@@ -141,6 +141,22 @@ test("Coral ID Key: the featured photos, then up to 5 other observers' photos", 
   );
 });
 
+// The Coral ID Key cards need variety (Pierre, 2026-11-08: the book's crops left, field photos fill the variety): after
+// the featured photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
+test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
+  const {CAP} = require('../core.js');
+  assert.strictEqual(CAP.inat, 5);
+  const P = [...Array(9)].map((_, i) => ({f: 'p' + i, o: 'https://www.inaturalist.org/observations/' + i, a: 'X'}));
+  const d = {gen: {G: {views: {wide: P.map(p => ({...p}))}}}, course: {}};
+  applySlots(d, {}, {});
+  const s = d.gen.G.sl.wide;
+  assert.strictEqual(s.feat.length, 3);
+  assert.deepStrictEqual(
+    s.idkey.map(p => p.f),
+    ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
+  );
+});
+
 test('every slate genus has game photos in at least one view', () => {
   Object.entries(D.gen).forEach(([n, g]) =>
     assert.ok(
@@ -185,8 +201,18 @@ test('one game list per view: each photo once, the featured game photos first, P
   each(D, (n, g, v, s) => {
     const F = s.game.map(p => p.f);
     assert.strictEqual(new Set(F).size, F.length, `${n} ${v}: a photo twice`);
-    const lead = s.feat.filter(p => s.game.includes(p)).map(p => p.f);
-    assert.deepStrictEqual(F.slice(0, lead.length), lead, `${n} ${v}: featured first`);
+    // The featured photos of the quality order lead (the game list keeps no licence: core.js byQ0, Codex review #742);
+    // the featured shown may hold, at the same quality and source, an open photo in place of an NC one (Q270).
+    const lead = s.feat.filter(p => s.game.includes(p)),
+      sig = p => [q(p.f), !!p.imr, !!p.own].join(),
+      byF = new Map(s.game.map(p => [p.f, p]));
+    assert.deepStrictEqual(
+      F.slice(0, lead.length)
+        .map(f => sig(byF.get(f)))
+        .sort(),
+      lead.map(sig).sort(),
+      `${n} ${v}: featured first`
+    );
     const rest = F.slice(lead.length).map(q),
       firstPoor = rest.indexOf(1);
     assert.ok(firstPoor < 0 || rest.slice(firstPoor).every(x => x === 1), `${n} ${v}: Poor photos last`);

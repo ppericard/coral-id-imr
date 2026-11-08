@@ -1556,6 +1556,15 @@ more come out know well 3, IMR course 2, new 2 (the estimate is rough: one test 
 It changes little for them: at 50+ answers the prior weighs a sixth or less, the offer window has opened, and no
 fallback card comes for an inferred answer; it is shown as "inferred" in the admin's player journey.
 
+**Changed by Pierre** (2026-11-08, Q228: a fallback card had moved a player who is no expert from "IMR course" to "know
+well"): the admin's Players changes a player's answer for one subject (`core.js` `startAdminSet`, sheet v99
+`userStart`). It is a choice event appended to the record's history, via `admin`, at the time of the change: the answers
+before it keep the prior they had (`startPriorAt`), the next ones take the new one, and every device merges it at its
+next sync (`startUnion`: the latest answer wins). The fallback window restarts from the change, as after an answer given
+in the app (`startSet`: its answers, hold, epoch and pending verdict go; the cards shown stay), so the level card is still
+offered (Pierre, 2026-11-08: "if the player then turns out much better than I thought, the level card must still be
+offered"), on the answers given after the change only: at 40 and 60 of them.
+
 **Rules version 3** (2026-11-04, after the full replay #399): the prior moves the ability of a genus's first answers,
 hence the progress, so the replay applies it: `core.js` `replayProgress` takes each player's `reefid-sync-coral-start` record
 (`starts`) and, at each answer, the prior of the answer then in force (`startPriorAt`, from its history `h`; 0 before the
@@ -2595,7 +2604,11 @@ before release:
   retype is a spelling step, not a second chance at the genus), so progress, Elo, the exam and the replay are untouched
   and no rules version is added; a close typo of another genus stays a wrong answer. The raw text and the step's
   outcome are logged (sheet v59, Typed and Retyped right) so typed near-misses can be studied (the name study's
-  question g, [reviews/2026-11-05-name-confusion-study.md](reviews/2026-11-05-name-confusion-study.md)).
+  question g, [reviews/2026-11-05-name-confusion-study.md](reviews/2026-11-05-name-confusion-study.md)). So are the
+  texts refused before the answer (sheet v100, Rejected tries; Pierre, 2026-11-08, Q237), logged only: no learning value
+  reads them. On a fish genus question, a common name or a family name typed is told so ("is a common name" / "is a
+  family: this question needs a genus's scientific name"), never which genus; the rule stands: a genus question needs
+  the scientific name.
 
 Simulated before release (`tools/learnsim.js` with a recall learner, kept on its own branch for the dynamic version:
 a typed question is answered right with the learner's recognition chance lowered by a recall gap; 30 seeds × 600
@@ -2950,7 +2963,7 @@ which names three genera, Q220) join the units in play without the offer once th
 photo of a genus not opened (Abudefduf, Acanthurus) or of one opened, asked at family level, is right as its family (Q221;
 a Naso photo is right as Surgeonfishes). It applies to every player with that answer, existing ones included (Pierre,
 2026-11-08): it reads the current scores, so the IMR genera of a family already past Open Water become candidates at once,
-one card at a time at the opening's pace. Not counted in the progress, as the other genera. A player who turned the set on
+one card at a time at the opening's pace. Counted in the fish global score through the genus credit (#730), as the other genera. A player who turned the set on
 before 2026-11-08 gets a one-time card offering to close it (`quiz.js` `bonusBackShow`, the set's `rv` recorded with the
 choice as `Q.sciV`). Turned on by hand (⚙, My progress) while no family is at Advanced, a family's genera join from its Open
 Water (Pierre, 2026-11-08, Q240: `Q.sciH`, synced with the choice); by the offer, from its Advanced. The IMR-families-first
@@ -3020,6 +3033,111 @@ fish game in a browser, the answer at which each achievement first enters the re
   passed its exam within 2,500 simulated answers: 10-13 families were in their exam by then).
 - **Dropped: a fish Elo achievement.** The simulated fish level is already about 1.5-2.2 (Elo 1,300-1,440) when it first shows at 200
   answers (`ELO_MIN`), so "Fish Elo 1200" came at exactly the 200th answer for every run: an answer count, not a milestone (rule L8).
+
+### Fish achievements, around the global score (2026-11-08, Q259-Q264; record version 3)
+
+**Decided** (Pierre, 2026-11-08), on the proposal of the same day (33 learning achievements), once the global score was built
+(Q255: "the fish achievements to be redesigned around the global score"):
+- **Q259**: the score's ladder every 10 points; fpct25 retired.
+- **Retired or no longer valid, removed from everyone**: "Pour les succès retirés, on le retire au jeu, à tout le monde ... on
+  est en mode bêta, les gens le savent"; **Q260**, no silent keep: "Si les succès sont plus bons, on les retire et on les
+  remplace". Then the principle: "il faut recalculer tous les progrès pour tous les joueurs à partir de leurs réponses, et
+  ensuite recalculer leurs succès aussi".
+- **Q261**: "Dauin's top 20" = circle-1 species only for now (another top with circle 3 later); and frequency-based ones ("je
+  sais reconnaître les X poissons les plus fréquents", and for fun "les X poissons les moins fréquents à Dauin").
+- **Q262**: a species is "named in Latin" once its scientific name's bar reaches Advanced (the My progress counter too).
+- **Q263**: 33 is fine. **Q264**: the removal is silent ("le retrait il est fait en silence").
+- Names: "n'hésite pas à réfléchir au nom des succès aussi, pour mettre des noms sympas, rigolos, pour varier": every fish
+  achievement has a short diver-flavoured name, its description stays plain and exact. The list below approved (Pierre, 2026-11-08): "pour
+  les succès, oui, je valide l'esprit, ça me va".
+
+**The list** (`core.js` `FISH_ACH`; tier 1 bronze, 2 silver, 3 gold). Built, 24:
+
+| Id | Name | Condition | Tier |
+|---|---|---|---|
+| fpct10, fpct20 | Giant stride, Bubble trail | the global fish score (`treeScore`'s %) at 10%, 20% | 1 |
+| fpct30, fpct40 | Reef crest, Down the wall | 30%, 40% | 2 |
+| fpct50 | Family reunion | 50%: what knowing every family for sure is worth (the families' anchor) | 3 |
+| fpct60 | Blue water | 60% | 3 |
+| fmet5 | Meet the neighbours | 5 families met | 1 |
+| fmetall | Full logbook | every family in the game met | 2 |
+| fq50a, fq50b | Certified, School's in | 5, 20 families at Open Water or above | 1, 2 |
+| fq80a, fq80b | Night diver, Deep diver | 5, 15 families at Advanced or above | 1, 2 |
+| fq95a | Dive guide | 5 families at Divemaster or above | 2 |
+| flearn1, flearn10, flearn30 | First briefing, Course director, Fish whisperer | 1, 10, 30 families' mastery exams passed | 2, 3, 3 |
+| fsci5 | Latin lessons | 5 scientific genera at Open Water or above | 2 |
+| fgen20, fgen60 | Name dropper, Walking field guide | 20, 60 scientific genera at Advanced or above | 2, 3 |
+| fmetcore | Roll call | every family of the IMR course met | 2 |
+| fcoreadv | House reef | every family of the IMR course at Advanced or above | 2 |
+| fc2 | Supporting cast | every circle-2 family (those that open right after the IMR course's) at Advanced or above | 2 |
+| fc3adv | Muck diver | 20 families beyond the IMR course (circle 3) at Advanced or above | 3 |
+| flearncore | Transect master | every family of the IMR course learned (its exam passed) | 3 |
+
+flearn30 joins `ACH_LEARN` (taken back with a learned mark, as the other Instructor ones). The circles read `UNITS` fish
+`circles` (`progress.js` `achSnap` `circ`), the genera at Advanced `achSnap` `setsAdv`; the % reads the global score from the
+device's progress (`treeScore` over `UNITS` tree), whatever the sheet's version (the achievements need nothing from it).
+
+**Waiting, 9** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
+confuse; names proposed for when they are built):
+- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): today's score tops out at 67% (families and
+  every genus), the species level brings the rest.
+- At the species level: fsp1 "First name terms", fsp10 "Name tags", fsp50 "Fish ID nerd" (species named by a common name at
+  Advanced); fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with both names at
+  Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
+- Fish basics: fbasics, with the module.
+- Also for the species level (Q261, counted beyond the 33): "Usual suspects", the X fish most often seen (circle 1, then
+  every circle), and "Rare finds", the X least often seen at Dauin, by the rank of observers near Dauin (`present.dauinU`,
+  the score's own weights); X chosen with the species level.
+- The contributions are unchanged.
+
+**The recount** (`progress.js` `ACH_V` 3, `achMigrate`): every device, at its first start-up on this version, tests every
+achievement of every subject again on that subject's current progress (`inSubject`, `core.js` `achRecount`): those met keep
+their date (the earliest held), the others go, fpct25 with them since no list holds it; every fish % achievement is thus
+re-evaluated on the global score (an fpct50 earned on the families' mean leaves a player under 50%), and the new ones the
+progress already meets come in. Silent (Q264), no card, no toast. The fish data is loaded only when the fish are needed
+(`app.js` `fishLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
+then are recounted the same way (`achPending`, from `fishLoad` and before each check). A device not updated yet: its record
+keeps version 2, and `core.js` `mergeAch` takes no achievement from a record of another version (only its feats), so it never
+brings back what the recount removed, and an updated device's record never reaches it either (the same rule on its side).
+The progress itself is not recounted here: the corals' is replayed from the answer log by the sheet (`Code.gs` `replay_`,
+rule D5); the fish's is not replayed (`SUBJECTS` fish `replay: false`), its bars rebuilt once on the device from their counts
+(`core.js` `domFromCounts`, Q200). Checked by `tests/core.test.js` (each condition at its threshold, fpct25 retired,
+`achRecount`) and `tests/adopt.test.js` (the recount on a corals + fish record of version 2, the fish waiting for their data,
+a merge with a stale device).
+
+**Timing** (rule L8; `tools/learnsim.js --subject fish --ach`, the real fish game in a browser; `--beyond yes` answers circle
+3's offer with yes): profiles beginner (choice "new") and lecture RA ("imr"), 2 seeds x 2,500 answers each, one process per run; the answer at
+which each achievement first enters the record (seed 1 / seed 2). The simulated player accepts the scientific genera's
+offer (at answer 31-199), and from then on about 60% of its questions are genera: the families' levels come later than
+in the run of 2026-11-06 (fq80a about 2,000 against 1,100; fq80b and fq95a past 2,500 against 1,600-1,900).
+
+| Achievement | beginner | lecture RA |
+|---|---|---|
+| fpct10 Giant stride | 82 / 21 | 10 / 11 |
+| fmet5 Meet the neighbours | 20 / 22 | 21 / 21 |
+| fpct20 Bubble trail | 228 / 122 | 34 / 91 |
+| fq50a Certified | 258 / 310 | 91 / 157 |
+| fmetcore Roll call | 155 / 171 | 250 / 293 |
+| fpct30 Reef crest | 598 / 513 | 284 / 538 |
+| fq50b School's in | 761 / 1,279 | 725 / 1,084 |
+| fsci5 Latin lessons | 793 / 943 | 1,308 / 977 |
+| fpct40 Down the wall | 1,437 / 1,349 | 1,235 / 1,255 |
+| fq80a Night diver | 1,978 / 2,264 | 2,075 / 2,025 |
+| fpct50 Family reunion | > 2,500 / > 2,500 | 2,421 / > 2,500 |
+| fq80b, fq95a, flearn1-30, fpct60, fgen20, fgen60, fcoreadv, fc2, fc3adv, fmetall, flearncore | > 2,500 | > 2,500 |
+
+Longer runs to time the far ones did not finish: the page of the tool crashed ("Target crashed", the browser's renderer)
+in every run of 4,500 and 8,000 answers on this machine (and once at 2,500 with two runs side by side), so the far goals
+(Advanced on 15 families and on every IMR course family, the circles, the genera at Advanced, the exams, 50-60%) stay
+"> 2,500": far goals, as the Instructor ones were in the run of 2026-11-06.
+
+- The first comes within a dozen answers for a lecture RA: fpct10 rides on the √ display (one or two of the most common
+  families at Open Water read about 10%), together with fmet5 at about 20: the first within a few dozen answers, as rule
+  L8 asks, then a steady spread (a new one every 100-700 answers to about 2,000).
+- `tools/learnsim.js` taught nothing on the units of an opt-in set before this change (the scientific genera were not in the
+  learner's knowledge, so their questions stayed at chance, the genera stayed shaky and held the families' openings: in a
+  first run the player was stuck at 27 families met from answer 200 on). Fixed here: they are learned like any unit from
+  the profile's low start.
 
 ### Fish: the global score, simulated (2026-11-04)
 
@@ -3106,6 +3224,141 @@ Not changed: the formula, a and b, the 25% share (nothing here argues against th
 him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md): whether the slow second branch and the leaderboard order at equal effort
 are what he wants. Rerun when a constant of the formula changes, when the curated common names are chosen (`--names`),
 and with the real app (`tools/learnsim.js` fish profiles) once the species level exists.
+
+### Fish: the global score, built (2026-11-08, Q242; sheet v101)
+
+**Decided** (Pierre, 2026-11-08). It started with "il faut qu'on attaque la question du score global ... Le score global, il
+faut commencer à l'intégrer. Donc à le calculer", because the scientific genera counted nowhere in the fish %. Re-simulated on
+today's bar and world (below), he chose **Q242: the formula of 2026-11-04 with each species weighted by how common it is near
+Dauin (A), and the % shown as the square root of the raw score (B); not the circle weights (C)**, to honour "le score avance
+vite au début et lentement après". Then: every score from one computation, decomposed ("il y a un score global ... et après
+il faut qu'il y ait des scores par famille, par genre, par espèce ... par espèce à la fois sur le nom scientifique et sur le
+nom commun ... qu'on arrive à découper les scores sur des composantes"; "il nous faut un progrès par composante ... essentiel
+de savoir à combien de pourcentage il est d'apprentissage pour tel genre ou telle espèce ou telle famille"); thresholds may
+read a component ("c'est pas déconnant de calculer des seuils sur des scores qui touchent que les familles ou que les genres
+ou que les espèces"); the path follows the new scores ("il faut qu'on trouve une manière de caler le parcours sur nos
+nouvelles manières de calculer les progrès et les scores"); a species with no common name stays out of that branch (Q247:
+"elles ne participeront pas à la branche nom commun").
+
+**The rule** (`core.js` `treeScore`, `rankWeights`, `fishScoreTree`; `SUBJECTS` fish `score`; docs/FISH_PATH.md "My
+progress (fish)"):
+
+- Every unit keeps its own bar (`scoreOf`: the domain-score bar, 1 once its exam is passed), which drives its levels and
+  exam as before. The app shows the score, and sends its tree to the sheet, from a sheet reply with v ≥ `SCORE_SHEET`
+  (101; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
+- Species weight w = 1/√(rank by observers near Dauin, `present.dauinU`: distinct Research Grade observers within 40 km,
+  not observations, so a few keen photographers of one species do not weigh; Codex review #730), ties sharing their mean rank; a family weighs the
+  sum of its species' weights, a genus too.
+- Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, ½ × its genus's bar); credit =
+  a·C + b·S + (1 − a − b)·C·S, a = 11/15, b = 0.8; a species with no common name: credit = S, out of the Common names
+  component (Q247).
+- raw = 0.25 × Entries + 0.75 × the weighted mean credit; shown = 100 √raw.
+- Components, from the same call: Entries, Genera, Common names, Scientific names (own, and S with the genus credit),
+  species credit, each a weighted mean from 0 to 1; the same per circle; every unit's bar.
+- Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
+  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
+
+**Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool keeps the formula of 2026-11-04,
+unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
+130 genus units, 664 species, 951 common names, about 1,800 units. Under today's bar a unit already known perfectly needs
+about 24 answers to reach Advanced and 43 to pass its exam (`core.js` `domStep` with the app's adaptive photos, 200 runs), a
+unit being learned 46-95 and 69-124. Before #727 (1,238 units), a player who already knew every fish scored about 69-72%
+(old formula) at 30,000 answers.
+
+**Re-simulation of today** (scratch scripts, not committed; fish.json after #727). The world is fully rated and synthetic, on
+the Elo scale:
+- photo difficulty Normal around its taxon, sd 0.46 (the coral photo spread of the Analyses tab);
+- taxa around their parent: family sd 0.37, +0.5 for the declared look-alike groups; genus and species sd 0.3, +0.3 with
+  siblings;
+- a player offset, sd 0.5, 6 players;
+- the app's mechanics mimicked from `model.js` (`aimOff`, the early lean, the Gaussian photo choice, `TYPED`, `drawW`,
+  `shaky` with `OPEN.K` 8, at most 3 openings per 15 answers) and the real `core.js` `domStep`;
+- species as FISH_PATH designs them; species weights by observers near Dauin; the learning curves assumed.
+
+Checked against the real app (`tools/learnsim.js --subject fish`, 1,000 answers, family phase, before #727): the fish %
+41% (lecture RA) and 37% (beginner), against 40% and 28% here. Right rate: 75-81% there, 77-86% here, 78-87% in the real
+log. Heavier photo tails (15% of photos 1.5 harder, or a t distribution with 3 degrees of freedom) move the score by −2 to
++1 points; photos shaped by the judged ease change it by about 2 points.
+
+IMR RA (both names, the IMR families taught, the IMR genera at Open Water). Columns:
+- Fam OW, Fam Adv: families at Open Water and at Advanced, of 67;
+- Genera: genera at Advanced, of 130;
+- Sp. common, Sp. sci: species at Advanced by common and by scientific name, of 664;
+- Current: the % under the formula of 2026-11-04;
+- A (commonness weights), B (√), C (the IMR circle × 3), and A+B (decided).
+
+| Answers | Fam OW | Fam Adv | Genera | Sp. common | Sp. sci | Current | A | B | C | A+B |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 100 | 2 | 0 | 0 | 0 | 0 | 1.6% | 3.7% | 13% | 2.6% | 19% |
+| 300 | 9 | 0 | 0 | 0 | 0 | 4.2% | 7.3% | 21% | 6.7% | 27% |
+| 1,000 | 22 | 5 | 0 | 0 | 0 | 8.7% | 12% | 30% | 12% | 35% |
+| 3,000 | 57 | 19 | 0 | 1 | 0 | 19% | 19% | 43% | 20% | 44% |
+| 10,000 | 67 | 50 | 11 | 2 | 0 | 31% | 31% | 56% | 33% | 55% |
+| 30,000 | 67 | 63 | 70 | 9 | 0 | 42% | 42% | 65% | 47% | 65% |
+| 100,000 | 67 | 64 | 99 | 105 | 49 | 56% | 55% | 75% | 63% | 74% |
+
+Casual diver (common names only):
+
+| Answers | Fam OW | Fam Adv | Sp. common | Current | A | B | C | A+B |
+|---|---|---|---|---|---|---|---|---|
+| 100 | 1 | 0 | 0 | 0.6% | 1.5% | 7.9% | 1.0% | 12% |
+| 300 | 5 | 0 | 0 | 1.9% | 4.2% | 14% | 3.1% | 21% |
+| 1,000 | 15 | 4 | 0 | 5.9% | 9.4% | 24% | 9.1% | 31% |
+| 3,000 | 47 | 13 | 1 | 16% | 17% | 40% | 17% | 41% |
+| 10,000 | 67 | 51 | 8 | 25% | 24% | 50% | 25% | 49% |
+| 30,000 | 67 | 62 | 34 | 31% | 31% | 56% | 33% | 56% |
+| 100,000 | 67 | 64 | 172 | 48% | 47% | 69% | 54% | 68% |
+
+The fish % shown until now (the families' mean) at 100 / 300 / 1,000 / 3,000 / 10,000 / 30,000 answers:
+- IMR RA: 6 / 17 / 34 / 69 / 90 / 97%;
+- casual diver: 3 / 8 / 23 / 61 / 90 / 97%.
+
+**The curves compared**:
+- The formula of 2026-11-04 rises about 1 point per 100 answers at the start, and 0.3-0.6 per 1,000 past 10,000.
+- A adds 1-4 points early (the common families open first and weigh more) and nothing late.
+- C adds 1-7 points.
+- B and A+B read fast at the start (19-27% after 100-300 answers, 35% after 1,000 for the RA) and slower and slower after:
+  the shape asked for, at the cost of the 80% / 85% anchors (now 89% / 92%).
+
+**The path on the new scores.** This covers every rule that reads a global fish %. Unchanged:
+- the per-unit levels: a family's own Open Water or Advanced, which opens its genera and its species;
+- the counts: every circle-1 family asked, for circle 2.
+
+Answer at which each rule fires, median over the 6 simulated players [range], before and after:
+
+| Rule | Reads, before | Reads, after | IMR RA, before / after | Casual, before / after |
+|---|---|---|---|---|
+| Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [400-800] / 600 [400-850] | 1,000 [800-1,100] / 1,100 [1,000-1,250] |
+| fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`; retired since, Q259) | the families' mean ≥ 25% | the global % ≥ 25% | 700 / 300 | 1,150 / 550 |
+| fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,800 / 5,900 | 2,500 / 12,300 |
+| The fish leaderboard (Code.gs `board_`, v101) | the families' mean | the global % | | |
+| The header pill, My progress's ring, the update card | the families' mean | the global % | | |
+
+**Other thresholds weighed for circle 3:**
+- The global % ≥ 33%, where the families' 50% falls. It fires at about 750 / 1,350 answers (between the 32% and 34% runs),
+  and genera and later species would bring circle 3 sooner.
+- 15 circle-1 families at Open Water: about 550 / 1,050 answers (between the 14 and 16 runs).
+
+The circle-1 Entries component keeps the order "the IMR course's families first", whatever else the player learns.
+
+**Pierre's answers** (2026-11-08, Q253-Q258): no card, the switch is silent and the ? text explains it (Q253); circle 3 at
+55% of the circle-1 Entries component (Q254); fpct25 and fpct50 kept as built for now, the fish achievements to be
+redesigned around the global score in a proposal of their own (Q255; since done: "Fish achievements, around the global
+score"); the bar labels (Q256); the weighted bars with the
+genus credit in Scientific names (Q257), provided genera alone never pass a set level: S = max(the species' own bar, ½ ×
+its genus's), so genera alone keep Scientific names at 50% at most and the global % at the "families and every genus"
+anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with no common name (Q258).
+
+**What a player sees change** (the families' bars as they are):
+
+| The player's families | Fish % until now | Global score |
+|---|---|---|
+| Every circle-1 family at 50% | 21% | 29% |
+| Every circle-1 family at 80% | 33% | 37% |
+| Every circle-1 family at 80%, their genera at 50% | 33% | 49% |
+| Every family of every circle at 80% | 80% | 45% |
+| Every family learned | 100% | 50% |
+| Every family and every genus learned | 100% | 67% |
 
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
@@ -4091,6 +4344,65 @@ the logged ability minus the question's difficulty (th − d, from Expected and 
   b̂_photo (the photo's shrunk time effect, from the sheet) would give each factor its own part; today b̂ is shrunk to
   a third or less (reliability 0.26-0.51), so it would change nothing.
 
+### Response time as information on difficulty (measured 2026-11-08, no change to the app)
+
+Pierre, 2026-11-08: the earlier analyses asked how variables change the response time; he asked the other way round:
+what the speed of an answer says about how hard the question was, "even when they got it right: an answer where
+people took long, or even clicked to enlarge, means the question or the photo was harder than if the person answers at
+once". Today the seconds weigh only a right answer's steps on the player's ability ("Response time" section 5); the
+photo ratings (`Code.gs` `stats_`, `core.js` `eloReplay`) do not use them, and "Response time: genus and photo" found
+no use for them on 613 answers of 5 players.
+
+**Data** (the sheet's Answers tab read 2026-11-08, read-only; 4,021 rows: corals 2,729 (2,159 timed, 14 players, 11
+with timed answers on a photo another player answered), fish 1,292 (1,251 timed, 8 players); players P1… only; a
+script kept outside the repo). z = log seconds minus the median of the player's own earlier timed answers (from their
+11th; typed answers out). **Declared before reading the data** (rule L11, the multiple-testing rules of "Multifactor
+analyses"): three primary tests under Holm (family-wise 5%), the players the unit (stratified sign-flip over players,
+exact), one-sided: **H1**, others' earlier right-answer speed on a photo predicts a player's success on it beyond the
+app's rating (corals and fish pooled); **H2** (corals) and **H3** (fish), the sheet's photo Elo with a right answer's
+photo step × clamp(1 − k z, 0.5, 1.5) (k by leave one player out, grid 0.25-3) predicts the next answers better
+(paired log-loss). Everything else secondary under Benjamini-Hochberg (FDR 5%, 28 tests); the rest exploratory.
+
+| Primary | estimate [95%] | players | p | Holm |
+| --- | --- | --- | --- | --- |
+| H1: others' right-answer speed on the photo (logit per log unit, beyond the photo Elo) | −2.66 [−3.63, −2.17] (920 answers) | 11 | 0.001 | **0.003, clear** |
+| H2: corals, time on the photo's Elo step (log-loss × 10⁻³ per answer, mean of players) | −0.41 [−0.87, −0.02] (2,729) | 14 (8 better) | 0.057 | 0.114 |
+| H3: fish, the same | −0.10 [−0.29, +0.10] (1,278) | 7 (4 better) | 0.20 | 0.20 |
+
+- **(a) A slow right answer says the photo is harder, and the rating does not know it yet.** By how fast other
+  players had answered the photo right (their shrunk mean z), the next answer on it (corals): faster than their usual
+  91% right against 79% expected (295 answers), about usual 83% / 78% (284), slower 76% / 77% (202). Corals alone
+  −2.87 [−4.67, −2.18] (BH 0.014, clear); fish −1.13 [−4.99, +3.21] (139 answers on a photo answered before: too few).
+- **(b) Enlarged**: others' enlarging of the photo against their own habit, −3.59 per unit share [−4.89, −1.43]
+  (corals and fish, 1,185 answers; BH 0.085, not clear after the correction); fish has 17 enlarged answers.
+- **(c) Time intensity, out of sample** (van der Linden's lognormal model: each photo's time intensity from the other
+  players' answers, net of right or wrong and of each player's median, shrunk by 3 answers' worth, added to the
+  answer's expectation; coefficients fitted on the other players, each player predicted in turn): corals −6.1 × 10⁻³
+  per answer [−11.9, −1.0] (9 of 14 players better; BH 0.094, not clear), fish −0.5 [−2.7, +0.9]. The photos' time
+  intensity and their final Elo agree, +0.22 [0.12, 0.32] over 466 coral photos with 2 timed answers or more, +0.27
+  [0.12, 0.42] with 3.
+- **The photo Elo with time, replayed**: the k grid chose 0.5 or 1.5 by fold; fixed k 0.25 −0.19 ± 0.07 × 10⁻³ per
+  answer, 0.5 −0.29 ± 0.12 (both BH 0.027, clear): small, about 0.1% of the log-loss (0.456). On the answers to a photo
+  another player had answered right with a time: −0.86 ± 0.52 (BH 0.085). The enlarged mark as a slow answer, or as
+  its own factor on the step: nothing (BH 0.29-1). The same weight on the **genus offset's** step too (the
+  hierarchical photo Elo's G): −1.56 ± 0.36 × 10⁻³ per answer, 11 of 14 players better (BH 0.014, clear;
+  exploratory, 3 values of k tried); fish −0.58 ± 0.35 (BH 0.18).
+- So: the time other players took carries real information on a photo's difficulty (H1, large and for most players),
+  but a weight on the photo's own Elo step, the form the earlier study proposed, takes little of it (a photo has few
+  answers, and the step it scales is small); the genus offset's step takes more. Fish: too few repeated photos yet
+  (152 photos with 2 timed answers or more, 1 with 5).
+
+**Options, not built** (ROADMAP "Time in the photo rating"): (1) the weight on the genus offset's step too (`Code.gs`
+`stats_` and `core.js` `eloReplay` together, k chosen by leave one player out); (2) a time-intensity term in
+`photoDiff` from the sheet (rule L13: each photo's shrunk time intensity served with `photos`, × a coefficient chosen
+out of sample); (3) the enlarged mark as a small extra once it is clear. Risks: player speed (z is against the
+player's own median), typed questions (out), practice (z drifts as players speed up: the median from earlier answers
+only), pauses (the 600 s cap; the weight's clamp at 0.5), and the player-side weight already taken on the same z
+(PR #431): a slow right answer would then lower both the player's step and the photo's, which is what Elo does with
+one surprise (Pelánek 2016), but the two must be tuned together, not stacked. Validation (rule L11): level 2 (it moves
+every photo's rating, so the draw), both worlds, the real-log replay as the primary. The view below measures it at
+every milestone: Analyses › Difficulty › Time.
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
@@ -4098,7 +4410,7 @@ Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every rou
 - **Crossed random effects.** Player, genus and photo (a question's photos share its photo effect, weight 1/m each), fitted by alternating updates: each level's shrunk effect given the rest (a majorise-minimise step, exact when a row has one level), then the fixed effects, with EM updates of the variance components from the posterior second moments (REML-like shrinkage, without REML's exact determinant term). Gaussian for log response time (`lmm`); logistic with each question's guess rate, P = g + (1 − g) sig(eta), for right / wrong (`glmm`, penalised quasi-likelihood, Fisher scoring), g as the app's (`core.js` `guessOf`: 1/k, ½ for a duel, 0 typed).
 - **Intervals.** 95%: the model's own (Wald, from the fixed effects' covariance marginal over the random effects, the inverse of the Schur complement of the joint precision: an effect that is constant within a player, such as a player's habit, gets the players' spread, not the precision of their many answers; Codex review #441) and, from 6 players, a cluster bootstrap over players, whichever is wider. Draws (Pierre, 2026-11-05: at least 999): **999** for the latest milestone in the Action (the percentiles of the draws), **199** for the earlier milestones, newest first, while their answers add up to 60,000, none beyond (the model's own interval only), so that a full recompute stays inside the Action's 2 hours as the log grows (`report`); **Recompute here** in the browser: 199 draws read as a normal interval, the estimate ± 1.96 times the draws' standard deviation, never beyond the draws' range (`boot`, `BSE`: some 200 draws pin a standard error, percentiles need about 1,000, Efron & Tibshirani 1993), earlier milestones not reused from the stored report with the model's own interval only. Seeded: the same answers give the same intervals. Each bootstrap refit starts from the full fit of the same model (`WARM`: the same fit in fewer steps); a draw with no answer moving a feature gives no value for it (`drawn`), never the full fit's or 0. Few players = rough intervals, said by the verdicts.
 - **Verdicts** (`verdictOf`, then `correct` over the whole milestone), per effect: *Clear* (after the multiple-testing correction below: its adjusted p at most 5%, so its 95% interval excludes 0, or the app's value for a guess rate, with room to spare); *Within the margin of error* (it includes it and lies within the smallest effect that would matter: ±0.1 log time ≈ 10%, ±0.25 logit, ±5 points, ±0.1 logit for slopes); *Not enough data yet* with the answers needed for an interval as narrow as the current estimate (or that smallest effect), n × (half-width / target)², rounded up; after the correction, the answers for either verdict, whichever comes first: its interval at the level the correction asks of it leaving 0 out, or its 95% interval inside the margin (so it never says it needs fewer answers than it has): a rough power estimate that assumes the interval shrinks as 1/√n (it shrinks slower when the players are few).
-- **Multiple testing** (Pierre, 2026-11-05, Q69; the statistical methods study of 2026-11-05, `docs/reviews/2026-11-05-stats-methods-study.md` §2, §5.3, §6.3; `analysis.js` `PRIMARY`, `pOf`, `holm`, `bh`, `correct`; `AV` 4). A milestone holds about 40 effects, each at 95%: about 2 would read clear by chance alone, and the chance that at least one does is about 85%. So each analysis declares the 1-2 **primary** effects it exists to answer, chosen before looking at any result (below), 13 in all, tested together under **Holm** (family-wise error 5%: the chance that even one of them reads clear by chance; valid whatever the dependence between them); every other effect is **secondary, exploratory**, tested together under **Benjamini-Hochberg** (false discovery rate 5%: among the exploratory effects read clear, about 5% at most are chance, on average; valid for independent or positively dependent tests), a lead to re-test on later answers before acting on it. An effect's p-value comes from its 95% interval (the wider of the model's and the bootstrap's) read as a normal one on the side facing the null value, so p < 0.05 exactly when that interval leaves the null value out; the estimate and its 95% interval stay as they were, the verdict uses the adjusted p, and the admin shows the adjusted p only in the verdict's tooltip (rule A2: no method detail on the admin page). Each effect stores its family (`fam` 1 or 2), `p`, adjusted `pa`, and `alo` / `ahi`, its interval at the level its rank faces (it leaves the null value out exactly when the effect is clear). Typed answers in Learning curves are read as right answers against the typical question's, which has a guess floor they lack, so they are tested, and corrected, on that contrast: their null is the coefficient at which they are right as often (log 1.5 at 75% right with a ¼ guess floor), not 0 (`correct` sets `nul`). Not tested: the answers to reach 80% (a number, not a comparison) and effects with no estimate. **The primary effects**, from the questions each analysis was built for (the list above): Response time, *right answers* and *the app's expected difficulty* (is answer time a signal the app could use: does it follow knowledge and difficulty beyond right or wrong; the question of `rtsignal`); Zoom, *enlarged, against the player's own habit* (does enlarging help: its whole question); Photo factors, *poor quality* and *corallites instead of a colony* (the two rules the games' photo sets rest on: Poor photos feed the hard end, and the zoom levels go colony → corallites); Formats, *right − expected on 4 choices* and *on typed answers* (is the app's expected chance right on its main format and on the one with no guess floor; the model-light check, the most powerful of the three per format); Confusions, *corallites shown* (do close views cut mix-ups: the reason the app shows several views); Learning curves, *the learning slope* and *Again after a miss* (does practice work; does the app's Again help); Comeback, *the forgetting slope* and *comeback questions, right − expected* (do players forget over days; is the app's forgetting curve right); Sessions, *after a wrong answer* (do misses end sessions). No spread (SD) is primary: an SD's estimate never reaches 0 (EM keeps it above, and its interval is not valid at that boundary), so a spread that is really 0 can read clear, with or without a correction; on a synthetic log with no photo or time spread, both still read clear (ROADMAP "Analyses: what the correction leaves open"). **Milestones are looks, not new studies**: each refits a larger copy of the same log, so a result that turns clear at one milestone is no new finding; the admin no longer marks results "new since the previous milestone" nor charts the clear results over time, and keeps the milestones as history. **Validated** (`tests/analysis.test.js`): on 400 made-up milestones of 37 null effects on the analyses' own keys, 1.80 per milestone read clear at 95% before the correction and 0.125 after; a false clear among the primary effects in 5.25% of the milestones (Holm's 5%); a strong effect (6 standard errors), primary or exploratory, stays clear every time. On a synthetic answer log with every effect switched off but two (12 players, 5,400 answers, no bootstrap): 2 of 41 null fixed effects clear at 95% before, 1 after, no null primary effect clear, and the two real effects (the learning slope, typed answers taking longer) clear. A correction cannot remove a bias: a null effect the model gets wrong (here "one view alone", ±0.2 logit across seeds) can stay clear; the bootstrap widens such intervals.
+- **Multiple testing** (Pierre, 2026-11-05, Q69; the statistical methods study of 2026-11-05, `docs/reviews/2026-11-05-stats-methods-study.md` §2, §5.3, §6.3; `analysis.js` `PRIMARY`, `pOf`, `holm`, `bh`, `correct`; `AV` 4). A milestone holds about 40 effects, each at 95%: about 2 would read clear by chance alone, and the chance that at least one does is about 85%. So each analysis declares the 1-2 **primary** effects it exists to answer, chosen before looking at any result (below), 14 in all, tested together under **Holm** (family-wise error 5%: the chance that even one of them reads clear by chance; valid whatever the dependence between them); every other effect is **secondary, exploratory**, tested together under **Benjamini-Hochberg** (false discovery rate 5%: among the exploratory effects read clear, about 5% at most are chance, on average; valid for independent or positively dependent tests), a lead to re-test on later answers before acting on it. An effect's p-value comes from its 95% interval (the wider of the model's and the bootstrap's) read as a normal one on the side facing the null value, so p < 0.05 exactly when that interval leaves the null value out; the estimate and its 95% interval stay as they were, the verdict uses the adjusted p, and the admin shows the adjusted p only in the verdict's tooltip (rule A2: no method detail on the admin page). Each effect stores its family (`fam` 1 or 2), `p`, adjusted `pa`, and `alo` / `ahi`, its interval at the level its rank faces (it leaves the null value out exactly when the effect is clear). Typed answers in Learning curves are read as right answers against the typical question's, which has a guess floor they lack, so they are tested, and corrected, on that contrast: their null is the coefficient at which they are right as often (log 1.5 at 75% right with a ¼ guess floor), not 0 (`correct` sets `nul`). Not tested: the answers to reach 80% (a number, not a comparison) and effects with no estimate. **The primary effects**, from the questions each analysis was built for (the list above): Response time, *right answers* and *the app's expected difficulty* (is answer time a signal the app could use: does it follow knowledge and difficulty beyond right or wrong; the question of `rtsignal`); Zoom, *enlarged, against the player's own habit* (does enlarging help: its whole question); Photo factors, *poor quality* and *corallites instead of a colony* (the two rules the games' photo sets rest on: Poor photos feed the hard end, and the zoom levels go colony → corallites); Formats, *right − expected on 4 choices* and *on typed answers* (is the app's expected chance right on its main format and on the one with no guess floor; the model-light check, the most powerful of the three per format); Confusions, *corallites shown* (do close views cut mix-ups: the reason the app shows several views); Learning curves, *the learning slope* and *Again after a miss* (does practice work; does the app's Again help); Comeback, *the forgetting slope* and *comeback questions, right − expected* (do players forget over days; is the app's forgetting curve right); Sessions, *after a wrong answer* (do misses end sessions); Time and difficulty, *others answered the photo right slowly* (does the time others took on a photo say it is harder than the app thinks; Pierre, 2026-11-08). No spread (SD) is primary: an SD's estimate never reaches 0 (EM keeps it above, and its interval is not valid at that boundary), so a spread that is really 0 can read clear, with or without a correction; on a synthetic log with no photo or time spread, both still read clear (ROADMAP "Analyses: what the correction leaves open"). **Milestones are looks, not new studies**: each refits a larger copy of the same log, so a result that turns clear at one milestone is no new finding; the admin no longer marks results "new since the previous milestone" nor charts the clear results over time, and keeps the milestones as history. **Validated** (`tests/analysis.test.js`): on 400 made-up milestones of 37 null effects on the analyses' own keys, 1.80 per milestone read clear at 95% before the correction and 0.125 after; a false clear among the primary effects in 5.25% of the milestones (Holm's 5%); a strong effect (6 standard errors), primary or exploratory, stays clear every time. On a synthetic answer log with every effect switched off but two (12 players, 5,400 answers, no bootstrap): 2 of 41 null fixed effects clear at 95% before, 1 after, no null primary effect clear, and the two real effects (the learning slope, typed answers taking longer) clear. A correction cannot remove a bias: a null effect the model gets wrong (here "one view alone", ±0.2 logit across seeds) can stay clear; the bootstrap widens such intervals.
 - **Runtimes** (measured 2026-11-05 on a shared machine, one core; made-up logs of 10 players on the real photos; the Action's limit is 2 hours, `.github/workflows/analyses.yml`): 999 draws for the latest milestone cost about 1.7 minutes per 1,000 answers (5,000 answers: 8.5 minutes); a whole report from scratch at 5,000 answers (the latest at 999, the 4 earlier at 199): 10.7 minutes. Estimated: about 33 minutes at 10,000 answers, about 55 at 20,000 (the earlier milestones' draws are capped at 60,000 answers, about 20 minutes); the latest milestone alone reaches the 2 hours near 55,000 answers (ROADMAP "Analyses: what the correction leaves open"). Recompute here in Chromium at 5,000 answers (199 normal-interval draws for the latest, the earlier milestones without bootstrap): 1.9 minutes, where 999 percentile draws would take about 9; a phone is slower.
 - **Validated** on synthetic answer logs whose true effects are known (`ANALYSIS.synth`, `TRUTH`): the fits give them back within the test tolerances (response time effects within 0.04-0.06 log units, photo features within 0.25 logit, learning slope within 0.15). Photo random-effect SDs come out a little low (PQL's known shrinkage), a guess rate is pinned only by the weakest answers (its interval stays wide).
 
@@ -4121,6 +4433,7 @@ Two views show how effects and genera relate (the multifactor visualisation stud
 **Player profiles** (`profiles`, Pierre's Q70-Q73): a description of how each player plays, never named types (from about 30 players at the earliest: Dalmaijer et al. 2022). Each player's last 300 answers (all when fewer, `PROF_N`; under 100 the row is greyed and left out of the tree, the map and the groups, `PROF_MIN`; under 20 left out, `PROF_LOW`). Seven behaviours, each net of what the app decided (`profFeat`, which takes any set of answers so a later trajectory analysis can run it window by window): answer time (the player's own effect in the Answer time model on those answers, a fast fit), enlarging (the share enlarged minus everyone's rate for the views shown), right beyond the app's expectation (right − expected), stopping after misses (the chance to end a session after 2+ misses in a row within it minus after other answers, each shrunk towards the pooled rate by 10 answers' worth, `PROF_K`; open sessions left out), session length (median answers, log; a session cut by the window's start left out unless it is the only one), sessions a week (log, over the window, at least a week), evening play (share of answers from 17:00 Manila). The learning slope (Q72, "when fitted") waits for a random practice slope in Learning. z-scores over the players with a profile (a behaviour every player shares reads 0, its spread taken as none under a billionth of its size: Codex review #604, the rounding of the mean read ±1 SD); Ward's tree on them; the behaviours ordered by average linkage on 1 − r; a PCA of their correlations (Jacobi, `eigSym`), each axis's sign set so its largest loading is positive. Groups: the tree cut into 2 to 5 where the average silhouette is best (`cutK`, `silhouette`); stability (Hennig 2007): each group's best Jaccard in every run with one player left out ("kept" counts the runs where every group reaches 0.75, `PROF_STAB`) and its mean over 50-200 bootstrap draws of the players (each draw re-standardised and clustered with its multiplicities, the groups compared as distinct players); stable only when every leave-one-out run keeps every group and each bootstrap mean reaches 0.75 (Codex review #604: the leave-one-out means alone hid runs that changed the groups); unknown, never "not stable", when no leave-one-out run can be grouped (3 players). Tested on two planted styles (`tests/analysis.test.js`).
 
 8. **Sessions** (30 minutes without an answer ends one): Kaplan-Meier of the length (open sessions censored) and a discrete-time hazard, stop after this answer ~ wrong + 2+ misses in a row + expected difficulty + slow (against the player's usual) + log position + (player).
+9. **Time and difficulty** (Pierre, 2026-11-08; `tdiff`, `tdFeat`, `AV` 9; "Response time as information on difficulty" above): the reverse of Response time and Zoom. Before each answer, the earlier answers of other players on its photo (the question's first photo): their right answers' z (log seconds minus their own median over their earlier timed answers, from the 11th; typed and enlarged answers out) and their enlarging minus their own habit so far, each the photo's mean shrunk by `TD_K` = 3 answers' worth; right ~ offset (the app's log-odds, its photo rating included) + slow + enlarged + (player), with each question's guess rate. Then the time intensity beside difficulty: log seconds ~ right + typed + enlarged + 2 choices + (player) + (genus) + (photo), and right ~ the photo's time intensity + typed + 2 choices + (player) + (genus) + (photo). The genera's and the slowest and fastest photos' time intensity beside their difficulty from the accuracy alone (a third fit, no covariate), their correlation over the photos with 3 timed answers or more and the genera with 5 (descriptive; shrinkage lowers it); right against expected by the others' speed (faster, about, slower than their usual: ±0.1). The others' features are fixed in the bootstrap (it resamples the answers' players, not the features' sources). The genus's time intensity is not tested: beside the genus's own effect it is not identified with a few dozen genera. Tested on a planted link (`TRUTH.td`: `link`, the photo's time per logit of its own difficulty; `blind`, the share of that difficulty the app's expectation misses): both effects come back, none without the link, and others' time adds nothing when the app already knows the photo. Corals only, as every analysis (the replayed subject).
 
 ## Considered and not adopted
 
@@ -4675,6 +4988,12 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
+  with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
+  species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation
+  with its components (per family, genus, species × common / scientific name, per circle); a species with no common name
+  has no common branch (credit = S); the rules that read a global fish % read the new scores (circle 3: the circle-1
+  Entries component at 55%).
 - 2026-11-06, Pierre (Q187-Q190, after the photo exposure study; fish too, 15:36): the Colony cap 40 colonies per genus
   (corals; fish no cap); the calibration questions are an exploration share of 30% drawing colonies (observations)
   never seen, on a unit held (simulated); a beginner's multi-view question weighs a colony by cov, not cov² (corals); a

@@ -43,6 +43,7 @@ from excluded import excluded, drop_excluded, restore_unexcluded, load_gone, sav
 from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
 from taxonomy import inat_taxon  # the iNaturalist taxon of each genus, from tools/taxonomy.json
+from rights import licence, rights_rank  # a photo's licence and its rights tie-break (Q270), as core.js licOf / rightsRank
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike (Pierre, 2026-11-05): cc-by-sa and cc-by-nc-sa left out
 LICS = set(LIC.split(','))
@@ -91,14 +92,16 @@ def get(u):
         time.sleep(wait)
 
 
-def licence(p):
-    """A photo record's licence code: its lic, else read from its attribution text ("(CC BY-NC-SA)" -> cc-by-nc-sa, "no
-    rights reserved" -> cc0); None when neither says (IMR lecture photos)."""
-    if p.get('lic'): return p['lic'].lower()
-    m = re.search(r'\((?:CC0|CC[ -][A-Z -]+?)\)', p.get('a') or '')
-    if not m: return 'cc0' if 'no rights reserved' in (p.get('a') or '').lower() else None  # iNaturalist's CC0 credit
-    t = m.group(0)[1:-1].upper()
-    return 'cc0' if t == 'CC0' else 'cc-' + '-'.join(t[3:].lower().split())
+def tie_key(o, P, rank):
+    """The last keys of an observation in the shortlist (main): Research Grade before the genus-level and expert IDs (the
+    order main lists them in; Codex review #742), then its votes (iNaturalist's order, most first), then its rights
+    (rights_rank of its best photo P: an open licence or Pierre's own first; Pierre, 2026-11-08, Q270: a tie-break only),
+    then its place in the list. An observation without a votes count keeps its place (rank), as before."""
+    own = (o.get('user') or {}).get('login') == 'ppericard'
+    v = o.get('cached_votes_total')
+    best = min(rights_rank({'lic': ph.get('license_code'), 'own': own}) for ph in P)
+    grade = 0 if o.get('quality_grade') == 'research' else 1
+    return (grade, -v, best, rank) if isinstance(v, int) else (grade, rank, best, rank)
 
 
 def share_alike(p):
@@ -338,15 +341,17 @@ def main():
             # Research Grade only (the query asks for nothing else).
             obs = [o for o in obs if o['quality_grade'] == 'research'] + [o for o in obs if loc != 'world' and o['quality_grade'] != 'research' and ph_ok(o, tid)]
             # Shortlist that varies (Pierre): pick one by one the observation whose species and observer are least represented
-            # so far (votes order breaks ties), and take all its photos.
+            # so far (votes order breaks ties), and take all its photos. Between observations of as many votes, one with an
+            # open licence (CC0, CC BY) or Pierre's own before CC BY-NC (tie_key: rights_rank of its best photo; Pierre,
+            # 2026-11-08, Q270: a tie-break only), then the votes order.
             pool = []
             for rank, o in enumerate(obs):
                 P = [ph for ph in o['photos'] if photo_ok(ph) and str(ph['id']) not in usedp and not excluded(photo_id=ph['id'])][:PER_OBS]
-                if P: pool.append((o, P, rank))
+                if P: pool.append((o, P, tie_key(o, P, rank)))
             n = Counter()
             for p in out: n['t', p.get('t')] += 1
             while pool and r > 0:
-                o, P, rank = min(pool, key=lambda x: (n['t', x[0]['taxon']['name']], n['u', x[0]['user']['login']], x[2]))
+                o, P, _k = min(pool, key=lambda x: (n['t', x[0]['taxon']['name']], n['u', x[0]['user']['login']], x[2]))
                 pool = [x for x in pool if x[0]['id'] != o['id']]
                 url = f'https://www.inaturalist.org/observations/{o["id"]}'
                 n['t', o['taxon']['name']] += 1; n['u', o['user']['login']] += 1

@@ -298,7 +298,9 @@ test('fishGen order and cover: the easiest, most reference-like photo first, who
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide;
     if (!L.length) return;
-    assert.strictEqual(g.cover, L[0].f, `${g.id}: the cover is the list's first`);
+    // The cover: the list's first, an open licence breaking ties (core.js easyCover, Q270); the list keeps no licence.
+    assert.strictEqual(g.cover, C.easyCover(L).f, `${g.id}: the cover is the list's first, the licence breaking ties`);
+    assert.strictEqual(C.easyRank(L, undefined, false)[0].f, L[0].f, `${g.id}: the list in easyRank order without licence`);
     L.slice(1).forEach((p, i) => {
       const a = L[i];
       // A very easy reference photo (rep) first (core.js refFirst, Pierre 2026-11-06), then the ease, then refScore.

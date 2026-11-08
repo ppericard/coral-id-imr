@@ -300,7 +300,9 @@ const server = http.createServer((req, res) => {
         l.ch !== '' ||
         !(l.e > 0 && l.e < 1) ||
         l.ty !== typo.toLowerCase() ||
-        l.tr !== 1
+        l.tr !== 1 ||
+        // the text refused before it, logged with it (Pierre, 2026-11-08, Q237); the spelling step's retype is none
+        JSON.stringify(l.rj) !== JSON.stringify(['xyzcoral'])
       )
         fails.push(`typed answer "${typo}" retyped "${g}" logged ${JSON.stringify(l)}`);
       const h1 = document.querySelector('#after .fb h3');

@@ -25,14 +25,9 @@
   // Licences (Pierre, 2026-11-05: no share-alike for corals any more, aligned with the fish rules; the candidate search
   // no longer takes them, tools/fetch_local.py LIC). A photo's licence: its lic, else read from its attribution text
   // ("(CC BY-NC-SA)", "no rights reserved" = CC0), as tools/fetch_local.py licence() does; null when neither says (IMR
-  // lecture, Coral Finder book).
-  const licence = p => {
-    if (!p) return null;
-    if (p.lic) return String(p.lic).toLowerCase();
-    const m = /\((CC0|CC[ -][A-Z -]+?)\)/.exec(p.a || '');
-    if (!m) return /no rights reserved/i.test(p.a || '') ? 'cc0' : null; // iNaturalist's CC0 credit
-    return m[1] === 'CC0' ? 'cc0' : 'cc-' + m[1].slice(3).toLowerCase().trim().split(/\s+/).join('-');
-  };
+  // lecture, Coral Finder book). One reading for the app and the admin: core.js licOf.
+  const {licOf} = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
+  const licence = licOf;
   const shareAlike = p => /-sa$/.test(licence(p) || '');
   // The share-alike photos on the site still needing Pierre's decision (To do › Share-alike): every photo a genus page
   // lists now (several-corals photos included: the site may show them), not removed, not kept (kept(f): his

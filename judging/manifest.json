@@ -93,7 +93,7 @@
     "Corallites immersed on the verrucae."
    ],
    "coral_finder": [
-    "Knobbly branches covered in skeletal bumps (verrucae).",
+    "Branches studded with lumps of skeleton (verrucae) that make them look knobbly.",
     "Corallites immersed on and between the verrucae.",
     "Fine fuzz of tentacles by day; some species form blades with meandering ends."
    ],
@@ -119,7 +119,7 @@
     "Instructor's notes: From afar the skeleton looks smooth, unlike Pocillopora."
    ],
    "coral_finder": [
-    "Compact branches with blunt or slightly flattened ends, as if squeezed.",
+    "Short, stocky branches; their tips are blunt, sometimes a little flattened, as though pinched.",
     "Tiny corallites (~1 mm) with skeletal hoods, giving a scaly look.",
     "Coarser and rounder than Seriatopora."
    ],
@@ -147,7 +147,7 @@
     "Instructor's notes: Branch tips can fork."
    ],
    "coral_finder": [
-    "Thin, weakly tapered branches with rounded or clubbed ends.",
+    "Slender branches that barely narrow towards the tip and end round or club-shaped.",
     "No differentiated axial corallite (unlike Acropora).",
     "Small corallites (1-2 mm), widely spaced and poorly developed; common in turbid water."
    ],
@@ -201,7 +201,7 @@
    "coral_finder": [
     "Very small corallites (0.8-1.5 mm) with well-formed walls, giving a pitted surface.",
     "Massive (large domes, micro-atolls), finger-like branches, or encrusting.",
-    "Corallites slightly larger and better defined than Montipora."
+    "Next to Montipora, its corallites are a little bigger and sharper in outline."
    ],
    "summary": "Very small corallites (0.8-1.5 mm) with well-formed shared walls: a pitted honeycomb surface.",
    "look_alikes": [
@@ -226,10 +226,10 @@
    ],
    "coral_finder": [
     "Azooxanthellate: caves, overhangs, walls.",
-    "Tubular corallites with high thin walls, no costae or ornament.",
+    "Each corallite is a tube with tall, thin walls and a plain outside: no costae, no decoration.",
     "Orange, yellow, pink; T. micranthus is dark green to black and tree-like (up to 1 m)."
    ],
-   "summary": "No symbiotic algae: tubular corallites with high thin walls, no costae, smooth coenosteum; shaded overhangs.",
+   "summary": "No symbiotic algae: tube-shaped corallites with tall, thin, plain walls (no costae) on a smooth coenosteum; shaded overhangs.",
    "look_alikes": [
     "Duncanopsammia",
     "Turbinaria"
@@ -305,7 +305,7 @@
    ],
    "coral_finder": [
     "Compact, spiky colonies.",
-    "Tubular corallites with protruding blade- or spine-like septa: distinctive.",
+    "Its tube-shaped corallites bristle with septa that stick out like blades or spines, an easy giveaway.",
     "Daytime tentacles may hide the septa."
    ],
    "summary": "Tubular, star-like corallites with protruding blade-like septa; tentacles sit outside the septa.",
@@ -332,7 +332,7 @@
    "coral_finder": [
     "Plates, vases, cups or crusts.",
     "Corallites (2-5 mm) tubular or low and immersed, well spaced.",
-    "Surface between corallites always smooth, without ornament."
+    "The skeleton between corallites is plain and smooth, never ornamented."
    ],
    "summary": "Well-spaced corallites (2-5 mm) on an always smooth, unornamented surface; plates, vases or cups.",
    "look_alikes": [
@@ -383,7 +383,7 @@
     "Separate or shared walls; shared walls often have a groove along the top."
    ],
    "coral_finder": [
-    "Dividing stalks (phaceloid) forming massive, domed or flat-topped colonies.",
+    "Colonies form domes, flat tops or solid masses from stalks that keep forking (phaceloid).",
     "Wide valleys (10-40 mm) with separate walls.",
     "Large spiky septal teeth under fleshy, carpet-like tissue.",
     "Now includes former Symphyllia (shared walls)."
@@ -414,7 +414,7 @@
     "Corallites without walls (2-4 mm) grouped in valleys separated by sharp-crested ridges.",
     "Smooth septo-costae flow from one corallite to the next."
    ],
-   "summary": "Wall-less corallites (2-4 mm) linked by smooth septo-costae, between sharp ridges; often on both sides of fronds.",
+   "summary": "Corallites without walls, 2-4 mm, set between sharp ridges and joined by smooth septo-costae; fronds often carry them on both faces.",
    "look_alikes": [
     "Pachyseris",
     "Leptoria",
@@ -439,9 +439,9 @@
    "coral_finder": [
     "Encrusting, plate-like or contorted massive.",
     "Roughly parallel valleys (corallites without walls, 3-6 mm).",
-    "Septo-costae form fine regular ribs at right angles to the valleys, like a fingerprint."
+    "Fine, evenly spaced septo-costae cross each valley square-on, giving a fingerprint look."
    ],
-   "summary": "Parallel valleys crossed by fine regular ribs at right angles, like a fingerprint; leafy plates.",
+   "summary": "Leafy plates with parallel valleys, each crossed square-on by fine, even ribs: a fingerprint look.",
    "look_alikes": [
     "Pavona",
     "Mycedium",
@@ -521,7 +521,7 @@
    ],
    "coral_finder": [
     "Massive, ridges or columns; brain coral with narrow valleys.",
-    "Septa equal in size and evenly spaced, like a zipper.",
+    "All septa the same size, set at even gaps: a zipper pattern.",
     "More regular and finer than Platygyra."
    ],
    "summary": "Brain coral with very narrow valleys and equal, evenly spaced septa like a zipper; no paliform lobes.",
@@ -754,7 +754,7 @@
    ],
    "coral_finder": [
     "Free-living OVAL disc with heavy skeleton (up to 17 cm).",
-    "Major septa with tall tentacular lobes raised above the surface.",
+    "Tall tentacular lobes stand up from the larger septa, above the disc surface.",
     "Smaller and less elongate than Ctenactis."
    ],
    "summary": "Free-living oval disc (to 17 cm) with tall tentacular lobes, often green, blue or white, raised on the major septa.",
@@ -944,7 +944,7 @@
    ],
    "coral_finder": [
     "Submassive or thick encrusting; corallites 3-8 mm, mostly with SHARED walls (cerioid).",
-    "Wall structure can be ambiguous: shared and separate walls in the same colony, with a shadow between sub-rounded corallites.",
+    "Walls can be hard to read: one colony may mix shared and separate walls, with a shadow line between its roundish corallites.",
     "Extra-tentacular budding, like Astrea; more irregular than Goniastrea, paliform lobes uncommon."
    ],
    "summary": "Mostly shared walls (usually 3-8 mm), sometimes separate with a shadow between; extra-tentacular budding; paliform lobes usually weak or absent (a clear crown in a few species).",

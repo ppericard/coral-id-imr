@@ -999,26 +999,33 @@ const WIDTHS = [390, 1280];
       ms: document.querySelectorAll('[data-anm]').length,
       badge: (document.querySelector('.adm-an-badge') || {}).textContent || ''
     }));
-    if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/since .* next at/.test(anv.badge))
+    if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/^Corals: fitted on .* next at/.test(anv.badge))
       fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
     // the stored report's switch: round milestones only (Pierre, 2026-11-05: 1000, 2000, …, no "All N"), the newest pressed;
-    // the badge counts from it
+    // the status line counts from it, the corals' answers only (Pierre, 2026-11-08: the demo's fish answers apart; a demo
+    // script before v105 counts every subject's rows in its head, so the line counts from the answer log read)
+    await p
+      .waitForFunction(() => / since · /.test((document.querySelector('.adm-an-badge') || {}).textContent || ''), null, {timeout: 30000})
+      .catch(() => {});
     const anseg = await p.evaluate(() => {
       const B = [...document.querySelectorAll('.adm-sseg [data-anm]')];
       return {
         labels: B.map(b => b.textContent),
         pressed: B.map(b => b.ariaPressed),
-        badge: document.querySelector('.adm-an-badge').textContent
+        badge: document.querySelector('.adm-an-badge').textContent,
+        coral: subjCounts(ANS.all)[replaySubject()],
+        fish: ANS.all.length - subjCounts(ANS.all)[replaySubject()]
       };
     });
-    const newest = anseg.labels.length && Number(anseg.labels[anseg.labels.length - 1].replace('k', '')) * 1000;
+    const newest = anseg.labels.length && Number(anseg.labels[anseg.labels.length - 1].replace('k', '')) * 1000,
+      anLine = `Corals: fitted on ${newest.toLocaleString('en-US')} answers · ${(anseg.coral - newest).toLocaleString('en-US')} since · next at ${(newest + 1000).toLocaleString('en-US')}`;
     if (
       !anseg.labels.length ||
       !anseg.labels.every(l => /^\d+k$/.test(l)) ||
       anseg.pressed.join() !== anseg.labels.map((_, i, L) => String(i === L.length - 1)).join() ||
-      !anseg.badge.includes(` since ${newest.toLocaleString('en-US')} · next at ${(newest + 1000).toLocaleString('en-US')}`)
+      anseg.badge !== anLine
     )
-      fails.push(`${w}px Analyses milestone switch: ${JSON.stringify(anseg)}`);
+      fails.push(`${w}px Analyses milestone switch: ${JSON.stringify(anseg)}, wanted "${anLine}"`);
     // Recompute here on every screen, phones included (Pierre, 2026-11-05: it was hidden under 600 px): shown, inside the window.
     const anre = await p.evaluate(() => {
       const e = document.querySelector('[data-anre]'),
@@ -1035,6 +1042,7 @@ const WIDTHS = [390, 1280];
       'analyses/difficulty/photos',
       'analyses/difficulty/formats',
       'analyses/difficulty/mix-ups',
+      'analyses/difficulty/time',
       'analyses/learning/practice',
       'analyses/learning/after-a-break',
       'analyses/learning/sessions',
@@ -1237,6 +1245,37 @@ const WIDTHS = [390, 1280];
         if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
         await aq.close();
       }
+      // Pierre, 2026-11-08: the corals' status line never counts the fish answers. Script v104 (from v60 the demo logs fish
+      // answers too; the head's answers every row of every subject, not used: the line counts from the answer log read)
+      // and v105 (the head counts each subject apart).
+      if (w === 1280)
+        for (const v of [104, 105]) {
+          const aq = await ctx.newPage(),
+            aqe = [];
+          aq.on('pageerror', e => aqe.push(e.message));
+          await aq.goto(base + `admin.html?demo&v=${v}#analyses/overview`);
+          await aq
+            .waitForFunction(
+              () => ANS && ANS.all && / since · /.test((document.querySelector('.adm-an-badge') || {}).textContent || ''),
+              null,
+              {timeout: 90000}
+            )
+            .catch(() => aqe.push('no status line with a count'));
+          const st = await aq.evaluate(() => {
+            const L = [...document.querySelectorAll('.adm-sseg [data-anm]')].map(b => b.textContent),
+              coral = ANS && ANS.all ? subjCounts(ANS.all)[replaySubject()] : null;
+            return {
+              badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
+              newest: L.length ? Number(L[L.length - 1].replace('k', '')) * 1000 : 0,
+              coral,
+              fish: ANS && ANS.all ? ANS.all.length - coral : 0
+            };
+          });
+          const want = `Corals: fitted on ${st.newest.toLocaleString('en-US')} answers · ${(st.coral - st.newest).toLocaleString('en-US')} since · next at ${(st.newest + 1000).toLocaleString('en-US')}`;
+          if (!st.fish || !st.newest || st.badge !== want) aqe.push(`${JSON.stringify(st)}, wanted "${want}"`);
+          if (aqe.length) fails.push(`${w}px Analyses with script v${v}: ${aqe.join(' | ')}`);
+          await aq.close();
+        }
 
       // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs),
       // except Players, which always opens Activity (fixed group, Pierre 2026-11-05), List having been used before.
@@ -1841,6 +1880,60 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
     };
     await checkLast('default sort');
+    // Change the starting answer (sheet v99, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
+    // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
+    // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
+    // the answers are listed. Before v99, Change… is greyed (rule D4).
+    {
+      const q = await p.context().newPage();
+      q.on('pageerror', e => fails.push(`${w}px Starting answer page error: ${e.message}`));
+      q.on('dialog', d => (fails.push(`${w}px Starting answer: a browser dialog (${d.message()})`), d.dismiss()));
+      const open = async v => {
+        await q.goto(base + `admin.html?demo&v=${v}#players/list`);
+        await q.waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000});
+        await q.click('[data-uopen="Carla Demo"]');
+        await q.waitForSelector('.adm-ustart-s', {timeout: 10000});
+      };
+      const bar = () => q.$eval('.adm-ustart', x => x.innerText.replace(/\s+/g, ' ')),
+        wide = () => q.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+      try {
+        await open(98);
+        if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v98): Change… not greyed`);
+        await open(99);
+        const b0 = await bar();
+        if (!/Corals starting answer: I know corals well/.test(b0) || !/I had the IMR coral course · in the welcome tour/.test(b0))
+          fails.push(`${w}px Starting answer: bar ${JSON.stringify(b0)}`);
+        await q.click('[data-ustart]');
+        const opts = await q.$$eval('[data-ustart-c]', L => L.map(b => [b.dataset.ustartC, b.disabled]));
+        if (
+          JSON.stringify(opts) !==
+          JSON.stringify([
+            ['new', false],
+            ['imr', false],
+            ['know', true]
+          ])
+        )
+          fails.push(`${w}px Starting answer: the answers listed ${JSON.stringify(opts)}`);
+        if (await wide()) fails.push(`${w}px Starting answer: wider than the screen with the answers listed`);
+        await q.click('[data-ustart-c="imr"]');
+        if (!/Change to “I had the IMR coral course”\?/.test(await bar())) fails.push(`${w}px Starting answer: no confirm step`);
+        await q.click('[data-ustart-ok]');
+        await q.waitForFunction(() => /Changed to/.test(document.querySelector('.adm-ustart').innerText), null, {timeout: 10000});
+        const b1 = await bar();
+        if (
+          !/Corals starting answer: I had the IMR coral course/.test(b1) ||
+          !/I had the IMR coral course · changed by you on Players/.test(b1) ||
+          !/their app takes it at its next sync/.test(b1)
+        )
+          fails.push(`${w}px Starting answer: after Change ${JSON.stringify(b1)}`);
+        const saved = await q.evaluate(() => (PSAVED['Carla Demo'].by.coral.start || {}).via);
+        if (saved !== 'admin') fails.push(`${w}px Starting answer: the saved copy here not updated (${saved})`);
+        if (await wide()) fails.push(`${w}px Starting answer: wider than the screen after Change`);
+      } catch (e) {
+        fails.push(`${w}px Starting answer: ${e.message.split('\n')[0]}`);
+      }
+      await q.close();
+    }
     if (once) {
       // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
       if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);

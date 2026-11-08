@@ -6568,6 +6568,30 @@ html.touring .unlock {
 .pbtxt > span > * {
   white-space: nowrap;
 }
+/* The global score's components under the name (progress.js scoreBars: the fish's families, common and scientific names):
+   label, bar, % on one row each, the labels in one column so the bars line up. */
+.pbars {
+  display: grid;
+  grid-template-columns: auto minmax(60px, 1fr) auto;
+  gap: 2px 8px;
+  align-items: center;
+  margin-top: 4px;
+  width: 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.pbars > span {
+  display: contents;
+}
+.pbars small {
+  font-size: inherit;
+  text-align: left;
+}
+.pbars b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
 /* A dot between two parts shown (the rank stays hidden until the Elo is due, the levels line is empty at first). */
 .pbtxt > span > :not([hidden]) ~ :not([hidden])::before {
   content: ' · ';

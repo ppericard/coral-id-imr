@@ -20,6 +20,7 @@ const AN_VIEWS = [
   ['analyses/difficulty/photos', 'photo', 'What makes a photo hard'],
   ['analyses/difficulty/formats', 'fmt', 'Question formats'],
   ['analyses/difficulty/mix-ups', 'conf', 'Genera mixed up'],
+  ['analyses/difficulty/time', 'tdiff', 'Time and difficulty'],
   ['analyses/learning/practice', 'learn', 'Learning with practice'],
   ['analyses/learning/after-a-break', 'back', 'After a break'],
   ['analyses/learning/sessions', 'sess', 'Sessions'],
@@ -44,7 +45,8 @@ function anLoad() {
       }
       // a report stored before 2026-11-05 also kept all its answers as one more point ("All 1933"): round milestones only
       if (rep && rep.M.some(M => M % ANALYSIS.STEP === 0)) rep.M = rep.M.filter(M => M % ANALYSIS.STEP === 0);
-      return (ANREP = {st: rep ? 'ok' : 'none', rep, answers: j.answers, stored: j.stored});
+      // sheet v105: each subject's answers counted apart (counts); an older script's answers were every subject's rows
+      return (ANREP = {st: rep ? 'ok' : 'none', rep, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: j.stored});
     })
     .catch(() => (ANREP = {st: 'err', err: 'Offline'}));
 }
@@ -1409,7 +1411,9 @@ function anView(key, rep, R) {
     ...(key === 'photo' && a.photos ? [['Photos', anInt(a.photos)]] : []),
     ...(key === 'conf' && a.mixed != null ? [['Mixed up', anInt(a.mixed)]] : []),
     ...(key === 'back' && a.far != null ? [['After a break', anInt(a.far)]] : []),
-    ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : [])
+    ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : []),
+    ...(key === 'tdiff' && a.timed != null ? [['Timed answers', anInt(a.timed)]] : []),
+    ...(key === 'tdiff' && a.photos ? [['Photos', anInt(a.photos)]] : [])
   ]);
   // a compacted milestone (analysis.js compact) keeps only the counts of its profiles, never the players' rows (Codex
   // review #604: the heatmap read 0 answers, 0 players and drew nothing): its counts and the compacted note
@@ -1458,6 +1462,44 @@ const AN_PART = {
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
 const ANV = {
+  // Time and difficulty (analysis.js tdiff): right answers by how fast other players answered the photo right; time
+  // intensity beside difficulty, for the genera and the slowest and fastest photos.
+  tdiff: a => {
+    const T = anTyp(a),
+      right = d => anPc(ANALYSIS.shiftP(T.p, T.g, -d)),
+      ag = a.agree || {};
+    return [
+      anCard(
+        'Right answers, by how fast others answered the photo right',
+        anTable(
+          ['Others’ right answers on the photo', '#Answers', '#Right', '#Expected', '#Against expected'],
+          (a.bins || []).map(
+            b =>
+              `<tr><td>${esc(b.label)}</td><td class="n">${anInt(b.n)}</td><td class="n">${b.n ? pc(b.y / b.n) : '–'}</td><td class="n">${b.n ? pc(b.E / b.n) : '–'}</td><td class="n">${b.n ? anPts((b.y - b.E) / b.n) : '–'}</td></tr>`
+          )
+        ) + `<p class="note">Against each player's own usual time so far.</p>`
+      ),
+      anCard(
+        'Time and accuracy, genus by genus',
+        `<p class="note">Agreement between time and accuracy: ${ag.genus == null ? '–' : anRw(ag.genus)} over ${anInt(ag.genera)} genera; ${ag.photo == null ? '–' : anRw(ag.photo)} over ${anInt(ag.photos)} photos with 3 timed answers or more.</p>` +
+          anTable(
+            ['Genus', '#Timed answers', '#Typical time', '#Right, typical player'],
+            (a.genus || []).map(
+              g =>
+                `<tr><td><i>${esc(g.k)}</i></td><td class="n">${anInt(g.n)}</td><td class="n">${anSec(anS(a, g.t))}</td><td class="n">${right(g.d)}</td></tr>`
+            )
+          ),
+        'wide'
+      ),
+      a.slowest && a.slowest.length
+        ? anCard(
+            'Slowest and fastest photos',
+            anThumbs(a.slowest, x => `${anSec(anS(a, x.t))} · ${right(x.d)} right · ${anInt(x.n)} answers`),
+            'wide'
+          )
+        : ''
+    ];
+  },
   rt: a => [
     anCard(
       'What makes answer times differ',
@@ -1877,6 +1919,26 @@ function anSessDesc(d) {
   ];
 }
 
+// The report's subject (the analyses are one subject's: the corals' so far) and its answers in the log now, counted as
+// the sheet's head and the Action count them (core.js subjCounts; Pierre, 2026-11-08: every 1000 answers of that
+// subject, the fish answers apart): the head's count from sheet v105, else the answer log this page reads once it is
+// in, else null (not known yet).
+const anSubj = rep => subjectOf((rep && rep.subject) || (ANREP && ANREP.stored && ANREP.stored.subject) || replaySubject());
+const anCount = S => {
+  if (ANREP && ANREP.counts) return Number(ANREP.counts[S.id]) || 0;
+  return ANS && !ANS.old && Array.isArray(ANS.all) ? subjCounts(ANS.all)[S.id] || 0 : null;
+};
+// The status line: "Corals: fitted on 2,000 answers · 729 since · next at 3,000" (the newest milestone, the subject's
+// answers since it, the next one; due within the hour once the subject's answers reach it: the Action's hourly run).
+const anStatus = (S, lastM, now) => {
+  const nextM = lastM + ANALYSIS.STEP;
+  return [
+    `${S.name}: ${lastM ? `fitted on ${anInt(lastM)} answers` : 'no milestone yet'}`,
+    ...(now == null ? [] : [`${anInt(Math.max(0, now - lastM))} since`]),
+    now != null && now >= nextM ? `${anInt(nextM)} due within the hour` : `next at ${anInt(nextM)}`
+  ].join(' · ');
+};
+
 /* ---------- The page ---------- */
 function renderAnalyses() {
   status();
@@ -1903,10 +1965,9 @@ function renderAnalyses() {
   }
   const M = anM(rep),
     R = rep.R[M],
-    now = local ? rep.answers : ANREP.answers || rep.answers,
-    lastM = anRound(rep).slice(-1)[0] || 0,
-    since = now - lastM,
-    nextM = lastM + ANALYSIS.STEP;
+    S = anSubj(rep),
+    now = local ? rep.answers : anCount(S),
+    lastM = anRound(rep).slice(-1)[0] || 0;
   // the newest round milestones (the newest selected by default), and Recompute here's look at all the answers
   const seg = `<span class="adm-qseg adm-sseg" role="group" aria-label="Milestone">${anRound(rep)
     .slice(-5)
@@ -1916,10 +1977,10 @@ function renderAnalyses() {
       return `<button type="button" data-anm="${v}" aria-pressed="${M === m}">${v === 'now' ? `now (${anInt(m)} answers), this tab only` : m / 1000 + 'k'}</button>`;
     })
     .join('')}</span>`;
-  // the answers since the newest milestone; the next one is due within the hour once the log reaches it (the Action's run)
-  const badge = `<span class="adm-src adm-an-badge" title="${esc(`${anInt(now)} answers in the log; a milestone every ${anInt(ANALYSIS.STEP)}: ${anInt(ANALYSIS.STEP)}, ${anInt(2 * ANALYSIS.STEP)}, ${anInt(3 * ANALYSIS.STEP)}…`)}">${
-    lastM ? `${anInt(since)} since ${anInt(lastM)} · ` : ''
-  }${now >= nextM ? `${anInt(nextM)} due within the hour` : `next at ${anInt(nextM)}`}</span>`;
+  // the subject's answers since the newest milestone; the next one is due within the hour once they reach it (the Action's run)
+  const badge = `<span class="adm-src adm-an-badge" title="${esc(
+    `${now == null ? 'Counting the' : anInt(now)} ${S.name.toLowerCase()} answers in the log, the other subjects' apart; refitted every ${anInt(ANALYSIS.STEP)} of them: ${anInt(ANALYSIS.STEP)}, ${anInt(2 * ANALYSIS.STEP)}, ${anInt(3 * ANALYSIS.STEP)}…`
+  )}">${esc(anStatus(S, lastM, now))}</span>`;
   const made = `<span class="note adm-an-made" title="${esc(local ? 'Recomputed in this tab' : 'Stored report')}">${local ? 'This tab' : dateText(rep.made, 'dmhm')}</span>`;
   AN_CARDS = [];
   const body = key ? anView(key, rep, R) : anOverview(rep, R);
@@ -2047,7 +2108,7 @@ addEventListener('resize', () => {
 const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. Only the clear results show at first: the button under a chart or table shows the others there (no clear effect, too early to tell), in the same order. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data (all of these). <b>Sort</b>, above every chart and table: <b>Most negative first</b> or <b>Most positive first</b> (by the signed change: a chance in points, a time as the share of time gained or lost; spreads after the changes, by size), <b>By topic</b> (Overview: a sub-heading per analysis, the analyses in the menu's order, by the signed change inside each) or <b>By name</b>; on the Overview each result's topic (the analysis it comes from) is the grey line under its name. A tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
-  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once the log reaches the next round thousand (or the code changed), redoes every analysis on the first 1000, 2000, 3000, … answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). This page only draws it. The switch picks a milestone, the newest by default; the badge says how many answers came since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
+  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once the corals' answers reach the next round thousand (or the code changed), redoes every analysis on the first 1000, 2000, 3000, … coral answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). The fish answers are counted apart and never move the corals' analyses. This page only draws it. The switch picks a milestone, the newest by default; the line beside it gives the subject, the milestone fitted last, the subject's answers since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
   <p><b>Effects hard to tell apart</b> (folded, under each analysis's charts). Two results whose estimates are strongly correlated (r beyond ±0.6) cannot be told apart well by the data: when they are negatively correlated, one could be a bit higher and the other a bit lower with almost as good a fit, so each alone is fragile and their sum is sure; positively correlated, both could be higher (or lower) together, so their difference is sure. It is a property of the estimates (from the model's own covariance), not a link between the two in the world. <b>Conditions in the answers</b>: how often two situations come together in the answers (beyond ±0.7, worth knowing); <b>VIF</b>: how much of a condition the other conditions of the model predict (1 = none; beyond 5, entangled). Columns are numbered as the rows; in a cell, ▲ means the two go the same way, ▼ opposite ways.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
@@ -2060,6 +2121,7 @@ Object.assign(HELP, {
   'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
+  'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,
   'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. The learning slope joins once the Learning model fits one per player. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.

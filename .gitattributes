@@ -6,3 +6,11 @@ cand.json linguist-generated=true
 fish-cand.json linguist-generated=true
 fish-game.json linguist-generated=true
 suggest.json linguist-generated=true
+# Left out of the published site (pages.yml stages it with git archive): the docs, tests, tools, judging package and the
+# repository's own config are read from the repository, never from the site (Code.gs reads raw.githubusercontent.com).
+/docs/ export-ignore
+/tests/ export-ignore
+/tools/ export-ignore
+/judging/ export-ignore
+/.github/ export-ignore
+/.claude/ export-ignore

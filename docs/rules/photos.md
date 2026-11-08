@@ -36,6 +36,11 @@ mixes sources on purpose for variety.
 - **Licences of candidates** (corals aligned with the fish): CC0, CC BY or CC BY-NC only, never share-alike (nor ND);
   the share-alike coral photos already on the site are Pierre's to keep or remove (admin To do › Share-alike), never
   removed automatically.
+- **Licence, the last tie-break** (every subject): between photos otherwise equal (quality, ease, reference look, the
+  source order above, variety), CC0 / CC BY and Pierre's own come before CC BY-NC, own and open alike (`core.js`
+  `rightsRank`, `tools/rights.py`): candidate fetching, the auto-sort's and the swiper's order, default covers and
+  featured photos; never a reason to leave a photo out, never above quality, ease or variety (the fish fetch's licence
+  came first from 2026-11-03; since 2026-11-08 it is this tie-break there too, `tools/fetch_fish.py` `select`).
 - **Corals: trusted identifications**: in the Philippines tiers, an observation identified by iNaturalist user `thamnasteroid`
   (by far the top identifier of stony corals there) at the genus or below is accepted, like a genus-level community ID,
   when no other current identification disagrees (a coarser one on the same line, e.g. the observer's "Stony corals",
@@ -45,11 +50,11 @@ mixes sources on purpose for variety.
 *Why:* for corals, many IMR lecture photos are hard to find elsewhere and are already curated (good quality), hence a
 slight priority; for fish, the IMR slides' photos were taken from elsewhere, while well-sourced photos with clear rights
 abound; a beginner's first fish photos must be easy, near-reference ones, and source priority had filled them with
-Pierre's own.
+Pierre's own; among equals, an open licence grows the stock a later commercial version could use.
 *Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568); no
 source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06; fish reference photos first and FishBase in automatically,
 2026-11-06; fish photos in play by themselves once judged, hosted on R2 whatever their route in, 2026-11-06 (Q180, Q199); reference photos in like candidates, whatever their
-level, 2026-11-08 (Q212).
+level, 2026-11-08 (Q212); licence as the last tie-break, 2026-11-08 (Q270, Q283), the fish fetch's too, 2026-11-08 (Q284).
 
 ### P2
 
