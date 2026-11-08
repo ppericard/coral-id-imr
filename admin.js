@@ -9158,7 +9158,9 @@ function needsBody() {
 // (everyoneMisses) or a difficulty PH_FAR or more above the median of their genus's rated photos.
 // S: the subject whose photos they are (the one on screen; the Corals | Fish switch, rule A4): the corals' game photos
 // (allPhotos), another subject's as the admin reads them (fishAdmin: each fish photo with its family, genus = the family).
-// The sheet rates the corals' photos only (core.js SUBJECTS replay), so a fish photo is counted on its answers alone.
+// The sheet rates the corals' photos only (core.js SUBJECTS replay), so a fish photo is counted on its answers alone. A
+// fish photo already handled in the draft (fishRepTile's tools: × excluded, Not this, Removed) is out of the list before
+// it is sorted and cut (Codex review #800): acting on the photos shown brings the next ones in.
 function healthBad(R, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
@@ -9166,7 +9168,9 @@ function healthBad(R, S = ASUBJ) {
   // from the photo Elo against the median of the genus's rated photos.
   const PS = S.sheets ? {} : photoStats(),
     META = Object.create(null);
-  if (S.sheets) Object.values((FISHA && FISHA.ph) || {}).forEach(p => (META[p.f] = META[p.f] || {...p, genus: p.entry}));
+  const FD = (DRAFT && DRAFT.fish) || {},
+    done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f];
+  if (S.sheets) Object.values((FISHA && FISHA.ph) || {}).forEach(p => done(p.f) || (META[p.f] = META[p.f] || {...p, genus: p.entry}));
   else
     allPhotos()
       .filter(p => p.view !== 'cand')

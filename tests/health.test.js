@@ -152,7 +152,8 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
     allPhotos: () => [{f: 'ca', genus: 'Favia', view: 'wide'}],
     photoStats: () => ({}),
     nAns: s => (s ? (s[3] ?? s[1]) : 0),
-    GAME: new Set(['Favia', 'Favites'])
+    GAME: new Set(['Favia', 'Favites']),
+    DRAFT: {fish: {}}
   };
   let t = 0;
   const miss = (id, g, ph) => [id, t++, g, 'x', 0, 'quiz', ph];
@@ -174,6 +175,12 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
     [['fa', 'f:Damselfishes', 6, 3]],
     'the fish photo with its family; the coral photo is no fish photo'
   );
+  // a fish photo handled in the draft (× excluded, Not this, Removed) leaves the list before it is cut (Codex review #800)
+  for (const k of ['exclude', 'out', 'seen']) {
+    env.DRAFT.fish = {[k]: {fa: k === 'out' ? 's2' : 1}};
+    assert.deepStrictEqual(F.healthBad(R), [], `a photo in fish ${k}: handled`);
+  }
+  env.DRAFT.fish = {};
   assert.deepStrictEqual(
     K.healthBad(R).map(o => o.p.f),
     ['ca'],

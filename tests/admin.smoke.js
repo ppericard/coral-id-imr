@@ -3820,7 +3820,8 @@ const WIDTHS = [390, 1280];
       }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
       // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
-      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health.
+      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health. With 25
+      // photos everyone misses (24 shown: statsHealth MAXPH), one Removed leaves the list and the 25th comes in.
       {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
           fc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
@@ -3849,16 +3850,23 @@ const WIDTHS = [390, 1280];
             }
           )
           .catch(() => fe.push('Health not drawn'));
-        // three players miss a candidate photo in play (fish-cand.json and the fish photos), twice each
+        // three players miss a candidate photo in play (fish-cand.json and the fish photos) three times each, first in the
+        // list, and 24 other fish photos twice each
         const pre = await fq.evaluate(async () => {
           const was = !!FISHC,
             C = await fetch('fish-cand.json').then(r => r.json()),
             cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
-            f = Object.keys(FISHA.ph).find(x => cf.has(x)),
+            D = DRAFT.fish || {},
+            open = Object.keys(FISHA.ph).filter(x => !['exclude', 'out', 'seen'].some(k => (D[k] || {})[x])),
+            f = open.find(x => cf.has(x)),
+            more = open.filter(x => x !== f).slice(0, 24),
             r0 = rowsOf()[0];
-          if (!f || !r0) return {was, f, r0: !!r0};
-          const add = ['nt1', 'nt2', 'nt3'].flatMap((id, i) =>
-            [0, 1].map(k => Object.assign([...r0], {0: id, 1: Date.now() - (i * 2 + k + 1) * 60e3, 2: FISHA.ph[f].entry, 4: 0, 6: f}))
+          if (!f || !r0 || more.length < 24) return {was, f, r0: !!r0};
+          let t = Date.now() - 600 * 60e3;
+          const add = ['nt1', 'nt2', 'nt3'].flatMap(id =>
+            [f, f, f, ...more.flatMap(x => [x, x])].map(x =>
+              Object.assign([...r0], {0: id, 1: (t += 1000), 2: FISHA.ph[x].entry, 4: 0, 6: x})
+            )
           );
           ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
           render();
@@ -3877,6 +3885,26 @@ const WIDTHS = [390, 1280];
                 )}`
               )
             );
+        if (!fe.length) {
+          const shown = () => fq.evaluate(() => [...document.querySelectorAll('[data-health="photos"] .adm-frep')].map(e => e.dataset.ff)),
+            S0 = await shown(),
+            gone = S0.find(x => x !== pre.f);
+          if (S0.length !== 24 || !/\+1 more/.test(await fq.textContent('[data-health="photos"]')))
+            fe.push(`25 photos everyone misses: ${S0.length} shown`);
+          else {
+            await fq.click(`[data-health="photos"] [data-ff="${gone}"] [data-fr="remove"]`);
+            await fq
+              .waitForFunction(
+                ([g, L]) => {
+                  const F = [...document.querySelectorAll('[data-health="photos"] .adm-frep')].map(e => e.dataset.ff);
+                  return F.length === 24 && !F.includes(g) && F.some(x => !L.includes(x));
+                },
+                [gone, S0],
+                {timeout: 15000}
+              )
+              .catch(async () => fe.push(`after Remove on ${gone}: ${JSON.stringify(await shown())}`));
+          }
+        }
         if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
