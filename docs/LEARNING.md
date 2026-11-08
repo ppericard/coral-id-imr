@@ -2604,7 +2604,11 @@ before release:
   retype is a spelling step, not a second chance at the genus), so progress, Elo, the exam and the replay are untouched
   and no rules version is added; a close typo of another genus stays a wrong answer. The raw text and the step's
   outcome are logged (sheet v59, Typed and Retyped right) so typed near-misses can be studied (the name study's
-  question g, [reviews/2026-11-05-name-confusion-study.md](reviews/2026-11-05-name-confusion-study.md)).
+  question g, [reviews/2026-11-05-name-confusion-study.md](reviews/2026-11-05-name-confusion-study.md)). So are the
+  texts refused before the answer (sheet v100, Rejected tries; Pierre, 2026-11-08, Q237), logged only: no learning value
+  reads them. On a fish genus question, a common name or a family name typed is told so ("is a common name" / "is a
+  family: this question needs a genus's scientific name"), never which genus; the rule stands: a genus question needs
+  the scientific name.
 
 Simulated before release (`tools/learnsim.js` with a recall learner, kept on its own branch for the dynamic version:
 a typed question is answered right with the learner's recognition chance lowered by a recall gap; 30 seeds × 600
