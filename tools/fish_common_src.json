@@ -662,7 +662,9 @@
   "s678": {"inat":{"id":179875,"main":"Bluestreak Goby","names":["Bluestreak Goby","Blueband Glidergoby","Golden-headed Sleeper","Golden-head Sleeper Goby","Golden-head Sleeper-goby","Blueband Goby","Blueband Glider Goby","Blue-streak goby","Pennant glider"]},"fb":{"code":6575,"as":"Valenciennea strigata","main":"Blueband goby","names":[["Blueband goby",2],["Pennant glider",2],["Blue-streak goby",1],["Blueband glider goby",1],["Blueband glidergoby",1],["Golden-head sleeper-goby",1],["Sleeper goby",1],["Watchman goby",1]]}},
   "s679": {"inat":{"id":1688544,"main":null,"names":[]},"fb":null},
   "s680": {"inat":{"id":1313221,"main":null,"names":[]},"fb":{"code":69587,"as":"Hazeus profusus","main":null,"names":[]}},
-  "s681": {"inat":{"id":530046,"main":null,"names":[]},"fb":{"code":25493,"as":"Hazeus maculipinna","main":null,"names":[]}}
+  "s681": {"inat":{"id":530046,"main":null,"names":[]},"fb":{"code":25493,"as":"Hazeus maculipinna","main":null,"names":[]}},
+  "s682": {"inat":{"id":194619,"main":"Lined Soapfish","names":["Lined Soapfish","Sixstriped Soapfish","Six-lined Soapfish","Sixline Soapfish","Six-lined Perch","Radio Fish","Goldstriped Soapfish","Golden-striped Bass","White-lined Rock Cod"]},"fb":{"code":4925,"as":"Grammistes sexlineatus","main":"Goldenstriped soapfish","names":[["Sixline soapfish",4],["Sixstripe soapfish",4],["Goldenstriped soapfish",3],["Golden-striped soapfish",2],["Lined soapfish",2],["Skunkfish",2],["Black and white striped soapfish",1],["Chain-gang sea bass",1],["Golden-striped bass",1],["Goldstriped soapfish",1],["Grouper",1],["Radio fish",1],["Six-lined perch",1],["Soapfish",1],["White-lined rock cod",1],["Yellowstriped soapfish",1]]}},
+  "s683": {"inat":{"id":530837,"main":"Spotted Soapfish","names":["Spotted Soapfish"]},"fb":{"code":12727,"as":"Pogonoperca punctata","main":"Bearded soapfish","names":[["Spotted soapfish",6],["Bearded soapfish",1],["Soapfish",1]]}}
  },
  "fishbase": "rfishbase snapshot v25.04 (huggingface.co/datasets/cboettig/fishbase), tables species and comnames"
 }

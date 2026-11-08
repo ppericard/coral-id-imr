@@ -17,9 +17,10 @@ test('the old-id map is fish.json’s: every entry’s species land in their fam
   F.teach.forEach(t => {
     if (+t.id.slice(1) > atSwitch) return;
     assert.ok(S.renamed.ids[t.id], t.id + ' mapped');
+    // A species that came in after the switch (s481 on, 2026-11-08) was never logged under an old entry id.
     t.species
       .map(id => SP.get(id))
-      .filter(s => s.family)
+      .filter(s => s.family && +s.id.slice(1) <= 480)
       .forEach(s => assert.strictEqual(C.renamedId(S, t.id, s.name), s.family, `${t.id} ${s.name}`));
   });
   Object.entries(S.renamed.names).forEach(([id, n]) => assert.strictEqual((FAM.get(id) || {}).name, n, id));

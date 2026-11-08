@@ -662,6 +662,8 @@
   "s678": {"sp":"Valenciennea strigata","names":[{"name":"Bluestreak goby","from":["dauin","fb1","inatMain"]},{"name":"Blueband goby","from":["fbMain","fb2","inat"]}]},
   "s679": {"sp":"Priacanthus starnesi","names":[],"noFishBase":true},
   "s680": {"sp":"Hazeus profusus","names":[]},
-  "s681": {"sp":"Hazeus maculipinna","names":[]}
+  "s681": {"sp":"Hazeus maculipinna","names":[]},
+  "s682": {"sp":"Grammistes sexlineatus","names":[{"name":"Lined soapfish","from":["dauin","fb2","inatMain"]},{"name":"Goldenstriped soapfish","from":["fbMain","fb6","inat"],"alt":["Goldstriped soapfish"]}]},
+  "s683": {"sp":"Pogonoperca punctata","names":[{"name":"Spotted soapfish","from":["dauin","fb6","inatMain"]}],"left":["Bearded soapfish"]}
  }
 }

@@ -651,5 +651,7 @@
   "s677": {"rls": "trimma-taylori", "len": 4, "lsrc": "rls", "fb": 12752, "dep": [20, 50], "dsrc": "fishbase"},
   "s678": {"rls": "valenciennea-strigata", "len": 18, "lsrc": "rls", "dep": [1, 25], "dsrc": "rls", "fb": 6575},
   "s680": {"fb": 69587, "len": 2.9, "lsrc": "fishbase", "lt": "SL"},
-  "s681": {"fb": 25493, "len": 3.7, "lsrc": "fishbase", "lt": "SL", "dep": [null, 20], "dsrc": "fishbase"}
+  "s681": {"fb": 25493, "len": 3.7, "lsrc": "fishbase", "lt": "SL", "dep": [null, 20], "dsrc": "fishbase"},
+  "s682": {"rls": "grammistes-sexlineatus", "len": 30, "lsrc": "rls", "dep": [1, 130], "dsrc": "rls", "fb": 4925},
+  "s683": {"rls": "pogonoperca-punctata", "len": 35, "lsrc": "rls", "fb": 12727, "dep": [10, 216], "dsrc": "fishbase"}
 }
