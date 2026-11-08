@@ -2721,7 +2721,7 @@ function zoomSet(L, i0, cap) {
   show();
 }
 let toastT;
-function toast(msg) {
+function toast(msg, ms = 3500) {
   let t = document.querySelector('.adm-toast');
   if (!t) {
     t = document.createElement('p');
@@ -2734,7 +2734,7 @@ function toast(msg) {
   clearTimeout(toastT);
   toastT = setTimeout(() => {
     t.hidden = true;
-  }, 3500);
+  }, ms);
 }
 
 /* ---------- Choices that point to a photo no longer in data.json ---------- */
@@ -6310,8 +6310,24 @@ async function start() {
     REVS[SEEN] = clone(old);
   } // the draft another open tab started from
   DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
-  // A plain draft was there too (another tab or token kept working without signing out): the sealed one goes on top.
-  if (sealed && old !== sealed.d) DRAFT = sealed.b ? mergeCur(sealed.b, sealed.d, DRAFT) : mergeOld(sealed.d, DRAFT);
+  // A plain draft was there too: written after the sign out (Sign out takes it off), by another tab or token that kept
+  // working, so it is the newer one and wins where both changed; what only the sealed one has comes in under it. Both are
+  // named in a note: a choice undone since in the plain draft comes back from the sealed one (review of #798).
+  let sealNote = '';
+  if (sealed && old !== sealed.d) {
+    const S = sealed.b ? mergeCur(sealed.b, sealed.d, SAVED) : mergeOld(sealed.d, SAVED),
+      newer = [],
+      M = mergeCur(SAVED, DRAFT, S, newer),
+      back = sealDiff(DRAFT, M).map(x => x[0]),
+      some = L => L.slice(0, 3).map(confName).join(', ') + (L.length > 3 ? ` and ${L.length - 3} more` : '');
+    DRAFT = M;
+    if (back.length || newer.length)
+      sealNote =
+        ' The draft sealed at your last sign out came in under a newer one left in this browser' +
+        (back.length ? `; from the sealed one: ${some(back)}` : '') +
+        (newer.length ? `; the newer kept for ${some(newer)}` : '') +
+        '. Check them before you Publish.';
+  }
   DRAFT.genera = DRAFT.genera || {};
   // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
   const kept = (() => {
@@ -6367,14 +6383,19 @@ async function start() {
     render();
     toast('Clicks made in another admin tab are in.');
   });
-  const keep = changed().length;
-  if (keep) toast(`Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.`);
+  const keep = changed().length,
+    told = keep || sealNote; // the next toasts wait for this one
+  if (told)
+    toast(
+      ((keep ? `Your draft from last time is back: ${keep} ${keep > 1 ? 'genera' : 'genus'} not published yet.` : '') + sealNote).trim(),
+      sealNote ? 12000 : 3500
+    );
   // The auto-sort: what the candidate pass is sure of goes into the draft (autoRun), one Undo step for the whole run.
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const ar = TOKEN && autoRun();
-  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
+  if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), told ? (sealNote ? 12000 : 4000) : 0);
   fishAutoRun().then(R => {
-    if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+    if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), told || ar ? (sealNote ? 16000 : 8000) : 0);
   });
   $('tools').hidden = false;
   $('save').onclick = save;
@@ -6510,12 +6531,16 @@ const sess = {
 };
 store.set(SESSION, null); // drop the plain copy older versions kept in localStorage
 // Sign out leaves no draft to the next person on this browser (second admin review, 2026-11-01: on a shared device the
-// next admin inherited it and could publish it). The unpublished draft and its base are sealed with this admin's token
-// (AES-GCM, the key a SHA-256 of the token) and taken off the plain draft keys, so another admin's token, a read-only
-// visit and the site's ?draft preview see none of it; unlocking again with the same token opens it and merges it back
-// (start, unsealDraft). Nothing is wiped (rule A1). At most 3 sealed drafts, the newest first; if the browser cannot
-// store it, the draft stays as before.
-const SEALED = 'reefid-admin-sealed';
+// next admin inherited it and could publish it). The unpublished draft is sealed with this admin's token (AES-GCM, the
+// key a SHA-256 of the token) and taken off the plain draft keys, so another admin's token, a read-only visit and the
+// site's ?draft preview see none of it; unlocking again with the same token opens it and merges it back (start,
+// unsealDraft). Nothing is wiped (rule A1). At most 3 sealed drafts, the newest first.
+// A real draft is a whole curation (1.2 M characters, the fish most of it) and its base another, near a browser's
+// 5 M-character storage: the seal holds the draft and only the changes that lead from it to its base (sealDiff), gzipped
+// before it is encrypted (where the browser has no CompressionStream, as they are), and the plain keys come off before it
+// is written, put back if it does not fit (review of #798). If it cannot be sealed, Sign out says so and stops.
+const SEALED = 'reefid-admin-sealed',
+  PLAIN_KEYS = ['reefid-curation-draft', 'reefid-curation-base'];
 const sealKey = tok =>
   crypto.subtle
     .digest('SHA-256', new TextEncoder().encode('reefid-admin-draft|' + tok))
@@ -6525,20 +6550,58 @@ const b64big = u => {
   for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000));
   return btoa(s);
 };
+const gzip = (u, out) =>
+  new Response(new Blob([u]).stream().pipeThrough(out ? new CompressionStream('gzip') : new DecompressionStream('gzip')))
+    .arrayBuffer()
+    .then(b => new Uint8Array(b));
+// What leads from a to b, as [path, value], or [path] for a key b does not have; sealPatch(a, sealDiff(a, b)) is b.
+const isMap = o => !!o && typeof o === 'object' && !Array.isArray(o);
+const sealDiff = (a, b, p = [], out = []) => {
+  if (isMap(a) && isMap(b)) new Set([...Object.keys(a), ...Object.keys(b)]).forEach(k => sealDiff(a[k], b[k], [...p, k], out));
+  else if (b === undefined) a !== undefined && out.push([p]);
+  else if (a === undefined || JSON.stringify(a) !== JSON.stringify(b)) out.push([p, b]);
+  return out;
+};
+const sealPatch = (a, D) => {
+  const r = clone(a);
+  D.forEach(x => {
+    const p = x[0],
+      k = p[p.length - 1],
+      o = p.slice(0, -1).reduce((o, k) => (isMap(o[k]) ? o[k] : (o[k] = {})), r);
+    if (x.length > 1) o[k] = x[1];
+    else delete o[k];
+  });
+  return r;
+};
+// The plain draft keys off, under their old names too (core.js keyBefore: a migration that could not write them yet).
+const plainOff = () =>
+  PLAIN_KEYS.forEach(k => {
+    store.set(k, null);
+    try {
+      if (!DEMO && keyBefore(k)) localStorage.removeItem(keyBefore(k));
+    } catch (e) {}
+  });
+// True once no plain draft is left (sealed, or nothing unpublished in it), false when it stays as it was.
 async function sealDraft() {
-  const d = store.get('reefid-curation-draft', null);
-  if (!d || !TOKEN) return;
-  if (DRAFT && status0().parts.length) {
-    delete d._tab;
-    const iv = crypto.getRandomValues(new Uint8Array(12)),
-      pt = new TextEncoder().encode(JSON.stringify({d, b: store.get('reefid-curation-base', null)})),
-      ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, await sealKey(TOKEN), pt),
-      L = store.get(SEALED, []);
-    if (!store.set(SEALED, [{iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now()}, ...(Array.isArray(L) ? L : [])].slice(0, 3)))
-      return;
+  if (!TOKEN || !DRAFT) return true;
+  takeOther(); // the clicks of another admin tab come in first
+  if (!status0().parts.length) {
+    plainOff();
+    return true;
   }
-  store.set('reefid-curation-draft', null);
-  store.set('reefid-curation-base', null);
+  const at = snap,
+    z = typeof CompressionStream === 'function' && typeof DecompressionStream === 'function',
+    raw = new TextEncoder().encode(JSON.stringify({d: DRAFT, x: sealDiff(DRAFT, SAVED)})),
+    iv = crypto.getRandomValues(new Uint8Array(12)),
+    ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, await sealKey(TOKEN), z ? await gzip(raw, 1) : raw),
+    L = store.get(SEALED, []),
+    S = [{iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0}, ...(Array.isArray(L) ? L : [])].slice(0, 3);
+  if (snap !== at) return sealDraft(); // a click came in while it was being sealed
+  plainOff();
+  if (store.set(SEALED, S)) return true;
+  putDraft(); // it did not fit: the draft goes back as it was
+  store.set('reefid-curation-base', SAVED);
+  return false;
 }
 // The draft this token sealed at its last sign out, if any: {d, b, drop}; drop() removes it once it is in the draft.
 async function unsealDraft() {
@@ -6547,20 +6610,34 @@ async function unsealDraft() {
   const k = await sealKey(TOKEN);
   for (let i = 0; i < L.length; i++) {
     try {
-      const o = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(L[i].iv)}, k, unb64(L[i].ct))));
+      const pt = new Uint8Array(await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(L[i].iv)}, k, unb64(L[i].ct))),
+        o = JSON.parse(new TextDecoder().decode(L[i].z ? await gzip(pt, 0) : pt));
       if (o && o.d && o.d.genera)
         return {
-          ...o,
+          d: o.d,
+          b: Array.isArray(o.x) ? sealPatch(o.d, o.x) : null,
           drop: () => store.set(SEALED, L.length > 1 ? L.filter((x, j) => j !== i) : null)
         };
     } catch (e) {} // sealed by another token
   }
   return null;
 }
+// A draft that cannot be sealed (storage full, no Web Crypto) stays in plain only if Sign out is clicked again after
+// the warning.
+let soWarned = 0;
 async function signOut() {
+  ptFlush(); // a note being typed reaches the draft first
+  let ok = false;
   try {
-    await sealDraft();
-  } catch (e) {} // no Web Crypto: the draft stays as before
+    ok = await sealDraft();
+  } catch (e) {}
+  if (!ok && Date.now() - soWarned > 15000) {
+    soWarned = Date.now();
+    return toast(
+      'Your unpublished draft could not be sealed in this browser: Publish it, or click Sign out again to leave it here in plain.',
+      15000
+    );
+  }
   sess.set(null);
   try {
     sessionStorage.removeItem(HKEY);

@@ -4655,6 +4655,153 @@ const WIDTHS = [390, 1280];
         fails.push(`difficulty bands, ${theme}${cvd === '1' ? ', colour-blind' : ''}: ${JSON.stringify(r)}`);
       await c.close();
     }
+  // Sign out with a draft of real size (review of #798): the main run serves a curation with its fish cut down, where any
+  // seal fits; Pierre's real curation.json (1.2 M characters) is served here as it is, so the draft and its base fill half
+  // of the browser's storage. gzip, then a browser without CompressionStream, then a seal that cannot be written (Sign out
+  // warns, the draft stays in plain until Sign out is clicked again), then a newer plain draft found beside the sealed
+  // one (the newer wins where both changed; an undo since is named in the note). Once, at 1280.
+  if (ws.includes(1280) && run.has('photos'))
+    for (const mode of ['gzip', 'plain', 'full']) {
+      const c = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+      await c.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await c.addInitScript(m => {
+        if (m === 'plain') delete window.CompressionStream;
+        if (m === 'full') {
+          const set = Storage.prototype.setItem;
+          Storage.prototype.setItem = function (k, v) {
+            if (k === 'demo:reefid-admin-sealed') throw new DOMException('full', 'QuotaExceededError');
+            return set.call(this, k, v);
+          };
+        }
+        addEventListener('beforeunload', () =>
+          sessionStorage.setItem(
+            'smoke-seal',
+            JSON.stringify({
+              plain: (localStorage.getItem('demo:reefid-curation-draft') || '').length,
+              base: (localStorage.getItem('demo:reefid-curation-base') || '').length,
+              sealed: localStorage.getItem('demo:reefid-admin-sealed')
+            })
+          )
+        );
+      }, mode);
+      const q = await c.newPage(),
+        F = `Sign out, real-size draft (${mode})`,
+        ready = () => q.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000}),
+        signOut = async () => {
+          await q.click('.adm-more summary');
+          await q.click('#signout');
+        },
+        quality = L => q.evaluate(L => L.map(f => (DRAFT.quality || {})[f] || 0), L);
+      await q.goto(base + 'admin.html?demo#photos/review/quality');
+      await ready();
+      // Two photos rated otherwise than published, in one draft.
+      const st = await q.evaluate(() => {
+        const L = Object.keys(PHOTOS).slice(0, 3),
+          s = L.map(f => (SAVED.quality || {})[f] || 0),
+          v = s.map(x => (x === 1 ? 3 : 1));
+        DRAFT.quality = {...(DRAFT.quality || {}), [L[0]]: v[0], [L[1]]: v[1]};
+        saveDraft();
+        const canon = o =>
+          JSON.stringify(o, (k, x) =>
+            x && typeof x === 'object' && !Array.isArray(x)
+              ? Object.fromEntries(
+                  Object.keys(x)
+                    .sort()
+                    .map(k => [k, x[k]])
+                )
+              : x
+          );
+        return {
+          L,
+          s,
+          v,
+          size:
+            (localStorage.getItem('demo:reefid-curation-draft') || '').length +
+            (localStorage.getItem('demo:reefid-curation-base') || '').length,
+          fish: JSON.stringify(SAVED.fish || {}).length,
+          back: canon(sealPatch(DRAFT, sealDiff(DRAFT, SAVED))) === canon(SAVED)
+        };
+      });
+      if (st.size < 2e6 || st.fish < 5e5)
+        fails.push(`${F}: the draft is not of real size ${JSON.stringify({size: st.size, fish: st.fish})}`);
+      if (!st.back) fails.push(`${F}: the base is not given back by the draft and its changes (sealDiff, sealPatch)`);
+      if (mode === 'full') {
+        await signOut();
+        await q.waitForTimeout(1500);
+        const w = await q.evaluate(() => ({
+          plain: (localStorage.getItem('demo:reefid-curation-draft') || '').length,
+          base: (localStorage.getItem('demo:reefid-curation-base') || '').length,
+          toast: (document.querySelector('.adm-toast:not([hidden])') || {}).textContent || '',
+          token: TOKEN
+        }));
+        if (w.plain < 1e6 || w.base < 1e6 || !/could not be sealed/.test(w.toast) || !w.token)
+          fails.push(`${F}: a seal that does not fit did not stop Sign out with a warning, the draft back in plain ${JSON.stringify(w)}`);
+        await Promise.all([q.waitForEvent('load'), signOut()]);
+        await ready();
+        const u = await q.evaluate(() => JSON.parse(sessionStorage.getItem('smoke-seal') || '{}'));
+        if (u.plain < 1e6 || u.sealed || (await quality(st.L.slice(0, 2))).join() !== st.v.slice(0, 2).join())
+          fails.push(`${F}: Sign out clicked again did not leave the draft in plain ${JSON.stringify({...u, q: await quality(st.L)})}`);
+        await c.close();
+        continue;
+      }
+      await Promise.all([q.waitForEvent('load'), signOut()]);
+      await ready();
+      const u = await q.evaluate(() => JSON.parse(sessionStorage.getItem('smoke-seal') || '{}')),
+        S = JSON.parse(u.sealed || '[]'),
+        z = mode === 'gzip' ? 1 : 0,
+        len = ((S[0] || {}).ct || '').length;
+      if (u.plain || u.base || S.length !== 1 || S[0].z !== z || (z ? len > 5e5 : len < 1e6))
+        fails.push(`${F}: the draft was left in plain or not sealed ${JSON.stringify({...u, sealed: S.length, z: (S[0] || {}).z, len})}`);
+      if (
+        (await quality(st.L.slice(0, 2))).join() !== st.v.slice(0, 2).join() ||
+        (await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed')))
+      )
+        fails.push(`${F}: the same token did not get the draft back ${JSON.stringify(await quality(st.L))}`);
+      if (mode === 'gzip' && S.length) {
+        // Another tab kept the token and worked on after this sign out: it undid the first rating, rated the second photo
+        // otherwise and a third one. At the next unlock its plain draft (newer) and the sealed one (older) are both there.
+        const v2 = [2, 3, 1].find(x => x !== st.s[1] && x !== st.v[1]),
+          D = await q.evaluate(
+            ([L, v2, v3]) => {
+              const d = clone(SAVED);
+              d.quality = {...(d.quality || {}), [L[1]]: v2, [L[2]]: v3};
+              return [JSON.stringify(d), JSON.stringify(SAVED)];
+            },
+            [st.L, v2, st.v[2]]
+          );
+        // Written from another page of the site, so no admin write of the page open now comes after them.
+        await q.goto(base + 'no-such-page');
+        await q.evaluate(
+          ([sealed, d, b]) => {
+            localStorage.setItem('demo:reefid-admin-sealed', sealed);
+            localStorage.setItem('demo:reefid-curation-draft', d);
+            localStorage.setItem('demo:reefid-curation-base', b);
+          },
+          [u.sealed, ...D]
+        );
+        await q.goto(base + 'admin.html?demo#photos/review/quality');
+        await ready();
+        const note = await q
+          .waitForFunction(
+            () => /sealed at your last sign out/.test((document.querySelector('.adm-toast') || {}).textContent || ''),
+            null,
+            {timeout: 10000}
+          )
+          .then(() => q.evaluate(() => document.querySelector('.adm-toast').textContent))
+          .catch(() => '');
+        const got = await quality(st.L);
+        if (got.join() !== [st.v[0], v2, st.v[2]].join() || (await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed'))))
+          fails.push(
+            `${F}: a newer plain draft and the sealed one did not merge, the newer winning ${JSON.stringify({got, want: [st.v[0], v2, st.v[2]]})}`
+          );
+        if (!/from the sealed one: \S/.test(note) || !/newer kept for quality of/.test(note))
+          fails.push(`${F}: no note names what the sealed draft brought back and where the newer one was kept: ${JSON.stringify(note)}`);
+      }
+      await c.close();
+    }
   await b.close();
   server.close();
   if (out.length) fails.push('Calls left the page in demo mode: ' + [...new Set(out)].slice(0, 5).join(', '));
