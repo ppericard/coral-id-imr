@@ -37,7 +37,7 @@ const first = x => String(x || '').split(/\s+/)[0];
 // The fish UNITS' lists (app.js typeOther) on fish.json.
 const OTHER = {
   sci: [...F.genera.map(g => g.name), ...F.species.flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
-  common: [...F.genera.flatMap(g => [g.common, g.imr]), ...F.species.map(x => x.common)].filter(Boolean)
+  common: [...F.genera.flatMap(g => [g.common, g.imr]), ...F.species.flatMap(x => [x.common, ...(x.cn || []).flat()])].filter(Boolean)
 };
 const SCI = [...new Set(OTHER.sci)];
 const kindOf = text =>
@@ -103,6 +103,7 @@ test('typeElse: a family name, a common name, or nothing (the spelling message a
   assert.strictEqual(kindOf('Clownfish'), 'common', 'a name in common use');
   assert.strictEqual(kindOf('Bannerfish'), 'common');
   assert.strictEqual(kindOf('Ternate chromis'), 'common', "a species' common name");
+  assert.strictEqual(kindOf('Reticulated damselfish'), 'common', "a species' listed common name, not the PDF's (fish.json cn)");
   assert.strictEqual(kindOf('xyzfish'), '');
   assert.strictEqual(kindOf(''), '');
   // A scientific genus name, in the game or not, is never a common name: the spelling message as before.

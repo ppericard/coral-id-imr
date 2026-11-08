@@ -58,7 +58,7 @@ Each species: {id, name (PDF / source), now (WoRMS accepted, when it differs), c
 taxon of its PDF name, else of the WoRMS name), circle (in the game) or out (why not), r (rank order: the PDF
 cheatsheet's 24 most sighted first, then the source order, i.e. PDF order, then the slides, winks, Dauin species),
 cmi (commonness index, 0-1, within its teaching entry: tools/fish_commonness.py), present, src (slides, dauin, wink; PDF when absent), sec (PDF section), pdf (pages), cs (cheatsheet rank), sl (slide),
-check}. A teaching node's `species` (and its sub-entries') are in commonness order, the most commonly met around Dauin
+check, cn (the curated common names, 1 to 3, from tools/fish_common.json: add_families)}. A teaching node's `species` (and its sub-entries') are in commonness order, the most commonly met around Dauin
 first (Pierre, 2026-11-04: "common beats easy" to start; fish_commonness.apply(), its inputs in
 tools/fish_commonness.json and tools/fish_commonness_inat.json; docs/FISH_PATH.md). Ids are stable and never names: they live in the source file (teaching nodes t01..., species s001...), never
 reuse or renumber one (`retired` lists the ids taken out).
@@ -90,6 +90,7 @@ SRC = ROOT / "tools" / "fish_source.json"
 SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
 FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
 GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
+CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 OUT = ROOT / "fish.json"
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
@@ -635,6 +636,18 @@ def add_families(o, key, declared=()):
             s["size"] = {"len": x["len"], **({"lt": x["lt"]} if x.get("lt") else {}), "src": fsrc(x, "lsrc")}
         if x.get("dep"):
             s["depth"] = {"m": x["dep"], "src": fsrc(x, "dsrc")}
+    # The species' curated common names (tools/fish_common.json, tools/fish_common.py; Pierre, 2026-11-04: 1 to 3 per
+    # species, never more; published as selected, Pierre, 2026-11-08, Q313): cn, one list per name, the name shown first
+    # (the most shared first), then its other spellings, accepted when typed (Pearl-scaled / Pearlscale angelfish; a PDF
+    # slip's own form). A game species no reference names has none (Q247). Every source stays in tools/fish_common.json.
+    cnames = json.loads(CNAMES.read_text(encoding="utf-8")).get("species", {}) if CNAMES.exists() else {}
+    for s in o["species"]:
+        s.pop("cn", None)
+        L = (cnames.get(s["id"]) or {}).get("names") or []
+        if len(L) > 3:
+            sys.exit(f"tools/fish_common.json {s['id']}: {len(L)} names, at most 3")
+        if L and s.get("circle"):
+            s["cn"] = [[n["name"], *n.get("alt", [])] for n in L]
     o["families"] = out
     # The genus common names (tools/fish_genus_names.json; Pierre, 2026-11-07: "some genera have common names. They
     # should be present somewhere"): common (the name) and csrc (its source, in words), checked against the data.
