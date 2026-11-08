@@ -39,6 +39,11 @@ const gameHelp = cur =>
   <p class="lede"><b>Typed questions</b>: once you know a genus well (from ${Math.round(100 * TYPED.from)}%), some of its questions ask you to type its name instead of picking it, more and more as it gets closer to learned: that is how you will name corals on a dive or in ReefCloud. Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer (it counts as a miss). A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>`
   }`;
 let EXAMQ = null; // the genus whose exam question is on screen (set by question, read by answer)
+// The question on screen, for Send feedback (app.js helpEnd; Pierre, 2026-11-08, Q309: feedback sent from a game carries
+// the question's unit and its photos, as a report does): {g, ph, el}, read only while its question is on screen; ph grows
+// with the corallites hint and the other views revealed once answered (the mix-up comparison's photo is another unit's).
+let QREP = null;
+const qNow = () => (QREP && QREP.el && QREP.el.isConnected ? {g: QREP.g, ph: QREP.ph} : null);
 // Typed questions (model.js TYPED; Pierre, 2026-11-03): the player types the genus instead of picking one of the
 // choices. The matching is core.js's (typeMatchIn: spelling tolerance, old names); the form, its messages and the
 // phone keyboard's behaviour are the Lab prototype's, shared with it (proto/type.js): no suggestions while typing,
@@ -226,6 +231,7 @@ function question(cur, target, choices, prompt, set, kq) {
       <div id="after"></div>
     </aside></div>`;
   QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
+  const qrep = (QREP = {g: target, ph: ph.map(p => p.f).filter(Boolean), el: $v.querySelector('.q')});
   bindQuizNav(cur);
   fitStage();
   qclockArm();
@@ -235,6 +241,7 @@ function question(cur, target, choices, prompt, set, kq) {
     hintShown = true;
     const st = $v.querySelector('.qstage');
     st.insertAdjacentHTML('beforeend', fig(set.hint, ph.length, ph.length + 1));
+    qrep.ph = [...qrep.ph, set.hint.f].filter(Boolean); // its photos as shown (Codex review #785)
     if (hb) hb.remove();
     fitStage();
     // Phones show the photos as a swipe strip: bring the corallites in (RA review 2026-11-02: only a sliver showed at the
@@ -274,6 +281,7 @@ function question(cur, target, choices, prompt, set, kq) {
       st = $v.querySelector('.qstage');
     if (!R.length || !st) return;
     st.insertAdjacentHTML('beforeend', R.map((p, k) => fig(p, ph.length + k, ph.length + R.length)).join(''));
+    qrep.ph = [...qrep.ph, ...R.map(p => p.f)].filter(Boolean);
     fitStage();
   };
   let tm0 = null; // the clock read when a typed answer's retype was asked (typeBind o.close): the seconds of the recognition

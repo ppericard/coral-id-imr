@@ -901,20 +901,22 @@ async function freshPlayers(b, base, errs) {
         W = slateGenera()
           .filter(n => GX(n).views.wide.length)
           .map(n => want(n)),
-        C = slateGenera()
-          .filter(n => suits(GX(n).coverP))
-          .map(n => GX(n).coverP),
+        Cn = slateGenera().filter(n => suits(GX(n).coverP)),
+        C = Cn.map(n => GX(n).coverP),
         T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img, #view .hdoor.identify .hdart img')].map(i =>
           i.getAttribute('src')
         );
       return {
         n: T.length,
         covers: T.filter(x => C.some(p => shows(x, p))).length,
+        // the tiles of a family whose cover fits: Home draws 12 families at random, so none may come (#785's CI run),
+        // and each that comes must show its cover
+        ofC: T.filter(x => Cn.some(n => shows(x, GX(n).coverP) || GX(n).views.wide.some(p => shows(x, p)))).length,
         fits: C.length,
         bad: T.filter(x => !W.some(p => shows(x, p)))
       };
     });
-    if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))
+    if (!ht.n || ht.bad.length || ht.covers !== ht.ofC)
       ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page but
