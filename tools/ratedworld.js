@@ -7,10 +7,10 @@
 // fishGenera). Only the planner around them is written here, as quiz.js planPhoto does it: the first cards, a card when
 // the path allows one (INTRO.EVERY, openPace, openRight, openChance), the target drawn among the units met (nextTarget),
 // a unit opened on a card asked as soon as it is ready; no Again, duel or comeback (they are not in the rated world).
-// The fish for now; the corals come next (ROADMAP "Validation tools for the two-world check", step 5).
+// Both subjects: the fish units built as the app builds them (above), the corals' too (coralUnits); --learner count or item.
 //
-//   node tools/learnsim.js --world rated --subject fish [--seeds 10] [--questions 3000] [--profiles ...]
-//                          [--dist normal|tail|t3] [--app truth|own] [--beyond yes|no] [--out rated.json]
+//   node tools/learnsim.js --world rated [--subject fish] [--seeds 10] [--questions 3000] [--profiles ...]
+//                          [--learner count|item] [--dist normal|tail|t3] [--app truth|own] [--beyond yes|no] [--out rated.json]
 //
 // The world of a seed (the same seed, the same world, so two versions of the app compare on it):
 // - each family's difficulty mu ~ N(0, FAM^2), + LOOK when it has declared look-alikes; each scientific genus's mu ~ its
@@ -51,7 +51,10 @@ const RATED = {
   TAIL: {SHARE: 0.15, ADD: 1.5},
   EASE: {MID: 3, STEP: 0.5, NOISE: 0.35},
   PI: 0.5,
-  SINGLE: 0.5
+  SINGLE: 0.5,
+  // The corals' genus spread: the SD of the sheet's genus offsets gd, 0.286 as #637 measured them with the photos rated
+  // against the genus ability (0.370 with today's rating against the level: the sensitivity variant, --coralsd 0.37).
+  CORAL_GD: 0.286
 };
 
 // Seeded generators: mulberry32 and Box-Muller.
@@ -80,16 +83,94 @@ function fishUnits() {
   return (XCACHE = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR, F), ph.sheet), F));
 }
 
+// The coral units as the app builds them (app.js build: core.js applyCuration and applySlots, app.js applyForms; the
+// extra genera, Millepora and the bonus genera, the same way), and imrFormsOf on them.
+let DCACHE = null;
+function coralUnits() {
+  if (DCACHE) return DCACHE;
+  const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
+    d = J('data.json'),
+    CUR = J('curation.json'),
+    fj = J('forms.json'),
+    autoq = J('quality.json').q || {},
+    picks = J('picks.json'),
+    // app.js forms(): gunsure a list in the file, a lookup in the app
+    FORMS = {gf: fj.gf || {}, form: fj.form || {}, cf: fj.cf || {}, forms: fj.forms || [], gunsure: Object.fromEntries((fj.gunsure || []).map(f => [f, 1]))},
+    GX = n => d.gen[n] || ((d.x || {}).gen || {})[n],
+    src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    ctx = vm.createContext({...C, FORMS, CFMAP: FORMS.cf, DATA: d, GX});
+  vm.runInContext(
+    cut(src, 'function applyForms(', '\n}\n', {through: 1, file: 'app.js'}) +
+      '\n' +
+      cut(src, 'const imrFormsOf = ', '\n};\n', {through: 1, file: 'app.js'}) +
+      '\nglobalThis.__f = {applyForms, imrFormsOf};',
+    ctx
+  );
+  C.applyCuration(d, CUR);
+  ctx.__f.applyForms(d, CUR);
+  C.applySlots(d, CUR, {picks, autoq});
+  if (d.x) {
+    const x = {gen: d.x.gen, course: {}, cand: d.cand};
+    C.applyCuration(x, CUR);
+    ctx.__f.applyForms(x, CUR);
+    C.applySlots(x, CUR, {picks, autoq});
+  }
+  return (DCACHE = {d, GX, imrFormsOf: ctx.__f.imrFormsOf});
+}
+// A subject's units in one shape: slate (the slate in order), extra (the units of its opt-in set: the fish scientific
+// genera, the coral bonus genera), rec(n) (the unit's record), views (the game photos per view), core (circle 1, or the
+// slate), c3 (the circle opened by choice), tree (the global score's, or null), kind(n), DATA.
+const VIEWN = ['wide', 'medium', 'macro'];
+function unitsOf(subject) {
+  if (subject === 'fish') {
+    const X = fishUnits();
+    return {
+      subject,
+      X,
+      DATA: {gen: {}},
+      slate: [...X.c1, ...X.c2, ...X.c3],
+      extra: X.sci,
+      setK: 'sci',
+      rec: n => X.gen[n],
+      views: n => ({wide: X.gen[n].views.wide || []}),
+      core: X.c1,
+      c3: X.c3,
+      tree: X.tree,
+      kind: n => (X.gen[n].rank === 'genus' ? 'genus' : 'family'),
+      imrFormsOf: n => X.gen[n].forms || ['a']
+    };
+  }
+  const {d, GX, imrFormsOf} = coralUnits(),
+    slate = C.slateOf(d),
+    extra = C.BONUS.filter(n => GX(n));
+  return {
+    subject,
+    DATA: d,
+    slate,
+    extra,
+    setK: 'bon',
+    rec: GX,
+    views: n => Object.fromEntries(VIEWN.map(v => [v, ((GX(n).sl || {})[v] ? GX(n).sl[v].game : GX(n).views[v]) || []])),
+    core: slate,
+    c3: [],
+    tree: null,
+    kind: n => (extra.includes(n) ? 'bonus' : 'genus'),
+    imrFormsOf
+  };
+}
+
 // The world of one seed (above): mu per unit, eps and the judged ease per photo file, the player's pi.
-function world(X, seed, photos = 'normal') {
+function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
+  if (!U.slate) U = unitsOfX(U);
   const r = gen((seed * 2654435761) ^ 0x51ed270b),
     mu = {},
     eps = {},
-    ease = {},
-    fams = [...X.c1, ...X.c2, ...X.c3];
-  fams.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((X.gen[n].look || []).length ? RATED.LOOK : 0)));
-  X.sci.forEach(n => (mu[n] = (mu[X.gen[n].parent] || 0) + RATED.SUB * normal(r) + ((X.gen[n].look || []).length ? RATED.SIB : 0)));
-  const files = [...new Set([...fams, ...X.sci].flatMap(n => (X.gen[n].views.wide || []).map(p => p.f)))].sort();
+    ease = {};
+  if (U.subject === 'fish') {
+    U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
+    U.extra.forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
+  } else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
+  const files = [...new Set([...U.slate, ...U.extra].flatMap(n => Object.values(U.views(n)).flatMap(L => L.map(p => p.f))))].sort();
   files.forEach(f => {
     let e = RATED.EPS * normal(r);
     if (photos === 'tail' && r() < RATED.TAIL.SHARE) e += RATED.TAIL.ADD;
@@ -103,50 +184,65 @@ function world(X, seed, photos = 'normal') {
   });
   return {mu, eps, ease, pi: RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372))};
 }
+// The fish units given as built by fishUnits (the tests' X), in the shape of unitsOf.
+const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
 const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'introSince', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
-function engine(X, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
-  // Every unit's photos with the world's judged ease (p.e), the files unchanged.
-  const G = {};
-  [...X.c1, ...X.c2, ...X.c3, ...X.sci].forEach(n => {
-    const g = X.gen[n];
-    G[n] = {...g, views: {wide: (g.views.wide || []).map(p => ({...p, e: W.ease[p.f]}))}};
+function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
+  if (!U.slate) U = unitsOfX(U);
+  const subject = U.subject,
+    all = [...U.slate, ...U.extra],
+    // Every unit's record with its game photos per view, each with the world's judged ease (p.e) where the subject has
+    // one (the fish; no coral photo is judged).
+    G = {};
+  all.forEach(n => {
+    const v = U.views(n);
+    G[n] = {...U.rec(n), views: Object.fromEntries(Object.entries(v).map(([k, L]) => [k, subject === 'fish' ? L.map(p => ({...p, e: W.ease[p.f]})) : L]))};
   });
   const mem = new Map(),
     store = {get: (k, d) => (mem.has(k) ? JSON.parse(mem.get(k)) : d), set: (k, v) => mem.set(k, JSON.stringify(v))},
-    SUBJ = C.subjectOf('fish'),
-    slate = [...X.c1, ...X.c2, ...X.c3],
-    ctx = {...C, console, Math: Object.create(Math), store, SUBJ, DATA: {gen: {}}, P: {}, Q: {}, PMEM: [0, -0.45, -1.1, -1.7], PFMT: {}, last: null};
+    SUBJ = C.subjectOf(subject),
+    slate = U.slate,
+    ctx = {...C, console, Math: Object.create(Math), store, SUBJ, DATA: U.DATA, P: {}, Q: {}, PMEM: [0, -0.45, -1.1, -1.7], PFMT: {}, last: null};
   ctx.Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
-  const tree = X.tree,
-    headScore = () => C.treeScore(ctx.P, tree, SUBJ.score),
+  const tree = U.tree,
+    headScore = () => (tree ? C.treeScore(ctx.P, tree, SUBJ.score) : null),
     fishC3 = () => ((headScore().by[1] || {}).entries || 0) >= 0.55, // app.js FISH_C3.entries
     imr = () => ctx.imrSaid(),
-    sci = () => {
+    // The opt-in set's units in play (app.js UNITS sets): the fish scientific genera, from their family's Advanced
+    // (Open Water for an IMR genus of an IMR player, without the offer: sciOpen); the coral bonus genera once on.
+    setUnits = () => {
+      if (subject !== 'fish') return {auto: [], units: U.extra};
       const at = (n, x) => ctx.introduced(n) || ctx.genScore(G[n].parent) >= x,
-        auto = imr() ? X.sci.filter(n => G[n].imrg && at(n, ctx.LV_AT[0])) : [],
-        units = X.sci.filter(n => !(imr() && G[n].imrg) && at(n, ctx.LV_AT[1]));
+        auto = imr() ? U.extra.filter(n => G[n].imrg && at(n, ctx.LV_AT[0])) : [],
+        units = U.extra.filter(n => !(imr() && G[n].imrg) && at(n, ctx.LV_AT[1]));
       return {auto, units};
-    };
+    },
+    gate = n => {
+      const c = (G[n] || {}).circle || 1;
+      if (c < 2) return true;
+      return c < 3 ? U.core.every(x => ctx.asked(x) && ctx.introduced(x)) : fishC3();
+    },
+    has = n => VIEWN.some(v => (G[n].views[v] || []).length);
   Object.assign(ctx, {
-    sDev: name => 'reefid-fish-' + name,
-    sKey: name => C.subjKey('fish', name),
+    sDev: name => `reefid-${subject}-${name}`,
+    sKey: name => C.subjKey(subject, name),
     syncSoon: () => {},
     GX: n => G[n],
-    VIEWS: [['wide'], ['medium'], ['macro']],
+    VIEWS: VIEWN.map(v => [v]),
     gamePics: (n, v) => (G[n] && G[n].views[v]) || [],
-    gamePhotoOk: () => true,
-    imrFormsOf: n => (G[n] || {}).forms || ['a'],
-    isCore: () => false,
+    gamePhotoOk: (n, p) => !G[n].x || p.own || !p.gid, // app.js gamePhotoOk
+    imrFormsOf: n => U.imrFormsOf(n),
+    isCore: p => !!(SUBJ.tiers && (p.imr || p.own)),
     rankOf: n => (G[n] || {}).rank || '',
-    rankUnits: rk => X.sci.filter(n => (G[n].rank || '') === rk),
+    rankUnits: rk => U.extra.filter(n => (G[n].rank || '') === rk),
     slateGenera: () => slate,
-    UNITS: {fish: {core: () => X.c1, slate: () => slate, tree: () => tree, gate: n => fishGate(n), opens: []}},
-    bonusList: () => [...new Set([...(ctx.Q.sci ? sci().units : []), ...sci().auto])],
-    pool: () => [...slate, ...ctx.bonusList()].filter(n => G[n].views.wide.length), // app.js pool: units with a photo to show
-    openShut: n => (G[n] || {}).circle === 3 && beyond !== 'yes' && !X.c3.some(u => u in ctx.introMap()),
+    UNITS: {[subject]: tree ? {core: () => U.core, slate: () => slate, tree: () => tree, gate, opens: []} : {slate: () => slate, opens: []}},
+    bonusList: () => [...new Set([...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto])],
+    pool: () => [...slate, ...ctx.bonusList()].filter(has), // app.js pool: units with a photo to show
+    openShut: n => U.c3.includes(n) && beyond !== 'yes' && !U.c3.some(u => u in ctx.introMap()),
     headScore,
     sheetV: () => 1000,
     shuffle: a => {
@@ -158,11 +254,6 @@ function engine(X, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
     },
     pick: a => a[Math.floor(ctx.Math.random() * a.length)]
   });
-  const fishGate = n => {
-    const c = (G[n] || {}).circle || 1;
-    if (c < 2) return true;
-    return c < 3 ? X.c1.every(x => ctx.asked(x) && ctx.introduced(x)) : fishC3();
-  };
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(ROOT, 'model.js'), 'utf8'), ctx, {filename: 'model.js'});
   // model.js's own bindings (its const and let live in the vm's global scope, not on ctx).
@@ -176,7 +267,7 @@ function engine(X, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
     const ez = C.calibOf(SUBJ).ease || 0,
       pgd = {};
     Object.keys(G).forEach(n => {
-      const L = G[n].views.wide.filter(p => p.e),
+      const L = [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))].filter(p => p.e),
         pr = L.length ? L.reduce((t, p) => t + (M.PDIFF.MID - p.e) * ez, 0) / L.length : 0;
       pgd[n] = [(W.mu[n] || 0) - pr];
     });
@@ -184,7 +275,7 @@ function engine(X, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
     ctx.__pgd = pgd;
     vm.runInContext('PGD = __pgd; GDIFF = {};', ctx);
   }
-  return {ctx, M, G, sci};
+  return {ctx, M, G, U};
 }
 
 // quiz.js planPhoto's photo-quiz question on unit t (cards: the cards shown with it, start: the first ones): the exam's
@@ -210,26 +301,38 @@ const noteRecent = (s, ph) => {
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
 };
 
-// One run: profile (learnprof name) x seed, N answers, checkpoints cps.
-function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', keep = false}) {
-  const W = world(X, seed, photos),
-    {ctx, M, G} = engine(X, W, {app, seed, beyond}),
-    prof = LP.profOf(profile, 'fish'),
+// One run: profile (learnprof name) x seed, N answers, checkpoints cps; learner 'count' (by the number of answers) or
+// 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
+// given PICKED, a card as one right answer).
+const ITEM = {MISS: 1.5, PICKED: 0.5};
+function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false}) {
+  if (subject) U = unitsOf(subject);
+  if (!U.slate) U = unitsOfX(U);
+  const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
+    {ctx, M, G} = engine(U, W, {app, seed, beyond}),
+    prof = LP.profOf(profile, U.subject),
     r = gen((seed * 2654435761) ^ 0x9e3779b9),
-    slate = ctx.slateGenera(),
-    knows = LP.knownUnits(prof, {SL: slate, group: () => 0, numbered: () => false, core: X.c1, tree: X.tree.f}),
+    slate = U.slate,
+    knows = LP.knownUnits(prof, {
+      SL: slate,
+      group: n => C.lectureGroup(U.DATA, n),
+      numbered: n => ((U.DATA.gen || {})[n] || {}).n > 0,
+      core: U.core,
+      tree: U.tree ? U.tree.f : []
+    }),
     know = {};
   slate.forEach(n => (know[n] = knows.has(n) ? prof.hi : prof.lo));
-  X.sci.forEach(n => (know[n] = LP.genKnown(prof, knows, G[n].parent, G[n].imrg) ? prof.hi : prof.lo));
-  const teach = n => (know[n] += prof.rate * (1 - know[n])),
+  U.extra.forEach(n => (know[n] = LP.genKnown(prof, knows, G[n].parent, G[n].imrg) ? prof.hi : prof.lo));
+  const teach = (n, x = 1) => n in know && (know[n] += Math.min(1, prof.rate * x) * (1 - know[n])),
     trueD = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0),
-    pRec = (n, d) => sig(logit(know[n]) + W.pi - d - RATED.SINGLE),
+    pRec = (n, d, single = true) => sig(logit(know[n]) + W.pi - d - (single ? RATED.SINGLE : 0)),
     dStar = n => {
-      const L = G[n].views.wide || []; // every game photo of the unit
+      const L = [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))]; // every game photo of the unit
       return L.length ? L.reduce((t, p) => t + pRec(n, trueD(n, p)), 0) / L.length : null;
     },
-    U = [...slate, ...X.sci],
-    kindOf = n => (G[n].rank === 'genus' ? 'genus' : 'family'),
+    UA = [...slate, ...U.extra],
+    kindOf = U.kind,
+    KINDS = [...new Set(UA.map(kindOf))],
     mean = A => (A.length ? A.reduce((a, x) => a + x, 0) / A.length : null);
   // The first-launch answer (--choice auto, learnsim AUTO): the IMR RAs "imr", the strong RA and the expert "know".
   const choice = {beginner: 'new', casualDiver: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'}[profile] || 'new';
@@ -242,11 +345,10 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     c3 = {offer: null, met: null},
     plat = {best: 0, since: 0, max: 0};
   let rights = 0,
-    blk = {n: 0, ok: 0},
-    lastCard = -Infinity;
+    blk = {n: 0, ok: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
-    const sl = list.filter(n => !X.sci.includes(n)),
+    const sl = list.filter(n => !U.extra.includes(n)),
       want = M.INTRO.START - sl.filter(M.introduced).length,
       L = [],
       met = n => M.introduced(n) || L.includes(n);
@@ -255,12 +357,14 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     return L;
   };
   const P = () => ctx.P,
-    shown = () => C.treeScore(ctx.P, X.tree, ctx.SUBJ.score).pct;
+    shown = () => (U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score).pct : M.progPct(slate));
   for (let i = 0; i < N; i++) {
     const at = M.answersSoFar(),
       list = ctx.pool();
-    // The scientific names' offer (app.js UNITS fish sets: a family at Advanced): accepted, or declined (names common).
-    if (ctx.Q.sci === undefined && slate.some(n => M.genScore(n) >= M.LV_AT[1])) ctx.Q.sci = prof.names !== 'common';
+    // The opt-in set's offer (app.js UNITS sets): the fish scientific names once a family is at Advanced, accepted or
+    // declined (names common); the coral bonus genera once every slate genus is met, accepted (as learnsim).
+    if (ctx.Q[U.setK] === undefined && (U.subject === 'fish' ? slate.some(n => M.genScore(n) >= M.LV_AT[1]) : slate.every(n => M.asked(n) && M.introduced(n))))
+      ctx.Q[U.setK] = prof.names !== 'common';
     // The first cards, else a card when the path allows one (quiz.js planPhoto).
     let cards = introStart(list);
     const start = cards.length > 0,
@@ -270,18 +374,17 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
       if (fresh.length && ctx.Math.random() < M.openChance(list)) cards = [M.openPick(fresh, list)];
     }
     if (cards.length) M.introAdd(cards, start);
-    if (cards.length) lastCard = i;
-    cards.forEach(teach);
+    cards.forEach(n => teach(n));
     const due = start ? [] : M.openRecent(at).filter(n => !M.asked(n) && M.introReady(n) && list.includes(n)),
       t = M.nextTarget(start ? cards : due.length ? due : met.length ? met : list);
-    if (c3.met === null && X.c3.some(M.introduced)) c3.met = i + 1;
+    if (c3.met === null && U.c3.some(M.introduced)) c3.met = i + 1;
     // The question: an exam question when its unit is ready for one, else the photo quiz's; typed or among choices.
     const {exam, typed, chs, k, set} = question(M, ctx, G, t, {list, cards, start}),
       same = list.filter(n => n !== t && M.introduced(n) && kindOf(n) === kindOf(t)),
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
     const d = mean(ph.map(p => trueD(t, p))),
-      rec = r() < pRec(t, d);
+      rec = r() < pRec(t, d, ph.length === 1);
     let c = t;
     if (!rec) {
       if (typed) c = r() < 0.5 ? '' : (same.length ? same[Math.floor(r() * same.length)] : '') || '';
@@ -329,11 +432,15 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     }
     if (!ok && G[c] && P()[c]) delete P()[c].ex;
     if (!ok) [t, ...(G[c] ? [c] : [])].forEach(n => P()[n] && P()[n].mx && !M.mxKept(n) && delete P()[n].mx);
-    teach(t);
+    // The learner learns: by the number of answers, or by the answer (ITEM).
+    if (learner === 'item') {
+      teach(t, ok ? 1 : ITEM.MISS);
+      if (!ok && G[c]) teach(c, ITEM.PICKED);
+    } else teach(t);
     rights += ok;
     blk.n++;
     blk.ok += ok;
-    U.forEach(n => {
+    UA.forEach(n => {
       if (!M.introduced(n) || (n in owAt && n in advAt)) return;
       const b = M.genScore(n) + 1e-9;
       if (!(n in owAt) && b >= M.LV_AT[0]) owAt[n] = i + 1;
@@ -345,7 +452,7 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     if (cps.includes(i + 1)) {
       const metU = slate.filter(M.introduced),
         ds = Object.fromEntries(metU.map(n => [n, dStar(n)])),
-        h = C.treeScore(ctx.P, X.tree, ctx.SUBJ.score),
+        h = U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score) : null,
         r4 = x => Math.round(x * 1e4) / 1e4,
         comp = o => ({entries: r4(o.entries), genera: r4(o.genera), common: r4(o.common), scientific: r4(o.scientific), S: r4(o.S), credit: r4(o.credit), raw: r4(o.raw), pct: o.pct});
       rows.push({
@@ -357,8 +464,8 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
         prog: M.progPct(slate),
         f: {gs: Object.fromEntries(metU.map(n => [n, r4(M.genScore(n))])), ds: Object.fromEntries(metU.map(n => [n, r4(ds[n])]))},
         kinds: Object.fromEntries(
-          ['family', 'genus'].map(kd => {
-            const L = U.filter(n => kindOf(n) === kd),
+          KINDS.map(kd => {
+            const L = UA.filter(n => kindOf(n) === kd),
               Lm = L.filter(M.introduced),
               dm = Lm.map(dStar);
             return [
@@ -374,7 +481,7 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
             ];
           })
         ),
-        score: {...comp(h), by: Object.fromEntries(Object.entries(h.by || {}).map(([cc, o]) => [cc, comp(o)]))},
+        score: h ? {...comp(h), by: Object.fromEntries(Object.entries(h.by || {}).map(([cc, o]) => [cc, comp(o)]))} : {pct: shown()},
         plateau: plat.max
       });
       blk = {n: 0, ok: 0};
@@ -387,18 +494,17 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     rows,
     owAt,
     advAt,
-    kinds: Object.fromEntries(U.map(n => [n, kindOf(n)])),
+    kinds: Object.fromEntries(UA.map(n => [n, kindOf(n)])),
     c3,
     expo,
     preOW,
     knows: [...knows],
     right: rights / Math.max(1, N),
-    ...(keep ? {P: ctx.P} : {}), // the app's records, for the tests
-    lastCard
+    ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
   };
 }
 
-module.exports = {RATED, world, engine, runOne, fishUnits, question, noteRecent};
+module.exports = {RATED, ITEM, world, engine, runOne, fishUnits, coralUnits, unitsOf, question, noteRecent};
 
 // The rated world's checkpoints: the guardrails' (LEARNING.md) up to the horizon, and the horizon.
 const checkpoints = N => [...new Set([100, 300, 1000, 3000, 10000, 30000].filter(q => q <= N).concat([N]))].sort((a, b) => a - b);
@@ -409,7 +515,7 @@ async function main(o) {
     t0 = Date.now(),
     cps = checkpoints(o.N),
     jobs = [];
-  for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++) for (const profile of o.profiles) jobs.push({profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner});
+  for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++) for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -438,9 +544,10 @@ async function main(o) {
     },
     f = (x, d) => (x === null ? '-' : x.toFixed(d));
   console.log(
-    `\nRated world (fish; photos ${o.dist}, the app ${o.app === 'truth' ? 'told the truth' : 'on its own estimate'}): ${o.profiles.join(', ')}; ${o.seeds} seeds x ${o.N} answers; ${runs.length} runs in ${secs.toFixed(0)} s`
+    `\nRated world (${o.subject}; learner ${o.learner}; photos ${o.dist}, the app ${o.app === 'truth' ? 'told the truth' : 'on its own estimate'}): ${o.profiles.join(', ')}; ${o.seeds} seeds x ${o.N} answers; ${runs.length} runs in ${secs.toFixed(0)} s`
   );
-  console.log('right%: since the previous checkpoint; D*: true knowledge of the families; E: bar - D*, families met; OW / Adv: families, genera at Open Water / Advanced');
+  const K = [...new Set(runs.flatMap(r => Object.values(r.kinds)))];
+  console.log(`right%: since the previous checkpoint; D*: true knowledge of the slate; E: bar - D*, slate units met; OW / Adv: ${K.join(', ')} at Open Water / Advanced`);
   for (const p of o.profiles) {
     const R = runs.filter(r => r.profile === p);
     console.log(`\n${p} (pi ${R.map(r => r.pi.toFixed(2)).join(' ')})`);
@@ -448,7 +555,7 @@ async function main(o) {
       const w = R.map(r => r.rows[i]).filter(Boolean),
         g = fn => m(w.map(fn));
       console.log(
-        `  ${String(q).padStart(6)}  right ${f(g(x => x.right), 0)}  met ${f(g(x => x.met), 1)}  D* ${f(g(x => x.dStar), 3)}  E ${f(g(x => x.kinds.family.over), 3)}  OW ${f(g(x => x.kinds.family.ow), 1)} / ${f(g(x => x.kinds.genus.ow), 1)}  Adv ${f(g(x => x.kinds.family.adv), 1)} / ${f(g(x => x.kinds.genus.adv), 1)}  score ${f(g(x => x.score.pct), 1)} (entries ${f(g(x => x.score.entries), 3)}, credit ${f(g(x => x.score.credit), 3)})  plateau ${f(g(x => x.plateau), 0)}`
+        `  ${String(q).padStart(6)}  right ${f(g(x => x.right), 0)}  met ${f(g(x => x.met), 1)}  D* ${f(g(x => x.dStar), 3)}  E ${f(g(x => (x.kinds[K[0]] || {}).over), 3)}  OW ${K.map(k => f(g(x => (x.kinds[k] || {}).ow), 1)).join(' / ')}  Adv ${K.map(k => f(g(x => (x.kinds[k] || {}).adv), 1)).join(' / ')}  score ${f(g(x => x.score.pct), 1)}${g(x => x.score.entries) === null ? '' : ` (entries ${f(g(x => x.score.entries), 3)}, credit ${f(g(x => x.score.credit), 3)})`}  plateau ${f(g(x => x.plateau), 0)}`
       );
     });
   }
@@ -460,15 +567,16 @@ async function main(o) {
           date: new Date().toISOString(),
           commit: o.commit,
           world: 'rated',
-          subject: 'fish',
+          subject: o.subject,
           seeds: o.seeds,
           seed0: o.seed0,
           questions: o.N,
           checkpoints: cps,
-          profiles: Object.fromEntries(o.profiles.map(n => [n, LP.profOf(n, 'fish')])),
+          profiles: Object.fromEntries(o.profiles.map(n => [n, LP.profOf(n, o.subject)])),
           rated: RATED,
           dist: o.dist,
           learnerKind: o.learner || 'count',
+          coralSd: o.subject === 'coral' ? o.coralSd || RATED.CORAL_GD : null,
           app: o.app,
           beyond: o.beyond || null,
           seconds: secs,
@@ -486,7 +594,6 @@ module.exports.main = main;
 module.exports.checkpoints = checkpoints;
 // A worker thread of main: runs the jobs it is sent.
 if (!require('worker_threads').isMainThread && require('worker_threads').workerData === 1) {
-  const {parentPort} = require('worker_threads'),
-    X = fishUnits();
-  parentPort.on('message', j => parentPort.postMessage(runOne(X, j)));
+  const {parentPort} = require('worker_threads');
+  parentPort.on('message', j => parentPort.postMessage(runOne(null, j)));
 }

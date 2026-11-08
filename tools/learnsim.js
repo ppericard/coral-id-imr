@@ -276,14 +276,16 @@ const SEEDS = Number(arg('seeds', 5)),
   // photo and unit rated; own: its judged-ease prior alone). --questions counts its answers.
   WORLD = arg('world', 'app'),
   DIST = arg('dist', 'normal'),
-  APPK = arg('app', 'truth');
+  APPK = arg('app', 'truth'),
+  // --coralsd: the corals' genus spread in the rated world (default tools/ratedworld.js RATED.CORAL_GD, 0.286; 0.37 the
+  // sensitivity variant).
+  CORALSD = Number(arg('coralsd', 0)) || null;
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
-if (WORLD === 'rated' && SUBJECT !== 'fish') throw new Error('--world rated: the fish only for now (the corals: ROADMAP, step 5)');
 if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
 if (!['truth', 'own'].includes(APPK)) throw new Error('--app truth or own');
 if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
-if (arg('world', 'app') === 'rated' ? LEARN !== 'count' : !['item', 'field', 'exemplar'].includes(LEARN))
-  throw new Error(arg('world', 'app') === 'rated' ? '--learner count in the rated world' : '--learner item, field or exemplar');
+if (arg('world', 'app') === 'rated' ? !['count', 'item'].includes(LEARN) : !['item', 'field', 'exemplar'].includes(LEARN))
+  throw new Error(arg('world', 'app') === 'rated' ? '--learner count or item in the rated world' : '--learner item, field or exemplar');
 if (!(TAU >= 0 && TAU <= 1)) throw new Error('--tau between 0 and 1');
 if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or more genera, --drill 1 or more questions');
 {
@@ -1590,7 +1592,7 @@ function openTable(runs) {
         return null;
       }
     })();
-    return require('./ratedworld.js').main({profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, out: OUT, commit});
+    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit});
   }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   if (STATS === 'live') STATS_JSON = await liveStats();

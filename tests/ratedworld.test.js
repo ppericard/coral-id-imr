@@ -65,6 +65,34 @@ test('a run: the same seed gives the same run, and learncmp reads every measure 
   assert.deepStrictEqual(a.knows.sort(), X.c1.slice().sort());
 });
 
+test('the corals: the slate and the bonus genera as the app builds them, a run with its kinds', () => {
+  const U = RW.unitsOf('coral');
+  assert.strictEqual(U.slate.length, 40);
+  assert.ok(U.slate.includes('Millepora') && U.extra.length > 0);
+  assert.ok(U.views('Acropora').wide.length > 0 && U.views('Acropora').medium.length > 0);
+  const W = RW.world(U, 1),
+    g = U.slate.map(n => W.mu[n]);
+  assert.ok(Math.abs(sd(g) - RW.RATED.CORAL_GD) < 0.15, String(sd(g)));
+  const W37 = RW.world(U, 1, 'normal', {coralSd: 0.37}),
+    g37 = U.slate.map(n => W37.mu[n]);
+  assert.ok(Math.abs(sd(g37) / sd(g) - 0.37 / RW.RATED.CORAL_GD) < 1e-9);
+  const a = RW.runOne(null, {subject: 'coral', profile: 'strongRA', seed: 2, N: 100, cps: [100]});
+  assert.deepStrictEqual(Object.keys(a.rows[0].kinds).sort(), ['bonus', 'genus']);
+  assert.strictEqual(a.rows[0].score.entries, undefined); // no global score: the units' mean
+  assert.ok(a.knows.length >= 24 && a.knows.length < 30, String(a.knows.length));
+});
+
+test('the item learner: its gain depends on the answer; the count learner learns the same whatever the answer', () => {
+  const run = learner => RW.runOne(null, {subject: 'fish', profile: 'beginner', seed: 4, N: 150, cps: [150], learner});
+  const c = run('count'),
+    i = run('item');
+  // Same world, same first answers' draws: the two learners part only through what they learn.
+  assert.strictEqual(c.pi, i.pi);
+  assert.notDeepStrictEqual(c.rows[0].knowSlate, i.rows[0].knowSlate);
+  assert.strictEqual(RW.ITEM.MISS, 1.5);
+  assert.strictEqual(RW.ITEM.PICKED, 0.5);
+});
+
 // Codex review #787: the question as quiz.js planPhoto builds it (k from the traps, the hold's ease and the mix-ups in the
 // photo's aim), and the recent observations quiz.js answer records.
 test('the question: every choice counts from 2 traps, the hold and the mix-ups aim the photo lower', () => {

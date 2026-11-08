@@ -4525,7 +4525,7 @@ code or the docs unless marked *inferred*):
 
 | | The app world | The rated world |
 | --- | --- | --- |
-| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | `node tools/learnsim.js --world rated --subject fish` (`tools/ratedworld.js`; the corals next) |
+| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | `node tools/learnsim.js --world rated [--subject fish]` (`tools/ratedworld.js`) |
 | Photos | the real pools, the app's estimate or `--truth` | d = μ(unit) + ε, ε ~ N(0, 0.46²) (the coral photo spread of the Analyses tab); heavy tails: 15% of the photos +1.5, or a scaled t with 3 degrees of freedom; judged ease e = round(3 − (ε + N(0, 0.35²)) / 0.5) on 1-5 |
 | Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ the spread of the sheet's `gd` (to measure) |
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
@@ -4564,6 +4564,18 @@ else a guess among the choices (typed: "I don't know" half the time); it learns 
 know) per answer on the unit and per card). D\*: its mean chance on each of the unit's game photos alone. Rows hold what
 learncmp reads (`dStar`, `knowSlate`, `met`, `right`, `prog`, `f`, `kinds`, `score`, `plateau`; per run `owAt`, `advAt`,
 `c3`, `expo`, `preOW`), at the guardrails' checkpoints (100, 300, 1,000, 3,000, 10,000, 30,000) up to the horizon.
+
+**The corals** (2026-11-08, step 5): the coral units as the app builds them (`core.js` `applyCuration` and `applySlots`,
+`app.js` `applyForms` and `imrFormsOf` cut out the same way; the extra genera, Millepora and the bonus genera, too): the
+40 genera of the slate and the bonus genera, their game photos in their three views (a question shows those
+`photoSet` picks; one view alone is the single-view case). Each genus's μ ~ N(0, `RATED.CORAL_GD`²), **0.286: the SD of the
+sheet's genus offsets `gd` as #637 measured them with the photos rated against the genus ability (Q136); 0.370 with
+today's rating against the level, the sensitivity variant (`--coralsd 0.37`)**; no photo has a
+judged ease, so the share under ease 4 is not measured there. The bonus genera are offered once every slate genus is
+met and accepted, as in the app world; there is no global score, so the shown score is the units' mean (`progPct`).
+**The learners**: `--learner count` (the default), by the number of answers, as above; `--learner item`, whose gain
+depends on the answer and its feedback, as learnsim's item learner: a right answer teaches rate × (1 − know), a miss
+1.5 times that (`ITEM.MISS`), the unit wrongly given 0.5 times (`ITEM.PICKED`), a card as one right answer.
 
 ```
 node tools/learnsim.js --world rated --subject fish --seeds 10 --questions 3000 --out before.json [--dist tail] [--app own]
