@@ -301,6 +301,23 @@ test('Activity: the answers given since are added; a gap reads the whole log in 
   await new Promise(r => setImmediate(r));
   assert.deepStrictEqual([b.ctx.reads, b.ctx.users], [1, 1], 'the whole log and the player list (Codex review #775)');
   assert.strictEqual(b.ctx.ANS, held, 'shown until the whole log is in');
+  // The whole log read but not the player list (after a delete or an archive): the list is asked again at each light
+  // read until it is in, though nothing else calls for it (Codex review #775).
+  const ul = liveAdmin({
+    reply: n =>
+      n === 1 ? {ok: true, rows: [row('B', 50)], last: {B: 50}, n: 80, k: 50} : {ok: true, rows: [row('A', 1)], last: {A: 1}, n: 1, k: 1}
+  });
+  ul.ctx.usersFail = true;
+  await ul.L.liveRead();
+  await new Promise(r => setImmediate(r));
+  assert.strictEqual(ul.ctx.users, 1);
+  ul.ctx.usersFail = false;
+  for (const want of [2, 2]) {
+    ul.ctx.now += 60000;
+    await ul.L.liveRead();
+    await new Promise(r => setImmediate(r));
+    assert.strictEqual(ul.ctx.users, want, 'asked again once, then no more once it is in');
+  }
   // The whole log could not be read (offline, an error): the log held stays, the next light read in a minute.
   const e = liveAdmin({reply: () => ({ok: true, rows: [row('B', 50)], last: {B: 50}, n: 80, k: 50})}),
     he = e.ctx.ANS;

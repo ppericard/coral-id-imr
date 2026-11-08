@@ -7310,10 +7310,14 @@ function liveMerge(all, j, roster) {
 // livemerge: end
 // The player list read again for the light read: a read that fails keeps the last good list (loadUsers would leave
 // {err}, and every signed-in player would show as a device not signed in; Codex review #775).
+// Until a read of it succeeds, every light read asks for it again (liveUsersDue): after a delete or an archive the
+// list held may still name the account (Codex review #775).
+let liveUsersDue = false;
 function liveUsers() {
   const U0 = USERS;
   return loadUsers(true).then(() => {
-    if ((!USERS || USERS.err) && U0 && !U0.err) USERS = U0;
+    liveUsersDue = !USERS || !!USERS.err;
+    if (liveUsersDue && U0 && !U0.err) USERS = U0;
   });
 }
 // The next light read, LIVE_READ.MS after the last read (the whole log's or a light one), or none while not wanted.
@@ -7354,7 +7358,7 @@ function liveRead() {
           known = new Map(U.map(u => [u.id, u.name]));
         // A signed-in player of the log the list does not hold (a new account, or an earlier read of the list that
         // failed): the list again, at each light read until it holds them (Codex review #775).
-        if ((ANS.all || ANS.rows || []).some(r => !r[11] && !known.has(r[0])))
+        if (liveUsersDue || (ANS.all || ANS.rows || []).some(r => !r[11] && !known.has(r[0])))
           liveUsers().then(() => cur === 'players/activity' && render());
         // A player's saved copy read for an unfolded session (achievements, cards, learned genera) follows their new
         // answers, as ↻ does (savedClear; Codex review #775).
