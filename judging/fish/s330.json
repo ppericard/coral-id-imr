@@ -107,6 +107,51 @@
   "fish-s330-cand-fb-Pabar_u1": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s330-cand-411368218": {
+   "code": "o0g1bmm1",
+   "keep": "best"
+  },
+  "fish-s330-cand-401448520": {
+   "code": "p1g1msm2",
+   "keep": "dup"
+  },
+  "fish-s330-cand-401448563": {
+   "code": "o1g1bm12",
+   "keep": "best"
+  },
+  "fish-s330-cand-401448600": {
+   "code": "p1g1ssm1",
+   "keep": "dup"
+  },
+  "fish-s330-cand-596512972": {
+   "code": "p1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s330-cand-596512974": {
+   "code": "p1g1ssm1",
+   "keep": "dup"
+  },
+  "fish-s330-cand-33341349": {
+   "code": "d1g0ss11",
+   "keep": "best"
+  },
+  "fish-s330-cand-411723702": {
+   "code": "o1g1bmm1",
+   "keep": "best"
+  },
+  "fish-s330-cand-596512975": {
+   "code": "p1g1smm2",
+   "keep": "best"
+  },
+  "fish-s330-cand-551266134": {
+   "code": "p1g2bm1j1",
+   "keep": "best",
+   "note": "Red body with a white saddle: likely night or resting colours, not a juvenile; tag kept as the harder value."
+  },
+  "fish-s330-cand-411367493": {
+   "code": "d1g0sl13",
+   "keep": "best"
   }
  }
 }

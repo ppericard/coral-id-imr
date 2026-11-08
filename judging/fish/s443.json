@@ -197,6 +197,26 @@
   "fish-s443-cand-10328741": {
    "code": "h0g0sl12",
    "keep": "best"
+  },
+  "fish-s443-cand-598452381": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s443-cand-428999643": {
+   "code": "o0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s443-cand-428999659": {
+   "code": "o0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s443-cand-428999673": {
+   "code": "p0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s443-cand-428999682": {
+   "code": "o0g1sm12",
+   "keep": "dup"
   }
  }
 }

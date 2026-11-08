@@ -111,6 +111,102 @@
   "fish-s096-cand-fb-Pymar_u0": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s096-cand-597957145": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s096-cand-727573014": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s096-cand-727573021": {
+   "code": "p1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s096-cand-575232807": {
+   "code": "o1g1sls3",
+   "keep": "best"
+  },
+  "fish-s096-cand-735598435": {
+   "code": "p1g1bm12",
+   "keep": "best"
+  },
+  "fish-s096-cand-327382008": {
+   "code": "o0g1bl12",
+   "keep": "best"
+  },
+  "fish-s096-cand-760160975": {
+   "code": "p1g0ssm2",
+   "keep": "best"
+  },
+  "fish-s096-cand-619822510": {
+   "code": "p1g0ssx1",
+   "keep": "best"
+  },
+  "fish-s096-cand-606356935": {
+   "code": "o1g1msx1",
+   "keep": "best"
+  },
+  "fish-s096-cand-588890331": {
+   "code": "o1g2mssj2",
+   "keep": "best"
+  },
+  "fish-s096-cand-629921116": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s096-cand-490118737": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s096-cand-303749887": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s096-cand-303749910": {
+   "code": "o1g1ss1j2",
+   "keep": "dup"
+  },
+  "fish-s096-cand-265235302": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s096-cand-597126992": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s096-cand-597126979": {
+   "code": "p1g0sl1j2",
+   "keep": "alt"
+  },
+  "fish-s096-cand-740793543": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s096-cand-436396746": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s096-cand-436396899": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s096-cand-588890483": {
+   "code": "o1g1bl1j1",
+   "keep": "best"
+  },
+  "fish-s096-cand-588890489": {
+   "code": "d1g1ms1j1",
+   "keep": "dup"
+  },
+  "fish-s096-cand-523264940": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s096-cand-598686683": {
+   "code": "p1g1sm14",
+   "keep": "best"
   }
  }
 }

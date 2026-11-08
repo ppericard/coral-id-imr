@@ -131,6 +131,103 @@
   "fish-s384-cand-493663277": {
    "code": "o1g1sm1c2",
    "keep": "best"
+  },
+  "fish-s384-cand-64550276": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s384-cand-50908816": {
+   "code": "h1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s384-cand-244489550": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s384-cand-629139901": {
+   "code": "o1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s384-cand-722309680": {
+   "code": "o0g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-722309686": {
+   "code": "p1g0sl1j2",
+   "keep": "best",
+   "note": "White body with red saddles: the juvenile pattern, though iNat gives no stage."
+  },
+  "fish-s384-cand-722309701": {
+   "code": "o0g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-722309709": {
+   "code": "h1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-628752146": {
+   "code": "o1g0sm1c2",
+   "keep": "best"
+  },
+  "fish-s384-cand-700289680": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s384-cand-700283924": {
+   "code": "o1g0sm1jc2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-49770690": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s384-cand-490331125": {
+   "code": "p1g1sl1c3",
+   "keep": "best"
+  },
+  "fish-s384-cand-726284568": {
+   "code": "o1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-726284560": {
+   "code": "h1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-726284584": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s384-cand-492258052": {
+   "code": "o1g1sl1c3",
+   "keep": "best"
+  },
+  "fish-s384-cand-700375231": {
+   "code": "o0g0ss1j1",
+   "keep": "best"
+  },
+  "fish-s384-cand-700375242": {
+   "code": "o0g0ss1j1",
+   "keep": "dup"
+  },
+  "fish-s384-cand-700375262": {
+   "code": "o0g0ss1j1",
+   "keep": "dup"
+  },
+  "fish-s384-cand-723449853": {
+   "code": "p1g0sl1j2",
+   "keep": "alt"
+  },
+  "fish-s384-cand-723449875": {
+   "code": "p1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-722309715": {
+   "code": "o0g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s384-cand-722309729": {
+   "code": "h1g0sl1j2",
+   "keep": "dup"
   }
  }
 }

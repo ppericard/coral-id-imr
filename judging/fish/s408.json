@@ -147,6 +147,119 @@
   "fish-s408-cand-54405772": {
    "code": "o1g1sl1c2",
    "keep": "best"
+  },
+  "fish-s408-cand-257152699": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s408-cand-309332241": {
+   "code": "p1g0sm1jc2",
+   "keep": "dup"
+  },
+  "fish-s408-cand-186052830": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s408-cand-186197724": {
+   "code": "o1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s408-cand-152623157": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s408-cand-141506085": {
+   "code": "o1d1bs1jc1",
+   "keep": "best"
+  },
+  "fish-s408-cand-108719077": {
+   "code": "p1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s408-cand-429599982": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s408-cand-30390687": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s408-cand-333616833": {
+   "code": "o1g0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s408-cand-333617243": {
+   "code": "o0g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s408-cand-333617245": {
+   "code": "o1g0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s408-cand-333617249": {
+   "code": "h1g0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s408-cand-717149098": {
+   "code": "o1d1sl1c2",
+   "keep": "best"
+  },
+  "fish-s408-cand-49661031": {
+   "code": "p1g0sm1j2",
+   "keep": "best",
+   "note": "iNat gives no stage; pale body with a tall dark dorsal like this species' juveniles."
+  },
+  "fish-s408-cand-719476914": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s408-cand-54492270": {
+   "code": "o1d2sl1c2",
+   "keep": "best"
+  },
+  "fish-s408-cand-49567409": {
+   "code": "p1d2sl1c2",
+   "keep": "best"
+  },
+  "fish-s408-cand-589251809": {
+   "code": "o1d1sm1c2",
+   "keep": "best"
+  },
+  "fish-s408-cand-61895497": {
+   "code": "o1g0ss1j1",
+   "keep": "best"
+  },
+  "fish-s408-cand-390643367": {
+   "code": "d1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s408-cand-390643168": {
+   "code": "p1g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s408-cand-390643166": {
+   "code": "p1g1ssxc1",
+   "keep": "dup"
+  },
+  "fish-s408-cand-498579759": {
+   "code": "p1d1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s408-cand-498579786": {
+   "code": "p1d1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s408-cand-290557931": {
+   "code": "d1g1sl13",
+   "keep": "alt"
+  },
+  "fish-s408-cand-333617250": {
+   "code": "h1g0sl1c2",
+   "keep": "alt"
+  },
+  "fish-s408-cand-333617255": {
+   "code": "h1g0sl1c2",
+   "keep": "dup"
   }
  }
 }

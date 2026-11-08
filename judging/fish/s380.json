@@ -151,6 +151,22 @@
   "fish-s380-cand-758823216": {
    "code": "o0g0sl13",
    "keep": "best"
+  },
+  "fish-s380-cand-743743772": {
+   "code": "p1g0sm1c3",
+   "keep": "best"
+  },
+  "fish-s380-cand-688926992": {
+   "code": "o1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-688926971": {
+   "code": "o0g0sl1c2",
+   "keep": "dup"
+  },
+  "fish-s380-cand-83681240": {
+   "code": "o1g1mm1c1",
+   "keep": "best"
   }
  }
 }

@@ -187,6 +187,38 @@
   "fish-s427-cand-fb-Symor_u0": {
    "code": "o1g0sl13",
    "keep": "best"
+  },
+  "fish-s427-cand-252021844": {
+   "code": "p1g0sm1c2",
+   "keep": "best"
+  },
+  "fish-s427-cand-758898751": {
+   "code": "p1g0sl1c3",
+   "keep": "alt"
+  },
+  "fish-s427-cand-758898757": {
+   "code": "p1g0sl1c3",
+   "keep": "dup"
+  },
+  "fish-s427-cand-758898759": {
+   "code": "p1g0sl1c3",
+   "keep": "dup"
+  },
+  "fish-s427-cand-758898773": {
+   "code": "p1g0sl1c3",
+   "keep": "dup"
+  },
+  "fish-s427-cand-689449869": {
+   "code": "o1g0sm14",
+   "keep": "best"
+  },
+  "fish-s427-cand-442134768": {
+   "code": "o0g0sl12",
+   "keep": "best"
+  },
+  "fish-s427-cand-252021840": {
+   "code": "p1g0sl15",
+   "keep": "best"
   }
  }
 }
