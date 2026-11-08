@@ -127,7 +127,7 @@ test('fishScoreTree on fish.json: every family of the slate, every game species 
     Tr = C.fishScoreTree(X, F),
     sp = new Map(F.species.map(s => [s.id, s])),
     game = F.families.flatMap(f => f.species.filter(id => sp.has(id))),
-    w = C.rankWeights(game.map(id => (sp.get(id).present || {}).dauin || 0)),
+    w = C.rankWeights(game.map(id => (sp.get(id).present || {}).dauinU || 0)),
     sum = a => a.reduce((t, x) => t + x, 0);
   assert.strictEqual(Tr.f.length, F.families.length);
   near(sum(Tr.s.map(e => e[0])), sum(w), 0.01);
@@ -135,6 +135,14 @@ test('fishScoreTree on fish.json: every family of the slate, every game species 
   // A family weighs the sum of its species' weights.
   const dam = F.families.find(f => f.id === 'f:Damselfishes');
   near(Tr.f.find(e => e[0] === dam.id)[1], sum(dam.species.map(id => w[game.indexOf(id)])), 1e-3);
+  // Observers, not observations (Codex review #730): a species photographed again and again by a few divers (Canthigaster
+  // valentini: about 240 observations from about 40 observers) weighs by its observers.
+  const wObs = C.rankWeights(game.map(id => (sp.get(id).present || {}).dauin || 0)),
+    cv = F.species.find(x => x.name === 'Canthigaster valentini'),
+    i = game.indexOf(cv.id),
+    fcv = F.families.find(f => f.species.includes(cv.id));
+  assert.ok(wObs[i] - w[i] > 0.2, `observations would weigh it ${wObs[i]}, observers ${w[i]}`);
+  near(Tr.f.find(e => e[0] === fcv.id)[1], sum(fcv.species.map(id => w[game.indexOf(id)])), 1e-3);
   // Packed: a genus unit of the game (circle 1) once per circle, the species without one under ''.
   assert.ok(Tr.s.every(e => e[1] === '' || gen[e[1]]));
   // A species with no common name in fish.json gets null (Q247), never packed with named ones.

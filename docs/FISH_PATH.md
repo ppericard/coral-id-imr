@@ -438,7 +438,7 @@ on families only to an IMR RA with every species open:
     today's bar and world (docs/LEARNING.md "Fish: the global score, built"), to honour "the score moves fast at the start
     and slowly after":
     - **Weights by commonness (A)**: each species weighs 1/√ of its rank by observers near Dauin (fish.json
-      `present.dauin`, the 40 km zone); tied counts share the mean of their ranks, so the species no one observed there
+      `present.dauinU`, its distinct Research Grade observers in the 40 km zone); tied counts share the mean of their ranks, so the species no one observed there
       (0) share the last ranks' mean and still count, the least (`core.js` `rankWeights`). Each family weighs the sum of
       its species' weights. The Entries part and the species credit are these weighted means.
     - **Square-root display (B)**: the % shown is 100 × √raw. Anchors: families only **50%**, families and every genus

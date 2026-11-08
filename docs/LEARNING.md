@@ -3018,8 +3018,10 @@ nouvelles manières de calculer les progrès et les scores"); a species with no 
 progress (fish)"):
 
 - Every unit keeps its own bar (`scoreOf`: the domain-score bar, 1 once its exam is passed), which drives its levels and
-  exam as before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
-- Species weight w = 1/√(rank by observers near Dauin, `present.dauin`), ties sharing their mean rank; a family weighs the
+  exam as before. The app shows the score, and sends its tree to the sheet, from a sheet reply with v ≥ `SCORE_SHEET`
+  (100; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
+- Species weight w = 1/√(rank by observers near Dauin, `present.dauinU`: distinct Research Grade observers within 40 km,
+  not observations, so a few keen photographers of one species do not weigh; Codex review #730), ties sharing their mean rank; a family weighs the
   sum of its species' weights, a genus too.
 - Per species: C = the mean of its common names' bars, S = max(its scientific name's bar, ½ × its genus's bar); credit =
   a·C + b·S + (1 − a − b)·C·S, a = 11/15, b = 0.8; a species with no common name: credit = S, out of the Common names
@@ -3053,24 +3055,27 @@ formula of 2026-11-04 ("Current"), A (commonness weights), B (√), C (the IMR c
 | Answers | Fam OW | Fam Adv | Genera | Sp. common | Sp. sci | Current | A | B | C | A+B |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 100 | 2 | 0 | 0 | 0 | 0 | 1.9% | 4.0% | 14% | 2.7% | 20% |
-| 300 | 10 | 0 | 0 | 0 | 0 | 5.3% | 8.0% | 23% | 7.4% | 28% |
-| 1,000 | 23 | 5 | 0 | 0 | 0 | 11% | 13% | 34% | 14% | 37% |
-| 3,000 | 45 | 15 | 0 | 1 | 0 | 21% | 22% | 46% | 22% | 47% |
-| 10,000 | 50 | 40 | 14 | 5 | 0 | 35% | 35% | 59% | 37% | 59% |
-| 30,000 | 50 | 46 | 54 | 27 | 4 | 48% | 47% | 69% | 52% | 68% |
-| 100,000 | 50 | 47 | 73 | 133 | 85 | 66% | 64% | 81% | 73% | 80% |
+| 300 | 10 | 0 | 0 | 0 | 0 | 5.3% | 7.8% | 23% | 7.4% | 28% |
+| 1,000 | 23 | 5 | 0 | 0 | 0 | 11% | 13% | 34% | 14% | 36% |
+| 3,000 | 45 | 15 | 0 | 1 | 0 | 21% | 21% | 46% | 22% | 46% |
+| 10,000 | 50 | 40 | 14 | 5 | 0 | 35% | 34% | 59% | 37% | 58% |
+| 30,000 | 50 | 46 | 54 | 27 | 4 | 48% | 46% | 69% | 52% | 68% |
+| 100,000 | 50 | 47 | 73 | 133 | 85 | 66% | 63% | 81% | 73% | 80% |
 
 Casual diver (common names only):
 
 | Answers | Fam OW | Fam Adv | Sp. common | Current | A | B | C | A+B |
 |---|---|---|---|---|---|---|---|---|
-| 100 | 1 | 0 | 0 | 0.8% | 1.6% | 8.9% | 1.1% | 13% |
+| 100 | 1 | 0 | 0 | 0.8% | 1.6% | 8.9% | 1.1% | 12% |
 | 300 | 5 | 0 | 0 | 2.8% | 5.0% | 17% | 3.9% | 22% |
 | 1,000 | 15 | 4 | 0 | 7.7% | 11% | 28% | 11% | 33% |
 | 3,000 | 40 | 13 | 0 | 18% | 19% | 42% | 19% | 43% |
-| 10,000 | 50 | 38 | 8 | 27% | 27% | 52% | 27% | 52% |
-| 30,000 | 50 | 45 | 57 | 38% | 37% | 62% | 40% | 60% |
+| 10,000 | 50 | 38 | 8 | 27% | 27% | 52% | 27% | 51% |
+| 30,000 | 50 | 45 | 57 | 38% | 36% | 62% | 40% | 60% |
 | 100,000 | 50 | 47 | 195 | 62% | 61% | 79% | 64% | 78% |
+
+The fish % shown until now (the families' mean) at the same answers: RA 8 / 21 / 44 / 72 / 90 / 97% (100 to 30,000
+answers), casual diver 3 / 11 / 30 / 67 / 90 / 96%.
 
 **The curves compared**: the formula of 2026-11-04 rises about 1 point per 100 answers at the start and 0.5-0.6 per 1,000
 past 10,000; A adds 1-4 points early (the common families open first and weigh more) and nothing late; C adds 1-4 points;
@@ -3083,14 +3088,14 @@ Answer at which it fires, median over the 6 simulated players [range], before an
 
 | Rule | Reads, before | Reads, after | IMR RA, before / after | Casual, before / after |
 |---|---|---|---|---|
-| Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [500-700] / 600 [450-1100] | 1,050 [800-1,100] / 1,000 [750-1,100] |
+| Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [500-700] / 650 [450-1,150] | 1,050 [800-1,100] / 1,000 [750-1,100] |
 | fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`) | the families' mean ≥ 25% | the global % ≥ 25% | 500 / 200 | 750 / 500 |
-| fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,400 / 4,900 | 2,150 / 8,150 |
+| fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,400 / 5,100 | 2,150 / 8,300 |
 | The fish leaderboard (Code.gs `board_`, v100) | the families' mean | the global % | | |
 | The header pill, My progress's ring, the update card | the families' mean | the global % | | |
 
 Other thresholds weighed for circle 3: the global % ≥ 33% (where the families' 50% falls: 31-34% at that answer; fires at
-about 700 / 1,100, between the 32% and 34% runs, but genera and later species would bring circle 3 sooner); 15 circle-1
+about 750 / 1,150, between the 32% and 34% runs, but genera and later species would bring circle 3 sooner); 15 circle-1
 families at Open Water (about 550 / 1,050, between the 14 and 16 runs).
 The circle-1 Entries component keeps the order "the IMR course's families first" whatever else the player learns.
 

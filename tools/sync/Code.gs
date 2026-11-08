@@ -4193,7 +4193,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // The tree of the fish global score (treeScore, SUBJECTS fish score; Pierre, 2026-11-08, Q242; docs/FISH_PATH.md
   // "My progress (fish)"): the families of the slate on the trunk, each weighted by the sum of its species' weights; on the
   // branches every species of those families, weighted by how common it is near Dauin (rankWeights over fish.json
-  // present.dauin, the observers within 40 km), with its units: its genus when the game has it as a unit (the scientific
+  // present.dauinU, its distinct Research Grade observers within 40 km: observers, not observations, so a few keen
+  // photographers of one species do not weigh; Codex review #730), with its units: its genus when the game has it as a unit (the scientific
   // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
   // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
   // The circle is the family's (treeScore by: the components per circle).
@@ -4202,7 +4203,7 @@ const CORE_ = (function () { const module = {exports: {}};
       fam = new Map((F.families || []).map(f => [f.id, f])),
       fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
       L = fams.flatMap(id => (fam.get(id).species || []).filter(x => sp.has(x)).map(x => [sp.get(x), id])),
-      w = rankWeights(L.map(([s]) => (s.present || {}).dauin || 0)),
+      w = rankWeights(L.map(([s]) => (s.present || {}).dauinU || 0)),
       fw = {},
       pack = new Map(),
       r4 = x => Math.round(x * 1e4) / 1e4,
@@ -5380,6 +5381,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
   // s.pg exactly as before (rule D4).
   const DOM_SHEET = 87;
+  // The sheet script that ranks a subject with a global score by it (Code.gs v100 board_, core.js treeScore): the app shows
+  // the score, and sends its tree, only from a reply with v >= SCORE_SHEET (model.js headScore, sync.js boardUnits; rule
+  // D4: the leaderboard and My progress on one scale; Codex review #730), before that the families' mean as before.
+  const SCORE_SHEET = 100;
   // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
   // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
@@ -6474,6 +6479,7 @@ const CORE_ = (function () { const module = {exports: {}};
     RT_SHEET,
     START_SHEET,
     DOM_SHEET,
+    SCORE_SHEET,
     LOG_SHEET,
     logOk,
     RTIME,

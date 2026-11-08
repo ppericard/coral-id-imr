@@ -255,6 +255,11 @@ const server = http.createServer((req, res) => {
     );
     FISH.c1.forEach(n => (st(n).ok = st(n).ok || 1));
     ok(FISH.c2.every(mayOpen) && !FISH.c3.some(mayOpen), 'circle 2 opens once every circle-1 family is asked, circle 3 still waits');
+    // The global score from the sheet script that ranks by it (core.js SCORE_SHEET, rule D4): before, the families' mean.
+    store.set(SHEETV, SCORE_SHEET - 1);
+    ok(headScore() === null && headPct() === progPct(), 'before SCORE_SHEET: the families mean, as before');
+    store.set(SHEETV, SCORE_SHEET);
+    ok(headScore() && headPct() === headScore().pct, 'from SCORE_SHEET: the global score');
     ok(!fishC3(), 'circle 1 under FISH_C3');
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
