@@ -1335,8 +1335,19 @@ const WIDTHS = [390, 1280];
               )
               .catch(() => fe.push(`#${h}: nothing drawn`));
             return fq.evaluate(() => {
+              // the fish words (core.js SUBJECTS analyses one, many) left aside: a "genus" left is a coral word
               const V = document.getElementById('view'),
-                t = V.textContent + [...V.querySelectorAll('[title]')].map(e => e.getAttribute('title')).join(' ');
+                W = ASUBJ.analyses || {},
+                t = [V.textContent, ...[...V.querySelectorAll('[title]')].map(e => e.getAttribute('title'))]
+                  .join(' ')
+                  .split(W.one || '\u0000')
+                  .join(' ')
+                  .split(W.many || '\u0000')
+                  .join(' ')
+                  .split(W.one ? W.one[0].toUpperCase() + W.one.slice(1) : '\u0000')
+                  .join(' ')
+                  .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
+                  .join(' ');
               return {
                 badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
                 none: /No report yet/.test(V.textContent),
@@ -1364,7 +1375,7 @@ const WIDTHS = [390, 1280];
             const H = await fq.evaluate(() =>
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h)))
             );
-            if (H.length !== 9 || H.some(h => /photos$|pairs$|answer-log$|stops$/.test(h))) fe.push(`its views ${H.join(' ')}`);
+            if (H.length !== 10 || H.some(h => /photos$|pairs$|answer-log$|stops$/.test(h))) fe.push(`its views ${H.join(' ')}`);
             for (const h of vw === 1280 ? H : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
               at = await look('fish/' + h);
               if (at.none || !/^Fish: /.test(at.badge) || at.words || at.ids.length || at.coral || at.wide > 0)
