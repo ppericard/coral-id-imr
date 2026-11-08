@@ -816,7 +816,9 @@ def run(args):
             for c in C:
                 items(c, got[c["s"]["inat"]])
                 c["pmore"][ph] = more[c["s"]["inat"]]
-            have_ph = lambda c: sum(len(it["P"]) for it in c["all"].values() if ph in item_phases(it) and it["tier"] != "world")
+            # What the Philippines bring to the phase, counted as the room is (obs_cost; Codex review #715).
+            have_ph = lambda c: sum(obs_cost(c["held"].get(obs_url(it["id"]), 0), len(it["P"])) for it in c["all"].values()
+                                    if ph in item_phases(it) and it["tier"] != "world")
             W = [c for c in C if (c["s"].get("present") or {}).get("ph")
                  and (c["near"] or (not c["pmore"][ph] and have_ph(c) < c["R"]["rooms"][ph]))]
             if W:

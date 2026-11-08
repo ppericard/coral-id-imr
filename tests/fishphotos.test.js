@@ -432,6 +432,73 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
+test('phase searches abroad (Codex review #715): the Philippines fill a phase as obs_cost counts, so one observation of 10 juvenile photos leaves the search abroad open', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishobsph-'));
+  const fish = {
+    species: [{id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}}],
+    teach: [{id: 't1', name: 'Juvenile fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1']}]
+  };
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs, fields=FIELDS): c[API + q + '&fields=' + fields] = {'total': len(obs), 'results': obs}
+Q = queries(501)
+for k in ('own', 'dauin', 'region', 'ph', 'world'):
+    put(Q[k], [])
+J = (1, 8)
+put(phase_query('juvenile', [501], 'ph'), [{**ob(21, an=[J], ll=(14.6, 121.0), n=10), 'tx': [501]}], fields=FIELDS + ',taxon.ancestor_ids')
+put(phase_query('juvenile', [501], 'world'), [{**ob(i, an=[J], ll=(-8.5, 115.2), inph=False), 'tx': [501]} for i in (31, 32)], fields=FIELDS + ',taxon.ancestor_ids')
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const argv = [
+    ['--fish', 'fish.json'],
+    ['--cand', 'fish-cand.json'],
+    ['--cur', 'none.json'],
+    ['--suggest', 'none.json'],
+    ['--cache', 'cache.json']
+  ].flatMap(([f, x]) => [f, path.join(dir, x)]);
+  const plan = JSON.parse(execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--plan'], {cwd: ROOT, encoding: 'utf8'}));
+  // The juvenile room is 10: the 10 photos of 21 take 4 of it, so the two juveniles from abroad come too.
+  assert.deepStrictEqual(plan.species.s1.rooms, {juvenile: 10});
+  assert.deepStrictEqual(plan.species.s1.add, {ph: 10, world: 2});
+  assert.deepStrictEqual(plan.species.s1.spent, {free: 0, juvenile: 6});
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('judging_fish.py: an observation whose best Pierre already added gets its other photos judged against it (Codex review #715)', () => {
+  const out = J(`import judging_fish as JF
+JF.SP = {'s1': {'id': 's1', 'name': 'Fishus fishii'}}
+JF.ENTRY = {}
+JF.CUR = {'add': {'fish-s1-cand-10': 's1'}}
+JF.CAND = {'s1': [{'f': f'fish-s1-cand-{i}', 'o': f'obs{i // 10}'} for i in (10, 11, 12, 20)]}
+J = lambda k: {'code': 'p1g0sm14', 'keep': k}
+files = {
+  'dup': {'photos': {'fish-s1-cand-11': J('dup'), 'fish-s1-cand-12': J('alt'), 'fish-s1-cand-20': J('best')}},
+  'better': {'photos': {'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('dup'), 'fish-s1-cand-20': J('best')}},
+  'two': {'photos': {'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('best'), 'fish-s1-cand-20': J('dup')}},
+}
+JF.load = lambda p, d=None: files[mode] if p.startswith('judging/fish/') else d
+R = []
+for mode in files:
+    R.append(JF.check('s1')[0])
+G = [[[p['f'] for p in c], [p['f'] for p in w]] for c, w in JF.groups('s1')]
+print(json.dumps([R, G]))`);
+  const [[dup, better, two], G] = out;
+  assert.deepStrictEqual(dup, [], 'its new photos may all be dup or alt of the photo Pierre added');
+  assert.deepStrictEqual(better, [], 'or one of them better (best)');
+  assert.strictEqual(two.length, 2);
+  assert.match(two[0], /obs1: 2 photos marked best; at most one/);
+  assert.match(two[1], /obs2: 0 photos marked best; exactly one/);
+  // The sheet shows the photo Pierre added first, as context.
+  assert.deepStrictEqual(G, [
+    [['fish-s1-cand-10'], ['fish-s1-cand-11', 'fish-s1-cand-12']],
+    [[], ['fish-s1-cand-20']]
+  ]);
+});
+
 test('judging_fish.py sheets: an observation never split over two sheets, so its near-duplicates are side by side', () => {
   const out = J(`import judging_fish as JF
 g = lambda o, k: [f'{o}.{i}' for i in range(k)]

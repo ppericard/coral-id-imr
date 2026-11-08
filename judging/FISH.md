@@ -180,6 +180,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    - `code`: the code of "Tags" above, ease included (`p1g0sm14`). The tool adds the phase flag `p` and applies the caps.
    - `keep`: `best` (exactly one per observation: its most useful photo), `alt` (the same fish, adding something:
      another side, another phase or pose, other light), `dup` (adds nothing over the best: a burst, the same framing).
+     An observation of which Pierre already added a photo (its other photos come at a later run) shows that photo
+     first on its sheet, marked as context and not to judge: its new photos are judged against it, at most one of
+     them `best` (when it beats his), none needed.
    - `phase` (optional): the sex or colour phase the IMR fish presentation names for the entry (`fish.json`
      `teach[].phase`) when the photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile
      is the code's `j` flag; an adult needs no tag.

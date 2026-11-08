@@ -82,6 +82,27 @@ def cands(sid):
     return [p for p in CAND.get(sid, []) if p["f"] not in done]
 
 
+def added(sid):
+    """{observation: [its photos Pierre added to species sid]}: an observation whose other photos come later (every photo
+    of an observation is a candidate since Pierre, 2026-11-08) already has a photo in play, its best so far. They are
+    shown first on its sheet as context, never judged again (Codex review #715)."""
+    A = CUR.get("add") or {}
+    out = OrderedDict()
+    for p in CAND.get(sid, []):
+        if A.get(p["f"]) == sid:
+            out.setdefault(p["o"], []).append(p)
+    return out
+
+
+def groups(sid):
+    """The contact sheets' groups of species sid, observation by observation: (context, waiting) per observation with a
+    photo waiting, context being the photos of it Pierre already added (added)."""
+    A, G = added(sid), OrderedDict()
+    for p in cands(sid):
+        G.setdefault(p["o"], []).append(p)
+    return [(A.get(o, []), L) for o, L in G.items()]
+
+
 def fetch(p, size="medium"):
     out = P("judging", "fish", "img", f"{p['f']}{'-l' if size == 'large' else ''}.jpg")
     if os.path.exists(out) and os.path.getsize(out):
@@ -148,21 +169,22 @@ def sheet(sid, k, L, start=0):
 
 def cmd_sheets(names):
     for sid in names:
-        L = cands(sid)
-        if not L:
+        G = groups(sid)
+        if not G:
             continue
         s = SP.get(sid, {})
-        G = OrderedDict()
-        for p in L:
-            G.setdefault(p["o"], []).append(p)
-        L = [p for g in G.values() for p in g]  # observation by observation
-        print(f"## {sid} {s.get('name')} ({s.get('common', '')}): {len(L)} photos in {len(G)} observations")
+        ctx = {p["f"] for c, _ in G for p in c}
+        L = [p for c, w in G for p in c + w]  # observation by observation, what Pierre added first
+        print(f"## {sid} {s.get('name')} ({s.get('common', '')}): {len(L) - len(ctx)} photos to judge in {len(G)} observations"
+              f"{f', {len(ctx)} added by Pierre shown as context' if ctx else ''}")
         n = 0
-        for k, S in enumerate(pack(list(G.values()))):
+        for k, S in enumerate(pack([c + w for c, w in G])):
             print(sheet(sid, k, S, n))
             n += len(S)
         for i, p in enumerate(L, 1):
             extra = [p.get("loc", ""), p.get("lic", "")] + (["own"] if p.get("own") else []) + ([f"iNat: {p['st']}"] if p.get("st") else [])
+            if p["f"] in ctx:
+                extra.append("added by Pierre: context, not to judge")
             print(f"  {i} {p['f']}  obs {p['o'].rsplit('/', 1)[-1]}  ({', '.join(x for x in extra if x)})")
 
 
@@ -218,9 +240,13 @@ def check(sid):
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
     obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict)}
+    A = added(sid)
     for o in obs:
-        if len(best.get(o, [])) != 1:
-            E.append(f"{sid}: observation {o}: {len(best.get(o, []))} photos marked best; exactly one")
+        nb = len(best.get(o, []))
+        if o in A and nb > 1:
+            E.append(f"{sid}: observation {o}: {nb} photos marked best; at most one (Pierre added one of its photos)")
+        elif o not in A and nb != 1:
+            E.append(f"{sid}: observation {o}: {nb} photos marked best; exactly one")
     return E, j
 
 
