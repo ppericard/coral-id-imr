@@ -8,33 +8,33 @@ presence.json = {v, date, sp: {species name (as iNaturalist writes it on the pho
 confirmed, by = the rule's reasons (observers, checklist, near), rg = Research Grade observations in the Philippines, chk =
 Corals of the World lists it for a Philippine ecoregion. One species per line.
 
-iNaturalist: per genus (its taxon as tools/taxonomy.json gives it: no search by name), two batched species counts (the Philippines, 40 km around Dauin) and an observers query only for
-a species neither the checklist nor near Dauin settles; about one request a second, a User-Agent, every reply cached in
-tools/.cache/presence.json (git-ignored): a rerun is offline and identical; --refresh asks again, --offline never asks.
+iNaturalist: every genus (its taxon as tools/taxonomy.json gives it: no search by name) at once, two batched species
+counts (the Philippines, 40 km around Dauin) and the distinct observers only of a species neither the checklist nor near
+Dauin settles, counted together for the species with few observations (tools/presence.py species_presence_many); through
+tools/inat.py (about one request a second, the project's User-Agent, 429 / 5xx retried after a pause; rule C7), every
+reply cached in tools/.cache/presence.json (git-ignored): a rerun is offline and identical; --refresh asks again,
+--offline never asks.
 Usage: python3 tools/coral_presence.py [--offline | --refresh]
 """
 import datetime
 import json
 import sys
-import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import load_all  # noqa: E402
-from presence import listed, species_presence  # noqa: E402
+import inat  # noqa: E402  (the one paced, retried iNaturalist client)
+from presence import listed, species_presence_many  # noqa: E402
 from taxonomy import inat_taxon  # noqa: E402  (the iNaturalist taxon of each genus, tools/taxonomy.json)
 
 OUT = ROOT / "presence.json"
 CACHE = ROOT / "tools" / ".cache" / "presence.json"
-UA = {"User-Agent": "coral-id-imr/1.0", "Accept": "application/json"}
 
 
 class Net:
     def __init__(self, offline, refresh):
-        self.offline, self.refresh, self.last = offline, refresh, 0.0
+        self.offline, self.refresh = offline, refresh
         self.c = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
         self.asked = set()
 
@@ -43,21 +43,7 @@ class Net:
             return self.c[url]
         if self.offline:
             sys.exit(f"--offline: not cached: {url}")
-        for wait in (5, 15, 30, 60, 0):
-            time.sleep(max(0.0, self.last + 1.0 - time.time()))
-            self.last = time.time()
-            try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
-                    v = json.load(r)
-                break
-            except urllib.error.HTTPError as e:
-                if not wait or not (e.code == 429 or e.code >= 500):
-                    raise
-            except (urllib.error.URLError, TimeoutError):
-                if not wait:
-                    raise
-            print(f"  iNaturalist busy, waiting {wait} s", file=sys.stderr)
-            time.sleep(wait)
+        v = inat.get(url)  # paced, 429 / 5xx retried after a pause (rule C7)
         self.c[url], _ = v, self.asked.add(url)
         return v
 
@@ -84,11 +70,14 @@ def build(net):
     d = load_all()
     names, _ = photo_species(d)
     sp = {}
+    tids = {g: inat_taxon(g, "coral") for g in sorted(names)}
+    # Every genus at once (rule C7): the same counts as one genus at a time, in a few requests.
+    many = species_presence_many(net.get, [t for t in tids.values() if t], "coral", "&captive=false")
     for g in sorted(names):
-        tid = inat_taxon(g, "coral")
+        tid = tids[g]
         if not tid:
             print(f"{g}: no active iNaturalist taxon in tools/taxonomy.json (run python3 tools/taxonomy.py)", file=sys.stderr)
-        pres = species_presence(net.get, tid, "coral", "&captive=false") if tid else {}
+        pres = many.get(tid, {}) if tid else {}
         for n in sorted(names[g]):
             v = pres.get(n) or {"rg": 0, "chk": listed("coral", [n]), "by": []}
             sp[n] = {"ok": bool(v["by"]), "by": v["by"], "rg": v["rg"], "chk": v["chk"]}

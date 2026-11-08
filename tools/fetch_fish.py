@@ -72,7 +72,10 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   runs --topup over every species of its circles: the other photos of the observations fetched under the old limit of 4
   per observation (topup; one request per 200 such observations).
 
-Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
+Network: iNaturalist API v2 (only the fields used), read only, through tools/inat.py (about one request a second, the
+project's User-Agent, 429 / 5xx retried after a pause; rule C7). The general searches of many species are asked together
+(prefetch: taxon_id=a,b,c, BATCH_PAGES pages at most), each species' share answering its own search exactly as
+iNaturalist would; a species with many observations keeps its own search.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
 file; --refresh asks again (new observations), --offline never asks (fails on a reply not cached), --plan prints as JSON,
 offline, per species its cap, its phases (with what records each), the photos it keeps per phase and the room per phase,
@@ -109,8 +112,7 @@ TAXA = "https://api.inaturalist.org/v2/taxa/"
 FIELDS = ("id,quality_grade,location,place_ids,taxon.id,taxon.name,taxon.rank,user.login,photos.id,photos.url,"
           "photos.license_code,photos.attribution,annotations.controlled_attribute_id,annotations.controlled_value_id,"
           "annotations.vote_score")
-UA = {"User-Agent": "coral-id-imr/1.0", "Accept": "application/json"}
-PAUSE = 1.0  # iNaturalist asks for at most about one request per second
+import inat  # noqa: E402  the one paced, retried iNaturalist client (rule C7): about one request a second, a User-Agent
 DAUIN = (9.19, 123.26)
 DAUIN_KM, REGION_KM = 40, 250  # as tools/fetch_local.py
 PH = 6873  # iNaturalist place: the Philippines
@@ -155,7 +157,7 @@ DEAD = (17, 19)
 # observations with a very easy photo (ease >= EASY_E) in play or sure to come: model.js easyFirst shows a unit's very
 # easy photos (PDIFF.EARLY, 4) until it reaches Open Water, or its PICKD.VARIETY (3) easiest when it has fewer.
 EASY_E, EASY_NEED = 4, 3
-REFILL_MAX = 40  # species refilled per run at most (rule C7: about 6 requests each, the shortest first)
+REFILL_MAX = 40  # species refilled per run at most (rule C7: about 2 requests each, the general searches batched; the shortest first)
 RECHECK_DAYS = 30  # a part of a species' room searched to the end is searched again after this many days
 GEN_PAGES = 5  # pages of 200 read per general search in a refill at most (id_below), while it brings too few photos
 REFILL = ROOT / "tools" / "fish_refill.json"  # what was searched to the end, per species (in the repo)
@@ -227,31 +229,36 @@ class Net:
         self.path, self.offline, self.refresh, self.plan = Path(cache), offline, refresh, plan
         self.c = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {}
         self.asked, self.new, self.missing = set(), 0, 0
+        self.virtual = {}  # a one-species search: every observation it holds, newest first (prefetch)
+
+    def need(self, url):
+        """url would be asked (not cached, or --refresh and not asked yet in this run)."""
+        return url not in self.c or (self.refresh and url not in self.asked)
 
     def get(self, q, fields=FIELDS):
-        return self.fetch(API + q + "&fields=" + fields,
-                          lambda d: {"total": d.get("total_results", 0), "results": [trim(o) for o in d.get("results") or []]})
+        url = API + q + "&fields=" + fields
+        base, _, below = q.partition("&id_below=")
+        if fields == FIELDS and base in self.virtual and self.need(url):
+            # Answered from the prefetch, as iNaturalist answers it: newest first, 200 a page, the total from id_below on.
+            R = [o for o in self.virtual[base] if not below or o["id"] < int(below)]
+            v = self.c[url] = {"total": len(R), "results": R[:200]}
+            self.asked.add(url)
+            return v
+        return self.fetch(url, lambda d: {"total": d.get("total_results", 0), "results": [trim(o) for o in d.get("results") or []]})
 
     def fetch(self, url, keep):
         """The reply to url, kept as keep(reply) in the cache (asked again with --refresh, never with --offline)."""
-        if url in self.c and not (self.refresh and url not in self.asked):
+        if not self.need(url):
             return self.c[url]
         if self.plan:
             self.missing += 1
             return None
         if self.offline:
             sys.exit(f"--offline: not cached: {url}")
-        for k in range(6):
-            time.sleep(PAUSE)
-            try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
-                    d = json.load(r)
-                break
-            except (OSError, ValueError) as e:  # URLError, a reset connection, a timeout, bad JSON: retried
-                print(f"  retry {url[:120]} ({e})", file=sys.stderr)
-                time.sleep(10 * (k + 1))
-        else:
-            raise RuntimeError(f"failed: {url}")
+        try:
+            d = inat.get(url)  # paced; a 429, a 5xx, a network error or a cut reply retried after a pause
+        except (OSError, ValueError) as e:
+            raise RuntimeError(f"failed: {url} ({e})") from e
         v = keep(d)
         self.c[url] = v
         self.asked.add(url)
@@ -284,6 +291,70 @@ def pages(net, q, enough, n=GEN_PAGES):
         res += last["results"]
         n -= 1
     return {"total": len(res) + max(0, last["total"] - len(last["results"])), "results": res}
+
+
+# The general searches of several species asked together (rule C7; #784): the
+# species with at most BATCH_SOLO observations in a search (species_counts says) share one search, read to its end
+# (BATCH_PAGES pages of 200 at most, BATCH_TAXA taxa a search), and each one's share answers its own search (Net.virtual):
+# the same observations, newest first, as iNaturalist answers the one-species search. The others keep their own search.
+BATCH_TAXA, BATCH_PAGES, BATCH_SOLO = 50, 5, 150
+
+
+def _counts(d):
+    """A species_counts reply trimmed to what the prefetch reads (the cache keeps it)."""
+    return {"total_results": d.get("total_results", 0), "results": [
+        {"count": r.get("count", 0), "taxon": {"id": (r.get("taxon") or {}).get("id"),
+                                               "ancestor_ids": (r.get("taxon") or {}).get("ancestor_ids") or []}}
+        for r in d.get("results") or []]}
+
+
+def prefetch(net, taxa, kinds):
+    """Asks the searches `kinds` (queries) of the iNaturalist taxa `taxa` together where that saves requests, into
+    net.virtual. Only searches a run would ask (Net.need); never in a --plan or --offline run (they read the cache only).
+    Returns the number of one-species searches answered this way."""
+    if net.plan or net.offline or BATCH_SOLO <= 0:  # BATCH_SOLO 0: every species asks on its own (tests)
+        return 0
+    done = 0
+    for k in kinds:
+        url = lambda x, k=k: API + queries(x)[k] + "&fields=" + FIELDS  # noqa: E731
+        want = sorted({x for x in taxa if net.need(url(x))})
+        if len(want) < 2:
+            continue
+        est = inat.leaf_counts(lambda u: net.fetch(u, _counts), want, queries("0")[k], estimate=True)
+        small = sorted((x for x in want if est[x] <= BATCH_SOLO), key=lambda x: (est[x], x))
+        batches, B, n = [], [], 0
+        for x in small:
+            if B and (n + est[x] > 200 * BATCH_PAGES or len(B) >= BATCH_TAXA):
+                batches.append((B, n))
+                B, n = [], 0
+            B.append(x)
+            n += est[x]
+        if B:
+            batches.append((B, n))
+        for B, n in batches:
+            if max(1, math.ceil(n / 200)) >= len(B):
+                continue  # no fewer requests than each species alone
+            q = queries(",".join(map(str, B)))[k]
+            got, below, end = {x: [] for x in B}, None, False
+            for _ in range(BATCH_PAGES):
+                d = net.get(q + (f"&id_below={below}" if below else ""), FIELDS + ",taxon.ancestor_ids")
+                if not d or (below is None and d["total"] > 200 * BATCH_PAGES):
+                    break  # more than species_counts said (an observed subspecies): each species asks on its own
+                if any(not o.get("tx") for o in d["results"]):
+                    break  # an observation whose taxon is not said: each species asks on its own
+                for o in d["results"]:
+                    for x in dict.fromkeys(o["tx"]):
+                        if x in got:
+                            got[x].append({a: v for a, v in o.items() if a != "tx"})
+                if len(d["results"]) < 200 or len(d["results"]) >= d["total"]:
+                    end = True
+                    break
+                below = min(o["id"] for o in d["results"])
+            if end:
+                for x in B:
+                    net.virtual[queries(x)[k]] = got[x]
+                done += len(B)
+    return done
 
 
 def queries(tid):
@@ -793,8 +864,13 @@ def run(args):
         return {"covers": len(cov), "tagged": n}
     ctx = []
     try:
+        S = species_list(fish, set(args.circle), only)
+        # The general searches of the species with room, asked together where that saves requests (rule C7).
+        prefetch(net, [s["inat"] for s, t in S if species_room(s, t, have.get(s["id"], []), gone, sugf, game.get(s["id"], ()),
+                                                              (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap)["room"] > 0],
+                 ["own", *TIERS])
         # 1. Per species: its cap, phases and room (species_room), and the general searches.
-        for s, t in species_list(fish, set(args.circle), only):
+        for s, t in S:
             sid = s["id"]
             L = have.setdefault(sid, [])
             R = species_room(s, t, L, gone, sugf, game.get(sid, ()), (fbsrc.get(sid) or {}).get("photos") or (), moved, args.cap)

@@ -7,12 +7,14 @@
 # of the old near-book wording); boxes come from the book's A-Z index pages placed in the front-page key ranges.
 # Photos: iNaturalist, open licences, Dauin first then the Philippines, shown straight from iNaturalist (r: 1).
 # Run from the repo root: python3 tools/build_extra.py
-import json, time, urllib.request
+# iNaturalist through tools/inat.py (rule C7): about one request a second, the project's User-Agent, 429 / 5xx retried;
+# the genera's families in one request per 30 taxa.
+import json
+import inat
 from datajson import dump  # the one data.json layout (one genus per line)
 from fetch_local import LIC, photo_ok  # accepted licences, never share-alike (Pierre, 2026-11-05)
-UA = {'User-Agent': 'coral-id-imr/1.0'}
 DAUIN, PH = 'lat=9.19&lng=123.26&radius=40', 'place_id=6873'
-get = lambda u: json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
+get = inat.get
 
 # genus: (A-Z index pages, traits, criteria after the book in our own words, two short ID tips). Traits use the site's clue ids
 # (sizes = Coral Finder box thresholds; walls = IMR slide 14 wording, set from the book's text).
@@ -91,10 +93,12 @@ def agree(o, tid):
     return len({i['user']['login'] for i in ids if i['taxon']['id'] == tid or tid in (i['taxon'].get('ancestor_ids') or [])})
 
 out, leaf = {}, {}
+TID = {g: taxon(g)['id'] for g in X}
+FAM = {t['id']: next((a['name'] for a in t['ancestors'] if a['rank'] == 'family'), '')
+       for B in inat.chunks(sorted(set(TID.values())), 30) for t in get('https://api.inaturalist.org/v1/taxa/' + ','.join(map(str, B)))['results']}
 for g, (pages, tr, crit, qt) in X.items():
-    t = taxon(g); tid = t['id']
-    fam = get(f'https://api.inaturalist.org/v1/taxa/{tid}')['results'][0]
-    fam = next((a['name'] for a in fam['ancestors'] if a['rank'] == 'family'), '')
+    tid = TID[g]
+    fam = FAM[tid]
     pres = get(f'https://api.inaturalist.org/v1/observations?taxon_id={tid}&{DAUIN}&per_page=200')['results']
     rg = sum(o['quality_grade'] == 'research' for o in pres); two = sum(agree(o, tid) >= 2 for o in pres)
     if not rg and not two: print('NOT PRESENT', g); continue
@@ -113,7 +117,6 @@ for g, (pages, tr, crit, qt) in X.items():
             # An observation's first photo is usually the colony, its last a close-up (as in fetch_local.py).
             views['medium'].append(mk(P[0]))
             if len(P) > 1: views['macro'].append(mk(P[-1]))
-        time.sleep(0.5)
     L = leaves_for(pages)
     for l in L: leaf.setdefault(l, []).append(g)
     lk = LOOK.get(g, {})
@@ -122,7 +125,6 @@ for g, (pages, tr, crit, qt) in X.items():
     for k in ('views', 'cover', 'levels', 'plain'):
         if k in OLD.get(g, {}): out[g][k] = OLD[g][k]
     print(g, fam, L, 'rg', rg, 'two', two, 'photos', sum(map(len, views.values())))
-    time.sleep(0.5)
 # Coral Finder front page: the last group (book p. 77-78) is not in the IMR key, so it is added here.
 groups = [{'id': 'N', 'name': 'Blue, fire, organ pipe corals', 'sub': 'Not true hard corals: they build skeletons and look coral-like', 'color': 'other',
            'leaves': [{'id': 'N1', 't': 'Blue, fire and organ pipe corals, lace corals, spiculites', 's': None, 'a': 77, 'b': 78, 'g': []}]}]

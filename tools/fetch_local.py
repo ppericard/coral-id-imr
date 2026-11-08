@@ -36,7 +36,8 @@
 # --tidy: offline, refills nothing: only puts back the photos Pierre restored, drops the excluded photos and the waiting
 # share-alike candidates, and re-splits data.json / cand.json (tidy(), which every refill ends with), so the lists follow
 # a Publish without asking iNaturalist.
-import json, re, sys, time, urllib.error, urllib.request
+import json, re, sys, urllib.request
+import inat  # the one paced, retried iNaturalist client (rule C7)
 from collections import Counter
 from datajson import load_all, dump_all, curated  # data.json + cand.json (candidates waiting live in cand.json)
 from excluded import excluded, drop_excluded, restore_unexcluded, load_gone, save_gone, set_aside, SUG
@@ -44,7 +45,7 @@ from genera import key_only, cap_sheet
 from presence import confirmed_species  # the presence rule, defined once
 from taxonomy import inat_taxon  # the iNaturalist taxon of each genus, from tools/taxonomy.json
 from rights import licence, rights_rank  # a photo's licence and its rights tie-break (Q270), as core.js licOf / rightsRank
-UA = {'User-Agent': 'coral-id-imr/1.0'}
+UA = {'User-Agent': inat.UA}
 LIC = 'cc-by,cc-by-nc,cc0'  # never share-alike (Pierre, 2026-11-05): cc-by-sa and cc-by-nc-sa left out
 LICS = set(LIC.split(','))
 # Trusted identifiers (Pierre, 2026-11-05): `thamnasteroid` is by far the top identifier of stony corals in the
@@ -68,28 +69,16 @@ def flag(name, default):
 PHILIPPINES = 'place_id=6873'
 POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philippines candidates
 # iNaturalist slows clients down with HTTP 429 ("normal_throttling"): the Candidate photos Action of 2026-11-04 died on
-# one after a curation publish, so Pierre's added photos were not downloaded. Every request now waits PACE seconds after
-# the last (iNaturalist asks for about one a second) and, on 429, 5xx or a network error, waits (Retry-After when given,
-# else WAITS) and tries again, failing only after the last wait.
-PACE, WAITS = 1.0, (5, 15, 30, 60, 120)
-_last = [0.0]
+# one after a curation publish, so Pierre's added photos were not downloaded. Every request goes through tools/inat.py
+# (rule C7, shared by every iNaturalist tool): it waits PACE (1 s) after the last one and, on 429, 5xx or a network
+# error, waits (Retry-After when given, else WAITS: 5, 15, 30, 60, 120 s) and tries again, failing only after the last.
+# The searches below are one per genus and source on purpose: they are in votes order, and iNaturalist orders the
+# observations of equal votes in no fixed way, so a search over several genera at once would not give each genus the
+# same 200 (measured 2026-11-08, #784). The presence rule's counts are batched.
 
 
 def get(u):
-    for k in range(len(WAITS) + 1):
-        time.sleep(max(0.0, _last[0] + PACE - time.time()))
-        _last[0] = time.time()
-        try:
-            return json.load(urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60))
-        except urllib.error.HTTPError as e:
-            if k == len(WAITS) or not (e.code == 429 or e.code >= 500): raise
-            ra = (e.headers or {}).get('Retry-After') if hasattr(e, 'headers') else None
-            wait = int(ra) if ra and str(ra).isdigit() else WAITS[k]
-        except (urllib.error.URLError, TimeoutError):
-            if k == len(WAITS): raise
-            wait = WAITS[k]
-        print(f'  iNaturalist busy, waiting {wait} s (try {k + 2} of {len(WAITS) + 1})', file=sys.stderr)
-        time.sleep(wait)
+    return inat.get(u)
 
 
 def tie_key(o, P, rank):

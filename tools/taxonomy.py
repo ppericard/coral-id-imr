@@ -65,6 +65,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import genera  # noqa: E402  (the game genera, defined once in core.js)
+import inat  # noqa: E402  (the one paced, retried client, rule C7: WoRMS 0.3 s, iNaturalist 1 s between requests)
 from datajson import load_all  # noqa: E402  (data.json with the candidates of cand.json)
 
 OUT = ROOT / "tools" / "taxonomy.json"
@@ -72,11 +73,8 @@ NAMES = ROOT / "names.json"  # the admin's extract (names_extract)
 CACHE = ROOT / "tools" / ".cache" / "taxonomy.json"
 CHECKLISTS = ROOT / "tools" / "presence_checklists.json"
 V = 1
-UA = {"User-Agent": "coral-id-imr/1.0 (IMR Reef ID; tools/taxonomy.py)", "Accept": "application/json"}
 WORMS = "https://www.marinespecies.org/rest/"
 INAT = "https://api.inaturalist.org/v1/"
-PAUSE = {WORMS: 0.3, INAT: 1.0}
-WAITS = (5, 15, 30, 60, 120)
 BATCH_WORMS, BATCH_INAT, PAGE_INAT = 50, 30, 500
 IMR_SAYS = re.compile(r"\bformerly\b|\bnow includes?\b", re.I)  # the IMR lecture's own lines about former names
 
@@ -126,7 +124,6 @@ class Net:
         self.offline, self.refresh, self.path, self.new, self.asked = offline, refresh, Path(path), 0, set()
         self.c = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {}
         self.today = today or time.strftime("%Y-%m-%d")
-        self.last = 0.0
 
     def dates(self):
         return dict(self.c.get("_dates") or {})
@@ -137,28 +134,7 @@ class Net:
         if self.offline:
             sys.exit(f"--offline: not cached: {url}")
         base = WORMS if url.startswith(WORMS) else INAT
-        for k in range(len(WAITS) + 1):
-            time.sleep(max(0.0, self.last + PAUSE[base] - time.time()))
-            self.last = time.time()
-            try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
-                    body = r.read()
-                v = json.loads(body) if body.strip() else None
-                break
-            except urllib.error.HTTPError as e:
-                if e.code in (204, 404):
-                    v = None
-                    break
-                if k == len(WAITS) or not (e.code == 429 or e.code >= 500):
-                    raise
-                ra = (e.headers or {}).get("Retry-After")
-                wait = int(ra) if ra and str(ra).isdigit() else WAITS[k]
-            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
-                if k == len(WAITS):
-                    raise
-                wait = WAITS[k]
-            print(f"  busy, waiting {wait} s: {url[:100]}", file=sys.stderr)
-            time.sleep(wait)
+        v = inat.get(url, missing=True)  # paced per host, 429 / 5xx retried after a pause (Retry-After when given); 204 / 404: None
         self.c[url] = v
         self.c.setdefault("_dates", {})["worms" if base == WORMS else "inat"] = self.today
         self.asked.add(url)

@@ -34,25 +34,17 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump, load  # noqa: E402  (the one writer of data.json's layout)
 import genera  # noqa: E402  (the game genera as core.js gameOf)
+import inat  # noqa: E402  (the one paced, retried iNaturalist client)
 
-UA = {"User-Agent": "coral-id-imr/1.0"}
 API = "https://api.inaturalist.org/v1/"
 CNIDARIA = 47534  # Millepora is a hydrozoan and Heliopora an octocoral: not under Scleractinia
 NEAR = "lat=9.19&lng=123.26&radius=40&verifiable=true"
 
 
-def _get(path, tries=5):
-    """One iNaturalist call, ~0.5 s apart, retried with a growing pause on any error."""
-    for k in range(tries):
-        try:
-            time.sleep(0.5)
-            req = urllib.request.Request(API + path, headers=UA)
-            return json.load(urllib.request.urlopen(req, timeout=60))
-        except Exception as e:  # noqa: BLE001  (network, HTTP 429/5xx, bad JSON: all retried)
-            if k == tries - 1:
-                raise
-            print(f"  retry {path[:60]}... ({e})", file=sys.stderr)
-            time.sleep(3 * (k + 1))
+def _get(path):
+    """One iNaturalist call through tools/inat.py: about one a second, the project's User-Agent, 429 / 5xx and network
+    errors retried after a pause (rule C7)."""
+    return inat.get(API + path)
 
 
 def taxon(name, inactive=False):
