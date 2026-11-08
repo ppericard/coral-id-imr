@@ -65,6 +65,34 @@ test('a run: the same seed gives the same run, and learncmp reads every measure 
   assert.deepStrictEqual(a.knows.sort(), X.c1.slice().sort());
 });
 
+test('the corals: the slate and the bonus genera as the app builds them, a run with its kinds', () => {
+  const U = RW.unitsOf('coral');
+  assert.strictEqual(U.slate.length, 40);
+  assert.ok(U.slate.includes('Millepora') && U.extra.length > 0);
+  assert.ok(U.views('Acropora').wide.length > 0 && U.views('Acropora').medium.length > 0);
+  const W = RW.world(U, 1),
+    g = U.slate.map(n => W.mu[n]);
+  assert.ok(Math.abs(sd(g) - RW.RATED.CORAL_GD) < 0.15, String(sd(g)));
+  const W37 = RW.world(U, 1, 'normal', {coralSd: 0.37}),
+    g37 = U.slate.map(n => W37.mu[n]);
+  assert.ok(Math.abs(sd(g37) / sd(g) - 0.37 / RW.RATED.CORAL_GD) < 1e-9);
+  const a = RW.runOne(null, {subject: 'coral', profile: 'strongRA', seed: 2, N: 100, cps: [100]});
+  assert.deepStrictEqual(Object.keys(a.rows[0].kinds).sort(), ['bonus', 'genus']);
+  assert.strictEqual(a.rows[0].score.entries, undefined); // no global score: the units' mean
+  assert.ok(a.knows.length >= 24 && a.knows.length < 30, String(a.knows.length));
+});
+
+test('the item learner: its gain depends on the answer; the count learner learns the same whatever the answer', () => {
+  const run = learner => RW.runOne(null, {subject: 'fish', profile: 'beginner', seed: 4, N: 150, cps: [150], learner});
+  const c = run('count'),
+    i = run('item');
+  // Same world, same first answers' draws: the two learners part only through what they learn.
+  assert.strictEqual(c.pi, i.pi);
+  assert.notDeepStrictEqual(c.rows[0].knowSlate, i.rows[0].knowSlate);
+  assert.strictEqual(RW.ITEM.MISS, 1.5);
+  assert.strictEqual(RW.ITEM.PICKED, 0.5);
+});
+
 // Codex review #787: the question as quiz.js planPhoto builds it (k from the traps, the hold's ease and the mix-ups in the
 // photo's aim), and the recent observations quiz.js answer records.
 test('the question: every choice counts from 2 traps, the hold and the mix-ups aim the photo lower', () => {
@@ -110,4 +138,21 @@ test('the last two observations shown are recorded, as photoSet reads them', () 
   const run = RW.runOne(X, {profile: 'expert', seed: 6, N: 60, cps: [60], keep: true});
   const ro = Object.values(run.P).filter(x => x && Array.isArray(x.ro));
   assert.ok(ro.length > 3 && ro.every(x => x.ro.length <= 2), String(ro.length));
+});
+
+// Codex review #789: the judge reads only the photos the game may ask, and a typed miss may name any unit of the rank.
+test('D* over the game photos only; a typed miss on a slate genus may name a bonus genus', () => {
+  const U = RW.unitsOf('coral'),
+    {ctx, G} = RW.engine(U, RW.world(U, 1)),
+    all = [...new Set(['wide', 'medium', 'macro'].flatMap(v => G.Millepora.views[v] || []))],
+    ok = RW.judgePhotos(ctx, G, 'Millepora');
+  assert.ok(ok.length > 0 && ok.length < all.length, `${ok.length} of ${all.length}`);
+  ok.forEach(p => assert.ok(ctx.gamePhotoOk('Millepora', p)));
+  const b = U.extra[0],
+    o = RW.typedOthers(G, ['Acropora', 'Porites', b], 'Acropora', () => true);
+  assert.deepStrictEqual(o, ['Porites', b]);
+  const F = RW.unitsOf('fish'),
+    g = F.extra[0],
+    fo = RW.typedOthers(RW.engine(F, RW.world(F, 1)).G, [F.slate[0], F.slate[1], g], F.slate[0], () => true);
+  assert.deepStrictEqual(fo, [F.slate[1]]); // a family's typed miss names a family, never a genus
 });
