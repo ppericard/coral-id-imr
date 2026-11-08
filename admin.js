@@ -1639,7 +1639,13 @@ const modeKey = () =>
 // Pierre's click only) and × (fishExclude), one click and one Undo step each. The family's choices go to curation.json
 // fish genera keyed by family id (fishPick), through the draft and Publish only (rule A1); ✓ Validated once fishNeeds has
 // nothing to say. A wink family shows its surprise card first, as players meet it. Fish data load once (fishLoad).
-const fuJ = f => ((SUG && SUG.fish) || {})[f] || null;
+// A photo's judgment: the pass's (suggest.json), else the game record's own ease and tags (a reference photo is judged
+// outside suggest.json; fish-game.json keeps its e and jt).
+const fuJ = f => {
+  const g = ((FISHC && FISHC.gj) || {})[f],
+    j = ((SUG && SUG.fish) || {})[f];
+  return g && j ? {...g, ...j} : j || g || null;
+};
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
 // The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
 const FU_TAGS = [
@@ -1674,6 +1680,18 @@ function fuData() {
     gone = [];
   Object.entries(F.add || {}).forEach(([f, sid]) => {
     if (fishOn(F, f, sid)) (play[sid] = play[sid] || []).push(FISHC.byF[f] || {f});
+  });
+  // Everything else the game plays (the sure candidates and the reference photos that enter by themselves): a photo once,
+  // under its photo id, Pierre's add (the draft's) first.
+  const seen = new Set(
+    Object.values(play)
+      .flat()
+      .map(p => fishPid(p.f))
+  );
+  fishGameIn(FISHC.plays, DRAFT).forEach(p => {
+    if (seen.has(fishPid(p.f))) return;
+    seen.add(fishPid(p.f));
+    (play[p.sp] = play[p.sp] || []).push(p);
   });
   Object.entries(F.out || {}).forEach(([f, to]) => {
     const p = FISHC.byF[f];
@@ -1714,17 +1732,17 @@ function fuTile(sid, p, st, cover, picked, F, XI) {
     ${st.num ? `<span class="adm-num">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption><span class="adm-src o-${o}">${esc((ASUBJ.admin.origins.find(y => y[0] === o) || [, o])[2])}</span>${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span></figcaption>
-    <div class="adm-acts"><button type="button" data-fu="feat" aria-pressed="${!!st.num}" title="Feature">Feature</button><button type="button" data-fu="cover" aria-pressed="${!!(isCover && picked)}" title="Cover">★ Cover</button><button type="button" data-fu="remove" title="Remove">Remove</button><button type="button" data-fu="not" title="Not this species">Not this</button></div></figure>`;
+    <div class="adm-acts"><button type="button" data-fu="feat" aria-pressed="${!!st.num}" title="Feature">Feature</button><button type="button" data-fu="cover" aria-pressed="${!!(isCover && picked)}" title="Cover">★ Cover</button><button type="button" data-fu="remove" title="Remove">Remove</button>${FISHC.byF[p.f] ? '<button type="button" data-fu="not" title="Not this species">Not this</button>' : ''}</div></figure>`;
 }
 // The wink's surprise card as players meet it (quiz.js winkShow): its photo, "Which family?", its name among the three
 // absurd choices (the right one marked), and both feedback lines.
 const fuWink = (u, cover) =>
   `<section class="adm-row adm-wink"><h3>Wink <small>a surprise card, never counted</small></h3><div class="adm-winkc">${cover && cover.src ? `<img ${crSrc(fuP(cover), 1)} alt="">` : '<span class="none"></span>'}<div><p class="adm-winkq">Which ${esc(ASUBJ.one)}? <span class="adm-src">Surprise</span></p><div class="adm-winka">${[[u.id, u.name], ...(u.wink.choices || [])].map(([id, l]) => `<span class="${id === u.id ? 'ok' : ''}">${esc(l)}</span>`).join('')}</div>${u.wink.right ? `<p><b>✓</b> ${esc(u.wink.right)}</p>` : ''}${u.wink.wrong ? `<p><b>✗</b> ${esc(u.wink.wrong)}</p>` : ''}</div></div></section>`;
 function renderFishUnits(id) {
-  if (!FISHC) {
+  if (!FISHC || !FISHC.plays) {
     status();
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad().then(() => under(cur, FAMS) && render());
+    fishLoad(true).then(() => under(cur, FAMS) && render());
     return;
   }
   const U = FISHC.units;
@@ -1888,10 +1906,10 @@ function renderFishUnits(id) {
 // look (the species most worth a candidate search, fishLook; ?look=all, every one).
 let FISHCOV = Object.assign({lv: 'fam', order: 'thin'}, store.get('reefid-admin-fishcov', {}));
 function renderFishCov() {
-  if (!FISHC) {
+  if (!FISHC || !FISHC.plays) {
     status();
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad().then(() => cur === 'inbox/coverage/games' && render());
+    fishLoad(true).then(() => cur === 'inbox/coverage/games' && render());
     return;
   }
   status();
@@ -2022,10 +2040,10 @@ const frevRow = (name, at, opts, v, auto) =>
     .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
     .join('')}</span>`;
 function renderFishReview(kind) {
-  if (!FISHC) {
+  if (!FISHC || !FISHC.plays) {
     status();
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad().then(() => cur.startsWith('photos/review/') && render());
+    fishLoad(true).then(() => cur.startsWith('photos/review/') && render());
     return;
   }
   status();
@@ -2186,10 +2204,10 @@ function renderFishReview(kind) {
 // in curation.json fish mont {pair: {v, a, b, hide}} (the coral key names), through the draft and Publish (rule A1).
 const FMONT_T = {adult: 'Adult', juvenile: 'Juvenile', all: 'All'};
 function renderFishMont() {
-  if (!FISHC) {
+  if (!FISHC || !FISHC.plays) {
     status();
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad().then(() => cur === 'photos/look-alikes' && render());
+    fishLoad(true).then(() => cur === 'photos/look-alikes' && render());
     return;
   }
   status();
@@ -4849,24 +4867,42 @@ function autoRun() {
 let FISHC = null; // {cand, species} once loaded
 // The fish candidates and species, fetched once (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, or an
 // Undo needs a candidate's species).
-async function fishLoad() {
-  if (FISHC) return FISHC;
+// withGame (the fish pages): also the photos the game plays (fish-game.json, 3 MB), so that counts and lists show every photo
+// in play whatever its route (Pierre's adds, the sure candidates and the reference photos that enter by themselves),
+// not curation.json's adds alone. Not fetched for the auto-sort's own use of FISHC.
+let FISHL = null, // the one initial load, shared by every caller (the auto-sort's and a page's)
+  FISHG = null;
+async function fishLoad(withGame) {
   const get = u =>
     fetch(u, {cache: 'no-cache'})
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}));
-  const [C, F] = await Promise.all([get('fish-cand.json'), get('fish.json')]);
-  return (FISHC = {
-    units: fishUnits(F),
-    groups: Object.fromEntries(((F.key || {}).groups || []).map(g => [g.n, g.title])),
-    cand: C.cand || {},
-    species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
-    // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
-    entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
-    // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
-    game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
-    byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
-  });
+  if (!FISHC)
+    await (FISHL =
+      FISHL ||
+      Promise.all([get('fish-cand.json'), get('fish.json')]).then(([C, F]) => {
+        FISHC = {
+          units: fishUnits(F),
+          groups: Object.fromEntries(((F.key || {}).groups || []).map(g => [g.n, g.title])),
+          cand: C.cand || {},
+          species: Object.fromEntries((F.species || []).map(x => [x.id, x])),
+          // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
+          entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
+          // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
+          game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
+          byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
+        };
+      }));
+  if (withGame && !FISHC.plays)
+    await (FISHG =
+      FISHG ||
+      get('fish-game.json').then(G => {
+        const L = Object.values((G && G.photos) || {}).flat();
+        // The judgment a game record carries (a reference photo is judged outside suggest.json), with its resolved phase.
+        FISHC.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
+        FISHC.plays = L;
+      }));
+  return FISHC;
 }
 async function fishAutoRun() {
   if (!TOKEN || !DRAFT || !Object.keys((SUG && SUG.fish) || {}).length) return null;

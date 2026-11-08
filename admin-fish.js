@@ -194,10 +194,15 @@ const fishName = sid => {
   return {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
 };
 // The photos of a species in play (Pierre's keep holds the add), its own candidates first, then any other photo added to it.
-const fishInPlay = (F, sid) =>
-  Object.entries(F.add || {})
-    .filter(([f, s]) => s === sid && fishOn(F, f, sid))
-    .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG.fish || {})[f]}) || {f});
+const fishInPlay = (F, sid) => {
+  const L = Object.entries(F.add || {})
+      .filter(([f, s]) => s === sid && fishOn(F, f, sid))
+      .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG.fish || {})[f]}) || {f}),
+    seen = new Set(L.map(p => fishPid(p.f)));
+  // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
+  fishGameIn(FISHC.plays, {...DRAFT, fish: F}).forEach(p => p.sp === sid && !seen.has(fishPid(p.f)) && seen.add(fishPid(p.f)) && L.push(p));
+  return L;
+};
 // One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (Pierre's ✕
 // Reject on it: off the species, a correction when the auto-sort had proposed it).
 function fishZoom(p, sid, inPlay, blind) {
@@ -307,14 +312,14 @@ function bindFishAuto(scope) {
 }
 function renderFishCand() {
   status();
-  if (!FISHC) {
+  if (!FISHC || !FISHC.plays) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    fishLoad().then(() => cur === 'photos/candidates' && ASUBJ.admin.cur && render());
+    fishLoad(true).then(() => cur === 'photos/candidates' && ASUBJ.admin.cur && render());
     return;
   }
   const F = DRAFT.fish || {},
     SF = (SUG && SUG.fish) || {},
-    Q0 = fishQueue(FISHC.cand, SF, FISHC.species, F),
+    Q0 = fishQueue(FISHC.cand, SF, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
     Q1 = FQ === 'chk' ? chks : Q0,
     shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),
