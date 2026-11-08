@@ -783,9 +783,16 @@ const server = http.createServer((req, res) => {
     const hc = await q.evaluate(() => {
       const g = FISH.gen['f:' + decodeURIComponent(location.hash.split('/').pop())],
         h = document.querySelector('#view .hero-ph img');
-      return !g || !g.coverP ? null : {want: img(g.coverP, 's'), got: h ? h.getAttribute('src') : ''};
+      // By photo, not by address: a photo's address moves from R2 to its iNaturalist original when R2 fails mid-run
+      // (core.js photoUrl fallback), so the same cover can show under either.
+      const id = String((g && g.coverP && g.coverP.f) || ''),
+        got = h ? h.getAttribute('src') : '',
+        alt = id.replace(/^fi(\d+)$/, 'photos/$1/');
+      return !g || !g.coverP
+        ? null
+        : {want: img(g.coverP, 's'), got, same: !!id && (got.includes(id) || (alt !== id && got.includes(alt)))};
     });
-    if (hc && hc.want !== hc.got) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
+    if (hc && hc.want !== hc.got && !hc.same) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
     // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
     const mk = await q.evaluate(() => {
       const m = document.querySelector('#view .fmarks');
