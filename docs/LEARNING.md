@@ -4525,20 +4525,56 @@ code or the docs unless marked *inferred*):
 
 | | The app world | The rated world |
 | --- | --- | --- |
-| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | a Node mode of learnsim (to build; until then the scratch harness, "Fish: the global score, built") |
+| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | `node tools/learnsim.js --world rated --subject fish` (`tools/ratedworld.js`; the corals next) |
 | Photos | the real pools, the app's estimate or `--truth` | d = μ(unit) + ε, ε ~ N(0, 0.46²) (the coral photo spread of the Analyses tab); heavy tails: 15% of the photos +1.5, or a scaled t with 3 degrees of freedom; judged ease e = round(3 − (ε + N(0, 0.35²)) / 0.5) on 1-5 |
 | Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ the spread of the sheet's `gd` (to measure) |
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
 | The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
 | Learner | item (default), field, exemplar | by the number of answers, and one whose gain depends on the answer and its feedback (as the item learner's) |
 | Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
-| Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | 4 profiles × 20 seeds × 2 arms × 3,000 answers in under a minute |
+| Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | about 4 s per 300 answers and 80-160 s per 3,000 per worker on a loaded machine (the app's own `photoSet` on pools of up to 1,600 photos); the scratch harness, which did not run it, took under a minute for 4 × 20 × 2 × 3,000 |
 
 The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
 `OPEN.K`, a card every 2 answers, at most 3 openings in 15, `RARE`) and runs the real `core.js` (`domStep`,
 `treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.js` does, so the draw is the
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
+
+**The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
+are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
+cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.
+A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π;
+the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
+the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
+genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the
+domain-score bar, the global level, rule L2), so the aim, the start's lean, `photoSet` (Gaussian choice, `RARE`, the
+floor), typed questions, `drawW`, `shaky`, `openChance`, `openPace`, `openRight`, `openPick`, the opening hold and the
+exam are the app's own. Only the planner is written there, as `quiz.js` `planPhoto` reads: the first cards, a card when
+the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
+`distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
+every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
+`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
+true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
+photo statistics, as the fish today; the sheet's photo Elo is not simulated). `--dist normal|tail|t3`. Circle 3 stays
+closed unless `--beyond yes`, as in the app world (its offer left unanswered). The scientific names' offer, once a family
+is at Advanced, is accepted, except by the casual diver. The learner: the profile's know per unit (`tools/learnprof.js`,
+as the app world), the run's π, recognition sig(logit know + π − d − 0.5) on the true difficulty d of the photo shown,
+else a guess among the choices (typed: "I don't know" half the time); it learns by the number of answers (rate × (1 −
+know) per answer on the unit and per card). D\*: its mean chance on each of the unit's game photos alone. Rows hold what
+learncmp reads (`dStar`, `knowSlate`, `met`, `right`, `prog`, `f`, `kinds`, `score`, `plateau`; per run `owAt`, `advAt`,
+`c3`, `expo`, `preOW`), at the guardrails' checkpoints (100, 300, 1,000, 3,000, 10,000, 30,000) up to the horizon.
+
+```
+node tools/learnsim.js --world rated --subject fish --seeds 10 --questions 3000 --out before.json [--dist tail] [--app own]
+node tools/learncmp.js before.json after.json --primary score@3000:up
+```
+
+First numbers (2026-11-08, told the truth, normal photos, 5 seeds, π −1.26 to 0.25), at 1,000 answers: the beginner
+31.6% shown (17.8 families at Open Water, 77% right over answers 301-1,000), the lecture RA 36.6% (24.6 families, 77%
+right). The app world's of 2026-11-08 above (before #727, the earlier profiles): 37% and 41%, 75-81% right. So the rated
+world reads about 5 points lower, the right rate within the range; the same check on today's app world with these
+profiles is in the PR that built it (#787).
 
 **Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
 levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
