@@ -3773,17 +3773,35 @@ array, so nothing changes for them), the prior (`core.js` `MEM.PRIOR`) for any o
 rates fish photos (ROADMAP admin plan PR 11). Checked by `tests/fishmemory.test.js` (a fish draw, expectation and
 recalculation run with a `PMEM` that throws on any read; the corals' read `PMEM` itself).
 
-- **Learning outcomes** (rule L11 level 1: one subject, the offsets of the few answers on a photo already seen;
-  `tools/learnsim.js --subject fish --stats` with the live `?stats=1` of 2026-11-08, 4 profiles × 5 seeds × 300
-  questions, before (#776, e62256e) and after on the same seeds; declared before running: primary true knowledge at
-  300, non-inferiority at −0.02; paired difference after − before, one-sided 90% bounds). Primary held: knowSlate
-  +0.0009 (bound −0.0004; 0.379 → 0.383 / 0.538 → 0.538 / 0.706 → 0.706 / 0.944 → 0.944, beginner / lecture RA /
-  strong RA / expert; sign-flip p 0.40). Guardrails held: prog − know −0.0015 (over-claim bound +0.0099, margin +0.03);
-  units met at 100 +0.05 (bound −0.02), at 300 identical (32); share under ease 4 before Open Water −0.001 (bound
-  +0.003). The effect is small because repeats are rare in the fish pools (about 2% of the first 300 questions show a
-  photo already seen). **The corals, identical**: the same run on `--subject coral`, same stats and seeds,
-  gives the same 300 answers in every run (genus, answer, photos, choices, expectation, scoring record; only the answer
-  id and the wall-clock time differ) and the same rows and summary (knowSlate 0.686 / 0.758 / 0.856 / 0.954, met 40).
+- **Learning outcomes** (rule L11 level 1: one subject, the offsets of the few answers on a photo already seen).
+  `tools/learnsim.js --subject fish --stats` with the live `?stats=1` of 2026-11-08, the five fish profiles × 5 seeds ×
+  300 questions, before (main 71b6b42) and after (3ca9f0c) on the same seeds, judged by `tools/learncmp.js`; declared
+  before running: primary `know@300:up` (none expected: a leak fix, its guardrail the non-inferiority check). Look 1
+  (25 pairs) left the answers to the first family at Open Water breached for the beginner (+39) and the casual diver
+  (+22), each from one seed (61 → 261 and 62 → 170 answers; the other 8 pairs equal or better), and the families at Open
+  Water unclear for three profiles, so, one step up, a second look declared before it ran: beginner, casual diver and
+  lecture RA on seeds 6-15 (55 pairs in all, `--looks 2`: 95% bounds, the primary at 0.025). Paired difference after −
+  before [bound on the side of harm], beginner / casual diver / lecture RA / strong RA / expert:
+
+  | Guardrail | Margin | Difference [bound] | Verdict |
+  | --- | --- | --- | --- |
+  | True knowledge @300 (primary: no clear difference, p 0.036) | −0.02 | +0.003 [0.000] / −0.001 [−0.002] / +0.001 [0.000] / 0 [−0.001] / 0 [0] | held |
+  | E = bar − D\* @300 | +0.03 | −0.024 [−0.005] / −0.001 [+0.016] / −0.001 [+0.004] / −0.001 [+0.002] / 0 [+0.001] | held |
+  | Answers to the first family at Open Water | +19.5 / +12 / +10 / +10 / +10 | +10.5 [+37.5] / +9.1 [+22.0] / 0 / 0 / 0 | unclear for the beginner and the casual diver, else held |
+  | Families at Open Water @300 | −2 | −0.6 [−1.8] / −0.2 [−1.1] / −0.1 [−0.8] / 0 [−0.7] / 0 | held |
+  | Longest plateau of the shown score | +10 / +10 / +9 / +10 / +9 | +11 [+17] / +2 [+8] / +1 [+2] / −3 [+2] / 0 | **breached for the beginner** (50 → 61 answers), else held |
+  | Share under ease 4 before Open Water @300 | +0.05 | −0.002 to +0.001, bounds ≤ +0.005 | held |
+  | Families met @100, @300 | −2 | +0.3 to 0; 32 at 300 in every run | held |
+
+  What it says: the beginner's bar runs a little lower (E −0.336 → −0.360), its longest flat stretch of the shown score
+  about 11 answers longer and its first Open Water later on average: the corals' +0.43 for a photo shown and missed made
+  a later right answer on it count as a hard question, the prior's −0.5 counts it as the easier question memory makes
+  it (in this learner's world memory adds +0.4 there, and on the real log below such photos were 92% right against 74%
+  expected with the corals' offset, 86% with the prior's). A cost the change brings, not declared before running, so
+  it goes to Pierre (rule L11). **The corals, identical**: the same runs on `--subject coral` (4 profiles × 5 seeds,
+  71b6b42 → 3ca9f0c; and before on e62256e) give the same 300 answers in every run (genus, answer, photos, choices,
+  expectation, scoring record; only the answer id and the wall-clock time differ) and the same rows and summary
+  (knowSlate 0.686 / 0.814 / 0.859 / 0.954, met 40).
 - **On the real log** (rule L12, read-only, the Answers tab read 2026-11-08 20:57 Manila: 1,536 scored fish answers of
   9 players, 45 of them on a photo already seen, bucket from the logged `f`; the expectation recomputed with the
   prior's offset in place of the logged one):
