@@ -3034,10 +3034,6 @@ td.cov-c .cov-off {
   width: auto;
   display: inline;
 }
-.adm-rephead .adm-tdone {
-  margin-left: auto;
-  font-weight: 700;
-}
 .adm-repwho.unv {
   color: var(--muted, #667);
   font-weight: 600;
@@ -3066,6 +3062,76 @@ td.cov-c .cov-off {
 .adm-repline {
   margin: 4px 0;
   font-size: var(--fs-s);
+}
+/* A report's action bar (Q309): its status (Done, Stand-by, Dismiss, Reopen once handled), then the tools it can use
+   (Journey, the unit's page, Open page, Attach a photo); one line on a desktop, wrapped on a phone. */
+.adm-repbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 2px;
+}
+.adm-repbar .adm-repst {
+  margin: 0;
+}
+.adm-repbar .adm-repst button,
+.adm-repbar .chip {
+  min-height: 32px;
+}
+.adm-repbar .chip {
+  padding: 0 12px;
+}
+.adm-repbar button.chip[aria-expanded='true'] {
+  background: var(--surface-2);
+}
+/* Stand-by, Done and Dismissed reports: muted, below the open ones. */
+.adm-rep[data-rs='wait'],
+.adm-rep[data-rs='done'],
+.adm-rep[data-rs='drop'] {
+  color: var(--muted);
+}
+.adm-repfold {
+  margin: 12px 0;
+}
+/* Attach a photo: the unit picker, then the unit's photos to pick one. */
+.adm-reppick {
+  margin: 8px 0 2px;
+}
+.adm-reppick select {
+  font: inherit;
+  margin: 0 0 8px;
+}
+.adm-reppgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.adm-reppgrid .adm-ph {
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+  aspect-ratio: 4 / 3;
+  cursor: pointer;
+}
+.adm-reppgrid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 599px) {
+  .adm-repbar .adm-repst {
+    display: flex;
+    flex: 1 0 100%;
+  }
+  .adm-repbar .adm-repst button {
+    flex: 1;
+  }
 }
 .adm-qhead:has([data-rload]) {
   display: flex;

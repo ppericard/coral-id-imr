@@ -2700,12 +2700,15 @@ const WIDTHS = [390, 1280];
         // Sheet v55: a report an account deleted with its answers kept left behind reads "From a removed account", no id.
         if (!/From a removed account/.test(await text()) || /~deleted/.test(await text()))
           fails.push(`${w}px To do › Reports: a removed account's report is not shown as such`);
-        // A fish report (Codex review #442): the fish entry by its IMR name and its iNaturalist photo, not an empty tile.
+        // A fish report (Codex review #442) on the fish side (Q309, rule A4: the reports follow the Corals | Fish switch): the
+        // fish entry by its IMR name and its iNaturalist photo, not an empty tile; none of the fish reports on the corals' side.
+        if (/Demo fish/.test(await text())) fails.push(`${w}px To do › Reports: a fish report on the corals' side`);
+        await go('fish/inbox/todo/reports');
         {
           const fr = await p
             .waitForFunction(
               () => {
-                const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report/.test(x.textContent));
+                const c = [...document.querySelectorAll('.adm-rep')].find(x => /Demo fish report: not a/.test(x.textContent));
                 const im = c && c.querySelector('.adm-tile img');
                 return c && im && /Damselfishes \(fish\)/.test(c.textContent) ? im.getAttribute('src') : false;
               },
@@ -2716,7 +2719,258 @@ const WIDTHS = [390, 1280];
             .catch(() => null);
           if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
         }
+        await reportsBar();
       }
+      // One action bar on every report (Q309), at every width: its status (Done, Stand-by, Dismiss), on one card, never
+      // wider than it, on both sides.
+      for (const side of ['', 'fish/']) {
+        await go(side + 'inbox/todo/reports');
+        const bar = await p.evaluate(() =>
+          [...document.querySelectorAll('#view .adm-rep')].map(c => {
+            const b = c.querySelector('.adm-repbar'),
+              r = c.getBoundingClientRect();
+            return {
+              id: c.dataset.rep,
+              st: b ? [...b.querySelectorAll('[data-rst]')].map(x => x.dataset.rst).join() : '',
+              wide: !!b && (b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > r.right + 1),
+              out: r.right > innerWidth + 1
+            };
+          })
+        );
+        const bad = bar.filter(x => x.st !== 'done,wait,drop' || x.wide || x.out);
+        if (bar.length < 3 || bad.length)
+          fails.push(`${w}px To do › Reports (${side || 'corals'}): action bars ${JSON.stringify(bad)} of ${bar.length}`);
+        const sx = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+        if (sx > 1) fails.push(`${w}px To do › Reports (${side || 'corals'}): ${sx}px of horizontal scroll`);
+      }
+    }
+    // The reports' action bar (Q309), once: status, the tools each report can use, the list following the subject switch.
+    async function reportsBar() {
+      const card = id => `#view .adm-rep[data-rep="${id}"]`;
+      const info = id =>
+        p.evaluate(sel => {
+          const c = document.querySelector(sel);
+          if (!c) return null;
+          const a = q => c.querySelector(q);
+          return {
+            rs: c.dataset.rs,
+            pressed: (a('[data-rst][aria-pressed="true"]') || {}).dataset?.rst || '',
+            sts: [...c.querySelectorAll('[data-rst]')].map(x => x.dataset.rst).join(),
+            journey: a('[data-rj]') && a('[data-rj]').getAttribute('href'),
+            unit: a('[data-ru]') && [a('[data-ru]').textContent, a('[data-ru]').getAttribute('href')],
+            page: a('[data-rp]') && a('[data-rp]').getAttribute('href'),
+            attach: !!a('[data-ratt]'),
+            tiles: [...c.querySelectorAll('.adm-tile')].map(t => t.dataset.f),
+            coralTools: !!a('.adm-tile [data-act="hide"]'),
+            pick: c.querySelectorAll('[data-rpf]').length,
+            unitSel: !!a('[data-rpunit]'),
+            where: (a('.adm-where') || {}).textContent || '',
+            fold: !!c.closest('details[data-repfold]') && c.closest('details[data-repfold]').dataset.repfold,
+            afterWait: !!c.closest('#view') && [...document.querySelectorAll('#view [data-repsec="wait"] ~ .adm-rep')].includes(c)
+          };
+        }, card(id));
+      const st = id =>
+        p.evaluate(id => ({s: repStatus(DRAFT, id), seen: !!(DRAFT.seen || {})['rep:' + id], reps: (DRAFT.reps || {})[id] || ''}), id);
+      await go('inbox/todo/reports');
+      // The corals' side: the corals' reports and those about no subject (Home's feedback), no fish one.
+      const t0 = await text();
+      if (!/a timer in the quiz/.test(t0) || /Demo fish/.test(t0)) fails.push(`To do › Reports, corals: not its subject's reports only`);
+      // A game report from a player: Journey, the genus page, the page it came from, its photo with the genus page's tools.
+      let r = await info('demorep0');
+      if (
+        !r ||
+        r.sts !== 'done,wait,drop' ||
+        r.journey !== '#players/list/journey/Ben%20Demo' ||
+        !r.unit ||
+        r.unit[0] !== 'Open genus' ||
+        !/^#photos\/genera\/live\//.test(r.unit[1]) ||
+        r.page !== 'index.html#practice/quiz' ||
+        r.attach ||
+        !r.tiles.length ||
+        !r.coralTools
+      )
+        fails.push(`To do › Reports, a game report's bar: ${JSON.stringify(r)}`);
+      // Stand-by: below the open ones, never thanked (not in seen); Publish counts it.
+      const h0 = await p.evaluate(() => HIST.length);
+      await p.click(card('demorep0') + ' [data-rst="wait"]');
+      await settle();
+      r = await info('demorep0');
+      let s = await st('demorep0');
+      const sum = await p.evaluate(() => pubSummary());
+      if (
+        s.s !== 'wait' ||
+        s.seen ||
+        s.reps !== 'wait' ||
+        !r ||
+        r.rs !== 'wait' ||
+        r.pressed !== 'wait' ||
+        !r.afterWait ||
+        !/1 report status/.test(sum)
+      )
+        fails.push(`To do › Reports, Stand-by: ${JSON.stringify({s, r, sum})}`);
+      if (/report status/.test(await p.evaluate(() => (status0().parts || []).join()))) {
+        // the draft says so on Publish's title too
+      } else fails.push('To do › Reports, Stand-by: the draft does not count the report status');
+      // Done: thanked (seen rep:<id>), out of reps, folded in Done; Undo steps back through Stand-by to open.
+      await p.click(card('demorep0') + ' [data-rst="done"]');
+      await settle();
+      r = await info('demorep0');
+      s = await st('demorep0');
+      if (
+        s.s !== 'done' ||
+        !s.seen ||
+        s.reps ||
+        !r ||
+        r.fold !== 'done' ||
+        !/Reopen/.test(await p.evaluate(c => document.querySelector(c).textContent, card('demorep0')))
+      )
+        fails.push(`To do › Reports, Done: ${JSON.stringify({s, r})}`);
+      await p.click('#undo');
+      await settle();
+      if ((await st('demorep0')).s !== 'wait') fails.push(`To do › Reports: Undo of Done did not go back to Stand-by`);
+      await p.click('#undo');
+      await settle();
+      s = await st('demorep0');
+      if (s.s !== 'open' || (await p.evaluate(() => HIST.length)) !== h0)
+        fails.push(`To do › Reports: Undo did not reopen ${JSON.stringify(s)}`);
+      // Dismiss: never thanked, folded in Dismissed; Reopen there.
+      await p.click(card('demorep0') + ' [data-rst="drop"]');
+      await settle();
+      s = await st('demorep0');
+      r = await info('demorep0');
+      if (s.s !== 'drop' || s.seen || !r || r.fold !== 'drop') fails.push(`To do › Reports, Dismiss: ${JSON.stringify({s, r})}`);
+      await p.evaluate(c => document.querySelector(c).closest('details').setAttribute('open', ''), card('demorep0'));
+      await p.click(card('demorep0') + ' [data-rst="open"]');
+      await settle();
+      if ((await st('demorep0')).s !== 'open' || (await p.evaluate(() => JSON.stringify(DRAFT.reps || null))) !== 'null')
+        fails.push(`To do › Reports: Reopen left a status ${await p.evaluate(() => JSON.stringify(DRAFT.reps))}`);
+      // A sheet report: its genus page, Attach a photo (its genus's photos), the photo then on the card with its tools,
+      // kept in this tab only (never in the draft).
+      r = await info('demorep3');
+      if (!r || !r.unit || r.unit[0] !== 'Open genus' || !r.attach || r.tiles.length || /^game/.test(r.where))
+        fails.push(`To do › Reports, a sheet report's bar: ${JSON.stringify(r)}`);
+      else {
+        await p.click(card('demorep3') + ' [data-ratt]');
+        await settle();
+        r = await info('demorep3');
+        if (!r.pick || r.unitSel) fails.push(`To do › Reports, Attach on a sheet report: ${JSON.stringify(r)}`);
+        const d0 = await p.evaluate(() => JSON.stringify(DRAFT));
+        const f = await p.evaluate(c => document.querySelector(c + ' [data-rpf]').dataset.rpf, card('demorep3'));
+        await p.click(card('demorep3') + ' [data-rpf]');
+        await settle();
+        r = await info('demorep3');
+        if (r.tiles.join() !== f || !r.coralTools || r.pick || (await p.evaluate(() => JSON.stringify(DRAFT))) !== d0)
+          fails.push(`To do › Reports, a photo attached: ${JSON.stringify({f, r})}`);
+      }
+      // Send feedback from Home: Open page, no unit; Attach asks the genus first.
+      r = await info('demorep4');
+      if (
+        !r ||
+        r.page !== 'index.html' ||
+        r.unit ||
+        r.journey !== '#players/list/journey/Ana%20Demo' ||
+        !r.attach ||
+        !/^page/.test(r.where)
+      )
+        fails.push(`To do › Reports, Home feedback's bar: ${JSON.stringify(r)}`);
+      else {
+        await p.click(card('demorep4') + ' [data-ratt]');
+        await settle();
+        r = await info('demorep4');
+        if (!r.unitSel || r.pick) fails.push(`To do › Reports, Attach without a unit: no unit picker first ${JSON.stringify(r)}`);
+        await p.selectOption(card('demorep4') + ' [data-rpunit]', {index: 1});
+        await settle();
+        r = await info('demorep4');
+        if (!r.pick) fails.push(`To do › Reports, Attach: no photos once a genus is picked ${JSON.stringify(r)}`);
+      }
+      // Send feedback from a game carries the question's genus and photo: its tools, no Attach.
+      r = await info('demorep7');
+      if (!r || !r.unit || !r.tiles.length || !r.coralTools || r.attach || r.page !== 'index.html#practice/quiz')
+        fails.push(`To do › Reports, feedback from a game: ${JSON.stringify(r)}`);
+      // The fish side: its reports and the feedback about no subject; the fish photo tools, the fish units' links.
+      await go('fish/inbox/todo/reports');
+      await p
+        .waitForFunction(() => typeof FISHC !== 'undefined' && FISHC && document.querySelector('.adm-frep [data-fr="not"]'), null, {
+          timeout: 15000
+        })
+        .catch(() => {});
+      const t1 = await text();
+      if (!/a timer in the quiz/.test(t1) || /two colonies/.test(t1)) fails.push(`To do › Reports, fish: not its subject's reports only`);
+      const fam = '#fish/photos/families/' + encodeURIComponent('f:Damselfishes');
+      const ft = id =>
+        p.evaluate(
+          ([sel, fam]) => {
+            const t = document.querySelector(sel + ' .adm-frep');
+            return (
+              t && {
+                f: t.dataset.ff,
+                x: !!t.querySelector('[data-fr="exclude"]'),
+                rm: !!t.querySelector('[data-fr="remove"]'),
+                not: !!t.querySelector('[data-fr="not"]'),
+                open: (t.querySelector('[data-fr-open]') || {}).getAttribute?.('href') === fam,
+                out: (t.querySelector('.adm-acts .adm-src') || {}).textContent || ''
+              }
+            );
+          },
+          [card(id), fam]
+        );
+      let fr = await ft('demorep5');
+      if (!fr || !fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
+      else {
+        await p.click(card('demorep5') + ' [data-fr="remove"]');
+        await settle();
+        const rm = await p.evaluate(f => ((DRAFT.fish || {}).seen || {})[f], fr.f);
+        const fr2 = await ft('demorep5');
+        if (rm !== 1 || fr2.out !== 'removed' || fr2.rm) fails.push(`To do › Reports, a fish photo's Remove: ${JSON.stringify({rm, fr2})}`);
+        await p.click('#undo');
+        await settle();
+        await p.click(card('demorep5') + ' [data-fr="exclude"]');
+        await settle();
+        if (!(await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f], fr.f)))
+          fails.push(`To do › Reports, a fish photo's ×: not excluded`);
+        await p.click('#undo');
+        await settle();
+        if (await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f] || !!((DRAFT.fish || {}).seen || {})[f], fr.f))
+          fails.push(`To do › Reports, a fish photo: Undo did not take the tools back`);
+      }
+      // A curated candidate photo: Not this sends it to another species of its family, or none.
+      fr = await ft('demorep10');
+      if (!fr || !fr.not) fails.push(`To do › Reports, a fish candidate photo: no Not this ${JSON.stringify(fr)}`);
+      else {
+        await p.click(card('demorep10') + ' [data-fr="not"]');
+        await p.selectOption(card('demorep10') + ' [data-frnot]', 'x');
+        await settle();
+        if ((await p.evaluate(f => ((DRAFT.fish || {}).out || {})[f], fr.f)) !== 'x')
+          fails.push(`To do › Reports, a fish photo's Not this: not sent`);
+        await p.click('#undo');
+        await settle();
+      }
+      // A species sheet whose id the script did not keep: its unit from its page, a working link to its family's page; the
+      // ID marks' report is a sheet's, not a game's.
+      r = await info('demorep8');
+      const sp = await p.evaluate(
+        c => [...document.querySelectorAll(c + ' .adm-rephead a.adm-gen')].map(a => [a.textContent, a.getAttribute('href')]),
+        card('demorep8')
+      );
+      if (
+        !r ||
+        !r.unit ||
+        r.unit[0] !== 'Open family' ||
+        r.unit[1] !== fam ||
+        JSON.stringify(sp) !== JSON.stringify([['Chromis ternatensis', fam]])
+      )
+        fails.push(`To do › Reports, a fish species sheet report: ${JSON.stringify({r, sp})}`);
+      r = await info('demorep9');
+      if (!r || !/^marks/.test(r.where) || !r.unit || r.unit[1] !== fam)
+        fails.push(`To do › Reports, a fish ID marks report: ${JSON.stringify(r)}`);
+      // The fish side's counts are its own open reports (and flags).
+      const cnt = await p.evaluate(() => ({
+        view: +(((document.querySelector('#subnav a[href$="inbox/todo/reports"]') || {}).textContent || '').match(/\d+/) || [0])[0],
+        open: document.querySelectorAll('#view .adm-rep[data-rs="open"]').length,
+        flags: Object.keys(flagsOf(DRAFT)).length
+      }));
+      if (cnt.view !== cnt.open + cnt.flags) fails.push(`To do › Reports, fish: the count ${JSON.stringify(cnt)}`);
+      await go('inbox/todo/reports');
     }
     if (run.has('players')) await playersPart();
     await go('players/activity');
