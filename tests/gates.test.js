@@ -48,6 +48,9 @@ const GATES = {
   DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
   // Deleting one's own account (sync.js selfDelOn, #about/delete-account; Code.gs selfDelete_): from v58; before, a note.
   SELFDEL_SHEET: (v, N) => fn('sync.js', 'const selfDelOn = ', '\n', 'selfDelOn', {sheetV: () => v, SELFDEL_SHEET: N})(),
+  // Activity's light read every minute while it is open and in view (admin.js liveOn, liveArm; Code.gs live_ readLive):
+  // from the version that serves it; before, ↻ by hand only.
+  LIVE_SHEET: (v, N) => fn('admin.js', 'const liveOn = ', '\n', 'liveOn', {ANS: v === undefined ? {} : {v}, LIVE_SHEET: N})(),
   // The device's id on every answer it sends (sync.js devField, the save's and the anonymous send's dev; Code.gs
   // logAnswers_ Device; Q312): from the version that writes it; before, nothing more is sent.
   DEV_SHEET: (v, N) => {

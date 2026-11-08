@@ -945,8 +945,10 @@ const LOG0 = 'reefid-log0',
   ANONID = 'reefid-anon-id',
   ANONQ = 'reefid-anonq';
 // Anonymous answers (Pierre, 2026-11-01): a player who never signs in still helps rate the photos and the confusions.
-// Their answers go to the sheet under a random id made on this device ("~anon <id>": no name, no code), in small
-// batches (sheet script v12; an older script answers 'input' and they simply wait here). Signing in later moves them to
+// Their answers go to the sheet under a random id made on this device ("~anon <id>": no name, no code), about
+// ANON_SEND.MS after each answer, as a signed-in player's go with their progress (syncSoon; Pierre, 2026-11-08: "Les
+// deux", so the admin's live Activity sees them play; until then 10 at a time), at most 100 a request (sheet script
+// v12; an older script answers 'input' and they simply wait here). Signing in later moves them to
 // the player's name (anon in the first send; the sheet skips answers it already has, by id), and a new id is made.
 const anonId = () => {
   let id = store.get(ANONID, '');
@@ -970,9 +972,14 @@ function anonResend() {
   store.set(ANONQ, [...store.get(LOG0, []).filter(a => a && a.id && !have.has(a.id)), ...q].slice(-2000));
   store.set(ANON_RESEND.KEY, ANON_RESEND.ID);
 }
+// One timer, restarted at each answer (answers a second apart go in one request), as syncSoon. The queue (ANONQ) and the
+// sheet's caps (Code.gs anon_: 100 a request, 600 per device and 6000 for every device not signed in, every 6 hours)
+// are as before: a refused or failed send keeps its answers here for the next answer, the next visit, the app hidden
+// or closed, or back online.
+const ANON_SEND = {MS: 3000};
 const anonSoon = () => {
   clearTimeout(anonTimer);
-  anonTimer = setTimeout(sendAnon, store.get(ANONQ, []).filter(a => logOk(a, sheetV())).length >= 10 ? 0 : 20000);
+  anonTimer = setTimeout(sendAnon, ANON_SEND.MS);
 };
 function sendAnon() {
   // The answers the sheet can file (core.js logOk: a subject it does not replay waits for LOG_SHEET, rule D4), queued.
