@@ -1355,6 +1355,9 @@ const GROUPS = [
       // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
       // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs).
       ['activity', 'Activity', [['', 'Recent sessions']]],
+      // Visits (Pierre, 2026-11-08, Q301 layout A): who opens the app and what for, games or not, signed in or not
+      // (admin-visits.js renderVisits).
+      ['visits', 'Visits', [['', 'Visits']]],
       ['list', 'List', [['', 'List']]]
     ],
     // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
@@ -1599,6 +1602,7 @@ const modeKey = () =>
             ? 'stats'
             : {
                 'players/list': 'users',
+                'players/visits': 'visits',
                 'photos/review/quality': 'quality',
                 'photos/review/growth-form': 'form',
                 'photos/review/ease': 'fishrev',
@@ -2313,6 +2317,9 @@ function render() {
   if (cur === 'inbox/coverage/games' && ASUBJ.rank === 'family') return renderFishCov();
   if (cur === 'inbox/coverage/games') return renderCov();
   if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
+  // Opened from its address, the page can be drawn before admin-visits.js is in, as a journey (below).
+  if (cur === 'players/visits')
+    return typeof renderVisits === 'function' ? renderVisits() : addEventListener('load', () => render(), {once: true});
   if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
   if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
@@ -3544,7 +3551,8 @@ const pagesRows = rows =>
       } catch (e) {
         d = pagesClean({});
       }
-      return {t: r[1], dev: r[2], id: r[4], vi: d.vi || r[0], na: typeof d.na === 'number' ? d.na : null, r: d.r, g: d.g};
+      // ua: the Browser column (sync.js uaShort, "… mobile" on a phone; Players › Visits).
+      return {t: r[1], dev: r[2], id: r[4], vi: d.vi || r[0], na: typeof d.na === 'number' ? d.na : null, r: d.r, g: d.g, ua: r[9] || ''};
     });
 // The genus sheets one player opened, from their summaries: per genus the times opened, the seconds, how the first
 // opening was reached and whether the genus had been asked to them before it; and their visits.
@@ -7063,19 +7071,21 @@ function sheetEarly(h) {
         ? ['users', 'ans', 'pages']
         : h === 'players/activity'
           ? ['users', 'ans']
-          : h === 'analyses/learning/stops'
-            ? ['ans', 'pages']
-            : h === 'inbox/todo/all'
-              ? ['ans', 'events', 'reports']
-              : h === 'inbox/todo/reports'
-                ? ['reports']
-                : h === 'inbox/todo/errors'
-                  ? ['events']
-                  : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
-                    ? ['ans']
-                    : h === 'photos/stats/overview'
-                      ? ['ratings']
-                      : [];
+          : h === 'players/visits'
+            ? ['pages', 'events', 'ans', 'users']
+            : h === 'analyses/learning/stops'
+              ? ['ans', 'pages']
+              : h === 'inbox/todo/all'
+                ? ['ans', 'events', 'reports']
+                : h === 'inbox/todo/reports'
+                  ? ['reports']
+                  : h === 'inbox/todo/errors'
+                    ? ['events']
+                    : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
+                      ? ['ans']
+                      : h === 'photos/stats/overview'
+                        ? ['ratings']
+                        : [];
   const go = {
     ans: () => loadStats(),
     ratings: () => loadStats(true),

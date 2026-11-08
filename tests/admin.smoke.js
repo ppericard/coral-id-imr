@@ -6,10 +6,14 @@ const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
 // Analyses › Learning › Stops › Genus sheets opened on the demo's Pages tab (admin-demo.js: 4 visits a player at 0, 1/4, 1/2 and 3/4 of
 // their answers; Ana opens 3 sheets in her first 3 visits, Carla 2, Ben 1; a device not signed in one; one visit with no
-// id is counted by its device): players, share that opened one, visits, share with one.
-const SHEETS_ALL = ['Under 50 answers 8 50% 18 28%', '50-300 answers 6 50% 11 45%', 'Over 300 answers 1 0% 1 0%', 'All 9 44% 30 33%'].join(
-  ' | '
-);
+// id is counted by its device; and the visits of Players › Visits: Ben and Carla reading sheets, 12 devices that never
+// answered): players, share that opened one, visits, share with one.
+const SHEETS_ALL = [
+  'Under 50 answers 22 50% 59 39%',
+  '50-300 answers 6 50% 22 73%',
+  'Over 300 answers 1 0% 1 0%',
+  'All 23 48% 82 48%'
+].join(' | ');
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -3217,6 +3221,92 @@ const WIDTHS = [390, 1280];
         !ac.some(t => /^Activity over time/.test(t))
       )
         fails.push(`${w}px Activity: cards ${JSON.stringify(ac)}`);
+    }
+    // Players › Visits (Pierre, 2026-11-08, Q301-Q304; admin-visits.js, the demo's visits in admin-demo.js): every card,
+    // no sideways scroll, the demo's numbers under the default filters (30 days, Without a game, Everyone, every device),
+    // at both widths; once, the filters, a visitor unfolded, Show all and the Fish side.
+    {
+      const vis = () =>
+        p.evaluate(() => ({
+          cards: [...document.querySelectorAll('#view [data-visits]')].map(x => x.dataset.visits).join(' '),
+          // textContent: the tiles' labels are upper case by CSS only
+          kpis: [...document.querySelectorAll('.adm-vis .adm-kpis > div')].map(d => d.textContent.replace(/\s+/g, ' ').trim()).join(' | '),
+          rows: document.querySelectorAll('[data-vopen]').length,
+          open: document.querySelectorAll('.adm-vdet').length,
+          legend: !!document.querySelector('[data-visits="time"] .adm-legend'),
+          stack: document.querySelectorAll('[data-visits="time"] i.adm-vgame').length,
+          pages: (document.querySelector('[data-visits="pages"]') || {}).textContent || '',
+          dev: [...document.querySelectorAll('[data-visits="device"] tbody tr')].map(r => r.textContent.replace(/\s+/g, ' ').trim()),
+          wide: document.documentElement.scrollWidth - innerWidth
+        }));
+      await go('players/visits');
+      const v0 = await vis();
+      if (v0.cards !== 'time pages key sheets first device visitors') fails.push(`${w}px Visits: cards ${v0.cards}`);
+      if (v0.wide > 0) fails.push(`${w}px Visits: page ${v0.wide} px wider than the window`);
+      // At 1280 the actions run before this (a merge, the answers of devices deleted) leave one more visitor of the demo
+      // without an answer.
+      if (v0.kpis !== `42of 71Visits without a game | 15Visitors | ${once ? 12 : 11}Never answered | 8 minMedian visit | 55%On a phone`)
+        fails.push(`${w}px Visits: numbers ${v0.kpis}`);
+      if (v0.rows !== 12 || v0.open || v0.legend || v0.stack) fails.push(`${w}px Visits: ${JSON.stringify({...v0, pages: ''})}`);
+      if (!/Coral ID Key/.test(v0.pages) || !/Tools › anatomy/.test(v0.pages) || /Quiz|Duels/.test(v0.pages))
+        fails.push(`${w}px Visits: pages opened without a game ${v0.pages}`);
+      // Q304: three device classes, the iPad (a computer's browser 820 px wide) and the Android tablet among the tablets.
+      if (
+        !v0.dev.some(t => /^Tablet/.test(t)) ||
+        !v0.dev.some(t => /^Phone, installed app/.test(t)) ||
+        !v0.dev.some(t => /^Computer/.test(t))
+      )
+        fails.push(`${w}px Visits: devices ${JSON.stringify(v0.dev)}`);
+      if (once) {
+        const click = async (f, v) => {
+          errs.length = 0;
+          await p.click(`[data-vf="${f}"][data-v="${v}"]`);
+          await settle();
+          if (errs.length) fails.push(`${w}px Visits ${f}=${v}: ${errs.slice(0, 3).join(' | ')}`);
+          return vis();
+        };
+        const va = await click('vis', 'all');
+        if (!/^71Visits \| 21Visitors/.test(va.kpis) || !va.legend || !va.stack || !/Quiz/.test(va.pages))
+          fails.push(`${w}px Visits, All visits: ${va.kpis} legend ${va.legend} stacked ${va.stack}`);
+        const vn = await click('who', 'never');
+        // Only those who never answered: every visitor is one.
+        if (!/^[1-9]\d*Visits \| (\d+)Visitors \| \1Never answered/.test(vn.kpis)) fails.push(`${w}px Visits, Never answered: ${vn.kpis}`);
+        const vt = await click('dev', 'tablet');
+        if (!/^\d+Visits \| [1-9]\d*Visitors/.test(vt.kpis) || !vt.dev.every(t => /^Tablet/.test(t)))
+          fails.push(`${w}px Visits, Tablet: ${vt.kpis} ${JSON.stringify(vt.dev)}`);
+        await click('dev', 'all');
+        await click('who', 'all');
+        const vw = await click('by', 'week');
+        if (vw.wide > 0) fails.push(`${w}px Visits by week: page ${vw.wide} px wider than the window`);
+        await click('vis', 'nogame');
+        await p.click('[data-vopen]');
+        await settle();
+        const vo = await vis();
+        if (vo.open !== 1 || vo.wide > 0) fails.push(`${w}px Visits: a visitor unfolded ${JSON.stringify({open: vo.open, wide: vo.wide})}`);
+        await p.click('[data-vall]');
+        await settle();
+        const vs = await vis();
+        if (vs.rows !== 15) fails.push(`${w}px Visits: Show all lists ${vs.rows} visitors, not 15`);
+        // A visitor's name opens their Journey.
+        const jl = await p.$eval('[data-visits="visitors"] a[href^="#players/list/"]', a => a.getAttribute('href')).catch(() => '');
+        if (!jl) fails.push(`${w}px Visits: no Journey link`);
+        // The Fish side (rule A4): its own pages in its words, no genus sheets.
+        await go('fish/players/visits');
+        const vf = await vis();
+        if (
+          !/^\d+of \d+Visits without a game \| 2Visitors \| 2Never answered/.test(vf.kpis) ||
+          /sheets/.test(vf.cards) ||
+          !/Families/.test(vf.pages)
+        )
+          fails.push(`${w}px Visits, Fish: ${vf.kpis} ${vf.cards} ${vf.pages}`);
+        // Its help behind "?" (rule A2).
+        await p.click('#help');
+        if (await p.$('#admhelp [data-ht="page"]')) await p.click('#admhelp [data-ht="page"]');
+        const ht = await p.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
+        if (!/tablet/i.test(ht) || !/a game = a Practice page/i.test(ht)) fails.push(`${w}px Visits: help ${ht.slice(0, 80)}`);
+        await p.click('#help');
+        await go('players/visits');
+      }
     }
     if (once) {
       // Once: stale page summaries, the lightboxes' source links.

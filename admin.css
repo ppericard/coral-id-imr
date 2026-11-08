@@ -4573,6 +4573,112 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* Players › Visits (admin-visits.js; Pierre, 2026-11-08, Q301 layout A): the filters on one wrapping row, the visits
+   with a game stacked in a pale tint of the accent above those without, the groups of Pages opened, the Key's four
+   numbers, a visitor unfolded. */
+.adm-vfilt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 0 0 12px;
+}
+.adm-vfilt .adm-sseg button {
+  white-space: nowrap;
+}
+.adm-cols.stack > div > i.adm-vgame,
+.adm-legend i.adm-vgame {
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface-2));
+}
+.adm-legend i.adm-vnogame {
+  background: var(--accent);
+}
+.adm-vis .adm-kpis b small {
+  font-family: var(--body);
+  font-size: var(--fs-s);
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+.adm-vis .adm-scard h3 small {
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.adm-vsec td {
+  font-weight: 600;
+  padding-top: 10px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.adm-vwho {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+}
+.adm-vvis {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+.adm-vvis td {
+  padding: 3px 8px;
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+.adm-vvis td:first-child {
+  white-space: nowrap;
+  color: var(--muted);
+}
+.adm-vdet > td {
+  padding: 6px 8px 10px !important;
+  background: var(--bg);
+  white-space: normal !important;
+  max-width: none !important;
+}
+.adm-vmore {
+  margin: 8px 0 0;
+}
+.adm-vkeyk {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.adm-vkeyk div {
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+}
+.adm-vkeyk b {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--fs-xl);
+  line-height: 1.1;
+}
+.adm-vkeyk span {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.adm-vlater {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.adm-scard h3.adm-vh3 {
+  margin-top: 14px;
+}
+.adm-vis .adm-sgrid {
+  margin-top: 12px;
+}
+@media (max-width: 599px) {
+  .adm-vpages th:nth-child(3),
+  .adm-vpages td:nth-child(3):not([colspan]) {
+    display: none;
+  }
+}
 /* To do › Out of the presence rule and To do › Share-alike: the photos Pierre kept, folded at the bottom of the section
    (Pierre, 2026-11-05), and their tag on other pages, neutral instead of the warning red. */
 .adm-src.adm-rule.kept,
