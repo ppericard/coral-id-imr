@@ -1178,7 +1178,9 @@ function domRecalcAll() {
 // an answer; later perhaps a full replay of the sheet's answer log) and reports every genus whose s.mx it removed. A mark
 // lost by misses in play (quiz.js mxKept) never goes through it. Kept on this device only (MXL.KEY, outside the synced
 // record: a drop made by a pull on another device is told there too): due {genus: its s.mx}, the drops not told yet;
-// told {genus: s.mx}, those told, so the same mark is never told twice here (a copy pulled again that still has it);
+// told {genus: s.mx}, those told, so the same mark is never told twice here (a copy pulled again that still has it),
+// and each told to the account too (sync.js toldAdd, core.js TOLD 'mx:<genus>@<s.mx>': never told again on another of
+// its devices; progress.js mxLostNotice);
 // ach, achievements still to recheck (progress.js comes after model.js on a first load); gone, the ids taken back, for
 // the card. Cleared at sign-out with the progress (sync.js signOff).
 const MXL = {KEY: 'reefid-mx-lost'};

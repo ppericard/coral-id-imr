@@ -1491,7 +1491,9 @@ function quizPhoto(cur = 'quiz') {
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
-  else if (!noOpen() && promptOk() && bonusBackDue()) (promptMark(), bonusBackShow());
+  // The back card is said once: signed in, only once the visit's first sync brought the choice made on another device
+  // (sync.js noticesReady, Pierre 2026-11-08).
+  else if (!noOpen() && promptOk() && noticesReady() && bonusBackDue()) (promptMark(), bonusBackShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
