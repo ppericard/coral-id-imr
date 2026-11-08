@@ -156,14 +156,18 @@ function loadCodeGs(opts = {}) {
       newTrigger: () => ({timeBased: () => ({everyMinutes: () => ({create() {}})})})
     },
     // opts.lock = {busy: true}: the script lock is held by another request, as Apps Script then answers: waitLock throws
-    // its "Lock timeout" exception, tryLock gives false. Set lock.busy back to false to free it.
+    // its "Lock timeout" exception, tryLock gives false. Set lock.busy back to false to free it. lock.onRelease runs at each
+    // releaseLock.
     LockService: {
       getScriptLock: () => ({
         waitLock() {
           if (lock.busy) throw new Error('Lock timeout: another process was holding the lock for too long.');
         },
         tryLock: () => !lock.busy,
-        releaseLock() {}
+        // lock.onRelease: what another request does the moment this one lets the lock go (a test's race).
+        releaseLock() {
+          if (lock.onRelease) lock.onRelease();
+        }
       })
     },
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},

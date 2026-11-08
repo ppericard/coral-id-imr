@@ -234,12 +234,24 @@ function doPost_(e){
     // vNEXT: a light save against another revision than the saved one (another device wrote since) is answered 'stale'
     // before anything is counted or logged, with the load of the copy there (load_), read once the lock is released, as a
     // load is: the app merges it and saves again at once, its answers still queued with it (as an app before vNEXT loads,
-    // merges, then saves). A name not found (no row) answers found: false, which the app reads as archived.
+    // merges, then saves). A name not found (no row) answers found: false, which the app reads as archived. The row (its
+    // code checked above) is read before the lock goes: an admin's delete, merge or archive in between moves the rows up,
+    // and the row at r would then be another player's (independent review of #799).
     if (p.light && typeof p.at === 'number' && p.at !== rev) {
       if (!r) return json_({ok: false, error: 'stale', rev: rev, found: false});
+      const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
       lock.releaseLock(); held = false;
-      const ld = load_(name, sh.getRange(r, 1, 1, HEAD.length).getValues()[0], {pt: p.pt, rv: typeof p.rv === 'number' ? p.rv : undefined, rvs: p.rvs && typeof p.rvs === 'object' ? p.rvs : {}, light: true});
+      const ld = load_(name, row, {pt: p.pt, rv: typeof p.rv === 'number' ? p.rv : undefined, rvs: p.rvs && typeof p.rvs === 'object' ? p.rvs : {}, light: true});
       return json_(Object.assign(ld, {ok: false, error: 'stale', rev: ld.rev}));
+    }
+    let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
+    // vNEXT: a light save's data (lightData_): the copy rebuilt from a delta, or the whole data under the new key names, the
+    // old ones added here. A delta that does not rebuild the copy the app holds is refused before anything is counted or
+    // logged ('delta': the app sends the whole data again, its answers with it, which the caps below then count once).
+    if (p.light) {
+      const ld = lightData_(p, old, rev);
+      if (!ld) return json_({ok: false, error: 'delta', rev: rev});
+      p.data = ld;
     }
     // Caps (v12): at most 40 new accounts and 3000 answers per name every 6 hours; over that, nothing is written and the
     // app keeps its answers to send later. A real class of RAs stays far below both.
@@ -253,15 +265,6 @@ function doPost_(e){
       relabel_('Answers', 1, '~anon ' + p.anon, name);
       pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
       rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
-    }
-    let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
-    // vNEXT: a light save's data (lightData_): the copy rebuilt from a delta, or the whole data under the new key names, the
-    // old ones added here. A delta that does not rebuild the copy the app holds is refused before anything is logged
-    // ('delta': the app sends the whole data again, its answers with it).
-    if (p.light) {
-      const ld = lightData_(p, old, rev);
-      if (!ld) return json_({ok: false, error: 'delta', rev: rev});
-      p.data = ld;
     }
     logAnswers_(name, f.fresh, f.seen, p.dev);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)

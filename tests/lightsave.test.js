@@ -103,6 +103,35 @@ test('the sheet: a light save rebuilds the copy from a delta, adds the old names
   assert.deepStrictEqual(old, {ok: false, error: 'stale', log: true, rev: 2, v: old.v}, 'an app before vNEXT: the reply it always had');
 });
 
+test('the sheet: a stale light save reads its own row before the lock goes, so an admin delete then never sends another player’s copy', () => {
+  const s = loadCodeGs(),
+    mine = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0}})},
+    other = {'reefid-sync-coral-progress': JSON.stringify({Porites: {ok: 99, ko: 0}})};
+  s.post({name: 'Ana', pin: '1234', data: mine, summary: {}, answers: []});
+  s.post({name: 'Ana', pin: '1234', data: mine, summary: {}, answers: [], at: 1});
+  s.post({name: 'Ben', pin: '5678', data: other, summary: {}, answers: []});
+  // The moment the stale save lets the lock go, the admin deletes Ana: the rows below hers move up.
+  let race = true;
+  s.lock.onRelease = () => race && ((race = false), assert.ok(s.post({userDelete: 'Ana', token: TOK}).ok));
+  const st = s.post({lt: {light: 1, name: 'Ana', pin: '1234', data: mine, at: 1, summary: {}, answers: []}});
+  assert.strictEqual(race, false, 'the delete ran in the window');
+  assert.strictEqual(st.error, 'stale');
+  assert.ok(!/Porites/.test(JSON.stringify(st.data || {})), 'another player’s copy: ' + JSON.stringify(st.data));
+});
+
+test('the sheet: a refused delta counts nothing toward the answer cap; the whole save that follows counts its answers once', () => {
+  const s = loadCodeGs(),
+    X = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 1, ko: 0}})},
+    cap = () => Number(Object.entries(s.cache).find(([k]) => /^cap:n:ana:\d+$/.test(k))?.[1] || 0);
+  s.post({lt: {light: 1, name: 'Ana', pin: '1234', data: X, summary: {}, answers: []}});
+  const A = [1, 2, 3].map(i => qa('c' + i, 'Acropora', 1, T(i))),
+    X2 = {'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: 4, ko: 0}})};
+  const bad = s.post({lt: {light: 1, name: 'Ana', pin: '1234', dz: C.dataDelta(X, X2), sum: 'wrong', at: 1, summary: {}, answers: A}});
+  assert.deepStrictEqual([bad.error, cap(), rowsOf(s)], ['delta', 0, 0]);
+  const ok = s.post({lt: {light: 1, name: 'Ana', pin: '1234', data: X2, at: 1, summary: {}, answers: A}});
+  assert.deepStrictEqual([ok.ok, cap(), rowsOf(s)], [true, 3, 3]);
+});
+
 test('the sheet: a load of the copy the device already holds comes back without it; the light hold names only the answers from pt', () => {
   const s = loadCodeGs(),
     A = Array.from({length: 30}, (_, i) => qa('h' + i, 'Acropora', i % 3, T(i)));
