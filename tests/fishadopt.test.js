@@ -293,3 +293,49 @@ test('answers logged from a refused save (SYNC.lg): the flag holds for fish unti
   assert.ok(!a.ctx.SYNC.lg && !a.ctx.SYNC.lgOk, 'cleared once every subject replayed has its own');
   assert.strictEqual(a.replaysAdopt(j, [], undefined), false, 'then once per version, as the corals');
 });
+
+// Codex review #779: answers logged from a refused save (SYNC.lg) while the fish units are not in yet: the fish replay
+// cannot be adopted, and the plain merge counted those answers twice (a baseline of 6, 9 here, a saved replay of 9: 12).
+test('a refused save while the fish units are not in: no merge, the replay of the whole log once they are', async () => {
+  const s = loadCodeGs(withFiles()),
+    rec = C.replayProgress(
+      F.map(x => C.logRow(x, 'ana')),
+      {gen: FGEN}
+    ).ana.P,
+    saved = C.replayedOf({P: rec}, {}, FRV), // another device adopted the replay of the 9 and saved it
+    base = C.replayedOf(
+      {
+        P: C.replayProgress(
+          F.slice(0, 6).map(x => C.logRow(x, 'ana')),
+          {gen: FGEN}
+        ).ana.P
+      },
+      {}
+    ),
+    here = C.replayedOf({P: rec}, {}); // this device: the 6 of the baseline, then 3 logged by a refused save
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(saved), 'reefid-sync-fish-rv': JSON.stringify(FRV)});
+  const n = P => ((P['f:Damselfishes'] || {}).ok || 0) + ((P['f:Damselfishes'] || {}).ko || 0),
+    a = app({
+      sheet: atv(s),
+      ls: {
+        'reefid-sync-fish-progress': JSON.stringify(here),
+        'reefid-sync-fish-rv': JSON.stringify(FRV),
+        'reefid-sync-coral-rv': String(C.RV)
+      },
+      SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: base, lg: 1, lgOk: ['coral'], srv: 0}
+    });
+  a.store.set('reefid-sheet-v', C.REPLAYS_SHEET);
+  const gen = a.ctx.UNITS.fish.gen;
+  a.ctx.UNITS.fish.gen = () => null; // the fish data not loaded on this device yet
+  await a.syncPull();
+  assert.strictEqual(n(a.fish()), 9, 'not merged: was 12');
+  assert.strictEqual(a.rvApplied(FS), 0, 'the replay of the whole log asked for again');
+  a.ctx.UNITS.fish.gen = gen;
+  await a.syncPull();
+  assert.ok(
+    a.sent.some(b => b.rv_fish === '0'),
+    'asked once the units are in'
+  );
+  assert.strictEqual(n(a.fish()), 9);
+  assert.strictEqual(a.rvApplied(FS), FRV);
+});

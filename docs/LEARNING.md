@@ -3395,7 +3395,7 @@ corals again, so no coral player gets a card for it), asked by the app with the 
 (`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet vNEXT (`core.js` `REPLAYS_SHEET`, rule D4).
 **The floor** (`core.js` `replayFloor`): at adoption, a unit whose record on the device came from no replay yet and whose
 bar is above the replayed one keeps the device's record, so no unit's bar, and so no %, goes down at the first replay; a
-unit taken from a replay follows the replay from then on, under later fish rules versions too. On the same data, adopted
+unit taken from a replay follows the replay from then on, under later fish rules versions too. A unit's bar reads the other units' false alarms on it, so the records that count them are taken back with it, as the device holds them; should a unit still read lower (false alarms in a record the device does not have), the device's progress is kept whole (Codex review #779). On the same data, adopted
 with the floor: no unit and no headline down; one headline 1 point up, one families' mean 1 point up, the rest equal;
 the units kept from the device (by the floor, or by `replayedOf` for a unit with no logged answer or fewer than saved)
 were 0 to 23 a player. Its card: fish rules version 1 takes the standard card (`RV_CARD`: only a move of 5 points or

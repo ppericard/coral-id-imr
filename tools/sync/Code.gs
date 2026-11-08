@@ -6231,27 +6231,31 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
   // The floor of a subject's first replay (SUBJECTS replayed floor; Pierre, 2026-11-08, Q310: "today's bar as a floor,
-  // nobody goes back"; measured on the 8 fish players first, ROADMAP "Fish progress replayed from the answer log"): a unit
-  // whose record on this device came from no replay yet (no rv: played before the subject was replayed, or kept from the
-  // device by replayedOf) and whose bar (scoreOf) is above the replayed one keeps this device's record as it is, so no
-  // unit's bar, and so no % built from them, goes down at the first replay. A unit taken from a replay (rv) is the
-  // replay's from then on, under later rules versions too. M: the record adopted (replayedOf), P: this device's; returns
-  // a copy of M with those units back as they were (a unit's bar reads the others' false alarms, faOf: passes until none
-  // changes). The global level (LEVEL) stays the replay's.
+  // nobody goes back"; measured on the fish players first, LEARNING.md "Fish: the progress replayed from the answer log";
+  // the integrator, 2026-11-08: per unit, once): a unit whose record on this device came from no replay yet (no rv: played
+  // before the subject was replayed, or kept from the device by replayedOf) and whose bar (scoreOf) would be below this
+  // device's keeps this device's record, so no unit's bar, and so no % built from them, goes down at the first replay. A
+  // unit taken from a replay (rv) is the replay's from then on, under later rules versions too. A unit's bar reads the
+  // other units' false alarms on it (faOf: their conf and off), so a unit kept may still read lower beside the replayed
+  // records (Codex review #779): the records that hold its false alarms are taken back too, as this device holds them,
+  // until no unit kept reads lower; should one still (false alarms in a record this device does not have), the device's
+  // own progress is kept as it is, whole (its % then exactly today's). M: the record adopted (replayedOf), P: this
+  // device's; returns a copy of M with those units back as they were. The global level (LEVEL) stays the replay's.
   function replayFloor(M, P) {
     const out = {...(M || {})},
       S = isObj(P) ? P : {},
-      L = Object.keys(S).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
-    for (let k = 0, ch = true; ch && k <= L.length; k++) {
-      ch = false;
-      L.forEach(g => {
-        if (out[g] !== S[g] && scoreOf(S[g], S, g) > scoreOf(out[g], out, g) + 1e-9) {
-          out[g] = S[g];
-          ch = true;
-        }
+      L = Object.keys(S).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv),
+      dup = x => JSON.parse(JSON.stringify(x)),
+      low = () => L.filter(g => scoreOf(out[g], out, g) < scoreOf(S[g], S, g) - 1e-9),
+      // The records that count a false alarm, or an offer, on unit g (faOf).
+      fas = g => Object.keys(out).filter(t => t !== g && t !== LEVEL && isObj(out[t]) && ((out[t].conf || {})[g] || (out[t].off || {})[g]));
+    for (let k = 0, B = low(); B.length && k <= Object.keys(out).length; k++, B = low())
+      B.forEach(g => {
+        out[g] = S[g];
+        fas(g).forEach(t => isObj(S[t]) && (out[t] = S[t]));
       });
-    }
-    L.forEach(g => out[g] === S[g] && (out[g] = JSON.parse(JSON.stringify(S[g]))));
+    if (low().length) return Object.fromEntries(Object.keys(S).map(g => [g, dup(S[g])]));
+    Object.keys(out).forEach(g => out[g] === S[g] && (out[g] = dup(S[g])));
     return out;
   }
 

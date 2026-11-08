@@ -81,12 +81,21 @@ test('replayFloor: on random records no unit of the device goes down, nor the fi
     X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, GM.photos, CUR, F), PH.sheet), F),
     units = [...X.c1, ...X.c2].slice(0, 30),
     K = C.SUBJECTS.find(S => S.id === 'fish').score,
+    // with offers and mix-ups on the other units (off, conf: their false alarms, faOf; Codex review #779)
     rec = () => {
       const ok = Math.floor(rnd() * 20),
-        ko = Math.floor(rnd() * 8);
-      return {ok, ko, h: '', ...C.domFromCounts({ok, ko, h: ''}, rnd() - 0.5, 4, 0)};
+        ko = Math.floor(rnd() * 8),
+        off = {},
+        conf = {};
+      units.forEach(n => {
+        if (rnd() < 0.2) {
+          off[n] = 1 + Math.floor(rnd() * 6);
+          if (rnd() < 0.5) conf[n] = Math.floor(rnd() * off[n]);
+        }
+      });
+      return {ok, ko, h: '', off, conf, ...C.domFromCounts({ok, ko, h: ''}, rnd() - 0.5, 4, 0)};
     };
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < 80; k++) {
     const P = {},
       M = {};
     units.forEach(n => {
@@ -97,4 +106,21 @@ test('replayFloor: on random records no unit of the device goes down, nor the fi
     units.forEach(n => P[n] && assert.ok(C.scoreOf(out[n], out, n) >= C.scoreOf(P[n], P, n) - 1e-9, n));
     assert.ok(C.treeScore(out, X.tree, K).pct >= C.treeScore(P, X.tree, K).pct);
   }
+});
+
+// Codex review #779: a unit's bar reads the other units' false alarms on it (faOf), so restoring its record alone may
+// leave it lower beside a replayed record that counts mix-ups on it.
+test('replayFloor: a unit kept is not lowered by the false alarms of a replayed record', () => {
+  const ds = (v, x = {}) => ({ok: 6, ko: 0, h: '111111', dp: [0], ds: v, ...x}),
+    s = (X, n) => C.scoreOf(X[n], X, n),
+    P = {A: ds(0.8), B: ds(0.5)},
+    M = {A: ds(0.5, {rv: 1}), B: ds(0.7, {rv: 1, off: {A: 10}, conf: {A: 2}})};
+  // The device holds B: B comes back as the device holds it, and A reads its bar of today.
+  let out = C.replayFloor(M, P);
+  assert.ok(s(out, 'A') >= s(P, 'A') - 1e-9, `A ${s(out, 'A')} vs ${s(P, 'A')}`);
+  assert.deepStrictEqual(out.B, P.B);
+  // The device has no B (its mix-ups only in the log): the device's progress as it is, whole.
+  out = C.replayFloor(M, {A: P.A});
+  assert.deepStrictEqual(out, {A: P.A});
+  assert.ok(s(out, 'A') >= s(P, 'A') - 1e-9);
 });

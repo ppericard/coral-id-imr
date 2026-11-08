@@ -464,7 +464,13 @@ function mergeSubject(j, d, S, mine) {
   // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
   notesSeen(j);
   const recovered = !!(RO && lgFor(S) && rpS && replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre));
-  if (!mine && !recovered) {
+  // Another subject replayed (fish) whose replay could not be adopted here (its units not in yet, or the reply without
+  // it): its merge would add the answers of the refused save again (Codex review #779: a baseline of 2, 3 here and a
+  // saved replay of 3 gave 4), so it waits, this device's progress as it is, and its rules version goes back to 0, so
+  // the replay of its whole log is asked for and adopted once it can be (replayAdoptS), whatever saves come before.
+  const waitRp = !S.replay && RO && lgFor(S) && !recovered;
+  if (waitRp) store.set(RK, 0);
+  if (!mine && !recovered && !waitRp) {
     if (rvSaved >= rvApplied(S)) {
       // In place: other code holds P by name only, but keep the same object anyway.
       const M = mergeProgress(SYNC[BK] || {}, P, R);
