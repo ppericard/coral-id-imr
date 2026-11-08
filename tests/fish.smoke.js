@@ -1822,7 +1822,8 @@ const server = http.createServer((req, res) => {
         }),
         'each card shows a reference-level photo, else its easiest'
       );
-      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely.
+      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely (model.js RARE:
+      // about 1 in 10 at most, whatever the pool; the bound below leaves room for 15 photos' noise).
       let gated = 0,
         under = 0;
       for (let i = 0; i < N; i++) {
