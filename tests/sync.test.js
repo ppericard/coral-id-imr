@@ -930,6 +930,61 @@ test('board (v95): each subject its own board, by its % over the units its apps 
   assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, []);
 });
 
+test('board (v101): a subject with a global score ranks by core.js treeScore over the tree its apps sent', () => {
+  const s = seed();
+  const fish = P => ({...prog(3), 'reefid-sync-fish-progress': JSON.stringify(P)});
+  // Two families (the common one weighs 3, the rare one 1), one genus unit under the common one.
+  const tree = {
+    f: [
+      ['f:Pomacentridae', 3, 1],
+      ['f:Gobiidae', 1, 3]
+    ],
+    s: [
+      [3, 'g:Chromis', '', [], 1],
+      [1, '', '', [], 3]
+    ]
+  };
+  const lvl = th => ({ok: 220, ko: 30, th});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({'f:Gobiidae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(1)}),
+    summary: {board: 1, boards: {fish: tree}},
+    answers: []
+  });
+  s.post({
+    name: 'Ben',
+    pin: '1111',
+    data: fish({'f:Pomacentridae': {ok: 9, ko: 0, mx: 1}, 'g:Chromis': {ok: 9, ko: 0, mx: 1}, '~level': lvl(0.5)}),
+    summary: {board: 1},
+    answers: []
+  });
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'the tree kept as sent');
+  // Ana: the rare family only, √(0.25 × 1/4) = 25%. Ben: the common family and its genus, √(0.25 × 3/4 + 0.75 × 0.8 ×
+  // 0.5 × 3/4) = √0.4125 = 64%.
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [
+    ['Ben', 64, 0.5],
+    ['Ana', 25, 1]
+  ]);
+  // A tree that fails the checks keeps the one stored; a list from an older app never replaces a tree (Codex review #730:
+  // the board would go back to the families' mean while the apps show the global score).
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: {f: [['=SUM(A1)', 1, 1]], s: []}}}, answers: []});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({}),
+    summary: {board: 1, boards: {fish: {f: [['f:Gobiidae', 1, 1]], s: [[1, 'g:X', '', ['n:1', 'n:2', 'n:3', 'n:4'], 1]]}}},
+    answers: []
+  });
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae', 'f:Gobiidae']}}, answers: []});
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'an older app list: the tree kept');
+  // Before any tree, a list is kept and read as before (an app from before the score, sheet v95).
+  const t = seed();
+  t.post({name: 'Cy', pin: '2222', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae']}}, answers: []});
+  assert.strictEqual(t.props.BOARD_UNITS_fish, JSON.stringify(['f:Pomacentridae']));
+});
+
 test('board (v20): an admin hides a player from the leaderboard; their own syncs never bring them back', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('a3')]});
@@ -1677,7 +1732,7 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
   const r = s.post({name: 'Ana', pin: '1234', data: prog(9), summary: {}, answers: L, rv: 0});
   const A = s.sheets.Answers,
     col = A.rows[0].indexOf('Scoring');
-  assert.deepStrictEqual([col, A.rows[0].length], [22, 23], 'Scoring at the end, column W (core.js LOG_SC)');
+  assert.deepStrictEqual([col, A.rows[0].length], [22, 24], 'Scoring in column W (core.js LOG_SC), Rejected tries after it (v100)');
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(
     A.rows.slice(1).map(x => x[col]),
@@ -2063,6 +2118,38 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
   const id = require('vm').runInContext("aid_('~anon devanon102')", s.ctx);
   s.post({anonDelete: [id], token: TOK});
   assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
+});
+
+// Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
+// subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
+test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
+  const s = seed(),
+    fish = (id, extra = {}) => ans(id, {s: 'fish', rk: 'family', g: 'f:Damselfishes', a: 'f:Damselfishes', ...extra});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(3),
+    summary: {},
+    answers: [fish('f1'), fish('f2'), fish('f3', {ok: 0, a: 'f:Gobies'}), ans('a3', {s: 'coral'})],
+    at: 1
+  });
+  // a row with no player (the readAnswers log leaves it out: so does the count), and a surprise card's answer (sheet v98,
+  // Mode wink: counted nowhere)
+  s.sheets.Answers.appendRow(['', new Date(), 'Acropora', 'Acropora', 1, 'quiz']);
+  const wink = ['Ana', new Date(), 'f:WhaleSharks', 'f:Damselfishes', 0, 'wink'];
+  wink[17] = 'fish';
+  s.sheets.Answers.appendRow(wink);
+  const h = s.post({analysesGet: 1, head: 1, token: TOK});
+  assert.deepStrictEqual(h.counts, {coral: 5, fish: 3}, 'four coral rows logged before v60 or with Subject coral, three fish');
+  assert.strictEqual(h.subject, 'coral');
+  assert.strictEqual(h.answers, 5, "the corals' answers, not the tab's 10 rows");
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK, subject: 'fish'}).answers, 3);
+  // the same count as the log the Action reads (readAnswers) and the admin's (core.js subjCounts)
+  const C = require('../core.js');
+  assert.deepStrictEqual(C.subjCounts(s.post({readAnswers: 1, token: TOK}).rows), h.counts);
+  // the stored meta keeps the report's subject
+  s.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 5, made: 1, AV: 1, subject: 'coral'}), token: TOK});
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stored.subject, 'coral');
 });
 
 test('v55 analyses head: a report stored before the last delete or merge is stale', () => {

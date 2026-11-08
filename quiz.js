@@ -46,6 +46,7 @@ let EXAMQ = null; // the genus whose exam question is on screen (set by question
 // TYPEDQ: the typed question on screen and what was typed ({t: genus asked, m: the match or null, text}), read by answer.
 let TYPEDQ = null,
   TYPEN = null;
+const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind rj)
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
 // For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
 const typeNames = () => {
@@ -60,14 +61,35 @@ const typeMatch = (text, rk = '') =>
     text,
     UNITS[SUBJ.id].norm
   );
+// What a typed text that is no unit of rank rk names instead (core.js typeElse): the rank word of another unit it names
+// ('family'), 'common' for a common name, '' for nothing. Only on a question below the subject's rank (a fish scientific
+// genus), from the subject's own lists (UNITS typeOther); none for a subject without them.
+const typeKind = (text, rk) => {
+  const U = UNITS[SUBJ.id],
+    x = rk && U.typeOther ? U.typeOther(rk) : null;
+  if (!x) return '';
+  return typeElse(
+    text,
+    typeNames().filter(o => rankOf(o.g) !== rk),
+    {...x, rank: g => rankOf(g) || SUBJ.rank, own: g => (GX(g) || {}).imrName},
+    U.norm
+  );
+};
+// The nudge for a text typeKind reads (Pierre, 2026-11-08, Q237): it says what kind of name was typed and what the
+// question needs, nothing more: never a scientific name, and the same whether it names the photo's fish or another.
+const typeKindMsg = (text, kind, one) =>
+  `“${text}” is ${kind === 'common' ? 'a common name' : 'a ' + kind}: this question needs a ${one}'s scientific name.`;
 // S: the subject the form names and reads (the quiz's own; Tools › Type the genus is the corals', whatever is on screen).
 const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <label for="tyin">${S.one[0].toUpperCase() + S.one.slice(1)}</label>
     <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${S.one}">
     <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
     <p class="tymsg" aria-live="polite"></p></form>`;
-// Binds a typed form: done(m, text, sp) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
-// word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
+// Binds a typed form: done(m, text, sp, rj) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
+// word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it (on
+// a question below the subject's rank, a common name or another rank's name is told so: typeKind, typeKindMsg). rj: the
+// texts refused that way before the answer, in order (at most TYPEDQ_RJ, each cut to 40 characters), logged with it
+// (Pierre, 2026-11-08, Q237: "c'est essentiel. Et c'est vrai pour tout le jeu, partout").
 // After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
 // rk, one: the rank of the unit asked and its word ("genus" for a fish scientific genus): see typeMatch.
 // o.t, the unit asked: the spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"; core.js typeVerdict). A
@@ -84,6 +106,7 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     idk = form.querySelector('[data-idk]');
   let over = false,
     first = null; // {m, text}: the close reading, while the player retypes it
+  const rj = []; // the texts refused, in order (done's rj)
   const end = (m, text, sp) => {
     over = true;
     msg.textContent = '';
@@ -92,7 +115,7 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     inp.disabled = true;
     form.querySelectorAll('button').forEach(b => (b.disabled = true));
     inp.blur(); // the phone's keyboard closes, so the feedback is in view
-    done(m, text, sp);
+    done(m, text, sp, rj.slice());
   };
   const read = text => (S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk)));
   form.onsubmit = e => {
@@ -103,7 +126,10 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
     if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t) === 'exact' ? 1 : 0, text});
     const m = read(text);
-    if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
+    if (!m || m.near) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
+    const kind = !m && S === SUBJ ? typeKind(text, rk) : '';
+    if (kind) msg.textContent = typeKindMsg(text, kind, one);
+    else if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else if (o.t && typeVerdict(m, o.t) === 'close') {
       first = {m, text};
@@ -268,8 +294,8 @@ function question(cur, target, choices, prompt, set, kq) {
   if (tf)
     typeBind(
       tf,
-      (m, text, sp) => {
-        Object.assign(TYPEDQ || {}, {m, text, sp});
+      (m, text, sp, rj) => {
+        Object.assign(TYPEDQ || {}, {m, text, sp, rj});
         go(m ? m.g : '');
       },
       SUBJ,
@@ -625,6 +651,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // (Code.gs logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
     ...(tq ? {ty: String(tq.text || '').slice(0, 40)} : {}),
     ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {}),
+    // The texts refused before it (typeBind rj: no unit, two as close, a common name or another rank's name), in order
+    // (Pierre, 2026-11-08, Q237): sheet v100 keeps them (Rejected tries); an older script ignores the field (Code.gs
+    // logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
+    ...(tq && tq.rj && tq.rj.length ? {rj: tq.rj.slice(0, TYPEDQ_RJ)} : {}),
     // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
     // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's (SUBJECTS
     // rank). An older script ignores these fields and would file the answer as a coral one: the answers of a subject the
@@ -847,8 +877,11 @@ function winkDue() {
 // The wink's photo (Pierre, 2026-11-07: a surprise card never shows a bad photo, each draws from 2 or 3 really beautiful
 // ones): one of the photos chosen for it (wink.photos: tools/fish_wink_photos.json) that are still among the unit's game
 // photos, matched by photo id (fishPid: a candidate and its stopgap copy are one photo), so one Pierre's curation takes
-// out is never drawn; none left, the unit's best by ease and reference look (easyRank's first).
+// out is never drawn; none left, the unit's best by ease and reference look (easyRank's first). Pierre's ★ Cover of the
+// unit comes first while it is in play (coverP, app.js fishCurate; Pierre, 2026-11-08, Q290, of the Thresher sharks'
+// card: "we can use my cover for the card").
 function winkPhoto(g) {
+  if (g.coverP) return g.coverP;
   const want = new Set((g.wink.photos || []).map(fishPid)),
     L = g.views.wide.filter(p => want.has(fishPid(p.f)));
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
@@ -1461,7 +1494,9 @@ function quizPhoto(cur = 'quiz') {
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
-  else if (!noOpen() && promptOk() && bonusBackDue()) (promptMark(), bonusBackShow());
+  // The back card is said once: signed in, only once the visit's first sync brought the choice made on another device
+  // (sync.js noticesReady, Pierre 2026-11-08).
+  else if (!noOpen() && promptOk() && noticesReady() && bonusBackDue()) (promptMark(), bonusBackShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }

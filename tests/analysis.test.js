@@ -305,7 +305,7 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.deepStrictEqual(JSON.parse(stored).M, [1000], 'round milestones only, no "All N" point');
   assert.ok(!('live' in JSON.parse(stored)));
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'wait', 'no new answers: nothing to do');
-  assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+  assert.strictEqual(logs[logs.length - 1], `Corals: ${rows.length} answers, newest milestone 1000: the next one at 2000.`);
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0, force: true}), 'stored');
   assert.ok(/1 reused|2 reused/.test(logs[logs.length - 1]), logs[logs.length - 1]);
   // sheet v55: an account removed since the stored report (head stale): refitted at once, nothing reused.
@@ -327,7 +327,100 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
     };
   assert.strictEqual(await sheetRun(short, 'tok', {B: 0}), 'wait');
   assert.strictEqual(puts.length, 0);
-  assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+  assert.strictEqual(logs[logs.length - 1], `Corals: ${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+});
+
+// Pierre, 2026-11-08: "il faut faire tous les 1000, mais pour le nombre de réponses dans le mode de jeu": the corals'
+// analyses are refitted every 1000 coral answers. The sheet's head counted every row of every subject, so the fish answers
+// made each hourly run read the whole log (and the admin announce a refit that was not due).
+test('tools/analyses.js on the real sheet script: fish answers never bring a coral refit', async () => {
+  const {sheetRun} = require('../tools/analyses.js'),
+    {loadCodeGs} = require('./gas.js'),
+    TOK = 'ghp_write000000000000000000',
+    s = loadCodeGs(),
+    t0 = Date.UTC(2026, 10, 1),
+    row = (i, subject) => {
+      const r = ['Ana', new Date(t0 + i * 6e4), 'Acropora', 'Acropora', 1, 'quiz', 'acropora-1', 'x' + i];
+      r[17] = subject;
+      return r;
+    };
+  const sh = require('vm').runInContext("sheet_('Answers', LOG)", s.ctx);
+  // 1500 coral answers (1000 logged before v60 with no Subject), then 1600 fish answers: 3100 rows in the tab
+  for (let i = 0; i < 1500; i++) sh.appendRow(row(i, i < 1000 ? '' : 'coral'));
+  for (let i = 0; i < 1600; i++) sh.appendRow(row(1500 + i, 'fish'));
+  assert.strictEqual(
+    s.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 1200, made: 1, AV: A.AV, subject: 'coral'}), token: TOK}).ok,
+    true
+  );
+  const calls = [],
+    logs = [],
+    io = {post: async b => (calls.push(Object.keys(b).find(k => /^(analyses|read)/.test(k))), s.post(b)), log: t => logs.push(t)};
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'wait');
+  assert.deepStrictEqual(calls, ['analysesGet'], 'no new thousand of coral answers: the log is not read');
+  assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
+});
+
+test("tools/analyses.js: the head of an older script (every subject's rows) is judged again on the subject's log", async () => {
+  const {sheetRun, headCount} = require('../tools/analyses.js'),
+    rows = Array.from({length: 3100}, (_, i) => {
+      const r = ['p1', i, 'Acropora', 'Acropora', 1, 'quiz', ''];
+      r[17] = i < 1500 ? 'coral' : 'fish';
+      return r;
+    });
+  assert.strictEqual(headCount({answers: 3100}, 'coral'), 3100, 'before v105: an upper bound');
+  assert.strictEqual(headCount({answers: 1500, counts: {coral: 1500, fish: 1600}}, 'coral'), 1500);
+  assert.strictEqual(headCount({answers: 1500, counts: {coral: 1500, fish: 1600}}, 'fish'), 1600);
+  const puts = [],
+    logs = [],
+    io = {
+      post: async b =>
+        b.analysesGet
+          ? {ok: true, answers: 3100, stored: {answers: 1200, av: A.AV}}
+          : b.readAnswers
+            ? {ok: true, rows}
+            : (puts.push(b), {ok: true}),
+      log: t => logs.push(t)
+    };
+  assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'wait');
+  assert.strictEqual(puts.length, 0, 'nothing stored: 1500 coral answers, the 1600 fish ones apart');
+  assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
+});
+
+// The admin's status line beside the milestone switch (admin-analyses.js anStatus): the subject and its own numbers.
+test('admin Analyses status line: the subject, the milestone fitted, its answers since, the next one', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    block = require('./block.js'),
+    C = require('../core.js'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'admin-analyses.js'), 'utf8');
+  const code =
+    block(src, 'const anInt = ', '\n', {file: 'admin-analyses.js', through: true}) +
+    block(src, 'const anSubj = ', '\n/* ---------- The page', {file: 'admin-analyses.js'}) +
+    ';({anSubj, anCount, anStatus})';
+  const run = (ANREP, ANS) => {
+    const ctx = {ANREP, ANS, ANALYSIS: A, subjCounts: C.subjCounts, subjectOf: C.subjectOf, replaySubject: C.replaySubject};
+    return require('vm').runInNewContext(code, ctx);
+  };
+  const line = (ANREP, ANS, lastM) => {
+    const f = run(ANREP, ANS),
+      S = f.anSubj({M: [lastM]});
+    return f.anStatus(S, lastM, f.anCount(S));
+  };
+  // sheet v105: the head's count of the corals' answers (2,729 coral and 1,292 fish answers on 2026-11-08)
+  assert.strictEqual(line({counts: {coral: 2729, fish: 1292}}, null, 2000), 'Corals: fitted on 2,000 answers · 729 since · next at 3,000');
+  assert.strictEqual(
+    line({counts: {coral: 3004, fish: 1292}}, null, 2000),
+    'Corals: fitted on 2,000 answers · 1,004 since · 3,000 due within the hour'
+  );
+  // an older script (its answers every subject's rows, not used): the answer log this page reads, the fish rows apart
+  const mixed = Array.from({length: 4021}, (_, i) => {
+    const r = ['p1', i];
+    r[17] = i < 2047 ? '' : i < 2729 ? 'coral' : 'fish';
+    return r;
+  });
+  assert.strictEqual(line({counts: null}, {all: mixed}, 2000), 'Corals: fitted on 2,000 answers · 729 since · next at 3,000');
+  // the log not read yet: no count, no "due"
+  assert.strictEqual(line({counts: null}, null, 2000), 'Corals: fitted on 2,000 answers · next at 3,000');
 });
 
 // Pierre, 2026-11-05: the report sits on round milestones only (1000, 2000, 3000, …), never shifted by the count of the
@@ -1850,4 +1943,71 @@ test('admin: a compacted milestone shows its profiles’ counts, not an empty he
   lean.thin = true;
   lean.n = 2;
   assert.match(vm.runInContext("anView('who', REP, REP.R[1000])", ctx), /<b>2<\/b><span>Players/);
+});
+
+// Time and difficulty (Pierre, 2026-11-08: "a slow answer, even a right one, or a photo enlarged, means the photo was
+// harder"): before each answer, the earlier answers of OTHER players on its photo, their right answers' speed against
+// their own median (from their 10th timed answer; typed and enlarged answers out of it) and their enlarging against
+// their own habit, each shrunk by TD_K answers' worth.
+test('time and difficulty: others’ earlier answers on the photo only, shrunk; a player’s median from the 10th timed answer', () => {
+  const row = (p, t, f, s, o = {}) => [
+    p,
+    t,
+    'G',
+    'G',
+    o.y == null ? 1 : o.y,
+    o.m || 'quiz',
+    f,
+    0.8,
+    0,
+    0,
+    'G H I J',
+    0,
+    s,
+    o.z == null ? 0 : o.z
+  ];
+  const rows = [];
+  for (let i = 0; i < 10; i++) rows.push(row('Q', i, 'x', 5));
+  rows.push(row('Q', 10, 'f', 10)); // z = log 2: Q's 11th timed answer, right, not enlarged
+  rows.push(row('Q', 11, 'f', 30, {m: 'quiz|t', z: 1})); // typed: no z; enlarged against Q's habit 0 so far
+  rows.push(row('R', 12, 'f', 4)); // R: one earlier right answer of another player on f
+  rows.push(row('Q', 13, 'f', 5)); // Q again: R's answer has no z (R has no 10 timed answers), its enlarging no habit yet
+  const R = A.tdFeat(A.prep(rows));
+  assert.strictEqual(R[9].z, null, 'the 10th timed answer has no median yet');
+  near(R[10].z, Math.log(2), 1e-9, 'z of the 11th');
+  assert.strictEqual(R[11].z, null, 'a typed answer has no z');
+  assert.strictEqual(R[10].slow, null, 'no other player on f yet');
+  const r = R[12];
+  assert.strictEqual(r.nz, 1);
+  near(r.slow, Math.log(2) / (1 + A.TD_K), 1e-9, 'others’ right-answer speed, shrunk');
+  assert.strictEqual(r.ne, 2, 'two of Q’s answers on f carry an enlarging against a habit');
+  near(r.enl, 1 / (2 + A.TD_K), 1e-9, 'others’ enlarging against their habit, shrunk');
+  assert.strictEqual(R[13].slow, null, 'Q’s own answers never count for Q');
+  assert.strictEqual(R[13].nz, 0);
+});
+
+test('time and difficulty: a planted link between a photo’s time and its difficulty comes back; without it, nothing', () => {
+  const {photos, meta, look} = synthMeta(),
+    pl = Array.from({length: 12}, (_, i) => ['P' + i, ((i % 5) - 2) * 0.4, 600, 0.05 + 0.03 * (i % 6)]),
+    run = td =>
+      withTruth({td}, () => A.tdiff(A.prep(A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 3}), meta), 0, 1)),
+    e = (r, k) => r.effects.find(x => x.k === k);
+  // the app's expectation blind to the photos' own difficulty (blind 1): what others' time says is then news to it. One
+  // seed: at 95% a null effect reads clear about once in 20 (seed 1 does, for slow, among 12 null runs tried)
+  const on = run({link: 0.5, blind: 1}),
+    off = run({link: 0, blind: 1}),
+    known = run({link: 0.5, blind: 0});
+  assert.ok(e(on, 'slow').v === 'clear' && e(on, 'slow').est < 0, `slow ${JSON.stringify(e(on, 'slow'))}`);
+  assert.ok(e(on, 'tph').v === 'clear' && e(on, 'tph').est < 0, `tph ${JSON.stringify(e(on, 'tph'))}`);
+  assert.ok(on.agree.photo > 0.3, `agreement ${on.agree.photo}`);
+  assert.notStrictEqual(e(off, 'slow').v, 'clear', 'no link: others’ time says nothing');
+  assert.notStrictEqual(e(off, 'tph').v, 'clear', 'no link: no time intensity effect');
+  assert.ok(Math.abs(off.agree.photo) < 0.2, `no link: agreement ${off.agree.photo}`);
+  // the app already knows each photo's difficulty: others' time adds nothing beyond its expectation, while slow photos
+  // are still the hard ones
+  assert.notStrictEqual(e(known, 'slow').v, 'clear', 'an app that knows the photo: nothing beyond it');
+  assert.ok(e(known, 'tph').v === 'clear' && e(known, 'tph').est < 0, 'slow photos are still the hard ones');
+  // its bins: right answers against expected fall from fast to slow others
+  const pts = b => (b.y - b.E) / b.n;
+  assert.ok(pts(on.bins[0]) > pts(on.bins[2]), JSON.stringify(on.bins));
 });

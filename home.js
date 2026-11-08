@@ -7,6 +7,17 @@
   // the band's shape allows) without cutting the fish's head or tail: a photo wider than its tile loses some of its sides,
   // one narrower some of its top and bottom (object-fit: cover), so from 4:3 to 16:9 only a little of each.
   const LAND_AR = [1.3, 1.8];
+  // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
+  // judged tag, judging/FISH.md).
+  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1';
+  // A unit's photo on a Home tile. Landscape tiles (UNITS land): Pierre's ★ Cover (coverP, app.js fishCurate) when it
+  // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
+  // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it,
+  // else its first. Other tiles: the unit's card photo (cover()).
+  const tilePhoto = (g, land) => {
+    const L = g.views.wide;
+    return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || L[0]) : cover(g);
+  };
   const ph = (n, v) => {
     const g = DATA.gen[n];
     if (!g) return '';
@@ -34,17 +45,14 @@
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
     // A subject whose photos are wide (UNITS land: fish, Pierre 2026-11-08: "most fish are horizontal", square tiles cut
     // them) gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
-    // photo picked to suit them: the first of its easiest, most reference-like photos (core.js easyRank, already in that
-    // order) that shows the whole fish (its judged tag, judging/FISH.md) at a shape that suits the tile (LAND_AR), else its first.
-    const land = !!UNITS[SUBJ.id].land,
-      fits = L =>
-        (land && L.slice(0, 10).find(p => p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1')) || L[0];
+    // photo picked to suit them (tilePhoto: Pierre's cover when it suits the tile, else the first of its easiest that does).
+    const land = !!UNITS[SUBJ.id].land;
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)
           .map(
             n =>
-              `<img ${thumb(fits(GX(n).views.wide), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
+              `<img ${thumb(tilePhoto(GX(n), land), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
           )
           .join('')
       : shuffle(names)
@@ -54,7 +62,8 @@
     // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
-      fp = fish && (GX(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || {views: {wide: []}}).views.wide[0],
+      // Its fish art, a landscape band too: the same photo a tile would show (tilePhoto, Q291).
+      fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
       fishArt = fp ? `<img ${thumb(fp, '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">` : '';
     const idoor = fish
       ? `

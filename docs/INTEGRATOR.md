@@ -13,6 +13,10 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Questions** go to him numbered, never reset: the last number used is in [STATUS.md](STATUS.md) ("Last question number"; `python3 tools/brief.py` prints it). Each with its context in one or two
   sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
   PR's Decisions ("Pierre, date time (QN)"), empty "Choices I made", remove `needs-pierre`, merge.
+  **Only a real development choice gets a number** (Pierre, 2026-11-08, on Q297: "les questions que tu dois me poser
+  numérotées, c'est des questions dont les réponses sont ensuite enregistrées, sur lesquelles on peut revenir pour montrer
+  comment on est arrivé à tel point"): a choice whose answer is recorded and changes what gets built. Never number a
+  question that anticipates his ROADMAP order ("which next?"): he sets the order himself; ask it plainly, unnumbered.
 - **Keep the integrator's context for integrating** (Pierre, 2026-11-08: "a good idea"). Delegate to a subagent any task
   that would pour raw material into it (sheet dumps, large data files, many files read or many API calls, long logs):
   give the subagent a precise brief and ask for the conclusion, the numbers and the evidence, not the material. Keep in

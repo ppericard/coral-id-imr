@@ -938,6 +938,16 @@
       u.board = p.hide ? -1 : 1;
       return {ok: true, board: u.board};
     }
+    // Sheet v99: Change the starting answer (Code.gs users_ userStart, the same core.js startAdminSet), with ?demo&v=99.
+    if (p.userStart) {
+      const u = S.users[lc(p.userStart)];
+      if (!u) return {ok: false, error: 'user'};
+      const out = startAdminSet(u.data, String(p.s || ''), String(p.c || ''), Date.now());
+      if (!out) return {ok: false, error: 'none'};
+      u.data = out.data;
+      u.rev++;
+      return {ok: true, rev: u.rev, start: out.start};
+    }
     if (p.userData) {
       const u = S.users[lc(p.userData)];
       return u ? {ok: true, rev: u.rev, data: JSON.parse(JSON.stringify(u.data))} : {ok: false, error: 'user'};
@@ -1017,13 +1027,21 @@
           w.terminate();
           done(e.data && e.data.res ? JSON.stringify(e.data.res) : null);
         };
-        w.postMessage({id: 1, rows: answers().rows, meta: ANA_META, B: 0, seed: 1});
+        // the corals' answers only, as the Action reads them (tools/analyses.js: core.js subjRows)
+        w.postMessage({id: 1, rows: subjRows(answers().rows), meta: ANA_META, B: 0, seed: 1});
       });
     return ANA.then(text => {
-      const n = S.rows.length,
+      // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
+      // answers was every row of every subject, the fish ones included (?demo&v=104: the admin counts from the log).
+      const rows = answers().rows,
+        counts = subjCounts(rows),
+        sj = replaySubject(),
+        head0 = V >= 105 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
         r = text && JSON.parse(text);
-      const stored = r ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made} : null;
-      return head || !text ? {ok: true, answers: n, stored} : {ok: true, answers: n, stored, report: text};
+      const stored = r
+        ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, ...(V >= 105 ? {subject: sj} : {})}
+        : null;
+      return head || !text ? {...head0, stored} : {...head0, stored, report: text};
     });
   };
   const demoFetch = async (u, opts) => {
@@ -1058,6 +1076,7 @@
         p.anonDelete ||
         p.userBoard ||
         (p.userArchive && V >= 58) ||
+        (p.userStart && V >= 99) ||
         (p.userGroup && V >= 48)
       )
         return ok(users(p));

@@ -75,11 +75,17 @@ function syncSummary() {
 // The units each other subject's leaderboard counts (SUBJECTS board after the first; sheet v95, Code.gs
 // boardUnitsSave_): {id: its slate}, as My progress counts it (UNITS slate), the sheet then ranking that board on each
 // player's saved progress of the subject over it. A subject whose content is not loaded on this device sends none.
+// A subject with a global score (core.js SUBJECTS score: the fish) sends its tree instead (app.js UNITS tree), once the
+// sheet ranks by it (core.js SCORE_SHEET, v101: board_ ranks by core.js treeScore, the % My progress shows; rule D4).
 const boardUnits = () =>
   Object.fromEntries(
     SUBJECTS.filter((S, i, a) => S.board && S !== a.find(x => x.board))
-      .map(S => [S.id, typeof UNITS === 'object' && UNITS[S.id] ? UNITS[S.id].slate() : []])
-      .filter(([, u]) => u.length)
+      .map(S => {
+        const U = typeof UNITS === 'object' ? UNITS[S.id] : null,
+          T = U && S.score && U.tree && sheetV() >= SCORE_SHEET ? U.tree() : null;
+        return [S.id, T || (U ? U.slate() : [])];
+      })
+      .filter(([, u]) => u && (Array.isArray(u) ? u.length : (u.f || []).length))
   );
 // The saved data comes with the key names of the app that saved it (core.js keysIn: an app from before the rename to
 // IMR Reef ID, 2026-11-03, saves the old ones): read with the new names only.
@@ -274,6 +280,7 @@ function mergeSavedIn(j) {
     if (rc && Array.isArray(rc.g) && (rc.t || 0) > ((lc && lc.t) || 0)) store.set('reefid-sync-coral-custom', rc);
   } catch (e) {}
   achMerge(d[ACHK]); // achievements earned on another device join this one's
+  toldMerge(d[TOLD.KEY]); // the notices told on another device: never told again here (noticesGo decides after the merge)
   // Each subject's first-launch question answered on another device (model.js startMerge; the latest answer wins).
   SUBJECTS.forEach(S => S.start && startMerge(d[startKey(S.id)], S.id));
   // Each subject's progress on its own (core.js SUBJECTS), as if it were on screen (inSubject): its cards, reset, opt-in
@@ -393,7 +400,7 @@ function mergeSubject(j, d, S, mine) {
       // A copy under newer rules than this device applied (another device adopted their replay): a learned mark that
       // replay took away is not taken here by the merge, which would tell nothing (the mark gone before mxRecalc sees it;
       // Codex review #399). It stays until this device adopts the same replay (replayAdopt, in this very sync when the
-      // reply carries it, else at the next), which decides it with this device's own card (the cards are per device).
+      // reply carries it, else at the next), which decides it with this device's own card (told once per account: core.js TOLD, progress.js mxLostNotice).
       if (S.replay && rvSaved > rvApplied())
         Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
       Object.keys(P).forEach(g => delete P[g]);
@@ -503,6 +510,7 @@ function syncPush() {
   }
   syncing = syncOnce().finally(() => {
     syncing = null;
+    noticesGo(); // the visit's first sync is over: the one-time notices, on the merged state
     if (syncAgain) {
       syncAgain = false;
       syncPush();
@@ -669,6 +677,62 @@ const syncSoon = () => {
   clearTimeout(syncTimer);
   syncTimer = setTimeout(syncPush, 3000);
 };
+// The one-time notices wait for the visit's first sync (Pierre, 2026-11-08: a device still holding an old copy of his
+// account showed him again, two or three times over three devices, the cards and toasts he had seen on another: "as long
+// as the page is not synchronised, there is no point showing things for the umpteenth time"). For a signed-in player,
+// the cards that tell something once (progress.js recalcNotice, mxLostNotice, rvNotice, sorryNotice, subjHello,
+// boardNotice) and the achievements check (achCheck, achRecheck: their toasts, given and taken back) wait (noticeLater)
+// until the first sync of the visit is over (noticesGo: the pull and merge done, whatever the reply: an error, offline
+// or a refused code shows them from this device's state at once), or NOTICE.WAIT at most (a line so slow the reply has
+// not come). Then each is decided again on the merged state: the progress and achievements of every device, and the
+// notices already told on any of them (TOLD, core.js toldUnion). Not signed in: no wait, as before.
+const NOTICE = {WAIT: 20000};
+let noticeOk = false,
+  noticeT = 0;
+const noticeQ = new Map();
+const noticesReady = () => noticeOk || !SYNC || !SYNC_URL;
+// fn later, once (the last one under its key k, in the order the keys came), when the notices are not ready yet: true.
+function noticeLater(k, fn) {
+  if (noticesReady()) return false;
+  noticeQ.set(k, fn);
+  if (!noticeT) noticeT = setTimeout(noticesGo, NOTICE.WAIT);
+  return true;
+}
+function noticesGo() {
+  if (noticeOk) return;
+  noticeOk = true;
+  clearTimeout(noticeT);
+  const L = [...noticeQ.values()];
+  noticeQ.clear();
+  L.forEach(fn => {
+    try {
+      fn();
+    } catch (e) {
+      ev('err', {msg: 'notice: ' + String((e && e.message) || e).slice(0, 120)});
+    }
+  });
+}
+// The notices told (core.js TOLD: a list of tokens), this device's and, merged at each sync, every other device's of the
+// account. toldAdd marks some told here and sends them with the next save. Signed in only: not signed in, the cards'
+// own device marks decide, as before.
+const toldAll = () => (SYNC ? toldUnion(store.get(TOLD.KEY, []), []) : []);
+const toldHas = t => toldAll().includes(t);
+function toldAdd(...L) {
+  if (!SYNC) return false;
+  const was = toldAll(),
+    now = toldUnion(was, L);
+  if (now.length === was.length) return false;
+  store.set(TOLD.KEY, now);
+  if (SYNC) syncSoon();
+  return true;
+}
+// Those told on another device (the saved copy's, at a sync).
+function toldMerge(json) {
+  try {
+    const r = JSON.parse(json || 'null');
+    if (Array.isArray(r)) store.set(TOLD.KEY, toldUnion(toldAll(), r));
+  } catch (e) {}
+}
 // Bring in what other devices saved: on start-up, when the app comes back to the screen (a phone PWA resumed,
 // a desktop tab switched to) and when back online. Unsent changes here: a full sync (pull, merge, send).
 // Otherwise only a pull and merge, nothing written to the sheet. My progress redraws if the merge changed it.
@@ -706,6 +770,7 @@ function syncPull() {
     .catch(() => null)
     .finally(() => {
       syncing = null;
+      noticesGo(); // as syncPush
       if (syncAgain) {
         syncAgain = false;
         syncPush();
@@ -1400,10 +1465,12 @@ function signOutClear(all) {
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
     ACHK,
     'reefid-ach-new',
+    'reefid-ach-old', // progress.js ACHOLD: this player's achievements waiting for a subject's data to be recounted
     CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
     'reefid-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
     RVK, // the rules version this player's progress was replayed with (replayAdopt)
     'reefid-rv-msg', // progress.js RVN.KEY: the announcement cards of the rules versions, this player's
+    TOLD.KEY, // core.js: the one-time notices this player was told, on any of their devices
     BOARD,
     LOG0,
     NUDGE,
