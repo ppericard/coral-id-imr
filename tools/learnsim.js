@@ -444,6 +444,13 @@ function play(cfg) {
     know = {};
   SL.forEach((g, i) => (know[g] = (prof.grp ? prof.grp.includes(shownGroup(g)) : i % 5 < prof.m) ? prof.hi : prof.lo));
   BON.forEach(g => (know[g] = prof.lo));
+  // The units of the subject's opt-in sets (app.js UNITS sets: the fish scientific genera), learned like any unit from the
+  // profile's low start (2026-11-08, the fish achievements on genera): before, they were never taught (not in know), so
+  // their questions stayed at chance, the genera stayed shaky and held the openings of the families.
+  if (typeof SETS === 'function')
+    SETS()
+      .flatMap(S => (S.all ? S.all() : S.units()))
+      .forEach(g => g in know || (know[g] = prof.lo));
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
     if (g in know) know[g] += x * (1 - know[g]);

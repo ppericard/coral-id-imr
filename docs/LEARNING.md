@@ -2927,7 +2927,8 @@ fish game in a browser, the answer at which each achievement first enters the re
 - **Q262**: a species is "named in Latin" once its scientific name's bar reaches Advanced (the My progress counter too).
 - **Q263**: 33 is fine. **Q264**: the removal is silent ("le retrait il est fait en silence").
 - Names: "n'hésite pas à réfléchir au nom des succès aussi, pour mettre des noms sympas, rigolos, pour varier": every fish
-  achievement has a short diver-flavoured name, its description stays plain and exact.
+  achievement has a short diver-flavoured name, its description stays plain and exact. The list below approved (Pierre, 2026-11-08): "pour
+  les succès, oui, je valide l'esprit, ça me va".
 
 **The list** (`core.js` `FISH_ACH`; tier 1 bronze, 2 silver, 3 gold). Built, 24:
 
@@ -2984,7 +2985,38 @@ rule D5); the fish's is not replayed (`SUBJECTS` fish `replay: false`), its bars
 a merge with a stale device).
 
 **Timing** (rule L8; `tools/learnsim.js --subject fish --ach`, the real fish game in a browser; `--beyond yes` answers circle
-3's offer with yes): TIMINGS
+3's offer with yes): profiles beginner (choice "new") and lecture RA ("imr"), 2 seeds x 2,500 answers each, one process per run; the answer at
+which each achievement first enters the record (seed 1 / seed 2). The simulated player accepts the scientific genera's
+offer (at answer 31-199), and from then on about 60% of its questions are genera: the families' levels come later than
+in the run of 2026-11-06 (fq80a about 2,000 against 1,100; fq80b and fq95a past 2,500 against 1,600-1,900).
+
+| Achievement | beginner | lecture RA |
+|---|---|---|
+| fpct10 Giant stride | 82 / 21 | 10 / 11 |
+| fmet5 Meet the neighbours | 20 / 22 | 21 / 21 |
+| fpct20 Bubble trail | 228 / 122 | 34 / 91 |
+| fq50a Certified | 258 / 310 | 91 / 157 |
+| fmetcore Roll call | 155 / 171 | 250 / 293 |
+| fpct30 Reef crest | 598 / 513 | 284 / 538 |
+| fq50b School's in | 761 / 1,279 | 725 / 1,084 |
+| fsci5 Latin lessons | 793 / 943 | 1,308 / 977 |
+| fpct40 Down the wall | 1,437 / 1,349 | 1,235 / 1,255 |
+| fq80a Night diver | 1,978 / 2,264 | 2,075 / 2,025 |
+| fpct50 Family reunion | > 2,500 / > 2,500 | 2,421 / > 2,500 |
+| fq80b, fq95a, flearn1-30, fpct60, fgen20, fgen60, fcoreadv, fc2, fc3adv, fmetall, flearncore | > 2,500 | > 2,500 |
+
+Longer runs to time the far ones did not finish: the page of the tool crashed ("Target crashed", the browser's renderer)
+in every run of 4,500 and 8,000 answers on this machine (and once at 2,500 with two runs side by side), so the far goals
+(Advanced on 15 families and on every IMR course family, the circles, the genera at Advanced, the exams, 50-60%) stay
+"> 2,500": far goals, as the Instructor ones were in the run of 2026-11-06.
+
+- The first comes within a dozen answers for a lecture RA: fpct10 rides on the √ display (one or two of the most common
+  families at Open Water read about 10%), together with fmet5 at about 20: the first within a few dozen answers, as rule
+  L8 asks, then a steady spread (a new one every 100-700 answers to about 2,000).
+- `tools/learnsim.js` taught nothing on the units of an opt-in set before this change (the scientific genera were not in the
+  learner's knowledge, so their questions stayed at chance, the genera stayed shaky and held the families' openings: in a
+  first run the player was stuck at 27 families met from answer 200 on). Fixed here: they are learned like any unit from
+  the profile's low start.
 
 ### Fish: the global score, simulated (2026-11-04)
 
