@@ -657,9 +657,10 @@ test('fish-photos.json (the stopgap game photos) shows only species in the game'
   );
 });
 
-// Curated common names, the proposal (Pierre, 2026-11-04: 1 to 3 per species; docs/FISH_PATH.md "Common names";
-// tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule C1), each with its
-// sources, no two spellings of one name listed apart, and the file is what the selection gives.
+// Curated common names (Pierre, 2026-11-04: 1 to 3 per species; published as selected, 2026-11-08, Q313; docs/FISH_PATH.md
+// "Common names"; tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule C1),
+// each with its sources, no two spellings of one name listed apart, and the file is what the selection gives (fish.json
+// cn and the game's use of them: tests/fishcommon.test.js).
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
   assert.strictEqual(P.s132.names[0].name, "Russell's snapper");
@@ -668,7 +669,7 @@ test('common names: a PDF slip shows the FishBase spelling, the PDF form accepte
   assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
 });
 
-test('common names proposal: 0 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
+test('common names: 0 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
   const P = read('tools/fish_common.json').species,
     SRC_NAMES = read('tools/fish_common_src.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
@@ -705,7 +706,7 @@ test('common names proposal: 0 to 3 per game species, the PDF name first, source
 // Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a
 // name accepted as a spelling (alt) counts in the shared-name check (Dascyllus trimaculatus' "Three spot damsel" is
 // Pomacentrus tripunctatus' PDF name); a spelling that links two groups merges them (Antennarius striatus).
-test('common names proposal: FishBase main name, shared spellings, linked spellings', () => {
+test('common names: FishBase main name, shared spellings, linked spellings', () => {
   const P = read('tools/fish_common.json').species,
     SRC_NAMES = read('tools/fish_common_src.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');

@@ -606,6 +606,40 @@ function sciOpen(L, score, met, imr, hand) {
     auto = imr ? L.filter(n => GX(n).imrg && at(n, LV_AT[0])) : [];
   return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, hand ? LV_AT[0] : LV_AT[1]))};
 }
+// The curated common names of a fish species (fish.json species cn, from tools/fish_common.py; Pierre, 2026-11-04,
+// docs/FISH_PATH.md "Common names"): 1 to 3 names, the most shared first, each [the name shown, its other spellings];
+// none for a species no reference names (Q247). Common-name mastery of a species needs every listed name (core.js
+// treeScore: C is the mean of its names' bars), so a multiple-choice question shows one listed name at a time, rotating
+// (cnShow), and a typed answer is accepted only as a listed name (cnTypeNames). For the species level, which asks them.
+const cnList = s => ((s && s.cn) || []).map(n => n[0]);
+// The listed name a multiple-choice question on species s shows next: the one asked least so far (asked(i, name): how
+// many times its name i was asked), the list's order on a tie (the most shared first). '' for a species with none.
+function cnShow(s, asked) {
+  const L = cnList(s);
+  let best = -1,
+    low = Infinity;
+  L.forEach((n, i) => {
+    const k = Number((asked && asked(i, n)) || 0);
+    if (k < low) ((low = k), (best = i));
+  });
+  return best < 0 ? '' : L[best];
+}
+// The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
+// typeNormAll: [{k, g: the species id, old, alt}], each listed name and its recorded spellings (old: the spelling typed,
+// alt: 1), nothing else: no other name the references give, no short form without "fish" (fishTypeNames' drop is the
+// families'). A name two species list names both (typeMatchIn near: "which one?").
+function cnTypeNames(L) {
+  const out = [];
+  (L || []).forEach(s =>
+    ((s && s.cn) || []).forEach(n =>
+      n.forEach((x, i) => {
+        const k = typeNormAll(x);
+        if (k && !out.some(o => o.k === k && o.g === s.id)) out.push({k, g: s.id, old: i ? x : '', alt: i ? 1 : 0});
+      })
+    )
+  );
+  return out;
+}
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
 const rankOf = n => (GX(n) || {}).rank || '';
@@ -1607,14 +1641,18 @@ const UNITS = {
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
-    // common names (the genera's, their IMR tags, the species'), from fish.json alone. Nothing for another rank.
+    // common names (the genera's, their IMR tags, the species': the PDF's and every listed one with its spellings, cn),
+    // from fish.json alone. Nothing for another rank.
     typeOther: rk => {
       const F = rk === 'genus' && FISHRAW && FISHRAW.f;
       if (!F) return null;
       const first = x => String(x || '').split(/\s+/)[0];
       return {
         sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
-        common: [...(F.genera || []).flatMap(g => [g.common, g.imr]), ...(F.species || []).map(x => x.common)].filter(Boolean)
+        common: [
+          ...(F.genera || []).flatMap(g => [g.common, g.imr]),
+          ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat()])
+        ].filter(Boolean)
       };
     },
     // The look-alikes the IMR presentation names, each pair once.

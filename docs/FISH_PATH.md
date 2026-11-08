@@ -84,18 +84,31 @@ is the design's shorthand, and internal identifiers may keep it.
 - **A species no reference names has none** (Pierre, 2026-11-08, Q247: "some species have no common name ... they will not take part in the common-name branch"; nudibranchs will be the same): the build and the proposal accept it with no name, none is invented (rule C2), and it simply has no common-name unit (3 near-Dauin species on 2026-11-08: *Priacanthus starnesi*, *Hazeus profusus*, *H. maculipinna*).
 - **Common-name mastery of a species needs all its listed names**: a multiple-choice question shows one listed name at a time, rotating;
   free text accepts only the listed names.
-- **Selection** (a proposal, validated by Pierre in the admin): the names that recur across public sources (the iNaturalist default
-  English name, the FishBase main English name, other public references), at most 3.
-- **The proposal** (2026-11-04 night, waiting on Pierre: `tools/fish_common.json`, written by `tools/fish_common.py`, every name
-  with its sources): the PDF name first (rule C1, kept as written, a likely slip flagged), then the FishBase main English name
-  and the iNaturalist default English name when each is found in both references, then a third only if both record it and
-  FishBase 3 times or more (countries, references); at most 3. Spellings of one name count once (Pearl-scaled / Pearlscale
-  angelfish; Neon damsel / damselfish), the others kept to accept when typed. A name two game species share is dropped from the
-  one that does not own it; a PDF name shared stays, flagged ("Twospot wrasse"). 442 game species: 252 with 1 name, 170 with 2,
-  20 with 3 (circle 1: 184 / 136 / 20; Pierre, 2026-11-05: no third rule, and a PDF slip shows FishBase's spelling,
-  the PDF form accepted when typed). Since every listed name is needed, more names make the common-name branch longer:
-  in the score simulation (`tools/fishscore.js --names tools/fish_common.json`) a common-names-only player reaches 80% after
-  about 2.6 times as many answers as with one name each.
+- **Selection**: the names that recur across public sources (the iNaturalist default English name, the FishBase main
+  English name, other public references), at most 3. **Published without his prior check** (Pierre, 2026-11-08, Q313:
+  "Publie, je corrige à l'usage"): he corrects a list in use (the admin has no place for it yet: below).
+- **The lists** (`tools/fish_common.json`, written by `tools/fish_common.py`, every name with its sources; `tools/build_fish.py`
+  writes them into `fish.json`, species `cn`: one list per name, the name shown first, then its other spellings): the PDF name
+  first (rule C1, kept as written, a likely slip flagged), then the FishBase main English name and the iNaturalist default
+  English name when each is found in both references; at most 3; then **the most shared first** (in the most references, then
+  the main name of the most, then the most FishBase records, then FishBase's main name before iNaturalist's, then by name).
+  Spellings of one name count once (Pearl-scaled / Pearlscale angelfish; Neon damsel / damselfish), the others kept to accept
+  when typed. A name two game species share is dropped from the one that does not own it; a PDF name shared stays, flagged
+  (4 pairs on 2026-11-08: "Twospot wrasse", "Seagrass wrasse", Twotone / Two-tone wrasse, Blackstripe(d) cardinalfish: to settle
+  before species questions ship, "Gaps"). A species with no name of its own and none found in both references gets the main
+  name of one (`single`: *Nudiantennarius subteres*, Deep-water frogfish; *Cryptocentrus nigrocellatus*). Pierre, 2026-11-05: no
+  third rule, and a PDF slip shows FishBase's spelling, the PDF form accepted when typed. **664 game species (2026-11-08)**: 3
+  with no name (Q247), 392 with 1, 248 with 2, 21 with 3 (circle 1: 271 / 180 / 20). Since every listed name is needed, more
+  names make the common-name branch longer: in the score simulation (`tools/fishscore.js --names tools/fish_common.json`, on
+  the 442 species of 2026-11-05) a common-names-only player reaches 80% after about 2.6 times as many answers as with one name each.
+- **In the game** (`app.js`, for the species level, which asks them): `cnShow`, the listed name a multiple-choice question shows,
+  the one asked least so far, the list's order on a tie (so every name comes round); `cnTypeNames`, the typed names: only the
+  listed names and their recorded spellings (the usual spelling tolerance applies, `core.js` `typeMatchIn`), no other name the
+  references give, no short form; a shared name asks "which one?". On a genus question, a listed name typed gets the "common
+  name" nudge (Q237, `typeOther`). Still to build with the species level: one common-name unit per listed name in the score
+  tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null` without one, so the two `single` species
+  read as nameless until then).
+- **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
 
 ## Typed family names (fish beta QA, 2026-11-06)
 
@@ -304,10 +317,9 @@ Gaps before species questions ship:
   photo memory; the fish pre-sort's automatic decisions (`FISHCHK`) make this workable. Targets: "Fish photos and the admin".
 - **Species-level look-alikes**, with the cue that tells each side apart. Only entries have `look` today. Sources: "Fish photos and the
   admin"; how the cues are taught: "How cues are taught" there.
-- **Duplicate common name**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question).
-- *Nudiantennarius subteres* (circle 3) has no common name.
+- **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both.
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): proposed in `tools/fish_common.json`, waiting on Pierre; today `common` holds one English name each.
+- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; four shared PDF names to settle ("Common names").
 - Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
