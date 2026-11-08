@@ -7,9 +7,15 @@
 // loadUsers, allPhotos, zoom, img, kpis). Views: GROUPS in admin.js; docs/ARCHITECTURE.md "Analyses"; the methods in
 // docs/LEARNING.md "Multifactor analyses"; the chart helpers in docs/DESIGN.md "Admin charts".
 const AN_V = 35; // sync script version with analysesGet (rule D4: before it, the page just has no stored report)
+// One report per subject (Pierre, 2026-11-08: each subject's analyses; sheet v113, ANALYSIS.AN_SUBJ_SHEET): ANREPS and
+// ANLOCS by subject id; ANREP and ANLOC are the subject on screen's (anOn), as every view reads them.
 let ANREP = null, // {st: 'ok' | 'none' | 'old' | 'err', rep, answers, stored}
   ANLOC = null, // a report recomputed in this tab: {rep} once done, {prog} while running
   ANWORK = null;
+const ANREPS = {},
+  ANLOCS = {};
+// The subject on screen's report and recompute (the Corals | Fish switch, rule A4).
+const anOn = (S = ASUBJ) => ((ANREP = ANREPS[S.id] || null), (ANLOC = ANLOCS[S.id] || null), S);
 const AN = Object.assign({m: 'all', src: 'sheet'}, store.get('reefid-admin-an', {}));
 const anSave = () => store.set('reefid-admin-an', {m: AN.m});
 // Views: [address, analysis key in the report, title]
@@ -29,14 +35,20 @@ const AN_VIEWS = [
 const anKey = h => (AN_VIEWS.find(v => v[0] === h) || [])[1];
 const anTitle = k => (AN_VIEWS.find(v => v[1] === k) || [])[2] || k;
 
-function anLoad() {
-  if (!TOKEN) return Promise.resolve((ANREP = {st: 'err', err: 'Needs the GitHub token'}));
-  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN})})
+// The stored report of subject S (the one on screen by default), read once per load.
+function anLoad(S = ASUBJ) {
+  const put = x => ((ANREPS[S.id] = x), S === ASUBJ && (ANREP = x), x);
+  if (!TOKEN) return Promise.resolve(put({st: 'err', err: 'Needs the GitHub token'}));
+  return fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({analysesGet: 1, token: TOKEN, subject: S.id})})
     .then(r => r.json())
     .then(j => {
       // A script before v35 answers 'input' to an unknown POST: no stored report, nothing else changes (rule D4).
-      if (!j || (!j.ok && j.error === 'input') || (j.v && j.v < AN_V)) return (ANREP = {st: 'old', v: j && j.v});
-      if (!j.ok) return (ANREP = {st: 'err', err: j.error === 'token' ? 'Token refused' : 'Not available'});
+      if (!j || (!j.ok && j.error === 'input') || (j.v && j.v < AN_V)) return put({st: 'old', v: j && j.v});
+      if (!j.ok) return put({st: 'err', err: j.error === 'token' ? 'Token refused' : 'Not available'});
+      // Another subject's report from the script that stores one per subject only (rule D4): an older one answers with the
+      // corals' report whatever the subject asked. Its answers are still counted (the status line).
+      const own = S.id === replaySubject() || (Number(j.v) >= ANALYSIS.AN_SUBJ_SHEET && j.subject === S.id);
+      if (!own) return put({st: 'none', rep: null, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: null});
       let rep = null;
       try {
         rep = j.report ? JSON.parse(j.report) : null;
@@ -46,9 +58,9 @@ function anLoad() {
       // a report stored before 2026-11-05 also kept all its answers as one more point ("All 1933"): round milestones only
       if (rep && rep.M.some(M => M % ANALYSIS.STEP === 0)) rep.M = rep.M.filter(M => M % ANALYSIS.STEP === 0);
       // sheet v105: each subject's answers counted apart (counts); an older script's answers were every subject's rows
-      return (ANREP = {st: rep ? 'ok' : 'none', rep, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: j.stored});
+      return put({st: rep ? 'ok' : 'none', rep, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: j.stored});
     })
-    .catch(() => (ANREP = {st: 'err', err: 'Offline'}));
+    .catch(() => put({st: 'err', err: 'Offline'}));
 }
 // A report with no point at all (Recompute here on an empty log: no milestone before 1000, no live point at 0) is no
 // report: the page says "No report yet" (Codex review #591).
@@ -748,7 +760,8 @@ function anAnsLoad() {
 }
 function anLive(L, key = 'k') {
   const U = USERS && USERS.users,
-    R = ANS && ANS.rows;
+    // every subject's rows (ANS.all): a device that played only the fish is still one never signed in
+    R = ANS && (ANS.all || ANS.rows);
   if (!Array.isArray(L) || !U || !R) return L || [];
   const ok = new Set(U.map(u => u.id).filter(Boolean));
   R.forEach(r => r[11] === 1 && ok.add(r[0]));
@@ -970,6 +983,10 @@ function anEnt(a, key) {
 // phone, the dendrogram as a list of genera (the tree on their left), each family a band that opens, on a tap, its own
 // block and its mix-ups. In words: the families, those no genus sheet names as look-alikes, and the mix-ups across
 // families. A table of the exact numbers beside it.
+// The units of the subject on screen, with their look-alikes: the corals' genera (data.json), another subject's units as
+// the admin reads them (admin.js fishAdmin: the fish families).
+const anGen = () =>
+  (ASUBJ.sheets ? typeof FISHA !== 'undefined' && FISHA && FISHA.gen : typeof DATA !== 'undefined' && DATA && DATA.gen) || {};
 function anMixMap(a) {
   const m = a.map;
   if (!m || !m.g || m.g.length < 3) return '';
@@ -977,7 +994,7 @@ function anMixMap(a) {
     G = m.g,
     C = new Map(m.cells.map(c => [c[0] * n + c[1], c])),
     famOf = new Map(m.fam.flatMap((L, f) => L.map(i => [i, f]))),
-    gen = (typeof DATA !== 'undefined' && DATA && DATA.gen) || {},
+    gen = anGen(),
     look = (x, y) => ((gen[x] || {}).look || []).includes(y) || ((gen[y] || {}).look || []).includes(x),
     hmax = Math.max(1e-9, ...m.m.map(x => x[2])),
     q = sr => (sr <= m.base ? 0 : sr <= 1.5 * m.base ? 1 : sr <= 2.5 * m.base ? 2 : sr <= 4 * m.base ? 3 : 4),
@@ -1939,12 +1956,54 @@ const anStatus = (S, lastM, now) => {
   ].join(' · ');
 };
 
+// Another subject's words on its Analyses pages (core.js SUBJECTS analyses one, many: the fish's units are families and
+// scientific genera, as its tree has them): the views and analysis.js's plain readings speak of genera, so once drawn
+// the text of the page (and its tooltips) says the subject's words instead, and each unit by its name rather than its id
+// (f:Damselfishes: Damselfishes, as fishAdmin names a family; g:Chromis: Chromis). The corals' pages are left as drawn.
+const anCap = w => w[0].toUpperCase() + w.slice(1);
+function anWords(root, S) {
+  const W = S.analyses || {},
+    pre = Object.values(S.sheets || {});
+  if (!W.one && !pre.length) return;
+  const rx = pre.length ? new RegExp(`\\b(?:${pre.map(x => x.replace(/[^a-z]/g, '')).join('|')}):[A-Z][A-Za-z]*(?: [a-z]+)?`, 'g') : null,
+    name = id => (typeof FISHA !== 'undefined' && FISHA && FISHA.gen[id] ? FISHA.gen[id].name : id.replace(/^[a-z]+:/, '')),
+    say = t => {
+      let o = rx ? t.replace(rx, name) : t;
+      if (W.one)
+        o = o
+          .replace(/\b([Gg])enus by genus\b/g, (_, g) => (g === 'G' ? 'By ' : 'by ') + W.one)
+          .replace(/\bgenera\b/g, W.many)
+          .replace(/\bGenera\b/g, anCap(W.many))
+          .replace(/\bgenus\b/g, W.one)
+          .replace(/\bGenus\b/g, anCap(W.one));
+      return o;
+    };
+  const T = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = T.nextNode(); n; n = T.nextNode()) {
+    const o = say(n.nodeValue);
+    if (o !== n.nodeValue) n.nodeValue = o;
+  }
+  root
+    .querySelectorAll('[title],[aria-label]')
+    .forEach(e => ['title', 'aria-label'].forEach(a => e.hasAttribute(a) && e.setAttribute(a, say(e.getAttribute(a)))));
+}
+// The Analyses views a subject does not have (its admin pages, core.js SUBJECTS admin: for the fish, the photo features
+// and the views drawn from the corals' live answer log), in one line under its Overview.
+const anNotHere = S => {
+  const L = TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].filter(([h]) => !hasPage(S, h)).map(([, w]) => `${t[1]} › ${w}`));
+  return L.length ? `<p class="note adm-an-not">Not for ${esc(S.name.toLowerCase())} yet: ${esc(L.join(', '))}.</p>` : '';
+};
+
 /* ---------- The page ---------- */
 function renderAnalyses() {
   status();
+  const SU = anOn();
+  // a subject whose units have sheets (the fish): their names, read once (admin.js fishAdmin), for anWords
+  if (SU.sheets && typeof FISHA !== 'undefined' && !FISHA && typeof fishAdmin === 'function')
+    fishAdmin().then(() => anPage(cur) && FISHA && render());
   if (!ANREP) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    anLoad().then(() => anPage(cur) && render());
+    anLoad(SU).then(() => anPage(cur) && render());
     return;
   }
   if (TOKEN && !USERS) loadUsers().then(() => anPage(cur) && ANREP && render());
@@ -1961,6 +2020,7 @@ function renderAnalyses() {
   if (!rep) {
     const why = ANREP.st === 'err' ? esc(ANREP.err) : 'No report yet';
     $v.innerHTML = `<section class="adm-an"><div class="adm-shead"><span class="note">${why}</span>${recompute}</div></section>`;
+    anWords($v, SU);
     return anBind();
   }
   const M = anM(rep),
@@ -1984,7 +2044,10 @@ function renderAnalyses() {
   const made = `<span class="note adm-an-made" title="${esc(local ? 'Recomputed in this tab' : 'Stored report')}">${local ? 'This tab' : dateText(rep.made, 'dmhm')}</span>`;
   AN_CARDS = [];
   const body = key ? anView(key, rep, R) : anOverview(rep, R);
-  $v.innerHTML = `<section class="adm-an"><div class="adm-shead">${seg}${badge}${made}${recompute}</div>${anControls()}${anJump()}${body}</section>`;
+  $v.innerHTML = `<section class="adm-an"><div class="adm-shead">${seg}${badge}${made}${recompute}</div>${anControls()}${anJump()}${body}${
+    key ? '' : anNotHere(SU)
+  }</section>`;
+  anWords($v, SU);
   anBind();
 }
 function anBind() {
@@ -2064,38 +2127,42 @@ function anBind() {
 // milestones are reused when their answers are the same. Kept in this tab only, never sent anywhere.
 function anRecompute() {
   if (ANWORK) return;
-  ANLOC = {prog: 'Reading the answers…'};
+  // the subject on screen's answers (core.js subjRows), its photo features when its analyses read them (SUBJECTS analyses)
+  const S = ASUBJ,
+    loc = x => ((ANLOCS[S.id] = x), S === ASUBJ && (ANLOC = x), x);
+  loc({prog: 'Reading the answers…'});
   render();
   const go = () => {
-    const rows = (ANS && ANS.rows) || [];
-    const meta = {ph: ANALYSIS.photoMeta(DATA, DRAFT, {q: AUTOQ}, {m: METRICS})};
+    const rows = subjRows((ANS && (ANS.all || ANS.rows)) || [], S.id);
+    const meta = (S.analyses || {}).photos ? {ph: ANALYSIS.photoMeta(DATA, DRAFT, {q: AUTOQ}, {m: METRICS})} : {ph: {}};
     const src = (document.querySelector('script[src^="analysis.js"]') || {}).getAttribute?.('src') || 'analysis.js';
     try {
       ANWORK = new Worker(src);
     } catch (e) {
-      ANLOC = {prog: 'No worker'};
+      loc({prog: 'No worker'});
       return render();
     }
     ANWORK.onmessage = e => {
       const d = e.data || {};
       if (d.prog) {
-        ANLOC = {prog: `${anInt(d.prog[0])}: ${anTitle(d.prog[1])}…`};
-        const b = $v.querySelector('[data-anre]');
-        if (b) b.textContent = ANLOC.prog;
+        const pr = loc({prog: `${anInt(d.prog[0])}: ${anTitle(d.prog[1])}…`}).prog,
+          b = S === ASUBJ && $v.querySelector('[data-anre]');
+        if (b) b.textContent = pr;
         return;
       }
       ANWORK.terminate();
       ANWORK = null;
-      ANLOC = d.res ? {rep: d.res} : {prog: 'Failed'};
-      if (d.res) AN.src = 'local';
+      loc(d.res ? {rep: {...d.res, subject: S.id}} : {prog: 'Failed'});
+      if (d.res && S === ASUBJ) AN.src = 'local';
       if (anPage(cur)) render();
     };
     // 199 draws with normal intervals from their spread (analysis.js boot): the newest milestone and the look at all the
     // answers (live) in a few minutes here, where the Action's 999 percentile draws would take about 5 times as long;
     // earlier milestones not reused from the stored report keep the model's own interval only
-    ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: ANREP && ANREP.rep, live: 1});
+    const st = ANREPS[S.id];
+    ANWORK.postMessage({id: 1, rows, meta, B: 199, Bh: 0, bse: 1, seed: 1, prev: st && st.rep, live: 1});
   };
-  (ANS && ANS.rows && ANS.rows.length ? Promise.resolve() : loadStats()).then(go);
+  (ANS && ANS.all && ANS.all.length ? Promise.resolve() : loadStats()).then(go);
 }
 // The charts are drawn at the page's width: draw again when it changes.
 let anRz = null;
@@ -2108,7 +2175,7 @@ addEventListener('resize', () => {
 const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. Only the clear results show at first: the button under a chart or table shows the others there (no clear effect, too early to tell), in the same order. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data (all of these). <b>Sort</b>, above every chart and table: <b>Most negative first</b> or <b>Most positive first</b> (by the signed change: a chance in points, a time as the share of time gained or lost; spreads after the changes, by size), <b>By topic</b> (Overview: a sub-heading per analysis, the analyses in the menu's order, by the signed change inside each) or <b>By name</b>; on the Overview each result's topic (the analysis it comes from) is the grey line under its name. A tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
-  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and, once the corals' answers reach the next round thousand (or the code changed), redoes every analysis on the first 1000, 2000, 3000, … coral answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). The fish answers are counted apart and never move the corals' analyses. This page only draws it. The switch picks a milestone, the newest by default; the line beside it gives the subject, the milestone fitted last, the subject's answers since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
+  <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and keeps one report per subject: once a subject's answers reach its next round thousand (or the code changed), it redoes every analysis on that subject's first 1000, 2000, 3000, … answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). Each subject's answers are counted apart: the fish answers never move the corals' analyses, nor the coral answers the fish's. The Corals | Fish switch picks the report. On the fish side the units are the families and scientific genera the questions ask; What makes a photo hard is not there (the fish photos' features, judged ease, phase and framing, are not in the analyses yet), nor the views drawn from the corals' live answer log (Pairs, Answer log, Stops). This page only draws it. The switch picks a milestone, the newest by default; the line beside it gives the subject, the milestone fitted last, the subject's answers since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
   <p><b>Effects hard to tell apart</b> (folded, under each analysis's charts). Two results whose estimates are strongly correlated (r beyond ±0.6) cannot be told apart well by the data: when they are negatively correlated, one could be a bit higher and the other a bit lower with almost as good a fit, so each alone is fragile and their sum is sure; positively correlated, both could be higher (or lower) together, so their difference is sure. It is a property of the estimates (from the model's own covariance), not a link between the two in the world. <b>Conditions in the answers</b>: how often two situations come together in the answers (beyond ±0.7, worth knowing); <b>VIF</b>: how much of a condition the other conditions of the model predict (1 = none; beyond 5, entangled). Columns are numbered as the rows; in a cell, ▲ means the two go the same way, ▼ opposite ways.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
