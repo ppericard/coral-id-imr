@@ -18,6 +18,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   drop:
+    # Pierre only (security review #748): the job is skipped for any other actor, whoever can dispatch it.
+    if: github.actor == 'ppericard'
     runs-on: ubuntu-26.04
     timeout-minutes: 15
     steps:
