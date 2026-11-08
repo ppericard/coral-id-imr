@@ -291,6 +291,12 @@ const server = http.createServer((req, res) => {
       ok(!document.querySelector('#view .q.wink'), 'wink: not again in its window');
     }
     WINK.AT.splice(0, 2, ...W0);
+    // A wink with Pierre's ★ Cover in play shows it on its card (Pierre, 2026-11-08, Q290: the Thresher sharks).
+    const wc = UNITS[SUBJ.id].winks().filter(n => GX(n).coverP);
+    ok(
+      wc.every(n => winkPhoto(GX(n)) === GX(n).coverP),
+      `wink: his cover on the card (${wc})`
+    );
     // The circles on the path (Pierre, 2026-11-06, Q175, Q177): no offer card; circle 2 may open once every circle-1
     // family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3; until then the opening never draws
     // them (mayOpen, openPick); every circle counts in the progress.
@@ -661,6 +667,33 @@ const server = http.createServer((req, res) => {
     const saved = await q.evaluate(() => localStorage.getItem('reefid-sync-subject'));
     if (saved !== '"fish"' || !/fish\*/.test(h1.row) || !/Fish/.test(h1.chip) || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
+    // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
+    // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
+    const ht = await q.evaluate(() => {
+      const srcOf = p => (/src="([^"]*)"/.exec(thumb(p, '1px')) || [])[1],
+        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1',
+        want = n => {
+          const g = GX(n),
+            L = g.views.wide;
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || L[0];
+        },
+        W = new Set(
+          slateGenera()
+            .filter(n => GX(n).views.wide.length)
+            .map(n => srcOf(want(n)))
+        ),
+        C = new Set(
+          slateGenera()
+            .filter(n => suits(GX(n).coverP))
+            .map(n => srcOf(GX(n).coverP))
+        ),
+        T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img, #view .hdoor.identify .hdart img')].map(i =>
+          i.getAttribute('src')
+        );
+      return {n: T.length, covers: T.filter(x => C.has(x)).length, fits: C.size, bad: T.filter(x => !W.has(x))};
+    });
+    if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))
+      ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the chip is there, on every page.
     await q.evaluate(() => (location.hash = '#tools'));
@@ -698,6 +731,26 @@ const server = http.createServer((req, res) => {
       };
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
+    // Each family's photo there is Pierre's ★ Cover (curation.json fish genera, app.js fishCurate) while it is in play,
+    // else the card photo as before (cover(): the easiest, ties on the licence, Q270; 2026-11-08: his covers never showed).
+    const fcv = await q.evaluate(() => {
+      const srcOf = a => (/src="([^"]*)"/.exec(a) || [])[1],
+        cards = [...document.querySelectorAll('#view .tipg')].map(a => ({
+          n: slateGenera().find(n => unameT(n) === (a.querySelector('.tipph b') || {}).textContent),
+          src: (a.querySelector('.tipph img') || {getAttribute: () => ''}).getAttribute('src')
+        })),
+        cur = Object.keys(((CUR || {}).fish || {}).genera || {}).filter(n => FISH.gen[n] && FISH.gen[n].coverP);
+      return {
+        cur: cur.length,
+        shown: cards.filter(c => c.n && FISH.gen[c.n].coverP).length,
+        bad: cards
+          .filter(c => c.n && FISH.gen[c.n].views.wide.length)
+          .filter(c => c.src !== srcOf(thumb(cover(FISH.gen[c.n]), '130px')))
+          .map(c => c.n)
+      };
+    });
+    if (!fcv.shown || fcv.bad.length)
+      ui.push(`${width}px families page: the cards' photos are not the curated covers ${JSON.stringify(fcv)}`);
     await wide('the families page');
     // A family's photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06).
     await q.click('#view .tipph .zoom');
@@ -726,6 +779,13 @@ const server = http.createServer((req, res) => {
     if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
       ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
     if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
+    // Its hero photo is the family's curated cover too, when it has one in play (app.js fishCurate).
+    const hc = await q.evaluate(() => {
+      const g = FISH.gen['f:' + decodeURIComponent(location.hash.split('/').pop())],
+        h = document.querySelector('#view .hero-ph img');
+      return !g || !g.coverP ? null : {want: img(g.coverP, 's'), got: h ? h.getAttribute('src') : ''};
+    });
+    if (hc && hc.want !== hc.got) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
     // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
     const mk = await q.evaluate(() => {
       const m = document.querySelector('#view .fmarks');
@@ -1870,14 +1930,16 @@ const server = http.createServer((req, res) => {
         starters.slice().sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes',
         `the starter core from fish.json: ${starters}`
       );
-      // The card: a reference-level photo where the family has one (core.js refLevel, refFirst), else its easiest.
+      // The card: Pierre's ★ Cover while in play (app.js fishCurate: his pick, 2026-11-08), else a reference-level photo
+      // where the family has one (core.js refLevel, refFirst), else its easiest.
       ok(
         starters.every(n => {
           const L = GX(n).views.wide,
             c = ph(n, GX(n).cover);
+          if (GX(n).coverP) return c.f === GX(n).coverP.f && cover(GX(n)).f === c.f;
           return L.some(refLevel) ? refLevel(c) : c.e === Math.max(...L.map(p => p.e || 0));
         }),
-        'each card shows a reference-level photo, else its easiest'
+        "each card shows Pierre's cover, else a reference-level photo, else its easiest"
       );
       // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely (model.js RARE:
       // about 1 in 10 at most, whatever the pool; the bound below leaves room for 15 photos' noise).
