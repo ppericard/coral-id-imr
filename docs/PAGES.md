@@ -64,7 +64,7 @@ backend cause remains unknown.
 
 ## Workflow inventory and triggers
 
-Every workflow in `.github/workflows/`. Bot commits use
+Every workflow in `.github/workflows/` (`tests/docs.test.js` checks that this table names each one). Bot commits use
 `GITHUB_TOKEN`, so they start no `push` workflow: Deploy Pages picks them up through `workflow_run`.
 
 | Workflow | Trigger / commits | Publishes Pages? |

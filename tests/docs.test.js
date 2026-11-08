@@ -263,3 +263,96 @@ test('no reference to the retired rule numbers or to the judging brief under its
     'judging/' + 'AGENTS.md is judging/BRIEF.md: Codex would load an AGENTS.md for any work under judging/'
   );
 });
+
+// Repo hygiene audit (2026-11-08): the living docs' relative links and anchors resolve, every ARCHITECTURE.md "X" cited
+// anywhere names a section or a lead-in that exists, and docs/PAGES.md lists every workflow. Offline: files only. The
+// copied reviews and the frozen archive are history and keep their links.
+const LIVING_DOCS = TEXT_FILES.filter(
+  f => /\.md$/.test(f) && !f.startsWith('docs' + path.sep + 'reviews' + path.sep) && !f.startsWith('.github' + path.sep)
+);
+// Fenced blocks and code spans hold examples, not links.
+const prose = src => src.replace(/^(```|~~~)[\s\S]*?^\1/gm, '').replace(/`[^`\n]*`/g, '');
+// GitHub's heading anchors: lower case, punctuation dropped, each space a hyphen, a repeated heading suffixed -1, -2…
+const anchorsOf = (() => {
+  const memo = new Map();
+  return f => {
+    if (memo.has(f)) return memo.get(f);
+    const src = prose(read(f)),
+      seen = new Map(),
+      out = new Set();
+    for (const m of src.matchAll(/^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$/gm)) {
+      const s = m[1]
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/<[^>]+>/g, '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+        .replace(/\s/g, '-');
+      const n = seen.get(s) || 0;
+      seen.set(s, n + 1);
+      out.add(n ? s + '-' + n : s);
+    }
+    for (const m of src.matchAll(/<a\s+(?:id|name)="([^"]+)"/g)) out.add(m[1]);
+    memo.set(f, out);
+    return out;
+  };
+})();
+
+test('the living docs: every relative link and anchor resolves', () => {
+  const bad = [];
+  for (const f of LIVING_DOCS)
+    for (const m of prose(read(f)).matchAll(/\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"]*")?\)/g)) {
+      const u = m[1];
+      if (/^[a-z][a-z0-9+.-]*:/i.test(u)) continue; // https:, mailto:: not checked offline
+      const [p, a] = u.split('#'),
+        target = p ? path.relative(ROOT, path.resolve(ROOT, path.dirname(f), decodeURIComponent(p))) : f;
+      // A sparse checkout without img/ (rule W22) cannot see the photos: CI has them.
+      if (target.split(path.sep)[0] === 'img' && !fs.existsSync(path.join(ROOT, 'img'))) continue;
+      if (!fs.existsSync(path.join(ROOT, target))) bad.push(f + ': ' + u + ' (no such file)');
+      else if (a && /\.md$/.test(target) && !anchorsOf(target).has(decodeURIComponent(a).toLowerCase()))
+        bad.push(f + ': ' + u + ' (no such heading)');
+    }
+  assert.deepStrictEqual(bad, [], 'broken relative links in the living docs (point them at what exists, or say "PR #N")');
+});
+
+test('every ARCHITECTURE.md "X" cited in the repo names a section or a lead-in of docs/ARCHITECTURE.md', () => {
+  // A citation is the start of a heading ("Photos" for "## Photos", "Fish content" for "### Fish content (`fish.json`…"),
+  // or of a bullet or a paragraph's bold lead-in ("Photos, stopgap" for "- **Photos, stopgap** (…"); quotes, bold and
+  // code marks are ignored on both sides.
+  const flat = s => s.replace(/[*"`“”]/g, '').trim();
+  const starts = read('docs/ARCHITECTURE.md')
+    .split('\n')
+    .map(l => flat(l.replace(/^\s*(?:#{1,6}\s+|[-*]\s+|\d+\.\s+)?/, '')));
+  const bold = [...read('docs/ARCHITECTURE.md').matchAll(/\*\*([^*\n]+)\*\*/g)].map(m => flat(m[1]));
+  const found = x => {
+    const t = flat(x);
+    return starts.some(s => s.startsWith(t) && !/[\p{L}\p{N}]/u.test(s[t.length] || '')) || bold.some(b => b.startsWith(t));
+  };
+  const bad = [];
+  // The quoted names after the file's name, on its line or the next one (a comment or a wrapped paragraph).
+  const cite = /ARCHITECTURE(?:\.md)?(?:[ \t]|\n[ \t]*(?:\/\/|#|\*)?[ \t]*)*((?:["“][^"”\n]+["”](?:,?[ \t]*(?:and[ \t]+|or[ \t]+)?)?)+)/g;
+  for (const f of TEXT_FILES) {
+    if (f.startsWith('docs' + path.sep + 'archive' + path.sep) || f === path.join('tests', 'docs.test.js')) continue; // history; this file's own examples
+    for (const m of read(f).matchAll(cite))
+      for (const q of m[1].matchAll(/["“]([^"”\n]+)["”]/g)) if (!found(q[1])) bad.push(f + ': ARCHITECTURE "' + q[1] + '"');
+  }
+  assert.deepStrictEqual(bad, [], 'citations of ARCHITECTURE.md sections that do not exist (add the section or fix the name)');
+});
+
+test('docs/PAGES.md lists every workflow, and only workflows that exist', () => {
+  const dir = path.join(ROOT, '.github', 'workflows'),
+    files = fs.readdirSync(dir).filter(f => /\.ya?ml$/.test(f)),
+    sec = /^## Workflow inventory and triggers\n([\s\S]*?)(?=^## )/m.exec(read('docs/PAGES.md'));
+  assert.ok(sec, 'docs/PAGES.md: the section "## Workflow inventory and triggers" is missing');
+  const named = new Set([...sec[1].matchAll(/^\| `([\w.-]+\.ya?ml)`/gm)].map(m => m[1]));
+  assert.deepStrictEqual(
+    files.filter(f => !named.has(f)),
+    [],
+    'workflows missing from docs/PAGES.md "Workflow inventory and triggers" (a row each: trigger, commits, publishes?)'
+  );
+  assert.deepStrictEqual(
+    [...named].filter(f => !files.includes(f)),
+    [],
+    'docs/PAGES.md lists workflows that are not in .github/workflows/'
+  );
+});
