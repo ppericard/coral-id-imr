@@ -3846,20 +3846,58 @@ const XP_BANDS = [
   ['50-300 answers', 50, 300],
   ['Over 300 answers', 301, Infinity]
 ];
-// Analyses › Learning › Stops › Genus sheets: of the visits and the players of each band, the share that opened at least one genus sheet.
-function healthSheets() {
-  const head = '<h3>Genus sheets opened</h3>';
+// sheetsbysubj: begin
+// The sheets a subject's players read and the pages its visits show (Stops, per subject: the Corals | Fish switch, rule
+// A4). The corals' genus sheets are counted from the summary's genera (g: core.js PAGES.GENUS keeps coral genus names
+// only); another subject's from its sheet page (its page prefix SUBJECTS pv + 'learn.genus'). A page name is in the
+// corals' words whatever the subject (core.js pageName: a page's identity), so a fish family, genus or species sheet
+// (g-f:…, g-g:…, g-s:…) is always logged 'fish.learn.genus': one name for its sheets of every rank, no count per rank
+// (tests/health.test.js checks pageName). One visit summary x: null when the visit showed none of the subject's pages (a
+// fish visit for the corals' Stops is still a visit: the corals have no prefix), else [times a sheet was opened, seconds
+// on them].
+const sheetWord = S => (S.sheets ? Object.keys(S.sheets) : [S.one]),
+  sheetsTitle = S => {
+    const L = sheetWord(S),
+      t = L.length > 1 ? L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1] : L[0];
+    return t[0].toUpperCase() + t.slice(1) + ' sheets opened';
+  },
+  sheetVisit = (x, S) => {
+    if (!S.sheets) return Object.values(x.g || {}).reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]);
+    const R = x.r || {};
+    if (!Object.keys(R).some(k => k.startsWith(S.pv))) return null;
+    const v = R[S.pv + 'learn.genus'];
+    return v ? [v[0], v[1]] : [0, 0];
+  };
+// The column of the units a subject's questions ask (Stops' last shown): Genus; the fish "Family", or "Family or genus"
+// with the words of its Analyses pages (SUBJECTS analyses one).
+const stopWord = S => {
+  const w = (S.analyses && S.analyses.one) || S.one;
+  return w[0].toUpperCase() + w.slice(1);
+};
+// Their plural (Health's "Genera that don't take off"): Genera; the fish "Families", or "Families and genera" (SUBJECTS
+// analyses many).
+const manyWord = S => {
+  const w = (S.analyses && S.analyses.many) || S.many;
+  return w[0].toUpperCase() + w.slice(1);
+};
+// sheetsbysubj: end
+// Analyses › Learning › Stops › Genus sheets: of the visits and the players of each band, the share that opened at least
+// one of the subject's sheets.
+function healthSheets(S = ASUBJ) {
+  const head = `<h3>${esc(sheetsTitle(S))}</h3>`,
+    one = S.sheets ? '' : S.one + ' ';
   if (!PGS) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">Loading…</p></section>`;
   if (PGS.err) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">${esc(PGS.err)}</p></section>`;
   // One visit = the summaries with the same visit id; a player = the admin's id, else the device.
   const VS = Object.create(null);
   PGS.rows.forEach(x => {
+    const sv = sheetVisit(x, S);
+    if (!sv) return;
     const who = x.id || 'dev:' + x.dev,
       v = (VS[who + '|' + x.vi] = VS[who + '|' + x.vi] || {who, na: x.na, sheet: false, s: 0});
     if (x.na != null && (v.na == null || x.na < v.na)) v.na = x.na;
-    const gs = Object.values(x.g);
-    if (gs.some(([n]) => n > 0)) v.sheet = true;
-    v.s += gs.reduce((t, a) => t + a[1], 0);
+    if (sv[0] > 0) v.sheet = true;
+    v.s += sv[1];
   });
   const visits = Object.values(VS),
     rowOf = (t, L) => {
@@ -3880,7 +3918,7 @@ function healthSheets() {
     unknown = visits.filter(v => !bandOf(v));
   return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}${
     visits.length
-      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Experience</th><th class="n">Players</th><th class="n" title="Players who opened at least one genus sheet">Opened one</th><th></th><th class="n">Visits</th><th class="n" title="Visits with at least one genus sheet opened">With one</th></tr></thead><tbody>${rows.join('')}${unknown.length ? rowOf('Not known', unknown) : ''}${rowOf('<b>All</b>', visits)}</tbody></table></div>`
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Experience</th><th class="n">Players</th><th class="n" title="Players who opened at least one ${esc(one)}sheet">Opened one</th><th></th><th class="n">Visits</th><th class="n" title="Visits with at least one ${esc(one)}sheet opened">With one</th></tr></thead><tbody>${rows.join('')}${unknown.length ? rowOf('Not known', unknown) : ''}${rowOf('<b>All</b>', visits)}</tbody></table></div>`
       : '<p class="note">None yet.</p>'
   }</section>`;
 }
@@ -4211,12 +4249,13 @@ const FISHS = SUBJECTS.find(S => S.admin.cur && S.sheets) || null;
 const famHref = id => '#' + (FISHS ? FISHS.hash : ASUBJ.hash) + FAMS + '/' + encodeURIComponent(id);
 // A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus or
 // species in italics (its id's prefix off), each with its family's page once the fish data are read (fishAdmin).
-const repUnit = x => {
+// bare: without the subject's name after it (a page that is that subject's already: its Stops).
+const repUnit = (x, bare) => {
   const S = unitSubj(x);
   if (!S || !S.sheets) return `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
   const fam = FISHA && FISHA.fam[x],
     nm = FISHA && FISHA.gen[x] ? esc(FISHA.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
-  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam))}">${nm}</a>` : nm} <small>(${esc(S.name.toLowerCase())})</small>`;
+  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
 // A fish photo's tile in To do (a report's or a flag's): the photo (its observation), its family, and the tools of the
 // family's page (renderFishUnits; Q309): × Exclude (fishExclude), Remove (fishReject), Not this (a candidate photo only:
@@ -9234,16 +9273,25 @@ function needsBody() {
 }
 // Photos everyone misses (Health): missed by many players (manyMiss), and under PH_LOW right over all their answers
 // (everyoneMisses) or a difficulty PH_FAR or more above the median of their genus's rated photos.
-function healthBad(R) {
+// S: the subject whose photos they are (the one on screen; the Corals | Fish switch, rule A4): the corals' game photos
+// (allPhotos), another subject's as the admin reads them (fishAdmin: each fish photo with its family, genus = the family).
+// The sheet rates the corals' photos only (core.js SUBJECTS replay), so a fish photo is counted on its answers alone. A
+// fish photo already handled in the draft (fishRepTile's tools: × excluded, Not this, Removed) is out of the list before
+// it is sorted and cut (Codex review #800): acting on the photos shown brings the next ones in.
+function healthBad(R, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
   // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
   // from the photo Elo against the median of the genus's rated photos.
-  const PS = photoStats(),
+  const PS = S.sheets ? {} : photoStats(),
     META = Object.create(null);
-  allPhotos()
-    .filter(p => p.view !== 'cand')
-    .forEach(p => (META[p.f] = META[p.f] || p));
+  const FD = (DRAFT && DRAFT.fish) || {},
+    done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f];
+  if (S.sheets) Object.values((FISHA && FISHA.ph) || {}).forEach(p => done(p.f) || (META[p.f] = META[p.f] || {...p, genus: p.entry}));
+  else
+    allPhotos()
+      .filter(p => p.view !== 'cand')
+      .forEach(p => (META[p.f] = META[p.f] || p));
   const PH = photoAnswers(R, f => !!META[f]);
   const GMED = Object.create(null);
   Object.values(META).forEach(p => {
@@ -9273,8 +9321,28 @@ function healthBad(R) {
     .sort((a, b) => a.r - b.r || b.n - a.n);
   return BAD;
 }
-// Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first.
-function healthGenera(BY) {
+// Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first. S: the subject on screen;
+// its units (healthUnits): the corals' game genera (GAME), another subject's slate and its genera met in the answers.
+// A subject with sheets at several ranks: its slate (fishAdmin: the app's UNITS slate, the fish families) and, each in a
+// row of its own, the genera its players met (an answer's unit with the genus prefix, SUBJECTS sheets genus: g:Chromis,
+// the scientific genera of app.js fishGenera, offered once a family is learnt; FISHA.slate never holds them).
+const healthUnits = (BY, S) => {
+  if (!S.sheets) return [...GAME];
+  const L = [...((FISHA && FISHA.slate) || [])],
+    has = new Set(L),
+    gp = S.sheets.genus;
+  if (gp)
+    Object.values(BY).forEach(A =>
+      A.forEach(r => {
+        const u = r[2];
+        if (typeof u !== 'string' || !u.startsWith(gp) || u.length <= gp.length || has.has(u)) return;
+        has.add(u);
+        L.push(u);
+      })
+    );
+  return L;
+};
+function healthGenera(BY, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
   // 3. Genera that don't take off: per game genus (isGame: the slate, Millepora, the bonus genera once on), each player's right rate on the photos of it (answers where it was
@@ -9286,7 +9354,7 @@ function healthGenera(BY) {
       (PG[k] = PG[k] || []).push(r[4]);
     })
   );
-  const GR = [...GAME]
+  const GR = healthUnits(BY, S)
     .map(n => {
       const P = Object.keys(BY)
         .map(id => PG[id + '|' + n])
@@ -9320,8 +9388,9 @@ function healthLine0() {
     BY = Object.create(null);
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
-  const bad = R.length ? healthBad(R).length : 0,
-    stuck = R.length ? healthGenera(BY).filter(g => g.stuck).length : 0,
+  // the corals' To do (its page), whatever the subject on screen when it is computed (MEMO)
+  const bad = R.length ? healthBad(R, ADM0).length : 0,
+    stuck = R.length ? healthGenera(BY, ADM0).filter(g => g.stuck).length : 0,
     L = [
       bad && `${bad} photo${bad === 1 ? '' : 's'} everyone misses`,
       stuck && `${stuck} ${stuck === 1 ? 'genus' : 'genera'} players are stuck on`
@@ -9347,7 +9416,11 @@ function statsHealth() {
     bindStats();
     return;
   }
-  const R = playerRows();
+  // Stops and Health: the subject on screen's answers (rowsOf; the Corals | Fish switch, rule A4). Another subject's units
+  // and photos come from its data (admin.js fishAdmin), read once.
+  const R = rowsOf();
+  if (ASUBJ.sheets && !FISHA)
+    fishAdmin().then(() => (cur === 'analyses/learning/stops' || cur === 'inbox/todo/health') && FISHA && render());
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();
@@ -9440,10 +9513,8 @@ function statsHealth() {
     <div><h4>Last shown, sessions ≤${H.EARLY}</h4>${
       early.length
         ? tbl(
-            ['Genus', 'n:Sessions'],
-            top(early, r => r[2], 5).map(
-              ([g, n]) => `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
-            )
+            [stopWord(ASUBJ), 'n:Sessions'],
+            top(early, r => r[2], 5).map(([g, n]) => `<tr><td>${repUnit(g, true)}</td><td class="n">${n}</td></tr>`)
           ) +
           tbl(
             ['Game', 'n:Sessions'],
@@ -9453,21 +9524,32 @@ function statsHealth() {
     }</div></div></section>`;
 
   const BAD = healthBad(R);
-  const MAXPH = 24,
+  // Its photo tiles' Not this (a candidate photo: fishRepTile reads FISHC.byF) needs the family pages' data (fishLoad), as
+  // Reports does: read once there are photos to show, and Health drawn again when it comes (Codex review #800).
+  if (!stops && ASUBJ.sheets && BAD.length && !FISHC) fishLoad().then(() => cur === 'inbox/todo/health' && ASUBJ.sheets && render());
+  // Another subject's photo: its tile with the tools of its family's page (fishRepTile: × Exclude, Remove, Not this, Open
+  // in Families), the numbers in its caption.
+  const fishTile = o =>
+      fishRepTile(o.p, {
+        cap: `<span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>`
+      }),
+    MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
       <figcaption><a class="adm-gen" href="${esc(genusHref(o.p.genus))}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
       <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
-      ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH).map(phTile).join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
+      ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH)
+          .map(ASUBJ.sheets ? fishTile : phTile)
+          .join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
       : '<p class="note">None.</p>'
   }</section>`;
 
   const GR = healthGenera(BY);
-  const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>Genera that don't take off</h3><div class="adm-tscroll tall">${tbl(
+  const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>${esc(manyWord(ASUBJ))} that don't take off</h3><div class="adm-tscroll tall">${tbl(
     [
-      'Genus',
+      stopWord(ASUBJ),
       'n:Players',
       'Median right',
       '',
@@ -9475,7 +9557,7 @@ function statsHealth() {
     ],
     GR.map(
       g =>
-        `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
+        `<tr><td>${repUnit(g.n, true)}</td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
     )
   )}</div></section>`;
 
@@ -9490,6 +9572,8 @@ function statsHealth() {
       `<div class="adm-sgrid adm-health">${stopSec}${healthSheets()}</div>`
     : head + `<div class="adm-sgrid adm-health">${phSec}${gSec}</div>`;
   bindStats();
+  // another subject's photo tiles: the tools of its family's page (× Exclude, Remove, Not this)
+  if (!stops && ASUBJ.sheets) bindFishRep();
   // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
   // once stale.
   if (stops) pagesFresh('analyses/learning/stops');

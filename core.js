@@ -533,6 +533,9 @@
         pages: [
           'inbox/todo/reports',
           'inbox/todo/errors',
+          // Health (fish admin at parity, 2026-11-08): the fish photos everyone misses, with the tools of their family's
+          // page, and the fish units players are stuck on (admin.js statsHealth, healthBad, healthGenera)
+          'inbox/todo/health',
           'inbox/coverage/games',
           'players/list',
           'photos/families',
@@ -541,8 +544,9 @@
           'photos/review/phase-framing',
           'photos/look-alikes',
           // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report but
-          // What makes a photo hard (analyses photos false), and none of the views drawn from the corals' live answer log
-          // (admin.js LIVE_STATS: Pairs, Answer log, Stops).
+          // What makes a photo hard (analyses photos false), and of the views drawn from the live answer log (admin.js
+          // LIVE_STATS) only Stops, from the fish answers (fish admin at parity, 2026-11-08: admin.js statsHealth,
+          // healthSheets), not Pairs or Answer log.
           'analyses/overview',
           'analyses/speed',
           'analyses/difficulty/formats',
@@ -551,7 +555,8 @@
           'analyses/learning/practice',
           'analyses/learning/after-a-break',
           'analyses/learning/sessions',
-          'analyses/learning/profiles'
+          'analyses/learning/profiles',
+          'analyses/learning/stops'
         ],
         origins: [
           ['own', 'Pierre', 'Pierre'],
