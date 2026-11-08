@@ -465,6 +465,13 @@
       rank: 'family',
       renamed: FISH_RENAMED,
       replay: false,
+      // Its progress replayed by the sheet from its own answers too (Pierre, 2026-11-08: "recalculate every player's
+      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): from sync script v108
+      // (Code.gs replay_ per subject, its units from fish.json: fishReplayGen), served beside the corals' replay
+      // (replays: {fish: ...}) to an app that asks for it (rvs: {fish: its rules version applied}). replay stays the
+      // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
+      // replay reads, from the subject's first pool file (fish.json).
+      replayed: {sheet: 108, gen: F => fishReplayGen(F)},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -545,6 +552,8 @@
   const subjGroup = S => !!S && S.open === 'group';
   // The subject whose answers the sheet computes from (SUBJECTS replay: the corals): its replay, hold and photo ratings.
   const replaySubject = () => (SUBJECTS.find(S => S.replay) || SUBJECTS[0]).id;
+  // The other subjects whose progress the sheet replays from their own answers (SUBJECTS replayed: fish), by id.
+  const replayedSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed).map(S => S.id);
   // The subject of an answer: the app's log entry (s, from 2026-11-06; an entry without one came from the corals, the
   // only subject logged before), and of an answer-log row, at index LOG_SUBJ in both the sheet's readAnswers rows and
   // its Answers tab rows (sheet v60, column Subject; blank in the rows logged before: the default subject's).
@@ -776,6 +785,29 @@
       key: F.key ? {id: F.key.id, region: F.key.region, cite: F.key.cite, short: F.key.short} : null,
       groups: (F.key && F.key.groups) || []
     };
+  }
+  // The fish units as the full replay reads them (core.js replayProgress gen: each unit's look-alikes and family line, for
+  // the look-alike prior of a mix-up and the unit wrongly given): the families of fishGen and the scientific genera of
+  // app.js fishGenera (a circle-1 family's genera with species of circle 1, each with its sibling genera as look-alikes
+  // and its family's name and line as its family), from fish.json alone (no photo changes them). The sync sheet builds it
+  // from fish.json (Code.gs fishGen_); tests/fishreplay.test.js checks it against the app's units.
+  function fishReplayGen(F) {
+    const X = fishGen(F || {}, {}),
+      out = {},
+      sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
+      gens = new Map(((F && F.genera) || []).map(g => [g.id, g]));
+    Object.values(X.gen).forEach(g => (out[g.id] = {look: g.look.slice(), fam: g.fam}));
+    ((F && F.families) || [])
+      .filter(f => f.circle === 1 && X.gen[f.id])
+      .forEach(f => {
+        const E = X.gen[f.id],
+          ids = (f.genera || [])
+            .map(id => gens.get(id))
+            .filter(G => G && (G.species || []).some(id => (sp.get(id) || {}).circle === 1))
+            .map(G => G.id);
+        ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
+      });
+    return out;
   }
   // The fish game photos (admin plan PR 7): the photos Pierre put in play in the admin's fish Candidates, downloaded to R2
   // (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish), take the place of the
@@ -5110,6 +5142,7 @@
     calibOf,
     subjGroup,
     replaySubject,
+    replayedSubjects,
     LOG_SUBJ,
     LOG_SC,
     ansSubject,
@@ -5124,6 +5157,7 @@
     subjKey,
     subjDev,
     fishGen,
+    fishReplayGen,
     easyRank,
     easyCover,
     refFirst,

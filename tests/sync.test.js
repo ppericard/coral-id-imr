@@ -2120,6 +2120,114 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
   assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
 });
 
+// v108 (Pierre, 2026-11-08: "recalculate every player's progress from their answers"; ROADMAP "Fish progress replayed
+// from the answer log"): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
+// their own rows and units (core.js fishReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
+const FJSON = fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'),
+  FGEN = C.fishReplayGen(JSON.parse(FJSON));
+const withFish = (n = {c: 0, f: 0}) => ({
+  n,
+  fetch: url =>
+    /\/main\/data\.json$/.test(url)
+      ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON})
+      : /\/main\/fish\.json$/.test(url)
+        ? (n.f++, {getResponseCode: () => 200, getContentText: () => FJSON})
+        : null
+});
+const fa = (id, i, x = {}) =>
+  ans(id, {
+    t: new Date(Date.UTC(2026, 10, 7, 6, 0, i)).toISOString(),
+    s: 'fish',
+    rk: 'family',
+    g: 'f:Damselfishes',
+    a: i % 3 === 2 ? 'f:Butterflyfishes' : 'f:Damselfishes',
+    ok: i % 3 === 2 ? 0 : 1,
+    m: 'quiz|c',
+    ph: 'fi' + (100 + (i % 4)),
+    ch: 'f:Damselfishes f:Butterflyfishes f:Angelfishes f:Wrasses',
+    e: 0.8,
+    th: 1,
+    sc: {d: 0, r: 1},
+    ...x
+  });
+const fishWant = (L, id, o = {}) =>
+  C.replayProgress(
+    L.map(a => C.logRow(a, id)),
+    {gen: FGEN, ...o}
+  )[id].P;
+
+test('v108: the fish progress replayed from its own answers, asked by its own rules version, kept in its own tab', () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    F = Array.from({length: 9}, (_, i) => fa('f' + i, i)),
+    K = Array.from({length: 4}, (_, i) => qa('k' + i, i)),
+    data = prog(3);
+  // An app that asks for no fish replay (every app before v108's): none, the corals' as before.
+  const r0 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [...K, ...F.slice(0, 6)], rv: 0});
+  assert.ok(r0.replay && !r0.replays, 'no fish replay unasked');
+  assert.ok(!s.sheets['Replayed Fish']);
+  assert.strictEqual(r0.replay.n, 4, "the corals' replay counts the coral rows only");
+  const r = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: F.slice(6), rv: C.RV, rvs: {fish: 0}});
+  assert.ok(!r.replay, 'the corals applied: none');
+  const want = fishWant(F, 'ana');
+  assert.deepStrictEqual(r.replays.fish.rec, want, 'the same engine over the fish rows, with the fish units');
+  assert.deepStrictEqual([r.replays.fish.rv, r.replays.fish.n, r.replays.fish.ids.length], [C.RV, 9, 9]);
+  assert.ok(Array.isArray(want['f:Damselfishes'].dp) && want['f:Butterflyfishes'], 'the unit wrongly given counted');
+  const T = s.sheets['Replayed Fish'];
+  assert.deepStrictEqual([...T.rows[0]], ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']);
+  assert.deepStrictEqual(
+    Array.from(T.rows.slice(1), x => [x[0], x[1], x[2]]),
+    [['Ana', C.RV, 9]]
+  );
+  assert.deepStrictEqual(
+    Array.from(s.sheets.Replayed.rows.slice(1), x => [x[0], x[2]]),
+    [['Ana', 4]],
+    "the corals' tab keeps the corals' record only"
+  );
+  // Reused while the rows are the same (a marker comes back); fish.json read once (cached).
+  T.rows[1][5] = '{"mark":1}';
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
+  assert.strictEqual(f.n.f, 1);
+  // Applied: nothing; an unknown subject or a bad value: nothing.
+  assert.ok(!s.get({name: 'Ana', pin: '1234', rv_fish: String(C.RV)}).replays);
+  assert.ok(!s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {coral: 0, nope: 0, fish: 'x'}}).replays);
+  // The fish reset (reefid-sync-fish-reset) cuts the fish rows only; the first-launch answer is the fish one.
+  const reset = new Date(Date.UTC(2026, 10, 7, 6, 0, 4, 500)).toISOString(),
+    start = {c: 'imr', t: Date.UTC(2026, 10, 1)},
+    d2 = {...data, 'reefid-sync-fish-reset': JSON.stringify(reset), 'reefid-sync-fish-start': JSON.stringify(start)},
+    r2 = s.post({name: 'Ana', pin: '1234', data: d2, summary: {}, answers: [], rv: 0, rvs: {fish: 0}});
+  assert.strictEqual(r2.replays.fish.n, 4);
+  assert.deepStrictEqual(r2.replays.fish.rec, fishWant(F.slice(5), 'ana', {starts: {ana: start}}));
+  assert.strictEqual(r2.replay.n, 4, "the corals' rows, whatever the fish reset");
+});
+
+test('v108: an anonymous device gets its fish replay since its own fish reset', () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    F = Array.from({length: 6}, (_, i) => fa('a' + i, i)),
+    reset = new Date(Date.UTC(2026, 10, 7, 6, 0, 1, 500)).toISOString(),
+    r = s.post({anon: 'devfish001', anonAnswers: F, rvs: {fish: 0}, sreset: {fish: reset}, av: '190'});
+  assert.deepStrictEqual(r.replays.fish.rec, fishWant(F.slice(2), '~anon devfish001'));
+  assert.strictEqual(s.sheets['Replayed Fish'].rows[1][0], '~anon devfish001');
+  // Claimed at sign-in: its replay rows go in every tab.
+  s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: [], anon: 'devfish001', av: '190'});
+  assert.deepStrictEqual(s.sheets['Replayed Fish'].rows.length, 1);
+});
+
+test('v108: a delete, a merge or an archive drops the fish replay rows too', () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    names = () => s.sheets['Replayed Fish'].rows.slice(1).map(r => String(r[0]));
+  ['Ana', 'Ana B', 'Cy', 'Di'].forEach((n, k) =>
+    s.post({name: n, pin: '1234', data: prog(1), summary: {}, answers: [fa(n + 'x', k)], rvs: {fish: 0}})
+  );
+  assert.deepStrictEqual(names(), ['Ana', 'Ana B', 'Cy', 'Di']);
+  s.post({userMerge: {from: 'Ana B', into: 'Ana', data: prog(2), at: 1}, token: TOK});
+  s.post({userDelete: 'Cy', token: TOK});
+  s.post({userArchive: {from: 'Di', into: 'Di-test'}, token: TOK});
+  assert.deepStrictEqual(names(), ['Ana']);
+});
+
 // Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
 // subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
 test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
