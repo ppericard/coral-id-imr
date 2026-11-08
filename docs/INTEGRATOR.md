@@ -17,6 +17,14 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   that would pour raw material into it (sheet dumps, large data files, many files read or many API calls, long logs):
   give the subagent a precise brief and ask for the conclusion, the numbers and the evidence, not the material. Keep in
   your own context what you need to decide, check and merge; small lookups whose target you know stay with you.
+- **The quota in practice** (rule W25, Pierre, 2026-11-08): a subagent's brief names the files, the scope and the
+  deliverable; large JSON and the sheet are queried (jq, grep, the connector's ranges), never printed whole; a few
+  commands are done by the integrator itself; an agent is stopped once its report is in; a wait is one monitor that
+  wakes once on a terminal state; Prettier and the unit tests run before a push, every Codex finding fixed in one go;
+  two PRs on the same files are not run in parallel. A lighter model (the Agent tool's `model`) only for mechanical work
+  a test checks (bringing a PR up to date, docs, data fetches, a test fix); the strongest model for anything judged
+  (learning, content, design, reviews, photo judging). Photo judging: sort on metadata first (licence, presence,
+  resolution, one species) before looking, and judge the species under target first.
 - **Don't ask the obvious** (he said so several times): a rule written for corals applies to fish unless coral-specific
   (Q168); micro-choices (names, layout details, test values) are the integrator's call, listed in the PR as such.
 - **Visual changes**: send screenshots as files in the chat (SendUserFile, 390 px phone first), then the question.
