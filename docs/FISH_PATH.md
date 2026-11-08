@@ -51,7 +51,7 @@ is the design's shorthand, and internal identifiers may keep it.
   invented: rule C2); one entry spans up to 22 genera (Wrasse; 98 genera in circle 1) and no genus spans two entries.
 - **Built** (2026-11-04 night, #526, merged with Pierre's yes on 2026-11-05): the genus step as an opt-in set of the fish,
   "Scientific names" (offer card once an entry is at Advanced: Open Water from 2026-11-07, Q205, back to Advanced on 2026-11-08,
-  Pierre, "too early, too strong"; ⚙ row): a family's genera join the game when the family reaches Advanced and open one at a time
+  Pierre, "too early, too strong"; ⚙ row, and My progress while off: the offer never locks the setting, Pierre 2026-11-08): a family's genera join the game when the family reaches Advanced and open one at a time
   (an IMR player meets the IMR course's genera without the offer from their family's Open Water: below); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its most met species; not counted in the progress yet (the global score is not built).

@@ -1563,6 +1563,10 @@ const UNITS = {
         note: "⚙ Settings, Scientific names, any time. They don't count in your progress yet.",
         tag: 'Scientific genus',
         name: 'Scientific names',
+        // My progress's switch while off (progress.js; Pierre, 2026-11-08: the offer at Advanced never locks the setting),
+        // and what it says once on.
+        row: 'Turn on scientific names',
+        onToast: 'Scientific names on: a family’s genera come as you reach Advanced on it.',
         card: ''
       }
     ]

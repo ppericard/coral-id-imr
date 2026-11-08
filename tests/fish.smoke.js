@@ -437,6 +437,14 @@ const server = http.createServer((req, res) => {
     closeCards();
     ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
+    quizBoard();
+    const so = document.querySelector('#view [data-seton="sci"]');
+    ok(so && /Turn on scientific names/.test(so.textContent), 'sci: My progress offers to turn them on while off');
+    if (so) so.click();
+    ok(Q.sci === true && !document.querySelector('#view [data-seton="sci"]'), 'sci: on from My progress, the box gone');
+    bonusSet(false, 'sci');
+    route();
     // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,
     // "t01", and the dialog spoke of genera and corals): the fish names, in the fish words.
     closeCards();
