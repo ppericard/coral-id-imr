@@ -1355,6 +1355,9 @@ const GROUPS = [
       // Activity = who plays and how much (Pierre, 2026-11-04, one role per admin page): its analysis cards and the
       // Mix-ups view moved to Analyses (Learning › Answer log, Difficulty › Pairs).
       ['activity', 'Activity', [['', 'Recent sessions']]],
+      // Visits (Pierre, 2026-11-08, Q301 layout A): who opens the app and what for, games or not, signed in or not
+      // (admin-visits.js renderVisits).
+      ['visits', 'Visits', [['', 'Visits']]],
       ['list', 'List', [['', 'List']]]
     ],
     // fixed: a click on the group always opens its first tab, never the tab used last (Pierre, 2026-11-05: "Players
@@ -1599,6 +1602,7 @@ const modeKey = () =>
             ? 'stats'
             : {
                 'players/list': 'users',
+                'players/visits': 'visits',
                 'photos/review/quality': 'quality',
                 'photos/review/growth-form': 'form',
                 'photos/review/ease': 'fishrev',
@@ -1639,7 +1643,7 @@ let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' 
 const FU_TAGS = [
   {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
   {0: 'partial'},
-  {d: 'dim light', n: 'night'},
+  {d: 'dim light', n: 'night livery'},
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
   {m: 'soft', b: 'blurred'},
   {s: 'small'},
@@ -2313,6 +2317,9 @@ function render() {
   if (cur === 'inbox/coverage/games' && ASUBJ.rank === 'family') return renderFishCov();
   if (cur === 'inbox/coverage/games') return renderCov();
   if (cur === 'inbox/coverage/sheets-id-key') return renderKcov();
+  // Opened from its address, the page can be drawn before admin-visits.js is in, as a journey (below).
+  if (cur === 'players/visits')
+    return typeof renderVisits === 'function' ? renderVisits() : addEventListener('load', () => render(), {once: true});
   if (cur === 'players/list') return renderUsers(); // its own tab: managing players, not only stats (Pierre, 2026-11-01)
   // A journey opened from its address can be drawn before admin-journey.js is in (a read answered while it downloads).
   if (playerPage(cur) && typeof renderJourney !== 'function') return addEventListener('load', () => render(), {once: true});
@@ -2909,8 +2916,8 @@ function sessionsOf(rows) {
   return S;
 }
 // Who played last and who is playing now (Pierre, 2026-11-03): Players' Last column and Activity's Recent sessions.
-// "Now" = a last answer less than NOW minutes old in the log loaded: a signed-in player's answers reach the sheet a few
-// seconds after each answer, a device not signed in sends them 10 at a time (sync.js sendAnon), so a few minutes.
+// "Now" = a last answer less than NOW minutes old in the log loaded: a player's answers reach the sheet a few seconds
+// after each answer, signed in or not (sync.js syncSoon, anonSoon), and Activity reads the newest every minute (liveArm).
 const RECENT = {
   NOW: 5, // minutes: a last answer more recent than this = playing now
   N: 10, // sessions in Recent sessions
@@ -3005,7 +3012,7 @@ const HELP = {
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
-    <p><b>How live is "now"?</b> It shows what the sheet has. A signed-in player's answer is sent about 3 seconds after it is given, so it is here within about 10 seconds (after ↻). A device not signed in sends its answers 10 at a time, or 20 seconds after it stops answering, or as soon as the app is left: while it plays, its last answers here can be up to 9 answers behind (a minute or three), still inside the ${RECENT.NOW} minutes of "now". Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
+    <p><b>How live is "now"?</b> It shows what the sheet has. A player's answer is sent about 3 seconds after it is given, signed in or not, so it is in the sheet within about 10 seconds (a device not signed in on an app from before 8 November sends its answers 10 at a time, up to a few minutes behind). Activity reads the newest answers again every minute while it is open and in view (↻ reads everything at once). Answers played offline arrive when the device is back online, with the time they were given. Times are the device's own clock.</p>
     <p><b>Tap a session</b> to unfold its summary under it; tap again to fold it. A sentence first, then start → end, length, answers, right (beside it, small, the share the game expected: the mean of each answer's logged chance) and the progress % before → after the session (the player's answers replayed with today's rules up to the session's first answer, then through it). The chart: right answers over the session's last ${SESS.WIN} (from its 5th answer) against the expected, its scale from ${SESS.PAD} points under the session's lowest point (rounded down to 10) to 100%, a dot under each genus met for the first time, ★ at a genus learned; a session under 5 answers shows its answers as dots. <b>New genera</b>: first asked in this session (<i>card</i>: its card showed, not asked yet). <b>Most improved</b>: the genera whose bar rose most (${Math.round(SESS.GAIN * 100)} points or more, at most ${SESS.TOP}). <b>Difficulties</b>: genera missed ${SESS.MISS} times or more, mix-ups (shown → answered), the photos of the questions missed, hardest first by their difficulty for everyone (the photo Elo), each with <b>recognised by N%</b>: the share of starting players (Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) of its photo Elo d, whatever the question's format; <b>hard for everyone</b>: a photo everyone misses, as on Health (counted on players: ${HEALTH.PL_MIN}+ players answered it, most of them miss it, ${HEALTH.PH_MIN}+ answers). <b>Achievements</b>: earned within ${SESS.EDGE / 6e4} minutes of the session's answers (from the player's saved progress). <b>Events</b>: which session it is and the time since the last one, Open all, the first-launch question, genera learned (the right exam question that passed it), mastery exam questions, typed answers, ${SESS.RUN} right or more in a row, ending on ${SESS.END} misses or more in a row. <b>Journey →</b> opens the player's full journey.</p>`;
   },
   statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Elo = the median player's Elo on the genus (1000 + 200 × their level on it).</p>
@@ -3544,7 +3551,8 @@ const pagesRows = rows =>
       } catch (e) {
         d = pagesClean({});
       }
-      return {t: r[1], dev: r[2], id: r[4], vi: d.vi || r[0], na: typeof d.na === 'number' ? d.na : null, r: d.r, g: d.g};
+      // ua: the Browser column (sync.js uaShort, "… mobile" on a phone; Players › Visits).
+      return {t: r[1], dev: r[2], id: r[4], vi: d.vi || r[0], na: typeof d.na === 'number' ? d.na : null, r: d.r, g: d.g, ua: r[9] || ''};
     });
 // The genus sheets one player opened, from their summaries: per genus the times opened, the seconds, how the first
 // opening was reached and whether the genus had been asked to them before it; and their visits.
@@ -7063,19 +7071,21 @@ function sheetEarly(h) {
         ? ['users', 'ans', 'pages']
         : h === 'players/activity'
           ? ['users', 'ans']
-          : h === 'analyses/learning/stops'
-            ? ['ans', 'pages']
-            : h === 'inbox/todo/all'
-              ? ['ans', 'events', 'reports']
-              : h === 'inbox/todo/reports'
-                ? ['reports']
-                : h === 'inbox/todo/errors'
-                  ? ['events']
-                  : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
-                    ? ['ans']
-                    : h === 'photos/stats/overview'
-                      ? ['ratings']
-                      : [];
+          : h === 'players/visits'
+            ? ['pages', 'events', 'ans', 'users']
+            : h === 'analyses/learning/stops'
+              ? ['ans', 'pages']
+              : h === 'inbox/todo/all'
+                ? ['ans', 'events', 'reports']
+                : h === 'inbox/todo/reports'
+                  ? ['reports']
+                  : h === 'inbox/todo/errors'
+                    ? ['events']
+                    : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
+                      ? ['ans']
+                      : h === 'photos/stats/overview'
+                        ? ['ratings']
+                        : [];
   const go = {
     ans: () => loadStats(),
     ratings: () => loadStats(true),
@@ -7245,8 +7255,8 @@ function bindStats() {
   );
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
   bindSess();
-  // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. A manual
-  // reload only, no timer: each read sends the whole answer log (docs/ARCHITECTURE.md "Recent sessions and who is playing now").
+  // ↻ on Activity: the answer log and the player list read again (who is playing now), the photo ratings kept. Between
+  // them, from sheet LIVE_SHEET, the light read every minute (liveArm below).
   const rl = $v.querySelector('[data-sload]');
   if (rl)
     rl.onclick = () => {
@@ -7256,7 +7266,119 @@ function bindStats() {
       savedClear();
       render();
     };
+  liveArm(); // Activity drawn: the next light read (none on any other page)
 }
+// A live Players › Activity (Pierre, 2026-11-08: "Les deux"): while the page is open and in view, every LIVE_READ.MS the
+// sheet's light read (Code.gs live_, POST readLive, from LIVE_SHEET: the last rows of the answer log and each player's
+// last answer time, where readAnswers sends the whole log) brings the answers given since, merged into the log held
+// (liveMerge), and the page is drawn again (Recent sessions, who is playing now, "as of"). Hidden (another tab, the phone
+// asleep) or another page: no read, the timer stopped; back in view, a read at once when the last is over LIVE_READ.MS old.
+// When the light read cannot complete the log held (liveMerge full), the whole log is read again in the background, as
+// ↻ does but with the page kept on screen; a player new to the player list reads it again too. Before LIVE_SHEET (an
+// older script answers readLive 'input'), and without the token, nothing: ↻ by hand as before (rule D4).
+const LIVE_SHEET = 110;
+const LIVE_READ = {MS: 60000};
+const liveOn = () => !!ANS && !ANS.old && Number(ANS.v) >= LIVE_SHEET;
+let liveT = 0,
+  liveAt = 0; // the last light read asked (a failed one too: the next waits LIVE_READ.MS)
+const liveWanted = () => cur === 'players/activity' && document.visibilityState === 'visible' && !!TOKEN && liveOn();
+// livemerge: begin
+// The light read's reply j merged into the rows held (all: ANS.all, every subject's, in the tab's order): {add: the rows
+// of j not held yet, to append}, or {full: true}: the rows held can no longer be completed from it, the whole log is
+// read again. A row is known by its answer (time, unit shown, answered, mode, photos: a player never gives two at the
+// same millisecond), not by its player id. Full when a row is held under another player id (answers claimed at sign-in,
+// renamed or merged: the log changed under the page); when the reply's window (its last j.k rows of j.n) holds none of
+// the rows held while the tab has more rows than the window (answers came in faster than the reads: some fell
+// between); or when a player's last answer (j.last, a deleted account's and an archive's left out, as flag 2 here) is
+// more than a second later than the last one held (an answer outside the window). Also full when an account left
+// normal operation since the log held was read (j.roster, Code.gs rosterAt_: a delete, merge or archive, against the
+// log's own roster), or when a player of the rows held has no last answer any more (their answers deleted, renamed or
+// claimed): the log held must never keep a deleted account's answers (rule D7; Codex review #775).
+const liveKey = r => [r[1], r[2], r[3], r[5], r[6]].join('|');
+function liveMerge(all, j, roster) {
+  const rows = (j && Array.isArray(j.rows) ? j.rows : []).filter(r => !winkRow(r)),
+    held = new Map(all.map(r => [liveKey(r), r[0]])),
+    add = [];
+  let seen = 0;
+  for (const r of rows) {
+    const k = liveKey(r);
+    if (!held.has(k)) {
+      add.push(r);
+      held.set(k, r[0]);
+    } else if (held.get(k) !== r[0]) return {full: true};
+    else seen++;
+  }
+  if (!seen && Number(j.n) > Number(j.k)) return {full: true};
+  if (Number(j.roster) > (Number(roster) || 0)) return {full: true};
+  const last = {};
+  [...all, ...add].forEach(r => r[11] !== 2 && r[1] > (last[r[0]] || 0) && (last[r[0]] = r[1]));
+  if (Object.entries((j && j.last) || {}).some(([id, t]) => Number(t) > (last[id] || 0) + 1000)) return {full: true};
+  const L = (j && j.last) || {};
+  if (Object.keys(last).some(id => !(id in L))) return {full: true};
+  return {add};
+}
+// livemerge: end
+// The player list read again for the light read: a read that fails keeps the last good list (loadUsers would leave
+// {err}, and every signed-in player would show as a device not signed in; Codex review #775).
+// Until a read of it succeeds, every light read asks for it again (liveUsersDue): after a delete or an archive the
+// list held may still name the account (Codex review #775).
+let liveUsersDue = false;
+function liveUsers() {
+  const U0 = USERS;
+  return loadUsers(true).then(() => {
+    liveUsersDue = !USERS || !!USERS.err;
+    if (liveUsersDue && U0 && !U0.err) USERS = U0;
+  });
+}
+// The next light read, LIVE_READ.MS after the last read (the whole log's or a light one), or none while not wanted.
+function liveArm() {
+  clearTimeout(liveT);
+  liveT = 0;
+  if (liveWanted()) liveT = setTimeout(liveRead, Math.max(0, LIVE_READ.MS - (Date.now() - Math.max(ANS.at || 0, liveAt))));
+}
+function liveRead() {
+  liveT = 0;
+  if (!liveWanted() || SHEET_READS.ans) return;
+  const a0 = ANS;
+  liveAt = Date.now();
+  return sheetRead('live', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readLive: 1, token: TOKEN})})
+      .then(r => r.json())
+      .catch(() => null)
+      .then(j => {
+        if (!fresh() || ANS !== a0) return;
+        if (!j || !j.ok) return liveArm(); // offline, an error: the log held stays, the next read in a minute
+        const m = liveMerge(a0.all || a0.rows || [], j, a0.roster);
+        if (m.full) {
+          // The whole log and the player list again, the page kept: a failed read keeps the log held and tries again in
+          // a minute (loadStats leaves an unreadable log as {old}; Codex review #775). An unfolded session's saved copy too.
+          sheetDrop('ans');
+          return Promise.all([loadStats(), liveUsers()]).then(() => {
+            if (!ANS || ANS.old) ANS = a0;
+            else savedClear();
+            if (cur === 'players/activity') render();
+            else liveArm();
+          });
+        }
+        if (m.add.length) {
+          const all = [...(a0.all || a0.rows || []), ...m.add];
+          ANS = {...a0, all, rows: subjRows(all), at: Date.now()};
+        } else a0.at = Date.now();
+        const U = (USERS && USERS.users) || [],
+          known = new Map(U.map(u => [u.id, u.name]));
+        // A signed-in player of the log the list does not hold (a new account, or an earlier read of the list that
+        // failed): the list again, at each light read until it holds them (Codex review #775).
+        if (liveUsersDue || (ANS.all || ANS.rows || []).some(r => !r[11] && !known.has(r[0])))
+          liveUsers().then(() => cur === 'players/activity' && render());
+        // A player's saved copy read for an unfolded session (achievements, cards, learned genera) follows their new
+        // answers, as ↻ does (savedClear; Codex review #775).
+        if (m.add.some(r => known.has(r[0]) && known.get(r[0]) in PSAVED)) savedClear();
+        if (cur === 'players/activity') render();
+        else liveArm();
+      })
+  );
+}
+document.addEventListener('visibilitychange', liveArm);
 // Users, a header tab of its own (Pierre, 2026-11-01: "now that beta testers come, I need to see and manage them"; not under Stats, it manages players): every player who signed in,
 // by name, with their numbers, from sheet script v11 (POST {users: 1, token}; names, so the admin token is checked like
 // for reports). Merge = two names of one person: the progress is merged here (core.js mergeUsers: answers add up, the

@@ -95,6 +95,102 @@
   "fish-s143-cand-590967575": {
    "code": "p1g2sm13",
    "keep": "best"
+  },
+  "fish-s143-cand-400527711": {
+   "code": "o1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-400527718": {
+   "code": "o1d1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s143-cand-715579": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-471129938": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-252426337": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-360859224": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-273020380": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-620508905": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-742453654": {
+   "code": "o1g1bsm1",
+   "keep": "best"
+  },
+  "fish-s143-cand-596075645": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s143-cand-592326022": {
+   "code": "p1g2bm12",
+   "keep": "best"
+  },
+  "fish-s143-cand-738740404": {
+   "code": "p1g2bl12",
+   "keep": "best"
+  },
+  "fish-s143-cand-738740427": {
+   "code": "o1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s143-cand-603779233": {
+   "code": "o1g2ms12",
+   "keep": "best"
+  },
+  "fish-s143-cand-708879940": {
+   "code": "o1g1ms12",
+   "keep": "best"
+  },
+  "fish-s143-cand-701370035": {
+   "code": "o1g1ms12",
+   "keep": "best"
+  },
+  "fish-s143-cand-595457838": {
+   "code": "p1g2bs12",
+   "keep": "best"
+  },
+  "fish-s143-cand-755349285": {
+   "code": "p1g1ms12",
+   "keep": "best"
+  },
+  "fish-s143-cand-689142148": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s143-cand-615527388": {
+   "code": "o1g1msx1",
+   "keep": "best"
+  },
+  "fish-s143-cand-525978632": {
+   "code": "p1g2mm13",
+   "keep": "dup"
+  },
+  "fish-s143-cand-525978648": {
+   "code": "o1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s143-cand-525978664": {
+   "code": "p1g2ss12",
+   "keep": "dup"
+  },
+  "fish-s143-cand-525978677": {
+   "code": "o1g2sm13",
+   "keep": "alt"
   }
  }
 }

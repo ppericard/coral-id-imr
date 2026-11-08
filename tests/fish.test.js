@@ -508,7 +508,7 @@ test('judged photos: every fish game photo judged with a valid code, written int
         `${p.f}: run python3 tools/fish_judge.py`
       );
       assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
-      // Never among the very easy photos of the first questions: juveniles, night, partial, head / tail / top views,
+      // Never among the very easy photos of the first questions: juveniles, the night livery, partial, head / tail / top views,
       // camouflage, out of water, an unclear subject.
       if (
         (/j/.test(p.jt.slice(7)) && !juvEarly(tid, p)) ||
@@ -566,7 +566,7 @@ test('judged photos: every fish game photo judged with a valid code, written int
 
 // The curated photos (admin plan PR 7, tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
 // an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no juvenile, night
-// shot, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
+// livery, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
 // write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js fishPhotos: fish-game.json and the
 // stopgap): every circle-1 entry keeps at least 5 very easy photos (Pierre, 2026-11-04).
 test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
@@ -657,9 +657,10 @@ test('fish-photos.json (the stopgap game photos) shows only species in the game'
   );
 });
 
-// Curated common names, the proposal (Pierre, 2026-11-04: 1 to 3 per species; docs/FISH_PATH.md "Common names";
-// tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule C1), each with its
-// sources, no two spellings of one name listed apart, and the file is what the selection gives.
+// Curated common names (Pierre, 2026-11-04: 1 to 3 per species; published as selected, 2026-11-08, Q313; docs/FISH_PATH.md
+// "Common names"; tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule C1),
+// each with its sources, no two spellings of one name listed apart, and the file is what the selection gives (fish.json
+// cn and the game's use of them: tests/fishcommon.test.js).
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
   assert.strictEqual(P.s132.names[0].name, "Russell's snapper");
@@ -668,7 +669,7 @@ test('common names: a PDF slip shows the FishBase spelling, the PDF form accepte
   assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
 });
 
-test('common names proposal: 0 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
+test('common names: 0 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
   const P = read('tools/fish_common.json').species,
     SRC_NAMES = read('tools/fish_common_src.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
@@ -705,7 +706,7 @@ test('common names proposal: 0 to 3 per game species, the PDF name first, source
 // Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a
 // name accepted as a spelling (alt) counts in the shared-name check (Dascyllus trimaculatus' "Three spot damsel" is
 // Pomacentrus tripunctatus' PDF name); a spelling that links two groups merges them (Antennarius striatus).
-test('common names proposal: FishBase main name, shared spellings, linked spellings', () => {
+test('common names: FishBase main name, shared spellings, linked spellings', () => {
   const P = read('tools/fish_common.json').species,
     SRC_NAMES = read('tools/fish_common_src.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');

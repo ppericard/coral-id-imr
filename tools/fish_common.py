@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Curated common names of the fish species, 1 to 3 each: an agent's PROPOSAL for Pierre to confirm (Pierre, 2026-11-04,
-docs/FISH_PATH.md "Common names: a short curated list per species": "1 to 3 well-used common names, never more, never a
-full reference list"; mastery of a species' common names needs all its listed names, so every name added makes it
-harder). Editorial: nothing in the game reads the proposal until Pierre has confirmed it.
+"""Curated common names of the fish species, 1 to 3 each (Pierre, 2026-11-04, docs/FISH_PATH.md "Common names: a short
+curated list per species": "1 to 3 well-used common names, never more, never a full reference list"; mastery of a
+species' common names needs all its listed names, so every name added makes it harder). Published without his prior
+check (Pierre, 2026-11-08, Q313: "Publie, je corrige à l'usage"): tools/build_fish.py writes the lists into fish.json
+(species `cn`), and he corrects them in use.
 
 Sources (every name keeps the sources it was found in):
 - pdf: the IMR reference PDF's common name (fish.json `common`, "as in the PDF, never corrected": rules C1 and
@@ -15,12 +16,14 @@ Sources (every name keeps the sources it was found in):
 - inat: iNaturalist's taxon names (api.inaturalist.org /v1/taxa, all_names, English lexicon); inatMain = the default
   English name (preferred_common_name, locale en).
 
-Selection, in order, at most 3 names (names compared without case, spaces, hyphens or apostrophe style):
+Selection, at most 3 names (names compared without case, spaces, hyphens or apostrophe style):
 1. fish.json `common` (the PDF name: IMR's wording first, rule C1; or its slides, Dauin or wink source);
 2. the FishBase main English name and the iNaturalist default English name, when not already listed (each is the main
    name of a major public reference), but only when it recurs: found in both FishBase (its main name counts, with or
    without a comnames record) and iNaturalist;
 (no other name: Pierre, 2026-11-05, dropped the rule that added a name recorded 3+ times by FishBase).
+Order, deterministic: the species' own name first, then the most shared: found in the most references, then the main
+name of the most, then the most FishBase records, then FishBase's main name before iNaturalist's, then by name.
 Spellings of one name count as one name (2 letters apart at most, a trailing "fish", or one the other's first words:
 Pearl-scaled / Pearlscale angelfish, Neon damsel / damselfish, Indo-Pacific sergeant / sergeant major; a spelling
 that links two groups merges them): the form shown
@@ -260,7 +263,11 @@ def select():
             # No third rule for other recorded names (Pierre, 2026-11-05: only the main names of the two references).
             return (g["fb"] > 0 or g["fbMain"]) and g["inat"] and (g["fbMain"] or g["inatMain"])
 
-        rank = sorted(groups, key=lambda g: (not g["own"], not (g["fbMain"] or g["inatMain"]), -g["fb"]))
+        # The order, deterministic: the species' own (PDF) name first (rule C1), then the most shared: in the most
+        # references (FishBase, iNaturalist), then the main name of the most, then the most FishBase records, then
+        # FishBase's main name before iNaturalist's, then by name.
+        rank = sorted(groups, key=lambda g: (not g["own"], -((g["fb"] > 0 or g["fbMain"]) + g["inat"]),
+                                             -(g["fbMain"] + g["inatMain"]), -g["fb"], not g["fbMain"], norm(g["name"])))
         pick = [g for g in rank if g["own"] or keep(g)][:MAX]
         single = not pick and any(g["fbMain"] or g["inatMain"] for g in rank)
         if single:  # no name of its own and none in both references: the best main name, flagged
@@ -317,7 +324,8 @@ def select():
 
 
 def write(out, check):
-    doc = ("Proposed curated common names per fish species (1 to 3), for Pierre to confirm: tools/fish_common.py, "
+    doc = ("Curated common names per fish species (1 to 3, the most shared first; published, Pierre corrects them in use: "
+           "Q313), written into fish.json species cn by tools/build_fish.py: tools/fish_common.py, "
            "docs/FISH_PATH.md \"Common names\". from: pdf = IMR reference PDF (fish.json common), dauin = circle 3's source "
            "name, fbMain = FishBase main English name, fbN = FishBase English records of the name (countries / references), "
            "inatMain = iNaturalist default English name, inat = another iNaturalist English name.")

@@ -2670,7 +2670,7 @@ changes, all data the engine reads generically (the corals have none of these fi
 - **Every circle-1 photo judged** (648 photos, then 37 added, `judging/FISH.md`, `tools/fish_judge.json`): an agent
   looked at each one and gave it tags (view, whole fish, light, colour loss, clarity, size, count, juvenile, camouflage;
   the sex / colour phase flag for the entries the presentation says change, `dimorph`: Parrotfish, Anthias) and an ease
-  from 1 to 5, capped by rule (a juvenile or a monochrome photo at most 2; a night shot, a strong colour loss, a head-on
+  from 1 to 5, capped by rule (a juvenile or a monochrome photo at most 2; the night livery, a strong colour loss, a head-on
   or tail view, a partial fish or camouflage at most 3), plus a proposed crop for 140 of them (a proposal for the admin,
   never applied). The photos of circles 2 and 3 and the winks were judged the same way next (475 photos, 48 crops;
   judging/FISH.md). **The phase flag caps nothing** (Pierre, 2026-11-04): a sex or colour phase is a species-level
@@ -2696,7 +2696,7 @@ changes, all data the engine reads generically (the corals have none of these fi
 - **Reference photos one ease point easier** (2026-11-05, Pierre: a photo a reference source uses to represent the
   species, FishBase's main picture or iNaturalist's taxon cover, "is easy to identify, so it should come early in the quiz
   for a beginner"): such a candidate carries `rep`, and its judged ease gets `REP_BONUS` = 1 (`tools/fish_judge.py`
-  `cap`, the flag `r` in its tags), the caps applied after it (a juvenile or a night shot stays capped). Why one point:
+  `cap`, the flag `r` in its tags), the caps applied after it (a juvenile or a fish in its night livery stays capped). Why one point:
   it lifts a medium photo (3) into the very easy ones (ease 4-5: the gate of an entry's first questions, `easyFirst`, until 2026-11-06) and makes a
   very easy one more likely the card's cover, without passing over the visual rubric (a hard reference photo stays
   hard). It reached the game only through Pierre's curation (candidates) at first; since 2026-11-06 (Q180, Q199) a candidate

@@ -508,6 +508,27 @@ function fishGenera(X, F) {
   const sp = new Map((F.species || []).map(s => [s.id, s])),
     gens = new Map((F.genera || []).map(g => [g.id, g])),
     sci = [];
+  // A family IMR gives no cue for (circles 2-3, the Soapfishes): its ID marks (fish.json marks, our own words from the
+  // sources it lists, msrc: tools/fish_sheets.json) show where the IMR cues show (the feedback, the first-meeting card,
+  // the families page, the cards), under a label naming those sources, never as IMR's (Pierre, 2026-11-08: "court terme,
+  // assez urgent"; "On publie").
+  (F.families || []).forEach(f => {
+    const E = X.gen[f.id],
+      by = [
+        ...new Set(
+          (f.msrc || [])
+            .map(s =>
+              String(s.t || '')
+                .split(',')[0]
+                .trim()
+            )
+            .filter(Boolean)
+        )
+      ].join(', ');
+    if (!E || E.qt || !(f.marks || []).length) return;
+    E.qt = f.marks;
+    E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
+  });
   (F.families || [])
     .filter(f => f.circle === 1 && X.gen[f.id])
     .forEach(f => {
@@ -584,6 +605,40 @@ function sciOpen(L, score, met, imr, hand) {
   const at = (n, x) => met(n) || score(GX(n).parent) >= x,
     auto = imr ? L.filter(n => GX(n).imrg && at(n, LV_AT[0])) : [];
   return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, hand ? LV_AT[0] : LV_AT[1]))};
+}
+// The curated common names of a fish species (fish.json species cn, from tools/fish_common.py; Pierre, 2026-11-04,
+// docs/FISH_PATH.md "Common names"): 1 to 3 names, the most shared first, each [the name shown, its other spellings];
+// none for a species no reference names (Q247). Common-name mastery of a species needs every listed name (core.js
+// treeScore: C is the mean of its names' bars), so a multiple-choice question shows one listed name at a time, rotating
+// (cnShow), and a typed answer is accepted only as a listed name (cnTypeNames). For the species level, which asks them.
+const cnList = s => ((s && s.cn) || []).map(n => n[0]);
+// The listed name a multiple-choice question on species s shows next: the one asked least so far (asked(i, name): how
+// many times its name i was asked), the list's order on a tie (the most shared first). '' for a species with none.
+function cnShow(s, asked) {
+  const L = cnList(s);
+  let best = -1,
+    low = Infinity;
+  L.forEach((n, i) => {
+    const k = Number((asked && asked(i, n)) || 0);
+    if (k < low) ((low = k), (best = i));
+  });
+  return best < 0 ? '' : L[best];
+}
+// The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
+// typeNormAll: [{k, g: the species id, old, alt}], each listed name and its recorded spellings (old: the spelling typed,
+// alt: 1), nothing else: no other name the references give, no short form without "fish" (fishTypeNames' drop is the
+// families'). A name two species list names both (typeMatchIn near: "which one?").
+function cnTypeNames(L) {
+  const out = [];
+  (L || []).forEach(s =>
+    ((s && s.cn) || []).forEach(n =>
+      n.forEach((x, i) => {
+        const k = typeNormAll(x);
+        if (k && !out.some(o => o.k === k && o.g === s.id)) out.push({k, g: s.id, old: i ? x : '', alt: i ? 1 : 0});
+      })
+    )
+  );
+  return out;
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
@@ -710,7 +765,8 @@ function inSubject(id, fn) {
   }
 }
 // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): two places, one state, the Corals | Fish row
-// at the top of Home (home.js) and the subject switch next to the logo in the header (#subjc, showSubj), shown only while
+// at the top of Home (home.js) and the subject switch next to the logo in the header on every other page (#subjc,
+// showSubj; hidden on Home, route), shown only while
 // the player has more than one subject (subjMine: the admin's only while a subject is in beta). The subject's data
 // first, then everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A
 // subject the player may not have (subjAt) brings the corals.
@@ -1585,14 +1641,18 @@ const UNITS = {
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
-    // common names (the genera's, their IMR tags, the species'), from fish.json alone. Nothing for another rank.
+    // common names (the genera's, their IMR tags, the species': the PDF's and every listed one with its spellings, cn),
+    // from fish.json alone. Nothing for another rank.
     typeOther: rk => {
       const F = rk === 'genus' && FISHRAW && FISHRAW.f;
       if (!F) return null;
       const first = x => String(x || '').split(/\s+/)[0];
       return {
         sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
-        common: [...(F.genera || []).flatMap(g => [g.common, g.imr]), ...(F.species || []).map(x => x.common)].filter(Boolean)
+        common: [
+          ...(F.genera || []).flatMap(g => [g.common, g.imr]),
+          ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat()])
+        ].filter(Boolean)
       };
     },
     // The look-alikes the IMR presentation names, each pair once.
@@ -1615,7 +1675,7 @@ const UNITS = {
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
-    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
+    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at
@@ -2348,6 +2408,16 @@ function route() {
     .querySelectorAll('nav [data-tab]')
     .forEach(b => (b.dataset.tab === tab ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current')));
   showModes(tab, h);
+  // Home has its own Corals | Fish row (home.js): the header's subject control steps aside there, every width (Pierre,
+  // 2026-11-08: "on the home page on desktop we have the Corals | Fish switch twice"; docs/DESIGN.md "Subject switch").
+  // Hidden but keeping its room (app.css .subjc[data-home]), so the header keeps its size and every item its place from
+  // page to page; its menu closes. A subject switch with the focus (the header's, or Home's row, drawn again on a switch)
+  // gives it to the same subject's button in Home's row once drawn.
+  const home = !h || h === 'home',
+    fa = document.activeElement,
+    fsj = home && fa && fa.closest && fa.closest('#view .hsubj, #subjc') ? fa.dataset.subj || SUBJ.id : '';
+  if (home) subjMenu(false);
+  $subjc.toggleAttribute('data-home', home);
   if (h.startsWith('g-')) UNITS[SUBJ.id].sheet(h.slice(2));
   else if (h === 'cmp' || h.startsWith('cmp|')) {
     const [, a, b] = h.split('|');
@@ -2373,6 +2443,10 @@ function route() {
   } else if ((!h || h === 'home') && window.viewHome) viewHome();
   else UNITS[SUBJ.id].list();
   window.scrollTo(0, 0);
+  if (fsj) {
+    const b = $v.querySelector(`.hsubj [data-subj="${fsj}"]`);
+    if (b) b.focus({preventScroll: true});
+  }
   if (h === 'genera' && fromSheet && generaY) {
     const a = $v.querySelector(`a[href="${CSS.escape(generaY[0])}"]`);
     if (a) window.scrollTo(0, a.getBoundingClientRect().top - generaY[1]);
@@ -2390,6 +2464,8 @@ function route() {
   if ((hashNow() || 'home') === (h || 'home') && typeof pagesRoute === 'function') pagesRoute(h);
   // Home drawn: the moment a subject newly open to the player may be told (progress.js subjHello, once progress.js is in).
   if ((h || 'home') === 'home' && typeof subjHello === 'function') subjHello();
+  // The same moment for the offer to install the app (installNudge, below).
+  if ((h || 'home') === 'home' && typeof installNudge === 'function') installNudge();
   // The page of address h is drawn: the tests wait for this instead of a fixed time (tests/pages.smoke.js drawn()).
   window.ROUTED = h;
 }
@@ -2527,6 +2603,131 @@ document.addEventListener('keydown', e => {
     hdrMetrics();
   }
 });
+// Install the app (Pierre, 2026-11-08: nudge phone players to install it, an icon on the home screen, instead of opening a
+// link in the browser, which has to be found again each time). The standard pattern: where the browser has an install
+// prompt (Android Chrome and its family: beforeinstallprompt), our own "Install the app" button calls it; iPhone and iPad
+// Safari have none, so the card shows the steps (Share, Add to Home Screen) with their icons. Offered once, on a touch
+// screen (pointer: coarse, rule U4), from the INSTALL.VISITS-th visit or once INSTALL.ANSWERS answers are played (a full
+// session trail), whichever comes first; on Home at a calm moment, as progress.js subjHello (never during a question,
+// after the visit's first sync when signed in: sync.js noticeLater; spaced from the other prompts and never with another
+// card: quiz.js promptOk). Never again once closed or installed, never in the installed app. ⚙ Settings keeps an "Install
+// the app" row for anyone, any time (hidden in the installed app). Nothing new is logged: the load event already says
+// installed or not (sync.js loadSend st). An iPhone's home-screen app keeps its own storage, apart from Safari's: Safari
+// cannot know the app was installed, so its card is closed for good by its button.
+// reefid-install (this device): {n: visits, t: the last load, x: the card closed (time), in: installed (time)}.
+const INSTALL = {KEY: 'reefid-install', VISITS: 3, ANSWERS: 10, GAP: 30 * 60000, WAIT: 1500};
+// The record after a load at time now: a new visit when the last load was INSTALL.GAP or more before (a reload is none).
+const installVisit = (r, now) => {
+  const R = r && typeof r === 'object' ? r : {},
+    n = typeof R.n === 'number' ? R.n : 0,
+    same = typeof R.t === 'number' && now >= R.t && now - R.t < INSTALL.GAP;
+  return {...R, n: same ? n : n + 1, t: now};
+};
+// iPhone or iPad Safari (an iPad asks for the desktop site: a Mac with a touch screen), not another browser or an app's
+// own browser (Chrome, Firefox, Edge, Opera, Google, Facebook, Instagram on iOS: no "Version/… Safari", or their token).
+const installIos = (ua, touch) =>
+  (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1)) &&
+  /Version\/[\d.]+.*Safari\//.test(ua) &&
+  !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram/.test(ua);
+// Whether the card is due. way: 'prompt' (the browser's install prompt is ready), 'ios' (the steps) or '' (nothing to
+// offer). Pure on its inputs: tests call it.
+const installDue = ({standalone, rec, way, touch, answers}) => {
+  const R = rec && typeof rec === 'object' ? rec : {};
+  return !standalone && !R.x && !R.in && !!way && !!touch && ((R.n || 0) >= INSTALL.VISITS || answers >= INSTALL.ANSWERS);
+};
+let installEv = null,
+  installT = 0;
+const installStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const installWay = () => (installEv ? 'prompt' : installIos(navigator.userAgent, navigator.maxTouchPoints || 0) ? 'ios' : '');
+const installMark = k => store.set(INSTALL.KEY, {...(store.get(INSTALL.KEY, {}) || {}), [k]: Date.now()});
+// This load: one more visit if it is one; opened as the installed app, installed.
+{
+  const r = installVisit(store.get(INSTALL.KEY, null), Date.now());
+  store.set(INSTALL.KEY, installStandalone() && !r.in ? {...r, in: Date.now()} : r);
+}
+addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); // no bar of the browser's own: the card and the ⚙ row offer it
+  installEv = e;
+  const r = document.getElementById('instrow');
+  if (r) r.hidden = installStandalone();
+  if (window.APP_READY) installNudge(); // it can come after Home was drawn
+});
+addEventListener('appinstalled', () => {
+  installEv = null;
+  installMark('in');
+  document.querySelectorAll('.unlock.install').forEach(d => d.close('installed'));
+});
+// The browser's prompt, once (an event's prompt can be used only once; the browser may send a new one later).
+function installPrompt() {
+  const e = installEv;
+  if (!e) return installCard(false);
+  installEv = null;
+  Promise.resolve()
+    .then(() => e.prompt())
+    .then(() => e.userChoice)
+    .then(c => c && c.outcome === 'accepted' && installMark('in'))
+    .catch(() => {});
+}
+// The steps' icons (the app's SVG set; 18 px, stroke 2): Safari's Share and Add to Home Screen.
+const INSTALL_ICONS = {
+  share: '<path d="M12 3v11M8 7l4-4 4 4"/><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/>',
+  add: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/>'
+};
+const installIcon = k =>
+  `<svg class="insti" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${INSTALL_ICONS[k]}</svg>`;
+// The card: once (the nudge: closed for good however it closes, but by leaving the page) or from ⚙ (no mark).
+function installCard(once) {
+  const way = installWay(),
+    why = `<p>Add ${esc(ORG.app)} to your home screen: one tap opens it, full screen, with no link to find again.</p>`, // rule W21: the name from ORG
+    body =
+      way === 'prompt'
+        ? why
+        : way === 'ios'
+          ? `${why}<ol class="instl"><li>Tap <b>Share</b> ${installIcon('share')} in Safari. On a recent iPhone, tap <b>•••</b> first.</li><li>Tap <b>Add to Home Screen</b> ${installIcon('add')} (scroll down the list if you don't see it).</li><li>Tap <b>Add</b>.</li></ol>`
+          : `<p>Open your browser's menu and choose <b>Install app</b> or <b>Add to Home screen</b>.</p><p class="note">Opened the link inside another app, such as a chat? Open it in Chrome or Safari first.</p>`;
+  cardShow({
+    kind: 'feature',
+    cls: 'install',
+    visual: '<img class="instapp" src="icon.svg" alt="" width="60" height="60">',
+    kick: 'Install the app',
+    title: 'Keep it on your home screen',
+    body,
+    primary: way === 'prompt' ? {text: 'Install the app', on: installPrompt} : {text: 'Got it'},
+    secondary: way === 'prompt' && once ? {text: 'No thanks'} : null,
+    note: once ? 'Later: ⚙ Settings, Install the app.' : '',
+    esc: way === 'prompt' && once ? 2 : 1,
+    onClose: how => once && how !== 'route' && how !== 'empty' && installMark('x')
+  });
+}
+// The nudge, at a calm moment on Home (route, and app.js SETUP 3 once the prompts' spacing is loaded).
+function installNudge() {
+  clearTimeout(installT);
+  const home = () => (hashNow() || 'home') === 'home',
+    due = () =>
+      installDue({
+        standalone: installStandalone(),
+        rec: store.get(INSTALL.KEY, null),
+        way: installWay(),
+        touch: matchMedia('(pointer: coarse)').matches,
+        answers: typeof answersAll === 'function' ? answersAll() : 0
+      });
+  if (!home() || !due() || (typeof noticeLater === 'function' && noticeLater('install', installNudge))) return;
+  installT = setTimeout(() => {
+    const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .unlock');
+    if (!home() || busy || !due() || typeof promptOk !== 'function' || !promptOk()) return;
+    promptMark();
+    installCard(true);
+  }, INSTALL.WAIT);
+}
+// ⚙ Settings › Install the app: the browser's prompt at once where it has one, else the card with the steps.
+{
+  const r = document.getElementById('instrow');
+  r.hidden = installStandalone();
+  document.getElementById('instb').onclick = () => {
+    setOpen(false);
+    installPrompt();
+  };
+}
 // Admin | User view switch: only in the browser holding the admin token; a switch reloads so every module follows.
 const $viewrow = document.getElementById('viewrow');
 // Link to the admin page (Pierre, on his phone), in either view.
@@ -2687,6 +2888,7 @@ const SETUP = {
     sorryNotice(); // an apology to the players of the broken opening (2026-11-03/04): once, after any recalculation note
     achHelped(); // a report of this player's marked done in the admin (Q66): told once
     subjHello(); // a subject newly open to the player (fish): once, at a calm moment on Home
+    installNudge(); // install the app on the home screen: once, at a calm moment on Home
     prog();
     window.APP_READY = true; // Home, the quiz and the Learn pages work (tests and tools/perf.js wait for this)
   },

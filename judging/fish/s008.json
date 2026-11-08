@@ -29,7 +29,7 @@
    "keep": "best"
   },
   "fish-s008-cand-596711071": {
-   "code": "p1d0sl14",
+   "code": "p1g0sl15",
    "keep": "best"
   },
   "fish-s008-cand-621862283": {
@@ -118,6 +118,87 @@
   },
   "fish-s008-cand-724524505": {
    "code": "p1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s008-cand-197142934": {
+   "code": "o1g0ss1j2",
+   "keep": "best"
+  },
+  "fish-s008-cand-243292389": {
+   "code": "o1g0ssmj2",
+   "keep": "best"
+  },
+  "fish-s008-cand-594962354": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s008-cand-594962372": {
+   "code": "o1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s008-cand-100218630": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s008-cand-428524922": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s008-cand-428524917": {
+   "code": "o1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s008-cand-475311512": {
+   "code": "p1g0sls5",
+   "keep": "best",
+   "note": "iNat annotates a juvenile; the photo shows the adult's colours (no ocellus), so no j."
+  },
+  "fish-s008-cand-650126862": {
+   "code": "d1g0ss12",
+   "keep": "best"
+  },
+  "fish-s008-cand-760868408": {
+   "code": "o1g2ms12",
+   "keep": "best"
+  },
+  "fish-s008-cand-597040767": {
+   "code": "o1g1bs11",
+   "keep": "best"
+  },
+  "fish-s008-cand-265910238": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s008-cand-760776501": {
+   "code": "d1g1ss11",
+   "keep": "best"
+  },
+  "fish-s008-cand-617165029": {
+   "code": "o1d1sm12",
+   "keep": "best"
+  },
+  "fish-s008-cand-694496482": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s008-cand-626735308": {
+   "code": "p1d1sss2",
+   "keep": "best"
+  },
+  "fish-s008-cand-267818081": {
+   "code": "o1g2mm13",
+   "keep": "alt"
+  },
+  "fish-s008-cand-267818080": {
+   "code": "t1g2mm11",
+   "keep": "dup"
+  },
+  "fish-s008-cand-267818149": {
+   "code": "o1g2mm12",
+   "keep": "dup"
+  },
+  "fish-s008-cand-267818141": {
+   "code": "o1g2bm11",
    "keep": "dup"
   }
  }
