@@ -718,7 +718,7 @@ function viewFishList() {
   const flat = [];
   const tip = n => {
     const g = GX(n),
-      p = g.views.wide[0];
+      p = cover(g); // Pierre's ★ Cover while in play (app.js fishCurate), else the card photo as before (core.js easyCover)
     if (p) flat.push({...p, genus: n});
     return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${tipsList(g)}${
       g.lk.length
@@ -782,6 +782,14 @@ const fishSpPhotos = () => {
   Object.values((FISH && FISH.gen) || {}).forEach(g => ((g.views || {}).wide || []).forEach(add));
   Object.values((FISH && FISH.sheet) || {}).forEach(L => (L || []).forEach(add));
   Object.keys(by).forEach(k => (by[k] = easyRank(by[k])));
+  // Pierre's featured photos of a species first, in his order (app.js fishCurate featP; the admin's page order,
+  // autosort.js fishOrder), then the others in the game's order.
+  Object.values((FISH && FISH.gen) || {}).forEach(g =>
+    Object.entries(g.featP || {}).forEach(([sid, F]) => {
+      const fs = new Set(F.map(p => p.f));
+      if (by[sid]) by[sid] = [...F.map(p => by[sid].find(x => x.f === p.f)).filter(Boolean), ...by[sid].filter(x => !fs.has(x.f))];
+    })
+  );
   return ((FSPH = by), (FSPH_OF = FISH), by);
 };
 const spPhoto = s => (fishSpPhotos()[s.id] || [])[0] || null;
@@ -1008,13 +1016,14 @@ function fishFamily(f) {
     G = (f.genera || []).map(id => T.gen[id]).filter(g => g && genSpecies(g).length),
     flat = [],
     all = easyRank(A.flatMap(s => fishSpPhotos()[s.id] || [])),
-    hero = all[0],
+    // Pierre's ★ Cover while in play (app.js fishCurate), else the easiest, most reference-like of its species' photos.
+    hero = (GX(f.id) || {}).coverP || all[0],
     juv = all.filter(p => /j/.test(String(p.jt || '').slice(7))).slice(0, 4),
     u = GX(f.id) ? f.id : '';
   if (hero) flat.push(hero);
   const cover = id => {
     const L = famSpecies(T.fam[id]);
-    return easyRank(L.flatMap(s => fishSpPhotos()[s.id] || []))[0];
+    return (GX(id) || {}).coverP || easyRank(L.flatMap(s => fishSpPhotos()[s.id] || []))[0];
   };
   // F5: IMR's look-alike lines (fish.json look, lsrc), our lines for the pairs IMR gives no words for (apart, from the
   // family's sources: tools/fish_sheets.json), then the families players mix it up with (model.js dataLooks), said as
