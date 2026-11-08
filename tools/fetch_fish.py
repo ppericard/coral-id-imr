@@ -293,7 +293,7 @@ def pages(net, q, enough, n=GEN_PAGES):
     return {"total": len(res) + max(0, last["total"] - len(last["results"])), "results": res}
 
 
-# The general searches of several species asked together (rule C7; PR "Review every iNaturalist tool for batching"): the
+# The general searches of several species asked together (rule C7; #784): the
 # species with at most BATCH_SOLO observations in a search (species_counts says) share one search, read to its end
 # (BATCH_PAGES pages of 200 at most, BATCH_TAXA taxa a search), and each one's share answers its own search (Net.virtual):
 # the same observations, newest first, as iNaturalist answers the one-species search. The others keep their own search.

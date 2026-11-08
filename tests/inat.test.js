@@ -1,7 +1,6 @@
 // The one iNaturalist client of the tools (tools/inat.py; rule C7: about one request a second, batched, a User-Agent,
-// paced retries) and the batched requests that replaced many small ones (PR "Review every iNaturalist tool for
-// batching", Pierre's ROADMAP row of 2026-11-04): each batched answer is the same as the one-taxon requests it replaces,
-// in fewer requests. Everything offline: a stubbed opener, or the made-up iNaturalist of tests/inatstub.py
+// paced retries) and the batched requests that replaced many small ones (#784, Pierre's ROADMAP row of 2026-11-04): each
+// batched answer is the same as the one-taxon requests it replaces, in fewer requests. Everything offline: a stubbed opener, or the made-up iNaturalist of tests/inatstub.py
 // (tests/inat_check.py runs each case).
 const test = require('node:test'),
   assert = require('node:assert'),

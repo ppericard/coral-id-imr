@@ -235,8 +235,7 @@ def inat_count(tid, where, grade="research"):
     return (NET.get(f"{INAT}observations?taxon_id={tid}{g}&{where}&per_page=0") or {}).get("total_results", 0)
 
 
-# The presence counts of every species, asked together before the species loop (rule C7; PR "Review every iNaturalist
-# tool for batching"): {(taxon, where, grade): observations, ("u", taxon, where): distinct Research Grade observers}, each
+# The presence counts of every species, asked together before the species loop (rule C7; #784): {(taxon, where, grade): observations, ("u", taxon, where): distinct Research Grade observers}, each
 # what the one-species request (inat_count, observers) answers; what is not in it is asked alone, as before.
 PRE = {}
 COUNTS = ((f"user_login={PIERRE}", ""), (PH, "research"), (DAUIN, "research"), (DAUIN, "needs_id"))

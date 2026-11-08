@@ -74,7 +74,7 @@ POOR = 15  # fewer Dauin photos (site + candidates) than this: also fetch Philip
 # error, waits (Retry-After when given, else WAITS: 5, 15, 30, 60, 120 s) and tries again, failing only after the last.
 # The searches below are one per genus and source on purpose: they are in votes order, and iNaturalist orders the
 # observations of equal votes in no fixed way, so a search over several genera at once would not give each genus the
-# same 200 (measured 2026-11-08, PR "Review every iNaturalist tool for batching"). The presence rule's counts are batched.
+# same 200 (measured 2026-11-08, #784). The presence rule's counts are batched.
 
 
 def get(u):

@@ -14,7 +14,7 @@ than PACE between two requests to one host, whichever module asked.
     UA                        the User-Agent every request sends: the project's name and the app's, no personal address
                               or account.
     chunks(xs, n)             xs in lists of n (n ids a request: `id=`, `taxon_id=`, /taxa/a,b,c).
-    calls                     requests sent so far, by host (the call counts of the PR that brought this module).
+    calls                     requests sent so far, by host (the request counts of #784).
 
 The batched counts (rule C7: "observations/species_counts on a family rather than one call per species"), each exactly
 what the one-taxon request it replaces would answer:
