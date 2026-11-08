@@ -34,13 +34,13 @@ This morning: Q314, then the waiting PRs land; the Reports and Events tabs read 
 Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
 mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- **Q314** Codex's usage limit (since 15:35 UTC 11-08) stops every merge: (a) add Codex credits, (b) wait for the
-  reset, (c) an independent Claude review agent on each head meanwhile, findings handled like Codex's. Recommended: (c).
-- **Q315** Time in the photo rating (reopened 11-08 ~17:00; ROADMAP row): (1) the genus offset's step too, (2) a
-  time-intensity term in `photoDiff` served by the sheet, (3) enlarged as a small extra, or none. Recommendation: (2),
-  the one the measure supports (others' speed predicts success beyond the rating, Holm 0.003), at L11 level 2.
-- **Q208** (set aside on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on
-  their own pace? **Q230** out-of-zone taxon-page photos: waits for real arguments (ROADMAP row).
+- **Q314** Codex's usage limit (15:35 UTC 11-08) blocks merges: (a) credits, (b) wait, (c, recommended) a Claude reviewer.
+- **Q315** Time in the photo rating (ROADMAP row): (1) the genus offset's step too, (2) a time term in `photoDiff`,
+  (3) enlarged as a small extra, or none. Recommended: (2), the measure supports it (Holm 0.003), at L11 level 2.
+- **Q317** L11 breach (#790 live, #805): without the corals' memory offsets the fish beginner's flat stretch is +11
+  (50 → 61). Keep (recommended: the log backs it, 92% right on seen photos) or fit fish offsets? `PFMT` leaks too.
+- **Q208** (set aside 11-08): families not met before the scientific genera, or genera on their own pace? **Q230**
+  out-of-zone taxon-page photos: waits for real arguments.
 - **Q316** (C1, #664's F8) fish photo ratings per rank: (A) one per (photo, rank), or (B, recommended) one per photo
   plus a fitted rank offset (Q136 with it). Not numbered: **Show the species after a family or genus answer**
   (species, common and scientific name, right or wrong; Pierre ~20:10): before the species level? **#641 a-j** (F7 =
@@ -60,7 +60,7 @@ mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes in
   Q308 fish light g / d / n (#759); Q309 reports bar (#785); Q310 fish replay, today's bar a floor (#776, #779); Q311
   fish batches (#766, #780, #781); Q312 device id on answers (#774); Q313 fish common names, corrected in use (#778).
 
-Last question number: Q316
+Last question number: Q317
 
 ## Pierre's hands
 
