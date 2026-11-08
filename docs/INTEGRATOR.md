@@ -136,7 +136,7 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   2.5 s, now also checking left/right) and its events (`empty card closed`, `left with a card open`) stay: read the
   Events tab now and then for any other card that hides. Lesson: test every new card at 390 px with a long list.
 - **Open PRs**: STATUS "Now" (on 2026-11-09 night, 11 green PRs waiting for Codex's usage limit, #769 a draft). #664
-  (engine coherence review) merged as a reference doc; its re-check is done (ROADMAP row): one question left, C1. #637 (photos rated against the genus ability, Q136) was
+  (engine coherence review) merged as a reference doc; its re-check is done (ROADMAP row): C1 decided by Pierre on 2026-11-09 (Q316: componential difficulty model; Q136 reopened with it). #637 (photos rated against the genus ability, Q136) was
   closed unmerged; its branch stays (ROADMAP "Photos rated against the genus ability"). The old worktree
   `photo-genus-ability` (2 commits not on the remote head) is in a pre-rewrite clone: patches only, never a push.
 - **Branch `claude/fish-todo-wip`** (no PR): unfinished, untested follow-up of #686's audit, fish.exclude matched by
