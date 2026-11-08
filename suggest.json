@@ -1264,8 +1264,8 @@
   "s142": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-06",
-    "n": 28
+    "at": "2026-11-08",
+    "n": 48
    }
   },
   "s145": {
@@ -2706,8 +2706,8 @@
   "s243": {
    "fish": {
     "by": "claude",
-    "at": "2026-11-04",
-    "n": 29
+    "at": "2026-11-08",
+    "n": 53
    }
   },
   "s221": {
@@ -36581,6 +36581,46 @@
    "e": 3,
    "k": "dup"
   },
+  "fish-s142-cand-105560172": {
+   "jt": "o1g1sm1j",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s142-cand-427581684": {
+   "jt": "p1g3bsx",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s142-cand-537587518": {
+   "jt": "p1g0sm1j",
+   "e": 2,
+   "k": "dup"
+  },
+  "fish-s142-cand-537587820": {
+   "jt": "p1g0sm1j",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s142-cand-571664543": {
+   "jt": "o1g1sl1j",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s142-cand-597403669": {
+   "jt": "o1g2mmm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s142-cand-597564318": {
+   "jt": "p1g3smm",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s142-cand-597569894": {
+   "jt": "p1g3smm",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s142-cand-603726876": {
    "jt": "p1g2sm1j",
    "e": 2,
@@ -36595,6 +36635,11 @@
    "jt": "p1g1ssx",
    "e": 1,
    "k": "dup"
+  },
+  "fish-s142-cand-605534616": {
+   "jt": "o1g1slm",
+   "e": 2,
+   "k": "best"
   },
   "fish-s142-cand-606000772": {
    "jt": "p1g2bl1",
@@ -36619,6 +36664,36 @@
   "fish-s142-cand-614105499": {
    "jt": "p1g2bs1",
    "e": 1,
+   "k": "best"
+  },
+  "fish-s142-cand-618230712": {
+   "jt": "o1g1ml1",
+   "e": 3,
+   "k": "dup"
+  },
+  "fish-s142-cand-618230713": {
+   "jt": "o1g1sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s142-cand-618230715": {
+   "jt": "o1g1slm",
+   "e": 2,
+   "k": "alt"
+  },
+  "fish-s142-cand-618230754": {
+   "jt": "p1g2mss",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s142-cand-618230756": {
+   "jt": "p1g2msm",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s142-cand-618231270": {
+   "jt": "p1g2ss1",
+   "e": 2,
    "k": "best"
   },
   "fish-s142-cand-618794736": {
@@ -36711,14 +36786,39 @@
    "e": 2,
    "k": "dup"
   },
+  "fish-s142-cand-754126217": {
+   "jt": "o1g1sm1j",
+   "e": 2,
+   "k": "best"
+  },
   "fish-s142-cand-754389121": {
    "jt": "o1g2ss1j",
    "e": 1,
    "k": "best"
   },
+  "fish-s142-cand-755348628": {
+   "jt": "p1g1sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "fish-s142-cand-755348632": {
+   "jt": "o1g2bsx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s142-cand-755348638": {
+   "jt": "p1g2sms",
+   "e": 2,
+   "k": "dup"
+  },
   "fish-s142-cand-755348689": {
    "jt": "h1g2sm1",
    "e": 2,
+   "k": "best"
+  },
+  "fish-s142-cand-759568614": {
+   "jt": "o1d1ss1j",
+   "e": 1,
    "k": "best"
   },
   "fish-s143-cand-176251652": {
@@ -50668,6 +50768,11 @@
    "e": 4,
    "k": "best"
   },
+  "fish-s243-cand-189394118": {
+   "jt": "o1g1ssx",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s243-cand-269008595": {
    "jt": "p1g1bl1",
    "e": 1,
@@ -50688,9 +50793,24 @@
    "e": 3,
    "k": "best"
   },
+  "fish-s243-cand-269008659": {
+   "jt": "o1g1bl1",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s243-cand-269008675": {
+   "jt": "o1g1bl1",
+   "e": 1,
+   "k": "dup"
+  },
   "fish-s243-cand-269009209": {
    "jt": "p1g1sm1",
    "e": 3,
+   "k": "best"
+  },
+  "fish-s243-cand-329922761": {
+   "jt": "o1d2bm1c",
+   "e": 1,
    "k": "best"
   },
   "fish-s243-cand-329925126": {
@@ -50728,6 +50848,16 @@
    "e": 2,
    "k": "dup"
   },
+  "fish-s243-cand-347429796": {
+   "jt": "p1d1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s243-cand-373890515": {
+   "jt": "o1g1sm1jc",
+   "e": 2,
+   "k": "best"
+  },
   "fish-s243-cand-401151530": {
    "jt": "p1g1sm1",
    "e": 3,
@@ -50748,6 +50878,16 @@
    "e": 1,
    "k": "best"
   },
+  "fish-s243-cand-410938957": {
+   "jt": "o1n0sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s243-cand-411367113": {
+   "jt": "o1g1bm1c",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s243-cand-418089784": {
    "jt": "o1g1ss1jc",
    "e": 1,
@@ -50758,9 +50898,24 @@
    "e": 1,
    "k": "dup"
   },
+  "fish-s243-cand-447112143": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
   "fish-s243-cand-450374322": {
    "jt": "d1g1ss1c",
    "e": 1,
+   "k": "best"
+  },
+  "fish-s243-cand-450795267": {
+   "jt": "o1g1sm1",
+   "e": 3,
+   "k": "alt"
+  },
+  "fish-s243-cand-450795275": {
+   "jt": "p1g1sm1",
+   "e": 3,
    "k": "best"
   },
   "fish-s243-cand-480277119": {
@@ -50771,6 +50926,36 @@
   "fish-s243-cand-480277155": {
    "jt": "p1g2ssx",
    "e": 1,
+   "k": "best"
+  },
+  "fish-s243-cand-525990864": {
+   "jt": "o1g1ssxc",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s243-cand-525990892": {
+   "jt": "o1g1ssxc",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s243-cand-537528927": {
+   "jt": "p1g1mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "fish-s243-cand-587354758": {
+   "jt": "o1g1ssxjc",
+   "e": 1,
+   "k": "best"
+  },
+  "fish-s243-cand-587360444": {
+   "jt": "o1g1ssxjc",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s243-cand-592263": {
+   "jt": "p1g1slmj",
+   "e": 2,
    "k": "best"
   },
   "fish-s243-cand-599193979": {
@@ -50788,13 +50973,48 @@
    "e": 3,
    "k": "best"
   },
+  "fish-s243-cand-613996047": {
+   "jt": "p1g1sm1j",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s243-cand-620144430": {
+   "jt": "p1g1ss1jc",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s243-cand-641671910": {
    "jt": "o1g1sm1",
    "e": 3,
    "k": "best"
   },
+  "fish-s243-cand-660594239": {
+   "jt": "o1g1ssx",
+   "e": 1,
+   "k": "best"
+  },
   "fish-s243-cand-676572424": {
    "jt": "p1d1ss1",
+   "e": 2,
+   "k": "best"
+  },
+  "fish-s243-cand-758574574": {
+   "jt": "o1g1ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s243-cand-758574585": {
+   "jt": "o1g1ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s243-cand-758574586": {
+   "jt": "o1g1ssx",
+   "e": 1,
+   "k": "dup"
+  },
+  "fish-s243-cand-758574588": {
+   "jt": "p1g1smm",
    "e": 2,
    "k": "best"
   },
