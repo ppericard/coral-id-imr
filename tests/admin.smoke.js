@@ -2915,7 +2915,8 @@ const WIDTHS = [390, 1280];
           [card(id), fam]
         );
       // No Journey for a reporter who is not on the players' list.
-      if (((await info('demorep5')) || {}).journey !== null) fails.push(`To do › Reports: a Journey link for a reporter not on the list`);
+      const r5 = await info('demorep5');
+      if (!r5 || r5.journey) fails.push(`To do › Reports: a Journey link for a reporter not on the list ${JSON.stringify(r5)}`);
       let fr = await ft('demorep5');
       if (!fr || !fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
       else {
