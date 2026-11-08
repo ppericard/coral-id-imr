@@ -350,7 +350,8 @@ const server = http.createServer((req, res) => {
     ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
     // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
     // genera and the offer.
-    pgAt('f:Butterflyfishes', 0.72);
+    pgAt('f:Butterflyfishes', 0.6);
+    ok(genScore('f:Butterflyfishes') >= LV_AT[0] && genScore('f:Butterflyfishes') < LV_AT[1], 'sci: the family at Open Water');
     ok(!sci.units().length && !(bonusOfferDue() && bonusOfferDue().k === 'sci'), 'sci: nothing at Open Water');
     ok(!pool().some(n => GX(n).rank), 'sci: no genus in play for a player not at IMR');
     // "I'm at IMR" (Q219, Q220): the IMR genera of a family at Open Water come without the offer, Heniochus here; never
@@ -375,7 +376,8 @@ const server = http.createServer((req, res) => {
       if (s0 === null) localStorage.removeItem(sk);
       else localStorage.setItem(sk, s0);
     }
-    pgAt('f:Butterflyfishes', 0.85);
+    pgAt('f:Butterflyfishes', 0.72);
+    ok(genScore('f:Butterflyfishes') >= LV_AT[1], 'sci: the family at Advanced');
     ok(
       sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
       'sci: the genera of the family at Advanced only'
@@ -408,7 +410,7 @@ const server = http.createServer((req, res) => {
     // wrong choice, as in the quiz); a genus card's photo is its easiest, most reference-like one, whoever took it
     // (Pierre, 2026-11-06: no source tier for fish), and a never-seen photo of Pierre's gets no draw bonus.
     pgAt('f:Butterflyfishes', 0.2);
-    pgAt('f:Spadefishes', 0.85);
+    pgAt('f:Spadefishes', 0.72);
     const pl = pool().filter(n => GX(n).rank);
     ok(pl.length === 1 && GX(pl[0]).parent === 'f:Spadefishes', 'sci: the Spadefishes alone, one genus in play');
     ok(distractors(pl[0], pool(), 0).length === 3, 'sci: still 3 wrong genus names');
