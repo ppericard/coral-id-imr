@@ -83,7 +83,7 @@ test('a majority of players, and the overall share under 40%, are both needed', 
 });
 
 test('healthBad, the session summary and the demo all use the one rule', () => {
-  const bad = block(src, 'function healthBad(R) {', '\n}\n', {through: 1, file: 'admin.js'});
+  const bad = block(src, 'function healthBad(R, S = ASUBJ) {', '\n}\n', {through: 1, file: 'admin.js'});
   assert.match(bad, /photoAnswers\(R,/);
   assert.match(bad, /manyMiss\(o\)/);
   assert.match(bad, /everyoneMisses\(o\)/);
@@ -92,4 +92,97 @@ test('healthBad, the session summary and the demo all use the one rule', () => {
   const demo = read('admin-demo.js');
   assert.match(demo, /everyoneMisses\(tally\(/);
   assert.match(demo, /photoAnswers\(/);
+});
+
+// Fish admin at parity (Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"): Stops
+// follows the Corals | Fish switch. The sheets a subject's players opened: the corals' genus sheets from the summary's
+// genera, the fish's from its sheet pages (fish.learn.family / genus / species), a visit with no fish page not a fish visit.
+test("Stops' sheets opened, per subject: the corals' genera, the fish's sheet pages", () => {
+  const C = require('../core.js'),
+    {sheetVisit, sheetsTitle, stopWord} = new Function(
+      block(src, '// sheetsbysubj: begin', '// sheetsbysubj: end', {file: 'admin.js'}) + '\nreturn {sheetVisit, sheetsTitle, stopWord};'
+    )(),
+    [coral, fish] = [C.subjectOf('coral'), C.subjectOf('fish')];
+  assert.strictEqual(sheetsTitle(coral), 'Genus sheets opened');
+  assert.strictEqual(sheetsTitle(fish), 'Family, genus and species sheets opened');
+  assert.strictEqual(stopWord(coral), 'Genus');
+  // the fish words of its Analyses pages (SUBJECTS analyses one, "family or genus") once they exist, else its one
+  assert.strictEqual(
+    stopWord(fish),
+    ((fish.analyses && fish.analyses.one) || fish.one).replace(/^./, c => c.toUpperCase())
+  );
+  assert.match(stopWord(fish), /^Family/);
+  const coralVisit = {
+      r: {'learn.genus': [2, 40], 'practice.quiz': [1, 300]},
+      g: {Acropora: [2, 30, 'quiz', 1], Porites: [1, 10, 'list', 0]}
+    },
+    fishVisit = {r: {'fish.learn.genus': [1, 20], 'fish.learn.family': [2, 50], 'fish.practice.quiz': [1, 200]}, g: {}},
+    fishQuiz = {r: {'fish.practice.quiz': [1, 200]}, g: {}};
+  assert.deepStrictEqual(sheetVisit(coralVisit, coral), [3, 40]);
+  assert.deepStrictEqual(sheetVisit(fishVisit, coral), [0, 0], 'a fish visit is a visit for the corals, as before: no genus sheet');
+  assert.strictEqual(sheetVisit(coralVisit, fish), null, 'no fish page: not a fish visit');
+  assert.deepStrictEqual(sheetVisit(fishVisit, fish), [3, 70]);
+  assert.deepStrictEqual(sheetVisit(fishQuiz, fish), [0, 0], 'a fish visit with no sheet opened');
+});
+
+// Health on the fish side (fish admin at parity): the fish photos everyone misses, counted on their answers (the sheet
+// rates the corals' photos only), each with its family; the fish units players are stuck on, from its slate. The corals'
+// side reads its own photos and genera as before.
+test('Health per subject: the fish photos and units, the corals untouched', () => {
+  const C = require('../core.js'),
+    [coral, fish] = [C.subjectOf('coral'), C.subjectOf('fish')],
+    E = block(src, '// everyone: begin', '// everyone: end', {file: 'admin.js'}),
+    H =
+      block(src, '// S: the subject whose photos they are', '\nconst healthMedian', {file: 'admin.js'}) +
+      block(src, 'const healthMedian = ', '\n};\n', {file: 'admin.js', through: true});
+  const run = (env, ASUBJ) =>
+    new Function(...Object.keys(env), 'ASUBJ', E + H + '\nreturn {healthBad, healthGenera};')(...Object.values(env), ASUBJ);
+  const env = {
+    FISHA: {
+      ph: {fa: {f: 'fa', entry: 'f:Damselfishes', sp: 's1'}, fb: {f: 'fb', entry: 'f:Gobies'}},
+      slate: ['f:Damselfishes', 'f:Gobies', 'g:Chromis']
+    },
+    allPhotos: () => [{f: 'ca', genus: 'Favia', view: 'wide'}],
+    photoStats: () => ({}),
+    nAns: s => (s ? (s[3] ?? s[1]) : 0),
+    GAME: new Set(['Favia', 'Favites'])
+  };
+  let t = 0;
+  const miss = (id, g, ph) => [id, t++, g, 'x', 0, 'quiz', ph];
+  // three players miss the Damselfishes photo fa every time; a coral photo ca too
+  const R = ['p1', 'p2', 'p3'].flatMap(id => [
+    miss(id, 'f:Damselfishes', 'fa'),
+    miss(id, 'f:Damselfishes', 'fa'),
+    miss(id, 'Favia', 'ca'),
+    miss(id, 'Favia', 'ca')
+  ]);
+  const F = run(env, fish),
+    K = run(env, coral);
+  assert.deepStrictEqual(
+    F.healthBad(R).map(o => [o.p.f, o.p.genus, o.n, o.pl]),
+    [['fa', 'f:Damselfishes', 6, 3]],
+    'the fish photo with its family; the coral photo is no fish photo'
+  );
+  assert.deepStrictEqual(
+    K.healthBad(R).map(o => o.p.f),
+    ['ca'],
+    "the corals' side: its own photos"
+  );
+  const BY = {};
+  R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
+  assert.deepStrictEqual(
+    F.healthGenera(BY).map(g => [g.n, g.met]),
+    [
+      ['f:Damselfishes', 3],
+      ['f:Gobies', 0],
+      ['g:Chromis', 0]
+    ],
+    'every unit of the fish slate, the one met first'
+  );
+  assert.deepStrictEqual(
+    K.healthGenera(BY)
+      .map(g => g.n)
+      .sort(),
+    ['Favia', 'Favites']
+  );
 });

@@ -2411,13 +2411,19 @@ const CORE_ = (function () { const module = {exports: {}};
         pages: [
           'inbox/todo/reports',
           'inbox/todo/errors',
+          // Health (fish admin at parity, 2026-11-08): the fish photos everyone misses, with the tools of their family's
+          // page, and the fish units players are stuck on (admin.js statsHealth, healthBad, healthGenera)
+          'inbox/todo/health',
           'inbox/coverage/games',
           'players/list',
           'photos/families',
           'photos/candidates',
           'photos/review/ease',
           'photos/review/phase-framing',
-          'photos/look-alikes'
+          'photos/look-alikes',
+          // Stops (fish admin at parity, 2026-11-08): the fish answers and the fish sheets opened (admin.js statsHealth,
+          // healthSheets), a view drawn from the live answer log (admin.js LIVE_STATS)
+          'analyses/learning/stops'
         ],
         origins: [
           ['own', 'Pierre', 'Pierre'],

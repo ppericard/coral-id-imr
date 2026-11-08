@@ -3555,6 +3555,92 @@ const WIDTHS = [390, 1280];
       if (hs.wide > 0) fails.push(`${w}px Stops: page ${hs.wide} px wider than the window`);
       if (hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Stops genus sheets: ${JSON.stringify(hs.sheets)}`);
     }
+    // Fish admin at parity (Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"): Stops
+    // and Health follow the Corals | Fish switch (rule A4). With the demo's fish answers (the script of today: its three
+    // fish players), Stops counts the fish players, names the fish units in their own column and counts the fish sheets
+    // opened; Health lists every unit of the fish slate by name, nothing of the corals'. Once, at 1280 and 360 px.
+    if (once) {
+      const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]);
+      for (const vw of [1280, 360]) {
+        const fc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/analyses/learning/stops`);
+        await fq
+          .waitForFunction(
+            () =>
+              cur === 'analyses/learning/stops' &&
+              FISHA &&
+              /Players/.test((document.querySelector('.adm-kpis') || {}).textContent || '') &&
+              /\d/.test((document.querySelector('[data-health="sheets"] tbody') || {}).textContent || ''),
+            null,
+            {timeout: 90000}
+          )
+          .catch(() => fe.push('Stops not drawn'));
+        const st = await fq.evaluate(() => {
+          const V = document.getElementById('view'),
+            k = [...document.querySelectorAll('.adm-kpis > *')].map(e => e.textContent);
+          return {
+            players: (k.find(t => /Players/.test(t)) || '').replace(/\D/g, ''),
+            want: String(new Set(rowsOf().map(r => r[0])).size),
+            sheets: (document.querySelector('[data-health="sheets"] h3') || {}).textContent || '',
+            last: [...V.querySelectorAll('[data-health="stop"] th')].map(e => e.textContent),
+            // the subject's words for its units (admin.js stopWord: SUBJECTS analyses one, else one)
+            word: stopWord(ASUBJ),
+            ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+            open: document.querySelectorAll('[data-health="sheets"] tbody tr').length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+        if (
+          st.want === '0' ||
+          st.players !== st.want ||
+          st.sheets !== 'Family, genus and species sheets opened' ||
+          !/^Family/.test(st.word) ||
+          !st.last.includes(st.word) ||
+          st.ids.length ||
+          !st.open ||
+          st.wide > 0
+        )
+          fe.push(`Stops ${JSON.stringify(st)}`);
+        await fq.evaluate(() => (location.hash = '#fish/inbox/todo/health'));
+        await fq
+          .waitForFunction(() => cur === 'inbox/todo/health' && document.querySelector('[data-health="genera"] tbody tr'), null, {
+            timeout: 60000
+          })
+          .catch(() => fe.push('Health not drawn'));
+        const hl = await fq.evaluate(() => {
+          const V = document.getElementById('view');
+          return {
+            h3: [...V.querySelectorAll('h3')].map(e => e.textContent.replace(/\s*\d+$/, '')),
+            rows: V.querySelectorAll('[data-health="genera"] tbody tr').length,
+            slate: FISHA.slate.length,
+            head: (V.querySelector('[data-health="genera"] th') || {}).textContent || '',
+            want: [stopWord(ASUBJ), `Photos everyone misses | ${manyWord(ASUBJ)} that don't take off`],
+            ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+            coral: V.querySelectorAll('[data-health="photos"] .adm-htile').length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+        if (
+          !/^Families/.test(hl.want[1].split(' | ')[1]) ||
+          hl.h3.join(' | ') !== hl.want[1] ||
+          hl.rows !== hl.slate ||
+          hl.head !== hl.want[0] ||
+          hl.ids.length ||
+          hl.coral ||
+          hl.wide > 0
+        )
+          fe.push(`Health ${JSON.stringify(hl)}`);
+        if (fe.length) fails.push(`${vw}px Fish Stops and Health: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
+    }
     // Activity's analysis cards are on Analyses › Learning › Answer log, and only there (one role per admin page).
     {
       const cards = () => p.evaluate(() => [...document.querySelectorAll('#view .adm-scard h3')].map(h => h.textContent.trim()));
