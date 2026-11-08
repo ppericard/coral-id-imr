@@ -466,12 +466,13 @@
       renamed: FISH_RENAMED,
       replay: false,
       // Its progress replayed by the sheet from its own answers too (Pierre, 2026-11-08: "recalculate every player's
-      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): from sync script v108
+      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): from sync script vNEXT
       // (Code.gs replay_ per subject, its units from fish.json: fishReplayGen), served beside the corals' replay
       // (replays: {fish: ...}) to an app that asks for it (rvs: {fish: its rules version applied}). replay stays the
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
-      // replay reads, from the subject's first pool file (fish.json).
-      replayed: {sheet: 108, gen: F => fishReplayGen(F)},
+      // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
+      // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -3843,6 +3844,24 @@
     }
   ];
   const RV = RVS[RVS.length - 1].v;
+  // The rules versions of the fish progress replayed by the sheet (SUBJECTS fish replayed rvs; ROADMAP "Fish progress
+  // replayed from the answer log", Pierre 2026-11-08, Q298, Q310): its own list, numbered from 1 as RVS is, so a fish
+  // replay never makes a coral device take its replay again, nor the other way round. Each entry as in RVS; its card is
+  // told under the subject's id (progress.js rvNoticeAdd: 'fish:1').
+  const FISH_RVS = [
+    {
+      v: 1,
+      at: '2026-11-08',
+      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (nobody goes back)",
+      msg: RV_CARD
+    }
+  ];
+  // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
+  const rvsOf = id => {
+    const S = subjectOf(id);
+    return S.replay ? RVS : S.replayed && typeof S.replayed.rvs === 'function' ? S.replayed.rvs() : [];
+  };
+  const rvOf = id => (L => (L.length ? L[L.length - 1].v : 0))(rvsOf(id));
   // The sync script version from which the sheet replays (Code.gs replay_, v28). The app never gets ahead of the sheet
   // script (rule D4, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
   // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
@@ -5143,6 +5162,8 @@
     subjGroup,
     replaySubject,
     replayedSubjects,
+    rvsOf,
+    rvOf,
     LOG_SUBJ,
     LOG_SC,
     ansSubject,

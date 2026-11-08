@@ -2120,7 +2120,7 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
   assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
 });
 
-// v108 (Pierre, 2026-11-08: "recalculate every player's progress from their answers"; ROADMAP "Fish progress replayed
+// The other subjects' replays (Pierre, 2026-11-08: "recalculate every player's progress from their answers"; ROADMAP "Fish progress replayed
 // from the answer log"): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
 // their own rows and units (core.js fishReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
 const FJSON = fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'),
@@ -2156,13 +2156,13 @@ const fishWant = (L, id, o = {}) =>
     {gen: FGEN, ...o}
   )[id].P;
 
-test('v108: the fish progress replayed from its own answers, asked by its own rules version, kept in its own tab', () => {
+test('sheet replays per subject: the fish progress replayed from its own answers, asked by its own rules version, kept in its own tab', () => {
   const f = withFish(),
     s = loadCodeGs({fetch: f.fetch}),
     F = Array.from({length: 9}, (_, i) => fa('f' + i, i)),
     K = Array.from({length: 4}, (_, i) => qa('k' + i, i)),
     data = prog(3);
-  // An app that asks for no fish replay (every app before v108's): none, the corals' as before.
+  // An app that asks for no fish replay (every app before this script's): none, the corals' as before.
   const r0 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [...K, ...F.slice(0, 6)], rv: 0});
   assert.ok(r0.replay && !r0.replays, 'no fish replay unasked');
   assert.ok(!s.sheets['Replayed Fish']);
@@ -2171,13 +2171,15 @@ test('v108: the fish progress replayed from its own answers, asked by its own ru
   assert.ok(!r.replay, 'the corals applied: none');
   const want = fishWant(F, 'ana');
   assert.deepStrictEqual(r.replays.fish.rec, want, 'the same engine over the fish rows, with the fish units');
-  assert.deepStrictEqual([r.replays.fish.rv, r.replays.fish.n, r.replays.fish.ids.length], [C.RV, 9, 9]);
+  assert.deepStrictEqual([r.replays.fish.rv, r.replays.fish.n, r.replays.fish.ids.length], [C.rvOf('fish'), 9, 9]);
   assert.ok(Array.isArray(want['f:Damselfishes'].dp) && want['f:Butterflyfishes'], 'the unit wrongly given counted');
   const T = s.sheets['Replayed Fish'];
+  // Its own rules versions (core.js FISH_RVS): a fish replay never replays the corals again.
+  assert.ok(C.rvOf('fish') >= 1 && C.rvsOf('fish') !== C.RVS);
   assert.deepStrictEqual([...T.rows[0]], ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']);
   assert.deepStrictEqual(
     Array.from(T.rows.slice(1), x => [x[0], x[1], x[2]]),
-    [['Ana', C.RV, 9]]
+    [['Ana', C.rvOf('fish'), 9]]
   );
   assert.deepStrictEqual(
     Array.from(s.sheets.Replayed.rows.slice(1), x => [x[0], x[2]]),
@@ -2189,7 +2191,7 @@ test('v108: the fish progress replayed from its own answers, asked by its own ru
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
   assert.strictEqual(f.n.f, 1);
   // Applied: nothing; an unknown subject or a bad value: nothing.
-  assert.ok(!s.get({name: 'Ana', pin: '1234', rv_fish: String(C.RV)}).replays);
+  assert.ok(!s.get({name: 'Ana', pin: '1234', rv_fish: String(C.rvOf('fish'))}).replays);
   assert.ok(!s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {coral: 0, nope: 0, fish: 'x'}}).replays);
   // The fish reset (reefid-sync-fish-reset) cuts the fish rows only; the first-launch answer is the fish one.
   const reset = new Date(Date.UTC(2026, 10, 7, 6, 0, 4, 500)).toISOString(),
@@ -2201,7 +2203,7 @@ test('v108: the fish progress replayed from its own answers, asked by its own ru
   assert.strictEqual(r2.replay.n, 4, "the corals' rows, whatever the fish reset");
 });
 
-test('v108: an anonymous device gets its fish replay since its own fish reset', () => {
+test('sheet replays per subject: an anonymous device gets its fish replay since its own fish reset', () => {
   const f = withFish(),
     s = loadCodeGs({fetch: f.fetch}),
     F = Array.from({length: 6}, (_, i) => fa('a' + i, i)),
@@ -2214,7 +2216,7 @@ test('v108: an anonymous device gets its fish replay since its own fish reset', 
   assert.deepStrictEqual(s.sheets['Replayed Fish'].rows.length, 1);
 });
 
-test('v108: a delete, a merge or an archive drops the fish replay rows too', () => {
+test('sheet replays per subject: a delete, a merge or an archive drops the fish replay rows too', () => {
   const f = withFish(),
     s = loadCodeGs({fetch: f.fetch}),
     names = () => s.sheets['Replayed Fish'].rows.slice(1).map(r => String(r[0]));
