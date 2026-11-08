@@ -5,86 +5,81 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-08, about 16:45 Manila, by the integrator, during a working session. **A new integrator starts here, then
-reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
+Written 2026-11-09, about 00:15 Manila, by the integrator, during the night (Rule 0: the morning report). **A new
+integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
 Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11-07; events: "Can't find variable: shownGroup" twice on 11-06 on one device, one "left with a card open" on the Scientific names offer on 11-07, two saves failed and not recovered)
 
 ## Now
 
-Fish is open to every player (beta). Main: sheet script v107. **No open PR; merge queue empty.**
+Fish is open to every player (beta). Main: sheet script **v112**. **Merges stopped since 23:35 Manila**: Codex's usage
+limit (Q314). Overnight Claude reviews (two rounds) of #793, #795, #798-#801: every finding fixed with a test, green.
 
-- **History rewritten, 2026-11-08 ~16:20 Manila** (photos step 3, Q121, Q300): 8,240 paths out of every commit of the 18
-  branches (the 2,216 Coral Finder crop files among them), pack 702 -> 63 MiB, a fresh clone ~75 MB, today's tree
-  unchanged, `.git-blame-ignore-revs` remapped (14fdb4b), Pages green and the live site checked. **Every clone or worktree
-  made before then must never push: re-clone** (HANDOVER "Photos out of the repo, step 3"). No GitHub Support purge
-  (Pierre's choice): the old objects stay reachable only through old PR refs and commit URLs, never in clones.
-- **Merged on 11-08**: #711-#753 (`git log`); #637 closed unmerged. **Being built**: nothing.
+- **Waiting, all green** (17/17 checks, 2026-11-09 00:10), no Codex review of their heads: #793 rotate a photo, #794 fish
+  Analyses, #795 rights badges, #796 #797 #802 #803 fish judging (Blennies, Gobies), #798 admin low items, #799 lighter
+  saves, #800 fish Stops and Health, #801 security follow-ups. **#769** (learnsim): Codex-clean, a draft (Pierre's hands).
+- **Code.gs PRs, one per train**: #794 (before #800: a small `core.js` conflict), #799, #800, #801, each versioned by
+  `tools/sheet_version.py --assign` at its turn: their gates (all 113 tonight) become 113, 114… in merge order.
+- **Merged tonight** (`git log`): #756-#759, #766-#768, #770-#792 (#760-#765 closed into #766): merge speed (Q305; CI
+  209 s -> 134 s), fish rubric 6 and 4,120 candidates judged (Q308, Q311), the 17 new families live, sheet v109-v112
+  (device id Q312, live Activity, the fish replay Q310), Visits (Q301-Q304), reports bar (Q309), common names (Q313),
+  ID marks of 40 families, install nudge, the 7 L11 tools, iNaturalist batching, #790 (the #664 re-check's bug).
 
 ## Next
 
-ROADMAP "Backlog in priority order" (Pierre, 2026-11-08): (1) everything that speeds up development: Q305 a, b, d
-(decided, **their rule wording goes to Pierre tomorrow**) and the CI speed study's first changes (merge train, docs-only
-skip of the smokes, unit-test hot spots, smoke rebalance with a start-up signal); (2) then the Visits page (Q301-Q304),
-the fish judging flash or lamp bias, the install nudge, the admin reports action bar, the #664 decisions re-check.
+This morning: Q314, then the waiting PRs land; the Reports and Events tabs read since 11-08 07:20; then ROADMAP "Backlog in priority order".
 
 ## Questions for Pierre
 
 Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
 mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- **Q208** (set aside on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on
-  their own pace? **Q230** out-of-zone taxon-page photos: waits for real arguments (ROADMAP row).
-- **Tomorrow, the admin reports action bar** (ROADMAP row). Numbered when asked (both tests): (a) the status names, the
-  new curation key `reps`, does Dismiss thank the player; (b) feedback sent from a game carries its game and photo
-  (`g` / `ph`). Unnumbered: (c) remember the attached photo (admin detail); (d) the list follows the subject switch (A4).
-- Not numbered: **tomorrow, the Q305 rule wording** (a, b, d; his OK goes in the rules' *Source* line); #641 a-j,
-  #651's 5 choices, #664's 8 decisions (re-check first). Q123, Q124: maybe answered elsewhere; ask them again (11-08).
-- Answered 11-08: Q121 / Q300 the rewrite, all at once (done); Q301-Q304 the Visits page; Q305 a, b, d adopted, c not;
-  Q306 #753's look OK; Q307 the one-tap flip chip under 380 px OK.
+- **Q314** Codex's usage limit (15:35 UTC 11-08) blocks merges: (a) credits, (b) wait, (c, recommended) a Claude reviewer.
+- **Q315** Time in the photo rating (ROADMAP row): (1) the genus offset's step too, (2) a time term in `photoDiff`,
+  (3) enlarged as a small extra, or none. Recommended: (2), the measure supports it (Holm 0.003), at L11 level 2.
+- **Q317** L11 breach (#790 live, #805): without the corals' memory offsets the fish beginner's flat stretch is +11
+  (50 → 61). Keep (recommended: the log backs it, 92% right on seen photos) or fit fish offsets? `PFMT` leaks too.
+- **Q208** (set aside 11-08): families not met before the scientific genera, or genera on their own pace? **Q230**
+  out-of-zone taxon-page photos: waits for real arguments.
+- **Q316** (C1, #664's F8) fish photo ratings per rank: (A) one per (photo, rank), or (B, recommended) one per photo
+  plus a fitted rank offset (Q136 with it). Not numbered: **Show the species after a family or genus answer**
+  (species, common and scientific name, right or wrong; Pierre ~20:10): before the species level? **#641 a-j** (F7 =
+  j) and #651's 5 choices; **Q123, Q124** asked again. Apply the **152 curated tag and ease proposals**
+  (`judging/fish-light-q308.json` "curation", 105 flash n -> g) in the admin? A **stopgap `fish-photos.json`** so
+  unjudged species show remote photos meanwhile (~10,100 candidates in 468 species unjudged)? The **R2 crop
+  workflow**: done? **Rule D5**, a one-line change for his OK: "adds an entry at the end of the subject's rules
+  versions (`core.js` `RVS` for the corals, `FISH_RVS` for the fish)". **Eel-tailed catfishes** (parked below): what
+  he wants from it. Re-read the **Q305 rule texts** (#757 Decisions) and #758's W12/W14 wording.
+- FYI. Delegated tonight, to check in use: Visits (#777: device rows with installed / browser and "not known", a
+  two-subject visit on each side, one row per Lab page), the reports bar, Home's header switch, the privacy text, the
+  install nudge (#768: 10 answers = a session, a visit = a 30-min gap, every touch screen, Home only, a ⚙ Settings row,
+  any close ends it). Rule C7's pointer to a deleted ROADMAP row now reads "Every tool goes through `tools/inat.py`, one
+  paced, retried client (#784)." Without species units, a player who declines scientific names plateaus at 50% once
+  the families are mastered (rated world). Eagle rays and Cat sharks have no species near Dauin: not in play.
+- Answered 11-08: Q121 / Q300 the rewrite; Q301-Q304 Visits (#777); Q305 a, b, d, not c (#757); Q306, Q307 (#753);
+  Q308 fish light g / d / n (#759); Q309 reports bar (#785); Q310 fish replay, today's bar a floor (#776, #779); Q311
+  fish batches (#766, #780, #781); Q312 device id on answers (#774); Q313 fish common names, corrected in use (#778).
 
-Last question number: Q307
+Last question number: Q317
 
 ## Pierre's hands
 
 Actions only Pierre can do.
 
-- **Drop the Coral Finder crops from R2**: Actions > "Drop the book crops from R2" (it runs for him only), dry run first,
-  then for real (HANDOVER "Coral Finder book crops on R2"). **Delete his rewrite backup** (mirror clone and bundle) when
-  he says so. Restrict the link-sharing of the Coral Finder PDF on his Drive.
+- **#769: click "Ready for review"** (the session's permission classifier refused it three times).
+- **Drop the Coral Finder crops from R2** (Actions > "Drop the book crops from R2", dry run first; HANDOVER "Coral Finder
+  book crops on R2"); **delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
 - From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
-  morning report scheduled task from claude.ai (not visible from this session).
-- **The 8 unsure fish candidates** left in the admin (a drawing, tank shots, a damaged file, a screenshot, a possibly
-  wrong species) and the photos the expert analyses flagged (sent in the chat on 11-06).
-- **Genus common names without a source in the repo**, to add in place if he wants them: Cephalopholis (hinds),
-  Centropyge (pygmy angelfishes), Dendrochirus (dwarf lionfishes), Dascyllus (humbugs).
-- **Covers for the 11 fish entries with no reference-level photo** (Barracuda, Seamoths, Scorpionfishes, Flying
-  gurnards, Stargazers, Snake eels, Garden eels, Rays, Reef sharks, Whale shark, Thresher sharks): pick or shoot one.
-- **Photo hunt for Astrea and Anacropora** at the Dauin sites where IMR trainers know they occur (colony, close-up,
-  macro; posted to iNaturalist under CC BY or CC BY-NC): iNaturalist has no Astrea observation with photos in the
-  Philippines.
-- **Pre-sort the near-Dauin iNaturalist observations left above genus** (he or an IMR trainer can tell an Astrea or an
-  Anacropora; counts of 2026-11-05): stony corals at order only,
-  [84](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=47532&rank=order&photos=true);
-  Merulinidae (Astrea's family) at family only,
-  [20](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=85893&rank=family&photos=true);
-  every stony coral between order and family,
-  [57](https://www.inaturalist.org/observations?lat=9.19&lng=123.26&radius=40&taxon_id=47532&rank=suborder,infraorder,superfamily,family&photos=true).
-- **Show the Astrea question to an IMR trainer** from the admin (To do › Points, first item) and Publish the answers.
-- **Sort the photos out of the presence rule** (To do › Out of the presence rule: Remove / Keep) and, when convenient, the 14 share-alike coral photos (To do › Share-alike).
-- **More photos for the genera with the fewest** (photo memory: in a thin genus players learn the photos, not the genus; Pierre, 2026-11-03): [admin Coverage › Games › Thinnest](https://ppericard.github.io/coral-id-imr/admin.html#~cov) lists them.
-- **Protect `main` on GitHub**: [HANDOVER "Protect main"](HANDOVER.md#protect-main-one-time-setup).
-- **Archive tags, then delete branches** (the proxy refuses tag pushes and branch deletes from the agents):
-  `git push origin f46f11c:refs/tags/archive/cards-mockups` and
-  `git push origin dd491b0:refs/tags/archive/fishprog-mockups`, then delete the branches
-  `claude/admiring-ramanujan-nw3mxr-cards` and `…-fishprog`; `…-calib-study` can go too (its docs were salvaged in
-  #503); `…-fishphotos` after the fish Candidates admin PR lands.
-- **Clean merged branches**: [HANDOVER "Clean merged branches"](HANDOVER.md#clean-merged-branches-one-time-setup).
-- **Renew the admin GitHub token** before late January 2027 (90-day token created around 2026-10-31; the admin lock
-  screen links to the token page).
-- **Lab Keep / Trim votes**: say which Lab tools he marked (the votes live only in his browser) before the Lab is
-  trimmed.
-- **IMR benthic deck**: look for it (Millepora's ID tips stay the Coral Finder's until it is in).
+  morning report scheduled task from claude.ai; the 8 unsure fish candidates and the expert analyses' photos (11-06);
+  genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for
+  the 11 fish entries with no reference-level photo (Barracuda, Seamoths, Scorpionfishes, Flying gurnards, Stargazers,
+  Snake eels, Garden eels, Rays, Reef sharks, Whale shark, Thresher sharks).
+- **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know; pre-sort the near-Dauin observations left
+  above genus (links: `git show 4c8251a:docs/STATUS.md`); show the Astrea question to a trainer (To do › Points). To do ›
+  Out of the presence rule, the 14 share-alike coral photos, more photos for the thinnest genera (Coverage › Thinnest).
+- **Protect `main`**, **clean merged branches** (HANDOVER); archive tags `f46f11c` (`archive/cards-mockups`), `dd491b0`
+  (`archive/fishprog-mockups`), then delete `claude/admiring-ramanujan-nw3mxr-cards`, `…-fishprog`, `…-calib-study`.
+- Renew the admin GitHub token before late January 2027; say his Lab Keep / Trim votes; look for the IMR benthic deck.
 
 ## Parked after hours
 
@@ -92,8 +87,13 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 - (integrator, from Pierre's session) the limit of 8 shaky genera fills with the hardest look-alike families: it held an
   expert's openings for 138 answers. Revisit with the progress rebuild.
+- (Pierre ~20:10) after every family or genus answer, right or wrong, show the photo's species, common and scientific
+  name (ROADMAP row "Show the species after a family or genus answer").
+- (Pierre ~20:20) "Eel-tailed Catfish is really a family with its own thumbnail in the book's index" (in the game:
+  circle 3, *Plotosus lineatus*). Ask what he wants from it (a circle, a cover, more species?).
 
 ## Last stop
 
-2026-11-08 ~16:45 Manila, integrator, mid-session: the drain done (#748, #753, #664), then the history rewrite (Q121,
-Q300); Q301-Q307 recorded; the numbered-question definition replaced (AGENTS.md, INTEGRATOR). Nothing mid-flight.
+2026-11-09 ~00:15 Manila, integrator, night: the acceleration (#756-#758), then trains of the decided work (Q308-Q313,
+the 11-08 delegation); stopped at 23:35 by Codex's limit. Mid-flight: the 11 green PRs of "Now"; #769 (Pierre's click).
+
