@@ -247,7 +247,8 @@ admin help. Say "Docs: none needed" in the PR description when nothing applies. 
 title ` (#N)` and the PR description are the record of what shipped, the docs say what the code does now; a shared list
 that every PR appends to made every two open PRs conflict, so never start one again (ROADMAP's old list is frozen in
 `docs/archive/`). `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
-rule, no reference to the retired rule numbers.
+rule, no reference to the retired rule numbers, the living docs' relative links and anchors resolving, every
+ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow.
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05.
 
