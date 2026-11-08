@@ -243,9 +243,10 @@ print(json.dumps([G.fish_on(F, f, s) for f, s in ${JSON.stringify(cases)}] + [G.
   assert.ok(!C.fishPhotos({t01: [ref]}, {}, cur).t01.some(p => p.f === ref.f), 'out once Pierre rejected the candidate');
 });
 
-// The photos that enter play by themselves (Pierre, 2026-11-06, Q180 and Q199: a candidate judged sure, a reference photo
-// judged at the reference level; treated exactly like the photos he adds, hosted on R2): the same download, listed with
-// auto, out once he rejects, excludes or moves the photo; never the same photo or (a reference photo) observation twice.
+// The photos that enter play by themselves (Pierre, 2026-11-06, Q180 and Q199: a candidate judged sure; a reference photo
+// judged sure on the same rubric, whatever its reference level, 2026-11-08, Q212; treated exactly like the photos he
+// adds, hosted on R2): the same download, listed with auto, out once he rejects, excludes or moves the photo; never the
+// same photo or (a reference photo) observation twice.
 const AUTO_SUG = {
   fish: {
     ...SUG.fish,
@@ -282,29 +283,36 @@ function autoWorld() {
   w('curation.json', cur);
   w('suggest.json', AUTO_SUG);
   fs.mkdirSync(path.join(dir, 'tools'));
-  // 308: a cover judged 4, one point more for being one (reference level); 309: judged 4, no rep (below it); 310: on
-  // candidate 301's observation (rule P4: out).
+  // 308: a cover judged 4, one point more for being one (reference level); 309: judged 4, no rep (below it, in like a
+  // candidate: Q212); 310: on candidate 301's observation (rule P4: out); 311: other kinds of fish too (P3: out); 312: out
+  // of the water (out); 313: a hard one, head-on, dim and soft, judged 2 (in, as a candidate would be).
   w('tools/fish_refs.json', {
     photos: {
       s003: [
         REF(308, 9308, {rep: 'inaturalist', from: 'cover'}),
         REF(309, 9309, {from: 'taxon'}),
-        REF(310, 9301, {rep: 'inaturalist', from: 'taxon'})
+        REF(310, 9301, {rep: 'inaturalist', from: 'taxon'}),
+        REF(311, 9311, {from: 'taxon'}),
+        REF(312, 9312, {from: 'taxon'}),
+        REF(313, 9313, {from: 'taxon'})
       ]
     }
   });
-  w('tools/fish_judge.json', {photos: {t02: {fi308: 'p1g0sl14', fi309: 'p1g0sl14', fi310: 'p1g0sl15'}}, crops: {}});
+  w('tools/fish_judge.json', {
+    photos: {t02: {fi308: 'p1g0sl14', fi309: 'p1g0sl14', fi310: 'p1g0sl15', fi311: 'p1g0slm4', fi312: 'p1g0sl1a3', fi313: 'h1d0mm12'}},
+    crops: {}
+  });
   return dir;
 }
 test(
-  'fish_game.py: candidates judged sure and reference-level photos in play by themselves, on R2, until Pierre decides',
+  'fish_game.py: candidates and reference photos judged sure in play by themselves, on R2, until Pierre decides',
   {skip: !pil && 'Pillow missing'},
   () => {
     const dir = autoWorld(),
       // One download only: the reference photo first (the tier order), the rest wait for the next run.
       r1 = run(dir, path.join(dir, 'up1'), 1),
       G1 = JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'));
-    assert.deepStrictEqual([r1.done, r1.wait], [1, 8]); // 107 among them: its host is refused at download
+    assert.deepStrictEqual([r1.done, r1.wait], [1, 10]); // 107 among them: its host is refused at download
     assert.deepStrictEqual(
       Object.values(G1.photos)
         .flat()
@@ -318,11 +326,14 @@ test(
           .flat()
           .map(p => [p.f, p])
       );
-    assert.deepStrictEqual([r.done, r.wait, r.n], [7, 0, 8]);
-    // Pierre's 5 as before, the sure best and alt of the candidates, the reference-level photo; never the unsure, other kinds
-    // of fish (P3), dup, a photo he rejected, out of the water, a reference photo below the level or on an observation in play.
+    assert.deepStrictEqual([r.done, r.wait, r.n], [9, 0, 10]);
+    // Pierre's 5 as before, the sure best and alt of the candidates, the reference photos judged sure (below the reference
+    // level too: Q212); never the unsure, other kinds of fish (P3), dup, a photo he rejected, out of the water, a reference
+    // photo on an observation in play.
     assert.deepStrictEqual(Object.keys(by).sort(), [
       'fi308',
+      'fi309',
+      'fi313',
       'fish-s001-cand-101',
       'fish-s001-cand-102',
       'fish-s001-cand-105',
@@ -341,6 +352,9 @@ test(
       [by.fi308.auto, by.fi308.e, by.fi308.jt, by.fi308.rep, by.fi308.from, !!by.fi308.r],
       ['ref', 5, 'p1g0sl1r', 'inaturalist', 'cover', false]
     );
+    // Below the reference level, in with its judged ease and tags, as a candidate judged the same.
+    assert.deepStrictEqual([by.fi309.auto, by.fi309.e, by.fi309.jt, C.refLevel(by.fi309)], ['ref', 4, 'p1g0sl1', false]);
+    assert.deepStrictEqual([by.fi313.auto, by.fi313.e, by.fi313.jt], ['ref', 2, 'h1d0mm1']);
     assert.ok(!by['fish-s001-cand-101'].auto, "Pierre's own adds carry no auto");
     // In the game (core.js fishPhotos): in play until Pierre rejects, excludes or moves the photo, by photo id.
     const cur = JSON.parse(fs.readFileSync(path.join(dir, 'curation.json'), 'utf8')),
@@ -366,7 +380,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
     // Pierre rejects one: the next run takes it out of the list.
     fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(no('seen', 'fish-s003-cand-302')));
     const r3 = run(dir, path.join(dir, 'up3'));
-    assert.deepStrictEqual([r3.done, r3.n], [0, 7]);
+    assert.deepStrictEqual([r3.done, r3.n], [0, 9]);
     fs.rmSync(dir, {recursive: true, force: true});
   }
 );
