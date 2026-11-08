@@ -6,7 +6,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const ROOT = path.join(__dirname, '..');
-const {REP_STATUS, repStatus, repStatusSet, repsOrder, unitSubj, repCtx, repOn} = require('../reports.js');
+const {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, unitSubj, repCtx, repOn} = require('../reports.js');
 const {SUBJECTS, merge3} = require('../core.js');
 const CORAL = SUBJECTS.find(s => !s.hash),
   FISH = SUBJECTS.find(s => s.hash);
@@ -85,6 +85,31 @@ test('merge3 carries the new reps key: both sides changes kept, a conflict mine'
   assert.deepStrictEqual(merge3(base, mine, theirs), {genera: {}, reps: {a: 'drop', b: 'drop'}, seen: {'rep:c': 1}});
   // every report reopened: the emptied key leaves
   assert.deepStrictEqual(merge3(base, {genera: {}}, base), {genera: {}});
+});
+
+test('repsReconcile: a status merged from two sides stays whole, the draft winning (Codex review #785)', () => {
+  const base = {genera: {}},
+    theirsDone = {genera: {}, seen: {'rep:a': 1}},
+    mineWait = {genera: {}, reps: {a: 'wait'}};
+  // merge3 alone keeps both places: Done would win and the player be thanked despite the draft's Stand-by
+  const raw = merge3(base, mineWait, theirsDone);
+  assert.strictEqual(repStatus(raw, 'a'), 'done');
+  const m = repsReconcile(base, mineWait, raw);
+  assert.strictEqual(repStatus(m, 'a'), 'wait');
+  assert.ok(!(m.seen || {})['rep:a'], 'no thanks for a report the draft set on Stand-by');
+  // the draft's Done over a Dismiss published from elsewhere
+  const m2 = repsReconcile(base, theirsDone, merge3(base, theirsDone, {genera: {}, reps: {a: 'drop'}}));
+  assert.deepStrictEqual([repStatus(m2, 'a'), m2.reps], ['done', undefined]);
+  // the draft's Reopen over a Done published from elsewhere, from a Stand-by base
+  const b3 = {genera: {}, reps: {a: 'wait'}},
+    m3 = repsReconcile(b3, {genera: {}}, merge3(b3, {genera: {}}, {genera: {}, seen: {'rep:a': 1}}));
+  assert.strictEqual(repStatus(m3, 'a'), 'open');
+  // a report the draft did not touch takes the published status as it is
+  const m4 = repsReconcile(base, {genera: {}}, merge3(base, {genera: {}}, theirsDone));
+  assert.deepStrictEqual(m4, {genera: {}, seen: {'rep:a': 1}});
+  // nothing to do: the same object back
+  const same = merge3(base, mineWait, base);
+  assert.strictEqual(repsReconcile(base, mineWait, same), same);
 });
 
 test('unitSubj: prefixed and renamed ids are the fish, any other id the corals', () => {

@@ -1008,13 +1008,16 @@ async function overlays(b, base) {
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await p.waitForSelector('#view [data-c]');
+    // The corallites hint, when the question has one: its photo is one of those shown, so it goes too (Codex review #785).
+    const hint = await p.evaluate(() => !!document.getElementById('hintb'));
+    if (hint) await p.click('#hintb');
     const q = await p.evaluate(() => ({
       now: qNow(),
       shown: [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f)
     }));
     const r = await feedback();
     if (!r || !q.now || r.m !== 'page' || !r.g || r.g !== q.now.g || !r.ph || r.ph !== q.shown.join(' ') || r.w !== 'practice/quiz')
-      fails.push(`Send feedback from a game: ${JSON.stringify({r, q})}`);
+      fails.push(`Send feedback from a game: ${JSON.stringify({r, q, hint})}`);
     await p.evaluate(() => (location.hash = 'about'));
     await p.waitForSelector('#view [data-rep]', {timeout: 10000}).catch(() => {});
     const a = await feedback();

@@ -33,6 +33,30 @@
     else if (s === 'wait' || s === 'drop') reps[id] = s;
     return {seen: Object.keys(seen).length ? seen : undefined, reps: Object.keys(reps).length ? reps : undefined};
   }
+  // After a three-way merge (core.js merge3 of the draft onto a newer published curation, or of another tab's draft): a
+  // report whose status the draft changed since base keeps the draft's status whole, never Done from one side and Stand-by
+  // or Dismissed from the other (its two places merge key by key; Codex review #785). Returns merged, or a copy.
+  function repsReconcile(base, mine, merged) {
+    const ids = c => [
+      ...Object.keys((c && c.reps) || {}),
+      ...Object.keys((c && c.seen) || {})
+        .filter(k => k.startsWith('rep:'))
+        .map(k => k.slice(4))
+    ];
+    let out = merged;
+    new Set([...ids(base), ...ids(mine)]).forEach(id => {
+      const s = repStatus(mine, id);
+      if (s === repStatus(base, id) || (s === repStatus(out, id) && !(own((out || {}).reps, id) && own((out || {}).seen, 'rep:' + id))))
+        return;
+      const {seen, reps} = repStatusSet(out, id, s);
+      out = {...out};
+      if (seen) out.seen = seen;
+      else delete out.seen;
+      if (reps) out.reps = reps;
+      else delete out.reps;
+    });
+    return out;
+  }
   // The reports by status, each in the rows' order (the sheet's: newest first). {open, wait, done, drop}.
   const repsOrder = (rows, cur) => {
     const out = Object.fromEntries(REP_STATUS.map(([k]) => [k, []]));
@@ -94,7 +118,7 @@
   }
   // A report shown on subject S's side: its own, or one about no subject (on every side).
   const repOn = (ctx, S) => !ctx.subj || ctx.subj === S.id;
-  const API = {REP_STATUS, repStatus, repStatusSet, repsOrder, REP_NOGAME, unitSubj, repCtx, repOn};
+  const API = {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, REP_NOGAME, unitSubj, repCtx, repOn};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

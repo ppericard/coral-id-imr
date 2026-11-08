@@ -132,11 +132,13 @@ const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 // merge3 (three-way merge of a draft onto the latest published curation) and mergeOld live in core.js.
 // Re-base the draft (and every Undo/Redo step) onto a newer published curation.
 // Returns the paths where the draft replaced a choice published from elsewhere (see merge3).
+// merge3, then each report's status kept whole (reports.js repsReconcile: Done and Stand-by / Dismissed live in two maps).
+const mergeCur = (base, mine, theirs, conf) => repsReconcile(base, mine, merge3(base, mine, theirs, conf));
 function rebase(next) {
   const base = SAVED,
-    f = d => merge3(base, d, next),
+    f = d => mergeCur(base, d, next),
     conf = [];
-  DRAFT = merge3(base, DRAFT, next, conf);
+  DRAFT = mergeCur(base, DRAFT, next, conf);
   DRAFT.genera = DRAFT.genera || {};
   HIST = HIST.map(x => JSON.stringify(f(JSON.parse(x))));
   FUT = FUT.map(x => JSON.stringify(f(JSON.parse(x))));
@@ -266,11 +268,12 @@ let REV = 0,
 function takeOther() {
   const v = store.get('reefid-curation-draft', null);
   if (!v || !v.genera) return null;
-  const m = takeTab(REVS, DRAFT, SAVED, v);
+  const shared = (v._tab && REVS[v._tab.seen]) || SAVED, // the draft both tabs last agreed on (core.js takeTab)
+    m = takeTab(REVS, DRAFT, SAVED, v);
   if (!m) return null;
   if (v._tab) SEEN = v._tab.rev;
   if (!m.changed) return null;
-  DRAFT = m.draft;
+  DRAFT = repsReconcile(shared, DRAFT, m.draft);
   snap = JSON.stringify(DRAFT);
   memoReset();
   return m;
@@ -6311,7 +6314,7 @@ async function start() {
     delete old._tab;
     REVS[SEEN] = clone(old);
   } // the draft another open tab started from
-  DRAFT = old && old.genera ? (base ? merge3(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
+  DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
   DRAFT.genera = DRAFT.genera || {};
   // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
   const kept = (() => {
@@ -6322,7 +6325,7 @@ async function start() {
     }
   })();
   if (TOKEN && kept && old && kept.snap === JSON.stringify(old) && Array.isArray(kept.hist) && Array.isArray(kept.fut)) {
-    const f = x => JSON.stringify(base ? merge3(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
+    const f = x => JSON.stringify(base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED));
     HIST = kept.hist.map(f);
     FUT = kept.fut.map(f);
   }
