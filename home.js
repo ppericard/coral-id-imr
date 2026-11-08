@@ -155,7 +155,7 @@ ${idoor}
       </section>
       <section>
         <h3>Privacy</h3>
-        <p>No ads, no cookies, no third-party analytics. The app counts which pages you open, with your answers, to improve the course. Your progress stays in this browser unless you sign in. Your answers in the games help rate how hard each photo is: they are sent without your name unless you sign in.</p>
+        <p>No ads, no cookies, no third-party analytics. The app counts which pages you open, with your answers, and reports how it loads and any error it meets, to improve the course. Your progress stays in this browser unless you sign in. Your answers in the games help rate how hard each photo is: they are sent without your name unless you sign in.</p>
         <p><a href="privacy.html">Read the privacy notice</a> · <a href="${hr('delete-account')}">Delete my account</a></p>
       </section>
       <section>
