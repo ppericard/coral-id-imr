@@ -2078,12 +2078,16 @@ test("v105 analyses head: each subject counted apart, the corals' answers never 
     answers: [fish('f1'), fish('f2'), fish('f3', {ok: 0, a: 'f:Gobies'}), ans('a3', {s: 'coral'})],
     at: 1
   });
-  // a row with no player (the readAnswers log leaves it out: so does the count)
+  // a row with no player (the readAnswers log leaves it out: so does the count), and a surprise card's answer (sheet v98,
+  // Mode wink: counted nowhere)
   s.sheets.Answers.appendRow(['', new Date(), 'Acropora', 'Acropora', 1, 'quiz']);
+  const wink = ['Ana', new Date(), 'f:WhaleSharks', 'f:Damselfishes', 0, 'wink'];
+  wink[17] = 'fish';
+  s.sheets.Answers.appendRow(wink);
   const h = s.post({analysesGet: 1, head: 1, token: TOK});
   assert.deepStrictEqual(h.counts, {coral: 5, fish: 3}, 'four coral rows logged before v60 or with Subject coral, three fish');
   assert.strictEqual(h.subject, 'coral');
-  assert.strictEqual(h.answers, 5, "the corals' answers, not the tab's 9 rows");
+  assert.strictEqual(h.answers, 5, "the corals' answers, not the tab's 10 rows");
   assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK, subject: 'fish'}).answers, 3);
   // the same count as the log the Action reads (readAnswers) and the admin's (core.js subjCounts)
   const C = require('../core.js');

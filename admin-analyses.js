@@ -20,6 +20,7 @@ const AN_VIEWS = [
   ['analyses/difficulty/photos', 'photo', 'What makes a photo hard'],
   ['analyses/difficulty/formats', 'fmt', 'Question formats'],
   ['analyses/difficulty/mix-ups', 'conf', 'Genera mixed up'],
+  ['analyses/difficulty/time', 'tdiff', 'Time and difficulty'],
   ['analyses/learning/practice', 'learn', 'Learning with practice'],
   ['analyses/learning/after-a-break', 'back', 'After a break'],
   ['analyses/learning/sessions', 'sess', 'Sessions'],
@@ -1410,7 +1411,9 @@ function anView(key, rep, R) {
     ...(key === 'photo' && a.photos ? [['Photos', anInt(a.photos)]] : []),
     ...(key === 'conf' && a.mixed != null ? [['Mixed up', anInt(a.mixed)]] : []),
     ...(key === 'back' && a.far != null ? [['After a break', anInt(a.far)]] : []),
-    ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : [])
+    ...(key === 'sess' && a.sessions ? [['Sessions', anInt(a.sessions)]] : []),
+    ...(key === 'tdiff' && a.timed != null ? [['Timed answers', anInt(a.timed)]] : []),
+    ...(key === 'tdiff' && a.photos ? [['Photos', anInt(a.photos)]] : [])
   ]);
   // a compacted milestone (analysis.js compact) keeps only the counts of its profiles, never the players' rows (Codex
   // review #604: the heatmap read 0 answers, 0 players and drew nothing): its counts and the compacted note
@@ -1459,6 +1462,44 @@ const AN_PART = {
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
 const ANV = {
+  // Time and difficulty (analysis.js tdiff): right answers by how fast other players answered the photo right; time
+  // intensity beside difficulty, for the genera and the slowest and fastest photos.
+  tdiff: a => {
+    const T = anTyp(a),
+      right = d => anPc(ANALYSIS.shiftP(T.p, T.g, -d)),
+      ag = a.agree || {};
+    return [
+      anCard(
+        'Right answers, by how fast others answered the photo right',
+        anTable(
+          ['Others’ right answers on the photo', '#Answers', '#Right', '#Expected', '#Against expected'],
+          (a.bins || []).map(
+            b =>
+              `<tr><td>${esc(b.label)}</td><td class="n">${anInt(b.n)}</td><td class="n">${b.n ? pc(b.y / b.n) : '–'}</td><td class="n">${b.n ? pc(b.E / b.n) : '–'}</td><td class="n">${b.n ? anPts((b.y - b.E) / b.n) : '–'}</td></tr>`
+          )
+        ) + `<p class="note">Against each player's own usual time so far.</p>`
+      ),
+      anCard(
+        'Time and accuracy, genus by genus',
+        `<p class="note">Agreement between time and accuracy: ${ag.genus == null ? '–' : anRw(ag.genus)} over ${anInt(ag.genera)} genera; ${ag.photo == null ? '–' : anRw(ag.photo)} over ${anInt(ag.photos)} photos with 3 timed answers or more.</p>` +
+          anTable(
+            ['Genus', '#Timed answers', '#Typical time', '#Right, typical player'],
+            (a.genus || []).map(
+              g =>
+                `<tr><td><i>${esc(g.k)}</i></td><td class="n">${anInt(g.n)}</td><td class="n">${anSec(anS(a, g.t))}</td><td class="n">${right(g.d)}</td></tr>`
+            )
+          ),
+        'wide'
+      ),
+      a.slowest && a.slowest.length
+        ? anCard(
+            'Slowest and fastest photos',
+            anThumbs(a.slowest, x => `${anSec(anS(a, x.t))} · ${right(x.d)} right · ${anInt(x.n)} answers`),
+            'wide'
+          )
+        : ''
+    ];
+  },
   rt: a => [
     anCard(
       'What makes answer times differ',
@@ -2080,6 +2121,7 @@ Object.assign(HELP, {
   'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
+  'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,
   'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. The learning slope joins once the Learning model fits one per player. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.
