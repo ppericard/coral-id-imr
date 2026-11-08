@@ -1,5 +1,5 @@
 {
- "_doc": "Proposed curated common names per fish species (1 to 3), for Pierre to confirm: tools/fish_common.py, docs/FISH_PATH.md \"Common names\". from: pdf = IMR reference PDF (fish.json common), dauin = circle 3's source name, fbMain = FishBase main English name, fbN = FishBase English records of the name (countries / references), inatMain = iNaturalist default English name, inat = another iNaturalist English name.",
+ "_doc": "Curated common names per fish species (1 to 3, the most shared first; published, Pierre corrects them in use: Q313), written into fish.json species cn by tools/build_fish.py: tools/fish_common.py, docs/FISH_PATH.md \"Common names\". from: pdf = IMR reference PDF (fish.json common), dauin = circle 3's source name, fbMain = FishBase main English name, fbN = FishBase English records of the name (countries / references), inatMain = iNaturalist default English name, inat = another iNaturalist English name.",
  "species": {
   "s091": {"sp":"Chromis ternatensis","names":[{"name":"Ternate chromis","from":["pdf","fbMain","fb5","inatMain"]}]},
   "s119": {"sp":"Pomacentrus moluccensis","names":[{"name":"Lemon damsel","from":["pdf","fbMain","fb7","inatMain"],"alt":["Lemon damselfish"]}]},

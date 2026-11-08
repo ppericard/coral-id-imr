@@ -3896,7 +3896,7 @@
   // with today's bars as a floor, Code.gs replay_ and replayFloor) only once the script's replies say v >= REPLAYS_SHEET
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
-  const REPLAYS_SHEET = 109;
+  const REPLAYS_SHEET = 112;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
