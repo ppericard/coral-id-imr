@@ -498,3 +498,17 @@ test("a device with more answers than the log keeps the floor's typed opportunit
   );
   assert.deepStrictEqual(a.base()['~level'].tyk, P['~level'].tyk, 'the same in the shared baseline');
 });
+
+// Codex review #779: this device's unsent typed answer goes on top of the replay in its own progress, never into the
+// shared baseline (a merge with another device's copy of the replay would take it away from the denominator).
+test("an unsent typed answer at adoption: its typed opportunity in this device's progress only, not the baseline", () => {
+  const s = loadCodeGs(withFiles());
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
+  const a = app({sheet: atv(s), SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: {}, srv: 1}}),
+    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.REPLAYS_SHEET},
+    mine = {...fa('u1', 50), m: 'quiz|t', a: 'f:Damselfishes', ok: 1, ch: ''};
+  assert.ok(!((j.replays.fish.rec['~level'] || {}).tyk || {}).f, 'the replay has no typed answer');
+  assert.strictEqual(a.replaysAdopt(j, [mine], undefined), true);
+  assert.ok(((a.fish()['~level'] || {}).tyk || {}).f >= 1, "in this device's progress");
+  assert.ok(!((a.base()['~level'] || {}).tyk || {}).f, 'not in the shared baseline');
+});
