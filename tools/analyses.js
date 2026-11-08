@@ -121,7 +121,7 @@ async function sheetRun(io, token, o = {}) {
   // head counts them (subjCounts).
   const count = C.subjCounts(ans.rows)[subject] || 0;
   ans.rows = C.subjRows(ans.rows, subject);
-  // Sheet vNEXT: the players and devices the admin left out of the statistics (Players, readAnswers excluded) are left out
+  // Sheet v115: the players and devices the admin left out of the statistics (Players, readAnswers excluded) are left out
   // of the report too; an exclusion changed makes the stored report stale (the sheet's rosterChanged_), so it is refitted.
   const sx = new Set(Array.isArray(ans.excluded) ? ans.excluded : []);
   if (sx.size) ans.rows = ans.rows.filter(r => !sx.has(r[0]));

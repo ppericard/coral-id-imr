@@ -8269,7 +8269,7 @@ const delOn = () => (USERS.v || 0) >= DEL_SHEET;
 // Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
 const ARCH_SHEET = 58;
 const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
-// Out of the statistics (sheet vNEXT, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
+// Out of the statistics (sheet v115, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
 // the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
 const EXCL_SHEET = 115;

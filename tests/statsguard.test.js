@@ -1,4 +1,4 @@
-// Sheet vNEXT (ROADMAP "Security follow-ups", Pierre 2026-11-08): the admin leaves a player or a device not signed in out
+// Sheet v115 (ROADMAP "Security follow-ups", Pierre 2026-11-08): the admin leaves a player or a device not signed in out
 // of the statistics (Code.gs sxSet_, statsExclude), and an answer whose photos are of another unit rates no photo
 // (photoCheck_, photoAlert_), the answer itself always kept. Against the in-memory sheet (tests/gas.js).
 const test = require('node:test'),

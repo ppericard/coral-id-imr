@@ -1169,7 +1169,7 @@
       S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
       return {ok: true, answers, reports: 0};
     }
-    // Sheet vNEXT (Code.gs statsExclude, sxPut_): an id left out of the statistics, or counted again.
+    // Sheet v115 (Code.gs statsExclude, sxPut_): an id left out of the statistics, or counted again.
     if (p.statsExclude && V >= EXCL_SHEET) {
       const id = String(p.statsExclude);
       if (!/^[A-Za-z0-9+/]{8}$/.test(id)) return {ok: false, error: 'input'};

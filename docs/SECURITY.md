@@ -48,7 +48,7 @@ rule, not the name, is what tells a real player from a bot: random clicking, bot
 never count, signed in or not. A bot that reads the right answers from the app's data could still pull photos towards "easy" (repeats on a photo
 it got right twice weigh less, as remembered).
 
-## Left out of the statistics, and photos of another unit (vNEXT)
+## Left out of the statistics, and photos of another unit (v115)
 
 Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
 - **Leave out**: in admin Players (a player's bar under their row, or a device in Not signed in), **Leave out** puts the
