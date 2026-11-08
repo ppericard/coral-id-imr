@@ -61,6 +61,11 @@
 // each further day the genus was answered right (spaced successes); our learner, not the app's model (the app reads S
 // from the Elo ability and the days answered right).
 //
+// Long runs (2026-11-08, #734: every run of 4,500 or 8,000 answers ended in "Target crashed"): a run is one synchronous
+// page.evaluate, so the page's event loop never turns until it ends, and every localStorage write (the app writes its
+// answer log twice an answer, about 300,000 characters each) left messages queued in the renderer, about 1.5 MB an answer,
+// until it died. The page's localStorage is now kept in its own memory (tools/memstorage.js): the same values and order
+// for the app, nothing sent, nothing queued: about 1.1 GB at 8,000 answers (9.6 GB at 3,500 before, then the crash).
 // Each run (profile x seed) opens a fresh browser context (empty storage), seeds the app's Math.random and a separate
 // learner random generator from the seed (runs are reproducible, and the same seeds before and after a change give
 // paired comparisons), then drives the real photo quiz as profiles.smoke.js does: quizPhoto(), the first-meeting cards
@@ -163,6 +168,7 @@ const http = require('http'),
   os = require('os'),
   path = require('path');
 const {chromium} = require('playwright');
+const {memStorage, LS_SAFE} = require('./memstorage.js');
 const ROOT = path.join(__dirname, '..');
 
 // Profiles: the three players of profiles.smoke.js (same definitions: beginner, RA = "lectureRA", expert) and a strong
@@ -1098,7 +1104,8 @@ function play(cfg) {
     afterMiss,
     blocked: [...blocked].filter(([a]) => a < N).map(([a, c]) => [a + 1, Math.round(c * 1000) / 1000]),
     alog,
-    custom: cust
+    custom: cust,
+    lsPeak: window.__lsPeak // the most characters localStorage held (tools/memstorage.js)
   };
 }
 
@@ -1108,6 +1115,9 @@ async function run(browser, base, name, seed) {
     u => !u.href.startsWith(base),
     r => r.abort()
   );
+  // localStorage in the page's own memory, before anything writes to it (tools/memstorage.js: a run is one long
+  // evaluate, and the browser's storage queued about 1.5 MB an answer in the renderer until it crashed, #734).
+  await ctx.addInitScript(memStorage);
   await ctx.addInitScript(([st, rtapp, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
@@ -1560,6 +1570,11 @@ function openTable(runs) {
     );
   }
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
+  // localStorage lives in the page's memory (tools/memstorage.js), with no quota: a run that held more than a browser
+  // surely takes is flagged (8,000 answers peak at about 2.24 million characters).
+  const big = runs.filter(r => r.lsPeak > LS_SAFE);
+  if (big.length)
+    console.log(`\nWarning: localStorage held more than ${LS_SAFE} characters in ${big.length} runs (a browser could have refused writes): ${big.map(r => `${r.profile}:${r.seed} ${r.lsPeak}`).join(', ')}`);
   // --rtlog: every run's answer log as readAnswers rows [player, time ms, shown, answered, right, mode, photos, e, th, new
   // photos, choices, 0, seconds, enlarged, pTrue, noise], the player 'profile:seed' (tools/abilityeval.js reads them).
   if (RTLOG) {
