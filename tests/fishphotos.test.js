@@ -252,14 +252,21 @@ files = {
                       'fish-s1-cand-20': {'code': 'p1g0sl15', 'keep': 'best', 'unsure': ['crop'], 'note': 'tail cut?'}}},
   'bad': {'species': 's1', 'photos': {'fish-s1-cand-10': {'code': 'p1g0sm19', 'keep': 'best', 'phase': 'adult', 'crop': [0.5, 0, 0.4, 1]},
                                        'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'best', 'species': 'not', 'quality': 2},
-                                       'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
+                                       'fish-s1-cand-99': {'code': 'p1g0sm14', 'keep': 'best'}}},
+  # Pierre decided on cand-30 (seen) after its judgement: it stays as judged, its best counts for its observation.
+  'kept': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'dup'},
+                      'fish-s1-cand-20': {'code': 'p1g0sm14', 'keep': 'alt'}, 'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
+  'twice': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'dup'},
+                       'fish-s1-cand-20': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
 }
 JF.load = lambda p, d=None: files[mode] if p.startswith('judging/fish/') else d
 mode = 'good'; E1, j = JF.check('s1')
 mode = 'bad'; E2, _ = JF.check('s1')
-print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
+mode = 'kept'; E3, _ = JF.check('s1')
+mode = 'twice'; E4, _ = JF.check('s1')
+print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2, E3, E4]))`
   );
-  const [E1, entries, E2] = out;
+  const [E1, entries, E2, E3, E4] = out;
   assert.deepStrictEqual(E1, []);
   // The caps of tools/fish_judge.py: a juvenile of a class-C entry at most 2, strong colour loss at most 3; the phase
   // flag p of a dimorph entry added, capping nothing.
@@ -274,9 +281,13 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
   assert.match(bad, /phase is one of/);
   assert.match(bad, /crop must be \[left, top, right, bottom\]/);
   assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule W3)
-  assert.match(bad, /fish-s1-cand-30: not a candidate waiting/); // Pierre rejected it
+  assert.match(bad, /fish-s1-cand-99: not a candidate of s1/);
   assert.match(bad, /1 candidate\(s\) not judged yet/);
   assert.match(bad, /2 photos marked best/);
+  // A candidate Pierre decided on after its judgement (cand-30, seen) stays in the file as judged, never an error; its
+  // best still counts for its observation, so a new candidate there is an alt or a dup, not a second best.
+  assert.deepStrictEqual(E3, []);
+  assert.deepStrictEqual(E4, ['s1: observation obs1: 2 photos marked best; exactly one']);
 });
 
 test('confirmed near Dauin (build_fish near_dauin): 2+ Research Grade observers or the IMR list; one observer is not enough, Pierre included', () => {
