@@ -3787,8 +3787,12 @@
   // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
   // just after the latest event when a device's clock ran ahead, so it is always the answer in force; its answers count
   // the player's in that subject (its LEVEL record). Every earlier event stays, so the replay keeps each answer's prior
-  // (startPriorAt). The fallback window and the cards shown (w, fb) stay as they are; a verdict waiting for its card (v)
-  // was about the former answer and goes. The copy under the key's name from before the rename (keyLegacy, which an app
+  // (startPriorAt). The fallback window starts again from this event, as an answer given in the app does (model.js
+  // startSet; Pierre, 2026-11-08, Q228: "if the player then turns out much better than I thought, the level card must
+  // still be offered"): its answers (w), the opening hold seen in it (hd), its epoch (wt) and a verdict waiting for its
+  // card (v) were about the former answer and go, so no card comes from the answers given under it; the checkpoints
+  // count the answers after the change. The cards shown (fb) stay: once per answer and direction, as in the app. The
+  // copy under the key's name from before the rename (keyLegacy, which an app
   // of before it still reads) gets the same record when the copy holds it. null when nothing is to change: an unknown
   // subject or answer, a subject without the question, or no answer saved for it (the player is asked on their device).
   // Returns {data, start: the new record}.
@@ -3811,7 +3815,8 @@
       a = num(L.ok) + num(L.ko),
       ev = startEvents(rec),
       t = Math.max(Math.round(Number(now) || 0), ...ev.map(x => stTime(x) + 1).filter(isFinite)),
-      start = startNorm({...rec, v: null, h: startEventsOf({h: [...ev, [c, a, t, 'admin']]})}),
+      {w, hd, v, wt, ...rest} = rec,
+      start = startNorm({...rest, w: [], h: startEventsOf({h: [...ev, [c, a, t, 'admin']]})}),
       json = JSON.stringify(start),
       out = {...data, [k]: json};
     if (old && old in data) out[old] = json;

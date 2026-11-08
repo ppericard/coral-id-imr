@@ -1,6 +1,7 @@
 // Change the starting answer (Pierre, 2026-11-08, Q228): the admin's change of a player's first-launch answer for one
 // subject (core.js startAdminSet; Code.gs users_ userStart, sheet v98; admin.js startBlock), merged into the player's
-// devices by the normal sync (core.js startUnion), and never moved again by a fallback card (model.js startDue).
+// devices by the normal sync (core.js startUnion); the fallback window starts again from it (model.js startStep,
+// startDue: the level card is still offered, on the answers given after the change only).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -20,7 +21,8 @@ const rec = () => ({
   at: 40,
   via: 'fallback',
   w: [[0.5, 0.25, 1, 1]],
-  hd: 0,
+  hd: 1,
+  wt: T0 - 5,
   v: 'lo',
   fb: {'imr-hi': [40, T0 + 40]}, // rename-app: keep (a fallback card key: the imr answer, then its direction)
   h: [
@@ -41,9 +43,10 @@ test('startAdminSet appends a choice event via admin: the history kept, the answ
     s = out.start;
   assert.deepStrictEqual(s.h, [...rec().h, ['imr', 75, NOW, 'admin']], 'every earlier event kept, the new one last');
   assert.deepStrictEqual([s.c, s.t, s.at, s.via], ['imr', NOW, 75, 'admin']);
-  assert.deepStrictEqual(s.fb, rec().fb, 'the fallback cards shown stay');
-  assert.deepStrictEqual(s.w, rec().w, 'the window stays');
-  assert.strictEqual(s.v, null, 'a verdict about the former answer goes');
+  assert.deepStrictEqual(s.fb, rec().fb, 'the fallback cards shown stay (once per answer and direction)');
+  // The window starts again from the change (Pierre, 2026-11-08, Q228), as an answer given in the app does (startSet).
+  assert.deepStrictEqual(s.w, [], 'the window restarts');
+  assert.ok(!('v' in s) && !('hd' in s) && !('wt' in s), 'its verdict, hold and epoch were about the former answer');
   assert.deepStrictEqual(JSON.parse(out.data[startKey('coral')]), s);
   assert.strictEqual(out.data._acct, 'abc123', 'the rest of the copy as it was');
   assert.strictEqual(out.data[subjKey('coral', 'progress')], data()[subjKey('coral', 'progress')]);
@@ -59,6 +62,7 @@ test('the change wins the merge with an older device copy, whichever comes first
     assert.strictEqual(m.c, 'imr');
     assert.strictEqual(m.via, 'admin');
     assert.strictEqual(m.h.length, 3, 'one copy of each event');
+    assert.deepStrictEqual(m.w, [], "the window of the record holding the answer: the change's, restarted");
   }
   // A device that played on and answered again before the change: its event stays in the history, the change wins.
   const later = startNorm({...rec(), h: [...rec().h, ['know', 60, NOW - 5, 'card']]}),
@@ -147,8 +151,10 @@ test('userStart: an archived record is read-only', () => {
   assert.strictEqual(s.post({userStart: 'Ana-test', s: 'coral', c: 'imr', token: TOK}).error, 'archived');
 });
 
-// model.js startDue, run in Node on stubs (as tests/start.test.js): an answer set in the admin gets no fallback card.
-test('no fallback card on an answer set in the admin', () => {
+// model.js startStep and startDue, run in Node on stubs (as tests/start.test.js): an answer set in the admin gets the
+// normal fallback card (Pierre, 2026-11-08, Q228: "if the player then turns out much better than I thought, the level
+// card must still be offered"), counted on the answers given after the change only.
+test('the fallback window restarts at the change, and the level card still comes from the answers after it', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     block = cut(src, '// First meeting with a genus (Pierre', 'const introSince'),
     saved = {},
@@ -158,23 +164,44 @@ test('no fallback card on an answer set in the admin', () => {
       LEVEL,
       CB: {},
       COMEBACK: {KEY: 'reefid-comeback'},
+      n: 0,
       Date: {now: () => NOW},
       slateGenera: () => ['A', 'B'],
       syncSoon: () => {},
       basicsDue: () => true,
       dropPlans: () => {},
-      answersSoFar: () => 75,
       document: {querySelectorAll: () => []},
       ...C,
       ...require('./subj.stub.js')(),
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
+  ctx.answersSoFar = () => ctx.n;
   vm.createContext(ctx);
-  vm.runInContext(block + '\nthis.M = {startDue};', ctx);
-  const k = startKey('coral'),
-    pending = {c: 'imr', t: NOW, at: 75, via: 'card', w: [], fb: {}, v: 'hi', h: [['imr', 75, NOW, 'card']]};
-  saved[k] = JSON.stringify(pending);
-  assert.strictEqual(ctx.M.startDue(), 'hi', 'the same record given on a card: the card is due');
-  saved[k] = JSON.stringify({...pending, via: 'admin', h: [['imr', 75, NOW, 'admin']]});
-  assert.strictEqual(ctx.M.startDue(), null);
+  vm.runInContext(block + '\nthis.M = {startOf, startStep, startDue};', ctx);
+  const M = ctx.M,
+    k = startKey('coral'),
+    // n answers on questions of difficulty 0, a quarter right, the global level -0.5: clearly harder than "know" says.
+    play = n => {
+      for (let i = 0; i < n; i++) {
+        ctx.n++;
+        ctx.P[LEVEL] = {ok: ctx.n, ko: 0, th: -0.5};
+        M.startStep(0, 4, i % 4 === 0, true);
+      }
+    },
+    N = C.CHOICE.AT[0];
+  // "I had the IMR coral course" given in the tour, 39 answers in its window.
+  saved[k] = JSON.stringify({c: 'imr', t: T0, at: 0, via: 'tour', w: [], fb: {}, h: [['imr', 0, T0, 'tour']]});
+  play(N - 1);
+  assert.strictEqual(M.startOf().w.length, N - 1);
+  // Pierre changes it to "I know corals well": the window restarts, so the next answer is no checkpoint.
+  const d = {[k]: saved[k], [subjKey('coral', 'progress')]: JSON.stringify({[LEVEL]: {ok: ctx.n, ko: 0}})};
+  saved[k] = startAdminSet(d, 'coral', 'know', NOW).data[k];
+  assert.strictEqual(M.startOf().via, 'admin');
+  play(1);
+  assert.strictEqual(M.startOf().w.length, 1);
+  assert.strictEqual(M.startDue(), null, 'no card from the answers given under the former answer');
+  play(N - 2);
+  assert.strictEqual(M.startDue(), null, 'not before 40 answers after the change');
+  play(1);
+  assert.strictEqual(M.startDue(), 'lo', 'the level card at 40 answers after the change, as for an answer given in the app');
 });
