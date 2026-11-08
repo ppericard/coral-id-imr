@@ -8,7 +8,7 @@ Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the add
 
 Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
 
-**Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; required migration from branch publishing).
+**Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; every workflow and what it commits).
 
 **Docs:** [AGENTS.md](AGENTS.md) (the constitution for any agent or developer; rules in [docs/rules/](docs/rules/)) · [docs/HANDOVER.md](docs/HANDOVER.md) (how to take over) · [docs/STATUS.md](docs/STATUS.md) (where things stand) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog, content questions) · [docs/DESIGN.md](docs/DESIGN.md) (design tokens and components) · [docs/reviews/](docs/reviews/README.md) (expert reviews).
 
