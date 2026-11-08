@@ -93,8 +93,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   `core.js`, through `python3 tools/sync_core.py --fix`) carries one `tools/sync/changes/<branch>.md` and leaves
   `VERSION` and the header line alone, so parallel PRs no longer collide. To merge it: in its worktree, merge
   `origin/main` into the branch, run `python3 tools/sheet_version.py --assign --dry-run`, then `--assign` (VERSION + 1,
-  the entry folded into the header line and ARCHITECTURE.md's version history, the gates above the old VERSION and every
-  bare `vNEXT` set to the new number, the file removed), run the fast tier, commit "Sheet script vN assigned at merge",
+  the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds or changes and
+  every bare `vNEXT` set to the new number, the file removed), run the fast tier, commit "Sheet script vN assigned at merge",
   push, `@codex review`, wait for green and Codex, then merge alone or as the one Code.gs PR of a train. A PR built under
   the old rule (its own VERSION bump) passes the check only if its number is still main+1 and ARCHITECTURE.md names it:
   otherwise move its header entry into a changes file and restore main's VERSION and header line. Rules versions (RVS)

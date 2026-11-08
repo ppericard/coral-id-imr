@@ -12,15 +12,16 @@ files, rule D4) takes main's VERSION + 1. So two open PRs never collide on the n
 
 --assign (the integrator, on the PR branch once it is up to date with main, right before the merge): VERSION + 1; the
 entry goes at the head of the header line (under the day's Manila date) and of ARCHITECTURE.md's version history;
-every gate above the old VERSION becomes the new one; every bare placeholder (outside a `code span`) becomes vN; the
+every gate the PR adds or changes against the base (and any above the old VERSION) becomes the new one; every bare placeholder (outside a `code span`) becomes vN; the
 changes file is removed. It prints what it changed; the integrator commits it ("Sheet script vN assigned at merge"),
 pushes, waits for green and Codex as for any head, and merges.
 
 --check, against the merge-base of HEAD and REF (default origin/main; skipped when git cannot find it):
 - always: the header says VERSION N, its first entry is vN, and `const VERSION = N`; each changes file is one entry;
-- a PR waiting for its version: exactly one changes file, a Code.gs change, VERSION and the header line as on the base;
+- a PR waiting for its version: exactly one changes file, a Code.gs change, VERSION and the header line as on the base,
+  every gate it adds or changes above the base's VERSION (so the feature stays off until the assign);
 - a PR assigned: no changes file, VERSION one above the base's, the header line the base's with one entry folded in,
-  ARCHITECTURE.md naming vN, no gate above VERSION, no bare placeholder;
+  ARCHITECTURE.md naming vN, every gate it adds or changes at vN, none above, no bare placeholder;
 - a PR with no Code.gs change: no changes file, VERSION and the header line untouched, no gate above VERSION;
 - --main (main itself, or a merge train about to become main): no changes file left, no gate above VERSION and no bare
   placeholder, whatever the base.
@@ -109,6 +110,24 @@ def gates(root='.'):
     return out
 
 
+def gates_at(ref, root='.'):
+    """gates() as they are in commit ref (the base)."""
+    out = {}
+    names = (git('ls-tree', '--name-only', ref, '--', '.', 'proto/', root=root) or '').split()
+    for f in sorted(x for x in names if x.endswith('.js') and x.count('/') <= 1 and (x.startswith('proto/') or '/' not in x)):
+        for m in GATE.finditer(git('show', '%s:%s' % (ref, f), root=root) or ''):
+            out[m.group(1)] = (int(m.group(2)), f)
+    return out
+
+
+def own(root='.', base=None):
+    """The gates this branch adds or changes against base: {name: (N, file)}."""
+    if base is None:
+        return {}
+    was = {k: n for k, (n, _) in gates_at(base, root).items()}
+    return {k: (n, f) for k, (n, f) in gates(root).items() if was.get(k) != n}
+
+
 def bare(root='.'):
     """{file: count} of the bare placeholders in the files git knows (tracked or new, not ignored)."""
     out = git('grep', '-l', '-I', '-w', '--untracked', '-e', TOKEN, root=root) or ''
@@ -174,6 +193,9 @@ def problems(root='.', base=None, main=False):
             errs.append('%s/%s but no change to %s: remove the changes file' % (CHANGES, files[0], GS))
         if v != bv or h[2] != bh[2]:
             errs.append('%s: VERSION %d and the header line are assigned at merge: keep the base\'s (VERSION %d)' % (GS, v, bv))
+        low = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in own(root, base).items() if n <= bv)
+        if low:
+            errs.append('gates this PR adds or changes at or below main\'s VERSION %d: %s: write %d (--assign sets the real one; rule D4)' % (bv, ', '.join(low), bv + 1))
         return errs, state
     if v == bv:
         if h[2] != bh[2]:
@@ -192,6 +214,9 @@ def problems(root='.', base=None, main=False):
             errs.append('%s: its version history does not name v%d: use --assign' % (ARCH, v))
         if high and not main:
             errs.append('gates above VERSION %d: %s' % (v, ', '.join(high)))
+        off = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in own(root, base).items() if n != v)
+        if off:
+            errs.append('gates this PR adds or changes not at its VERSION %d: %s: use --assign' % (v, ', '.join(off)))
         if left and not main:
             errs.append('the placeholder %s left in %s' % (TOKEN, ', '.join(sorted(left))))
         return errs, 'assigned: v%d' % v
@@ -199,7 +224,7 @@ def problems(root='.', base=None, main=False):
     return errs, 'broken'
 
 
-def assign(root='.', date=None, dry=False):
+def assign(root='.', date=None, dry=False, base=None):
     """Fold the one changes file into Code.gs and ARCHITECTURE.md; returns the lines saying what changed."""
     files = changes(root)
     if len(files) != 1:
@@ -223,8 +248,9 @@ def assign(root='.', date=None, dry=False):
     arch = arch.replace(HISTORY, '%sv%d (%s) %s; ' % (HISTORY, n, date, flat(entry)), 1)
     edits = {GS: new, ARCH: arch}
     said = ['%s: VERSION %d -> %d, header entry v%d (%s)' % (GS, old, n, n, date), '%s: version history v%d' % (ARCH, n)]
+    mine = own(root, base)  # what the PR adds or changes, even at a number main has reached since (Codex review #757)
     for k, (gn, f) in sorted(gates(root).items()):
-        if gn > old:
+        if gn > old or (k in mine and gn != n):
             body = edits.get(f, read(f, root))
             edits[f] = re.sub(r'\bconst %s = \d+;' % k, 'const %s = %d;' % (k, n), body)
             said.append('%s: %s %d -> %d' % (f, k, gn, n))
@@ -240,18 +266,28 @@ def assign(root='.', date=None, dry=False):
     return n, said
 
 
+def day(s):
+    if not re.fullmatch(r'\d{4}-\d\d-\d\d', s):
+        raise argparse.ArgumentTypeError('a day is YYYY-MM-DD')
+    datetime.strptime(s, '%Y-%m-%d')
+    return s
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument('--check', action='store_true', help='check the rules (tools/check_versions.py runs it)')
     g.add_argument('--assign', action='store_true', help='the integrator, at merge: assign the next VERSION')
-    ap.add_argument('--base', default='origin/main', help='--check: compare with the merge-base of HEAD and this ref')
+    ap.add_argument('--base', default='origin/main', help='compare with the merge-base of HEAD and this ref')
     ap.add_argument('--main', action='store_true', help='--check: this tree is main or a merge train: no changes file left')
-    ap.add_argument('--date', help='--assign: the day of the header entry (default: today in Manila)')
+    ap.add_argument('--date', type=day, help='--assign: the day of the header entry, YYYY-MM-DD (default: today in Manila)')
     ap.add_argument('--dry-run', action='store_true', help='--assign: say what would change, write nothing')
     a = ap.parse_args()
     if a.assign:
-        n, said = assign(date=a.date, dry=a.dry_run)
+        base = base_of(a.base)
+        if base is None:
+            sys.exit('✗ --assign needs the base (%s) to find the gates this PR adds: git fetch origin main' % a.base)
+        n, said = assign(date=a.date, dry=a.dry_run, base=base)
         for s in said:
             print(('would change ' if a.dry_run else '') + s)
         if not a.dry_run:

@@ -139,10 +139,10 @@ test('--assign: the next VERSION, the entry in the header (new day) and ARCHITEC
     r.write('docs/notes.md', `Since ${NEXT} the reply is 2; the token \`${NEXT}\` is kept in a code span.\n`);
     r.write('tools/sync/changes/claude-x.md', 'doGet answers 2 (`doGet`,\n Pierre, 2026-11-09).\n');
     r.commit();
-    const dry = r.run('--assign', '--dry-run', '--date', '2026-11-09');
+    const dry = r.run('--assign', '--base', 'main', '--dry-run', '--date', '2026-11-09');
     ok(dry, /would change tools\/sync\/Code\.gs: VERSION 7 -> 8/);
     assert.ok(fs.existsSync(path.join(r.d, 'tools/sync/changes/claude-x.md')), 'a dry run writes nothing');
-    const a = r.run('--assign', '--date', '2026-11-09');
+    const a = r.run('--assign', '--base', 'main', '--date', '2026-11-09');
     ok(a, /core\.js: NEW_SHEET 8 -> 8[\s\S]*tools\/sync\/changes\/claude-x\.md: removed/);
     const gs = r.read('tools/sync/Code.gs');
     assert.strictEqual(
@@ -176,11 +176,14 @@ test('--assign on the same day goes under that day; it needs exactly one changes
   const r = repo();
   try {
     r.edit('tools/sync/Code.gs', 'return 1;', 'return 2;');
-    const none = r.run('--assign');
+    const none = r.run('--assign', '--base', 'main');
     assert.strictEqual(none.status, 1);
     assert.match(none.stderr, /needs exactly one file in tools\/sync\/changes, found 0/);
     r.write('tools/sync/changes/claude-x.md', 'doGet answers 2\n');
-    ok(r.run('--assign', '--date', '2026-11-08'));
+    // A day that is not YYYY-MM-DD would break the header line: refused before anything is written.
+    for (const bad of ['2026-13-01', '8 Nov']) assert.strictEqual(r.run('--assign', '--base', 'main', '--date', bad).status, 2, bad);
+    assert.ok(fs.existsSync(path.join(r.d, 'tools/sync/changes/claude-x.md')));
+    ok(r.run('--assign', '--base', 'main', '--date', '2026-11-08'));
     assert.ok(
       r
         .read('tools/sync/Code.gs')
@@ -191,6 +194,34 @@ test('--assign on the same day goes under that day; it needs exactly one changes
     r.edit('tools/sync/Code.gs', 'VERSION 8 (2026-11-08: v8:', 'VERSION 9 (2026-11-08: v9: more; v8:');
     r.edit('tools/sync/Code.gs', 'const VERSION = 8;', 'const VERSION = 9;');
     fails(r.check(), /VERSION went from 7 to 9: only --assign changes it, by one/);
+  } finally {
+    r.done();
+  }
+});
+
+test('a gate the PR adds gets the assigned version even after main reached its provisional number (Codex review #757)', () => {
+  const r = repo();
+  try {
+    r.write('tools/sync/Code.gs', r.read('tools/sync/Code.gs') + 'function more(){ return 3; }\n');
+    r.edit('core.js', 'const x = 1;', 'const NEW_SHEET = 8;\nconst x = 1;');
+    r.write('tools/sync/changes/claude-x.md', 'doGet answers 2\n');
+    r.commit();
+    ok(r.check(), /waiting/);
+    // Meanwhile another PR took v8 on main.
+    r.git('checkout', '-q', 'main');
+    r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
+    r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
+    r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
+    r.commit();
+    r.git('checkout', '-q', 'pr');
+    r.git('merge', '-q', '--no-edit', 'main');
+    fails(r.check(), /gates this PR adds or changes at or below main's VERSION 8: NEW_SHEET = 8 \(core\.js\): write 9/);
+    const a = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
+    ok(a, /core\.js: NEW_SHEET 8 -> 9/);
+    assert.match(r.read('core.js'), /const OLD_SHEET = 5;\nconst NEW_SHEET = 9;/);
+    ok(r.check(), /assigned: v9/);
+    r.edit('core.js', 'const NEW_SHEET = 9;', 'const NEW_SHEET = 8;');
+    fails(r.check(), /gates this PR adds or changes not at its VERSION 9: NEW_SHEET = 8/);
   } finally {
     r.done();
   }
@@ -222,7 +253,7 @@ test('the real Code.gs header and ARCHITECTURE.md history take an --assign, whic
     r.edit('tools/sync/Code.gs', 'function json_(o){', '// A comment.\nfunction json_(o){');
     r.write('tools/sync/changes/claude-x.md', 'a comment, nothing it computes changes\n');
     ok(r.check(), /waiting/);
-    ok(r.run('--assign', '--date', '2099-01-01'));
+    ok(r.run('--assign', '--base', 'main', '--date', '2099-01-01'));
     const line = r.read('tools/sync/Code.gs').split('\n')[0];
     assert.ok(line.includes(`VERSION ${v + 1} (2099-01-01: v${v + 1}: a comment, nothing it computes changes; 20`), line.slice(0, 200));
     ok(r.check(), new RegExp('assigned: v' + (v + 1)));

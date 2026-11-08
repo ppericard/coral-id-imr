@@ -9,5 +9,5 @@ are kept in ARCHITECTURE.md's version history and dropped from the header). No v
 Where the PR's comments or docs name the new version, they write `vNEXT`; a new gate on the script's version
 (`const X_SHEET = N;`, rule D4) takes main's `VERSION` + 1. At merge the integrator runs
 `python3 tools/sheet_version.py --assign`: the next `VERSION`, the entry folded into the header line and ARCHITECTURE.md,
-those gates and every bare `vNEXT` set to it, this file removed. `python3 tools/check_versions.py` checks it all;
+every gate the PR adds or changes and every bare `vNEXT` set to it, this file removed. `python3 tools/check_versions.py` checks it all;
 `main` never holds a file here but this README.

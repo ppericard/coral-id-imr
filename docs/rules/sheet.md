@@ -42,8 +42,8 @@ updates itself.** A PR never edits `const VERSION` nor the header's history line
 script now does and why, Pierre and the date; no version number). Where its comments or docs name the new version it
 writes `vNEXT`; a new gate on the script's version (rule D4) takes `main`'s `VERSION` + 1. Right before the merge the
 integrator brings the branch up to date with `main` and runs `python3 tools/sheet_version.py --assign`: `VERSION` + 1,
-the entry folded into the header line and ARCHITECTURE.md's version history, those gates and every bare `vNEXT` set to
-it, the file removed; that head is checked and reviewed like any other, then merged (docs/INTEGRATOR.md).
+the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds or changes and
+every bare `vNEXT` set to it, the file removed; that head is checked and reviewed like any other, then merged (docs/INTEGRATOR.md).
 `python3 tools/check_versions.py` checks both states; `main` never holds a changes file. From v11 the script updates
 itself from `main` within about 15 minutes of the merge (`autoUpdate`; Pierre's setup of 2026-11-01: HANDOVER.md
 "Code.gs"); check the live `v` about 15 minutes after merging, and the sheet's "Deploy log" tab says what happened.

@@ -68,10 +68,13 @@ jobs:
       # The sheet's VERSION is assigned at merge (Q305 a, tools/sheet_version.py): a PR against its base (HEAD^1, above),
       # a train or main as about to go live (no changes file left), any other branch for consistency only.
       - name: Cache-busting versions consistent (stamped at deploy; tests/versions.test.js stamps a copy as the deploy does), sheet VERSION
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
         run: |
-          if [ "${{ github.event_name }}" = pull_request ]; then
+          if [ "$EVENT" = pull_request ]; then
             python3 tools/check_versions.py --sheet-base HEAD^1
-          elif [ "${{ github.ref }}" = refs/heads/main ] || [[ "${{ github.ref }}" == refs/heads/train/* ]]; then
+          elif [ "$REF" = refs/heads/main ] || [[ "$REF" == refs/heads/train/* ]]; then
             python3 tools/check_versions.py --main
           else
             python3 tools/check_versions.py
