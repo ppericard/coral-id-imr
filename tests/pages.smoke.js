@@ -2097,7 +2097,7 @@ async function noticesAfterSync(base) {
   const last = 'typed-questions-2026-11',
     t0 = Date.parse('2026-11-03T05:00:00Z'),
     prog = {Acropora: {ok: 1, ko: 0, streak: 1, h: '1', at: t0}, '~level': {ok: 1, ko: 0, th: 0.1, at: t0}},
-    mine = {_v: 2, _best: 12}, // the run's feat here, its achievement (run10) not counted yet
+    mine = {_v: 3, _best: 12}, // the run's feat here, its achievement (run10) not counted yet; a record of today's version (progress.js ACH_V), so no silent recount (#734) counts it first
     acct = {...mine, run10: t0},
     // The sheet's copy: what the device has, plus what another device told and earned (told: core.js TOLD tokens).
     data = told => ({
