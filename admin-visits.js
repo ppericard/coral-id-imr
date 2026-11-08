@@ -13,6 +13,7 @@ const VISITS = {
   PHONE: 600, // a window at least this wide on a phone's browser is a tablet's (DESIGN.md size classes)
   DESK: 1024, // a computer's browser (an iPad's Safari says it is a Mac) under this width: a tablet
   NEAR: 120, // seconds: a load row joins the visit whose first summary it precedes by at most the visit's first part + this
+  SLACK: 1, // seconds a load row may follow the first summary (sync.js sends the load row first, in the same moment)
   MAX: 60, // periods at most in the charts over time (the last ones), as Activity
   TOP: 12, // visitors listed before "Show all"
   SHEETS: 8, // genus sheets listed
@@ -37,7 +38,7 @@ function devClass(ua, W) {
 // more a visit (one each time the app was left, each with its own counts). o: own(page name) → the page in the subject's
 // words, null for another subject's page; answered: the ids with answers (any subject); named: Map id → name (signed in);
 // loads: the load rows {t, dev, w, st, p0}; sheets: the genus sheets (g) are this subject's. A visit is
-// {k, who, id, dev, t (its first summary), last, P {page: [times, seconds]}, G {genus: [times, seconds, from]}, s (seconds),
+// {k, who, id, dev, t (its first summary), last, P {page: [times, seconds]}, G {genus: [times, seconds, {from: times}]} (how each summary reached it, Codex review #777), s (seconds),
 // game, kind (in: signed in, anon: not signed in, both with answers; never: no answer), signed, name, cls (phone, tablet,
 // computer), inst (1 installed, 0 a browser tab, null not known), p0 (the first page's name, null not known)}. A visit
 // with none of the subject's pages is the other subject's.
@@ -80,9 +81,10 @@ function visitsOf(rows, o) {
       });
       if (o.sheets)
         Object.entries(x.g || {}).forEach(([g, [c, s, from]]) => {
-          const a = (v.G[g] = v.G[g] || [0, 0, from]);
+          const a = (v.G[g] = v.G[g] || [0, 0, Object.create(null)]);
           a[0] += c;
           a[1] += s;
+          a[2][from] = (a[2][from] || 0) + c;
         });
     });
   const L = Object.values(V)
@@ -92,10 +94,12 @@ function visitsOf(rows, o) {
     cls = Object.create(null);
   L.forEach(v => {
     // Its load row: the device's, sent within the visit's first part (at the first quiz photo, when the app was first
-    // left, or 3 min after the first page), the nearest to its first summary, each load row joined once.
+    // left, or 3 min after the first page), so never after its first summary (sync.js: loadSend before pagesSend), the
+    // latest before it, each load row joined once: the next visit's load row, sent after, is never this one's (Codex
+    // review #777).
     const near = (LD[v.dev] || [])
-      .filter(x => !used.has(x) && x.t >= v.t - (v.s1 + VISITS.NEAR) * 1000 && x.t <= v.t + VISITS.NEAR * 1000)
-      .sort((a, b) => Math.abs(a.t - v.t) - Math.abs(b.t - v.t))[0];
+      .filter(x => !used.has(x) && x.t >= v.t - (v.s1 + VISITS.NEAR) * 1000 && x.t <= v.t + VISITS.SLACK * 1000)
+      .sort((a, b) => b.t - a.t)[0];
     if (near) used.add(near);
     const all = LD[v.dev] || [],
       st = all.filter(x => x.st).length;
@@ -333,7 +337,12 @@ function renderVisits() {
         'Device'
       )
     ].join('')}</div>`,
-    warn = [USERS.err && 'Players: ' + USERS.err, ANS.old && 'Answers: ' + (ANS.err || 'not available')].filter(Boolean);
+    // A read that failed says so: without the Events read, no first page, installed app or tablet is known (Codex review #777).
+    warn = [
+      USERS.err && 'Players: ' + USERS.err,
+      ANS.old && 'Answers: ' + (ANS.err || 'not available'),
+      EVS.err && `Events: ${EVS.err} (first page, installed app and tablets not known)`
+    ].filter(Boolean);
   if (!rows.length) {
     $v.innerHTML =
       head(V.length ? vDay(P.since) : '') +
@@ -435,12 +444,12 @@ function renderVisits() {
   // Genus sheets (the replayed subject's): the most opened, by how many visitors, the time, how they were reached most.
   const GS = Object.create(null);
   rows.forEach(v =>
-    Object.entries(v.G).forEach(([g, [n, s, from]]) => {
+    Object.entries(v.G).forEach(([g, [n, s, F]]) => {
       const o = (GS[g] = GS[g] || {n: 0, who: new Set(), s: 0, from: {}});
       o.n += n;
       o.who.add(v.who);
       o.s += s;
-      o.from[from] = (o.from[from] || 0) + n;
+      Object.entries(F).forEach(([f, c]) => (o.from[f] = (o.from[f] || 0) + c));
     })
   );
   const GL = Object.entries(GS).sort((a, b) => b[1].n - a[1].n || b[1].s - a[1].s || a[0].localeCompare(b[0])),

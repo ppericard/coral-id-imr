@@ -53,7 +53,14 @@ const named = new Map([
   ROWS = [
     row(at(2, 9), 'devana', 'aidana', 'v1', {home: [1, 10], 'practice.quiz': [1, 600]}),
     row(at(3, 20), 'devana', 'aidana', 'v2', {home: [1, 5], 'learn.genus': [2, 100]}, {Acropora: [2, 100, 'learn', 1]}),
-    row(at(3, 20, 30), 'devana', 'aidana', 'v2', {'learn.genus': [1, 40], progress: [1, 60]}, {Porites: [1, 40, 'progress', 0]}),
+    row(
+      at(3, 20, 30),
+      'devana',
+      'aidana',
+      'v2',
+      {'learn.genus': [5, 140], progress: [1, 60]},
+      {Porites: [1, 40, 'progress', 0], Acropora: [4, 100, 'quiz', 1]}
+    ),
     row(at(4, 11), 'devanon', 'aidanon', 'v3', {'identify.key': [1, 300]}, {}, 'Samsung 27 mobile'),
     row(at(5, 14), 'devkai', 'aidkai', 'v4', {'identify.key': [2, 900], 'tools.anatomy': [1, 120]}, {}, 'Chrome 140'),
     row(at(6, 15), 'devipad', 'aidnew', 'v5', {home: [1, 20], 'learn.genera': [1, 60]}, {}, 'Safari 18'),
@@ -64,7 +71,7 @@ const named = new Map([
   LOADS = [
     {t: at(2, 9) - 200e3, dev: 'devana', w: 390, st: 1, p0: 'home'},
     {t: at(3, 20) - 30e3, dev: 'devana', w: 390, st: 0, p0: 'learn.genus'},
-    {t: at(5, 14) + 1000, dev: 'devkai', w: 1440, st: 0, p0: 'identify.key'},
+    {t: at(5, 14) + 500, dev: 'devkai', w: 1440, st: 0, p0: 'identify.key'},
     {t: at(6, 15) - 60e3, dev: 'devipad', w: 820, st: 1, p0: 'home'},
     {t: at(1, 15), dev: 'devipad', w: 820, st: 1, p0: 'home'}, // another day: no visit of its own here
     {t: at(4, 11) - 3 * 3600e3, dev: 'devanon', w: 384, st: 0, p0: 'home'} // hours before: not this visit's
@@ -79,9 +86,10 @@ test('visitsOf: one visit per visitor and visit id, its parts added up, newest f
     'the Fish-only visit v7 is not on the corals side'
   );
   const v2 = by.v2;
-  eq(J(v2.P), {home: [1, 5], 'learn.genus': [3, 140], progress: [1, 60]});
-  eq(J(v2.G), {Acropora: [2, 100, 'learn'], Porites: [1, 40, 'progress']});
-  assert.strictEqual(v2.s, 205);
+  eq(J(v2.P), {home: [1, 5], 'learn.genus': [7, 240], progress: [1, 60]});
+  // Each summary says how it reached a sheet: the parts' counts are kept per source (Codex review #777).
+  eq(J(v2.G), {Acropora: [6, 200, {learn: 2, quiz: 4}], Porites: [1, 40, {progress: 1}]});
+  assert.strictEqual(v2.s, 305);
   assert.strictEqual(v2.t, at(3, 20), 'its time: its first part');
   assert.strictEqual(v2.last, at(3, 20, 30));
   assert.strictEqual(by['v6'].who, 'dev:devx', 'no id (a wrong code): counted by its device');
@@ -151,7 +159,7 @@ test('visitsPick: period, visits without a game (Q303) or all, who, device', () 
 
 test('visitKpis: visits of how many, visitors, never answered, median visit, on a phone', () => {
   const P = ctx.visitsPick(V, {per: '30', vis: 'nogame', who: 'all', dev: 'all'}, at(8, 12));
-  eq(J(ctx.visitKpis(P)), {n: 6, of: 7, visitors: 6, never: 4, med: 205, phone: 4});
+  eq(J(ctx.visitKpis(P)), {n: 6, of: 7, visitors: 6, never: 4, med: 300, phone: 4});
 });
 
 test('visitPeriods: per day or week (from Monday), gaps filled, with and without a game, visitors', () => {
@@ -182,4 +190,25 @@ test('visitPeriods: per day or week (from Monday), gaps filled, with and without
     'the week from Monday 9 November, empty'
   );
   assert.strictEqual(ctx.visitPeriods([], at(1), at(1) + 100 * 864e5, 'day').length, ctx.VISITS.MAX, 'the last periods only');
+});
+
+// Codex review #777: a visit left at 10:10 and a new one opened 30 s later on the same device; the second one's load row
+// (10:10:30) is never the first one's, whose own load row came at 10:03 (sync.js sends the load row before the summary).
+test("visitsOf: a load row sent after a visit's first summary is the next visit's", () => {
+  const R = [
+      row(at(9, 10, 10), 'devq', 'aidq', 'w1', {home: [1, 60], 'identify.key': [1, 360]}),
+      row(at(9, 10, 20), 'devq', 'aidq', 'w2', {'learn.genera': [1, 500]})
+    ],
+    L = [
+      {t: at(9, 10, 3), dev: 'devq', w: 390, st: 0, p0: 'home'},
+      {t: at(9, 10, 10) + 30e3, dev: 'devq', w: 390, st: 1, p0: 'learn.genera'}
+    ],
+    W = ctx.visitsOf(R, {own: coral, loads: L});
+  eq(
+    W.map(v => [v.k, v.p0, v.inst]),
+    [
+      ['aidq|w2', 'learn.genera', 1],
+      ['aidq|w1', 'home', 0]
+    ]
+  );
 });

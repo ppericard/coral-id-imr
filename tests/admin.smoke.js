@@ -3278,9 +3278,10 @@ const WIDTHS = [390, 1280];
       const v0 = await vis();
       if (v0.cards !== 'time pages key sheets first device visitors') fails.push(`${w}px Visits: cards ${v0.cards}`);
       if (v0.wide > 0) fails.push(`${w}px Visits: page ${v0.wide} px wider than the window`);
-      // At 1280 the actions run before this (a merge, the answers of devices deleted) leave one more visitor of the demo
-      // without an answer.
-      if (v0.kpis !== `42of 71Visits without a game | 15Visitors | ${once ? 12 : 11}Never answered | 8 minMedian visit | 55%On a phone`)
+      // The players' part's actions at 1280, when it ran before this (a whole run; not SMOKE_PART=main), leave one more
+      // visitor of the demo without an answer (a merge, the answers of devices deleted).
+      const never = once && run.has('players') ? 12 : 11;
+      if (v0.kpis !== `42of 71Visits without a game | 15Visitors | ${never}Never answered | 8 minMedian visit | 55%On a phone`)
         fails.push(`${w}px Visits: numbers ${v0.kpis}`);
       if (v0.rows !== 12 || v0.open || v0.legend || v0.stack) fails.push(`${w}px Visits: ${JSON.stringify({...v0, pages: ''})}`);
       if (!/Coral ID Key/.test(v0.pages) || !/Tools › anatomy/.test(v0.pages) || /Quiz|Duels/.test(v0.pages))
