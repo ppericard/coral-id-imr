@@ -4659,9 +4659,11 @@ const WIDTHS = [390, 1280];
   // seal fits; Pierre's real curation.json (1.2 M characters) is served here as it is, so the draft and its base fill half
   // of the browser's storage. gzip, then a browser without CompressionStream, then a seal that cannot be written (Sign out
   // warns, the draft stays in plain until Sign out is clicked again), then a newer plain draft found beside the sealed
-  // one (the newer wins where both changed; an undo since is named in the note). Once, at 1280.
+  // one (the newer wins where both changed; an undo since is named in the note), or one with nothing of its own (no note).
+  // Second review of #798: a second Sign out while the first seals does nothing (twice, full), and Sign out signs out the
+  // other admin tabs of the same token (tabs). Once, at 1280.
   if (ws.includes(1280) && run.has('photos'))
-    for (const mode of ['gzip', 'plain', 'full']) {
+    for (const mode of ['gzip', 'twice', 'plain', 'full', 'tabs']) {
       const c = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
       await c.route(
         u => !u.href.startsWith(base),
@@ -4682,7 +4684,8 @@ const WIDTHS = [390, 1280];
             JSON.stringify({
               plain: (localStorage.getItem('demo:reefid-curation-draft') || '').length,
               base: (localStorage.getItem('demo:reefid-curation-base') || '').length,
-              sealed: localStorage.getItem('demo:reefid-admin-sealed')
+              sealed: localStorage.getItem('demo:reefid-admin-sealed'),
+              token: typeof TOKEN === 'undefined' ? 'none' : TOKEN
             })
           )
         );
@@ -4728,15 +4731,29 @@ const WIDTHS = [390, 1280];
       if (st.size < 2e6 || st.fish < 5e5)
         fails.push(`${F}: the draft is not of real size ${JSON.stringify({size: st.size, fish: st.fish})}`);
       if (!st.back) fails.push(`${F}: the base is not given back by the draft and its changes (sealDiff, sealPatch)`);
+      // Two Sign outs at once (a second click while the first seals): the button reads Sealing… and is off meanwhile.
+      const twice = () =>
+        q.evaluate(() => {
+          window.smokeStay = 1; // gone if the page reloads
+          signOut();
+          const b = document.getElementById('signout'),
+            on = [b.disabled, b.textContent];
+          signOut();
+          return on;
+        });
       if (mode === 'full') {
-        await signOut();
-        await q.waitForTimeout(1500);
+        const on = await twice();
+        await q.waitForTimeout(2000);
         const w = await q.evaluate(() => ({
+          stay: typeof smokeStay !== 'undefined',
+          button: [document.getElementById('signout').disabled, document.getElementById('signout').textContent],
           plain: (localStorage.getItem('demo:reefid-curation-draft') || '').length,
           base: (localStorage.getItem('demo:reefid-curation-base') || '').length,
           toast: (document.querySelector('.adm-toast:not([hidden])') || {}).textContent || '',
           token: TOKEN
         }));
+        if (!w.stay || on.join() !== 'true,Sealing…' || w.button.join() !== 'false,Sign out')
+          fails.push(`${F}: a second Sign out while the first sealed went on, or the button did not show it ${JSON.stringify({on, ...w})}`);
         if (w.plain < 1e6 || w.base < 1e6 || !/could not be sealed/.test(w.toast) || !w.token)
           fails.push(`${F}: a seal that does not fit did not stop Sign out with a warning, the draft back in plain ${JSON.stringify(w)}`);
         await Promise.all([q.waitForEvent('load'), signOut()]);
@@ -4747,17 +4764,88 @@ const WIDTHS = [390, 1280];
         await c.close();
         continue;
       }
-      await Promise.all([q.waitForEvent('load'), signOut()]);
+      if (mode === 'tabs') {
+        // A second admin tab of the same token: it took the clicks, and locks when this one signs out (in the demo the
+        // token comes back at every load, so both load again); one of another token stays, and writes the base back.
+        const q2 = await c.newPage();
+        await q2.goto(base + 'admin.html?demo#photos/review/quality');
+        await q2.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
+        await q2.waitForTimeout(1500); // its auto-sort written
+        await q.evaluate(() => {
+          DRAFT.quality = {...DRAFT.quality};
+          saveDraft();
+        });
+        await q2.waitForFunction(([L, v]) => L.every((f, i) => (DRAFT.quality || {})[f] === v[i]), [st.L.slice(0, 2), st.v], {
+          timeout: 10000
+        });
+        const loads = Promise.all([q.waitForEvent('load'), q2.waitForEvent('load', {timeout: 15000})]).then(
+          () => true,
+          () => false
+        );
+        await signOut();
+        const both = await loads;
+        await ready();
+        await q2.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
+        const u2 = await q2.evaluate(() => JSON.parse(sessionStorage.getItem('smoke-seal') || '{}'));
+        if (!both || u2.token !== null)
+          fails.push(`${F}: the other tab of the same token did not lock at the sign out ${JSON.stringify({both, token: u2.token})}`);
+        if ((await quality(st.L.slice(0, 2))).join() !== st.v.slice(0, 2).join())
+          fails.push(`${F}: the draft did not come back after the sign out of two tabs ${JSON.stringify(await quality(st.L))}`);
+        // The other tab now holds another token: a Sign out here leaves it unlocked.
+        await q2.evaluate(() => {
+          TOKEN = 'another-token';
+          window.smokeStay = 1;
+        });
+        await Promise.all([q.waitForEvent('load'), signOut()]);
+        await ready();
+        await q.waitForTimeout(1500);
+        if (!(await q2.evaluate(() => typeof smokeStay !== 'undefined' && TOKEN === 'another-token')))
+          fails.push(`${F}: a Sign out locked a tab of another token`);
+        // As at another tab's sign out, the draft and its base come off; that tab's next click puts both back.
+        await q.evaluate(() => {
+          localStorage.removeItem('demo:reefid-curation-draft');
+          localStorage.removeItem('demo:reefid-curation-base');
+        });
+        await q2.waitForFunction(() => BASE_GONE, null, {timeout: 10000}).catch(() => {});
+        const kb = await q2.evaluate(f => {
+          DRAFT.quality = {...DRAFT.quality, [f]: 2};
+          saveDraft();
+          return [localStorage.getItem('demo:reefid-curation-draft'), localStorage.getItem('demo:reefid-curation-base')].map(
+            x => (x || '').length
+          );
+        }, st.L[2]);
+        if (kb[0] < 1e6 || kb[1] < 1e6) fails.push(`${F}: a click after another tab's sign out wrote the draft without its base ${kb}`);
+        await c.close();
+        continue;
+      }
+      // Two sealed drafts of other tokens are there already: a second Sign out at once must not push one out.
+      const others =
+        mode === 'twice'
+          ? await q.evaluate(() => {
+              const L = ['B', 'C'].map(x => ({iv: 'AAAAAAAAAAAAAAAA', ct: btoa(x.repeat(48)), t: 1, z: 1}));
+              localStorage.setItem('demo:reefid-admin-sealed', JSON.stringify(L));
+              return L;
+            })
+          : [];
+      if (mode === 'twice') {
+        const loaded = q.waitForEvent('load'),
+          on = await twice();
+        await loaded;
+        if (on.join() !== 'true,Sealing…') fails.push(`${F}: the button did not read Sealing… while it sealed ${on}`);
+      } else await Promise.all([q.waitForEvent('load'), signOut()]);
       await ready();
       const u = await q.evaluate(() => JSON.parse(sessionStorage.getItem('smoke-seal') || '{}')),
-        S = JSON.parse(u.sealed || '[]'),
-        z = mode === 'gzip' ? 1 : 0,
+        S0 = JSON.parse(u.sealed || '[]'),
+        S = S0.slice(0, S0.length - others.length),
+        z = mode === 'plain' ? 0 : 1,
         len = ((S[0] || {}).ct || '').length;
+      if (others.length && JSON.stringify(S0.slice(1)) !== JSON.stringify(others))
+        fails.push(`${F}: the sealed drafts of other tokens were not kept as they were ${JSON.stringify(S0.map(x => x.ct.slice(0, 8)))}`);
       if (u.plain || u.base || S.length !== 1 || S[0].z !== z || (z ? len > 5e5 : len < 1e6))
         fails.push(`${F}: the draft was left in plain or not sealed ${JSON.stringify({...u, sealed: S.length, z: (S[0] || {}).z, len})}`);
       if (
         (await quality(st.L.slice(0, 2))).join() !== st.v.slice(0, 2).join() ||
-        (await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed')))
+        (await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed'))) !== (others.length ? JSON.stringify(others) : null)
       )
         fails.push(`${F}: the same token did not get the draft back ${JSON.stringify(await quality(st.L))}`);
       if (mode === 'gzip' && S.length) {
@@ -4767,18 +4855,21 @@ const WIDTHS = [390, 1280];
           D = await q.evaluate(
             ([L, v2, v3]) => {
               const d = clone(SAVED);
-              d.quality = {...(d.quality || {}), [L[1]]: v2, [L[2]]: v3};
-              return [JSON.stringify(d), JSON.stringify(SAVED)];
+              d.quality = {...(d.quality || {}), [L[1]]: v2};
+              const h = JSON.stringify(d); // that tab's Undo step before its last click
+              d.quality[L[2]] = v3;
+              return [JSON.stringify(d), JSON.stringify(SAVED), h];
             },
             [st.L, v2, st.v[2]]
           );
         // Written from another page of the site, so no admin write of the page open now comes after them.
         await q.goto(base + 'no-such-page');
         await q.evaluate(
-          ([sealed, d, b]) => {
+          ([sealed, d, b, h]) => {
             localStorage.setItem('demo:reefid-admin-sealed', sealed);
             localStorage.setItem('demo:reefid-curation-draft', d);
             localStorage.setItem('demo:reefid-curation-base', b);
+            sessionStorage.setItem('demo:reefid-admin-undo', JSON.stringify({snap: d, hist: [h], fut: []}));
           },
           [u.sealed, ...D]
         );
@@ -4799,6 +4890,34 @@ const WIDTHS = [390, 1280];
           );
         if (!/from the sealed one: \S/.test(note) || !/newer kept for quality of/.test(note))
           fails.push(`${F}: no note names what the sealed draft brought back and where the newer one was kept: ${JSON.stringify(note)}`);
+        // That tab's Undo step, kept for this tab, has the sealed draft under it too: one Undo keeps the sealed rating.
+        await q.evaluate(() => undo());
+        const un = await quality(st.L);
+        if (un.join() !== [st.v[0], v2, st.s[2]].join())
+          fails.push(
+            `${F}: an Undo step kept with the plain draft dropped the sealed draft ${JSON.stringify({un, want: [st.v[0], v2, st.s[2]]})}`
+          );
+        // A plain draft with nothing of its own beside the seal (another admin's unlock, closed without a sign out): the
+        // sealed draft is the draft, with no note.
+        await q.goto(base + 'no-such-page');
+        await q.evaluate(
+          ([sealed, b]) => {
+            localStorage.setItem('demo:reefid-admin-sealed', sealed);
+            localStorage.setItem('demo:reefid-curation-draft', b);
+            localStorage.setItem('demo:reefid-curation-base', b);
+            sessionStorage.removeItem('demo:reefid-admin-undo');
+          },
+          [u.sealed, D[1]]
+        );
+        await q.goto(base + 'admin.html?demo#photos/review/quality');
+        await ready();
+        await q.waitForTimeout(1500);
+        const t3 = await q.evaluate(() => (document.querySelector('.adm-toast') || {}).textContent || ''),
+          g3 = await quality(st.L.slice(0, 2));
+        if (g3.join() !== st.v.slice(0, 2).join() || /sealed at your last sign out/.test(t3))
+          fails.push(
+            `${F}: beside a plain draft with nothing of its own, the sealed draft was not the draft, or a note said otherwise ${JSON.stringify({g3, t3})}`
+          );
       }
       await c.close();
     }
