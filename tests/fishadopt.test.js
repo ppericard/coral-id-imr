@@ -209,9 +209,11 @@ test("the fish replay adopted from the script that replays it: today's bars a fl
   assert.strictEqual(a.rvApplied(FS), FRV, 'its own rules version');
   assert.strictEqual(a.rvApplied(), C.RV, "the corals' untouched");
   assert.ok(!a.sent.some(b => (b.rv !== undefined && Number(b.rv) < C.RV) || b.rv === '0'), 'no coral replay asked for');
-  // The floor: the damselfishes' bar stays (the replayed one is lower), as the device held it, no rules version.
+  // The floor, by the sheet against the saved copy (Code.gs replay_): the damselfishes' bar stays (the replayed one is
+  // lower), on the replay's record, its answers the log's (9), under the rules version.
   assert.ok(bar(want, 'f:Damselfishes') < bar(today, 'f:Damselfishes'));
-  assert.deepStrictEqual(P['f:Damselfishes'], today['f:Damselfishes']);
+  assert.ok(bar(P, 'f:Damselfishes') >= bar(today, 'f:Damselfishes') - 1e-9);
+  assert.deepStrictEqual([P['f:Damselfishes'].ok, P['f:Damselfishes'].ko, P['f:Damselfishes'].rv], [6, 3, FRV]);
   // The butterflyfishes (a false alarm, never held here): the replay's, under its rules version.
   assert.strictEqual(P['f:Butterflyfishes'].rv, FRV);
   assert.deepStrictEqual(P['f:Butterflyfishes'].dp, want['f:Butterflyfishes'].dp);
@@ -219,10 +221,10 @@ test("the fish replay adopted from the script that replays it: today's bars a fl
   assert.deepStrictEqual(P['f:Angelfishes'], today['f:Angelfishes']);
   // No bar went down.
   Object.keys(today).forEach(n => n !== '~level' && assert.ok(bar(P, n) >= bar(today, n) - 1e-9, n));
-  // The adopted version goes with the next save; the merge baseline is the replay's for the units taken from it.
+  // The adopted version goes with the next save; the merge baseline is the replay's, the floored unit's too.
   const last = [...a.sent].reverse().find(b => b.data);
   assert.strictEqual(JSON.parse(last.data['reefid-sync-fish-rv']), FRV);
-  assert.deepStrictEqual(a.base()['f:Damselfishes'], today['f:Damselfishes']);
+  assert.deepStrictEqual(a.base()['f:Damselfishes'].ds, P['f:Damselfishes'].ds);
   assert.strictEqual(a.base()['f:Butterflyfishes'].rv, FRV);
   // Its card: the fish rules versions from none, told as the fish subject's (progress.js rvNoticeAdd sid).
   assert.deepStrictEqual(
@@ -338,4 +340,86 @@ test('a refused save while the fish units are not in: no merge, the replay of th
   );
   assert.strictEqual(n(a.fish()), 9);
   assert.strictEqual(a.rvApplied(FS), FRV);
+});
+
+// Codex review #779: the floor is the sheet's, so every device of the account adopts the same record. A second device
+// that never adopted it, its progress as the account's before the replay, keeps its bars when it pulls the first one's
+// save (it was taken to the other device's lower record and its rules version, and floored no more).
+test("a second device pulls the first one's adopted fish replay: its bars stay, nothing counted twice", async () => {
+  const s = loadCodeGs(withFiles());
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
+  const dev = () =>
+      app({
+        sheet: atv(s),
+        ls: {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-coral-rv': String(C.RV)},
+        SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1}
+      }),
+    A = dev(),
+    B = dev(),
+    n = (P, u) => ((P[u] || {}).ok || 0) + ((P[u] || {}).ko || 0);
+  await A.syncPush();
+  B.store.set('reefid-sheet-v', C.REPLAYS_SHEET);
+  await B.syncPull();
+  Object.keys(today).forEach(u => u !== '~level' && assert.ok(bar(B.fish(), u) >= bar(today, u) - 1e-9, u));
+  assert.deepStrictEqual(B.fish()['f:Damselfishes'], A.fish()['f:Damselfishes'], 'the same record on both');
+  assert.strictEqual(n(B.fish(), 'f:Damselfishes'), 9);
+  // B answers nothing more, A saves again, B pulls: still 9 (the shared baseline is the replay).
+  await A.syncPush();
+  await B.syncPull();
+  assert.strictEqual(n(B.fish(), 'f:Damselfishes'), 9);
+});
+
+// Codex review #779: a refused save's answers, all logged, recovered by the replay while the floor keeps a higher bar:
+// the shared baseline must be the replay's record (its 9 answers), or another device's save of the same replay adds them
+// again (a baseline of 6, 9 here: 12).
+test('a refused save recovered by the floored replay: the baseline takes the replay, nothing counted twice', async () => {
+  const s = loadCodeGs(withFiles()),
+    six = C.replayedOf(
+      {
+        P: C.replayProgress(
+          F.slice(0, 6).map(x => C.logRow(x, 'ana')),
+          {gen: FGEN}
+        ).ana.P
+      },
+      {}
+    ),
+    nine = C.replayedOf(
+      {
+        P: C.replayProgress(
+          F.map(x => C.logRow(x, 'ana')),
+          {gen: FGEN}
+        ).ana.P
+      },
+      {}
+    ),
+    n = P => ((P['f:Damselfishes'] || {}).ok || 0) + ((P['f:Damselfishes'] || {}).ko || 0);
+  // The saved copy: the 6 of the baseline (the save of the 3 more was refused; they are logged), today's high bar on it.
+  const savedHigh = {...six, 'f:Damselfishes': {...six['f:Damselfishes'], ds: 0.9}};
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(savedHigh)});
+  const here = {...nine, 'f:Damselfishes': {...nine['f:Damselfishes'], ds: 0.9}},
+    a = app({
+      sheet: atv(s),
+      ls: {'reefid-sync-fish-progress': JSON.stringify(here), 'reefid-sync-coral-rv': String(C.RV)},
+      SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: savedHigh, lg: 1, lgOk: ['coral'], srv: 0}
+    });
+  a.store.set('reefid-sheet-v', C.REPLAYS_SHEET);
+  await a.syncPull();
+  assert.strictEqual(a.rvApplied(FS), FRV, 'recovered by the replay');
+  assert.strictEqual(n(a.fish()), 9);
+  assert.strictEqual(n(a.base()), 9, 'the baseline counts the logged answers (was 6)');
+  assert.ok(bar(a.fish(), 'f:Damselfishes') >= bar(savedHigh, 'f:Damselfishes') - 1e-9, 'the floor held');
+  // Another device saves the same replay; this one pulls: 9, not 12.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {
+      'reefid-sync-coral-progress': '{}',
+      'reefid-sync-fish-progress': JSON.stringify(a.fish()),
+      'reefid-sync-fish-rv': JSON.stringify(FRV)
+    },
+    summary: {},
+    answers: []
+  });
+  await a.syncPull();
+  assert.strictEqual(n(a.fish()), 9);
 });

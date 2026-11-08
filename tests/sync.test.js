@@ -2203,6 +2203,47 @@ test('sheet replays per subject: the fish progress replayed from its own answers
   assert.strictEqual(r2.replay.n, 4, "the corals' rows, whatever the fish reset");
 });
 
+// Q310 (Pierre, 2026-11-08: "today's bar as a floor, nobody goes back"; Codex review #779): the sheet floors the fish
+// replay against the saved copy's units no replay gave yet, keeps that reference with the record, and floors a later
+// replay of the same rules version against the same bars; after an earlier version's record, none (once).
+test('sheet replays per subject: the fish replay floored against the saved copy, frozen with its rules version', () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    F = Array.from({length: 9}, (_, i) => fa('f' + i, i)),
+    high = {'f:Damselfishes': {ok: 6, ko: 0, h: '111111', pg: 0.9}, 'f:Angelfishes': {ok: 1, ko: 0, h: '1', pg: 0.2}},
+    data = {...prog(3), 'reefid-sync-fish-progress': JSON.stringify(high)},
+    bar = (P, n) => C.scoreOf(P[n], P, n),
+    raw = fishWant(F, 'ana');
+  const r = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: F, rvs: {fish: 0}}),
+    rec = r.replays.fish.rec;
+  assert.ok(bar(raw, 'f:Damselfishes') < bar(high, 'f:Damselfishes'));
+  assert.ok(bar(rec, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9, 'floored');
+  assert.deepStrictEqual([rec['f:Damselfishes'].ok, rec['f:Damselfishes'].ko], [6, 3], "the log's answers");
+  assert.deepStrictEqual(rec['f:Angelfishes'], high['f:Angelfishes'], 'a unit the log has nothing on: as saved');
+  assert.deepStrictEqual(rec, C.replayFloor(raw, high));
+  const T = s.sheets['Replayed Fish'],
+    kept = JSON.parse(T.rows[1].slice(5).join(''));
+  assert.deepStrictEqual(Object.keys(kept), ['P', 'F']);
+  assert.deepStrictEqual(kept.F, high);
+  // One more answer, the saved copy now the adopted one (its units under the rules version): the same reference.
+  const adopted = JSON.stringify(C.replayedOf({P: rec}, {}, C.rvOf('fish'))),
+    r2 = s.post({
+      name: 'Ana',
+      pin: '1234',
+      data: {...data, 'reefid-sync-fish-progress': adopted},
+      summary: {},
+      answers: [fa('f9', 9)],
+      rvs: {fish: 0}
+    });
+  assert.ok(bar(r2.replays.fish.rec, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9, 'still floored');
+  assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, high);
+  // A record kept under an earlier rules version: the next version's replay is not floored (once).
+  T.rows[1][1] = C.rvOf('fish') - 1;
+  const r3 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {fish: 0}});
+  assert.deepStrictEqual(r3.replays.fish.rec, fishWant([...F, fa('f9', 9)], 'ana'));
+  assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, {});
+});
+
 test('sheet replays per subject: an anonymous device gets its fish replay since its own fish reset', () => {
   const f = withFish(),
     s = loadCodeGs({fetch: f.fetch}),

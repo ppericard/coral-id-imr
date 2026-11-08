@@ -472,8 +472,8 @@
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
-      // floor: the device's bars before its first replay are kept as a floor (replayFloor; Pierre, 2026-11-08, Q310:
-      // "nobody goes back").
+      // floor: the saved bars before its first replay are kept as a floor, by the sheet (Code.gs replay_, replayFloor;
+      // Pierre, 2026-11-08, Q310: "nobody goes back").
       replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, floor: true},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
@@ -3893,7 +3893,8 @@
   const LOG_SHEET = 60;
   // The sync script version that replays the other subjects' progress under this app's rules (SUBJECTS replayed: fish,
   // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS,
-  // with today's bars as a floor, replayFloor) only once the script's replies say v >= REPLAYS_SHEET (rule D4); before,
+  // with today's bars as a floor, Code.gs replay_ and replayFloor) only once the script's replies say v >= REPLAYS_SHEET
+  // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 109;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
@@ -4429,30 +4430,49 @@
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
   // The floor of a subject's first replay (SUBJECTS replayed floor; Pierre, 2026-11-08, Q310: "today's bar as a floor,
   // nobody goes back"; measured on the fish players first, LEARNING.md "Fish: the progress replayed from the answer log";
-  // the integrator, 2026-11-08: per unit, once): a unit whose record on this device came from no replay yet (no rv: played
-  // before the subject was replayed, or kept from the device by replayedOf) and whose bar (scoreOf) would be below this
-  // device's keeps this device's record, so no unit's bar, and so no % built from them, goes down at the first replay. A
-  // unit taken from a replay (rv) is the replay's from then on, under later rules versions too. A unit's bar reads the
-  // other units' false alarms on it (faOf: their conf and off), so a unit kept may still read lower beside the replayed
-  // records (Codex review #779): the records that hold its false alarms are taken back too, as this device holds them,
-  // until no unit kept reads lower; should one still (false alarms in a record this device does not have), the device's
-  // own progress is kept as it is, whole (its % then exactly today's). M: the record adopted (replayedOf), P: this
-  // device's; returns a copy of M with those units back as they were. The global level (LEVEL) stays the replay's.
+  // the integrator, 2026-11-08: per unit, once). Applied by the sheet to the replayed record (Code.gs replay_), against
+  // the account's saved copy, so every device adopts the same record and keeps it as their shared baseline (sync.js
+  // replayAdoptS, replayBase; Codex review #779). M: the replayed record; P: the reference, the saved units that came
+  // from no replay yet (no rv). A unit of P the replay has no record of keeps P's. A unit whose bar (barOf) in M reads
+  // below its bar in P keeps the replay's record, its answers the log's (so no answer is counted twice in a merge), with
+  // its domain score (ds) lifted so that its bar reads P's: a right answer never lowers ds (domStep), a miss moves it
+  // the posterior's way, as for any bar. The lift allows for the false alarms the replay counts on the unit (faOf: the
+  // other records' conf and off; Codex review #779); should a domain score of 1 not be enough, the other records count,
+  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), and the lift is made again. A
+  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's; a learned mark or an exam in course comes from the device
+  // (replayedOf). Returns a copy of M floored.
   function replayFloor(M, P) {
     const out = {...(M || {})},
       S = isObj(P) ? P : {},
-      L = Object.keys(S).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv),
       dup = x => JSON.parse(JSON.stringify(x)),
-      low = () => L.filter(g => scoreOf(out[g], out, g) < scoreOf(S[g], S, g) - 1e-9),
-      // The records that count a false alarm, or an offer, on unit g (faOf).
-      fas = g => Object.keys(out).filter(t => t !== g && t !== LEVEL && isObj(out[t]) && ((out[t].conf || {})[g] || (out[t].off || {})[g]));
-    for (let k = 0, B = low(); B.length && k <= Object.keys(out).length; k++, B = low())
-      B.forEach(g => {
-        out[g] = S[g];
-        fas(g).forEach(t => isObj(S[t]) && (out[t] = S[t]));
+      L = Object.keys(S).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
+    L.forEach(g => isObj(out[g]) || (out[g] = dup(S[g])));
+    const lift = (g, want) => (out[g] = {...dup(out[g]), ds: Math.min(1, Math.round((want + faOf(out, g)) * 1e4 + 0.5) / 1e4)});
+    // Passes until none changes: a record taken whole brings its own conf and off, which other units' bars read.
+    for (let k = 0, ch = true; ch && k <= L.length; k++) {
+      ch = false;
+      L.forEach(g => {
+        const want = barOf(S[g], S, g);
+        if (barOf(out[g], out, g) >= want - 1e-9) return;
+        ch = true;
+        if (!domOn(out[g])) return void (out[g] = dup(S[g]));
+        lift(g, want);
+        if (barOf(out[g], out, g) >= want - 1e-9) return;
+        // More false alarms on it than a domain score of 1 leaves room for: on it, the other records count the mix-ups
+        // and offers P counts (fewer mix-ups, more offers), then the lift again.
+        Object.keys(out).forEach(t => {
+          const x = out[t],
+            y = isObj(S[t]) ? S[t] : {},
+            on = r => (r.conf || {})[g] || (r.off || {})[g];
+          if (t === g || t === LEVEL || !isObj(x) || !(on(x) || on(y))) return;
+          const o = (out[t] = dup(x));
+          if (o.conf && o.conf[g]) o.conf[g] = Math.min(o.conf[g], (y.conf || {})[g] || 0);
+          const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
+          if (f) o.off = {...(o.off || {}), [g]: f};
+        });
+        lift(g, want);
       });
-    if (low().length) return Object.fromEntries(Object.keys(S).map(g => [g, dup(S[g])]));
-    Object.keys(out).forEach(g => out[g] === S[g] && (out[g] = dup(S[g])));
+    }
     return out;
   }
 

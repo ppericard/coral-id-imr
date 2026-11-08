@@ -266,8 +266,10 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
           })[me].P
         : rp.rec,
       before = copy(P),
-      // Today's bars as a floor at the subject's first replay (SUBJECTS replayed floor, core.js replayFloor; Q310).
-      M = S.replayed && S.replayed.floor ? replayFloor(replayedOf({P: R}, P, rp.rv), P) : replayedOf({P: R}, P, rp.rv);
+      // Today's bars as a floor at a subject's first replay (SUBJECTS replayed floor; Q310) are in the replay itself: the
+      // sheet floors it against the account's saved copy (Code.gs replay_, core.js replayFloor), so every device adopts
+      // the same record and keeps it as their shared baseline (replayBase; Codex review #779).
+      M = replayedOf({P: R}, P, rp.rv);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten

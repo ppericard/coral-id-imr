@@ -44,32 +44,36 @@ test('the subjects the sheet replays besides the corals: fish, with its own rule
 });
 
 // The floor of the first fish replay (Pierre, 2026-11-08, Q310: "today's bar as a floor, nobody goes back").
-test("replayFloor: a unit's bar never below this device's before its first replay; a replayed unit is the replay's", () => {
+test("replayFloor: a unit's bar never below the saved one at its first replay, its answers the log's", () => {
   const dom = (ok, ko) => C.domFromCounts({ok, ko, h: '1'.repeat(Math.min(ok, 10))}, 0.5, 4, 0),
     rec = (ok, ko, x = {}) => ({ok, ko, h: '', ...dom(ok, ko), ...x}),
     P = {
-      a: rec(12, 0), // today high, the replay lower: kept
-      b: rec(2, 1), // today low, the replay higher: the replay's
+      a: rec(12, 0), // saved high, the replay lower: the replay's answers, its bar lifted to the saved one
+      b: rec(2, 1), // saved low, the replay higher: the replay's
       c: rec(12, 0, {rv: 9}), // already from a replay: the replay's even lower
-      d: rec(3, 0), // no replayed record: kept
+      d: rec(3, 0), // no replayed record: the saved one
+      f: {ok: 6, ko: 0, h: '111111', pg: 0.9}, // under the former moving average, the replay's record without dp: the saved one
       '~level': {ok: 17, ko: 1, th: 1.5}
     },
     M = {
-      a: rec(4, 3, {rv: 10}),
-      b: rec(9, 0, {rv: 10}),
-      c: rec(4, 3, {rv: 10}),
-      e: rec(5, 0, {rv: 10}),
-      '~level': {ok: 17, ko: 1, th: 0.9, rv: 10}
+      a: rec(4, 3),
+      b: rec(9, 0),
+      c: rec(4, 3),
+      e: rec(5, 0),
+      f: {ok: 7, ko: 2, h: '1101111', pg: 0.2},
+      '~level': {ok: 17, ko: 1, th: 0.9}
     },
     out = C.replayFloor(M, P),
     s = (X, n) => C.scoreOf(X[n], X, n);
   assert.ok(s(M, 'a') < s(P, 'a') && s(M, 'b') > s(P, 'b'));
-  assert.deepStrictEqual(out.a, P.a);
-  assert.notStrictEqual(out.a, P.a, 'a copy');
+  assert.ok(s(out, 'a') >= s(P, 'a') - 1e-9 && s(out, 'a') < s(P, 'a') + 1e-3, 'lifted to the saved bar');
+  assert.deepStrictEqual({...out.a, ds: M.a.ds}, M.a, "the replay's record, its domain score lifted");
   assert.deepStrictEqual(out.b, M.b);
   assert.deepStrictEqual(out.c, M.c, 'a unit once replayed follows the replay');
   assert.deepStrictEqual(out.d, P.d);
+  assert.notStrictEqual(out.d, P.d, 'a copy');
   assert.deepStrictEqual(out.e, M.e);
+  assert.deepStrictEqual(out.f, P.f);
   assert.deepStrictEqual(out['~level'], M['~level'], 'the level is the replay’s');
   assert.deepStrictEqual(C.replayFloor(M, {}), M);
   assert.deepStrictEqual(C.replayFloor(M, null), M);
@@ -95,7 +99,7 @@ test('replayFloor: on random records no unit of the device goes down, nor the fi
       });
       return {ok, ko, h: '', off, conf, ...C.domFromCounts({ok, ko, h: ''}, rnd() - 0.5, 4, 0)};
     };
-  for (let k = 0; k < 80; k++) {
+  for (let k = 0; k < 200; k++) {
     const P = {},
       M = {};
     units.forEach(n => {
@@ -114,13 +118,11 @@ test('replayFloor: a unit kept is not lowered by the false alarms of a replayed 
   const ds = (v, x = {}) => ({ok: 6, ko: 0, h: '111111', dp: [0], ds: v, ...x}),
     s = (X, n) => C.scoreOf(X[n], X, n),
     P = {A: ds(0.8), B: ds(0.5)},
-    M = {A: ds(0.5, {rv: 1}), B: ds(0.7, {rv: 1, off: {A: 10}, conf: {A: 2}})};
-  // The device holds B: B comes back as the device holds it, and A reads its bar of today.
-  let out = C.replayFloor(M, P);
-  assert.ok(s(out, 'A') >= s(P, 'A') - 1e-9, `A ${s(out, 'A')} vs ${s(P, 'A')}`);
-  assert.deepStrictEqual(out.B, P.B);
-  // The device has no B (its mix-ups only in the log): the device's progress as it is, whole.
-  out = C.replayFloor(M, {A: P.A});
-  assert.deepStrictEqual(out, {A: P.A});
-  assert.ok(s(out, 'A') >= s(P, 'A') - 1e-9);
+    M = {A: ds(0.5), B: ds(0.7, {off: {A: 10}, conf: {A: 2}})};
+  // A's bar reads the replayed B's false alarms on it (0.2): its domain score is lifted by them too.
+  for (const ref of [P, {A: P.A}]) {
+    const out = C.replayFloor(M, ref);
+    assert.ok(s(out, 'A') >= s(P, 'A') - 1e-9, `A ${s(out, 'A')} vs ${s(P, 'A')}`);
+    assert.deepStrictEqual(out.B, M.B, "B's mix-ups are the log's");
+  }
 });
