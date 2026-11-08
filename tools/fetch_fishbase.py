@@ -247,10 +247,10 @@ def run(args):
         rows = [r for r in ordered(fb["photos"], s.get("present")) if record(s, fb["code"], r)["f"] not in known]
         take, left = [], R["room"]
         for ph, n in R["rooms"].items():  # each phase's room first (Q36), with the photos FishBase labels so
-            got = [r for r in rows if ff.PHASE_WORD.get(STAGE.get(r.get("st") or "")) == ph and r not in take][:min(n, left)]
+            got = [r for r in rows if ff.PHASE_WORD.get(STAGE.get(r.get("st") or "")) == ph and r not in take][:int(min(n, left))]
             take += got
             left -= len(got)
-        take += [r for r in rows if r not in take][:min(R["free"], left)]  # a phase's room left unfilled stays for it
+        take += [r for r in rows if r not in take][:int(min(R["free"], left))]  # one FishBase photo, one room (its own o)  # a phase's room left unfilled stays for it
         if not take:
             continue
         recs = [record(s, fb["code"], r) for r in take]

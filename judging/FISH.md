@@ -116,17 +116,22 @@ candidates after a new tag. Where the source is FishBase, the photo page (`o`) g
 species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
 FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
 iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every circle-1 genus and every
-entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: up to
-3 for a species, the first for a genus or a family) that pass the game photo rules on their observation (Research Grade,
-CC0 / CC BY / CC BY-NC, the Indo-West Pacific box, not captive or dead; for a genus or a family, a photo of a game species
-of the entry), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
+entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: all
+of them for a species, Pierre, 2026-11-08, Q229; the first for a genus or a family) that pass the game photo rules on
+their observation (Research Grade, CC0 / CC BY / CC BY-NC, never ND, Q231, the Indo-West Pacific box, not captive or dead;
+for a genus or a family, a photo of a game species of the entry; the observation is found whether or not it is among the
+taxon's most faved, `obs_of`; a photo whose observation is outside the box is listed under `away`, never taken, while
+Pierre's Q230 is open), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
 `tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
 --todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
 (`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out), the iNaturalist ones and
 FishBase's main picture with `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
 candidates"): every reference photo judged sure on the candidates' rubric (one kind of fish, count `1` or `s`; in the
 water, no `a`) is in play by itself, whatever its level (`tools/fish_game.py` `ref_play`, `judged_sure`); the stopgap list
-(`fish-photos.json`) still takes only the reference-level ones.
+(`fish-photos.json`) still takes only the reference-level ones. The same photo as one in play stays out, always; **a reference photo on an observation
+already in play** (another photo of it is a game photo) is judged against that observation's photos like a candidate
+(Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): `tools/fish_judge.json`
+`keep` {photo: `best` | `alt` | `dup`}; `best` or `alt` enters, `dup` stays out, and it waits until judged.
 
 **Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
 read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it; in both cases
@@ -169,7 +174,10 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
 
 1. `python3 tools/judging_fish.py sheets <id>` (a species `s091` or a whole entry `t01`) downloads the candidates still
    waiting (500 px, `judging/fish/img/`, not in git) and draws contact sheets observation by observation
-   (`judging/fish/sheets/<species>/`, 12 tiles each); it prints tile number → photo, observation, source, licence and
+   (`judging/fish/sheets/<species>/`, 12 tiles at most), an observation never split over two sheets (one of more than
+   12 photos fills sheets of its own): every photo of an observation is a candidate (Pierre, 2026-11-08; its first photo counts 1 against the species' cap, each
+   further one half, Q226; a sure `dup` frees its room), so its
+   near-duplicates are side by side for `keep` below; it prints tile number → photo, observation, source, licence and
    the observer's iNaturalist annotation (`iNat: juvenile`...: a hint for the `j` flag, checked on the photo).
    `python3 tools/judging_fish.py big <f>` gives the 1024 px photo, for a tag the tile does not settle and for a crop.
 2. Write `judging/fish/<species id>.json`: `{"photos": {"<f>": {...}}}`, every candidate waiting listed (a candidate Pierre
@@ -178,6 +186,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
    - `code`: the code of "Tags" above, ease included (`p1g0sm14`). The tool adds the phase flag `p` and applies the caps.
    - `keep`: `best` (exactly one per observation: its most useful photo), `alt` (the same fish, adding something:
      another side, another phase or pose, other light), `dup` (adds nothing over the best: a burst, the same framing).
+     An observation of which Pierre already added a photo (its other photos come at a later run) shows that photo
+     first on its sheet, marked as context and not to judge: its new photos are judged against it, at most one of
+     them `best` (when it beats his), none needed.
    - `phase` (optional): the sex or colour phase the IMR fish presentation names for the entry (`fish.json`
      `teach[].phase`) when the photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile
      is the code's `j` flag; an adult needs no tag.
