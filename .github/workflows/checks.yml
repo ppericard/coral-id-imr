@@ -1,10 +1,12 @@
-# Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests, JSON files (and the
-# data.json layout, M5), Python tools, cache-busting versions. Node and Python only, except the Playwright smoke tests (jobs
-# "smoke (…)", one per smoke file, in parallel on separate runners), which install Playwright with npm into a temporary folder
-# (Pierre's OK, 2026-11-01); the repo keeps no package.json.
+# Fast checks on every pull request (code review 2026-11-01, M6/M7): JS syntax, unit tests (tests/docs.test.js among
+# them), JSON files (and the data.json layout, M5), Python tools, cache-busting versions and the sheet script's VERSION.
+# Node and Python only: the Playwright smoke tests are their own workflow, .github/workflows/smokes.yml, which a docs-only
+# PR skips (Pierre, 2026-11-08, Q305 d). Both also run on a merge train's push (train/*, tools/train.py; Q305 b).
 name: Checks
 on:
   pull_request:
+  push:
+    branches: ['train/*']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,9 +20,12 @@ jobs:
     # The image named in every workflow, not ubuntu-latest, so the next Ubuntu is a reviewed one-line PR (rule W9).
     runs-on: ubuntu-26.04
     steps:
-      # Depth 1: the whole history with every photo cost ~300 s of checkout. Nothing here compares with a base any more:
-      # the version numbers are stamped at deploy (tools/stamp_versions.py, Pierre 2026-11-04), never bumped in a PR.
+      # Depth 2, not the whole history (with every photo it cost ~300 s of checkout): on a PR the commit checked out is
+      # GitHub's merge of the PR into main, so HEAD^1 is main, the base the sheet's VERSION is checked against (rule D3).
+      # The other version numbers are stamped at deploy (tools/stamp_versions.py, Pierre 2026-11-04), never bumped in a PR.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
@@ -60,72 +65,17 @@ jobs:
       - name: The rename to IMR Reef ID is complete (tools/rename_app.py; an old name kept on purpose carries rename-app keep)
         run: |
           python3 tools/rename_app.py --check
-      - name: Cache-busting versions consistent (stamped at deploy; tests/versions.test.js stamps a copy as the deploy does)
+      # The sheet's VERSION is assigned at merge (Q305 a, tools/sheet_version.py): a PR against its base (HEAD^1, above),
+      # a train or main as about to go live (no changes file left), any other branch for consistency only.
+      - name: Cache-busting versions consistent (stamped at deploy; tests/versions.test.js stamps a copy as the deploy does), sheet VERSION
         run: |
-          python3 tools/check_versions.py
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            python3 tools/check_versions.py --sheet-base HEAD^1
+          elif [ "${{ github.ref }}" = refs/heads/main ] || [[ "${{ github.ref }}" == refs/heads/train/* ]]; then
+            python3 tools/check_versions.py --main
+          else
+            python3 tools/check_versions.py
+          fi
       - name: Stack pins consistent with tools/stack.json (tools/stack_check.py; --latest, run by hand or by the brief, says what is behind)
         run: |
           python3 tools/stack_check.py --check
-  smoke:
-    name: smoke (${{ matrix.name }})
-    runs-on: ubuntu-26.04
-    strategy:
-      # Every smoke reports: one failing smoke no longer hides the others (the old single job stopped at its first failure).
-      fail-fast: false
-      # The two longest smokes run in two halves each (tests/slot.js: SMOKE_PART for pages.smoke.js, whose parts the two
-      # groups cover between them, or the run fails; SMOKE_W for admin.smoke.js, one width each), so no job is the long pole.
-      matrix:
-        include:
-          - name: pages main
-            smoke: pages
-            part: main
-            what: Page smoke test, main half (the routes at 390 and 1280 px, sheets, history, new player, cards and prompts)
-          - name: pages rest
-            smoke: pages
-            part: rest
-            what: Page smoke test, other half (Coral basics, credits, pages opened, tips, the Duel tab relief card, sign-in, the sheet's replay)
-          - name: draw
-            smoke: draw
-            what: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
-          - name: fish
-            smoke: fish
-            what: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
-          - name: admin 390
-            smoke: admin
-            w: '390'
-            what: Admin demo test at 390 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
-          - name: admin 1280
-            smoke: admin
-            w: '1280'
-            what: Admin demo test at 1280 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
-          - name: profiles
-            smoke: profiles
-            what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)
-          - name: net
-            smoke: net
-            what: Poor connection test (start-up without curation.json, preloaded next question, photo fallback, kept leaderboard)
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '26'
-      # The checks and tests run python3: pinned, not the image's own (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest
-      # stable (rule W9), the same in every workflow.
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.15'
-      # The Chromium download (~170 MB) is kept between runs; the key follows the Playwright pin below.
-      - uses: actions/cache@v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: ms-playwright-${{ runner.os }}-1.64.1
-      - name: Install Playwright (temporary folder, nothing added to the repo)
-        run: |
-          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
-          npm install --no-save --no-audit --no-fund playwright@1.64.1
-          npx playwright install --with-deps chromium
-      - name: ${{ matrix.what }}
-        env:
-          SMOKE_PART: ${{ matrix.part }}
-          SMOKE_W: ${{ matrix.w }}
-        run: NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tests/${{ matrix.smoke }}.smoke.js

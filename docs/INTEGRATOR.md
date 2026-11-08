@@ -82,16 +82,36 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   auto-merge go through the CCR routes: `GET …/pulls/N/ccr/review_threads`, `POST …/pulls/N/ccr/comments/ID/resolve`,
   `POST …/pulls/N/ccr/ready_for_review`. Subagents are refused thread resolution: the integrator resolves.
 - **Merge**: `gh api -X PUT …/pulls/N/merge -f merge_method=squash -f sha=<head>` once the branch is up to date with
-  origin/main (above), every check is green on that head (their number grows: CodeQL and other security checks run
+  origin/main (above) or through a green train (below), every check is green on that head (their number grows: CodeQL and other security checks run
   too), the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
   (`…/pulls/N/comments`, commit_id = head) even when the thread count is 0: a finding on the head may not be a thread yet.
 - **Security bots** (Pierre turned on more automatic security audits in GitHub, 2026-11-08: CodeQL, secret scanning
   and push protection, possibly others): their alerts and comments on a PR count like Codex findings. Before a merge,
   each one is fixed, or the PR says in one line why it does not apply (false positive, test-only code), and its thread
   is resolved. A security alert is never merged over in silence.
-- **Code.gs VERSION**: every PR that changes core.js bumps it to **main+1 at push time** (header line + constant +
-  `python3 tools/sync_core.py --fix`). Parallel PRs collide; the one merged second renumbers. Rules versions (RVS) run with
-  no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
+- **Code.gs VERSION, assigned at merge** (rule D3; Pierre, 2026-11-08, Q305 a): a PR that changes `Code.gs` (or
+  `core.js`, through `python3 tools/sync_core.py --fix`) carries one `tools/sync/changes/<branch>.md` and leaves
+  `VERSION` and the header line alone, so parallel PRs no longer collide. To merge it: in its worktree, merge
+  `origin/main` into the branch, run `python3 tools/sheet_version.py --assign --dry-run`, then `--assign` (VERSION + 1,
+  the entry folded into the header line and ARCHITECTURE.md's version history, the gates above the old VERSION and every
+  bare `vNEXT` set to the new number, the file removed), run the fast tier, commit "Sheet script vN assigned at merge",
+  push, `@codex review`, wait for green and Codex, then merge alone or as the one Code.gs PR of a train. A PR built under
+  the old rule (its own VERSION bump) passes the check only if its number is still main+1 and ARCHITECTURE.md names it:
+  otherwise move its header entry into a changes file and restore main's VERSION and header line. Rules versions (RVS)
+  run with no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
+- **The merge train** (rule W26; Pierre, 2026-11-08, Q305 b): when two or more PRs are ready on their own heads (green,
+  Codex-clean, threads resolved, "Choices I made" empty, no `needs-pierre`), run `python3 tools/train.py --dry-run N1 N2 …`
+  (in merge order: it checks each PR and builds the train locally), then the same without `--dry-run` in the background
+  (Bash `run_in_background`: it waits about 4 min for Checks and Smokes on `train/<time>`). Green: it squash-merges each
+  PR at its tested head, then compares `main`'s tree with the train's. Red: nothing merged; read the failing job, leave
+  out the PR it points to (or fix it), build a new train; never re-run (rule W23). It stops before a merge if `main`
+  moved (a Publish, Candidate photos): the PRs left go in a new train. Exit 2 = `main`'s tree differs from the train's:
+  dispatch Checks and Smokes on `main` and fix forward. Train branches stay on GitHub (agents cannot delete branches);
+  `tools/brief.py` does not list them. One PR alone: merge it as before, a train of one saves nothing. The merges land
+  seconds apart: Deploy Pages cancels all but the last run (its concurrency group), so check that last one; a Code.gs
+  PR in the train goes live on the sheet at the next self-update, as after any merge (rule D4).
+- **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
+  assign are new heads, so `@codex review` and wait. The train adds no head.
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex
   caught this on #701).
 - **Prettier**: CI uses 3.9.10; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
