@@ -16,6 +16,8 @@
 //   header, ⚙, Tools) and stays on the corals even with Fish saved, its fish progress kept; the admin switches on Home
 //   (the Corals | Fish row) and in the header (the subject chip), one state. Every context below but that one holds an
 //   admin token.
+// - load order: a fish record under the former moving average, opened by a link straight to a quiz page with data.json
+//   late (and fish.json in between), rebuilt once the data is in, with no page error, Fish kept, as on a plain load;
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 // A page key's address (core.js routeOut), for the corals.
@@ -2044,7 +2046,75 @@ const server = http.createServer((req, res) => {
     }
     await cf.close();
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag];
+  // A fish record still under the former moving average (s.pg), on a link straight to a tier-2 page with data.json late:
+  // the quiz tier then runs before the data is in (app.js need at start-up), and model.js domRecalcAll read GX before
+  // DATA existed ("reading 'gen'", 2026-11-08); with fish.json in between, fishLoad's own call threw too and the app fell
+  // back to the corals. The rebuild waits for the data (app.js start-up) and gives the same bar as a plain load.
+  const early = [];
+  {
+    const OLD = {'f:Damselfishes': {ok: 6, ko: 2, h: '11011101', streak: 3, pg: 0.4}};
+    const run = async (hash, hold) => {
+      const c = await b.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+      await c.route(
+        u => !u.href.startsWith(base),
+        r => r.abort()
+      );
+      await c.addInitScript(old => {
+        try {
+          if (!sessionStorage.getItem('fish-early')) {
+            sessionStorage.setItem('fish-early', '1');
+            localStorage.setItem('reefid-tour', '"done"');
+            localStorage.setItem('reefid-admin-vault', 'smoke');
+            localStorage.setItem('reefid-sync-subject', '"fish"');
+            localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}');
+            localStorage.setItem('reefid-sync-fish-progress', JSON.stringify(old));
+          }
+        } catch (e) {}
+      }, OLD);
+      const q = await c.newPage(),
+        pe = [];
+      q.on('pageerror', e => pe.push(e.message));
+      // Held until the page shows model.js has run (and, for fish.json first, until the fish data is built): the order of
+      // a slow line, without a fixed wait.
+      const after = what => q.waitForFunction(what, null, {timeout: 30000, polling: 50}).catch(() => {});
+      if (hold.fish)
+        await c.route(/\/fish\.json/, async r => {
+          await after(() => typeof domRecalcAll === 'function');
+          await r.continue();
+        });
+      if (hold.data)
+        await c.route(/\/data\.json/, async r => {
+          await after(() => typeof domRecalcAll === 'function' && (!hold.fish || FISH));
+          await r.continue();
+        });
+      await q.goto(base + hash);
+      const ready = await q
+        .waitForFunction(() => window.APP_READY, null, {timeout: 30000})
+        .then(() => true)
+        .catch(() => false);
+      const r = await q.evaluate(() => ({
+        subj: SUBJ.id,
+        rec: (JSON.parse(localStorage.getItem('reefid-sync-fish-progress') || '{}') || {})['f:Damselfishes'] || {}
+      }));
+      await c.close();
+      return {ready, pe, subj: r.subj, pg: r.rec.pg, ds: r.rec.ds};
+    };
+    const ref = await run('', {});
+    if (!ref.ready || ref.pe.length || ref.subj !== 'fish' || typeof ref.ds !== 'number' || ref.pg !== undefined)
+      early.push('the old fish record on a plain load: ' + JSON.stringify(ref));
+    for (const [hash, hold] of [
+      ['#fish/practice/quiz', {data: 1}],
+      ['#fish/progress', {data: 1}],
+      ['#fish/practice/quiz', {data: 1, fish: 1}]
+    ]) {
+      const x = await run(hash, hold);
+      if (!x.ready || x.pe.length || x.subj !== 'fish' || x.pg !== undefined || x.ds !== ref.ds)
+        early.push(
+          `the old fish record, ${hash} with ${Object.keys(hold).join(' and ')} late: ${JSON.stringify(x)}, a plain load ${ref.ds}`
+        );
+    }
+  }
+  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

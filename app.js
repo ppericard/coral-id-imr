@@ -2604,6 +2604,9 @@ Promise.all([
     RAW = d;
     CUR = c;
     build();
+    // The quiz tier already in (a link straight to its page asks for it at start-up): its rebuild of a non-replayed
+    // subject's old records, which waits for the data (model.js domRecalcAll).
+    if (typeof domRecalcAll === 'function') domRecalcAll();
     showSubj();
     route();
     started();
