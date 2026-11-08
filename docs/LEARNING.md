@@ -4551,7 +4551,9 @@ domain-score bar, the global level, rule L2), so the aim, the start's lean, `pho
 floor), typed questions, `drawW`, `shaky`, `openChance`, `openPace`, `openRight`, `openPick`, the opening hold and the
 exam are the app's own. Only the planner is written there, as `quiz.js` `planPhoto` reads: the first cards, a card when
 the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
-`distractors` and `plausibleK`, the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+`distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
+every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
+`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
 photo statistics, as the fish today; the sheet's photo Elo is not simulated). `--dist normal|tail|t3`. Circle 3 stays

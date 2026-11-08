@@ -64,3 +64,50 @@ test('a run: the same seed gives the same run, and learncmp reads every measure 
   // The lecture RA knows circle 1 (tools/learnprof.js).
   assert.deepStrictEqual(a.knows.sort(), X.c1.slice().sort());
 });
+
+// Codex review #787: the question as quiz.js planPhoto builds it (k from the traps, the hold's ease and the mix-ups in the
+// photo's aim), and the recent observations quiz.js answer records.
+test('the question: every choice counts from 2 traps, the hold and the mix-ups aim the photo lower', () => {
+  const calls = {},
+    M = {
+      examReady: () => false,
+      holdEase: () => -0.5,
+      trapsFor: (t, e) => ((calls.trapsEase = e), calls.traps),
+      distractors: () => ['b', 'c', 'd'],
+      typedP: () => 0,
+      plausibleK: () => 2,
+      confTerm: () => 0.2,
+      introduced: () => true,
+      TYPED: {k: Infinity},
+      photoSet: (t, skip, shift, k, f) => ((calls.photo = {skip, shift, k, f}), {shown: [{f: 'p'}]})
+    },
+    ctx = {shuffle: a => a, Math: {random: () => 0.5}},
+    G = {a: {cover: 'cov.webp'}};
+  calls.traps = 3;
+  let q = RW.question(M, ctx, G, 'a', {list: ['a', 'b', 'c', 'd'], cards: ['a'], start: true});
+  assert.strictEqual(q.k, 4);
+  assert.deepStrictEqual(calls.photo, {skip: 'cov.webp', shift: -0.7, k: 4, f: 'k4'});
+  assert.strictEqual(calls.trapsEase, -0.5);
+  calls.traps = 1;
+  q = RW.question(M, ctx, G, 'a', {list: ['a', 'b', 'c', 'd']});
+  assert.strictEqual(q.k, 2);
+  assert.deepStrictEqual(calls.photo, {skip: null, shift: -0.7, k: 2, f: 'k2'});
+  // On the real engine: a unit known well (3 traps) is asked among 4 choices with k 4.
+  const W = RW.world(X, 5),
+    {ctx: c2, M: M2, G: G2} = RW.engine(X, W),
+    t = X.c1[0];
+  X.c1.slice(0, 8).forEach(n => (c2.P[n] = {ok: 20, ko: 0, h: '1111111111', th: 2.5}));
+  const q2 = RW.question(M2, c2, G2, t, {list: X.c1.slice(0, 8)});
+  assert.ok(M2.trapsFor(t, 0) >= 2);
+  assert.strictEqual(q2.k, q2.chs.length);
+  assert.strictEqual(q2.chs.length, 4);
+});
+
+test('the last two observations shown are recorded, as photoSet reads them', () => {
+  const s = {};
+  [{o: 'A'}, {o: 'B'}, {o: 'A'}, {f: 'x'}].forEach(p => RW.noteRecent(s, [p]));
+  assert.deepStrictEqual(s.ro, ['A', 'x']);
+  const run = RW.runOne(X, {profile: 'expert', seed: 6, N: 60, cps: [60], keep: true});
+  const ro = Object.values(run.P).filter(x => x && Array.isArray(x.ro));
+  assert.ok(ro.length > 3 && ro.every(x => x.ro.length <= 2), String(ro.length));
+});

@@ -105,7 +105,7 @@ function world(X, seed, photos = 'normal') {
 }
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'answersSoFar', 'introReady', 'introSince', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'introSince', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(X, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   // Every unit's photos with the world's judged ease (p.e), the files unchanged.
@@ -187,8 +187,31 @@ function engine(X, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   return {ctx, M, G, sci};
 }
 
+// quiz.js planPhoto's photo-quiz question on unit t (cards: the cards shown with it, start: the first ones): the exam's
+// when the unit is ready for one; the traps the level asks for (trapsFor, with the opening hold's ease), the choices
+// (distractors, never a unit opened on its own card now), typed with the unit's typed share; k the plausible choices
+// while the traps are fewer than 2, else every choice (Codex review #787); the photo aimed lower by the hold's ease and
+// the player's own mix-ups (confTerm), in its format (k2, k3, k4, typed), never the card's own cover.
+function question(M, ctx, G, t, {list, cards = [], start = false}) {
+  const ex = M.examReady(t) && M.examSet(t),
+    ease = M.holdEase(),
+    traps = ex ? 3 : M.trapsFor(t, ease),
+    ch = ctx.shuffle([t, ...M.distractors(t, start ? list : list.filter(n => !cards.includes(n)), traps, n => cards.includes(n) || M.introduced(n))]),
+    typed = ex ? M.examTyped(t) : M.typedP(t) > 0 && ctx.Math.random() < M.typedP(t),
+    k = typed ? M.TYPED.k : traps < 2 ? M.plausibleK(t, ch) : ch.length,
+    cf = typed ? 0 : M.confTerm(t, ch, k),
+    fq = typed ? 'typed' : ch.length === 2 ? 'again' : k < 4 ? (k >= 3 ? 'k3' : 'k2') : 'k4',
+    cov = cards.includes(t) ? G[t].cover : null,
+    set = ex || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
+  return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set};
+}
+// quiz.js answer: the unit's last two observations shown (s.ro), which photoSet holds back (Codex review #787).
+const noteRecent = (s, ph) => {
+  if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
+};
+
 // One run: profile (learnprof name) x seed, N answers, checkpoints cps.
-function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = ''}) {
+function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', keep = false}) {
   const W = world(X, seed, photos),
     {ctx, M, G} = engine(X, W, {app, seed, beyond}),
     prof = LP.profOf(profile, 'fish'),
@@ -253,12 +276,8 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
       t = M.nextTarget(start ? cards : due.length ? due : met.length ? met : list);
     if (c3.met === null && X.c3.some(M.introduced)) c3.met = i + 1;
     // The question: an exam question when its unit is ready for one, else the photo quiz's; typed or among choices.
-    const exam = M.examReady(t),
-      typed = exam ? M.examTyped(t) : ctx.Math.random() < M.typedP(t),
+    const {exam, typed, chs, k, set} = question(M, ctx, G, t, {list, cards, start}),
       same = list.filter(n => n !== t && M.introduced(n) && kindOf(n) === kindOf(t)),
-      chs = typed ? [] : [t, ...M.distractors(t, list, M.trapsFor(t), M.introduced)].slice(0, 4),
-      k = typed ? Infinity : Math.max(2, Math.min(chs.length, M.plausibleK(t, chs))),
-      set = exam ? M.examSet(t) : M.photoSet(t, null, 0, k, typed ? 'typed' : 'k' + k),
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
     const d = mean(ph.map(p => trueD(t, p))),
@@ -297,6 +316,7 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     if (typeof res.e === 'number') M.holdStep(res.e, ok); // the opening hold (quiz.js answer)
     // The exam (quiz.js answer): a miss ends it; EXAM.n right with TYPED.exam typed passes it.
     const s = P()[t];
+    noteRecent(s, ph);
     if (!ok) delete s.ex;
     else if (exam) {
       const ex = s.ex || {k: 0, v: [], ts: 0};
@@ -373,11 +393,12 @@ function runOne(X, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     preOW,
     knows: [...knows],
     right: rights / Math.max(1, N),
+    ...(keep ? {P: ctx.P} : {}), // the app's records, for the tests
     lastCard
   };
 }
 
-module.exports = {RATED, world, engine, runOne, fishUnits};
+module.exports = {RATED, world, engine, runOne, fishUnits, question, noteRecent};
 
 // The rated world's checkpoints: the guardrails' (LEARNING.md) up to the horizon, and the horizon.
 const checkpoints = N => [...new Set([100, 300, 1000, 3000, 10000, 30000].filter(q => q <= N).concat([N]))].sort((a, b) => a - b);
