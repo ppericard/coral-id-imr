@@ -109,21 +109,22 @@ test('report: 999 draws by default for the latest milestone, fewer for the histo
     pl = Array.from({length: 6}, (_, i) => ['P' + i, 0.3 * i - 0.8, 520, 0.1]),
     rows = A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 3});
   assert.ok(rows.length >= 3000, String(rows.length));
-  const rep = A.report(rows.slice(0, 3000), meta, null, {B: 3, Bh: 2, hcap: 2000, seed: 1});
+  // B 2 and Bh 1, three distinct budgets at the fewest fits (each draw is a whole refit)
+  const rep = A.report(rows.slice(0, 3000), meta, null, {B: 2, Bh: 1, hcap: 2000, seed: 1});
   assert.deepStrictEqual(
     rep.M.map(M => rep.R[M].B),
-    [0, 2, 3],
-    'latest 3, then 2 for the 2000 answers that fit under the cap, 0 beyond'
+    [0, 1, 2],
+    'latest 2, then 1 for the 2000 answers that fit under the cap, 0 beyond'
   );
   assert.ok(rep.R[3000].mt.m1 > 0 && rep.R[3000].mt.m2 > 0, 'every milestone is corrected');
   // Recompute here's live look at all the answers takes the latest's draws too; the round milestones keep their budget
   // (the newest round thousand is still "the latest" for the history's cap), reused from the stored report
   assert.ok(rows.length > 3000 && rows.length < 4000, String(rows.length));
-  const lv = A.report(rows, meta, rep, {B: 3, Bh: 2, hcap: 2000, seed: 1, live: 1});
+  const lv = A.report(rows, meta, rep, {B: 2, Bh: 1, hcap: 2000, seed: 1, live: 1});
   assert.deepStrictEqual(lv.M, [1000, 2000, 3000, rows.length]);
   assert.deepStrictEqual(
     lv.M.map(M => lv.R[M].B),
-    [0, 2, 3, 3]
+    [0, 1, 2, 2]
   );
   assert.strictEqual(lv.R[3000], rep.R[3000], 'the newest milestone reused');
   // the same draws for the same answers (seeded): the latest milestone computed again on its own, as report runs it
@@ -131,13 +132,16 @@ test('report: 999 draws by default for the latest milestone, fewer for the histo
   const again = A.runAll(
     rows.slice(0, 3000).sort((a, b) => a[1] - b[1]),
     meta,
-    {M: 3000, B: 3, seed: 1}
+    {M: 3000, B: 2, seed: 1}
   );
   assert.deepStrictEqual(again.A.rt.effects, rep.R[3000].A.rt.effects);
-  // the browser's quicker interval (normal, from the draws' spread) stays within the draws' range
-  const se = A.runAll(rows.slice(0, 3000), meta, {B: 6, bse: true, seed: 1});
+  // the browser's quicker interval (normal, from the draws' spread) stays within the draws' range (3 draws: a spread;
+  // on fewer answers, 1000, no effect is bootstrapped and the check would hold on nothing)
+  const se = A.runAll(rows.slice(0, 3000), meta, {B: 3, bse: true, seed: 1});
   assert.strictEqual(se.bse, 1);
-  se.A.rt.effects.filter(e => e.boot).forEach(e => assert.ok(e.lo <= e.est && e.est <= e.hi, e.k));
+  const boot = se.A.rt.effects.filter(e => e.boot);
+  assert.ok(boot.length > 0, 'some effects bootstrapped');
+  boot.forEach(e => assert.ok(e.lo <= e.est && e.est <= e.hi, e.k));
 });
 
 test('the admin draws no “new since the previous milestone” count', () => {
