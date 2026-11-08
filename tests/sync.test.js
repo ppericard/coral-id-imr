@@ -930,7 +930,7 @@ test('board (v95): each subject its own board, by its % over the units its apps 
   assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, []);
 });
 
-test('board (v100): a subject with a global score ranks by core.js treeScore over the tree its apps sent', () => {
+test('board (v101): a subject with a global score ranks by core.js treeScore over the tree its apps sent', () => {
   const s = seed();
   const fish = P => ({...prog(3), 'reefid-sync-fish-progress': JSON.stringify(P)});
   // Two families (the common one weighs 3, the rare one 1), one genus unit under the common one.

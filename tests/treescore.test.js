@@ -95,6 +95,24 @@ test('treeScore: a species with no common name at all (Q247) has no common branc
   assert.strictEqual(C.treeScore({'s:2': {mx: 1}}, U, K).units['s:2'], 1, 'each unit with its own bar');
 });
 
+test('treeScore: genera only, never a species, stays under its level (Pierre, 2026-11-08, Q257)', () => {
+  // Scientific names ≤ 50% (half the genus's bar), the global ≤ the "families and every genus" anchor (√0.55 = 74%), whatever
+  // the families' and genera's bars, on the small tree and on any random draw of bars.
+  const top = Math.round(100 * Math.sqrt(0.55));
+  const all = C.treeScore(know('f', 'g'), T, K);
+  assert.ok(all.S <= 0.5 && all.scientific === 0 && all.common === 0, 'every family and genus mastered: S at most half');
+  assert.strictEqual(all.pct, top);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 200; i++) {
+    const P = Object.fromEntries(
+      [...units.f, ...units.g].map(u => [u, rnd() < 0.3 ? {ok: 9, ko: 0, mx: 1} : {ok: 5, ko: 1, dp: C.DOM_PRIOR, ds: rnd()}])
+    );
+    const R = C.treeScore(P, T, K);
+    assert.ok(R.S <= 0.5 + 1e-12 && R.raw <= 0.55 + 1e-12 && R.pct <= top, JSON.stringify({S: R.S, raw: R.raw, pct: R.pct}));
+  }
+});
+
 test('treeScore: a species packed with others of its genus scores the same', () => {
   const U = {
       f: [['f:A', 2, 1]],

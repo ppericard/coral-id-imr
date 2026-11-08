@@ -2999,7 +2999,7 @@ him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md): wh
 are what he wants. Rerun when a constant of the formula changes, when the curated common names are chosen (`--names`),
 and with the real app (`tools/learnsim.js` fish profiles) once the species level exists.
 
-### Fish: the global score, built (2026-11-08, Q242; sheet v100)
+### Fish: the global score, built (2026-11-08, Q242; sheet v101)
 
 **Decided** (Pierre, 2026-11-08). It started with "il faut qu'on attaque la question du score global ... Le score global, il
 faut commencer à l'intégrer. Donc à le calculer", because the scientific genera counted nowhere in the fish %. Re-simulated on
@@ -3019,7 +3019,7 @@ progress (fish)"):
 
 - Every unit keeps its own bar (`scoreOf`: the domain-score bar, 1 once its exam is passed), which drives its levels and
   exam as before. The app shows the score, and sends its tree to the sheet, from a sheet reply with v ≥ `SCORE_SHEET`
-  (100; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
+  (101; rule D4: the leaderboard and My progress on one scale), the families' mean before. Nothing about a unit changes; no rules version (rule D5: no unit's record changes, as for Q175).
 - Species weight w = 1/√(rank by observers near Dauin, `present.dauinU`: distinct Research Grade observers within 40 km,
   not observations, so a few keen photographers of one species do not weigh; Codex review #730), ties sharing their mean rank; a family weighs the
   sum of its species' weights, a genus too.
@@ -3105,7 +3105,7 @@ Answer at which each rule fires, median over the 6 simulated players [range], be
 | Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [400-800] / 600 [400-850] | 1,000 [800-1,100] / 1,100 [1,000-1,250] |
 | fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`) | the families' mean ≥ 25% | the global % ≥ 25% | 700 / 300 | 1,150 / 550 |
 | fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,800 / 5,900 | 2,500 / 12,300 |
-| The fish leaderboard (Code.gs `board_`, v100) | the families' mean | the global % | | |
+| The fish leaderboard (Code.gs `board_`, v101) | the families' mean | the global % | | |
 | The header pill, My progress's ring, the update card | the families' mean | the global % | | |
 
 **Other thresholds weighed for circle 3:**
@@ -3114,6 +3114,13 @@ Answer at which each rule fires, median over the 6 simulated players [range], be
 - 15 circle-1 families at Open Water: about 550 / 1,050 answers (between the 14 and 16 runs).
 
 The circle-1 Entries component keeps the order "the IMR course's families first", whatever else the player learns.
+
+**Pierre's answers** (2026-11-08, Q253-Q258): no card, the switch is silent and the ? text explains it (Q253); circle 3 at
+55% of the circle-1 Entries component (Q254); fpct25 and fpct50 kept as built for now, the fish achievements to be
+redesigned around the global score in a proposal of their own (Q255); the bar labels (Q256); the weighted bars with the
+genus credit in Scientific names (Q257), provided genera alone never pass a set level: S = max(the species' own bar, ½ ×
+its genus's), so genera alone keep Scientific names at 50% at most and the global % at the "families and every genus"
+anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with no common name (Q258).
 
 **What a player sees change** (the families' bars as they are):
 

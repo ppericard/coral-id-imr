@@ -76,7 +76,7 @@ function syncSummary() {
 // boardUnitsSave_): {id: its slate}, as My progress counts it (UNITS slate), the sheet then ranking that board on each
 // player's saved progress of the subject over it. A subject whose content is not loaded on this device sends none.
 // A subject with a global score (core.js SUBJECTS score: the fish) sends its tree instead (app.js UNITS tree), once the
-// sheet ranks by it (core.js SCORE_SHEET, v100: board_ ranks by core.js treeScore, the % My progress shows; rule D4).
+// sheet ranks by it (core.js SCORE_SHEET, v101: board_ ranks by core.js treeScore, the % My progress shows; rule D4).
 const boardUnits = () =>
   Object.fromEntries(
     SUBJECTS.filter((S, i, a) => S.board && S !== a.find(x => x.board))

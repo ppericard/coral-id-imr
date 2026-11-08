@@ -3706,10 +3706,10 @@
   // its queued answers on top of the sheet's follows the same version (sync.js replayAdopt); before, the moving average
   // s.pg exactly as before (rule D4).
   const DOM_SHEET = 87;
-  // The sheet script that ranks a subject with a global score by it (Code.gs v100 board_, core.js treeScore): the app shows
+  // The sheet script that ranks a subject with a global score by it (Code.gs v101 board_, core.js treeScore): the app shows
   // the score, and sends its tree, only from a reply with v >= SCORE_SHEET (model.js headScore, sync.js boardUnits; rule
   // D4: the leaderboard and My progress on one scale; Codex review #730), before that the families' mean as before.
-  const SCORE_SHEET = 100;
+  const SCORE_SHEET = 101;
   // The sync script version that files each answer under its subject (Code.gs v60: Answers Subject, Rank, Taxon shown,
   // Taxon answered, Species shown; its replay, hold and photo ratings keep the replayed subject's rows). An older script
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not

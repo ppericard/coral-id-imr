@@ -65,7 +65,7 @@ const GATES = {
       startS: () => ({replay: true})
     })() !== 0,
   // A subject's global score (model.js scoreOn: the headline, the rules on it and the tree sent to the sheet; core.js
-  // treeScore): from v100, which ranks the leaderboard by it; before, the families' mean.
+  // treeScore): from v101, which ranks the leaderboard by it; before, the families' mean.
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
