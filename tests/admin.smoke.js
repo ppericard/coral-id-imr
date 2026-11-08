@@ -2775,6 +2775,11 @@ const WIDTHS = [390, 1280];
       // The corals' side: the corals' reports and those about no subject (Home's feedback), no fish one.
       const t0 = await text();
       if (!/a timer in the quiz/.test(t0) || /Demo fish/.test(t0)) fails.push(`To do › Reports, corals: not its subject's reports only`);
+      // No Journey without a player on the list: a report sent without signing in, one from a removed account.
+      for (const id of ['demorep2', 'demorep6']) {
+        const x = await info(id);
+        if (!x || x.journey) fails.push(`To do › Reports: a Journey link on ${id} ${JSON.stringify(x)}`);
+      }
       // A game report: the genus page, the page it came from, its photo with the genus page's tools (its reporter's record
       // was archived by the players' part: no Journey; Ana's feedback below has one).
       let r = await info('demorep0');
@@ -2914,9 +2919,6 @@ const WIDTHS = [390, 1280];
           },
           [card(id), fam]
         );
-      // No Journey for a reporter who is not on the players' list.
-      const r5 = await info('demorep5');
-      if (!r5 || r5.journey) fails.push(`To do › Reports: a Journey link for a reporter not on the list ${JSON.stringify(r5)}`);
       let fr = await ft('demorep5');
       if (!fr || !fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
       else {
