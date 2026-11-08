@@ -614,6 +614,7 @@ const fishLoad = () =>
       FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
       const F = fishBuild();
       if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
+      if (typeof achPending === 'function') achPending(); // progress.js: an achievement recount waiting for this data
       return F;
     })
     .catch(e => {
@@ -1469,6 +1470,9 @@ const UNITS = {
     // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
     tree: () => (FISH ? FISH.tree : null),
     core: () => (FISH ? FISH.c1 : []),
+    // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
+    // families, those that open right after them, those beyond the course.
+    circles: () => (FISH ? [FISH.c1, FISH.c2, FISH.c3] : []),
     gate: fishGate,
     // Circle 3, the families beyond the IMR course (Pierre, 2026-11-07 08:50): offered at the Q177 threshold instead of
     // opening by itself; once on, its families open one at a time like any other. They count in the % either way (Q204).
@@ -1517,7 +1521,7 @@ const UNITS = {
     bar: id => fishBar(id),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), your fish progress, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,

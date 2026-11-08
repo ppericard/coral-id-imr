@@ -2913,6 +2913,79 @@ fish game in a browser, the answer at which each achievement first enters the re
 - **Dropped: a fish Elo achievement.** The simulated fish level is already about 1.5-2.2 (Elo 1,300-1,440) when it first shows at 200
   answers (`ELO_MIN`), so "Fish Elo 1200" came at exactly the 200th answer for every run: an answer count, not a milestone (rule L8).
 
+### Fish achievements, around the global score (2026-11-08, Q259-Q264; record version 3)
+
+**Decided** (Pierre, 2026-11-08), on the proposal of the same day (33 learning achievements), once the global score was built
+(Q255: "the fish achievements to be redesigned around the global score"):
+- **Q259**: the score's ladder every 10 points; fpct25 retired.
+- **Retired or no longer valid, removed from everyone**: "Pour les succès retirés, on le retire au jeu, à tout le monde ... on
+  est en mode bêta, les gens le savent"; **Q260**, no silent keep: "Si les succès sont plus bons, on les retire et on les
+  remplace". Then the principle: "il faut recalculer tous les progrès pour tous les joueurs à partir de leurs réponses, et
+  ensuite recalculer leurs succès aussi".
+- **Q261**: "Dauin's top 20" = circle-1 species only for now (another top with circle 3 later); and frequency-based ones ("je
+  sais reconnaître les X poissons les plus fréquents", and for fun "les X poissons les moins fréquents à Dauin").
+- **Q262**: a species is "named in Latin" once its scientific name's bar reaches Advanced (the My progress counter too).
+- **Q263**: 33 is fine. **Q264**: the removal is silent ("le retrait il est fait en silence").
+- Names: "n'hésite pas à réfléchir au nom des succès aussi, pour mettre des noms sympas, rigolos, pour varier": every fish
+  achievement has a short diver-flavoured name, its description stays plain and exact.
+
+**The list** (`core.js` `FISH_ACH`; tier 1 bronze, 2 silver, 3 gold). Built, 24:
+
+| Id | Name | Condition | Tier |
+|---|---|---|---|
+| fpct10, fpct20 | Giant stride, Bubble trail | the global fish score (`treeScore`'s %) at 10%, 20% | 1 |
+| fpct30, fpct40 | Reef crest, Down the wall | 30%, 40% | 2 |
+| fpct50 | Family reunion | 50%: what knowing every family for sure is worth (the families' anchor) | 3 |
+| fpct60 | Blue water | 60% | 3 |
+| fmet5 | Meet the neighbours | 5 families met | 1 |
+| fmetall | Full logbook | every family in the game met | 2 |
+| fq50a, fq50b | Certified, School's in | 5, 20 families at Open Water or above | 1, 2 |
+| fq80a, fq80b | Night diver, Deep diver | 5, 15 families at Advanced or above | 1, 2 |
+| fq95a | Dive guide | 5 families at Divemaster or above | 2 |
+| flearn1, flearn10, flearn30 | First briefing, Course director, Fish whisperer | 1, 10, 30 families' mastery exams passed | 2, 3, 3 |
+| fsci5 | Latin lessons | 5 scientific genera at Open Water or above | 2 |
+| fgen20, fgen60 | Name dropper, Walking field guide | 20, 60 scientific genera at Advanced or above | 2, 3 |
+| fmetcore | Roll call | every family of the IMR course met | 2 |
+| fcoreadv | House reef | every family of the IMR course at Advanced or above | 2 |
+| fc2 | Supporting cast | every circle-2 family (those that open right after the IMR course's) at Advanced or above | 2 |
+| fc3adv | Muck diver | 20 families beyond the IMR course (circle 3) at Advanced or above | 3 |
+| flearncore | Transect master | every family of the IMR course learned (its exam passed) | 3 |
+
+flearn30 joins `ACH_LEARN` (taken back with a learned mark, as the other Instructor ones). The circles read `UNITS` fish
+`circles` (`progress.js` `achSnap` `circ`), the genera at Advanced `achSnap` `setsAdv`; the % reads the global score from the
+device's progress (`treeScore` over `UNITS` tree), whatever the sheet's version (the achievements need nothing from it).
+
+**Waiting, 9** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
+confuse; names proposed for when they are built):
+- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): today's score tops out at 67% (families and
+  every genus), the species level brings the rest.
+- At the species level: fsp1 "First name terms", fsp10 "Name tags", fsp50 "Fish ID nerd" (species named by a common name at
+  Advanced); fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with both names at
+  Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
+- Fish basics: fbasics, with the module.
+- Also for the species level (Q261, counted beyond the 33): "Usual suspects", the X fish most often seen (circle 1, then
+  every circle), and "Rare finds", the X least often seen at Dauin, by the rank of observers near Dauin (`present.dauinU`,
+  the score's own weights); X chosen with the species level.
+- The contributions are unchanged.
+
+**The recount** (`progress.js` `ACH_V` 3, `achMigrate`): every device, at its first start-up on this version, tests every
+achievement of every subject again on that subject's current progress (`inSubject`, `core.js` `achRecount`): those met keep
+their date (the earliest held), the others go, fpct25 with them since no list holds it; every fish % achievement is thus
+re-evaluated on the global score (an fpct50 earned on the families' mean leaves a player under 50%), and the new ones the
+progress already meets come in. Silent (Q264), no card, no toast. The fish data is loaded only when the fish are needed
+(`app.js` `fishLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
+then are recounted the same way (`achPending`, from `fishLoad` and before each check). A device not updated yet: its record
+keeps version 2, and `core.js` `mergeAch` takes no achievement from a record of another version (only its feats), so it never
+brings back what the recount removed, and an updated device's record never reaches it either (the same rule on its side).
+The progress itself is not recounted here: the corals' is replayed from the answer log by the sheet (`Code.gs` `replay_`,
+rule D5); the fish's is not replayed (`SUBJECTS` fish `replay: false`), its bars rebuilt once on the device from their counts
+(`core.js` `domFromCounts`, Q200). Checked by `tests/core.test.js` (each condition at its threshold, fpct25 retired,
+`achRecount`) and `tests/adopt.test.js` (the recount on a corals + fish record of version 2, the fish waiting for their data,
+a merge with a stale device).
+
+**Timing** (rule L8; `tools/learnsim.js --subject fish --ach`, the real fish game in a browser; `--beyond yes` answers circle
+3's offer with yes): TIMINGS
+
 ### Fish: the global score, simulated (2026-11-04)
 
 The global fish score's formula (Pierre, 2026-11-04; docs/FISH_PATH.md "My progress (fish)", unchanged here): per species
@@ -3103,7 +3176,7 @@ Answer at which each rule fires, median over the 6 simulated players [range], be
 | Rule | Reads, before | Reads, after | IMR RA, before / after | Casual, before / after |
 |---|---|---|---|---|
 | Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [400-800] / 600 [400-850] | 1,000 [800-1,100] / 1,100 [1,000-1,250] |
-| fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`) | the families' mean ≥ 25% | the global % ≥ 25% | 700 / 300 | 1,150 / 550 |
+| fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`; retired since, Q259) | the families' mean ≥ 25% | the global % ≥ 25% | 700 / 300 | 1,150 / 550 |
 | fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,800 / 5,900 | 2,500 / 12,300 |
 | The fish leaderboard (Code.gs `board_`, v101) | the families' mean | the global % | | |
 | The header pill, My progress's ring, the update card | the families' mean | the global % | | |
@@ -3117,7 +3190,8 @@ The circle-1 Entries component keeps the order "the IMR course's families first"
 
 **Pierre's answers** (2026-11-08, Q253-Q258): no card, the switch is silent and the ? text explains it (Q253); circle 3 at
 55% of the circle-1 Entries component (Q254); fpct25 and fpct50 kept as built for now, the fish achievements to be
-redesigned around the global score in a proposal of their own (Q255); the bar labels (Q256); the weighted bars with the
+redesigned around the global score in a proposal of their own (Q255; since done: "Fish achievements, around the global
+score"); the bar labels (Q256); the weighted bars with the
 genus credit in Scientific names (Q257), provided genera alone never pass a set level: S = max(the species' own bar, ½ ×
 its genus's), so genera alone keep Scientific names at 50% at most and the global % at the "families and every genus"
 anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with no common name (Q258).

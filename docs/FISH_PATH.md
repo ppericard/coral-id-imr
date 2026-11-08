@@ -456,7 +456,7 @@ on families only to an IMR RA with every species open:
       species credit), the same per circle, and every unit's own bar (each family, genus, species × common / scientific:
       the bar that drives its levels and exam, unchanged). Every rule that reads a score reads one of these.
     - **Shown**: the header pill, My progress's ring and, under the name, three bars (Families, Common names, Scientific
-      names: the components, the last one with the genus credit), the fish % achievements (25%, 50%), the leaderboard
+      names: the components, the last one with the genus credit), the fish % achievements (every 10 points since Q259), the leaderboard
       (sheet v101), the update card. The species terms stay 0 until the species level exists; the genus credit is live
       for the genera a player has (the IMR genera, the opted-in ones).
     - **The path on the new scores** (Pierre, 2026-11-08: "il faut qu'on trouve une manière de caler le parcours sur nos
@@ -466,19 +466,19 @@ on families only to an IMR RA with every species open:
     - **Pierre's answers** (2026-11-08, Q253-Q258): the switch is silent for current players, the ? text explains it
       (Q253: "pour l'instant on le passe en silencieux"); circle 3 at the circle-1 Entries component's 55% (Q254); the
       fish % achievements stay at 25% and 50% of the global score for now, the whole fish set to be redesigned around
-      the global score (Q255, a proposal of its own); the bar labels (Q256); the weighted bars with the genus credit in
+      the global score (Q255, a proposal of its own: since done, Q259-Q264, "Achievements" below); the bar labels (Q256); the weighted bars with the genus credit in
       Scientific names (Q257), on one condition the formula guarantees and a test proves: a player who plays the genera
       and never a species cannot pass a set level (Scientific names at most 50%, the global % at most the "families and
       every genus" anchor, 74%); credit = S for a species with no common name (Q258).
   - The same scale for every player, whichever names they learn ("Which names a player learns"); the stages are the families of every
     circle (since the units migration, the book's families: 28 of circle 1, 1 of circle 2, 19 of circle 3) and their species; unopened
     units at 0. **Every circle counts** (Pierre, 2026-11-06, Q175; replaces "circles 2 and 3 never count"): the families and species of circles 2 and 3 are stages too, so 100% is further away and every fish player's % dropped once (fish in beta, accepted). They open after the IMR course's families (Q177: circle 2 by itself once every circle-1 family has been asked, circle 3 once the progress on circle 1 reaches 50%; `app.js` `fishGate`); the two opt-in settings are gone. **Circle 3 is an option** (Pierre, 2026-11-07 08:50): at that threshold a card asks "More fish families, beyond the IMR course?" (Open them / Not now, "Not now" on top); "Open them" lets its families open one at a time as usual, "Not now" keeps them closed, the card comes back once 200 answers later, then never, and My progress offers "Open the families beyond IMR (N families)" while it is off (`UNITS.fish` `opens`, `core.js` `openState`; the choice `beyond` in the quiz settings, synced). Circle-3 families **still count** in the fish % (Pierre, Q204: 100% is everything unlocked and known, circle 3 included; a player who declines has room left, and the global score with genera and species will add more). Circle-3 families already open stay open, and a player whose circle 3 already opened by itself is not asked.
-  - What counts as a species' scientific name known (the exam passed, or the progress on the questions shown in Latin) is part of the
-    same study.
+  - **A species is "named in Latin" once its scientific name's bar reaches Advanced** (Pierre, 2026-11-08, Q262), the same
+    definition for the counter below and for the achievements.
   - **The Elo level stays alongside** as the player's overall level.
 - **Default view, Slate rows (A)**: the 27 IMR entries in IMR order, each with its level bar, a thin bar of its species and the two
-  counters, **"Species named: N"** (a species at Advanced) and **"Scientific name: M"** (its all-Latin exam passed; "In Latin" in the
-  first mock-up, renamed per the wording rule), as detail under the global score.
+  counters, **"Species named: N"** (a species at Advanced) and **"Scientific name: M"** (its scientific name's bar at Advanced, Q262; "In Latin" in
+  the first mock-up, renamed per the wording rule), as detail under the global score.
 - **On top, the totals and short lists of the Dashboard (B)**: species met, named and in Latin as totals, and three short lists
   (Review first, Almost there, Just met), so a player with 300 species open still sees what to do next without scrolling them all.
 - **Second view, Mosaic (C)**: one square per species inside its entry, for the collection effect, picked from the view selector at the
@@ -508,6 +508,16 @@ on families only to an IMR RA with every species open:
     families met, the IMR course's families met and mastered, families at Open Water / Advanced / Divemaster, Instructor, fish progress,
     scientific genera), their timing simulated (docs/LEARNING.md "Fish achievements, simulated"); species named and Fish basics
     come with those features;
+  - **redesigned around the global score** (2026-11-08, Pierre's Q259-Q264; the full list, its names and timings in docs/LEARNING.md
+    "Fish achievements, around the global score"): 33, of which 24 are built (the score every 10 points to 60%, fpct25
+    retired; families; scientific genera at Open Water and at Advanced; the circles at Advanced) and 9 wait for the species
+    level or Fish basics. **At the species level**: fsp1, fsp10, fsp50 (species named by a common name, at Advanced),
+    fspsci1 (a first species named in Latin: its scientific name's bar at Advanced, Q262), fboth25 (25 species with both
+    names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261: circle 1 only for
+    now, another top with circle 3 later), fpct70 and fpct100 ("Fish god": every name of every species), and Pierre's
+    frequency-based ones (Q261): "I know the X fish most often seen" (circle 1, and every circle) and, for fun, "the X
+    least often seen at Dauin" (the rank by observers near Dauin, `present.dauinU`, as the score's weights), X and names
+    chosen when the species level is built;
   - plus a **separate set of harder, specific "hunt" achievements** for players who like to chase them: mastering a precise look-alike
     pair (Pierre's example: the pearlscale angelfish, *Centropyge vrolikii*, against the mimic surgeonfish, the juvenile of *Acanthurus
     pyroferus*), hard combinations, and tongue-in-cheek / wink ones. Kept apart from the general set so they never crowd it.

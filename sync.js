@@ -1405,6 +1405,7 @@ function signOutClear(all) {
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
     ACHK,
     'reefid-ach-new',
+    'reefid-ach-old', // progress.js ACHOLD: this player's achievements waiting for a subject's data to be recounted
     CUSTOM.KEY, // model.js: the custom quiz's selection is the player's too
     'reefid-mx-lost', // model.js MXL.KEY: learned marks taken away and their card, this player's
     RVK, // the rules version this player's progress was replayed with (replayAdopt)

@@ -11,8 +11,12 @@
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
+//                          [--beyond yes|no]
 // --ach (2026-11-06, the fish achievements, rule L8: each one's timing checked with the real game): the answer at which
 // each achievement of the record first came, median per profile over the runs.
+// --beyond (2026-11-08, the fish achievements of circle 3): how the player answers the card that offers a part of the
+// slate by choice (quiz.js openOfferShow: fish circle 3, Q204): yes opens it, no keeps it closed; without it, as before
+// (the card left unanswered).
 // --subject fish (2026-11-06, Q186: the fish draw's learning outcomes, rules L11-L12): the player plays the fish subject
 // (its slate of IMR entries, its photos and calibration); the coral-only measures (Millepora, bonus genera) stay empty.
 // --photos FILE serves that file as fish-photos.json (another pool, e.g. a branch's); --calib merges fields over the
@@ -254,6 +258,7 @@ const SEEDS = Number(arg('seeds', 5)),
     }),
   OPENALL = arg('openall', ''),
   ACHT = process.argv.includes('--ach'), // the achievements' timing (below: "Achievements")
+  BEYOND = arg('beyond', ''),
   CHOICE = arg('choice', 'new'),
   FALLBACK = arg('fallback', 'keep'),
   VARS = JSON.parse(arg('vars', '{}')),
@@ -343,7 +348,8 @@ const server = http.createServer((req, res) => {
 // One player, inside the page: the app's globals (P, quizPhoto, photoDiff, pooledConf, ...) are in scope.
 function play(cfg) {
   const {prof, seed, N, cps, L, breaks, after, openall, back, truth, rton, choice, fallback, vars} = cfg,
-    ACHT = cfg.ach;
+    ACHT = cfg.ach,
+    BEYOND = cfg.beyond;
   // The subject's draw calibration overridden (--calib), and the corals' bonus genera only on the corals (--subject).
   if (cfg.calib && Object.keys(cfg.calib).length) SUBJ.calib = {...(SUBJ.calib || {}), ...cfg.calib};
   const BON = SUBJ.id === 'coral' && typeof BONUS !== 'undefined' ? BONUS : [];
@@ -660,6 +666,9 @@ function play(cfg) {
     if (pre) pre(q);
     // The first-meeting cards, read through: each teaches like one right answer.
     (q.intro || []).forEach(g => (teach(g, prof.rate), exem && exAdd(g, rAt(0), null), nCards++));
+    // --beyond: the card offering a part of the slate by choice (fish circle 3), answered.
+    const ob = BEYOND && document.querySelector(`.unlock.intro [data-${BEYOND === 'yes' ? 'opens' : 'notnow'}]`);
+    if (ob) ob.click();
     // The bonus genera offer (every slate genus met): accepted.
     const bo = document.querySelector('.unlock [data-bonus]');
     if (bo) {
@@ -1136,7 +1145,8 @@ async function run(browser, base, name, seed) {
     custom: CUSTOMN,
     drill: DRILL,
     calib: CALIBX,
-    ach: ACHT
+    ach: ACHT,
+    beyond: BEYOND
   });
   await ctx.close();
   return {profile: name, seed, errs, ...r};
