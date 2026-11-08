@@ -4685,6 +4685,16 @@ photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `
 `perPhoto` (answers per photo shown), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
 exist yet, so their kinds are empty until they do.
 
+**On a GitHub runner** (tier 2 and level 3, too long for the shared machine): Actions › "Learning check (tier 2)" › Run
+workflow (`.github/workflows/learncheck.yml`, manual dispatch only), with the version with the change (`after`: its
+branch), the one to compare it with (`before`, `main` by default), the subject, the world (`both`, `app` or `rated`; the
+rated world from the version that has it, ROADMAP "Validation tools", step 4), the seeds, the questions (app world) and
+answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only), the looks and
+any other learnsim option (`--profiles beginner,expert --dist tail`). It runs learnsim on both versions with the same
+seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its report in the run's summary;
+it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish
+-f primary=hard@300:down`. Inputs are checked against narrow patterns before any command reads them.
+
 **First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
 unit under Open Water; exploratory, the protocol not yet
 approved; the rated world by the scratch harness with the cap mimicked as `rareCap` does, 4 profiles × 20 seeds × 3,000

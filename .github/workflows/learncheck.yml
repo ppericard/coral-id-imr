@@ -1,0 +1,136 @@
+# Tier 2 of a learning change (rule L11; docs/LEARNING.md "Validating a learning change"): the paired comparison of two
+# versions of the app (before and after a change) in the app world (tools/learnsim.js, the real app in Chromium) and the
+# rated world (learnsim --world rated, Node), on the same seeds, read by tools/learncmp.js against the guardrails. Too
+# long for a laptop or the shared machine at level 2-3 (the fish app world: about an hour for both arms), so a manual
+# run on a GitHub runner: manual dispatch only, never on a push or a schedule. Commits nothing, sends nothing, no
+# artifact: the report goes to the run's summary (simulated players only, no player data).
+# Every input reaches the commands through env and is checked against a narrow pattern first (no ${{ inputs }} in run).
+name: Learning check (tier 2)
+on:
+  workflow_dispatch:
+    inputs:
+      after:
+        description: 'The version with the change (a branch, tag or commit)'
+        required: true
+        type: string
+      before:
+        description: 'The version to compare it with'
+        required: true
+        default: main
+        type: string
+      subject:
+        description: 'Subject'
+        type: choice
+        options: [fish, coral]
+        default: fish
+      world:
+        description: 'World(s)'
+        type: choice
+        options: [both, app, rated]
+        default: both
+      seeds:
+        description: 'Seeds per profile (the same in both arms)'
+        default: '10'
+        type: string
+      questions:
+        description: 'Questions per run in the app world'
+        default: '300'
+        type: string
+      answers:
+        description: 'Answers per run in the rated world'
+        default: '3000'
+        type: string
+      primary:
+        description: 'The primary declared before running, MEASURE@CHECKPOINT:up|down (empty: guardrails only)'
+        default: ''
+        type: string
+      looks:
+        description: 'Looks declared (rule L11: each look reads its bounds at 1 - 0.10 / looks)'
+        default: '1'
+        type: string
+      args:
+        description: 'More learnsim options for both arms and worlds (e.g. --profiles beginner,expert --dist tail)'
+        default: ''
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: learncheck-${{ github.run_id }}
+  cancel-in-progress: false
+jobs:
+  compare:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 360
+    env:
+      AFTER: ${{ inputs.after }}
+      BEFORE: ${{ inputs.before }}
+      SUBJECT: ${{ inputs.subject }}
+      WORLD: ${{ inputs.world }}
+      SEEDS: ${{ inputs.seeds }}
+      QUESTIONS: ${{ inputs.questions }}
+      ANSWERS: ${{ inputs.answers }}
+      PRIMARY: ${{ inputs.primary }}
+      LOOKS: ${{ inputs.looks }}
+      ARGS: ${{ inputs.args }}
+    steps:
+      - name: Check the inputs
+        run: |
+          ok() { [[ "$2" =~ $3 ]] || { echo "::error::$1 '$2' does not match $3"; exit 1; }; }
+          ok after "$AFTER" '^[A-Za-z0-9._/-]{1,100}$'
+          ok before "$BEFORE" '^[A-Za-z0-9._/-]{1,100}$'
+          ok seeds "$SEEDS" '^[1-9][0-9]?$'
+          ok questions "$QUESTIONS" '^[1-9][0-9]{0,4}$'
+          ok answers "$ANSWERS" '^[1-9][0-9]{0,5}$'
+          ok primary "$PRIMARY" '^([A-Za-z]+@([0-9]+|run):(up|down))?$'
+          ok looks "$LOOKS" '^[1-9]$'
+          ok args "$ARGS" '^[A-Za-z0-9 ,.:@_=-]{0,200}$'
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.after }}
+          path: after
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.before }}
+          path: before
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+      # The app world runs the real app in Chromium: Playwright as the smokes install it (a temporary folder, the same pin).
+      - uses: actions/cache@v6
+        if: inputs.world != 'rated'
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-1.64.1
+      - name: Install Playwright (temporary folder, nothing added to the repo)
+        if: inputs.world != 'rated'
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm install --no-save --no-audit --no-fund playwright@1.64.1
+          npx playwright install --with-deps chromium
+      - name: Both arms, the same seeds
+        run: |
+          set -o pipefail
+          out="$RUNNER_TEMP/out" && mkdir -p "$out"
+          worlds=$([ "$WORLD" = both ] && echo "app rated" || echo "$WORLD")
+          for w in $worlds; do
+            n=$([ "$w" = app ] && echo "$QUESTIONS" || echo "$ANSWERS")
+            for side in before after; do
+              echo "::group::$w world, $side"
+              # shellcheck disable=SC2086 # ARGS: several options, checked above
+              (cd "$side" && NODE_PATH="$RUNNER_TEMP/pw/node_modules" node tools/learnsim.js --world "$w" --subject "$SUBJECT" \
+                --seeds "$SEEDS" --questions "$n" --workers 4 $ARGS --out "$out/$w-$side.json")
+              echo "::endgroup::"
+            done
+          done
+      - name: The paired comparison (tools/learncmp.js of the version with the change)
+        run: |
+          out="$RUNNER_TEMP/out"
+          for w in app rated; do
+            [ -f "$out/$w-after.json" ] || continue
+            {
+              echo "## $w world: $BEFORE -> $AFTER ($SUBJECT, $SEEDS seeds)"
+              echo
+              node after/tools/learncmp.js "$out/$w-before.json" "$out/$w-after.json" --looks "$LOOKS" ${PRIMARY:+--primary "$PRIMARY"}
+              echo
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+          done
