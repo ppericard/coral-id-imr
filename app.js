@@ -501,10 +501,12 @@ function build() {
 // circle-1 species, the genus being the first word of the PDF name (no grouping invented, rule C2), inside its family
 // (fish.json families: the book's; Pierre, 2026-11-06). Its record, beside the families in FISH.gen under its id
 // 'g:' + genus (ids and names never meet): rank 'genus' (its questions and typed answers stay among genera: model.js
-// sameRank), its family (parent: it opens once the family is at Advanced, the set's units below), its family's group as
-// its form (easy wrong choices from other groups first), its sibling genera as look-alikes (the traps, as the species
-// level's "same family" choices), the IMR tag (imr: the IMR sub-entry naming it, Chromis, Anemonefish, Bannerfish...)
-// with its cues when IMR has them, its species in the game (scientific and common names, commonness order) and its
+// sameRank), its family (parent: it opens once the family is at Advanced, or Open Water for an IMR genus of an IMR player:
+// sciOpen, below), its family's group as its form (easy wrong choices from other groups first), its sibling genera as
+// look-alikes (the traps, as the species level's "same family" choices), the IMR tag (imr: the IMR sub-entry naming it,
+// Chromis, Anemonefish, Bannerfish...) with its cues and slides when IMR has them, imrg when that sub-entry names this genus
+// alone (an IMR genus: Chromis, Anemonefish for Amphiprion, Unicornfish for Naso; not Surgeonfish, which names three
+// genera: Pierre, 2026-11-08, Q220), its species in the game (scientific and common names, commonness order) and its
 // family's photos of those species. FISH.sci: every genus, in the families' order.
 function fishGenera(X, F) {
   const sp = new Map((F.species || []).map(s => [s.id, s])),
@@ -522,6 +524,7 @@ function fishGenera(X, F) {
           g = G.name,
           set = new Set(L.map(s => s.id)),
           cues = G.cues && G.cues.length ? G.cues : null,
+          sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
           wide = E.views.wide.filter(p => set.has(p.sp));
         X.gen[id] = {
           id,
@@ -532,6 +535,7 @@ function fishGenera(X, F) {
           fam: E.name + (E.fam ? ' · ' + E.fam : ''), // the card's and the feedback's family line names its family
           wfam: [],
           imrName: G.imr || '', // the IMR tag
+          imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
           fish: 1,
           circle: 1,
           group: E.group,
@@ -541,7 +545,7 @@ function fishGenera(X, F) {
           lk: [],
           lsrc: {},
           qt: cues,
-          tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + ')' : 'Its species here',
+          tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, then the count.
           sum:
             (L.length > 3 ? 'Most met here: ' : '') +
@@ -570,6 +574,19 @@ function fishGenera(X, F) {
   // The species' names by id (fish.json species, the PDF name), for the species shown that each answer logs (UNITS species).
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
   return X;
+}
+// The scientific genera in play (the sci set, UNITS fish sets), from L (FISH.sci) by their family's score (score: genScore)
+// and whether met (met: introduced; a genus met stays in): units, offered to everyone (Pierre, 2026-11-08: back at
+// Advanced, LV_AT[1], for the offer and a family's genera; Q205 had it at Open Water), each genus once its family is at
+// Advanced; auto, for a player at IMR (imr: model.js imrSaid), the IMR genera (imrg) without the offer, each once its family
+// is at Open Water (LV_AT[0]; Pierre, 2026-11-08, Q219), its card then, at the opening's usual pace (model.js openPick,
+// openPace). An IMR player's IMR genera are never in units: they come by themselves, whatever the offer's answer.
+// hand: the set turned on by hand before any family was at Advanced (Q.sciH, bonusSet; Pierre, 2026-11-08, Q240): the
+// units from their family's Open Water, as Q205 had them.
+function sciOpen(L, score, met, imr, hand) {
+  const at = (n, x) => met(n) || score(GX(n).parent) >= x,
+    auto = imr ? L.filter(n => GX(n).imrg && at(n, LV_AT[0])) : [];
+  return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, hand ? LV_AT[0] : LV_AT[1]))};
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
@@ -1455,6 +1472,10 @@ const UNITS = {
         'The fish families follow the reef fish ID book (References); the cues, the look-alikes and IMR’s names come from the IMR fish presentation.',
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
     },
+    // No level-change card (model.js startDue, the fallback cards at 40 and 60 answers): Pierre, 2026-11-08, "on ne fasse
+    // pas les propositions de changement de niveau sur les poissons tant qu'on n'a pas mieux calibré" (it moved two IMR
+    // players who are not experts to "I know reef fish well"). The answer's variables and the window are kept as they are.
+    startFb: false,
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
     core: () => (FISH ? FISH.c1 : []),
     gate: fishGate,
@@ -1513,23 +1534,42 @@ const UNITS = {
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
-      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at Open
-      // Water (Pierre, 2026-11-07, Q205; it was Advanced, far too late under the cautious bar of #646); on, a family's
-      // genera join the game when the family reaches Open Water, then open one at a time like any unit (a genus met stays in). all: every genus,
-      // for setOf. Not in the progress yet (the global fish score, FISH_PATH "My progress (fish)", is not built).
+      // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at
+      // Advanced (Pierre, 2026-11-08, back from Q205's Open Water: "too early, too strong"); on, a family's genera join the
+      // game when the family reaches Advanced, then open one at a time like any unit (a genus met stays in). auto: a
+      // player at IMR meets the IMR genera without the offer, from their family's Open Water (sciOpen; Q219, Q220),
+      // whatever the set's state. all: every genus, for setOf. Not in the progress yet (the global fish score, FISH_PATH
+      // "My progress (fish)", is not built).
       {
         k: 'sci',
         all: () => (FISH ? FISH.sci || [] : []),
         units: () =>
-          (FISH ? FISH.sci || [] : []).filter(n => typeof genScore === 'function' && (introduced(n) || genScore(GX(n).parent) >= LV_AT[0])),
-        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[0]),
+          FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid(), !!Q.sciH).units : [],
+        auto: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid()).auto : []),
+        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
+        // rv: the rules a choice is made under (Q.sciV, synced with the choice): 1 since the offer moved back to Advanced
+        // (2026-11-08). A player who turned them on before (Q.sci true, no sciV) gets the back card once (quiz.js
+        // bonusBackShow; Pierre, 2026-11-08): close them, the IMR genera kept for an IMR player, or keep them; either
+        // answer is a choice made under rv 1, so it is never asked again, on any device.
+        rv: 1,
+        back: {
+          title: 'Keep the scientific genus names?',
+          body: 'Scientific genus names now come later, once a family is at Advanced. You can close them for now: your progress on them is kept.',
+          imr: 'The genera of the IMR course stay in the game.',
+          no: 'Close them for now',
+          yes: 'Keep them'
+        },
         page: false, // not on the families page
         kick: 'Scientific names',
         title: () => 'Scientific genus names?',
-        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Open Water on it.',
+        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.',
         note: "⚙ Settings, Scientific names, any time. They don't count in your progress yet.",
         tag: 'Scientific genus',
         name: 'Scientific names',
+        // My progress's switch while off (progress.js; Pierre, 2026-11-08: the offer at Advanced never locks the setting),
+        // and what it says once on.
+        row: 'Turn on scientific names',
+        onToast: () => `Scientific names on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
         card: ''
       }
     ]
@@ -1547,8 +1587,9 @@ if (Q.bon === undefined && Q.bu > 1) {
   Q.bon = true;
   saveQ();
 }
-// The units of the opt-in sets the player has on.
-const bonusList = () => SETS().flatMap(S => (Q[S.k] ? S.units() : []));
+// The units of the opt-in sets the player has on, and those a set brings without asking (its auto: an IMR player's IMR
+// genera), each once.
+const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...(S.auto ? S.auto() : [])]))];
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 opened by itself, 2026-11-06 to 2026-11-07, keep it: Pierre,
 // 2026-11-07). A unit of a part that is off never opens (model.js mayOpen); one already open stays open.
@@ -1583,9 +1624,14 @@ const showBon = () =>
     .querySelectorAll('[data-optin] button')
     .forEach(b => b.setAttribute('aria-pressed', String((b.dataset.on === '1') === !!Q[b.closest('[data-optin]').dataset.optin])));
 // Q[k + 'T']: when the choice was made, so the latest choice wins across devices (sync.js mergeSaved; Codex review #371).
-function bonusSet(on, k = SETS()[0].k) {
+// Q[k + 'V']: the set's rules version (rv) the choice was made under (the back card, quiz.js bonusBackDue). hand: turned
+// on or off by the player's own switch (⚙, My progress), not a card; Q[k + 'H']: on by hand while not due yet (no family
+// at Advanced: the fish genera then come by their family's Open Water, app.js sciOpen; Pierre, 2026-11-08, Q240).
+function bonusSet(on, k = SETS()[0].k, hand) {
+  const S = SETS().find(x => x.k === k);
   Q[k] = !!on;
   Q[k + 'T'] = Date.now();
+  if (S && S.rv) ((Q[k + 'V'] = S.rv), (Q[k + 'H'] = !!(on && hand && !S.due())));
   saveQ();
   showBon();
   if (typeof syncSoon === 'function') syncSoon();
@@ -1593,7 +1639,7 @@ function bonusSet(on, k = SETS()[0].k) {
 }
 document
   .querySelectorAll('[data-optin] button')
-  .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin)));
+  .forEach(b => (b.onclick = () => bonusSet(b.dataset.on === '1', b.closest('[data-optin]').dataset.optin, true)));
 showBon();
 // The warning on Millepora's first-meeting card and genus sheet (Pierre, 2026-11-02).
 const BENTHIC_NOTE =
@@ -2331,7 +2377,7 @@ document.getElementById('signb').onclick = e => {
         delete Q.bu;
         delete Q.ba;
         // the bonus genera (fish: the scientific genera, circle 3) are offered again once due
-        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A'].forEach(x => delete Q[k + x]));
+        SUBJ.optin.forEach(k => ['', 'T', 'N', 'A', 'V', 'H'].forEach(x => delete Q[k + x]));
         saveQ();
         store.set(sKey('reset'), new Date().toISOString());
         introReset();
@@ -2604,6 +2650,9 @@ Promise.all([
     RAW = d;
     CUR = c;
     build();
+    // The quiz tier already in (a link straight to its page asks for it at start-up): its rebuild of a non-replayed
+    // subject's old records, which waits for the data (model.js domRecalcAll).
+    if (typeof domRecalcAll === 'function') domRecalcAll();
     showSubj();
     route();
     started();

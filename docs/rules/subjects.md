@@ -42,7 +42,9 @@ groups), credited to the book; the citation is written once, in the key, never c
 ARCHITECTURE.md "Fish content", "Identification groups"). **Every fish family added to any circle must attach to one of
 the key's groups**: `tools/build_fish.py` fails, naming the node, when a node in the game has no group or spans two
 without an explicit `keyGroup` (null with `keyWhy` only while a node waits for Pierre's decision; the build lists it).
+A label the book does not print is added to a group only by Pierre's decision, its note saying so (the thresher sharks
+in Sharks & Rays, 2026-11-08, Q232).
 The keys are data (`tools/fish_source.json` `keys`, the one in force `deploy.key`): a deployment in another region uses
 that region's key, a region with no key has no such rule, and adding one needs no code change.
 *Why:* the book's index is the reference in every dive centre, so nobody questions the groups.
-*Source:* Pierre, 2026-11-04.
+*Source:* Pierre, 2026-11-04; a label added by his decision, 2026-11-08 (Q232).

@@ -62,7 +62,8 @@ class Names:
     only when no species has it as one of those (WoRMS lists Chaetodon lunulatus as a synonym of C. lunula)."""
 
     def __init__(self, fish):
-        self.ref = fish.get("ref", {})
+        # str keys: fish.json read back has them, the full build's fresh tree has int AphiaIDs (its synonyms were missed).
+        self.ref = {str(k): v for k, v in fish.get("ref", {}).items()}
         self.primary = {}
         for s in fish["species"]:
             for k in self.prim(s):
