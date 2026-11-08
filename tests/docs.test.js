@@ -271,13 +271,14 @@ const LIVING_DOCS = TEXT_FILES.filter(
   f => /\.md$/.test(f) && !f.startsWith('docs' + path.sep + 'reviews' + path.sep) && !f.startsWith('.github' + path.sep)
 );
 // Fenced blocks and code spans hold examples, not links.
-const prose = src => src.replace(/^(```|~~~)[\s\S]*?^\1/gm, '').replace(/`[^`\n]*`/g, '');
+const fenceless = src => src.replace(/^(```|~~~)[\s\S]*?^\1/gm, ''),
+  prose = src => fenceless(src).replace(/`[^`\n]*`/g, '');
 // GitHub's heading anchors: lower case, punctuation dropped, each space a hyphen, a repeated heading suffixed -1, -2…
 const anchorsOf = (() => {
   const memo = new Map();
   return f => {
     if (memo.has(f)) return memo.get(f);
-    const src = prose(read(f)),
+    const src = fenceless(read(f)), // a heading's code keeps its text in GitHub's anchors (Codex review #741)
       seen = new Map(),
       out = new Set();
     for (const m of src.matchAll(/^#{1,6}[ \t]+(.*)$/gm)) {
@@ -298,6 +299,14 @@ const anchorsOf = (() => {
     return out;
   };
 })();
+
+test("heading anchors follow GitHub's: code in a heading keeps its text", () => {
+  const a = anchorsOf(path.join('docs', 'ARCHITECTURE.md'));
+  // ### Service worker (`sw.js`) and ### Fish photos (the sources and the area rule) (Codex review #741).
+  assert.ok(a.has('service-worker-swjs'), 'the anchor of a heading with inline code');
+  assert.ok(!a.has('service-worker-'), 'inline code dropped from a heading anchor');
+  assert.ok(a.has('fish-photos-the-sources-and-the-area-rule'));
+});
 
 test('the living docs: every relative link and anchor resolves', () => {
   const bad = [];
