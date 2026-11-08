@@ -152,6 +152,14 @@
   "fish-s160-cand-454682409": {
    "code": "p1g0sl14",
    "keep": "best"
+  },
+  "fish-s160-cand-618482734": {
+   "code": "o1g2sss2",
+   "keep": "best"
+  },
+  "fish-s160-cand-618482735": {
+   "code": "o1g2sss2",
+   "keep": "dup"
   }
  }
 }

@@ -46,6 +46,7 @@ let EXAMQ = null; // the genus whose exam question is on screen (set by question
 // TYPEDQ: the typed question on screen and what was typed ({t: genus asked, m: the match or null, text}), read by answer.
 let TYPEDQ = null,
   TYPEN = null;
+const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind rj)
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
 // For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
 const typeNames = () => {
@@ -60,14 +61,35 @@ const typeMatch = (text, rk = '') =>
     text,
     UNITS[SUBJ.id].norm
   );
+// What a typed text that is no unit of rank rk names instead (core.js typeElse): the rank word of another unit it names
+// ('family'), 'common' for a common name, '' for nothing. Only on a question below the subject's rank (a fish scientific
+// genus), from the subject's own lists (UNITS typeOther); none for a subject without them.
+const typeKind = (text, rk) => {
+  const U = UNITS[SUBJ.id],
+    x = rk && U.typeOther ? U.typeOther(rk) : null;
+  if (!x) return '';
+  return typeElse(
+    text,
+    typeNames().filter(o => rankOf(o.g) !== rk),
+    {...x, rank: g => rankOf(g) || SUBJ.rank, own: g => (GX(g) || {}).imrName},
+    U.norm
+  );
+};
+// The nudge for a text typeKind reads (Pierre, 2026-11-08, Q237): it says what kind of name was typed and what the
+// question needs, nothing more: never a scientific name, and the same whether it names the photo's fish or another.
+const typeKindMsg = (text, kind, one) =>
+  `“${text}” is ${kind === 'common' ? 'a common name' : 'a ' + kind}: this question needs a ${one}'s scientific name.`;
 // S: the subject the form names and reads (the quiz's own; Tools › Type the genus is the corals', whatever is on screen).
 const typeForm = (S = SUBJ) => `<form class="tyform" autocomplete="off">
     <label for="tyin">${S.one[0].toUpperCase() + S.one.slice(1)}</label>
     <input id="tyin" name="genus" type="text" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="done" placeholder="Type the ${S.one}">
     <div class="tybtns"><button type="submit" class="next">Check</button><button type="button" class="next sec" data-idk>I don't know</button></div>
     <p class="tymsg" aria-live="polite"></p></form>`;
-// Binds a typed form: done(m, text, sp) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
-// word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it.
+// Binds a typed form: done(m, text, sp, rj) once answered, m the genus read ({g, old, exact}) or null for "I don't know". A
+// word that is no genus (even with the tolerance), or as close to two, is no answer: the player is asked to check it (on
+// a question below the subject's rank, a common name or another rank's name is told so: typeKind, typeKindMsg). rj: the
+// texts refused that way before the answer, in order (at most TYPEDQ_RJ, each cut to 40 characters), logged with it
+// (Pierre, 2026-11-08, Q237: "c'est essentiel. Et c'est vrai pour tout le jeu, partout").
 // After the answer the field is locked; after "I don't know" it is emptied (a word rejected earlier is no answer).
 // rk, one: the rank of the unit asked and its word ("genus" for a fish scientific genus): see typeMatch.
 // o.t, the unit asked: the spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"; core.js typeVerdict). A
@@ -84,6 +106,7 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     idk = form.querySelector('[data-idk]');
   let over = false,
     first = null; // {m, text}: the close reading, while the player retypes it
+  const rj = []; // the texts refused, in order (done's rj)
   const end = (m, text, sp) => {
     over = true;
     msg.textContent = '';
@@ -92,7 +115,7 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     inp.disabled = true;
     form.querySelectorAll('button').forEach(b => (b.disabled = true));
     inp.blur(); // the phone's keyboard closes, so the feedback is in view
-    done(m, text, sp);
+    done(m, text, sp, rj.slice());
   };
   const read = text => (S === SUBJ ? typeMatch(text, rk) : inSubject(S.id, () => typeMatch(text, rk)));
   form.onsubmit = e => {
@@ -103,7 +126,10 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
     if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t) === 'exact' ? 1 : 0, text});
     const m = read(text);
-    if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
+    if (!m || m.near) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
+    const kind = !m && S === SUBJ ? typeKind(text, rk) : '';
+    if (kind) msg.textContent = typeKindMsg(text, kind, one);
+    else if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else if (o.t && typeVerdict(m, o.t) === 'close') {
       first = {m, text};
@@ -169,6 +195,16 @@ document.addEventListener('visibilitychange', () => {
 });
 const qclockRead = () =>
   QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000)) * 10) / 10;
+// A new question's clock (question(), winkShow): stopped and not enlarged; the first of its photos to be in starts it,
+// whichever (Codex review #370: one cached or quicker than the first in the page would otherwise be looked at off the
+// clock).
+function qclockArm() {
+  const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
+    ims = [...$v.querySelectorAll('.qstage .qph img')];
+  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
+  if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
+  else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
+}
 function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
   TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
@@ -192,13 +228,7 @@ function question(cur, target, choices, prompt, set, kq) {
   QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
   bindQuizNav(cur);
   fitStage();
-  const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
-    ims = [...$v.querySelectorAll('.qstage .qph img')];
-  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
-  // The first of the question's photos to be in starts it, whichever (Codex review #370: one cached or quicker than the
-  // first in the page would otherwise be looked at off the clock).
-  if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
-  else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
+  qclockArm();
   const hb = document.getElementById('hintb');
   const showHint = () => {
     if (hintShown || !set.hint) return;
@@ -264,8 +294,8 @@ function question(cur, target, choices, prompt, set, kq) {
   if (tf)
     typeBind(
       tf,
-      (m, text, sp) => {
-        Object.assign(TYPEDQ || {}, {m, text, sp});
+      (m, text, sp, rj) => {
+        Object.assign(TYPEDQ || {}, {m, text, sp, rj});
         go(m ? m.g : '');
       },
       SUBJ,
@@ -621,6 +651,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // (Code.gs logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
     ...(tq ? {ty: String(tq.text || '').slice(0, 40)} : {}),
     ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {}),
+    // The texts refused before it (typeBind rj: no unit, two as close, a common name or another rank's name), in order
+    // (Pierre, 2026-11-08, Q237): sheet v100 keeps them (Rejected tries); an older script ignores the field (Code.gs
+    // logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
+    ...(tq && tq.rj && tq.rj.length ? {rj: tq.rj.slice(0, TYPEDQ_RJ)} : {}),
     // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
     // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's (SUBJECTS
     // rank). An older script ignores these fields and would file the answer as a coral one: the answers of a subject the
@@ -647,13 +681,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // Every subject's answers go to the sheet (Pierre, 2026-11-06: fish answers logged from the first second). A subject the
   // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
   // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
-  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
-  else if (SYNC_URL) {
-    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
-    // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
-    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
-    anonSoon();
-  }
+  logAnswer(ans);
   save();
   // Achievements on the photos seen before answering: a corallites hint left closed is not one.
   // progress.js (tier 4, index.html) may come after the first answers of a first visit: its start-up check (achCheck)
@@ -789,11 +817,24 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
     ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}${vs}
     ${more}`;
 }
+// An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
+// twice or lost offline; not signed in, it waits on this device (LOG0) and also goes to the sheet anonymously (Pierre,
+// 2026-11-01, see sendAnon).
+function logAnswer(ans) {
+  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
+  else if (SYNC_URL) {
+    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
+    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
+    anonSoon();
+  }
+}
 // Winks (fish.json wink, Pierre 2026-11-03): an unmistakable fish, fun to meet (the whale shark, the pelagic thresher),
 // as a rare surprise card in the photo quiz: one photo, its name among 3 deliberately absurd choices taken from our own
-// entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no answer
-// logged, no photo rating). For every player of a subject that has winks (app.js UNITS winks: fish), from circle 1 on
-// (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), whatever opt-in circles are on.
+// entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no photo rating,
+// no statistic): its answer is logged like any other (Pierre, 2026-11-08: "il faut l'enregistrer bien sûr"), marked by
+// its mode (core.js WINK_MODE: winkAnswer), which every reader of the log leaves out. For every player of a subject that
+// has winks (app.js UNITS winks: fish), from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the people working on
+// the IMR course), whatever opt-in circles are on.
 // Rare, late, and once per player (Pierre, 2026-11-06: after his second fish question was the whale shark, the first only
 // after at least 300 fish answers, the next after about 600-700; then, 13:31: each surprise once per player, and that's
 // all, across devices): the winks in fish.json order (whale shark, thresher sharks), wink i due at the first photo-quiz
@@ -842,6 +883,34 @@ function winkPhoto(g) {
     L = g.views.wide.filter(p => want.has(fishPid(p.f)));
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
 }
+// A surprise card's answer for the log (logAnswer), the fields of a game answer (quiz.js answer) that say what was shown
+// and answered: the wink unit (g, tn), its photo (ph, sp), the choice made (a, ta) among the four (ch: renamed ids,
+// core.js renamedId: an absurd choice names an old fish entry, t01 the Damselfishes), right or wrong, seconds and
+// enlarged (QCLOCK), the device's UTC offset, subject and rank; mode WINK_MODE; nothing scored (no e, th, nw, sc). Sent
+// only to a sheet whose readers leave it out (core.js logOk, WINK_SHEET), queued until then (rule D4).
+function winkAnswer(n, id, ids, p, tm) {
+  const r = x => renamedId(SUBJ, x),
+    a = r(id),
+    sp = speciesShown([p]);
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    t: new Date().toISOString(),
+    g: n,
+    a,
+    ok: id === n ? 1 : 0,
+    m: WINK_MODE,
+    ph: p.f || '',
+    ch: ids.map(r).join(' '),
+    ...(typeof tm.rt === 'number' ? {rt: tm.rt} : {}),
+    zm: tm.zm ? 1 : 0,
+    tz: -new Date().getTimezoneOffset(),
+    s: SUBJ.id,
+    rk: rankOf(n) || SUBJ.rank,
+    ...(unitName(n) ? {tn: unitName(n)} : {}),
+    ...(unitName(a) ? {ta: unitName(a)} : {}),
+    ...(sp ? {sp} : {})
+  };
+}
 function winkShow({n}) {
   const g = GX(n),
     w = g.wink,
@@ -860,11 +929,16 @@ function winkShow({n}) {
       <div id="after"></div>
     </aside></div>`;
   fitStage();
+  qclockArm();
   let done = false;
   const go = id => {
     if (done) return;
     done = true;
     const good = id === n;
+    const tm = {rt: qclockRead(), zm: QCLOCK.zm},
+      ids = ch.map(([x]) => x);
+    logAnswer(winkAnswer(n, id, ids, p, tm));
+    if (typeof syncSoon === 'function') syncSoon(); // signed in: the account record keeps the queued answer, sent soon
     $v.querySelectorAll('[data-w]').forEach(b => {
       b.disabled = true;
       if (b.dataset.w === n) b.classList.add('ok', ...(good ? ['cheer'] : []));
@@ -881,7 +955,10 @@ function winkShow({n}) {
     nb.onclick = route;
   };
   $v.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => go(b.dataset.w)));
-  $v.querySelector('.zoom').onclick = () => zoom([{...p, genus: n}], 0, {blind: () => !done});
+  $v.querySelector('.zoom').onclick = () => {
+    if (!done) QCLOCK.zm = 1;
+    zoom([{...p, genus: n}], 0, {blind: () => !done});
+  };
   const keys = e => {
     if (!document.body.contains($v.querySelector('.q.wink'))) return document.removeEventListener('keydown', keys);
     if (!lb.hidden || e.target.closest('input, textarea, select') || document.getElementById('tour')) return;
@@ -965,7 +1042,7 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
   let seed = [];
   if (!raw)
     try {
-      seed = (SYNC && SYNC.log) || store.get(LOG0, []);
+      seed = ((SYNC && SYNC.log) || store.get(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
     } catch (e) {}
   return tipsInit(raw, seed);
 };

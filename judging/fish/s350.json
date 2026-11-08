@@ -103,6 +103,76 @@
   "fish-s350-cand-625749695": {
    "code": "d1g1sm1c2",
    "keep": "best"
+  },
+  "fish-s350-cand-650675147": {
+   "code": "p1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s350-cand-603367622": {
+   "code": "p1n0sl1j2",
+   "keep": "best"
+  },
+  "fish-s350-cand-625565439": {
+   "code": "o1g1sm1jc1",
+   "keep": "best",
+   "note": "A juvenile hidden among a sea pen and crinoids; hard to find at all."
+  },
+  "fish-s350-cand-594819065": {
+   "code": "p1n0sm1j2",
+   "keep": "best"
+  },
+  "fish-s350-cand-617805777": {
+   "code": "o0d1sm11",
+   "keep": "best",
+   "note": "The fish is under a coral overhang at the bottom edge; hard to find."
+  },
+  "fish-s350-cand-662484903": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s350-cand-605360323": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s350-cand-370248304": {
+   "code": "o1g3sl12",
+   "keep": "best"
+  },
+  "fish-s350-cand-663102585": {
+   "code": "o1g1ss11",
+   "keep": "best"
+  },
+  "fish-s350-cand-669986138": {
+   "code": "o1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s350-cand-669986149": {
+   "code": "o1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s350-cand-669986438": {
+   "code": "o1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s350-cand-625635900": {
+   "code": "o1g3sm11",
+   "keep": "best"
+  },
+  "fish-s350-cand-624730271": {
+   "code": "o1g2mm11",
+   "keep": "best"
+  },
+  "fish-s350-cand-624730270": {
+   "code": "o1g2mm11",
+   "keep": "dup"
+  },
+  "fish-s350-cand-606369144": {
+   "code": "h1g2sl12",
+   "keep": "best"
+  },
+  "fish-s350-cand-745333971": {
+   "code": "o1d1sm1c1",
+   "keep": "best"
   }
  }
 }

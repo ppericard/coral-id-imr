@@ -3295,6 +3295,50 @@ td.cov-c .cov-off {
 .adm-ubar .adm-danger {
   margin-left: auto;
 }
+/* The starting answer per subject (admin.js startBlock, sheet v98): a line of its own under the bar's tools, its
+   history below it; the answers' segmented choice wraps, and stacks on phones (their words are long). */
+.adm-ubar .adm-ustart {
+  flex: 1 0 100%;
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.adm-ustart-s > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.adm-ustart .adm-sseg.adm-qseg {
+  flex-wrap: wrap;
+}
+.adm-ustart-h {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.adm-ustart-msg {
+  color: var(--ink);
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.adm-ustart-msg.bad {
+  color: var(--bad);
+}
+.adm-ustart .adm-sseg button[disabled] {
+  cursor: default;
+}
+@media (max-width: 599px) {
+  .adm-ustart .adm-sseg.adm-qseg {
+    flex: 1 0 100%;
+    flex-direction: column;
+    border-radius: var(--r);
+  }
+  .adm-ustart .adm-sseg button + button {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
 /* Delete's two named choices (sheet v55, Q89: no default), on the right of the bar where Delete… was. */
 .adm-ubar .adm-udel {
   display: flex;

@@ -11,6 +11,22 @@
 // itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
 // leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
 // device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
+// A subject with a global score (core.js SUBJECTS score: the fish) shows its components under the name, from the same
+// computation as the ring's % (model.js headScore, core.js treeScore; FISH_PATH "My progress (fish)": three bars under the
+// headline): the families, the species by common name and the species by scientific name (the genus credit included).
+const scoreBars = H =>
+  H
+    ? `<div class="pbars" role="list" aria-label="Your progress in parts">${[
+        ['Families', H.entries],
+        ['Common names', H.common],
+        ['Scientific names', H.S]
+      ]
+        .map(([t, x]) => {
+          const v = Math.round(100 * x);
+          return `<span role="listitem" title="${t}: ${v}%"><small>${t}</small><span class="bar"><span style="width:${v}%"></span></span><b>${v}%</b></span>`;
+        })
+        .join('')}</div>`
+    : '';
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -29,7 +45,7 @@ function badge(ring, pct, sub) {
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
             .join('')}</a>`
         : ''
-    }</span></div></div>`;
+    }</span>${scoreBars(headScore())}</div></div>`;
 }
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
 // tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
@@ -165,7 +181,7 @@ function quizBoard() {
   <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list))}<div class="pgwrap"></div>
+  <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
     <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
@@ -303,7 +319,7 @@ const unlockText = (list = slateGenera(), html = false) => {
 function showProg() {
   if (!DATA) return;
   const n = slateGenera();
-  const pt = `${progPct(n)}%`;
+  const pt = `${headPct(n)}%`;
   document.getElementById('progn').textContent = pt;
   const p2 = document.getElementById('progn2');
   if (p2) p2.textContent = pt;
@@ -311,7 +327,7 @@ function showProg() {
   const pill = document.getElementById('prog'),
     out = !!SYNC_URL && !SYNC;
   pill.querySelector('.pl').textContent = 'Progress';
-  pill.style.setProperty('--pp', progPct(n));
+  pill.style.setProperty('--pp', headPct(n));
   // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
   // "Not saved" pill beside it already says so in words (design re-review p9).
   pill.title = `${
@@ -518,9 +534,13 @@ const ACHK = 'reefid-sync-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
 // earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
 // never comes back from a copy earned before (core.js mergeAch).
-// Version of the record (ACH_V): a record from before the full recount (2026-11-01, mastery exam) brings its feats
-// (best run, corallites, hard photo) but not its achievements, which were counted on the old rules.
-const ACH_V = 2;
+// Version of the record (ACH_V): a record from before the last full recount brings its feats (best run, corallites, hard
+// photo) but not its achievements, which were counted on older rules (core.js mergeAch), so a device not updated yet
+// never brings back one the recount took away. 2: the mastery exam (2026-11-01). 3: the fish achievements around the
+// global score (Pierre, 2026-11-08, Q259-Q264: fpct25 retired, every fish % one on the score, new ones; "il faut
+// recalculer ... leur succès actuel"), every subject recounted (achMigrate), silently (Q264: "le retrait il est fait en
+// silence").
+const ACH_V = 3;
 function achMerge(json) {
   try {
     const ra = JSON.parse(json || 'null');
@@ -565,15 +585,20 @@ function achRecheck() {
   return out;
 }
 const achList = () => slateGenera();
-// The subject's core units (UNITS core: the IMR course's fish families) and its opt-in sets (UNITS sets: the scientific
-// genera), for the achievements that read them (core.js FISH_ACH): met and learned in the core, units at Open Water or
-// above in each set.
+// The subject's core units (UNITS core: the IMR course's fish families), its circles (UNITS circles: the fish families of
+// circles 1, 2 and 3) and its opt-in sets (UNITS sets: the scientific genera), for the achievements that read them
+// (core.js FISH_ACH): met, at Advanced or above and learned in the core; at Advanced or above in each circle; units at
+// Open Water or above (sets) and at Advanced or above (setsAdv) in each set. pct: the subject's global score when it has
+// one (core.js SUBJECTS score, treeScore over UNITS tree: Q259, the fish % achievements on it), read from the device's
+// progress whatever the sheet's version (the achievements need nothing from the sheet), else the headline %.
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
     st = L.map(lvStep),
     G = P[LEVEL],
     U = UNITS[SUBJ.id],
-    C = U.core ? U.core() : [];
+    C = U.core ? U.core() : [],
+    T = SUBJ.score && U.tree ? U.tree() : null,
+    at = (list, k) => list.filter(n => lvStep(n) >= k).length;
   const groups = {};
   L.forEach(n => (groups[shownGroup(n) || 0] = groups[shownGroup(n) || 0] || []).push(n));
   return {
@@ -581,7 +606,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     met: st.filter(x => x >= 1).length,
     q: [2, 3, 4].map(k => st.filter(x => x >= k).length),
     learned: st.filter(x => x >= 5).length,
-    pct: progPct(L),
+    pct: T ? treeScore(P, T, SUBJ.score).pct : headPct(L),
     streak: A._best || 0,
     duel: L.some(n => (P[n] || {}).du),
     cor: !!A._cor,
@@ -590,33 +615,78 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusList().filter(introduced).length,
-    core: {total: C.length, met: C.filter(n => lvStep(n) >= 1).length, learned: C.filter(n => lvStep(n) >= 5).length},
-    sets: Object.fromEntries((U.sets || []).map(S => [S.k, (S.all ? S.all() : S.units()).filter(n => lvStep(n) >= 2).length])),
+    core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
+    circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
+    sets: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 2)])),
+    setsAdv: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 3)])),
     basics: !!A._basics,
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
 }
-// Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
-// locking again those unlocked when they should not have been"): every achievement is tested again on the current
-// progress with the current rules; those still met keep their date, the others go. Feats (runs, corallites, hard photo)
-// stay. Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows.
-// Each subject with achievements (core.js SUBJECTS ach) checks its own list (SUBJECTS achs) on its own progress; a subject
-// without any checks the first one's. All live in the one record (ACHK) under ids of their own.
-const ACHS = () => SUBJECTS.find(x => x.ach).id;
+// Full recount, once per device and record version (Pierre, 2026-11-01: "redo the calculation cleanly for everyone,
+// achievements too, locking again those unlocked when they should not have been"; 2026-11-08: "recalculer tous les
+// progrès ... et ensuite recalculer leurs succès aussi"): every achievement of every subject is tested again on that
+// subject's current progress with the current rules (core.js achRecount); those still met keep their date, the others
+// go, and so do the ids no list holds any more (fish fpct25, Q259). Feats (runs, corallites, hard photo, removals) stay.
+// Silent (Q264). Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows. Each subject with
+// achievements (core.js SUBJECTS ach) checks its own list (SUBJECTS achs) on its own progress (inSubject); the
+// Contributions once, with the first. All live in the one record (ACHK) under ids of their own.
+// A subject whose data is not in yet (the fish, lazy-loaded: app.js fishLoad; its slate empty) cannot be tested: its
+// achievements wait on this device (ACHOLD, {subject: {id: time}}, outside the synced record, so nothing unchecked
+// travels) and are recounted once its data comes (achPending); until then they are out of the record, never shown (its
+// pages need its data). Every such subject waits, even with nothing held, so what its progress already meets comes in
+// silently too (Codex review #734). Before a subject is tested, its records still under the former moving average are
+// rebuilt (model.js domRecalcAll: a short visit, inSubject, skips it; Codex review #734), so nothing is granted from
+// obsolete bars.
+const ACHS = () => SUBJECTS.find(x => x.ach).id,
+  ACHOLD = 'reefid-ach-old',
+  // The shared data first (app.js DATA, set by build: the levels read it through GX; Codex review #734: a direct Fish link
+  // can bring the fish files before data.json), then the subject's own (its slate).
+  achReady = () =>
+    !!(typeof DATA === 'object' && DATA && DATA.gen) &&
+    achList().length > 0 &&
+    (typeof domRecalcAll !== 'function' || (domRecalcAll(), true)),
+  achOwn = S => S.achs().filter(a => a.kind !== 'contrib');
 function achMigrate() {
-  if (!SUBJ.ach) return inSubject(ACHS(), achMigrate);
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
-  const B = {_v: ACH_V};
+  const B = {_v: ACH_V},
+    t = Date.now(),
+    held = {};
   if (A) Object.keys(A).forEach(k => k[0] === '_' && k !== '_v' && A[k] && (B[k] = A[k])); // the feats (_run, _best, _cor, _hard, _gone, _basics, _fb)
-  const snap = achSnap(B),
-    t = Date.now();
-  // Another subject's achievements in an old record were never counted there (fish had none before): only this one's.
-  achTests()
-    .filter(a => a.test(snap))
-    .forEach(a => (B[a.id] = (A && A[a.id]) || t));
+  SUBJECTS.filter(S => S.ach).forEach((S, i) =>
+    inSubject(S.id, () => {
+      const list = [...achOwn(S), ...(i ? [] : ACH_CONTRIB)];
+      if (achReady()) return achRecount(B, A, list, achSnap(B), t);
+      held[S.id] = Object.fromEntries(list.filter(a => A && A[a.id]).map(a => [a.id, A[a.id]]));
+    })
+  );
   store.set(ACHK, B);
+  store.set(ACHOLD, Object.keys(held).length ? held : null);
   if (SYNC && A) syncSoon();
+}
+// The recount of a subject that waited for its data (achMigrate): once it is in (app.js fishLoad: every subject waiting;
+// achCheck: the one it checks, never a visit to another at each answer), its achievements are tested on its progress,
+// each met one keeping the earliest of its dates (core.js achRecount), the others dropped. Silent, as the recount.
+function achPending(only) {
+  const H = store.get(ACHOLD, null);
+  if (!H || typeof H !== 'object' || (only && !H[only])) return;
+  const left = {};
+  let done = false;
+  Object.entries(H).forEach(([id, old]) => {
+    const S = SUBJECTS.find(x => x.id === id && x.ach);
+    if (!S) return;
+    if (only && id !== only) return void (left[id] = old);
+    inSubject(id, () => {
+      if (!achReady()) return void (left[id] = old);
+      const A = store.get(ACHK, {}) || {};
+      achRecount(A, old, achOwn(S), achSnap(A), Date.now());
+      store.set(ACHK, A);
+      done = true;
+    });
+  });
+  store.set(ACHOLD, Object.keys(left).length ? left : null);
+  if (done && SYNC) syncSoon();
 }
 // Signed in, the check waits for the visit's first sync (sync.js noticeLater), then runs once on the merged progress and
 // achievements (as silent as the quietest call that waited): an old copy of the account never pops up, nor takes back, what
@@ -634,6 +704,7 @@ function achCheck(silent) {
     return;
   }
   if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
+  achPending(SUBJ.id); // a recount waiting for this subject's data first: what it keeps is not new
   const had = store.get(ACHK, null),
     A = had || {},
     ids = newAch(achSnap(A), A, achTests());
@@ -1123,7 +1194,7 @@ function recalcNotice() {
   cardShow({
     kind: k,
     cls: 'recalc',
-    visual: k === 'update' ? cardRing(progPct()) : '',
+    visual: k === 'update' ? cardRing(headPct()) : '',
     kick: due[0].k || 'Update',
     title: due[0].t,
     body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),

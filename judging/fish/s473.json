@@ -135,6 +135,67 @@
   "fish-s473-cand-584680782": {
    "code": "p1g1sm14",
    "keep": "alt"
+  },
+  "fish-s473-cand-607639529": {
+   "code": "o1g0sm1ja2",
+   "keep": "best",
+   "note": "Held up on a line above the water's edge."
+  },
+  "fish-s473-cand-607639536": {
+   "code": "o1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s473-cand-291142172": {
+   "code": "o1g3ml12",
+   "keep": "dup"
+  },
+  "fish-s473-cand-291207065": {
+   "code": "p1g3ml12",
+   "keep": "best"
+  },
+  "fish-s473-cand-332459862": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s473-cand-421903730": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s473-cand-675377648": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s473-cand-256976114": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s473-cand-682068196": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s473-cand-682068274": {
+   "code": "h1g0sm12",
+   "keep": "dup"
+  },
+  "fish-s473-cand-235058936": {
+   "code": "o1g3bm1c1",
+   "keep": "best"
+  },
+  "fish-s473-cand-288423813": {
+   "code": "p1g3ms11",
+   "keep": "best"
+  },
+  "fish-s473-cand-59208871": {
+   "code": "d1g0sl13",
+   "keep": "best"
+  },
+  "fish-s473-cand-600552655": {
+   "code": "h1g0sl13",
+   "keep": "best"
+  },
+  "fish-s473-cand-640673749": {
+   "code": "o1d2mm12",
+   "keep": "best"
   }
  }
 }
