@@ -460,6 +460,7 @@ Still useful / re-runnable:
 - Pierre's Publish pushes `curation.json` to `main`, triggering both Deploy Pages and Candidate photos (which also runs on a push changing `suggest.json`, `tools/fish_judge.json`, `tools/fish_refs.json` or `tools/fish_game.py`). The latter commits `data.json`, `cand.json`, `excluded.json`, `fish-game.json` and `img/` (and, in its `fish` job, `fish-cand.json` and `tools/fish_refill.json`) using `GITHUB_TOKEN`; its completion triggers Deploy Pages again so bot changes are published too.
 - The service worker serves the cached shell: the deploy stamps every `?v=` and `sw.js` `V` from content hashes (`tools/stamp_versions.py`, rule W15), so a shell change reaches the players without anyone bumping a number. `curation.json` is fetched with `no-cache` (from the kept copy first at start-up, see above).
 - A completed Actions run can leave a stale Pages backend lock. Cancel the blocking **Pages deployment** as well as any stuck Actions run, then dispatch `pages.yml` on `main`; see [PAGES.md](PAGES.md#manual-recovery). Repeatedly rerunning the blocking legacy SHA is not the fix.
+- `.gitattributes`: every text file stored with LF (`* text=auto eol=lf`); the machine-written JSON (`cand.json`, `fish-cand.json`, `fish-game.json`, `suggest.json`) marked `linguist-generated`, so GitHub collapses their diffs (`data.json`, the hand-edited source of truth, stays shown). `.gitignore` also keeps out `node_modules/` (a Playwright install by hand) and `.DS_Store`.
 
 ## Players' reports (2026-11-01)
 
