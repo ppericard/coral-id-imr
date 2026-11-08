@@ -1,25 +1,33 @@
 // An in-memory localStorage for the pages a Playwright tool drives in one long synchronous evaluate (tools/learnsim.js).
 // Why (2026-11-08, ROADMAP "learnsim: long runs crash"): learnsim plays every answer of a run inside one page.evaluate,
 // so the page's event loop never turns until the run ends. Each answer writes the answer log twice (sync.js LOG0 and
-// ANONQ, up to 2,000 answers, about 300,000 characters each), and every localStorage write sends the browser a message
-// whose answers (each with the key's old and new value) queue in the renderer until the loop ends: about 1.5 MB of
-// native memory an answer, never freed, so the renderer died ("Target crashed") between 2,500 and 4,500 answers. This
-// Storage keeps the items in the page's own memory: nothing is sent, so nothing queues.
+// ANONQ, up to 2,000 answers, about 290,000 characters each), and every localStorage write goes through the browser,
+// whose traffic back queues in the renderer until the loop ends: measured, 1.5 MB of native memory an answer (3.6 MB
+// once the logs are full), never freed, the V8 heap flat, until the renderer died ("Target crashed") near 3,500 answers.
+// This Storage keeps the items in the page's own memory: no traffic, nothing queued (0.1 MB an answer left).
 // It behaves as the browser's for everything the app does: getItem / setItem / removeItem / clear / key / length, the
-// values strings, key(i) in the browser's order (sorted by UTF-16 code units, Chromium's map), and the items as the
+// values strings, key(i) over every key in a fixed order (sorted; Chromium's own is its hash map's, which nothing in the
+// app or the tools depends on: core.js travelData collects the keys into an object), and the items as the
 // object's own enumerable properties (so {...localStorage} and Object.entries(localStorage) give the items, never the
-// methods). No quota: window.__lsPeak keeps the most characters (keys and values) it ever held, so a run that came near
-// the browser's limit (LS_SAFE) is flagged instead of silently differing from a real browser.
+// methods), and the browser's quota: a write that would take it past LS_QUOTA characters (keys and values) throws
+// QuotaExceededError and changes nothing, as Chromium does (measured 2026-11-08 on the Playwright Chromium the tools use:
+// 5,242,880 characters, 10 MiB at two bytes a character). window.__lsPeak keeps the most characters it ever held.
 // Installed with ctx.addInitScript(memStorage) before any other init script; tests/memstorage.test.js checks it.
 function memStorage(w = typeof window === 'undefined' ? globalThis : window) {
-  const m = new Map();
+  const QUOTA = 5242880, // LS_QUOTA below (this function runs alone in the page)
+    m = new Map();
   let size = 0;
   w.__lsPeak = 0;
   const keys = () => [...m.keys()].sort(),
     put = (k, v) => {
       k = String(k);
       v = String(v);
-      size += k.length + v.length - (m.has(k) ? k.length + m.get(k).length : 0);
+      const next = size + k.length + v.length - (m.has(k) ? k.length + m.get(k).length : 0);
+      if (next > QUOTA)
+        throw typeof DOMException === 'function'
+          ? new DOMException('localStorage quota exceeded', 'QuotaExceededError')
+          : Object.assign(new Error('localStorage quota exceeded'), {name: 'QuotaExceededError'});
+      size = next;
       m.set(k, v);
       if (size > w.__lsPeak) w.__lsPeak = size;
     },
@@ -50,7 +58,6 @@ function memStorage(w = typeof window === 'undefined' ? globalThis : window) {
   Object.defineProperty(w, 'localStorage', {value: store, configurable: true});
   return store;
 }
-// The most characters a run may hold with no doubt that a real browser would have taken every write: browsers allow 5 to
-// 10 MiB per origin; 5 MiB at two bytes a character is the lowest bound (learnsim warns above it).
-const LS_SAFE = (5 * 1024 * 1024) / 2;
-module.exports = {memStorage, LS_SAFE};
+// Chromium's localStorage quota per origin, in characters of keys and values.
+const LS_QUOTA = 5242880;
+module.exports = {memStorage, LS_QUOTA};

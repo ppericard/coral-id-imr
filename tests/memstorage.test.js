@@ -7,7 +7,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {memStorage, LS_SAFE} = require('../tools/memstorage.js');
+const {memStorage, LS_QUOTA} = require('../tools/memstorage.js');
 
 // As Playwright runs it: its source alone, in a page of its own (here a fresh global).
 const page = () => {
@@ -36,7 +36,7 @@ test('memstorage: the Storage API on strings', () => {
   assert.strictEqual(ls.key(0), null);
 });
 
-test("memstorage: key(i) in the browser's order (sorted), items as own properties, methods never shadowed", () => {
+test('memstorage: key(i) over every key (sorted), items as own properties, methods never shadowed', () => {
   const ls = page().localStorage;
   ['reefid-sync-coral-progress', 'reefid-log0', 'reefid-anonq', 'getItem'].forEach((k, i) => ls.setItem(k, 'v' + i));
   assert.deepStrictEqual(
@@ -57,7 +57,7 @@ test("memstorage: key(i) in the browser's order (sorted), items as own propertie
   assert.strictEqual(ls.getItem('reefid-x'), null);
 });
 
-test('memstorage: the peak size it held (keys and values), for the quota warning', () => {
+test('memstorage: the peak size it held (keys and values)', () => {
   const g = page(),
     ls = g.localStorage;
   ls.setItem('ab', '1234');
@@ -68,7 +68,21 @@ test('memstorage: the peak size it held (keys and values), for the quota warning
   ls.clear();
   ls.setItem('d', '1');
   assert.strictEqual(g.__lsPeak, 15);
-  assert.ok(LS_SAFE > 2e6 && LS_SAFE < 3e6);
+});
+
+test("memstorage: Chromium's quota (5,242,880 characters of keys and values): the write that passes it throws, changes nothing", () => {
+  const g = page(),
+    ls = g.localStorage;
+  assert.strictEqual(LS_QUOTA, 5242880);
+  ls.setItem('a', 'x'.repeat(LS_QUOTA - 2));
+  ls.setItem('b', ''); // exactly at the quota
+  assert.throws(() => ls.setItem('c', ''), {name: 'QuotaExceededError'});
+  assert.throws(() => ls.setItem('a', 'x'.repeat(LS_QUOTA - 1)), {name: 'QuotaExceededError'});
+  assert.strictEqual(ls.getItem('a').length, LS_QUOTA - 2);
+  assert.strictEqual(ls.getItem('c'), null);
+  ls.setItem('a', 'short'); // a smaller value always fits
+  ls.setItem('c', 'x'.repeat(1000));
+  assert.strictEqual(ls.length, 3);
 });
 
 test('learnsim installs it before any other init script', () => {

@@ -64,7 +64,7 @@
 // Long runs (2026-11-08, #734: every run of 4,500 or 8,000 answers ended in "Target crashed"): a run is one synchronous
 // page.evaluate, so the page's event loop never turns until it ends, and every localStorage write (the app writes its
 // answer log twice an answer, about 300,000 characters each) left messages queued in the renderer, about 1.5 MB an answer,
-// until it died. The page's localStorage is now kept in its own memory (tools/memstorage.js): the same values and order
+// until it died. The page's localStorage is now kept in its own memory (tools/memstorage.js): the same values and quota
 // for the app, nothing sent, nothing queued: about 1.1 GB at 8,000 answers (9.6 GB at 3,500 before, then the crash).
 // Each run (profile x seed) opens a fresh browser context (empty storage), seeds the app's Math.random and a separate
 // learner random generator from the seed (runs are reproducible, and the same seeds before and after a change give
@@ -168,7 +168,7 @@ const http = require('http'),
   os = require('os'),
   path = require('path');
 const {chromium} = require('playwright');
-const {memStorage, LS_SAFE} = require('./memstorage.js');
+const {memStorage} = require('./memstorage.js');
 const ROOT = path.join(__dirname, '..');
 
 // Profiles: the three players of profiles.smoke.js (same definitions: beginner, RA = "lectureRA", expert) and a strong
@@ -1570,11 +1570,6 @@ function openTable(runs) {
     );
   }
   if (errs.length) console.log('\nPage errors: ' + errs.slice(0, 5).join(' | '));
-  // localStorage lives in the page's memory (tools/memstorage.js), with no quota: a run that held more than a browser
-  // surely takes is flagged (8,000 answers peak at about 2.24 million characters).
-  const big = runs.filter(r => r.lsPeak > LS_SAFE);
-  if (big.length)
-    console.log(`\nWarning: localStorage held more than ${LS_SAFE} characters in ${big.length} runs (a browser could have refused writes): ${big.map(r => `${r.profile}:${r.seed} ${r.lsPeak}`).join(', ')}`);
   // --rtlog: every run's answer log as readAnswers rows [player, time ms, shown, answered, right, mode, photos, e, th, new
   // photos, choices, 0, seconds, enlarged, pTrue, noise], the player 'profile:seed' (tools/abilityeval.js reads them).
   if (RTLOG) {

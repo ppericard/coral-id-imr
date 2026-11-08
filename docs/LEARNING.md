@@ -4739,6 +4739,21 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   d}}`), independent of the app's estimate; without it the learner takes the app's own `photoDiff`, so a change to the
   app's photo difficulty would change the learner's world too. `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
+- **Long runs** (2026-11-08, ROADMAP "learnsim: long runs crash"): a run is one synchronous `page.evaluate`, so the
+  page's event loop never turns until it ends. Every `localStorage` write goes through the browser, and its traffic back
+  queued in the renderer until the run ended; the app writes its answer log twice an answer (`sync.js` `LOG0` and `ANONQ`,
+  up to 2,000 answers, about 290,000 characters each): the renderer grew by about 1.5 MB an answer, 3.6 MB once the logs
+  were full (one run alone: 1.4 GB at 1,000 answers, 4.2 GB at 2,000, 9.6 GB at 3,500, then "Target crashed"; its V8 heap
+  stayed at 13-18 MB, so the memory was outside JavaScript). The tool now keeps the page's `localStorage` in the page's
+  own memory (`tools/memstorage.js`, installed before anything writes: the same values, own properties and quota as the
+  browser's, 5,242,880 characters as measured on the tools' Chromium; checked by `tests/memstorage.test.js`): 0.4 GB at 1,000 answers, 0.55 at 2,000, 1.1 at
+  8,000, with 4 runs side by side. About 0.1 MB an answer is left (V8 heap 12 → 25 MB, the rest outside it), not
+  identified: not the app's pending timers, MutationObserver records or promise reactions (each taken away in a
+  diagnostic run, the same growth), nor the photos (aborted, the same); far from a crash at 8,000 answers. A run of
+  8,000 answers takes 10-60 minutes (corals about 10 with 4 runs side by side; fish slower). The same seeds give the same runs as before (1,500 answers, corals and fish, beginner and
+  lecture RA: every measure identical; only 2 of 6,000 logged answer times differ by 0.1 s, the wall-clock time between
+  the tool setting the question clock and the app reading it, which a slower page added before). 8,000 answers peak at
+  about 2.24 million characters of storage (corals), under the quota.
 - **Opening pace** (2026-11-04): `open/15`, the most genera opened on their own cards in any 15 consecutive questions so
   far; with `--breaks`, the genera opened in the first 15 answers after the comeback, the most in any 15 and in all the
   `--after` ones. Profile `strongBack` (not in the default list): a strong player who knows 80% of the genera well and
