@@ -4438,8 +4438,10 @@
   // its domain score (ds) lifted so that its bar reads P's: a right answer never lowers ds (domStep), a miss moves it
   // the posterior's way, as for any bar. The lift allows for the false alarms the replay counts on the unit (faOf: the
   // other records' conf and off; Codex review #779); should a domain score of 1 not be enough, the other records count,
-  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), and the lift is made again. A
-  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's; a learned mark or an exam in course comes from the device
+  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), the level its typed
+  // opportunities on that rank (P's when more; P's level is read as context, never floored), and the lift is made again. A
+  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's but
+  // for those typed opportunities; a learned mark or an exam in course comes from the device
   // (replayedOf). Returns a copy of M floored.
   function replayFloor(M, P) {
     const out = {...(M || {})},
@@ -4470,6 +4472,11 @@
           const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
           if (f) o.off = {...(o.off || {}), [g]: f};
         });
+        // and the typed opportunities of its rank, which faOf counts too, P's when more (Codex review #779).
+        const rk = rankKey(g),
+          ty = ((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0,
+          lv = isObj(out[LEVEL]) ? out[LEVEL] : {};
+        if (ty > ((lv.tyk || {})[rk] || 0)) out[LEVEL] = {...dup(lv), tyk: {...(lv.tyk || {}), [rk]: ty}};
         lift(g, want);
       });
     }

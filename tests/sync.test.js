@@ -2248,6 +2248,33 @@ test('sheet replays per subject: the fish replay floored against the saved copy,
   assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, {});
 });
 
+// Codex review #779: a saved bar reads the level's typed opportunities (faOf): the reference keeps the level as context.
+test('sheet replays per subject: the floor reads the saved bars with their typed opportunities', () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    F = Array.from({length: 6}, (_, i) => fa('f' + i, i)),
+    dp = C.domFromCounts({ok: 6, ko: 0, h: '111111'}, 0.5, 4, 0).dp,
+    high = {
+      'f:Damselfishes': {ok: 6, ko: 0, h: '111111', u: 6, dp, ds: 0.9},
+      'f:Wrasses': {ok: 2, ko: 0, h: '11', u: 2, dp, ds: 0.3, conf: {'f:Damselfishes': 2}, off: {'f:Damselfishes': 2}},
+      '~level': {ok: 8, ko: 0, th: 1, tyk: {f: 10}}
+    },
+    bar = (P, n) => C.scoreOf(P[n], P, n),
+    r = s.post({
+      name: 'Ana',
+      pin: '1234',
+      data: {...prog(3), 'reefid-sync-fish-progress': JSON.stringify(high)},
+      summary: {},
+      answers: F,
+      rvs: {fish: 0}
+    }),
+    rec = r.replays.fish.rec;
+  assert.ok(bar(high, 'f:Damselfishes') > 0.7, 'the saved bar, with its typed opportunities');
+  assert.ok(bar(rec, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9, `${bar(rec, 'f:Damselfishes')}`);
+  assert.deepStrictEqual(JSON.parse(s.sheets['Replayed Fish'].rows[1].slice(5).join('')).F['~level'], high['~level']);
+  assert.notDeepStrictEqual(rec['~level'], high['~level'], "the level is the replay's");
+});
+
 // Codex review #779: a progress reset after the first replay clears the progress, its floor with it.
 test('sheet replays per subject: a fish progress reset drops the floor kept with the record', () => {
   const f = withFish(),

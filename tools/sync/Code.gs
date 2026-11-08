@@ -562,10 +562,13 @@ function replays_(key, data, rvs, pt, alt, held){
   return Object.keys(out).length ? out : null;
 }
 // The floor's reference of a subject's first replay (replay_): the units of its saved progress (the player's data, old
-// unit ids renamed: core.js renameUnits) that came from no replay yet (no rv), as saved; {} when none.
+// unit ids renamed: core.js renameUnits) that came from no replay yet (no rv), as saved, with its global level as
+// context only (its typed opportunities count in a unit's false-alarm rate, core.js faOf: the saved bars are read with
+// them; Codex review #779; replayFloor never floors the level); {} when no unit.
 function floorRef_(sid, saved){
-  const P = CORE_.renameUnits(CORE_.subjectOf(sid), saved && typeof saved === 'object' ? saved : {}), out = {};
-  Object.keys(P || {}).forEach(g => { if (g !== CORE_.LEVEL && P[g] && typeof P[g] === 'object' && !P[g].rv) out[g] = P[g]; });
+  const P = CORE_.renameUnits(CORE_.subjectOf(sid), saved && typeof saved === 'object' ? saved : {}), out = {}, L = CORE_.LEVEL;
+  Object.keys(P || {}).forEach(g => { if (g !== L && P[g] && typeof P[g] === 'object' && !P[g].rv) out[g] = P[g]; });
+  if (Object.keys(out).length && P[L] && typeof P[L] === 'object') out[L] = P[L];
   return out;
 }
 // The tab keeping another subject's replay records: "Replayed Fish", as RPL.TAB keeps the corals'.
@@ -6324,8 +6327,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // its domain score (ds) lifted so that its bar reads P's: a right answer never lowers ds (domStep), a miss moves it
   // the posterior's way, as for any bar. The lift allows for the false alarms the replay counts on the unit (faOf: the
   // other records' conf and off; Codex review #779); should a domain score of 1 not be enough, the other records count,
-  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), and the lift is made again. A
-  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's; a learned mark or an exam in course comes from the device
+  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), the level its typed
+  // opportunities on that rank (P's when more; P's level is read as context, never floored), and the lift is made again. A
+  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's but
+  // for those typed opportunities; a learned mark or an exam in course comes from the device
   // (replayedOf). Returns a copy of M floored.
   function replayFloor(M, P) {
     const out = {...(M || {})},
@@ -6356,6 +6361,11 @@ const CORE_ = (function () { const module = {exports: {}};
           const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
           if (f) o.off = {...(o.off || {}), [g]: f};
         });
+        // and the typed opportunities of its rank, which faOf counts too, P's when more (Codex review #779).
+        const rk = rankKey(g),
+          ty = ((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0,
+          lv = isObj(out[LEVEL]) ? out[LEVEL] : {};
+        if (ty > ((lv.tyk || {})[rk] || 0)) out[LEVEL] = {...dup(lv), tyk: {...(lv.tyk || {}), [rk]: ty}};
         lift(g, want);
       });
     }
