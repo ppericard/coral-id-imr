@@ -100,6 +100,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line, as cand.json
+from rights import rights_rank  # noqa: E402  the rights of a photo, as core.js rightsRank (Q270)
 
 API = "https://api.inaturalist.org/v2/observations?"
 TAXA = "https://api.inaturalist.org/v2/taxa/"
@@ -159,10 +160,11 @@ REFILL = ROOT / "tools" / "fish_refill.json"  # what was searched to the end, pe
 
 
 def lic_class(lic, own):
-    """0 Pierre's own (whatever its licence), 1 CC0 / CC BY, 2 NC: the order fish photos are taken in (Pierre, 2026-11-03)."""
+    """0 Pierre's own (whatever its licence), 1 CC0 / CC BY, 2 NC: the order fish photos are taken in (Pierre, 2026-11-03;
+    since then a bucket of the fetch order, stronger than the tie-break of Q270, 2026-11-08: tools/rights.py)."""
     if own:
         return 0
-    return 1 if lic in ("cc0", "cc-by") else 2
+    return 1 + rights_rank({"lic": lic})
 
 
 def lic_ok(lic, own):

@@ -582,6 +582,30 @@
   // every game draw reads views.wide (model.js photoSet, app.js fishGenera), so none can show it. The result's sheet
   // holds them by species ({species id: [photo]}), for a species sheet to show (none yet: docs/ARCHITECTURE.md "Fish content").
   const sheetOnly = p => !!p && p.use === 'ref';
+  // The rights a photo comes with (Pierre, 2026-11-08, Q270: "à qualité égale", CC0 / CC BY and his own photos before
+  // CC BY-NC, so the stock a later commercial app could use grows; the CC BY-NC photos stay fully usable): 'imr' an IMR
+  // lecture photo, 'book' a Coral Finder book photo, 'own' Pierre's own (whatever its licence), 'open' CC0 or CC BY,
+  // 'nc' the rest (CC BY-NC, or no licence read). licOf: the photo's licence code, its lic, else read from its credit a
+  // ("(CC BY-NC-SA)" -> cc-by-nc-sa, "no rights reserved" -> cc0), null when neither says (IMR lecture, Coral Finder
+  // book); the admin's presence.js licence. tools/rights.py is the Python copy of all three (tests/rights.test.js).
+  // rightsRank is the tie-break key, last of an order between otherwise-equal photos and never above quality, ease or
+  // variety (docs/rules/photos.md P1): 0 own or open, 1 the rest. Own and open rank alike, so his photos are never
+  // boosted over another open one (P1, fish).
+  function licOf(p) {
+    if (!p) return null;
+    if (p.lic) return String(p.lic).toLowerCase();
+    const m = /\((CC0|CC[ -][A-Z -]+?)\)/.exec(p.a || '');
+    if (!m) return /no rights reserved/i.test(p.a || '') ? 'cc0' : null; // iNaturalist's CC0 credit
+    return m[1] === 'CC0' ? 'cc0' : 'cc-' + m[1].slice(3).toLowerCase().trim().split(/\s+/).join('-');
+  }
+  function rightsClass(p) {
+    if (!p) return 'nc';
+    if (p.imr) return 'imr';
+    if (p.cf) return 'book';
+    if (p.own) return 'own';
+    return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
+  }
+  const rightsRank = p => (/^(own|open)$/.test(rightsClass(p)) ? 0 : 1);
   // How much a judged photo looks like a reference photo (judging/FISH.md, its tags jt): REF.rep for the flag r (a
   // reference source shows it for the species: FishBase's main picture, iNaturalist's cover), then a point for each
   // field-guide trait (profile, whole fish, good light, no colour loss, sharp, large, one fish), a point off for a
@@ -620,10 +644,12 @@
     /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
     (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
   const refFirst = p => (refLevel(p) ? 0 : 1);
+  // Last before the hash, the rights (rightsRank, below): between otherwise-equal photos, an open licence or Pierre's own
+  // first (Pierre, 2026-11-08, Q270).
   function easyRank(L, d = p => -(p.e || 3)) {
     return (L || [])
-      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), h: fHash(p.f)}))
-      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.h - b.h)
+      .map(p => ({p, t: refFirst(p), d: d(p), r: refScore(p.jt), l: rightsRank(p), h: fHash(p.f)}))
+      .sort((a, b) => a.t - b.t || a.d - b.d || b.r - a.r || a.l - b.l || a.h - b.h)
       .map(x => x.p);
   }
   function fishGen(F, photos, sheet) {
@@ -1958,7 +1984,8 @@
       VIEWS.forEach(([v]) => {
         const field = (g.views[v] || []).filter(p => !p.multi),
           q = p => qualOf(c, p.f),
-          byQ = L => L.slice().sort((a, b) => q(b) - q(a));
+          // Equal quality: an open licence or his own first (rightsRank, Q270), else the list's order.
+          byQ = L => L.slice().sort((a, b) => q(b) - q(a) || rightsRank(a) - rightsRank(b));
         const all = [...field, ...course.filter(p => p.view === v && !p.multi)].filter(p => use[p.f] !== 'game');
         // Sheet order (Pierre): IMR photos first, then his own, then other observers, each by quality; Poor photos last.
         const rr = [...byQ(all.filter(p => p.imr)), ...byQ(all.filter(p => !p.imr && p.own))];
@@ -4811,6 +4838,9 @@
     refFirst,
     refLevel,
     refScore,
+    licOf,
+    rightsClass,
+    rightsRank,
     fishOn,
     fishIn,
     fishGone,
