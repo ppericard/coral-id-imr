@@ -2393,6 +2393,42 @@ test("v105 analyses head: each subject counted apart, the corals' answers never 
   assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stored.subject, 'coral');
 });
 
+// Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). One report per subject, each in its
+// own tab: a fish report never replaces the corals', and each head names its own subject's stored report.
+test('vNEXT analyses: one stored report per subject, each in its own tab', () => {
+  const s = seed(),
+    rep = (subject, answers) => JSON.stringify({R: {1000: {}}, M: [1000], answers, made: answers, AV: 1, ...(subject ? {subject} : {})}),
+    put = (subject, answers) => s.post({analysesPut: 1, report: rep(subject, answers), token: TOK}),
+    get = o => s.post({analysesGet: 1, token: TOK, ...o});
+  assert.strictEqual(put('coral', 2000).stored.subject, 'coral');
+  assert.strictEqual(put('fish', 1000).stored.subject, 'fish');
+  assert.ok(s.sheets['Analyses Fish'], "the fish report in a tab of its own, as the fish replay's");
+  assert.strictEqual(JSON.parse(s.sheets.Analyses.rows[1][1]).answers, 2000, "the corals' report untouched by the fish one");
+  // the head and the whole report of each subject; no subject asked: the replayed subject's (the corals'), as before
+  assert.strictEqual(get({head: 1}).stored.answers, 2000);
+  assert.strictEqual(get({head: 1}).subject, 'coral');
+  assert.strictEqual(get({head: 1, subject: 'fish'}).stored.answers, 1000);
+  assert.strictEqual(get({head: 1, subject: 'fish'}).stored.subject, 'fish');
+  assert.strictEqual(JSON.parse(get({subject: 'fish'}).report).answers, 1000);
+  assert.strictEqual(JSON.parse(get({subject: 'coral'}).report).answers, 2000);
+  assert.ok(!('report' in get({head: 1, subject: 'fish'})), 'the head alone, cheap');
+  // a report with no subject is the replayed subject's, as before; a subject the script does not know is refused
+  assert.strictEqual(put('', 3000).stored.subject, 'coral');
+  assert.strictEqual(get({head: 1}).stored.answers, 3000);
+  assert.strictEqual(get({head: 1, subject: 'fish'}).stored.answers, 1000);
+  assert.deepStrictEqual(put('benthos', 1000), {ok: false, error: 'input', v: s.post({analysesGet: 1, head: 1, token: TOK}).v});
+  assert.strictEqual(get({head: 1, subject: 'benthos'}).error, 'input');
+  // a fish report not stored yet: no stored meta, no report, its own answers counted
+  const t = seed();
+  assert.strictEqual(t.post({analysesGet: 1, head: 1, token: TOK, subject: 'fish'}).stored, null);
+  assert.strictEqual(t.post({analysesGet: 1, token: TOK, subject: 'fish'}).report, undefined);
+  // stale per report: an account removed after the fish report was stored marks it stale too
+  assert.strictEqual(get({head: 1, subject: 'fish'}).stale, false);
+  s.props.ROSTER_AT = String(Date.now() + 1000);
+  assert.strictEqual(get({head: 1, subject: 'fish'}).stale, true);
+  assert.strictEqual(get({head: 1}).stale, true);
+});
+
 test('v55 analyses head: a report stored before the last delete or merge is stale', () => {
   const s = seed(),
     rep = JSON.stringify({R: {}, answers: 4, made: 1, AV: 1});

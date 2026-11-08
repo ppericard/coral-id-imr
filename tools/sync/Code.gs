@@ -908,8 +908,14 @@ function reports_(token){
 // answers, those of the subject asked (default the stored report's, else the replayed one: the corals), no longer every
 // row of every subject. POST {analysesPut: 1, token, report: JSON text} -> {ok, stored}: replaces the whole report
 // (Analyses tab: row 2 its meta, then 45,000-character parts; 2.5 MB at most); its meta keeps the report's subject.
+// vNEXT (Pierre, 2026-11-08: each subject's analyses, "fish when the fish analyses exist"): one report per subject, each
+// in its own tab: the corals' (the replayed subject's) in Analyses as before, another subject's in "Analyses Fish"
+// (anTab_, as rplTab_ names its replay records); analysesGet reads the tab of the subject asked (default the replayed
+// one), analysesPut writes the tab of the report's subject, and refuses a subject the script does not know (input).
 // Admin token only.
 const AN_TAB = 'Analyses', AN_MAX = 2500000;
+const anTab_ = sid => (CORE_.subjectOf(sid).id === CORE_.replaySubject() ? AN_TAB : AN_TAB + ' ' + CORE_.subjectOf(sid).name);
+const anKnown_ = sid => CORE_.SUBJECTS.some(S => S.id === sid);
 // v55: when an account last left normal operation (deleted, merged or archived): the Script Property ROSTER_AT set by
 // rosterChanged_, or the newest row of the Removed tab (an account removed before v55).
 function rosterAt_(){
@@ -928,12 +934,15 @@ function rosterChanged_(){
 function analyses_(p){
   if (!isAdmin_(String(p.token || ''))) return {ok: false, error: 'token'};
   const ss = SpreadsheetApp.getActiveSpreadsheet(), a = ss.getSheetByName('Answers');
-  const sh = ss.getSheetByName(AN_TAB), n = sh ? sh.getLastRow() : 0;
-  const metaOf = () => { try { return n >= 2 ? JSON.parse(String(sh.getRange(2, 2).getValue() || 'null')) : null; } catch (e) { return null; } };
   if (p.analysesGet) {
+    // vNEXT: the subject asked, else the replayed one (the corals); one it does not know is refused, never read as the corals'
+    const subject = String(p.subject || CORE_.replaySubject());
+    if (!anKnown_(subject)) return {ok: false, error: 'input'};
+    const sh = ss.getSheetByName(anTab_(subject)), n = sh ? sh.getLastRow() : 0;
+    let st = null;
+    try { st = n >= 2 ? JSON.parse(String(sh.getRange(2, 2).getValue() || 'null')) : null; } catch (e) { st = null; }
     // v105: up to the Subject column (Mode included), all that subjRows reads
-    const st = metaOf(), counts = CORE_.subjCounts(a ? logRows_(a, CORE_.LOG_SUBJ + 1) : []);
-    const subject = CORE_.subjectOf(String(p.subject || (st && st.subject) || CORE_.replaySubject())).id;
+    const counts = CORE_.subjCounts(a ? logRows_(a, CORE_.LOG_SUBJ + 1) : []);
     const out = {ok: true, subject: subject, answers: counts[subject] || 0, counts: counts, stored: st};
     // v55: a report made before the last delete, merge (or archive) of an account is stale: the Action refits it at once
     // instead of 1000 answers later (tools/analyses.js), so no per-player result of a removed account stays in it.
@@ -948,13 +957,16 @@ function analyses_(p){
   if (!text || text.length > AN_MAX) return {ok: false, error: 'size'};
   let rep; try { rep = JSON.parse(text); } catch (e) { return {ok: false, error: 'input'}; }
   if (!rep || typeof rep !== 'object' || !rep.R) return {ok: false, error: 'input'};
+  // vNEXT: the report's subject picks its tab (a report without one is the replayed subject's, as before)
+  const subject = String(rep.subject || CORE_.replaySubject());
+  if (!anKnown_(subject)) return {ok: false, error: 'input'};
   const meta = {answers: Number(rep.answers) || 0, made: Number(rep.made) || 0, av: Number(rep.AV) || 0, size: text.length, at: Date.now(), roster: typeof p.roster === 'number' && isFinite(p.roster) ? p.roster : null,
-    subject: CORE_.subjectOf(String(rep.subject || CORE_.replaySubject())).id};
+    subject: subject};
   const rows = [['meta', JSON.stringify(meta)]];
   for (let i = 0; i < text.length; i += CHUNK) rows.push(['part ' + (rows.length), safe_(text.slice(i, i + CHUNK))]);
   const lock = lock_();
   try {
-    const t = sheet_(AN_TAB, ['Part', 'Data']), old = t.getLastRow();
+    const t = sheet_(anTab_(subject), ['Part', 'Data']), old = t.getLastRow();
     t.getRange(2, 1, rows.length, 2).setValues(rows);
     // a shorter report than the last one: blank the parts left over
     if (old > rows.length + 1) t.getRange(rows.length + 2, 1, old - rows.length - 1, 2).setValues(Array.from({length: old - rows.length - 1}, () => ['', '']));
@@ -2285,6 +2297,11 @@ const CORE_ = (function () { const module = {exports: {}};
       achs: () => ACH,
       achFeats: true,
       board: true,
+      // Its Analyses report (admin Analyses, tools/analyses.js; one report per subject, refitted every 1000 of its answers:
+      // Pierre, 2026-11-08). photos: its photos' features, read by What makes a photo hard (analysis.js photoMeta: view,
+      // quality, sharpness, source, from data.json, curation.json, quality.json and metrics.json). The admin's words for
+      // its units are its one and many.
+      analyses: {photos: true},
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups'],
@@ -2372,6 +2389,12 @@ const CORE_ = (function () { const module = {exports: {}};
       // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
       // v95, Code.gs board_ &s=fish; progress.js loadBoard).
       board: true,
+      // Its Analyses report (Pierre, 2026-11-08: "fish when the fish analyses exist"; one report per subject, refitted every
+      // 1000 fish answers): its units are what the questions ask, families and scientific genera as the fish tree has
+      // them (one, many: the admin's words for them on its Analyses pages). photos false: no photo features of its own in
+      // the analyses yet (its judged ease, phase and framing are not read), so What makes a photo hard is not among its
+      // admin pages.
+      analyses: {photos: false, one: 'family or genus', many: 'families and genera'},
       // Its global score (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the square-root
       // display; docs/FISH_PATH.md "My progress (fish)"): core.js treeScore over its tree (app.js UNITS fish tree), shown
       // as its headline % (model.js headPct: the header, My progress, the leaderboard, the fish % achievements) with its
@@ -2417,7 +2440,19 @@ const CORE_ = (function () { const module = {exports: {}};
           'photos/candidates',
           'photos/review/ease',
           'photos/review/phase-framing',
-          'photos/look-alikes'
+          'photos/look-alikes',
+          // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report but
+          // What makes a photo hard (analyses photos false), and none of the views drawn from the corals' live answer log
+          // (admin.js LIVE_STATS: Pairs, Answer log, Stops).
+          'analyses/overview',
+          'analyses/speed',
+          'analyses/difficulty/formats',
+          'analyses/difficulty/mix-ups',
+          'analyses/difficulty/time',
+          'analyses/learning/practice',
+          'analyses/learning/after-a-break',
+          'analyses/learning/sessions',
+          'analyses/learning/profiles'
         ],
         origins: [
           ['own', 'Pierre', 'Pierre'],

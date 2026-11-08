@@ -3,15 +3,18 @@
 // answers: round thousands only, Pierre 2026-11-05), and stores the report in the sync sheet, where the admin reads it:
 // the primary source. The admin's "Recompute here" runs the same code in its own tab, on any device (Pierre,
 // 2026-11-05), and keeps its result there.
-//   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): reads the log with
-//                                             readAnswers and stores the report with analysesPut (sheet v35), both
-//                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until the
-//                                             log reaches a round thousand of the corals' answers (the analysed
-//                                             subject's, counted apart by the sheet's head from v105; Pierre,
-//                                             2026-11-08) the stored report does not hold (or the
-//                                             code changed, or an account was removed since: sheet v55
+//   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): one report per
+//                                             subject (core.js SUBJECTS analyses: the corals, then the fish; Pierre,
+//                                             2026-11-08), each from its own answers (core.js subjRows): reads the log
+//                                             with readAnswers and stores the report with analysesPut (sheet v35; one
+//                                             stored report per subject from vNEXT, AN_SUBJ_SHEET), both with the admin
+//                                             token in ANALYSES_ADMIN_TOKEN; does nothing for a subject until the log
+//                                             reaches a round thousand of that subject's answers (counted apart by the
+//                                             sheet's head from v105; Pierre, 2026-11-08) its stored report does not
+//                                             hold (or the code changed, or an account was removed since: sheet v55
 //                                             stale), unless --force (plan)
-//   node tools/analyses.js --in answers.json --out report.json   a saved readAnswers reply (kept outside the repo)
+//   node tools/analyses.js --in answers.json [--subject fish] --out report.json   a saved readAnswers reply (kept
+//                                             outside the repo), one subject's answers (the corals' by default)
 //   node tools/analyses.js --demo --out report.json              the admin demo's made-up answers, no network
 // --boot N: bootstrap draws for the latest milestone (default 999, analysis.js BOOT); --boot-history N: for the earlier
 // ones (default 199, until their answers add up to 60,000; none beyond: analysis.js report). Seeded: the same answers
@@ -29,8 +32,20 @@ const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const MAX = 2400000; // under the sheet's 2.5 MB cap (Code.gs AN_MAX)
 const SHEET_V = 35; // analysesGet / analysesPut
 
-// The photos' features from the public files of this checkout.
-const metaOf = () => ({ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))});
+// The photos' features from the public files of this checkout, for a subject whose analyses read them (core.js SUBJECTS
+// analyses photos: the corals'); none for another (the fish: What makes a photo hard is not among its pages).
+const metaOf = (subject = C.replaySubject()) =>
+  (C.subjectOf(subject).analyses || {}).photos
+    ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))}
+    : {ph: {}};
+// The subjects with an Analyses report (core.js SUBJECTS analyses), the replayed one (the corals) first: one report per
+// subject (Pierre, 2026-11-08: each subject's analyses refitted every 1000 of its answers, "fish when the fish analyses
+// exist").
+const subjects = () => {
+  const L = C.SUBJECTS.filter(S => S.analyses).map(S => S.id),
+    r = C.replaySubject();
+  return L.includes(r) ? [r, ...L.filter(x => x !== r)] : L;
+};
 const syncUrl = () => /const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'))[1];
 
 // The newest milestone of n answers of the analysed subject (0: none yet; Pierre, 2026-11-08: every 1000 answers of
@@ -74,6 +89,12 @@ async function sheetRun(io, token, o = {}) {
     io.log(`The sync script refused the admin token (${(head && head.error) || 'no reply'}). Nothing done.`);
     return 'refused';
   }
+  // Another subject's report only from the script that stores one per subject (rule D4): an older one would answer with
+  // the corals' stored report and store this one in its place.
+  if (subject !== C.replaySubject() && (!(Number(head.v) >= A.AN_SUBJ_SHEET) || head.subject !== subject)) {
+    io.log(`${C.subjectOf(subject).name}: the sync script answers as v${head.v || '?'}: one report per subject needs v${A.AN_SUBJ_SHEET}. Nothing done.`);
+    return 'old';
+  }
   const st = head.stored,
     // sheet v55: head.stale, an account deleted, merged or archived since the stored report: refit at once, from scratch
     // (no milestone reused), so no per-player result of a removed account stays in the report.
@@ -84,7 +105,7 @@ async function sheetRun(io, token, o = {}) {
     io.log(planText(n, p, subject));
     return 'wait';
   }
-  const prev = st && !stale ? await post({analysesGet: 1}) : null;
+  const prev = st && !stale ? await post({analysesGet: 1, subject}) : null;
   let old = null;
   try {
     old = prev && prev.report ? JSON.parse(prev.report) : null;
@@ -107,7 +128,7 @@ async function sheetRun(io, token, o = {}) {
     return 'wait';
   }
   const t0 = Date.now(),
-    rep = {...A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, Bh: o.Bh, seed: 1}), MAX), subject},
+    rep = {...A.compact(A.report(ans.rows, metaOf(subject), old, {B: o.B, Bh: o.Bh, seed: 1}), MAX), subject},
     text = JSON.stringify(rep);
   if (text.length > MAX) {
     io.log(`The report is still ${Math.round(text.length / 1000)} kB after compaction, over the sheet's cap: not stored.`);
@@ -126,13 +147,26 @@ async function sheetRun(io, token, o = {}) {
   );
   return 'stored';
 }
+// Every subject's report in turn (subjects: the corals first), each judged on its own answers (sheetRun). Returns
+// {subject: what happened}; a refused one (the token, the log, the sheet) makes the job fail, an older script's 'old' not.
+async function sheetRunAll(io, token, o = {}) {
+  const out = {};
+  for (const subject of subjects()) {
+    out[subject] = await sheetRun(io, token, {...o, subject});
+    // the token refused or the script too old for the corals' report: the same for every other subject
+    if (subject === C.replaySubject() && out[subject] !== 'wait' && out[subject] !== 'stored') break;
+  }
+  return out;
+}
 
 if (require.main === module) {
   const argv = process.argv.slice(2),
     arg = k => (argv.includes(k) ? argv[argv.indexOf(k) + 1] : null),
     B = arg('--boot') != null ? Number(arg('--boot')) : A.BOOT,
     Bh = arg('--boot-history') != null ? Number(arg('--boot-history')) : undefined,
-    log = t => console.log(t);
+    log = t => console.log(t),
+    // --in: the subject whose answers are analysed (the replayed one by default; --demo: the corals' made-up answers)
+    subject = argv.includes('--demo') || !arg('--subject') ? C.replaySubject() : C.subjectOf(arg('--subject')).id;
   require('../tests/slot.js').guard('tools/analyses.js');  // one heavy run at a time on the machine (tests/slot.js, rule W24)
   (async () => {
     if (argv.includes('--sheet')) {
@@ -150,20 +184,23 @@ if (require.main === module) {
             .catch(() => null),
         log
       };
-      const r = await sheetRun(io, token, {force: argv.includes('--force'), B, Bh});
-      if (r === 'refused') process.exitCode = 1;
+      const r = await sheetRunAll(io, token, {force: argv.includes('--force'), B, Bh});
+      if (Object.values(r).includes('refused')) process.exitCode = 1;
       return;
     }
     let rows;
     if (argv.includes('--demo')) rows = A.demoLog(rd('data.json'), Date.now() - 3 * 864e5, {cur: rd('curation.json'), qual: rd('quality.json'), met: rd('metrics.json')});
     else if (arg('--in')) {
       const J = JSON.parse(fs.readFileSync(arg('--in'), 'utf8'));
-      rows = C.subjRows(Array.isArray(J) ? J : J.rows);
-    } else throw new Error('usage: node tools/analyses.js --sheet [--force] | --in answers.json --out report.json | --demo --out report.json');
-    const rep = A.compact(A.report(rows, metaOf(), null, {B, Bh, seed: 1}), MAX),
+      rows = C.subjRows(Array.isArray(J) ? J : J.rows, subject);
+    } else
+      throw new Error(
+        'usage: node tools/analyses.js --sheet [--force] | --in answers.json [--subject fish] --out report.json | --demo --out report.json'
+      );
+    const rep = {...A.compact(A.report(rows, metaOf(subject), null, {B, Bh, seed: 1}), MAX), subject},
       out = arg('--out');
     if (out) fs.writeFileSync(out, JSON.stringify(rep));
     log(`${rep.answers} answers, ${rep.M.length} milestones${out ? ', written to ' + out : ''}.`);
   })();
 }
-module.exports = {sheetRun, metaOf, plan, lastOf, planText, headCount};
+module.exports = {sheetRun, sheetRunAll, subjects, metaOf, plan, lastOf, planText, headCount};
