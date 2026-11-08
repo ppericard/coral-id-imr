@@ -452,12 +452,13 @@ test('a non-replayed subject (fish, Q200): its units rebuilt on the device from 
       through: true,
       file: 'model.js'
     });
-  const run = (subj, P, GX = () => ({})) => {
+  const run = (subj, P, GX = () => ({}), data = {DATA: {gen: {}}}) => {
     const ctx = {
       ...C,
       SUBJ: subj,
       P,
       GX,
+      DATA: data.DATA,
       GDIFF: {},
       LEVEL: '~level',
       PICKD: {SINGLE: 0.5},
@@ -493,6 +494,12 @@ test('a non-replayed subject (fish, Q200): its units rebuilt on the device from 
   const w = run({id: 'fish', replay: false}, W, () => undefined);
   assert.ok(!w.out && w.saved === 0 && W['f:Wrasses'].pg === 0.6 && !('dp' in W['f:Wrasses']), 'no data, no rebuild');
   assert.ok(run({id: 'fish', replay: false}, W).out && C.domOn(W['f:Wrasses']), 'rebuilt once the data is in');
+  // Before data.json is in (2026-11-08: a link straight to a quiz page runs model.js first, app.js need): DATA undefined,
+  // which app.js GX reads first. Nothing read, nothing rebuilt: app.js start-up runs it again once the data is built.
+  const E = {'f:Wrasses': {ok: 6, ko: 0, h: '111111', pg: 0.6}};
+  let D; // data.json not in yet
+  const e = run({id: 'fish', replay: false}, E, n => D.gen[n] || {}, {DATA: D});
+  assert.ok(!e.out && e.saved === 0 && E['f:Wrasses'].pg === 0.6, 'no data.json, no rebuild');
 });
 
 test("the fish rebuild replays no false alarm as an own miss (Codex review #688): h's zeros capped at ko", () => {

@@ -1,0 +1,8 @@
+# Line endings: every text file is stored with LF (git detects binary files: photos, fonts, icons).
+* text=auto eol=lf
+# Machine-written JSON (the candidate lists and the judging results): collapsed in GitHub diffs and left out of the
+# language statistics. data.json stays reviewable: it is the hand-edited source of truth (tools/datajson.py).
+cand.json linguist-generated=true
+fish-cand.json linguist-generated=true
+fish-game.json linguist-generated=true
+suggest.json linguist-generated=true

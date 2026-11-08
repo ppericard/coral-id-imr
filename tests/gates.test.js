@@ -83,12 +83,29 @@ const GATES = {
   LOG_SHEET: (v, N) => {
     const logOk = fn('core.js', 'const logOk = ', '\n', 'logOk', {
       LOG_SHEET: N,
+      WINK_SHEET: 98,
+      winkEntry: a => a.m === 'wink',
       ansSubject: a => a.s || 'coral',
       replaySubject: () => 'coral'
     });
     assert.strictEqual(logOk({s: 'coral'}, v), true, 'a coral answer is always sent');
     assert.strictEqual(logOk({}, v), true, 'an answer without a subject is a coral one');
     return logOk({s: 'fish'}, v);
+  },
+  // A surprise card's answer (quiz.js winkAnswer, Mode wink; sent through core.js logOk): from v98, whose readers leave
+  // it out (Code.gs replayed_, answers_, the Activity tab); before, it stays queued (an older script would count it as a
+  // fish answer). The other answers as their own gate says (a coral one always, a fish one from LOG_SHEET).
+  WINK_SHEET: (v, N) => {
+    const logOk = fn('core.js', 'const logOk = ', '\n', 'logOk', {
+      LOG_SHEET: 60,
+      WINK_SHEET: N,
+      winkEntry: a => a.m === 'wink',
+      ansSubject: a => a.s || 'coral',
+      replaySubject: () => 'coral'
+    });
+    assert.strictEqual(logOk({s: 'coral', m: 'quiz'}, v), true, 'a coral answer is always sent');
+    assert.strictEqual(logOk({s: 'fish', m: 'quiz'}, v), Number(v) >= 60, 'a fish answer from LOG_SHEET');
+    return logOk({s: 'fish', m: 'wink'}, v) && logOk({m: 'wink'}, v);
   },
   // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
   // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).

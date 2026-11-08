@@ -196,6 +196,12 @@ function quizBoard() {
           `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-opens="${esc(S.k)}">${esc(S.row(S.units().filter(n => !introduced(n)).length))}</button></div>`
       )
       .join('')}
+    ${SETS()
+      .filter(S => S.row && !Q[S.k])
+      .map(
+        S => `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-seton="${esc(S.k)}">${esc(S.row)}</button></div>`
+      )
+      .join('')}
     ${
       weak.length
         ? `<div><h3 class="label">Review first</h3><p class="chips">${weak
@@ -235,6 +241,19 @@ function quizBoard() {
         NEXTQ = null;
         quizBoard();
         appToast('They open one at a time as you play.', 6000);
+      })
+  );
+  // An opt-in set off (app.js UNITS sets row: the fish scientific genera; Pierre, 2026-11-08: "si les gens veulent aller
+  // dans leur page progrès ou même dans les settings, d'activer les genres s'ils le veulent"): on, as ⚙ On; its units then
+  // come by the set's own rule (units).
+  document.querySelectorAll('[data-seton]').forEach(
+    b =>
+      (b.onclick = () => {
+        const S = SETS().find(x => x.k === b.dataset.seton);
+        bonusSet(true, b.dataset.seton, true);
+        NEXTQ = null;
+        quizBoard();
+        if (S && S.onToast) appToast(S.onToast(), 6000);
       })
   );
   bindSync();
