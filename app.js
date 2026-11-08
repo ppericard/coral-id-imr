@@ -1490,6 +1490,18 @@ const UNITS = {
     },
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop),
     norm: typeNormAll,
+    // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
+    // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
+    // common names (the genera's, their IMR tags, the species'), from fish.json alone. Nothing for another rank.
+    typeOther: rk => {
+      const F = rk === 'genus' && FISHRAW && FISHRAW.f;
+      if (!F) return null;
+      const first = x => String(x || '').split(/\s+/)[0];
+      return {
+        sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
+        common: [...(F.genera || []).flatMap(g => [g.common, g.imr]), ...(F.species || []).map(x => x.common)].filter(Boolean)
+      };
+    },
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
       Object.values(FISH ? FISH.gen : {})
