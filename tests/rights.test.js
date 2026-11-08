@@ -156,6 +156,15 @@ test('fishGen: a family cover between equal photos is an open one; an easier NC 
   });
   const G = C.fishGen(T, {t: [ph('nc', 5, 'cc-by-nc'), ph('open', 4, 'cc0')]});
   assert.strictEqual(G.gen['f:X'].cover, 'nc');
+  // The list the draw reads keeps no licence (model.js photoSet's ties follow it, Codex review #742): the hash order.
+  const L = ['a', 'b', 'c', 'd', 'e', 'f'].map((x, i) => ph(x, 4, i % 2 ? 'cc-by' : 'cc-by-nc'));
+  const W = C.fishGen(T, {t: L}).gen['f:X'];
+  assert.deepStrictEqual(
+    W.views.wide.map(p => p.f),
+    C.easyRank(L, undefined, false).map(p => p.f)
+  );
+  assert.strictEqual(W.cover, C.easyCover(L).f);
+  assert.strictEqual(C.rightsClass(W.views.wide.find(p => p.f === W.cover)), 'open');
 });
 
 test('applySlots: equal quality, an open photo is featured before an NC one; quality and the source order still first', () => {
@@ -187,8 +196,12 @@ test('applySlots: equal quality, an open photo is featured before an NC one; qua
     d.gen.G.sl.wide.more.map(x => x.f),
     ['nc1', 'nc2']
   );
-  // Every photo stays in the games: the rights leave none out.
-  assert.deepStrictEqual(d.gen.G.sl.wide.game.map(x => x.f).sort(), ['nc1', 'nc2', 'ncgood', 'open', 'own']);
+  // Every photo stays in the games, in the order without the rights (the draw's ties follow it, Codex review #742):
+  // the featured of the quality order (own, ncgood, nc1) lead, then the rest by source and quality.
+  assert.deepStrictEqual(
+    d.gen.G.sl.wide.game.map(x => x.f),
+    ['own', 'ncgood', 'nc1', 'nc2', 'open']
+  );
 });
 
 test('fishRun and fishQueue: between equal candidates, an open licence or his own first; the ease still first', () => {
@@ -229,17 +242,19 @@ test('fishOrder and fishCoverOf (the admin): the rights break a tie; his cover p
   assert.strictEqual(A.fishCoverOf(L, {genera: {'f:X': {cover: 'a'}}}, 'f:X', j).f, 'a');
 });
 
-test('fetch_local tie_key: equal votes, an open or own observation first; more votes still first; no votes count, the old order', () => {
+test('fetch_local tie_key: Research Grade first, then more votes, then an open or own observation; no votes count, the old order', () => {
   const R = py(`from fetch_local import tie_key
-o = lambda v, login='x': {'user': {'login': login}, **({} if v is None else {'cached_votes_total': v})}
+o = lambda v, login='x', g='research': {'user': {'login': login}, 'quality_grade': g, **({} if v is None else {'cached_votes_total': v})}
 nc, op = [{'license_code': 'cc-by-nc'}], [{'license_code': 'cc-by-nc'}, {'license_code': 'cc0'}]
 print(json.dumps([
   tie_key(o(0), op, 5) < tie_key(o(0), nc, 1),
   tie_key(o(0, 'ppericard'), nc, 5) < tie_key(o(0), nc, 1),
   tie_key(o(2), nc, 1) < tie_key(o(0), op, 5),
   tie_key(o(None), nc, 1) < tie_key(o(None), op, 5),
+  # Research Grade before a genus-level or expert ID, whatever the votes or the licence (Codex review #742).
+  tie_key(o(0), nc, 1) < tie_key(o(3, g='needs_id'), op, 0),
 ]))`);
-  assert.deepStrictEqual(R, [true, true, true, true]);
+  assert.deepStrictEqual(R, [true, true, true, true, true]);
 });
 
 test('fetch_fish lic_class: his own, CC0 / CC BY, NC (select reads it as the last tie-break, Q284)', () => {

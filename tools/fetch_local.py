@@ -93,13 +93,15 @@ def get(u):
 
 
 def tie_key(o, P, rank):
-    """The last keys of an observation in the shortlist (main): its votes (iNaturalist's order, most first), then its
-    rights (rights_rank of its best photo P: an open licence or Pierre's own first; Pierre, 2026-11-08, Q270: a tie-break
-    only), then its place in the votes order. An observation without a votes count keeps its place (rank), as before."""
+    """The last keys of an observation in the shortlist (main): Research Grade before the genus-level and expert IDs (the
+    order main lists them in; Codex review #742), then its votes (iNaturalist's order, most first), then its rights
+    (rights_rank of its best photo P: an open licence or Pierre's own first; Pierre, 2026-11-08, Q270: a tie-break only),
+    then its place in the list. An observation without a votes count keeps its place (rank), as before."""
     own = (o.get('user') or {}).get('login') == 'ppericard'
     v = o.get('cached_votes_total')
     best = min(rights_rank({'lic': ph.get('license_code'), 'own': own}) for ph in P)
-    return (-v, best, rank) if isinstance(v, int) else (rank, best, rank)
+    grade = 0 if o.get('quality_grade') == 'research' else 1
+    return (grade, -v, best, rank) if isinstance(v, int) else (grade, rank, best, rank)
 
 
 def share_alike(p):
