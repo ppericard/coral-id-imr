@@ -34,17 +34,15 @@ global fish score first, then ID marks for the 23 uncued fish families.
 
 Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes into its PR and off this list.
 
-- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone, now with the Coral Finder crops): your go and a time.
-- **Q295, Q296** (privacy page, activity study): `privacy.html` says the reports' device id is "not linked to your
-  answers", yet Pages rows hold it beside the player's id and the admin joins them; the once-a-visit `load` event is
-  described nowhere. Reword each? Rec. yes.
-- **Q297** game modes (ROADMAP "Game modes", ReefRecall's and 7 new): which next? Rec. Find the X as agreed, then Odd one
-  out and Same or different. **Q298** fish replay: device bar as a floor before sheet v60, or accept the loss? Rec.
-  measure the gap in the admin first. **Q299** the names of the 9 fish achievements not built yet (ROADMAP row).
-- **Q208** (set aside, wants more information): families not met before the scientific genera, or genera on their own
+- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone, now with the Coral Finder crops): not yet a go
+  (11-08); he wants to know whether it needs him (yes: the ruleset switch off and on, the backup kept off GitHub, and the
+  force-push needs his approval in the session) and how long the app is down (it is not: Pages keeps serving).
+- **Q208** (set aside again on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on their own
   pace? **Q230** out-of-zone taxon-page photos: open, waits for real arguments (ROADMAP row).
 - Not numbered: #641 a-j, #651's 5 choices, #664's 8 decisions (ROADMAP rows). Q123 (fish confusion a-o) and Q124
-  (name study a-h): no answer found after the 11-06 morning list; check before asking.
+  (name study a-h): Pierre may have answered them elsewhere; ask them again (11-08).
+- Answered 11-08: Q295, Q296 reword the privacy page (yes); Q297 withdrawn (not a development choice: INTEGRATOR
+  "Questions"); Q298 measure the gap in the admin on real players first; Q299 the 9 names OK.
 
 Last question number: Q299
 
