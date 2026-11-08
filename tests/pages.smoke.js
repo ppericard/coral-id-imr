@@ -971,7 +971,14 @@ async function overlays(b, base) {
       await p.reload();
       await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     }
-    await p.waitForTimeout(2500);
+    // Not a fixed wait: start-up says when its one-time cards are settled (progress.js window.CARDS_SAID, read true only
+    // once APP_READY is set, after sorryNotice ran); the apology, if due, is on screen by then. Its first-run record proves
+    // the decision was made (sorryNotice writes it before deciding).
+    const said = await p
+      .waitForFunction(() => window.CARDS_SAID && localStorage.getItem('reefid-sorry-first'), null, {timeout: 25000})
+      .then(() => true)
+      .catch(() => false);
+    if (!said) fails.push(`apology card, ${lab}: start-up never settled its cards`);
     if (await p.$('.sorry'))
       fails.push(
         `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('reefid-sorry-first'))}`
@@ -2070,9 +2077,18 @@ async function replayAdoptCheck(base) {
     });
     if (!card || card.t !== 'A test update') fails.push(`replay: no card for the version with a msg: ${JSON.stringify(card)}`);
     if (card) await p.click('.unlock.rvmsg .next');
+    // The next load: a card that came back would show after its first sync (sync.js noticeLater). Not a fixed wait:
+    // start-up says when its cards are settled (progress.js window.CARDS_SAID), and the sheet's log, emptied first,
+    // proves that came after this load's pull, never before it.
+    await p.evaluate(() => localStorage.setItem('test-sheet-log', '[]'));
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForTimeout(2500);
+    const said = await p
+      .waitForFunction(() => window.CARDS_SAID, null, {timeout: 25000})
+      .then(() => p.evaluate(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get)))
+      .catch(() => null);
+    if (said === null) fails.push('replay: at the next load, start-up never settled its cards');
+    else if (!said) fails.push('replay: at the next load, start-up said its cards were settled before the sync');
     if (await p.$('.unlock.rvmsg, .unlock.recalc')) fails.push('replay: a card came back after it was seen');
     await c.close();
   }
