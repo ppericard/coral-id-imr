@@ -1377,9 +1377,11 @@ const WIDTHS = [390, 1280];
         }
       // Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). From the script that stores one
       // report per subject (analysis.js AN_SUBJ_SHEET), the fish side's Analyses draw the fish report: its own status line
-      // and milestone, its views but What makes a photo hard and the live views (one line on its Overview says so), the
-      // fish words and unit names, never a coral genus; the corals' side keeps its own report. A script before it: the fish
-      // side has no report (rule D4), the corals' unchanged. At 1280, and the Overview and Mix-ups at 360 px too.
+      // and milestone, its views but What makes a photo hard and the live views but Stops (one line on its Overview says so),
+      // the fish words and unit names, never a coral genus; the corals' side keeps its own report. Its Stops is the live
+      // view drawn from the fish answers, not from the report (checked with fish Health, below: "Fish admin at parity"). A
+      // script before it: the fish side has no report (rule D4), the corals' unchanged. At 1280, and the Overview and
+      // Mix-ups at 360 px too.
       {
         const GATE = require('../analysis.js').AN_SUBJ_SHEET;
         for (const [v, vw] of [
@@ -1443,14 +1445,16 @@ const WIDTHS = [390, 1280];
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Pairs, Learning › Answer log, Learning › Stops.')
+            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Pairs, Learning › Answer log.')
               fe.push(`the line on what is not there: "${at.not}"`);
-            // every view the fish side has, each drawn from the fish report
+            // every view the fish side has: Stops (live) and the others, each drawn from the fish report
             const H = await fq.evaluate(() =>
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h)))
             );
-            if (H.length !== 10 || H.some(h => /photos$|pairs$|answer-log$|stops$/.test(h))) fe.push(`its views ${H.join(' ')}`);
-            for (const h of vw === 1280 ? H : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
+            if (H.length !== 11 || H.some(h => /photos$|pairs$|answer-log$/.test(h)) || !H.includes('analyses/learning/stops'))
+              fe.push(`its views ${H.join(' ')}`);
+            // the views drawn from the fish report (Stops, the live one, has no report to draw)
+            for (const h of vw === 1280 ? H.filter(h => !/stops$/.test(h)) : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
               at = await look('fish/' + h);
               if (at.none || !/^Fish: /.test(at.badge) || at.words || at.ids.length || at.coral || at.wide > 0)
                 fe.push(`#fish/${h} ${JSON.stringify({...at, views: undefined})}`);
