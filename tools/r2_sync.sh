@@ -46,7 +46,7 @@ echo "$RCLONE_SHA256  $rc/rclone.zip" | sha256sum --check --strict --quiet - ||
   { echo "rclone v$RCLONE_VERSION: the download does not match its pinned SHA-256, nothing synced" >&2; exit 1; }
 unzip -q -j "$rc/rclone.zip" "rclone-v${RCLONE_VERSION}-linux-amd64/rclone" -d "$rc"
 PATH="$rc:$PATH"
-rclone version | head -1
+rclone version | sed -n '1p'
 export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare RCLONE_CONFIG_R2_REGION=auto \
   RCLONE_CONFIG_R2_ENDPOINT="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com" \
   RCLONE_CONFIG_R2_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
@@ -62,7 +62,7 @@ if [ "$DIR" = --drop-crops ]; then
   n=$(crops | wc -l)
   echo "$n Coral Finder book crop file(s) on R2"
   if [ "${DRY_RUN:-true}" != false ]; then
-    crops | head -20
+    crops | sed -n '1,20p' # sed reads to the end: head would stop rclone early (SIGPIPE, exit 141 under pipefail)
     echo "dry run: nothing deleted (run again with dry_run unticked to delete them)"
     exit 0
   fi
@@ -89,7 +89,7 @@ rclone lsf "r2:${R2_BUCKET}/img" --files-only --fast-list | sort >"$have"
 missing=$(comm -23 "$want" "$have")
 if [ -n "$missing" ]; then
   echo "$(printf '%s\n' "$missing" | wc -l) file(s) of photos that live on R2 only are missing from the bucket:" >&2
-  printf '%s\n' "$missing" | head -50 >&2
+  printf '%s\n' "$missing" | sed -n '1,50p' >&2
   exit 1
 fi
 echo "img/ copied to R2; the $(wc -l <"$want") files of the photos that live on R2 only are there: $(rclone size "r2:${R2_BUCKET}/img" --json)"
