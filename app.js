@@ -1493,9 +1493,12 @@ const UNITS = {
       }
     },
     // About and credits (home.js viewAbout), shown only to a player the subject is open to (subjMine): what they learn
-    // (Who made it), where its content comes from (Course content) and the works it cites (References).
+    // (Who made it), where its content comes from (Course content), its photos besides iNaturalist's (Photos) and the works
+    // it cites (References).
     about: {
       who: 'reef fish families',
+      photos:
+        'Fish photos also come from <a href="https://www.fishbase.se" target="_blank" rel="noopener">FishBase</a>, under CC BY-NC, and never from IMR’s presentations.',
       course:
         'The fish families follow the reef fish ID book (References); the cues, the look-alikes and IMR’s names come from the IMR fish presentation.',
       refs: '<li>Gerald Allen, Roger Steene, Paul Humann and Ned DeLoach, <i>Reef Fish Identification: Tropical Pacific</i> (2nd ed., 2015), New World Publications: its identification groups order the fish families.</li>'
