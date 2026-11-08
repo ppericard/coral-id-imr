@@ -1643,7 +1643,7 @@ let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' 
 const FU_TAGS = [
   {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
   {0: 'partial'},
-  {d: 'dim light', n: 'night'},
+  {d: 'dim light', n: 'night livery'},
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
   {m: 'soft', b: 'blurred'},
   {s: 'small'},

@@ -38,8 +38,8 @@ VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos show
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
 # A reference photo (`rep`: the photo a reference source uses to represent the species, FishBase's main picture or
 # iNaturalist's taxon photo; Pierre, 2026-11-05: "such photos are easy to identify, so they should come early in the quiz
-# for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a night shot
-# stays capped). One point lifts a medium photo (3) into the very easy ones (4-5).
+# for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a fish in its
+# night livery stays capped). One point lifts a medium photo (3) into the very easy ones (4-5).
 REP_BONUS = 1
 
 
@@ -58,6 +58,8 @@ def cap(code, phase, juv_ok=False, rep=None):
         e = min(e, 2)
     # The phase flag p caps nothing (Pierre, 2026-11-04: a sex or colour phase is a species-level difficulty; an Anthias
     # or a parrotfish is easy to call one at the family level), kept for the species questions and explanation cards.
+    # light n is the night livery only (rubric 6, Pierre, 2026-11-08, Q308: a night or resting colour pattern unlike the
+    # day one); a fish lit by a flash or a lamp on a dark background is good light (g) and caps nothing.
     if set(fl) & set("ca") or light == "n" or loss == "2" or v in "htd" or w == "0":
         e = min(e, 3)
     return e, code[:7] + fl
