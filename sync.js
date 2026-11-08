@@ -269,7 +269,13 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       // Today's bars as a floor at a subject's first replay (SUBJECTS replayed floor; Q310) are in the replay itself: the
       // sheet floors it against the account's saved copy (Code.gs replay_, core.js replayFloor), so every device adopts
       // the same record and keeps it as their shared baseline (replayBase; Codex review #779).
-      M = replayedOf({P: R}, P, rp.rv);
+      M0 = replayedOf({P: R}, P, rp.rv);
+    let M = M0;
+    // A unit replayedOf keeps from this device (more answers here than in the log: answers from before fish logging)
+    // beside the replayed records: their mix-ups and offers on it may read it lower than it was here, so its bar of
+    // before is floored too, in this device's progress (core.js replayFloor; Codex review #779).
+    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && P[g] && !P[g].rv);
+    if (S.replayed && S.replayed.floor && keptHere.length) M = replayFloor(M, P, keptHere);
     // A floored replay's typed opportunities (core.js replayFloor may raise the level's, which a unit's false-alarm rate
     // reads): kept per rank when this device's larger answer count keeps its own level (replayedOf), here (the replay
     // with this device's answers on top, R) and in the shared baseline below (the sheet's replay alone, rp.rec: this

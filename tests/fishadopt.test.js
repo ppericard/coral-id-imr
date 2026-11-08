@@ -512,3 +512,40 @@ test("an unsent typed answer at adoption: its typed opportunity in this device's
   assert.ok(((a.fish()['~level'] || {}).tyk || {}).f >= 1, "in this device's progress");
   assert.ok(!((a.base()['~level'] || {}).tyk || {}).f, 'not in the shared baseline');
 });
+
+// Codex review #779: a unit with more answers here than in the log (from before fish logging) keeps this device's record
+// (replayedOf), beside replayed records whose offers and mix-ups on it read it lower: its bar of before is floored too.
+test('a unit kept from this device for its larger count keeps its bar beside the replayed mix-ups on it', async () => {
+  const s = loadCodeGs(withFiles()),
+    dp = C.domFromCounts({ok: 10, ko: 0, h: '1111111111'}, 0.5, 4, 0).dp,
+    mine = {'f:Damselfishes': {ok: 10, ko: 0, h: '1111111111', u: 10, dp, ds: 0.8}, '~level': {ok: 10, ko: 0, th: 1}},
+    own = Array.from({length: 5}, (_, i) => ({...fa('d' + i, i), a: 'f:Damselfishes', ok: 1})),
+    wr = Array.from({length: 10}, (_, i) => ({
+      ...fa('w' + i, 10 + i),
+      g: 'f:Wrasses',
+      a: i === 0 ? 'f:Damselfishes' : 'f:Wrasses',
+      ok: i === 0 ? 0 : 1,
+      ch: 'f:Wrasses f:Damselfishes f:Angelfishes f:Butterflyfishes'
+    }));
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-fish-progress': JSON.stringify(mine)},
+    summary: {},
+    answers: [...own, ...wr]
+  });
+  const a = app({
+    sheet: atv(s),
+    ls: {'reefid-sync-fish-progress': JSON.stringify(mine), 'reefid-sync-coral-rv': String(C.RV)},
+    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(mine)), srv: 1}
+  });
+  await a.syncPush();
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  const P = a.fish();
+  assert.strictEqual(P['f:Damselfishes'].ok, 10, "this device's record, its larger count");
+  assert.ok(C.faOf(P, 'f:Damselfishes') > 0, 'the replayed mix-ups on it');
+  assert.ok(
+    bar(P, 'f:Damselfishes') >= bar(mine, 'f:Damselfishes') - 1e-9,
+    `${bar(P, 'f:Damselfishes')} vs ${bar(mine, 'f:Damselfishes')}`
+  );
+});

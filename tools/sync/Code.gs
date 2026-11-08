@@ -6332,11 +6332,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's but
   // for those typed opportunities; a learned mark or an exam in course comes from the device
   // (replayedOf). Returns a copy of M floored.
-  function replayFloor(M, P) {
+  // only: the units to floor (default every unit of P that came from no replay), their bars read in P whole.
+  function replayFloor(M, P, only) {
     const out = {...(M || {})},
       S = isObj(P) ? P : {},
       dup = x => JSON.parse(JSON.stringify(x)),
-      L = Object.keys(S).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
+      L = (only || Object.keys(S)).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
     L.forEach(g => isObj(out[g]) || (out[g] = dup(S[g])));
     const lift = (g, want) => (out[g] = {...dup(out[g]), ds: Math.min(1, Math.round((want + faOf(out, g)) * 1e4 + 0.5) / 1e4)});
     // Passes until none changes: a record taken whole brings its own conf and off, which other units' bars read.
