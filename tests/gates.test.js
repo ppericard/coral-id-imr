@@ -51,6 +51,17 @@ const GATES = {
   // Activity's light read every minute while it is open and in view (admin.js liveOn, liveArm; Code.gs live_ readLive):
   // from the version that serves it; before, ↻ by hand only.
   LIVE_SHEET: (v, N) => fn('admin.js', 'const liveOn = ', '\n', 'liveOn', {ANS: v === undefined ? {} : {v}, LIVE_SHEET: N})(),
+  // The device's id on every answer it sends (sync.js devField, the save's and the anonymous send's dev; Code.gs
+  // logAnswers_ Device; Q312): from the version that writes it; before, nothing more is sent.
+  DEV_SHEET: (v, N) => {
+    const f = fn('sync.js', 'const devField = ', '\n', 'devField', {
+      devOn: () => (v === undefined ? 0 : v) >= N,
+      devId: () => 'abcdefghij'
+    });
+    const on = fn('sync.js', 'const devOn = ', '\n', 'devOn', {sheetV: () => (v === undefined ? 0 : v), DEV_SHEET: N})();
+    assert.strictEqual(JSON.stringify(f()), JSON.stringify(on ? {dev: 'abcdefghij'} : {}));
+    return on;
+  },
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
