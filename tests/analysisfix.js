@@ -5,11 +5,18 @@ const assert = require('node:assert');
 const A = require('../analysis.js');
 const near = (got, want, tol, what) => assert.ok(Math.abs(got - want) <= tol, `${what}: ${got.toFixed(3)} not within ${tol} of ${want}`);
 
-// The generator with its effects switched off (TRUTH patched for the duration of fn, then put back).
+// The generator with its effects switched off (TRUTH patched for the duration of fn, then put back). Only TRUTH's own
+// keys are written (a key it lacks, __proto__ among them, fails at once: no prototype pollution, no silent typo).
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 function withTruth(patch, fn) {
   const save = JSON.parse(JSON.stringify(A.TRUTH));
   const put = (o, p) =>
-    Object.entries(p).forEach(([k, v]) => (v && typeof v === 'object' && !Array.isArray(v) ? put(o[k], v) : (o[k] = v)));
+    Object.keys(p).forEach(k => {
+      if (UNSAFE.has(k) || !Object.prototype.hasOwnProperty.call(o, k)) throw new Error(`withTruth: no TRUTH key ${k}`);
+      const v = p[k];
+      if (v && typeof v === 'object' && !Array.isArray(v)) put(o[k], v);
+      else o[k] = v;
+    });
   put(A.TRUTH, patch);
   try {
     return fn();
