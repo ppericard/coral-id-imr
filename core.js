@@ -2286,49 +2286,80 @@
     ['fb5', 'Helping hand', '5 reports sent: you are making the app better', 2, '💬', s => s.fb >= 5, 'contrib'],
     ['fb10', 'Co-author', '10 reports sent: the app owes you a lot', 3, '💬', s => s.fb >= 10, 'contrib']
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
-  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start: families met, levels,
-  // mastery, scientific names; species named and Fish basics wait for those features; harder "hunt" ones later, apart;
-  // "do not multiply achievements"). Learning milestones only (rule L8), tested on the fish snapshot (progress.js
-  // achSnap: the same fields over the fish slate, core = the IMR course's families, sets.sci = scientific genera at Open
-  // Water or above), in the shared record under ids starting with f, so a fish achievement never counts in the corals'
-  // (each subject's page and badge count its own list; SUBJECTS achs). Timing simulated with the real fish game
-  // (tools/learnsim.js --subject fish --ach): docs/LEARNING.md "Fish achievements, simulated".
+  // The fish achievements (Pierre, 2026-11-04: "about 14 general fish achievements" to start; redesigned around the global
+  // score, 2026-11-08, Q259-Q263: docs/LEARNING.md "Fish achievements, around the global score"). Learning milestones only
+  // (rule L8), tested on the fish snapshot (progress.js achSnap: the same fields over the fish slate; core = the IMR
+  // course's families; circ = each circle's families, Advanced or above counted; sets.sci = scientific genera at Open
+  // Water or above, setsAdv.sci at Advanced or above; pct = the global fish score, treeScore's %), in the shared record
+  // under ids starting with f, so a fish achievement never counts in the corals' (each subject's page and badge count its
+  // own list; SUBJECTS achs). Names short, fun and varied, diver-flavoured (Pierre, 2026-11-08: "des noms sympas,
+  // rigolos, pour varier"); descriptions plain and exact. Retired (Q259, 2026-11-08): fpct25, removed from every record by
+  // the recount (progress.js ACH_V 3, achMigrate), as every % one met on the former families' mean and not on the score.
+  // Wait for the species level, documented, not built: fpct70, fpct100, species named, Fish basics (LEARNING).
+  // Timing simulated with the real fish game (tools/learnsim.js --subject fish --ach).
   const FISH_ACH = [
-    ['fmet5', 'First families', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
-    ['fmetcore', 'The IMR line-up', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
-    ['fmetall', 'Whole reef', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
-    ['fq50a', 'Open Water: 5 families', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
-    ['fq50b', 'Open Water: 20 families', '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
-    ['fq80a', 'Advanced: 5 families', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
-    ['fq80b', 'Advanced: 15 families', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    ['fmet5', 'Meet the neighbours', 'Met 5 fish families', 1, '🧭', s => s.met >= 5],
+    ['fmetcore', 'Roll call', 'Met every family of the IMR course', 2, '🧭', s => s.core.total && s.core.met >= s.core.total],
+    ['fmetall', 'Full logbook', 'Met every fish family in the game', 2, '🧭', s => s.total && s.met >= s.total],
+    ['fq50a', 'Certified', '5 families at Open Water level or above (50%+)', 1, '🌱', s => s.q[0] >= 5],
+    ['fq50b', "School's in", '20 families at Open Water level or above', 2, '🌱', s => s.q[0] >= 20],
+    ['fq80a', 'Night diver', '5 families at Advanced level or above (80%+)', 1, '🌿', s => s.q[1] >= 5],
+    ['fq80b', 'Deep diver', '15 families at Advanced level or above', 2, '🌿', s => s.q[1] >= 15],
+    ['fq95a', 'Dive guide', '5 families at Divemaster level or above (95%: their mastery exam is on)', 2, '🐠', s => s.q[2] >= 5],
+    ['flearn1', 'First briefing', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
+    ['flearn10', 'Course director', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    ['flearn30', 'Fish whisperer', 'Mastery exam passed on 30 families', 3, '🎓', s => s.learned >= 30],
+    // The circles (the IMR course's families, those that open right after them, those beyond the course).
     [
-      'fq95a',
-      'Divemaster: 5 families',
-      '5 families at Divemaster level or above (95%: their mastery exam is on)',
+      'fcoreadv',
+      'House reef',
+      'Every family of the IMR course at Advanced level or above (80%+)',
       2,
-      '🐠',
-      s => s.q[2] >= 5
+      '🗺️',
+      s => s.core.total && s.core.adv >= s.core.total
     ],
-    ['flearn1', 'First fish Instructor', "You passed a family's mastery exam: you could teach it", 2, '🎓', s => s.learned >= 1],
-    ['flearn10', 'Instructor: 10 families', 'Mastery exam passed on 10 families', 3, '🎓', s => s.learned >= 10],
+    [
+      'fc2',
+      'Supporting cast',
+      'Every family that opens right after the IMR course’s at Advanced level or above',
+      2,
+      '🗺️',
+      s => !!(s.circ && s.circ[1] && s.circ[1].total && s.circ[1].adv >= s.circ[1].total)
+    ],
+    [
+      'fc3adv',
+      'Muck diver',
+      '20 families beyond the IMR course at Advanced level or above',
+      3,
+      '🗺️',
+      s => !!(s.circ && s.circ[2] && s.circ[2].adv >= 20)
+    ],
     [
       'flearncore',
-      'IMR fish master',
+      'Transect master',
       'You know every family of the IMR course for sure',
       3,
       '👑',
       s => s.core.total && s.core.learned >= s.core.total
     ],
-    ['fpct25', 'A quarter of the reef', '25% fish progress', 2, '📈', s => s.pct >= 25],
-    ['fpct50', 'Half the reef', '50% fish progress', 3, '📈', s => s.pct >= 50],
+    // The global fish score (core.js treeScore, Q242), every 10 points (Q259); 50% is the families' anchor.
+    ['fpct10', 'Giant stride', '10% fish progress', 1, '📈', s => s.pct >= 10],
+    ['fpct20', 'Bubble trail', '20% fish progress', 1, '📈', s => s.pct >= 20],
+    ['fpct30', 'Reef crest', '30% fish progress', 2, '📈', s => s.pct >= 30],
+    ['fpct40', 'Down the wall', '40% fish progress', 2, '📈', s => s.pct >= 40],
+    ['fpct50', 'Family reunion', '50% fish progress: what knowing every family for sure is worth', 3, '📈', s => s.pct >= 50],
+    ['fpct60', 'Blue water', '60% fish progress', 3, '📈', s => s.pct >= 60],
+    // The scientific genera (an opt-in set, SUBJECTS optin sci).
     [
       'fsci5',
-      'Genus names',
+      'Latin lessons',
       '5 scientific genera at Open Water level or above: you can name them as EventMeasure does',
       2,
       '🏷️',
       s => (s.sets.sci || 0) >= 5
-    ]
+    ],
+    ['fgen20', 'Name dropper', '20 scientific genera at Advanced level or above (80%+)', 2, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 20],
+    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id.
@@ -2371,13 +2402,28 @@
   }
   // The achievements a snapshot meets that `have` ({id: time}) does not hold yet, in list order.
   const newAch = (snap, have, list = ACH) => list.filter(a => !(have || {})[a.id] && a.test(snap)).map(a => a.id);
+  // The full recount (progress.js achMigrate, achPending; Pierre, 2026-11-01 and 2026-11-08: "recalculer ... leur succès
+  // actuel" from their current progress): into B, every achievement of list that the snapshot meets, dated by the
+  // earliest of B's own (a copy already recounted, merged in) and old's (the record before the recount), else t. What the
+  // snapshot does not meet is left out (an achievement of an older record never comes back through a merge: mergeAch
+  // takes no achievement from a record of another version). Changes B; returns the ids it holds from list.
+  function achRecount(B, old, list, snap, t) {
+    const ok = x => typeof x === 'number' && x > 0;
+    return (list || [])
+      .filter(a => a.test(snap))
+      .map(a => {
+        const d = [B[a.id], old && old[a.id]].filter(ok);
+        B[a.id] = d.length ? Math.min(...d) : t;
+        return a.id;
+      });
+  }
   // Achievements taken back (Pierre, 2026-11-03): only those that rest on genera learned, and only when a recalculation
   // takes a learned mark away (model.js mxRecalc, progress.js achRecheck); anywhere else achievements are only added.
   // achRevoke removes from A ({id: time}) those of ACH_LEARN that the snapshot no longer meets, and dates in A._gone
   // {id: time} every one of them the snapshot does not meet, held here or not: the tombstone keeps a copy earned before
   // (the sheet's, another device's not merged yet) from coming back through a merge (mergeAch); earned again later, the
   // achievement carries a newer time and stays. Returns the ids removed.
-  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearncore'];
+  const ACH_LEARN = ['learn1', 'learn5', 'learn10', 'learn20', 'learnall', 'group', 'flearn1', 'flearn10', 'flearn30', 'flearncore'];
   // list: the achievements the snapshot is about (a subject's own: SUBJECTS achs), the corals' by default.
   function achRevoke(A, snap, t, list = ACH) {
     if (!A || typeof A !== 'object') return [];
@@ -4930,6 +4976,7 @@
     ACH_CONTRIB,
     achFind,
     newAch,
+    achRecount,
     ACH_LEARN,
     achRevoke,
     mergeAch,
