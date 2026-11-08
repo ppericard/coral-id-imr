@@ -4254,6 +4254,16 @@ async function subjTour(b, base) {
             skip: !!b.querySelector('.tskip'),
             sync: !!b.querySelector('.tsync'),
             ring: (document.querySelector('#tour .tring').getAttribute('d') || '').length > 0,
+            // What the ring frames: Home's subject row (the header's subject control steps aside on Home, app.css), or ''.
+            framed: (() => {
+              const g = document.querySelector('#tour .tring').getBoundingClientRect(),
+                row = document.querySelector('#view .hsubj'),
+                r = row && row.getBoundingClientRect(),
+                x = r && (r.left + r.right) / 2,
+                y = r && (r.top + r.bottom) / 2;
+              return r && r.width && g.width && x >= g.left && x <= g.right && y >= g.top && y <= g.bottom ? 'row' : '';
+            })(),
+            hdrSubj: getComputedStyle(document.getElementById('subjc')).visibility,
             subj: SUBJ.id,
             hash: location.hash
           }
@@ -4325,7 +4335,7 @@ async function subjTour(b, base) {
     const all = await walk(p),
       words = await p.evaluate(() => ({doors: UNITS.fish.tour.doors.d, games: UNITS.fish.tour.games.t}));
     const sw = all[0] || {};
-    if (sw.n !== '3 / 8' || sw.h !== 'Corals or Fish, any time' || !sw.ring)
+    if (sw.n !== '3 / 8' || sw.h !== 'Corals or Fish, any time' || !sw.ring || sw.framed !== 'row' || sw.hdrSubj !== 'hidden')
       fails.push(`subject tour, group: the switch step ${JSON.stringify(sw)}`);
     const doors = all.find(s => s.h === 'Two ways in'),
       games = all.find(s => s.h === words.games);
