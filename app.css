@@ -2871,6 +2871,14 @@ header {
   .subjb .sjc {
     display: none;
   }
+  /* The two-sided subject switch does not fit beside the Sign in pill: one chip instead, the subject on screen, one click
+     to the other (app.js showSubj). */
+  header:has(#signb:not([hidden])) .subjsw {
+    display: none;
+  }
+  header:has(#signb:not([hidden])) .subjflip {
+    display: inline-flex;
+  }
 }
 .helpbox {
   grid-area: help;
@@ -6982,6 +6990,73 @@ html.touring .unlock {
     background: var(--surface-2);
   }
 }
+/* The header's subject switch (two subjects: app.js showSubj, subjCtl), in the chip's place: one click a side (Pierre,
+   2026-11-08), the look of the admin's mini switch (admin.css .adm-subj): a 32 px pill, each side the subject's icon and
+   name, the subject on screen raised with its icon in the accent; no beta tag (Home's row carries it), so the header keeps
+   its one line on desktops. Phones and tablets: each side its icon only (its name stays its label), so a tablet's header
+   wraps no more than it did with the chip; phones: 30 px. Three subjects or more get the chip and its menu above. */
+.subjsw {
+  display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  padding: 2px;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+}
+.subjsw button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px 0 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.subjsw .sji {
+  flex: none;
+}
+.subjsw button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.subjsw button[aria-pressed='true'] .sji {
+  color: var(--accent);
+}
+@media (hover: hover) {
+  .subjsw button[aria-pressed='false']:hover {
+    color: var(--ink);
+  }
+}
+.subjsw .beta {
+  display: none;
+}
+/* The switch as one chip (app.js showSubj [data-flip]: the subject on screen, one click brings the other), where its two
+   sides do not fit: under 380 px while the Sign in (or Not saved) pill shows (below). */
+.subjflip {
+  display: none;
+}
+@media (max-width: 1023.98px) {
+  .subjsw button {
+    padding: 0 8px;
+  }
+  .subjsw button > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
 @media (max-width: 599.98px) {
   header:has(#subjc:not([hidden])) {
     grid-template-columns: auto 1fr auto;
@@ -6995,6 +7070,12 @@ html.touring .unlock {
     height: 30px;
     padding: 0 7px;
     gap: 3px;
+  }
+  .subjsw {
+    height: 30px;
+  }
+  .subjsw button {
+    padding: 0 7px;
   }
   .subjb .sjn,
   header:has(#subjc:not([hidden])):has(#signb:not([hidden])) .brand .home span {

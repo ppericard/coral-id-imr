@@ -714,7 +714,7 @@ function inSubject(id, fn) {
   }
 }
 // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): two places, one state, the Corals | Fish row
-// at the top of Home (home.js) and the subject chip next to the logo in the header (#subjc, showSubj), shown only while
+// at the top of Home (home.js) and the subject switch next to the logo in the header (#subjc, showSubj), shown only while
 // the player has more than one subject (subjMine: the admin's only while a subject is in beta). The subject's data
 // first, then everything reloads for it. Remembered on this device and synced (SUBJECT_KEY, a reefid-sync key). A
 // subject the player may not have (subjAt) brings the corals.
@@ -750,24 +750,47 @@ const subjBtns = () =>
         `<button type="button" data-subj="${S.id}" aria-pressed="${S === SUBJ}">${subjIcon(S)}<span>${esc(S.name)}</span>${S.beta ? '<small class="beta">beta</small>' : ''}</button>`
     )
     .join('');
-// Everything that names the subject on screen: the switches ([data-subj] buttons: Home's row, the header chip's menu),
-// the header chip itself (the subject on screen, its icon and name; the name steps aside on phones while the Sign in pill
-// shows, app.css), ⚙ rows of one subject only (setrow[data-for]), the section tabs' words.
+// The header's subject control for n subjects (Pierre, 2026-11-08: "it makes me click twice on desktop to change mode"):
+// two subjects, a one-click switch (a [data-subj] button each, as Home's row); three or more, the chip and its menu (a
+// switch of three or more would not fit the header on phones); fewer than two, nothing. Where the two sides do not fit
+// (under 380 px while the Sign in pill shows, app.css), the switch shows as one chip with the subject on screen, and one
+// click on it brings the other ([data-flip]).
+const subjCtl = n => (n === 2 ? 'switch' : n > 2 ? 'menu' : '');
+// Everything that names the subject on screen: the switches ([data-subj] buttons: Home's row, the header's switch or its
+// chip's menu), the header chip itself (the subject on screen, its icon and name; the name steps aside on phones while the
+// Sign in pill shows, app.css), ⚙ rows of one subject only (setrow[data-for]), the section tabs' words.
 const $subjc = document.getElementById('subjc');
 function showSubj() {
   document.documentElement.dataset.subject = SUBJ.id;
-  const two = subjMine().length > 1;
-  $subjc.hidden = !two;
-  $subjc.innerHTML = two
-    ? `<button type="button" class="subjb" id="subjb" aria-haspopup="true" aria-expanded="false" aria-controls="subjmenu" aria-label="Subject: ${esc(SUBJ.name)}. Switch" title="Subject: ${esc(SUBJ.name)}">${subjIcon(SUBJ)}<span class="sjn">${esc(SUBJ.name)}</span><svg class="sjc" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="subjmenu" id="subjmenu" role="group" aria-label="Subject" hidden>${subjBtns()}</div>`
-    : '';
+  const ctl = subjCtl(subjMine().length),
+    // A switch used from the keyboard keeps the focus once redrawn: the same subject's button, or the chip.
+    a = document.activeElement,
+    had = $subjc.contains(a) ? (a.dataset.flip ? 'flip' : a.dataset.subj || 'chip') : '',
+    other = subjMine().find(S => S !== SUBJ);
+  $subjc.hidden = !ctl;
+  $subjc.innerHTML =
+    ctl === 'switch'
+      ? `<div class="subjsw" role="group" aria-label="Subject">${subjBtns()}</div><button type="button" class="subjb subjflip" data-flip="${other.id}" aria-label="Subject: ${esc(SUBJ.name)}. Switch to ${esc(other.name)}" title="Subject: ${esc(SUBJ.name)}. Switch to ${esc(other.name)}">${subjIcon(SUBJ)}</button>`
+      : ctl === 'menu'
+        ? `<button type="button" class="subjb" id="subjb" aria-haspopup="true" aria-expanded="false" aria-controls="subjmenu" aria-label="Subject: ${esc(SUBJ.name)}. Switch" title="Subject: ${esc(SUBJ.name)}">${subjIcon(SUBJ)}<span class="sjn">${esc(SUBJ.name)}</span><svg class="sjc" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="subjmenu" id="subjmenu" role="group" aria-label="Subject" hidden>${subjBtns()}</div>`
+        : '';
+  if (had) {
+    const f =
+      ctl !== 'switch'
+        ? document.getElementById('subjb')
+        : had === 'flip'
+          ? $subjc.querySelector('[data-flip]')
+          : $subjc.querySelector(`[data-subj="${had}"]`);
+    if (f) f.focus();
+  }
   document.querySelectorAll('[data-subj]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.subj === SUBJ.id)));
   document.querySelectorAll('[data-for]').forEach(r => (r.hidden = r.dataset.for !== SUBJ.id));
   // The header's links to the pages that follow the subject carry its prefix (index.html data-key: a page key), each the
   // subject's own page (subjPage: Identify's key is the Fish ID Key with Fish chosen, #fish/identify/key; Codex review #612).
   document.querySelectorAll('a[data-key]').forEach(a => a.setAttribute('href', hr(subjPage(a.dataset.key))));
 }
-// The header chip's menu: opened and closed by the chip, closed by a choice, Escape or a tap elsewhere (as ⚙).
+// The header chip's menu (three subjects or more): opened and closed by the chip, closed by a choice, Escape or a tap
+// elsewhere (as ⚙).
 function subjMenu(open) {
   const m = document.getElementById('subjmenu'),
     b = document.getElementById('subjb');
@@ -776,12 +799,13 @@ function subjMenu(open) {
   b.setAttribute('aria-expanded', String(open));
   if (open) (m.querySelector('[aria-pressed="true"]') || m.querySelector('button')).focus();
 }
-// Every subject switch on any page ([data-subj]: Home's row, the header chip's menu).
+// Every subject switch on any page ([data-subj]: Home's row, the header's switch, the header chip's menu; [data-flip]: the
+// header's switch on the narrowest phones).
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-subj]');
+  const b = e.target.closest('[data-subj], [data-flip]');
   if (b) {
     subjMenu(false);
-    setSubject(b.dataset.subj);
+    setSubject(b.dataset.subj || b.dataset.flip);
   } else if (e.target.closest('#subjb')) subjMenu(document.getElementById('subjmenu').hidden);
   else if (!e.target.closest('#subjmenu')) subjMenu(false);
 });
@@ -1294,7 +1318,7 @@ const pg = l => (l.a === l.b ? 'p.' + l.a : 'p.' + l.a + '-' + l.b);
 const leafLabel = l => l.t + (l.s ? ' · ' + l.s : '');
 
 /* ---------- quiz ---------- */
-// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or with the header chip (setSubject;
+// The subject the player is on (core.js SUBJECTS: Corals, Fish), chosen on Home or in the header (setSubject;
 // the admin's only while Fish is in beta), remembered on the device and synced (SUBJECT_KEY). Everything below (P, Q, the slate, the cards, the comeback...) is the current
 // subject's; code that must read another subject's state runs inside inSubject() (sync.js: the sheet's summary and
 // the merge of every subject's progress). setSubject() switches (subjectLoad: each file's per-subject state).
