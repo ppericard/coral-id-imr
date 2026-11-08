@@ -174,14 +174,14 @@ const fishJudged = j =>
   !j
     ? '<p class="adm-judge">Not judged yet</p>'
     : `<p class="adm-judge${j.k === 'dup' ? ' warn' : ''}" title="Suggestion of the judging pass (suggest.json)">${j.e ? `<span class="adm-chip adm-fease" title="Ease 1-5 (5 very easy): the photo's difficulty prior">ease ${j.e}</span> ` : ''}${[FKEEP[j.k] || '', fishTagText(j.jt), j.ph ? esc(j.ph) : '', j.u && j.u.length ? `unsure: ${esc(j.u.join(', '))}` : '', j.n ? esc(j.n) : '', j.c ? 'crop suggested' : ''].filter(Boolean).join(' · ')}</p>`;
-// A fish photo with its crop: Pierre's (draft), else, outside a Check, the pass's; and his rotation (fish rot, drawn by
-// admin.js rotFit). The photos stay remote (iNaturalist, FishBase) until they enter the game (admin plan PR 7).
+// A fish photo with its crop: Pierre's (draft), else, outside a Check, the pass's; and his rotation (fish rot). Through
+// admin.js crSrc, as the family pages (fuP): a candidate (remote) gets both drawn on its original; a photo in play from
+// fish-game.json, whose R2 file has its published crop and rotation baked in (cr, ro), is shown as it is while the draft
+// keeps them, else from its original with the draft's (Codex review #793: drawn over the baked file, a published 90°
+// showed as 180°).
 const fishRot = f => rotNorm(((DRAFT.fish || {}).rot || {})[f]);
-const fishSrc = (p, s, blind) => {
-  const c = ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && p.j && p.j.c) || null,
-    ro = fishRot(p.f);
-  return `src="${esc(img(p, s))}"${c ? ` style="object-view-box:${vbox(c)}"` : ''}${ro ? ` data-rot="${ro}"` : ''}`;
-};
+const fishSrc = (p, s, blind) =>
+  crSrc({...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && p.j && p.j.c) || null, ro: fishRot(p.f)}}, s);
 // Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
 // Indo-West Pacific (the coral origins' colours, admin.js ORIGINS).
 const fishSrcTag = p => {

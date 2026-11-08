@@ -2,14 +2,14 @@
 // set in the admin's crop editor, through the draft and Publish (rule A1), applied to the files by the photo workflow
 // after the crop (tools/photos.py turn). The curation key (autosort.js rotNorm, rotStep, rotSet), its merge (core.js
 // merge3), the composed transform (autosort.js photoAt, turnedSize: the crop cut from the original, then turned) against
-// the workflow's own on a fixture image, and the editor's and previews' geometry (rotDelta, rotScale).
+// the workflow's own on a fixture image, and the editor's and previews' geometry (rotDelta, rotScale, rotCover).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   os = require('os'),
   path = require('path'),
   {execFileSync} = require('child_process');
-const {ROTS, rotNorm, rotStep, rotSet, photoAt, turnedSize, rotDelta, rotScale} = require('../autosort.js');
+const {ROTS, rotNorm, rotStep, rotSet, photoAt, turnedSize, rotDelta, rotScale, rotCover} = require('../autosort.js');
 const {merge3} = require('../core.js');
 const ROOT = path.join(__dirname, '..');
 const py = code => execFileSync('python3', ['-c', `import sys, json; sys.path.insert(0, 'tools')\n${code}`], {cwd: ROOT, encoding: 'utf8'});
@@ -105,15 +105,37 @@ test('the crop editor and the previews: a drag in the turned photo, a turned pre
       `rot ${r}`
     )
   );
-  // Upright or half a turn: no scale. A 4:3 tile photo turned a quarter covers its tile again at 4/3.
-  assert.strictEqual(rotScale(400, 300, 180, true), 1);
-  assert.strictEqual(rotScale(400, 300, 90, true), 4 / 3);
+  // A whole photo (contain: the lightbox, the swiper). Upright or half a turn: no scale.
+  assert.strictEqual(rotScale(400, 300, 180, 4 / 3), 1);
   // A whole 4:3 photo in a 4:3 box (the lightbox) turned a quarter: 3/4 of its size, whole inside.
-  assert.strictEqual(rotScale(400, 300, 90, false, 4 / 3), 0.75);
+  assert.strictEqual(rotScale(400, 300, 90, 4 / 3), 0.75);
   // A 4:3 photo fitted in a tall box (the phone's swiper, 300 x 600): 400 wide once turned would not fit; it fills the width.
-  const k = rotScale(300, 600, 270, false, 4 / 3);
+  const k = rotScale(300, 600, 270, 4 / 3);
   assert.ok(Math.abs(k * 225 - 300) < 1e-9, String(k));
-  assert.strictEqual(rotScale(0, 0, 90, true), 1, 'no box yet');
+  assert.strictEqual(rotScale(0, 0, 90, 1), 1, 'no box yet');
+  // A tile's photo (cover) turned a quarter shows exactly the part of the photo the turned file will show in that tile
+  // (Codex review #793: a portrait photo turned in a landscape tile was cut twice). The cover cut of an image of aspect
+  // a in a box of aspect b, as fractions of the image kept along its width and height:
+  const cut = (a, b) => (a > b ? [b / a, 1] : [1, a / b]);
+  assert.strictEqual(rotCover(400, 300, 180), null);
+  assert.strictEqual(rotCover(400, 300, 0), null);
+  assert.deepStrictEqual(rotCover(400, 300, 90), {w: 300, h: 400, mv: -50, mh: 50}, 'the box swapped, the tile kept 400 x 300');
+  for (const [bw, bh] of [
+    [400, 300],
+    [300, 300],
+    [300, 400]
+  ])
+    for (const ia of [0.75, 1, 4 / 3, 1.5, 0.5])
+      [90, 270].forEach(r => {
+        const v = rotCover(bw, bh, r),
+          shown = cut(ia, v.w / v.h), // the preview: the original cut to cover the swapped box, then turned
+          [gx, gy] = cut(1 / ia, bw / bh); // the turned file cut to cover the tile; its x is the original's y
+        assert.ok(Math.abs(v.w + 2 * v.mh - bw) < 1e-9 && Math.abs(v.h + 2 * v.mv - bh) < 1e-9, 'the tile keeps its size');
+        assert.ok(
+          Math.abs(shown[0] - gy) < 1e-9 && Math.abs(shown[1] - gx) < 1e-9,
+          `${bw}x${bh} ia ${ia} rot ${r}: ${shown} vs ${[gy, gx]}`
+        );
+      });
 });
 
 test('tools/photos.py turn: the workflow cuts and turns a fixture image as photoAt maps it', {skip: !pil && 'Pillow missing'}, () => {

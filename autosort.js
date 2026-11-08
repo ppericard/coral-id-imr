@@ -943,16 +943,22 @@
   function rotDelta(dx, dy, r) {
     return {90: [dy, -dx], 180: [-dx, -dy], 270: [-dy, dx]}[rotNorm(r)] || [dx, dy];
   }
-  // The scale that keeps a preview turned r degrees inside its box (bw x bh px): an image filling the box (cover: a tile)
-  // covers it again turned; one fitted whole (contain, or sized to the photo: the lightbox, the swiper) of aspect ia
-  // (width / height as shown, its crop included) stays whole inside it.
-  function rotScale(bw, bh, r, cover, ia) {
+  // The scale that keeps a preview fitted whole (object-fit contain, or sized to the photo: the lightbox, the swiper),
+  // of aspect ia (width / height as shown, its crop included), whole inside its box (bw x bh px) once turned r degrees:
+  // the turned file fitted whole in that box.
+  function rotScale(bw, bh, r, ia) {
     if (!(rotNorm(r) % 180) || !(bw > 0 && bh > 0)) return 1;
-    if (cover) return Math.max(bw / bh, bh / bw);
     const a = ia > 0 ? ia : bw / bh,
       cw = Math.min(bw, bh * a),
       ch = cw / a;
     return Math.min(bw / ch, bh / cw);
+  }
+  // A tile's photo (object-fit cover in a bw x bh box) turned a quarter: the image box swapped to bh x bw, its cover cut
+  // made there, then turned, so it covers the tile exactly as the turned file will (Codex review #793: scaling the tile's
+  // own cover cut cut the photo twice); the margins keep the tile's own size. Upright or half a turn: nothing to change.
+  function rotCover(bw, bh, r) {
+    if (!(rotNorm(r) % 180) || !(bw > 0 && bh > 0)) return null;
+    return {w: bh, h: bw, mv: (bh - bw) / 2, mh: (bw - bh) / 2};
   }
 
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
@@ -1134,6 +1140,7 @@
     turnedSize,
     rotDelta,
     rotScale,
+    rotCover,
     AUTO,
     fnv,
     autoCheck,

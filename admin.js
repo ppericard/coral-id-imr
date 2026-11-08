@@ -117,21 +117,42 @@ document.addEventListener(
   },
   true
 );
-// A draft rotation drawn on a preview (crSrc's data-rot): turned by CSS once the photo has loaded, scaled to stay in its
-// box (autosort.js rotScale: a tile's photo covers it again, a whole photo stays whole), and again when the box changes.
-// The box clips a turned tile photo. The files themselves are turned at Publish (tools/photos.py turn).
-const ROTRO = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(E => E.forEach(e => rotFit(e.target)));
+// A draft rotation drawn on a preview (crSrc's data-rot): turned by CSS once the photo has loaded, and again when its
+// box changes size. A tile's photo (object-fit cover) gets its box swapped before it is turned, so it covers the tile as
+// the turned file will (autosort.js rotCover; the tile clips it, its shape kept in data-ra); a whole photo (the lightbox,
+// the swiper) is scaled to stay whole (rotScale). The files themselves are turned at Publish (tools/photos.py turn).
+const ROTRO =
+  typeof ResizeObserver === 'undefined'
+    ? null
+    : new ResizeObserver(E =>
+        E.forEach(e => (e.target.dataset.rot ? [e.target] : e.target.querySelectorAll(':scope > img[data-rot]')).forEach(rotFit))
+      );
 function rotFit(i) {
-  if (!i.isConnected) return ROTRO && ROTRO.unobserve(i);
-  const r = rotNorm(i.dataset.rot),
-    cover = getComputedStyle(i).objectFit === 'cover',
-    // The photo's shape as shown: its crop (object-view-box inset) taken off its natural size.
-    m = (i.style.getPropertyValue('object-view-box') || '').match(/inset\(([\d.]+)% ([\d.]+)% ([\d.]+)% ([\d.]+)%\)/),
+  const P = i.parentElement;
+  if (!i.isConnected || !P) return ROTRO && (ROTRO.unobserve(i), P && ROTRO.unobserve(P));
+  const r = rotNorm(i.dataset.rot);
+  if (getComputedStyle(i).objectFit === 'cover') {
+    // The tile's shape, measured once before the image box is swapped; its width then follows the tile.
+    if (!+i.dataset.ra && i.clientWidth && i.clientHeight) i.dataset.ra = i.clientWidth / i.clientHeight;
+    const bw = P.clientWidth,
+      v = +i.dataset.ra && rotCover(bw, bw / +i.dataset.ra, r);
+    if (!v) return;
+    Object.assign(i.style, {
+      width: v.w + 'px',
+      height: v.h + 'px',
+      maxWidth: 'none',
+      margin: `${v.mv}px ${v.mh}px`,
+      transform: `rotate(${r}deg)`
+    });
+    P.style.overflow = 'hidden';
+    return;
+  }
+  // The photo's shape as shown: its crop (object-view-box inset) taken off its natural size.
+  const m = (i.style.getPropertyValue('object-view-box') || '').match(/inset\(([\d.]+)% ([\d.]+)% ([\d.]+)% ([\d.]+)%\)/),
     [t, rr, b, l] = m ? m.slice(1).map(x => x / 100) : [0, 0, 0, 0],
     ia = i.naturalWidth && i.naturalHeight ? (i.naturalWidth * (1 - l - rr)) / (i.naturalHeight * (1 - t - b)) : 0,
-    k = rotScale(i.clientWidth, i.clientHeight, r, cover, ia);
+    k = rotScale(i.clientWidth, i.clientHeight, r, ia);
   i.style.transform = r ? `rotate(${r}deg)${k !== 1 ? ` scale(${+k.toFixed(4)})` : ''}` : '';
-  if (r && cover && i.parentElement) i.parentElement.style.overflow = 'hidden';
 }
 document.addEventListener(
   'load',
@@ -139,7 +160,7 @@ document.addEventListener(
     const i = e.target;
     if (!(i instanceof HTMLImageElement) || !i.dataset.rot) return;
     rotFit(i);
-    if (ROTRO) ROTRO.observe(i);
+    if (ROTRO) [i, i.parentElement].forEach(x => x && ROTRO.observe(x));
   },
   true
 );
