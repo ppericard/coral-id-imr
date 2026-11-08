@@ -652,7 +652,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     ...(tq ? {ty: String(tq.text || '').slice(0, 40)} : {}),
     ...(tq && tq.sp ? {tr: tq.sp.r ? 1 : 0} : {}),
     // The texts refused before it (typeBind rj: no unit, two as close, a common name or another rank's name), in order
-    // (Pierre, 2026-11-08, Q237): sheet v99 keeps them (Rejected tries); an older script ignores the field (Code.gs
+    // (Pierre, 2026-11-08, Q237): sheet v100 keeps them (Rejected tries); an older script ignores the field (Code.gs
     // logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
     ...(tq && tq.rj && tq.rj.length ? {rj: tq.rj.slice(0, TYPEDQ_RJ)} : {}),
     // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60

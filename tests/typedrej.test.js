@@ -1,5 +1,5 @@
 // Typed answers (Pierre, 2026-11-08, Q237): every text the form refuses before the answer is logged with it ("c'est
-// essentiel. Et c'est vrai pour tout le jeu, partout": quiz.js typeBind rj, answer rj, Code.gs v99 Rejected tries), and
+// essentiel. Et c'est vrai pour tout le jeu, partout": quiz.js typeBind rj, answer rj, Code.gs v100 Rejected tries), and
 // on a genus question a common name or a family name is told so, with a nudge that gives nothing away (core.js
 // typeElse, quiz.js typeKind, typeKindMsg): never a scientific name, the same whatever the photo's genus.
 const test = require('node:test');
@@ -223,7 +223,7 @@ function sheet(rj) {
   return s;
 }
 
-test('Code.gs v99: Rejected tries, a JSON list, cleaned and capped; blank when none', () => {
+test('Code.gs v100: Rejected tries, a JSON list, cleaned and capped; blank when none', () => {
   const s = loadCodeGs(),
     col = n => s.sheets.Answers.rows[0].indexOf(n);
   s.post({
