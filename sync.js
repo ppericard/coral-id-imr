@@ -1049,7 +1049,7 @@ const devId = () => {
 // Device of its events), which the sheet writes in each answer's Device column, signed in or not; only once the
 // script's replies say v >= DEV_SHEET (rule D4: an older script would drop it), else nothing more is sent, as before.
 // The answers a request sends are all this device's own (its queue), so one id per request.
-const DEV_SHEET = 108;
+const DEV_SHEET = 109;
 const devOn = () => sheetV() >= DEV_SHEET;
 const devField = () => (devOn() ? {dev: devId()} : {});
 // The app's version as the sheet and the admin's Errors page see it: the deploy's build number, then app.js's content
