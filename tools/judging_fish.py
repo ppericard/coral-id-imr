@@ -10,9 +10,12 @@ whether a photo shows the right species. Its sure decisions (autosort.js fishSur
 the fish curation exists (admin plan PR 4); nothing here writes curation.json.
 
     python3 tools/judging_fish.py sheets [id ...]   download the photos (judging/fish/img/, not in git) and build contact
-                                                   sheets per species (judging/fish/sheets/<species id>/), 12 tiles each,
-                                                   observation by observation; prints tile number -> photo, observation,
-                                                   iNat annotation; ids = species (s091) or teaching entries (t01)
+                                                   sheets per species (judging/fish/sheets/<species id>/), 12 tiles at
+                                                   most, observation by observation, an observation never split over two
+                                                   sheets (one of more than 12 photos fills sheets of its own), so its
+                                                   near-duplicates are side by side; prints tile number -> photo,
+                                                   observation, iNat annotation; ids = species (s091) or teaching entries
+                                                   (t01)
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
     python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
@@ -28,7 +31,7 @@ import json
 import os
 import sys
 import urllib.request
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fish_judge import CODE, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
@@ -79,6 +82,27 @@ def cands(sid):
     return [p for p in CAND.get(sid, []) if p["f"] not in done]
 
 
+def added(sid):
+    """{observation: [its photos Pierre added to species sid]}: an observation whose other photos come later (every photo
+    of an observation is a candidate since Pierre, 2026-11-08) already has a photo in play, its best so far. They are
+    shown first on its sheet as context, never judged again (Codex review #715)."""
+    A = CUR.get("add") or {}
+    out = OrderedDict()
+    for p in CAND.get(sid, []):
+        if A.get(p["f"]) == sid:
+            out.setdefault(p["o"], []).append(p)
+    return out
+
+
+def groups(sid):
+    """The contact sheets' groups of species sid, observation by observation: (context, waiting) per observation with a
+    photo waiting, context being the photos of it Pierre already added (added)."""
+    A, G = added(sid), OrderedDict()
+    for p in cands(sid):
+        G.setdefault(p["o"], []).append(p)
+    return [(A.get(o, []), L) for o, L in G.items()]
+
+
 def fetch(p, size="medium"):
     out = P("judging", "fish", "img", f"{p['f']}{'-l' if size == 'large' else ''}.jpg")
     if os.path.exists(out) and os.path.getsize(out):
@@ -91,8 +115,25 @@ def fetch(p, size="medium"):
     return out
 
 
-def sheet(sid, k, L):
-    """One contact sheet of up to 12 photos (4 per row), each 360 px high, numbered from 1."""
+TILES = 12  # photos per contact sheet at most
+
+
+def pack(groups, size=TILES):
+    """The contact sheets of a species: its observations' photos (groups, one list per observation, in order) in sheets of
+    at most `size`, an observation never split over two sheets: one that does not fit in what is left of a sheet starts the
+    next; one of more than `size` photos (every photo of an observation is a candidate since Pierre, 2026-11-08) fills
+    sheets of its own. Its photos side by side are what lets the judge mark the near-duplicates (keep dup)."""
+    out = []
+    for g in groups:
+        if out and len(out[-1]) + len(g) <= size:
+            out[-1] += g
+            continue
+        out += [list(g[i:i + size]) for i in range(0, len(g), size)]
+    return out
+
+
+def sheet(sid, k, L, start=0):
+    """One contact sheet of up to 12 photos (4 per row), each 360 px high, numbered from start + 1."""
     from PIL import Image, ImageDraw, ImageFont
     H, GAP = 360, 8
     ims = []
@@ -111,7 +152,7 @@ def sheet(sid, k, L):
         font = ImageFont.truetype("DejaVuSans-Bold.ttf", 34)
     except OSError:
         font = ImageFont.load_default()
-    n = 12 * k
+    n = start
     for y, r in enumerate(rows):
         x = 0
         for im in r:
@@ -128,19 +169,22 @@ def sheet(sid, k, L):
 
 def cmd_sheets(names):
     for sid in names:
-        L = cands(sid)
-        if not L:
+        G = groups(sid)
+        if not G:
             continue
         s = SP.get(sid, {})
-        G = OrderedDict()
-        for p in L:
-            G.setdefault(p["o"], []).append(p)
-        L = [p for g in G.values() for p in g]  # observation by observation
-        print(f"## {sid} {s.get('name')} ({s.get('common', '')}): {len(L)} photos in {len(G)} observations")
-        for k in range(0, len(L), 12):
-            print(sheet(sid, k // 12, L[k:k + 12]))
+        ctx = {p["f"] for c, _ in G for p in c}
+        L = [p for c, w in G for p in c + w]  # observation by observation, what Pierre added first
+        print(f"## {sid} {s.get('name')} ({s.get('common', '')}): {len(L) - len(ctx)} photos to judge in {len(G)} observations"
+              f"{f', {len(ctx)} added by Pierre shown as context' if ctx else ''}")
+        n = 0
+        for k, S in enumerate(pack([c + w for c, w in G])):
+            print(sheet(sid, k, S, n))
+            n += len(S)
         for i, p in enumerate(L, 1):
             extra = [p.get("loc", ""), p.get("lic", "")] + (["own"] if p.get("own") else []) + ([f"iNat: {p['st']}"] if p.get("st") else [])
+            if p["f"] in ctx:
+                extra.append("added by Pierre: context, not to judge")
             print(f"  {i} {p['f']}  obs {p['o'].rsplit('/', 1)[-1]}  ({', '.join(x for x in extra if x)})")
 
 
@@ -157,7 +201,7 @@ def check(sid):
     # A candidate Pierre has decided on since its judgement (added, rejected, excluded, moved) stays in the file as
     # judged: not checked again, imported unchanged, and its best still counts for its observation.
     decided = {p["f"]: p for p in CAND.get(sid, []) if p["f"] not in mine}
-    best = defaultdict(list)
+    best, new = defaultdict(list), Counter()  # new: the bests among the photos still waiting
     for f, x in j["photos"].items():
         at = f"{sid}/{f}"
         if f in decided:
@@ -178,6 +222,7 @@ def check(sid):
             E.append(f"{at}: keep must be one of {KEEP}")
         elif x["keep"] == "best":
             best[mine[f]["o"]].append(f)
+            new[mine[f]["o"]] += 1
         if "phase" in x and x["phase"] not in PHASES:
             E.append(f"{at}: phase is one of {PHASES}, or omitted")
         u = x.get("unsure", [])
@@ -196,9 +241,13 @@ def check(sid):
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
     obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict)}
-    for o in obs:
-        if len(best.get(o, [])) != 1:
-            E.append(f"{sid}: observation {o}: {len(best.get(o, []))} photos marked best; exactly one")
+    A = added(sid)
+    for o in sorted(obs):
+        nb = new[o] if o in A else len(best.get(o, []))  # Pierre's add is its best so far: a new one may beat it
+        if o in A and nb > 1:
+            E.append(f"{sid}: observation {o}: {nb} photos marked best; at most one (Pierre added one of its photos)")
+        elif o not in A and nb != 1:
+            E.append(f"{sid}: observation {o}: {nb} photos marked best; exactly one")
     return E, j
 
 
