@@ -91,6 +91,99 @@
   "fish-s072-cand-757466111": {
    "code": "p1g0sm1a2",
    "keep": "best"
+  },
+  "fish-s072-cand-266872464": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s072-cand-573560535": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s072-cand-267341020": {
+   "code": "o1g1ssmj1",
+   "keep": "best"
+  },
+  "fish-s072-cand-596072042": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s072-cand-295355218": {
+   "code": "o0g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s072-cand-130759452": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s072-cand-343395576": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s072-cand-62394647": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s072-cand-538972257": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s072-cand-538972293": {
+   "code": "o1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s072-cand-748520900": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s072-cand-745384152": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s072-cand-597913749": {
+   "code": "o1g1sss1",
+   "keep": "best"
+  },
+  "fish-s072-cand-722448492": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s072-cand-681497339": {
+   "code": "o1g3bss1",
+   "keep": "best"
+  },
+  "fish-s072-cand-681497396": {
+   "code": "o1g3bs11",
+   "keep": "dup"
+  },
+  "fish-s072-cand-633863345": {
+   "code": "p0g2bl11",
+   "keep": "best",
+   "note": "Low-resolution video frame (389 px) with a watermark."
+  },
+  "fish-s072-cand-633863378": {
+   "code": "o0g2bl11",
+   "keep": "dup"
+  },
+  "fish-s072-cand-614420754": {
+   "code": "o1g1ss11",
+   "keep": "best"
+  },
+  "fish-s072-cand-760053287": {
+   "code": "p1g1ml14",
+   "keep": "best"
+  },
+  "fish-s072-cand-760053265": {
+   "code": "o1g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s072-cand-760053307": {
+   "code": "d1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s072-cand-760053316": {
+   "code": "d1g1ss11",
+   "keep": "dup"
   }
  }
 }
