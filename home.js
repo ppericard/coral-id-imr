@@ -62,13 +62,16 @@
     // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
-      // Its fish art, a landscape band too: the same photo a tile would show (tilePhoto, Q291).
+      // Its fish art, a landscape box too (home.css .hdart.rc.land, near 3:2 at every size, so the whole fish shows): the
+      // same photo a tile would show (tilePhoto, Q291).
       fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
-      fishArt = fp ? `<img ${thumb(fp, '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">` : '';
+      fishArt = fp
+        ? `<img ${thumb(fp, land ? '(max-width:599.98px) 184px, 520px' : '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">`
+        : '';
     const idoor = fish
       ? `
         <section class="hdoor identify">
-          <a class="hdart rc" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
+          <a class="hdart rc${land ? ' land' : ''}" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
           <div class="hdbody">
             <p class="hdwhen">In EventMeasure<span class="wide"> · or a photo from your dive</span></p>
             <h2>Identify a fish</h2>
