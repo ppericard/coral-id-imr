@@ -173,7 +173,8 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
 1. `python3 tools/judging_fish.py sheets <id>` (a species `s091` or a whole entry `t01`) downloads the candidates still
    waiting (500 px, `judging/fish/img/`, not in git) and draws contact sheets observation by observation
    (`judging/fish/sheets/<species>/`, 12 tiles at most), an observation never split over two sheets (one of more than
-   12 photos fills sheets of its own): every photo of an observation is a candidate (Pierre, 2026-11-08), so its
+   12 photos fills sheets of its own): every photo of an observation is a candidate (Pierre, 2026-11-08; its first photo counts 1 against the species' cap, each
+   further one half, Q226; a sure `dup` frees its room), so its
    near-duplicates are side by side for `keep` below; it prints tile number → photo, observation, source, licence and
    the observer's iNaturalist annotation (`iNat: juvenile`...: a hint for the `j` flag, checked on the photo).
    `python3 tools/judging_fish.py big <f>` gives the 1024 px photo, for a tag the tile does not settle and for a crop.

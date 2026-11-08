@@ -39,9 +39,9 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   set in by the pre-sort, or waiting); what Pierre rejects, excludes or sends elsewhere, and what the pre-sort sets aside
   without doubt, frees room for the next run. Each observation brings ALL its photos (Pierre, 2026-11-08: no limit per
   observation any more, 4 until then; the judging pass marks the near-duplicates within an observation, judging/FISH.md
-  keep), but holds at most OBS_ROOM (4) photos of the cap (obs_cost), so one observation with many photos never eats a
-  species' room: the photos past its first OBS_ROOM come without taking room, and a refill brings the photos an
-  observation already among the candidates still has. One function for both tools: species_room.
+  keep), and its photos count against the cap by weight (Pierre, 2026-11-08, Q226, option b): its first photo 1, each
+  further photo EXTRA_W (0.5) (obs_cost), so an observation with many photos takes less room than as many observations;
+  a refill brings the photos an observation already among the candidates still has. One function for both tools: species_room.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
   src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
@@ -112,10 +112,11 @@ DAUIN = (9.19, 123.26)
 DAUIN_KM, REGION_KM = 40, 250  # as tools/fetch_local.py
 PH = 6873  # iNaturalist place: the Philippines
 PIERRE = "ppericard"
-# Photos of one observation counted against the cap at most (Pierre, 2026-11-08: every photo of an observation is taken,
-# "weight the choice so one observation does not bring too many, never blocking"; 4 was the limit per observation until
-# then). The photos past an observation's first OBS_ROOM still come, without taking room (obs_cost).
-OBS_ROOM = 4
+# How an observation's photos count against the cap (Pierre, 2026-11-08: every photo of an observation is taken, "weight
+# the choice so one observation does not bring too many, never blocking"; Q226, option b: the first photo 1, each further
+# photo half, "better for learning on the species already full"): obs_cost.
+EXTRA_W = 0.5
+OLD_LIMIT = 4  # photos per observation at most until 2026-11-08: the observations --topup completes
 # The cap per species (Pierre, 2026-11-05, Q36; before: 20 observations per species, 2026-11-04): 30 photos for a stable
 # species, +10 per extra phase, at most 60; each extra phase aims at PER_PHASE photos of its own, the rest is free.
 BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
@@ -317,9 +318,16 @@ def obs_url(oid):
 
 
 def obs_cost(held, k):
-    """The room k more photos of one observation take when it already holds `held` photos of the species: an observation
-    holds at most OBS_ROOM photos of the cap (Pierre, 2026-11-08), so its photos past the first OBS_ROOM take none."""
-    return min(held + k, OBS_ROOM) - min(held, OBS_ROOM)
+    """The room k more photos of one observation take when it already holds `held` photos of the species (Pierre,
+    2026-11-08, Q226, option b): its first photo 1, each further photo EXTRA_W (0.5)."""
+    if k <= 0:
+        return 0
+    return (0 if held else 1 - EXTRA_W) + EXTRA_W * k
+
+
+def obs_fit(held, room):
+    """How many more photos of one observation holding `held` fit in `room` (obs_cost)."""
+    return max(0, int((room - (0 if held else 1 - EXTRA_W)) // EXTRA_W))
 
 
 def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None, photos=False, held=None):
@@ -333,7 +341,7 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     already taken (updated here): iNaturalist lets one photo belong to several observations, so a photo is taken once,
     by the first observation picked, and an observation left with no photo of its own is skipped without taking room
     (Codex review #463). photos=True: room counts photos (the cap of Q36) as obs_cost does: every photo of an observation is
-    taken, at most OBS_ROOM of them count, and an observation only is cut when the room left is shorter than that; held
+    taken, the first for 1 and each further one for EXTRA_W, and an observation is cut only to the room left; held
     ({observation url: photos it holds}, updated here) is what the species already keeps, so the other photos of an
     observation among its candidates come at their cost and its observer and life stage are not counted again.
     Otherwise one observation is one unit of room. Returns [item, ...] in order, each with only its own photos in P and
@@ -346,18 +354,14 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     def take(L):
         nonlocal room
         L = [o for o in L if o["id"] not in seen]
-        while L:
-            if room <= 0:  # photos past an observation's first OBS_ROOM take no room: still taken (Codex review #715)
-                L = [o for o in L if photos and held.get(obs_url(o["id"]), 0) >= OBS_ROOM]
-                if not L:
-                    break
+        while L and room > 0:
             o = min(L, key=lambda o: (n["u", o["u"]], n["s", o["st"]], o["h"]))
             L.remove(o)
             seen.add(o["id"])
             P = [p for p in o["P"] if str(p[0]) not in claimed]
             h = held.get(obs_url(o["id"]), 0)
             if photos and obs_cost(h, len(P)) > room:
-                P = P[:room]  # short of room: h + room < OBS_ROOM here, so each photo takes one
+                P = P[:obs_fit(h, room)]  # short of room: what fits (a new observation needs 1 for its first photo)
             if not P:
                 continue
             o["P"], o["cost"] = P, obs_cost(h, len(P)) if photos else 1
@@ -389,11 +393,12 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
 
 def topup(args):
     """--topup (Codex review #715 on Pierre's 2026-11-08 decision): the other photos of the observations fetched under the
-    old limit of 4 photos per observation, whatever the species' room: an observation holding exactly OBS_ROOM candidate
+    old limit of 4 photos per observation, whatever the species' room: an observation holding exactly OLD_LIMIT candidate
     records (whatever their state: a near-duplicate set aside or a photo rejected does not stop it) is asked again by id
-    (200 a request, rule C7) and every photo of it not taken yet comes. It was counted for up to OBS_ROOM photos already,
-    so this never blocks; a species it puts over its cap only waits longer for new observations (nothing is removed). One
-    that holds more was fetched whole (since 2026-11-08 an observation is cut only below OBS_ROOM photos); one with a photo
+    (200 a request, rule C7) and every photo of it not taken yet comes, each for EXTRA_W of room (obs_cost): this never
+    blocks; a species it puts over its cap only waits longer for new observations (nothing is removed). One that holds
+    any other number was fetched since 2026-11-08, whole or cut by the room (the searches then bring the rest: an
+    observation among the candidates is no longer skipped); one with a photo
     Pierre sent elsewhere, or no longer identified as that species on iNaturalist, brings nothing more. The --refill runs it for every species of its circles first. Returns
     {species id: photos added}."""
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
@@ -410,7 +415,7 @@ def topup(args):
         bad = {p["o"] for p in L if p["f"] in moved}
         for o, k in recs.items():
             tail = o.rsplit("/", 1)[-1]
-            if k == OBS_ROOM and o not in bad and o.startswith(obs_url("")) and tail.isdigit():
+            if k == OLD_LIMIT and o not in bad and o.startswith(obs_url("")) and tail.isdigit():
                 want[int(tail)] = s
     net = Net(args.cache, offline=args.offline, refresh=args.refresh, plan=args.plan)
     added = Counter()
@@ -432,7 +437,7 @@ def topup(args):
                     added[s["id"]] += 1
     finally:
         net.save()
-    print(f"topup: {len(ids)} observations holding {OBS_ROOM} photos asked again, +{sum(added.values())} photos for "
+    print(f"topup: {len(ids)} observations holding {OLD_LIMIT} photos asked again, +{sum(added.values())} photos for "
           f"{len(added)} species", flush=True)
     if added and not args.plan:
         order = [s["id"] for s in fish["species"]]
@@ -534,13 +539,14 @@ def phase_room(phases, cap, held):
     """The room of one species: {"room": photos still to take (cap - photos kept), "rooms": {phase: photos to take of
     that phase first}, "free": the rest, of any phase}. held: Counter of the photos it keeps by photo_phase ("" adult or
     not known). Each extra phase aims at PER_PHASE photos of its own (the +10 it brings to the cap); when the room is
-    shorter than what the phases lack, it is shared out one photo at a time, in PHASES order."""
+    shorter than what the phases lack, it is shared out one photo at a time, in PHASES order; a half photo of room left
+    (obs_cost) stays free."""
     room = max(0, cap - sum(held.values()))
     need = {ph: max(0, PER_PHASE - held.get(ph, 0)) for ph in PHASES if ph in phases}
     rooms, left = dict.fromkeys(need, 0), room
-    while left and any(rooms[ph] < need[ph] for ph in need):
+    while left >= 1 and any(rooms[ph] < need[ph] for ph in need):
         for ph in need:
-            if left and rooms[ph] < need[ph]:
+            if left >= 1 and rooms[ph] < need[ph]:
                 rooms[ph] += 1
                 left -= 1
     return {"room": room, "rooms": rooms, "free": left}
@@ -548,10 +554,10 @@ def phase_room(phases, cap, held):
 
 def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap=None):
     """Everything the cap of Q36 says about species s (entry t), shared by tools/fetch_fish.py and tools/fetch_fishbase.py:
-    {"cap", "phases" (species_phases), "have" (photos still usable, at most OBS_ROOM per observation: obs_cost), "held"
+    {"cap", "phases" (species_phases), "have" (photos still usable, weighted per observation: obs_cost), "held"
     ({phase: photos kept of it, counted the same way}), "obs" ({observation: photos still usable}), "room", "rooms",
     "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of. An
-    observation's first OBS_ROOM usable photos in list order are the ones counted."""
+    observation's first usable photo in list order counts 1, the others EXTRA_W."""
     sug = sug or {}
     phases = species_phases(s, t, L, sug, game, fb, moved)
     c = cap_of(phases) if cap is None else cap
@@ -1076,7 +1082,7 @@ def main(argv=None):
     m.add_argument("--plan", action="store_true", help="print what a run would add, from the cache only; write nothing")
     a.add_argument("--rep", action="store_true", help="only tag the candidates that are their taxon's iNaturalist cover (rep)")
     a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171); runs --topup first")
-    a.add_argument("--topup", action="store_true", help="the other photos of observations holding OBS_ROOM (4) photos, asked by id")
+    a.add_argument("--topup", action="store_true", help="the other photos of observations holding OLD_LIMIT (4) photos, asked by id")
     a.add_argument("--max", type=int, default=REFILL_MAX, help=f"--refill: species refilled at most (default {REFILL_MAX})")
     a.add_argument("--today", help="--refill: the day, YYYY-MM-DD (tests; default today, UTC)")
     a.add_argument("--memory", default=str(REFILL), help="--refill: what was searched to the end (tools/fish_refill.json)")
