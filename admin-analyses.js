@@ -44,7 +44,7 @@ function anLoad() {
       }
       // a report stored before 2026-11-05 also kept all its answers as one more point ("All 1933"): round milestones only
       if (rep && rep.M.some(M => M % ANALYSIS.STEP === 0)) rep.M = rep.M.filter(M => M % ANALYSIS.STEP === 0);
-      // sheet v103: each subject's answers counted apart (counts); an older script's answers were every subject's rows
+      // sheet v105: each subject's answers counted apart (counts); an older script's answers were every subject's rows
       return (ANREP = {st: rep ? 'ok' : 'none', rep, counts: j.counts && typeof j.counts === 'object' ? j.counts : null, stored: j.stored});
     })
     .catch(() => (ANREP = {st: 'err', err: 'Offline'}));
@@ -1880,7 +1880,7 @@ function anSessDesc(d) {
 
 // The report's subject (the analyses are one subject's: the corals' so far) and its answers in the log now, counted as
 // the sheet's head and the Action count them (core.js subjCounts; Pierre, 2026-11-08: every 1000 answers of that
-// subject, the fish answers apart): the head's count from sheet v103, else the answer log this page reads once it is
+// subject, the fish answers apart): the head's count from sheet v105, else the answer log this page reads once it is
 // in, else null (not known yet).
 const anSubj = rep => subjectOf((rep && rep.subject) || (ANREP && ANREP.stored && ANREP.stored.subject) || replaySubject());
 const anCount = S => {

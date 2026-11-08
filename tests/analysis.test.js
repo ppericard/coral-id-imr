@@ -367,7 +367,7 @@ test("tools/analyses.js: the head of an older script (every subject's rows) is j
       r[17] = i < 1500 ? 'coral' : 'fish';
       return r;
     });
-  assert.strictEqual(headCount({answers: 3100}, 'coral'), 3100, 'before v103: an upper bound');
+  assert.strictEqual(headCount({answers: 3100}, 'coral'), 3100, 'before v105: an upper bound');
   assert.strictEqual(headCount({answers: 1500, counts: {coral: 1500, fish: 1600}}, 'coral'), 1500);
   assert.strictEqual(headCount({answers: 1500, counts: {coral: 1500, fish: 1600}}, 'fish'), 1600);
   const puts = [],
@@ -406,7 +406,7 @@ test('admin Analyses status line: the subject, the milestone fitted, its answers
       S = f.anSubj({M: [lastM]});
     return f.anStatus(S, lastM, f.anCount(S));
   };
-  // sheet v103: the head's count of the corals' answers (2,729 coral and 1,292 fish answers on 2026-11-08)
+  // sheet v105: the head's count of the corals' answers (2,729 coral and 1,292 fish answers on 2026-11-08)
   assert.strictEqual(line({counts: {coral: 2729, fish: 1292}}, null, 2000), 'Corals: fitted on 2,000 answers · 729 since · next at 3,000');
   assert.strictEqual(
     line({counts: {coral: 3004, fish: 1292}}, null, 2000),

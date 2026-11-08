@@ -7,7 +7,7 @@
 //                                             readAnswers and stores the report with analysesPut (sheet v35), both
 //                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until the
 //                                             log reaches a round thousand of the corals' answers (the analysed
-//                                             subject's, counted apart by the sheet's head from v103; Pierre,
+//                                             subject's, counted apart by the sheet's head from v105; Pierre,
 //                                             2026-11-08) the stored report does not hold (or the
 //                                             code changed, or an account was removed since: sheet v55
 //                                             stale), unless --force (plan)
@@ -56,7 +56,7 @@ function plan(answers, st, force, removed) {
 const planText = (answers, p, subject = C.replaySubject()) =>
   `${C.subjectOf(subject).name}: ` +
   (p.now ? `${answers} answers, newest milestone ${p.now}: the next one at ${p.next}.` : `${answers} answers, no milestone yet: the first one at ${A.STEP}.`);
-// The analysed subject's answers in the sheet's head: its own count from sheet v103 (counts), else every row of every
+// The analysed subject's answers in the sheet's head: its own count from sheet v105 (counts), else every row of every
 // subject (an older script: an upper bound, so the run read the whole log every hour to count the subject's, below).
 const headCount = (head, subject) => (head.counts && typeof head.counts[subject] === 'number' ? head.counts[subject] : Number(head.answers) || 0);
 
@@ -100,7 +100,7 @@ async function sheetRun(io, token, o = {}) {
   // head counts them (subjCounts).
   const count = C.subjCounts(ans.rows)[subject] || 0;
   ans.rows = C.subjRows(ans.rows, subject);
-  // Judged again on the log read: a script before v103 counted every subject's rows in its head.
+  // Judged again on the log read: a script before v105 counted every subject's rows in its head.
   const q = plan(count, st, o.force, !!head.stale);
   if (!q.go) {
     io.log(planText(count, q, subject));

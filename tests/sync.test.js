@@ -2067,7 +2067,7 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
 
 // Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
 // subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
-test("v103 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
+test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
   const s = seed(),
     fish = (id, extra = {}) => ans(id, {s: 'fish', rk: 'family', g: 'f:Damselfishes', a: 'f:Damselfishes', ...extra});
   s.post({

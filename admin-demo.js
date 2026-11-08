@@ -1021,15 +1021,15 @@
         w.postMessage({id: 1, rows: subjRows(answers().rows), meta: ANA_META, B: 0, seed: 1});
       });
     return ANA.then(text => {
-      // v103 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
-      // answers was every row of every subject, the fish ones included (?demo&v=102: the admin counts from the log).
+      // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
+      // answers was every row of every subject, the fish ones included (?demo&v=104: the admin counts from the log).
       const rows = answers().rows,
         counts = subjCounts(rows),
         sj = replaySubject(),
-        head0 = V >= 103 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
+        head0 = V >= 105 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
         r = text && JSON.parse(text);
       const stored = r
-        ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, ...(V >= 103 ? {subject: sj} : {})}
+        ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, ...(V >= 105 ? {subject: sj} : {})}
         : null;
       return head || !text ? {...head0, stored} : {...head0, stored, report: text};
     });

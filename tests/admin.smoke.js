@@ -1003,7 +1003,7 @@ const WIDTHS = [390, 1280];
       fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
     // the stored report's switch: round milestones only (Pierre, 2026-11-05: 1000, 2000, …, no "All N"), the newest pressed;
     // the status line counts from it, the corals' answers only (Pierre, 2026-11-08: the demo's fish answers apart; a demo
-    // script before v103 counts every subject's rows in its head, so the line counts from the answer log read)
+    // script before v105 counts every subject's rows in its head, so the line counts from the answer log read)
     await p
       .waitForFunction(() => / since · /.test((document.querySelector('.adm-an-badge') || {}).textContent || ''), null, {timeout: 30000})
       .catch(() => {});
@@ -1244,11 +1244,11 @@ const WIDTHS = [390, 1280];
         if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
         await aq.close();
       }
-      // Pierre, 2026-11-08: the corals' status line never counts the fish answers. Script v102 (from v60 the demo logs fish
+      // Pierre, 2026-11-08: the corals' status line never counts the fish answers. Script v104 (from v60 the demo logs fish
       // answers too; the head's answers every row of every subject, not used: the line counts from the answer log read)
-      // and v103 (the head counts each subject apart).
+      // and v105 (the head counts each subject apart).
       if (w === 1280)
-        for (const v of [102, 103]) {
+        for (const v of [104, 105]) {
           const aq = await ctx.newPage(),
             aqe = [];
           aq.on('pageerror', e => aqe.push(e.message));
