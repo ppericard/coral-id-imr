@@ -9403,6 +9403,9 @@ function statsHealth() {
     }</div></div></section>`;
 
   const BAD = healthBad(R);
+  // Its photo tiles' Not this (a candidate photo: fishRepTile reads FISHC.byF) needs the family pages' data (fishLoad), as
+  // Reports does: read once there are photos to show, and Health drawn again when it comes (Codex review #800).
+  if (!stops && ASUBJ.sheets && BAD.length && !FISHC) fishLoad().then(() => cur === 'inbox/todo/health' && ASUBJ.sheets && render());
   // Another subject's photo: its tile with the tools of its family's page (fishRepTile: × Exclude, Remove, Not this, Open
   // in Families), the numbers in its caption.
   const fishTile = o =>

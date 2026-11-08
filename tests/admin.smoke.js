@@ -3818,6 +3818,68 @@ const WIDTHS = [390, 1280];
         if (fe.length) fails.push(`${vw}px Fish Stops and Health: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
+      // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
+      // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
+      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health.
+      {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          fc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        await fc.route(
+          u => u.pathname === '/suggest.json',
+          async r => {
+            const j = await (await r.fetch()).json();
+            delete j.fish;
+            await r.fulfill({json: j});
+          }
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/inbox/todo/health`);
+        await fq
+          .waitForFunction(
+            () => cur === 'inbox/todo/health' && FISHA && ANS && document.querySelector('[data-health="genera"] tbody tr'),
+            null,
+            {
+              timeout: 90000
+            }
+          )
+          .catch(() => fe.push('Health not drawn'));
+        // three players miss a candidate photo in play (fish-cand.json and the fish photos), twice each
+        const pre = await fq.evaluate(async () => {
+          const was = !!FISHC,
+            C = await fetch('fish-cand.json').then(r => r.json()),
+            cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
+            f = Object.keys(FISHA.ph).find(x => cf.has(x)),
+            r0 = rowsOf()[0];
+          if (!f || !r0) return {was, f, r0: !!r0};
+          const add = ['nt1', 'nt2', 'nt3'].flatMap((id, i) =>
+            [0, 1].map(k => Object.assign([...r0], {0: id, 1: Date.now() - (i * 2 + k + 1) * 60e3, 2: FISHA.ph[f].entry, 4: 0, 6: f}))
+          );
+          ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+          render();
+          return {was, f, r0: true};
+        });
+        if (pre.was || !pre.f || !pre.r0) fe.push(`not a fresh session with a candidate photo: ${JSON.stringify(pre)}`);
+        else
+          await fq
+            .waitForFunction(f => document.querySelector(`[data-health="photos"] [data-ff="${CSS.escape(f)}"] [data-fr="not"]`), pre.f, {
+              timeout: 60000
+            })
+            .catch(async () =>
+              fe.push(
+                `no Not this on ${pre.f}: ${JSON.stringify(
+                  await fq.evaluate(f => ({fishc: !!FISHC, tile: !!document.querySelector(`[data-ff="${CSS.escape(f)}"]`)}), pre.f)
+                )}`
+              )
+            );
+        if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
     }
     // Activity's analysis cards are on Analyses › Learning › Answer log, and only there (one role per admin page).
     {
