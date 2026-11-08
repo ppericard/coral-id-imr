@@ -558,6 +558,13 @@ function achMerge(json) {
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
+  // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy; as the
+  // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved; Codex review #736).
+  if (!noticesReady()) {
+    const id = SUBJ.id;
+    noticeLater('achRecheck:' + id, () => inSubject(id, achRecheck));
+    return [];
+  }
   const A = store.get(ACHK, null),
     was = JSON.stringify(A),
     out = A ? achRevoke(A, achSnap(A), Date.now(), ACH_L()) : [];
@@ -681,7 +688,21 @@ function achPending(only) {
   store.set(ACHOLD, Object.keys(left).length ? left : null);
   if (done && SYNC) syncSoon();
 }
+// Signed in, the check waits for the visit's first sync (sync.js noticeLater), then runs once on the merged progress and
+// achievements (as silent as the quietest call that waited): an old copy of the account never pops up, nor takes back, what
+// the other devices already settled.
+let achWait = false;
 function achCheck(silent) {
+  if (!noticesReady()) {
+    achWait = achWait || !!silent;
+    const id = SUBJ.id;
+    noticeLater('ach:' + id, () => {
+      const s = achWait;
+      achWait = false;
+      inSubject(id, () => achCheck(s));
+    });
+    return;
+  }
   if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
   achPending(SUBJ.id); // a recount waiting for this subject's data first: what it keeps is not new
   const had = store.get(ACHK, null),
@@ -1098,14 +1119,20 @@ function boardNotice() {
   // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
   // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
   // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
-  if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ)) return;
+  // Told on another device of the account (core.js TOLD 'board'): after the visit's first sync (sync.js noticeLater).
+  if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board')) return;
   store.set('reefid-board-told', 1);
-  const t = appToast(
-    '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
-    15000
-  );
+  const ms = 15000,
+    t = appToast(
+      '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+      ms
+    ),
+    // Told for the account once closed or gone by itself; not when a switch of subject takes it away (toastsOff: due again).
+    told = () => !t.dataset.off && toldAdd('board');
   t.dataset.again = 'reefid-board-told';
-  t.querySelector('a').onclick = () => t.remove();
+  t.querySelector('a').onclick = () => (told(), t.remove());
+  t.querySelector('button').addEventListener('click', told);
+  setTimeout(told, ms);
 }
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
@@ -1145,13 +1172,16 @@ const RECALC = {
   ]
 };
 function recalcNotice() {
+  if (noticeLater('recalc', recalcNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
   // Whether this load has decided ("none" or "shown"; tests wait for it rather than for a fixed time).
   const said = d => (window.RECALC_SAID = d);
+  // The last note seen: here (KEY) or on another device of the account (core.js TOLD 'recalc:<id>'), the later one.
   const L = RECALC.L,
     last = L[L.length - 1].id,
-    seen = store.get(RECALC.KEY, ''),
-    due = L.slice(L.findIndex(x => x.id === seen) + 1).reverse();
+    at = id => L.findIndex(x => x.id === id),
+    seen = Math.max(at(store.get(RECALC.KEY, '')), ...L.filter(x => toldHas('recalc:' + x.id)).map(x => at(x.id))),
+    due = L.slice(seen + 1).reverse();
   if (!due.length) return void said('none');
   // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
@@ -1168,7 +1198,7 @@ function recalcNotice() {
     kick: due[0].k || 'Update',
     title: due[0].t,
     body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),
-    primary: {text: due[0].b || 'Got it', on: () => store.set(RECALC.KEY, last)},
+    primary: {text: due[0].b || 'Got it', on: () => (store.set(RECALC.KEY, last), toldAdd('recalc:' + last))},
     esc: 1,
     enter: 1,
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
@@ -1208,10 +1238,22 @@ function mxLostText(L, nAch, why = {}) {
     .join(' ');
 }
 let mxLostT = 0;
+// A mark told on another device of the account (core.js TOLD 'mx:<unit>@<its s.mx>'), or back on the unit by the time the
+// card would show (a sync merged a copy that has it), is not told: it goes to told here, silently.
+const mxTok = (n, mx) => `mx:${n}@${mx}`;
 function mxLostNotice() {
   clearTimeout(mxLostT);
-  const M = store.get(MXL.KEY, {}) || {},
-    due = M.due || {},
+  if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
+  let M = store.get(MXL.KEY, {}) || {};
+  const done = Object.keys(M.due || {}).filter(n => toldHas(mxTok(n, M.due[n])) || (P[n] && P[n].mx));
+  if (done.length) {
+    const left = {...M.due},
+      told = {...(M.told || {})};
+    done.forEach(n => ((told[n] = left[n]), delete left[n]));
+    M = {...M, due: left, told, ...(Object.keys(left).length ? {} : {gone: []})};
+    store.set(MXL.KEY, M);
+  }
+  const due = M.due || {},
     L = Object.keys(due).sort();
   if (!L.length || document.querySelector('.mxlost')) return;
   if (document.querySelector('#tour, .unlock')) return void (mxLostT = setTimeout(mxLostNotice, 2000));
@@ -1233,6 +1275,7 @@ function mxLostNotice() {
           if (left[n] === due[n]) delete left[n];
         });
         store.set(MXL.KEY, {...N, due: left, told, gone: []});
+        toldAdd(...L.map(n => mxTok(n, due[n])));
         mxLostNotice();
       }
     },
@@ -1252,9 +1295,10 @@ function mxLostNotice() {
 // or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
 // At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
 const RVN = {KEY: 'reefid-rv-msg'};
+const rvTold = v => toldHas('rv:' + v); // its card seen on another device of the account (core.js TOLD)
 function rvNoticeAdd(from, to, pct) {
   const M = store.get(RVN.KEY, {}) || {},
-    told = M.told || [],
+    told = [...new Set([...(M.told || []), ...RVS.map(r => r.v).filter(rvTold)])],
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {};
   // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
@@ -1287,8 +1331,15 @@ const rvPs = m => {
 };
 function rvNotice() {
   clearTimeout(rvT);
-  const M = store.get(RVN.KEY, {}) || {},
-    r0 = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v)),
+  if (noticeLater('rv', rvNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
+  let M = store.get(RVN.KEY, {}) || {};
+  // Seen on another device since it was due here: told, silently.
+  const elsewhere = (M.due || []).filter(rvTold);
+  if (elsewhere.length) {
+    M = {...M, due: M.due.filter(v => !elsewhere.includes(v)), told: [...new Set([...(M.told || []), ...elsewhere])]};
+    store.set(RVN.KEY, M);
+  }
+  const r0 = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v)),
     // A version whose standard card replaced its apology (rvNoticeAdd std): the standard card.
     x = r0 && (M.std || []).includes(r0.v) ? {...r0, msg: RV_CARD} : r0;
   if (!x || document.querySelector('.rvmsg')) return;
@@ -1310,6 +1361,7 @@ function rvNotice() {
       on: () => {
         const N = store.get(RVN.KEY, {}) || {};
         store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
+        toldAdd('rv:' + x.v);
         rvNotice(); // the next version's card, if any
       }
     },
@@ -1325,10 +1377,12 @@ function rvNotice() {
 // opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
 // cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
 // up), never held, its button, Enter or Escape close it for good on this device (reefid-sorry, like reefid-recalc, kept on the
-// device); leaving the page closes it unseen and it comes back.
+// device) and, signed in, on the account's other devices (core.js TOLD 'sorry'); leaving the page closes it unseen and it
+// comes back.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
   if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
+  if (noticeLater('sorry', sorryNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
   if (!F || typeof F !== 'object') {
@@ -1339,7 +1393,7 @@ function sorryNotice() {
     F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
     store.set(SORRYK.FIRST, F);
   }
-  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0)})) return;
+  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0) || toldHas('sorry')})) return; // or on another device (TOLD)
   if (document.querySelector('.sorry')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
   const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset());
@@ -1349,7 +1403,7 @@ function sorryNotice() {
     kick: 'Sorry',
     title: esc(x.t),
     body: `<p>${esc(x.p)}</p>`,
-    primary: {text: 'Thanks', on: () => store.set(SORRYK.KEY, Date.now())},
+    primary: {text: 'Thanks', on: () => (store.set(SORRYK.KEY, Date.now()), toldAdd('sorry'))},
     esc: 1,
     enter: 1,
     onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
@@ -1360,9 +1414,9 @@ function sorryNotice() {
 // invitation to every player, while the subject keeps its beta label). Pierre, 2026-11-05: "a proper card the player
 // closes, shown once, at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group
 // he picks, the card is an invitation to test the fish beta, for the players of that group only.
-// Each card is seen once per device, under its own key (subjDev: reefid-fish-hello-group), so a later card is not hidden
-// by an earlier one. hello.group goes only to a player in the subject's group (subjGroups: never the admin's own access,
-// IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
+// Each card is seen once, under its own key (subjDev: reefid-fish-hello-group, and the account's core.js TOLD
+// 'hello:fish-group' for its other devices), so a later card is not hidden by an earlier one. hello.group goes only to
+// a player in the subject's group (subjGroups: never the admin's own access, IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
 // the admin's browser (as the tour), and only to a player settled in the subject on screen (the corals): at least
 // HELLO.MIN answers (a new player meets the switch with the tour and the first questions). A player who has played the
 // subject already (it is on screen, its welcome question is answered, or it has progress) is never told: marked seen at
@@ -1374,6 +1428,8 @@ function sorryNotice() {
 const HELLO = {KEY: 'hello-', MIN: 10, WAIT: 1500};
 // The way S opens ('group' or 'all'): the name of its card in UNITS hello and of the card's seen mark.
 const helloMode = S => (subjGroup(S) ? 'group' : 'all');
+// Its token once seen (core.js TOLD), for every device of the account.
+const helloTok = S => `hello:${S.id}-${helloMode(S)}`;
 // 'show', 'met' (mark it seen, say nothing), or '' (not now). Pure on its inputs: tests call it.
 const helloDue = ({card, member, admin, seen, met, answers}) =>
   !card || !member || admin || seen ? '' : met ? 'met' : answers >= HELLO.MIN ? 'show' : '';
@@ -1381,7 +1437,7 @@ let helloT = 0;
 function subjHello() {
   clearTimeout(helloT);
   const home = () => (hashNow() || 'home') === 'home';
-  if (!home()) return;
+  if (!home() || noticeLater('hello', subjHello)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   // The 'all' card is the beta invitation: only while the subject keeps its beta label (SUBJECTS beta).
   const card = S => (helloMode(S) === 'all' && !S.beta ? null : (UNITS[S.id].hello || {})[helloMode(S)]),
     member = S => (helloMode(S) === 'group' ? subjGroups().includes(S.id) : subjOpen(S));
@@ -1389,12 +1445,13 @@ function subjHello() {
   if (!S) return;
   const H = card(S),
     key = subjDev(S.id, HELLO.KEY + helloMode(S)),
+    tok = helloTok(S),
     P2 = store.get(subjKey(S.id, 'progress'), null),
     due = helloDue({
       card: H,
       member: member(S),
       admin: HAS_ADMIN_TOKEN,
-      seen: !!store.get(key, null),
+      seen: !!store.get(key, null) || toldHas(tok), // or on another device of the account (core.js TOLD)
       met: SUBJ === S || !!store.get(startKey(S.id), null) || !!(P2 && typeof P2 === 'object' && Object.keys(P2).length),
       answers: answersSoFar() // the subject on screen's, another subject than S (met otherwise)
     });
@@ -1402,9 +1459,9 @@ function subjHello() {
   if (due !== 'show') return;
   helloT = setTimeout(() => {
     const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .hello');
-    if (!home() || busy || store.get(key, null) || !member(S) || !promptOk()) return;
+    if (!home() || busy || store.get(key, null) || toldHas(tok) || !member(S) || !promptOk()) return;
     promptMark();
-    const seen = () => store.set(key, Date.now());
+    const seen = () => (store.set(key, Date.now()), toldAdd(tok));
     cardShow({
       kind: S.card,
       cls: 'hello',
@@ -1417,11 +1474,37 @@ function subjHello() {
     });
   }, HELLO.WAIT);
 }
+// The notices this device marked seen before they travelled with the account (core.js TOLD, 2026-11-08), told to the
+// account once, at start-up (app.js SETUP 2), so the account's other devices stop showing them too; a save sends them
+// when any is new. Once per device (SEEDK), the first time this version runs, and only to the account signed in then:
+// a later account on a shared device never takes the marks a previous player left (Codex review #736). Not signed in
+// then: never (an anonymous device keeps them here, as before).
+const SEEDK = 'reefid-told-seeded';
+function toldSeed() {
+  if (store.get(SEEDK, 0)) return;
+  store.set(SEEDK, 1);
+  if (!SYNC) return;
+  const L = [],
+    r = RECALC.L.findIndex(x => x.id === store.get(RECALC.KEY, ''));
+  if (r >= 0) L.push('recalc:' + RECALC.L[r].id);
+  ((store.get(RVN.KEY, {}) || {}).told || []).forEach(v => L.push('rv:' + v));
+  const told = (store.get(MXL.KEY, {}) || {}).told || {};
+  Object.keys(told).forEach(n => L.push(mxTok(n, told[n])));
+  if (store.get(SORRYK.KEY, 0)) L.push('sorry');
+  SUBJECTS.forEach(S =>
+    ['group', 'all'].forEach(m => {
+      const v = store.get(subjDev(S.id, HELLO.KEY + m), null);
+      if (v && v !== 'met') L.push(`hello:${S.id}-${m}`);
+    })
+  );
+  if (store.get('reefid-board-told', 0)) L.push('board');
+  if (L.length) toldAdd(...L);
+}
 // The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
 // data-again (its "told" key) is due again later.
 function toastsOff() {
   document.querySelectorAll('.apptoast').forEach(t => {
-    if (t.dataset.again) store.set(t.dataset.again, 0);
+    if (t.dataset.again) (store.set(t.dataset.again, 0), (t.dataset.off = 1));
     t.remove();
   });
 }

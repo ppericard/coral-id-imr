@@ -877,8 +877,11 @@ function winkDue() {
 // The wink's photo (Pierre, 2026-11-07: a surprise card never shows a bad photo, each draws from 2 or 3 really beautiful
 // ones): one of the photos chosen for it (wink.photos: tools/fish_wink_photos.json) that are still among the unit's game
 // photos, matched by photo id (fishPid: a candidate and its stopgap copy are one photo), so one Pierre's curation takes
-// out is never drawn; none left, the unit's best by ease and reference look (easyRank's first).
+// out is never drawn; none left, the unit's best by ease and reference look (easyRank's first). Pierre's ★ Cover of the
+// unit comes first while it is in play (coverP, app.js fishCurate; Pierre, 2026-11-08, Q290, of the Thresher sharks'
+// card: "we can use my cover for the card").
 function winkPhoto(g) {
+  if (g.coverP) return g.coverP;
   const want = new Set((g.wink.photos || []).map(fishPid)),
     L = g.views.wide.filter(p => want.has(fishPid(p.f)));
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
@@ -1491,7 +1494,9 @@ function quizPhoto(cur = 'quiz') {
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
-  else if (!noOpen() && promptOk() && bonusBackDue()) (promptMark(), bonusBackShow());
+  // The back card is said once: signed in, only once the visit's first sync brought the choice made on another device
+  // (sync.js noticesReady, Pierre 2026-11-08).
+  else if (!noOpen() && promptOk() && noticesReady() && bonusBackDue()) (promptMark(), bonusBackShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
