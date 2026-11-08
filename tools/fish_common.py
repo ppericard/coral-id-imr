@@ -55,12 +55,14 @@ import time
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import inat  # noqa: E402  (the one paced, retried iNaturalist client; rule C7)
+
 ROOT = Path(__file__).resolve().parent.parent
 FISH = ROOT / "fish.json"
 SRC = ROOT / "tools" / "fish_common_src.json"
 OUT = ROOT / "tools" / "fish_common.json"
 API = "https://api.inaturalist.org/v1/taxa/"
-UA = {"User-Agent": "coral-id-imr/1.0 (fish common names)", "Accept": "application/json"}
 MAX = 3
 OWN = ("pdf", "slides", "dauin", "wink")  # fish.json `common` by its species' src: kept as written, listed first
 
@@ -91,15 +93,12 @@ def save_src(src):
     SRC.write_text("{\n" + ",\n".join(rows) + "\n}\n")
 
 
-def get(url, tries=5):
-    for k in range(tries):
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
-                return json.loads(r.read())
-        except Exception as e:  # noqa: BLE001  (429, 5xx, network: retried after a pause, never in a tight loop)
-            print(f"  retry after {e}", file=sys.stderr)
-            time.sleep(5 * (k + 1))
-    sys.exit(f"iNaturalist did not answer: {url}")
+def get(url):
+    """Through tools/inat.py: about one request a second, the project's User-Agent, 429 / 5xx retried after a pause."""
+    try:
+        return inat.get(url)
+    except (OSError, ValueError) as e:
+        sys.exit(f"iNaturalist did not answer: {url} ({e})")
 
 
 def fetch_inat():
@@ -109,10 +108,7 @@ def fetch_inat():
     for s in sp:
         by.setdefault(s["inat"], []).append(s["id"])
     ids = list(by)
-    last = 0.0
     for i in range(0, len(ids), 30):
-        time.sleep(max(0.0, 1.1 - (time.time() - last)))
-        last = time.time()
         d = get(API + ",".join(map(str, ids[i:i + 30])) + "?all_names=true&locale=en&per_page=30")
         for r in d["results"]:
             eng = [n["name"] for n in sorted(r.get("names", []), key=lambda n: n.get("position", 0))

@@ -20,6 +20,7 @@ identifiers and the date.
 import json
 from pathlib import Path
 
+import inat  # the batched observer counts (rule C7)
 from taxonomy import aliases  # the species rows of tools/taxonomy.json: former names, moves, spellings
 
 NEAR_OBSERVERS = 2
@@ -86,28 +87,59 @@ def listed(kind, names):
 def species_presence(get, taxon_id, kind="coral", extra=""):
     """{species name: {"id", "rg", "chk", "by"}} for every species under an iNaturalist taxon (a genus) with a Research
     Grade observation in the Philippines; "by" = ph_confirmed's reasons (empty: not confirmed). Species with none there
-    are absent (not confirmed). Three batched queries, plus an observers query for each species not already settled
-    by the checklist or near Dauin. `get(url)` returns the parsed JSON (the caller paces and caches it: rule
-    C7). `extra`: more query parameters (e.g. "&captive=false")."""
+    are absent (not confirmed). `get(url)` returns the parsed JSON (the caller paces and caches it: rule C7). `extra`:
+    more query parameters (e.g. "&captive=false"). species_presence_many for one taxon."""
+    return species_presence_many(get, [taxon_id], kind, extra).get(taxon_id, {})
+
+
+def species_presence_many(get, taxa, kind="coral", extra=""):
+    """{taxon: species_presence(taxon)} for several iNaturalist taxa (genera) at once (rule C7): two species_counts
+    queries for all of them (BATCH taxa a request, 500 rows a page; each taxon gets the species rows below it, as its own
+    query gives them: iNaturalist counts leaf taxa, and a taxon's leaves are the same in a query over more taxa), then
+    the distinct observers near Dauin of the species the checklist does not settle, then in the Philippines of those
+    still not settled, counted together for the species with few observations (tools/inat.py observer_counts: their
+    observations read in one search), one observers query each for the others."""
     api = "https://api.inaturalist.org/v1/observations"
-    ph = get(f"{api}/species_counts?taxon_id={taxon_id}&place_id=6873&quality_grade=research{extra}&per_page=500")["results"]
-    ph = [x for x in ph if x["taxon"].get("rank") == "species"]
+    taxa = list(dict.fromkeys(taxa))
+
+    def rows(where):
+        out = []
+        for B in inat.chunks(taxa, inat.BATCH):
+            page = 1
+            while True:
+                d = get(f"{api}/species_counts?taxon_id={','.join(map(str, B))}&{where}&quality_grade=research{extra}&per_page=500"
+                        + (f"&page={page}" if page > 1 else ""))
+                out += d.get("results") or []
+                if page * 500 >= (d.get("total_results") or 0) or not d.get("results"):
+                    break
+                page += 1
+        return out
+
+    want = set(taxa)
+
+    def under(x):
+        """The taxa asked that a row is below (one taxon asked: every row is)."""
+        if len(taxa) == 1:
+            return {taxa[0]}
+        return {a for a in [*(x["taxon"].get("ancestor_ids") or []), x["taxon"]["id"]] if a in want}
+
+    ph = [x for x in rows("place_id=6873") if x["taxon"].get("rank") == "species"]
     if not ph:
-        return {}
-    dauin = get(f"{api}/species_counts?taxon_id={taxon_id}&lat=9.19&lng=123.26&radius=40&quality_grade=research{extra}&per_page=500")["results"]
-    dn = {x["taxon"]["id"]: x["count"] for x in dauin}
-    out = {}
+        return {t: {} for t in taxa}
+    dn = {x["taxon"]["id"]: x["count"] for x in rows("lat=9.19&lng=123.26&radius=40")}
+    lst = {x["taxon"]["id"]: listed(kind, [x["taxon"]["name"]]) for x in ph}
+    near_q = f"quality_grade=research&lat=9.19&lng=123.26&radius=40{extra}"
+    ph_q = f"quality_grade=research&place_id=6873{extra}"
+    solo = lambda q: lambda t: get(f"{api}/observers?taxon_id={t}&{q}&per_page=1").get("total_results", 0)  # noqa: E731
+    od = inat.observer_counts(get, {x["taxon"]["id"]: dn[x["taxon"]["id"]] for x in ph
+                                    if dn.get(x["taxon"]["id"], 0) >= NEAR_OBSERVERS and not lst[x["taxon"]["id"]]}, near_q, solo(near_q))
+    op = inat.observer_counts(get, {x["taxon"]["id"]: x["count"] for x in ph if x["count"] >= PH_OBSERVERS and not lst[x["taxon"]["id"]]
+                                    and not near_dauin(od.get(x["taxon"]["id"], 0))}, ph_q, solo(ph_q))
+    out = {t: {} for t in taxa}
     for x in ph:
         t, n, name = x["taxon"]["id"], x["count"], x["taxon"]["name"]
-        lst = listed(kind, [name])
-        od = 0
-        if dn.get(t, 0) >= NEAR_OBSERVERS and not lst:
-            od = get(f"{api}/observers?taxon_id={t}&quality_grade=research&lat=9.19&lng=123.26&radius=40{extra}&per_page=1").get("total_results", 0)
-        near = near_dauin(od)
-        op = None
-        if n >= PH_OBSERVERS and not lst and not near:
-            op = get(f"{api}/observers?taxon_id={t}&quality_grade=research&place_id=6873{extra}&per_page=1").get("total_results", 0)
-        out[name] = {"id": t, "rg": n, "chk": lst, "by": ph_confirmed(n, op, lst, near)}
+        for g in under(x):
+            out[g][name] = {"id": t, "rg": n, "chk": lst[t], "by": ph_confirmed(n, op.get(t), lst[t], near_dauin(od.get(t, 0)))}
     return out
 
 

@@ -8,7 +8,8 @@ from those that became Research Grade since. It also moves the bonus genera's ph
 x.gen[g].more, as tools/apply_multi.py does for the slate genera: games skip them; Pierre's curation "single" restores one.
 Re-runnable: python3 tools/apply_bonus.py
 """
-import json, re, time, urllib.request
+import json, re
+import inat  # the one paced, retried iNaturalist client (rule C7): 200 observations a request, about one a second
 from datajson import dump  # the one data.json layout (one genus per line)
 from genera import lists  # core.js BENTHIC + BONUS, defined once
 
@@ -20,12 +21,9 @@ X = d['x']['gen']
 photos = [p for g in BONUS for k in ('views', 'more') for L in X[g].get(k, {}).values() for p in L if 'inaturalist.org/observations/' in p.get('o', '')]
 oid = lambda p: re.search(r'(\d+)$', p['o']).group(1)
 ids, grade = sorted({oid(p) for p in photos}), {}
-for i in range(0, len(ids), 100):
-    url = 'https://api.inaturalist.org/v1/observations?per_page=200&id=' + ','.join(ids[i:i + 100])
-    req = urllib.request.Request(url, headers={'User-Agent': 'coral-id-imr'})
-    for o in json.load(urllib.request.urlopen(req))['results']:
+for B in inat.chunks(ids, 200):
+    for o in inat.get('https://api.inaturalist.org/v1/observations?per_page=200&id=' + ','.join(B))['results']:
         grade[str(o['id'])] = o['quality_grade']
-    time.sleep(1)
 n = 0
 for p in photos:
     g = grade.get(oid(p))

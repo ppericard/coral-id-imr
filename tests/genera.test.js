@@ -204,9 +204,9 @@ test('starWaits: a starred genus is not eligible before its references are met, 
 test('fetch_local get: waits and retries on 429 and 5xx, honours Retry-After, raises after the last wait', () => {
   const out = JSON.parse(
     py(`
-import io, urllib.error, fetch_local as fl
+import io, time, urllib.error, fetch_local as fl
 slept, calls = [], []
-fl.time.sleep = lambda s: slept.append(round(s))
+time.sleep = lambda s: slept.append(round(s))  # tools/inat.py, the client fetch_local.get goes through
 def fail(code, ra=None):
   h = {'Retry-After': ra} if ra else {}
   return urllib.error.HTTPError('u', code, 'x', h, None)

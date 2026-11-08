@@ -45,6 +45,12 @@ def get(u):
     if 'observers' in u:
         t = int(u.split('taxon_id=')[1].split('&')[0])
         return {"total_results": {2: 3, 3: 2, 4: 2}[t]}
+    if '/v2/observations?' in u:  # species 2 and 3 read together (tools/inat.py observer_counts): 3 and 2 observers
+        users = {2: [1, 2, 3, 1], 3: [9, 8, 9, 8]}
+        want = [int(x) for x in u.split('taxon_id=')[1].split('&')[0].split(',')]
+        res = [{"id": 10 * t + k, "user": {"id": who}, "taxon": {"id": t, "ancestor_ids": [999, t]}}
+               for t in want for k, who in enumerate(users[t])]
+        return {"total_results": len(res), "results": res}
     raise AssertionError(u)
 r = species_presence(get, 999, "coral")
 print(json.dumps({"by": {k: v["by"] for k, v in r.items()}, "calls": len(calls), "ok": sorted(confirmed_species(get, 999))}))`);
