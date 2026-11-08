@@ -72,32 +72,53 @@ jobs:
     strategy:
       # Every smoke reports: one failing smoke no longer hides the others (the old single job stopped at its first failure).
       fail-fast: false
-      # The two longest smokes run in two halves each (tests/slot.js: SMOKE_PART for pages.smoke.js, whose parts the two
-      # groups cover between them, or the run fails; SMOKE_W for admin.smoke.js, one width each), so no job is the long pole.
+      # The longest smokes run in groups, one runner each, so no job is the long pole (tests/slot.js: SMOKE_PART for
+      # pages.smoke.js and fish.smoke.js, whose groups cover every part between them or the run fails, and
+      # tests/smokeparts.test.js fails when a group is in no job here; admin.smoke.js runs whole at 390, in two groups at
+      # 1280, SMOKE_W one width each).
       matrix:
         include:
           - name: pages main
             smoke: pages
             part: main
-            what: Page smoke test, main half (the routes at 390 and 1280 px, sheets, history, new player, cards and prompts)
+            what: Page smoke test, main routes (the routes at 390 and 1280 px, sheets, history, tips, the new player, one path)
+          - name: pages overlays
+            smoke: pages
+            part: overlays
+            what: Page smoke test, overlays (cards, prompts, the one-tap question, the tour)
+          - name: pages more
+            smoke: pages
+            part: more
+            what: Page smoke test, more (the Duel tab relief card, the first-launch question, sign-in, the sheet's replay, notices after the sync)
           - name: pages rest
             smoke: pages
             part: rest
-            what: Page smoke test, other half (Coral basics, credits, pages opened, tips, the Duel tab relief card, sign-in, the sheet's replay)
+            what: Page smoke test, rest (Coral basics, credits, pages opened, the subject tour)
           - name: draw
             smoke: draw
             what: Question draw test (photoSet and distractors on the real data, every genus, 4 player levels)
-          - name: fish
+          - name: fish main
             smoke: fish
+            part: main
             what: Fish quiz test (the fish subject on the real fish.json, circles opt-in, winks, progress kept apart)
+          - name: fish fresh
+            smoke: fish
+            part: fresh
+            what: Fish quiz test, the brand-new fish players (the starter core, the easy photos before Open Water, five seeds)
           - name: admin 390
             smoke: admin
             w: '390'
             what: Admin demo test at 390 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
-          - name: admin 1280
+          - name: admin 1280 main
             smoke: admin
             w: '1280'
-            what: Admin demo test at 1280 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
+            part: main
+            what: Admin demo test at 1280 px, main (admin.html?demo, every page, Analyses, To do, Activity, Health; made-up data, nothing sent)
+          - name: admin 1280 more
+            smoke: admin
+            w: '1280'
+            part: more
+            what: Admin demo test at 1280 px, players and photos (Players' actions, Candidates, the auto-sort, Publish; made-up data, nothing sent)
           - name: profiles
             smoke: profiles
             what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)

@@ -125,7 +125,8 @@ smokes (`tests/*.smoke.js`; CI installs Playwright in a temporary folder: never 
 you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
 `.github/workflows/checks.yml`: JS syntax, tests, JSON, `data.json` layout, Python, versions, and each Playwright smoke
-in its own parallel job `smoke (<name>)` (pages and admin in two halves each, `SMOKE_PART` / `SMOKE_W`),
+in its own parallel job `smoke (<name>)` (pages in four groups and fish in two, `SMOKE_PART`, each group in a job of its
+own or `tests/smokeparts.test.js` fails; admin whole at 390 px and in two groups at 1280, `SMOKE_W` / `SMOKE_PART`),
 `fail-fast: false` so every failing smoke reports; a new push cancels the run still going on the PR. **Session hooks**
 (`.claude/settings.json`) print the Manila time and the Rule 0 window at each session start and prompt
 (`tools/brief.py --short`, `--time`), running main's reviewed copy of the script
@@ -164,8 +165,8 @@ and reports every failing one. Locally, run what your change can break, once:
   fallback cards, the open-all offer: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
-  `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|rest` is the half CI runs on one
-  runner. Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
+  `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|overlays|rest|more` is the group CI runs
+  on one runner (`fish.smoke.js`: `main|fresh`, `fresh` the brand-new fish players). Default (no variable): everything. `PAGES_ONLY=` (the older name) still works.
 - **One Playwright run at a time per 2 cores**: every smoke and every Playwright tool (`tools/learnsim.js`,
   `tools/perf.js`, `tools/rtprep.js`, `tools/og/make_og.js`) takes a slot from `tests/slot.js` before it starts
   Chromium, waits while the machine's load is above twice its core count (rule W24), and gives the slot back when it ends
