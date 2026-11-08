@@ -2604,11 +2604,12 @@ const installIcon = k =>
 // The card: once (the nudge: closed for good however it closes, but by leaving the page) or from ⚙ (no mark).
 function installCard(once) {
   const way = installWay(),
+    why = `<p>Add ${esc(ORG.app)} to your home screen: one tap opens it, full screen, with no link to find again.</p>`, // rule W21: the name from ORG
     body =
       way === 'prompt'
-        ? '<p>Add IMR Reef ID to your home screen: one tap opens it, full screen, with no link to find again.</p>'
+        ? why
         : way === 'ios'
-          ? `<p>Add IMR Reef ID to your home screen: one tap opens it, full screen, with no link to find again.</p><ol class="instl"><li>Tap <b>Share</b> ${installIcon('share')} in Safari. On a recent iPhone, tap <b>•••</b> first.</li><li>Tap <b>Add to Home Screen</b> ${installIcon('add')} (scroll down the list if you don't see it).</li><li>Tap <b>Add</b>.</li></ol>`
+          ? `${why}<ol class="instl"><li>Tap <b>Share</b> ${installIcon('share')} in Safari. On a recent iPhone, tap <b>•••</b> first.</li><li>Tap <b>Add to Home Screen</b> ${installIcon('add')} (scroll down the list if you don't see it).</li><li>Tap <b>Add</b>.</li></ol>`
           : `<p>Open your browser's menu and choose <b>Install app</b> or <b>Add to Home screen</b>.</p><p class="note">Opened the link inside another app, such as a chat? Open it in Chrome or Safari first.</p>`;
   cardShow({
     kind: 'feature',
