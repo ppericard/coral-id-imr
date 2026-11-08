@@ -3423,10 +3423,18 @@ const WIDTHS = [390, 1280];
       await p.click('#undo');
       await settle();
       // The pre-sort sets a sure comparison image aside (Pierre, 2026-11-03; the auto-sort leaves those to him): out of
-      // the queue, counted, back on Show.
+      // the queue, counted, back on Show. The count is the shown source's (renderCand nAside, over candQueue(CSRC)), and
+      // CF[2] is whichever undecided candidate the real curation leaves (Dauin, Philippines…: Pierre's Publish of
+      // 2026-11-08 moved it from Dauin to Philippines while the page showed Dauin), so the page is put on CF[2]'s own
+      // source first, All when that is not a source of the swiper; the source shown before is restored after.
       const as = await p.evaluate(F => {
-        const inQ = () => candQueue('all').some(x => x.p.f === F[2] && !x.aside);
-        return {aside: !inQ(), note: !!document.querySelector('.adm-caside')};
+        const inQ = () => candQueue('all').some(x => x.p.f === F[2] && !x.aside),
+          x = candQueue('all').find(y => y.p.f === F[2]),
+          o = x && origin(x.p),
+          prev = CSRC;
+        CSRC = FB.srcs().some(([k]) => k === o) ? o : 'all';
+        render();
+        return {aside: !inQ(), note: !!document.querySelector('.adm-caside'), src: CSRC, prev};
       }, CF);
       if (!as.aside || !as.note) fails.push(`${w}px Pre-sort: the comparison image is not set aside (${JSON.stringify(as)})`);
       // The rule (same as tools/excluded.py set_aside): several corals and Poor are set aside too, unless unsure.
@@ -3456,6 +3464,11 @@ const WIDTHS = [390, 1280];
         await p.click('[data-caside]');
         await settle();
       }
+      await p.evaluate(s => {
+        CSRC = s;
+        render();
+      }, as.prev);
+      await settle();
       // Auto-sort (Pierre, 2026-11-03): the sure judgments were decided at load, logged as auto, the Check waits for him.
       const au = await p.evaluate(
         ([F, C]) => {
