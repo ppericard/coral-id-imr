@@ -3360,7 +3360,7 @@ anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with 
 | Every family learned | 100% | 50% |
 | Every family and every genus learned | 100% | 67% |
 
-### Fish: the progress replayed from the answer log (2026-11-08, Q298, Q310; fish rules version 1, sheet vNEXT)
+### Fish: the progress replayed from the answer log (2026-11-08, Q298, Q310; fish rules version 1, sheet v112)
 
 Pierre, 2026-11-08: "recalculate every player's progress from their answers, then their achievements too". Until then no
 replay reached a fish player: the sheet replayed the corals only, so a fish bar lived on the device (rebuilt once from its
@@ -3392,7 +3392,7 @@ answers than the log.
 `fish.json`, `core.js` `fishReplayGen`; none of `stats_`'s photo numbers, which are the corals'), under the fish rules
 versions of their own (`core.js` `FISH_RVS`, `rvOf`; the integrator, 2026-11-08: a fish replay must never replay the
 corals again, so no coral player gets a card for it), asked by the app with the fish rules version it applied
-(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet vNEXT (`core.js` `REPLAYS_SHEET`, rule D4).
+(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet v112 (`core.js` `REPLAYS_SHEET`, rule D4).
 **The floor** (`core.js` `replayFloor`), applied by the sheet to the replay itself (`Code.gs` `replay_`), so every
 device of the account adopts the same record and keeps it as their shared merge baseline (Codex review #779: floored on
 each device, two devices disagreed and a recovered refused save counted its answers twice): against the account's saved
