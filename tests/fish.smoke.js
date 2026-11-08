@@ -28,6 +28,11 @@ const http = require('http'),
 const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
 const ROOT = path.join(__dirname, '..');
+// The game species of Chromis in fish.json: the genus page shows a tile each, a Chromis sheet the others (the count moves
+// with the data: 13 until 2026-11-08, when the near-Dauin species of the game families came in).
+const CHROMIS = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')).species.filter(
+  s => s.circle && s.genus === 'g:Chromis'
+).length;
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -692,7 +697,7 @@ const server = http.createServer((req, res) => {
         };
       })
       .catch(e => ({err: e.message}));
-    if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== 13 || gp.sib < 2 || !/genus/.test(gp.bar))
+    if (gp.name !== 'Chromis' || gp.tips !== 2 || gp.tiles !== CHROMIS || gp.sib < 2 || !/genus/.test(gp.bar))
       ui.push(`${width}px genus page: ${JSON.stringify(gp)}`);
     await wide('a genus page');
     // A species tile opens its species sheet (scientific name first, its common name, badges, photos, the other species of
@@ -718,7 +723,7 @@ const server = http.createServer((req, res) => {
       ss.badges < 3 ||
       !ss.fam ||
       !ss.photo ||
-      ss.sib !== 12 ||
+      ss.sib !== CHROMIS - 1 ||
       !ss.bar.includes(ss.name)
     )
       ui.push(`${width}px species sheet: ${JSON.stringify(ss)}`);

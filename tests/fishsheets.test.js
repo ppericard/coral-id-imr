@@ -54,9 +54,10 @@ test('fishTree: option B, every family, genus and species reaches a sheet', () =
   assert.strictEqual(T.go('f:Damselfishes'), 'f:Damselfishes');
   // A genus with several species in a family of several genera opens its page.
   assert.strictEqual(T.go('g:Chromis'), 'g:Chromis');
-  // A genus with one species opens that species' sheet (Pierre, Q2): Zanclus, Abudefduf.
+  // A genus with one species opens that species' sheet (Pierre, Q2): Zanclus, Pygoplites (Abudefduf until it got a second
+  // species, 2026-11-08).
   assert.strictEqual(T.go('g:Zanclus'), 's:Zanclus cornutus');
-  assert.strictEqual(T.go('g:Abudefduf'), 's:Abudefduf vaigiensis');
+  assert.strictEqual(T.go('g:Pygoplites'), 's:Pygoplites diacanthus');
   // The only genus of a family with several species has no page: the family sheet (the study's recommendation).
   assert.strictEqual(T.go('g:Platax'), 'f:Spadefishes');
   // A species by its id or its sheet id; unknown ids reach nothing.
