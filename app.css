@@ -5594,6 +5594,11 @@ html.touring body::after {
   font-weight: 600;
   text-decoration: none;
 }
+button.setlink {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
 @media (pointer: coarse) {
   .setlink {
     min-height: 44px;
@@ -5964,6 +5969,26 @@ html.touring .unlock {
 .ulbtns .next {
   align-self: stretch;
   text-align: center;
+}
+/* Install the app (app.js installCard): the app's own icon in the medallion, as on the home screen; the iPhone steps as
+   a short numbered list, left-aligned, each with Safari's icon inline in the accent. */
+.instapp {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--r);
+}
+.instl {
+  margin: 4px 0 0;
+  padding-left: 22px;
+  text-align: left;
+}
+.instl li + li {
+  margin-top: 6px;
+}
+.insti {
+  display: inline-block;
+  vertical-align: -3px;
+  color: var(--accent);
 }
 /* A "Did you know?" tip (quiz.js tipShow): the photo just answered, small, with its enlarge mark (app.js ZOOMI) ringed in
    the kind's hue, so the player sees what to tap. Its buttons take no tap for their first moments (quiz.js TIP.WAIT):
