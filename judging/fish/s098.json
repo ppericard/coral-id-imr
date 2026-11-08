@@ -77,12 +77,8 @@
    "keep": "best"
   },
   "fish-s098-cand-342186113": {
-   "code": "d1n0sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Blotched colours: probably the night pattern"
+   "code": "o1n0mm12",
+   "keep": "best"
   },
   "fish-s098-cand-342186110": {
    "code": "p1n0sm13",
@@ -161,12 +157,8 @@
    "keep": "best"
   },
   "fish-s098-cand-216637702": {
-   "code": "p1g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "A drawn circle marks the fish"
+   "code": "o1g2bsx1",
+   "keep": "best"
   }
  }
 }

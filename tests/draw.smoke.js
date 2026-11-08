@@ -1,7 +1,7 @@
 // Question draw test (code re-review 2026-11-01, ROADMAP "Test the question draw"): runs the real photoSet() and
 // distractors() of app.js in Chromium, for every genus and several player levels, and checks Pierre's rules:
 // - every photo of a question (shown, hint, revealed after) comes from ONE observation (same colony; rule P4);
-// - never a several-corals or Coral Finder book photo in a game (rule P3); genera off the IMR list (Millepora, bonus):
+// - never a several-corals photo in a game (rule P3); genera off the IMR list (Millepora, bonus):
 //   Research Grade or Pierre's only (rule L6);
 // - answer choices: 3 distinct genera of the list, never the target; exactly the asked number of traps (look-alikes /
 //   confused genera) when enough exist, none at the very start (rule L7);
@@ -106,8 +106,7 @@ const server = http.createServer((req, res) => {
     for (const th of [null, 0, 1, 2.5]) {
       P = th === null ? {} : Object.fromEntries(genera.map(n => [n, {ok: 5, ko: 2, h: '1101101', th, pg: 0.4}]));
       for (const n of genera) {
-        const g = GX(n),
-          book = new Set((g.book || []).map(x => x.f));
+        const g = GX(n);
         for (let i = 0; i < RUNS; i++) {
           const s = photoSet(n),
             all = [...s.shown, ...(s.hint ? [s.hint] : []), ...(s.reveal || [])];
@@ -122,7 +121,6 @@ const server = http.createServer((req, res) => {
           if (new Set(all.map(x => x.f)).size < all.length) fails.push(`${n} (th ${th}): the same photo twice in one question`);
           all.forEach(x => {
             if (x.multi) fails.push(`${n}: several-corals photo ${x.f} in a game`);
-            if (book.has(x.f)) fails.push(`${n}: Coral Finder book photo ${x.f} in a game`);
             if (g.x && !x.own && x.gid) fails.push(`${n}: photo ${x.f} of a genus off the IMR list is not Research Grade`);
           });
         }
@@ -302,7 +300,9 @@ const server = http.createServer((req, res) => {
         l.ch !== '' ||
         !(l.e > 0 && l.e < 1) ||
         l.ty !== typo.toLowerCase() ||
-        l.tr !== 1
+        l.tr !== 1 ||
+        // the text refused before it, logged with it (Pierre, 2026-11-08, Q237); the spelling step's retype is none
+        JSON.stringify(l.rj) !== JSON.stringify(['xyzcoral'])
       )
         fails.push(`typed answer "${typo}" retyped "${g}" logged ${JSON.stringify(l)}`);
       const h1 = document.querySelector('#after .fb h3');
@@ -416,14 +416,32 @@ const server = http.createServer((req, res) => {
     // One miss keeps a learned genus (mxKept), a second one before it is back up takes it away.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: PROG.M, mx: 1};
     answer('quiz', wrong, t, pics.slice(0, 2), false, null);
-    if (!P[t].mx) fails.push(`${t}: one miss took a learned genus away (progress ${knownP(t)})`);
+    if (!P[t].mx) fails.push(`${t}: one miss took a learned genus away (progress ${pgOf(P[t])})`);
     answer('quiz', wrong, t, pics.slice(0, 2), false, null);
-    if (P[t].mx) fails.push(`${t}: still mastered after two misses (progress ${knownP(t)})`);
+    if (P[t].mx) fails.push(`${t}: still mastered after two misses (progress ${pgOf(P[t])})`);
     // A miss never raises the progress, even on its hardest photo shown alone, and takes it down visibly (core.js PROG).
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.75};
     const b0 = genScore(t);
     answer('quiz', wrong, t, pics.slice(-1), false, null);
     if (genScore(t) > b0 - 0.1) fails.push(`${t}: a miss at ${Math.round(100 * b0)}% only took it to ${Math.round(100 * genScore(t))}%`);
+    // The domain-score bar (core.js DOM, rules version 9) once the sheet replays it (model.js domRules: sheet v87, DOM_SHEET):
+    // a genus first answered takes it, a right answer credits it, a miss never raises it, and the answer logs the genus
+    // offset it was scored with (sc m). The records above, saved with s.pg, keep the former rule (rule D4).
+    {
+      const sv = store.get('reefid-sheet-v', 0);
+      store.set('reefid-sheet-v', DOM_SHEET);
+      delete P[t];
+      answer('quiz', t, t, pics.slice(-1), false, null);
+      const d1 = P[t].ds,
+        lg = (SYNC ? SYNC.log : store.get(LOG0, [])).slice(-1)[0] || {};
+      if (!(d1 > 0) || 'pg' in P[t] || !Array.isArray(P[t].dp))
+        fails.push(`${t}: the domain-score bar after a right answer: ${JSON.stringify(P[t])}`);
+      if (!lg.sc || lg.sc.m !== Math.round(genusDiff(t) * 1000) / 1000)
+        fails.push(`${t}: the genus offset not logged: ${JSON.stringify(lg.sc)}`);
+      answer('quiz', wrong, t, pics.slice(-1), false, null);
+      if (!(P[t].ds <= d1)) fails.push(`${t}: a miss raised the domain-score bar ${d1} -> ${P[t].ds}`);
+      store.set('reefid-sheet-v', sv);
+    }
     // What a right answer proves (pgWeight): more against a look-alike, and more among 4 plausible choices than 2.
     const la = Object.keys(DATA.gen).find(n => n !== t && pooledConf(t, n) >= CONF.TRAP),
       far = Object.keys(DATA.gen).find(n => n !== t && pooledConf(t, n) < CONF.TRAP && !isLook(t, n) && !confusable(t, n));
@@ -495,6 +513,54 @@ const server = http.createServer((req, res) => {
         fails.push(
           `${n} (${files.length} photos, ${cols.length} colonies): the least remembered colony came up ${favour} (all known alike: ${even})`
         );
+    }
+    // Photo exposure (Pierre, 2026-11-06, Q188 and Q190; docs/LEARNING.md "Photo exposure"): in a genus with colonies at
+    // several zooms, a colony counts as seen whatever view was shown, so a colony seen only in its colony view is drawn
+    // as often as one seen in every view; and a calibration question (the exploration share) shows a colony the player
+    // has never seen while one remains.
+    {
+      // the colonies of a genus by their set of views: two colonies with the same views (two or more) and other colonies
+      const cols = n => {
+          const o = {};
+          VIEWS.forEach(([v]) =>
+            gamePics(n, v).forEach(x => ((o[key(x)] = o[key(x)] || []).push(x), (o[key(x)].vs = (o[key(x)].vs || '') + v)))
+          );
+          return o;
+        },
+        pair = n => {
+          const C = cols(n),
+            by = {};
+          Object.keys(C).forEach(k => C[k].length >= 2 && (by[C[k].vs] = by[C[k].vs] || []).push(k));
+          return Object.keys(C).length >= 6 ? Object.values(by).find(L => L.length >= 2) : null;
+        },
+        n = slateGenera().find(pair),
+        C = cols(n),
+        ks = Object.keys(C),
+        [ca, cb] = pair(n),
+        // every colony seen in full and right once, but ca and cb: ca seen in one photo only, cb in all of them
+        ps0 = Object.fromEntries(ks.flatMap(k => C[k].map(x => [x.f, [1, 1]]))),
+        ps = {...ps0, ...Object.fromEntries(C[ca].slice(1).map(x => [x.f, undefined]))},
+        rate = CAL.RATE,
+        share = (c, rt) => {
+          CAL.RATE = rt;
+          // 10000 draws: at 2000 a share near 0.05 moved by 0.01 from one run to the next, past the 1.3 ratio below.
+          let hit = 0;
+          for (let i = 0; i < 10000; i++) {
+            P[n] = {ok: 20, ko: 2, h: '1111111111', th: 1.2, pg: 0.6, ps: JSON.parse(JSON.stringify(ps))};
+            if (photoSet(n).shown.some(x => key(x) === c)) hit++;
+          }
+          return hit / 10000;
+        };
+      Object.keys(ps).forEach(f => ps[f] === undefined && delete ps[f]);
+      const a = share(ca, 0),
+        b = share(cb, 0);
+      if (!(a < 1.3 * b && b < 1.3 * a)) fails.push(`${n}: a colony seen in one view came up ${a}, one seen in every view ${b}`);
+      // The exploration share: one colony never seen (its photos left out of ps), every calibration question shows it.
+      const cn = ks.find(k => k !== ca && k !== cb);
+      C[cn].forEach(x => delete ps[x.f]);
+      const e = share(cn, 1);
+      CAL.RATE = rate;
+      if (!(e > 0.99)) fails.push(`${n}: a calibration question showed the colony never seen ${e} of the time`);
     }
     // Exam photos are never-seen ones while some remain.
     P[t] = {ok: 30, ko: 2, h: '1111111111', th: 2, pg: 0.85, ps: {}};

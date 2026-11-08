@@ -9,7 +9,7 @@
 #
 # Where they live (Photos out of the repo, Pierre's rule of 2026-11-05; docs/ROADMAP.md, docs/ARCHITECTURE.md "Photos"):
 # the app reads every photo from the Cloudflare R2 bucket (core.js PHOTO_BASE, same img/ paths). git keeps only the
-# photos with no other backup (IMR lecture photos, Coral Finder book scans, page art): a photo whose record has an online
+# photos with no other backup (IMR lecture photos, page art): a photo whose record has an online
 # original (src: iNaturalist, Pierre's own iNaturalist photos, FishBase) and is downloaded (no r) lives on R2 only
 # (online()); tools/fetch_approved.py uploads it there, never to img/, and tools/r2_sync.sh never deletes from the bucket.
 # A tool that reads a photo's pixels opens path(f, size): the file in img/, or a copy from R2 kept in tools/.cache/r2/.
@@ -25,8 +25,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(ROOT, 'img')
 SIZES = ((1600, 78, ''), (960, 72, '-m'), (480, 72, '-s'), (240, 70, '-t'))
 SUFFIXES = tuple(s for _, _, s in SIZES)
-# The files that hold photo records (dicts with f): the game and sheet photos, the candidates waiting, the fish photos.
-DATA = ('data.json', 'cand.json', 'fish-photos.json')
+# The files that hold photo records (dicts with f): the game and sheet photos, the candidates waiting, the fish photos (the
+# stopgap list, and the curated ones on R2: tools/fish_game.py).
+DATA = ('data.json', 'cand.json', 'fish-photos.json', 'fish-game.json')
 CACHE = os.path.join(ROOT, 'tools', '.cache', 'r2')  # gitignored
 UA = {'User-Agent': 'coral-id-imr/1.0'}  # R2's public address refuses Python's default user agent
 
@@ -82,7 +83,7 @@ def online(recs=None):
 
 
 def gitonly(recs=None):
-    """The photos whose only copy outside R2 is git: downloaded, with no online original (IMR, Coral Finder book)."""
+    """The photos whose only copy outside R2 is git: downloaded, with no online original (IMR lecture photos, page art)."""
     recs = records() if recs is None else recs
     return {f for f, L in recs.items() if not any(p.get('src') or p.get('r') for p in L)}
 

@@ -221,6 +221,13 @@ test('the success aimed for follows the global level, with no cliff', () => {
   const easy = ctx.M.aimOff(4);
   ctx.P = {'~level': {th: 2}};
   assert.ok(easy > ctx.M.aimOff(4) + 0.5, `${easy} vs ${ctx.M.aimOff(4)}`);
+  // Per-format offsets (Q138, core.js fmtOff): a format found easier by df gets a photo df harder, so the question is
+  // still right with the aimed chance in its format: 1/k + (1 - 1/k) sig(aimOff(k, df) + df) = aimP.
+  ctx.P = {'~level': {th: 1}};
+  near(ctx.M.aimOff(2, 0), ctx.M.aimOff(2));
+  near(ctx.M.aimOff(2, 1.14), ctx.M.aimOff(2) - 1.14);
+  const sg = x => 1 / (1 + Math.exp(-x));
+  near(0.5 + 0.5 * sg(ctx.M.aimOff(2, 1.14) + 1.14), ctx.M.aimP());
 });
 
 // Codex review #415: the level bands come from one reference level, whatever the model replayed (--model) or the rule

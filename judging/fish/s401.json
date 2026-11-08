@@ -21,12 +21,8 @@
    "keep": "best"
   },
   "fish-s401-cand-491069815": {
-   "code": "o1g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the fish for sure among the rubble"
+   "code": "d1g0smxc1",
+   "keep": "best"
   },
   "fish-s401-cand-332636774": {
    "code": "d1g2sl1c1",
@@ -65,12 +61,12 @@
    "keep": "dup"
   },
   "fish-s401-cand-512824269": {
-   "code": "o1g2sm1c1",
+   "code": "p1g1sl1c3",
    "keep": "best",
    "unsure": [
-    "keep"
+    "code"
    ],
-   "note": "A screenshot of a phone screen, with the app's buttons on the photo"
+   "note": "A screenshot of a phone screen, the app's buttons on it: never a game photo"
   },
   "fish-s401-cand-350331120": {
    "code": "h1g1sl1c2",
@@ -146,6 +142,50 @@
   },
   "fish-s401-cand-161117908": {
    "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-67143540": {
+   "code": "p1g0sl1c2",
+   "keep": "dup"
+  },
+  "fish-s401-cand-67143557": {
+   "code": "p1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-65191247": {
+   "code": "h0g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-53716297": {
+   "code": "o1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-60585728": {
+   "code": "o0g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s401-cand-57791463": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s401-cand-60604194": {
+   "code": "o0g1sl1c1",
+   "keep": "best"
+  },
+  "fish-s401-cand-53702319": {
+   "code": "p1g0sm1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-63851234": {
+   "code": "h1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-53701963": {
+   "code": "p1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s401-cand-71775289": {
+   "code": "o1g0sl13",
    "keep": "best"
   }
  }

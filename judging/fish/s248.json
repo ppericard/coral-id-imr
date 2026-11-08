@@ -89,12 +89,12 @@
    "keep": "best"
   },
   "fish-s248-cand-444428198": {
-   "code": "o1g0sl1j2",
+   "code": "o1g0sm1j2",
    "keep": "best",
    "unsure": [
-    "keep"
+    "code"
    ],
-   "note": "In a tank or a bucket, not in the wild"
+   "note": "Plain beige background: likely a tank or a container, not the wild"
   },
   "fish-s248-cand-151121666": {
    "code": "p1g1sm13",
@@ -102,6 +102,66 @@
   },
   "fish-s248-cand-647170449": {
    "code": "p1d1ml12",
+   "keep": "best"
+  },
+  "fish-s248-cand-11614697": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s248-cand-1420903": {
+   "code": "p1d1sm12",
+   "keep": "best"
+  },
+  "fish-s248-cand-574864625": {
+   "code": "p1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s248-cand-515658946": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s248-cand-515828742": {
+   "code": "o1g1smm2",
+   "keep": "dup"
+  },
+  "fish-s248-cand-45583542": {
+   "code": "o1g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s248-cand-45583512": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s248-cand-708419077": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s248-cand-550646579": {
+   "code": "o1d1ss12",
+   "keep": "best"
+  },
+  "fish-s248-cand-704570761": {
+   "code": "p1g1mm12",
+   "keep": "best"
+  },
+  "fish-s248-cand-699577827": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s248-cand-468469893": {
+   "code": "p1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s248-cand-585273517": {
+   "code": "p1d1mm12",
+   "keep": "alt"
+  },
+  "fish-s248-cand-585273534": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s248-cand-349232989": {
+   "code": "p1g1ml13",
    "keep": "best"
   }
  }

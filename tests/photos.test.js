@@ -35,12 +35,11 @@ const each = (d, fn) =>
     })
   );
 
-test('game photos: never a Coral Finder book photo, a several-corals photo or a sheet-only photo (rule P3, use)', () => {
+test('game photos: never a several-corals photo or a sheet-only photo (rule P3, use)', () => {
   const use = CUR.use || {};
   each(D, (n, g, v, s) =>
     GAME.forEach(k =>
       s[k].forEach(p => {
-        assert.ok(!p.cf, `${n} ${v} ${k}: book photo ${p.f}`);
         assert.ok(!p.multi, `${n} ${v} ${k}: several corals ${p.f}`);
         assert.notStrictEqual(use[p.f], 'ref', `${n} ${v} ${k}: sheet-only ${p.f}`);
       })
@@ -55,6 +54,28 @@ test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', ()
       assert.ok(!X[p.f], `${n} ${v}: excluded ${p.f}`)
     );
   });
+});
+
+// The fish game photos (admin plan PR 7; core.js fishPhotos, the same code the app runs, on the real fish-game.json,
+// fish-photos.json and curation.json): a photo Pierre rejected, excluded or sent to another species (Not this) never
+// plays for the species he took it from, curated or stopgap; a curated photo only while it is in play (core.js fishOn).
+test('fish: rejected, excluded and Not this photos are never in the game; curated ones only while in play', () => {
+  const {fishGen, fishPhotos, fishPid, fishIn, fishGone} = require('../core.js'),
+    F = CUR.fish || {},
+    PH = read('fish-photos.json'),
+    X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR, read('fish.json')), PH.sheet),
+    no = new Map();
+  ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
+  Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));
+  Object.values(X.gen).forEach(g =>
+    g.views.wide.forEach(p => {
+      // A curated photo (fish-game.json): Pierre's add, or one in play by itself (auto, Q180 and Q199), while he has not
+      // decided against it (core.js fishIn).
+      if (/-cand-/.test(p.f) && !p.from)
+        return assert.ok(fishIn(F, p, fishGone(CUR)) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
+      assert.ok(!no.has(fishPid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(fishPid(p.f))}`);
+    })
+  );
 });
 
 test('a photo Pierre hid in a genus is not shown for that genus', () => {
@@ -97,26 +118,43 @@ test("featured = Pierre's pins first, in his order; at most 3", () => {
 test("sheet order: IMR and Pierre's own photos come before other observers (rule P1), Poor last", () => {
   const q = f => (CUR.quality || {})[f] || (AUTOQ[f] === 1 && !/^imrl?-/.test(f) ? 1 : 2);
   each(D, (n, g, v, s) => {
-    const L = s.more.filter(p => !p.cf && q(p.f) !== 1);
+    const L = s.more.filter(p => q(p.f) !== 1);
     const firstOther = L.findIndex(p => !(p.imr || p.own)),
       lastCore = L.map(p => !!(p.imr || p.own)).lastIndexOf(true);
     assert.ok(firstOther < 0 || lastCore < firstOther, `${n} ${v}: ${L.map(p => p.f).join(' ')}`);
   });
 });
 
-test('a book photo is on a sheet only once pinned or approved (never as a game photo)', () => {
-  genera(D).forEach(([n, g]) => (g.book || []).forEach(p => assert.ok(p.view, `${n}: book photo ${p.f} without an approved view`)));
+// The Coral ID Key cards need variety (Pierre, 2026-11-08: the book's crops left, field photos fill the variety): after
+// the featured photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
+test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
+  const {CAP} = require('../core.js');
+  assert.strictEqual(CAP.inat, 5);
+  const P = [...Array(9)].map((_, i) => ({f: 'p' + i, o: 'https://www.inaturalist.org/observations/' + i, a: 'X'}));
+  const d = {gen: {G: {views: {wide: P.map(p => ({...p}))}}}, course: {}};
+  applySlots(d, {}, {});
+  const s = d.gen.G.sl.wide;
+  assert.strictEqual(s.feat.length, 3);
+  assert.deepStrictEqual(
+    s.idkey.map(p => p.f),
+    ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
+  );
 });
 
-test('Coral Finder book switch off: no book photo anywhere', () => {
-  const d = build({...CUR, book: false});
-  genera(d).forEach(([n, g]) => {
-    assert.ok(!g.book || !g.book.length, n);
-    VIEWS.forEach(v => {
-      const s = (g.sl || {})[v];
-      if (s) [...s.feat, ...s.more, ...s.idkey].forEach(p => assert.ok(!p.cf, `${n} ${v}: ${p.f}`));
-    });
-  });
+// The Coral ID Key cards need variety (Pierre, 2026-11-08: the book's crops left, field photos fill the variety): after
+// the featured photos, up to CAP.inat (5) photos from other iNaturalist observers, a different observation each.
+test("Coral ID Key: the featured photos, then up to 5 other observers' photos", () => {
+  const {CAP} = require('../core.js');
+  assert.strictEqual(CAP.inat, 5);
+  const P = [...Array(9)].map((_, i) => ({f: 'p' + i, o: 'https://www.inaturalist.org/observations/' + i, a: 'X'}));
+  const d = {gen: {G: {views: {wide: P.map(p => ({...p}))}}}, course: {}};
+  applySlots(d, {}, {});
+  const s = d.gen.G.sl.wide;
+  assert.strictEqual(s.feat.length, 3);
+  assert.deepStrictEqual(
+    s.idkey.map(p => p.f),
+    ['p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']
+  );
 });
 
 test('every slate genus has game photos in at least one view', () => {
@@ -163,8 +201,18 @@ test('one game list per view: each photo once, the featured game photos first, P
   each(D, (n, g, v, s) => {
     const F = s.game.map(p => p.f);
     assert.strictEqual(new Set(F).size, F.length, `${n} ${v}: a photo twice`);
-    const lead = s.feat.filter(p => s.game.includes(p)).map(p => p.f);
-    assert.deepStrictEqual(F.slice(0, lead.length), lead, `${n} ${v}: featured first`);
+    // The featured photos of the quality order lead (the game list keeps no licence: core.js byQ0, Codex review #742);
+    // the featured shown may hold, at the same quality and source, an open photo in place of an NC one (Q270).
+    const lead = s.feat.filter(p => s.game.includes(p)),
+      sig = p => [q(p.f), !!p.imr, !!p.own].join(),
+      byF = new Map(s.game.map(p => [p.f, p]));
+    assert.deepStrictEqual(
+      F.slice(0, lead.length)
+        .map(f => sig(byF.get(f)))
+        .sort(),
+      lead.map(sig).sort(),
+      `${n} ${v}: featured first`
+    );
     const rest = F.slice(lead.length).map(q),
       firstPoor = rest.indexOf(1);
     assert.ok(firstPoor < 0 || rest.slice(firstPoor).every(x => x === 1), `${n} ${v}: Poor photos last`);
@@ -247,7 +295,7 @@ test('every img/ photo file named in the pages and tools is in img/ (the others 
 });
 
 // tools/photos.py --check (CI) on made-up folders: the four sizes of every photo in img/; a downloaded photo with no
-// online original (IMR lecture photo, Coral Finder book scan) never missing from img/, git being its only backup; a
+// online original (IMR lecture photo, page art) never missing from img/, git being its only backup; a
 // downloaded photo with an online original may be on R2 only (Photos out of the repo, Pierre's rule of 2026-11-05).
 test('tools/photos.py check: the four sizes in img/, the photos with no online original kept there, the others on R2', () => {
   const py = code =>

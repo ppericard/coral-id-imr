@@ -217,3 +217,17 @@ test('a new version installs the deployed page, not an HTTP-cached copy, and cop
   );
   assert.ok(!store.all.has('reefid-shell-v1'));
 });
+
+// The Coral Finder book crops left the app (Pierre, 2026-11-08): the activation of the next version deletes the copies a
+// phone kept in its photo cache (img/<genus>-cf-<page>-<tag>…, under their R2 or site address), and only those.
+test('activation deletes the Coral Finder book crops from the photo cache, and nothing else', async () => {
+  const store = storage(),
+    net = [],
+    R2 = 'https://pub-934250f83b884a4f890497f2027ce251.r2.dev/';
+  const ph = await store.api.open('imr-photos-v1');
+  const keep = [R2 + 'img/acropora-medium-123-s.webp', SITE + 'img/imrl-p40_i1-m.webp', R2 + 'img/pavona-wide-9-s.webp'],
+    gone = [R2 + 'img/acropora-cf-2-00-s.webp', SITE + 'img/lobophyllia-cf-20-g21.webp', R2 + 'img/pavona-cf-30-06-m.webp?c=1'];
+  for (const u of [...keep, ...gone]) await ph.put(u, {body: u});
+  await worker('reefid-shell-v2', store, net).activate();
+  assert.deepStrictEqual([...store.all.get('imr-photos-v1').keys()].sort(), keep.sort());
+});

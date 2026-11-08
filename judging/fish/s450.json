@@ -25,12 +25,8 @@
    "keep": "best"
   },
   "fish-s450-cand-641642374": {
-   "code": "p1g1sl13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a clear box with a ruler, not in the wild"
+   "code": "p1g0sl1a1",
+   "keep": "best"
   },
   "fish-s450-cand-641647521": {
    "code": "o1g1sl13",
@@ -53,12 +49,8 @@
    "keep": "dup"
   },
   "fish-s450-cand-587354626": {
-   "code": "o0g1sm1jc2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Juvenile in a tide pool, maybe partly out of water"
+   "code": "o0g0sm1j2",
+   "keep": "best"
   },
   "fish-s450-cand-587360582": {
    "code": "o0g1sm1jc2",
@@ -146,6 +138,54 @@
   },
   "fish-s450-cand-536429130": {
    "code": "o0n0ss1c1",
+   "keep": "best"
+  },
+  "fish-s450-cand-545730371": {
+   "code": "d1g0sm13",
+   "keep": "best"
+  },
+  "fish-s450-cand-499086568": {
+   "code": "o0n0sl13",
+   "keep": "best"
+  },
+  "fish-s450-cand-260024472": {
+   "code": "p0g0sl13",
+   "keep": "best"
+  },
+  "fish-s450-cand-222278537": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s450-cand-2452971": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s450-cand-638038189": {
+   "code": "o0g0sm12",
+   "keep": "dup"
+  },
+  "fish-s450-cand-638038207": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s450-cand-638038209": {
+   "code": "o0g0sm12",
+   "keep": "dup"
+  },
+  "fish-s450-cand-638038208": {
+   "code": "o0g0sm12",
+   "keep": "dup"
+  },
+  "fish-s450-cand-422546468": {
+   "code": "o0g2bm11",
+   "keep": "best"
+  },
+  "fish-s450-cand-464944335": {
+   "code": "o0g0sm12",
+   "keep": "best"
+  },
+  "fish-s450-cand-598701742": {
+   "code": "d0g0sm12",
    "keep": "best"
   }
  }

@@ -45,12 +45,8 @@
    "keep": "dup"
   },
   "fish-s380-cand-566808974": {
-   "code": "o1d1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the pygmy seahorse for sure in the sea fan"
+   "code": "p1n0smx1",
+   "keep": "best"
   },
   "fish-s380-cand-66156252": {
    "code": "p1g1sm1c1",
@@ -77,12 +73,8 @@
    "keep": "best"
   },
   "fish-s380-cand-711055542": {
-   "code": "o1n0ssxc1",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the pygmy seahorse for sure in the sea fan"
+   "code": "p1n0smx1",
+   "keep": "dup"
   },
   "fish-s380-cand-711055551": {
    "code": "o1n0sm1c1",
@@ -115,6 +107,50 @@
   "fish-s380-cand-637408530": {
    "code": "o1g1ss1c1",
    "keep": "dup"
+  },
+  "fish-s380-cand-687413969": {
+   "code": "p1g1ssxc1",
+   "keep": "best"
+  },
+  "fish-s380-cand-588961517": {
+   "code": "o1n0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s380-cand-588961534": {
+   "code": "p1n0sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-745205463": {
+   "code": "p1n0sl1c3",
+   "keep": "best"
+  },
+  "fish-s380-cand-688928531": {
+   "code": "o1g0smsc2",
+   "keep": "best"
+  },
+  "fish-s380-cand-528631807": {
+   "code": "p1g0ss1c1",
+   "keep": "best"
+  },
+  "fish-s380-cand-528631850": {
+   "code": "p1g0ss1c1",
+   "keep": "dup"
+  },
+  "fish-s380-cand-637400755": {
+   "code": "p1d1msxc1",
+   "keep": "best"
+  },
+  "fish-s380-cand-625250979": {
+   "code": "p1n0sm1c2",
+   "keep": "best"
+  },
+  "fish-s380-cand-753013898": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s380-cand-758823216": {
+   "code": "o0n0sl13",
+   "keep": "best"
   }
  }
 }

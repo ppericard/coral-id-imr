@@ -5,57 +5,57 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-06, about 05:50 Manila, by the integrator.
+Written 2026-11-08, about 12:10 Manila, by the integrator, during a working session. **A new integrator starts here, then
+reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
-Last checked: reports and events: 2026-11-05 ~13:38 Manila (nothing new since 11:30)
+Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11-07; events: "Can't find variable: shownGroup" twice on 11-06 on one device, one "left with a card open" on the Scientific names offer on 11-07, two saves failed and not recovered)
 
 ## Now
 
-Tracks in flight: track · PR or branch · state · next step. Priority (Pierre, 2026-11-05 evening): **public fish by
-Sunday 2026-11-08**; very short term: the photos' step 3, the fish sheets at three levels, the new app icon.
+Fish is open to every player (beta). Main: sheet script v97; 664 fish species in 67 families since #727.
 
-- **Progress against the field** · #611 draft, needs-pierre · Pierre (2026-11-06 morning) rejected the trade-off:
-  the bar must be right for every profile, experts above all early (q300: expert under-claimed by 25 points today, 30
-  with the W 1 / C 0.6 rule). Diagnosis: each genus and pair is counted from zero, with no prior from the player's
-  level. Being rebuilt as a person-level hierarchical estimate plus a pair-difficulty model; targets pre-declared
-  (|over| <= 0.03 at q300, q600, q1000 for every profile, a spotty profile included; Custom-8 within 0.05). Nothing
-  reaches players before Pierre validates. Field-learner sensitivity sims (`learnsim-field`) running, then a PR.
-- Fish public release · A #595 merged; C #598, admin 5a #599, 5b #602, PR 7 #614 wait for Pierre (Q92-Q100, Q118-Q120)
-  · then the flip within his hours (not after 16:30).
-- Deleted accounts #600 merged (v55 live, cleanup ran); #603 waits for Q116. Feedback cards #579 / #581 · Q117.
-- Typed retry #616 · Q114. One-tap timing #618 · Q115. URL refonte #610 / #612 · after the fish flip + 48 h.
+- **Merged on 11-08**: #711-#735, #737, #738, #740, #741, #743, #745, #746, #750 (`git log`): IMR genera and
+  scientific genera at Advanced, 18 new families, the global fish score A + √ and its achievements, refused typed texts
+  logged, Coral Finder crops judged out, rule L11 in levels, LICENSE + README, the repo tidy-up. **Open**: the sheet chain
+  #742 (v103) → #736 (v104) → #749 (v105); #739, #744, #747, #748: Pierre answered Q288-Q294 on 11-08 (to paste into each PR); #664 open.
+- **Being built**: the 11-08 midday items are all open PRs now (above); the batch-5 fish judging.
+- **Pierre's hands**: "CF book: off" + Publish; Q121 history rewrite (now also the Coral Finder crops), then a GitHub
+  purge request; set one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the morning report
+  scheduled task from claude.ai (not visible from this session); later, stop the link-sharing of the Coral Finder PDF
+  on his Drive.
+- **Expert anchors**: the sheet's Notes tab, keys `agent.expert.*` (names only in chat).
 
 ## Next
 
-1. The fish sheets at three levels ([study](reviews/2026-11-05-fish-sheets-study.md)): Q125, then build.
-2. Curated fish photos in the game (#599, #602, #614, then answer logging), then independent reviews, after release.
+The backlog in Pierre's order of interest is in [INTEGRATOR.md](INTEGRATOR.md) "Open work": the species level and the
+global fish score first, then ID marks for the 23 uncued fish families.
 
 ## Questions for Pierre
 
 Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes into its PR and off this list.
 
-- Q114 #616 typed retry: one retype on a close misspelling, grading unchanged; logs the raw typed text and a retyped
-  flag in 2 new Answers columns (a sheet layout change) plus a privacy-page line. Rec. yes.
-- Q115 #618: the one-tap "Getting boring?" question only after 15 answers and 5 minutes in the session. Rec. yes.
-- Q116 #603: archive message and self-delete page wording. Q117 #579 / #581: the four feedback cards.
-- Q118 #598: fish copy edits 1-7 and the "Fish is here" card (kicker, target, once per device, 10-answer minimum).
-- Q119 #599 / #602 fish admin screens ("Choices I made" in each PR). Q120 #614: keep the per-entry minimum rule (rec.
-  yes); leave the 25 pre-flag-ease photos (rec. yes).
-- Q121 photos step 3 (history rewrite, 686 -> 133 MiB per clone): your explicit go and a time; dry run ready.
-- Q122 the app icon: D2 (D improved) or a loupe B1-B4.
-- Q123 fish confusion study a-o (gos on i, f, k). Q124 name study a-h. Q125 the 13 fish-sheet questions.
-- Q105 (personalised exam) and Q113 (rule L11 wording) stay open in #611.
-- Q92-Q100, the fish release (plan (a)-(i)): everyone sees fish, signed-out included (Q92); keep "beta" (Q93); a
-  "Fish is here" card (Q94); PR C's copy edits (Q95); level 1 on today's photos (Q96); no fish answer logging for a week
-  (Q97); smoke tests and the bug sweep as release checks (Q98); new players start on Corals (Q99); the flip Saturday
-  ~10:00 Manila, Sunday morning as reserve (Q100). Rec. yes to each.
+- **Q121** photos step 3 (history rewrite, 686 -> 133 MiB per clone, now with the Coral Finder crops): not yet a go
+  (11-08); he wants to know whether it needs him (yes: the ruleset switch off and on, the backup kept off GitHub, and the
+  force-push needs his approval in the session) and how long the app is down (it is not: Pages keeps serving).
+- **Q208** (set aside again on 11-08: "on verra plus tard"): families not met before the scientific genera, or genera on their own
+  pace? **Q230** out-of-zone taxon-page photos: open, waits for real arguments (ROADMAP row).
+- Not numbered: #641 a-j, #651's 5 choices, #664's 8 decisions (ROADMAP rows). Q123 (fish confusion a-o) and Q124
+  (name study a-h): Pierre may have answered them elsewhere; ask them again (11-08).
+- Answered 11-08: Q295, Q296 reword the privacy page (yes); Q297 withdrawn (not a development choice: INTEGRATOR
+  "Questions"); Q298 measure the gap in the admin on real players first; Q299 the 9 names OK.
 
-Last question number: Q125
+Last question number: Q299
 
 ## Pierre's hands
 
 Actions only Pierre can do.
 
+- **The 8 unsure fish candidates** left in the admin (a drawing, tank shots, a damaged file, a screenshot, a possibly
+  wrong species) and the photos the expert analyses flagged (sent in the chat on 11-06).
+- **Genus common names without a source in the repo**, to add in place if he wants them: Cephalopholis (hinds),
+  Centropyge (pygmy angelfishes), Dendrochirus (dwarf lionfishes), Dascyllus (humbugs).
+- **Covers for the 11 fish entries with no reference-level photo** (Barracuda, Seamoths, Scorpionfishes, Flying
+  gurnards, Stargazers, Snake eels, Garden eels, Rays, Reef sharks, Whale shark, Thresher sharks): pick or shoot one.
 - **Photo hunt for Astrea and Anacropora** at the Dauin sites where IMR trainers know they occur (colony, close-up,
   macro; posted to iNaturalist under CC BY or CC BY-NC): iNaturalist has no Astrea observation with photos in the
   Philippines.
@@ -86,14 +86,12 @@ Actions only Pierre can do.
 
 Ideas Pierre dictated after 17:30, untouched until the morning, then turned into work or a ROADMAP row (Rule 0).
 
-- (20:07) Show the genera unlocked in the Progress badge, e.g. "30/40 genera unlocked".
-- (20:22) Photos seen again and again: raise the per-genus photo caps a lot (Pierre photographs the frequent genera);
-  count photos never shown; an admin stat per player, photos seen / photos available given the genera unlocked; make
-  sure the game tries new photos enough. Proposal: a read-only study on the real log first, then the changes.
 - (integrator, from Pierre's session) the limit of 8 shaky genera fills with the hardest look-alike families: it held an
   expert's openings for 138 answers. Revisit with the progress rebuild.
 
 ## Last stop
 
-2026-11-06 ~05:50 Manila, integrator, morning report. Merged overnight: #572, #591-#597, #600 (sheet v55 live),
-#601, #604-#609, #613, #615, #617, #619, #620. The morning report now comes before 05:00 (Pierre wakes ~05:00).
+2026-11-08 ~12:10 Manila, integrator, mid-session. Questions Q229-Q280 answered except Q230 (out-of-zone taxon photos,
+waits for numbers); Q237 kept as is (common names on genus questions).
+Then Q288-Q294 (Pierre, 11-08): Q288 OK, reworded Key labels kept; Q289 his covers are the cards' photo; Q290 his cover
+on the thresher card; Q291 covers on Home when landscape and they fit; Q292 the book's 3-8 cm; Q293, Q294 OK.

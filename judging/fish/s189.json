@@ -103,6 +103,175 @@
   "fish-s189-cand-688441273": {
    "code": "p1g2sl13",
    "keep": "best"
+  },
+  "fish-s189-cand-fb-Chsor_j0": {
+   "code": "p1n0sl1j2",
+   "keep": "best"
+  },
+  "fish-s189-cand-fb-Chsor_u0": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s189-cand-160741203": {
+   "code": "o1g1smxj1",
+   "keep": "best"
+  },
+  "fish-s189-cand-160741205": {
+   "code": "o1g1smxj1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-348421303": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s189-cand-348421315": {
+   "code": "o0g1bm1j1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-376557546": {
+   "code": "o1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s189-cand-376557611": {
+   "code": "o1d1smmj1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-44206232": {
+   "code": "o1g1slsj2",
+   "keep": "best"
+  },
+  "fish-s189-cand-410938818": {
+   "code": "o1g1bmsj1",
+   "keep": "best"
+  },
+  "fish-s189-cand-241606519": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s189-cand-107560382": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s189-cand-107560385": {
+   "code": "o1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-67423298": {
+   "code": "p1g1bm11",
+   "keep": "best"
+  },
+  "fish-s189-cand-107639307": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s189-cand-107639309": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s189-cand-107639311": {
+   "code": "o1g2smm1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-107572334": {
+   "code": "o1g2slm2",
+   "keep": "best"
+  },
+  "fish-s189-cand-107572339": {
+   "code": "o1g2smm1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-302723569": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s189-cand-302723625": {
+   "code": "o1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s189-cand-310266445": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s189-cand-310266491": {
+   "code": "o1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-749730916": {
+   "code": "o1g2smm2",
+   "keep": "best"
+  },
+  "fish-s189-cand-429411884": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s189-cand-738718177": {
+   "code": "o1g1bl12",
+   "keep": "best"
+  },
+  "fish-s189-cand-738718193": {
+   "code": "o1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s189-cand-738718194": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s189-cand-705117513": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s189-cand-688445027": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s189-cand-757112761": {
+   "code": "o1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s189-cand-727978256": {
+   "code": "o1g3bsx1",
+   "keep": "best",
+   "note": "Two dark fish in the blue; low-resolution original (465 px)."
+  },
+  "fish-s189-cand-655351162": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s189-cand-658732166": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s189-cand-705117511": {
+   "code": "o1g1smm3",
+   "keep": "best"
+  },
+  "fish-s189-cand-658725076": {
+   "code": "o1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s189-cand-710254975": {
+   "code": "p1g1smm2",
+   "keep": "best"
+  },
+  "fish-s189-cand-434427664": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s189-cand-710255059": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s189-cand-710255056": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s189-cand-434111078": {
+   "code": "p1g1mm13",
+   "keep": "best"
+  },
+  "fish-s189-cand-710255748": {
+   "code": "o1g1ssx1",
+   "keep": "best"
   }
  }
 }

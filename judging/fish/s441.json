@@ -49,12 +49,8 @@
    "keep": "best"
   },
   "fish-s441-cand-563593925": {
-   "code": "o0g1slx1",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "A white-eyed moray in front; the subject is not obvious"
+   "code": "h0g0slm3",
+   "keep": "dup"
   },
   "fish-s441-cand-621189474": {
    "code": "o0g1sm13",
@@ -101,12 +97,8 @@
    "keep": "best"
   },
   "fish-s441-cand-534764783": {
-   "code": "o0g1sm13",
-   "keep": "dup",
-   "unsure": [
-    "code"
-   ],
-   "note": "Black and white bands, unlike the other photos: maybe a juvenile"
+   "code": "o1g0sl1j2",
+   "keep": "alt"
   },
   "fish-s441-cand-637900204": {
    "code": "o0d1sl13",
@@ -126,6 +118,54 @@
   },
   "fish-s441-cand-655239128": {
    "code": "o0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s441-cand-382443967": {
+   "code": "o0g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s441-cand-67118578": {
+   "code": "d1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s441-cand-563658366": {
+   "code": "o0g1ms12",
+   "keep": "best"
+  },
+  "fish-s441-cand-503244516": {
+   "code": "o0g1mm12",
+   "keep": "best"
+  },
+  "fish-s441-cand-745906132": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s441-cand-508132564": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s441-cand-693199606": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s441-cand-693199607": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s441-cand-508071074": {
+   "code": "o0g1ss11",
+   "keep": "best"
+  },
+  "fish-s441-cand-276925353": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s441-cand-625238315": {
+   "code": "h0g0sl12",
+   "keep": "best"
+  },
+  "fish-s441-cand-584314238": {
+   "code": "o0g0sl13",
    "keep": "best"
   }
  }

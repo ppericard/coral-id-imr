@@ -70,3 +70,10 @@ if '--all-remote-unused' in sys.argv:
             p['r'] = 1; gone += 1
 if done or gone: dump_all(d)
 print(f'downloaded {done} into {OUT}/ (upload: tools/r2_sync.sh {OUT}), made remote {gone}')
+# --fish (admin plan PR 7): the fish photos Pierre put in play (curation.json fish, core.js fishOn), from iNaturalist or
+# FishBase, into the same folder, and fish-game.json, which the fish game reads (tools/fish_game.py).
+if '--fish' in sys.argv:
+    import fish_game
+    fish_done, fish_failed, fish_n, fish_wait = fish_game.run(OUT)
+    print(f'fish: downloaded {fish_done} into {OUT}/, {len(fish_failed)} failed; {fish_n} photos in fish-game.json'
+          + (f'; {fish_wait} more wait for the next run (tools/fish_game.py MAX)' if fish_wait else ''))

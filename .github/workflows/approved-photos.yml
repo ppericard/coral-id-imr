@@ -1,12 +1,17 @@
 # After each photo-curation publish (curation.json pushed from admin.html): download the candidates Pierre added
-# (tools/fetch_approved.py) and upload them to Cloudflare R2, then refill the candidate lists up to their caps
+# (tools/fetch_approved.py; the fish photos too, tools/fish_game.py) and upload them to Cloudflare R2, then refill the candidate lists up to their caps
 # (tools/fetch_local.py), and commit. Photos with an online original live on R2 only (Photos out of the repo, Pierre's
-# rule of 2026-11-05): their files are never committed to img/.
+# rule of 2026-11-05): their files are never committed to img/. Then the fish job refills the short fish species
+# (tools/fetch_fish.py --refill; Pierre, 2026-11-06, Q171).
 name: Candidate photos
 on:
   push:
     branches: [main]
-    paths: [curation.json]
+    # curation.json: Pierre's Publish; the judgements: a judged batch puts photos in play by themselves (Q180, Q199;
+    # tools/fish_game.py in_play: suggest.json for the candidates, tools/fish_judge.json and tools/fish_refs.json for the
+    # reference photos; Codex review #674); tools/fish_game.py itself: a change to what enters play (Q212: the reference
+    # photos judged sure like a candidate, whatever their level) is downloaded and uploaded at its merge.
+    paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py]
   workflow_dispatch:
 permissions:
   contents: write
@@ -33,9 +38,11 @@ jobs:
         with:
           python-version: '3.15'
       - run: pip install -r tools/requirements.txt
-      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). The files
-      # go to r2-upload/ (gitignored), uploaded below before anything is committed.
-      - run: python tools/fetch_approved.py --games --out r2-upload
+      # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). --fish: the
+      # fish photos Pierre put in play (iNaturalist or FishBase, his crop applied) and fish-game.json, the list the fish
+      # game reads (tools/fish_game.py; admin plan PR 7). The files go to r2-upload/ (gitignored), uploaded below before
+      # anything is committed.
+      - run: python tools/fetch_approved.py --games --fish --out r2-upload
       - run: python tools/fetch_local.py
         working-directory: .
       # Photo shapes for the quiz layout (designer re-review 2026-11-01) of the photos in img/; the new photos got theirs
@@ -65,9 +72,41 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json cand.json excluded.json img
+          git add data.json cand.json excluded.json fish-game.json img
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: download added ones, refill the lists"
+          git pull --rebase origin main
+          git push origin HEAD:main
+  # The fish candidates (Pierre, 2026-11-06, Q171: "no more candidates is no more candidates"): the short species only
+  # (under their cap of Q36 net of what Pierre rejected, excluded or sent elsewhere, or short of easy photos), at most 40
+  # a run, the shortest first, with tools/fetch_fish.py's rules (Research Grade, the licences, the Philippines first,
+  # abroad the Indo-West Pacific only); a species searched to the end is noted in tools/fish_refill.json and asked again a
+  # month later; FishBase (offline) fills what iNaturalist left. About one request a second, batched (rule C7). After the
+  # photos job, from today's main (its commit, if any, is on it), even if it failed: the two touch different files.
+  # Nothing is downloaded (candidates stay remote) and curation.json is never written (rule A1): the new candidates wait
+  # for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's auto-sort applies.
+  fish:
+    needs: photos
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.15'
+      # shell: bash sets pipefail, so a failed refill fails the step despite the tee.
+      - run: python tools/fetch_fish.py --refill --circle 1 --circle 2 --circle 3 | tee -a "$GITHUB_STEP_SUMMARY"
+        shell: bash
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fish-cand.json tools/fish_refill.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Candidate photos: refill the short fish species"
           git pull --rebase origin main
           git push origin HEAD:main
   # img/ copied to R2 and the bucket checked (every photo that lives on R2 only has its four files there), in its own

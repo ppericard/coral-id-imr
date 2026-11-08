@@ -21,12 +21,8 @@
    "keep": "dup"
   },
   "fish-s381-cand-113159495": {
-   "code": "o1g1sm1j2",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a container, not in the wild"
+   "code": "p1g0sl1ja1",
+   "keep": "best"
   },
   "fish-s381-cand-113159529": {
    "code": "p1g1sm1j2",
@@ -41,12 +37,8 @@
    "keep": "best"
   },
   "fish-s381-cand-339000510": {
-   "code": "p1g0sl13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a container, not in the wild"
+   "code": "p1g0sl1a1",
+   "keep": "best"
   },
   "fish-s381-cand-339000515": {
    "code": "p1g1sm13",
@@ -135,6 +127,74 @@
   "fish-s381-cand-290975440": {
    "code": "p1g1sl1c2",
    "keep": "best"
+  },
+  "fish-s381-cand-238834417": {
+   "code": "p1g1sm1jc2",
+   "keep": "best"
+  },
+  "fish-s381-cand-238834436": {
+   "code": "p1g1sm1jc2",
+   "keep": "dup"
+  },
+  "fish-s381-cand-238834458": {
+   "code": "p1g1sm1jc2",
+   "keep": "dup"
+  },
+  "fish-s381-cand-238834491": {
+   "code": "p1g1sm1jc1",
+   "keep": "dup"
+  },
+  "fish-s381-cand-622826999": {
+   "code": "o1n0sm12",
+   "keep": "best"
+  },
+  "fish-s381-cand-526462": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s381-cand-535292034": {
+   "code": "p1n0sm13",
+   "keep": "dup"
+  },
+  "fish-s381-cand-535292039": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s381-cand-526458": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s381-cand-622826981": {
+   "code": "p1n0sm13",
+   "keep": "best"
+  },
+  "fish-s381-cand-622824969": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s381-cand-622826212": {
+   "code": "p1g2bmx1",
+   "keep": "dup"
+  },
+  "fish-s381-cand-535295958": {
+   "code": "o1n0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s381-cand-535295963": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s381-cand-535295964": {
+   "code": "o1n0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s381-cand-535294927": {
+   "code": "o1n0sm12",
+   "keep": "best"
+  },
+  "fish-s381-cand-535294925": {
+   "code": "o1n0sm12",
+   "keep": "dup"
   }
  }
 }

@@ -45,12 +45,8 @@
    "keep": "best"
   },
   "fish-s095-cand-556862152": {
-   "code": "o1g1ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "The obvious fish is a moray; the damselfish is small"
+   "code": "p1g0ssx1",
+   "keep": "best"
   },
   "fish-s095-cand-581222371": {
    "code": "p1g1sm1j2",
@@ -90,6 +86,63 @@
   },
   "fish-s095-cand-609871835": {
    "code": "p1d0sms3",
+   "keep": "best"
+  },
+  "fish-s095-cand-fb-Chcau_u0": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s095-cand-2985554": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s095-cand-682504740": {
+   "code": "o1g3bl11",
+   "keep": "best"
+  },
+  "fish-s095-cand-626401753": {
+   "code": "o1d2sm12",
+   "keep": "best"
+  },
+  "fish-s095-cand-255742734": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s095-cand-198855077": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s095-cand-10570881": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s095-cand-587049188": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s095-cand-533802649": {
+   "code": "o1d3ml11",
+   "keep": "best"
+  },
+  "fish-s095-cand-490118731": {
+   "code": "o1g3bs11",
+   "keep": "best"
+  },
+  "fish-s095-cand-292171050": {
+   "code": "o1g0slm3",
+   "keep": "best"
+  },
+  "fish-s095-cand-541626559": {
+   "code": "o1g2smm1",
+   "keep": "best",
+   "note": "Several chromis and a cleaner wrasse; the chromis are the obvious subject."
+  },
+  "fish-s095-cand-380211464": {
+   "code": "h1g0slm2",
+   "keep": "best"
+  },
+  "fish-s095-cand-255242250": {
+   "code": "p1g1sl14",
    "keep": "best"
   }
  }

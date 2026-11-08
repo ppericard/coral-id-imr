@@ -9,12 +9,8 @@
    "keep": "dup"
   },
   "fish-s448-cand-413589812": {
-   "code": "d0g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the moray for sure among the seagrass"
+   "code": "o0g1msx1",
+   "keep": "best"
   },
   "fish-s448-cand-106235102": {
    "code": "d0g1sm13",
@@ -53,12 +49,8 @@
    "keep": "dup"
   },
   "fish-s448-cand-541754479": {
-   "code": "p0g1sl13",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "In a clear container, not in the wild"
+   "code": "p0g0sl1a1",
+   "keep": "best"
   },
   "fish-s448-cand-541754582": {
    "code": "p0g1sl13",
@@ -169,16 +161,76 @@
    "keep": "dup"
   },
   "fish-s448-cand-594697587": {
-   "code": "d0g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the moray for sure among the seagrass"
+   "code": "o0g1msx1",
+   "keep": "best"
   },
   "fish-s448-cand-594697590": {
    "code": "d0g1ssxc1",
    "keep": "dup"
+  },
+  "fish-s448-cand-623115651": {
+   "code": "o0g0sm1c1",
+   "keep": "best"
+  },
+  "fish-s448-cand-623115637": {
+   "code": "o0g0sm1c1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-527011148": {
+   "code": "o0d0sm11",
+   "keep": "best"
+  },
+  "fish-s448-cand-732464739": {
+   "code": "d0g0sm1c2",
+   "keep": "best"
+  },
+  "fish-s448-cand-543364237": {
+   "code": "o1d0sm12",
+   "keep": "best"
+  },
+  "fish-s448-cand-266498002": {
+   "code": "o0g0sm12",
+   "keep": "dup"
+  },
+  "fish-s448-cand-266498011": {
+   "code": "o0g0sm12",
+   "keep": "dup"
+  },
+  "fish-s448-cand-266498024": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s448-cand-266498032": {
+   "code": "o0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s448-cand-364698400": {
+   "code": "o0g0ss11",
+   "keep": "best"
+  },
+  "fish-s448-cand-595215919": {
+   "code": "p1g0sm1a1",
+   "keep": "best"
+  },
+  "fish-s448-cand-595215924": {
+   "code": "p0g0sl1a1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-595215927": {
+   "code": "p1g0sm1a1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-595215923": {
+   "code": "p1g0sm1a1",
+   "keep": "dup"
+  },
+  "fish-s448-cand-155958079": {
+   "code": "o0g0ss11",
+   "keep": "best"
+  },
+  "fish-s448-cand-609177178": {
+   "code": "o0g0sm12",
+   "keep": "best"
   }
  }
 }

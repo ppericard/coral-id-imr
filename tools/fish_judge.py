@@ -17,7 +17,9 @@ This script:
     12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after); --only t28,t47
     limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid for the crops.
 tools/fish_photos.py calls apply() whenever it rebuilds the photo list, so a rebuild keeps the judgements.
-Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo]]
+  - adds the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) to their entries once judged; --sheets
+    DIR --refs draws the sheets of those photos (with --todo: the ones not judged yet).
+Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo] [--refs]]
 """
 import argparse
 import json
@@ -28,15 +30,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_judge.json"
+REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/fish_refs.py)
 PHOTOS = ROOT / "fish-photos.json"
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$")
-EARLY = 4  # very easy (judging/FISH.md): the photos of an entry's first questions (model.js easyFirst)
+EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
 # A reference photo (`rep`: the photo a reference source uses to represent the species, FishBase's main picture or
 # iNaturalist's taxon photo; Pierre, 2026-11-05: "such photos are easy to identify, so they should come early in the quiz
 # for a beginner") is one ease point easier than its visual code says, the caps applied after (a juvenile or a night shot
-# stays capped). One point lifts a medium photo (3) into the very easy ones of the first questions (model.js easyFirst).
+# stays capped). One point lifts a medium photo (3) into the very easy ones (4-5).
 REP_BONUS = 1
 
 
@@ -76,6 +79,76 @@ def load_src():
     return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {}), s.get("add", {})
 
 
+def load_refs(fish=None):
+    """tools/fish_refs.json photos (kept by species) as teaching id -> reference photo objects, each under the level-1
+    entry that holds its species (FishBase's too: Pierre, 2026-11-06, FishBase enters automatically when its licence
+    allows)."""
+    if not REFS.exists():
+        return {}
+    fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
+    home = {}
+    for t in fish["teach"]:
+        if t.get("level") == 1:
+            for sid in t.get("species", []):
+                home.setdefault(sid, t["id"])
+    out = {}
+    for sid, L in json.loads(REFS.read_text(encoding="utf-8")).get("photos", {}).items():
+        if sid in home:
+            out.setdefault(home[sid], []).extend(L)
+    return out
+
+
+def load_keep():
+    """tools/fish_judge.json "keep": {reference photo id: best | alt | dup}, judged against the photos of its observation
+    in play (Pierre, 2026-11-08, Q218; tools/fish_game.py in_play)."""
+    return json.loads(SRC.read_text(encoding="utf-8")).get("keep") or {}
+
+
+def add_refs(photos, J, added=(), fish=None, dup=frozenset()):
+    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place. A photo already in the game
+    takes the rep tag only (rtag marks a tag set here), and stays whatever its level (Codex review #660: a game photo is
+    never removed for being a reference photo). A new one joins at the end once judged (J; apply then keeps it only at the
+    reference level, ref_level), unless its observation is already in the game (one photo per observation, rule P4: the
+    game photo stays). core.js easyRank orders the list. A rerun gives the same file: a joined photo tools/fish_refs.json
+    no longer lists leaves, a tag it no longer lists goes. dup: the reference photos judged duplicates of their
+    observation's photos (load_keep): never joined, and one that joined leaves (Codex review #715); a game photo of its own
+    stays."""
+    R = load_refs(fish)
+    want = {r["f"]: r for L in R.values() for r in L}
+    for tid in list(photos):
+        photos[tid] = [p for p in photos[tid] if not p.get("from") or (p["f"] in want and p["f"] not in dup)]
+        for p in photos[tid]:
+            if p.get("rtag") and p["f"] not in want:
+                p.pop("rep", None)
+                p.pop("rtag", None)
+    for tid, L0 in R.items():
+        L = photos.setdefault(tid, [])
+        for r in L0:
+            have = next((p for p in L if p["f"] == r["f"]), None)
+            if have:
+                if have.get("from"):
+                    have.update({k: v for k, v in r.items() if k != "for"})
+                elif r.get("rep") and have.get("rep") != r["rep"]:
+                    have.update(rep=r["rep"], rtag=1)
+            elif r["f"] in J and r["f"] not in dup and not any(p["o"] == r["o"] for p in L):
+                L.append({k: v for k, v in r.items() if k != "for"})
+
+
+LOOK = re.compile(r"^p1g0s[lm][1s]$")
+
+
+def ref_level(p):
+    """core.js refLevel: a reference source's photo (rep) judged very easy (4-5), or any photo judged 5 with the reference
+    look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school; no j, c or a); in both
+    cases one kind of fish (count 1 or s)."""
+    e, jt = p.get("e") or 0, p.get("jt") or ""
+    # Never a photo with other kinds of fish (count m) or an unclear subject (x), whatever its source (rule P3: one
+    # species per game photo; Codex review #660).
+    if len(jt) < 7 or jt[6] not in "1s":
+        return False
+    return (e >= EARLY and bool(p.get("rep"))) or (e == 5 and bool(LOOK.match(jt[:7])) and not set(jt[7:]) & set("jca"))
+
+
 def apply(photos, fish=None):
     """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
     fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
@@ -87,6 +160,7 @@ def apply(photos, fish=None):
         L = photos.setdefault(tid, [])
         have = {p["o"] for p in L}
         L.extend(dict(p) for p in extra if p["o"] not in have)
+    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish, {f for f, k in load_keep().items() if k == "dup"})
     k = 0
     for tid, L in photos.items():
         for p in L:
@@ -97,6 +171,12 @@ def apply(photos, fish=None):
                 if p["f"] in C:
                     p["c"] = C[p["f"]]
                 k += 1
+    # In this stopgap list a reference photo plays only at the reference level (Pierre, 2026-11-06: "take every photo that
+    # passes the rules and is judged reference-level"); one judged lower stays out of it. On R2 (fish-game.json) every
+    # reference photo judged sure like a candidate is in play, whatever its level (Pierre, 2026-11-08, Q212; tools/
+    # fish_game.py ref_play).
+    for tid in photos:
+        photos[tid] = [p for p in photos[tid] if not p.get("from") or ref_level(p)]
     return k
 
 
@@ -140,7 +220,7 @@ def summary(doc, fish):
     print("circle-1 entries with fewer than %d very easy photos (better photos needed): %s" % (WANT, ", ".join(short) or "none"))
 
 
-def sheets(out, only=(), todo=False):
+def sheets(out, only=(), todo=False, refs=False):
     """Downloads the game photos (iNaturalist medium size) and draws contact sheets of 12, as judging/FISH.md says: only
     the entries `only` names (all when empty), only the photos not judged yet with `todo`. A 5 x 5 grid over each photo
     reads the crop fractions to a tenth (judging/FISH.md "A proposed crop")."""
@@ -149,6 +229,8 @@ def sheets(out, only=(), todo=False):
     from PIL import Image, ImageDraw, ImageFont
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
     J = load_src()[0] if todo else {}
+    if refs:  # the reference photos of tools/fish_refs.json instead of the game photos
+        doc["photos"] = load_refs()
     doc["photos"] = {t: [p for p in L if p["f"] not in J] for t, L in doc["photos"].items() if not only or t in only}
     (out / "img").mkdir(parents=True, exist_ok=True)
     (out / "sheets").mkdir(parents=True, exist_ok=True)
@@ -191,12 +273,13 @@ def main():
     ap.add_argument("--sheets", type=Path, help="download the photos and draw contact sheets into this folder")
     ap.add_argument("--only", default="", help="with --sheets: these entries only (comma-separated teaching ids)")
     ap.add_argument("--todo", action="store_true", help="with --sheets: only the photos not judged yet")
+    ap.add_argument("--refs", action="store_true", help="with --sheets: the reference photos of tools/fish_refs.json")
     a = ap.parse_args()
     if a.sheets:
         import slot
 
         slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
-        return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo)
+        return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo, a.refs)
     fish = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
     before = json.dumps(doc, sort_keys=True)

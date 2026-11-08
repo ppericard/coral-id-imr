@@ -99,7 +99,7 @@
         "form": {
           "type": "string",
           "pattern": "^[A-Zx]$",
-          "description": "Exactly one IMR growth form letter from manifest.json forms (the dominant one visible in this photo), or x = form not visible. Required except for book photos."
+          "description": "Exactly one IMR growth form letter from manifest.json forms (the dominant one visible in this photo), or x = form not visible. Required."
         },
         "polyps": {
           "const": true,

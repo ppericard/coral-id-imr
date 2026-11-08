@@ -49,12 +49,8 @@
    "keep": "best"
   },
   "fish-s414-cand-657109087": {
-   "code": "d1g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the seamoth for sure among the rubble"
+   "code": "d1g0smxc1",
+   "keep": "best"
   },
   "fish-s414-cand-503766410": {
    "code": "o1g1sl1c2",
@@ -106,6 +102,74 @@
   },
   "fish-s414-cand-47105714": {
    "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-309401817": {
+   "code": "d1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s414-cand-476947109": {
+   "code": "d1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s414-cand-476947301": {
+   "code": "d1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s414-cand-280938112": {
+   "code": "d1g0sl13",
+   "keep": "best"
+  },
+  "fish-s414-cand-280939413": {
+   "code": "h1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s414-cand-280939412": {
+   "code": "h1g0sm12",
+   "keep": "dup"
+  },
+  "fish-s414-cand-50688005": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s414-cand-266783964": {
+   "code": "o1g2sm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-452104193": {
+   "code": "d1g0sl1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-283974280": {
+   "code": "d1g2bm1c1",
+   "keep": "best"
+  },
+  "fish-s414-cand-283974284": {
+   "code": "d1g2bm1c1",
+   "keep": "dup"
+  },
+  "fish-s414-cand-654673119": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s414-cand-312346457": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s414-cand-312344815": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s414-cand-312346465": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s414-cand-47199541": {
+   "code": "p1g0sl13",
+   "keep": "best"
+  },
+  "fish-s414-cand-348227672": {
+   "code": "d1g0sl13",
    "keep": "best"
   }
  }

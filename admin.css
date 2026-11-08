@@ -328,9 +328,6 @@ body.admin .hdr-tools[hidden] {
 .o-world {
   --o: var(--solo);
 }
-.o-book {
-  --o: var(--massive);
-}
 .adm-src[class*='o-'] {
   background: var(--o);
   color: var(--band-ink);
@@ -712,31 +709,54 @@ body.adm-dragging * {
   box-shadow: var(--shadow);
 }
 
-/* The subject switch (admin plan PR 2: Corals | Fish, left of the groups), each side with its to-do count. Phones: a
-   full-width row under the header line (the study's mock-up 1). */
+/* The subject switch (admin plan PR 2: Corals | Fish, next to the logo), each side with its to-do count. A mini switch in
+   the top bar on every page and width (Pierre, 2026-11-06: as the app's header chip, app.css .subjb: a 32 px pill, the
+   subject's icon in the accent, its name; on phones the icon and the count only, the name kept as its label), one tap a
+   side (rule A2). */
 .adm-subj {
   display: inline-flex;
   flex: none;
-  padding: 3px;
+  align-items: stretch;
+  height: 32px;
+  padding: 2px;
   gap: 2px;
   background: var(--surface-2);
+  border: 1px solid var(--line);
   border-radius: var(--pill);
 }
 .adm-subj[hidden] {
   display: none;
 }
 .adm-subj a {
-  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 9px 0 7px;
+  font-size: var(--fs-s);
   color: var(--muted);
   text-decoration: none;
-  padding: 5px 12px;
+  white-space: nowrap;
   border-radius: var(--pill);
+}
+.adm-subj a .sji {
+  flex: none;
 }
 .adm-subj a[aria-pressed='true'] {
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
   box-shadow: var(--shadow);
+}
+.adm-subj a[aria-pressed='true'] .sji {
+  color: var(--accent);
+}
+/* Inert on a shared page (admin.js SHARED: the list of players, the same on both sides): it shows the side the other
+   pages are on, and takes no click. */
+.adm-subj.off {
+  opacity: 0.45;
+}
+.adm-subj.off a {
+  pointer-events: none;
 }
 .adm-scnt {
   font-size: var(--fs-xs);
@@ -1462,7 +1482,9 @@ kbd {
   color: var(--accent);
   border: 1.5px solid var(--accent);
 }
-/* Candidates, one per screen (made for the phone): photo fills what the controls leave; the decision bar sits under the thumb. */
+/* Candidates, one per screen (made for the phone): photo fills what the controls leave; the decision bar sits under the thumb.
+   --sw-top is where the page starts (admin.js start: under the header, the tab row and the demo banner), so the bar
+   stays on screen whatever sits above it (Pierre, 2026-11-06: one phone screen, 390 x 844, nothing below the fold). */
 .adm-modesel {
   display: none;
 }
@@ -1475,8 +1497,8 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: calc(100dvh - var(--hdr-h, 64px) - var(--sub-h, 0px) - 20px);
-  min-height: 480px;
+  height: calc(100dvh - var(--sw-top, 120px) - env(safe-area-inset-bottom, 0px) - 12px);
+  min-height: 360px;
 }
 .adm-swempty {
   height: auto;
@@ -1683,6 +1705,100 @@ kbd {
 .adm-swbar .add.sug {
   border: 2px dashed var(--accent);
 }
+/* Fish Candidates (admin-fish.js): the species' photos in play under the card, small, in one row that swipes sideways
+   when they do not all fit (a photo strip, not a slider: rule U6) */
+.adm-fplay {
+  flex: none;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.adm-fplay::-webkit-scrollbar {
+  display: none;
+}
+.adm-fplayn {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.adm-fplayn b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.adm-fplayn.full b {
+  color: var(--good);
+}
+.adm-fth {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.adm-fth img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.adm-chip.adm-fease {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* Fish rows (5b): Pierre's value pressed; the pass's dashed until he confirms or changes it (as the growth form). */
+.adm-acts .adm-ftag button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-acts .adm-ftag.auto button[aria-pressed='true'] {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+/* Tags unfolded: the swiper keeps its one screen (Pierre, 2026-11-06): the photo gives up room down to about a quarter
+   of the screen, the tag rows scroll inside their own panel, Ease and the decision buttons stay in view. */
+.adm-sw.adm-ftopen .adm-swcard {
+  min-height: min(26dvh, 240px);
+}
+.adm-sw.adm-ftopen .adm-swacts {
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  min-height: 0;
+}
+.adm-ftags {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.adm-sw.adm-ftopen .adm-ftags {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.adm-sw .adm-acts .adm-ftags .adm-qseg button {
+  min-height: 32px;
+  font-size: 0.8rem;
+}
+.adm-src.adm-fnew {
+  background: var(--good-bg);
+  color: var(--good);
+}
+@media (max-width: 599px) {
+  .adm-fth {
+    width: 36px;
+    height: 36px;
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .adm-swbar .add:hover {
     background: var(--good-bg);
@@ -1713,18 +1829,31 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 }
 /* Phones: header on one line (entry points in a menu; Redo and Help move into ⋯). */
 @media (max-width: 599px) {
-  body.admin header:has(.adm-subj:not([hidden])) {
-    flex-wrap: wrap;
+  /* Phones: the logo steps aside while the switch shows (the page menu keeps its room), each side its icon over its
+     count, the name its label only. */
+  body.admin header:has(.adm-subj:not([hidden])) .brand {
+    display: none;
   }
   body.admin .adm-subj {
-    order: 10;
-    flex: 1 1 100%;
+    height: 40px;
   }
   body.admin .adm-subj a {
-    flex: 1;
-    text-align: center;
-    min-height: 36px;
-    line-height: 26px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 34px;
+    padding: 0 6px;
+  }
+  body.admin .adm-scnt {
+    line-height: 1;
+  }
+  body.admin .adm-sjn {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
   body.admin header {
     flex-wrap: nowrap;
@@ -1738,9 +1867,9 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
     flex: 1;
     min-width: 0;
     font: inherit;
-    font-size: 0.95rem;
+    font-size: var(--fs-s);
     min-height: 44px;
-    padding: 0 8px;
+    padding: 0 6px;
     border: 1px solid var(--line);
     border-radius: var(--pill);
     background: var(--surface);
@@ -1772,8 +1901,7 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
     padding: 12px 10px;
   }
   .adm-sw {
-    height: calc(100dvh - var(--hdr-h, 64px) - var(--sub-h, 0px) - 12px);
-    min-height: 440px;
+    height: calc(100dvh - var(--sw-top, 120px) - env(safe-area-inset-bottom, 0px) - 8px);
     gap: 6px;
   }
   .adm-sw .adm-fseg button {
@@ -1787,7 +1915,7 @@ body.admin.adm-narrow .adm-modesel:not([hidden]) {
 @media (max-width: 599px) {
   body.admin .chip.adm-save {
     min-width: 0;
-    padding: 0 12px;
+    padding: 0 9px;
   }
   .adm-swbar button {
     font-size: 0.86rem;
@@ -1804,6 +1932,10 @@ body.admin.adm-cmode {
 }
 body.adm-cmode main {
   margin-bottom: 0;
+}
+/* The swiper sets its own height: the page's minimum height (app.css .wrap) under the demo banner made it scroll. */
+body.adm-cmode .wrap {
+  min-height: 0;
 }
 .adm-sw .adm-swacts {
   padding: 0;
@@ -3160,6 +3292,50 @@ td.cov-c .cov-off {
 .adm-ubar .adm-danger {
   margin-left: auto;
 }
+/* The starting answer per subject (admin.js startBlock, sheet v98): a line of its own under the bar's tools, its
+   history below it; the answers' segmented choice wraps, and stacks on phones (their words are long). */
+.adm-ubar .adm-ustart {
+  flex: 1 0 100%;
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.adm-ustart-s > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+.adm-ustart .adm-sseg.adm-qseg {
+  flex-wrap: wrap;
+}
+.adm-ustart-h {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.adm-ustart-msg {
+  color: var(--ink);
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.adm-ustart-msg.bad {
+  color: var(--bad);
+}
+.adm-ustart .adm-sseg button[disabled] {
+  cursor: default;
+}
+@media (max-width: 599px) {
+  .adm-ustart .adm-sseg.adm-qseg {
+    flex: 1 0 100%;
+    flex-direction: column;
+    border-radius: var(--r);
+  }
+  .adm-ustart .adm-sseg button + button {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
 /* Delete's two named choices (sheet v55, Q89: no default), on the right of the bar where Delete… was. */
 .adm-ubar .adm-udel {
   display: flex;
@@ -3248,6 +3424,38 @@ button.adm-chip[aria-pressed='true'] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--bg);
+}
+/* In the swiper: the toggles on one line (a long one shortens with an ellipsis), the Auto line folded behind its chip
+   (admin.js autoChip; Pierre, 2026-11-06: the photo and the decision buttons on one phone screen). */
+.adm-sw .adm-cflags {
+  flex: none;
+  flex-wrap: nowrap;
+  margin: 0;
+  min-width: 0;
+}
+.adm-sw .adm-cflags .adm-chip {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-sw .adm-cflags .adm-cauto {
+  flex: none;
+  margin-left: auto;
+}
+button.adm-chip.adm-cauto[aria-expanded='true'] {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.adm-chip.adm-cauto.off {
+  border-color: var(--warn);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+}
+.adm-sw .adm-auto {
+  flex: none;
+  margin: 0;
 }
 /* Adding to a full cell: pick the colony it replaces */
 .adm-repl-new {
@@ -4757,4 +4965,155 @@ button.adm-chip[aria-pressed='true'] {
   fill: none;
   stroke: var(--line);
   stroke-width: 1;
+}
+/* The fish units page's wink (admin plan PR 6): the surprise card as players meet it, its photo beside the choices and
+   both feedback lines; the right choice marked. */
+.adm-winkc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.adm-winkc > img,
+.adm-winkc > .none {
+  width: 220px;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--line);
+}
+.adm-winkc > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.adm-winkc p {
+  margin: 0 0 6px;
+}
+.adm-winka {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.adm-winka span {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.adm-winka span.ok {
+  border-color: var(--good);
+  background: var(--good-bg);
+  font-weight: 600;
+}
+/* The fish units page (admin plan PR 6 on the book's families): the key group headings of the family list, the IMR tag,
+   the All | IMR filter, one block per genus with its species inside. */
+.adm-fgrp {
+  margin: 10px 4px 2px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-src.adm-imrt {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.adm-sname small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-fgen {
+  margin: 0 0 18px;
+}
+.adm-fgenh {
+  margin: 14px 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+/* Fish Coverage (admin plan PR 8): To do chips, the table scrolls sideways inside its box on phones. */
+.adm-ftodo {
+  flex-wrap: wrap;
+}
+.adm-fishcovw {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.adm-fishcovt th[scope='row'] {
+  text-align: left;
+  white-space: nowrap;
+}
+.adm-fishcovt td {
+  text-align: center;
+}
+.adm-fishcovt .adm-fph,
+.adm-fishcovt .adm-fneed {
+  text-align: left;
+  font-size: 0.8rem;
+}
+/* A player's Journey, one per subject (admin-journey.js jseg): Corals | Fish at the right of the title, each with the
+   player's answers in it; links styled as the segmented buttons. */
+.adm-jsubj {
+  margin-left: auto;
+}
+.adm-jsubj a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  min-height: 30px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--muted);
+  text-decoration: none;
+}
+.adm-jsubj a + a {
+  border-left: 1px solid var(--line);
+}
+.adm-jsubj a[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-jsubj small {
+  font-size: var(--fs-xs);
+  opacity: 0.8;
+}
+/* The list of players (admin.js renderUsers): a group of columns per subject, its name over them, a rule at its left. */
+.adm-utbl .adm-ugrp th {
+  padding-bottom: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.adm-utbl .adm-ug0 {
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
+}
+/* Fish Photo review (admin plan PR 9): the value rows of a tile, wrapping; the pass's value (not Pierre's yet) dashed. */
+.adm-frev .adm-ftag button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.adm-frev {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.adm-frev .adm-ftag {
+  flex-wrap: wrap;
+  border-radius: var(--r-sm);
+}
+.adm-frev .adm-ftag button {
+  flex: 1 0 auto;
+}
+.adm-frev .adm-ftag.auto button[aria-pressed='true'] {
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  outline: 1.5px dashed var(--accent);
+  outline-offset: -1.5px;
+}
+.adm-agree {
+  margin: 6px 0;
 }

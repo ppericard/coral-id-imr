@@ -48,6 +48,9 @@ const GATES = {
   DEL_SHEET: (v, N) => fn('admin.js', 'const delOn = ', '\n', 'delOn', {USERS: v === undefined ? {} : {v}, DEL_SHEET: N})(),
   // Deleting one's own account (sync.js selfDelOn, #about/delete-account; Code.gs selfDelete_): from v58; before, a note.
   SELFDEL_SHEET: (v, N) => fn('sync.js', 'const selfDelOn = ', '\n', 'selfDelOn', {sheetV: () => v, SELFDEL_SHEET: N})(),
+  // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
+  // before, the columns stay away.
+  EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
@@ -61,6 +64,9 @@ const GATES = {
       startV: () => ({p: 0.7}),
       startS: () => ({replay: true})
     })() !== 0,
+  // A subject's global score (model.js scoreOn: the headline, the rules on it and the tree sent to the sheet; core.js
+  // treeScore): from v101, which ranks the leaderboard by it; before, the families' mean.
+  SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
   HELP_SHEET: (v, N) => {
@@ -77,6 +83,8 @@ const GATES = {
   LOG_SHEET: (v, N) => {
     const logOk = fn('core.js', 'const logOk = ', '\n', 'logOk', {
       LOG_SHEET: N,
+      WINK_SHEET: 98,
+      winkEntry: a => a.m === 'wink',
       ansSubject: a => a.s || 'coral',
       replaySubject: () => 'coral'
     });
@@ -84,7 +92,36 @@ const GATES = {
     assert.strictEqual(logOk({}, v), true, 'an answer without a subject is a coral one');
     return logOk({s: 'fish'}, v);
   },
+  // A surprise card's answer (quiz.js winkAnswer, Mode wink; sent through core.js logOk): from v98, whose readers leave
+  // it out (Code.gs replayed_, answers_, the Activity tab); before, it stays queued (an older script would count it as a
+  // fish answer). The other answers as their own gate says (a coral one always, a fish one from LOG_SHEET).
+  WINK_SHEET: (v, N) => {
+    const logOk = fn('core.js', 'const logOk = ', '\n', 'logOk', {
+      LOG_SHEET: 60,
+      WINK_SHEET: N,
+      winkEntry: a => a.m === 'wink',
+      ansSubject: a => a.s || 'coral',
+      replaySubject: () => 'coral'
+    });
+    assert.strictEqual(logOk({s: 'coral', m: 'quiz'}, v), true, 'a coral answer is always sent');
+    assert.strictEqual(logOk({s: 'fish', m: 'quiz'}, v), Number(v) >= 60, 'a fish answer from LOG_SHEET');
+    return logOk({s: 'fish', m: 'wink'}, v) && logOk({m: 'wink'}, v);
+  },
+  // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
+  // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).
+  DOM_SHEET: (v, N) => fn('model.js', 'const domRules = ', '\n', 'domRules', {sheetV: () => v, DOM_SHEET: N, SUBJ: {replay: true}})(),
+  // Another subject's leaderboard (progress.js boardOk, Code.gs board_ &s=<id>): from v95; an older script answers with
+  // the first subject's board, never shown as another's. The first subject's board is shown from any script.
+  BOARD_SHEET: (v, N) => {
+    const ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {BOARD_SHEET: N}),
+      j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
+    assert.strictEqual(ok(j, true), true, "the first subject's board from any script");
+    return ok(j, false);
+  },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
+  // The per-format offsets (core.js fmtsOf, ?stats=1 fmt; Q138): from the version that serves them and replays with them;
+  // before, every offset is 0 (the app's PFMT, the admin's SFMT, the device's replay on top of the sheet's).
+  FMT_SHEET: v => Object.keys(require('../core.js').fmtsOf({...(v === undefined ? {} : {v}), fmt: {k2: [1, 30]}})).length > 0,
   PGD_SHEET: (v, N) => {
     const gdOf = fn('model.js', 'const gdOf = ', '\n', 'gdOf', {PGD_SHEET: N});
     return Object.keys(gdOf({...(v === undefined ? {} : {v}), gd: {Acropora: [0.2, 30]}})).length > 0;

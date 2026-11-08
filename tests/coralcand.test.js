@@ -50,7 +50,6 @@ test('licence(): the recorded lic, else the credit line; Python and the admin re
   [...Object.values(D.gen), ...Object.values(D.x.gen)].forEach(g => {
     Object.values(g.views || {}).forEach(add);
     Object.values(g.more || {}).forEach(add);
-    add(g.book);
   });
   Object.values(D.course).forEach(add);
   Object.values(D.cand || {}).forEach(add);
@@ -59,7 +58,6 @@ def add(L): out.extend(licence(p) for p in (L or []))
 for g in [*D['gen'].values(), *D['x']['gen'].values()]:
     for L in (g.get('views') or {}).values(): add(L)
     for L in (g.get('more') or {}).values(): add(L)
-    add(g.get('book'))
 for L in D['course'].values(): add(L)
 for L in (D.get('cand') or {}).values(): add(L)
 print(json.dumps(out))`);
@@ -203,7 +201,7 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
     sizes = job.indexOf('python tools/photos.py');
   assert.ok(files > 0 && files < sizes && sizes < tidy, 'a restored lecture photo: its file from history, its sizes, then back');
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
-  assert.match(job, /git add data\.json cand\.json excluded\.json img/);
+  assert.match(job, /git add data\.json cand\.json excluded\.json fish-game\.json img/);
 });
 
 // One full refill for genus A, near Dauin only (the other tiers answer nothing), against a stubbed iNaturalist.

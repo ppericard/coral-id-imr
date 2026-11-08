@@ -1,0 +1,16 @@
+# Line endings: every text file is stored with LF (git detects binary files: photos, fonts, icons).
+* text=auto eol=lf
+# Machine-written JSON (the candidate lists and the judging results): collapsed in GitHub diffs and left out of the
+# language statistics. data.json stays reviewable: it is the hand-edited source of truth (tools/datajson.py).
+cand.json linguist-generated=true
+fish-cand.json linguist-generated=true
+fish-game.json linguist-generated=true
+suggest.json linguist-generated=true
+# Left out of the published site (pages.yml stages it with git archive): the docs, tests, tools, judging package and the
+# repository's own config are read from the repository, never from the site (Code.gs reads raw.githubusercontent.com).
+/docs/ export-ignore
+/tests/ export-ignore
+/tools/ export-ignore
+/judging/ export-ignore
+/.github/ export-ignore
+/.claude/ export-ignore

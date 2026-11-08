@@ -161,7 +161,7 @@ and reports every failing one. Locally, run what your change can break, once:
   `node tests/fish.smoke.js`. `sw.js`, the loader in `index.html`, photo sizes and fallbacks, R2 →
   `node tests/net.smoke.js`. In `tests/pages.smoke.js`, `SMOKE_ONLY=<part>[,<part>]` runs some of its parts: `tips`
   (`tips.js`), `relief` (the Duel tab's relief card, `quiz.js` `reliefShow`), `start` (the first-launch question, its
-  fallback cards, the open-all offer: `startSmoke`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
+  fallback cards, the open-all offer: `startSmoke`), `subjtour` (the subject to start with in the tour: `subjTour`), `signin` (sign-in, the `sync.js` UI), `replay` (the sheet's replay
   adopted), `overlays` (cards, prompts, the one-tap question, the tour), `credits` (Home, credits, header fit), `basics`
   (Coral basics), `visit` (the pages-opened summary), `main` (routes, sheets, lightbox, history: anything else in
   `app.js`, `app.css`, `index.html`; with `SMOKE_W=390` for one width). `SMOKE_PART=main|rest` is the half CI runs on one
@@ -247,20 +247,26 @@ admin help. Say "Docs: none needed" in the PR description when nothing applies. 
 title ` (#N)` and the PR description are the record of what shipped, the docs say what the code does now; a shared list
 that every PR appends to made every two open PRs conflict, so never start one again (ROADMAP's old list is frozen in
 `docs/archive/`). `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
-rule, no reference to the retired rule numbers.
+rule, no reference to the retired rule numbers, the living docs' relative links and anchors resolving, every
+ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow.
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05.
 
 ### W20
 
-**Corals: remind Pierre when a genus runs short of candidates.** The candidate search (`tools/fetch_local.py`) runs on request
-only. At the start of a working session and in recaps, run `python3 tools/cand_gaps.py`: game genera with fewer than 5
-candidate photos waiting in `cand.json`, listed only when iNaturalist still has something the search would take near
-Dauin or in the Philippines. The search stays in the Philippines, nearest first (within 250 km of Dauin, then the rest
-of the country), and only when the whole country has nothing left, photos taken elsewhere of species confirmed in the
-Philippines (rule C8); never a species not confirmed in the Philippines; no reminder when it cannot find anything
-better. If it lists any, tell Pierre and offer to run the search for them. The choice of photos stays his (rule W10).
-*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral wording, 2026-11-06.
+**When a unit runs short of candidate photos, the tools fetch more automatically; when none are left, they note it and
+stop.** After each Publish the "Candidate photos" workflow refills the lists: coral genera up to their caps
+(`tools/fetch_local.py`), and the short fish species (`tools/fetch_fish.py --refill`: under the cap of Q36 net of what
+Pierre rejected, excluded or sent elsewhere, or short of easy photos; a few dozen a run, the shortest first). "No more
+candidates is no more candidates": a fish species whose search found nothing more is noted with the day
+(`tools/fish_refill.json`) and searched again only a month later; for corals, `python3 tools/cand_gaps.py` lists the
+game genera with fewer than 5 candidate photos waiting only when iNaturalist still has something the search would take,
+never one with nothing better. Each search keeps its subject's area and rules (ARCHITECTURE "Photos", "Fish
+candidates"): abroad only for species confirmed in the Philippines (rule C8), never what Pierre rejected or excluded.
+The choice of photos stays his (rule W10).
+*Why:* a unit short of photos should not wait for someone to notice, and a search with nothing left should not keep
+asking iNaturalist (rule C7).
+*Source:* Pierre, 2026-11-02; the search area, 2026-11-03; subject-neutral, automatic, 2026-11-06 (Q171).
 
 ### W21
 
@@ -324,3 +330,12 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
 
 *Why:* an agent that forgets the rule must not be able to overload the machine. *Source:* Pierre, 2026-11-05 ("the
 automatic lock of the unit tests"; the load budget of twice the cores and the disk rule the same day).
+
+### W25
+
+**Use the quota with care, never at the cost of the result.** Precise briefs, query instead of reading, no subagent for a
+small task, stop agents when done, one wake-up per wait, local checks before each push. A lighter model only for
+mechanical work a test verifies; never for a judgment (photo judging included).
+
+*Why:* the Claude quota is shared by every agent and runs out for days; the result comes first. *Source:* Pierre,
+2026-11-08.

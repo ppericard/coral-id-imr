@@ -1,12 +1,8 @@
 {
  "photos": {
   "fish-s345-cand-499589932": {
-   "code": "p1d0sm1a2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A dead fish in a hole on land? Out of water by its look"
+   "code": "p1g0sm1ja1",
+   "keep": "best"
   },
   "fish-s345-cand-538922507": {
    "code": "p1g2bl11",
@@ -127,6 +123,98 @@
   "fish-s345-cand-614416882": {
    "code": "p1g2ssx1",
    "keep": "dup"
+  },
+  "fish-s345-cand-300718607": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-484828372": {
+   "code": "h1g2bs1j1",
+   "keep": "best"
+  },
+  "fish-s345-cand-484828375": {
+   "code": "h1g2bs1j1",
+   "keep": "dup"
+  },
+  "fish-s345-cand-550755234": {
+   "code": "o1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-554965057": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-554965097": {
+   "code": "o1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s345-cand-250791661": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-613415810": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-332397649": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-336665122": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s345-cand-732441343": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s345-cand-381550483": {
+   "code": "o1d1mm12",
+   "keep": "best"
+  },
+  "fish-s345-cand-615721479": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s345-cand-758686887": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s345-cand-758686878": {
+   "code": "o1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s345-cand-681521083": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s345-cand-681521163": {
+   "code": "o1g3bs11",
+   "keep": "dup"
+  },
+  "fish-s345-cand-614435765": {
+   "code": "o1g1bm12",
+   "keep": "best"
+  },
+  "fish-s345-cand-614435766": {
+   "code": "o1g1bm12",
+   "keep": "dup"
+  },
+  "fish-s345-cand-717131913": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s345-cand-756921979": {
+   "code": "o1g1bm12",
+   "keep": "best"
+  },
+  "fish-s345-cand-381551689": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s345-cand-332587473": {
+   "code": "o1g1bs11",
+   "keep": "best"
   }
  }
 }

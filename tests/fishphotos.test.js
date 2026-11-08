@@ -82,7 +82,7 @@ print(json.dumps([
   u(ob(6, lic='cc-by-nd')),                      # no derivatives: never
   u(ob(7, an=[(17, 19)])),                       # annotated Dead (fish market): never
   u(ob(8, an=[(1, 8), (9, 11)])),                # life stage and sex kept as a hint
-  u(ob(9, n=7)),                                 # at most PER_OBS photos
+  u(ob(9, n=7)),                                 # every photo of an observation (Pierre, 2026-11-08; 4 at most before)
   u(ob(10, n=2), used={'100'}),                  # a photo already a candidate
   u(ob(11, n=1), ex={'110'}),                    # an excluded photo
   u(ob(12, rk='genus')),
@@ -99,7 +99,7 @@ print(json.dumps([
     null,
     null,
     [1, 'dauin', false, 1, 'juvenile/male'],
-    [1, 'dauin', false, 4, ''],
+    [1, 'dauin', false, 7, ''],
     [1, 'dauin', false, 1, ''],
     null,
     null,
@@ -109,29 +109,31 @@ print(json.dumps([
   ]);
 });
 
-test('select, a species not confirmed near Dauin: Pierre own first, then free licences across the Philippines nearest first, NC to fill, abroad last', () => {
+test('select, a species not confirmed near Dauin: Pierre own first, then the Philippines nearest first, the licence only breaking ties, abroad last', () => {
   const out = J(`${OBS}
 it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
 pools = {'dauin': [it(1, 'cc-by-nc'), it(2, 'cc-by'), it(3, 'cc-by-nc', u='ppericard')], 'region': [it(4, 'cc0', ll=(10.3, 123.9))], 'ph': [it(5, 'cc-by', ll=(14.6, 121.0)), it(6, 'cc-by-nc', ll=(14.6, 121.0))],
          'world': [it(8, 'cc-by-nc', u='ppericard', ll=(-8.5, 115.2), inph=False)]}
 W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
 print(json.dumps([[o['id'] for o in select(pools, r, {}, None, W)] for r in (1, 2, 5, 7, 9)]))`);
+  // The licence is the last key (Pierre, 2026-11-08, Q284: variety before licences): distance first, so the NC photo
+  // of Dauin comes before the CC0 one of the region; within a tier, an open photo before an NC one of equal variety.
   assert.deepStrictEqual(out, [
     [3], // Pierre's own first, whatever its licence
     [3, 8], // his own abroad too
-    [3, 8, 2, 4, 5], // then CC BY Dauin, CC0 region, CC BY Luzon: the free ones, nearest first
-    [3, 8, 2, 4, 5, 1, 6], // NC only to fill, nearest first
-    [3, 8, 2, 4, 5, 1, 6, 7] // the Philippines exhausted: abroad
+    [3, 8, 2, 1, 4], // then Dauin (CC BY before CC BY-NC: a tie), the region
+    [3, 8, 2, 1, 4, 5, 6], // then the rest of the Philippines, CC BY before CC BY-NC
+    [3, 8, 2, 1, 4, 5, 6, 7] // the Philippines exhausted: abroad
   ]);
 });
 
-test('select, a species confirmed near Dauin: Pierre own first, then from anywhere by licence, not by distance', () => {
+test('select, a species confirmed near Dauin: Pierre own first, then from anywhere, not by distance, the licence breaking ties', () => {
   const out = J(`${OBS}
 it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
 pools = {'dauin': [it(1, 'cc-by-nc'), it(3, 'cc-by-nc', u='ppericard')], 'ph': [it(5, 'cc-by-nc', ll=(14.6, 121.0))]}
 W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
 print(json.dumps([[o['id'] for o in select(pools, r, {'ph': True}, None, W, anywhere=True)] for r in (2, 4)]))`);
-  // The CC0 photo from abroad comes before the NC ones from Dauin, even while the Philippines have more.
+  // Equal variety: the CC0 photo from abroad comes before the NC ones from Dauin (a tie), even while the Philippines have more.
   assert.deepStrictEqual(out[0], [3, 7]);
   assert.deepStrictEqual(out[1].slice(0, 2), [3, 7]);
   assert.deepStrictEqual(out[1].slice(2).sort(), [1, 5]);
@@ -164,6 +166,28 @@ n = Counter({('s', ''): 5})
 print(json.dumps([a, [o['id'] for o in select(pools, 1, {}, n)]]))`);
   assert.deepStrictEqual(out[0], ['a', 'b', 'c']);
   assert.deepStrictEqual(out[1], [3]); // the juvenile, when adults are already plenty
+});
+
+test('select: the licence never costs variety (Pierre, 2026-11-08, Q284): a new observer or life stage before an open licence', () => {
+  const out = J(`${OBS}
+from collections import Counter
+it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
+pools = lambda: {'dauin': [it(1, 'cc-by', u='a'), it(2, 'cc-by-nc', u='b')]}
+seen_a = lambda: Counter({('u', 'a'): 1})
+stage = lambda: {'dauin': [it(1, 'cc0'), it(2, 'cc-by-nc', an=[(1, 8)])]}
+adults = lambda: Counter({('s', ''): 3})
+print(json.dumps([
+  [o['id'] for o in select(pools(), 1, {}, seen_a())],
+  [o['id'] for o in select(pools(), 1, {'ph': True}, seen_a(), lambda: [], anywhere=True)],
+  [o['id'] for o in select(stage(), 1, {}, adults())],
+  [o['id'] for o in select(pools(), 1, {})],
+]))`);
+  assert.deepStrictEqual(out, [
+    [2], // observer a is already in the list: b's NC photo first
+    [2], // the same for a species confirmed near Dauin
+    [2], // a juvenile when adults are plenty, NC or not
+    [1] // equal variety: the open licence breaks the tie
+  ]);
 });
 
 test('species of the game: circle 1 in teaching order, out species and other circles left out, --only by species or entry', () => {
@@ -252,14 +276,21 @@ files = {
                       'fish-s1-cand-20': {'code': 'p1g0sl15', 'keep': 'best', 'unsure': ['crop'], 'note': 'tail cut?'}}},
   'bad': {'species': 's1', 'photos': {'fish-s1-cand-10': {'code': 'p1g0sm19', 'keep': 'best', 'phase': 'adult', 'crop': [0.5, 0, 0.4, 1]},
                                        'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'best', 'species': 'not', 'quality': 2},
-                                       'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
+                                       'fish-s1-cand-99': {'code': 'p1g0sm14', 'keep': 'best'}}},
+  # Pierre decided on cand-30 (seen) after its judgement: it stays as judged, its best counts for its observation.
+  'kept': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'dup'},
+                      'fish-s1-cand-20': {'code': 'p1g0sm14', 'keep': 'alt'}, 'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
+  'twice': {'photos': {'fish-s1-cand-10': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-11': {'code': 'p1g0sm14', 'keep': 'dup'},
+                       'fish-s1-cand-20': {'code': 'p1g0sm14', 'keep': 'best'}, 'fish-s1-cand-30': {'code': 'p1g0sm14', 'keep': 'best'}}},
 }
 JF.load = lambda p, d=None: files[mode] if p.startswith('judging/fish/') else d
 mode = 'good'; E1, j = JF.check('s1')
 mode = 'bad'; E2, _ = JF.check('s1')
-print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
+mode = 'kept'; E3, _ = JF.check('s1')
+mode = 'twice'; E4, _ = JF.check('s1')
+print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2, E3, E4]))`
   );
-  const [E1, entries, E2] = out;
+  const [E1, entries, E2, E3, E4] = out;
   assert.deepStrictEqual(E1, []);
   // The caps of tools/fish_judge.py: a juvenile of a class-C entry at most 2, strong colour loss at most 3; the phase
   // flag p of a dimorph entry added, capping nothing.
@@ -274,9 +305,13 @@ print(json.dumps([E1, [JF.entry('s1', x) for x in j['photos'].values()], E2]))`
   assert.match(bad, /phase is one of/);
   assert.match(bad, /crop must be \[left, top, right, bottom\]/);
   assert.match(bad, /unknown fields \['quality', 'species'\]/); // no species judgement, no old fields (rule W3)
-  assert.match(bad, /fish-s1-cand-30: not a candidate waiting/); // Pierre rejected it
+  assert.match(bad, /fish-s1-cand-99: not a candidate of s1/);
   assert.match(bad, /1 candidate\(s\) not judged yet/);
   assert.match(bad, /2 photos marked best/);
+  // A candidate Pierre decided on after its judgement (cand-30, seen) stays in the file as judged, never an error; its
+  // best still counts for its observation, so a new candidate there is an alt or a dup, not a second best.
+  assert.deepStrictEqual(E3, []);
+  assert.deepStrictEqual(E4, ['s1: observation obs1: 2 photos marked best; exactly one']);
 });
 
 test('confirmed near Dauin (build_fish near_dauin): 2+ Research Grade observers or the IMR list; one observer is not enough, Pierre included', () => {
@@ -313,6 +348,265 @@ print(json.dumps([[o['id'] for o in T], [[p[0] for p in o['P']] for o in T], sor
   assert.deepStrictEqual(out[2], ['10', '11', '30', '999']);
 });
 
+// Every photo of an observation is a candidate (Pierre, 2026-11-08: "the limit of 4 photos per observation must be lifted
+// for every observation [...] weight the choice so as not to bring too many photos of one observation, but never
+// blocking"); Q226, option b: "better for learning on the species already full": its first photo counts 1 against the
+// cap, each further photo half (obs_cost, EXTRA_W).
+test('every photo of an observation (Pierre, 2026-11-08): the first counts 1, each further one half (Q226); cut only to the room left', () => {
+  const out = J(`${OBS}
+from collections import Counter
+it = lambda *a, used=set(), **k: usable_obs(ob(*a, **k), used, set())
+u = lambda i: f'https://www.inaturalist.org/observations/{i}'
+row = lambda T: [[o['id'], len(o['P']), o['cost']] for o in T]
+costs = [obs_cost(0, 1), obs_cost(0, 4), obs_cost(0, 10), obs_cost(2, 10), obs_cost(4, 6), obs_cost(1, 1)]
+# Room 8: the observation of 10 photos comes whole and takes 5.5, the room left goes to other observations (2 needs 1).
+a = row(sorted(select({'dauin': [it(1, n=10, u='a'), it(2, u='b'), it(3, u='c'), it(4, u='d')]}, 8, {}, photos=True), key=lambda o: o['id']))
+# A short room: the observation cut to what fits (1 + 0.5 + 0.5).
+b = row(select({'dauin': [it(1, n=10)]}, 2, {}, photos=True))
+# 1 already holds 4 photos (the old limit): its 6 others take half each and its observer is not counted again.
+n, held = Counter({('u', 'b'): 1}), {u(1): 4}
+T = select({'dauin': [it(1, n=10, u='a', used={'10', '11', '12', '13'}), it(2, u='b')]}, 3, {}, n, held=held, photos=True)
+c = [row(T), held, n[('u', 'a')], n[('u', 'b')]]
+# species_room: 1 keeps 9 of its 10 (a near-duplicate set aside), 2 one, 3 rejected: 1 + 8 x 0.5 + 1 held of a cap of 10.
+L = [{'f': f'fish-s1-cand-{i}', 'o': u(1)} for i in range(10, 20)] + [{'f': 'fish-s1-cand-20', 'o': u(2)}, {'f': 'fish-s1-cand-30', 'o': u(3)}]
+R = species_room({'id': 's1'}, {'id': 't1'}, L, lambda f: f in ('fish-s1-cand-10', 'fish-s1-cand-30'), cap=10)
+# The exhaustion memory reads the room taken, not the photos: 7 photos of one observation took 4 (1 + 6 x 0.5) of 6.
+e = exhausted({'free': 6, 'rooms': {}, 'add': {'ph': 7}, 'phase_add': {}, 'spent': {'free': 4}, 'end': {'free': True}})
+print(json.dumps([costs, a, b, c, [R['have'], R['room'], R['obs']], e]))`);
+  assert.deepStrictEqual(out[0], [1, 2.5, 5.5, 5, 3, 0.5]);
+  // In the fixed hash order (4, 1, 3, 2): 4, then 1 whole (10 photos, 5.5 of room), then 3; 0.5 left, short for 2.
+  assert.deepStrictEqual(out[1], [
+    [1, 10, 5.5],
+    [3, 1, 1],
+    [4, 1, 1]
+  ]);
+  assert.deepStrictEqual(out[2], [[1, 3, 2]]);
+  assert.deepStrictEqual(out[3], [[[1, 6, 3]], {'https://www.inaturalist.org/observations/1': 10}, 0, 1]);
+  assert.deepStrictEqual(out[5], ['free'], 'searched to the end with room left: remembered');
+  assert.deepStrictEqual(out[4], [
+    6,
+    4,
+    {'https://www.inaturalist.org/observations/1': 9, 'https://www.inaturalist.org/observations/2': 1}
+  ]);
+});
+
+test('fetch_fish.py offline: every photo of an observation, also of one already a candidate; none more of one Pierre sent elsewhere', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishobs-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}},
+      {id: 's2', name: 'Fishus rarus', inat: 502, circle: 1, present: {ph: true}},
+      {id: 's3', name: 'Fishus dubius', inat: 503, circle: 1, present: {ph: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2', 's3']}]
+  };
+  const o = i => `https://www.inaturalist.org/observations/${i}`,
+    rec = (sid, i, k) => ({
+      f: `fish-${sid}-cand-${i * 10 + k}`,
+      a: '(c) u',
+      lic: 'cc-by',
+      o: o(i),
+      t: 'Fishus fishii',
+      own: false,
+      loc: 'dauin',
+      src: 'x',
+      r: 1
+    });
+  // s2 keeps the 4 first photos of observation 5 (the old limit); s3 one photo of 7, which Pierre sent out of the fish.
+  const cand = {v: 1, cand: {s2: [0, 1, 2, 3].map(k => rec('s2', 5, k)), s3: [rec('s3', 7, 0)]}};
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify(cand));
+  fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {out: {'fish-s3-cand-70': 'x'}}}));
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+for tid, obs in ((501, [ob(1, n=7), ob(2), ob(3), ob(4)]), (502, [ob(5, n=7), ob(6)]), (503, [ob(7, n=3), ob(8)])):
+    Q = queries(tid)
+    for k in ('own', 'region', 'ph', 'world'):
+        put(Q[k], [])
+    put(Q['dauin'], obs)
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const at = x => path.join(dir, x),
+    args = ['--fish', at('fish.json'), '--cand', at('fish-cand.json'), '--cur', at('cur.json'), '--suggest', at('none.json')];
+  args.push('--cache', at('cache.json'), '--cap', '6');
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...args, ...a], {cwd: ROOT, encoding: 'utf8'});
+  run('--offline');
+  const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand,
+    obs = L => L.reduce((m, p) => ((m[p.o.split('/').pop()] = (m[p.o.split('/').pop()] || 0) + 1), m), {});
+  // s1, room 6, in the fixed hash order (4, 1, 3, 2): 4, the 7 photos of 1 (4 of room), then 3.
+  assert.deepStrictEqual(obs(C.s1), {1: 7, 3: 1, 4: 1});
+  // s2 holds 4 (5's first four): its 3 other photos come without taking room, then 6.
+  assert.deepStrictEqual(obs(C.s2), {5: 7, 6: 1});
+  // s3: nothing more of 7 (Pierre sent its photo elsewhere), 8 comes.
+  assert.deepStrictEqual(obs(C.s3), {7: 1, 8: 1});
+  // A rerun adds nothing: every photo the search sees is taken or left out on purpose.
+  run('--offline');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand, C);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('phase searches abroad (Codex review #715): the Philippines fill a phase as obs_cost counts, so one observation of 10 juvenile photos leaves the search abroad open', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishobsph-'));
+  const fish = {
+    species: [{id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}}],
+    teach: [{id: 't1', name: 'Juvenile fishes', circle: 1, phase: ['Juveniles look very different from adults'], species: ['s1']}]
+  };
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs, fields=FIELDS): c[API + q + '&fields=' + fields] = {'total': len(obs), 'results': obs}
+Q = queries(501)
+for k in ('own', 'dauin', 'region', 'ph', 'world'):
+    put(Q[k], [])
+J = (1, 8)
+put(phase_query('juvenile', [501], 'ph'), [{**ob(21, an=[J], ll=(14.6, 121.0), n=10), 'tx': [501]}], fields=FIELDS + ',taxon.ancestor_ids')
+put(phase_query('juvenile', [501], 'world'), [{**ob(i, an=[J], ll=(-8.5, 115.2), inph=False), 'tx': [501]} for i in (31, 32)], fields=FIELDS + ',taxon.ancestor_ids')
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const argv = [
+    ['--fish', 'fish.json'],
+    ['--cand', 'fish-cand.json'],
+    ['--cur', 'none.json'],
+    ['--suggest', 'none.json'],
+    ['--cache', 'cache.json']
+  ].flatMap(([f, x]) => [f, path.join(dir, x)]);
+  const plan = JSON.parse(execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--plan'], {cwd: ROOT, encoding: 'utf8'}));
+  // The juvenile room is 10: the 10 photos of 21 take 5.5 of it, so the two juveniles from abroad come too.
+  assert.deepStrictEqual(plan.species.s1.rooms, {juvenile: 10});
+  assert.deepStrictEqual(plan.species.s1.add, {ph: 10, world: 2});
+  assert.deepStrictEqual(plan.species.s1.spent, {free: 0, juvenile: 7.5});
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('judging_fish.py: an observation whose best Pierre already added gets its other photos judged against it (Codex review #715)', () => {
+  const out = J(`import judging_fish as JF
+JF.SP = {'s1': {'id': 's1', 'name': 'Fishus fishii'}}
+JF.ENTRY = {}
+JF.CUR = {'add': {'fish-s1-cand-10': 's1'}}
+JF.CAND = {'s1': [{'f': f'fish-s1-cand-{i}', 'o': f'obs{i // 10}'} for i in (10, 11, 12, 20)]}
+J = lambda k: {'code': 'p1g0sm14', 'keep': k}
+files = {
+  'dup': {'photos': {'fish-s1-cand-11': J('dup'), 'fish-s1-cand-12': J('alt'), 'fish-s1-cand-20': J('best')}},
+  'better': {'photos': {'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('dup'), 'fish-s1-cand-20': J('best')}},
+  'two': {'photos': {'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('best'), 'fish-s1-cand-20': J('dup')}},
+  # His add still in the file as judged best (#717 keeps decided candidates): a new photo may still beat it.
+  'kept': {'photos': {'fish-s1-cand-10': J('best'), 'fish-s1-cand-11': J('best'), 'fish-s1-cand-12': J('dup'), 'fish-s1-cand-20': J('best')}},
+}
+JF.load = lambda p, d=None: files[mode] if p.startswith('judging/fish/') else d
+R = []
+for mode in files:
+    R.append(JF.check('s1')[0])
+G = [[[p['f'] for p in c], [p['f'] for p in w]] for c, w in JF.groups('s1')]
+print(json.dumps([R, G]))`);
+  const [[dup, better, two, kept], G] = out;
+  assert.deepStrictEqual(kept, []);
+  assert.deepStrictEqual(dup, [], 'its new photos may all be dup or alt of the photo Pierre added');
+  assert.deepStrictEqual(better, [], 'or one of them better (best)');
+  assert.strictEqual(two.length, 2);
+  assert.match(two[0], /obs1: 2 photos marked best; at most one/);
+  assert.match(two[1], /obs2: 0 photos marked best; exactly one/);
+  // The sheet shows the photo Pierre added first, as context.
+  assert.deepStrictEqual(G, [
+    [['fish-s1-cand-10'], ['fish-s1-cand-11', 'fish-s1-cand-12']],
+    [[], ['fish-s1-cand-20']]
+  ]);
+});
+
+test('the other photos of an observation already held take half a photo each (Q226); --topup brings those of the old limit to a full species, asking by id (Codex review #715)', () => {
+  const out = J(`${OBS}
+from collections import Counter
+it = lambda *a, used=set(), **k: usable_obs(ob(*a, **k), used, set())
+u = lambda i: f'https://www.inaturalist.org/observations/{i}'
+# Room 2: 2 (an observer not represented yet) takes 1; 1, holding 4, gets 2 of its 3 others in the 1 left.
+T = select({'dauin': [it(1, n=7, u='a', used={'10', '11', '12', '13'}), it(2, u='b')]}, 2, {}, Counter({('u', 'a'): 1}), held={u(1): 4}, photos=True)
+print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
+  assert.deepStrictEqual(out, [
+    [2, 1, 1],
+    [1, 2, 1]
+  ]);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishtopup-'));
+  const fish = {
+    species: [{id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true}}],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1']}]
+  };
+  const o = i => `https://www.inaturalist.org/observations/${i}`,
+    rec = (i, k) => ({
+      f: `fish-s1-cand-${i * 10 + k}`,
+      a: '(c) u',
+      lic: 'cc-by',
+      o: o(i),
+      t: 'Fishus fishii',
+      own: false,
+      loc: 'dauin',
+      src: 'x',
+      r: 1
+    });
+  // s1 is full (cap 4): 5 holds the 4 photos of the old limit; 6 too, one of them rejected (it still gets its others);
+  // 7 five (fetched whole already); 8 four, one of which Pierre sent out of the fish (nothing more of it); 9 four, since
+  // re-identified on iNaturalist as another species (nothing more of it: Codex review #715).
+  const L0 = [0, 1, 2, 3]
+    .map(k => rec(5, k))
+    .concat(
+      [0, 1, 2, 3].map(k => rec(6, k)),
+      [0, 1, 2, 3, 4].map(k => rec(7, k)),
+      [0, 1, 2, 3].map(k => rec(8, k)),
+      [0, 1, 2, 3].map(k => rec(9, k))
+    );
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify({v: 1, cand: {s1: L0}}));
+  fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({fish: {seen: {'fish-s1-cand-60': 1}, out: {'fish-s1-cand-80': 'x'}}}));
+  // Only 5, 6 and 9, in one request, are in the cache: asking for 7 or 8 would stop the --offline run.
+  py(
+    `${OBS}
+tx = lambda o, *t: {**o, 'tx': list(t)}
+c = {API + 'id=5,6,9&captive=false&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 3, 'results': [tx(ob(5, n=7), 501, 50), tx(ob(6, n=5), 501, 50), tx(ob(9, n=6), 777, 50)]}}
+json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
+    dir
+  );
+  const argv = [
+    ['--fish', 'fish.json'],
+    ['--cand', 'fish-cand.json'],
+    ['--cur', 'cur.json'],
+    ['--suggest', 'none.json'],
+    ['--cache', 'cache.json']
+  ].flatMap(([f, x]) => [f, path.join(dir, x)]);
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--cap', '4', ...a], {cwd: ROOT, encoding: 'utf8'});
+  run('--topup', '--offline');
+  const L = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1;
+  assert.deepStrictEqual(
+    L.slice(L0.length).map(p => p.f),
+    ['fish-s1-cand-54', 'fish-s1-cand-55', 'fish-s1-cand-56', 'fish-s1-cand-64']
+  );
+  assert.deepStrictEqual(L.slice(0, L0.length), L0);
+  // Once whole, 5 and 6 are not asked again; 9 still is (one request).
+  fs.writeFileSync(
+    path.join(dir, 'cache.json'),
+    py(`${OBS}
+print(json.dumps({API + 'id=9&captive=false&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 1, 'results': [{**ob(9, n=6), 'tx': [777]}]}}))`)
+  );
+  run('--topup', '--offline');
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.length, L0.length + 4);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('judging_fish.py sheets: an observation never split over two sheets, so its near-duplicates are side by side', () => {
+  const out = J(`import judging_fish as JF
+g = lambda o, k: [f'{o}.{i}' for i in range(k)]
+P = JF.pack([g('a', 3), g('b', 4), g('c', 6), g('d', 14), g('e', 2), g('f', 12)])
+print(json.dumps([[sorted({x.split('.')[0] for x in S}) for S in P], [len(S) for S in P]]))`);
+  assert.deepStrictEqual(out, [
+    [['a', 'b'], ['c'], ['d'], ['d', 'e'], ['f']],
+    [7, 6, 12, 4, 12]
+  ]);
+});
+
 test('fish-cand.json: every candidate photo once (one photo can belong to several iNaturalist observations)', () => {
   const C = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-cand.json'), 'utf8')).cand,
     ids = Object.values(C).flatMap(L => L.map(p => p.f.split('-').pop())),
@@ -321,7 +615,7 @@ test('fish-cand.json: every candidate photo once (one photo can belong to severa
 });
 
 test('fetch_fish.py offline on a fixture cache: tiers, licences, presence, record shape; --plan writes nothing', () => {
-  // The cap counts photos (Pierre, 2026-11-05, Q36); --cap 3 here: one fixed cap for every species. Up to 4 photos per observation.
+  // The cap counts photos (Pierre, 2026-11-05, Q36); --cap 3 here: one fixed cap for every species. Every photo of an observation, the first counting 1, the others half.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishphotos-'));
   const fish = {
     species: [
@@ -393,17 +687,18 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'));
   assert.strictEqual(C.v, 1);
   assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2', 's4']);
-  // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines (CC BY
-  // Luzon, then NC Dauin); the CC0 one abroad would come only once they are exhausted and room is left.
+  // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines nearest
+  // first (NC Dauin, then CC BY Luzon: the licence only breaks ties, Q284); the CC0 one abroad would come only once they
+  // are exhausted and room is left.
   assert.deepStrictEqual(
     C.cand.s4.map(p => p.o.split('/').pop()),
-    ['23', '21', '20']
+    ['23', '20', '21']
   );
   assert.strictEqual(C.cand.s4[0].own, true);
   const s1 = C.cand.s1,
     row = p => [p.o.split('/').pop(), p.lic, p.loc, p.own];
   // Pierre's own first (NC, Needs ID); then CC BY from Luzon and CC0 from abroad before the NC ones of Dauin, which the
-  // Philippines still have more of; never the share-alike ones.
+  // Philippines still have more of (equal variety: the licence breaks the tie); never the share-alike ones.
   assert.deepStrictEqual(row(s1[0]), ['1', 'cc-by-nc', 'dauin', true]);
   assert.deepStrictEqual(s1.slice(1).map(row).sort(), [
     ['10', 'cc0', 'world', false],
@@ -440,13 +735,14 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
 // search fills each phase. tools/fetch_fish.py cap_of, species_phases, phase_room, species_room, phase_obs, fill.
 test('cap per species (Q36): stable 30, +10 per extra phase, at most 60', () => {
   const out = J(
-    `print(json.dumps([BASE_CAP, PER_PHASE, MAX_CAP, PER_OBS, list(PHASES), cap_of([]), cap_of(['juvenile']), cap_of({'juvenile': ['imr'], 'male': ['inat:2']}), cap_of(['juvenile', 'intermediate', 'male']), cap_of(PHASES), cap_of(['adult', 'juvenile', 'juvenile'])]))`
+    `print(json.dumps([BASE_CAP, PER_PHASE, MAX_CAP, EXTRA_W, OLD_LIMIT, list(PHASES), cap_of([]), cap_of(['juvenile']), cap_of({'juvenile': ['imr'], 'male': ['inat:2']}), cap_of(['juvenile', 'intermediate', 'male']), cap_of(PHASES), cap_of(['adult', 'juvenile', 'juvenile'])]))`
   );
   assert.deepStrictEqual(out, [
     30,
     10,
     60,
-    4,
+    0.5, // EXTRA_W: each photo of an observation past its first counts half (Q226)
+    4, // OLD_LIMIT: photos per observation at most until 2026-11-08 (--topup completes those)
     ['juvenile', 'intermediate', 'male', 'female'],
     30, // stable
     40, // one extra phase
@@ -466,6 +762,7 @@ print(json.dumps([
   phase_room({'juvenile': 1, 'male': 1}, 50, Counter({'': 45})),
   phase_room({'juvenile': 1}, 40, Counter({'': 50})),
   phase_room({'juvenile': 1}, 40, Counter({'': 10, 'juvenile': 14})),
+  phase_room({'juvenile': 1}, 40, Counter({'': 32, 'juvenile': 7.5})),
 ]))`);
   assert.deepStrictEqual(out, [
     {room: 10, rooms: {}, free: 10}, // a stable species: all free
@@ -473,7 +770,8 @@ print(json.dumps([
     {room: 40, rooms: {juvenile: 10, intermediate: 10, male: 10, female: 10}, free: 0},
     {room: 5, rooms: {juvenile: 3, male: 2}, free: 0}, // shared out one photo at a time
     {room: 0, rooms: {juvenile: 0}, free: 0}, // over the cap (an older run): nothing removed, nothing added
-    {room: 16, rooms: {juvenile: 0}, free: 16} // the phase already has its 10
+    {room: 16, rooms: {juvenile: 0}, free: 16}, // the phase already has its 10
+    {room: 0.5, rooms: {juvenile: 0}, free: 0.5} // half a photo of room (Q226): free, never a phase's whole photo
   ]);
 });
 
@@ -626,6 +924,175 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const again = JSON.parse(run('--plan', '--only', 's1')).species.s1;
   // The juveniles brought in now record the phase too (6 annotated observations).
   assert.deepStrictEqual(pick(again), [40, {juvenile: ['imr', 'inat:6']}, 36, {juvenile: 6}, 4, {juvenile: 4}, 0]);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+// The automatic refill (Pierre, 2026-11-06, Q171: "no more candidates is no more candidates"): tools/fetch_fish.py
+// --refill, shortness, easy_obs, pick_short, exhausted, pages; the exhaustion memory (tools/fish_refill.json).
+test('refill (Q171): short = room under the cap or too few easy observations; only room is refilled; searched-to-the-end species skipped until the re-check', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill-'));
+  const sp = (id, i, k = {}) => ({id, name: `Fishus ${id}`, inat: 500 + i, circle: 1, present: {ph: true}, ...k});
+  const fish = {
+    species: [sp('s1', 1), sp('s2', 2), sp('s3', 3), sp('s4', 4), sp('s5', 5), sp('s6', 6), sp('s7', 7, {cs: 1})],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2', 's3', 's4', 's5', 's6', 's7']}]
+  };
+  const cand = (sid, n) =>
+    Array.from({length: n}, (_, i) => ({f: `fish-${sid}-cand-${i + 1}`, o: `https://www.inaturalist.org/observations/${sid}${i + 1}`}));
+  const C = {
+    v: 1,
+    cand: {s1: cand('s1', 4), s2: cand('s2', 4), s3: cand('s3', 4), s4: cand('s4', 4), s5: cand('s5', 2), s6: cand('s6', 2)}
+  };
+  const easy = e => ({jt: 'p1g0sm1', e, k: 'best'});
+  // s1: full (cap 4), 3 easy observations sure to come (the pre-sort's sure adds, Pierre's add with his ease): not short.
+  // s2: full, its sure adds are hard: short of easy photos, but at the cap (the cap holds: nothing to refill).
+  // s3: full, 2 of its photos rejected / sent elsewhere by Pierre: room 2. s4: full, one set aside for sure by the pre-sort.
+  // s5, s6: room 2, searched to the end 10 and 40 days ago. s7: nothing yet, a cheatsheet species.
+  const sug = {
+    fish: {
+      'fish-s1-cand-1': easy(5),
+      'fish-s1-cand-2': easy(4),
+      'fish-s1-cand-3': easy(2),
+      'fish-s2-cand-1': easy(2),
+      'fish-s2-cand-2': easy(3),
+      'fish-s4-cand-1': {jt: 'p1g0sm1', e: 4, k: 'dup'}
+    }
+  };
+  const cur = {
+    fish: {add: {'fish-s1-cand-3': 's1'}, ease: {'fish-s1-cand-3': 5}, seen: {'fish-s3-cand-1': 1}, out: {'fish-s3-cand-2': 'x'}}
+  };
+  const mem = {end: {s5: {at: '2026-11-01', parts: ['free']}, s6: {at: '2026-10-01', parts: ['free']}}};
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('fish-cand.json', C);
+  w('sug.json', sug);
+  w('cur.json', cur);
+  w('mem.json', mem);
+  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'sug.json', 'none.json', 'none.json', 'none.json', 'mem.json'];
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
+  const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
+  const plan = (...a) =>
+    JSON.parse(
+      execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--refill', '--plan', '--cap', '4', '--today', '2026-11-06', ...a], {
+        cwd: ROOT,
+        encoding: 'utf8'
+      })
+    );
+  const P = plan();
+  const pick = r => r && [r.room, r.parts, r.easy, r.unjudged];
+  assert.ok(!P.short.s1, 'full, with 3 easy observations sure to come: not short');
+  assert.deepStrictEqual(pick(P.short.s2), [0, {}, 0, 2]);
+  assert.deepStrictEqual(P.at_cap, ['s2'], 'short of easy photos at the cap: the cap holds, nothing is fetched');
+  assert.deepStrictEqual(pick(P.short.s3), [2, {free: 2}, 0, 2], 'what Pierre rejected or sent elsewhere frees room');
+  assert.deepStrictEqual(pick(P.short.s4), [1, {free: 1}, 0, 3], 'what the pre-sort set aside for sure frees room');
+  assert.deepStrictEqual(pick(P.short.s7), [4, {free: 4}, 0, 0]);
+  // s5 was searched to the end 10 days ago: skipped; s6, 40 days ago: searched again (RECHECK_DAYS). The shortest first:
+  // short of easy photos with nothing waiting for the judging pass (s7), then the largest share of the cap missing.
+  assert.deepStrictEqual(P.skip, ['s5']);
+  assert.deepStrictEqual(P.pick, ['s7', 's3', 's6', 's4']);
+  assert.deepStrictEqual(plan('--max', '2').pick, ['s7', 's3'], 'at most --max species a run (rule C7)');
+  assert.deepStrictEqual(plan('--today', '2026-12-01').skip, [], 'a month later every species is searched again');
+  // A part of the room not searched to the end (a juvenile room opened since) is searched, whatever the memory says.
+  w('mem.json', {end: {s5: {at: '2026-11-01', parts: ['juvenile']}}});
+  assert.deepStrictEqual(plan().skip, []);
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')), C, '--plan writes nothing');
+  // python sure_add is exactly autosort.js fishSure's adds.
+  const J0 = [
+    null,
+    easy(5),
+    {jt: 'o1d3bs1', e: 1, k: 'alt'},
+    {jt: 'p1g0sm1', e: 4, k: 'dup'},
+    {jt: 'p1g0smx', e: 1, k: 'best'},
+    {jt: 'p1g0sm1a', e: 3, k: 'best'},
+    {jt: 'p1g0sm1', e: 4, k: 'best', u: ['code']},
+    {jt: 'p1g0sm1', k: 'best'},
+    {jt: 'bad', e: 3, k: 'best'}
+  ];
+  assert.deepStrictEqual(
+    J(`print(json.dumps([sure_add(j) for j in json.loads(sys.argv[1])]))`, JSON.stringify(J0)),
+    J0.map(j => !!fishSure(j) && fishSure(j).keep === 'add')
+  );
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
+test('refill (Q171) offline on a fixture cache: pages on while too few photos, never what Pierre rejected, excluded or sent elsewhere; the end remembered', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishrefill2-'));
+  const fish = {
+    species: [
+      {id: 's1', name: 'Fishus fishii', inat: 501, circle: 1, present: {ph: true, near: true}},
+      {id: 's2', name: 'Fishus vulgaris', inat: 502, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  // s1 has 3 candidates: observation 10 rejected (seen), 20 excluded, 40 "Not this" (sent elsewhere); photo 300
+  // (observation 30) excluded by its photo id though no longer a candidate. Cap 5: room 5.
+  const rec = (sid, i) => ({f: `fish-${sid}-cand-${i * 10}`, o: `https://www.inaturalist.org/observations/${i}`});
+  const C = {v: 1, cand: {s1: [rec('s1', 10), rec('s1', 20), rec('s1', 40)]}};
+  const cur = {
+    fish: {
+      seen: {'fish-s1-cand-100': 1},
+      exclude: {'fish-s1-cand-200': 'blurred', 'fish-s1-cand-300': 'excluded'},
+      out: {'fish-s1-cand-400': 'x'}
+    }
+  };
+  const w = (f, d) => fs.writeFileSync(path.join(dir, f), JSON.stringify(d));
+  w('fish.json', fish);
+  w('fish-cand.json', C);
+  w('cur.json', cur);
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs, total=None): c[API + q + '&fields=' + FIELDS] = {'total': len(obs) if total is None else total, 'results': obs}
+Q = queries(501)
+put(Q['own'], [])
+# Newest first: the first page holds the rejected, excluded and "Not this" observations again, and 60 and 50; 8 in all
+# in the search, so it reads on (id_below) while it has fewer usable photos than the room.
+put(Q['dauin'], [ob(60), ob(50), ob(40), ob(30), ob(20), ob(10)], total=8)
+put(Q['dauin'] + '&id_below=10', [ob(8), ob(7)])
+for k in ('region', 'ph', 'world'):
+    put(Q[k], [])
+Q = queries(502)
+put(Q['own'], [])
+put(Q['dauin'], [ob(i) for i in range(100, 108)], total=300)  # enough on the first page: no more pages asked
+for k in ('region', 'ph', 'world'):
+    put(Q[k], [])
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const args = ['fish.json', 'fish-cand.json', 'cur.json', 'none.json', 'cache.json', 'none.json', 'none.json', 'mem.json'];
+  const flags = ['--fish', '--cand', '--cur', '--suggest', '--cache', '--photos', '--fbsrc', '--memory'];
+  const argv = flags.flatMap((f, i) => [f, path.join(dir, args[i])]);
+  const run = (...a) =>
+    execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--refill', '--cap', '5', '--today', '2026-11-06', ...a], {
+      cwd: ROOT,
+      encoding: 'utf8'
+    });
+  run('--offline');
+  const got = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  const ids = L => L.map(p => p.o.split('/').pop());
+  assert.deepStrictEqual(ids(got.s1).slice(0, 3), ['10', '20', '40'], 'the decided candidates stay, once each');
+  assert.deepStrictEqual(ids(got.s1).slice(3).sort(), ['50', '60', '7', '8'], 'never what Pierre rejected, excluded or sent elsewhere');
+  assert.strictEqual(got.s2.length, 5, 'filled to its cap from the first page');
+  // s1 is still short (room 1) and its searches were read to the end: searched to the end today; s2 is full.
+  const M = JSON.parse(fs.readFileSync(path.join(dir, 'mem.json'), 'utf8'));
+  assert.deepStrictEqual(M.end, {s1: {at: '2026-11-06', parts: ['free']}});
+  assert.ok(M._doc);
+  const P = JSON.parse(run('--plan'));
+  assert.deepStrictEqual([P.pick, P.skip], [[], ['s1']], 'no iNaturalist request for it until the re-check');
+  assert.deepStrictEqual(JSON.parse(run('--plan', '--today', '2026-12-06')).pick, ['s1']);
+  // A rerun asks nothing more: nothing short but s1, which is skipped.
+  run('--offline');
+  assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand, got);
+  // Per part of the room: a phase still open whose searches were read to the end, or which got nothing, is searched to
+  // the end; one still filling (its searches had more) is not; a part filled is not either.
+  const ex = (end, padd) =>
+    `exhausted({'free': 0, 'rooms': {'juvenile': 4, 'intermediate': 2}, 'add': {'ph': 2 + ${padd}}, 'phase_add': {'juvenile': ${padd}}, 'end': ${end}})`;
+  assert.deepStrictEqual(
+    J(
+      `print(json.dumps([${ex("{'free': False, 'juvenile': True}", 3)}, ${ex("{'free': False, 'juvenile': False}", 3)}, ${ex("{'free': False, 'juvenile': False}", 0)}, ${ex("{'free': True, 'juvenile': True}", 4)}]))`
+    ),
+    [['juvenile'], [], ['juvenile'], []]
+  );
   fs.rmSync(dir, {recursive: true, force: true});
 });
 

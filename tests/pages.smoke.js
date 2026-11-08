@@ -229,9 +229,11 @@ async function overlays(b, base) {
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
       ['account', () => signinNudge(false, false)],
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
-      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), and
-      // the learned mark taken away (progress.js mxLostNotice), through their real callers.
-      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), the
+      // apology of rules version 9 (core.js RV_SORRY), and the learned mark taken away (progress.js mxLostNotice), through
+      // their real callers.
+      ['update', () => (store.set('reefid-rv-msg', {due: [RV - 1], told: [], pct: {[RV - 1]: [50, 42]}}), rvNotice())],
+      ['apology', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
       ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
       ['feedback', () => pulseAsk()]
     ];
@@ -414,9 +416,15 @@ async function overlays(b, base) {
     const [c, p] = await open({viewport: {width: 1280, height: 860}}, () => localStorage.setItem('reefid-nudge', '1'));
     await p.goto(base);
     await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
+    // Fish open to every player (Q158): the subject to pick first (tour.js pick), and where to switch after the question.
+    const two = !!(await p.$('#tour [data-pick="coral"]'));
+    if (two) {
+      await p.click('#tour [data-pick="coral"]');
+      await p.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
+    }
     await p.click('#tour [data-start="imr"]'); // the first-launch question first (tour.js ask): it moves on by itself
     await p.waitForTimeout(300);
-    for (let k = 0; k < at; k++) {
+    for (let k = 0; k < at + (two ? 1 : 0); k++) {
       await p.keyboard.press('ArrowRight');
       await p.waitForTimeout(300);
     }
@@ -1215,16 +1223,23 @@ async function overlays(b, base) {
     // and the card then waits for a later break, so the check waits for it (a flake on CI, #603).
     await p.waitForFunction(() => helpedIds().length > 0, null, {timeout: 10000}).catch(() => {});
     const q1 = await card(2000); // the question waits for its answer: no card
+    // A wrong answer, never a right one: a right answer can earn an achievement (Look-alike slayer on a duel, Corallite
+    // reader on corallites alone, Sharp eye), whose toast is up when the answer arms the break, and the thanks then waits
+    // for a later break (never over a toast); which question comes first is drawn at random, so a right answer made this
+    // check fail now and then on CI, never on a re-run (#603, #652). A wrong answer earns none.
+    const target = await p.evaluate(() => SHOWNQ && SHOWNQ[1]);
     const typed = await p.$('.tyq input');
-    if (typed) (await p.fill('.tyq input', 'Acropora'), await p.keyboard.press('Enter'));
-    else await p.click('.ans button');
+    if (typed) (await p.fill('.tyq input', target === 'Acropora' ? 'Porites' : 'Acropora'), await p.keyboard.press('Enter'));
+    else await p.click(`.ans button[data-c]:not([data-c="${target}"])`);
     await p.waitForSelector('#next', {timeout: 5000});
+    const toast = await p.evaluate(() => document.querySelector('.achpop b')?.textContent || null); // none: else no break
     const a1 = await card(1500); // the answer's feedback: still no card
     await p.click('#next');
     const n1 = await card();
     await p.waitForTimeout(800);
     const next = await p.evaluate(() => !!document.querySelector('#view .q') && QOPEN);
-    if (q1 || a1 || !n1 || !next) fails.push(`Your feedback helped, calm moment: ${JSON.stringify({q1, a1, n1, next})}`);
+    if (q1 || a1 || !n1 || !next || toast)
+      fails.push(`Your feedback helped, calm moment: ${JSON.stringify({q1, a1, n1, next, toast, target})}`);
     await c.close();
   }
   // Signed in: nothing before the sheet's load reply, whose saved record may say the report was thanked on another
@@ -1406,6 +1421,13 @@ async function signin(base) {
       await p.evaluate(() => go('quiz'));
       await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
       const r = await p.evaluate(async () => {
+        // The fish achievements already held: their pop-ups (First families at about 20 answers) would hold the card a few
+        // answers (quiz.js promptOk: no prompt with an achievement toast), which is not what this checks.
+        store.set(ACHK, {_v: ACH_V, ...Object.fromEntries(FISH_ACH.map(a => [a.id, 1]))});
+        // The Scientific names offer answered too: it may come inside these 20 answers (a family at Advanced),
+        // and an offer card holds the sign-in card the same way.
+        Q.sci = false;
+        saveQ();
         // Waits on what the app draws, never a fixed sleep (a loaded machine runs it slower).
         const at = [],
           until = async f => {
@@ -1765,6 +1787,9 @@ async function signin(base) {
   await run(
     () => localStorage.setItem('reefid-nudge', '1'),
     async p => {
+      // Fish open to all (Q158): the tour starts with the subject to play (#629); the corals.
+      await p.waitForSelector('#tour [data-pick], #tour [data-start]', {timeout: 10000}).catch(() => {});
+      if (await p.$('#tour [data-pick="coral"]')) await p.click('#tour [data-pick="coral"]');
       await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
       if (await p.$('#tour [data-start]')) await p.click('#tour [data-start="imr"]'); // the first-launch question
       await p.waitForSelector('#tour .tnext', {timeout: 10000}).catch(() => {});
@@ -1809,13 +1834,15 @@ async function replayAdoptCheck(base) {
       A('s3', 3, 'Acropora', 'Montipora', 'acropora-wide-745206089')
     ],
     mine = A('m1', 4, 'Acropora', 'Acropora', 'acropora-wide-745675208'),
+    // The stub answers as a script before the domain-score bar (sv below core.js DOM_SHEET): its replay, and the app's
+    // own answers on top, keep the moving average (dom: false, rule D4).
     rec = C.replayProgress(
       sheet.map(a => C.logRow(a, 'ana')),
-      {gen: RGEN}
+      {gen: RGEN, dom: false}
     ).ana.P,
     all = C.replayProgress(
       [...sheet, mine].map(a => C.logRow(a, 'ana')),
-      {gen: RGEN}
+      {gen: RGEN, dom: false}
     ).ana.P,
     // The sheet's copy, saved under the older rules (wrong bars), and this device's: the same plus its unsent answer.
     old = {
@@ -1918,29 +1945,44 @@ async function replayAdoptCheck(base) {
     if (a.pg !== dev.Acropora.pg || a.ok !== 2 || 'rv' in a || s.rv || s.pending || s.card)
       fails.push(`replay: adopted from a script before v${C.RV_SHEET}: ${JSON.stringify({a, rv: s.rv, pending: s.pending, card: s.card})}`);
     // The standard card (core.js RV_CARD, only: 'changed', min 5) is due only when the progress % moved by 5 points or
-    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice).
-    const due = await p.evaluate(v => {
-      const d = [];
-      for (const pct of [
-        [10, 10],
-        [10, 14],
-        [10, 5]
-      ]) {
+    // more, and then shows with the two % (progress.js rvNoticeAdd, rvNotice): on the versions before the apology.
+    const card = v =>
+      p.evaluate(v => {
+        const d = [];
+        for (const pct of [
+          [10, 10],
+          [10, 14],
+          [10, 5]
+        ]) {
+          localStorage.removeItem('reefid-rv-msg');
+          rvNoticeAdd(0, v, pct);
+          // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
+          document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
+          rvNotice();
+          // The card's text without its heading (the % may be on a line of its own: core.js RV_SORRY pct).
+          const t = [...document.querySelectorAll('.rvmsg p:not(.ulkick)')].map(e => e.textContent).join(' ');
+          d.push([JSON.parse(localStorage.getItem('reefid-rv-msg')).due, t]);
+          document.querySelectorAll('.rvmsg').forEach(e => e.remove());
+        }
         localStorage.removeItem('reefid-rv-msg');
-        rvNoticeAdd(0, v, pct);
-        // Shown at once when no other card is on screen (rvNotice waits behind one: the update note may be up here).
-        document.querySelectorAll('.unlock, #tour').forEach(e => e.remove());
-        rvNotice();
-        const t = (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '';
-        d.push([JSON.parse(localStorage.getItem('reefid-rv-msg')).due, t]);
-        document.querySelectorAll('.rvmsg').forEach(e => e.remove());
-      }
-      localStorage.removeItem('reefid-rv-msg');
-      return d;
-    }, C.RV);
-    // Every version since 0 has the standard card (RV_CARD): it is due once, for the last version (core.js rvMsgs).
-    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV) || !due[2][1].includes('went from 10% to 5%'))
+        return d;
+      }, v);
+    const due = await card(C.RV - 1);
+    // Every version before the apology has the standard card (RV_CARD): it is due once, for the last of them (core.js rvMsgs).
+    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV - 1) || !due[2][1].includes('went from 10% to 5%'))
       fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
+    // Rules version 9's apology (core.js RV_SORRY, min 1): due from a point, alone in the jump, with the two %.
+    // Only on a drop (RV_SORRY down): 10% → 14% gets no card (a rise under the standard card's 5 points), 10% → 5% the
+    // apology.
+    const sorry = await card(C.RV);
+    if (
+      sorry[0][0].length ||
+      sorry[1][0].length ||
+      sorry[2][0].join() !== String(C.RV) ||
+      !sorry[2][1].includes('Your progress: 10% → 5%') ||
+      !sorry[2][1].startsWith("You've been learning so fast")
+    )
+      fails.push(`replay: the apology card: ${JSON.stringify(sorry)}`);
     await c.close();
   }
   // A stale device: the replay adopted once, its own answer on top.
@@ -1954,7 +1996,7 @@ async function replayAdoptCheck(base) {
       log: JSON.parse(localStorage.getItem('test-sheet-log') || '[]'),
       pending: (JSON.parse(localStorage.getItem('reefid-account') || '{}').log || []).length,
       card: !!document.querySelector('.rvmsg'),
-      text: (document.querySelector('.rvmsg p:not(.ulkick)') || {}).textContent || '',
+      text: [...document.querySelectorAll('.rvmsg p:not(.ulkick)')].map(e => e.textContent).join(' '),
       rvm: JSON.parse(localStorage.getItem('reefid-rv-msg') || '{}'),
       pct: genScore('Acropora')
     }));
@@ -1974,12 +2016,12 @@ async function replayAdoptCheck(base) {
     if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
       fails.push('replay: the adopted progress was not sent');
     if (s.pending) fails.push('replay: its own answer was not sent');
-    // Version 1's card is due only when the replay moved the progress % by 5 points or more (Pierre, 2026-11-03), and
-    // says the two % (it may wait behind the learned-mark card).
+    // The card of the last version (rules version 9's apology, core.js RV_SORRY) is due only when the replay moved the
+    // progress % by its min points or more, and says the two % (it may wait behind the learned-mark card).
     const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
     if (
-      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && Math.abs(pt - pf) >= C.RV_CARD.min) ||
-      (s.card && !s.text.includes(`went from ${pf}% to ${pt}%`))
+      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && pf - pt >= C.RVS[C.RVS.length - 1].msg.min) ||
+      (s.card && !s.text.includes(`${pf}% → ${pt}%`))
     )
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
     // The next load: not adopted again (the sheet now sends another record: the progress stays), and the load says the
@@ -2038,6 +2080,177 @@ async function replayAdoptCheck(base) {
   return fails;
 }
 
+// The one-time notices wait for the visit's first sync (Pierre, 2026-11-08: a device still holding an old copy of his
+// account showed him again the cards and toasts he had seen on another; sync.js noticeLater, noticesGo, core.js TOLD). A
+// signed-in device whose copy is older than the account's (the last update note not seen here, a learned mark taken
+// away not told here, a run of 12 right answers without its achievement): the sheet's copy says the note and the mark
+// were told on another device and holds the achievement, so nothing shows, before or after the sync. The same device
+// with nothing told elsewhere: nothing before the sheet's reply, then the note once, the mark's card, the achievement's
+// toast, and the save sends what was told; the next load shows none of them. Offline (the request fails): the note
+// shows from this device's state at once. Nothing reaches the sheet (rule D1): every request is answered in the page,
+// a route answers any that escapes, and the script's hosts are mapped to this computer.
+async function noticesAfterSync(base) {
+  const fails = [],
+    bs = await chromium.launch({
+      args: ['--host-resolver-rules=MAP script.google.com 127.0.0.1, MAP script.googleusercontent.com 127.0.0.1']
+    });
+  const last = 'typed-questions-2026-11',
+    t0 = Date.parse('2026-11-03T05:00:00Z'),
+    prog = {Acropora: {ok: 1, ko: 0, streak: 1, h: '1', at: t0}, '~level': {ok: 1, ko: 0, th: 0.1, at: t0}},
+    mine = {_v: 3, _best: 12}, // the run's feat here, its achievement (run10) not counted yet; a record of today's version (progress.js ACH_V), so no silent recount (#734) counts it first
+    acct = {...mine, run10: t0},
+    // The sheet's copy: what the device has, plus what another device told and earned (told: core.js TOLD tokens).
+    data = told => ({
+      'reefid-sync-coral-progress': JSON.stringify(prog),
+      'reefid-sync-coral-quiz': '{"bon":false}',
+      'reefid-sync-coral-start': '{"c":"new","t":1}',
+      'reefid-sync-coral-rv': String(C.RV),
+      'reefid-sync-ach': JSON.stringify(told ? acct : mine),
+      ...(told ? {'reefid-sync-told': JSON.stringify(['mx:Acropora@111', 'recalc:' + last])} : {})
+    });
+  // mode: 'slow' (the reply after 2.5 s), 'offline' (every request fails as fetch does without a line).
+  const STUB = mode => {
+    const f = window.fetch,
+      reply = (u, o) => {
+        const q = new URL(String(u)).searchParams,
+          body = o && o.body ? JSON.parse(o.body) : null,
+          log = JSON.parse(localStorage.getItem('test-sheet-log') || '[]');
+        if (body ? !body.name : q.get('name') !== 'Ana') return {ok: false};
+        log.push(body ? {post: 1, told: body.data['reefid-sync-told'] || null} : {get: 1});
+        localStorage.setItem('test-sheet-log', JSON.stringify(log));
+        const rev = Number(localStorage.getItem('test-rev') || 4);
+        if (body) {
+          localStorage.setItem('test-data', JSON.stringify(body.data));
+          localStorage.setItem('test-rev', String(rev + 1));
+          return {ok: true, log: true, rev: rev + 1, v: 97};
+        }
+        return {ok: true, found: true, rev, data: JSON.parse(localStorage.getItem('test-data')), v: 97};
+      },
+      answer = (u, o) =>
+        mode === 'offline'
+          ? Promise.reject(new TypeError('Failed to fetch'))
+          : new Promise(ok => setTimeout(ok, 2500)).then(
+              () => new Response(JSON.stringify(reply(String((u && u.url) || u), o)), {headers: {'Content-Type': 'application/json'}})
+            );
+    window.SHEET_STUB = answer;
+    window.fetch = (u, o) => (/script\.google/.test(String((u && u.url) || u)) ? answer(u, o) : f(u, o));
+    // Every overlay that ever shows, with the time since the page started (cards, achievement toasts).
+    window.__shown = [];
+    new MutationObserver(R =>
+      R.forEach(r =>
+        r.addedNodes.forEach(
+          n => n.classList && /\b(unlock|achpop)\b/.test(n.className) && window.__shown.push([n.className, Math.round(performance.now())])
+        )
+      )
+    ).observe(document, {childList: true, subtree: true}); // the init script runs before <html> exists
+  };
+  const init = ([prog, mine, sheet]) => {
+    if (localStorage.getItem('test-init')) return;
+    localStorage.setItem('test-init', '1');
+    localStorage.setItem('reefid-tour', '"done"');
+    localStorage.setItem('reefid-nudge', '1');
+    localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+    localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
+    localStorage.setItem('reefid-sync-coral-rv', sheet['reefid-sync-coral-rv']);
+    localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"'); // the note before the last: the last is due here
+    localStorage.setItem('reefid-mx-lost', JSON.stringify({due: {Acropora: 111}, why: {Acropora: 'bkt'}}));
+    localStorage.setItem('reefid-sync-ach', JSON.stringify(mine));
+    localStorage.setItem('reefid-sync-coral-progress', JSON.stringify(prog));
+    localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234', srv: 4, base: prog, log: []}));
+    localStorage.setItem('test-data', JSON.stringify(sheet));
+  };
+  const open = async (mode, told) => {
+    const c = await bs.newContext({viewport: {width: 390, height: 800}, serviceWorkers: 'block'});
+    await c.addInitScript(STUB, mode);
+    await c.addInitScript(init, [prog, mine, data(told)]);
+    await c.route(
+      u => !u.href.startsWith(base),
+      async r => {
+        const u = r.request().url();
+        if (!/script\.google/.test(u)) return r.abort();
+        fails.push('notices: a sync request escaped the wrapped fetch: ' + u.slice(0, 80));
+        r.fulfill({contentType: 'application/json', body: '{"ok":false,"error":"input"}'});
+      }
+    );
+    const p = await c.newPage();
+    p.on('pageerror', e => fails.push('notices page error: ' + e.message));
+    p.setDefaultTimeout(8000);
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p];
+  };
+  const shown = p =>
+    p.evaluate(() => window.__shown.map(x => x[0].split(' ').find(k => /^(recalc|mxlost|rvmsg|sorry|achpop)$/.test(k)) || x[0]));
+  const loaded = p =>
+    p
+      .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get), null, {timeout: 15000})
+      .catch(() => fails.push('notices: the device never loaded the account'));
+  // Told on another device: nothing, before or after the sync.
+  {
+    const [c, p] = await open('slow', true);
+    await loaded(p);
+    await p.waitForTimeout(3000);
+    const s = await shown(p);
+    if (s.length) fails.push(`notices: told on another device, shown again here: ${JSON.stringify(s)}`);
+    const r = await p.evaluate(() => ({
+      mx: JSON.parse(localStorage.getItem('reefid-mx-lost') || '{}'),
+      ach: JSON.parse(localStorage.getItem('reefid-sync-ach') || '{}')
+    }));
+    if (Object.keys(r.mx.due || {}).length || (r.mx.told || {}).Acropora !== 111 || !r.ach.run10)
+      fails.push(`notices: the merged state not taken: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Nothing told elsewhere: nothing before the reply, then each once, and the save tells the account.
+  {
+    const [c, p] = await open('slow', false);
+    const early = await shown(p);
+    if (early.length) fails.push(`notices: shown before the sync: ${JSON.stringify(early)}`);
+    await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => fails.push('notices: the new update note never showed'));
+    await p.click('.unlock.recalc .next').catch(() => {});
+    await p.waitForSelector('.unlock.mxlost', {timeout: 8000}).catch(() => fails.push("notices: the learned mark's card never showed"));
+    await p.click('.unlock.mxlost .next').catch(() => {});
+    await p.waitForSelector('.achpop', {timeout: 8000}).catch(() => fails.push("notices: the run's achievement never popped up"));
+    await p
+      .waitForFunction(
+        last => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.post && x.told && x.told.includes('recalc:' + last)),
+        last,
+        {timeout: 15000}
+      )
+      .catch(() => {});
+    const sent = await p.evaluate(() =>
+      JSON.parse(localStorage.getItem('test-sheet-log'))
+        .filter(x => x.post && x.told)
+        .pop()
+    );
+    if (!sent || !sent.told.includes('recalc:' + last) || !sent.told.includes('mx:Acropora@111'))
+      fails.push(`notices: the save did not tell the account: ${JSON.stringify(sent)}`);
+    const s = await shown(p);
+    if (s.filter(x => x === 'recalc').length !== 1 || s.filter(x => x === 'mxlost').length !== 1)
+      fails.push(`notices: not shown once each: ${JSON.stringify(s)}`);
+    // The next load: the sheet's copy (as this device saved it) has them all told.
+    await p.evaluate(() => {
+      localStorage.setItem('reefid-recalc', '"millepora-counts-2026-11"');
+      localStorage.setItem('reefid-sync-told', '[]');
+      localStorage.setItem('test-sheet-log', '[]');
+    });
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await loaded(p);
+    await p.waitForTimeout(3000);
+    const again = await shown(p);
+    if (again.length) fails.push(`notices: shown again at the next load: ${JSON.stringify(again)}`);
+    await c.close();
+  }
+  // Offline: the note from this device's state, at once.
+  {
+    const [c, p] = await open('offline', false);
+    await p.waitForSelector('.unlock.recalc', {timeout: 5000}).catch(() => fails.push('notices: offline, the update note never showed'));
+    await c.close();
+  }
+  await bs.close();
+  return fails;
+}
+
 // The first-launch question (Pierre, 2026-11-03; core.js CHOICE, tour.js ask, quiz.js startAskShow / startFbShow) and
 // Coral basics in Learn: forced in the tour (no Skip, no Next, no arrow key until answered), stored with how it was
 // given; a skipped tour asks it on a card before the quiz (Escape goes Home, the quiz asks again); "new" offers Coral
@@ -2045,11 +2258,22 @@ async function replayAdoptCheck(base) {
 // once over a new question when the first answers do not fit, never twice; Coral basics is the first Learn tab and the
 // "0" block of Genera, out of the Lab list with a link kept there; the Home line until it is done; a glossary term
 // links to its step; done = every step seen, with its achievement. Returns the failures.
+// Fish opens to all since 2026-11-06 (Q158): a check about the corals-only onboarding (one subject: the start question
+// first, no subject pick) serves core.js with fish back to open: 'group' (the two-subject tour: subjTour).
+const oneSubject = c =>
+  c.route(
+    u => new URL(u).pathname === '/core.js',
+    async r => {
+      const res = await r.fetch();
+      await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+    }
+  );
 async function startSmoke(b, base) {
   const fails = [],
     errs = [];
   const open = async (init, vp = {width: 390, height: 844}) => {
     const c = await b.newContext({viewport: vp, serviceWorkers: 'block', intro: true});
+    await oneSubject(c);
     await c.route(
       u => !u.href.startsWith(base),
       r => r.abort()
@@ -2998,23 +3222,43 @@ async function duelReliefCheck(b, base) {
 async function credits(b, base) {
   const fails = [],
     BOOK = /Coral Finder|Kelley|BYOGUIDES/i;
-  const open = async (w, h, hash = '') => {
+  const open = async (w, h, hash = '', fish = false) => {
     const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
     await c.route(
       u => !u.href.startsWith(base),
       r => r.abort()
     );
-    await c.addInitScript(() => {
+    await c.addInitScript(fish => {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-    });
+      if (fish)
+        (localStorage.setItem('reefid-sync-subject', '"fish"'), localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'));
+    }, fish);
     const p = await c.newPage();
     await p.goto(base + hash);
-    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForFunction(fish => window.APP_READY && (!fish || (typeof FISH === 'object' && FISH && SUBJ.id === 'fish')), fish, {
+      timeout: 30000
+    });
     await p.waitForTimeout(500);
     return [c, p];
   };
+  // The Learn door's photo tiles on screen: [width, height] of each, their columns, the band's class (home.css .hdtiles.land).
+  const tiles = p =>
+    p.evaluate(() => {
+      const t = document.querySelector('#view .hdoor.learn .hdtiles'),
+        R = t
+          ? [...t.querySelectorAll('img')]
+              .filter(i => getComputedStyle(i).display !== 'none')
+              .map(i => i.getBoundingClientRect())
+              .filter(r => r.width > 0 && r.height > 0)
+          : [];
+      return {
+        land: !!(t && t.classList.contains('land')),
+        cols: new Set(R.map(r => Math.round(r.left))).size,
+        boxes: R.map(r => [Math.round(r.width), Math.round(r.height)])
+      };
+    });
   for (const [w, h] of [
     [360, 640],
     [390, 750],
@@ -3058,8 +3302,38 @@ async function credits(b, base) {
     // Tablet and desktop: the Learn door's photo band keeps its height with the subject switch above the doors (the phone
     // rule that shortens it on the shortest screens never applies there; Codex review #650).
     if (w >= 600 && la[1] < 120) fails.push(`${w}x${h} Home: the Learn photo band collapsed to ${la[1]} px`);
+    // The corals keep their close-up mosaic (Pierre, 2026-11-08: only the fish tiles turn landscape): 4 columns on phones
+    // (one row, two once the band is 150 px tall), 6 x 2 from tablets up.
+    const ct = await tiles(p);
+    if (ct.land || ct.cols !== (w >= 600 ? 6 : 4) || ct.boxes.length !== (w >= 600 ? 12 : la[1] >= 150 ? 8 : 4))
+      fails.push(`${w}x${h} Home, corals: the Learn tiles changed ${JSON.stringify(ct)}`);
     if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
       fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Fish Home (Pierre, 2026-11-08: most fish are horizontal, square tiles cut them): fewer, landscape tiles (home.css
+  // .hdtiles.land), every one between 1.3 and 2 wide for 1 tall at every size (U4's widths, phones in portrait and in
+  // landscape, the short phone whose band is one row), at most the count given (the corals show 12 from tablets up, 4 or 8
+  // on phones); nothing wider than the screen.
+  for (const [w, h, most] of [
+    [320, 568, 4],
+    [360, 640, 4],
+    [375, 667, 3],
+    [390, 844, 4],
+    [430, 932, 4],
+    [844, 390, 8],
+    [768, 1024, 4],
+    [960, 800, 4],
+    [1024, 768, 6],
+    [1280, 800, 6],
+    [1280, 720, 10]
+  ]) {
+    const [c, p] = await open(w, h, '', true);
+    const ft = await tiles(p),
+      sw = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    if (!ft.land || !ft.boxes.length || ft.boxes.length > most || ft.boxes.some(([tw, th]) => tw / th < 1.3 || tw / th > 2))
+      fails.push(`${w}x${h} Home, fish: the Learn tiles are not landscape ${JSON.stringify(ft)}`);
+    if (sw > 0) fails.push(`${w}x${h} Home, fish: ${sw} px wider than the screen`);
     await c.close();
   }
   // The header fits one line at 360 and 320 px, signed out (the Sign in pill shown): no sideways scroll.
@@ -3612,12 +3886,19 @@ async function newPlayer(b, base) {
   await p.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000}).catch(() => {});
   if (!(await p.$('#tour'))) fails.push('new player: no welcome tour on the first visit');
   // The tour, step by step, to its end; its first-launch question (forced, no Next) answered "I'm new to corals".
-  for (let k = 0; k < 12 && (await p.$('#tour .tnext, #tour [data-start]')); k++) {
+  // Fish open to all (Q158): the tour's first step asks which subject to start with (#629); this player picks the corals.
+  for (let k = 0; k < 12 && (await p.$('#tour .tnext, #tour [data-start], #tour [data-pick]')); k++) {
     const o = await over();
     alone(o, `tour step ${k + 1}`);
     seen.tour = k + 1;
     const step = await p.evaluate(() => document.getElementById('tour').textContent);
-    await p.click((await p.$('#tour [data-start]')) ? '#tour [data-start="new"]' : '#tour .tnext');
+    await p.click(
+      (await p.$('#tour [data-start]'))
+        ? '#tour [data-start="new"]'
+        : (await p.$('#tour [data-pick]')) && !(await p.$('#tour .tnext'))
+          ? '#tour [data-pick="coral"]'
+          : '#tour .tnext'
+    );
     await p
       .waitForFunction(s => !document.getElementById('tour') || document.getElementById('tour').textContent !== s, step, {timeout: 5000})
       .catch(() => fails.push(`new player: tour step ${k + 1} did not move on`));
@@ -3895,20 +4176,249 @@ async function onePath(b, base) {
   return fails;
 }
 
+// The subject to start with (Pierre, 2026-11-06; tour.js pick, plan): a player with one subject gets the six steps as
+// before, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
+// subject's question, where to switch, and the rest in that subject's words; a group member who signs in during the tour
+// gets the choice right after the sign-in step; with fish open to all (core.js open: 'all'), a signed-out new player
+// gets it too. Fish photos are not fetched (every other host is aborted). Returns the failures.
+async function subjTour(b, base) {
+  const fails = [],
+    errs = [];
+  // mode: 'plain' (no group), 'group' (signed in, in the fish group), 'late' (signed out; signing in to their existing
+  // account, the sheet's reply puts them in the group and the app reloads), 'all' (fish open to all, signed out).
+  const open = async mode => {
+    const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    // Fish opens to all since 2026-11-06 (Q158): 'all' serves core.js as it is; the group cases serve it with fish back to
+    // open: 'group'.
+    await c.route(
+      u => u.href.startsWith(base) && u.pathname === '/core.js',
+      async r => {
+        const res = await r.fetch(),
+          t = await res.text();
+        if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
+        await r.fulfill({response: res, body: mode === 'all' ? t : t.replace("open: 'all'", "open: 'group'")});
+      }
+    );
+    await c.addInitScript(mode => {
+      try {
+        if (!sessionStorage.getItem('st-init')) {
+          sessionStorage.setItem('st-init', '1');
+          localStorage.setItem('reefid-nudge', '1');
+          localStorage.setItem('reefid-board-told', '1');
+          localStorage.setItem('reefid-board-sent14', '1');
+          if (mode === 'group') {
+            localStorage.setItem('reefid-account', JSON.stringify({name: 'Ana', pin: '1234'}));
+            localStorage.setItem('reefid-groups', JSON.stringify({n: 'Ana', g: ['fish']}));
+          }
+        }
+      } catch (e) {}
+      const g = mode === 'plain' || mode === 'all' ? [] : ['fish'];
+      window.SHEET_STUB = (url, o) =>
+        Promise.resolve({
+          json: () =>
+            Promise.resolve(
+              o && o.method === 'POST'
+                ? {ok: true, log: true, rev: 2, v: 56, groups: g}
+                : {ok: true, found: true, data: {'reefid-sync-coral-progress': '{}'}, rev: 1, hold: 0, holdIds: [], v: 56, groups: g}
+            )
+        });
+    }, mode);
+    const p = await c.newPage();
+    p.on('pageerror', e => errs.push(`${mode}: ${e.message}`));
+    await p.goto(base);
+    await p.waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000});
+    return [c, p];
+  };
+  // A click that cannot happen is a failure with the bubble as it is, not a throw that hides the other cases.
+  const tap = (p, sel, what) =>
+    p.click(sel, {timeout: 10000}).catch(async () => {
+      const st = await bub(p).catch(() => null),
+        mine = await p.evaluate(() => [subjMine().map(S => S.id), sessionStorage.getItem('reefid-tour-open')]).catch(() => null);
+      fails.push(`subject tour, ${what}: no ${sel} ${JSON.stringify({st, mine})}`);
+    });
+  const bub = p =>
+    p.evaluate(() => {
+      const b = document.querySelector('#tour .tbub');
+      return b && b.querySelector('.tstep')
+        ? {
+            n: b.querySelector('.tstep').textContent.trim(),
+            h: (b.querySelector('h3') || {}).textContent || '',
+            text: b.textContent,
+            pick: [...b.querySelectorAll('[data-pick]')].map(x => x.dataset.pick + (x.querySelector('.beta') ? '+beta' : '')),
+            start: b.querySelectorAll('[data-start]').length,
+            next: (b.querySelector('.tnext') || {}).textContent || null,
+            skip: !!b.querySelector('.tskip'),
+            sync: !!b.querySelector('.tsync'),
+            ring: (document.querySelector('#tour .tring').getAttribute('d') || '').length > 0,
+            subj: SUBJ.id,
+            hash: location.hash
+          }
+        : null;
+    });
+  // Next until the step's title matches (or the tour ends); every step met is collected.
+  const walk = async (p, until) => {
+    const seen = [];
+    for (let k = 0; k < 12; k++) {
+      const s = await bub(p);
+      if (!s) return seen;
+      seen.push(s);
+      if (until && until(s)) return seen;
+      if (!s.next || s.next === 'Start playing') return seen;
+      await tap(p, '#tour .tnext', 'step');
+      await p.waitForFunction(n => (document.querySelector('#tour .tstep') || {}).textContent !== n, s.n, {timeout: 10000}).catch(() => {});
+      await p.waitForTimeout(300);
+    }
+    return seen;
+  };
+  // 1. No group: the steps as before, the first-launch question first, no subject choice, no word of fish.
+  {
+    const [c, p] = await open('plain');
+    const s0 = await bub(p);
+    if (!s0 || s0.n !== '1 / 6' || s0.start !== 3 || s0.pick.length) fails.push(`subject tour, no group: first step ${JSON.stringify(s0)}`);
+    await tap(p, '#tour [data-start="imr"]', 'step');
+    await p.waitForTimeout(400);
+    const all = await walk(p);
+    if (all.length !== 5 || all.some(s => /fish/i.test(s.text) || s.pick.length || s.subj !== 'coral'))
+      fails.push(`subject tour, no group: ${JSON.stringify(all.map(s => [s.n, s.h, s.subj]))}`);
+    await c.close();
+  }
+  // 2. In the fish group: the choice first, forced, both subjects (fish with its beta tag); Fish picked: saved, the fish
+  // question, then where to switch (the Home row spotlit), the rest in fish words; Back shows the pick kept.
+  {
+    const [c, p] = await open('group');
+    const s0 = await bub(p);
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish+beta' || s0.next || s0.skip || !/two subjects/.test(s0.text))
+      fails.push(`subject tour, group: the choice ${JSON.stringify(s0)}`);
+    await p.keyboard.press('ArrowRight');
+    await p.waitForTimeout(300);
+    if (((await bub(p)) || {}).n !== '1 / 8') fails.push('subject tour, group: the arrow key passed the choice');
+    await tap(p, '#tour [data-pick="fish"]', 'step');
+    await p
+      .waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#tour [data-start]'), null, {timeout: 30000})
+      .catch(() => {});
+    const s1 = await bub(p),
+      q = await p.evaluate(() => [SUBJ.start.q, localStorage.getItem('reefid-sync-subject')]);
+    if (!s1 || s1.n !== '2 / 8' || s1.h !== q[0] || s1.subj !== 'fish' || q[1] !== '"fish"')
+      fails.push(`subject tour, group: after picking Fish ${JSON.stringify({s1, q})}`);
+    await tap(p, '#tour .tback', 'step');
+    await p.waitForTimeout(400);
+    const back = await p.evaluate(
+      () => !!document.querySelector('#tour [data-pick="fish"][aria-pressed="true"]') && !!document.querySelector('#tour .tnext')
+    );
+    if (!back) fails.push('subject tour, group: Back to the choice does not show Fish picked with Next');
+    // Picked again: Next, Back and the arrow keys wait while the subject loads, so the question that follows is the picked
+    // subject's (Codex review #629); then the tour goes on by itself, as from Next.
+    const held = await p.evaluate(() => {
+      document.querySelector('#tour [data-pick="fish"]').click();
+      const n = document.querySelector('#tour .tnext'),
+        k = document.querySelector('#tour .tback');
+      return !!n && n.disabled && (!k || k.disabled); // no Back on a first step
+    });
+    if (!held) fails.push('subject tour, group: Next or Back live while the picked subject loads');
+    await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+    await tap(p, '#tour [data-start="imr"]', 'step');
+    await p.waitForTimeout(400);
+    const all = await walk(p),
+      words = await p.evaluate(() => ({doors: UNITS.fish.tour.doors.d, games: UNITS.fish.tour.games.t}));
+    const sw = all[0] || {};
+    if (sw.n !== '3 / 8' || sw.h !== 'Corals or Fish, any time' || !sw.ring)
+      fails.push(`subject tour, group: the switch step ${JSON.stringify(sw)}`);
+    const doors = all.find(s => s.h === 'Two ways in'),
+      games = all.find(s => s.h === words.games);
+    if (!doors || !doors.text.includes(words.doors) || !games || all.some(s => /genus|genera/.test(s.text)))
+      fails.push(`subject tour, group: steps not in fish words ${JSON.stringify(all.map(s => [s.n, s.h]))}`);
+    const last = all[all.length - 1];
+    if (!last || last.n !== '8 / 8' || last.next !== 'Start playing') fails.push(`subject tour, group: last step ${JSON.stringify(last)}`);
+    await tap(p, '#tour .tnext', 'step');
+    await p
+      .waitForFunction(() => !document.getElementById('tour') && location.hash.startsWith(hr('quiz')), null, {timeout: 15000})
+      .catch(() => {});
+    const end = await p.evaluate(() => ({tour: !!document.getElementById('tour'), h: location.hash, q: hr('quiz'), subj: SUBJ.id}));
+    if (end.tour || !end.h.startsWith(end.q) || end.subj !== 'fish')
+      fails.push(`subject tour, group: Start playing ${JSON.stringify(end)}`);
+    await c.close();
+  }
+  // 3. A group member signing in on the tour's sign-in step: back on it after the reload, then the choice; Corals picked
+  // (its question already asked): no second question.
+  {
+    const [c, p] = await open('late');
+    await tap(p, '#tour [data-start="imr"]', 'step');
+    await p.waitForTimeout(400);
+    await walk(p, s => s.sync); // to the sign-in step
+    const s2 = await bub(p);
+    if (!s2 || s2.n !== '3 / 6') fails.push(`subject tour, sign-in: not on the sign-in step ${JSON.stringify(s2)}`);
+    await Promise.all([
+      p.waitForNavigation().catch(() => fails.push('subject tour, sign-in: no reload')),
+      p.evaluate(() => syncGet({name: 'Ana', pin: '1234'}).then(j => signIn('Ana', '1234', j)))
+    ]);
+    await p
+      .waitForFunction(() => window.APP_READY && document.querySelector('#tour .tbub .tstep'), null, {timeout: 30000})
+      .catch(() => fails.push('subject tour, sign-in: no tour after the reload'));
+    await p.waitForTimeout(500);
+    const s3 = await bub(p);
+    if (!s3 || s3.n !== '3 / 8' || s3.next !== 'Next') fails.push(`subject tour, sign-in: after the reload ${JSON.stringify(s3)}`);
+    await tap(p, '#tour .tnext', 'step');
+    await p.waitForSelector('#tour [data-pick]', {timeout: 10000}).catch(() => {});
+    const s4 = await bub(p);
+    if (!s4 || s4.n !== '4 / 8' || s4.pick.length !== 2) fails.push(`subject tour, sign-in: the choice ${JSON.stringify(s4)}`);
+    await tap(p, '#tour [data-pick="coral"]', 'step');
+    await p.waitForTimeout(800);
+    const s5 = await bub(p);
+    if (!s5 || s5.n !== '5 / 8' || s5.h !== 'Corals or Fish, any time')
+      fails.push(`subject tour, sign-in: after Corals ${JSON.stringify(s5)}`);
+    await c.close();
+  }
+  // 4. Fish open to all: a signed-out new player gets the choice; Corals picked: the coral question, the pick saved.
+  {
+    const [c, p] = await open('all');
+    const s0 = await bub(p);
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.length !== 2) fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
+    await tap(p, '#tour [data-pick="coral"]', 'step');
+    await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
+    const s1 = await bub(p),
+      k = await p.evaluate(() => [SUBJ.start.q, localStorage.getItem('reefid-sync-subject')]);
+    if (!s1 || s1.h !== k[0] || s1.subj !== 'coral' || k[1] !== '"coral"')
+      fails.push(`subject tour, open to all: Corals ${JSON.stringify({s1, k})}`);
+    await c.close();
+  }
+  if (errs.length) fails.push(`subject tour: page errors ${errs.slice(0, 3).join(' | ')}`);
+  return fails;
+}
+
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
-// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath).
-const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'onepath', 'signin', 'replay'],
+// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
+// the tour, for a player with one subject and with two (subjTour).
+const PARTS = [
+    'main',
+    'overlays',
+    'basics',
+    'credits',
+    'visit',
+    'tips',
+    'relief',
+    'start',
+    'subjtour',
+    'newplayer',
+    'onepath',
+    'signin',
+    'replay',
+    'notices'
+  ],
   WIDTHS = [390, 1280];
 
 (async () => {
   const run = slot.parts(PARTS, {
       main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'newplayer', 'onepath', 'signin', 'replay']
+      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'subjtour', 'newplayer', 'onepath', 'signin', 'replay', 'notices']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -4250,21 +4760,22 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       }
       if (!pg.card || !pg.above || !pg.slate || !pg.last) fails.push(`${w}px My progress layout: ${JSON.stringify(pg)}`);
       // One count of the genera met (a card or an answer) everywhere on the page (new-player walkthrough 2026-11-04: "23/40
-      // met" beside "12 not open yet" after 28 cards): the badge says the 4 first cards' genera are met, the genera not
-      // open yet are the others, and a genus met on a card but never asked does not read "Not seen".
+      // met" beside "12 not open yet" after 28 cards): the card says the 4 first cards' genera are unlocked (Pierre,
+      // 2026-11-05: "30/40 genera unlocked", on its own line under the name), the genera not open yet are the others, and a
+      // genus met on a card but never asked does not read "Not seen".
       const mc = await q2.evaluate(() => {
         const n = slateGenera().length,
           met = slateGenera().filter(introduced),
           tile = document.querySelector(`#view a[href="#learn/genus/${encodeURIComponent(met[0])}"]`);
         return {
-          badge: (document.querySelector('#view .pbadge') || {}).textContent || '',
+          badge: (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '',
           met: met.length,
           left: introLeft().length,
           n,
           tip: tile ? tile.title : null
         };
       });
-      if (!mc.badge.includes(`${mc.met}/${mc.n} met`) || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
+      if (mc.badge !== `${mc.met}/${mc.n} genera unlocked` || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
         fails.push(`${w}px My progress, genera met: ${JSON.stringify(mc)}`);
       else {
         await q2.click('#openall');
@@ -4273,6 +4784,9 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
         // ... and says so (the box just went before).
         const said = await q2.evaluate(() => document.querySelector('.apptoast')?.textContent || '');
         if (!/All \d+ genera are open/.test(said)) fails.push(`${w}px open all genera: no confirmation (${said})`);
+        // The card follows at once: every genus unlocked.
+        const un = await q2.evaluate(() => (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '');
+        if (un !== `${mc.n}/${mc.n} genera unlocked`) fails.push(`${w}px open all genera: the card says "${un}"`);
       }
       // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
       // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off). Likewise the card offering
@@ -4384,9 +4898,14 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       const qt = await ct.newPage();
       await qt.goto(base);
       await qt.waitForFunction(() => window.APP_READY && document.getElementById('tour'), null, {timeout: 30000});
-      await qt.click('#tour [data-start="imr"]'); // the first-launch question, the tour's first step
+      // Fish open to every player (Q158): the tour starts with the subject to pick (tour.js pick), then the question.
+      if (await qt.$('#tour [data-pick="coral"]')) {
+        await qt.click('#tour [data-pick="coral"]');
+        await qt.waitForSelector('#tour [data-start="imr"]', {timeout: 5000}).catch(() => {});
+      }
+      await qt.click('#tour [data-start="imr"]'); // the first-launch question
       await qt.waitForTimeout(400);
-      for (let k = 0; k < 4 && (await qt.evaluate(() => location.hash !== '#practice/quiz')); k++) {
+      for (let k = 0; k < 6 && (await qt.evaluate(() => location.hash !== '#practice/quiz')); k++) {
         await qt.keyboard.press('ArrowRight');
         await qt.waitForTimeout(400);
       }
@@ -4413,7 +4932,7 @@ const PARTS = ['main', 'overlays', 'basics', 'credits', 'visit', 'tips', 'relief
       // Through to the last step and its "Start playing" (already on the quiz): the waiting cards show from the first.
       const first = await qt.evaluate(() => document.querySelector('.unlock.intro h3').textContent);
       const said = [await qt.textContent('#tour')];
-      for (let k = 0; k < 4 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
+      for (let k = 0; k < 6 && (await qt.$('#tour .tnext')) && !/Start/.test(await qt.textContent('#tour .tnext')); k++) {
         await qt.click('#tour .tnext');
         await qt.waitForTimeout(400);
         said.push(await qt.textContent('#tour').catch(() => ''));
@@ -4671,11 +5190,13 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
+  if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);
+  if (run.has('notices')) for (const f of await noticesAfterSync(base)) fails.push(f);
   server.close();
   if (fails.length) {
     console.error('Page errors:\n' + fails.join('\n'));

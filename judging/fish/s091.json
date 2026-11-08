@@ -107,6 +107,79 @@
   "fish-s091-cand-485339341": {
    "code": "p1g1ssx1",
    "keep": "dup"
+  },
+  "fish-s091-cand-fb-Chter_u0": {
+   "code": "o1g2mss2",
+   "keep": "best"
+  },
+  "fish-s091-cand-682479988": {
+   "code": "o1g1sms3",
+   "keep": "best",
+   "note": "A tiny reddish shape at the top-right edge; the two chromis are the obvious subject."
+  },
+  "fish-s091-cand-682480041": {
+   "code": "o1g1ssm1",
+   "keep": "dup"
+  },
+  "fish-s091-cand-724485147": {
+   "code": "o1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s091-cand-619821322": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s091-cand-469635896": {
+   "code": "o1g2sss2",
+   "keep": "best"
+  },
+  "fish-s091-cand-581566167": {
+   "code": "o1g3sss1",
+   "keep": "best"
+  },
+  "fish-s091-cand-435710104": {
+   "code": "o1g2sss1",
+   "keep": "best"
+  },
+  "fish-s091-cand-435710206": {
+   "code": "o1g2sss1",
+   "keep": "dup"
+  },
+  "fish-s091-cand-434743294": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s091-cand-759725064": {
+   "code": "p1g2mms2",
+   "keep": "best"
+  },
+  "fish-s091-cand-759725101": {
+   "code": "o1g2ssm1",
+   "keep": "dup"
+  },
+  "fish-s091-cand-759725134": {
+   "code": "o1g2ssm1",
+   "keep": "dup"
+  },
+  "fish-s091-cand-536912997": {
+   "code": "p1g1mlm3",
+   "keep": "best"
+  },
+  "fish-s091-cand-501543192": {
+   "code": "o1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s091-cand-727572547": {
+   "code": "p1g2sss1",
+   "keep": "best"
+  },
+  "fish-s091-cand-682701534": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s091-cand-682701822": {
+   "code": "o1g1ssx1",
+   "keep": "dup"
   }
  }
 }

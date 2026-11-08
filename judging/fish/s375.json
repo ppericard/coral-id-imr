@@ -41,12 +41,8 @@
    "keep": "best"
   },
   "fish-s375-cand-667011939": {
-   "code": "p1g1mm1c1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Seen through a rippling water surface; the seahorse is hard to make out"
+   "code": "p0g2bmx1",
+   "keep": "best"
   },
   "fish-s375-cand-667011953": {
    "code": "p1g1mm1c1",
@@ -69,12 +65,8 @@
    "keep": "best"
   },
   "fish-s375-cand-43492891": {
-   "code": "o1g1slx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Red and white animals entangled; the subject is not obvious"
+   "code": "p1g2smx1",
+   "keep": "best"
   },
   "fish-s375-cand-43492899": {
    "code": "o1g1slx1",
@@ -135,6 +127,86 @@
   "fish-s375-cand-61955783": {
    "code": "p1g1sm1c2",
    "keep": "dup"
+  },
+  "fish-s375-cand-115623654": {
+   "code": "o1g0sm1jc1",
+   "keep": "best"
+  },
+  "fish-s375-cand-444138932": {
+   "code": "p1g0ml13",
+   "keep": "best"
+  },
+  "fish-s375-cand-319354353": {
+   "code": "p1n0sl1j2",
+   "keep": "best"
+  },
+  "fish-s375-cand-256677107": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s375-cand-444142194": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s375-cand-353145942": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s375-cand-659821118": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-711412669": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s375-cand-711411289": {
+   "code": "p0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-711412751": {
+   "code": "o1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s375-cand-734173330": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-734173485": {
+   "code": "p0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-734173506": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-734173537": {
+   "code": "t1g0sl12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-652659327": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s375-cand-652659351": {
+   "code": "o1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-652659373": {
+   "code": "o1g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s375-cand-675202377": {
+   "code": "o1g0ml12",
+   "keep": "best"
+  },
+  "fish-s375-cand-627031323": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-46797955": {
+   "code": "o1g1sl13",
+   "keep": "best"
   }
  }
 }

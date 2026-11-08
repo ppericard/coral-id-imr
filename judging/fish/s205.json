@@ -107,6 +107,163 @@
   "fish-s205-cand-610007140": {
    "code": "p1g3sm12",
    "keep": "best"
+  },
+  "fish-s205-cand-fb-Scrub_m0": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s205-cand-fb-Scrub_u2": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s205-cand-328706904": {
+   "code": "p1g0ss1j1",
+   "keep": "best"
+  },
+  "fish-s205-cand-462088769": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s205-cand-527030751": {
+   "code": "o1n0sm1j2",
+   "keep": "best"
+  },
+  "fish-s205-cand-519062939": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s205-cand-653483277": {
+   "code": "p1n0smmj2",
+   "keep": "best"
+  },
+  "fish-s205-cand-527024745": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s205-cand-204661275": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s205-cand-205146598": {
+   "code": "p0g0sl1a2",
+   "keep": "dup"
+  },
+  "fish-s205-cand-205146599": {
+   "code": "p0g1sl1a2",
+   "keep": "dup"
+  },
+  "fish-s205-cand-129776790": {
+   "code": "o1g2mms2",
+   "keep": "best"
+  },
+  "fish-s205-cand-129776805": {
+   "code": "o1g2mss1",
+   "keep": "dup"
+  },
+  "fish-s205-cand-308118491": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s205-cand-308119085": {
+   "code": "p1g1slm3",
+   "keep": "dup"
+  },
+  "fish-s205-cand-245052380": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s205-cand-141861851": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s205-cand-249153929": {
+   "code": "o1g1mmm2",
+   "keep": "best"
+  },
+  "fish-s205-cand-279254339": {
+   "code": "p1g1slm3",
+   "keep": "best"
+  },
+  "fish-s205-cand-288455486": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s205-cand-350115780": {
+   "code": "p1g2smm2",
+   "keep": "best"
+  },
+  "fish-s205-cand-607685700": {
+   "code": "o1g1slm3",
+   "keep": "best",
+   "note": "A second, spotted parrotfish below may be another phase of the same species or another species."
+  },
+  "fish-s205-cand-623601157": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s205-cand-623601178": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s205-cand-623601436": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s205-cand-623601841": {
+   "code": "o1g1slm2",
+   "keep": "dup"
+  },
+  "fish-s205-cand-674464102": {
+   "code": "p1g1mmm2",
+   "keep": "best"
+  },
+  "fish-s205-cand-428745006": {
+   "code": "o1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s205-cand-743167574": {
+   "code": "o0d3sl11",
+   "keep": "best"
+  },
+  "fish-s205-cand-610002130": {
+   "code": "o1g3bl11",
+   "keep": "best"
+  },
+  "fish-s205-cand-674336550": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s205-cand-597171251": {
+   "code": "o1d2bm11",
+   "keep": "best"
+  },
+  "fish-s205-cand-615534049": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s205-cand-554520997": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s205-cand-623581790": {
+   "code": "o1g2ml12",
+   "keep": "best"
+  },
+  "fish-s205-cand-623581754": {
+   "code": "t1g2ml11",
+   "keep": "dup"
+  },
+  "fish-s205-cand-623581736": {
+   "code": "o1g2mlm1",
+   "keep": "dup"
+  },
+  "fish-s205-cand-623581721": {
+   "code": "t1g2mlm1",
+   "keep": "dup"
+  },
+  "fish-s205-cand-670802360": {
+   "code": "o1g1smm2",
+   "keep": "best"
   }
  }
 }

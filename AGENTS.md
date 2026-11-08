@@ -58,6 +58,9 @@ what stops is everything that involves him.
 
 **The only place that says who merges and when.** Every other mention points here; change it here only.
 
+**The integrator also reads [docs/INTEGRATOR.md](docs/INTEGRATOR.md)** at the start of a session: how the work is run day
+to day with Pierre, what bites in the merge mechanics, and the open work (working knowledge, not rules).
+
 - **One integrator.** The main agent of a Claude Code session is the integrator: it starts as many subagents as useful,
   each on its own branch, worktree and PR (rule W22), checks their work and merges it. Subagents build, test, run the
   review loop (rule W23) and report to the integrator; **subagents never merge**.
@@ -139,9 +142,9 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **C8** Presence: one rule for every species (`tools/presence.py`).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: easiest first, never by source.
+- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: reference-quality photos first, then easiest, never by source.
 - **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
-- **P3** No photo of several corals or fish species, nor Coral Finder book photo, in games.
+- **P3** No photo of several corals or fish species in games; no Coral Finder book photo anywhere.
 - **P4** All photos of one question come from one observation.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
 
@@ -156,7 +159,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; tiered checks, valid statistics.
+- **L11** The simplest algorithm that works; checks proportionate to the change, in two worlds, valid statistics.
 - **L12** Check algorithm changes on the real log too.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.
@@ -211,6 +214,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W9** Latest stable version of tools.
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked; a guess is labelled.
+- **W25** Use the quota with care, never at the cost of the result.
 
 ## Read on demand
 

@@ -103,6 +103,14 @@
   "fish-s331-cand-579557266": {
    "code": "p1g1sm14",
    "keep": "alt"
+  },
+  "fish-s331-cand-fb-Pamul_u1": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s331-cand-fb-Pamul_u9": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }

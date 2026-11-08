@@ -29,12 +29,8 @@
    "keep": "best"
   },
   "fish-s397-cand-668778642": {
-   "code": "d1g2ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the porcupinefish for sure on the photo"
+   "code": "d0g1smx1",
+   "keep": "best"
   },
   "fish-s397-cand-724739229": {
    "code": "o0g1sl13",
@@ -45,12 +41,8 @@
    "keep": "dup"
   },
   "fish-s397-cand-681608173": {
-   "code": "d1g1ss11",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Seen from above at the surface: maybe at the surface or in a net"
+   "code": "d1g1bsx1",
+   "keep": "best"
   },
   "fish-s397-cand-681608201": {
    "code": "d1g1ss11",
@@ -93,12 +85,8 @@
    "keep": "best"
   },
   "fish-s397-cand-610204748": {
-   "code": "h1g2bmm1",
-   "keep": "best",
-   "unsure": [
-    "keep"
-   ],
-   "note": "Murky, among other fish: maybe in a tank"
+   "code": "o1g1smm3",
+   "keep": "best"
   },
   "fish-s397-cand-632010816": {
    "code": "d0g1sm1a2",
@@ -123,6 +111,62 @@
   "fish-s397-cand-602116309": {
    "code": "o1g2sl12",
    "keep": "dup"
+  },
+  "fish-s397-cand-717670795": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s397-cand-668881092": {
+   "code": "d1g1sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-49775026": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-600078414": {
+   "code": "d1d1bm11",
+   "keep": "best"
+  },
+  "fish-s397-cand-600078441": {
+   "code": "d1d1bm11",
+   "keep": "dup"
+  },
+  "fish-s397-cand-600079331": {
+   "code": "d0d1bl11",
+   "keep": "dup"
+  },
+  "fish-s397-cand-724067662": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-724067664": {
+   "code": "o1n0sl13",
+   "keep": "dup"
+  },
+  "fish-s397-cand-734724287": {
+   "code": "p1g0sm1c3",
+   "keep": "best"
+  },
+  "fish-s397-cand-597701544": {
+   "code": "p1n0sl13",
+   "keep": "best"
+  },
+  "fish-s397-cand-716607687": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s397-cand-668778682": {
+   "code": "o1g1msm1",
+   "keep": "best"
+  },
+  "fish-s397-cand-668778696": {
+   "code": "p1g1msx1",
+   "keep": "dup"
+  },
+  "fish-s397-cand-622907212": {
+   "code": "o1n0sl1j2",
+   "keep": "best"
   }
  }
 }

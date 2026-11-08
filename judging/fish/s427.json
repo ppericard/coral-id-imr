@@ -135,6 +135,58 @@
   "fish-s427-cand-121267521": {
    "code": "o1g1sl13",
    "keep": "best"
+  },
+  "fish-s427-cand-252021859": {
+   "code": "o1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s427-cand-569028571": {
+   "code": "o1d1sm1c1",
+   "keep": "best"
+  },
+  "fish-s427-cand-418231403": {
+   "code": "o1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s427-cand-668729927": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s427-cand-61570307": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s427-cand-61570323": {
+   "code": "o0g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s427-cand-354311": {
+   "code": "p1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s427-cand-354342": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s427-cand-354344": {
+   "code": "p1g1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s427-cand-758898728": {
+   "code": "o1g0sl1c2",
+   "keep": "dup"
+  },
+  "fish-s427-cand-758898729": {
+   "code": "o1g0sl1c2",
+   "keep": "dup"
+  },
+  "fish-s427-cand-758898730": {
+   "code": "o1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s427-cand-fb-Symor_u0": {
+   "code": "o1g0sl13",
+   "keep": "best"
   }
  }
 }

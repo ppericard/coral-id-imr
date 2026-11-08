@@ -8,8 +8,9 @@ Pierre's standing rules on the learning logic. The model, its research, every co
 
 **Time between sessions never decays progress, mastery or ability** (no spaced-repetition days, no decay, no
 "refresh"). The app is a practical tool, not a retention or daily-habit app (no streaks, lessons, Duolingo-style units):
-someone should be able to master everything in a few hours. Progress (`s.pg`), mastery (`s.mx`) and the Elo ability
-(`s.th`) move only with answers (and how fast a right one came).
+someone should be able to master everything in a few hours. Progress (the domain-score bar `s.ds`; `s.pg` before rules
+version 9), mastery (`s.mx`) and the Elo ability (`s.th`) move only with answers (and how fast a right one came): the
+bar's drift, which lets old answers fade, is taken per own answer on the genus, never per day.
 - **The seconds taken to answer are another matter**: they are evidence about that answer and may weigh how much it
   moves the ability (a right answer given fast proves more than one given slowly: `core.js` `rtWeight`, LEARNING.md
   "Response time"); never a decay, never a penalty for being slow on its own.
@@ -30,22 +31,33 @@ progress). For B it is a false alarm, not a failure to recognise a photo of B: i
 traps, rule L7). It does **not** move **B's ability (Elo)**: standard Elo learner models update only the item asked
 (Pelánek et al. 2017), and on the real answers a false alarm on B did not make the next B photo harder
 (docs/LEARNING.md "The genus wrongly given in the Elo").
+**In the domain-score bar** (rules version 9) the false alarm counts through signal detection theory, not as a miss on
+B's own photos: B's bar is its domain score from B's own photos less B's false-alarm rate (the times B was named for
+another unit's photo over the questions where B could have been named), the two-high-threshold corrected recognition
+Pr = H − FA (Snodgrass & Corwin 1988; Green & Swets 1966; Macmillan & Creelman 2005). The ability is untouched.
 *Why:* keeping the false alarm in B's progress keeps the bar from over-claiming a unit the player keeps naming wrongly;
 keeping it out of B's ability keeps strong players from being under-rated (one wrong pick used to cost about three
-right answers). Whether the new domain-score bar should keep it is open (Pierre, 2026-11-06: only if dropping it does
-not make progress rise too fast; until then it stays).
-*Source:* Pierre, by 2026-11-01; ability, 2026-11-03; wording clarified and made subject-neutral, 2026-11-06.
+right answers). As a full miss in the domain-score bar it took units a player knows well to 0 ("0 means you know
+nothing, and that's not true", Pierre); as a false-alarm rate it keeps the over-claim in check (simulated, +3 points at
+most on the path) without that.
+*Source:* Pierre, by 2026-11-01; ability, 2026-11-03; wording clarified and made subject-neutral, 2026-11-06; the bar's
+signal detection correction, 2026-11-06 (Q163, Q174).
 
 ### L3
 
 **Difficulty is adaptive and continuous; no manual Easy/Medium/Hard selector.** Per-unit player ability vs photo
 difficulty on one Elo scale (Pelánek 2016), ~80% target success, guaranteed variety and new photos, more single-view
-questions as the level rises (details in ARCHITECTURE.md). **Every account counts everywhere**, Pierre's included: the
+questions as the level rises (details in ARCHITECTURE.md). **Photo exposure** (Q187-Q190): a colony (fish: an
+observation) counts as seen whatever view or photo of it was shown; 30% of the questions on a unit the player holds
+explore, drawing a colony never seen at the difficulty aimed for; a beginner's multi-view question weighs a colony by its
+share of the views (corals only: fish have one view); corals: up to 40 colonies per genus in the Colony view (fish: no
+cap). **Every account counts everywhere**, Pierre's included: the
 admin has no filter on his own answers or "test" accounts; the leaderboard's "hidden" changes only the public
 leaderboard. Corals: starred genera are always included in Practice. The normal quiz is never split by a course group
 or a book's shape group; only the custom quiz picks groups.
-*Why:* Pierre's account is a real player's. *Source:* Pierre, by 2026-11-01; every account, 2026-11-04; subject-neutral wording, groups for every subject,
-2026-11-06 (Q168).
+*Why:* Pierre's account is a real player's; players went round a unit's photos fast. *Source:* Pierre, by 2026-11-01;
+every account, 2026-11-04; subject-neutral wording, groups for every subject, 2026-11-06 (Q168); photo exposure,
+2026-11-06 (Q187-Q190; fish too, 15:36).
 
 ### L4
 
@@ -113,14 +125,18 @@ before adding it).
 
 ### L9
 
-**Learned = the silent mastery exam.** A unit fills up to 95% with its progress, a moving average of its answers (right
-answers against its look-alikes count most, each point harder to earn than the last; LEARNING.md); learned (100%) takes
+**Learned = the silent mastery exam.** A unit fills up to 95% with its progress, the share of all its possible photos the
+player would name alone and typed, from their own answers on that unit only (the posterior expected domain score;
+LEARNING.md "The domain-score bar"; a unit never answered is at 0, a miss never raises it); its exam opens at 85%,
+once the unit has been asked beside each of its look-alikes (pair coverage, Q129);
+learned (100%) takes
 5 exam questions slipped unannounced into the photo quiz, several answers apart, each as hard as the game gets (one
 photo alone, never seen, look-alike traps), all right, at least 2 of them typed from memory (typed questions come in
 progressively as the level on a unit rises, never as an on/off mode; `model.js` `TYPED`). Any miss on the unit, or
 giving it as the answer for another one, restarts it. No milestone that a player can pass by luck or in a few
 questions.
-*Source:* Pierre, 2026-11-01; progress weights, 2026-11-02; typed, 2026-11-03; subject-neutral wording, 2026-11-06.
+*Source:* Pierre, 2026-11-01; progress weights, 2026-11-02; typed, 2026-11-03; subject-neutral wording, 2026-11-06;
+the domain-score bar, 2026-11-06 (Q127, Q128, Q135; the exam's entry at 85% and the keep rule are open choices).
 
 ### L10
 
@@ -138,21 +154,33 @@ its own record (`startKey`); never a subject named in the code that asks it.
 
 **The simplest algorithm that works.** Don't add a variable, a special case or a hard-coded ramp to patch a problem:
 first rethink the rule or recalibrate the existing settings (example: the opening of units became a slope on `OPEN.K`
-instead of new duel/opening knobs, LEARNING.md). **Checks come in four tiers, the effort proportionate to the question,
-the statistics always valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0,
-§3.2, §4, §6.7; a mean larger than its spread is never a verdict: it passes about 9% of cells with no effect):
-- **tier 0, always**: the unit tests and the CI smokes;
-- **tier 1, any change to the learning algorithm's behaviour** (`tests/profiles.smoke.js` over several seeds, and
-  `node tools/learnsim.js`: the four profiles × 5 seeds, before and after on the same seeds, about 2 min; LEARNING.md
-  "Learning-outcome simulation"). Before running, declare one primary measure, its checkpoint and its direction. Test it
-  pooled over the four profiles with an exact stratified sign-flip test on the 20 (profile, seed) pairs; only if that
-  passes, per-profile tests under Holm. The other measures are guardrails: held when the one-sided 90% bound of the
-  paired difference stays inside a margin set once in LEARNING.md. Anything else is labelled exploratory, uncorrected.
-  Five seeds catch large effects and breakage, not small improvements;
-- **tier 2, fine calibration** (choosing a value, or tier 1 inside the noise): 30-40 common seeds, the number sized from
-  tier 1's spread; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no
-  worse"; the chosen value confirmed on fresh seeds;
-- **tier 3, real data** (rule L12): inference per player (players are the statistical unit), never per answer.
+instead of new duel/opening knobs, LEARNING.md). **Checks are proportionate to the change's possible effect, and progressive; the statistics always
+valid** (how and why: [the statistics study](../reviews/2026-11-05-stats-methods-study.md) §0, §3.2, §4, §6.7;
+LEARNING.md "Validating a learning change": the worlds, the profiles, the measures, the margins, the commands). The PR
+declares the change's level with one line of why; the integrator checks it and may raise it; in doubt, the higher one.
+
+| Level | The change | The check |
+| --- | --- | --- |
+| 0 | no effect on learning: a wording, the UI, a test, code that gives the same answers | the unit tests and the CI smokes, no simulation |
+| 1 | small and local: one kind of unit, a rare situation, a constant nudged | the app world, the subject touched, its profiles × 5 seeds, 300 questions; the primary and the guardrails it can touch |
+| 2 | changes what players see or learn broadly: the draw, the bar, the opening, the levels, the score | both worlds: the app world as level 1, the rated world 10 seeds per profile, long enough to reach the levels the change touches; every guardrail |
+| 3 | choosing a value, or a level 1 or 2 result close to a margin | 30-40 seeds in the app world, 40 in the rated world under both photo distributions; each setting against the current value (or a fitted curve) with Dunnett or Holm; TOST for "no worse"; the value chosen confirmed on fresh seeds |
+
+Every level keeps the unit tests and the CI smokes; from level 1, the real log too (rule L12). **The app world** is the
+real app on the real data (`tests/profiles.smoke.js`, `node tools/learnsim.js`); **the rated world** has photos, units
+and players each with a continuous Elo difficulty or ability drawn from the distributions LEARNING.md states (normal
+photos, a heavy-tailed variant beside), the engine running on them.
+
+**Progressive**: a large expected effect needs no high sensitivity; start with the level's fewest seeds and add seeds
+only when a result lands near a margin (unclear), by the rule declared before running (at level 2, the rated world 10,
+then 20 seeds; then level 3). The error is split over the looks declared, k of them: each look reads the one-sided
+bound at 1 − 0.10/k (two looks: 95%) and the primary at 0.05/k (Bonferroni), so stopping on a result keeps the 90%. Before running, declare one primary measure, its world, its checkpoint and its direction,
+and any cost the change is expected to bring (a guardrail it will move, with the bound accepted). Test the primary
+pooled over the profiles with a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else
+100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm. Guardrails (LEARNING.md's table,
+the margins set once there): held when the one-sided 90% bound of the paired difference stays inside the margin; unclear
+goes one step up; breached, or a cost not declared, goes to Pierre. Anything else is labelled exploratory, uncorrected. A mean larger than its spread is never a verdict (it passes about
+9% of cells with no effect). **Real data** (rule L12): inference per player (players are the statistical unit), never per answer.
 
 **Multifactor analyses** (several factors or interactions at once, e.g. profile × parameter × seed; the admin's
 Analyses) get the method suited to the design, found before running (e.g. a factorial design with a mixed-effects
@@ -160,11 +188,12 @@ model, seeds or players as random effects, interactions in the model rather than
 the model and its assumptions in the PR and check them. They are rare: taking the time is expected.
 
 *Why:* every added part or variable makes the model harder to calibrate.
-*Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06.
+*Source:* Pierre, 2026-11-02; seeds, 2026-11-03; tiers and statistics, 2026-11-05; subject-neutral wording, 2026-11-06;
+levels by possible effect, the rated world beside the app world, 2026-11-08.
 
 ### L12
 
-**Check algorithm changes against the real players, not only the simulation** (tier 3 of rule L11). Any change to the
+**Check algorithm changes against the real players, not only the simulation** (rule L11, from level 1). Any change to the
 learning algorithm (Elo, progress, draw, opening, difficulty, typed questions…) is checked twice before its PR: in
 `tools/learnsim.js` (5 seeds, the four profiles: no learning path may break) and on the real answer log (read-only
 replay of the sheet's Answers tab, or a saved extract kept outside the repo): the change must not move the app's

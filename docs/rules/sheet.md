@@ -22,7 +22,8 @@ tell Pierre at once: which rows, and how to remove them.
 ### D2
 
 **Player names: real in chat, anonymous in the repo.** When talking with Pierre (chat, reports, analyses he reads
-there), always name players by their real names. Everything public or committed (code, comments, docs, tests, commits,
+there, tables included), always name players by their real names, spelled as the sheet spells them (tab RAs, column A),
+never as a voice transcription of Pierre's messages renders them. Everything public or committed (code, comments, docs, tests, commits,
 PR texts, GitHub comments, published pages) uses anonymous labels (P1, P2…) or made-up names, never a real player's or
 staff member's name.
 Names are never a reason to keep something off GitHub: a note, a study, a status or a ledger that belongs in the repo
@@ -31,7 +32,7 @@ admin's Players page shows it beside the name, so Pierre and the integrator can 
 when that id is not at hand, use P1, P2… and keep the mapping outside the repo (STATUS records where), never in a
 committed file. Raw data holding names (sheet exports) stays out of the repo and is deleted when no longer needed.
 *Why:* he knows the players, and real names help him understand and find problems; work kept only on one machine is
-lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-04; pseudonyms 2026-11-05.
+lost when the container goes. *Source:* Pierre, standing rule, restated 2026-11-04; pseudonyms 2026-11-05; tables and the sheet's spelling, 2026-11-08.
 
 ### D3
 
@@ -93,12 +94,15 @@ exception so far: the photo memory recalculation of 2026-11-03 is silent (the ba
   learned-based achievements they no longer meet (LEARNING.md "Learned under the former model").
 - **Announcement cards are never held**: a card that announces a rule change, a learned mark taken away or a big new app
   version shows as soon as the player opens or reconnects to the app (once the first page is drawn and the progress is
-  in, and right after a pull that brings the change), on whatever page they land on, once per device, marked seen by its
+  in, and right after a pull that brings the change), on whatever page they land on, once per account, marked seen by its
   button; no visit floor (`noOpen`) and no prompt spacing (`promptOk`). It only waits for another card or the tour
-  already on screen, then follows it (`progress.js` `recalcNotice`, `mxLostNotice`, `rvNotice`). The other prompts
+  already on screen, then follows it (`progress.js` `recalcNotice`, `mxLostNotice`, `rvNotice`), and, signed in, for
+  the visit's first sync, so a card seen on another device of the account is not shown again (`sync.js`
+  `noticeLater`, `core.js` `TOLD`; Pierre, 2026-11-08). The other prompts
   (sign-in nudge, one-tap question, open-all and bonus genera offers) keep `promptOk`.
 
-*Source:* Pierre, 2026-11-02; learned marks and cards never held, 2026-11-03.
+*Source:* Pierre, 2026-11-02; learned marks and cards never held, 2026-11-03; after the first sync, once per account,
+2026-11-08.
 
 ### D7
 

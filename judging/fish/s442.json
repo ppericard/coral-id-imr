@@ -49,12 +49,8 @@
    "keep": "best"
   },
   "fish-s442-cand-624703581": {
-   "code": "o0d2ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "I cannot find the moray for sure among the rocks"
+   "code": "o0g1bsx1",
+   "keep": "best"
   },
   "fish-s442-cand-469858575": {
    "code": "o0d1sl13",
@@ -85,12 +81,8 @@
    "keep": "best"
   },
   "fish-s442-cand-611612159": {
-   "code": "o0d1sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Flat black shape with a yellow rim: I cannot read a moray on the photo"
+   "code": "d0g1msx1",
+   "keep": "best"
   },
   "fish-s442-cand-620518592": {
    "code": "o0d1sm13",
@@ -109,12 +101,8 @@
    "keep": "dup"
   },
   "fish-s442-cand-757127771": {
-   "code": "o0g1ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Shallow and murky; I cannot find the moray for sure in the hole"
+   "code": "o0g1bsx1",
+   "keep": "best"
   },
   "fish-s442-cand-757130477": {
    "code": "o0g1ssxc1",
@@ -126,6 +114,62 @@
   },
   "fish-s442-cand-568074734": {
    "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-fb-Gyfla_u7": {
+   "code": "o0g1sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-662484265": {
+   "code": "o0g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s442-cand-698862865": {
+   "code": "o0n0sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-58898908": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-615537379": {
+   "code": "o0g0smm2",
+   "keep": "best"
+  },
+  "fish-s442-cand-615537385": {
+   "code": "o0g0smm2",
+   "keep": "dup"
+  },
+  "fish-s442-cand-615537395": {
+   "code": "o0g0smm2",
+   "keep": "dup"
+  },
+  "fish-s442-cand-591501854": {
+   "code": "o0g0sm1c2",
+   "keep": "best"
+  },
+  "fish-s442-cand-488716074": {
+   "code": "h0g0sl12",
+   "keep": "best"
+  },
+  "fish-s442-cand-642716598": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s442-cand-642716623": {
+   "code": "o0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s442-cand-592234330": {
+   "code": "o0g2bm11",
+   "keep": "best"
+  },
+  "fish-s442-cand-655238322": {
+   "code": "o0g0sm12",
+   "keep": "best"
+  },
+  "fish-s442-cand-730597694": {
+   "code": "o0g1sm12",
    "keep": "best"
   }
  }

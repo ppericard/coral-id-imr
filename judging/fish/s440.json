@@ -65,12 +65,8 @@
    "keep": "dup"
   },
   "fish-s440-cand-650134871": {
-   "code": "o0g2ssxc1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Shallow, blurry; I cannot find the moray for sure among the rocks"
+   "code": "o0g1bsx1",
+   "keep": "best"
   },
   "fish-s440-cand-650138353": {
    "code": "o0g2ssxc1",
@@ -138,6 +134,50 @@
   },
   "fish-s440-cand-479453323": {
    "code": "o0g2bs1c1",
+   "keep": "best"
+  },
+  "fish-s440-cand-327691460": {
+   "code": "o0g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s440-cand-654690653": {
+   "code": "d1g1bm12",
+   "keep": "best"
+  },
+  "fish-s440-cand-707741880": {
+   "code": "d0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s440-cand-707741888": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s440-cand-707741891": {
+   "code": "d0g1sm11",
+   "keep": "dup"
+  },
+  "fish-s440-cand-719986601": {
+   "code": "o0g1sm13",
+   "keep": "alt"
+  },
+  "fish-s440-cand-719986602": {
+   "code": "h0g1sm13",
+   "keep": "best"
+  },
+  "fish-s440-cand-43486341": {
+   "code": "h0d1ml12",
+   "keep": "best"
+  },
+  "fish-s440-cand-658381801": {
+   "code": "d1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s440-cand-658383238": {
+   "code": "h0g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s440-cand-612626739": {
+   "code": "d0g1smm1",
    "keep": "best"
   }
  }

@@ -856,6 +856,135 @@ test('board: signed-in players by progress then level; opted-out players and the
   );
 });
 
+// One leaderboard per subject (v95; Pierre, 2026-11-04: separate per subject, no merged ranking): fixtures only.
+test('board (v95): each subject its own board, by its % over the units its apps sent, then its level; the corals as before', () => {
+  const s = seed();
+  const fish = (P, coral = 3) => ({...prog(coral), 'reefid-sync-fish-progress': JSON.stringify(P)});
+  const units = ['f:Chaetodontidae', 'f:Pomacanthidae', 'f:Labridae', 'f:Acanthuridae'];
+  const lvl = th => ({ok: 220, ko: 30, th});
+  // No units sent yet (apps before v95): fish players listed with no % (–), never the corals' Progress column.
+  s.post({name: 'Ana', pin: '1234', data: fish({'f:Labridae': {ok: 3, ko: 1, pg: 0.4}}), summary: {pct: 41.6, board: 1}, answers: []});
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [['Ana', null, null]], 'no units kept yet');
+  Object.keys(s.cache).forEach(k => delete s.cache[k]);
+  // Ana: two families mastered, Elo from 250 answers. Ben: the same %, a higher level. Ana B: opted out (her coral choice
+  // holds for every board). Cy: corals only, never on the fish board.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({'f:Chaetodontidae': {ok: 9, ko: 0, mx: 1}, 'f:Pomacanthidae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(0.5)}),
+    summary: {pct: 41.6, board: 1, boards: {fish: units, coral: ['Acropora'], nope: ['x']}},
+    answers: []
+  });
+  s.post({
+    name: 'Ben',
+    pin: '1111',
+    data: fish({'f:Labridae': {ok: 9, ko: 0, mx: 1}, 'f:Acanthuridae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(1.5)}, 0),
+    summary: {pct: 2, board: 1, boards: {fish: ['=SUM(A1)', ...units]}},
+    answers: []
+  });
+  s.post({name: 'Ana B', pin: '5678', data: fish({'f:Labridae': {ok: 9, ko: 0, mx: 1}}), summary: {board: 0}, answers: []});
+  s.post({name: 'Cy', pin: '2222', data: prog(5), summary: {pct: 60, board: 1}, answers: [ans('cy1')]});
+  assert.strictEqual(
+    s.props.BOARD_UNITS_fish,
+    JSON.stringify(units),
+    'the units kept: a formula-like word dropped, no list for the corals or an unknown subject'
+  );
+  assert.ok(!('BOARD_UNITS_coral' in s.props) && !('BOARD_UNITS_nope' in s.props));
+  const F = s.get({board: '1', s: 'fish'});
+  assert.strictEqual(F.v, SV);
+  assert.deepStrictEqual(
+    F.rows,
+    [
+      ['Ben', 50, 1.5],
+      ['Ana', 50, 0.5]
+    ],
+    'by the fish % (2 of 4 families learned), then the fish level; Ana B opted out, Cy has no fish progress'
+  );
+  // The corals' board is unchanged: no s, an unknown subject, or one without a board.
+  const C = s.get({board: '1'}).rows;
+  assert.deepStrictEqual(s.get({board: '1', s: 'nope'}).rows, C);
+  assert.ok(
+    C.some(r => r[0] === 'Cy') && C.find(r => r[0] === 'Ana')[2] === null,
+    'the coral board reads the coral progress, not the fish level'
+  );
+  // Each board cached apart, 5 minutes; an admin's hide holds for every board and drops every board's cache at once.
+  assert.ok(s.cache.board14 && s.cache['board14:fish']);
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1}, answers: []});
+  assert.deepStrictEqual(
+    s.get({board: '1', s: 'fish'}).rows.map(r => r[0]),
+    ['Ben', 'Ana'],
+    'cached 5 minutes'
+  );
+  s.post({userBoard: 'Ben', hide: true, token: TOK});
+  assert.ok(!s.cache.board14 && !s.cache['board14:fish'], 'every board cache dropped');
+  s.post({name: 'Ana', pin: '1234', data: fish({'f:Labridae': {ok: 1, ko: 0, pg: 0.1}}), summary: {board: 1}, answers: []});
+  assert.deepStrictEqual(
+    s.get({board: '1', s: 'fish'}).rows.map(r => r[0]),
+    ['Ana'],
+    'hidden from the fish board too'
+  );
+  // An archive leaves both boards at once (rosterChanged_ drops every board's cache).
+  s.get({board: '1'});
+  s.post({userArchive: {from: 'Ana', into: 'Ana-test'}, token: TOK});
+  assert.ok(!s.cache['board14:fish'] && !s.cache.board14, 'every board cache dropped');
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, []);
+});
+
+test('board (v101): a subject with a global score ranks by core.js treeScore over the tree its apps sent', () => {
+  const s = seed();
+  const fish = P => ({...prog(3), 'reefid-sync-fish-progress': JSON.stringify(P)});
+  // Two families (the common one weighs 3, the rare one 1), one genus unit under the common one.
+  const tree = {
+    f: [
+      ['f:Pomacentridae', 3, 1],
+      ['f:Gobiidae', 1, 3]
+    ],
+    s: [
+      [3, 'g:Chromis', '', [], 1],
+      [1, '', '', [], 3]
+    ]
+  };
+  const lvl = th => ({ok: 220, ko: 30, th});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({'f:Gobiidae': {ok: 9, ko: 0, mx: 1}, '~level': lvl(1)}),
+    summary: {board: 1, boards: {fish: tree}},
+    answers: []
+  });
+  s.post({
+    name: 'Ben',
+    pin: '1111',
+    data: fish({'f:Pomacentridae': {ok: 9, ko: 0, mx: 1}, 'g:Chromis': {ok: 9, ko: 0, mx: 1}, '~level': lvl(0.5)}),
+    summary: {board: 1},
+    answers: []
+  });
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'the tree kept as sent');
+  // Ana: the rare family only, √(0.25 × 1/4) = 25%. Ben: the common family and its genus, √(0.25 × 3/4 + 0.75 × 0.8 ×
+  // 0.5 × 3/4) = √0.4125 = 64%.
+  assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [
+    ['Ben', 64, 0.5],
+    ['Ana', 25, 1]
+  ]);
+  // A tree that fails the checks keeps the one stored; a list from an older app never replaces a tree (Codex review #730:
+  // the board would go back to the families' mean while the apps show the global score).
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: {f: [['=SUM(A1)', 1, 1]], s: []}}}, answers: []});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: fish({}),
+    summary: {board: 1, boards: {fish: {f: [['f:Gobiidae', 1, 1]], s: [[1, 'g:X', '', ['n:1', 'n:2', 'n:3', 'n:4'], 1]]}}},
+    answers: []
+  });
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
+  s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae', 'f:Gobiidae']}}, answers: []});
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'an older app list: the tree kept');
+  // Before any tree, a list is kept and read as before (an app from before the score, sheet v95).
+  const t = seed();
+  t.post({name: 'Cy', pin: '2222', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae']}}, answers: []});
+  assert.strictEqual(t.props.BOARD_UNITS_fish, JSON.stringify(['f:Pomacentridae']));
+});
+
 test('board (v20): an admin hides a player from the leaderboard; their own syncs never bring them back', () => {
   const s = seed();
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 41.6, board: 1}, answers: [ans('a3')]});
@@ -1603,7 +1732,7 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
   const r = s.post({name: 'Ana', pin: '1234', data: prog(9), summary: {}, answers: L, rv: 0});
   const A = s.sheets.Answers,
     col = A.rows[0].indexOf('Scoring');
-  assert.deepStrictEqual([col, A.rows[0].length], [22, 23], 'Scoring at the end, column W (core.js LOG_SC)');
+  assert.deepStrictEqual([col, A.rows[0].length], [22, 24], 'Scoring in column W (core.js LOG_SC), Rejected tries after it (v100)');
   assert.strictEqual(col, C.LOG_SC);
   assert.deepStrictEqual(
     A.rows.slice(1).map(x => x[col]),
@@ -1618,7 +1747,7 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
   const st = s.get({stats: '1'}),
     want = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P;
   assert.deepStrictEqual(r.replay.rec, want);
   // Scored from the records, not from the stats: other stats give the same record.
@@ -1647,11 +1776,16 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   const st = s.get({stats: '1'}),
     want = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P;
   assert.deepStrictEqual(r.replay.rec, want, 'the same engine over the same rows');
   assert.deepStrictEqual([r.replay.rv, r.replay.n, r.replay.ids.length], [C.RV, 12, 12]);
-  assert.ok(r.replay.rec.Acropora.pg > 0 && typeof r.replay.rec.Acropora.th === 'number' && r.replay.rec['~level'].ok === 9);
+  assert.ok(
+    r.replay.rec.Acropora.ds > 0 &&
+      Array.isArray(r.replay.rec.Acropora.dp) &&
+      typeof r.replay.rec.Acropora.th === 'number' &&
+      r.replay.rec['~level'].ok === 9
+  );
   // The Replayed tab: Name, Rules, Rows, Since, Updated, Record.
   const T = s.sheets.Replayed;
   assert.deepStrictEqual([...T.rows[0]], ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']);
@@ -1708,7 +1842,7 @@ test("v42: the player list carries each player's replayed progress, learned and 
     P = JSON.parse(data['reefid-sync-coral-progress']),
     rec = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
     ).ana.P,
     G = C.replayedOf({P: rec}, P);
   const ana = r.users.find(u => u.name === 'Ana');
@@ -1732,7 +1866,8 @@ test("v42: the player list carries each player's replayed progress, learned and 
   assert.strictEqual(T.rows[1][2], 13);
   assert.strictEqual(T.rows.length, 3);
   assert.ok(Array.isArray(again.rp));
-  assert.strictEqual(f.n.c, 1, 'data.json read once (cached with the slate)');
+  // Twice in all: once for the replay (cached with the slate), once for the photo pool of the list (v81 pools_, cached).
+  assert.strictEqual(f.n.c, 2, 'data.json read once for each, then cached');
   // Without data.json: no rp (the admin reads the saved copies itself, as before v42).
   const s2 = loadCodeGs();
   s2.post({name: 'Ana', pin: '1234', data, summary: {}, answers: L});
@@ -1874,7 +2009,7 @@ test('v36: the stored replay is not reused when the first-launch history changes
     want = c =>
       C.replayProgress(
         L.map(a => C.logRow(a, 'ana')),
-        {gen: GEN, mem: st.mem, conf: st.conf, starts: {ana: rec(c)}}
+        {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, starts: {ana: rec(c)}}
       ).ana.P;
   assert.deepStrictEqual(r1.replay.rec, want('new'));
   assert.notDeepStrictEqual(want('know'), want('new'), 'the prior changes the replay of these answers');
@@ -1899,7 +2034,7 @@ const v55 = () => {
     "oldApp_('load', 'Ben'); sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ben (3000 per 6 h)'])",
     s.ctx
   );
-  s.cache.board14 = s.cache.achs15 = s.cache.stats15 = '{}';
+  s.cache.board14 = s.cache.achs15 = s.cache.stats17 = '{}';
   return s;
 };
 const rplAdd = (s, ...names) =>
@@ -1920,7 +2055,7 @@ test('v55 delete everything: answers, reports, page summaries, name mentions and
   assert.match(tabText(s, 'Events'), /\(~deleted [^)]+\)/);
   assert.match(tabText(s, 'Alerts'), /n:~deleted \S+ \(3000/);
   assert.ok(/Ben/.test(tabText(s, 'Removed')), 'the tombstone stays');
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined], 'caches cleared');
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined], 'caches cleared');
   assert.strictEqual(s.get({name: 'Ben', pin: '1111'}).error, 'gone');
 });
 
@@ -1948,7 +2083,7 @@ test('v55 merge clears the caches and moves name mentions to the name it joined'
   const s = v55();
   const m = s.post({userMerge: {from: 'Ben', into: 'Ana', data: prog(4)}, token: TOK});
   assert.strictEqual(m.ok, true);
-  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats15], [undefined, undefined, undefined]);
+  assert.deepStrictEqual([s.cache.board14, s.cache.achs15, s.cache.stats17], [undefined, undefined, undefined]);
   assert.match(tabText(s, 'Events'), /\(Ana\)/);
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')));
 });
@@ -1983,6 +2118,38 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
   const id = require('vm').runInContext("aid_('~anon devanon102')", s.ctx);
   s.post({anonDelete: [id], token: TOK});
   assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
+});
+
+// Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
+// subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
+test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
+  const s = seed(),
+    fish = (id, extra = {}) => ans(id, {s: 'fish', rk: 'family', g: 'f:Damselfishes', a: 'f:Damselfishes', ...extra});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(3),
+    summary: {},
+    answers: [fish('f1'), fish('f2'), fish('f3', {ok: 0, a: 'f:Gobies'}), ans('a3', {s: 'coral'})],
+    at: 1
+  });
+  // a row with no player (the readAnswers log leaves it out: so does the count), and a surprise card's answer (sheet v98,
+  // Mode wink: counted nowhere)
+  s.sheets.Answers.appendRow(['', new Date(), 'Acropora', 'Acropora', 1, 'quiz']);
+  const wink = ['Ana', new Date(), 'f:WhaleSharks', 'f:Damselfishes', 0, 'wink'];
+  wink[17] = 'fish';
+  s.sheets.Answers.appendRow(wink);
+  const h = s.post({analysesGet: 1, head: 1, token: TOK});
+  assert.deepStrictEqual(h.counts, {coral: 5, fish: 3}, 'four coral rows logged before v60 or with Subject coral, three fish');
+  assert.strictEqual(h.subject, 'coral');
+  assert.strictEqual(h.answers, 5, "the corals' answers, not the tab's 10 rows");
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK, subject: 'fish'}).answers, 3);
+  // the same count as the log the Action reads (readAnswers) and the admin's (core.js subjCounts)
+  const C = require('../core.js');
+  assert.deepStrictEqual(C.subjCounts(s.post({readAnswers: 1, token: TOK}).rows), h.counts);
+  // the stored meta keeps the report's subject
+  s.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 5, made: 1, AV: 1, subject: 'coral'}), token: TOK});
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stored.subject, 'coral');
 });
 
 test('v55 analyses head: a report stored before the last delete or merge is stale', () => {
@@ -2503,4 +2670,22 @@ test('v69 fish units: old entry ids logged as families (one map per row), report
     vm.runInContext('ONCE_.fishunits()', s.ctx),
     'units renamed (fish entries → families): Answers 0 fish rows, Reports 0 cells'
   );
+});
+
+test("v81: the load and save replies carry the Notes tab's card lines (notes_), Pierre's text never in the repo", () => {
+  const s = loadCodeGs(withData());
+  // No Notes tab: an empty object.
+  const r0 = s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []});
+  assert.deepStrictEqual(r0.notes, {});
+  const N = s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Notes');
+  N.appendRow(['Key', 'Text']);
+  N.appendRow(['card.rv8.ps', 'PS: thanks to a player who asked the right question.']);
+  N.appendRow(['private', 'not a card line: never served']);
+  N.appendRow(['card.bad key', 'a key with a space: never served']);
+  N.appendRow(['card.long', 'x'.repeat(400)]);
+  const want = {'card.rv8.ps': 'PS: thanks to a player who asked the right question.', 'card.long': 'x'.repeat(300)};
+  assert.deepStrictEqual(s.post({name: 'Ana', pin: '1234', data: prog(1), summary: {}, answers: []}).notes, want);
+  assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).notes, want);
+  // The card's PS key is the one rules version 9's apology reads (core.js RV_SORRY ps).
+  assert.ok(C.RV_SORRY.ps in want);
 });

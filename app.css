@@ -2871,6 +2871,14 @@ header {
   .subjb .sjc {
     display: none;
   }
+  /* The two-sided subject switch does not fit beside the Sign in pill: one chip instead, the subject on screen, one click
+     to the other (app.js showSubj). */
+  header:has(#signb:not([hidden])) .subjsw {
+    display: none;
+  }
+  header:has(#signb:not([hidden])) .subjflip {
+    display: inline-flex;
+  }
 }
 .helpbox {
   grid-area: help;
@@ -4113,7 +4121,11 @@ a.lt:hover {
   text-decoration: none;
   color: var(--ink);
 }
+.tipph .zoom {
+  position: relative;
+}
 .tipph img {
+  display: block;
   width: 100%;
   aspect-ratio: 4/3;
   object-fit: cover;
@@ -5796,6 +5808,8 @@ html.touring .unlock {
   inset: 0;
   z-index: 60;
   display: grid;
+  /* One column never wider than the screen: a wide child (a long row of thumbnails) must not push the card off it. */
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   padding: 16px;
   background: color-mix(in srgb, var(--photo-bg) 50%, transparent);
@@ -5891,6 +5905,17 @@ html.touring .unlock {
 }
 .ulmed.vis + .ulpanel {
   padding-top: 62px;
+}
+/* A recalculation card's two % (progress.js rvNotice, core.js RV_SORRY pct): one line, never wrapped mid-way. */
+.cardpct {
+  white-space: nowrap;
+  font-weight: 700;
+  margin-top: 0.5em;
+}
+/* A card's PS (progress.js rvPs: a line of the sheet's Notes tab, core.js RV_SORRY ps), quieter than the text. */
+.cardps {
+  margin-top: 0.6em;
+  color: var(--muted);
 }
 .ulkick {
   margin: 0;
@@ -6091,6 +6116,7 @@ html.touring .unlock {
 /* The bonus genera offer: their own photos as a row of round crops. */
 .ulthumbs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   margin: 4px 0 8px;
 }
@@ -6106,6 +6132,13 @@ html.touring .unlock {
 }
 .ulthumbs > * + * {
   margin-left: -8px;
+}
+.ulthumbs .ulmore {
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-s);
+  font-weight: 700;
+  color: var(--muted);
 }
 /* "Open all genera" (model.js introAll): a tinted band at the foot of the first cards and a box in My progress, with a
    real button (Pierre, 2026-11-02: a white chip on white was easy to miss). */
@@ -6196,6 +6229,32 @@ html.touring .unlock {
   .startopt:hover {
     border-color: var(--accent);
   }
+}
+/* The subject to start with (tour.js pick): the same buttons, the subject's icon in the accent beside its name, beta tag
+   and line. */
+.startopt.tpick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* (#tour svg is the tour's full-screen dim layer: the icon keeps its own size.) */
+#tour .tpick .sji {
+  position: static;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
+}
+.tpick > span {
+  min-width: 0;
+}
+.tpick b small.beta {
+  display: inline-block;
+  margin-top: 0;
+  color: var(--bg);
+}
+.startopt:disabled {
+  cursor: progress;
 }
 @keyframes ulfade {
   from {
@@ -6499,6 +6558,12 @@ html.touring .unlock {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The units unlocked, "30/40 genera unlocked" (progress.js unlockText): its own line under the name, in ink, the count bold. */
+.pbtxt > .pbunl {
+  font-style: normal;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
 .pbtxt > span {
   color: var(--muted);
   /* The levels line can be long ("2 Instructor · 3 Advanced diver"): its parts go to a second line instead of out of the
@@ -6511,7 +6576,32 @@ html.touring .unlock {
 .pbtxt > span > * {
   white-space: nowrap;
 }
-.pbtxt > span > :not(:first-child)::before {
+/* The global score's components under the name (progress.js scoreBars: the fish's families, common and scientific names):
+   label, bar, % on one row each, the labels in one column so the bars line up. */
+.pbars {
+  display: grid;
+  grid-template-columns: auto minmax(60px, 1fr) auto;
+  gap: 2px 8px;
+  align-items: center;
+  margin-top: 4px;
+  width: 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.pbars > span {
+  display: contents;
+}
+.pbars small {
+  font-size: inherit;
+  text-align: left;
+}
+.pbars b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* A dot between two parts shown (the rank stays hidden until the Elo is due, the levels line is empty at first). */
+.pbtxt > span > :not([hidden]) ~ :not([hidden])::before {
   content: ' · ';
   color: var(--muted);
 }
@@ -6900,6 +6990,73 @@ html.touring .unlock {
     background: var(--surface-2);
   }
 }
+/* The header's subject switch (two subjects: app.js showSubj, subjCtl), in the chip's place: one click a side (Pierre,
+   2026-11-08), the look of the admin's mini switch (admin.css .adm-subj): a 32 px pill, each side the subject's icon and
+   name, the subject on screen raised with its icon in the accent; no beta tag (Home's row carries it), so the header keeps
+   its one line on desktops. Phones and tablets: each side its icon only (its name stays its label), so a tablet's header
+   wraps no more than it did with the chip; phones: 30 px. Three subjects or more get the chip and its menu above. */
+.subjsw {
+  display: inline-flex;
+  align-items: stretch;
+  height: 32px;
+  padding: 2px;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+}
+.subjsw button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px 0 8px;
+  font: inherit;
+  font-size: var(--fs-s);
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.subjsw .sji {
+  flex: none;
+}
+.subjsw button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+.subjsw button[aria-pressed='true'] .sji {
+  color: var(--accent);
+}
+@media (hover: hover) {
+  .subjsw button[aria-pressed='false']:hover {
+    color: var(--ink);
+  }
+}
+.subjsw .beta {
+  display: none;
+}
+/* The switch as one chip (app.js showSubj [data-flip]: the subject on screen, one click brings the other), where its two
+   sides do not fit: under 380 px while the Sign in (or Not saved) pill shows (below). */
+.subjflip {
+  display: none;
+}
+@media (max-width: 1023.98px) {
+  .subjsw button {
+    padding: 0 8px;
+  }
+  .subjsw button > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
 @media (max-width: 599.98px) {
   header:has(#subjc:not([hidden])) {
     grid-template-columns: auto 1fr auto;
@@ -6913,6 +7070,12 @@ html.touring .unlock {
     height: 30px;
     padding: 0 7px;
     gap: 3px;
+  }
+  .subjsw {
+    height: 30px;
+  }
+  .subjsw button {
+    padding: 0 7px;
   }
   .subjb .sjn,
   header:has(#subjc:not([hidden])):has(#signb:not([hidden])) .brand .home span {
@@ -6979,4 +7142,304 @@ small.beta {
   background: var(--bg);
   color: var(--ink);
   letter-spacing: 0.2em;
+}
+
+/* ---------- Fish sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B) ---------- */
+/* The family's English name, its scientific name(s) below and its group in the key (Pierre, Q1 on the mockup). */
+.fnames {
+  margin: 6px 0 0;
+}
+.fnames p {
+  margin: 0;
+}
+.fnames .fn-t {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--fs-2xl);
+  line-height: 1;
+}
+.fnames .fn-s {
+  margin-top: 4px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.fnames .fn-s span,
+.fnames .fn-g {
+  color: var(--muted);
+  font-weight: 400;
+}
+.fnames .fn-g {
+  margin-top: 2px;
+  font-size: var(--fs-s);
+}
+.fsheet h3 small {
+  margin-left: 6px;
+  font-family: var(--body);
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* The one "No photo yet" drawing (Pierre, Q9), in the "Photo missing" tile's style. */
+.nofish {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.nofish svg {
+  width: 46%;
+  max-width: 96px;
+  height: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nofish .np-t {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.nofish .eye {
+  fill: currentColor;
+  stroke: none;
+}
+.hero-ph .nofish {
+  border-radius: var(--r);
+}
+/* Species tiles: the scientific name first, then the common name (Pierre, Q10). */
+.ftiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+@media (min-width: 600px) {
+  .ftiles {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}
+.ftile {
+  margin: 0;
+  min-width: 0;
+  background: var(--surface);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.ftile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  background: var(--surface-2);
+}
+.ftile .zoom {
+  position: relative;
+}
+.ftile :is(figcaption, .fcap) {
+  display: block;
+  padding: 6px 8px 8px;
+  font-size: var(--fs-s);
+  line-height: 1.25;
+}
+.ftile :is(figcaption, .fcap) i {
+  display: block;
+  font-weight: 600;
+}
+.ftile :is(figcaption, .fcap) span,
+.ftile :is(figcaption, .fcap) small {
+  display: block;
+  color: var(--muted);
+}
+.ftile :is(figcaption, .fcap) small {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+.ftile :is(figcaption, .fcap) small i {
+  display: inline;
+  font-weight: 400;
+}
+.fmore {
+  margin: 6px 0 0;
+}
+/* Genus rows (option B): a few species' photos, the genus, its counts and its IMR name. */
+.frows {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+@media (min-width: 1024px) {
+  .frows {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.frow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: inherit;
+  text-decoration: none;
+}
+.fstack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  flex: none;
+  width: 104px;
+}
+.fstack.one {
+  grid-template-columns: 1fr;
+}
+.fstack img,
+.fstack .nofish {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: var(--r-xs);
+}
+.fstack .nofish span {
+  display: none;
+}
+.ftxt {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-s);
+  line-height: 1.3;
+}
+.ftxt > i {
+  display: block;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.ftxt > span,
+.ftxt > small {
+  display: block;
+  color: var(--muted);
+}
+.ftxt > small {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+.fjuv {
+  max-width: 70ch;
+  margin: 6px 0;
+}
+.srcn {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.lt > span > b:first-child {
+  font-size: var(--fs-m);
+}
+a.frow:hover {
+  border-color: var(--accent);
+}
+.fgo {
+  flex: none;
+  font-size: var(--fs-l);
+  color: var(--muted);
+}
+/* The families page: a family's name opens its sheet (its photo enlarges). */
+.tipsheet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tipsheet .cmpgo {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+a.ftile {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+a.ftile:hover {
+  box-shadow: var(--shadow-hover);
+}
+/* Species sheet: its family, genus, IMR flags and presence as plain chips; its photos, the first one large. */
+.fbadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+.fbadges .chip {
+  text-decoration: none;
+}
+.fphotos {
+  margin: 10px 0 4px;
+}
+.fphotos > figure {
+  margin: 0;
+}
+.fbig {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
+.fbig img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+}
+.fphotos figcaption {
+  margin-top: 4px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.fphotos figcaption a {
+  color: var(--muted);
+}
+@media (min-width: 600px) {
+  .fphotos > figure,
+  .fphotos > .fbig {
+    max-width: 640px;
+  }
+}
+/* The family ID marks and behaviour lines under the IMR tips (learn.js fishMarks). */
+.fmarks {
+  margin-top: 12px;
+}
+.fmarks h3 {
+  margin: 12px 0 4px;
+}
+.fmarks .crit {
+  font-size: var(--fs-m);
+}
+.msrc {
+  margin-top: 6px;
+}
+/* Species sheet: its size and depth with their sources (learn.js spFacts). */
+.ffacts {
+  margin: 8px 0 4px;
+  font-size: var(--fs-m);
+  font-weight: 600;
+}
+.ffacts small,
+.fmarks li small {
+  font-weight: 400;
+  color: var(--muted);
+}
+.ffacts small a,
+.fmarks li small a {
+  color: var(--muted);
 }

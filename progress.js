@@ -11,6 +11,22 @@
 // itself, Pierre 2026-11-02), genera learned (or met) and achievements earned with the last three. The rank links to the
 // leaderboard, the achievements to their page. One level everywhere (Pierre, 2026-11-06, Q134): the Elo is always this
 // device's own level (P[LEVEL], eloLine), never the board's copy of it, so it does not change when the board arrives.
+// A subject with a global score (core.js SUBJECTS score: the fish) shows its components under the name, from the same
+// computation as the ring's % (model.js headScore, core.js treeScore; FISH_PATH "My progress (fish)": three bars under the
+// headline): the families, the species by common name and the species by scientific name (the genus credit included).
+const scoreBars = H =>
+  H
+    ? `<div class="pbars" role="list" aria-label="Your progress in parts">${[
+        ['Families', H.entries],
+        ['Common names', H.common],
+        ['Scientific names', H.S]
+      ]
+        .map(([t, x]) => {
+          const v = Math.round(100 * x);
+          return `<span role="listitem" title="${t}: ${v}%"><small>${t}</small><span class="bar"><span style="width:${v}%"></span></span><b>${v}%</b></span>`;
+        })
+        .join('')}</div>`
+    : '';
 function badge(ring, pct, sub) {
   const A = store.get(ACHK, {}) || {},
     got = ACH_L()
@@ -20,7 +36,8 @@ function badge(ring, pct, sub) {
     G = P[LEVEL];
   return `<div class="pbadge"><div class="pring" style="background:conic-gradient(${ring})"><span><b>${pct}%</b></span></div>
     <div class="pbtxt"><b>${name ? esc(name) : 'Not signed in'}</b>
-    <span><span>${sub}</span>${SUBJ.board ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
+    <em class="pbunl">${unlockText(slateGenera(), true)}</em>
+    <span>${sub ? `<span>${sub}</span>` : ''}${boardLive(SUBJ) ? `<a id="pbrank" href="${esc(hr('board'))}"${eloLine(G) ? '' : ' hidden'}>🏆 ${eloLine(G)}</a>` : ''}${
       SUBJ.ach
         ? `<a href="${esc(hr('ach'))}"${achNew() ? ' class="hasnew"' : ''}>🏅 <b>${got.length}</b>/${ACH_L().length} ${got
             .filter((a, i) => got.findIndex(b => b.icon === a.icon) === i) // the latest of each kind: three different icons
@@ -28,7 +45,7 @@ function badge(ring, pct, sub) {
             .map(a => `<span title="${esc(a.title)}">${a.icon}</span>`)
             .join('')}</a>`
         : ''
-    }</span></div></div>`;
+    }</span>${scoreBars(headScore())}</div></div>`;
 }
 // A name of 13+ letters (Duncanopsammia) gets a soft hyphen near its middle, between a vowel and a consonant: a phone
 // tile breaks it there with a hyphen instead of anywhere, at the normal size (RA review and Codex review #344).
@@ -49,9 +66,7 @@ function quizBoard() {
   // They stay out of the ring and the counts.
   const BO = bonusList();
   const lv = Object.fromEntries([...list, ...BO].map(n => [n, shownLevel(n)]));
-  const count = k => list.filter(n => lv[n][0] === k).length,
-    // Met: a card or an answer (docs/LEARNING.md), as "N not open yet" below counts the others.
-    met = n => lv[n][0] !== 'new' || introduced(n);
+  const count = k => list.filter(n => lv[n][0] === k).length;
   const weak = list.filter(n => lv[n][0] === 'weak').sort((a, b) => weight(b) - weight(a));
   // Mastery level on a 6-step scale (one colour ramp, light to dark; model.js MASTERY: Not seen, Snorkeler, Open Water,
   // Advanced, Divemaster, Instructor). "Review" is a separate marker, so it never hides the level.
@@ -160,21 +175,33 @@ function quizBoard() {
   $v.innerHTML = `${
     UNITS[SUBJ.id].progHelp
       ? UNITS[SUBJ.id].progHelp()
-      : `<p class="lede"><b>To learn a genus</b>, keep getting it right, above all when its look-alikes are among the choices: that fills it up to 95%, each point a little harder to earn than the last. Then comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
+      : `<p class="lede"><b>To learn a genus</b>, keep getting it right: its % is the share of all its photos, easy to hard, you would name alone and typed, as far as your answers on it have shown. Hard photos and typed answers prove the most; a right pick among 2 easy choices proves little. It fills up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
-  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from 95% (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
+  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
-  <p class="lede"><b>In detail</b>: each genus has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % follows your recent answers on the genus: a right answer against its look-alikes, among 4 plausible choices, counts in full; one where the other choices look nothing like it counts a third as much; a mistake takes it back down, less when the photo was harder than your level. 95% (Divemaster) means it has held up against its look-alikes; Instructor means its mastery exam is passed too.</p>
-  <div class="pgame pboard">${badge(ring, progPct(list), lvSummary(list) || `${list.filter(met).length}/${list.length} met`)}<div class="pgwrap"></div>
+  <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
+  <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}<div class="pgwrap"></div>
   <aside class="gside">
     <div class="plvl" role="list" aria-label="Learning level">${STEPS.map(([k, t]) => `<span role="listitem" class="s${k}" title="${t}: ${nst(k)} ${SUBJ.many}">${lvIcon(k)}<b>${nst(k)}</b><small>${t}</small></span>`).join('')}<span role="listitem" class="pl-rev weak${count('weak') ? '' : ' zero'}" title="To review: ${count('weak')} ${SUBJ.many}"><b>${count('weak')}</b><small>Review</small></span></div>
-    <p class="plvlnote"><span class="pbar"></span> = how close each genus is to Instructor</p>
+    <p class="plvlnote"><span class="pbar"></span> = how close each ${SUBJ.one} is to Instructor</p>
     ${
       introLeft().length
         ? `<div class="popen"><p><b>Had ${SUBJ.lecture}?</b> ${introLeft().length} ${SUBJ.many} are not open yet: they come one at a time as you play.</p><button type="button" class="next" id="openall">Open all ${SUBJ.many}</button></div>`
         : ''
     }
+    ${opensOff()
+      .map(
+        S =>
+          `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-opens="${esc(S.k)}">${esc(S.row(S.units().filter(n => !introduced(n)).length))}</button></div>`
+      )
+      .join('')}
+    ${SETS()
+      .filter(S => S.row && !Q[S.k])
+      .map(
+        S => `<div class="popen"><p>${S.body}</p><button type="button" class="next" data-seton="${esc(S.k)}">${esc(S.row)}</button></div>`
+      )
+      .join('')}
     ${
       weak.length
         ? `<div><h3 class="label">Review first</h3><p class="chips">${weak
@@ -202,8 +229,33 @@ function quizBoard() {
       save();
       quizBoard();
       // The box goes and little else changes on this page: say it worked (new-player walkthrough 2026-11-02).
-      appToast(`All ${slateGenera().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
+      appToast(`All ${slateCore().length} ${SUBJ.many} are open: the quiz now asks any of them.`, 6000);
     };
+  // A part of the slate opened by choice, off (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50: "the player
+  // must be able to unlock them later, notably from My progress"): as "Open them" on its card, the units then open one at
+  // a time as the player plays.
+  document.querySelectorAll('[data-opens]').forEach(
+    b =>
+      (b.onclick = () => {
+        bonusSet(true, b.dataset.opens);
+        NEXTQ = null;
+        quizBoard();
+        appToast('They open one at a time as you play.', 6000);
+      })
+  );
+  // An opt-in set off (app.js UNITS sets row: the fish scientific genera; Pierre, 2026-11-08: "si les gens veulent aller
+  // dans leur page progrès ou même dans les settings, d'activer les genres s'ils le veulent"): on, as ⚙ On; its units then
+  // come by the set's own rule (units).
+  document.querySelectorAll('[data-seton]').forEach(
+    b =>
+      (b.onclick = () => {
+        const S = SETS().find(x => x.k === b.dataset.seton);
+        bonusSet(true, b.dataset.seton, true);
+        NEXTQ = null;
+        quizBoard();
+        if (S && S.onToast) appToast(S.onToast(), 6000);
+      })
+  );
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
   // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
@@ -215,9 +267,10 @@ function quizBoard() {
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
     a.hidden = false;
   };
-  if (SUBJ.board) {
-    rank(boardCached());
-    loadBoard().then(rank);
+  if (boardLive(SUBJ)) {
+    const S = SUBJ;
+    rank(boardCached(S));
+    loadBoard(S).then(B => S === SUBJ && rank(B)); // the subject's own board (another chosen meanwhile: nothing)
   }
   const wrap = $v.querySelector('.pboard .pgwrap');
   const show = () => {
@@ -242,7 +295,7 @@ function quizBoard() {
   show();
 }
 
-// The two highest levels reached, with their counts, for the card and the header pill (Pierre, 2026-11-03: "0/39
+// The two highest levels reached, with their counts, for the card (Pierre, 2026-11-03: "0/39
 // learned" for weeks was discouraging): "3 Divemaster · 12 Open Water". From Open Water up; '' before any genus reaches Open Water.
 function lvSummary(list = slateGenera(), icons = true) {
   const st = list.map(lvStep);
@@ -253,29 +306,37 @@ function lvSummary(list = slateGenera(), icons = true) {
     .map(([k, c]) => `${icons ? lvIcon(k) : ''}${c} ${MASTERY[k][0]}`)
     .join(' · ');
 }
+// The units unlocked (Pierre, 2026-11-05: "30/40 genera unlocked"): the subject's units opened on the path (a card, an
+// answer, Open all: model.js introduced), out of every unit the progress counts (slateGenera, whatever the subject puts in
+// it); the units "not open yet" on this page (introLeft) are the rest. A unit counts from its card, a couple of answers
+// before the draw asks it (model.js INTRO.GAP). [unlocked, all].
+const unlockN = (list = slateGenera()) => [list.filter(introduced).length, list.length];
+const unlockText = (list = slateGenera(), html = false) => {
+  const [k, n] = unlockN(list);
+  return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
+};
 // Header progress pill: always in view; the page itself is #progress.
-const $prog = document.getElementById('prog');
 function showProg() {
   if (!DATA) return;
   const n = slateGenera();
-  const pt = `${progPct(n)}%`,
-    lt = lvSummary(n, false) || `${n.filter(x => level(x)[0] !== 'new' || introduced(x)).length}/${n.length} ${SUBJ.many} met`;
+  const pt = `${headPct(n)}%`;
   document.getElementById('progn').textContent = pt;
-  $prog.title = `Your progress: ${pt} (${lt})`;
   const p2 = document.getElementById('progn2');
   if (p2) p2.textContent = pt;
   // Not signed in: the pill's tooltip says so, so RAs find where to save their progress.
   const pill = document.getElementById('prog'),
     out = !!SYNC_URL && !SYNC;
   pill.querySelector('.pl').textContent = 'Progress';
-  pill.style.setProperty('--pp', progPct(n));
+  pill.style.setProperty('--pp', headPct(n));
   // Status only (design review 2026-11-01): the pill shows progress and nothing else. Its dot (saving trouble) is gone: the
   // "Not saved" pill beside it already says so in words (design re-review p9).
-  pill.title = SYNC
-    ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
-    : out
-      ? 'Your progress (not saved online yet: Sign in, top right)'
-      : `Your progress per ${SUBJ.one}`;
+  pill.title = `${
+    SYNC
+      ? `Signed in as ${SYNC.name}: your progress per ${SUBJ.one}`
+      : out
+        ? 'Your progress (not saved online yet: Sign in, top right)'
+        : `Your progress per ${SUBJ.one}`
+  }. ${pt}, ${unlockText(n)}.`; // the count in words: the header has no room for it (one line at 1024 px, rule U3)
   // Signing in (Pierre, 2026-11-01): a filled "Sign in" button in the header on every page while signed out; once signed in
   // it disappears and the account (name, Send now, Sign out) is a quiet line at the top of ⚙. Trouble saving brings it
   // back as "Not saved", which opens ⚙ where the problem is explained.
@@ -342,7 +403,7 @@ function bindProgFile() {
   };
 }
 
-// Public leaderboard (Pierre, 2026-11-01): every signed-in player by progress %, then Elo (their ability from every
+// Public leaderboard (Pierre, 2026-11-01), one per subject (2026-11-04): every signed-in player by progress %, then Elo (their ability from every
 // answer, so players at 100% keep competing). The Elo is the app's own level, P[LEVEL].th, the one My progress shows
 // (Pierre, 2026-11-06, Q134): the sheet reads it from each player's saved progress (Code.gs board_, v63; older scripts
 // sent their own chain, stats_ R), and the player's own row shows this device's level, which may be a few answers ahead. 🏆 in the header opens it from any page; My progress shows the player's
@@ -369,59 +430,76 @@ const eloLine = G => {
 // on this device (BOARD_C, not a reefid-sync key: it never travels with the progress) and shown at once, then replaced
 // when the fresh one arrives (Pierre, 2026-11-01: "the leaderboard takes long to load"). It is also fetched a few seconds
 // after start-up, so the first visit to the page is usually instant too.
-const BOARD_C = 'reefid-board-cache';
-let boardAt = 0,
-  boardP = null;
+// One leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; core.js SUBJECTS board): the
+// page shows the subject on screen's (boardSubj), the first subject's on one without a leaderboard. The first one's is
+// GET ?board=1 as before; another's adds &s=<id>, served from sheet v95 (BOARD_SHEET): an older script answers with the
+// first one's, which is never shown as another subject's (rule D4: "not available yet" until the script has it).
+// Each subject's board is kept apart (BOARD_C, the subject's device key: reefid-board-cache for the corals).
+const BOARD_C = 'board-cache';
+const BOARD_SHEET = 95;
+const board0 = () => SUBJECTS.find(x => x.board);
+// A board reply to show: the first subject's from any script, another's only from BOARD_SHEET (tests/gates.test.js).
+const boardOk = (j, first) => !!j && j.ok === true && Array.isArray(j.rows) && (first || Number(j.v) >= BOARD_SHEET);
+// A subject's board is live once the sheet serves it (rule D4; Codex review #694): the first one's always, another's from
+// BOARD_SHEET (sync.js sheetV, the version of the last reply). Before, that subject behaves as before it had one: the
+// page shows the first subject's board, no rank on My progress, no announcement.
+const boardLive = S => !!S && !!S.board && (S === board0() || (typeof sheetV === 'function' && sheetV() >= BOARD_SHEET));
+const boardSubj = () => (boardLive(SUBJ) ? SUBJ : board0());
+const boardAt = {},
+  boardP = {};
 const ago = t => {
   const m = Math.round((Date.now() - (t || 0)) / 60000);
   return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
 };
-const boardCached = () => {
-  const c = store.get(BOARD_C, null);
+const boardCached = (S = boardSubj()) => {
+  const c = store.get(subjDev(S.id, BOARD_C), null);
   return c && Array.isArray(c.rows) ? c : null;
 };
-const loadBoard = () => {
-  if (!boardP || Date.now() - boardAt > 60000) {
-    boardAt = Date.now();
-    boardP = fetch(SYNC_URL + '?board=1')
+const loadBoard = (S = boardSubj()) => {
+  const k = S.id,
+    first = S === board0();
+  if (!boardP[k] || Date.now() - (boardAt[k] || 0) > 60000) {
+    boardAt[k] = Date.now();
+    boardP[k] = fetch(SYNC_URL + '?board=1' + (first ? '' : '&s=' + encodeURIComponent(k)))
       .then(r => r.json())
-      .then(j => (j && j.ok && Array.isArray(j.rows) ? j : {err: j && j.v < 14 ? 'old' : 'na'}))
+      .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(BOARD_C, {rows: j.rows, t: Date.now()});
-        else boardAt = 0; // a failure is not kept for a minute: the next visit tries again
+        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now()});
+        else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
   }
-  return boardP;
+  return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
   $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
-  const C = boardCached();
-  if (C) paintBoard({...C, old: true});
-  loadBoard().then(B => {
+  const S = boardSubj(),
+    C = boardCached(S);
+  if (C) paintBoard({...C, old: true}, S);
+  loadBoard(S).then(B => {
     const box = document.getElementById('board');
-    if (!box || hashNow() !== 'board') return;
+    if (!box || hashNow() !== 'board' || boardSubj() !== S) return; // left, or another subject chosen meanwhile
     if (!B || B.err) {
       // Offline or failing: the last board stays, marked as such.
-      if (C) return paintBoard({...C, old: true, off: true});
+      if (C) return paintBoard({...C, old: true, off: true}, S);
       box.innerHTML = `<p class="note">${B && B.err === 'offline' ? 'The leaderboard needs a connection.' : 'The leaderboard is not available yet.'}</p>`;
       return;
     }
-    paintBoard(B);
+    paintBoard(B, S);
   });
 }
-function paintBoard(B) {
+function paintBoard(B, S = boardSubj()) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
   const me = boardMe(B.rows),
     // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
-    // device has none to show (Q134), or when the subject on screen is not the board's (SUBJ.board: P is another
-    // subject's progress). Other rows: the level the sheet read from their saved progress.
-    mine = me >= 0 && SUBJ.board ? eloLine(P[LEVEL]) : '',
+    // device has none to show (Q134), or when the subject on screen is not the board's (P is another subject's
+    // progress). Other rows: the level the sheet read from their saved progress.
+    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '',
     eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
@@ -456,9 +534,13 @@ const ACHK = 'reefid-sync-ach';
 // Two records of one player (another device, or this device before signing in): every achievement kept with its
 // earliest date, the best run kept; the current run stays this device's; an achievement taken back (A._gone, achRecheck)
 // never comes back from a copy earned before (core.js mergeAch).
-// Version of the record (ACH_V): a record from before the full recount (2026-11-01, mastery exam) brings its feats
-// (best run, corallites, hard photo) but not its achievements, which were counted on the old rules.
-const ACH_V = 2;
+// Version of the record (ACH_V): a record from before the last full recount brings its feats (best run, corallites, hard
+// photo) but not its achievements, which were counted on older rules (core.js mergeAch), so a device not updated yet
+// never brings back one the recount took away. 2: the mastery exam (2026-11-01). 3: the fish achievements around the
+// global score (Pierre, 2026-11-08, Q259-Q264: fpct25 retired, every fish % one on the score, new ones; "il faut
+// recalculer ... leur succès actuel"), every subject recounted (achMigrate), silently (Q264: "le retrait il est fait en
+// silence").
+const ACH_V = 3;
 function achMerge(json) {
   try {
     const ra = JSON.parse(json || 'null');
@@ -476,9 +558,16 @@ function achMerge(json) {
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
+  // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy; as the
+  // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved; Codex review #736).
+  if (!noticesReady()) {
+    const id = SUBJ.id;
+    noticeLater('achRecheck:' + id, () => inSubject(id, achRecheck));
+    return [];
+  }
   const A = store.get(ACHK, null),
     was = JSON.stringify(A),
-    out = A ? achRevoke(A, achSnap(A), Date.now()) : [];
+    out = A ? achRevoke(A, achSnap(A), Date.now(), ACH_L()) : [];
   if (A && JSON.stringify(A) !== was) {
     store.set(ACHK, A);
     if (SYNC) syncSoon();
@@ -496,10 +585,20 @@ function achRecheck() {
   return out;
 }
 const achList = () => slateGenera();
+// The subject's core units (UNITS core: the IMR course's fish families), its circles (UNITS circles: the fish families of
+// circles 1, 2 and 3) and its opt-in sets (UNITS sets: the scientific genera), for the achievements that read them
+// (core.js FISH_ACH): met, at Advanced or above and learned in the core; at Advanced or above in each circle; units at
+// Open Water or above (sets) and at Advanced or above (setsAdv) in each set. pct: the subject's global score when it has
+// one (core.js SUBJECTS score, treeScore over UNITS tree: Q259, the fish % achievements on it), read from the device's
+// progress whatever the sheet's version (the achievements need nothing from the sheet), else the headline %.
 function achSnap(A = store.get(ACHK, {}) || {}) {
   const L = achList(),
     st = L.map(lvStep),
-    G = P[LEVEL];
+    G = P[LEVEL],
+    U = UNITS[SUBJ.id],
+    C = U.core ? U.core() : [],
+    T = SUBJ.score && U.tree ? U.tree() : null,
+    at = (list, k) => list.filter(n => lvStep(n) >= k).length;
   const groups = {};
   L.forEach(n => (groups[shownGroup(n) || 0] = groups[shownGroup(n) || 0] || []).push(n));
   return {
@@ -507,7 +606,7 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     met: st.filter(x => x >= 1).length,
     q: [2, 3, 4].map(k => st.filter(x => x >= k).length),
     learned: st.filter(x => x >= 5).length,
-    pct: progPct(L),
+    pct: T ? treeScore(P, T, SUBJ.score).pct : headPct(L),
     streak: A._best || 0,
     duel: L.some(n => (P[n] || {}).du),
     cor: !!A._cor,
@@ -516,33 +615,99 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
     elo: G && typeof G.th === 'number' && (G.ok || 0) + (G.ko || 0) >= ELO_MIN ? eloScore(G.th) : 0,
     group: Object.entries(groups).some(([k, g]) => k !== '0' && g.length > 1 && g.every(n => lvStep(n) >= 5)),
     bonus: bonusList().filter(introduced).length,
+    core: {total: C.length, met: at(C, 1), adv: at(C, 3), learned: at(C, 5)},
+    circ: (U.circles ? U.circles() : []).map(c => ({total: c.length, adv: at(c, 3)})),
+    sets: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 2)])),
+    setsAdv: Object.fromEntries((U.sets || []).map(S => [S.k, at(S.all ? S.all() : S.units(), 3)])),
     basics: !!A._basics,
     fb: Array.isArray(A._fb) ? A._fb.length : 0
   };
 }
-// Full recount, once per device (Pierre, 2026-11-01: "redo the calculation cleanly for everyone, achievements too,
-// locking again those unlocked when they should not have been"): every achievement is tested again on the current
-// progress with the current rules; those still met keep their date, the others go. Feats (runs, corallites, hard photo)
-// stay. Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows.
-// Achievements count one subject (core.js SUBJECTS ach: corals): checked on its progress whatever the subject on screen.
-const ACHS = () => SUBJECTS.find(x => x.ach).id;
+// Full recount, once per device and record version (Pierre, 2026-11-01: "redo the calculation cleanly for everyone,
+// achievements too, locking again those unlocked when they should not have been"; 2026-11-08: "recalculer tous les
+// progrès ... et ensuite recalculer leurs succès aussi"): every achievement of every subject is tested again on that
+// subject's current progress with the current rules (core.js achRecount); those still met keep their date, the others
+// go, and so do the ids no list holds any more (fish fpct25, Q259). Feats (runs, corallites, hard photo, removals) stay.
+// Silent (Q264). Then one sync, so the sheet's copy (leaderboard %, achievement shares) follows. Each subject with
+// achievements (core.js SUBJECTS ach) checks its own list (SUBJECTS achs) on its own progress (inSubject); the
+// Contributions once, with the first. All live in the one record (ACHK) under ids of their own.
+// A subject whose data is not in yet (the fish, lazy-loaded: app.js fishLoad; its slate empty) cannot be tested: its
+// achievements wait on this device (ACHOLD, {subject: {id: time}}, outside the synced record, so nothing unchecked
+// travels) and are recounted once its data comes (achPending); until then they are out of the record, never shown (its
+// pages need its data). Every such subject waits, even with nothing held, so what its progress already meets comes in
+// silently too (Codex review #734). Before a subject is tested, its records still under the former moving average are
+// rebuilt (model.js domRecalcAll: a short visit, inSubject, skips it; Codex review #734), so nothing is granted from
+// obsolete bars.
+const ACHS = () => SUBJECTS.find(x => x.ach).id,
+  ACHOLD = 'reefid-ach-old',
+  // The shared data first (app.js DATA, set by build: the levels read it through GX; Codex review #734: a direct Fish link
+  // can bring the fish files before data.json), then the subject's own (its slate).
+  achReady = () =>
+    !!(typeof DATA === 'object' && DATA && DATA.gen) &&
+    achList().length > 0 &&
+    (typeof domRecalcAll !== 'function' || (domRecalcAll(), true)),
+  achOwn = S => S.achs().filter(a => a.kind !== 'contrib');
 function achMigrate() {
-  if (!SUBJ.ach) return inSubject(ACHS(), achMigrate);
   const A = store.get(ACHK, null);
   if (A && A._v === ACH_V) return;
-  const B = {_v: ACH_V};
+  const B = {_v: ACH_V},
+    t = Date.now(),
+    held = {};
   if (A) Object.keys(A).forEach(k => k[0] === '_' && k !== '_v' && A[k] && (B[k] = A[k])); // the feats (_run, _best, _cor, _hard, _gone, _basics, _fb)
-  const snap = achSnap(B),
-    t = Date.now();
-  ACH.filter(a => a.test(snap)).forEach(a => (B[a.id] = (A && A[a.id]) || t));
+  SUBJECTS.filter(S => S.ach).forEach((S, i) =>
+    inSubject(S.id, () => {
+      const list = [...achOwn(S), ...(i ? [] : ACH_CONTRIB)];
+      if (achReady()) return achRecount(B, A, list, achSnap(B), t);
+      held[S.id] = Object.fromEntries(list.filter(a => A && A[a.id]).map(a => [a.id, A[a.id]]));
+    })
+  );
   store.set(ACHK, B);
+  store.set(ACHOLD, Object.keys(held).length ? held : null);
   if (SYNC && A) syncSoon();
 }
+// The recount of a subject that waited for its data (achMigrate): once it is in (app.js fishLoad: every subject waiting;
+// achCheck: the one it checks, never a visit to another at each answer), its achievements are tested on its progress,
+// each met one keeping the earliest of its dates (core.js achRecount), the others dropped. Silent, as the recount.
+function achPending(only) {
+  const H = store.get(ACHOLD, null);
+  if (!H || typeof H !== 'object' || (only && !H[only])) return;
+  const left = {};
+  let done = false;
+  Object.entries(H).forEach(([id, old]) => {
+    const S = SUBJECTS.find(x => x.id === id && x.ach);
+    if (!S) return;
+    if (only && id !== only) return void (left[id] = old);
+    inSubject(id, () => {
+      if (!achReady()) return void (left[id] = old);
+      const A = store.get(ACHK, {}) || {};
+      achRecount(A, old, achOwn(S), achSnap(A), Date.now());
+      store.set(ACHK, A);
+      done = true;
+    });
+  });
+  store.set(ACHOLD, Object.keys(left).length ? left : null);
+  if (done && SYNC) syncSoon();
+}
+// Signed in, the check waits for the visit's first sync (sync.js noticeLater), then runs once on the merged progress and
+// achievements (as silent as the quietest call that waited): an old copy of the account never pops up, nor takes back, what
+// the other devices already settled.
+let achWait = false;
 function achCheck(silent) {
+  if (!noticesReady()) {
+    achWait = achWait || !!silent;
+    const id = SUBJ.id;
+    noticeLater('ach:' + id, () => {
+      const s = achWait;
+      achWait = false;
+      inSubject(id, () => achCheck(s));
+    });
+    return;
+  }
   if (!SUBJ.ach) return inSubject(ACHS(), () => achCheck(silent));
+  achPending(SUBJ.id); // a recount waiting for this subject's data first: what it keeps is not new
   const had = store.get(ACHK, null),
     A = had || {},
-    ids = newAch(achSnap(A), A);
+    ids = newAch(achSnap(A), A, achTests());
   if (!ids.length) {
     if (!had) store.set(ACHK, A);
     return achDot();
@@ -550,12 +715,16 @@ function achCheck(silent) {
   // Only the first achievement of each family and the top tier pop up (Pierre, 2026-11-02, after a walkthrough counted
   // 7-9 toasts in 60 answers): a new kind stays a surprise, an intermediate step lands quietly on the achievements page
   // with a "new" dot on 🏅 / 🏆. Several at once make one toast. Every Contributions tier pops up (Pierre, 2026-11-05, Q65).
-  const fams = new Set(ACH.filter(a => A[a.id]).map(achFam)),
+  const fams = new Set(
+      achTests()
+        .filter(a => A[a.id])
+        .map(achFam)
+    ),
     t = Date.now(),
     loud = [],
     quiet = [];
   ids.forEach(id => {
-    const a = ACH.find(x => x.id === id);
+    const a = achFind(id);
     (a.tier === 3 || a.kind === 'contrib' || !fams.has(achFam(a)) ? loud : quiet).push(id);
     fams.add(achFam(a));
     A[id] = t;
@@ -565,8 +734,8 @@ function achCheck(silent) {
   achDot();
   // The Contributions' 5th and 10th (tier 2 and 3) come as a card, which stays until closed (Pierre, 2026-11-05: a toast
   // at the top may go unread); the first stays a toast, like the learning achievements.
-  const card = id => !silent && had && (ACH.find(x => x.id === id) || {}).kind === 'contrib' && ACH.find(x => x.id === id).tier >= 2;
-  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(ACH.find(x => x.id === id)));
+  const card = id => !silent && had && (achFind(id) || {}).kind === 'contrib' && achFind(id).tier >= 2;
+  (silent || !had ? ids : loud).filter(card).forEach(id => achCard(achFind(id)));
   achRecap((silent || !had ? ids : loud).filter(id => !card(id)));
 }
 // One card at a time (docs/DESIGN.md "Cards"): fn runs once no card or tour is open.
@@ -608,20 +777,33 @@ function achCard(a) {
     })
   );
 }
-// The learning achievements (core.js ACH kind 'learn'): the count on the badge and on #ach; the Contributions (kind
-// 'contrib', Pierre 2026-11-05, Q65) are a family apart, never in that count, listed in their own section.
-const ACH_L = () => ACH.filter(a => a.kind !== 'contrib'),
-  ACH_C = () => ACH.filter(a => a.kind === 'contrib');
+// The learning achievements of the subject on screen (core.js SUBJECTS achs, kind 'learn'; a subject without any: the
+// first one's): the count on the badge and on #ach, so a fish achievement never counts in the corals' and back. The
+// Contributions (kind 'contrib', Pierre 2026-11-05, Q65) are one family for every subject (core.js ACH_CONTRIB), never in
+// that count, listed in their own section. achTests: what a check tests, the subject's learning ones and the Contributions.
+const achSubj = () => (SUBJ.ach ? SUBJ : subjectOf(ACHS())),
+  ACH_L = () =>
+    achSubj()
+      .achs()
+      .filter(a => a.kind !== 'contrib'),
+  ACH_C = () => ACH_CONTRIB,
+  achTests = () => [...ACH_L(), ...ACH_C()];
 // Families: the icons of one kind of milestone (genus progress, learned, Elo).
-const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '👑': '🎓', '🌟': '⭐'},
+const ACH_FAM = {'🌿': '🌱', '🪸': '🌱', '🐠': '🌱', '👑': '🎓', '🌟': '⭐'},
   achFam = a => ACH_FAM[a.icon] || a.icon;
 // Achievements earned quietly and not seen yet: a dot on 🏆 in the header, on the Achievements tab and on 🏅 in the
 // player's card. Kept on this
 // device only (its own key, outside the synced record: a sign-in or another device's sync never brings or drops them;
 // Codex review #360); sign-out clears it with the progress.
+// Each subject's page shows and clears only its own (achShown: its list and the Contributions; Codex review #694): another
+// subject's unseen ones keep their mark until that subject's page shows them.
 const ACHNEW = 'reefid-ach-new',
   achUnseen = () => store.get(ACHNEW, []) || [],
-  achNew = () => achUnseen().length;
+  achShown = () => {
+    const ids = new Set(achTests().map(a => a.id));
+    return achUnseen().filter(id => ids.has(id));
+  },
+  achNew = () => achShown().length;
 function achDot() {
   const bg = document.getElementById('boardgo'),
     tab = document.querySelector(`.btabs a[href="${hr('ach')}"]`); // the Achievements tab of the leaderboard page (boardTabs)
@@ -639,8 +821,11 @@ function achDot() {
 // as before. Nothing already earned is taken back.
 const achRunIn = cur => cur === 'quiz';
 function achAfter(good, ph, cur) {
-  if (!SUBJ.ach) return; // an answer on another subject earns nothing (fish: no achievements yet)
+  if (!SUBJ.ach) return; // an answer on a subject without achievements earns nothing
   if (!store.get(ACHK, null)) achCheck(true); // no record yet on this device: what is already met comes as one recap
+  // The feats (runs, corallites, hard photos) belong to the subject whose achievements read them (SUBJECTS achFeats: the
+  // corals): another subject's answers neither extend nor break the run, as the custom quiz's (fish: none of them yet).
+  if (!SUBJ.achFeats) return achCheck();
   const A = store.get(ACHK, {}) || {},
     solo = ph.length === 1,
     run = achRunIn(cur);
@@ -832,13 +1017,13 @@ function achNext() {
 }
 function achRecap(ids) {
   if (!ids.length) return;
-  if (ids.length === 1) return achPop(ACH.find(a => a.id === ids[0]));
+  if (ids.length === 1) return achPop(achFind(ids[0]));
   achPop({
     tier: 2,
     icon: '🏅',
     title: `${ids.length} achievements`,
     desc: ids
-      .map(id => (ACH.find(a => a.id === id) || {}).icon)
+      .map(id => (achFind(id) || {}).icon)
       .slice(0, 8)
       .join(' ')
   });
@@ -880,10 +1065,13 @@ const loadAchs = () => {
 // of players holding it, as on Steam.
 function viewAch() {
   const A = store.get(ACHK, {}) || {},
-    fresh = new Set(achUnseen());
-  // Seen now: the quiet ones lose their dot, and keep a "New" tag on this visit.
+    fresh = new Set(achShown());
+  // Seen now: the quiet ones shown here lose their dot, and keep a "New" tag on this visit.
   if (fresh.size) {
-    store.set(ACHNEW, []);
+    store.set(
+      ACHNEW,
+      achUnseen().filter(id => !fresh.has(id))
+    );
     achDot();
   }
   const draw = S => {
@@ -903,7 +1091,8 @@ function viewAch() {
     const card = (a, on) =>
       `<li class="achc${on ? ' on' : ''}${fresh.has(a.id) ? ' new' : ''} t${a.tier}"><span class="achic" aria-hidden="true">${a.icon}</span><span><b>${esc(a.title)} ${on ? TIER[a.tier] : ''}</b><small>${esc(a.desc)}${on ? ` · ${new Date(A[a.id]).toLocaleDateString([], {day: 'numeric', month: 'short'})}` : ''}</small>${share(a)}</span></li>`;
     // The Contributions apart, below the learning ones, in their order (1st, 5th, 10th report), with the count so far.
-    $v.innerHTML = `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>
+    // The ? text: the subject's own (UNITS achHelp), else the corals' words below.
+    $v.innerHTML = `${UNITS[achSubj().id].achHelp ? UNITS[achSubj().id].achHelp() : `<p class="lede">Achievements mark milestones of your learning: genera met, genera at each level (Open Water, Advanced, Divemaster, Instructor), your overall progress, runs of right answers, look-alike duels, corallites, hard photos and your Elo (from ${ELO_MIN} answers). Runs and hard photos are earned in the Quiz only (not in the Custom quiz or the Look-alike duels). Never time spent. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback): one per photo, and an "Other" report with a note; they never count in your progress. The share of players counts everyone who signed in.</p>`}
   <div class="board">${boardTabs('ach')}<h2 class="btitle">${got.length}/${ACH_L().length} earned</h2>
   <ul class="achl">${got.map(a => card(a, true)).join('')}${left.map(a => card(a, false)).join('')}</ul>
   <h2 class="btitle bsec">Contributions <small>${fb ? `${fb} report${fb > 1 ? 's' : ''} sent` : 'reports and feedback you send'}${thx ? ` · ${thx} handled` : ''}</small></h2>
@@ -921,19 +1110,29 @@ function boardNotice() {
   // Players signed in before the leaderboard: one sync writes their progress % (the sheet has none for them yet). Only
   // once the sheet serves the leaderboard (v14): an older script ignores the %, which left everyone at 0% (2026-11-01).
   if (SYNC && !store.get('reefid-board-sent14', 0))
-    loadBoard().then(B => {
+    loadBoard(board0()).then(B => {
       if (B && !B.err && SYNC && !store.get('reefid-board-sent14', 0)) {
         store.set('reefid-board-sent14', 1);
         syncSoon();
       }
     });
-  if (!SYNC || store.get('reefid-board-told', 0)) return;
+  // Said on a subject that has the leaderboard (SUBJECTS board) only: on another (Fish), it waits for a later load
+  // (fish beta QA, 2026-11-06: it covered the bottom of fish Home right after Fish was chosen). A switch of subject
+  // while it shows takes it away and it is due again (app.js setSubject, toastsOff).
+  // Told on another device of the account (core.js TOLD 'board'): after the visit's first sync (sync.js noticeLater).
+  if (!SYNC || store.get('reefid-board-told', 0) || !boardLive(SUBJ) || noticeLater('board', boardNotice) || toldHas('board')) return;
   store.set('reefid-board-told', 1);
-  const t = appToast(
-    '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
-    15000
-  );
-  t.querySelector('a').onclick = () => t.remove();
+  const ms = 15000,
+    t = appToast(
+      '🏆 New: a <a href="' + esc(hr('board')) + '">leaderboard</a>. Your name shows there; to leave it, ⚙ Settings, Leaderboard: Off.',
+      ms
+    ),
+    // Told for the account once closed or gone by itself; not when a switch of subject takes it away (toastsOff: due again).
+    told = () => !t.dataset.off && toldAdd('board');
+  t.dataset.again = 'reefid-board-told';
+  t.querySelector('a').onclick = () => (told(), t.remove());
+  t.querySelector('button').addEventListener('click', told);
+  setTimeout(told, ms);
 }
 // Progress recalculated for everyone (Pierre, 2026-11-02: when we recalculate every player's progress, say so with a
 // real pop-up, not a discreet note; no algorithm details). Once per device, to a player who already has answers (a new
@@ -973,13 +1172,16 @@ const RECALC = {
   ]
 };
 function recalcNotice() {
+  if (noticeLater('recalc', recalcNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
   // Whether this load has decided ("none" or "shown"; tests wait for it rather than for a fixed time).
   const said = d => (window.RECALC_SAID = d);
+  // The last note seen: here (KEY) or on another device of the account (core.js TOLD 'recalc:<id>'), the later one.
   const L = RECALC.L,
     last = L[L.length - 1].id,
-    seen = store.get(RECALC.KEY, ''),
-    due = L.slice(L.findIndex(x => x.id === seen) + 1).reverse();
+    at = id => L.findIndex(x => x.id === id),
+    seen = Math.max(at(store.get(RECALC.KEY, '')), ...L.filter(x => toldHas('recalc:' + x.id)).map(x => at(x.id))),
+    due = L.slice(seen + 1).reverse();
   if (!due.length) return void said('none');
   // Answers: the global count, or the genera's own for progress saved before it (Codex review #367).
   const played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && ((s.ok || 0) + (s.ko || 0) > 0 || s.h));
@@ -992,11 +1194,11 @@ function recalcNotice() {
   cardShow({
     kind: k,
     cls: 'recalc',
-    visual: k === 'update' ? cardRing(progPct()) : '',
+    visual: k === 'update' ? cardRing(headPct()) : '',
     kick: due[0].k || 'Update',
     title: due[0].t,
     body: due.map((x, i) => `${i ? `<h3>${x.t}</h3>` : ''}<p>${x.p}</p>`).join(''),
-    primary: {text: due[0].b || 'Got it', on: () => store.set(RECALC.KEY, last)},
+    primary: {text: due[0].b || 'Got it', on: () => (store.set(RECALC.KEY, last), toldAdd('recalc:' + last))},
     esc: 1,
     enter: 1,
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
@@ -1036,10 +1238,22 @@ function mxLostText(L, nAch, why = {}) {
     .join(' ');
 }
 let mxLostT = 0;
+// A mark told on another device of the account (core.js TOLD 'mx:<unit>@<its s.mx>'), or back on the unit by the time the
+// card would show (a sync merged a copy that has it), is not told: it goes to told here, silently.
+const mxTok = (n, mx) => `mx:${n}@${mx}`;
 function mxLostNotice() {
   clearTimeout(mxLostT);
-  const M = store.get(MXL.KEY, {}) || {},
-    due = M.due || {},
+  if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
+  let M = store.get(MXL.KEY, {}) || {};
+  const done = Object.keys(M.due || {}).filter(n => toldHas(mxTok(n, M.due[n])) || (P[n] && P[n].mx));
+  if (done.length) {
+    const left = {...M.due},
+      told = {...(M.told || {})};
+    done.forEach(n => ((told[n] = left[n]), delete left[n]));
+    M = {...M, due: left, told, ...(Object.keys(left).length ? {} : {gone: []})};
+    store.set(MXL.KEY, M);
+  }
+  const due = M.due || {},
     L = Object.keys(due).sort();
   if (!L.length || document.querySelector('.mxlost')) return;
   if (document.querySelector('#tour, .unlock')) return void (mxLostT = setTimeout(mxLostNotice, 2000));
@@ -1061,6 +1275,7 @@ function mxLostNotice() {
           if (left[n] === due[n]) delete left[n];
         });
         store.set(MXL.KEY, {...N, due: left, told, gone: []});
+        toldAdd(...L.map(n => mxTok(n, due[n])));
         mxLostNotice();
       }
     },
@@ -1080,25 +1295,53 @@ function mxLostNotice() {
 // or the tour on screen (tried again every 2 s), and a page change closes it unseen to show it again on the new page.
 // At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
 const RVN = {KEY: 'reefid-rv-msg'};
+const rvTold = v => toldHas('rv:' + v); // its card seen on another device of the account (core.js TOLD)
 function rvNoticeAdd(from, to, pct) {
   const M = store.get(RVN.KEY, {}) || {},
-    told = M.told || [],
+    told = [...new Set([...(M.told || []), ...RVS.map(r => r.v).filter(rvTold)])],
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {};
-  rvMsgs(from, to).forEach(x => {
+  // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
+  // cards, the standard one included (rvMsgs skip).
+  let L = rvMsgs(from, to);
+  const sorry = L.find(x => x.msg.down),
+    std = [];
+  if (sorry && !(pct && pct[0] - pct[1] >= (sorry.msg.min || 0))) {
+    L = rvMsgs(from, to, true);
+    // No earlier version in the jump with the standard card (an upgrade from the version just before): the standard card
+    // under the apology's version (M.std; rvNotice shows RV_CARD for it; Codex review #646).
+    if (!L.some(x => x.msg === RV_CARD)) (L.push({v: sorry.v, msg: RV_CARD}), std.push(sorry.v));
+  }
+  L.forEach(x => {
     if (told.includes(x.v) || due.includes(x.v)) return;
     if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
     if (pct) pc[x.v] = pct;
     due.push(x.v);
   });
-  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc});
+  const st = [...new Set([...(M.std || []).filter(v => !std.length || v !== std[0]), ...std.filter(v => due.includes(v))])];
+  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc, ...(st.length ? {std: st} : {})});
   if (window.APP_READY) rvNotice();
 }
 let rvT = 0;
+// A card's PS (core.js RV_SORRY ps): a line the sheet serves (sync.js NOTES_KEY, Code.gs notes_), small under the text,
+// when it is set; never written in the repo.
+const rvPs = m => {
+  const t = m && m.ps ? String(((typeof NOTES_KEY === 'string' ? store.get(NOTES_KEY, {}) : {}) || {})[m.ps] || '').trim() : '';
+  return t ? `<p class="cardps"><small>${esc(t)}</small></p>` : '';
+};
 function rvNotice() {
   clearTimeout(rvT);
-  const M = store.get(RVN.KEY, {}) || {},
-    x = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v));
+  if (noticeLater('rv', rvNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
+  let M = store.get(RVN.KEY, {}) || {};
+  // Seen on another device since it was due here: told, silently.
+  const elsewhere = (M.due || []).filter(rvTold);
+  if (elsewhere.length) {
+    M = {...M, due: M.due.filter(v => !elsewhere.includes(v)), told: [...new Set([...(M.told || []), ...elsewhere])]};
+    store.set(RVN.KEY, M);
+  }
+  const r0 = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v)),
+    // A version whose standard card replaced its apology (rvNoticeAdd std): the standard card.
+    x = r0 && (M.std || []).includes(r0.v) ? {...r0, msg: RV_CARD} : r0;
   if (!x || document.querySelector('.rvmsg')) return;
   if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
   // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
@@ -1106,15 +1349,19 @@ function rvNotice() {
   cardShow({
     kind: x.msg.kind || 'update',
     cls: 'rvmsg',
-    kick: 'Update',
+    kick: x.msg.kick || 'Update',
     title: x.msg.t,
     visual: pt != null ? cardRing(pt, pf) : '',
-    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>`,
+    // pct: the two % on a line of their own that never wraps (core.js RV_SORRY); ps: the sheet's line (rvPs).
+    body: `<p>${x.msg.p.replace('{from}', pf).replace('{to}', pt)}</p>${
+      x.msg.pct && pt != null ? `<p class="cardpct">${esc(x.msg.pct.replace('{from}', pf).replace('{to}', pt))}</p>` : ''
+    }${rvPs(x.msg)}`,
     primary: {
       text: 'Got it',
       on: () => {
         const N = store.get(RVN.KEY, {}) || {};
         store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
+        toldAdd('rv:' + x.v);
         rvNotice(); // the next version's card, if any
       }
     },
@@ -1130,10 +1377,12 @@ function rvNotice() {
 // opening hold's sum, the cards opened in it), so playing on changes nothing. A card like recalcNotice's (app.js
 // cardShow, kind apology: 🙏 on the warm --warn tint): one card at a time (it waits while the tour or another card is
 // up), never held, its button, Enter or Escape close it for good on this device (reefid-sorry, like reefid-recalc, kept on the
-// device); leaving the page closes it unseen and it comes back.
+// device) and, signed in, on the account's other devices (core.js TOLD 'sorry'); leaving the page closes it unseen and it
+// comes back.
 const SORRYK = {KEY: 'reefid-sorry', FIRST: 'reefid-sorry-first'};
 function sorryNotice() {
   if (!SUBJ.replay) return; // the apology is about the corals' opening: it waits until the player is on them
+  if (noticeLater('sorry', sorryNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   const now = Date.now();
   let F = store.get(SORRYK.FIRST, null);
   if (!F || typeof F !== 'object') {
@@ -1144,7 +1393,7 @@ function sorryNotice() {
     F = {t: now, ...sorryOf({log, cards: introMap(), total: answersSoFar(), h: HOLDS, first: now})};
     store.set(SORRYK.FIRST, F);
   }
-  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0)})) return;
+  if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0) || toldHas('sorry')})) return; // or on another device (TOLD)
   if (document.querySelector('.sorry')) return; // already on screen
   if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
   const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset());
@@ -1154,10 +1403,109 @@ function sorryNotice() {
     kick: 'Sorry',
     title: esc(x.t),
     body: `<p>${esc(x.p)}</p>`,
-    primary: {text: 'Thanks', on: () => store.set(SORRYK.KEY, Date.now())},
+    primary: {text: 'Thanks', on: () => (store.set(SORRYK.KEY, Date.now()), toldAdd('sorry'))},
     esc: 1,
     enter: 1,
     onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
+  });
+}
+// The cards that tell a player about a subject (app.js UNITS hello), one per way the subject opens (core.js SUBJECTS open,
+// subjGroup): hello.group while it opens to a group, hello.all once it opens to everyone (fish since Q158: the same
+// invitation to every player, while the subject keeps its beta label). Pierre, 2026-11-05: "a proper card the player
+// closes, shown once, at a calm moment", not a toast, which may go unread; 2026-11-06: while fish stays open to a group
+// he picks, the card is an invitation to test the fish beta, for the players of that group only.
+// Each card is seen once, under its own key (subjDev: reefid-fish-hello-group, and the account's core.js TOLD
+// 'hello:fish-group' for its other devices), so a later card is not hidden by an earlier one. hello.group goes only to
+// a player in the subject's group (subjGroups: never the admin's own access, IS_ADMIN, nor anyone while the subject is open to all); hello.all to anyone the subject is open to (subjOpen). Never in
+// the admin's browser (as the tour), and only to a player settled in the subject on screen (the corals): at least
+// HELLO.MIN answers (a new player meets the switch with the tour and the first questions). A player who has played the
+// subject already (it is on screen, its welcome question is answered, or it has progress) is never told: marked seen at
+// once. The calm moment: Home, HELLO.WAIT after it is drawn and still on it, nothing else on screen (the tour, a card, a
+// toast, the help, ⚙, an enlarged photo) and the prompt spacing met (quiz.js promptOk, which it then pushes back as the
+// other prompts do). Not calm: tried again at the next Home. Seen by either button or Escape; leaving the page closes it
+// unseen and it comes back at the next calm Home. "Try fish" switches to the subject and opens its quiz (its welcome
+// question first, quiz.js startGate).
+const HELLO = {KEY: 'hello-', MIN: 10, WAIT: 1500};
+// The way S opens ('group' or 'all'): the name of its card in UNITS hello and of the card's seen mark.
+const helloMode = S => (subjGroup(S) ? 'group' : 'all');
+// Its token once seen (core.js TOLD), for every device of the account.
+const helloTok = S => `hello:${S.id}-${helloMode(S)}`;
+// 'show', 'met' (mark it seen, say nothing), or '' (not now). Pure on its inputs: tests call it.
+const helloDue = ({card, member, admin, seen, met, answers}) =>
+  !card || !member || admin || seen ? '' : met ? 'met' : answers >= HELLO.MIN ? 'show' : '';
+let helloT = 0;
+function subjHello() {
+  clearTimeout(helloT);
+  const home = () => (hashNow() || 'home') === 'home';
+  if (!home() || noticeLater('hello', subjHello)) return; // signed in: after the visit's first sync (sync.js noticeLater)
+  // The 'all' card is the beta invitation: only while the subject keeps its beta label (SUBJECTS beta).
+  const card = S => (helloMode(S) === 'all' && !S.beta ? null : (UNITS[S.id].hello || {})[helloMode(S)]),
+    member = S => (helloMode(S) === 'group' ? subjGroups().includes(S.id) : subjOpen(S));
+  const S = SUBJECTS.find(x => card(x) && member(x)); // a subject with a card for the player, never by its place
+  if (!S) return;
+  const H = card(S),
+    key = subjDev(S.id, HELLO.KEY + helloMode(S)),
+    tok = helloTok(S),
+    P2 = store.get(subjKey(S.id, 'progress'), null),
+    due = helloDue({
+      card: H,
+      member: member(S),
+      admin: HAS_ADMIN_TOKEN,
+      seen: !!store.get(key, null) || toldHas(tok), // or on another device of the account (core.js TOLD)
+      met: SUBJ === S || !!store.get(startKey(S.id), null) || !!(P2 && typeof P2 === 'object' && Object.keys(P2).length),
+      answers: answersSoFar() // the subject on screen's, another subject than S (met otherwise)
+    });
+  if (due === 'met') return void store.set(key, 'met');
+  if (due !== 'show') return;
+  helloT = setTimeout(() => {
+    const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .hello');
+    if (!home() || busy || store.get(key, null) || toldHas(tok) || !member(S) || !promptOk()) return;
+    promptMark();
+    const seen = () => (store.set(key, Date.now()), toldAdd(tok));
+    cardShow({
+      kind: S.card,
+      cls: 'hello',
+      kick: H.kick,
+      title: H.title,
+      body: H.body,
+      primary: {text: `Try ${esc(S.name.toLowerCase())}`, on: () => (seen(), setSubject(S.id).then(() => (location.hash = hr('quiz'))))},
+      secondary: {text: 'Later', on: seen},
+      esc: 2
+    });
+  }, HELLO.WAIT);
+}
+// The notices this device marked seen before they travelled with the account (core.js TOLD, 2026-11-08), told to the
+// account once, at start-up (app.js SETUP 2), so the account's other devices stop showing them too; a save sends them
+// when any is new. Once per device (SEEDK), the first time this version runs, and only to the account signed in then:
+// a later account on a shared device never takes the marks a previous player left (Codex review #736). Not signed in
+// then: never (an anonymous device keeps them here, as before).
+const SEEDK = 'reefid-told-seeded';
+function toldSeed() {
+  if (store.get(SEEDK, 0)) return;
+  store.set(SEEDK, 1);
+  if (!SYNC) return;
+  const L = [],
+    r = RECALC.L.findIndex(x => x.id === store.get(RECALC.KEY, ''));
+  if (r >= 0) L.push('recalc:' + RECALC.L[r].id);
+  ((store.get(RVN.KEY, {}) || {}).told || []).forEach(v => L.push('rv:' + v));
+  const told = (store.get(MXL.KEY, {}) || {}).told || {};
+  Object.keys(told).forEach(n => L.push(mxTok(n, told[n])));
+  if (store.get(SORRYK.KEY, 0)) L.push('sorry');
+  SUBJECTS.forEach(S =>
+    ['group', 'all'].forEach(m => {
+      const v = store.get(subjDev(S.id, HELLO.KEY + m), null);
+      if (v && v !== 'met') L.push(`hello:${S.id}-${m}`);
+    })
+  );
+  if (store.get('reefid-board-told', 0)) L.push('board');
+  if (L.length) toldAdd(...L);
+}
+// The notes on screen go when the subject changes (they speak of the subject that was on screen); one marked
+// data-again (its "told" key) is due again later.
+function toastsOff() {
+  document.querySelectorAll('.apptoast').forEach(t => {
+    if (t.dataset.again) (store.set(t.dataset.again, 0), (t.dataset.off = 1));
+    t.remove();
   });
 }
 // A short note at the bottom of the screen (.apptoast, the cards' tint and shadow; html is the app's own text), closed by
@@ -1182,7 +1530,7 @@ document.querySelectorAll('#boardset button').forEach(
     (b.onclick = () => {
       store.set(BOARD, {v: b.dataset.board === '1' ? 1 : 0, t: Date.now()});
       showBoardSet();
-      boardP = null;
+      Object.keys(boardP).forEach(k => delete boardP[k]); // every subject's board fetched again (Codex review #693)
       syncSoon();
     })
 );

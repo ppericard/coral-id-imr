@@ -3,6 +3,21 @@
 //  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral ID Key).
 // The section tabs and the Tools page (#tools) list every other tool.
 (function () {
+  // The photo shapes (width / height) that suit a landscape tile (home.css .hdtiles.land: near 3:2, mostly 1.4 to 1.8 as
+  // the band's shape allows) without cutting the fish's head or tail: a photo wider than its tile loses some of its sides,
+  // one narrower some of its top and bottom (object-fit: cover), so from 4:3 to 16:9 only a little of each.
+  const LAND_AR = [1.3, 1.8];
+  // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
+  // judged tag, judging/FISH.md).
+  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1';
+  // A unit's photo on a Home tile. Landscape tiles (UNITS land): Pierre's ★ Cover (coverP, app.js fishCurate) when it
+  // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
+  // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it,
+  // else its first. Other tiles: the unit's card photo (cover()).
+  const tilePhoto = (g, land) => {
+    const L = g.views.wide;
+    return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || L[0]) : cover(g);
+  };
   const ph = (n, v) => {
     const g = DATA.gen[n];
     if (!g) return '';
@@ -14,7 +29,7 @@
     const names = Object.keys(DATA.gen),
       fish = !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
     // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
-    // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header chip (app.js
+    // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header's switch (app.js
     // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
     // in beta); the doors follow the subject on screen.
     const subj = subjMine().length > 1 ? `<div class="seg hsubj" role="group" aria-label="Subject">${subjBtns()}</div>` : '';
@@ -28,10 +43,17 @@
       // Not for a player who said they had the IMR course or know corals well (Pierre, 2026-11-04).
       said = (store.get(startKey(SUBJ.id), null) || {}).c,
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
+    // A subject whose photos are wide (UNITS land: fish, Pierre 2026-11-08: "most fish are horizontal", square tiles cut
+    // them) gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
+    // photo picked to suit them (tilePhoto: Pierre's cover when it suits the tile, else the first of its easiest that does).
+    const land = !!UNITS[SUBJ.id].land;
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)
-          .map(n => `<img ${thumb(GX(n).views.wide[0], '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`)
+          .map(
+            n =>
+              `<img ${thumb(tilePhoto(GX(n), land), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
+          )
           .join('')
       : shuffle(names)
           .slice(0, 12)
@@ -40,7 +62,8 @@
     // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
-      fp = fish && (GX(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || {views: {wide: []}}).views.wide[0],
+      // Its fish art, a landscape band too: the same photo a tile would show (tilePhoto, Q291).
+      fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
       fishArt = fp ? `<img ${thumb(fp, '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">` : '';
     const idoor = fish
       ? `
@@ -70,9 +93,9 @@
     $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">${subj}
       <div class="hdoors">
         <section class="hdoor learn${newb ? ' newb' : ''}">
-          <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
+          <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase<span class="wide"> · before ReefCloud or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen">Learning phase<span class="wide"> · before ${fish ? 'EventMeasure' : 'ReefCloud'} or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
@@ -102,26 +125,31 @@ ${idoor}
   // The Coral Finder book is cited as a reference (References), never credited as a source of the app's content: its
   // content is not reproduced (Pierre, 2026-11-03, a rights question). The Home credit line does not name it.
   window.viewAbout = function () {
-    const inat = 'https://www.inaturalist.org';
+    const inat = 'https://www.inaturalist.org',
+      ab = subjMine() // the other subjects open to this player add their lines (app.js UNITS about); the corals' are below
+        .map(S => UNITS[S.id].about)
+        .filter(Boolean);
     $v.innerHTML = `<h2 class="vh">About and credits</h2><div class="about">
       <section>
         <h3>Who made it</h3>
-        <p>${esc(ORG.app)} is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the ${esc(ORG.name)} (${esc(ORG.short)}), Dauin, Philippines, to name coral genera on photos and on dives.</p>
+        <p>${esc(ORG.app)} is made by <b>Pierre Pericard</b> (website and interface), to train the Research Assistants of the ${esc(ORG.name)} (${esc(ORG.short)}), Dauin, Philippines, to name coral genera${ab.map(a => ' and ' + a.who).join('')} on photos and on dives.</p>
       </section>
       <section>
         <h3>Course content</h3>
-        <p>The list of genera, the ID tips, the lecture notes and the lecture photos come from <b>IMR Lecture 6</b>, the IMR coral identification lecture. Any other source is named where it is used, for example under “Other sources” on a genus sheet.</p>
+        <p>The list of genera, the ID tips, the lecture notes and the lecture photos come from <b>IMR Lecture 6</b>, the IMR coral identification lecture. Any other source is named where it is used, for example under “Other sources” on a genus sheet.${ab.map(a => ' ' + a.course).join('')}</p>
       </section>
       <section>
         <h3>Photos</h3>
-        <p>Besides the IMR lecture photos, most photos are Pierre Pericard’s own and those of <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a> (CC BY, CC BY-NC, CC BY-SA, CC BY-NC-SA or CC0). Many thanks to them.</p>
-        <p>Every photo keeps its own credit: enlarge a photo to see its author and licence, with a link to the original observation.</p>
+        <p>Most photos are those of <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, Pierre Pericard among them, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a>: CC0, CC BY or CC BY-NC. Some are cropped. Many thanks to them.${ab.map(a => (a.photos ? ' ' + a.photos : '')).join('')}</p>
+        <p>Coral photos also come from IMR Lecture 6, for IMR’s internal training. Their rights are uncertain, as many were not taken by IMR: they are being traced to their original sources, to be credited or replaced.</p>
+        <p>Every photo keeps its own credit: enlarge a photo to see its author and licence, with a link to its original page.</p>
       </section>
       <section>
         <h3>References</h3>
         <p>Works cited in the app, by page or by link:</p>
         <ul>
           <li>Russell Kelley, <i>Coral Finder 2022</i> (Indo-Pacific), BYOGUIDES: an ID guide, cited by page on genus sheets and look-alike pairs.</li>
+          ${ab.map(a => a.refs).join('')}
           <li><a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species (WoRMS)</a> and <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a>, linked from every genus sheet.</li>
         </ul>
       </section>

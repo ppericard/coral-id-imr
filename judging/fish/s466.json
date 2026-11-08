@@ -65,12 +65,8 @@
    "keep": "dup"
   },
   "fish-s466-cand-650829029": {
-   "code": "p1g2ssx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Distant over the reef; I cannot find the jack for sure"
+   "code": "o1g1msx1",
+   "keep": "best"
   },
   "fish-s466-cand-650834911": {
    "code": "p1g2ssx1",
@@ -89,12 +85,8 @@
    "keep": "best"
   },
   "fish-s466-cand-664956790": {
-   "code": "d1g2bsx1",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Green and murky over seagrass; I cannot find the jack for sure"
+   "code": "p1g2bsx1",
+   "keep": "best"
   },
   "fish-s466-cand-664956852": {
    "code": "d1g2bm11",
@@ -147,6 +139,62 @@
   "fish-s466-cand-664957166": {
    "code": "d1g2bm11",
    "keep": "dup"
+  },
+  "fish-s466-cand-642670241": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s466-cand-266409077": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s466-cand-391406212": {
+   "code": "p1g0sl1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Bold bars, sheltering under a jellyfish like a young trevally while iNat says adult: juvenile flag doubtful"
+  },
+  "fish-s466-cand-391411308": {
+   "code": "o0g0ss1j1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "Same jellyfish scene, fish half hidden in the tentacles"
+  },
+  "fish-s466-cand-228142549": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s466-cand-6018807": {
+   "code": "p1g2mss2",
+   "keep": "best"
+  },
+  "fish-s466-cand-255919837": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s466-cand-21996886": {
+   "code": "o1g2sss2",
+   "keep": "best"
+  },
+  "fish-s466-cand-21996890": {
+   "code": "o1g2sms2",
+   "keep": "dup"
+  },
+  "fish-s466-cand-519030825": {
+   "code": "p1d1sms3",
+   "keep": "best"
+  },
+  "fish-s466-cand-581646486": {
+   "code": "o1g2sms2",
+   "keep": "best"
+  },
+  "fish-s466-cand-558200020": {
+   "code": "p1g2bl12",
+   "keep": "best"
   }
  }
 }

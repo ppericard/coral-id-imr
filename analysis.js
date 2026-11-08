@@ -11,12 +11,13 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 8; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 9; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
   // 7: player profiles (who)
   // 8: the Wright map and the genus × player residuals (Learning wright, res)
+  // 9: Time and difficulty (tdiff): others' answer time and enlarging on a photo, time intensity beside difficulty
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
@@ -509,7 +510,7 @@
   }
   // rows: the sheet's readAnswers rows [id, time ms, shown, answered, right, mode, photos, expected, ability, new
   // photos, choices, anonymous, seconds, enlarged] (Code.gs answers_), oldest first or not. meta.ph: {file: [view,
-  // quality 1-3, sharpness or null, source 'imr' | 'own' | 'inat' | 'book']} from the admin's data and curation.
+  // quality 1-3, sharpness or null, source 'imr' | 'own' | 'inat']} from the admin's data and curation.
   function prep(rows, meta = {}) {
     const PH = meta.ph || {},
       R = (rows || []).filter(r => String(r[5] || '').indexOf('quiz') === 0 && r[2]).sort((a, b) => a[1] - b[1]);
@@ -889,7 +890,7 @@
         share(x => x[1] === 1),
         sh.length ? (mean(sh.map(Math.log)) - mu) / sd : 0,
         share(x => x[3] === 'own'),
-        share(x => x[3] === 'inat' || x[3] === 'book'),
+        share(x => x[3] === 'inat'),
         P.length === 1 ? 1 : 0,
         a.typed
       ];
@@ -977,7 +978,7 @@
         k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k
       ),
       sources: tab(
-        x => (x[3] === 'book' ? 'inat' : x[3]),
+        x => x[3],
         k => ({imr: 'IMR lecture', own: 'Pierre’s', inat: 'Other iNaturalist'})[k] || k
       ),
       quality: tab(
@@ -2369,6 +2370,231 @@
     };
   }
 
+  /* ---------- 10. Time and difficulty: what the time to answer and enlarging say about a photo (Pierre, 2026-11-08) ---------- */
+  // The reverse of Answer time and Enlarging: "a slow answer, even a right one, or a photo enlarged first, means the
+  // question or the photo was harder than if the player answers at once". Two parts (docs/LEARNING.md "Response time as
+  // information on difficulty"):
+  // 1. Others' answers on the photo: before each answer, the answers OTHER players gave earlier on its photo (the
+  //    question's first photo, the colony of a multi-view question): their right answers' speed, z = log seconds minus
+  //    that player's own median over their earlier timed answers (from their TD_MIN-th, typed and enlarged answers left
+  //    out of the photo's mean: an enlarged answer's seconds hold the time spent enlarged), and their enlarging against
+  //    their own habit (enlarged 0/1 minus their share so far). Each the photo's mean shrunk by TD_K answers' worth (a
+  //    photo answered once says a quarter of what it seems). right ~ offset (the app's own expectation, its rated photo
+  //    difficulty included) + slow + enlarged + (player), with each question's guess rate: does the time others took on a
+  //    photo say it is harder than the app already thinks? Prequential: only earlier answers, as an app would have them.
+  // 2. Time intensity beside difficulty (van der Linden 2006, the lognormal model with the item's time intensity, split
+  //    into genus and photo): log seconds ~ right + typed + enlarged + 2 choices + (player) + (genus) + (photo), then
+  //    right ~ the photo's time intensity + typed + 2 choices + (player) + (genus) + (photo): how much harder a slower
+  //    photo is (an LLTM-like covariate). The genus's time intensity is shown beside its difficulty, not tested: with a
+  //    few dozen genera, a genus-level covariate beside the genus's own effect is not identified (its interval ran to
+  //    thousands on a planted log).
+  const TD_K = 3, // shrinkage: 3 = residual variance / photo variance of the time (LEARNING.md "Response time: genus and photo")
+    TD_MIN = 10, // a player's timed answers before their median counts (core.js RTIME.MIN)
+    TD_ZB = 0.1; // the bins of the others' mean z (fast below -0.1, slow above 0.1)
+  const medOf = L => {
+    const S = L.slice().sort((a, b) => a - b),
+      n = S.length;
+    return n % 2 ? S[(n - 1) / 2] : (S[n / 2 - 1] + S[n / 2]) / 2;
+  };
+  // Each answer's own z (or null) and the others' shrunk means on its photo (slow, enl; null when no other answer).
+  function tdFeat(A) {
+    const P = new Map(),
+      F = new Map(),
+      out = [];
+    A.forEach(a => {
+      let p = P.get(a.p);
+      if (!p) P.set(a.p, (p = {L: [], e: 0, n: 0}));
+      const timed = a.s != null && !a.typed,
+        z = timed && p.L.length >= TD_MIN ? Math.log(a.s) - medOf(p.L) : null,
+        f = a.ph[0],
+        h = f ? F.get(f) || (F.set(f, []), F.get(f)) : null,
+        o = h ? h.filter(x => x.p !== a.p) : [],
+        zr = o.filter(x => x.zr != null),
+        en = o.filter(x => x.en != null);
+      out.push({
+        a,
+        z,
+        slow: zr.length ? sum(zr.map(x => x.zr)) / (zr.length + TD_K) : null,
+        nz: zr.length,
+        enl: en.length ? sum(en.map(x => x.en)) / (en.length + TD_K) : null,
+        ne: en.length
+      });
+      if (h) h.push({p: a.p, zr: a.y && z != null && !a.z ? z : null, en: a.z != null && p.n ? a.z - p.e / p.n : null});
+      if (timed) p.L.push(Math.log(a.s));
+      if (a.z != null) ((p.e += a.z), (p.n += 1));
+    });
+    return out;
+  }
+  const TD_X = [
+    ['slow', 'Others answered this photo right slowly (per log unit of their own usual time)'],
+    ['enl', 'Others enlarged this photo more than they usually do']
+  ];
+  function tdFit1(R) {
+    const X = R.map(r => [1, r.slow || 0, r.enl || 0]),
+      F = [
+        factor(
+          'player',
+          R.map(r => r.a.p)
+        )
+      ];
+    return Object.assign(
+      glmm(
+        R.map(r => r.a.y),
+        X,
+        F,
+        {off: Float64Array.from(R.map(r => r.a.x)), g: Float64Array.from(R.map(r => r.a.g0))}
+      ),
+      {X}
+    );
+  }
+  // Part 2: the time model, then the accuracy model with each photo's and genus's time intensity (the time model's
+  // shrunk effects, in log seconds) as covariates.
+  function tdFit2(D) {
+    const T = D.filter(a => a.s),
+      Ft = [
+        factor(
+          'player',
+          T.map(a => a.p)
+        ),
+        factor(
+          'genus',
+          T.map(a => a.g)
+        ),
+        factor(
+          'photo',
+          T.map(a => (a.ph.length ? a.ph : null))
+        )
+      ],
+      Mt = lmm(
+        T.map(a => Math.log(a.s)),
+        T.map(a => [1, a.y, a.typed, a.z || 0, a.ch.length === 2 ? 1 : 0]),
+        Ft
+      ),
+      tp = new Map(Ft[2].L.map((k, j) => [k, Ft[2].u[j]])),
+      tph = a => (a.ph.length ? mean(a.ph.map(f => tp.get(f) || 0)) : 0),
+      X = D.map(a => [1, tph(a), a.typed, a.ch.length === 2 ? 1 : 0]),
+      F = [
+        factor(
+          'player',
+          D.map(a => a.p)
+        ),
+        factor(
+          'genus',
+          D.map(a => a.g)
+        ),
+        factor(
+          'photo',
+          D.map(a => (a.ph.length ? a.ph : null))
+        )
+      ],
+      M = glmm(
+        D.map(a => a.y),
+        X,
+        F,
+        {g: Float64Array.from(D.map(a => a.g0))}
+      );
+    return {M, X, F, Ft, Mt, tp};
+  }
+  function tdiff(A, B, seed) {
+    const D = A.filter(a => a.x != null),
+      R = tdFeat(D).filter(r => r.slow != null || r.enl != null),
+      n = R.length,
+      nt = D.filter(a => a.s).length;
+    if (n < 100 || new Set(R.map(r => r.a.p)).size < 2 || nt < 200) return thin(n, 100, {timed: nt});
+    const M = tdFit1(R),
+      bi = boot(
+        R.map(r => ({...r, p: r.a.p})),
+        S => {
+          const m = tdFit1(S.map(r => ({...r, a: {...r.a, p: r.p}})));
+          return {slow: m.b[1], enl: m.b[2]};
+        },
+        B,
+        seed
+      ),
+      W = tdFit2(D),
+      bw = boot(
+        D,
+        S => {
+          const w = tdFit2(S);
+          return {tph: w.M.b[1]};
+        },
+        B,
+        seed + 1
+      );
+    const effects = [
+      eff('slow', TD_X[0][1], M.b[1], M.se[1], bi, 'logit', 0.1, n, {rows: M.nz[1]}),
+      eff('enl', TD_X[1][1], M.b[2], M.se[2], bi, 'logit', 0.25, n, {rows: M.nz[2]}),
+      eff('tph', 'A photo slower to answer (per log unit of its time intensity)', W.M.b[1], W.M.se[1], bw, 'logit', 0.1, D.length, {
+        rows: W.M.nz[1]
+      })
+    ];
+    // Right answers against the app's expectation, by how fast others answered the photo right (descriptive).
+    const bins = [
+      ['fast', 'Faster than their usual', r => r.slow < -TD_ZB],
+      ['mid', 'About their usual', r => r.slow >= -TD_ZB && r.slow <= TD_ZB],
+      ['slow', 'Slower than their usual', r => r.slow > TD_ZB]
+    ].map(([k, label, f]) => {
+      const L = R.filter(r => r.slow != null && f(r));
+      return {k, label, n: L.length, y: sum(L.map(r => r.a.y)), E: sum(L.map(r => r.a.E))};
+    });
+    // Each photo's and genus's time intensity beside its difficulty from the accuracy alone (the same accuracy model
+    // without the time covariates, one fit: + = harder), and how the two agree over the photos with 3 timed answers or
+    // more and the genera with 5 or more (the correlation of the shrunk effects: descriptive, shrinkage lowers it).
+    const F0 = [
+      factor(
+        'player',
+        D.map(a => a.p)
+      ),
+      factor(
+        'genus',
+        D.map(a => a.g)
+      ),
+      factor(
+        'photo',
+        D.map(a => (a.ph.length ? a.ph : null))
+      )
+    ];
+    glmm(
+      D.map(a => a.y),
+      D.map(a => [1, a.typed, a.ch.length === 2 ? 1 : 0]),
+      F0,
+      {g: Float64Array.from(D.map(a => a.g0))}
+    );
+    const Fp = W.Ft[2],
+      Fg = W.Ft[1],
+      up = new Map(F0[2].L.map((k, j) => [k, F0[2].u[j]])),
+      ug = new Map(F0[1].L.map((k, j) => [k, F0[1].u[j]])),
+      lv = (Ft, u, min) => Ft.L.map((k, j) => ({k, f: k, n: Ft.cnt[j], t: Ft.u[j], d: -(u.get(k) || 0)})).filter(x => x.n >= min),
+      cor = L => {
+        if (L.length < 5) return null;
+        const mt = mean(L.map(x => x.t)),
+          md = mean(L.map(x => x.d)),
+          c = sum(L.map(x => (x.t - mt) * (x.d - md))),
+          v = Math.sqrt(sum(L.map(x => (x.t - mt) ** 2)) * sum(L.map(x => (x.d - md) ** 2)));
+        return v > 0 ? r3(c / v) : null;
+      },
+      ph = lv(Fp, up, 3).sort((a, b) => b.t - a.t),
+      gen = lv(Fg, ug, 5).sort((a, b) => b.t - a.t);
+    return {
+      n,
+      players: players(R.map(r => r.a)),
+      timed: nt,
+      photos: new Set(R.map(r => r.a.ph[0])).size,
+      typ: typOf(D),
+      effects,
+      bins,
+      agree: {photo: cor(ph), photos: ph.length, genus: cor(gen), genera: gen.length},
+      slowest: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))].map(x => ({
+        f: x.k,
+        n: x.n,
+        t: r3(x.t),
+        d: r3(x.d)
+      })),
+      genus: gen.map(x => ({k: x.k, n: x.n, t: r3(x.t), d: r3(x.d)})),
+      ent: entOf(M.V, M.X, [null, 'slow', 'enl'])
+    };
+  }
+
   /* ---------- Synthetic answer logs with known effects (the tests and the admin demo) ---------- */
   // TRUTH: the effects the generator plays with; the tests check that the fits give them back.
   const TRUTH = {
@@ -2379,7 +2605,11 @@
     zoom: 0.3,
     mix: 4, // a wrong answer goes to a look-alike offered 4 times as often as to another genus offered (the mix-up map)
     back: -0.3,
-    sess: {b0: -3.3, wrong: 0.5, streak: 0.6}
+    sess: {b0: -3.3, wrong: 0.5, streak: 0.6},
+    // a photo's time intensity linked to its difficulty: + log seconds per logit of the photo's own difficulty (0: none;
+    // the tests of Time and difficulty plant one)
+    // blind: the share of a photo's own difficulty the app's expectation misses (0: the app knows it, up to its noise)
+    td: {link: 0, blind: 0}
   };
   // o: {players: [[id, ability, answers, enlarge rate]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
   // start, end (ms), seed}. Returns readAnswers rows (Code.gs answers_ shape, id as given).
@@ -2415,7 +2645,7 @@
           (p.sh > 0 ? (P.sharp * (Math.log(p.sh) - shm)) / shd : 0) +
           (p.src === 'own' ? P.own : p.src === 'inat' ? P.inat : 0) +
           nrm() * P.sdPhoto;
-        rph[p.f] = nrm() * T.rt.sdPhoto;
+        rph[p.f] = nrm() * T.rt.sdPhoto + T.td.link * bph[p.f];
       })
     );
     const rows = [],
@@ -2461,7 +2691,7 @@
           }
         const app = f === 'typed' ? 0 : f === 'k2' ? 0.5 : f === 'k4' ? 0.25 : 0.5,
           // the app's expectation: its own estimate of eta (a little off), its fixed guess rate
-          E = app + (1 - app) * sig(eta + nrm() * 0.1),
+          E = app + (1 - app) * sig(eta + T.td.blind * mean(ph.map(x => bph[x.f])) + nrm() * 0.1),
           ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pickW(ch.slice(1), look),
           sec = Math.exp(
             T.rt.b0 +
@@ -2673,6 +2903,26 @@
         s: LN4,
         up: 'Players tire as a session goes on.'
       }
+    },
+    tdiff: {
+      slow: {
+        name: 'A photo other players answered right a quarter slower than their usual',
+        o: 'right',
+        s: Math.log(1.25),
+        down: 'A slow right answer says the photo is harder than its rating: the photo rating could take the time into account.'
+      },
+      enl: {
+        name: 'A photo other players enlarged one time in ten more than they usually do',
+        o: 'right',
+        s: 0.1,
+        down: 'Enlarging says the photo is harder than its rating: the photo rating could take it into account.'
+      },
+      tph: {
+        name: 'A photo players take a fifth longer to answer, beyond right or wrong',
+        o: 'right',
+        s: Math.log(1.2),
+        down: 'Photos slow to answer are also missed more: time and accuracy agree on the photos.'
+      }
     }
   };
   // Question formats: one entry per format and part (guess rate, difficulty, right − expected).
@@ -2854,7 +3104,8 @@
     conf: ['macro'], // do corallites shown cut mix-ups (an SD is never primary: its test is rough near 0, see pOf)
     learn: ['slope', 'again'], // does practice work; does "Again" after a miss help
     back: ['slope', 'calib'], // do players forget over days; is the comeback after a break right
-    sess: ['wrong'] // do misses end sessions
+    sess: ['wrong'], // do misses end sessions
+    tdiff: ['slow'] // does the time others took to answer a photo right say it is harder than the app thinks
   };
   const ALPHA = 0.05, // Holm, primary effects
     FDR = 0.05; // Benjamini-Hochberg, secondary effects
@@ -3022,7 +3273,8 @@
     ['learn', 'Learning curves', learning],
     ['back', 'Comeback', comeback],
     ['sess', 'Sessions', sessions],
-    ['who', 'Player profiles', profiles]
+    ['who', 'Player profiles', profiles],
+    ['tdiff', 'Time and difficulty', tdiff]
   ];
   // rows: the answer log (readAnswers rows); M: how many of its answers (time order) this milestone takes; B: bootstrap
   // draws (BOOT by default); bse: normal bootstrap intervals (boot). progress(key) is called as each analysis finishes.
@@ -3054,14 +3306,14 @@
   /* ---------- Photo features, from the public files (the same for the workflow and the admin) ---------- */
   // {file: [view, quality 1-3, sharpness or null, source]}: the view after Pierre's moves and adds (curation.json), his
   // quality rating else the automatic one (quality.json; an IMR lecture photo is never rated Poor automatically, as the
-  // app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, Pierre's, other iNaturalist, CF book).
+  // app's autoQ), the sharpness of metrics.json, and the source (IMR lecture, Pierre's, other iNaturalist).
   function photoMeta(data, cur, qual, met, core) {
     const out = {},
       C = (cur && cur.genera) || {},
       CQ = (cur && cur.quality) || {},
       AQ = (qual && qual.q) || {},
       MT = (met && met.m) || {},
-      src = p => (p.cf ? 'book' : p.imr || /^imrl?-/.test(p.f) ? 'imr' : p.own ? 'own' : 'inat');
+      src = p => (p.imr || /^imrl?-/.test(p.f) ? 'imr' : p.own ? 'own' : 'inat');
     let put = (p, v) => {
       const a = AQ[p.f] || 2;
       out[p.f] = [v, CQ[p.f] || (a === 1 && src(p) === 'imr' ? 2 : a), MT[p.f] ? MT[p.f][0] : null, src(p)];
@@ -3291,7 +3543,11 @@
     cutK,
     silhouette,
     wrightOf,
-    resOf
+    resOf,
+    tdFeat,
+    tdiff,
+    TD_K,
+    TD_MIN
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.ANALYSIS = api;

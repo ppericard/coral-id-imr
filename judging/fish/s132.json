@@ -53,12 +53,8 @@
    "keep": "dup"
   },
   "fish-s132-cand-630439116": {
-   "code": "p1g3bm11",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Murky yellow water; the striped fish looks like a juvenile"
+   "code": "p1g2bm1j1",
+   "keep": "best"
   },
   "fish-s132-cand-630439117": {
    "code": "p1g3bm1j1",
@@ -93,12 +89,8 @@
    "keep": "best"
   },
   "fish-s132-cand-562955074": {
-   "code": "d1g0sl1a2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "Dead or stranded on shells? Not free in the water"
+   "code": "o1g0sm1a1",
+   "keep": "best"
   },
   "fish-s132-cand-638016079": {
    "code": "p1g2smm2",
@@ -123,6 +115,116 @@
   "fish-s132-cand-627868080": {
    "code": "p1g0sm1a2",
    "keep": "dup"
+  },
+  "fish-s132-cand-482939921": {
+   "code": "o1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s132-cand-309523948": {
+   "code": "o1g0sm1ja2",
+   "keep": "best"
+  },
+  "fish-s132-cand-53044694": {
+   "code": "p1g2bs1j1",
+   "keep": "best"
+  },
+  "fish-s132-cand-444417971": {
+   "code": "d1g0ss1ja1",
+   "keep": "best"
+  },
+  "fish-s132-cand-98679717": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s132-cand-275801603": {
+   "code": "o1g2smmj2",
+   "keep": "best"
+  },
+  "fish-s132-cand-225139172": {
+   "code": "p1g1bs1j1",
+   "keep": "best"
+  },
+  "fish-s132-cand-759666568": {
+   "code": "p1g0sm1a3",
+   "keep": "best"
+  },
+  "fish-s132-cand-759666602": {
+   "code": "p1g0sm1a3",
+   "keep": "dup"
+  },
+  "fish-s132-cand-742818819": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s132-cand-629542265": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s132-cand-741399410": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s132-cand-662605337": {
+   "code": "o1g3bms1",
+   "keep": "best"
+  },
+  "fish-s132-cand-752746414": {
+   "code": "p1g1sm12",
+   "keep": "best"
+  },
+  "fish-s132-cand-752746434": {
+   "code": "o1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s132-cand-752746460": {
+   "code": "p1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s132-cand-752746465": {
+   "code": "p1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s132-cand-571016138": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s132-cand-667688554": {
+   "code": "p1g0sm1a3",
+   "keep": "best"
+  },
+  "fish-s132-cand-667688572": {
+   "code": "p1g0sm1a3",
+   "keep": "dup"
+  },
+  "fish-s132-cand-667688594": {
+   "code": "o1g0sm1a2",
+   "keep": "dup"
+  },
+  "fish-s132-cand-667688620": {
+   "code": "o1g0ss1a2",
+   "keep": "dup"
+  },
+  "fish-s132-cand-626657486": {
+   "code": "p0g2bl11",
+   "keep": "dup",
+   "note": "Low-resolution crop (210 px) of a murky photo."
+  },
+  "fish-s132-cand-626660683": {
+   "code": "o1g2bl11",
+   "keep": "best",
+   "note": "Low-resolution original (218 px)."
+  },
+  "fish-s132-cand-741071177": {
+   "code": "p1g1ss1j2",
+   "keep": "best"
+  },
+  "fish-s132-cand-605225492": {
+   "code": "d1g0ss1a1",
+   "keep": "best"
+  },
+  "fish-s132-cand-624473233": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }

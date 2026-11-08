@@ -5,12 +5,8 @@
    "keep": "best"
   },
   "fish-s443-cand-459640565": {
-   "code": "o0d1smm2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "A yellow fish in front of the moray: the subject may not be obvious"
+   "code": "o0d0smm3",
+   "keep": "best"
   },
   "fish-s443-cand-459640581": {
    "code": "o0d1smm2",
@@ -161,6 +157,46 @@
    "code": "h0g1slx1",
    "keep": "dup",
    "note": "Two morays of different colours: which one is the subject is not obvious"
+  },
+  "fish-s443-cand-610991156": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-468173421": {
+   "code": "o0d0sm12",
+   "keep": "best"
+  },
+  "fish-s443-cand-554576814": {
+   "code": "p0g0sm12",
+   "keep": "best"
+  },
+  "fish-s443-cand-651967183": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-562274812": {
+   "code": "o0g0sm12",
+   "keep": "best"
+  },
+  "fish-s443-cand-479582768": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-667106188": {
+   "code": "o0g0slm2",
+   "keep": "best"
+  },
+  "fish-s443-cand-617376459": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s443-cand-30011100": {
+   "code": "p0g0sl1a1",
+   "keep": "best"
+  },
+  "fish-s443-cand-10328741": {
+   "code": "h0g0sl12",
+   "keep": "best"
   }
  }
 }
