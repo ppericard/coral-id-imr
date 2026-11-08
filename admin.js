@@ -7280,9 +7280,12 @@ const liveWanted = () => cur === 'players/activity' && document.visibilityState 
 // renamed or merged: the log changed under the page); when the reply's window (its last j.k rows of j.n) holds none of
 // the rows held while the tab has more rows than the window (answers came in faster than the reads: some fell
 // between); or when a player's last answer (j.last, a deleted account's and an archive's left out, as flag 2 here) is
-// more than a second later than the last one held (an answer outside the window).
+// more than a second later than the last one held (an answer outside the window). Also full when an account left
+// normal operation since the log held was read (j.roster, Code.gs rosterAt_: a delete, merge or archive, against the
+// log's own roster), or when a player of the rows held has no last answer any more (their answers deleted, renamed or
+// claimed): the log held must never keep a deleted account's answers (rule D7; Codex review #775).
 const liveKey = r => [r[1], r[2], r[3], r[5], r[6]].join('|');
-function liveMerge(all, j) {
+function liveMerge(all, j, roster) {
   const rows = (j && Array.isArray(j.rows) ? j.rows : []).filter(r => !winkRow(r)),
     held = new Map(all.map(r => [liveKey(r), r[0]])),
     add = [];
@@ -7296,9 +7299,12 @@ function liveMerge(all, j) {
     else seen++;
   }
   if (!seen && Number(j.n) > Number(j.k)) return {full: true};
+  if (Number(j.roster) > (Number(roster) || 0)) return {full: true};
   const last = {};
   [...all, ...add].forEach(r => r[11] !== 2 && r[1] > (last[r[0]] || 0) && (last[r[0]] = r[1]));
   if (Object.entries((j && j.last) || {}).some(([id, t]) => Number(t) > (last[id] || 0) + 1000)) return {full: true};
+  const L = (j && j.last) || {};
+  if (Object.keys(last).some(id => !(id in L))) return {full: true};
   return {add};
 }
 // livemerge: end
@@ -7320,17 +7326,28 @@ function liveRead() {
       .then(j => {
         if (!fresh() || ANS !== a0) return;
         if (!j || !j.ok) return liveArm(); // offline, an error: the log held stays, the next read in a minute
-        const m = liveMerge(a0.all || a0.rows || [], j);
+        const m = liveMerge(a0.all || a0.rows || [], j, a0.roster);
         if (m.full) {
+          // The whole log and the player list again, the page kept: a failed read keeps the log held and tries again in
+          // a minute (loadStats leaves an unreadable log as {old}; Codex review #775). An unfolded session's saved copy too.
           sheetDrop('ans');
-          return loadStats().then(() => cur === 'players/activity' && render());
+          return Promise.all([loadStats(), loadUsers(true)]).then(() => {
+            if (!ANS || ANS.old) ANS = a0;
+            else savedClear();
+            if (cur === 'players/activity') render();
+            else liveArm();
+          });
         }
         if (m.add.length) {
           const all = [...(a0.all || a0.rows || []), ...m.add];
           ANS = {...a0, all, rows: subjRows(all), at: Date.now()};
         } else a0.at = Date.now();
-        const known = new Set(((USERS && USERS.users) || []).map(u => u.id));
+        const U = (USERS && USERS.users) || [],
+          known = new Map(U.map(u => [u.id, u.name]));
         if (m.add.some(r => !r[11] && !known.has(r[0]))) loadUsers(true).then(() => cur === 'players/activity' && render());
+        // A player's saved copy read for an unfolded session (achievements, cards, learned genera) follows their new
+        // answers, as ↻ does (savedClear; Codex review #775).
+        if (m.add.some(r => known.has(r[0]) && known.get(r[0]) in PSAVED)) savedClear();
         if (cur === 'players/activity') render();
         else liveArm();
       })

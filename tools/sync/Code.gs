@@ -537,17 +537,18 @@ function answerOut_(r, id, arch){
       [sj, String(r[18] || '') || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '', String(r[19] || ''), String(r[20] || ''), String(r[21] || '')], [CORE_.scoreRec(r[SC_COL])]);
 }
 // The admin's light read (vNEXT, Pierre 2026-11-08: "Les deux", a live Players › Activity): POST {readLive: 1, token} →
-// {ok, rows, last, n, k}, re-read every minute while that page is open and in view (admin.js liveRead), where readAnswers
+// {ok, rows, last, n, k, roster}, re-read every minute while that page is open and in view (admin.js liveRead), where readAnswers
 // sends the whole tab. rows: the Answers tab's last LIVE_N rows with a player, as readAnswers serves them (answerOut_),
 // in the tab's order, a surprise card's left out (core.js winkRow). last: {admin id (aid_): time ms of the player's last
 // answer}, every player and device not signed in with one, a deleted account's answers and an archive's left out
 // (anonFlag_ 2, as no reader counts them as a player), read from the Activity tab (one row per player, its QUERY's max
 // time) while it holds the script's formula, else from the Name, Time and Mode columns. n: the tab's answer rows (from
-// row 2), k: how many of the last were read (the window). Admins only (isAdmin_, whose answer is kept 10 minutes, so a read every minute asks GitHub once in ten). A
+// row 2), k: how many of the last were read (the window). roster: when an account last left normal operation
+// (rosterAt_, as readAnswers sends it), so the admin reads the whole log again after a delete, merge or archive. Admins only (isAdmin_, whose answer is kept 10 minutes, so a read every minute asks GitHub once in ten). A
 // read only, as readAnswers: no script lock, nothing written, so it never makes a save or an anonymous send wait.
 const LIVE_N = 50;
 function live_(){
-  const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), out = {ok: true, rows: [], last: {}, n: 0, k: 0};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), out = {ok: true, rows: [], last: {}, n: 0, k: 0, roster: rosterAt_()};
   if (!sh || sh.getLastRow() < 2) return out;
   const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();
   const n = out.n = sh.getLastRow() - 1, k = out.k = Math.min(n, LIVE_N), w = sh.getMaxColumns ? Math.min(LOG.length, sh.getMaxColumns()) : LOG.length;

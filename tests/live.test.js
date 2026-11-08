@@ -43,6 +43,7 @@ test('Code.gs readLive: admins only; an empty log gives nothing', () => {
     last: {},
     n: 0,
     k: 0,
+    roster: 0,
     v: s.post({readLive: 1, token: TOK}).v
   });
 });
@@ -84,6 +85,18 @@ test("Code.gs readLive: last from the Activity tab's QUERY while it holds the sc
   assert.deepStrictEqual(copy(s.post({readLive: 1, token: TOK}).last), {[id('Ana')]: Date.parse(T(2)), [id('Ben')]: Date.parse(T(3))});
 });
 
+test("Code.gs readLive: the roster's time moves with a delete, as readAnswers's (Codex review #775)", () => {
+  const s = loadCodeGs();
+  save(s, 'Ana', [ans('a1', 1)]);
+  save(s, 'Ben', [ans('a2', 2)]);
+  const r0 = s.post({readLive: 1, token: TOK}).roster;
+  assert.strictEqual(r0, s.post({readAnswers: 1, token: TOK}).roster);
+  assert.ok(s.post({userDelete: 'Ana', answers: true, token: TOK}).ok);
+  const j = s.post({readLive: 1, token: TOK});
+  assert.ok(j.roster > r0, JSON.stringify([r0, j.roster]));
+  assert.strictEqual(j.roster, s.post({readAnswers: 1, token: TOK}).roster);
+});
+
 test("Code.gs readLive: a deleted account's kept answers and an archive have no last answer (rule D7)", () => {
   const s = loadCodeGs();
   save(s, 'Ana', [ans('a1', 1)]);
@@ -118,7 +131,7 @@ const mergeOf = () => {
   const ctx = {winkRow: C.winkRow};
   vm.createContext(ctx);
   vm.runInContext(block(admin, '// livemerge: begin', '// livemerge: end', {file: 'admin.js'}) + '\nthis.f = liveMerge;', ctx);
-  return (all, j) => copy(ctx.f(all, j));
+  return (all, j, roster) => copy(ctx.f(all, j, roster));
 };
 // A readAnswers row: [player, time, shown, answered, right, mode, photos, ..., anonymous flag at 11].
 const row = (who, t, x = {}) => [who, t, x.g || 'Acropora', 'Acropora', 1, x.m || 'quiz', x.ph || 'p' + t, 0.5, null, null, '', x.f ?? 0];
@@ -130,7 +143,7 @@ test('liveMerge: the rows not held are added, in order; nothing new adds nothing
   assert.deepStrictEqual(m(all, j), {add: [row('B', 4), row('C', 5, {f: 1})]});
   assert.deepStrictEqual(m([...all, row('B', 4), row('C', 5, {f: 1})], j), {add: []});
   // A surprise card's answer is never added (readLive serves none; belt and braces).
-  assert.deepStrictEqual(m(all, {...j, rows: [row('B', 3), row('B', 9, {m: C.WINK_MODE})], last: {}}), {add: []});
+  assert.deepStrictEqual(m(all, {...j, rows: [row('B', 3), row('B', 9, {m: C.WINK_MODE})], last: {A: 2, B: 3}}), {add: []});
 });
 
 test('liveMerge: the whole log again when the window misses rows, a row changed player, or a last answer is not held', () => {
@@ -152,6 +165,21 @@ test('liveMerge: the whole log again when the window misses rows, a row changed 
   assert.deepStrictEqual(m(all, {rows: [row('A', 2)], last: {A: 1}, n: 2, k: 2}), {add: []});
 });
 
+test('liveMerge: a deleted, merged or archived account never stays in the log held (rule D7; Codex review #775)', () => {
+  const m = mergeOf(),
+    all = [row('A', 1), row('A', 2), row('B', 3)],
+    j = {rows: [row('B', 3)], last: {A: 2, B: 3}, n: 60, k: 50};
+  assert.deepStrictEqual(m(all, j), {add: []});
+  // An account left normal operation since the log held was read (Code.gs rosterAt_), whatever the window shows.
+  assert.deepStrictEqual(m(all, {...j, roster: 5000}, 4000), {full: true});
+  assert.deepStrictEqual(m(all, {...j, roster: 4000}, 4000), {add: []});
+  assert.deepStrictEqual(m(all, {...j, roster: 4000}), {full: true}, 'a log read with no roster');
+  // A held player with no last answer any more (their answers deleted, renamed or claimed), out of the window.
+  assert.deepStrictEqual(m(all, {...j, last: {B: 3}}), {full: true});
+  // A deleted account's kept answers (flag 2) are no player: their absence from last asks nothing.
+  assert.deepStrictEqual(m([...all, row('~d', 0, {f: 2})], j), {add: []});
+});
+
 // ---- the admin's timer ----
 
 // admin.js's live block run on stubs: the page (cur), its visibility, the clock (timers run by hand), the sheet replies.
@@ -170,7 +198,10 @@ function liveAdmin({v = Number(/const LIVE_SHEET = (\d+);/.exec(admin)[1]), rows
       reads: 0,
       users: 0,
       render: () => ctx.renders++,
-      loadStats: () => (ctx.reads++, Promise.resolve()),
+      loadStats: () => (ctx.reads++, ctx.fullFails ? (ctx.ANS = {old: true, rows: []}) : 0, Promise.resolve()),
+      PSAVED: {},
+      cleared: 0,
+      savedClear: () => ctx.cleared++,
       loadUsers: () => (ctx.users++, Promise.resolve()),
       Date: {now: () => ctx.now},
       now: 1e6,
@@ -268,8 +299,23 @@ test('Activity: the answers given since are added; a gap reads the whole log in 
     held = b.ctx.ANS;
   await b.L.liveRead();
   await new Promise(r => setImmediate(r));
-  assert.strictEqual(b.ctx.reads, 1);
+  assert.deepStrictEqual([b.ctx.reads, b.ctx.users], [1, 1], 'the whole log and the player list (Codex review #775)');
   assert.strictEqual(b.ctx.ANS, held, 'shown until the whole log is in');
+  // The whole log could not be read (offline, an error): the log held stays, the next light read in a minute.
+  const e = liveAdmin({reply: () => ({ok: true, rows: [row('B', 50)], last: {B: 50}, n: 80, k: 50})}),
+    he = e.ctx.ANS;
+  e.ctx.fullFails = true;
+  await e.L.liveRead();
+  await new Promise(r => setImmediate(r));
+  assert.strictEqual(e.ctx.ANS, he, 'not replaced by an unreadable log');
+  e.L.liveArm();
+  assert.strictEqual(e.pending().at(-1).at - e.ctx.now, 60000, 'and the timer still runs');
+  // An unfolded session's saved copy follows its player's new answers (Codex review #775).
+  const f = liveAdmin({reply: () => ({ok: true, rows: [row('A', 1), row('A', 9)], last: {A: 9}, n: 2, k: 2})});
+  f.ctx.PSAVED.Ana = {by: {}};
+  await f.L.liveRead();
+  await new Promise(r => setImmediate(r));
+  assert.strictEqual(f.ctx.cleared, 1);
   // A signed-in player the list does not know yet (a new account): the player list is read again.
   const c = liveAdmin({reply: () => ({ok: true, rows: [row('A', 1), row('N', 8)], last: {A: 1, N: 8}, n: 2, k: 2})});
   await c.L.liveRead();
