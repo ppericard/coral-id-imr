@@ -107,6 +107,51 @@
   "fish-s160-cand-459657198": {
    "code": "p1g3bss1",
    "keep": "best"
+  },
+  "fish-s160-cand-618482745": {
+   "code": "p1g2msm1",
+   "keep": "best"
+  },
+  "fish-s160-cand-618482747": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s160-cand-335508058": {
+   "code": "o1n0mm12",
+   "keep": "best",
+   "unsure": [
+    "code",
+    "keep"
+   ],
+   "note": "Dark brown backdrop with orange blobs: maybe a tank, or murky water at night."
+  },
+  "fish-s160-cand-604054280": {
+   "code": "p1g2mss2",
+   "keep": "best"
+  },
+  "fish-s160-cand-435666522": {
+   "code": "p1g2ms12",
+   "keep": "dup"
+  },
+  "fish-s160-cand-435666540": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s160-cand-28936806": {
+   "code": "t1g3bm11",
+   "keep": "best"
+  },
+  "fish-s160-cand-286013100": {
+   "code": "o1g2ml12",
+   "keep": "best"
+  },
+  "fish-s160-cand-625449789": {
+   "code": "o1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s160-cand-454682409": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }
