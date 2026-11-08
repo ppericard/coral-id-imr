@@ -549,7 +549,7 @@ print(json.dumps([[o['id'], len(o['P']), o['cost']] for o in T]))`);
   py(
     `${OBS}
 tx = lambda o, *t: {**o, 'tx': list(t)}
-c = {API + 'id=5,6,9&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 3, 'results': [tx(ob(5, n=7), 501, 50), tx(ob(6, n=5), 501, 50), tx(ob(9, n=6), 777, 50)]}}
+c = {API + 'id=5,6,9&captive=false&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 3, 'results': [tx(ob(5, n=7), 501, 50), tx(ob(6, n=5), 501, 50), tx(ob(9, n=6), 777, 50)]}}
 json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
     dir
   );
@@ -572,7 +572,7 @@ json.dump(c, open(sys.argv[1] + '/cache.json', 'w'))`,
   fs.writeFileSync(
     path.join(dir, 'cache.json'),
     py(`${OBS}
-print(json.dumps({API + 'id=9&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 1, 'results': [{**ob(9, n=6), 'tx': [777]}]}}))`)
+print(json.dumps({API + 'id=9&captive=false&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids': {'total': 1, 'results': [{**ob(9, n=6), 'tx': [777]}]}}))`)
   );
   run('--topup', '--offline');
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand.s1.length, L0.length + 4);

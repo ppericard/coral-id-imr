@@ -417,7 +417,8 @@ def topup(args):
     ids = sorted(want)
     try:
         for i in range(0, len(ids), 200):
-            d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&per_page=200", FIELDS + ",taxon.ancestor_ids")
+            # Never captive, as every search (Codex review #715).
+            d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&captive=false&per_page=200", FIELDS + ",taxon.ancestor_ids")
             for o in (d or {}).get("results", []):
                 s = want.get(o["id"])
                 # Still identified as that species (its taxon or an ancestor, as phase_obs): one re-identified since

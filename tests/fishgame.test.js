@@ -297,7 +297,10 @@ function autoWorld() {
         REF(312, 9312, {from: 'taxon'}),
         REF(313, 9313, {from: 'taxon'}),
         REF(314, 9301, {from: 'taxon'}),
-        REF(315, 9301, {from: 'taxon'})
+        REF(315, 9301, {from: 'taxon'}),
+        // 316 then 317, one new observation: 316 judged dup of 317 stays out whatever the order (Codex review #715).
+        REF(316, 9316, {from: 'taxon'}),
+        REF(317, 9316, {from: 'taxon'})
       ]
     }
   });
@@ -311,11 +314,13 @@ function autoWorld() {
         fi312: 'p1g0sl1a3',
         fi313: 'h1d0mm12',
         fi314: 'p1g0sl14',
-        fi315: 'p1g0sl14'
+        fi315: 'p1g0sl14',
+        fi316: 'p1g0sl14',
+        fi317: 'p1g0sl14'
       }
     },
     crops: {},
-    keep: {fi314: 'alt', fi315: 'dup'}
+    keep: {fi314: 'alt', fi315: 'dup', fi316: 'dup', fi317: 'best'}
   });
   return dir;
 }
@@ -327,7 +332,7 @@ test(
       // One download only: the reference photo first (the tier order), the rest wait for the next run.
       r1 = run(dir, path.join(dir, 'up1'), 1),
       G1 = JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'));
-    assert.deepStrictEqual([r1.done, r1.wait], [1, 11]); // 107 among them: its host is refused at download
+    assert.deepStrictEqual([r1.done, r1.wait], [1, 12]); // 107 among them: its host is refused at download
     assert.deepStrictEqual(
       Object.values(G1.photos)
         .flat()
@@ -341,7 +346,7 @@ test(
           .flat()
           .map(p => [p.f, p])
       );
-    assert.deepStrictEqual([r.done, r.wait, r.n], [10, 0, 11]);
+    assert.deepStrictEqual([r.done, r.wait, r.n], [11, 0, 12]);
     // Pierre's 5 as before, the sure best and alt of the candidates, the reference photos judged sure (below the reference
     // level too: Q212); never the unsure, other kinds of fish (P3), dup, a photo he rejected, out of the water, a reference
     // photo on an observation in play unless judged no duplicate of its photos (Q218).
@@ -350,6 +355,7 @@ test(
       'fi309',
       'fi313',
       'fi314',
+      'fi317',
       'fish-s001-cand-101',
       'fish-s001-cand-102',
       'fish-s001-cand-105',
@@ -396,7 +402,7 @@ print(json.dumps([[G.fish_in(c.get('fish') or {}, p, G.gone_ids(c)) for p in rec
     // Pierre rejects one: the next run takes it out of the list.
     fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(no('seen', 'fish-s003-cand-302')));
     const r3 = run(dir, path.join(dir, 'up3'));
-    assert.deepStrictEqual([r3.done, r3.n], [0, 10]);
+    assert.deepStrictEqual([r3.done, r3.n], [0, 11]);
     fs.rmSync(dir, {recursive: true, force: true});
   }
 );

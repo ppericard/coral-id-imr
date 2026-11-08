@@ -185,7 +185,7 @@ def ref_play(fish, refs, codes):
     return out
 
 
-def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, keep=None):
+def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
     """[(species id, record, its fish-cand.json species, route)] of every photo in play (Pierre, 2026-11-06, Q180 and
     Q199: one notion of "in play", every route hosted on R2): route None, Pierre's adds (fish_on) that fish-cand.json still
     describes; "cand", the candidates judged sure (cand_sure) he has not decided on (not added, rejected, excluded, moved);
@@ -193,8 +193,8 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, keep=None):
     the same photo twice (pid); a candidate's sure best and alt both enter, as fishSure proposes them. A reference photo
     on an observation already in play (another photo of it) enters too once judged against that observation's photos,
     like a candidate (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): keep
-    (tools/fish_judge.json "keep", {photo: best | alt | dup}) best or alt; a dup, or one not judged against them yet,
-    stays out. The game draws one observation a question (model.js photoSet), so its photos share one draw."""
+    (rkeep: tools/fish_judge.json "keep", {photo: best | alt | dup}) best or alt; one not judged against them yet stays
+    out, and a dup stays out whatever comes first. The game draws one observation a question (model.js photoSet), so its photos share one draw."""
     F = (cur or {}).get('fish') or {}
     top = set((cur or {}).get('exclude') or {})
     gone = gone_ids(cur)
@@ -219,7 +219,9 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, keep=None):
         for sid, r in ref_play(fish, refs, codes):
             if pid(r['f']) in gone or pid(r['f']) in have:
                 continue  # the same photo: out, always
-            if r.get('o') in obs and (keep or {}).get(r['f']) not in ('best', 'alt'):
+            if (rkeep or {}).get(r['f']) == 'dup':
+                continue  # judged a duplicate of its observation's photos: out, whatever the order (Codex review #715)
+            if r.get('o') in obs and (rkeep or {}).get(r['f']) not in ('best', 'alt'):
                 continue  # another photo of its observation is in play: in once judged no duplicate of it (Q218)
             put(sid, r, sid, 'ref')
     return out
