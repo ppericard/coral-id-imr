@@ -3017,7 +3017,7 @@ const HELP = {
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus a few iNat and book photos): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field, IMR lecture and approved Coral Finder book photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   cov: `<p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no Coral Finder book, no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, CF (Coral Finder book), removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v98): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had), and no fallback card moves it again. A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -7325,7 +7325,11 @@ function bindStats() {
 let USERS = null,
   usersAt = 0,
   uOpen = null,
-  uDel = ''; // the player whose two delete choices show in their bar
+  uDel = '', // the player whose two delete choices show in their bar
+  // Change the starting answer (sheet v98, Pierre 2026-11-08, Q228): the subject being changed in a player's bar
+  // {name, sid, c: the answer picked, waiting for Change; busy while sent}, and the last result {name, sid, ok, text}.
+  uStart = null,
+  uStartMsg = null;
 function loadUsers(force) {
   if (!force && USERS && Date.now() - usersAt < 120000) return Promise.resolve(USERS);
   if (!TOKEN) {
@@ -7676,6 +7680,44 @@ const delOn = () => (USERS.v || 0) >= DEL_SHEET;
 // Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
 const ARCH_SHEET = 58;
 const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
+// Sheet v98: Change the starting answer (users_ userStart; core.js startAdminSet).
+const START_ADMIN_SHEET = 98;
+const startAdmOn = () => (USERS.v || 0) >= START_ADMIN_SHEET;
+// A player's starting answer per subject, in their bar (Pierre, 2026-11-08, Q228: a fallback card moved a player to the
+// wrong answer; "Change the starting answer" fixes it through the normal sync, never by hand in the sheet): the answer in
+// force, its history (date, answer, how it was given: admin-journey.js JSTART), and Change: the subject's answers (core.js
+// SUBJECTS start words), then Change / Cancel in the bar (no browser dialog), then one line saying whether it was done.
+// A subject with no answer saved shows nothing: there is nothing to change, the player is asked on their device.
+function startBlock(u) {
+  const X = savedOf(u.name);
+  if (!X) return '<div class="adm-ustart note">Starting answer: loading…</div>';
+  if (X.err) return `<div class="adm-ustart note">Starting answer: not read (${esc(X.err)}); ↻ to try again.</div>`;
+  const how = via => (typeof JSTART === 'object' && JSTART[via]) || via || '?',
+    rows = SUBJECTS.filter(S => S.start).map(S => {
+      const rec = (X.by[S.id] || {}).start,
+        said = c => (startText(S.id, c) || [c])[0];
+      if (!rec || !startOpt(rec.c)) return '';
+      const h = startEvents(rec).filter(x => x[3] !== 'ease'),
+        hist = h.map(([c, , t, via]) => `${t ? esc(dateText(t, 'dm')) : '?'} · ${esc(said(c))} · ${esc(how(via))}`).join('<br>'),
+        on = uStart && uStart.name === u.name && uStart.sid === S.id ? uStart : null,
+        msg = uStartMsg && uStartMsg.name === u.name && uStartMsg.sid === S.id ? uStartMsg : null,
+        d = `data-sname="${esc(u.name)}" data-sid="${esc(S.id)}"`,
+        ctl = !on
+          ? `<button type="button" class="adm-fchip plain" data-ustart ${d}${startAdmOn() ? '' : ` disabled title="Needs the sheet script v${START_ADMIN_SHEET}"`}>Change…</button>`
+          : on.busy
+            ? '<span class="note">Changing…</span>'
+            : on.c
+              ? `<span class="adm-ustart-ok">Change to “${esc(said(on.c))}”? <button type="button" class="adm-fchip plain" data-ustart-ok ${d}>Change</button> <button type="button" class="adm-fchip plain" data-ustart-no>Cancel</button></span>`
+              : `<span class="adm-qseg adm-sseg" role="group" aria-label="New starting answer">${CHOICE.opts
+                  .map(
+                    ([c]) =>
+                      `<button type="button" data-ustart-c="${esc(c)}" ${d} aria-pressed="${c === rec.c}"${c === rec.c ? ' disabled' : ''}>${esc(said(c))}</button>`
+                  )
+                  .join('')}</span> <button type="button" class="adm-fchip plain" data-ustart-no>Cancel</button>`;
+      return `<div class="adm-ustart-s"><div><b>${esc(S.name)} starting answer:</b> ${esc(said(rec.c))} ${ctl}${msg ? ` <span class="adm-ustart-msg${msg.ok ? '' : ' bad'}" role="status">${esc(msg.text)}</span>` : ''}</div><div class="adm-ustart-h">${hist}</div></div>`;
+    });
+  return rows.some(Boolean) ? `<div class="adm-ustart">${rows.join('')}</div>` : '';
+}
 const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= GROUP_SHEET;
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
@@ -7764,7 +7806,7 @@ function renderUsers() {
         uDel === u.name
           ? `<span class="adm-udel">Delete "${esc(u.name)}": <button type="button" class="adm-danger" data-udel-all="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete everything</button> <button type="button" class="adm-danger" data-udel-keep="${esc(u.name)}"${delOn() ? '' : ' disabled'}>Delete, keep answers anonymously</button> <button type="button" class="adm-fchip" data-udel-no>Cancel</button>${delOn() ? '' : ` <small class="note">Needs the sheet script v${DEL_SHEET} (live: v${USERS.v || '?'}).</small>`}</span>`
           : `<button type="button" class="adm-danger" data-udel="${esc(u.name)}">Delete…</button>`
-      }</div></td></tr>`;
+      }${startBlock(u)}</div></td></tr>`;
   // Answers without a name: devices that never signed in (~anon), by anonymous id, every subject's. The answers a deleted
   // account left (sheet v55 anonymous 2) are never a player (Pierre, 2026-11-05, Q86): they only rate the photos.
   const named = new Set(U.map(u => u.id).filter(Boolean)),
@@ -7876,6 +7918,7 @@ function bindUsers() {
       (tr.onclick = () => {
         uOpen = uOpen === tr.dataset.uopen ? null : tr.dataset.uopen;
         uDel = '';
+        uStart = uStartMsg = null;
         render();
       })
   );
@@ -8000,6 +8043,45 @@ function bindUsers() {
             );
           })
           .catch(() => done('', null));
+      })
+  );
+  // Change the starting answer (sheet v98, startBlock): Change… shows the answers, one picked asks Change / Cancel, Change
+  // sends it (users_ userStart: appended to the record's history, the revision bumped so the player's devices merge it at
+  // their next sync), and the player's saved copy here takes the new record.
+  const sSet = v => ((uStart = v), (uStartMsg = null), render());
+  $v.querySelectorAll('[data-ustart]').forEach(b => (b.onclick = () => sSet({name: b.dataset.sname, sid: b.dataset.sid})));
+  $v.querySelectorAll('[data-ustart-c]').forEach(
+    b => (b.onclick = () => sSet({name: b.dataset.sname, sid: b.dataset.sid, c: b.dataset.ustartC}))
+  );
+  $v.querySelectorAll('[data-ustart-no]').forEach(b => (b.onclick = () => sSet(null)));
+  $v.querySelectorAll('[data-ustart-ok]').forEach(
+    b =>
+      (b.onclick = () => {
+        if (!uStart || !uStart.c || uStart.busy) return;
+        const {name, sid, c} = uStart,
+          S = subjectOf(sid),
+          said = (startText(sid, c) || [c])[0],
+          end = (ok, text) => {
+            uStart = null;
+            uStartMsg = {name, sid, ok, text};
+            render();
+          };
+        uStart = {...uStart, busy: 1};
+        render();
+        userPost({userStart: name, s: sid, c})
+          .then(j => {
+            if (!(j && j.ok && j.start)) {
+              const e = (j && j.error) || 'offline';
+              return end(false, e === 'none' ? `Not changed: no ${S.name} starting answer saved.` : `Not changed (${e}).`);
+            }
+            const X = PSAVED[name];
+            if (X && !X.err && X.by && X.by[sid]) {
+              const by = {...X.by, [sid]: {...X.by[sid], start: j.start}};
+              PSAVED[name] = {...X, ...(sid === replayS().id ? {start: j.start} : {}), by};
+            }
+            end(true, `Changed to “${said}”: their app takes it at its next sync.`);
+          })
+          .catch(() => end(false, 'Not changed (offline).'));
       })
   );
   // Answers without a name (test runs, junk): select ids, then delete all their answers (sheet v17 anonDelete).

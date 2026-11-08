@@ -938,6 +938,16 @@
       u.board = p.hide ? -1 : 1;
       return {ok: true, board: u.board};
     }
+    // Sheet v98: Change the starting answer (Code.gs users_ userStart, the same core.js startAdminSet), with ?demo&v=98.
+    if (p.userStart) {
+      const u = S.users[lc(p.userStart)];
+      if (!u) return {ok: false, error: 'user'};
+      const out = startAdminSet(u.data, String(p.s || ''), String(p.c || ''), Date.now());
+      if (!out) return {ok: false, error: 'none'};
+      u.data = out.data;
+      u.rev++;
+      return {ok: true, rev: u.rev, start: out.start};
+    }
     if (p.userData) {
       const u = S.users[lc(p.userData)];
       return u ? {ok: true, rev: u.rev, data: JSON.parse(JSON.stringify(u.data))} : {ok: false, error: 'user'};
@@ -1058,6 +1068,7 @@
         p.anonDelete ||
         p.userBoard ||
         (p.userArchive && V >= 58) ||
+        (p.userStart && V >= 98) ||
         (p.userGroup && V >= 48)
       )
         return ok(users(p));

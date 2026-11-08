@@ -1556,6 +1556,13 @@ more come out know well 3, IMR course 2, new 2 (the estimate is rough: one test 
 It changes little for them: at 50+ answers the prior weighs a sixth or less, the offer window has opened, and no
 fallback card comes for an inferred answer; it is shown as "inferred" in the admin's player journey.
 
+**Changed by Pierre** (2026-11-08, Q228: a fallback card had moved a player who is no expert from "IMR course" to "know
+well"): the admin's Players changes a player's answer for one subject (`core.js` `startAdminSet`, sheet v98
+`userStart`). It is a choice event appended to the record's history, via `admin`, at the time of the change: the answers
+before it keep the prior they had (`startPriorAt`), the next ones take the new one, and every device merges it at its
+next sync (`startUnion`: the latest answer wins). The window and the cards shown stay; no fallback card comes for an
+answer set so (`model.js` `startDue`), as for an inferred one.
+
 **Rules version 3** (2026-11-04, after the full replay #399): the prior moves the ability of a genus's first answers,
 hence the progress, so the replay applies it: `core.js` `replayProgress` takes each player's `reefid-sync-coral-start` record
 (`starts`) and, at each answer, the prior of the answer then in force (`startPriorAt`, from its history `h`; 0 before the

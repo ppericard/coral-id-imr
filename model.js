@@ -709,10 +709,11 @@ const startDue = () => {
   if (!startOn()) return null;
   const o = startOf(),
     d = o && o.v;
-  // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct. After an
+  // An inferred answer (an existing player, never asked) is not checked: the player said nothing to correct; nor one
+  // Pierre set in the admin (via 'admin', core.js startAdminSet): he chose it, no card moves it again. After an
   // answer changed on a fallback card, never the other way back (simulated, a lecture-level RA moved up at 60 answers was
   // then told to go back down on the harder genera opened next: a contradiction, not a correction).
-  if (!d || o.via === 'inferred' || (o.fb || {})[o.c + '-' + d] || startBack(o, d)) return null;
+  if (!d || o.via === 'inferred' || o.via === 'admin' || (o.fb || {})[o.c + '-' + d] || startBack(o, d)) return null;
   // 'lo' is the basics offer (quiz.js startFbShow): none once it is done, nor for a subject without one (app.js basicsDue);
   // 'hi' offers the higher answers.
   return d === 'lo' ? (basicsDue() ? d : null) : startNext(o.c, d).length ? d : null;

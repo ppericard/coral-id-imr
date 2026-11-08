@@ -3780,6 +3780,43 @@
             : A;
     return startNorm({...W, h, fb: {...(B.fb || {}), ...(A.fb || {})}});
   }
+  // Pierre's change of a player's first-launch answer for one subject (the admin's Players, Change; Code.gs users_
+  // userStart, sheet v98; Pierre 2026-11-08, Q228: a fallback card had moved a player to the wrong answer). data: the
+  // player's saved copy (keysIn names, _acct and the rest kept); s: the subject id; c: the answer (CHOICE.opts); now: ms.
+  // The change is a choice event appended to the history, via 'admin', never an event taken away: a device's copy would
+  // bring it back at its next merge (startUnion), whereas the appended event, the latest, wins it. Its time is now, or
+  // just after the latest event when a device's clock ran ahead, so it is always the answer in force; its answers count
+  // the player's in that subject (its LEVEL record). Every earlier event stays, so the replay keeps each answer's prior
+  // (startPriorAt). The fallback window and the cards shown (w, fb) stay as they are; a verdict waiting for its card (v)
+  // was about the former answer and goes. The copy under the key's name from before the rename (keyLegacy, which an app
+  // of before it still reads) gets the same record when the copy holds it. null when nothing is to change: an unknown
+  // subject or answer, a subject without the question, or no answer saved for it (the player is asked on their device).
+  // Returns {data, start: the new record}.
+  function startAdminSet(data, s, c, now) {
+    if (!isObj(data) || !startOpt(c) || !SUBJECTS.some(S => S.id === s && S.start)) return null;
+    const k = startKey(s),
+      old = keyLegacy(k),
+      parse = x => {
+        try {
+          return JSON.parse(x || 'null');
+        } catch (e) {
+          return null;
+        }
+      },
+      rec = startNorm(parse(typeof data[k] === 'string' ? data[k] : old && data[old]));
+    if (!rec) return null;
+    const P = parse(data[subjKey(s, 'progress')]),
+      L = isObj(P) && isObj(P[LEVEL]) ? P[LEVEL] : {},
+      num = x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0),
+      a = num(L.ok) + num(L.ko),
+      ev = startEvents(rec),
+      t = Math.max(Math.round(Number(now) || 0), ...ev.map(x => stTime(x) + 1).filter(isFinite)),
+      start = startNorm({...rec, v: null, h: startEventsOf({h: [...ev, [c, a, t, 'admin']]})}),
+      json = JSON.stringify(start),
+      out = {...data, [k]: json};
+    if (old && old in data) out[old] = json;
+    return {data: out, start};
+  }
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
       starts = o.starts || {},
@@ -4652,6 +4689,7 @@
     startStateAt,
     startNorm,
     startUnion,
+    startAdminSet,
     startWt,
     START_CAP,
     replayedOf,

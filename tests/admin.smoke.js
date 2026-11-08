@@ -1840,6 +1840,60 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Players (${how}): Last texts ${L.map(x => x.txt).join(', ')}`);
     };
     await checkLast('default sort');
+    // Change the starting answer (sheet v98, Pierre 2026-11-08, Q228; admin.js startBlock): Carla's bar shows her corals
+    // answer and its history, Change… lists the answers, one picked asks Change / Cancel in the page (no browser dialog),
+    // Change sends it and says so; the new answer and its history line show, and nothing is wider than the screen while
+    // the answers are listed. Before v98, Change… is greyed (rule D4).
+    {
+      const q = await p.context().newPage();
+      q.on('pageerror', e => fails.push(`${w}px Starting answer page error: ${e.message}`));
+      q.on('dialog', d => (fails.push(`${w}px Starting answer: a browser dialog (${d.message()})`), d.dismiss()));
+      const open = async v => {
+        await q.goto(base + `admin.html?demo&v=${v}#players/list`);
+        await q.waitForFunction(() => window.DEMO_PENDING === 0 && document.querySelector('.adm-urow'), null, {timeout: 20000});
+        await q.click('[data-uopen="Carla Demo"]');
+        await q.waitForSelector('.adm-ustart-s', {timeout: 10000});
+      };
+      const bar = () => q.$eval('.adm-ustart', x => x.innerText.replace(/\s+/g, ' ')),
+        wide = () => q.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+      try {
+        await open(97);
+        if (!(await q.$('[data-ustart][disabled]'))) fails.push(`${w}px Starting answer (v97): Change… not greyed`);
+        await open(98);
+        const b0 = await bar();
+        if (!/Corals starting answer: I know corals well/.test(b0) || !/I had the IMR coral course · in the welcome tour/.test(b0))
+          fails.push(`${w}px Starting answer: bar ${JSON.stringify(b0)}`);
+        await q.click('[data-ustart]');
+        const opts = await q.$$eval('[data-ustart-c]', L => L.map(b => [b.dataset.ustartC, b.disabled]));
+        if (
+          JSON.stringify(opts) !==
+          JSON.stringify([
+            ['new', false],
+            ['imr', false],
+            ['know', true]
+          ])
+        )
+          fails.push(`${w}px Starting answer: the answers listed ${JSON.stringify(opts)}`);
+        if (await wide()) fails.push(`${w}px Starting answer: wider than the screen with the answers listed`);
+        await q.click('[data-ustart-c="imr"]');
+        if (!/Change to “I had the IMR coral course”\?/.test(await bar())) fails.push(`${w}px Starting answer: no confirm step`);
+        await q.click('[data-ustart-ok]');
+        await q.waitForFunction(() => /Changed to/.test(document.querySelector('.adm-ustart').innerText), null, {timeout: 10000});
+        const b1 = await bar();
+        if (
+          !/Corals starting answer: I had the IMR coral course/.test(b1) ||
+          !/I had the IMR coral course · changed by you on Players/.test(b1) ||
+          !/their app takes it at its next sync/.test(b1)
+        )
+          fails.push(`${w}px Starting answer: after Change ${JSON.stringify(b1)}`);
+        const saved = await q.evaluate(() => (PSAVED['Carla Demo'].by.coral.start || {}).via);
+        if (saved !== 'admin') fails.push(`${w}px Starting answer: the saved copy here not updated (${saved})`);
+        if (await wide()) fails.push(`${w}px Starting answer: wider than the screen after Change`);
+      } catch (e) {
+        fails.push(`${w}px Starting answer: ${e.message.split('\n')[0]}`);
+      }
+      await q.close();
+    }
     if (once) {
       // Once: sorts, the replayed progress, scripts before v42 and v28, sheet reads, the leaderboard, rename, greyed names.
       if (!/12 min ago/.test(t)) fails.push(`${w}px Players: the device that stopped 12 minutes ago is not "12 min ago"`);
