@@ -5,7 +5,7 @@
    "keep": "best"
   },
   "fish-s452-cand-469858968": {
-   "code": "d0n0sm1c2",
+   "code": "d0g0sm1c2",
    "keep": "dup"
   },
   "fish-s452-cand-469858987": {
@@ -17,19 +17,19 @@
    "keep": "dup"
   },
   "fish-s452-cand-564504895": {
-   "code": "o0n0sm13",
+   "code": "o0g0sm13",
    "keep": "best"
   },
   "fish-s452-cand-564504971": {
-   "code": "h0n0sm13",
+   "code": "h0g0sm13",
    "keep": "dup"
   },
   "fish-s452-cand-564504995": {
-   "code": "o0n0sl13",
+   "code": "o0g0sl13",
    "keep": "dup"
   },
   "fish-s452-cand-564505037": {
-   "code": "o0n0sl12",
+   "code": "o0g0sl12",
    "keep": "dup"
   },
   "fish-s452-cand-596068512": {
@@ -57,11 +57,11 @@
    "keep": "dup"
   },
   "fish-s452-cand-401105396": {
-   "code": "d0n0sm13",
+   "code": "d0g0sm13",
    "keep": "best"
   },
   "fish-s452-cand-469859365": {
-   "code": "o0n0sl13",
+   "code": "o0g0sl13",
    "keep": "best"
   },
   "fish-s452-cand-469859366": {
@@ -93,7 +93,7 @@
    "keep": "best"
   },
   "fish-s452-cand-601460774": {
-   "code": "o0n0sm13",
+   "code": "o0g0sm13",
    "keep": "best"
   },
   "fish-s452-cand-343162480": {
@@ -109,11 +109,11 @@
    "keep": "best"
   },
   "fish-s452-cand-731388439": {
-   "code": "h0n0sm12",
+   "code": "h0d0sm12",
    "keep": "best"
   },
   "fish-s452-cand-605308649": {
-   "code": "d0n0ss11",
+   "code": "d0g0ss11",
    "keep": "best"
   },
   "fish-s452-cand-607830928": {
@@ -125,19 +125,19 @@
    "keep": "best"
   },
   "fish-s452-cand-256674029": {
-   "code": "o1n0sl13",
+   "code": "o1g0sl13",
    "keep": "best"
   },
   "fish-s452-cand-88319681": {
-   "code": "d1n0sm12",
+   "code": "d1g0sm12",
    "keep": "best"
   },
   "fish-s452-cand-246940315": {
-   "code": "d1n0sm12",
+   "code": "d1g0sm12",
    "keep": "best"
   },
   "fish-s452-cand-246940323": {
-   "code": "d1n0sm12",
+   "code": "d1g0sm12",
    "keep": "alt"
   },
   "fish-s452-cand-713638610": {
@@ -149,7 +149,7 @@
    "keep": "alt"
   },
   "fish-s452-cand-30502869": {
-   "code": "d1n0ss1c1",
+   "code": "d1d0ss1c1",
    "keep": "best"
   },
   "fish-s452-cand-19572627": {
