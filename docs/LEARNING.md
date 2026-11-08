@@ -4548,9 +4548,20 @@ re-simulation's IMR RA):
 | --- | --- | --- | --- |
 | Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
 | Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
-| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% (today's `lectureRA` picks 2 genera in 5 by data order) | the IMR families half known; both names; the IMR genera from Open Water (#720) |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; both names; the IMR genera from Open Water (#720) |
 | Strong RA | an RA with practice behind the lecture | 3 genera in 5 at 85%, the others 10% | the IMR families and their genera well known; both names |
 | Expert | knows nearly everything | every genus at 93% | families and genera well known, species partly; both names |
+
+Built in `tools/learnprof.js` (one list, loaded by learnsim in Node and in the page; the rated world reads the same list),
+never by data order. The default list of a subject is every profile with a part for it (`--profiles` picks others;
+`strongBack` and `spotty` stay by name). Corals: the lecture RA knows the 34 genera numbered on the IMR slate at 0.55;
+the strong RA the IMR lecture groups in the course's order until 60% of the slate is covered (groups 1 to 7, 26
+genera with their starred look-alikes) at 0.85; the others 0.1. Fish: the lecture RA knows the circle-1 families at
+0.5 and their IMR genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others
+0.1; the expert every family and genus at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most
+common families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at
+0.02, and declines the scientific names (Not now on the set's offer). First-launch answer with `--choice auto`: the
+casual diver "new". Learning rate as before (0.12; the expert 0.05).
 
 **Measures** every run reports (the guardrails among them in the table below):
 
