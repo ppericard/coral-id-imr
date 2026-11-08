@@ -3015,6 +3015,38 @@
       ...(best[0].oft ? {oft: best[0].oft} : {})
     };
   }
+  // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
+  // common name or a family name was told "not a genus in the game: check the spelling", which misleads), for a nudge
+  // that gives nothing away (the same whether it is the photo's or another one, never a scientific name: quiz.js
+  // typeBind). other: the names of the units of the other ranks ([{k, g, old, alt}], typeMatchIn's); x.sci: the
+  // scientific names at the rank asked, in the game or not (one of them, or another name of a unit that is one, is no
+  // common name: the spelling message as before); x.common: the common names at the rank asked (Anemonefishes); x.rank(g):
+  // the rank word of unit g; x.own(g): IMR's name for it (Damselfish; "Surgeonfish & Unicornfish", each part too), its own
+  // name as much as its first. Returns x.rank(g)
+  // for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish, Pomacentridae; Scarinae
+  // for the book's Parrotfishes), 'common' for any
+  // other name it goes by (Anemonefish, Clownfish) or a common name at the rank asked, '' otherwise.
+  function typeElse(text, other, x = {}, norm = typeNorm) {
+    const sci = new Set((x.sci || []).map(norm)),
+      t = norm(text);
+    if (!t || sci.has(t)) return '';
+    const m = typeMatchIn(
+      (other || []).filter(o => !sci.has(norm(o.old))),
+      text,
+      norm
+    );
+    if (m && !m.near) {
+      const imr = String((x.own && x.own(m.g)) || ''),
+        own = !m.old || /i[dn]ae$/i.test(m.old) || [imr, ...imr.split(/\s*&\s*|\s+and\s+/)].some(n => n && norm(n) === norm(m.old));
+      return own ? (x.rank ? x.rank(m.g) : '') || '' : 'common';
+    }
+    const c = typeMatchIn(
+      (x.common || []).filter(n => !sci.has(norm(n))).map(n => ({k: norm(n), g: 'common', old: ''})),
+      text,
+      norm
+    );
+    return c && !c.near ? 'common' : '';
+  }
   // The spelling step (a player's idea, Pierre 2026-11-05: "Good idea!"): how a typed answer reads against the unit asked
   // t, m being typeMatchIn's reading of it. 'exact': one of its names, spelled right (capitals, accents and spaces aside);
   // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
@@ -4663,6 +4695,7 @@
     typeNorm,
     typeNamesOf,
     typeMatchIn,
+    typeElse,
     typeVerdict,
     typeDiff,
     typedShare,
