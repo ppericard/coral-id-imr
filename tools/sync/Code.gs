@@ -502,7 +502,7 @@ function replay_(key, since, appRv, pt, start, sid, saved){
   let prev = null;  // the record kept, for the floor's reference
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0];
-    try { prev = {rv: Number(row[1]), o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) {}
+    try { prev = {rv: Number(row[1]), since: String(row[3]).split('#')[0], o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) {}
     if (prev && Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey) {
       return {rv: top, n: n, rec: fl && prev.o && prev.o.F ? prev.o.P || {} : prev.o, ids: ids, fp: fp};
     }
@@ -512,8 +512,10 @@ function replay_(key, since, appRv, pt, start, sid, saved){
   const st = main ? stats_() : {}, rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}})[who];
   let rec = rep ? rep.P : {};
   // The floor's reference: the one kept with this version's record, none after an earlier version's (once), else the
-  // saved copy's units no replay gave yet.
-  const F = !fl ? null : prev && prev.o && prev.o.F ? (prev.rv === top ? prev.o.F : {}) : floorRef_(sid, saved);
+  // saved copy's units no replay gave yet. A record kept from before a progress reset (another Since) keeps nothing: the
+  // reset clears the progress, its floor with it (Codex review #779), and the floor is the saved copy's again.
+  const same = prev && prev.o && prev.o.F && prev.since === String(since);
+  const F = !fl ? null : same ? (prev.rv === top ? prev.o.F : {}) : floorRef_(sid, saved);
   if (F && Object.keys(F).length) rec = CORE_.replayFloor(rec, F);
   const json = JSON.stringify(F ? {P: rec, F: F} : rec), parts = [];
   for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));

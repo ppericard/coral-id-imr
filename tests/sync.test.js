@@ -2244,6 +2244,35 @@ test('sheet replays per subject: the fish replay floored against the saved copy,
   assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, {});
 });
 
+// Codex review #779: a progress reset after the first replay clears the progress, its floor with it.
+test('sheet replays per subject: a fish progress reset drops the floor kept with the record', () => {
+  const f = withFish(),
+    s = loadCodeGs({fetch: f.fetch}),
+    F = Array.from({length: 6}, (_, i) => fa('f' + i, i)),
+    high = {'f:Damselfishes': {ok: 6, ko: 0, h: '111111', pg: 0.9}, 'f:Angelfishes': {ok: 1, ko: 0, h: '1', pg: 0.2}},
+    r = s.post({
+      name: 'Ana',
+      pin: '1234',
+      data: {...prog(3), 'reefid-sync-fish-progress': JSON.stringify(high)},
+      summary: {},
+      answers: F,
+      rvs: {fish: 0}
+    });
+  assert.ok(r.replays.fish.rec['f:Angelfishes'], 'floored at the first replay');
+  const reset = new Date(Date.UTC(2026, 10, 7, 7)).toISOString(),
+    r2 = s.post({
+      name: 'Ana',
+      pin: '1234',
+      data: {...prog(3), 'reefid-sync-fish-progress': '{}', 'reefid-sync-fish-reset': JSON.stringify(reset)},
+      summary: {},
+      answers: [],
+      rvs: {fish: 0}
+    });
+  assert.strictEqual(r2.replays.fish.n, 0);
+  assert.deepStrictEqual(r2.replays.fish.rec, {}, 'nothing from before the reset');
+  assert.deepStrictEqual(JSON.parse(s.sheets['Replayed Fish'].rows[1].slice(5).join('')).F, {});
+});
+
 test('sheet replays per subject: an anonymous device gets its fish replay since its own fish reset', () => {
   const f = withFish(),
     s = loadCodeGs({fetch: f.fetch}),
