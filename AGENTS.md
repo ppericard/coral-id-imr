@@ -97,9 +97,16 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
-- **Questions to Pierre**: in batches rather than one by one (unless one blocks work), in French in the chat, numbered
-  for good (Q1, Q2…, never reset; the last number used is in STATUS, so it carries across sessions and Claude accounts);
-  open ones wait in STATUS "Questions for Pierre" until he answers (the answer then goes into the PR). Each gives one or
+- **Questions to Pierre**: in batches rather than one by one (unless one blocks work), in French in the chat. **A
+  question gets a number** (Q1, Q2…, for good, never reset; the last number used is in STATUS, so it carries across
+  sessions and Claude accounts) only when it passes both tests: its answer commits the future (the players' learning or
+  game, the engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost) **and** it
+  will be cited later. Asked plainly, without a number: a visual detail inside an agreed design (screenshots and "OK?"),
+  an implementation detail (the agent's or integrator's call, written in the PR), the order or priorities, a
+  confirmation or a fact, the wording of a rule already decided (his OK goes in the rule's *Source* line). Agents that
+  prepare questions (a subagent in its report) apply the same tests. Every answer, numbered or not, is quoted in the
+  PR's Decisions; small questions go in batches; past numbers stay as they are (Pierre, 2026-11-08). Open numbered ones
+  wait in STATUS "Questions for Pierre" until he answers (the answer then goes into the PR). Each gives one or
   two lines of context (he does not remember everything as an agent does; he may ask for more), the question,
   screenshots **sent as files in the chat** when it is visual, and the integrator's recommendation, so he can answer in
   a word ("Q1 oui, Q2 B"). When and whether to ask: Rule 0.
@@ -231,7 +238,9 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 
 ## Ship checklist
 
-1. A worktree of your own from a fresh `origin/main`; stage files by name (rule W22).
+1. A worktree of your own from a fresh `origin/main`; stage files by name (rule W22). **A clone or worktree made
+   before 2026-11-08 16:20 Manila never pushes** (the history was rewritten then: a push would bring the old photos
+   back; docs/HANDOVER.md "Photos out of the repo, step 3"): clone again.
 2. A test with the logic you change (rule W12).
 3. Fast tier before each push: Prettier, the checks, `node tests/run.js` (the unit tests, in the machine slot: rule W24),
    the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).

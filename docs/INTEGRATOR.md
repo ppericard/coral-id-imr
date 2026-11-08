@@ -13,10 +13,15 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Questions** go to him numbered, never reset: the last number used is in [STATUS.md](STATUS.md) ("Last question number"; `python3 tools/brief.py` prints it). Each with its context in one or two
   sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
   PR's Decisions ("Pierre, date time (QN)"), empty "Choices I made", remove `needs-pierre`, merge.
-  **Only a real development choice gets a number** (Pierre, 2026-11-08, on Q297: "les questions que tu dois me poser
-  numérotées, c'est des questions dont les réponses sont ensuite enregistrées, sur lesquelles on peut revenir pour montrer
-  comment on est arrivé à tel point"): a choice whose answer is recorded and changes what gets built. Never number a
-  question that anticipates his ROADMAP order ("which next?"): he sets the order himself; ask it plainly, unnumbered.
+  **What gets a number** (Pierre, 2026-11-08, replacing the line of that afternoon; the definition is in AGENTS.md
+  "Working mode"): two tests, both needed. (1) The answer commits the future: the players' learning or game, the
+  engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost. (2) The answer will
+  be cited later, to show how a point was reached. **Not numbered**, asked plainly: a visual detail inside an agreed
+  design (screenshots and "OK?"), an implementation detail (the agent's or your call, written in the PR), the order or
+  priorities (he sets his ROADMAP order himself: "which next?" is never numbered), a confirmation or a fact, the wording
+  of a rule already decided (his OK goes in the rule's *Source* line). Every answer, numbered or not, is quoted in the
+  PR's Decisions; small questions go in batches. Past numbers are not renumbered. Subagents prepare their questions
+  with the same tests and say in their report which ones would be numbered.
 - **Keep the integrator's context for integrating** (Pierre, 2026-11-08: "a good idea"). Delegate to a subagent any task
   that would pour raw material into it (sheet dumps, large data files, many files read or many API calls, long logs):
   give the subagent a precise brief and ask for the conclusion, the numbers and the evidence, not the material. Keep in
@@ -62,7 +67,10 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Never force-push** (the classifier refuses it anyway). The merge contract still wants a PR up to date with
   origin/main right before it merges: since a rebase would need a force-push, bring the branch up to date with a merge
   commit (`gh api -X PUT …/pulls/N/update-branch`, or merge origin/main locally), wait for green, then merge. Never
-  force-push main. Photos step 3 (history rewrite, Q121) only with Pierre's explicit go, a time and a backup.
+  force-push main. **The history was rewritten on 2026-11-08 ~16:20 Manila** (photos step 3, Q121, Q300; HANDOVER
+  "Photos out of the repo, step 3"): **every clone or worktree made before then must never push** (a push would bring
+  the old photos back). Work only from a fresh clone; carry a commit left in an old one over as a patch
+  (`git format-patch`, then `git am` in the fresh clone), never by pushing from it.
 - **Every fish photo in play is hosted on R2** (Q199): Pierre's adds, the sure judged candidates (Q180) and the
   reference-level photos, all through `tools/fish_game.py` / `fish-game.json`; iNaturalist / FishBase are only the
   fallback (R2 asked twice, then the online original). The "Candidate photos" workflow uploads them after each Publish,
@@ -106,12 +114,15 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   Events tab now and then for any other card that hides. Lesson: test every new card at 390 px with a long list.
 - **Idea, not on the ROADMAP yet**: the Answers rows carry no device id, and Events have the device but only the date,
   so a session cannot be traced to a device (Pierre asked on 11-07). Log the device id with each answer.
-- **Open PRs**: #637 (photos rated against the genus ability, Q136: needs its learnsim before/after; the local worktree
-  `.claude/worktrees/photo-genus-ability` has 2 commits not on the remote head, check before pushing anything) and #664
-  (engine coherence review, a doc for Pierre to read).
+- **Open PRs**: none after the 11-08 drain and the history rewrite. #664 (engine coherence review) merged as a reference
+  doc; its 8 decisions get a read-only re-check (ROADMAP row). #637 (photos rated against the genus ability, Q136) was
+  closed unmerged; its branch stays (ROADMAP "Photos rated against the genus ability"). The old worktree
+  `photo-genus-ability` (2 commits not on the remote head) is in a pre-rewrite clone: patches only, never a push.
 - **Branch `claude/fish-todo-wip`** (no PR): unfinished, untested follow-up of #686's audit, fish.exclude matched by
   photo id (fishOn / fishPhotos) and the fish To do without the coral-only sections. Finish, renumber Code.gs, PR.
-- **Backlog, in Pierre's order of interest** (ROADMAP rows):
+- **Priority after the rewrite** (Pierre, 2026-11-08): first everything that speeds up development (Q305 a, b, d and
+  the CI speed study's first changes), then the rest: ROADMAP "Backlog in priority order" is the one list.
+- **Backlog, in Pierre's earlier order of interest** (ROADMAP rows):
   1. the **species level and the global fish score** (decided 11-04: 100% only with common and scientific names of
      every species; the path is a tree; a right genus is partial credit);
   2. **ID marks for the 23 fish families with no IMR cue** (circles 2-3, Soapfishes): the feedback shows nothing there;
@@ -123,7 +134,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   7. the new bar's **live confirmation** (seeds 61-90) and its **τ baseline**, held until after the fish rush;
   8. #641's confusion-group questions a-j and #651's 5 choices for Pierre (not numbered yet).
 - **Pierre's hands** (STATUS): covers for the 11 fish families with no reference-level photo, the 8 unsure candidates
-  left in the admin, the expert analyses' photos to check, Q121, the old branches to delete.
-- **Local clutter**: ~70 worktrees under `.claude/worktrees/` and `/home/user/coral-*` / `wt-*`, almost all of merged
-  PRs (their branches show "ahead" only because of squash merges). Safe to remove after checking `git status` in each;
-  `judge`, `learnsim-field` and `progcov` hold only untracked tmp sim scripts.
+  left in the admin, the expert analyses' photos to check, the rewrite's follow-ups (the R2 crops, deleting his backup
+  when he says so; no GitHub Support purge, his choice), the old branches to delete.
+- **Local clutter**: the ~70 worktrees of the old clone (`/home/user/coral-id-imr-OLD-HISTORY` and its
+  `.claude/worktrees/`, `/home/user/coral-*`, `wt-*`) are all from before the rewrite: never push from them. Almost all
+  are of merged PRs; `judge`, `learnsim-field` and `progcov` hold only untracked tmp sim scripts.
