@@ -156,7 +156,7 @@ function doGet_(e){
     const lock = LockService.getScriptLock();
     if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), Number(e.parameter.rv), Number(e.parameter.pt), startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
-  // vNEXT: the other subjects' replays (replays_), each asked by its own rules version (rv_fish).
+  // The other subjects' replays (replays_), each asked by its own rules version (rv_fish).
   const rvs = {};
   CORE_.replayedSubjects().forEach(id => { if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]); });
   const rps = replays_(name, data, rvs, Number(e.parameter.pt)); if (rps) out.replays = rps;
@@ -218,7 +218,7 @@ function doPost_(e){
     if (/^[a-z0-9]{8,16}$/.test(String(p.anon || ''))) {
       relabel_('Answers', 1, '~anon ' + p.anon, name);
       pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
-      rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; vNEXT: every subject's)
+      rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
     }
     logAnswers_(name, f.fresh, f.seen);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
@@ -268,7 +268,7 @@ function doPost_(e){
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
   if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
-  const rps = replays_(name, p.data, p.rvs, p.pt); if (rps) out.replays = rps;  // vNEXT: the other subjects' (replays_)
+  const rps = replays_(name, p.data, p.rvs, p.pt); if (rps) out.replays = rps;  // the other subjects' (replays_)
   return json_(out);
 }
 
@@ -337,7 +337,7 @@ const HOLD = {SLACK: 0.1, IDS: 500};
 const holdKey_ = name => 'hold:' + lc_(name);
 function dropHold_(name){ ROWS_ = null; try { CacheService.getScriptCache().remove(holdKey_(name)); } catch (e) {} }
 // The first-launch answer in a player's saved data (reefid-sync-coral-start, v29), null when there is none or it is broken.
-// sid (vNEXT): another subject's (core.js subjKey, startKey: reefid-sync-fish-start, -reset), under its new key name or
+// sid: another subject's (core.js subjKey, startKey: reefid-sync-fish-start, -reset), under its new key name or
 // the one from before the rename (core.js keyLegacy).
 const subjData_ = (data, k) => { const d = data || {}, o = CORE_.keyLegacy(k); return d[k] !== undefined ? d[k] : o ? d[o] : undefined; };
 function startOf_(data, sid){
@@ -388,7 +388,7 @@ function answerRows_(){
   ROWS_ALL_ = sh ? logRows_(sh, LOG.length) : [];
   return ROWS_ = ROWS_ALL_.filter(replayed_);
 }
-// vNEXT: the rows of another subject the sheet replays (core.js replayedSubjects: fish), from the same read of the tab
+// The rows of another subject the sheet replays (core.js replayedSubjects: fish), from the same read of the tab
 // (answerRows_), dropped with it; never a surprise card's answer.
 let ROWS_ALL_ = [], SROWS_ = {of: null};
 function subjRows_(sid){
@@ -475,7 +475,7 @@ const numOrNull_ = x => x === '' || x == null || !isFinite(Number(x)) ? null : N
 const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), numOrNull_(r[9]), numOrNull_(r[10]), String(r[11] || ''), null, numOrNull_(r[12]), ...new Array(CORE_.LOG_SC - 13).fill(null), CORE_.scoreRec(r[SC_COL])];
 // start: the player's first-launch answer (the app's reefid-sync-coral-start record; v36): the replay steps the ability
 // with the prior it says, as the app does (core.js startPriorAt).
-// sid (vNEXT): the subject replayed, the corals by default (replays_ for the others: their own rows, units and tab, and no
+// sid: the subject replayed, the corals by default (replays_ for the others: their own rows, units and tab, and no
 // photo memory offsets, pooled confusions, format or genus offsets, which stats_ computes for the corals only: an answer
 // logged with its scoring record, as every fish answer is, replays as the game scored it).
 function replay_(key, since, appRv, pt, start, sid){
@@ -507,7 +507,7 @@ function replay_(key, since, appRv, pt, start, sid){
   return {rv: top, n: n, rec: rec, ids: ids, fp: fp};  // fp: the first-launch history it applied (the app checks it)
 }
 
-// vNEXT: the replays of the other subjects the sheet replays (core.js replayedSubjects: fish; Pierre, 2026-11-08), each
+// The replays of the other subjects the sheet replays (core.js replayedSubjects: fish; Pierre, 2026-11-08), each
 // asked by the app with the rules version it applied to that subject (rvs: {subject: rv}; an app that sends none gets
 // none, as before), each since that subject's own progress reset with its own first-launch answer: from the player's
 // data (signed in), or the device's (alt: {reset: {subject: ISO time}, start: {subject: record}}, an anonymous send).
@@ -531,7 +531,7 @@ function replays_(key, data, rvs, pt, alt, held){
   } finally { if (lock) lock.releaseLock(); }
   return Object.keys(out).length ? out : null;
 }
-// The tab keeping another subject's replay records (vNEXT): "Replayed Fish", as RPL.TAB keeps the corals'.
+// The tab keeping another subject's replay records: "Replayed Fish", as RPL.TAB keeps the corals'.
 const rplTab_ = sid => RPL.TAB + ' ' + CORE_.subjectOf(sid).name;
 // Every tab of replay records, the corals' first: an account deleted, merged, archived or a device claimed drops its rows
 // in each (rplDrop_).
@@ -1254,7 +1254,7 @@ function deleteAccount_(name, all){
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
   pagesDrop_(new Set([aid_(name)]));
-  ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // vNEXT: every subject's replay
+  ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
   dropRows_(GROUPS.TAB, name, 2);  // v48: out of every beta group
   // Names merged into it before point nowhere now (Codex review #600): their devices are told the account was removed,
   // and their answers and reports never go under the deleted name (nor to someone who takes it later).
@@ -1397,7 +1397,7 @@ function users_(p){
         if (!(w in hit)) hit[w] = ids.has(aid_(w, salt));
         if (hit[w]) { sh.deleteRow(i + 2); n++; }
       }
-      Object.keys(hit).forEach(w => hit[w] && rplDrop_(w));  // v55: their full replay records too (vNEXT: every subject's)
+      Object.keys(hit).forEach(w => hit[w] && rplDrop_(w));  // v55: their full replay records too (every subject's)
       // v30: their sheets opened too (ids are the admin's, as the Pages tab keeps them); never a named player's.
       const named = new Set(ss.getSheetByName('RAs') && ra.getLastRow() > 1 ? ra.getRange(2, 1, ra.getLastRow() - 1, 1).getValues().map(r => aid_(String(r[0]), salt)) : []);
       pagesDrop_(new Set([...ids].filter(x => !named.has(x))));
@@ -1431,7 +1431,7 @@ function users_(p){
         relabel_('Removed', 3, from, into);
         redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none (Codex review #603)
         dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no beta group
-        rplDrop_(from);  // the replay (v28; vNEXT every subject's) is made again under the new name when asked
+        rplDrop_(from);  // the replay (v28; every subject's) is made again under the new name when asked
         rosterChanged_();  // v55: the three caches (achs15 too) and the Analyses report
         return {ok: true, answers: answers, reports: reports};
       }
@@ -1461,7 +1461,7 @@ function users_(p){
       // v48: the merged name's beta groups join the kept name's (each once).
       groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
-      ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, from));  // vNEXT: every subject's replay
+      ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, from));  // every subject's replay
       redact_(from, into);  // v55: its name in the log tabs becomes the name it joined
       relabel_('Removed', 3, from, into);  // names merged into from earlier now point to into (Codex review #600)
       removed_(from, a.v[6], into);
@@ -1776,7 +1776,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     const out = {ok: true, log: true};
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
     try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null); if (rp) out.replay = rp; } catch (err) {}
-    // vNEXT: the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
+    // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
     // {subject: the device's reefid-sync-<subject>-reset and -start}), already under this lock.
     const rps = replays_('~anon ' + id, null, p.rvs, p.pt, {reset: p.sreset, start: p.sstart}, true); if (rps) out.replays = rps;
     return out;
@@ -2268,7 +2268,7 @@ const CORE_ = (function () { const module = {exports: {}};
       renamed: FISH_RENAMED,
       replay: false,
       // Its progress replayed by the sheet from its own answers too (Pierre, 2026-11-08: "recalculate every player's
-      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): from sync script vNEXT
+      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): by the sync script
       // (Code.gs replay_ per subject, its units from fish.json: fishReplayGen), served beside the corals' replay
       // (replays: {fish: ...}) to an app that asks for it (rvs: {fish: its rules version applied}). replay stays the
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the

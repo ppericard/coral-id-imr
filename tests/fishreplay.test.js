@@ -35,8 +35,8 @@ test('fishReplayGen: nothing from an empty fish.json', () => {
   assert.deepStrictEqual(C.fishReplayGen(null), {});
 });
 
-test('the subjects the sheet replays besides the corals: fish, from its script version', () => {
+test('the subjects the sheet replays besides the corals: fish, with its own rules versions', () => {
   assert.deepStrictEqual(C.replayedSubjects(), ['fish']);
   assert.strictEqual(C.replaySubject(), 'coral');
-  assert.ok(C.SUBJECTS.find(S => S.id === 'fish').replayed.sheet > C.SCORE_SHEET);
+  assert.ok(C.rvOf('fish') >= 1 && C.rvsOf('fish') !== C.RVS && C.rvOf('coral') === C.RV);
 });

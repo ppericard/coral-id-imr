@@ -466,7 +466,7 @@
       renamed: FISH_RENAMED,
       replay: false,
       // Its progress replayed by the sheet from its own answers too (Pierre, 2026-11-08: "recalculate every player's
-      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): from sync script vNEXT
+      // progress from their answers"; ROADMAP "Fish progress replayed from the answer log"): by the sync script
       // (Code.gs replay_ per subject, its units from fish.json: fishReplayGen), served beside the corals' replay
       // (replays: {fish: ...}) to an app that asks for it (rvs: {fish: its rules version applied}). replay stays the
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
