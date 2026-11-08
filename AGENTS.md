@@ -159,7 +159,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **L8** Achievements reward learning, never time.
 - **L9** Learned = the silent mastery exam.
 - **L10** The first-launch question sets variables, never a path.
-- **L11** The simplest algorithm that works; tiered checks, valid statistics.
+- **L11** The simplest algorithm that works; checks proportionate to the change, in two worlds, valid statistics.
 - **L12** Check algorithm changes on the real log too.
 - **L13** Compute once, not on phones.
 - **L14** Visual recognition and side-by-side comparison beat theory.

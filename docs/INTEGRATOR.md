@@ -10,7 +10,7 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
   first names misspelled, "Firebase" = FishBase, "Fresh shark" = thresher shark). Answer in French, "tu". Every artifact (code, docs, PRs,
   commits) in English.
-- **Questions** go to him numbered, never reset: **the last number used is Q207**. Each with its context in one or two
+- **Questions** go to him numbered, never reset: the last number used is in [STATUS.md](STATUS.md) ("Last question number"; `python3 tools/brief.py` prints it). Each with its context in one or two
   sentences, the options, and a recommendation. He answers "Question N, ok" or picks an option. Record the answer in the
   PR's Decisions ("Pierre, date time (QN)"), empty "Choices I made", remove `needs-pierre`, merge.
 - **Keep the integrator's context for integrating** (Pierre, 2026-11-08: "a good idea"). Delegate to a subagent any task
@@ -70,11 +70,16 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   auto-merge go through the CCR routes: `GET …/pulls/N/ccr/review_threads`, `POST …/pulls/N/ccr/comments/ID/resolve`,
   `POST …/pulls/N/ccr/ready_for_review`. Subagents are refused thread resolution: the integrator resolves.
 - **Merge**: `gh api -X PUT …/pulls/N/merge -f merge_method=squash -f sha=<head>` once the branch is up to date with
-  origin/main (above), all 9 checks are green on that head, the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
+  origin/main (above), every check is green on that head (their number grows: CodeQL and other security checks run
+  too), the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
   (`…/pulls/N/comments`, commit_id = head) even when the thread count is 0: a finding on the head may not be a thread yet.
+- **Security bots** (Pierre turned on more automatic security audits in GitHub, 2026-11-08: CodeQL, secret scanning
+  and push protection, possibly others): their alerts and comments on a PR count like Codex findings. Before a merge,
+  each one is fixed, or the PR says in one line why it does not apply (false positive, test-only code), and its thread
+  is resolved. A security alert is never merged over in silence.
 - **Code.gs VERSION**: every PR that changes core.js bumps it to **main+1 at push time** (header line + constant +
   `python3 tools/sync_core.py --fix`). Parallel PRs collide; the one merged second renumbers. Rules versions (RVS) run with
-  no gap. Main is at **v97** (2026-11-07 09:48).
+  no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex
   caught this on #701).
 - **Prettier**: CI uses 3.9.10; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
