@@ -4689,7 +4689,8 @@ exist yet, so their kinds are empty until they do.
 workflow (`.github/workflows/learncheck.yml`, manual dispatch only), with the version with the change (`after`: its
 branch), the one to compare it with (`before`, `main` by default), the subject, the world (`both`, `app` or `rated`; the
 rated world from the version that has it, ROADMAP "Validation tools", step 4), the seeds, the questions (app world) and
-answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only), the looks and
+answers (rated world), the primary declared before running (`hard@300:down`, empty for guardrails only) and the world it is read in when both run
+(`primary_world`; the other world reports its guardrails), the looks and
 any other learnsim option (`--profiles beginner,expert --dist tail`). It runs learnsim on both versions with the same
 seeds (4 workers), then `tools/learncmp.js` of the version with the change, and puts its report in the run's summary;
 it commits nothing and keeps no artifact. With `gh`: `gh workflow run learncheck.yml -f after=<branch> -f subject=fish

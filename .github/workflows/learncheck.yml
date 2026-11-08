@@ -44,6 +44,11 @@ on:
         description: 'The primary declared before running, MEASURE@CHECKPOINT:up|down (empty: guardrails only)'
         default: ''
         type: string
+      primary_world:
+        description: 'The world the primary is read in, when both run (with one world, that one)'
+        type: choice
+        options: [app, rated]
+        default: app
       looks:
         description: 'Looks declared (rule L11: each look reads its bounds at 1 - 0.10 / looks)'
         default: '1'
@@ -70,6 +75,7 @@ jobs:
       QUESTIONS: ${{ inputs.questions }}
       ANSWERS: ${{ inputs.answers }}
       PRIMARY: ${{ inputs.primary }}
+      PRIMARY_WORLD: ${{ inputs.primary_world }}
       LOOKS: ${{ inputs.looks }}
       ARGS: ${{ inputs.args }}
     steps:
@@ -95,18 +101,18 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '26'
-      # The app world runs the real app in Chromium: Playwright as the smokes install it (a temporary folder, the same pin).
+      # Playwright as the smokes install it (a temporary folder, the same pin): the package for every world (learnsim
+      # loads it before it reads --world; Codex review #791), Chromium for the app world only.
       - uses: actions/cache@v6
         if: inputs.world != 'rated'
         with:
           path: ~/.cache/ms-playwright
           key: ms-playwright-${{ runner.os }}-1.64.1
       - name: Install Playwright (temporary folder, nothing added to the repo)
-        if: inputs.world != 'rated'
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
           npm install --no-save --no-audit --no-fund playwright@1.64.1
-          npx playwright install --with-deps chromium
+          if [ "$WORLD" != rated ]; then npx playwright install --with-deps chromium; fi
       - name: Both arms, the same seeds
         run: |
           set -o pipefail
@@ -122,15 +128,20 @@ jobs:
               echo "::endgroup::"
             done
           done
+      # The primary in its own world only (with one world, that one; Codex review #791): the other world reports its
+      # guardrails, a checkpoint it does not reach never stopping the report.
       - name: The paired comparison (tools/learncmp.js of the version with the change)
         run: |
+          set -o pipefail
           out="$RUNNER_TEMP/out"
+          pw=$([ "$WORLD" = both ] && echo "$PRIMARY_WORLD" || echo "$WORLD")
           for w in app rated; do
             [ -f "$out/$w-after.json" ] || continue
+            p=$([ "$w" = "$pw" ] && echo "$PRIMARY" || echo "")
             {
-              echo "## $w world: $BEFORE -> $AFTER ($SUBJECT, $SEEDS seeds)"
+              echo "## $w world: $BEFORE -> $AFTER ($SUBJECT, $SEEDS seeds)${p:+, primary $p}"
               echo
-              node after/tools/learncmp.js "$out/$w-before.json" "$out/$w-after.json" --looks "$LOOKS" ${PRIMARY:+--primary "$PRIMARY"}
+              node after/tools/learncmp.js "$out/$w-before.json" "$out/$w-after.json" --looks "$LOOKS" ${p:+--primary "$p"}
               echo
             } | tee -a "$GITHUB_STEP_SUMMARY"
           done
