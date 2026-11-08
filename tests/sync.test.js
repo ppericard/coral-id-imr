@@ -2065,6 +2065,34 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
   assert.ok(!rpl().includes('~anon devanon102'), 'deleted with its answers');
 });
 
+// Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
+// subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
+test("v103 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
+  const s = seed(),
+    fish = (id, extra = {}) => ans(id, {s: 'fish', rk: 'family', g: 'f:Damselfishes', a: 'f:Damselfishes', ...extra});
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: prog(3),
+    summary: {},
+    answers: [fish('f1'), fish('f2'), fish('f3', {ok: 0, a: 'f:Gobies'}), ans('a3', {s: 'coral'})],
+    at: 1
+  });
+  // a row with no player (the readAnswers log leaves it out: so does the count)
+  s.sheets.Answers.appendRow(['', new Date(), 'Acropora', 'Acropora', 1, 'quiz']);
+  const h = s.post({analysesGet: 1, head: 1, token: TOK});
+  assert.deepStrictEqual(h.counts, {coral: 5, fish: 3}, 'four coral rows logged before v60 or with Subject coral, three fish');
+  assert.strictEqual(h.subject, 'coral');
+  assert.strictEqual(h.answers, 5, "the corals' answers, not the tab's 9 rows");
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK, subject: 'fish'}).answers, 3);
+  // the same count as the log the Action reads (readAnswers) and the admin's (core.js subjCounts)
+  const C = require('../core.js');
+  assert.deepStrictEqual(C.subjCounts(s.post({readAnswers: 1, token: TOK}).rows), h.counts);
+  // the stored meta keeps the report's subject
+  s.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 5, made: 1, AV: 1, subject: 'coral'}), token: TOK});
+  assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK}).stored.subject, 'coral');
+});
+
 test('v55 analyses head: a report stored before the last delete or merge is stale', () => {
   const s = seed(),
     rep = JSON.stringify({R: {}, answers: 4, made: 1, AV: 1});

@@ -6,7 +6,9 @@
 //   node tools/analyses.js --sheet [--force]   the GitHub Action (.github/workflows/analyses.yml): reads the log with
 //                                             readAnswers and stores the report with analysesPut (sheet v35), both
 //                                             with the admin token in ANALYSES_ADMIN_TOKEN; does nothing until the
-//                                             log reaches a round thousand the stored report does not hold (or the
+//                                             log reaches a round thousand of the corals' answers (the analysed
+//                                             subject's, counted apart by the sheet's head from v103; Pierre,
+//                                             2026-11-08) the stored report does not hold (or the
 //                                             code changed, or an account was removed since: sheet v55
 //                                             stale), unless --force (plan)
 //   node tools/analyses.js --in answers.json --out report.json   a saved readAnswers reply (kept outside the repo)
@@ -31,10 +33,12 @@ const SHEET_V = 35; // analysesGet / analysesPut
 const metaOf = () => ({ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))});
 const syncUrl = () => /const SYNC_URL = '([^']+)'/.exec(fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'))[1];
 
-// The newest milestone of n answers (0: none yet). A stored report holds every round thousand up to its answer count
-// (analysis.js report), so this is also the newest milestone of the stored report, read from the sheet's cheap head.
+// The newest milestone of n answers of the analysed subject (0: none yet; Pierre, 2026-11-08: every 1000 answers of
+// that subject, the corals' never moved by the fish answers). A stored report holds every round thousand up to its
+// answer count (analysis.js report), so this is also the newest milestone of the stored report, read from the sheet's
+// cheap head.
 const lastOf = n => Math.floor((Number(n) || 0) / A.STEP) * A.STEP;
-// What the hourly run does with the sheet's head (answers: the log's rows; st: the stored report's meta or null): compute
+// What the hourly run does with the sheet's head (answers: the analysed subject's answers; st: the stored report's meta or null): compute
 // when the log reaches a round thousand the stored report does not hold (or fell below its newest: answers deleted),
 // when the analysis code changed (AV), when an account left normal operation since the stored report (removed: sheet
 // v55 head stale), or by hand (force); never before the first 1000 answers. Pure, tested.
@@ -48,13 +52,20 @@ function plan(answers, st, force, removed) {
   const why = !now ? (st && removed ? 'removed' : 'none') : !st ? 'first' : now !== last ? 'new' : st.av !== A.AV ? 'code' : removed ? 'removed' : force ? 'force' : 'wait';
   return {go: why !== 'none' && why !== 'wait', why, last, now, next};
 }
-const planText = (answers, p) =>
-  p.now ? `${answers} answers, newest milestone ${p.now}: the next one at ${p.next}.` : `${answers} answers, no milestone yet: the first one at ${A.STEP}.`;
+// The subject's name first (Corals: …): the log counts that subject's answers only.
+const planText = (answers, p, subject = C.replaySubject()) =>
+  `${C.subjectOf(subject).name}: ` +
+  (p.now ? `${answers} answers, newest milestone ${p.now}: the next one at ${p.next}.` : `${answers} answers, no milestone yet: the first one at ${A.STEP}.`);
+// The analysed subject's answers in the sheet's head: its own count from sheet v103 (counts), else every row of every
+// subject (an older script: an upper bound, so the run read the whole log every hour to count the subject's, below).
+const headCount = (head, subject) => (head.counts && typeof head.counts[subject] === 'number' ? head.counts[subject] : Number(head.answers) || 0);
 
-// io: {post(body) -> reply, log(text)}; o: {force, B, Bh}. Returns what happened, in a word.
+// io: {post(body) -> reply, log(text)}; o: {force, B, Bh, subject: the analysed subject, the replayed one (the corals) by
+// default}. Returns what happened, in a word.
 async function sheetRun(io, token, o = {}) {
-  const post = b => io.post({...b, token});
-  const head = await post({analysesGet: 1, head: 1});
+  const post = b => io.post({...b, token}),
+    subject = o.subject || C.replaySubject();
+  const head = await post({analysesGet: 1, head: 1, subject});
   if (!head || !head.ok) {
     if (head && head.error === 'input') {
       io.log(`The sync script answers as v${head.v || '?'}: the Analyses report needs v${SHEET_V}. Nothing done.`);
@@ -67,9 +78,10 @@ async function sheetRun(io, token, o = {}) {
     // sheet v55: head.stale, an account deleted, merged or archived since the stored report: refit at once, from scratch
     // (no milestone reused), so no per-player result of a removed account stays in the report.
     stale = st && (st.av !== A.AV || !!head.stale),
-    p = plan(head.answers, st, o.force, !!head.stale);
+    n = headCount(head, subject),
+    p = plan(n, st, o.force, !!head.stale);
   if (!p.go) {
-    io.log(planText(head.answers, p));
+    io.log(planText(n, p, subject));
     return 'wait';
   }
   const prev = st && !stale ? await post({analysesGet: 1}) : null;
@@ -84,16 +96,18 @@ async function sheetRun(io, token, o = {}) {
     io.log(`Could not read the answer log (${(ans && ans.error) || 'no reply'}). Nothing done.`);
     return 'refused';
   }
-  // The analyses are the replayed subject's (the corals'): sheet v60 logs every subject's answers (core.js subjRows).
-  ans.rows = C.subjRows(ans.rows);
-  // The head counts the Answers tab's rows; the log read may hold fewer (rows without a player): judge again on it.
-  const q = plan(ans.rows.length, st, o.force, !!head.stale);
+  // The analyses are one subject's (the corals'): sheet v60 logs every subject's answers (core.js subjRows), counted as the
+  // head counts them (subjCounts).
+  const count = C.subjCounts(ans.rows)[subject] || 0;
+  ans.rows = C.subjRows(ans.rows, subject);
+  // Judged again on the log read: a script before v103 counted every subject's rows in its head.
+  const q = plan(count, st, o.force, !!head.stale);
   if (!q.go) {
-    io.log(planText(ans.rows.length, q));
+    io.log(planText(count, q, subject));
     return 'wait';
   }
   const t0 = Date.now(),
-    rep = A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, Bh: o.Bh, seed: 1}), MAX),
+    rep = {...A.compact(A.report(ans.rows, metaOf(), old, {B: o.B, Bh: o.Bh, seed: 1}), MAX), subject},
     text = JSON.stringify(rep);
   if (text.length > MAX) {
     io.log(`The report is still ${Math.round(text.length / 1000)} kB after compaction, over the sheet's cap: not stored.`);
@@ -108,7 +122,7 @@ async function sheetRun(io, token, o = {}) {
   const kept = rep.M.filter(M => old && old.R && old.R[M] && old.R[M].fp === rep.R[M].fp).length;
   const last = rep.R[rep.M[rep.M.length - 1]];
   io.log(
-    `Stored: ${rep.answers} answers, ${rep.M.length} milestones (${kept} reused), ${last ? last.B : 0} bootstrap draws for the latest, ${Math.round(text.length / 1000)} kB, ${Math.round((Date.now() - t0) / 1000)} s.`
+    `Stored: ${C.subjectOf(subject).name}, ${rep.answers} answers, ${rep.M.length} milestones (${kept} reused), ${last ? last.B : 0} bootstrap draws for the latest, ${Math.round(text.length / 1000)} kB, ${Math.round((Date.now() - t0) / 1000)} s.`
   );
   return 'stored';
 }
@@ -152,4 +166,4 @@ if (require.main === module) {
     log(`${rep.answers} answers, ${rep.M.length} milestones${out ? ', written to ' + out : ''}.`);
   })();
 }
-module.exports = {sheetRun, metaOf, plan, lastOf};
+module.exports = {sheetRun, metaOf, plan, lastOf, planText, headCount};

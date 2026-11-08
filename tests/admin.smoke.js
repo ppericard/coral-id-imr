@@ -999,26 +999,33 @@ const WIDTHS = [390, 1280];
       ms: document.querySelectorAll('[data-anm]').length,
       badge: (document.querySelector('.adm-an-badge') || {}).textContent || ''
     }));
-    if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/since .* next at/.test(anv.badge))
+    if (anv.rows < 40 || anv.verdicts !== anv.rows || anv.ms < 3 || !/^Corals: fitted on .* next at/.test(anv.badge))
       fails.push(`${w}px Analyses overview: ${JSON.stringify(anv)}`);
     // the stored report's switch: round milestones only (Pierre, 2026-11-05: 1000, 2000, …, no "All N"), the newest pressed;
-    // the badge counts from it
+    // the status line counts from it, the corals' answers only (Pierre, 2026-11-08: the demo's fish answers apart; a demo
+    // script before v103 counts every subject's rows in its head, so the line counts from the answer log read)
+    await p
+      .waitForFunction(() => / since · /.test((document.querySelector('.adm-an-badge') || {}).textContent || ''), null, {timeout: 30000})
+      .catch(() => {});
     const anseg = await p.evaluate(() => {
       const B = [...document.querySelectorAll('.adm-sseg [data-anm]')];
       return {
         labels: B.map(b => b.textContent),
         pressed: B.map(b => b.ariaPressed),
-        badge: document.querySelector('.adm-an-badge').textContent
+        badge: document.querySelector('.adm-an-badge').textContent,
+        coral: subjCounts(ANS.all)[replaySubject()],
+        fish: ANS.all.length - subjCounts(ANS.all)[replaySubject()]
       };
     });
-    const newest = anseg.labels.length && Number(anseg.labels[anseg.labels.length - 1].replace('k', '')) * 1000;
+    const newest = anseg.labels.length && Number(anseg.labels[anseg.labels.length - 1].replace('k', '')) * 1000,
+      anLine = `Corals: fitted on ${newest.toLocaleString('en-US')} answers · ${(anseg.coral - newest).toLocaleString('en-US')} since · next at ${(newest + 1000).toLocaleString('en-US')}`;
     if (
       !anseg.labels.length ||
       !anseg.labels.every(l => /^\d+k$/.test(l)) ||
       anseg.pressed.join() !== anseg.labels.map((_, i, L) => String(i === L.length - 1)).join() ||
-      !anseg.badge.includes(` since ${newest.toLocaleString('en-US')} · next at ${(newest + 1000).toLocaleString('en-US')}`)
+      anseg.badge !== anLine
     )
-      fails.push(`${w}px Analyses milestone switch: ${JSON.stringify(anseg)}`);
+      fails.push(`${w}px Analyses milestone switch: ${JSON.stringify(anseg)}, wanted "${anLine}"`);
     // Recompute here on every screen, phones included (Pierre, 2026-11-05: it was hidden under 600 px): shown, inside the window.
     const anre = await p.evaluate(() => {
       const e = document.querySelector('[data-anre]'),
@@ -1237,6 +1244,37 @@ const WIDTHS = [390, 1280];
         if (aqe.length) fails.push(`${w}px Analyses with script v30: ${aqe.join(' | ')}`);
         await aq.close();
       }
+      // Pierre, 2026-11-08: the corals' status line never counts the fish answers. Script v102 (from v60 the demo logs fish
+      // answers too; the head's answers every row of every subject, not used: the line counts from the answer log read)
+      // and v103 (the head counts each subject apart).
+      if (w === 1280)
+        for (const v of [102, 103]) {
+          const aq = await ctx.newPage(),
+            aqe = [];
+          aq.on('pageerror', e => aqe.push(e.message));
+          await aq.goto(base + `admin.html?demo&v=${v}#analyses/overview`);
+          await aq
+            .waitForFunction(
+              () => ANS && ANS.all && / since · /.test((document.querySelector('.adm-an-badge') || {}).textContent || ''),
+              null,
+              {timeout: 90000}
+            )
+            .catch(() => aqe.push('no status line with a count'));
+          const st = await aq.evaluate(() => {
+            const L = [...document.querySelectorAll('.adm-sseg [data-anm]')].map(b => b.textContent),
+              coral = ANS && ANS.all ? subjCounts(ANS.all)[replaySubject()] : null;
+            return {
+              badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
+              newest: L.length ? Number(L[L.length - 1].replace('k', '')) * 1000 : 0,
+              coral,
+              fish: ANS && ANS.all ? ANS.all.length - coral : 0
+            };
+          });
+          const want = `Corals: fitted on ${st.newest.toLocaleString('en-US')} answers · ${(st.coral - st.newest).toLocaleString('en-US')} since · next at ${(st.newest + 1000).toLocaleString('en-US')}`;
+          if (!st.fish || !st.newest || st.badge !== want) aqe.push(`${JSON.stringify(st)}, wanted "${want}"`);
+          if (aqe.length) fails.push(`${w}px Analyses with script v${v}: ${aqe.join(' | ')}`);
+          await aq.close();
+        }
 
       // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs),
       // except Players, which always opens Activity (fixed group, Pierre 2026-11-05), List having been used before.

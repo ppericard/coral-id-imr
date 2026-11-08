@@ -305,7 +305,7 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
   assert.deepStrictEqual(JSON.parse(stored).M, [1000], 'round milestones only, no "All N" point');
   assert.ok(!('live' in JSON.parse(stored)));
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'wait', 'no new answers: nothing to do');
-  assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+  assert.strictEqual(logs[logs.length - 1], `Corals: ${rows.length} answers, newest milestone 1000: the next one at 2000.`);
   assert.strictEqual(await sheetRun(io, 'tok', {B: 0, force: true}), 'stored');
   assert.ok(/1 reused|2 reused/.test(logs[logs.length - 1]), logs[logs.length - 1]);
   // sheet v55: an account removed since the stored report (head stale): refitted at once, nothing reused.
@@ -327,7 +327,100 @@ test('tools/analyses.js: waits for 1000 new answers, stores the report, prints n
     };
   assert.strictEqual(await sheetRun(short, 'tok', {B: 0}), 'wait');
   assert.strictEqual(puts.length, 0);
-  assert.strictEqual(logs[logs.length - 1], `${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+  assert.strictEqual(logs[logs.length - 1], `Corals: ${rows.length} answers, newest milestone 1000: the next one at 2000.`);
+});
+
+// Pierre, 2026-11-08: "il faut faire tous les 1000, mais pour le nombre de réponses dans le mode de jeu": the corals'
+// analyses are refitted every 1000 coral answers. The sheet's head counted every row of every subject, so the fish answers
+// made each hourly run read the whole log (and the admin announce a refit that was not due).
+test('tools/analyses.js on the real sheet script: fish answers never bring a coral refit', async () => {
+  const {sheetRun} = require('../tools/analyses.js'),
+    {loadCodeGs} = require('./gas.js'),
+    TOK = 'ghp_write000000000000000000',
+    s = loadCodeGs(),
+    t0 = Date.UTC(2026, 10, 1),
+    row = (i, subject) => {
+      const r = ['Ana', new Date(t0 + i * 6e4), 'Acropora', 'Acropora', 1, 'quiz', 'acropora-1', 'x' + i];
+      r[17] = subject;
+      return r;
+    };
+  const sh = require('vm').runInContext("sheet_('Answers', LOG)", s.ctx);
+  // 1500 coral answers (1000 logged before v60 with no Subject), then 1600 fish answers: 3100 rows in the tab
+  for (let i = 0; i < 1500; i++) sh.appendRow(row(i, i < 1000 ? '' : 'coral'));
+  for (let i = 0; i < 1600; i++) sh.appendRow(row(1500 + i, 'fish'));
+  assert.strictEqual(
+    s.post({analysesPut: 1, report: JSON.stringify({R: {}, answers: 1200, made: 1, AV: A.AV, subject: 'coral'}), token: TOK}).ok,
+    true
+  );
+  const calls = [],
+    logs = [],
+    io = {post: async b => (calls.push(Object.keys(b).find(k => /^(analyses|read)/.test(k))), s.post(b)), log: t => logs.push(t)};
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'wait');
+  assert.deepStrictEqual(calls, ['analysesGet'], 'no new thousand of coral answers: the log is not read');
+  assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
+});
+
+test("tools/analyses.js: the head of an older script (every subject's rows) is judged again on the subject's log", async () => {
+  const {sheetRun, headCount} = require('../tools/analyses.js'),
+    rows = Array.from({length: 3100}, (_, i) => {
+      const r = ['p1', i, 'Acropora', 'Acropora', 1, 'quiz', ''];
+      r[17] = i < 1500 ? 'coral' : 'fish';
+      return r;
+    });
+  assert.strictEqual(headCount({answers: 3100}, 'coral'), 3100, 'before v103: an upper bound');
+  assert.strictEqual(headCount({answers: 1500, counts: {coral: 1500, fish: 1600}}, 'coral'), 1500);
+  assert.strictEqual(headCount({answers: 1500, counts: {coral: 1500, fish: 1600}}, 'fish'), 1600);
+  const puts = [],
+    logs = [],
+    io = {
+      post: async b =>
+        b.analysesGet
+          ? {ok: true, answers: 3100, stored: {answers: 1200, av: A.AV}}
+          : b.readAnswers
+            ? {ok: true, rows}
+            : (puts.push(b), {ok: true}),
+      log: t => logs.push(t)
+    };
+  assert.strictEqual(await sheetRun(io, 'tok', {B: 0}), 'wait');
+  assert.strictEqual(puts.length, 0, 'nothing stored: 1500 coral answers, the 1600 fish ones apart');
+  assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
+});
+
+// The admin's status line beside the milestone switch (admin-analyses.js anStatus): the subject and its own numbers.
+test('admin Analyses status line: the subject, the milestone fitted, its answers since, the next one', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    block = require('./block.js'),
+    C = require('../core.js'),
+    src = fs.readFileSync(path.join(__dirname, '..', 'admin-analyses.js'), 'utf8');
+  const code =
+    block(src, 'const anInt = ', '\n', {file: 'admin-analyses.js', through: true}) +
+    block(src, 'const anSubj = ', '\n/* ---------- The page', {file: 'admin-analyses.js'}) +
+    ';({anSubj, anCount, anStatus})';
+  const run = (ANREP, ANS) => {
+    const ctx = {ANREP, ANS, ANALYSIS: A, subjCounts: C.subjCounts, subjectOf: C.subjectOf, replaySubject: C.replaySubject};
+    return require('vm').runInNewContext(code, ctx);
+  };
+  const line = (ANREP, ANS, lastM) => {
+    const f = run(ANREP, ANS),
+      S = f.anSubj({M: [lastM]});
+    return f.anStatus(S, lastM, f.anCount(S));
+  };
+  // sheet v103: the head's count of the corals' answers (2,729 coral and 1,292 fish answers on 2026-11-08)
+  assert.strictEqual(line({counts: {coral: 2729, fish: 1292}}, null, 2000), 'Corals: fitted on 2,000 answers · 729 since · next at 3,000');
+  assert.strictEqual(
+    line({counts: {coral: 3004, fish: 1292}}, null, 2000),
+    'Corals: fitted on 2,000 answers · 1,004 since · 3,000 due within the hour'
+  );
+  // an older script (its answers every subject's rows, not used): the answer log this page reads, the fish rows apart
+  const mixed = Array.from({length: 4021}, (_, i) => {
+    const r = ['p1', i];
+    r[17] = i < 2047 ? '' : i < 2729 ? 'coral' : 'fish';
+    return r;
+  });
+  assert.strictEqual(line({counts: null}, {all: mixed}, 2000), 'Corals: fitted on 2,000 answers · 729 since · next at 3,000');
+  // the log not read yet: no count, no "due"
+  assert.strictEqual(line({counts: null}, null, 2000), 'Corals: fitted on 2,000 answers · next at 3,000');
 });
 
 // Pierre, 2026-11-05: the report sits on round milestones only (1000, 2000, 3000, …), never shifted by the count of the

@@ -1017,13 +1017,21 @@
           w.terminate();
           done(e.data && e.data.res ? JSON.stringify(e.data.res) : null);
         };
-        w.postMessage({id: 1, rows: answers().rows, meta: ANA_META, B: 0, seed: 1});
+        // the corals' answers only, as the Action reads them (tools/analyses.js: core.js subjRows)
+        w.postMessage({id: 1, rows: subjRows(answers().rows), meta: ANA_META, B: 0, seed: 1});
       });
     return ANA.then(text => {
-      const n = S.rows.length,
+      // v103 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
+      // answers was every row of every subject, the fish ones included (?demo&v=102: the admin counts from the log).
+      const rows = answers().rows,
+        counts = subjCounts(rows),
+        sj = replaySubject(),
+        head0 = V >= 103 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
         r = text && JSON.parse(text);
-      const stored = r ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made} : null;
-      return head || !text ? {ok: true, answers: n, stored} : {ok: true, answers: n, stored, report: text};
+      const stored = r
+        ? {answers: r.answers, made: r.made, av: r.AV, size: text.length, at: r.made, ...(V >= 103 ? {subject: sj} : {})}
+        : null;
+      return head || !text ? {...head0, stored} : {...head0, stored, report: text};
     });
   };
   const demoFetch = async (u, opts) => {
