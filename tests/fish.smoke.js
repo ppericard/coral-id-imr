@@ -1819,14 +1819,16 @@ const server = http.createServer((req, res) => {
         starters.slice().sort().join() === 'f:Angelfishes,f:Butterflyfishes,f:Damselfishes,f:Surgeonfishes',
         `the starter core from fish.json: ${starters}`
       );
-      // The card: a reference-level photo where the family has one (core.js refLevel, refFirst), else its easiest.
+      // The card: Pierre's ★ Cover while in play (app.js fishCurate: his pick, 2026-11-08), else a reference-level photo
+      // where the family has one (core.js refLevel, refFirst), else its easiest.
       ok(
         starters.every(n => {
           const L = GX(n).views.wide,
             c = ph(n, GX(n).cover);
+          if (GX(n).coverP) return c.f === GX(n).coverP.f && cover(GX(n)).f === c.f;
           return L.some(refLevel) ? refLevel(c) : c.e === Math.max(...L.map(p => p.e || 0));
         }),
-        'each card shows a reference-level photo, else its easiest'
+        "each card shows Pierre's cover, else a reference-level photo, else its easiest"
       );
       // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely.
       let gated = 0,
