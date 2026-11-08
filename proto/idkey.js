@@ -74,7 +74,7 @@ LAB.add({
                 opts: forms.flatMap(f =>
                   KEY.find(k => k.id === f.id)
                     .leaves.filter(l => l.g.length && f.id !== 'L' && f.id !== 'C')
-                    .map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l), ph: l.ph}))
+                    .map(l => ({id: l.id, t: leafLabel(l), g: l.g, pg: pg(l)}))
                 )
               }
             ]
@@ -378,19 +378,8 @@ LAB.add({
       const varied = (g, k, n) => {
         const one = pv !== 'mix' && (g.views[pv] || []).length,
           c = one ? null : (n && formCover(n)) || cover(g);
-        // Coral Finder book photos (g.book) alternate with the field photos of the same view.
-        // Capped set per view (applySlots in app.js): featured photos, then up to 3 approved book photos.
-        const mix = v => {
-          const F = ((g.sl || {})[v] || {}).idkey || [],
-            A = F.filter(p => !p.cf && (!c || p.f !== c.f)).map(p => ({...p, view: v})),
-            B = F.filter(p => p.cf),
-            o = [];
-          while (A.length || B.length) {
-            if (A.length) o.push(A.shift());
-            if (B.length) o.push(B.shift());
-          }
-          return o;
-        };
+        // Capped set per view (core.js applySlots): the featured photos, then up to 5 from other observers.
+        const mix = v => (((g.sl || {})[v] || {}).idkey || []).filter(p => !c || p.f !== c.f).map(p => ({...p, view: v}));
         const L = (one ? [[pv]] : VIEWS).map(([v]) => mix(v));
         const out = c ? [c] : [],
           used = new Set(c ? [c.o] : []);
@@ -608,13 +597,339 @@ LAB.add({
       );
     const optBtn = (f, o, on, n) =>
       `<button type="button" class="ikbigopt" data-o="${f.id}|${o.id}" aria-pressed="${on}"${!n && !on ? ' data-zero' : ''} title="${esc(o.s || o.t)}"><span>${gloss(o.t, undefined, true)}${o.pg ? ` <small>${o.pg}</small>` : ''}</span><span class="ikc">${n}</span></button>`;
-    // Coral Finder box illustrations (Pierre 2026-11-01: the photos must show the box's criterion, or use a drawing).
-    // 1. The book's own photos of that box: crops of its box pages picked by eye (data.json key leaves "ph",
-    //    tools/box_photos.txt), at most 3 (one large + two small); a crop Pierre excluded or the book switched off drops out.
-    // 2. Otherwise a simple drawing of the box's criterion (BOXART), never photos of the genera, which may show
-    //    another form or corallite type of the same genus.
-    // 3. A box with neither whose genera are in no other box (the non-hard-coral group): those genera's cover photos.
+    // Coral Finder box drawings (Pierre 2026-11-01: a box's picture must show its criterion; 2026-11-08: the book's crops
+    // leave the app, every box gets a drawing). One style for all (viewBox 160 x 120, .iksch in lab.css): the coral in
+    // white with a dark outline (.f), details in grey (.st), calices and valleys shaded (.c), the seabed line (.b); the
+    // part a box names in the one highlight colour (.h, .hf; DESIGN.md "Lab drawings"). A surface close-up carries a
+    // 1 cm bar (40 units, U per mm), the same in every close-up, so a size box is read against it.
+    const U = 4,
+      r1 = n => Math.round(n * 10) / 10,
+      // Deterministic jitter (no Math.random: the same drawing at every visit).
+      jit = (i, a) =>
+        r1(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453 - Math.floor(Math.sin(i * 12.9898 + a * 78.233) * 43758.5453) - 0.5);
+    const BAR =
+      '<g class="sb"><rect x="100" y="92" width="54" height="24" rx="5"/><path d="M107 110 H147 M107 106 V114 M147 106 V114"/><text x="127" y="103">1 cm</text></g>';
+    const SURF = '<rect class="f0" width="160" height="120"/>';
+    const ray = (x, y, a, r0, r) =>
+      `M${r1(x + r0 * Math.cos(a))} ${r1(y + r0 * Math.sin(a))} L${r1(x + r * Math.cos(a))} ${r1(y + r * Math.sin(a))}`;
+    const rays = (x, y, n, r0, r, t = 0) => [...Array(n)].map((_, i) => ray(x, y, t + (i * 2 * Math.PI) / n, r0, r)).join(' ');
+    // A calice seen from above: its pit (.c), septa from the rim inwards, the columella in the middle.
+    const calice = (x, y, r, n = r < 8 ? 8 : 12) =>
+      r < 4
+        ? `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}"/>`
+        : `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}"/><path class="st" d="${rays(x, y, n, r * 0.25, r)}"/><circle class="w" cx="${r1(x)}" cy="${r1(y)}" r="${r1(Math.max(1, r * 0.16))}"/>`;
+    // Centres of a staggered grid of spacing d over the drawing (rows d * 0.87 apart), each nudged a little.
+    const grid = (d, k = 0.12) => {
+      const P = [];
+      for (let j = -1, i = 0; j * d * 0.87 < 120 + d; j++)
+        for (let x = -d + (j % 2 ? d / 2 : 0); x < 160 + d; x += d, i++) P.push([x + jit(i, 1) * d * k, j * d * 0.87 + jit(i, 2) * d * k]);
+      // Only the cells that reach into the drawing.
+      return P.filter(([x, y]) => x > -0.6 * d && x < 160 + 0.6 * d && y > -0.6 * d && y < 120 + 0.6 * d);
+    };
+    // Corallites with separate walls: each calice ringed by its own wall (.f), the surface between them grey (.g).
+    const separate = d =>
+      '<rect class="g" width="160" height="120"/>' +
+      grid(d)
+        .map(([x, y]) => `<circle class="f" cx="${r1(x)}" cy="${r1(y)}" r="${r1(d * 0.4)}"/>${calice(x, y, d * 0.27)}`)
+        .join('') +
+      BAR;
+    // Shared walls: neighbouring calices split by one wall (the grey ridge line between two pits), as a honeycomb.
+    const shared = d => {
+      const hex = (x, y, R) =>
+        [...Array(6)]
+          .map(
+            (_, i) =>
+              `${i ? 'L' : 'M'}${r1(x + R * Math.cos(Math.PI / 6 + (i * Math.PI) / 3))} ${r1(y + R * Math.sin(Math.PI / 6 + (i * Math.PI) / 3))}`
+          )
+          .join(' ') + 'Z';
+      const P = grid(d, 0);
+      return (
+        SURF +
+        P.map(([x, y]) => `<path class="st" d="${hex(x, y, d / Math.sqrt(3))}"/>`).join('') +
+        P.map(
+          ([x, y]) =>
+            `<path class="c" d="${hex(x, y, (d / Math.sqrt(3)) * 0.72)}"/>${d >= 30 ? `<path class="st" d="${rays(x, y, 12, d * 0.08, d * 0.36)}"/>` : ''}<circle class="w" cx="${r1(x)}" cy="${r1(y)}" r="${r1(Math.max(1, d * 0.06))}"/>`
+        ).join('') +
+        BAR
+      );
+    };
+    // Meandering valleys s units apart: wavy walls (white bands, .wo under .wi) over the valley floor (.c), septa
+    // across each valley. sep: each valley has its own wall, two walls side by side with a groove between (.h).
+    const wave = (y0, a, l, ph) => {
+      let d = '';
+      for (let x = -4; x <= 164; x += 4)
+        d += `${x < 0 ? 'M' : 'L'}${x} ${r1(y0 + a * Math.sin((2 * Math.PI * x) / l + ph) + a * 0.35 * Math.sin((4 * Math.PI * x) / l + ph * 2))}`;
+      return d;
+    };
+    const meander = (s, sep) => {
+      const ww = sep ? s * 0.14 : Math.max(2.4, s * 0.16),
+        a = Math.min(10, s * 0.22),
+        l = Math.max(48, s * 2.2),
+        Y = [];
+      for (let y = -s / 2; y < 120 + s; y += s) Y.push(y);
+      const walls = Y.map((y, i) => wave(y, a, l, i * 0.5));
+      // Septa: short ticks from each wall towards the valley's axis.
+      const ticks = Y.map((y, i) => {
+        let d = '';
+        const step = Math.max(3, s * 0.16);
+        for (let x = 0; x <= 160; x += step) {
+          const f = (yy, ph) => yy + a * Math.sin((2 * Math.PI * x) / l + ph) + a * 0.35 * Math.sin((4 * Math.PI * x) / l + ph * 2);
+          const top = f(y, i * 0.5),
+            bot = f(y + s, (i + 1) * 0.5),
+            g = (bot - top) / 2;
+          if (s >= 16) d += `M${r1(x)} ${r1(top + ww / 2)} V${r1(top + g * 0.75)} M${r1(x)} ${r1(bot - ww / 2)} V${r1(bot - g * 0.75)} `;
+        }
+        return d;
+      }).join('');
+      const band = (d, w) =>
+        `<path class="wo" d="${d}" style="stroke-width:${r1(w + 2.6)}"/><path class="wi" d="${d}" style="stroke-width:${r1(w)}"/>`;
+      return (
+        '<rect class="c" width="160" height="120"/>' +
+        (ticks ? `<path class="st" d="${ticks}"/>` : '') +
+        walls
+          .map(d =>
+            sep
+              ? `<g transform="translate(0 ${r1(-ww * 0.75)})">${band(d, ww)}</g><g transform="translate(0 ${r1(ww * 0.75)})">${band(d, ww)}</g><path class="h" d="${d}"/>`
+              : band(d, ww)
+          )
+          .join('') +
+        BAR
+      );
+    };
+    // No walls: small calices joined to their neighbours by septo-costae running from one to the next (.h).
+    const linked = (d, edge) => {
+      const P = grid(d, 0.1),
+        n = 10;
+      const lines = P.map(([x, y], i) => rays(x, y, n, d * 0.12, d * 0.52, jit(i, 3) * 0.3)).join(' ');
+      return (
+        SURF +
+        `<path class="h thin" d="${lines}"/>` +
+        P.map(([x, y]) => `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(d * 0.12)}"/>`).join('') +
+        (edge
+          ? '<path class="bg" d="M-10 86 C40 82 60 90 90 86 C120 82 140 88 170 85 V140 H-10 Z"/><path class="f" d="M-2 84 C40 80 60 88 90 84 C120 80 140 86 162 83 V90 C140 93 120 87 90 91 C60 95 40 87 -2 91 Z"/><path class="b" d="M10 112 H96"/>'
+          : '') +
+        BAR
+      );
+    };
+    // A branch from (x0, y0) to its tip (x1, y1), w0 wide at its base, w1 at its rounded tip.
+    const branch = (x0, y0, x1, y1, w0, w1) => {
+      const L = Math.hypot(x1 - x0, y1 - y0),
+        nx = (y1 - y0) / L,
+        ny = -(x1 - x0) / L;
+      return `M${r1(x0 - (nx * w0) / 2)} ${r1(y0 - (ny * w0) / 2)} L${r1(x1 - (nx * w1) / 2)} ${r1(y1 - (ny * w1) / 2)} A${r1(w1 / 2)} ${r1(w1 / 2)} 0 0 0 ${r1(x1 + (nx * w1) / 2)} ${r1(y1 + (ny * w1) / 2)} L${r1(x0 + (nx * w0) / 2)} ${r1(y0 + (ny * w0) / 2)} Z`;
+    };
+    // Points along a branch, alternating sides, for its corallites.
+    const along = (x0, y0, x1, y1, w0, w1, n, t0 = 0.1, t1 = 0.85) =>
+      [...Array(n)].map((_, i) => {
+        const t = t0 + ((t1 - t0) * i) / Math.max(1, n - 1),
+          L = Math.hypot(x1 - x0, y1 - y0),
+          nx = (y1 - y0) / L,
+          ny = -(x1 - x0) / L,
+          side = i % 2 ? 1 : -1,
+          w = (w0 + (w1 - w0) * t) / 2;
+        return [x0 + (x1 - x0) * t + side * nx * w * 0.62, y0 + (y1 - y0) * t + side * ny * w * 0.62];
+      });
+    // Branching, no axial corallite: branch tips close up, every corallite alike, tip included; r = corallite radius.
+    const tips = (B, r, n) =>
+      SURF.replace('f0', 'bg') +
+      B.map(b => `<path class="f" d="${branch(...b)}"/>`).join('') +
+      B.map(b =>
+        [...along(...b, n, 0.04, 0.9), [b[2], b[3] - b[5] * 0.12]]
+          .map(([x, y]) =>
+            r < 4
+              ? `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}"/>`
+              : `<circle class="f" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r * 1.25)}"/>${calice(x, y, r, 8)}`
+          )
+          .join('')
+      ).join('') +
+      BAR;
     const BOXART = {
+      // With an axial corallite at branch tips (Acropora): each tip ends in one larger corallite (.h), the radial ones
+      // smaller along the sides.
+      B1: (() => {
+        const B = [
+          [46, 104, 30, 30, 15, 8],
+          [70, 104, 78, 18, 16, 8],
+          [94, 104, 120, 36, 15, 8],
+          [62, 78, 44, 50, 9, 7]
+        ];
+        return (
+          B.map(b => `<path class="f" d="${branch(...b)}"/>`).join('') +
+          B.map(b =>
+            along(...b, 7, 0.12, 0.88)
+              .map(([x, y]) => `<circle class="f" cx="${r1(x)}" cy="${r1(y)}" r="2"/>`)
+              .join('')
+          ).join('') +
+          B.map(
+            ([, , x, y, , w]) => `<circle class="hf" cx="${x}" cy="${y}" r="${w * 0.62}"/><circle class="w" cx="${x}" cy="${y}" r="1.3"/>`
+          ).join('') +
+          '<path class="b" d="M10 104 H150"/>'
+        );
+      })(),
+      // No axial corallite, corallites < 2 mm (Pocillopora, Porites, Montipora): many tiny ones, the tip like the rest.
+      B2: tips(
+        [
+          [30, 124, 42, 20, 40, 34],
+          [92, 124, 86, 34, 40, 34]
+        ],
+        2.4,
+        26
+      ),
+      // No axial corallite, corallites > 2 mm (Tubastraea, Echinopora): fewer, large cups, the tip like the rest.
+      B3: tips(
+        [
+          [36, 128, 44, 26, 52, 46],
+          [104, 128, 96, 42, 52, 46]
+        ],
+        9,
+        6
+      ),
+      // Branch surface complex, angular, sculpted (Hydnophora, Merulina, Pectinia): ridged, faceted branches.
+      B4: (() => {
+        const B = [
+          [52, 104, 34, 28, 22, 14],
+          [80, 104, 92, 20, 22, 14],
+          [106, 104, 128, 40, 20, 12]
+        ];
+        const zig = ([x0, y0, x1, y1, w0, w1]) => {
+          const L = Math.hypot(x1 - x0, y1 - y0),
+            nx = (y1 - y0) / L,
+            ny = -(x1 - x0) / L,
+            n = 9,
+            side = s =>
+              [...Array(n + 1)].map((_, i) => {
+                const t = i / n,
+                  w = ((w0 + (w1 - w0) * t) / 2) * (i % 2 ? 1.3 : 0.85);
+                return [x0 + (x1 - x0) * t + s * nx * w, y0 + (y1 - y0) * t + s * ny * w];
+              });
+          const A = side(-1),
+            Bb = side(1).reverse();
+          const ridges = [...Array(n - 1)]
+            .map((_, i) => {
+              const t = (i + 1) / n,
+                cx = x0 + (x1 - x0) * t,
+                cy = y0 + (y1 - y0) * t,
+                w = (w0 + (w1 - w0) * t) / 2;
+              return i % 2
+                ? ''
+                : `M${r1(cx - nx * w)} ${r1(cy - ny * w)} L${r1(cx + ((x1 - x0) / L) * 4)} ${r1(cy + ((y1 - y0) / L) * 4)} L${r1(cx + nx * w)} ${r1(cy + ny * w)}`;
+            })
+            .join(' ');
+          return `<path class="f" d="M${[...A, ...Bb].map(([x, y]) => `${r1(x)} ${r1(y)}`).join(' L')} Z"/><path class="st" d="${ridges}"/>`;
+        };
+        return B.map(zig).join('') + '<path class="b" d="M10 104 H150"/>';
+      })(),
+      // Meandering, corallites with separate walls (Lobophyllia): two walls side by side, a groove between them (.h).
+      M1: meander(44, true),
+      // Meandering, shared or no walls, valleys 1-4 mm (Pachyseris, Pavona): many fine ridges.
+      M2: meander(10, false),
+      // Shared or no walls, valleys 4-10 mm (Platygyra, Leptoria, Goniastrea).
+      M3: meander(28, false),
+      // Shared or no walls, valleys > 10 mm (Lobophyllia, Pectinia).
+      M4: meander(56, false),
+      // Massive, corallites with separate walls, < 8 mm (Dipsastraea, Astreopora, Cyphastrea).
+      S1: separate(5.5 * U),
+      // Separate walls, 8-20 mm (Diploastrea, Dipsastraea, Favites).
+      S2: separate(14 * U),
+      // No or indistinct walls, linked by septo-costae (Pavona).
+      S3: linked(5 * U),
+      // Shared walls, < 8 mm (Favites, Goniastrea, Porites).
+      S4: shared(5 * U),
+      // Shared walls, 8-12 mm.
+      S5: shared(10 * U),
+      // Shared walls, > 12 mm.
+      S6: shared(16 * U),
+      // Raised skeletal surface textures (Hydnophora, Galaxea, Porites): a massive colony's top seen from the side,
+      // knobs, cones and ridges standing up from it.
+      S7: (() => {
+        let d = 'M0 120 V58',
+          x = 0,
+          i = 0;
+        while (x < 160) {
+          const w = 12 + (jit(i, 4) + 0.5) * 8,
+            h = 12 + (jit(i, 5) + 0.5) * 12;
+          d += ` L${r1(x + w * 0.2)} 58 L${r1(x + w * 0.5)} ${r1(58 - h)} L${r1(x + w * 0.8)} 58`;
+          x += w;
+          i++;
+        }
+        d += ' L160 58 V120 Z';
+        return (
+          '<rect class="bg" width="160" height="120"/>' +
+          `<path class="f" d="${d}"/>` +
+          '<path class="st" d="M0 70 C40 66 120 74 160 68 M0 84 C50 80 110 88 160 82"/>' +
+          BAR
+        );
+      })(),
+      // Thin plates and crusts, raised or crumpled surface textures: a thin plate whose top is crumpled into ridges and bumps.
+      P1: (() => {
+        let d = 'M6 92',
+          i = 0;
+        for (let x = 6; x < 154; i++) {
+          const w = 8 + (jit(i, 6) + 0.5) * 8,
+            h = 4 + (jit(i, 7) + 0.5) * 9;
+          d += ` Q${r1(x + w / 2)} ${r1(78 - h * 2)} ${r1(Math.min(154, x + w))} 78`;
+          x += w;
+        }
+        return `<path class="f" d="${d} L154 92 C120 96 40 96 6 92 Z"/><path class="st" d="M10 86 C50 88 110 88 150 86"/><path class="f" d="M72 95 L74 104 H86 L88 95 Z"/><path class="b" d="M10 104 H150"/>`;
+      })(),
+      // Encrusting with rounded corallites (Turbinaria, Astreopora): a thin crust over the rock, round corallites raised on it.
+      P2: (() => {
+        const X = [18, 40, 62, 84, 106, 128, 148];
+        return (
+          '<path class="w" d="M0 120 V84 C30 76 60 86 90 78 C120 70 140 80 160 76 V120 Z"/>' +
+          '<path class="f" d="M0 84 C30 76 60 86 90 78 C120 70 140 80 160 76 V66 C140 70 120 60 90 68 C60 76 30 66 0 74 Z"/>' +
+          X.map((x, i) => {
+            const y = 72 - Math.sin((x / 160) * 6) * 4 - (i % 2) * 2;
+            return `<path class="f" d="M${x - 9} ${r1(y + 2)} C${x - 8} ${r1(y - 12)} ${x + 8} ${r1(y - 12)} ${x + 9} ${r1(y + 2)}"/><ellipse class="c" cx="${x}" cy="${r1(y - 8)}" rx="4.5" ry="2"/>`;
+          }).join('') +
+          BAR
+        );
+      })(),
+      // Vases or tiers (Turbinaria, Montipora, Echinopora): a vase on a short stalk, and plates stacked in tiers.
+      P3:
+        '<path class="f" d="M40 104 L44 82 C26 70 14 52 12 30 C30 38 60 38 76 30 C74 52 62 70 50 82 L54 104 Z"/><ellipse class="f" cx="44" cy="30" rx="32" ry="7"/><ellipse class="c" cx="44" cy="31" rx="24" ry="4"/>' +
+        '<path class="f" d="M116 104 V60"/><path class="st" d="M116 104 V58"/>' +
+        [
+          [116, 92, 30],
+          [116, 76, 24],
+          [116, 60, 17]
+        ]
+          .map(
+            ([x, y, w]) =>
+              `<path class="f" d="M${x - w} ${y} C${x - w / 2} ${y - 7} ${x + w / 2} ${y - 7} ${x + w} ${y} C${x + w / 2} ${y - 3} ${x - w / 2} ${y - 3} ${x - w} ${y} Z"/>`
+          )
+          .join('') +
+        '<path class="b" d="M10 104 H150"/>',
+      // Corallites linked by continuous septo-costae on a plate (Lithophyllon, Pavona): the plate's thin edge in front.
+      P5: linked(5 * U, true),
+      // With fingers or tubes arising (Montipora, Echinopora, Porites): upright fingers and tubes rising from a plate.
+      P6:
+        '<path class="f" d="M8 104 C10 96 30 92 80 92 C130 92 150 96 152 104 Z"/>' +
+        [
+          [26, 94, 54, 11],
+          [50, 92, 30, 12],
+          [78, 92, 40, 11],
+          [104, 92, 24, 12],
+          [130, 94, 46, 11]
+        ]
+          .map(([x, y, t, w], i) =>
+            i % 2
+              ? `<path class="f" d="M${x - w / 2} ${y} V${t} H${x + w / 2} V${y} Z"/><ellipse class="f" cx="${x}" cy="${t}" rx="${w / 2}" ry="3"/><ellipse class="c" cx="${x}" cy="${t}" rx="${w / 2 - 2.5}" ry="1.6"/>`
+              : `<path class="f" d="M${x - w / 2} ${y} V${t + w / 2} A${w / 2} ${w / 2} 0 0 1 ${x + w / 2} ${t + w / 2} V${y} Z"/>`
+          )
+          .join('') +
+        '<path class="b" d="M10 104 H150"/>',
+      // Free-living, round or oval disc 10-30 cm, single mouth (Fungia, Danafungia, Lobactis): a disc lying on the sand,
+      // septa from the rim to the one central mouth (.h).
+      F1: `<path class="f" d="M18 76 C18 96 142 96 142 76 L142 70 L18 70 Z"/><ellipse class="f" cx="80" cy="70" rx="62" ry="20"/><path class="st" d="${[
+        ...Array(36)
+      ]
+        .map((_, i) => {
+          const a = (i * 2 * Math.PI) / 36,
+            k = i % 2 ? 0.55 : 0.2;
+          return `M${r1(80 + 60 * Math.cos(a))} ${r1(70 + 19 * Math.sin(a))} L${r1(80 + 60 * k * Math.cos(a))} ${r1(70 + 19 * k * Math.sin(a))}`;
+        })
+        .join(' ')}"/><path class="h" d="M70 70 H90"/><path class="b" d="M10 100 C40 96 70 102 100 98 C120 96 136 100 150 99"/>`,
       // Leafy fronds, lettuce-like (CF p.57): thin upright wavy fronds rising from one base.
       P4:
         [
@@ -636,11 +951,10 @@ LAB.add({
       F4: '<path class="f" d="M62 104 C62 84 54 74 44 62 C60 66 70 60 80 50 C90 60 100 66 116 62 C106 74 98 84 98 104 Z"/><ellipse class="f" cx="80" cy="54" rx="40" ry="12"/><path class="st" d="M50 52 L58 56 M62 46 L66 52 M80 43 L80 50 M98 46 L94 52 M110 52 L102 56 M56 60 L64 58 M104 60 L96 58"/><ellipse class="w" cx="80" cy="54" rx="6" ry="2.5"/><path class="b" d="M10 104 C40 98 60 106 80 102 C100 98 120 106 150 102"/>'
     };
     const boxArt = id => (BOXART[id] ? `<svg class="iksch" viewBox="0 0 160 120" aria-hidden="true">${BOXART[id]}</svg>` : '');
-    const XCL = (CUR && CUR.exclude) || {},
-      BOOKON = !(CUR && CUR.book === false);
+    // A box's picture: its drawing, else (a box with no drawing whose genera are in no other box: the non-hard-coral
+    // group, the elongate free-living discs) those genera's cover photos, else nothing.
     const boxPics = o => {
-      const P = BOOKON ? (o.ph || []).filter(f => !XCL[f]).map(f => photoUrl(`img/${f}-s.webp`)) : [];
-      if (P.length || BOXART[o.id]) return P.slice(0, 3);
+      if (BOXART[o.id]) return [];
       // Only genera found in no other box, so their photos can only show this box's criterion.
       const solo = bySlate(o.g).filter(n => KEY.every(k => k.leaves.every(l => l.id === o.id || !l.g.includes(n))));
       return solo.length === o.g.length

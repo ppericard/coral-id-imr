@@ -40,7 +40,7 @@ changes the site by itself.
     have no Closer view), `starred` (not surveyed, look-alikes of surveyed genera).
   - `photos`: one entry per photo, ordered by genus. `genus` and `view` are where the photo sits today;
     `source` is `imr` (IMR lecture), `pierre` (Pierre's own), `inat-dauin`, `inat-philippines`,
-    `inat-elsewhere` (other iNaturalist observers) or `book` (cropped from the Coral Finder 2022 book);
+    `inat-elsewhere` (other iNaturalist observers); no Coral Finder book photo (its crops were removed on 2026-11-08);
     `status` is `live` (on the site), `candidate` (not shown until Pierre adds it), `hidden` or `comparison`;
     `multi` = already known to show several corals; `form_todo` = growth form still to (re)guess; `inat_label` = the observer's iNaturalist identification,
     a hint only; `caption` = IMR slide caption.
@@ -48,7 +48,7 @@ changes the site by itself.
 
 ## Per photo (`photos` in your file)
 
-Judge every photo whose manifest `genus` is the genus of the file, candidates and book photos included.
+Judge every photo whose manifest `genus` is the genus of the file, candidates included.
 
 ### `form`: exactly one IMR growth form
 
@@ -57,8 +57,7 @@ before you start). **One letter per photo: the dominant form visible in this pho
 shows, not what the genus usually does. `x` = form not visible (the photo is too close to tell the colony's form).
 Use `x` only when the shape really cannot be read: a part of a colony whose shape is still obvious (the edge of
 a plate, a round free-living disc, a branch tip) gets its form, not `x`.
-There is no list of forms allowed per genus: do not make one up. Coral Finder book photos (`source: "book"`) may
-omit `form`.
+There is no list of forms allowed per genus: do not make one up.
 
 ### `polyps`: polyps or vesicles extended (omit when false)
 
@@ -133,12 +132,11 @@ the view it would join if added.
     A single small crab or shrimp at the edge of a coral that fills the frame stays;
   - labels, scale bars, rulers, markers or arrows over the subject, that a crop cannot remove without cutting the
     subject (in the note, what they cover), and a photo covered with arrows or markers all over;
-  - Coral Finder book crops (`source: "book"`, the `cf` candidates): a crop with the "1x" skeleton inset, a crop
-    joining two photos (side by side or stacked; Pierre, 2026-11-03: no exception, not even two views of the same
-    specimen), a crop showing the spiral binding.
+  - a photo joining two photos (side by side or stacked; Pierre, 2026-11-03: no exception, not even two views of the
+    same specimen).
 
-  Never reasons to exclude or lower a photo (Pierre kept such photos): watermarks, logos, date stamps; species labels
-  on book crops; extended tentacles. Labels, scale bars, rulers, markers or arrows are fine **only when the crop
+  Never reasons to exclude or lower a photo (Pierre kept such photos): watermarks, logos, date stamps; extended
+  tentacles. Labels, scale bars, rulers, markers or arrows are fine **only when the crop
   you suggest removes them** without cutting the subject (Pierre kept such photos after cropping them); otherwise
   `exclude`, above.
 
@@ -196,7 +194,7 @@ IMR photo in favour of a non-IMR one. Pierre hides the drops himself, one by one
 The photos that best teach the genus in that view.
 - Priority (Pierre's rule): **IMR photos first, then Pierre's own, then other iNaturalist observers**; within a
   source, Good before Fair. A Fair IMR photo can beat a Good iNat photo if it shows the features well.
-- Only live photos (or candidates you also list in `add`), never book photos, never `multi`, never a duplicate
+- Only live photos (or candidates you also list in `add`), never `multi`, never a duplicate
   you drop, and different colonies when possible.
 - Prefer photos that show what the IMR cues describe.
 - The first Closer featured IMR photo becomes the genus cover by default: a mid-distance view, never macro, with
@@ -206,9 +204,7 @@ The photos that best teach the genus in that view.
 
 Candidates (`status: "candidate"`) Pierre should approve, in the view you gave them. Pierre's rule: IMR and his own
 photos are always used; others only fill gaps. So suggest iNaturalist candidates only for a view with fewer than
-3 Good or Fair live photos (Dauin first, then Philippines, then elsewhere), up to 3 per view. Separately, suggest
-up to 3 book photos per view for the site's Coral Finder (it mixes sources for variety): the clearest ones, most
-different from the field photos.
+3 Good or Fair live photos (Dauin first, then Philippines, then elsewhere), up to 3 per view.
 
 ## Candidate pass (`judging/cand/<Genus>.json`, `tools/judging_cand.py`)
 
@@ -253,14 +249,13 @@ aim: real diversity of colonies and views, so the players learn the genus, not t
    (`dup`); several corals (`multi`, above); Poor quality (1) judged on the 100% crops; and the `exclude` cases of
    `genus` above (a hand over a fifth of the frame or more, a coral held or out of the water, another animal as the
    subject or other animals taking the eye off the coral, labels, scales or markers over the subject that no crop can
-   remove, arrows or markers all over, the book crops with the "1x" inset, two photos joined or the spiral binding).
+   remove, arrows or markers all over, two photos joined).
    Very poor quality stays Poor (1), set aside. Lower in the queue only, not set aside: a subject under about a tenth
    of the frame gets quality at most Fair (2) and a note "small" (Pierre has kept such photos). Labels, scale bars,
    rulers, markers or arrows that a crop removes without cutting the subject: suggest that crop and keep the photo
    (the import keeps each trim at half its size, `CROP_K`, so the box you write must trim twice as far as the label
    reaches; when that would cut the subject, Pierre can still crop it by hand: `exclude` with `unsure`). Never
-   reasons to reject: watermarks, logos, date stamps, species labels on book crops, extended tentacles. Book crops
-   (`cf`) are not in the pass yet (`cands` skips them); the book rules apply when they are judged.
+   reasons to reject: watermarks, logos, date stamps, extended tentacles.
 3. `python3 tools/judging_cand.py --check <Genus>` until it passes, then `python3 tools/judging_cand.py` imports
    every passing genus into `suggest.json` `"cand"` (admin only: players never download it). Commit only
    `judging/cand/*.json` and `suggest.json`.

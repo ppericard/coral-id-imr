@@ -75,6 +75,7 @@ Every workflow in `.github/workflows/` (`tests/docs.test.js` checks that this ta
 | `photos-r2.yml` — Photos to R2 | Push to `main` changing `img/**`, and manual dispatch. Copies `img/` to the Cloudflare R2 bucket and checks it (`tools/r2_sync.sh`); commits nothing. | No |
 | `analyses.yml` — Analyses report | Hourly schedule and manual dispatch (`force`). Reads the answer log and stores the report in the sync sheet (`tools/analyses.js`); skipped without `ANALYSES_ADMIN_TOKEN`; commits nothing. | No |
 | `prune-branches.yml` — Prune merged branches | Manual dispatch only (`dry_run` by default). Deletes branches whose PR was merged and that got nothing after (docs/HANDOVER.md "Clean merged branches"). | No |
+| `r2-drop-crops.yml` — Drop the book crops from R2 | Manual dispatch only (`dry_run` by default). Deletes the Coral Finder book crops (`img/*-cf-*.webp`) from the R2 bucket once and checks none is left (`tools/r2_sync.sh --drop-crops`; docs/HANDOVER.md "Coral Finder book crops on R2"); commits nothing. Pierre's to run, never an agent's. | No |
 | `pages-cancel.yml` — Cancel stuck Pages deployment | Manual dispatch only, with the SHA named in the error. Cancels that Pages deployment ("Manual recovery" below). | No |
 
 The GitHub-generated **pages build and deployment** workflow (the old branch source) is retired since the switch to

@@ -58,7 +58,7 @@ def check(n):
         if 'polyps' in x and x['polyps'] is not True: E.append(f'{at}: polyps is true or omitted')
         if x.get('polyps') and (n not in POLYPS or x.get('view', p['view']) == 'macro'):
             E.append(f'{at}: polyps only for {", ".join(sorted(POLYPS))}, never on a macro photo (rule C4): omit it')
-        if 'form' not in x and p['source'] != 'book' and 'form' not in p.get('pierre', {}): E.append(f'{at}: form missing')
+        if 'form' not in x and 'form' not in p.get('pierre', {}): E.append(f'{at}: form missing')
         if fo: pass
         elif x.get('quality') not in (1, 2, 3) and 'quality' not in p.get('pierre', {}): E.append(f'{at}: quality must be 1, 2 or 3')
         if not fo and x.get('view') not in views: E.append(f'{at}: view must be one of {views}' + (' (two-view genus: no medium)' if len(views) == 2 and x.get('view') == 'medium' else ''))
@@ -87,7 +87,6 @@ def check(n):
         for f in L:
             p = PH.get(f)
             if not p or p['genus'] != n: E.append(f'{n}: featured.{v}: {f} is not a photo of {n}'); continue
-            if p['source'] == 'book': E.append(f'{n}: featured.{v}: {f} is a Coral Finder book photo (never featured)')
             if not live(f) and f not in (j.get('add') or []): E.append(f'{n}: featured.{v}: {f} is a candidate not listed in "add"')
             if vw(f) != v: E.append(f'{n}: featured.{v}: {f} is judged as view {vw(f)}')
             if p.get('multi') or (J.get(f) or {}).get('multi'): E.append(f'{n}: featured.{v}: {f} shows several corals')

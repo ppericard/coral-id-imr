@@ -55,7 +55,7 @@ def cands(n):
     """Candidates still waiting for genus n: iNaturalist photos in cand.json/data.json not added, rejected or excluded."""
     k = (C.get('genera') or {}).get(n, {})
     add, seen = k.get('add') or {}, C.get('seen') or {}
-    return [p for p in (D.get('cand') or {}).get(n, []) if not p.get('cf') and p['f'] not in add and p['f'] not in X and f'cand:{p["f"]}' not in seen]
+    return [p for p in (D.get('cand') or {}).get(n, []) if p['f'] not in add and p['f'] not in X and f'cand:{p["f"]}' not in seen]
 
 def obs_of(p): return p.get('o') or p['f']
 

@@ -1,0 +1,35 @@
+# The one deletion from Cloudflare R2 (Pierre, 2026-11-08): the Coral Finder book's crops (img/*-cf-*.webp, (c) R. Kelley /
+# BYOGUIDES) left the app and the repository; their copies leave the bucket (tools/r2_sync.sh --drop-crops). By hand only
+# (Actions > Drop the book crops from R2 > Run workflow): "dry_run" (the default) counts and lists them; unticked, it
+# deletes them and checks none is left. Never run by an agent (AGENTS.md: anything destructive is asked first).
+name: Drop the book crops from R2
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only count and list the crop files on R2'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+# One writer of the bucket at a time, with photos-r2.yml and the r2 job of approved-photos.yml.
+concurrency:
+  group: photos-r2
+  cancel-in-progress: false
+jobs:
+  drop:
+    # Pierre only (security review #748): the job is skipped for any other actor, whoever can dispatch it.
+    if: github.actor == 'ppericard'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - run: tools/r2_sync.sh --drop-crops
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
