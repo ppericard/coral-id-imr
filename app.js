@@ -573,6 +573,7 @@ function fishGenera(X, F) {
   X.sci = sci;
   // The species' names by id (fish.json species, the PDF name), for the species shown that each answer logs (UNITS species).
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
+  X.tree = fishScoreTree(X, F); // core.js: the tree of the fish global score
   return X;
 }
 // The scientific genera in play (the sci set, UNITS fish sets), from L (FISH.sci) by their family's score (score: genScore)
@@ -630,6 +631,10 @@ const fishLoad = () =>
       FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
       const F = fishBuild();
       if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
+      // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
+      try {
+        if (typeof achPending === 'function') achPending();
+      } catch (e) {}
       return F;
     })
     .catch(e => {
@@ -1361,12 +1366,21 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // opens, the card at the threshold, My progress any time after). Its families count in the fish % open or not (Q204: 100%
 // is everything known, circle 3 included; a player who says no has room left). Within what may open, the usual weighted
 // opening (model.js openPick).
-const FISH_C3 = 0.5;
+// The circle-3 threshold reads the fish score's circle-1 Entries component (Pierre, 2026-11-08: the path follows the new
+// scores; every score from the one computation, core.js treeScore by[1].entries, the circle-1 families weighted by how
+// common their species are): 55%, the value at which the simulated players reach it at the same answer as the plain mean's
+// 50% did (docs/LEARNING.md "Fish: the global score, built"). Without the subject's score (core.js SUBJECTS fish score,
+// the one switch), the plain mean of the circle-1 families at 50%, as before.
+const FISH_C3 = {entries: 0.55, mean: 0.5};
+const fishC3 = () => {
+  const h = headScore();
+  return h ? ((h.by[1] || {}).entries || 0) >= FISH_C3.entries : progPct(FISH.c1) >= 100 * FISH_C3.mean;
+};
 const fishGate = n => {
   const c = (GX(n) || {}).circle || 1;
   if (c < 2) return true;
   const c1 = FISH ? FISH.c1 : [];
-  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : progPct(c1) >= 100 * FISH_C3;
+  return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!FISH && fishC3();
 };
 const UNITS = {
   coral: {
@@ -1429,6 +1443,9 @@ const UNITS = {
   fish: {
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
+    // Home's Learn band in landscape tiles (home.js, home.css .hdtiles.land; Pierre, 2026-11-08: most fish are horizontal,
+    // square tiles cut them); the corals keep their square-ish close-ups.
+    land: true,
     load: () => fishLoad(),
     pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
@@ -1480,7 +1497,12 @@ const UNITS = {
     // players who are not experts to "I know reef fish well"). The answer's variables and the window are kept as they are.
     startFb: false,
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
+    // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
+    tree: () => (FISH ? FISH.tree : null),
     core: () => (FISH ? FISH.c1 : []),
+    // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
+    // families, those that open right after them, those beyond the course.
+    circles: () => (FISH ? [FISH.c1, FISH.c2, FISH.c3] : []),
     gate: fishGate,
     // Circle 3, the families beyond the IMR course (Pierre, 2026-11-07 08:50): offered at the Q177 threshold instead of
     // opening by itself; once on, its families open one at a time like any other. They count in the % either way (Q204).
@@ -1488,7 +1510,7 @@ const UNITS = {
       {
         k: 'beyond',
         units: () => (FISH ? FISH.c3 : []),
-        due: () => !!FISH && progPct(FISH.c1) >= 100 * FISH_C3,
+        due: () => !!FISH && fishC3(),
         kick: 'Beyond the IMR course',
         title: () => 'More fish families, beyond the IMR course?',
         body: 'The families divers look for around Dauin, muck diving above all: frogfishes, ghost pipefishes, seahorses, morays…',
@@ -1514,6 +1536,18 @@ const UNITS = {
     },
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop),
     norm: typeNormAll,
+    // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
+    // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
+    // common names (the genera's, their IMR tags, the species'), from fish.json alone. Nothing for another rank.
+    typeOther: rk => {
+      const F = rk === 'genus' && FISHRAW && FISHRAW.f;
+      if (!F) return null;
+      const first = x => String(x || '').split(/\s+/)[0];
+      return {
+        sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
+        common: [...(F.genera || []).flatMap(g => [g.common, g.imr]), ...(F.species || []).map(x => x.common)].filter(Boolean)
+      };
+    },
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
       Object.values(FISH ? FISH.gen : {})
@@ -1529,10 +1563,10 @@ const UNITS = {
     bar: id => fishBar(id),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), your fish progress, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
@@ -1566,7 +1600,7 @@ const UNITS = {
         kick: 'Scientific names',
         title: () => 'Scientific genus names?',
         body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.',
-        note: "⚙ Settings, Scientific names, any time. They don't count in your progress yet.",
+        note: '⚙ Settings, Scientific names, any time. They count in your fish %.',
         tag: 'Scientific genus',
         name: 'Scientific names',
         // My progress's switch while off (progress.js; Pierre, 2026-11-08: the offer at Advanced never locks the setting),
@@ -1673,7 +1707,7 @@ function syncTrouble() {
     return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
   // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
   if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
-  const n = (SYNC.log || []).length;
+  const n = (SYNC.log || []).filter(a => !winkEntry(a)).length; // a surprise card's answer is no answer to the player (core.js)
   if (SYNC.err)
     return n
       ? `Not saved yet: ${n} answer${n > 1 ? 's' : ''} waiting`
@@ -2594,6 +2628,7 @@ const SETUP = {
     // progress.js comes with the quiz (Codex review #361: answers given before it lost their achievement bookkeeping):
     // the achievement record is migrated and counted here, before any answer.
     achMigrate();
+    achPending(); // a recount that waited for a subject's data, once the shared data is built (Codex review #734)
     achRecheck(); // a learned mark taken away at load (model.js mxRecalc): its achievements first
     achCheck(); // before My progress opens, so its badge counts them
     recalcNotice(); // every player's progress recalculated (2026-11-02): said once, with a pop-up

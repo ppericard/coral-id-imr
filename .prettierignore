@@ -3,7 +3,6 @@
 # script hashes), JSON data files (data.json has its own layout, tools/datajson.py), Markdown.
 tools/
 judging/
-reference/
 *.html
 *.json
 *.md

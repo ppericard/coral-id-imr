@@ -3051,23 +3051,43 @@ async function duelReliefCheck(b, base) {
 async function credits(b, base) {
   const fails = [],
     BOOK = /Coral Finder|Kelley|BYOGUIDES/i;
-  const open = async (w, h, hash = '') => {
+  const open = async (w, h, hash = '', fish = false) => {
     const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block'});
     await c.route(
       u => !u.href.startsWith(base),
       r => r.abort()
     );
-    await c.addInitScript(() => {
+    await c.addInitScript(fish => {
       localStorage.setItem('reefid-tour', '"done"');
       localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       localStorage.setItem('reefid-nudge', '1');
-    });
+      if (fish)
+        (localStorage.setItem('reefid-sync-subject', '"fish"'), localStorage.setItem('reefid-sync-fish-start', '{"c":"new","t":1}'));
+    }, fish);
     const p = await c.newPage();
     await p.goto(base + hash);
-    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForFunction(fish => window.APP_READY && (!fish || (typeof FISH === 'object' && FISH && SUBJ.id === 'fish')), fish, {
+      timeout: 30000
+    });
     await p.waitForTimeout(500);
     return [c, p];
   };
+  // The Learn door's photo tiles on screen: [width, height] of each, their columns, the band's class (home.css .hdtiles.land).
+  const tiles = p =>
+    p.evaluate(() => {
+      const t = document.querySelector('#view .hdoor.learn .hdtiles'),
+        R = t
+          ? [...t.querySelectorAll('img')]
+              .filter(i => getComputedStyle(i).display !== 'none')
+              .map(i => i.getBoundingClientRect())
+              .filter(r => r.width > 0 && r.height > 0)
+          : [];
+      return {
+        land: !!(t && t.classList.contains('land')),
+        cols: new Set(R.map(r => Math.round(r.left))).size,
+        boxes: R.map(r => [Math.round(r.width), Math.round(r.height)])
+      };
+    });
   for (const [w, h] of [
     [360, 640],
     [390, 750],
@@ -3111,8 +3131,38 @@ async function credits(b, base) {
     // Tablet and desktop: the Learn door's photo band keeps its height with the subject switch above the doors (the phone
     // rule that shortens it on the shortest screens never applies there; Codex review #650).
     if (w >= 600 && la[1] < 120) fails.push(`${w}x${h} Home: the Learn photo band collapsed to ${la[1]} px`);
+    // The corals keep their close-up mosaic (Pierre, 2026-11-08: only the fish tiles turn landscape): 4 columns on phones
+    // (one row, two once the band is 150 px tall), 6 x 2 from tablets up.
+    const ct = await tiles(p);
+    if (ct.land || ct.cols !== (w >= 600 ? 6 : 4) || ct.boxes.length !== (w >= 600 ? 12 : la[1] >= 150 ? 8 : 4))
+      fails.push(`${w}x${h} Home, corals: the Learn tiles changed ${JSON.stringify(ct)}`);
     if (!/Pierre Pericard/.test(r.text) || !/IMR/.test(r.text) || !r.link || BOOK.test(r.text) || r.footer)
       fails.push(`${w}x${h} Home credit line: ${JSON.stringify(r)}`);
+    await c.close();
+  }
+  // Fish Home (Pierre, 2026-11-08: most fish are horizontal, square tiles cut them): fewer, landscape tiles (home.css
+  // .hdtiles.land), every one between 1.3 and 2 wide for 1 tall at every size (U4's widths, phones in portrait and in
+  // landscape, the short phone whose band is one row), at most the count given (the corals show 12 from tablets up, 4 or 8
+  // on phones); nothing wider than the screen.
+  for (const [w, h, most] of [
+    [320, 568, 4],
+    [360, 640, 4],
+    [375, 667, 3],
+    [390, 844, 4],
+    [430, 932, 4],
+    [844, 390, 8],
+    [768, 1024, 4],
+    [960, 800, 4],
+    [1024, 768, 6],
+    [1280, 800, 6],
+    [1280, 720, 10]
+  ]) {
+    const [c, p] = await open(w, h, '', true);
+    const ft = await tiles(p),
+      sw = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    if (!ft.land || !ft.boxes.length || ft.boxes.length > most || ft.boxes.some(([tw, th]) => tw / th < 1.3 || tw / th > 2))
+      fails.push(`${w}x${h} Home, fish: the Learn tiles are not landscape ${JSON.stringify(ft)}`);
+    if (sw > 0) fails.push(`${w}x${h} Home, fish: ${sw} px wider than the screen`);
     await c.close();
   }
   // The header fits one line at 360 and 320 px, signed out (the Sign in pill shown): no sideways scroll.

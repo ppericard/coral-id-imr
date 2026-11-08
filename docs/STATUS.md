@@ -5,35 +5,32 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-08, about 09:00 Manila, by the integrator, during a working session. **A new integrator starts here, then
+Written 2026-11-08, about 12:10 Manila, by the integrator, during a working session. **A new integrator starts here, then
 reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
 Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11-07; events: "Can't find variable: shownGroup" twice on 11-06 on one device, one "left with a card open" on the Scientific names offer on 11-07, two saves failed and not recovered)
 
 ## Now
 
-Fish is open to every player (beta). Main: sheet script v97. Agents running: the Dauin species search and new families
-(Q214, Q216, Q217), the IMR genera and the scientific genera back at Advanced (Q219-Q221, Q227, Q228), fish candidate
-judging batch 4 (Q213), #715 at weight b) (Q226).
+Fish is open to every player (beta). Main: sheet script v97; 664 fish species in 67 families since #727.
 
-- **Merged on 11-08**: #711-#713 (INTEGRATOR, Journey "genus", rule W25) · #714 reference photos in play like candidates
-  (Q212; 9,238 fish photos in play) · #716 admin fish pages count every photo in play · #717, #718 fish candidates judged (Q213).
-- **Every PR fails `smoke (admin 1280)` since Pierre's Publish 0acfd96** (the smoke depends on live curation data; fix
-  being built). Waiting on it: #719 (803 candidates judged, 50 species), #715.
-- **Open**: #715 every photo of an observation, an observation weighing 1 + 0.5 per further photo (Q226, Q218) ·
-  #637 · #664 · branch `claude/fish-todo-wip`.
-- **Decided 11-08, being built**: a species takes its family's circle (Q214; the build forced circle 3); new families:
-  circle 2 Trumpetfishes, Shrimpfishes, Sweepers; circle 3 Hawkfishes, Blennies, Triplefins, Convict Blennies,
-  Dottybacks, Eel-tailed Catfishes, Bigeyes, Tunas, Soles, Cornetfishes, Remoras, Needlefishes, Eagle Rays, Cat Sharks,
-  Gobies, Dartfishes (own key label); set aside Devilfishes (Plesiopidae), Sea Chubs, Grunters; Archerfishes out (no
-  Dauin record). Abudefduf caudobimaculatus kept apart from s066, not in the game yet (Q215). Scientific genera offered
-  at Advanced again; for anyone who ever answered "I'm at IMR", the IMR genera (Chromis, Dascyllus, Pomacentrus,
-  Amphiprion, Heniochus, Naso) open by themselves at Open Water on their family; no fish level-change card for now; a
-  one-time card offers the 2 players with scientific names on to close them.
-- **To do by the integrator, Pierre's one-off permission (11-08)**: set one player's fish start back to "I'm at IMR" in
-  the sheet (Q228; who: chat only), once the IMR PR says how to write it so the device keeps it.
+- **Merged on 11-08**: #711-#723 and #727, #732: reference photos in play like candidates (Q212), admin counts every
+  photo in play, fish judging batches (Q213), every photo of an observation weighted 1 + 0.5 (Q226), IMR genera and
+  scientific genera at Advanced (Q219-Q240), surprises at 200/400 answers, a species in its family's circle and 18 new
+  families (Q214-Q217, Q232, Q246-Q249), the load-order crash on deep links (#732), STATUS and rule D2 (#721).
+- **Merge queue, in this order** (sheet versions in brackets): #725 wink answers logged (v98; conflict being fixed) →
+  #726 admin "change starting answer" (→ v99) → #728 refused typed texts logged + neutral nudge (→ v100) → #730 global
+  fish score A + √ (v101) → #734 fish achievements (v102, needs Pierre's OK on the names). Also: #729 hard photos capped
+  before Open Water, families only (Q252 0.1, Q271) · #724 judging batch 4 · #731 every taxon-page photo (Q229/Q231;
+  Q230 out-of-zone photos open) · #735 rule L11 in levels (approved) · #733 docs fixes · #736 notices after the first
+  sync · #737 LICENSE + README (needs Pierre's OK on the About text) · open since 11-06: #637, #664.
+- **Being built**: Coral Finder crops out (Pierre switches "CF book" off in the admin; key-box drawings, then removal;
+  book-derived texts checked against the PDF) · curated fish covers ignored by the app (bug) · prefer CC0/CC BY photos
+  at equal quality (Q270) · fish Home mosaic in landscape tiles · repo tidy-up PRs (docs, config, CI on main, Pages trim).
+- **Pierre's hands**: "CF book: off" + Publish; Q121 history rewrite (now also the Coral Finder crops), then a GitHub
+  purge request; set one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the morning report
+  scheduled task from claude.ai (not visible from this session).
 - **Expert anchors**: the sheet's Notes tab, keys `agent.expert.*` (names only in chat).
-- **Morning report trigger disabled** (Q202); Pierre asked whether it is still useful (proposal: delete it).
 
 ## Next
 
@@ -48,7 +45,7 @@ Numbered for good (never reset, AGENTS.md "Working mode"); an answered one goes 
 - #641 confusion-group study, its questions a-j; #651 overconfidence diagnosis, its 5 choices (not numbered yet).
 - **Q208** (set aside 11-08, Pierre wants more information): families not yet met before the scientific genera, or genera on their own pace?
 
-Last question number: Q228
+Last question number: Q280
 
 ## Pierre's hands
 
@@ -95,4 +92,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-08 ~09:00 Manila, integrator, mid-session. Questions Q209-Q228 answered (Q208 set aside); see "Decided 11-08".
+2026-11-08 ~12:10 Manila, integrator, mid-session. Questions Q229-Q280 answered except Q230 (out-of-zone taxon photos,
+waits for numbers); Q237 kept as is (common names on genus questions).

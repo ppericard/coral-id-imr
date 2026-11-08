@@ -1,3 +1,6 @@
+// Historical (2026-11-04): this tool simulates the formula as first approved, unweighted and shown as is, on circle 1 and the
+// former moving-average bar. The score as built (2026-11-08, Q242: commonness weights, square-root display, every circle) is
+// core.js treeScore; its re-simulation is in docs/LEARNING.md "Fish: the global score, built".
 // The global fish score's formula on simulated players (docs/FISH_PATH.md "My progress (fish)", approved by Pierre on
 // 2026-11-04; docs/LEARNING.md "Fish: the global score, simulated"). The formula is not in the app yet (the species
 // level is not built); this tool checks it before it ships, as the design asks (rule L11): the 80 / 85 / 100% anchors,

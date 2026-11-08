@@ -91,6 +91,95 @@
   "fish-s269-cand-545495833": {
    "code": "p1g1smmj2",
    "keep": "best"
+  },
+  "fish-s269-cand-476255548": {
+   "code": "p1g1slx1",
+   "keep": "best",
+   "note": "A large soldierfish fills the frame; the small tubelip cleaning it is not the obvious subject."
+  },
+  "fish-s269-cand-476255553": {
+   "code": "p1g1slx1",
+   "keep": "dup"
+  },
+  "fish-s269-cand-476255540": {
+   "code": "o1g1smx1",
+   "keep": "dup"
+  },
+  "fish-s269-cand-609826289": {
+   "code": "o1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s269-cand-468474991": {
+   "code": "o1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s269-cand-468474993": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s269-cand-468474994": {
+   "code": "o1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s269-cand-468475005": {
+   "code": "o1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s269-cand-519022432": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s269-cand-68645725": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s269-cand-617172591": {
+   "code": "p1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s269-cand-627670317": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s269-cand-437482301": {
+   "code": "p1d1slmj2",
+   "keep": "best"
+  },
+  "fish-s269-cand-65635729": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s269-cand-387612178": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s269-cand-263572792": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s269-cand-370477194": {
+   "code": "p1g0sl15",
+   "keep": "alt"
+  },
+  "fish-s269-cand-171481047": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s269-cand-634647574": {
+   "code": "o1g2mmm1",
+   "keep": "best"
+  },
+  "fish-s269-cand-61894312": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s269-cand-61894319": {
+   "code": "o1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s269-cand-310532028": {
+   "code": "p1g1ss1j2",
+   "keep": "best"
   }
  }
 }

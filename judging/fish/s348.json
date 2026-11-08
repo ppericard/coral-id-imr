@@ -167,6 +167,19 @@
   "fish-s348-cand-726143598": {
    "code": "p1g3mss2",
    "keep": "best"
+  },
+  "fish-s348-cand-728816490": {
+   "code": "d0d2bmx1",
+   "keep": "best",
+   "note": "Tiny low-resolution original (222 px): a dark shape under a brittle star, the fish hard to make out."
+  },
+  "fish-s348-cand-332915327": {
+   "code": "o1g2mm12",
+   "keep": "best"
+  },
+  "fish-s348-cand-332915331": {
+   "code": "o1g2mss1",
+   "keep": "alt"
   }
  }
 }
