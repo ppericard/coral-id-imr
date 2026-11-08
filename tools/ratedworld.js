@@ -182,8 +182,10 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     eps[f] = e;
     ease[f] = Math.max(1, Math.min(5, Math.round(RATED.EASE.MID - (e + RATED.EASE.NOISE * normal(r)) / RATED.EASE.STEP)));
   });
-  return {mu, eps, ease, pi: RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372))};
+  return {mu, eps, ease, pi: piOf(seed)};
 }
+// The player's offset of a seed's world, on a stream of its own (so a test reads it for many seeds without their worlds).
+const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 // The fish units given as built by fishUnits (the tests' X), in the shape of unitsOf.
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
@@ -510,7 +512,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
   };
 }
 
-module.exports = {RATED, ITEM, world, engine, runOne, fishUnits, coralUnits, unitsOf, question, noteRecent, judgePhotos, typedOthers};
+module.exports = {RATED, ITEM, world, piOf, engine, runOne, fishUnits, coralUnits, unitsOf, question, noteRecent, judgePhotos, typedOthers};
 
 // The rated world's checkpoints: the guardrails' (LEARNING.md) up to the horizon, and the horizon.
 const checkpoints = N => [...new Set([100, 300, 1000, 3000, 10000, 30000].filter(q => q <= N).concat([N]))].sort((a, b) => a - b);

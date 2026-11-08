@@ -8,7 +8,7 @@
 // rareease-mixed.test.js, rareease-rank.test.js), on one harness (tests/rareease.js).
 const test = require('node:test'),
   assert = require('node:assert');
-const {engine, pool, share} = require('./rareease.js');
+const {engine, pool, share, DRAWS} = require('./rareease.js');
 
 test('before Open Water, a pool dominated by hard photos: those under ease 4 come rarely, never walled off', () => {
   const L = pool(),
@@ -32,7 +32,7 @@ test('a family with few easy photos: its few easiest count as the easy ones', ()
     e = Object.fromEntries(L.map(p => [p.f, p.e]));
   let one = 0,
     tot = 0;
-  for (let i = 0; i < 3000; i++) E.photoSet('u', null, 0, 4, 'k4').shown.forEach(x => ((tot += 1), (one += e[x.f] === 1 ? 1 : 0)));
+  for (let i = 0; i < DRAWS.CAP; i++) E.photoSet('u', null, 0, 4, 'k4').shown.forEach(x => ((tot += 1), (one += e[x.f] === 1 ? 1 : 0)));
   assert.ok(one / tot <= E.RARE.SHARE + 0.03, `ease 1: ${((100 * one) / tot).toFixed(1)}%`);
   assert.ok(one > 0, 'still drawn');
 });
