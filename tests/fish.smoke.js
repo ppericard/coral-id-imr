@@ -227,9 +227,30 @@ const server = http.createServer((req, res) => {
         (w.photos || []).some(f => src.includes(fishPid(f).slice(1))),
         `wink: one of its chosen photos (${src})`
       );
+      const q0 = JSON.parse(localStorage.getItem('reefid-log0') || '[]').length;
       wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
+      // Its answer logged like any other (Pierre, 2026-11-08), once, marked by its mode (core.js WINK_MODE): queued for
+      // the sheet (signed out: LOG0 and the anonymous queue) with what was shown and answered; never scored.
+      const L1 = JSON.parse(localStorage.getItem('reefid-log0') || '[]'),
+        wa = L1[L1.length - 1] || {};
+      ok(L1.length === q0 + 1 && wa.m === 'wink' && wa.g === n && wa.ok === 0, 'wink: its answer logged once: ' + JSON.stringify(wa));
+      ok(
+        wa.s === 'fish' &&
+          wa.a === renamedId(SUBJ, w.choices[0][0]) &&
+          wa.ph &&
+          wa.ch.split(' ').length === 4 &&
+          !('e' in wa) &&
+          !('sc' in wa),
+        'wink: what was shown and answered, nothing scored'
+      );
+      ok(
+        JSON.parse(localStorage.getItem('reefid-anonq') || '[]').some(a => a.id === wa.id),
+        'wink: queued for the anonymous send'
+      );
+      wk.querySelector(`[data-w="${n}"]`).click();
+      ok(JSON.parse(localStorage.getItem('reefid-log0') || '[]').length === q0 + 1, 'wink: one answer, a second tap logs nothing');
       ok(n in JSON.parse(localStorage.getItem('reefid-sync-fish-wink') || '{}'), 'wink: kept as shown for the player');
       route();
       closeCards();
@@ -1801,7 +1822,8 @@ const server = http.createServer((req, res) => {
         }),
         'each card shows a reference-level photo, else its easiest'
       );
-      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely.
+      // No wall (Pierre, 2026-11-06 14:17): before Open Water a photo under ease 4 may come, but rarely (model.js RARE:
+      // about 1 in 10 at most, whatever the pool; the bound below leaves room for 15 photos' noise).
       let gated = 0,
         under = 0;
       for (let i = 0; i < N; i++) {

@@ -116,10 +116,12 @@ candidates after a new tag. Where the source is FishBase, the photo page (`o`) g
 species must be reference photos, whoever took them; 14:02: "reference" means every photo of reference quality, and
 FishBase enters automatically when its licence allows: "a maximum of good photos to complement the weaker ones on
 iNaturalist"). `python3 tools/fish_refs.py` asks iNaturalist, for every game species, every circle-1 genus and every
-entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: up to
-3 for a species, the first for a genus or a family) that pass the game photo rules on their observation (Research Grade,
-CC0 / CC BY / CC BY-NC, the Indo-West Pacific box, not captive or dead; for a genus or a family, a photo of a game species
-of the entry), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
+entry's family, for the photos it shows to represent the taxon (its cover, then the other photos of its taxon page: all
+of them for a species, Pierre, 2026-11-08, Q229; the first for a genus or a family) that pass the game photo rules on
+their observation (Research Grade, CC0 / CC BY / CC BY-NC, never ND, Q231, the Indo-West Pacific box, not captive or dead;
+for a genus or a family, a photo of a game species of the entry; the observation is found whether or not it is among the
+taxon's most faved, `obs_of`; a photo whose observation is outside the box is listed under `away`, never taken, while
+Pierre's Q230 is open), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
 `tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
 --todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
 (`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out), the iNaturalist ones and

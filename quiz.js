@@ -169,6 +169,16 @@ document.addEventListener('visibilitychange', () => {
 });
 const qclockRead = () =>
   QCLOCK.t0 === null ? null : Math.round(Math.max(0, Math.min(600, (performance.now() - QCLOCK.t0 - QCLOCK.off) / 1000)) * 10) / 10;
+// A new question's clock (question(), winkShow): stopped and not enlarged; the first of its photos to be in starts it,
+// whichever (Codex review #370: one cached or quicker than the first in the page would otherwise be looked at off the
+// clock).
+function qclockArm() {
+  const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
+    ims = [...$v.querySelectorAll('.qstage .qph img')];
+  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
+  if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
+  else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
+}
 function question(cur, target, choices, prompt, set, kq) {
   EXAMQ = set.exam ? target : null;
   TYPEDQ = set.typed ? {t: target, m: null, text: ''} : null;
@@ -192,13 +202,7 @@ function question(cur, target, choices, prompt, set, kq) {
   QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
   bindQuizNav(cur);
   fitStage();
-  const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
-    ims = [...$v.querySelectorAll('.qstage .qph img')];
-  Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
-  // The first of the question's photos to be in starts it, whichever (Codex review #370: one cached or quicker than the
-  // first in the page would otherwise be looked at off the clock).
-  if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
-  else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
+  qclockArm();
   const hb = document.getElementById('hintb');
   const showHint = () => {
     if (hintShown || !set.hint) return;
@@ -647,13 +651,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // Every subject's answers go to the sheet (Pierre, 2026-11-06: fish answers logged from the first second). A subject the
   // sheet does not replay (SUBJECTS replay: fish) is logged only: its answers rate no photo, count in no confusion, hold
   // or replay (Code.gs answerRows_, sync.js holdAdopt and replayAdopt keep the replayed subject's).
-  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
-  else if (SYNC_URL) {
-    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
-    // Not signed in: the answer also goes to the sheet anonymously (Pierre, 2026-11-01), see sendAnon.
-    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
-    anonSoon();
-  }
+  logAnswer(ans);
   save();
   // Achievements on the photos seen before answering: a corallites hint left closed is not one.
   // progress.js (tier 4, index.html) may come after the first answers of a first visit: its start-up check (achCheck)
@@ -789,11 +787,24 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
     ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}${vs}
     ${more}`;
 }
+// An answer into the RA sheet's log (answer(), winkShow): kept until the sheet confirms it (capped), so it is never logged
+// twice or lost offline; not signed in, it waits on this device (LOG0) and also goes to the sheet anonymously (Pierre,
+// 2026-11-01, see sendAnon).
+function logAnswer(ans) {
+  if (SYNC) SYNC.log = [...(SYNC.log || []), ans].slice(-2000);
+  else if (SYNC_URL) {
+    store.set(LOG0, [...store.get(LOG0, []), ans].slice(-2000));
+    store.set(ANONQ, [...store.get(ANONQ, []), ans].slice(-2000));
+    anonSoon();
+  }
+}
 // Winks (fish.json wink, Pierre 2026-11-03): an unmistakable fish, fun to meet (the whale shark, the pelagic thresher),
 // as a rare surprise card in the photo quiz: one photo, its name among 3 deliberately absurd choices taken from our own
-// entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no answer
-// logged, no photo rating). For every player of a subject that has winks (app.js UNITS winks: fish), from circle 1 on
-// (Pierre, 2026-11-03: "ça sera rigolo" for the people working on the IMR course), whatever opt-in circles are on.
+// entries with a tongue-in-cheek label, then one friendly line. Never counted (no progress, no ability, no photo rating,
+// no statistic): its answer is logged like any other (Pierre, 2026-11-08: "il faut l'enregistrer bien sûr"), marked by
+// its mode (core.js WINK_MODE: winkAnswer), which every reader of the log leaves out. For every player of a subject that
+// has winks (app.js UNITS winks: fish), from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the people working on
+// the IMR course), whatever opt-in circles are on.
 // Rare, late, and once per player (Pierre, 2026-11-06: after his second fish question was the whale shark, the first only
 // after at least 300 fish answers, the next after about 600-700; then, 13:31: each surprise once per player, and that's
 // all, across devices): the winks in fish.json order (whale shark, thresher sharks), wink i due at the first photo-quiz
@@ -842,6 +853,34 @@ function winkPhoto(g) {
     L = g.views.wide.filter(p => want.has(fishPid(p.f)));
   return L.length ? pick(L) : easyRank(g.views.wide)[0];
 }
+// A surprise card's answer for the log (logAnswer), the fields of a game answer (quiz.js answer) that say what was shown
+// and answered: the wink unit (g, tn), its photo (ph, sp), the choice made (a, ta) among the four (ch: renamed ids,
+// core.js renamedId: an absurd choice names an old fish entry, t01 the Damselfishes), right or wrong, seconds and
+// enlarged (QCLOCK), the device's UTC offset, subject and rank; mode WINK_MODE; nothing scored (no e, th, nw, sc). Sent
+// only to a sheet whose readers leave it out (core.js logOk, WINK_SHEET), queued until then (rule D4).
+function winkAnswer(n, id, ids, p, tm) {
+  const r = x => renamedId(SUBJ, x),
+    a = r(id),
+    sp = speciesShown([p]);
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    t: new Date().toISOString(),
+    g: n,
+    a,
+    ok: id === n ? 1 : 0,
+    m: WINK_MODE,
+    ph: p.f || '',
+    ch: ids.map(r).join(' '),
+    ...(typeof tm.rt === 'number' ? {rt: tm.rt} : {}),
+    zm: tm.zm ? 1 : 0,
+    tz: -new Date().getTimezoneOffset(),
+    s: SUBJ.id,
+    rk: rankOf(n) || SUBJ.rank,
+    ...(unitName(n) ? {tn: unitName(n)} : {}),
+    ...(unitName(a) ? {ta: unitName(a)} : {}),
+    ...(sp ? {sp} : {})
+  };
+}
 function winkShow({n}) {
   const g = GX(n),
     w = g.wink,
@@ -860,11 +899,16 @@ function winkShow({n}) {
       <div id="after"></div>
     </aside></div>`;
   fitStage();
+  qclockArm();
   let done = false;
   const go = id => {
     if (done) return;
     done = true;
     const good = id === n;
+    const tm = {rt: qclockRead(), zm: QCLOCK.zm},
+      ids = ch.map(([x]) => x);
+    logAnswer(winkAnswer(n, id, ids, p, tm));
+    if (typeof syncSoon === 'function') syncSoon(); // signed in: the account record keeps the queued answer, sent soon
     $v.querySelectorAll('[data-w]').forEach(b => {
       b.disabled = true;
       if (b.dataset.w === n) b.classList.add('ok', ...(good ? ['cheer'] : []));
@@ -881,7 +925,10 @@ function winkShow({n}) {
     nb.onclick = route;
   };
   $v.querySelectorAll('[data-w]').forEach(b => (b.onclick = () => go(b.dataset.w)));
-  $v.querySelector('.zoom').onclick = () => zoom([{...p, genus: n}], 0, {blind: () => !done});
+  $v.querySelector('.zoom').onclick = () => {
+    if (!done) QCLOCK.zm = 1;
+    zoom([{...p, genus: n}], 0, {blind: () => !done});
+  };
   const keys = e => {
     if (!document.body.contains($v.querySelector('.q.wink'))) return document.removeEventListener('keydown', keys);
     if (!lb.hidden || e.target.closest('input, textarea, select') || document.getElementById('tour')) return;
@@ -965,7 +1012,7 @@ const tipsLoad = (raw = store.get(TIPR.KEY, null)) => {
   let seed = [];
   if (!raw)
     try {
-      seed = (SYNC && SYNC.log) || store.get(LOG0, []);
+      seed = ((SYNC && SYNC.log) || store.get(LOG0, [])).filter(a => !winkEntry(a)); // a surprise card's is no question
     } catch (e) {}
   return tipsInit(raw, seed);
 };
