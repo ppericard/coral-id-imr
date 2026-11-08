@@ -158,7 +158,11 @@ def stray(pool, open_refs):
         ahead = gh('repos/%s/compare/main...%s' % (REPO, sha)).get('ahead_by', 0)
         return ref if ahead else None
 
-    branches = [b for b in gh('repos/%s/branches?per_page=100' % REPO, lines=True) if b['name'] != 'main' and b['name'] not in open_refs]
+    # A merge train's branch (train/*, tools/train.py) never gets a PR: its PRs are merged on their own heads.
+    branches = [
+        b for b in gh('repos/%s/branches?per_page=100' % REPO, lines=True)
+        if b['name'] != 'main' and b['name'] not in open_refs and not b['name'].startswith('train/')
+    ]
     return [pool.submit(one, b) for b in branches]
 
 

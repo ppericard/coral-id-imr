@@ -64,6 +64,7 @@ test('fish: rejected, excluded and Not this photos are never in the game; curate
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
     X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR, read('fish.json')), PH.sheet),
+    gone = fishGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
     no = new Map();
   ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
   Object.keys(CUR.exclude || {}).forEach(f => no.set(fishPid(f), f));
@@ -71,8 +72,7 @@ test('fish: rejected, excluded and Not this photos are never in the game; curate
     g.views.wide.forEach(p => {
       // A curated photo (fish-game.json): Pierre's add, or one in play by itself (auto, Q180 and Q199), while he has not
       // decided against it (core.js fishIn).
-      if (/-cand-/.test(p.f) && !p.from)
-        return assert.ok(fishIn(F, p, fishGone(CUR)) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
+      if (/-cand-/.test(p.f) && !p.from) return assert.ok(fishIn(F, p, gone) && !(CUR.exclude || {})[p.f], `${g.id} ${p.f}: not in play`);
       assert.ok(!no.has(fishPid(p.f)), `${g.id} ${p.f}: Pierre decided against ${no.get(fishPid(p.f))}`);
     })
   );
