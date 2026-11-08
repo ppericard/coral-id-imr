@@ -207,6 +207,39 @@ const server = http.createServer((req, res) => {
     );
     ok(tm('unicornfish') === 'f:Surgeonfishes' && tm('Moorish idol') === 'f:MoorishIdol', 'typed: parts and two-word names');
     ok(!tm('Acropora'), 'typed: a genus is no fish entry');
+    // A genus question's text that names no genus (Pierre, 2026-11-08, Q237; quiz.js typeKind, typeKindMsg): a family name
+    // or a common name is told so, on the game's own names, and the nudge never holds a scientific genus name.
+    ok(
+      typeKind('Damselfishes', 'genus') === 'family' && typeKind('Pomacentridae', 'genus') === 'family',
+      'typed: a family name on a genus question'
+    );
+    ok(
+      typeKind('Anemonefish', 'genus') === 'common' && typeKind('Clownfish', 'genus') === 'common',
+      'typed: a common name on a genus question'
+    );
+    ok(!typeKind('xyzfish', 'genus') && !typeKind('Anemonefish', ''), 'typed: nothing else, and nothing on a family question');
+    {
+      const sci = new Set(FISH.sci.flatMap(n => GX(n).names).map(x => x.toLowerCase())),
+        bad = [];
+      let n = 0;
+      typeNames()
+        .filter(o => rankOf(o.g) !== 'genus')
+        .forEach(o => {
+          const t = o.old || GX(o.g).name,
+            k = typeKind(t, 'genus');
+          if (!k) return;
+          n++;
+          const rest = typeKindMsg(t, k, 'genus').replace(`“${t}”`, '');
+          if (
+            rest
+              .toLowerCase()
+              .split(/[^a-z]+/)
+              .some(w => sci.has(w))
+          )
+            bad.push(rest);
+        });
+      ok(n > 50 && !bad.length, `typed: ${n} nudges, none with a scientific genus name: ${bad.slice(0, 3)}`);
+    }
     // Winks for a circle-1 player: made due at this count (the first threshold moved here, the counts left as they are),
     // shown, answered, never counted.
     const P0 = JSON.stringify(P),
