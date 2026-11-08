@@ -5893,7 +5893,7 @@ async function save() {
     au = auChanged(),
     fi = fiChanged(),
     pt = ptChanged();
-  if (!(ch.length || q || x || bk || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt) || !TOKEN) return;
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
