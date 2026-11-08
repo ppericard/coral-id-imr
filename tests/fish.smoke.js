@@ -332,6 +332,9 @@ const server = http.createServer((req, res) => {
       [...Array(40)].every(() => GX(openPick(pool1)).imrName),
       "I'm at IMR: the IMR-tagged families first"
     );
+    // No level-change card on the fish (Pierre, 2026-11-08): a window that says "easier than said" shows nothing.
+    store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: [], w: [], v: 'hi'});
+    ok(startOf() && startOf().v === 'hi' && startDue() === null, 'fish: no level-change card');
     if (s0 === null) localStorage.removeItem(sk);
     else localStorage.setItem(sk, s0);
     // The scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels", branch B): one unit per genus of the
@@ -351,17 +354,42 @@ const server = http.createServer((req, res) => {
       'sci: every genus in its set, opened or not'
     );
     FISH.c1.forEach(n => pgAt(n, 0.2));
-    ok(!sci.units().length, 'sci: no genus in play before a family is at Open Water');
-    // The boundary (Q205, 2026-11-07): just under Open Water nothing, just over it the family's genera and the offer.
-    pgAt('f:Butterflyfishes', 0.4);
-    ok(!sci.units().length && !(bonusOfferDue() && bonusOfferDue().k === 'sci'), 'sci: nothing just under Open Water');
+    ok(!sci.units().length, 'sci: no genus in play before a family is at Advanced');
+    // The boundary (Pierre, 2026-11-08, back from Q205's Open Water): at Open Water nothing, at Advanced the family's
+    // genera and the offer.
     pgAt('f:Butterflyfishes', 0.6);
+    ok(genScore('f:Butterflyfishes') >= LV_AT[0] && genScore('f:Butterflyfishes') < LV_AT[1], 'sci: the family at Open Water');
+    ok(!sci.units().length && !(bonusOfferDue() && bonusOfferDue().k === 'sci'), 'sci: nothing at Open Water');
+    ok(!pool().some(n => GX(n).rank), 'sci: no genus in play for a player not at IMR');
+    // "I'm at IMR" (Q219, Q220): the IMR genera of a family at Open Water come without the offer, Heniochus here; never
+    // another genus of the family, whose photos stay the family's question (Q221).
+    {
+      const sk = startKey('fish'),
+        s0 = localStorage.getItem(sk);
+      store.set(sk, {c: 'imr', t: Date.now(), at: 0, via: 'card', h: []});
+      const gp = pool().filter(n => GX(n).rank);
+      ok(gp.length === 1 && gp[0] === 'g:Heniochus' && Q.sci === undefined, "sci: I'm at IMR, Heniochus without the offer: " + gp);
+      ok(!bonusOfferDue(), 'sci: no offer for it');
+      pgAt('f:Surgeonfishes', 0.6);
+      ok(
+        pool().includes('g:Naso') && !pool().some(n => /^g:(Acanthurus|Ctenochaetus|Zebrasoma)$/.test(n)),
+        'sci: Naso only of the surgeonfishes'
+      );
+      ok(
+        distractors('f:Surgeonfishes', pool(), 3).every(n => !GX(n).rank),
+        'sci: a family question still among families'
+      );
+      pgAt('f:Surgeonfishes', 0.2);
+      if (s0 === null) localStorage.removeItem(sk);
+      else localStorage.setItem(sk, s0);
+    }
+    pgAt('f:Butterflyfishes', 0.72);
+    ok(genScore('f:Butterflyfishes') >= LV_AT[1], 'sci: the family at Advanced');
     ok(
       sci.units().length && sci.units().every(n => GX(n).parent === 'f:Butterflyfishes'),
-      'sci: the genera of the family at Open Water only'
+      'sci: the genera of the family at Advanced only'
     );
-    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once a family is at Open Water');
-    pgAt('f:Butterflyfishes', 0.72);
+    ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once a family is at Advanced');
     const pc = progPct();
     bonusSet(true, 'sci');
     ok(
@@ -403,8 +431,37 @@ const server = http.createServer((req, res) => {
       "sci: a genus card's photo is its easiest (reference level first)"
     );
     ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
-    bonusSet(false, 'sci');
+    // The back card (Pierre, 2026-11-08): once, to a player who turned them on before the change (no sciV); "Close them
+    // for now" turns them off, and either answer is never asked again.
+    ok(!bonusBackDue(), 'sci: no back card for a choice made now');
+    delete Q.sciV;
+    ok(bonusBackDue() && bonusBackDue().k === 'sci', 'sci: the back card for a choice made before');
+    closeCards();
+    // Over a question on a genus about to close (Codex review #720): the question is replaced once they are closed.
+    const gq = pool().find(n => GX(n).rank && photoSet(n).shown.length);
+    if (gq) {
+      dropPlans();
+      SHOWNQ = null;
+      question('quiz', gq, distractors(gq, pool(), 3), '', photoSet(gq));
+      SHOWNQ = ['quiz', gq];
+    }
+    bonusBackShow();
+    const bk = document.querySelector('.unlock [data-sciback]');
+    ok(bk && /Close them for now/.test(bk.textContent), 'sci: the back card, Close them for now');
+    if (bk) bk.click();
+    closeCards();
+    ok(Q.sci === false && Q.sciV === 1 && !bonusBackDue(), 'sci: closed, never asked again');
+    // route() leaves the question unanswered (QOPEN false), then draws the next among the units in play
+    ok(!gq || (!pool().includes(gq) && (!QOPEN || (SHOWNQ && SHOWNQ[1] !== gq))), 'sci: the genus question on screen replaced once closed');
     ok(!pool().some(n => GX(n).rank), 'sci: Off, out of the draw');
+    // Never locked by the offer (Pierre, 2026-11-08): My progress turns them on while off, as ⚙ does.
+    quizBoard();
+    const so = document.querySelector('#view [data-seton="sci"]');
+    ok(so && /Turn on scientific names/.test(so.textContent), 'sci: My progress offers to turn them on while off');
+    if (so) so.click();
+    ok(Q.sci === true && !document.querySelector('#view [data-seton="sci"]'), 'sci: on from My progress, the box gone');
+    bonusSet(false, 'sci');
+    route();
     // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,
     // "t01", and the dialog spoke of genera and corals): the fish names, in the fish words.
     closeCards();
