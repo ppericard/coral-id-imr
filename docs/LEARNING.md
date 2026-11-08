@@ -2891,40 +2891,43 @@ Open Water (the bar at 60%, 70%, 85% with 12, 25, 60 answers and the ability 0.5
 33% / 18%, 53% / 35%, 79% / 61% before, 34% / 18%, 55% / 35%, 82% / 60% after (seeded noise).
 
 **Learning outcomes** (rule L11 tier 1: `tools/learnsim.js --subject fish`, the four profiles × 5 seeds × 300
-questions, `main` 77cecab against this change on the same seeds; the run now logs each question's `preOW`, whether
-its unit was under Open Water and the lowest judged ease shown). Declared before the runs: primary, the share of photos
-under ease 4 among the questions drawn under Open Water, questions 1-300, pooled, down; guardrails, true knowledge of
-the slate at 300 (margin 0.02) and units met at 100 and 300 (margin 2), the stats study's margins (one-sided 90% bound
-of the paired difference, per profile).
+questions, `main` f83f91e against this change (families only, Q271) on the same seeds; the run now logs each
+question's `preOW`, whether its unit was under Open Water and the lowest judged ease shown). Declared before the runs:
+primary, the share of photos under ease 4 among the questions on a family drawn under Open Water, questions 1-300,
+pooled, down; guardrails, true knowledge of the slate at 300 (margin 0.02) and units met at 100 and 300 (margin 2), the
+stats study's margins (one-sided 90% bound of the paired difference, per profile).
 
 | Measure | beginner | lectureRA | strongRA | expert |
 |---|---|---|---|---|
-| **Under ease 4 before Open Water** (primary) | 21.1% → 8.8% | 20.2% → 9.9% | 19.9% → 8.7% | 40.1% → 10.2% |
-| True knowledge, slate, q300 (bound) | 0.406 → 0.386 (−0.056) | 0.535 → 0.535 (−0.036) | 0.693 → 0.674 (−0.034) | 0.942 → 0.942 (−0.002) |
-| Units met, q100 (bound) | 17.4 → 16.4 (−1.8) | 15.0 → 15.8 (−1.0) | 14.0 → 13.2 (−1.9) | 13.0 → 12.6 (−1.8) |
-| Units met, q300 (bound) | 25.6 → 23.6 (−6.2) | 23.6 → 23.4 (−3.5) | 20.4 → 18.6 (−5.6) | 26.0 → 23.2 (−4.6) |
-| Right %, q300 | 74.0 → 75.0 | 77.2 → 77.8 | 76.8 → 76.4 | 95.0 → 96.4 |
-| Progress shown, q300 | 14.8 → 14.4 | 17.2 → 18.6 | 19.2 → 18.4 | 25.6 → 23.8 |
+| **Under ease 4 on a family before Open Water** (primary) | 29.0% → 9.1% | 34.4% → 10.1% | 35.5% → 7.8% | 48.9% → 9.3% |
+| True knowledge, slate, q300 (bound) | 0.362 → 0.363 (−0.001) | 0.529 → 0.523 (−0.009) | 0.690 → 0.697 (+0.002) | 0.944 → 0.943 (−0.001) |
+| Units met, q100 (bound) | 17.8 → 17.6 (−1.3) | 18.6 → 18.6 (−0.7) | 18.2 → 18.4 (−0.7) | 19.4 → 19.2 (−0.5) |
+| Units met, q300 (bound) | 29 → 29 (0) | 29 → 29 (0) | 29 → 29 (0) | 29 → 29 (0) |
+| Right %, q300 | 86.8 → 88.4 | 88.4 → 89.8 | 85.8 → 91.6 | 96.2 → 96.2 |
+| Progress shown, q300 | 15.2 → 14.0 | 19.0 → 19.4 | 21.8 → 22.8 | 28.0 → 27.0 |
 
-The primary falls in 19 of 20 pairs (stratified exact sign-flip, standardised per profile: p = 4 × 10⁻⁶ two-sided).
-Guardrails: units met at 100 held in every profile; true knowledge at 300 held for the expert, unclear for the three
-others (mean −0.02 to 0; pooled −0.010, bound −0.021); units met at 300 unclear for three profiles and **breached for the
-expert** (−2.8, 0 of 5 seeds up; pooled −1.7, bound −3.1). So the opening of new units comes a little later: fewer hard
-photos before Open Water means smaller ability steps on a right answer. Tier 2 (30 common seeds) runs next for these
-two guardrails; its result will replace this sentence.
+The primary falls in 20 of 20 pairs (stratified exact sign-flip, standardised per profile: p = 2 × 10⁻⁶ two-sided).
+Every guardrail is held in every profile (the bound inside its margin; at 300 every player had met all 29 families
+either way). Tier 1 is conclusive and the value was Pierre's (Q252), not a calibration chosen here, so no tier 2. On
+this `main` the share before Open Water had risen to 29-49% (the families of #727 and the judged candidates), so the
+change matters more than the 20-seed replay above suggests. No genus came in the first 300 questions (genera open at
+Advanced since #720), so the simulation does not exercise the families-only scope; `tests/rareease.test.js` does. A
+first tier-1 run of 2026-11-08 with the cap on every unit (genera too) and `main` 77cecab is superseded: there the
+units met at 300 fell for the expert (26.0 → 23.2), which this run, families only, does not reproduce.
 
 **Getting unrated photos rated** (Pierre's worry with Q252). Every trusted answer rates its photo on the sheet
 (`Code.gs` `stats_`: the same Elo for the corals' and the fish's photos, whatever the unit's level, a player's answer
 weighing n / (n + `PHOTO_W.N` 10) after their n answers), and the app reads the ratings for every subject (`PSTAT`,
-`photoDiff`, `calBonus`). The cap is one factor on all the hard photos of a unit, so among them the never-answered still
-weigh up to 3 times more (`calBonus`), and the exploration questions (`CAL.RATE`, among the observations never seen)
-still reach them, capped before Open Water and not after. In the runs above, 75-96% of a player's first 300 questions
-are under Open Water; the hard-photo answers in those 300 fall from 65-146 to 30-82 per player (almost all on photos
-never answered before), while past Open Water their share is unchanged (37-74%). With about 1,400 fish answers a week
-(about 6,000 a month) and 7,327 photos under ease 4 in play, that is roughly 0.2 answers per hard photo per month before
-and 0.1 after, if every answer came from players under Open Water: either way the pool is far larger than the traffic,
-and the hard photos get rated where players meet them, past Open Water. A separate exploration share before Open Water
-(1%) would add at most 1% of those answers, a tenth of what the cap already lets through, so none was added.
+`photoDiff`, `calBonus`). The cap is one factor on all the hard photos of a family, so among them the never-answered
+still weigh up to 3 times more (`calBonus`), and the exploration questions (`CAL.RATE`, among the observations never
+seen) still reach them, capped before Open Water and not after; genera are not capped (Q271). In the runs above, 60-95%
+of a player's first 300 questions are under Open Water; the answers on photos under ease 4 in those 300 fall from
+93-178 to 35-101 per player (almost all on photos never answered before), while past Open Water their share is
+unchanged within noise (54-74% after, 61-76% before). With about 1,400 fish answers a week (about 6,000 a month) and
+some 7,300 photos under ease 4 in play, that is roughly 0.3 answers per hard photo per month before and 0.1 after, if
+every answer came from players under Open Water: either way the pool is far larger than the traffic, and the hard
+photos get rated where players meet them, past Open Water. A separate exploration share before Open Water (1%) would
+add at most 1% of those answers, a tenth of what the cap already lets through, so none was added.
 
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
