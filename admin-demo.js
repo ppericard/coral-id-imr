@@ -581,6 +581,147 @@
       }),
       pageRow(pi++, NOW - 4 * 3600e3, '', {r: {home: [1, 3], 'learn.genera': [1, 40]}, g: {}, vi: 'demovinoid', na: 120})
     );
+    // Players › Visits (Pierre, 2026-11-08, Q301-Q304): visits without a game and visitors who never answered, over the
+    // last 5 weeks, each on a device of its own with its browser and a load row (Events) giving its window width, whether
+    // it is installed and its first page. Its own random numbers, so the rest of the demo stays the same. Ben and Carla
+    // (signed in) come back to read the sheets and their progress; two devices not signed in that answered open the Key
+    // and the Look-alikes, never a genus sheet (their journeys' sheets stay as above); 12 devices never answered: staff
+    // on computers reading the Key and the sheets, an iPad (a computer's browser 820 px wide: a tablet), an Android tablet
+    // (a phone's browser 800 px wide), the curious on phones; two of them on the Fish side.
+    {
+      let vs = 23;
+      const vr = () => (vs = (vs * 1103515245 + 12345) % 2147483648) / 2147483648,
+        vint = (a, b) => a + Math.floor(vr() * (b - a + 1)),
+        vpick = L => L[Math.floor(vr() * L.length)],
+        gp = () => G[Math.min(G.length - 1, Math.floor(Math.pow(vr(), 1.8) * Math.min(G.length, 24)))],
+        // [who, profile, browser, window width, installed, visits]
+        WHO = [
+          [aid('Ben Demo'), 'ra', 'Chrome 140 mobile', 412, 0, 6, 260],
+          [aid('Carla Demo'), 'ra', 'Safari 18 mobile', 393, 1, 5, 180],
+          [aid('~anon demo1'), 'anon', 'Samsung 27 mobile', 384, 0, 3, 20],
+          [aid('~anon demo2'), 'anon', 'Chrome 140 mobile', 360, 1, 2, 12],
+          ...[...Array(12)].map((_, i) => [
+            aid('~anon demonever' + i),
+            i < 4 ? 'staff' : i < 6 ? 'second' : 'curious',
+            [
+              'Chrome 140',
+              'Edge 141',
+              'Safari 18',
+              'Chrome 140 mobile',
+              'Firefox 144',
+              'Chrome 140 mobile',
+              'Safari 18 mobile',
+              'Chrome 140 mobile',
+              'Samsung 27 mobile',
+              'Chrome 140 mobile',
+              'Safari 18 mobile',
+              'Chrome 140 mobile'
+            ][i],
+            [1440, 1680, 820, 800, 1920, 412, 390, 412, 360, 412, 430, 393][i],
+            i === 6 ? 1 : 0,
+            i < 4 ? vint(4, 8) : i < 6 ? 2 : vint(1, 2),
+            0
+          ])
+        ],
+        add = (P, k, n, sec) => {
+          const o = (P[k] = P[k] || [0, 0]);
+          o[0] += n;
+          o[1] += sec;
+        };
+      let vk = 0;
+      WHO.forEach(([who, prof, ua, w, st, nv, na], di) => {
+        const dev = 'demovd' + String(di).padStart(2, '0');
+        for (let v = 0; v < nv; v++) {
+          // At its hour of the day, within the 24 hours before NOW - day days - 2 h: never on the edge of the 7 or 30
+          // days whatever the time the demo opens (days 6 and 29 left out), so the page's numbers stay the same.
+          const day = vpick([...Array(35).keys()].filter(d => d !== 6 && d !== 29)),
+            h = prof === 'staff' ? vint(8, 16) : vpick([7, 12, 13, 18, 19, 20, 21, 22]),
+            end = NOW - day * DAY - 2 * 3600e3,
+            t0 = new Date(end);
+          t0.setHours(h, vint(0, 59), 0, 0);
+          let t = t0.getTime() > end ? t0.getTime() - DAY : t0.getTime();
+          const P = {},
+            g = {};
+          let p0 = 'home';
+          const sheet = from => {
+            const x = gp(),
+              sec = vint(30, 200);
+            g[x] = g[x] || [0, 0, from, 1];
+            g[x][0]++;
+            g[x][1] += sec;
+            add(P, 'learn.genus', 1, sec);
+          };
+          if (prof === 'ra') {
+            add(P, 'home', 1, vint(5, 30));
+            for (let i = vint(1, 3); i--;) sheet(vpick(['learn', 'learn', 'progress']));
+            if (vr() < 0.5) add(P, 'learn.look-alikes', 1, vint(60, 300));
+            add(P, 'progress', 1, vint(30, 200));
+          } else if (prof === 'anon') {
+            p0 = v % 2 ? 'identify.key' : 'home';
+            if (p0 === 'home') add(P, 'home', 1, vint(5, 20));
+            add(P, 'identify.key', 1, vint(120, 500));
+            if (vr() < 0.6) add(P, 'learn.look-alikes', 1, vint(60, 240));
+          } else if (prof === 'staff') {
+            p0 = vr() < 0.6 ? 'identify.key' : 'home';
+            if (p0 === 'home') add(P, 'home', 1, vint(5, 25));
+            add(P, 'identify.key', vint(1, 2), vint(180, 1100));
+            for (let i = vint(0, 3); i--;) sheet(vpick(['learn', 'other', 'other']));
+            if (vr() < 0.3) add(P, 'learn.compare', 1, vint(40, 200));
+            if (vr() < 0.3) add(P, 'tools.anatomy', 1, vint(60, 300));
+          } else if (prof === 'second') {
+            p0 = 'fish.home';
+            add(P, 'fish.home', 1, vint(10, 40));
+            add(P, 'fish.learn.genera', 1, vint(40, 160));
+            add(P, 'fish.learn.genus', vint(1, 3), vint(60, 300));
+            if (vr() < 0.5) add(P, 'fish.identify.key', 1, vint(30, 120));
+          } else {
+            add(P, 'home', 1, vint(10, 70));
+            if (vr() < 0.7) add(P, 'learn.genera', 1, vint(30, 160));
+            if (vr() < 0.4) add(P, 'learn.basics', 1, vint(90, 420));
+            if (vr() < 0.5) sheet('learn');
+            if (vr() < 0.3) add(P, 'about', 1, vint(15, 90));
+          }
+          // A long visit was sent in two parts (the app left and opened again): one visit id, two rows.
+          const vi = 'demovv' + vk++,
+            keys = Object.keys(P),
+            parts = keys.length > 2 && vr() < 0.4 ? [keys.slice(0, 2), keys.slice(2)] : [keys];
+          const first = parts[0].reduce((a, k) => a + P[k][1], 0);
+          events.push([
+            'demoevv' + vi,
+            t + Math.min(first, 170) * 1000,
+            dev,
+            'load',
+            'cache-mnl9725-MNL',
+            '',
+            '',
+            JSON.stringify({p0, t0: 1.2, nx: keys.find(k => k !== p0) || '', bps: 2000, kb: 900, sw: 1, sv: 0, th: 'light', w, st}),
+            '190',
+            ua
+          ]);
+          parts.forEach((K, j) => {
+            t += K.reduce((a, k) => a + P[k][1], 0) * 1000 + (j ? 20 * 60e3 : 0);
+            pages.push([
+              'demopv' + vi + j,
+              t,
+              dev,
+              'pages',
+              who,
+              '',
+              K[0],
+              JSON.stringify({
+                r: Object.fromEntries(K.map(k => [k, P[k]])),
+                g: j || !Object.keys(g).length ? {} : g,
+                vi,
+                na
+              }),
+              '190',
+              ua
+            ]);
+          });
+        }
+      });
+      events.sort((a, b) => b[1] - a[1]);
+    }
     pages.sort((a, b) => b[1] - a[1]);
     // Another subject's answers (sheet v60 logs every subject's, column Subject): a few players on the second subject's
     // first circle, with its own random numbers so the rest of the demo stays the same. Kept apart (frows): the sheet's
