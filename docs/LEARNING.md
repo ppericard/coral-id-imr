@@ -4577,7 +4577,7 @@ interval is [−0.0148, −0.0120] (a clear gain), with the players as the unit 
 Figures recorded in this file before 2026-11-05 as "paired log-loss difference per answer ± its standard error" (and
 "× 10⁻³ ± SE") are the per-answer figure: read their intervals as too narrow, and "n standard errors" as fewer.
 
-## Validating a learning change (rule L11; proposed 2026-11-08, waiting for Pierre's OK)
+## Validating a learning change (rule L11; validated by Pierre on 2026-11-08, #735)
 
 Pierre, 2026-11-08: the engines and the simulations moved a lot these last days, so the way a change is validated must
 still fit what was built, and follow his suggestion: a fully rated world where photos, players and every unit (coral
@@ -4741,7 +4741,7 @@ casual diver "new". Learning rate as before (0.12; the expert 0.05).
 - right %, the Elo error against D\*, units met, `open/15`.
 
 **Guardrails and margins** (Pierre's "smallest change that matters", in each measure's units; one-sided 90% bound of the
-paired difference on the side of harm; proposed, for his OK):
+paired difference on the side of harm; validated with #735):
 
 | Guardrail | Checkpoints | Margin | Why this margin |
 | --- | --- | --- | --- |
