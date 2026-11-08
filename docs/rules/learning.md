@@ -168,7 +168,7 @@ the statistics always valid** (how and why: [the statistics study](../reviews/20
 
   Before running, declare one primary measure, its world, its checkpoint and its direction, and any cost the change is
   expected to bring (a guardrail it will move, with the bound accepted). Test the primary pooled over the profiles with
-  an exact stratified sign-flip test on the (profile, seed) pairs; only if that passes, per-profile tests under Holm.
+  a stratified sign-flip test on the (profile, seed) pairs (exact up to 20 pairs, else 100,000 draws from a fixed seed); only if that passes, per-profile tests under Holm.
   The measures of LEARNING.md's guardrail table are guardrails, in both worlds: held when the one-sided 90% bound of the
   paired difference stays inside its margin, the margins set once there. A guardrail breached or unclear goes to tier 2,
   or to Pierre when the cost was not declared. Anything else is labelled exploratory, uncorrected. Five seeds catch

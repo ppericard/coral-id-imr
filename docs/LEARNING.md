@@ -4177,7 +4177,7 @@ change meant to move one of them declares that cost and its accepted bound befor
 fish about 5 minutes per arm), and the rated world, 20 seeds × 3,000 answers, normal photos and one heavy-tailed variant
 (about a minute). Tier 2: 30-40 seeds in the app world (fish, about an hour for both arms on 2 workers, so a manual
 GitHub Action rather than the shared machine), 40 seeds × 30,000 answers in the rated world under both distributions
-(*inferred*: under 30 minutes on 4 cores). Neither belongs in the hourly analyses Action (its 2 hours serve the real
+(*inferred* from a 10,000-answer run: about half an hour on 4 cores). Neither belongs in the hourly analyses Action (its 2 hours serve the real
 log).
 
 **First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; exploratory, the protocol not yet
