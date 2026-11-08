@@ -319,7 +319,7 @@ function renderFishCand() {
   }
   const F = DRAFT.fish || {},
     SF = (SUG && SUG.fish) || {},
-    Q0 = fishQueue(fishCands(F), SF, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+    Q0 = fishQueue(FISHC.cand, SF, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
     Q1 = FQ === 'chk' ? chks : Q0,
     shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),

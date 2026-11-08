@@ -349,3 +349,20 @@ test("fishGameIn: the photos the game plays count whatever their route; Pierre's
   assert.strictEqual(fishQueue(c2, {}, {s1: {}}, {}).find(x => x.p.f === 'fish-s1-cand-700').full, false);
   assert.strictEqual(fishQueue(c2, {}, {s1: {}}, {}, fishGameIn(many, {})).find(x => x.p.f === 'fish-s1-cand-700').full, true);
 });
+
+test('fishQueue: a photo the game already plays by itself is not offered again, a blind Check still is', () => {
+  const cands = {
+      s1: [
+        {f: 'fish-s1-cand-111', o: 'o1'},
+        {f: 'fish-s1-cand-112', o: 'o1'},
+        {f: 'fish-s1-cand-113', o: 'o9'}
+      ]
+    },
+    game = [{f: 'fish-s1-cand-111', o: 'o1', sp: 's1', auto: 'cand'}],
+    F = {auto: {'2026-11-05': {'fish-s1-cand-113': '?a'}}};
+  assert.deepStrictEqual(
+    fishQueue(cands, {}, {s1: {}}, {}, game).map(x => x.p.f),
+    ['fish-s1-cand-112', 'fish-s1-cand-113']
+  );
+  assert.ok(fishQueue(cands, {}, {s1: {}}, F, [...game, {f: 'fish-s1-cand-113', o: 'o9', sp: 's1', auto: 'cand'}]).some(x => x.chk));
+});

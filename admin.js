@@ -1694,7 +1694,7 @@ function fuData() {
     (play[p.sp] = play[p.sp] || []).push(p);
   });
   Object.entries(F.out || {}).forEach(([f, to]) => {
-    const p = FISHC.byF[f] || (FISHC.gbyF || {})[f];
+    const p = FISHC.byF[f];
     if (p && to !== p.sid) gone.push({...p, to});
   });
   const dirty = new Set();
@@ -1732,7 +1732,7 @@ function fuTile(sid, p, st, cover, picked, F, XI) {
     ${st.num ? `<span class="adm-num">${st.num}</span>` : ''}
     ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
     <figcaption><span class="adm-src o-${o}">${esc((ASUBJ.admin.origins.find(y => y[0] === o) || [, o])[2])}</span>${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span></figcaption>
-    <div class="adm-acts"><button type="button" data-fu="feat" aria-pressed="${!!st.num}" title="Feature">Feature</button><button type="button" data-fu="cover" aria-pressed="${!!(isCover && picked)}" title="Cover">★ Cover</button><button type="button" data-fu="remove" title="Remove">Remove</button><button type="button" data-fu="not" title="Not this species">Not this</button></div></figure>`;
+    <div class="adm-acts"><button type="button" data-fu="feat" aria-pressed="${!!st.num}" title="Feature">Feature</button><button type="button" data-fu="cover" aria-pressed="${!!(isCover && picked)}" title="Cover">★ Cover</button><button type="button" data-fu="remove" title="Remove">Remove</button>${FISHC.byF[p.f] ? '<button type="button" data-fu="not" title="Not this species">Not this</button>' : ''}</div></figure>`;
 }
 // The wink's surprise card as players meet it (quiz.js winkShow): its photo, "Which family?", its name among the three
 // absurd choices (the right one marked), and both feedback lines.
@@ -1915,7 +1915,7 @@ function renderFishCov() {
   status();
   const U = FISHC.units,
     D = fuData(),
-    C = fishCov(U, D.play, FISHC.species, fishCands(D.F), D.F, fuJ),
+    C = fishCov(U, D.play, FISHC.species, FISHC.cand, D.F, fuJ),
     UB = Object.fromEntries(U.map(u => [u.id, u])),
     imrOn = FU_IMR === 'imr',
     inImr = r => {
@@ -4900,24 +4900,9 @@ async function fishLoad(withGame) {
         const L = Object.values((G && G.photos) || {}).flat();
         // The judgment a game record carries (a reference photo is judged outside suggest.json), with its resolved phase.
         FISHC.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
-        // The records no fish-cand.json candidate describes (the reference photos), by photo name, with their species as sid.
-        FISHC.gbyF = Object.fromEntries(L.filter(p => p && p.f && p.sp && !FISHC.byF[p.f]).map(p => [p.f, {...p, sid: p.sp}]));
         FISHC.plays = L;
       }));
   return FISHC;
-}
-// The candidates as the swiper and Coverage read them: fish-cand.json's, plus the game-only photos Pierre sent elsewhere with
-// Not this (they wait in their new species, as any candidate does; fishState).
-function fishCands(F) {
-  const out = FISHC.cand,
-    add = Object.keys((F || {}).out || {}).filter(f => FISHC.gbyF && FISHC.gbyF[f]);
-  if (!add.length) return out;
-  const C = {...out};
-  add.forEach(f => {
-    const p = FISHC.gbyF[f];
-    C[p.sid] = [...(C[p.sid] || []), p];
-  });
-  return C;
 }
 async function fishAutoRun() {
   if (!TOKEN || !DRAFT || !Object.keys((SUG && SUG.fish) || {}).length) return null;

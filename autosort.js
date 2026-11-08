@@ -165,7 +165,8 @@
   // easiest first (the first questions need easy photos), then the most reference-like (core.js refScore), then a fixed
   // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
   // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, easyRank, fishOn, fishIn, fishGone} = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
+  const {refScore, easyRank, fishOn, fishIn, fishGone, fishPid} =
+    typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
     const I = fishIdx(F),
@@ -361,11 +362,14 @@
       const ph = fishPhase(byF[f] || {f}, sug[f], F);
       if (ph) (shows[sid] = shows[sid] || new Set()).add(ph);
     });
+    // Photos the game already plays by itself (the sure candidates) are not offered again, but for a blind Check.
+    const playing = new Set((game || []).map(p => fishPid(p.f)));
     Object.entries(cands || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
         if (!p || !p.f) return;
         const {sid, st} = fishState(F, p.f, orig);
         if (st) return;
+        if (playing.has(fishPid(p.f)) && !(I[p.f] && I[p.f].d.check && !fishMine(F, p.f))) return;
         const inP = play[sid] || new Set(),
           target = fishTarget((species || {})[sid]),
           x = I[p.f],
