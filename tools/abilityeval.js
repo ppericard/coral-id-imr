@@ -675,7 +675,7 @@ function rtFit(scored) {
   });
   return {own: logitTerm(own), next: logitTerm(next)};
 }
-module.exports = {evaluate, normalise, kOf, groupsOf, paired, signFlip, tQuantile, SIGN, GAME, useModel, RT, rtFit};
+module.exports = {evaluate, normalise, kOf, groupsOf, paired, signFlip, tQuantile, tCdf, SIGN, GAME, useModel, RT, rtFit};
 if (require.main === module) {
 const args = process.argv.slice(2),
   opt = (k, d) => {

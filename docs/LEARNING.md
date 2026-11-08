@@ -4594,6 +4594,25 @@ and its accepted bound before running (rule L11).
 A large expected effect (several times its margin) is read at the level's fewest seeds; more seeds only when a result is
 near a margin. Neither world belongs in the hourly analyses Action (its 2 hours serve the real log).
 
+**Commands.** Each arm runs on the same seeds, then `tools/learncmp.js` pairs the two files and judges them (offline,
+under a second; `--list` prints its measures and guardrails):
+
+```
+node tools/learnsim.js --subject fish --out before.json          # on main; the change's branch: --out after.json
+node tools/learncmp.js before.json after.json --primary hard@300:down [--cost met@100:-3] [--looks 2] [--json r.json]
+```
+
+It pairs the runs by (profile, seed) and prints, ready for the PR: the primary (`MEASURE@CHECKPOINT:up|down`, declared
+before running), the stratified sign-flip pooled over the profiles (each pair's difference over its profile's root mean
+square difference, a scale a sign flip leaves unchanged so the test stays exact; T the sum; two-sided p, exact up to 20
+pairs, else 100,000 draws from seed 1, as #729 read it), clear when p ≤ 0.05 / looks and T goes the declared way, and
+only then each profile's paired t under Holm; then every guardrail of the table above at the checkpoints both files
+reach, per profile: before → after, the paired difference and its one-sided bound at 1 − 0.10 / looks on the side of
+harm (paired t), held, unclear or breached, and the before/after correlation r in `--json`. A guardrail is judged against
+its margin ("the larger" against the before mean of that profile; the corals' units met against 2 genera), or against
+the bound a `--cost` declares. Settings that differ between the files are printed, runs in one file only are left out.
+Measures not in learnsim's files yet (the global score, the levels, plateaus) are listed as not measured.
+
 **First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
 unit under Open Water; exploratory, the protocol not yet
 approved; the rated world by the scratch harness with the cap mimicked as `rareCap` does, 4 profiles × 20 seeds × 3,000
