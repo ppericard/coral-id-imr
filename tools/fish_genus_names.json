@@ -13,7 +13,6 @@
     "g:Hologymnosus": {"common": "Ring wrasses", "from": "species", "word": "ring wrasse"},
     "g:Lethrinus": {"common": "Emperors", "from": "species", "word": "emperor"},
     "g:Scolopsis": {"common": "Monocle breams", "from": "species", "word": "monocle bream"},
-    "g:Plectorhinchus": {"common": "Sweetlips", "from": "species", "word": "sweetlips"},
     "g:Pseudanthias": {"common": "Anthias", "from": "species", "word": "anthias"},
     "g:Ostracion": {"common": "Boxfishes", "from": "species", "word": "boxfish"},
     "g:Lactoria": {"common": "Cowfishes", "from": "species", "word": "cowfish"},
