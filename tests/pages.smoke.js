@@ -4389,6 +4389,176 @@ async function subjTour(b, base) {
   return fails;
 }
 
+// The offer to install the app (app.js installNudge, installCard; Pierre, 2026-11-08), at 390 px on a touch screen: an
+// Android-like browser (a beforeinstallprompt event, made here: headless Chromium sends none), iPhone Safari (the steps),
+// the installed app (standalone), the 2nd visit, a quiz question, and ⚙ Settings › Install the app. The decision itself is
+// in tests/install.test.js.
+const IOS_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
+async function installCheck(b, base) {
+  const fails = [];
+  // visits: the visits before this load (this load is one more, made 2 h after the last); standalone: opened as the app.
+  const open = async ({ios = false, standalone = false, visits = 2, hash = ''} = {}) => {
+    const c = await b.newContext({
+      viewport: {width: 390, height: 844},
+      isMobile: true,
+      hasTouch: true,
+      serviceWorkers: 'block',
+      ...(ios ? {userAgent: IOS_UA} : {})
+    });
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(
+      ([visits, standalone]) => {
+        if (!sessionStorage.getItem('in-init')) {
+          sessionStorage.setItem('in-init', '1');
+          localStorage.setItem('reefid-tour', '"done"');
+          localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+          localStorage.setItem('reefid-nudge', '1');
+          localStorage.setItem('reefid-install', JSON.stringify({n: visits, t: Date.now() - 2 * 3600000}));
+        }
+        if (standalone) {
+          Object.defineProperty(navigator, 'standalone', {get: () => true});
+          const mm = window.matchMedia.bind(window);
+          window.matchMedia = q => (/display-mode:\s*standalone/.test(q) ? {...mm(q), matches: true, media: q} : mm(q));
+        }
+      },
+      [visits, standalone]
+    );
+    const p = await c.newPage();
+    const errs = [];
+    p.on('pageerror', e => errs.push(String(e)));
+    await p.goto(base + hash);
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p, errs];
+  };
+  // An Android-like browser's install prompt: the event the app keeps, its prompt() and the player's choice.
+  const bip = (p, outcome = 'accepted') =>
+    p.evaluate(outcome => {
+      const e = new Event('beforeinstallprompt', {cancelable: true});
+      e.prompt = () => ((window.__prompted = (window.__prompted || 0) + 1), Promise.resolve());
+      e.userChoice = Promise.resolve({outcome});
+      dispatchEvent(e);
+      return e.defaultPrevented;
+    }, outcome);
+  const card = p =>
+    p
+      .waitForSelector('.unlock.install .ulcard', {timeout: 6000})
+      .then(() => true)
+      .catch(() => false);
+  const none = async p => (await p.waitForTimeout(3000), !(await p.$('.unlock.install')));
+  const rec = p => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-install') || 'null'));
+  const look = p =>
+    p.evaluate(() => {
+      const d = document.querySelector('.unlock.install'),
+        r = d && d.querySelector('.ulcard').getBoundingClientRect();
+      return (
+        d && {
+          fits: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
+          btns: [...d.querySelectorAll('.ulbtns button')].map(x => x.textContent),
+          steps: d.querySelectorAll('.instl li').length,
+          icons: d.querySelectorAll('.instl svg.insti').length,
+          med: !!d.querySelector('.ulmed img.instapp'),
+          note: (d.querySelector('.ulfoot') || {}).textContent || ''
+        }
+      );
+    });
+
+  // Android-like, 3rd visit: our button calls the browser's prompt; accepted, installed: never again.
+  {
+    const [c, p, errs] = await open();
+    if (!(await none(p))) fails.push('install: a card with nothing to offer (no prompt event, not Safari)');
+    if (!(await bip(p))) fails.push("install: the browser's own install bar was not held back (preventDefault)");
+    if (!(await card(p))) fails.push('install, Android: no card after the prompt event on the 3rd visit');
+    else {
+      const L = await look(p);
+      if (!L || !L.fits || L.btns.join('|') !== 'Install the app|No thanks' || !L.med || !/Settings/.test(L.note))
+        fails.push(`install, Android card: ${JSON.stringify(L)}`);
+      await p.click('.unlock.install [data-b="1"]');
+      await p.waitForTimeout(300);
+      const r = await rec(p);
+      if (!(await p.evaluate(() => window.__prompted === 1)) || !r.in || (await p.$('.unlock.install')))
+        fails.push(`install, Android: Install the app did not call the prompt once, or not marked installed: ${JSON.stringify(r)}`);
+    }
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await bip(p);
+    if (!(await none(p))) fails.push('install, Android: the card again once installed');
+    if (errs.length) fails.push(`install, Android: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // Android-like, No thanks: never again; ⚙ still offers it, the browser's prompt at once.
+  {
+    const [c, p, errs] = await open();
+    await bip(p, 'dismissed');
+    if (!(await card(p))) fails.push('install, No thanks: no card');
+    else await p.click('.unlock.install [data-b="2"]');
+    const r = (await rec(p)) || {};
+    if (!r.x || r.in) fails.push(`install, No thanks: not marked closed: ${JSON.stringify(r)}`);
+    await p.reload();
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await bip(p);
+    if (!(await none(p))) fails.push('install: the card again after No thanks');
+    await p.click('#setb');
+    const row = await p.evaluate(() => {
+      const r = document.getElementById('instrow');
+      return !!r && !r.hidden && r.getBoundingClientRect().height > 0;
+    });
+    if (!row) fails.push('install: no Install the app row in ⚙ Settings');
+    else {
+      await p.click('#instb');
+      await p.waitForTimeout(300);
+      if (!(await p.evaluate(() => window.__prompted === 1 && document.getElementById('settings').hidden)))
+        fails.push('install, ⚙ row: did not call the browser prompt (and close ⚙)');
+    }
+    if (errs.length) fails.push(`install, No thanks: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // iPhone Safari: never on a quiz question; on Home, the steps with their icons; Got it: never again. ⚙ shows the steps
+  // again, without marking anything.
+  {
+    const [c, p, errs] = await open({ios: true, hash: '#practice/quiz'});
+    await p.waitForSelector('#view .q [data-c]', {timeout: 15000}).catch(() => {});
+    if (!(await none(p))) fails.push('install, iPhone: the card over a quiz question');
+    await p.evaluate(() => (location.hash = '#home'));
+    if (!(await card(p))) fails.push('install, iPhone: no card on Home on the 3rd visit');
+    else {
+      const L = await look(p);
+      if (!L || !L.fits || L.steps !== 3 || L.icons !== 2 || L.btns.join('|') !== 'Got it' || !L.med)
+        fails.push(`install, iPhone card: ${JSON.stringify(L)}`);
+      await p.click('.unlock.install [data-b="1"]');
+      if (!((await rec(p)) || {}).x) fails.push('install, iPhone: Got it did not close it for good');
+    }
+    await p.click('#setb');
+    await p.click('#instb');
+    const L2 = (await card(p)) && (await look(p));
+    if (!L2 || L2.steps !== 3 || L2.note) fails.push(`install, iPhone ⚙ row: ${JSON.stringify(L2)}`);
+    if (errs.length) fails.push(`install, iPhone: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // iPhone Safari, 2nd visit: not yet.
+  {
+    const [c, p] = await open({ios: true, visits: 1});
+    if (!(await none(p))) fails.push('install: the card on the 2nd visit');
+    await c.close();
+  }
+  // The installed app (standalone, iPhone and Android-like): never the card, no ⚙ row; marked installed.
+  {
+    const [c, p, errs] = await open({ios: true, standalone: true});
+    await bip(p);
+    const st = {
+      none: await none(p),
+      row: await p.evaluate(() => document.getElementById('instrow').hidden),
+      in: !!((await rec(p)) || {}).in
+    };
+    if (!st.none || !st.row || !st.in) fails.push(`install, installed app: ${JSON.stringify(st)}`);
+    if (errs.length) fails.push(`install, installed app: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
 // The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
 // the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
@@ -4396,7 +4566,7 @@ async function subjTour(b, base) {
 // the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
-// the tour, for a player with one subject and with two (subjTour).
+// the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).
 const PARTS = [
     'main',
     'overlays',
@@ -4411,14 +4581,29 @@ const PARTS = [
     'onepath',
     'signin',
     'replay',
-    'notices'
+    'notices',
+    'install'
   ],
   WIDTHS = [390, 1280];
 
 (async () => {
   const run = slot.parts(PARTS, {
       main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'subjtour', 'newplayer', 'onepath', 'signin', 'replay', 'notices']
+      rest: [
+        'basics',
+        'credits',
+        'visit',
+        'tips',
+        'relief',
+        'start',
+        'subjtour',
+        'newplayer',
+        'onepath',
+        'signin',
+        'replay',
+        'notices',
+        'install'
+      ]
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
@@ -5193,6 +5378,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
+  if (run.has('install')) for (const f of await installCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);
   if (run.has('replay')) for (const f of await replayAdoptCheck(base)) fails.push(f);
