@@ -1013,6 +1013,15 @@ test('achievement recount: a subject whose data is not in waits on this device, 
     'the fish ones are out of the synced record until tested'
   );
   assert.deepStrictEqual(m.old(), {fish: {fmet5: 20, fpct50: 23}}, 'retired ids do not even wait');
+  // Nothing held: the fish still wait, so what their progress meets comes in silently once their data is in (Codex review #734).
+  const e = migr({_v: 2, met10: 10}, {fish: false});
+  e.achMigrate();
+  assert.deepStrictEqual(e.old(), {fish: {}});
+  e.ctx.fishIn = true;
+  e.ctx.domRecalcAll = () => (e.ctx.rebuilt = e.ctx.cur);
+  e.achPending();
+  assert.ok(e.rec().fmet5 && e.rec().fpct40 && e.old() === null);
+  assert.strictEqual(e.ctx.rebuilt, 'fish', 'the bars rebuilt in the fish subject before the test (Codex review #734)');
   m.achPending('coral'); // a check on the corals never visits the fish
   assert.ok(m.old());
   m.achPending(); // the fish data in, still missing: it waits again

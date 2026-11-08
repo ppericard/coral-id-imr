@@ -608,10 +608,13 @@ function achSnap(A = store.get(ACHK, {}) || {}) {
 // A subject whose data is not in yet (the fish, lazy-loaded: app.js fishLoad; its slate empty) cannot be tested: its
 // achievements wait on this device (ACHOLD, {subject: {id: time}}, outside the synced record, so nothing unchecked
 // travels) and are recounted once its data comes (achPending); until then they are out of the record, never shown (its
-// pages need its data).
+// pages need its data). Every such subject waits, even with nothing held, so what its progress already meets comes in
+// silently too (Codex review #734). Before a subject is tested, its records still under the former moving average are
+// rebuilt (model.js domRecalcAll: a short visit, inSubject, skips it; Codex review #734), so nothing is granted from
+// obsolete bars.
 const ACHS = () => SUBJECTS.find(x => x.ach).id,
   ACHOLD = 'reefid-ach-old',
-  achReady = () => achList().length > 0,
+  achReady = () => achList().length > 0 && (typeof domRecalcAll !== 'function' || (domRecalcAll(), true)),
   achOwn = S => S.achs().filter(a => a.kind !== 'contrib');
 function achMigrate() {
   const A = store.get(ACHK, null);
@@ -624,8 +627,7 @@ function achMigrate() {
     inSubject(S.id, () => {
       const list = [...achOwn(S), ...(i ? [] : ACH_CONTRIB)];
       if (achReady()) return achRecount(B, A, list, achSnap(B), t);
-      const old = Object.fromEntries(list.filter(a => A && A[a.id]).map(a => [a.id, A[a.id]]));
-      if (Object.keys(old).length) held[S.id] = old;
+      held[S.id] = Object.fromEntries(list.filter(a => A && A[a.id]).map(a => [a.id, A[a.id]]));
     })
   );
   store.set(ACHK, B);
