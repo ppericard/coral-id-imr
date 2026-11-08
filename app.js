@@ -1546,6 +1546,9 @@ const UNITS = {
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
     // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
     tree: () => (FISH ? FISH.tree : null),
+    // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
+    // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
+    gen: () => (FISH ? FISH.gen : null),
     core: () => (FISH ? FISH.c1 : []),
     // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
     // families, those that open right after them, those beyond the course.

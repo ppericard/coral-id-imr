@@ -1451,6 +1451,7 @@ function users_(p){
       // account's devices ask for the replay of the whole merged history (replay_).
       delete m.data['reefid-sync-coral-rv'];
       delete m.data['imr-coral-rv'];  // rename-app: keep (its name before the rename to IMR Reef ID, v33)
+      CORE_.SUBJECTS.forEach(S => delete m.data[CORE_.subjKey(S.id, 'rv')]);  // every subject's (fish's too: its own rules versions)
       let curData = {}; try { curData = JSON.parse(cur.json || '{}') || {}; } catch (e) {}
       if (curData._acct) m.data._acct = curData._acct; else delete m.data._acct;  // v58: the kept account's generation
       const json = JSON.stringify(m.data);
@@ -2274,7 +2275,9 @@ const CORE_ = (function () { const module = {exports: {}};
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
+      // floor: the device's bars before its first replay are kept as a floor (replayFloor; Pierre, 2026-11-08, Q310:
+      // "nobody goes back").
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, floor: true},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -5691,6 +5694,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // would file a fish answer as a coral one (no subject column): the app sends the answers of a subject the sheet does not
   // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
   const LOG_SHEET = 60;
+  // The sync script version that replays the other subjects' progress under this app's rules (SUBJECTS replayed: fish,
+  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS,
+  // with today's bars as a floor, replayFloor) only once the script's replies say v >= REPLAYS_SHEET (rule D4); before,
+  // that subject does exactly what it did (no rules version, the plain merge).
+  const REPLAYS_SHEET = 109;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -5701,10 +5709,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
   // 'apology', RV_SORRY) in the jump says what the standard card says, and more: the standard card is then left out.
   // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
-  const rvMsgs = (from, to, skip = false) => {
-    const L = RVS.filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology')).filter(
-      (x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg)
-    );
+  // sid: the subject whose rules versions they are (rvsOf: the corals' RVS by default, fish FISH_RVS).
+  const rvMsgs = (from, to, skip = false, sid) => {
+    const L = (sid ? rvsOf(sid) : RVS)
+      .filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology'))
+      .filter((x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg));
     return L.some(x => x.msg.kind === 'apology') ? L.filter(x => x.msg !== RV_CARD) : L;
   };
 
@@ -6221,6 +6230,30 @@ const CORE_ = (function () { const module = {exports: {}};
     return out;
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
+  // The floor of a subject's first replay (SUBJECTS replayed floor; Pierre, 2026-11-08, Q310: "today's bar as a floor,
+  // nobody goes back"; measured on the 8 fish players first, ROADMAP "Fish progress replayed from the answer log"): a unit
+  // whose record on this device came from no replay yet (no rv: played before the subject was replayed, or kept from the
+  // device by replayedOf) and whose bar (scoreOf) is above the replayed one keeps this device's record as it is, so no
+  // unit's bar, and so no % built from them, goes down at the first replay. A unit taken from a replay (rv) is the
+  // replay's from then on, under later rules versions too. M: the record adopted (replayedOf), P: this device's; returns
+  // a copy of M with those units back as they were (a unit's bar reads the others' false alarms, faOf: passes until none
+  // changes). The global level (LEVEL) stays the replay's.
+  function replayFloor(M, P) {
+    const out = {...(M || {})},
+      S = isObj(P) ? P : {},
+      L = Object.keys(S).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
+    for (let k = 0, ch = true; ch && k <= L.length; k++) {
+      ch = false;
+      L.forEach(g => {
+        if (out[g] !== S[g] && scoreOf(S[g], S, g) > scoreOf(out[g], out, g) + 1e-9) {
+          out[g] = S[g];
+          ch = true;
+        }
+      });
+    }
+    L.forEach(g => out[g] === S[g] && (out[g] = JSON.parse(JSON.stringify(S[g]))));
+    return out;
+  }
 
   // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
   // open the genus sheets": does a beginner use them more, does a sheet reader progress faster?). First-party, one
@@ -6814,6 +6847,7 @@ const CORE_ = (function () { const module = {exports: {}};
     startWt,
     START_CAP,
     replayedOf,
+    replayFloor,
     replayBase,
     logRow,
     ELO,
@@ -6830,6 +6864,7 @@ const CORE_ = (function () { const module = {exports: {}};
     DOM_SHEET,
     SCORE_SHEET,
     LOG_SHEET,
+    REPLAYS_SHEET,
     WINK_SHEET,
     logOk,
     RTIME,
