@@ -1293,3 +1293,59 @@ test('a recheck that waits for the first sync runs as the subject it was asked f
   assert.deepStrictEqual([q.map(x => x[0]), subj], [['achRecheck:coral'], ['coral']]);
   assert.strictEqual(a.rec().learn1, undefined, "taken back on the corals' own snapshot");
 });
+
+// The device on every answer (Pierre, 2026-11-08, Q312; sync.js devField, Code.gs Device): a save and an anonymous send
+// carry this device's id, the one its events carry (reefid-dev-id), only once the sheet's replies say v >= DEV_SHEET
+// (rule D4); below it, the requests are as before. The sheet here answers as the version given.
+const DEV_SHEET = +/const DEV_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'))[1];
+const asV = (s, v) => ({get: q => ({...s.get(q), v}), post: b => ({...s.post(b), v})});
+const devCol = s => s.sheets.Answers.rows.slice(1).map(r => [r[7], r[s.sheets.Answers.rows[0].indexOf('Device')] ?? '']);
+
+test('a signed-in save carries the device id from DEV_SHEET, written in each of its answers; before it, none', async () => {
+  for (const v of [DEV_SHEET - 1, DEV_SHEET]) {
+    const s = loadCodeGs(withData()),
+      a = app({
+        sheet: asV(s, v),
+        ls: {'reefid-dev-id': JSON.stringify('k3v9q0x7mz'), 'reefid-sheet-v': String(v)},
+        SYNC: {name: 'Ana', pin: '1234', dirty: true, log: [qa('d1', 1), qa('d2', 2)]}
+      });
+    await a.syncPush();
+    const sv = a.sent.find(b => b.answers);
+    assert.ok(sv && sv.answers.length === 2, 'the save went out');
+    if (v < DEV_SHEET) {
+      assert.ok(!('dev' in sv), `v${v}: no device id`);
+      assert.deepStrictEqual(devCol(s), [
+        ['d1', ''],
+        ['d2', '']
+      ]);
+    } else {
+      assert.strictEqual(sv.dev, 'k3v9q0x7mz', 'the id its events carry');
+      assert.deepStrictEqual(devCol(s), [
+        ['d1', 'k3v9q0x7mz'],
+        ['d2', 'k3v9q0x7mz']
+      ]);
+    }
+  }
+});
+
+test('an anonymous send carries the device id from DEV_SHEET, made once and kept (never the anonymous answer id)', async () => {
+  for (const v of [0, DEV_SHEET - 1, DEV_SHEET]) {
+    const s = loadCodeGs(withData()),
+      a = app({
+        sheet: asV(s, v),
+        ls: {'reefid-anon-id': JSON.stringify('abcdefghij'), 'reefid-anonq': JSON.stringify([qa('n1', 1)]), 'reefid-sheet-v': String(v)}
+      });
+    a.sendAnon();
+    await settle();
+    const b = a.sent[0];
+    assert.deepStrictEqual(copy(b.anonAnswers.map(x => x.id)), ['n1']);
+    if (v < DEV_SHEET) assert.ok(!('dev' in b), `v${v}: no device id`);
+    else {
+      const id = a.store.get('reefid-dev-id', '');
+      assert.match(b.dev, /^[a-z0-9]{10}$/);
+      assert.strictEqual(b.dev, id, 'the device id, kept for its events');
+      assert.notStrictEqual(b.dev, 'abcdefghij');
+      assert.deepStrictEqual(devCol(s), [['n1', id]]);
+    }
+  }
+});

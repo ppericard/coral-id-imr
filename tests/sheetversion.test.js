@@ -285,7 +285,10 @@ test('a gate above VERSION or a placeholder with no sheet change fails', () => {
 test('the real Code.gs header and ARCHITECTURE.md history take an --assign, which --check then accepts', () => {
   const r = repo();
   try {
-    for (const f of ['tools/sync/Code.gs', 'docs/ARCHITECTURE.md']) r.write(f, fs.readFileSync(path.join(ROOT, f), 'utf-8'));
+    // As main holds them: a PR branch's own placeholders (its sheet change waiting for its version) are not main's.
+    const mark = new RegExp('\\b' + NEXT + '\\b', 'g');
+    for (const f of ['tools/sync/Code.gs', 'docs/ARCHITECTURE.md'])
+      r.write(f, fs.readFileSync(path.join(ROOT, f), 'utf-8').replace(mark, 'the next version'));
     r.git('add', '-A');
     r.git('commit', '-q', '-m', 'real files');
     r.git('branch', '-f', 'main', 'HEAD');
