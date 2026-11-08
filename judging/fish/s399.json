@@ -81,19 +81,19 @@
    "keep": "dup"
   },
   "fish-s399-cand-592792345": {
-   "code": "d0n0sl12",
+   "code": "d0g0sl12",
    "keep": "best"
   },
   "fish-s399-cand-592792418": {
-   "code": "d0n0sl12",
+   "code": "d0g0sl12",
    "keep": "dup"
   },
   "fish-s399-cand-592792431": {
-   "code": "d0n0sl12",
+   "code": "d0g0sl12",
    "keep": "dup"
   },
   "fish-s399-cand-593077639": {
-   "code": "d0n0sm12",
+   "code": "d0d0sm12",
    "keep": "dup"
   },
   "fish-s399-cand-659435396": {
@@ -109,7 +109,7 @@
    "keep": "dup"
   },
   "fish-s399-cand-564536864": {
-   "code": "o0n0sl12",
+   "code": "o0d0sl12",
    "keep": "best"
   },
   "fish-s399-cand-713509339": {
@@ -117,11 +117,11 @@
    "keep": "best"
   },
   "fish-s399-cand-605836823": {
-   "code": "o1n0sm13",
+   "code": "o1g0sm13",
    "keep": "best"
   },
   "fish-s399-cand-605836825": {
-   "code": "h1n0sm12",
+   "code": "h1g0sm12",
    "keep": "alt"
   },
   "fish-s399-cand-617789184": {
@@ -129,7 +129,7 @@
    "keep": "best"
   },
   "fish-s399-cand-fb-Dilit_u0": {
-   "code": "p1n0sl13",
+   "code": "p1g0sl15",
    "keep": "best"
   }
  }

@@ -3336,7 +3336,9 @@ async function credits(b, base) {
   // Fish Home (Pierre, 2026-11-08: most fish are horizontal, square tiles cut them): fewer, landscape tiles (home.css
   // .hdtiles.land), every one between 1.3 and 2 wide for 1 tall at every size (U4's widths, phones in portrait and in
   // landscape, the short phone whose band is one row), at most the count given (the corals show 12 from tablets up, 4 or 8
-  // on phones); nothing wider than the screen.
+  // on phones); nothing wider than the screen. The Identify door's photo too (home.css .hdart.rc.land): a box between 1.3
+  // and 1.8 wide for 1 tall (#740's screenshots: a 96 px box cut the fish at 390 px), or, narrower on a 320 px phone, the
+  // photo shown whole (object-fit: contain).
   for (const [w, h, most] of [
     [320, 568, 4],
     [360, 640, 4],
@@ -3352,9 +3354,21 @@ async function credits(b, base) {
   ]) {
     const [c, p] = await open(w, h, '', true);
     const ft = await tiles(p),
-      sw = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      sw = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth),
+      id = await p.evaluate(() => {
+        const a = document.querySelector('#view .hdoor.identify .hdart'),
+          i = a && a.querySelector('img'),
+          r = a ? a.getBoundingClientRect() : {width: 0, height: 0};
+        return {
+          land: !!(a && a.classList.contains('land')),
+          ar: r.height ? r.width / r.height : 0,
+          fit: i ? getComputedStyle(i).objectFit : ''
+        };
+      });
     if (!ft.land || !ft.boxes.length || ft.boxes.length > most || ft.boxes.some(([tw, th]) => tw / th < 1.3 || tw / th > 2))
       fails.push(`${w}x${h} Home, fish: the Learn tiles are not landscape ${JSON.stringify(ft)}`);
+    if (!id.land || id.ar > 1.82 || (id.ar < 1.28 && id.fit !== 'contain'))
+      fails.push(`${w}x${h} Home, fish: the Identify photo cuts the fish ${JSON.stringify(id)}`);
     if (sw > 0) fails.push(`${w}x${h} Home, fish: ${sw} px wider than the screen`);
     await c.close();
   }

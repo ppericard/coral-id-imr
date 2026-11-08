@@ -250,6 +250,16 @@ from above, the sharks in blue water; seven entries have no photo at 4 or 5 (the
 under the `easyFirst` gate, gone since 2026-11-06). The rubric was applied as written (no family exception): a question for Pierre, put to
 him on the morning of 2026-11-05 (open questions now live in docs/STATUS.md).
 
+## The light re-judge (rubric 6, 2026-11-08)
+
+After Pierre's Q308 (above, "Light: the fish, not the background"), every photo coded `n` (727 distinct photos: game,
+reference and candidate photos) and every `d` photo with a dark background (495, picked by a dark border and then looked
+at one by one) were looked at again on sheets of 12 at 400 x 300 px: 1,062 codes changed (`n` to `g` 716, `d` to `g` 313,
+`n` to `d` 30, with the ease the light changed), 4 stopgap game photos keep `n` (two goatfish and two fusilier photos in a reddish night livery), and 37 judged candidates keep it too. The log,
+with each photo's old and new code, is `judging/fish-light-q308.json`; its `curation` list holds Pierre's adds whose
+tags and ease `curation.json` still holds from the earlier judgement (`tools/fish_game.py` reads them first): a
+proposal for him, never written by a script (rule A1).
+
 ## A temporary use
 
 The judged ease is a bootstrap prior: once fish answers are logged, the players' answers rate the photos and replace it
