@@ -1375,6 +1375,98 @@ const WIDTHS = [390, 1280];
           if (aqe.length) fails.push(`${w}px Analyses with script v${v}: ${aqe.join(' | ')}`);
           await aq.close();
         }
+      // Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). From the script that stores one
+      // report per subject (analysis.js AN_SUBJ_SHEET), the fish side's Analyses draw the fish report: its own status line
+      // and milestone, its views but What makes a photo hard and the live views (one line on its Overview says so), the
+      // fish words and unit names, never a coral genus; the corals' side keeps its own report. A script before it: the fish
+      // side has no report (rule D4), the corals' unchanged. At 1280, and the Overview and Mix-ups at 360 px too.
+      {
+        const GATE = require('../analysis.js').AN_SUBJ_SHEET;
+        for (const [v, vw] of [
+          [GATE, 1280],
+          [GATE, 360],
+          [GATE - 1, 1280]
+        ]) {
+          const fc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
+          await fc.route(
+            u => !u.href.startsWith(base),
+            r => r.abort()
+          );
+          const fq = await fc.newPage(),
+            fe = [],
+            tag = `${vw}px Fish Analyses with script v${v}`;
+          fq.on('pageerror', e => fe.push(e.message));
+          const look = async h => {
+            await fq.evaluate(h => (location.hash = h), h);
+            await fq
+              .waitForFunction(
+                h =>
+                  location.hash === '#' + h &&
+                  cur === h.replace(/^fish\//, '') &&
+                  /fitted on|No report yet|Not for /.test(document.getElementById('view').textContent),
+                h,
+                {timeout: 90000}
+              )
+              .catch(() => fe.push(`#${h}: nothing drawn`));
+            return fq.evaluate(() => {
+              // the fish words (core.js SUBJECTS analyses one, many) left aside: a "genus" left is a coral word
+              const V = document.getElementById('view'),
+                W = ASUBJ.analyses || {},
+                t = [V.textContent, ...[...V.querySelectorAll('[title]')].map(e => e.getAttribute('title'))]
+                  .join(' ')
+                  .split(W.one || '\u0000')
+                  .join(' ')
+                  .split(W.many || '\u0000')
+                  .join(' ')
+                  .split(W.one ? W.one[0].toUpperCase() + W.one.slice(1) : '\u0000')
+                  .join(' ')
+                  .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
+                  .join(' ');
+              return {
+                badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
+                none: /No report yet/.test(V.textContent),
+                not: (document.querySelector('.adm-an-not') || {}).textContent || '',
+                note: (document.querySelector('#view > .note') || {}).textContent || '',
+                views: [...document.querySelectorAll('#subnav .adm-views a, #subnav .adm-subtabs a')].map(a => a.textContent),
+                words: (t.match(/\b(genus|genera|Genus|Genera)\b/g) || []).length,
+                ids: (t.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+                coral: Object.keys(DATA.gen).some(g => new RegExp(`\\b${g}\\b`).test(V.textContent)),
+                cards: V.querySelectorAll('.adm-an-card').length,
+                wide: document.documentElement.scrollWidth - innerWidth
+              };
+            });
+          };
+          await fq.goto(base + `admin.html?demo&v=${v}#fish/analyses/overview`);
+          let at = await look('fish/analyses/overview');
+          if (v < GATE) {
+            if (!at.none) fe.push(`the fish side shows a report: ${JSON.stringify(at)}`);
+          } else {
+            if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
+              fe.push(`Overview ${JSON.stringify(at)}`);
+            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Pairs, Learning › Answer log, Learning › Stops.')
+              fe.push(`the line on what is not there: "${at.not}"`);
+            // every view the fish side has, each drawn from the fish report
+            const H = await fq.evaluate(() =>
+              TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h)))
+            );
+            if (H.length !== 10 || H.some(h => /photos$|pairs$|answer-log$|stops$/.test(h))) fe.push(`its views ${H.join(' ')}`);
+            for (const h of vw === 1280 ? H : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
+              at = await look('fish/' + h);
+              if (at.none || !/^Fish: /.test(at.badge) || at.words || at.ids.length || at.coral || at.wide > 0)
+                fe.push(`#fish/${h} ${JSON.stringify({...at, views: undefined})}`);
+            }
+            if (vw === 1280) {
+              at = await look('fish/analyses/difficulty/photos');
+              if (!/Not for fish yet/.test(at.note)) fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify(at)}`);
+            }
+          }
+          // the corals' report on the corals' side, as before
+          at = await look('analyses/overview');
+          if (!/^Corals: fitted on/.test(at.badge) || at.not) fe.push(`the corals' Overview ${JSON.stringify(at)}`);
+          if (fe.length) fails.push(`${tag}: ${fe.slice(0, 4).join(' | ')}`);
+          await fc.close();
+        }
+      }
 
       // Each tab reopens its view used last, each header group its tab used last (kept in the store, as other admin prefs),
       // except Players, which always opens Activity (fixed group, Pierre 2026-11-05), List having been used before.
