@@ -115,3 +115,47 @@ test('the game reads the photo memory offsets only through pmem (model.js, quiz.
     'model.js: const pmem = () => (SUBJ.replay ? PMEM : PMEM0);'
   ]);
 });
+
+// No rules version for this change (Codex review #790): it picks the offsets future fish answers are drawn and scored
+// with, and moves no saved progress. Every fish answer is logged with its scoring record (sc, its memory term f), and
+// the replay reads f as logged, so a fish replay under any memory offsets, the corals' or the prior, rebuilds the same
+// records; and a record already under the photo memory rule (s.pm, every fish record) is never recalculated again.
+test('saved fish progress does not move: the replay reads the logged memory term, a marked record is left alone', () => {
+  // A fish log with its photos coming back (every memory bucket), each row with the f the app logged with the corals'
+  // offsets of 2026-11-08 (as the 45 such rows of the real log).
+  const hist = {},
+    rows = Array.from({length: 40}, (_, i) => {
+      const g = i % 2 ? 'f:Damselfishes' : 'f:Wrasses',
+        ok = i % 5 !== 0,
+        ph = `${g}-${i % 3}`,
+        h = hist[ph] || [0, 0],
+        f = C.memFam([h[0] ? h : undefined], CORAL);
+      hist[ph] = [h[0] + 1, h[1] + (ok ? 1 : 0)];
+      return [
+        'p',
+        i,
+        g,
+        ok ? g : 'f:Gobies',
+        ok ? 1 : 0,
+        'quiz',
+        ph,
+        null,
+        null,
+        0,
+        `${g} f:Gobies f:Blennies f:Cardinalfishes`,
+        null,
+        5,
+        ...new Array(C.LOG_SC - 13).fill(null),
+        {d: 0.3 + (i % 4) / 5, m: 0.1, ...(f ? {f} : {})}
+      ];
+    });
+  assert.ok(rows.some(r => r[C.LOG_SC].f > 0) && rows.some(r => r[C.LOG_SC].f < 0), 'the log holds remembered photos');
+  const P = mem => JSON.stringify(C.replayProgress(rows, {gen: {}, ...(mem ? {mem} : {})}).p.P);
+  assert.strictEqual(P(CORAL), P(C.MEM.PRIOR));
+  assert.strictEqual(P(CORAL), P(null), 'with no offsets served (the fish replay: Code.gs st = {})');
+  // A record under the photo memory rule: memRecalc leaves it as it is, whatever offsets it is given.
+  const rec = {...oldRecord(), pm: 1},
+    was = JSON.stringify(rec);
+  assert.strictEqual(C.memRecalc(rec, C.MEM.PRIOR), false);
+  assert.strictEqual(JSON.stringify(rec), was);
+});
