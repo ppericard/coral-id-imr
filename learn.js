@@ -720,7 +720,7 @@ function viewFishList() {
     const g = GX(n),
       p = cover(g); // Pierre's ★ Cover while in play (app.js fishCurate), else the card photo as before (core.js easyCover)
     if (p) flat.push({...p, genus: n});
-    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${tipsList(g)}${
+    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${g.tl ? `<p class="label">${g.tl}</p>` : ''}${tipsList(g)}${
       g.lk.length
         ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>`
         : ''
@@ -749,7 +749,7 @@ function viewFishList() {
       ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units())
       : ''
   );
-  $v.innerHTML = `<p class="lede">The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues and IMR’s names. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
+  $v.innerHTML = `<p class="lede">The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and IMR’s names. Photos: iNaturalist observations for now.</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
   $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }

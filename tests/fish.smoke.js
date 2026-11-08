@@ -822,6 +822,26 @@ const server = http.createServer((req, res) => {
     if (rg.mixed && rg.tl.length < 2 && /reach/.test(rg.line))
       ui.push(`${width}px family size range mixes measures: ${JSON.stringify(rg)}`);
     await wide('a family sheet');
+    // A family IMR gives no cue for (Frogfishes, circle 3): its own ID marks on its sheet, and in the first-meeting card,
+    // the feedback and the families page under a label naming their sources, never IMR's (app.js fishGenera qt, tl).
+    await q.evaluate(() => (location.hash = '#fish/learn/family/Frogfishes'));
+    await q.waitForFunction(() => document.querySelector('#view .fsheet .fmarks'), null, {timeout: 15000}).catch(() => {});
+    const nm = await q.evaluate(() => {
+      const m = document.querySelector('#view .fmarks'),
+        g = GX('f:Frogfishes'),
+        card = introCard('f:Frogfishes').body,
+        fb = fbBody('f:Frogfishes', 'f:Frogfishes', true, false, false, [], '', null);
+      return {
+        h: ((m && m.querySelector('h3')) || {}).textContent || '',
+        n: m ? m.querySelectorAll('ul.crit')[0].querySelectorAll('li').length : 0,
+        imr: !!document.querySelector('#view .tipbox .idtips'),
+        tl: g.tl,
+        card: card.includes(g.tl) && g.qt.every(x => card.includes(x.split(' ')[0])),
+        fb: fb.includes(g.tl) && fb.includes('idtips')
+      };
+    });
+    if (nm.h !== 'Family ID marks' || nm.n < 1 || nm.imr || !/^ID marks \(FishBase/.test(nm.tl || '') || !nm.card || !nm.fb)
+      ui.push(`${width}px family with no IMR cue: ${JSON.stringify(nm)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Platax'));
     await q
       .waitForFunction(
