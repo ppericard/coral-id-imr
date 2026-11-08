@@ -34,16 +34,17 @@ jobs:
           npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
       - name: JS syntax
         run: |
-          for f in *.js proto/*.js tests/*.js; do node --check "$f" || exit 1; done
+          for f in *.js proto/*.js tests/*.js tools/*.js tools/og/*.js; do node --check "$f" || exit 1; done
       # Pillow (tools/requirements.txt): tests/fishgame.test.js runs the fish photo download on a fixture.
       - name: Python packages
         run: pip install -r tools/requirements.txt
       - name: Unit tests
         run: |
           node --test tests/*.test.js
+      # Every JSON file git tracks: the root's, tools/ and judging/ (tools/check_json.py; Deploy Pages runs it too).
       - name: JSON files parse
         run: |
-          for f in *.json; do python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" || { echo "Bad JSON: $f"; exit 1; }; done
+          python3 tools/check_json.py
       - name: data.json layout (one genus per line, written by tools/datajson.py)
         run: |
           python3 tools/datajson.py --check
