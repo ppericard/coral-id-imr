@@ -900,6 +900,168 @@ test('achievements taken back: the removals are kept and synced even when this r
   assert.strictEqual(b.rec().learn1, undefined);
 });
 
+// progress.js achMigrate and achPending (ACH_V 3, Pierre 2026-11-08: "recalculer ... leur succès actuel"), on the real
+// achSnap over a made-up world of two subjects: every subject's achievements recounted on its own progress, the fish
+// ones on the global score; a subject whose data is not in yet waits on the device; a stale device brings nothing back.
+function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    block = cut(src, 'const ACHK = ', 'function achCheck(');
+  const saved = {},
+    // Levels (lvStep): corals 12 genera met, 6 at Open Water; fish 30 families met, 8 at Advanced, 2 learned.
+    lv = {
+      coral: Object.fromEntries(Array.from({length: 40}, (_, i) => ['G' + i, i < 6 ? 2 : i < 12 ? 1 : 0])),
+      fish: Object.fromEntries(Array.from({length: 67}, (_, i) => ['f' + i, i < 2 ? 5 : i < 8 ? 3 : i < 30 ? 1 : 0]))
+    },
+    S = {coral: C.SUBJECTS[0], fish: C.SUBJECTS[1]},
+    ctx = {
+      ...C,
+      SYNC: {name: 'Ana'},
+      synced: 0,
+      cur: 'coral',
+      fishIn: fish,
+      MXL: {KEY: 'reefid-mx-lost'},
+      ACHNEW: 'reefid-ach-new',
+      LEVEL: '~level',
+      ELO_MIN: 200,
+      DATA: {gen: {}},
+      P: {},
+      achUnseen: () => [],
+      achDot: () => {},
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  const ids = s => (s === 'fish' && !ctx.fishIn ? [] : Object.keys(lv[s]));
+  Object.assign(ctx, {
+    slateGenera: () => ids(ctx.cur),
+    lvStep: n => lv[ctx.cur][n] || 0,
+    shownGroup: () => '',
+    bonusList: () => [],
+    introduced: () => false,
+    eloScore: () => 0,
+    headPct: () => coralPct,
+    treeScore: () => ({pct: fishPct}),
+    UNITS: {
+      coral: {},
+      fish: {
+        core: () => ids('fish').slice(0, 28),
+        circles: () => (ctx.fishIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
+        tree: () => (ctx.fishIn ? {f: [], s: []} : null),
+        sets: [{k: 'sci', all: () => []}]
+      }
+    },
+    inSubject: (id, fn) => {
+      const was = ctx.cur;
+      ctx.cur = id;
+      ctx.SUBJ = S[id];
+      try {
+        return fn();
+      } finally {
+        ctx.cur = was;
+        ctx.SUBJ = S[was];
+      }
+    }
+  });
+  ctx.SUBJ = S.coral;
+  ctx.syncSoon = () => ctx.synced++;
+  vm.createContext(ctx);
+  vm.runInContext(block + '\nthis.M = {achMigrate, achPending, achMerge, ACHK, ACHOLD, ACH_V};', ctx);
+  if (A) ctx.store.set('reefid-sync-ach', A);
+  return {...ctx.M, ctx, rec: () => ctx.store.get('reefid-sync-ach', null), old: () => ctx.store.get('reefid-ach-old', null)};
+}
+
+test('achievement recount (ACH_V 3): every subject on its own progress, fpct25 gone, fish % ones on the global score', () => {
+  // A record of version 2 holding corals and fish achievements, some of them met on the families' mean only.
+  const A = {
+      _v: 2,
+      met10: 10,
+      q25a: 11,
+      pct25: 12,
+      learn1: 13,
+      fmet5: 20,
+      fq50a: 21,
+      fpct25: 22,
+      fpct50: 23,
+      flearn1: 24,
+      _best: 7,
+      _fb: ['r:a']
+    },
+    m = migr(A);
+  assert.strictEqual(m.ACH_V, 3);
+  m.achMigrate();
+  const B = m.rec();
+  // Corals: met10 and q25a kept (12 met, 6 at Open Water), pct25 kept (30%), learn1 gone (none learned); pct10 new.
+  assert.deepStrictEqual([B.met10, B.q25a, B.pct25, B.learn1], [10, 11, 12, undefined]);
+  assert.ok(B.pct5 && B.pct10, 'met now, granted by the recount');
+  // Fish: kept with their dates; fpct25 retired, fpct50 gone (45% on the score); the ladder below it granted; new ones met.
+  assert.deepStrictEqual([B.fmet5, B.fq50a, B.flearn1, B.fpct25, B.fpct50], [20, 21, 24, undefined, undefined]);
+  assert.ok(B.fpct10 && B.fpct20 && B.fpct30 && B.fpct40 && !B.fpct60);
+  assert.ok(B.fq80a && !B.fcoreadv, '8 families at Advanced, not the whole IMR course');
+  // The feats stay, the Contributions once; one sync; nothing waits.
+  assert.deepStrictEqual([B._v, B._best, B._fb, B.fb1], [3, 7, ['r:a'], B.fb1]);
+  assert.ok(B.fb1);
+  assert.strictEqual(m.ctx.synced, 1);
+  assert.strictEqual(m.old(), null);
+  // Once per version: a second start-up changes nothing.
+  m.achMigrate();
+  assert.deepStrictEqual(m.rec(), B);
+});
+
+test('achievement recount: a subject whose data is not in waits on this device, then is recounted silently', () => {
+  const m = migr({_v: 2, met10: 10, fmet5: 20, fpct25: 22, fpct50: 23}, {fish: false});
+  m.achMigrate();
+  assert.deepStrictEqual(
+    [m.rec().met10, m.rec().fmet5, m.rec().fpct50],
+    [10, undefined, undefined],
+    'the fish ones are out of the synced record until tested'
+  );
+  assert.deepStrictEqual(m.old(), {fish: {fmet5: 20, fpct50: 23}}, 'retired ids do not even wait');
+  // Nothing held: the fish still wait, so what their progress meets comes in silently once their data is in (Codex review #734).
+  const e = migr({_v: 2, met10: 10}, {fish: false});
+  e.achMigrate();
+  assert.deepStrictEqual(e.old(), {fish: {}});
+  e.ctx.fishIn = true;
+  e.ctx.domRecalcAll = () => (e.ctx.rebuilt = e.ctx.cur);
+  e.achPending();
+  assert.ok(e.rec().fmet5 && e.rec().fpct40 && e.old() === null);
+  assert.strictEqual(e.ctx.rebuilt, 'fish', 'the bars rebuilt in the fish subject before the test (Codex review #734)');
+  // The fish data in before the shared data (a direct Fish link, Codex review #734): it waits, then is recounted.
+  const d = migr({_v: 2, fmet5: 20}, {fish: false});
+  d.achMigrate();
+  d.ctx.fishIn = true;
+  d.ctx.DATA = undefined;
+  d.achPending();
+  assert.deepStrictEqual(d.old(), {fish: {fmet5: 20}}, 'waits for data.json');
+  d.ctx.DATA = {gen: {}};
+  d.achPending();
+  assert.ok(d.old() === null && d.rec().fmet5 === 20);
+  m.achPending('coral'); // a check on the corals never visits the fish
+  assert.ok(m.old());
+  m.achPending(); // the fish data in, still missing: it waits again
+  assert.ok(m.old());
+  m.ctx.fishIn = true;
+  m.achPending();
+  assert.strictEqual(m.old(), null);
+  assert.deepStrictEqual([m.rec().fmet5, m.rec().fpct50, m.rec().fpct25, m.rec().met10], [20, undefined, undefined, 10]);
+  assert.ok(m.rec().fpct40, 'what the score meets now');
+});
+
+test('achievement recount: a stale device (record version 2) never brings back what the recount removed', () => {
+  const m = migr({_v: 2, fmet5: 20, fpct25: 22, fpct50: 23});
+  m.achMigrate();
+  const before = m.rec();
+  // The sheet's copy saved by a device not updated yet: fpct25 and fpct50 (earned even after the recount), and a feat.
+  m.achMerge(JSON.stringify({_v: 2, fmet5: 5, fpct25: 22, fpct50: Date.now() + 1000, fmetall: 30, _best: 9}));
+  const B = m.rec();
+  assert.deepStrictEqual(
+    [B.fpct25, B.fpct50, B.fmetall, B.fmet5],
+    [undefined, undefined, undefined, before.fmet5],
+    'no achievement of an older record'
+  );
+  assert.strictEqual(B._best, 9, 'its feats still join');
+  // Another updated device's record (version 3) joins as usual, earliest date first.
+  m.achMerge(JSON.stringify({_v: 3, fmet5: 5, fq50a: 40}));
+  assert.deepStrictEqual([m.rec().fmet5, m.rec().fq50a], [5, 40]);
+});
+
 // Codex review #444: this device's answers replayed on top of an adopted replay follow the rules of the script that sent
 // it. Before sheet v32 (core.js RT_SHEET) the answer time weighs nothing, as in the live game (model.js rtOn): the
 // replay on top must not weigh it either (rule D4); from v32, it does, as the sheet's own replay would.

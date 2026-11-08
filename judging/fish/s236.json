@@ -111,6 +111,108 @@
   "fish-s236-cand-33725583": {
    "code": "p1g0sl1a3",
    "keep": "best"
+  },
+  "fish-s236-cand-719936": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s236-cand-575218640": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s236-cand-329912085": {
+   "code": "p1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s236-cand-329912094": {
+   "code": "p1g0sl1a3",
+   "keep": "alt"
+  },
+  "fish-s236-cand-460707119": {
+   "code": "o1g1mmm2",
+   "keep": "best",
+   "note": "A red arrow drawn on the photo points at the fish."
+  },
+  "fish-s236-cand-730794047": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s236-cand-630355144": {
+   "code": "o1g1bl12",
+   "keep": "best"
+  },
+  "fish-s236-cand-675778257": {
+   "code": "o1g1bl12",
+   "keep": "best"
+  },
+  "fish-s236-cand-255254946": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s236-cand-393189034": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s236-cand-263847285": {
+   "code": "o1g2bm11",
+   "keep": "best",
+   "note": "Screen capture with app buttons and a video scrub bar."
+  },
+  "fish-s236-cand-263847806": {
+   "code": "o1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s236-cand-263847807": {
+   "code": "o1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s236-cand-263847820": {
+   "code": "o1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s236-cand-442530819": {
+   "code": "o1g1bs11",
+   "keep": "best"
+  },
+  "fish-s236-cand-59523123": {
+   "code": "o1g0slm3",
+   "keep": "best"
+  },
+  "fish-s236-cand-600222795": {
+   "code": "o1g1bm12",
+   "keep": "best"
+  },
+  "fish-s236-cand-756478831": {
+   "code": "o1g1slm2",
+   "keep": "best"
+  },
+  "fish-s236-cand-381403519": {
+   "code": "p1g2mm12",
+   "keep": "best"
+  },
+  "fish-s236-cand-13016459": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s236-cand-473086220": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s236-cand-476250352": {
+   "code": "p1g1mm13",
+   "keep": "dup"
+  },
+  "fish-s236-cand-476250361": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s236-cand-476250359": {
+   "code": "p1g1mm13",
+   "keep": "best"
+  },
+  "fish-s236-cand-606086320": {
+   "code": "o1g0ss1a1",
+   "keep": "best"
   }
  }
 }

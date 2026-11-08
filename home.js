@@ -3,6 +3,10 @@
 //  2. Identify: the tool for naming a coral under a ReefCloud point (the Coral ID Key).
 // The section tabs and the Tools page (#tools) list every other tool.
 (function () {
+  // The photo shapes (width / height) that suit a landscape tile (home.css .hdtiles.land: near 3:2, mostly 1.4 to 1.8 as
+  // the band's shape allows) without cutting the fish's head or tail: a photo wider than its tile loses some of its sides,
+  // one narrower some of its top and bottom (object-fit: cover), so from 4:3 to 16:9 only a little of each.
+  const LAND_AR = [1.3, 1.8];
   const ph = (n, v) => {
     const g = DATA.gen[n];
     if (!g) return '';
@@ -28,10 +32,20 @@
       // Not for a player who said they had the IMR course or know corals well (Pierre, 2026-11-04).
       said = (store.get(startKey(SUBJ.id), null) || {}).c,
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
+    // A subject whose photos are wide (UNITS land: fish, Pierre 2026-11-08: "most fish are horizontal", square tiles cut
+    // them) gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
+    // photo picked to suit them: the first of its easiest, most reference-like photos (core.js easyRank, already in that
+    // order) that shows the whole fish (its judged tag, judging/FISH.md) at a shape that suits the tile (LAND_AR), else its first.
+    const land = !!UNITS[SUBJ.id].land,
+      fits = L =>
+        (land && L.slice(0, 10).find(p => p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1')) || L[0];
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)
-          .map(n => `<img ${thumb(cover(GX(n)), '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`)
+          .map(
+            n =>
+              `<img ${thumb(fits(GX(n).views.wide), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
+          )
           .join('')
       : shuffle(names)
           .slice(0, 12)
@@ -70,7 +84,7 @@
     $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">${subj}
       <div class="hdoors">
         <section class="hdoor learn${newb ? ' newb' : ''}">
-          <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles">${tiles}</span></a>
+          <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
             <p class="hdwhen">Learning phase<span class="wide"> · before ${fish ? 'EventMeasure' : 'ReefCloud'} or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>

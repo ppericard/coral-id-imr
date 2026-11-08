@@ -24,6 +24,7 @@ function app(photoDiff) {
     fishPhotos: C.fishPhotos,
     easyRank: C.easyRank,
     fishPid: C.fishPid,
+    fishScoreTree: C.fishScoreTree,
     ...(photoDiff ? {photoDiff} : {})
   };
   vm.createContext(ctx);
