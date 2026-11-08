@@ -4611,7 +4611,20 @@ reach, per profile: before → after, the paired difference and its one-sided bo
 harm (paired t), held, unclear or breached, and the before/after correlation r in `--json`. A guardrail is judged against
 its margin ("the larger" against the before mean of that profile; the corals' units met against 2 genera), or against
 the bound a `--cost` declares. Settings that differ between the files are printed, runs in one file only are left out.
-Measures not in learnsim's files yet (the global score, the levels, plateaus) are listed as not measured.
+A guardrail with no valid pair (the share under ease 4 on the corals, whose photos have no judged ease) is listed as not
+measured, never held.
+
+What learnsim measures for it (each run's rows at the checkpoints, `tools/learnsim.js` header): `kinds`, per kind of
+unit (the subject's rank for its slate, `rankOf` for a set's units such as the fish scientific genera, the corals' bonus
+genera apart) the units, those met, at Open Water and at Advanced, D\* and E = bar − D\* over those met; `score`, the
+shown score (`headPct`) and, for the fish, its components (`treeScore`: entries, genera, common, scientific, S, credit,
+raw, by circle); `plateau`, the longest stretch so far without a new high of the shown score; per run `owAt` and `advAt`
+(the answer at which each unit first reached each level) and `c3` (circle 3 offered, met); with `expo` and `preOW`, the
+photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
+(the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
+`unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
+`perPhoto` (answers per photo shown), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
+exist yet, so their kinds are empty until they do.
 
 **First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
 unit under Open Water; exploratory, the protocol not yet

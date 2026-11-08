@@ -229,3 +229,49 @@ test('the command line prints the Markdown report', () => {
   );
   fs.rmSync(dir, {recursive: true});
 });
+
+// The levels, the score and the photo exposure learnsim writes (rows kinds, score, plateau; the run's owAt, kinds, c3,
+// expo, preOW).
+test('the levels, the score, the plateau and the photo exposure read from a run', () => {
+  const run = {
+    rows: [
+      {
+        q: 100,
+        kinds: {family: {ow: 3, adv: 1}, genus: {ow: 2, adv: 0}, bonus: {ow: 5, adv: 5}},
+        score: {pct: 12, entries: 0.3, credit: 0.01},
+        plateau: 7
+      },
+      {q: 300, kinds: {family: {ow: 9, adv: 4}}, score: {pct: 20}, plateau: 11}
+    ],
+    owAt: {A: 40, B: 25, X: 3},
+    kinds: {A: 'family', B: 'genus', X: 'bonus'},
+    c3: {offer: 250, met: 260},
+    expo: [
+      ['A', 'o1', 'p1'],
+      ['A', 'o2', 'p2'],
+      ['B', 'o1', 'p1'],
+      ['B', 'o3', 'p3', 'p4']
+    ],
+    preOW: [
+      [1, 5],
+      [0, 3],
+      [1, 2],
+      [0, 0]
+    ]
+  };
+  assert.strictEqual(L.levels(run, 100, 'ow'), 5);
+  assert.strictEqual(L.levels(run, 100, 'adv'), 1);
+  assert.strictEqual(L.levels(run, 200, 'ow'), null);
+  assert.strictEqual(L.firstOW(run), 25);
+  assert.strictEqual(L.firstOW({owAt: {}}), null);
+  assert.strictEqual(L.MEASURES.score.get(run, 300), 20);
+  assert.strictEqual(L.MEASURES.entries.get(run, 100), 0.3);
+  assert.strictEqual(L.MEASURES.plateau.get(run, 'run'), 11);
+  assert.strictEqual(L.MEASURES.c3.get(run, 'run'), 260);
+  assert.strictEqual(L.hardAnswers(run, 4), 2);
+  assert.strictEqual(L.hardAnswers({preOW: [[1, 0]]}, 1), null);
+  close(L.perPhoto(run, 4), 5 / 4);
+  close(L.perPhoto(run, 2), 1);
+  // Every guardrail of LEARNING.md's table has a measure now.
+  L.GUARDRAILS.forEach(g => assert.ok(L.MEASURES[g.m].get, g.m));
+});
