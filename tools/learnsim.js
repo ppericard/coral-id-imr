@@ -1599,6 +1599,7 @@ function openTable(runs) {
               return null;
             }
           })(),
+          subject: SUBJECT, // tools/learncmp.js reads it (the corals' margins)
           seeds: SEEDS,
           seed0: SEED0,
           sheetv: SHEETV,
