@@ -1,0 +1,19 @@
+IMR Reef ID
+Copyright (c) 2026 Pierre Pericard. All rights reserved.
+
+This repository is public so that the app can be served by GitHub Pages and its
+source can be read. No licence is granted on its code, on the data Pierre
+Pericard compiled (genus and species data, photo selections, curation, ratings,
+judgments), on its design or on its name. You may not copy, modify, host,
+distribute or sell them, in whole or in part, without his written permission.
+Viewing this repository and forking it on GitHub, as GitHub's Terms of Service
+allow, is the only use permitted without permission.
+
+The hosted app (https://ppericard.github.io/coral-id-imr/) is free to use for
+IMR's Research Assistants and staff and for anyone learning reef identification.
+
+Third-party content (photos, lecture material, book references, taxonomic and
+species data, fonts) is not covered by this notice. It stays under its owners'
+rights and licences: see "Content and rights" in README.md.
+
+Permission requests: open an issue on this repository.
