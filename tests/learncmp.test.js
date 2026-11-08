@@ -176,6 +176,25 @@ test('a declared cost replaces the margin; looks tighten the bound and the prima
   close(R2.alpha, 0.025);
 });
 
+// Codex review #782: a measure that is null in every run (corals: no judged ease; a file without preOW) is not measured,
+// never held; a profile with no valid pair at a measured checkpoint is named as not measured.
+test('a guardrail with no valid pair is not measured, and says so', () => {
+  const strip = F => ({...F, runs: F.runs.map(r => ({...r, preOW: []}))}),
+    R = L.compare(strip(before), strip(after));
+  assert.strictEqual(R.guardrails.find(g => g.m === 'hard').measured, false);
+  assert.match(L.report(R), /Not measured by these files: [^\n]*Share under ease 4 before Open Water/);
+  // One profile without it: the checkpoint is measured, that profile's cell is listed.
+  const half = F => ({...F, runs: F.runs.map(r => (r.profile === 'expert' ? {...r, preOW: []} : r))}),
+    R2 = L.compare(half(before), half(after)),
+    out = L.report(R2);
+  assert.deepStrictEqual(
+    R2.guardrails.find(g => g.m === 'hard').at[0].per.map(x => x.verdict),
+    ['held', 'not measured']
+  );
+  assert.match(out, /Share under ease 4 before Open Water at 300 for expert/);
+  assert.doesNotMatch(out, /^Every guardrail measured is held\.$/m);
+});
+
 test('the files must say their subject, or --subject does', () => {
   const b = {...before, subject: undefined},
     a = {...after, subject: undefined};

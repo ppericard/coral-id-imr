@@ -171,12 +171,10 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
   const guardrails = GUARDRAILS.map(G => {
     const M = MEASURES[G.m],
       cps = G.cps.filter(cp => reach(B, G.m, cp) && reach(A, G.m, cp));
-    return {
-      m: G.m,
-      label: M.label,
-      harm: G.harm,
-      measured: !!M.get && cps.length > 0,
-      at: (M.get ? cps : []).map(cp => {
+    // A checkpoint counts as measured only where some profile has a valid pair (Codex review #782: a measure every run
+    // gives null for, coral photos with no judged ease or a file without preOW, is not measured, never "held").
+    const at = (M.get ? cps : [])
+      .map(cp => {
         const cost = costs[key(G.m, cp)],
           per = profiles.map(prof => {
             const p = cell(G.m, cp, G.harm, prof),
@@ -185,7 +183,8 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
           });
         return {cp, per};
       })
-    };
+      .filter(a => a.per.some(x => x.n > 0));
+    return {m: G.m, label: M.label, harm: G.harm, measured: at.length > 0, at};
   });
   let prim = null;
   if (primary) {
@@ -265,7 +264,8 @@ function report(R, nameB = 'before', nameA = 'after') {
         `| ${G.label} | ${cp} | ${ms.length === 1 ? ms[0] : per.map(x => f(x.margin, dg)).join(' / ')} | ` +
           per
             .map(x => {
-              if (x.verdict !== 'held' && x.verdict !== 'not measured') bad.push(`${G.m}@${cp} ${x.profile}: ${x.verdict}`);
+              if (x.verdict === 'not measured') none.push(`${G.label} at ${cp} for ${x.profile}`);
+              else if (x.verdict !== 'held') bad.push(`${G.m}@${cp} ${x.profile}: ${x.verdict}`);
               return x.n ? `${v(x.before, dg)} -> ${v(x.after, dg)}, ${f(x.d, dg)} [${f(x.bound, dg)}] ${x.verdict}` : '-';
             })
             .join(' | ') +
@@ -274,7 +274,13 @@ function report(R, nameB = 'before', nameA = 'after') {
     });
   });
   L.push('');
-  L.push(bad.length ? `Not held: ${bad.join('; ')} (unclear: one step up; breached, or a cost not declared: to Pierre; rule L11).` : 'Every guardrail measured is held.');
+  L.push(
+    bad.length
+      ? `Not held: ${bad.join('; ')} (unclear: one step up; breached, or a cost not declared: to Pierre; rule L11).`
+      : none.length
+        ? 'Every guardrail cell measured is held (some are not measured: below).'
+        : 'Every guardrail measured is held.'
+  );
   if (none.length) L.push(`Not measured by these files: ${none.join('; ')}.`);
   return L.join('\n');
 }
