@@ -291,6 +291,12 @@ const server = http.createServer((req, res) => {
       ok(!document.querySelector('#view .q.wink'), 'wink: not again in its window');
     }
     WINK.AT.splice(0, 2, ...W0);
+    // A wink with Pierre's ★ Cover in play shows it on its card (Pierre, 2026-11-08, Q290: the Thresher sharks).
+    const wc = UNITS[SUBJ.id].winks().filter(n => GX(n).coverP);
+    ok(
+      wc.every(n => winkPhoto(GX(n)) === GX(n).coverP),
+      `wink: his cover on the card (${wc})`
+    );
     // The circles on the path (Pierre, 2026-11-06, Q175, Q177): no offer card; circle 2 may open once every circle-1
     // family has been asked, circle 3 once the progress on circle 1 reaches FISH_C3; until then the opening never draws
     // them (mayOpen, openPick); every circle counts in the progress.
@@ -658,6 +664,31 @@ const server = http.createServer((req, res) => {
     const saved = await q.evaluate(() => localStorage.getItem('reefid-sync-subject'));
     if (saved !== '"fish"' || !/fish\*/.test(h1.row) || !/Fish/.test(h1.chip) || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
+    // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
+    // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile one of those.
+    const ht = await q.evaluate(() => {
+      const srcOf = p => (/src="([^"]*)"/.exec(thumb(p, '1px')) || [])[1],
+        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1',
+        want = n => {
+          const g = GX(n),
+            L = g.views.wide;
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || L[0];
+        },
+        W = new Set(
+          slateGenera()
+            .filter(n => GX(n).views.wide.length)
+            .map(n => srcOf(want(n)))
+        ),
+        C = new Set(
+          slateGenera()
+            .filter(n => suits(GX(n).coverP))
+            .map(n => srcOf(GX(n).coverP))
+        ),
+        T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img')].map(i => i.getAttribute('src'));
+      return {n: T.length, covers: T.filter(x => C.has(x)).length, fits: C.size, bad: T.filter(x => !W.has(x))};
+    });
+    if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))
+      ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the chip is there, on every page.
     await q.evaluate(() => (location.hash = '#tools'));

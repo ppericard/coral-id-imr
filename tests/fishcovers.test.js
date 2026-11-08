@@ -144,3 +144,69 @@ test("real data: every curated fish cover in play is the card's photo, the admin
   });
   if (Object.values(G).some(k => k.cover)) assert.ok(n, 'at least one curated cover is in play');
 });
+
+// The first-meeting card (quiz.js introCard: cover()) shows his ★ Cover even when it is not what the automatic choice
+// would take (Pierre, 2026-11-08, Q289: "the covers I chose are all very visible and of reference level"): a
+// reference-level photo of the family (core.js refLevel, refFirst) leads the game's order, his pick is the card.
+test('fish first-meeting card: his ★ Cover wins over a reference-level photo (Q289)', () => {
+  const X = app(),
+    r = raw();
+  Object.assign(r.ph.photos.t1[0], {jt: 'p1g0sl1r', rep: 'inaturalist'});
+  const G = X.run(r, cur({cover: 'fi2'})).gen['f:A'];
+  assert.ok(C.refLevel(G.views.wide[0]) && G.views.wide[0].f === 'fi1', 'the reference-level photo leads the game');
+  assert.strictEqual(X.cover(G).f, 'fi2');
+});
+test("real data: a curated cover below the automatic choice is still the family's card (Q289)", () => {
+  const cu = read('curation.json'),
+    X = app(),
+    FISH = X.run({f: read('fish.json'), ph: read('fish-photos.json'), gm: read('fish-game.json')}, cu);
+  const low = Object.entries((cu.fish || {}).genera || {}).filter(([id, k]) => {
+    const g = FISH.gen[id];
+    return g && g.coverP && C.fishPid(g.coverP.f) === C.fishPid(k.cover) && !C.refLevel(g.coverP) && g.views.wide.some(C.refLevel);
+  });
+  low.forEach(([id, k]) => assert.strictEqual(C.fishPid(X.cover(FISH.gen[id]).f), C.fishPid(k.cover), id));
+});
+
+// Home's landscape tiles (home.js tilePhoto; Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in
+// landscape, it must fit well"): his cover when its shape (ar) suits the tile (LAND_AR) and it shows the whole fish,
+// else the mosaic's own pick (the first of the game's order that suits the tile, else the first); square tiles: cover().
+test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick (Q291)', () => {
+  const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
+    ctx = {cover: g => g.coverP || g.views.wide[0]};
+  vm.createContext(ctx);
+  vm.runInContext(block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) + '\nthis.tile = tilePhoto;', ctx);
+  const sq = {f: 'sq', ar: 1, jt: 'p1g0sl1'},
+    land = {f: 'land', ar: 1.5, jt: 'p1g0sl1'},
+    cut = {f: 'cut', ar: 1.5, jt: 'p0g0sl1'},
+    wide = {f: 'wide', ar: 1.9, jt: 'p1g0sl1'},
+    pick = {f: 'pick', ar: 1.4, jt: 'o1g0sl1'},
+    noar = {f: 'noar', jt: 'p1g0sl1'},
+    g = c => ({views: {wide: [sq, land, pick]}, ...(c ? {coverP: c} : {})});
+  assert.strictEqual(ctx.tile(g(pick), true).f, 'pick', 'his landscape whole-fish cover leads');
+  assert.strictEqual(ctx.tile(g(null), true).f, 'land', 'no cover: the mosaic pick');
+  for (const c of [sq, cut, wide, noar]) assert.strictEqual(ctx.tile(g(c), true).f, 'land', `a cover that does not suit the tile (${c.f})`);
+  assert.strictEqual(ctx.tile({views: {wide: [sq]}, coverP: wide}, true).f, 'sq', 'nothing suits: the first, as before');
+  assert.strictEqual(ctx.tile(g(sq), false).f, 'sq', 'square tiles: the card photo');
+});
+
+// A wink's surprise card (quiz.js winkPhoto; Pierre, 2026-11-08, Q290, of the Thresher sharks: "we can use my cover for
+// the card"): his ★ Cover while in play (coverP), else one of the wink's chosen photos in play, else the unit's best.
+test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q290)", () => {
+  const qs = fs.readFileSync(path.join(ROOT, 'quiz.js'), 'utf8'),
+    ctx = {fishPid: C.fishPid, easyRank: C.easyRank, pick: a => a[0]};
+  vm.createContext(ctx);
+  vm.runInContext(block(qs, 'function winkPhoto(g) {', '\n}\n', {through: 1, file: 'quiz.js'}) + '\nthis.wp = winkPhoto;', ctx);
+  const a = {f: 'fish-s9-cand-1', e: 5},
+    b = {f: 'fish-s9-cand-2', e: 4},
+    c = {f: 'fish-s9-cand-3', e: 2},
+    g = {views: {wide: [a, b, c]}, wink: {photos: ['fish-s9-cand-2']}};
+  assert.strictEqual(ctx.wp(g).f, b.f, 'no cover: a chosen photo');
+  assert.strictEqual(ctx.wp({...g, coverP: c}).f, c.f, 'his cover');
+  assert.strictEqual(ctx.wp({...g, wink: {photos: ['gone']}}).f, a.f, 'none chosen in play: the best');
+  // On the real files: the Thresher sharks' card is his cover (curation.json fish genera), in play.
+  const cu = read('curation.json'),
+    FISH = app().run({f: read('fish.json'), ph: read('fish-photos.json'), gm: read('fish-game.json')}, cu);
+  FISH.winks
+    .filter(n => FISH.gen[n].coverP)
+    .forEach(n => assert.strictEqual(C.fishPid(ctx.wp(FISH.gen[n]).f), C.fishPid(cu.fish.genera[n].cover), n));
+});
