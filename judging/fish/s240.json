@@ -123,6 +123,95 @@
   "fish-s240-cand-269000125": {
    "code": "p1g1smm3",
    "keep": "best"
+  },
+  "fish-s240-cand-341450858": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s240-cand-301085009": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s240-cand-270474816": {
+   "code": "o1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s240-cand-382267572": {
+   "code": "p1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s240-cand-171677386": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s240-cand-342178240": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s240-cand-342178234": {
+   "code": "o1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s240-cand-342178238": {
+   "code": "o1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s240-cand-615720205": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s240-cand-595786017": {
+   "code": "p1g2sl13",
+   "keep": "best"
+  },
+  "fish-s240-cand-555852573": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s240-cand-682554473": {
+   "code": "p1d2sms2",
+   "keep": "best"
+  },
+  "fish-s240-cand-682554518": {
+   "code": "o1d2smm1",
+   "keep": "dup"
+  },
+  "fish-s240-cand-545648369": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s240-cand-760771370": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s240-cand-582458206": {
+   "code": "o1g2mmm1",
+   "keep": "best",
+   "note": "The wrasse swims over a large spotted fish (a ray?) that fills the background."
+  },
+  "fish-s240-cand-654475837": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s240-cand-330377693": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s240-cand-620504096": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s240-cand-603911408": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s240-cand-455718247": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s240-cand-681370004": {
+   "code": "p1g2ss11",
+   "keep": "best"
   }
  }
 }
