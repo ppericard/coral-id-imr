@@ -3360,6 +3360,59 @@ anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with 
 | Every family learned | 100% | 50% |
 | Every family and every genus learned | 100% | 67% |
 
+### Fish: the progress replayed from the answer log (2026-11-08, Q298, Q310; fish rules version 1, sheet v112)
+
+Pierre, 2026-11-08: "recalculate every player's progress from their answers, then their achievements too". Until then no
+replay reached a fish player: the sheet replayed the corals only, so a fish bar lived on the device (rebuilt once from its
+counts under the domain-score bar, Q200). Fish answers are logged only since sheet v60 (2026-11-06), so a replay of the
+log alone would lose what was played before. Q298: measure the gap in the admin's way first; Q310: if it is small (the
+recomputed bar within ±5 points of the saved one for about 90% of fish players, nobody more than 10 below), build it with
+today's bar as a floor; if large, build nothing.
+
+**Measured** on the real log (rule L12), read-only, on an export of the sheet: the 1,292 fish answers logged from
+2026-11-06 13:07 to 2026-11-07 21:37 (every one with its scoring record) and the saved copies of the 8 fish players (all
+signed in). The admin's replay (`admin.js` `progOf`: `replayProgress` over each player's fish rows with the app's fish
+units, then `replayedOf` with the saved copy) against the saved copy as the player's app shows it at its next open (old
+unit ids renamed, `renameUnits`; records still under the moving average rebuilt from their counts, `domRecalcAll`). The
+per-player table stays outside the repository; the counts and distributions (the player is the unit, rule L11):
+
+| Measure | Within ±5 points | Changes (points, sorted) | Worst |
+|---|---|---|---|
+| Headline (`treeScore`, the fish global score) | 8 of 8 | −3, −1, −1, −1, −1, 0, 0, 0 | −3 |
+| Families' mean (`pctOf` over the slate) | 8 of 8 | −2, 0, 0, 0, 0, 0, 0, 0 | −2 |
+| Learned units | | 0 saved, 0 replayed for every player | |
+
+Small by Q310's measure. Per unit the replay moves more: of 203 unit bars, 122 unchanged, 183 within ±5, 10 more than 10
+points down (the lowest −21), the highest +3. Why the units differ while every row carries its scoring record was not
+checked; a guess: the device bars rebuilt from their counts on 2026-11-06 (Q200, an approximation the replay replaces).
+One player has 17 answers from before sheet v60, not in the log: `replayedOf` keeps a unit whose saved record has more
+answers than the log.
+
+**Built.** The sheet replays the fish progress as the corals' (`Code.gs` `replays_`: the fish rows, the fish units from
+`fish.json`, `core.js` `fishReplayGen`; none of `stats_`'s photo numbers, which are the corals'), under the fish rules
+versions of their own (`core.js` `FISH_RVS`, `rvOf`; the integrator, 2026-11-08: a fish replay must never replay the
+corals again, so no coral player gets a card for it), asked by the app with the fish rules version it applied
+(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet v112 (`core.js` `REPLAYS_SHEET`, rule D4).
+**The floor** (`core.js` `replayFloor`), applied by the sheet to the replay itself (`Code.gs` `replay_`), so every
+device of the account adopts the same record and keeps it as their shared merge baseline (Codex review #779: floored on
+each device, two devices disagreed and a recovered refused save counted its answers twice): against the account's saved
+copy, its units that came from no replay yet, a unit whose replayed bar reads below its saved bar keeps the replay's
+record (its answers the log's) with its domain score lifted to the saved bar, allowing for the false alarms the replay
+counts on it (a unit the log has nothing on keeps its saved record). So no unit's bar, and so no %, goes down at the
+first replay; a right answer never lowers the lifted score (`domStep`), a miss moves it as any bar. The reference is
+kept with the record, so a later replay of the same rules version (more answers, a version applied again) floors
+against the same bars; under a later fish rules version there is none (once, the integrator, 2026-11-08). Checked on
+the same data with the floor applied to the device's records: no unit and no headline down; one headline 1 point up,
+one families' mean 1 point up, the rest equal. Its card: fish rules version 1 takes the standard card (`RV_CARD`: only a move of 5 points or
+more; none on this data), told under the subject's id (`progress.js` `rvId`, `fish:1`), never as a coral version.
+
+What was checked (rule L11): the engine is unchanged (no learning rule moves), so no `tools/learnsim.js` run; the change is
+where a fish bar is computed, checked on the real log as above and by `tests/fishreplay.test.js` (the replay's units are
+the app's; the floor on fixed and random records, no unit or headline down) and `tests/fishadopt.test.js` (the app
+adopts it from `REPLAYS_SHEET` only, with the floor, its own rules version, no coral replay asked for, the reset cutoff
+and the refused-save flag). Not adopted yet by a device that never signed in (the sheet can serve it, `sreset`,
+`sstart`; ROADMAP).
+
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard

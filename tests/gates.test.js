@@ -80,6 +80,9 @@ const GATES = {
     })() !== 0,
   // A subject's global score (model.js scoreOn: the headline, the rules on it and the tree sent to the sheet; core.js
   // treeScore): from v101, which ranks the leaderboard by it; before, the families' mean.
+  // The other subjects' replays, fish (sync.js rpOn, core.js REPLAYS_SHEET; Code.gs replays_): asked for and adopted
+  // from the script that replays them under their own rules versions; before, fish merges as it did.
+  REPLAYS_SHEET: (v, N) => fn('sync.js', 'const rpOn = ', '\n', 'rpOn', {REPLAYS_SHEET: N})({id: 'fish', replay: false, replayed: {}}, v),
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
