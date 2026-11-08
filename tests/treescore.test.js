@@ -149,9 +149,11 @@ test('fishScoreTree on fish.json: every family of the slate, every game species 
   const none = game.filter(id => !sp.get(id).common);
   assert.ok(Tr.s.filter(e => e[3] === null).length >= Math.min(1, none.length));
   assert.ok(Tr.s.length < 200 && JSON.stringify(Tr).length < 9000, 'small enough for the sheet (a script property)');
-  // Today (no species units): families only 50%, families and every genus of the game 69% (the genera exist for
-  // circle 1 only).
-  const all = Object.fromEntries([...Tr.f.map(e => e[0]), ...Tr.s.map(e => e[1]).filter(Boolean)].map(k => [k, {mx: 1}]));
+  // Today (no species units): families only 50%; families and every genus unit of the game: half the scientific credit of
+  // the species those genera hold (the genus units exist for circle 1 only).
+  const all = Object.fromEntries([...Tr.f.map(e => e[0]), ...Tr.s.map(e => e[1]).filter(Boolean)].map(k => [k, {mx: 1}])),
+    gw = sum(Tr.s.filter(e => e[1]).map(e => e[0])) / sum(Tr.s.map(e => e[0]));
   assert.strictEqual(C.treeScore(Object.fromEntries(Tr.f.map(e => [e[0], {mx: 1}])), Tr, K).pct, 50);
-  assert.strictEqual(C.treeScore(all, Tr, K).pct, 69);
+  assert.strictEqual(C.treeScore(all, Tr, K).pct, Math.round(100 * Math.sqrt(0.25 + 0.75 * 0.8 * 0.5 * gw)));
+  assert.ok(C.treeScore(all, Tr, K).pct > 60);
 });

@@ -444,10 +444,10 @@ on families only to an IMR RA with every species open:
       its species' weights. The Entries part and the species credit are these weighted means.
     - **Square-root display (B)**: the % shown is 100 × √raw. Anchors: families only **50%**, families and every genus
       **74%**, every common name **89%**, every scientific name **92%**, every common name and every genus **95%**,
-      everything **100%**. Today the genera exist for circle 1 only, so families and every genus of the game reach 69%.
+      everything **100%**. Today the genera exist for circle 1 only, so families and every genus of the game reach 67% (after #727).
     - Not C (circle weights).
     - **A species with no common name at all** (Pierre, 2026-11-08, Q247: "elles ne participeront pas à la branche nom
-      commun"; 1 today, *Nudiantennarius subteres*, more with #727 and the nudibranchs): no common-name unit, out of the
+      commun"; 5 since #727, more with the nudibranchs): no common-name unit, out of the
       Common names component, and its credit is its scientific value alone (S), so it reaches 1 with its scientific name
       and 100% stays reachable.
     - **One computation, its components** (Pierre, 2026-11-08: "il faut qu'il y ait des scores par famille, par genre,

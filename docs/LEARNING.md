@@ -3030,77 +3030,101 @@ progress (fish)"):
 - Components, from the same call: Entries, Genera, Common names, Scientific names (own, and S with the genus credit),
   species credit, each a weighted mean from 0 to 1; the same per circle; every unit's bar.
 - Today the species units do not exist: C = 0 and a species' own scientific bar is 0, so the species terms come from the
-  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 69%).
+  genus credit alone, for the genera a player has (circle 1 only: families and every genus of the game reach 67%).
 
 **Why the 62% at 30,000 answers was not a flaw of `tools/fishscore.js`** (that tool keeps the formula of 2026-11-04,
-unweighted and linear, on circle 1 and the old moving-average bar). The size of the job: 50 families, 94 genus units, 442
-species, 652 listed common names, 1,238 units. Under today's bar a unit already known perfectly needs about 24 answers to
-reach Advanced and 43 to pass its exam (`core.js` `domStep` with the app's adaptive photos, 200 runs), a unit being learned
-46-95 and 69-124. A player who already knows every fish scores about 69-72% (old formula) at 30,000 answers.
+unweighted and linear, on circle 1 and the old moving-average bar). The size of the job (fish.json after #727): 67 families,
+130 genus units, 664 species, 951 common names, about 1,800 units. Under today's bar a unit already known perfectly needs
+about 24 answers to reach Advanced and 43 to pass its exam (`core.js` `domStep` with the app's adaptive photos, 200 runs), a
+unit being learned 46-95 and 69-124. Before #727 (1,238 units), a player who already knew every fish scored about 69-72%
+(old formula) at 30,000 answers.
 
-**Re-simulation of today** (scratch scripts, not committed: a fully rated synthetic world on the Elo scale. Photo difficulty
-Normal around its taxon, sd 0.46, the coral photo spread of the Analyses tab; taxa around their parent, family sd 0.37, +0.5
-for the declared look-alike groups, genus and species sd 0.3, +0.3 with siblings; player offset sd 0.5, 6 players; the app's
-mechanics mimicked from `model.js` (`aimOff`, the early lean, Gaussian photo choice, `TYPED`, `drawW`, `shaky` with
-`OPEN.K` 8, at most 3 openings per 15 answers) and the real `core.js` `domStep`; species as FISH_PATH designs them; learning
-curves assumed. Check against the real app: `tools/learnsim.js --subject fish`, 1,000 answers, family phase: the fish % 41%
-(lecture RA) and 37% (beginner) against 40% and 28% here; right rate 75-81% there, 77-86% here, 78-87% in the real log).
-Heavier photo tails (15% of photos 1.5 harder, or a t distribution with 3 degrees of freedom) move the score by −2 to +1
-points; photos shaped by the judged ease change it by about 2 points.
+**Re-simulation of today** (scratch scripts, not committed; fish.json after #727). The world is fully rated and synthetic, on
+the Elo scale:
+- photo difficulty Normal around its taxon, sd 0.46 (the coral photo spread of the Analyses tab);
+- taxa around their parent: family sd 0.37, +0.5 for the declared look-alike groups; genus and species sd 0.3, +0.3 with
+  siblings;
+- a player offset, sd 0.5, 6 players;
+- the app's mechanics mimicked from `model.js` (`aimOff`, the early lean, the Gaussian photo choice, `TYPED`, `drawW`,
+  `shaky` with `OPEN.K` 8, at most 3 openings per 15 answers) and the real `core.js` `domStep`;
+- species as FISH_PATH designs them; species weights by observers near Dauin; the learning curves assumed.
 
-IMR RA (both names, the IMR families taught, the IMR genera at Open Water). Columns: families at Open Water and Advanced
-(of 50), genera at Advanced (of 94), species at Advanced by common and by scientific name (of 442), then the % under the
-formula of 2026-11-04 ("Current"), A (commonness weights), B (√), C (the IMR circle × 3) and A+B (decided):
+Checked against the real app (`tools/learnsim.js --subject fish`, 1,000 answers, family phase, before #727): the fish %
+41% (lecture RA) and 37% (beginner), against 40% and 28% here. Right rate: 75-81% there, 77-86% here, 78-87% in the real
+log. Heavier photo tails (15% of photos 1.5 harder, or a t distribution with 3 degrees of freedom) move the score by −2 to
++1 points; photos shaped by the judged ease change it by about 2 points.
+
+IMR RA (both names, the IMR families taught, the IMR genera at Open Water). Columns:
+- Fam OW, Fam Adv: families at Open Water and at Advanced, of 67;
+- Genera: genera at Advanced, of 130;
+- Sp. common, Sp. sci: species at Advanced by common and by scientific name, of 664;
+- Current: the % under the formula of 2026-11-04;
+- A (commonness weights), B (√), C (the IMR circle × 3), and A+B (decided).
 
 | Answers | Fam OW | Fam Adv | Genera | Sp. common | Sp. sci | Current | A | B | C | A+B |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 100 | 2 | 0 | 0 | 0 | 0 | 1.9% | 4.0% | 14% | 2.7% | 20% |
-| 300 | 10 | 0 | 0 | 0 | 0 | 5.3% | 7.8% | 23% | 7.4% | 28% |
-| 1,000 | 23 | 5 | 0 | 0 | 0 | 11% | 13% | 34% | 14% | 36% |
-| 3,000 | 45 | 15 | 0 | 1 | 0 | 21% | 21% | 46% | 22% | 46% |
-| 10,000 | 50 | 40 | 14 | 5 | 0 | 35% | 34% | 59% | 37% | 58% |
-| 30,000 | 50 | 46 | 54 | 27 | 4 | 48% | 46% | 69% | 52% | 68% |
-| 100,000 | 50 | 47 | 73 | 133 | 85 | 66% | 63% | 81% | 73% | 80% |
+| 100 | 2 | 0 | 0 | 0 | 0 | 1.6% | 3.7% | 13% | 2.6% | 19% |
+| 300 | 9 | 0 | 0 | 0 | 0 | 4.2% | 7.3% | 21% | 6.7% | 27% |
+| 1,000 | 22 | 5 | 0 | 0 | 0 | 8.7% | 12% | 30% | 12% | 35% |
+| 3,000 | 57 | 19 | 0 | 1 | 0 | 19% | 19% | 43% | 20% | 44% |
+| 10,000 | 67 | 50 | 11 | 2 | 0 | 31% | 31% | 56% | 33% | 55% |
+| 30,000 | 67 | 63 | 70 | 9 | 0 | 42% | 42% | 65% | 47% | 65% |
+| 100,000 | 67 | 64 | 99 | 105 | 49 | 56% | 55% | 75% | 63% | 74% |
 
 Casual diver (common names only):
 
 | Answers | Fam OW | Fam Adv | Sp. common | Current | A | B | C | A+B |
 |---|---|---|---|---|---|---|---|---|
-| 100 | 1 | 0 | 0 | 0.8% | 1.6% | 8.9% | 1.1% | 12% |
-| 300 | 5 | 0 | 0 | 2.8% | 5.0% | 17% | 3.9% | 22% |
-| 1,000 | 15 | 4 | 0 | 7.7% | 11% | 28% | 11% | 33% |
-| 3,000 | 40 | 13 | 0 | 18% | 19% | 42% | 19% | 43% |
-| 10,000 | 50 | 38 | 8 | 27% | 27% | 52% | 27% | 51% |
-| 30,000 | 50 | 45 | 57 | 38% | 36% | 62% | 40% | 60% |
-| 100,000 | 50 | 47 | 195 | 62% | 61% | 79% | 64% | 78% |
+| 100 | 1 | 0 | 0 | 0.6% | 1.5% | 7.9% | 1.0% | 12% |
+| 300 | 5 | 0 | 0 | 1.9% | 4.2% | 14% | 3.1% | 21% |
+| 1,000 | 15 | 4 | 0 | 5.9% | 9.4% | 24% | 9.1% | 31% |
+| 3,000 | 47 | 13 | 1 | 16% | 17% | 40% | 17% | 41% |
+| 10,000 | 67 | 51 | 8 | 25% | 24% | 50% | 25% | 49% |
+| 30,000 | 67 | 62 | 34 | 31% | 31% | 56% | 33% | 56% |
+| 100,000 | 67 | 64 | 172 | 48% | 47% | 69% | 54% | 68% |
 
-The fish % shown until now (the families' mean) at the same answers: RA 8 / 21 / 44 / 72 / 90 / 97% (100 to 30,000
-answers), casual diver 3 / 11 / 30 / 67 / 90 / 96%.
+The fish % shown until now (the families' mean) at 100 / 300 / 1,000 / 3,000 / 10,000 / 30,000 answers:
+- IMR RA: 6 / 17 / 34 / 69 / 90 / 97%;
+- casual diver: 3 / 8 / 23 / 61 / 90 / 97%.
 
-**The curves compared**: the formula of 2026-11-04 rises about 1 point per 100 answers at the start and 0.5-0.6 per 1,000
-past 10,000; A adds 1-4 points early (the common families open first and weigh more) and nothing late; C adds 1-4 points;
-B and A+B read fast at the start (14-20% after 100 answers, 33-37% after 1,000 for the RA) and slower and slower after, the
-shape asked for, at the cost of the 80% / 85% anchors (89% / 92%).
+**The curves compared**:
+- The formula of 2026-11-04 rises about 1 point per 100 answers at the start, and 0.3-0.6 per 1,000 past 10,000.
+- A adds 1-4 points early (the common families open first and weigh more) and nothing late.
+- C adds 1-7 points.
+- B and A+B read fast at the start (19-27% after 100-300 answers, 35% after 1,000 for the RA) and slower and slower after:
+  the shape asked for, at the cost of the 80% / 85% anchors (now 89% / 92%).
 
-**The path on the new scores** (every rule that reads a global fish %; the per-unit levels, a family's own Open Water or
-Advanced that opens its genera and species, and the counts, every circle-1 family asked for circle 2, are unchanged).
-Answer at which it fires, median over the 6 simulated players [range], before and after:
+**The path on the new scores.** This covers every rule that reads a global fish %. Unchanged:
+- the per-unit levels: a family's own Open Water or Advanced, which opens its genera and its species;
+- the counts: every circle-1 family asked, for circle 2.
+
+Answer at which each rule fires, median over the 6 simulated players [range], before and after:
 
 | Rule | Reads, before | Reads, after | IMR RA, before / after | Casual, before / after |
 |---|---|---|---|---|
-| Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [500-700] / 650 [450-1,150] | 1,050 [800-1,100] / 1,000 [750-1,100] |
-| fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`) | the families' mean ≥ 25% | the global % ≥ 25% | 500 / 200 | 750 / 500 |
-| fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,400 / 5,100 | 2,150 / 8,300 |
+| Circle 3's offer (`app.js` `FISH_C3`, `fishC3`, `UNITS` fish `opens`) | mean of the circle-1 families ≥ 50% | circle-1 Entries component ≥ 55% | 600 [400-800] / 600 [400-850] | 1,000 [800-1,100] / 1,100 [1,000-1,250] |
+| fpct25 "A quarter of the reef" (`core.js` `FISH_ACH`) | the families' mean ≥ 25% | the global % ≥ 25% | 700 / 300 | 1,150 / 550 |
+| fpct50 "Half the reef" | the families' mean ≥ 50% | the global % ≥ 50% (every family known, or genera and species on top) | 1,800 / 5,900 | 2,500 / 12,300 |
 | The fish leaderboard (Code.gs `board_`, v100) | the families' mean | the global % | | |
 | The header pill, My progress's ring, the update card | the families' mean | the global % | | |
 
-Other thresholds weighed for circle 3: the global % ≥ 33% (where the families' 50% falls: 31-34% at that answer; fires at
-about 750 / 1,150, between the 32% and 34% runs, but genera and later species would bring circle 3 sooner); 15 circle-1
-families at Open Water (about 550 / 1,050, between the 14 and 16 runs).
-The circle-1 Entries component keeps the order "the IMR course's families first" whatever else the player learns.
+**Other thresholds weighed for circle 3:**
+- The global % ≥ 33%, where the families' 50% falls. It fires at about 750 / 1,350 answers (between the 32% and 34% runs),
+  and genera and later species would bring circle 3 sooner.
+- 15 circle-1 families at Open Water: about 550 / 1,050 answers (between the 14 and 16 runs).
 
-**What a player sees change** (the families' bars as they are): every circle-1 family at 50%: 28% → 31%; at 80%: 45% → 39%,
-and with their genera at 50%: 51%; every family of every circle at 80%: 80% → 45%; every family learned: 100% → 50%.
+The circle-1 Entries component keeps the order "the IMR course's families first", whatever else the player learns.
+
+**What a player sees change** (the families' bars as they are):
+
+| The player's families | Fish % until now | Global score |
+|---|---|---|
+| Every circle-1 family at 50% | 21% | 29% |
+| Every circle-1 family at 80% | 33% | 37% |
+| Every circle-1 family at 80%, their genera at 50% | 33% | 49% |
+| Every family of every circle at 80% | 80% | 45% |
+| Every family learned | 100% | 50% |
+| Every family and every genus learned | 100% | 67% |
 
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
