@@ -609,12 +609,13 @@ const server = http.createServer((req, res) => {
       const w = await q.evaluate(() => document.documentElement.scrollWidth - innerWidth);
       if (w > 0) ui.push(`${width}px ${what}: ${w}px wider than the screen`);
     };
-    // The two switches and the header: which subject each one shows, the chip's place (next to the logo, inside the
-    // header's one line, clear of the controls), the header's height with and without the chip (rule U3), Home's height.
+    // The two switches and the header: which subject each one shows, the header switch's place (next to the logo, inside
+    // the header's one line, clear of the controls), the header's height with and without it (rule U3), Home's height.
+    // Two subjects: the header holds a one-click switch, a button a subject (Pierre, 2026-11-08), not the chip's menu.
     const look = () =>
       q.evaluate(() => {
         const row = document.querySelector('#view .hsubj'),
-          chip = document.getElementById('subjb'),
+          chip = document.querySelector('#subjc .subjsw'),
           hdr = document.querySelector('header'),
           box = e => e && e.getBoundingClientRect(),
           home = box(document.querySelector('.brand .home')),
@@ -636,7 +637,14 @@ const server = http.createServer((req, res) => {
             ? Math.abs(row.getBoundingClientRect().width - document.querySelector('#view .hdoors').getBoundingClientRect().width) < 2
             : false,
           rowFirst: row ? row.getBoundingClientRect().bottom <= document.querySelector('#view .hdoors').getBoundingClientRect().top : false,
-          chip: chip && chip.offsetParent ? chip.getAttribute('aria-label') : '',
+          chip:
+            chip && chip.offsetParent && !document.getElementById('subjb')
+              ? [...chip.querySelectorAll('[data-subj]')]
+                  .map(x => x.dataset.subj + (x.getAttribute('aria-pressed') === 'true' ? '*' : ''))
+                  .join()
+              : '',
+          // Each side a button of its own, its name its label (phones: the icon only, the name visually hidden).
+          named: !!chip && [...chip.querySelectorAll('button[data-subj]')].every(x => x.textContent.trim()),
           nextToLogo: !!(cb && home && cb.left >= home.right - 1 && cb.left - home.right < 24),
           clear: !!cb && tools.every(t => cb.right <= t.left || cb.left >= t.right),
           inLine: !!cb && cb.top >= hdr.getBoundingClientRect().top && cb.bottom <= hdr.getBoundingClientRect().top + h0,
@@ -644,14 +652,14 @@ const server = http.createServer((req, res) => {
           fits: document.documentElement.scrollHeight <= innerHeight + 1
         };
       });
-    // Home, corals on: the row (Corals pressed), the chip (Corals), Home one screen, the header's size unchanged.
+    // Home, corals on: the row (Corals pressed), the header switch (Corals pressed), Home one screen, the header's size unchanged.
     await q.goto(base + '#home');
     await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
     const h0 = await look();
     if (h0.subj !== 'coral' || !/coral\*/.test(h0.row) || !/fish(?!\*)/.test(h0.row) || !h0.rowFull || !h0.rowFirst)
       ui.push(`${width}px Home, Corals on: no Corals | Fish row at the top ${JSON.stringify(h0)}`);
-    if (!/Corals/.test(h0.chip) || !h0.nextToLogo || !h0.clear || !h0.inLine || h0.hdr[0] !== h0.hdr[1])
-      ui.push(`${width}px header chip, Corals on: ${JSON.stringify(h0)}`);
+    if (h0.chip !== 'coral*,fish' || !h0.named || !h0.nextToLogo || !h0.clear || !h0.inLine || h0.hdr[0] !== h0.hdr[1])
+      ui.push(`${width}px header switch, Corals on: ${JSON.stringify(h0)}`);
     if (!h0.fits) ui.push(`${width}px Home with the subject row: more than one screen ${JSON.stringify(h0)}`);
     await wide('Home');
     // Fish chosen on Home: saved, everything follows (the row, the chip, the Learn door's photos are fish).
@@ -665,7 +673,7 @@ const server = http.createServer((req, res) => {
     });
     const h1 = await look();
     const saved = await q.evaluate(() => localStorage.getItem('reefid-sync-subject'));
-    if (saved !== '"fish"' || !/fish\*/.test(h1.row) || !/Fish/.test(h1.chip) || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
+    if (saved !== '"fish"' || !/fish\*/.test(h1.row) || h1.chip !== 'coral,fish*' || h1.hdr[0] !== h1.hdr[1] || !h1.fits)
       ui.push(`${width}px Fish chosen on Home: ${JSON.stringify({...h1, saved})}`);
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
     // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
@@ -695,15 +703,17 @@ const server = http.createServer((req, res) => {
     if (!ht.n || ht.bad.length || (ht.fits && !ht.covers))
       ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
-    // Tools: no subject tile and no emoji on the links to Tools any more; the chip is there, on every page.
+    // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page.
     await q.evaluate(() => (location.hash = '#tools'));
     await q.waitForFunction(() => document.querySelector('#view .labhub'), null, {timeout: 15000});
     const tl = await q.evaluate(() => ({
       tile: !!document.querySelector('#view .labsubj, #view [data-subj]'),
       badge: [...document.querySelectorAll('.labgo, .sections a[data-tab="lab"]')].some(a => a.dataset.badge),
-      chip: (document.getElementById('subjb') || {}).offsetParent ? document.getElementById('subjb').getAttribute('aria-label') : ''
+      chip: (document.querySelector('#subjc [data-subj="fish"]') || {}).offsetParent
+        ? document.querySelector('#subjc [data-subj="fish"]').getAttribute('aria-pressed')
+        : ''
     }));
-    if (tl.tile || tl.badge || !/Fish/.test(tl.chip)) ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
+    if (tl.tile || tl.badge || tl.chip !== 'true') ui.push(`${width}px Tools with Fish on: ${JSON.stringify(tl)}`);
     // The families page (learn.js viewFishList): the groups of the identification key in force (fish.json key,
     // rule S3), in the key's order, only those that hold a family of the slate (every circle: Pierre, 2026-11-06, Q175),
     // each under its number and title as the key prints them, every family under its own group; the key credited in full
@@ -1149,37 +1159,23 @@ const server = http.createServer((req, res) => {
     });
     if (!wk.wink || wk.seen !== 1) ui.push(`${width}px wink: ${JSON.stringify(wk)}`);
     await wide('a wink');
-    // Back to the corals through the header chip: its menu holds both subjects; a choice closes it.
+    // Back to the corals through the header switch: one click (Pierre, 2026-11-08), no menu.
     await q.evaluate(() => (location.hash = '#practice/quiz'));
     await q.waitForFunction(() => document.querySelector('#view .q'), null, {timeout: 15000});
     for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
-    await q.click('#subjb');
-    const menu = await q.evaluate(() => {
-      const m = document.getElementById('subjmenu');
-      return {
-        open: !!m && !m.hidden && !!m.offsetParent,
-        expanded: document.getElementById('subjb').getAttribute('aria-expanded'),
-        items: m
-          ? [...m.querySelectorAll('[data-subj]')].map(x => x.dataset.subj + (x.getAttribute('aria-pressed') === 'true' ? '*' : '')).join()
-          : '',
-        inside: !!m && m.getBoundingClientRect().right <= innerWidth && m.getBoundingClientRect().left >= 0
-      };
-    });
-    if (!menu.open || menu.expanded !== 'true' || !/fish\*/.test(menu.items) || !/coral(?!\*)/.test(menu.items) || !menu.inside)
-      ui.push(`${width}px header chip's menu: ${JSON.stringify(menu)}`);
-    await wide('the chip menu open');
-    await q.click('#subjmenu [data-subj="coral"]');
+    await q.click('#subjc [data-subj="coral"]');
     await q.waitForFunction(() => SUBJ.id === 'coral', null, {timeout: 15000});
     const bk = await q.evaluate(() => ({
       slate: slateGenera().length,
       saved: localStorage.getItem('reefid-sync-subject'),
-      chip: document.getElementById('subjb').getAttribute('aria-label'),
-      closed: document.getElementById('subjmenu').hidden,
-      expanded: document.getElementById('subjb').getAttribute('aria-expanded')
+      sw: [...document.querySelectorAll('#subjc [data-subj]')]
+        .map(x => x.dataset.subj + (x.getAttribute('aria-pressed') === 'true' ? '*' : ''))
+        .join(),
+      menu: !!document.getElementById('subjb') || !!document.getElementById('subjmenu')
     }));
-    if (bk.slate < 39 || bk.saved !== '"coral"' || !/Corals/.test(bk.chip) || !bk.closed || bk.expanded !== 'false')
-      ui.push(`${width}px back to Corals through the header chip: ${JSON.stringify(bk)}`);
-    // On the corals it shows; switching to Fish takes it away and it is due again.
+    if (bk.slate < 39 || bk.saved !== '"coral"' || bk.sw !== 'coral*,fish' || bk.menu)
+      ui.push(`${width}px back to Corals through the header switch: ${JSON.stringify(bk)}`);
+    // The leaderboard's toast: on the corals it shows; switching to Fish takes it away and it is due again.
     const bt2 = await q.evaluate(async () => {
       const s0 = SYNC;
       SYNC = {name: 'Test', code: 'x'};
@@ -1193,17 +1189,78 @@ const server = http.createServer((req, res) => {
       return r;
     });
     if (!bt2.shown || bt2.after || bt2.told) ui.push(`${width}px leaderboard toast and a subject switch: ${JSON.stringify(bt2)}`);
-    // The menu closes with Escape and with a tap elsewhere, choosing nothing.
     await q.evaluate(() => (location.hash = '#about'));
     await q.waitForFunction(() => document.querySelector('#view .about p'), null, {timeout: 15000});
+    // From the keyboard: Tab reaches each side, Enter switches, and the focus stays on the side chosen once the header is
+    // redrawn (showSubj).
+    await q.focus('#subjc [data-subj="coral"]');
+    await q.keyboard.press('Tab');
+    const tab1 = await q.evaluate(() => document.activeElement.closest('#subjc') && document.activeElement.dataset.subj);
+    await q.keyboard.press('Enter');
+    await q.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 15000}).catch(() => {});
+    await q.waitForTimeout(100);
+    const kb = await q.evaluate(() => ({
+      focus: document.activeElement.closest('#subjc') ? document.activeElement.dataset.subj : document.activeElement.tagName,
+      pressed: document.activeElement.getAttribute('aria-pressed')
+    }));
+    if (tab1 !== 'fish' || kb.focus !== 'fish' || kb.pressed !== 'true')
+      ui.push(`${width}px header switch from the keyboard: Tab ${tab1}, after Enter ${JSON.stringify(kb)}`);
+    await q.click('#subjc [data-subj="coral"]');
+    await q.waitForFunction(() => SUBJ.id === 'coral' && document.querySelector('#view .about p'), null, {timeout: 15000});
+    // A third subject (made up here, for the header only: app.js subjCtl): the header falls back to the chip and its menu,
+    // which holds every subject; a choice closes it, as do Escape and a tap elsewhere, choosing nothing. Back to two
+    // subjects, the switch again.
+    await q.evaluate(() => {
+      SUBJECTS.push({...SUBJECTS[0], id: 'smoke3', name: 'Third', beta: null});
+      UNITS.smoke3 = UNITS[SUBJECTS[0].id]; // what the pages read of each subject (About's lines)
+      showSubj();
+    });
+    const three = await q.evaluate(() => ({
+      sw: !!document.querySelector('#subjc .subjsw'),
+      chip: (document.getElementById('subjb') || {}).offsetParent ? document.getElementById('subjb').getAttribute('aria-label') : '',
+      over: document.documentElement.scrollWidth - innerWidth
+    }));
+    if (three.sw || !/Corals/.test(three.chip) || three.over > 0)
+      ui.push(`${width}px three subjects, the header chip: ${JSON.stringify(three)}`);
     await q.click('#subjb');
+    const menu = await q.evaluate(() => {
+      const m = document.getElementById('subjmenu');
+      return {
+        open: !!m && !m.hidden && !!m.offsetParent,
+        expanded: document.getElementById('subjb').getAttribute('aria-expanded'),
+        items: m
+          ? [...m.querySelectorAll('[data-subj]')].map(x => x.dataset.subj + (x.getAttribute('aria-pressed') === 'true' ? '*' : '')).join()
+          : '',
+        inside: !!m && m.getBoundingClientRect().right <= innerWidth && m.getBoundingClientRect().left >= 0
+      };
+    });
+    if (!menu.open || menu.expanded !== 'true' || menu.items !== 'coral*,fish,smoke3' || !menu.inside)
+      ui.push(`${width}px three subjects, the chip's menu: ${JSON.stringify(menu)}`);
+    await wide('the chip menu open');
     await q.keyboard.press('Escape');
-    const esc1 = await q.evaluate(() => document.getElementById('subjmenu').hidden);
+    const esc1 = await q.evaluate(() => ({closed: document.getElementById('subjmenu').hidden, focus: document.activeElement.id}));
     await q.click('#subjb');
     await q.click('#view .about p');
     const out1 = await q.evaluate(() => ({closed: document.getElementById('subjmenu').hidden, subj: SUBJ.id}));
-    if (!esc1 || !out1.closed || out1.subj !== 'coral')
-      ui.push(`${width}px chip menu: Escape ${esc1}, a tap elsewhere ${JSON.stringify(out1)}`);
+    if (!esc1.closed || esc1.focus !== 'subjb' || !out1.closed || out1.subj !== 'coral')
+      ui.push(`${width}px chip menu: Escape ${JSON.stringify(esc1)}, a tap elsewhere ${JSON.stringify(out1)}`);
+    await q.click('#subjb');
+    await q.click('#subjmenu [data-subj="fish"]');
+    await q.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 15000});
+    const pick = await q.evaluate(() => ({
+      chip: document.getElementById('subjb').getAttribute('aria-label'),
+      closed: document.getElementById('subjmenu').hidden,
+      expanded: document.getElementById('subjb').getAttribute('aria-expanded')
+    }));
+    if (!/Fish/.test(pick.chip) || !pick.closed || pick.expanded !== 'false')
+      ui.push(`${width}px Fish chosen in the chip's menu: ${JSON.stringify(pick)}`);
+    const two = await q.evaluate(async () => {
+      SUBJECTS.pop();
+      delete UNITS.smoke3;
+      await setSubject('coral');
+      return {sw: !!document.querySelector('#subjc .subjsw'), chip: !!document.getElementById('subjb')};
+    });
+    if (!two.sw || two.chip) ui.push(`${width}px back to two subjects: ${JSON.stringify(two)}`);
     await c2.close();
   }
   // Identify per subject (Pierre, 2026-11-04; ROADMAP "Identify per subject"): Identify shows the current subject's tool
@@ -1330,8 +1387,8 @@ const server = http.createServer((req, res) => {
     }
     await c5.close();
   }
-  // The admin's header with the subject chip fits one line on the narrowest phones, signed out (the Sign in pill shown)
-  // and signed in: no sideways scroll at 320 and 360 px (the logotype and the chip's caret step aside there, app.css).
+  // The admin's header with the subject switch fits one line on the narrowest phones, signed out (the Sign in pill shown)
+  // and signed in: no sideways scroll at 320 and 360 px (the logotype steps aside there, app.css).
   for (const width of [320, 360]) {
     const c4 = await b.newContext({viewport: {width, height: 640}, serviceWorkers: 'block'});
     await c4.route(
@@ -1348,14 +1405,31 @@ const server = http.createServer((req, res) => {
     q.on('pageerror', e => errs.push(`${width}px narrow header: ${e.message}`));
     await q.goto(base + '#home');
     await q.waitForFunction(() => window.APP_READY && document.querySelector('#view .home-page'), null, {timeout: 30000});
+    // Signed out, the two sides do not fit beside the Sign in pill: one chip with the subject on screen, one click to the
+    // other ([data-flip]); signed in, the two sides.
     for (const signed of [false, true]) {
       const m = await q.evaluate(s => {
         document.getElementById('signb').hidden = s;
-        const c = document.getElementById('subjb');
-        return {chip: !!(c && c.offsetParent), over: document.documentElement.scrollWidth - innerWidth};
+        const h = document.querySelector('header'),
+          sw = document.querySelector('#subjc .subjsw'),
+          fl = document.querySelector('#subjc [data-flip]'),
+          c = [sw, fl].find(e => e && e.offsetParent),
+          r = c && c.getBoundingClientRect();
+        return {
+          shown: c ? (c === sw ? 'switch' : 'flip:' + c.dataset.flip + ':' + c.getAttribute('aria-label')) : '',
+          inLine: !!r && r.bottom <= h.getBoundingClientRect().top + h.offsetHeight,
+          over: document.documentElement.scrollWidth - innerWidth
+        };
       }, signed);
-      if (!m.chip || m.over > 0) ui.push(`${width}px admin header ${signed ? 'signed in' : 'signed out'}: ${JSON.stringify(m)}`);
+      if (m.shown !== (signed ? 'switch' : 'flip:fish:Subject: Corals. Switch to Fish') || !m.inLine || m.over > 0)
+        ui.push(`${width}px admin header ${signed ? 'signed in' : 'signed out'}: ${JSON.stringify(m)}`);
     }
+    await q.evaluate(() => (document.getElementById('signb').hidden = false));
+    await q.click('#subjc [data-flip]');
+    await q.waitForFunction(() => SUBJ.id === 'fish', null, {timeout: 15000}).catch(() => {});
+    const fl = await q.evaluate(() => ({subj: SUBJ.id, flip: document.querySelector('#subjc [data-flip]').getAttribute('aria-label')}));
+    if (fl.subj !== 'fish' || fl.flip !== 'Subject: Fish. Switch to Corals')
+      ui.push(`${width}px one click on the narrow chip: ${JSON.stringify(fl)}`);
     await c4.close();
   }
   // Fish opening to a group (served so here, above): a player who is not the admin (no admin token; or the admin token in

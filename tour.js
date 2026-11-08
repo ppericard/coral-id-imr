@@ -24,12 +24,12 @@
   const TAP = matchMedia('(hover: hover) and (pointer: fine)').matches ? 'Click' : 'Tap';
   const DEF = {
     pick: {k: 'pick', h: '', pick: true},
-    // Where to switch: the Corals | Fish row on Home (the header chip where the row is not shown).
+    // Where to switch: the Corals | Fish row on Home (the header's switch, or its chip, where the row is not shown).
     swap: {
       k: 'swap',
       h: '',
       sel: '.hsubj',
-      alt: '#subjb',
+      alt: '#subjc',
       t: () =>
         `${subjMine()
           .map(S => S.name)
