@@ -96,7 +96,8 @@ test('healthBad, the session summary and the demo all use the one rule', () => {
 
 // Fish admin at parity (Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"): Stops
 // follows the Corals | Fish switch. The sheets a subject's players opened: the corals' genus sheets from the summary's
-// genera, the fish's from its sheet pages (fish.learn.family / genus / species), a visit with no fish page not a fish visit.
+// genera, the fish's from its sheet page, a visit with no fish page not a fish visit. A page name is in the corals' words
+// (core.js pageName), so a fish sheet of every rank is logged fish.learn.genus: the fixture holds what is really logged.
 test("Stops' sheets opened, per subject: the corals' genera, the fish's sheet pages", () => {
   const C = require('../core.js'),
     {sheetVisit, sheetsTitle, stopWord} = new Function(
@@ -116,17 +117,23 @@ test("Stops' sheets opened, per subject: the corals' genera, the fish's sheet pa
       r: {'learn.genus': [2, 40], 'practice.quiz': [1, 300]},
       g: {Acropora: [2, 30, 'quiz', 1], Porites: [1, 10, 'list', 0]}
     },
-    fishVisit = {r: {'fish.learn.genus': [1, 20], 'fish.learn.family': [2, 50], 'fish.practice.quiz': [1, 200]}, g: {}},
+    fishVisit = {r: {'fish.learn.genus': [3, 70], 'fish.practice.quiz': [1, 200]}, g: {}},
     fishQuiz = {r: {'fish.practice.quiz': [1, 200]}, g: {}};
   assert.deepStrictEqual(sheetVisit(coralVisit, coral), [3, 40]);
   assert.deepStrictEqual(sheetVisit(fishVisit, coral), [0, 0], 'a fish visit is a visit for the corals, as before: no genus sheet');
   assert.strictEqual(sheetVisit(coralVisit, fish), null, 'no fish page: not a fish visit');
   assert.deepStrictEqual(sheetVisit(fishVisit, fish), [3, 70]);
   assert.deepStrictEqual(sheetVisit(fishQuiz, fish), [0, 0], 'a fish visit with no sheet opened');
+  // what the app logs for a fish sheet of each rank (app.js: pageName(h, SUBJ.pv)): the one name sheetVisit reads
+  Object.entries(fish.sheets).forEach(([w, pre]) =>
+    assert.strictEqual(C.pageName('g-' + pre + 'Xus', fish.pv), fish.pv + 'learn.genus', `a fish ${w} sheet's page name`)
+  );
+  assert.strictEqual(C.pageName('g-Acropora', coral.pv), 'learn.genus');
 });
 
 // Health on the fish side (fish admin at parity): the fish photos everyone misses, counted on their answers (the sheet
-// rates the corals' photos only), each with its family; the fish units players are stuck on, from its slate. The corals'
+// rates the corals' photos only), each with its family; the fish units players are stuck on: its slate (families only,
+// as core.js fishGen's c1-c3 that fishAdmin reads) and the scientific genera met in the answers (g:Chromis). The corals'
 // side reads its own photos and genera as before.
 test('Health per subject: the fish photos and units, the corals untouched', () => {
   const C = require('../core.js'),
@@ -140,7 +147,7 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
   const env = {
     FISHA: {
       ph: {fa: {f: 'fa', entry: 'f:Damselfishes', sp: 's1'}, fb: {f: 'fb', entry: 'f:Gobies'}},
-      slate: ['f:Damselfishes', 'f:Gobies', 'g:Chromis']
+      slate: ['f:Damselfishes', 'f:Gobies']
     },
     allPhotos: () => [{f: 'ca', genus: 'Favia', view: 'wide'}],
     photoStats: () => ({}),
@@ -156,6 +163,10 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
     miss(id, 'Favia', 'ca'),
     miss(id, 'Favia', 'ca')
   ]);
+  // two players answer on the genus Chromis, ten misses each: stuck
+  ['p1', 'p2'].forEach(id => {
+    for (let i = 0; i < 10; i++) R.push(miss(id, 'g:Chromis', 'fz'));
+  });
   const F = run(env, fish),
     K = run(env, coral);
   assert.deepStrictEqual(
@@ -171,14 +182,15 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
   const BY = {};
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   assert.deepStrictEqual(
-    F.healthGenera(BY).map(g => [g.n, g.met]),
+    F.healthGenera(BY).map(g => [g.n, g.met, g.stuck]),
     [
-      ['f:Damselfishes', 3],
-      ['f:Gobies', 0],
-      ['g:Chromis', 0]
+      ['g:Chromis', 2, 2],
+      ['f:Damselfishes', 3, 0],
+      ['f:Gobies', 0, 0]
     ],
-    'every unit of the fish slate, the one met first'
+    'every unit of the fish slate and the genus met in the answers, the most stuck first'
   );
+  assert.ok(!env.FISHA.slate.includes('g:Chromis'), 'the slate is left as it is');
   assert.deepStrictEqual(
     K.healthGenera(BY)
       .map(g => g.n)

@@ -3558,7 +3558,8 @@ const WIDTHS = [390, 1280];
     // Fish admin at parity (Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"): Stops
     // and Health follow the Corals | Fish switch (rule A4). With the demo's fish answers (the script of today: its three
     // fish players), Stops counts the fish players, names the fish units in their own column and counts the fish sheets
-    // opened; Health lists every unit of the fish slate by name, nothing of the corals'. Once, at 1280 and 360 px.
+    // opened; Health lists every unit of the fish slate and every fish genus answered by name, nothing of the corals'.
+    // Once, at 1280 and 360 px.
     if (once) {
       const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]);
       for (const vw of [1280, 360]) {
@@ -3619,7 +3620,14 @@ const WIDTHS = [390, 1280];
           return {
             h3: [...V.querySelectorAll('h3')].map(e => e.textContent.replace(/\s*\d+$/, '')),
             rows: V.querySelectorAll('[data-health="genera"] tbody tr').length,
-            slate: FISHA.slate.length,
+            // its slate (the families) and the scientific genera its answers met (g:Chromis), one row each
+            slate:
+              FISHA.slate.length +
+              new Set(
+                rowsOf()
+                  .map(r => r[2])
+                  .filter(u => typeof u === 'string' && u.startsWith(ASUBJ.sheets.genus) && !FISHA.slate.includes(u))
+              ).size,
             head: (V.querySelector('[data-health="genera"] th') || {}).textContent || '',
             want: [stopWord(ASUBJ), `Photos everyone misses | ${manyWord(ASUBJ)} that don't take off`],
             ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),

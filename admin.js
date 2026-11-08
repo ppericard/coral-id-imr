@@ -3607,10 +3607,12 @@ const XP_BANDS = [
 // sheetsbysubj: begin
 // The sheets a subject's players read and the pages its visits show (Stops, per subject: the Corals | Fish switch, rule
 // A4). The corals' genus sheets are counted from the summary's genera (g: core.js PAGES.GENUS keeps coral genus names
-// only); another subject's from its sheet pages (its page prefix SUBJECTS pv and the address word of each rank of its
-// sheets, SUBJECTS sheets: fish.learn.family, fish.learn.genus, fish.learn.species). One visit summary x: null when the
-// visit showed none of the subject's pages (a fish visit for the corals' Stops is still a visit: the corals have no
-// prefix), else [times a sheet was opened, seconds on them].
+// only); another subject's from its sheet page (its page prefix SUBJECTS pv + 'learn.genus'). A page name is in the
+// corals' words whatever the subject (core.js pageName: a page's identity), so a fish family, genus or species sheet
+// (g-f:…, g-g:…, g-s:…) is always logged 'fish.learn.genus': one name for its sheets of every rank, no count per rank
+// (tests/health.test.js checks pageName). One visit summary x: null when the visit showed none of the subject's pages (a
+// fish visit for the corals' Stops is still a visit: the corals have no prefix), else [times a sheet was opened, seconds
+// on them].
 const sheetWord = S => (S.sheets ? Object.keys(S.sheets) : [S.one]),
   sheetsTitle = S => {
     const L = sheetWord(S),
@@ -3621,13 +3623,8 @@ const sheetWord = S => (S.sheets ? Object.keys(S.sheets) : [S.one]),
     if (!S.sheets) return Object.values(x.g || {}).reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]);
     const R = x.r || {};
     if (!Object.keys(R).some(k => k.startsWith(S.pv))) return null;
-    return Object.keys(S.sheets).reduce(
-      (a, w) => {
-        const v = R[S.pv + 'learn.' + w];
-        return v ? [a[0] + v[0], a[1] + v[1]] : a;
-      },
-      [0, 0]
-    );
+    const v = R[S.pv + 'learn.genus'];
+    return v ? [v[0], v[1]] : [0, 0];
   };
 // The column of the units a subject's questions ask (Stops' last shown): Genus; the fish "Family", or "Family or genus"
 // with the words of its Analyses pages (SUBJECTS analyses one).
@@ -9045,7 +9042,26 @@ function healthBad(R, S = ASUBJ) {
   return BAD;
 }
 // Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first. S: the subject on screen;
-// its units: the corals' game genera (GAME), another subject's slate (fishAdmin: the app's UNITS slate).
+// its units (healthUnits): the corals' game genera (GAME), another subject's slate and its genera met in the answers.
+// A subject with sheets at several ranks: its slate (fishAdmin: the app's UNITS slate, the fish families) and, each in a
+// row of its own, the genera its players met (an answer's unit with the genus prefix, SUBJECTS sheets genus: g:Chromis,
+// the scientific genera of app.js fishGenera, offered once a family is learnt; FISHA.slate never holds them).
+const healthUnits = (BY, S) => {
+  if (!S.sheets) return [...GAME];
+  const L = [...((FISHA && FISHA.slate) || [])],
+    has = new Set(L),
+    gp = S.sheets.genus;
+  if (gp)
+    Object.values(BY).forEach(A =>
+      A.forEach(r => {
+        const u = r[2];
+        if (typeof u !== 'string' || !u.startsWith(gp) || u.length <= gp.length || has.has(u)) return;
+        has.add(u);
+        L.push(u);
+      })
+    );
+  return L;
+};
 function healthGenera(BY, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
@@ -9058,7 +9074,7 @@ function healthGenera(BY, S = ASUBJ) {
       (PG[k] = PG[k] || []).push(r[4]);
     })
   );
-  const GR = [...(S.sheets ? (FISHA && FISHA.slate) || [] : GAME)]
+  const GR = healthUnits(BY, S)
     .map(n => {
       const P = Object.keys(BY)
         .map(id => PG[id + '|' + n])
