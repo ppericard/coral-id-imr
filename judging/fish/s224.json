@@ -123,6 +123,98 @@
   "fish-s224-cand-fb-Hemel_f2": {
    "code": "p1n0sl13",
    "keep": "best"
+  },
+  "fish-s224-cand-564517066": {
+   "code": "p1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s224-cand-626093838": {
+   "code": "p0g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s224-cand-362485364": {
+   "code": "p1g1sssj1",
+   "keep": "best"
+  },
+  "fish-s224-cand-450063385": {
+   "code": "p1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s224-cand-457894921": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s224-cand-457894931": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
+  },
+  "fish-s224-cand-32095637": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s224-cand-545648162": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s224-cand-256186127": {
+   "code": "p1g0sl1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Young colours (silver head, black body, yellow tail) while iNat says female: juvenile flag doubtful; else ease 5"
+  },
+  "fish-s224-cand-705200021": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s224-cand-721092051": {
+   "code": "p1g1ms11",
+   "keep": "dup"
+  },
+  "fish-s224-cand-721092087": {
+   "code": "p1g1ms11",
+   "keep": "dup"
+  },
+  "fish-s224-cand-721092294": {
+   "code": "p1g1ms11",
+   "keep": "best"
+  },
+  "fish-s224-cand-730663231": {
+   "code": "o1g1bmm1",
+   "keep": "best"
+  },
+  "fish-s224-cand-730663040": {
+   "code": "p1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s224-cand-730663045": {
+   "code": "p1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s224-cand-730663046": {
+   "code": "p1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s224-cand-701384684": {
+   "code": "o1d1sl13",
+   "keep": "best"
+  },
+  "fish-s224-cand-615720496": {
+   "code": "o0g1mm1j2",
+   "keep": "best"
+  },
+  "fish-s224-cand-760050865": {
+   "code": "d1g2mm12",
+   "keep": "best"
+  },
+  "fish-s224-cand-712030881": {
+   "code": "d1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s224-cand-698780077": {
+   "code": "p1g2ms11",
+   "keep": "best"
   }
  }
 }

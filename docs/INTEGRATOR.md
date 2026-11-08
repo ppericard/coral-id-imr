@@ -45,6 +45,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   genera); Pierre himself counts as a fish expert **for families only**. Who they are is in the sheet's Notes tab, keys
   `agent.expert.*` (private: the app only serves `card.*` keys), once Pierre has added those rows (Q206); else ask him.
   Never write their names or results to the repo.
+- Before saying who is an expert, or what a player is, read the Notes tab's `agent.expert.*` rows first (they exist
+  since Q206); names in chat come from the sheet's RAs tab, never from Pierre's voice transcriptions (rule D2).
 - Their logs serve to check the bar's calibration and to find mislabelled photos (an expert missing an "easy" photo).
 
 ## Sheet, photos, data: the hard limits

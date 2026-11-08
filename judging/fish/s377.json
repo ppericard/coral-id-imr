@@ -135,6 +135,59 @@
   "fish-s377-cand-602190445": {
    "code": "o1g2bmxc1",
    "keep": "best"
+  },
+  "fish-s377-cand-650831560": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-253935481": {
+   "code": "p1g0ml13",
+   "keep": "best"
+  },
+  "fish-s377-cand-319030554": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s377-cand-319030564": {
+   "code": "p1g0sl14",
+   "keep": "alt"
+  },
+  "fish-s377-cand-180240134": {
+   "code": "o1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-180240250": {
+   "code": "p0g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s377-cand-144176110": {
+   "code": "p1d2mm12",
+   "keep": "best"
+  },
+  "fish-s377-cand-270455984": {
+   "code": "p1g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-276167008": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s377-cand-184599617": {
+   "code": "p1g0sm13",
+   "keep": "best"
+  },
+  "fish-s377-cand-184599778": {
+   "code": "p1g0sl14",
+   "keep": "dup",
+   "note": "Near-identical to fish-s377-cand-319030554 (another observation, same seahorse and scene)"
+  },
+  "fish-s377-cand-12789628": {
+   "code": "p1n0sm13",
+   "keep": "best"
+  },
+  "fish-s377-cand-480044606": {
+   "code": "o1n0ssx1",
+   "keep": "best"
   }
  }
 }
