@@ -167,6 +167,18 @@
   "fish-s441-cand-584314238": {
    "code": "o0g0sl13",
    "keep": "best"
+  },
+  "fish-s441-cand-479818354": {
+   "code": "o0g1mm12",
+   "keep": "best"
+  },
+  "fish-s441-cand-482725543": {
+   "code": "o0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s441-cand-482725586": {
+   "code": "h0g0sl12",
+   "keep": "dup"
   }
  }
 }

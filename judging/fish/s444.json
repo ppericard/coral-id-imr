@@ -159,6 +159,22 @@
   "fish-s444-cand-739061152": {
    "code": "o0g1smm1",
    "keep": "dup"
+  },
+  "fish-s444-cand-668748036": {
+   "code": "o0g1ms12",
+   "keep": "best"
+  },
+  "fish-s444-cand-752274864": {
+   "code": "o0g2bsx1",
+   "keep": "best"
+  },
+  "fish-s444-cand-311817535": {
+   "code": "h0g0sm12",
+   "keep": "alt"
+  },
+  "fish-s444-cand-311817543": {
+   "code": "o0g0sm13",
+   "keep": "best"
   }
  }
 }
