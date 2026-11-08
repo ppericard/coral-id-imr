@@ -262,7 +262,7 @@ const WIDTHS = [390, 1280];
       return [
         ...L,
         {h: 'photos/genera/live/' + Object.keys(DATA.gen)[1], tab: 'Genera', view: 'photos/genera/live', n: 3},
-        {h: 'inbox/coverage/games?look=all', tab: 'Coverage', view: 'inbox/coverage/games', n: 2},
+        {h: 'inbox/coverage/games?look=all', tab: 'Coverage', view: 'inbox/coverage/games', n: 3},
         {h: 'players/list/journey/Ana Demo', tab: 'List', view: null, n: 1}
       ];
     });
@@ -491,7 +491,8 @@ const WIDTHS = [390, 1280];
             wide: document.documentElement.scrollWidth - innerWidth
           }));
         let c = await cv();
-        if (!c.tabs.includes('Coverage') || c.views || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
+        // Its views: Games and Rights (every subject's, admin.js EVERY).
+        if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
         if (once) {
           await p.click('[data-fishlv="sp"][aria-pressed]');
@@ -538,6 +539,79 @@ const WIDTHS = [390, 1280];
           const n5 = (await cv()).look;
           await go(other.hash + 'inbox/coverage/games');
           if ((await cv()).look > 5 || n5 < (await cv()).look) fails.push(`${w}px Fish Coverage, Where to look: ${n5} in full`);
+        }
+        // Coverage › Rights (docs/ROADMAP.md "Rights tagged for a later split", the licence study of 2026-11-08), on both
+        // sides: a row per unit with photos, each row's classes adding up to its photos and its Ready to own + open, the
+        // rows adding up to the header's total (a photo is in one unit at the first level), the same total on Coverage ›
+        // Games' summary line, and every photo tile of a genus or family page with its rights badge.
+        for (const s of [
+          {hash: '', lv0: 'gen', tile: () => goGenus('Acropora')},
+          {hash: other.hash, lv0: 'fam', tile: () => go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'))}
+        ]) {
+          await go(s.hash + 'inbox/coverage/games');
+          const line = await p.evaluate(() => (document.querySelector('.adm-rline') || {}).textContent || '');
+          await go(s.hash + 'inbox/coverage/rights');
+          const rt = () =>
+            p.evaluate(() => {
+              const hd = [...document.querySelectorAll('.adm-rightst thead th')].map(t => t.textContent),
+                n = (tr, i) => parseInt(tr.children[i].textContent, 10) || 0,
+                T = rightsAll(),
+                rows = [...document.querySelectorAll('.adm-rightst tbody tr')].map(tr => ({
+                  n: n(tr, 1),
+                  cls: hd.slice(2, -1).reduce((a, _, i) => a + n(tr, 2 + i), 0),
+                  own: hd.includes('own') ? n(tr, hd.indexOf('own')) : 0,
+                  open: hd.includes('open') ? n(tr, hd.indexOf('open')) : 0,
+                  ready: n(tr, hd.length - 1)
+                }));
+              return {
+                hd,
+                T,
+                rows: rows.length,
+                bad: rows.filter(r => r.cls !== r.n || r.ready !== r.own + r.open).length,
+                sum: rows.reduce((a, r) => a + r.n, 0),
+                head: (document.querySelector('.adm-rights .cov-head > b') || {}).textContent || '',
+                lv: (document.querySelector('[data-rlv][aria-pressed="true"]') || {}).dataset?.rlv,
+                view: (document.querySelector('#subnav .adm-views [aria-pressed="true"]') || {}).dataset?.view ?? null,
+                note: (document.querySelector('#view > .note') || {}).textContent || '',
+                wide: document.documentElement.scrollWidth - innerWidth
+              };
+            });
+          let r = await rt();
+          const tot = `${r.T.ready}/${r.T.n} commercial-ready`;
+          if (
+            r.note ||
+            r.view !== 'inbox/coverage/rights' ||
+            r.lv !== s.lv0 ||
+            r.rows < 20 ||
+            r.bad ||
+            r.sum !== r.T.n ||
+            r.T.ready !== r.T.own + r.T.open ||
+            !r.head.startsWith(tot) ||
+            !line.includes(tot) ||
+            r.hd[0] !== {gen: 'Genus', fam: 'Family'}[s.lv0] ||
+            r.hd.includes('book') ||
+            r.wide > 0
+          )
+            fails.push(`${w}px Rights #${s.hash}: ${JSON.stringify({...r, line})}`);
+          if (once) {
+            const rows0 = r.rows;
+            await p.click('[data-rlv="sp"]');
+            r = await rt();
+            if (r.lv !== 'sp' || r.rows <= rows0 || r.bad || r.hd[0] !== 'Species')
+              fails.push(`${w}px Rights #${s.hash}, species: ${JSON.stringify(r)}`);
+            await p.click(`[data-rlv="${s.lv0}"]`);
+          }
+          await s.tile();
+          const tl = await p.evaluate(() => {
+            const T = [...document.querySelectorAll('#view .adm-tile figcaption')];
+            return {
+              n: T.length,
+              without: T.filter(c => !c.querySelector('.adm-rt')).length,
+              kinds: [...new Set([...document.querySelectorAll('#view .adm-rt')].map(b => b.textContent))]
+            };
+          });
+          if (!tl.n || tl.without || !tl.kinds.length)
+            fails.push(`${w}px Rights #${s.hash}: tiles without their badge ${JSON.stringify(tl)}`);
         }
         // Fish Photo review (admin plan PR 9): Ease and Phase & framing, one family's photos in play by row; one click sets
         // Pierre's value (one Undo step); the coral views are not on the fish side, nor the fish views on the corals'.
