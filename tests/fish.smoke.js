@@ -622,6 +622,26 @@ const server = http.createServer((req, res) => {
       };
     });
     if (!fam.order || !fam.titles || !fam.placed || !fam.cite) ui.push(`${width}px families page: ${JSON.stringify(fam)}`);
+    // Each family's photo there is Pierre's ★ Cover (curation.json fish genera, app.js fishCurate) while it is in play,
+    // else the first of the game's order (2026-11-08: his covers, published, never showed).
+    const fcv = await q.evaluate(() => {
+      const srcOf = a => (/src="([^"]*)"/.exec(a) || [])[1],
+        cards = [...document.querySelectorAll('#view .tipg')].map(a => ({
+          n: slateGenera().find(n => unameT(n) === (a.querySelector('.tipph b') || {}).textContent),
+          src: (a.querySelector('.tipph img') || {src: ''}).getAttribute('src')
+        })),
+        cur = Object.keys(((CUR || {}).fish || {}).genera || {}).filter(n => FISH.gen[n] && FISH.gen[n].coverP);
+      return {
+        cur: cur.length,
+        shown: cards.filter(c => c.n && FISH.gen[c.n].coverP).length,
+        bad: cards
+          .filter(c => c.n && FISH.gen[c.n].views.wide.length)
+          .filter(c => c.src !== srcOf(thumb(FISH.gen[c.n].coverP || FISH.gen[c.n].views.wide[0], '130px')))
+          .map(c => c.n)
+      };
+    });
+    if (!fcv.shown || fcv.bad.length)
+      ui.push(`${width}px families page: the cards' photos are not the curated covers ${JSON.stringify(fcv)}`);
     await wide('the families page');
     // A family's photo enlarges in the shared viewer, as the coral photos do (fish beta QA, 2026-11-06).
     await q.click('#view .tipph .zoom');
@@ -650,6 +670,13 @@ const server = http.createServer((req, res) => {
     if (!/^#fish\/learn\/family\/\w+$/.test(sh.hash) || !sh.title || !sh.sci || !sh.tips || !sh.rows || !sh.bar.includes(sh.title))
       ui.push(`${width}px family sheet: ${JSON.stringify(sh)}`);
     if (sh.old !== '#fish/learn/family/Butterflyfishes' || !sh.wide) ui.push(`${width}px family sheet links: ${JSON.stringify(sh)}`);
+    // Its hero photo is the family's curated cover too, when it has one in play (app.js fishCurate).
+    const hc = await q.evaluate(() => {
+      const g = FISH.gen['f:' + decodeURIComponent(location.hash.split('/').pop())],
+        h = document.querySelector('#view .hero-ph img');
+      return !g || !g.coverP ? null : {want: img(g.coverP, 's'), got: h ? h.getAttribute('src') : ''};
+    });
+    if (hc && hc.want !== hc.got) ui.push(`${width}px family sheet: the hero is not the curated cover ${JSON.stringify(hc)}`);
     // The family ID marks and behaviour lines (tools/fish_sheets.json), with their sources and a report link.
     const mk = await q.evaluate(() => {
       const m = document.querySelector('#view .fmarks');

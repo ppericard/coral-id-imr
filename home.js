@@ -31,7 +31,7 @@
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)
-          .map(n => `<img ${thumb(GX(n).views.wide[0], '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`)
+          .map(n => `<img ${thumb(cover(GX(n)), '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`)
           .join('')
       : shuffle(names)
           .slice(0, 12)
@@ -40,7 +40,7 @@
     // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
-      fp = fish && (GX(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || {views: {wide: []}}).views.wide[0],
+      fp = fish && ((n => n && cover(GX(n)))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
       fishArt = fp ? `<img ${thumb(fp, '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">` : '';
     const idoor = fish
       ? `

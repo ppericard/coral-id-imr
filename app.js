@@ -615,10 +615,37 @@ let FISH = null,
   FISHRAW = null;
 const fishBuild = () => {
   const {f, ph, gm} = FISHRAW;
-  FISH = fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f), CUR);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+// Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
+// autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
+// card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
+// unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its stopgap
+// copy while the candidate is not downloaded yet) counting; else the cover as before (the first of the easyRank order).
+// Feature (up to autosort.js FISHFEAT per species, his order): featP {species id: [photo]}, those still in play, the
+// species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
+// Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
+function fishCurate(X, cur) {
+  const G = (cur && cur.fish && cur.fish.genera) || {};
+  Object.entries(G).forEach(([id, k]) => {
+    const g = X.gen[id];
+    if (!g || !k) return;
+    const L = g.views.wide,
+      at = f => L.find(p => p.f === f) || L.find(p => fishPid(p.f) === fishPid(f)),
+      cv = k.cover && at(k.cover),
+      fe = Object.entries(k.feat || {})
+        .map(([sid, F]) => [sid, [...new Set((F || []).map(at).filter(p => p && p.sp === sid))]])
+        .filter(([, F]) => F.length);
+    if (cv) {
+      g.coverP = cv;
+      g.cover = cv.f;
+    }
+    if (fe.length) g.featP = Object.fromEntries(fe);
+  });
+  return X;
+}
 const fishLoad = () =>
   FISHP ||
   (FISHP = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6'), json('fish-game.json?v=1')])
@@ -640,12 +667,13 @@ const fishLoad = () =>
 // then the players' answers once fish answers are logged and rated), so the card's photo and each list's first photo stay
 // the easiest, most reference-like ones as the ratings come (Pierre, 2026-11-06). Run when the fish data or the photo
 // stats arrive (sync.js loadStats). With no rating it keeps fishGen's order. The fish data can come at start-up before
-// model.js (a later script tier): then fishGen's order stands until the stats reply.
+// model.js (a later script tier): then fishGen's order stands until the stats reply. Pierre's cover (coverP, fishCurate)
+// stays the card's photo whatever the order.
 function rankPhotos() {
   if (!FISH || typeof photoDiff !== 'function') return;
   Object.entries(FISH.gen).forEach(([n, g]) => {
     g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p));
-    if (g.views.wide.length) g.cover = g.views.wide[0].f;
+    if (g.views.wide.length) g.cover = (g.coverP || g.views.wide[0]).f;
   });
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
