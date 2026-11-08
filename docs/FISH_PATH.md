@@ -278,7 +278,7 @@ each, an optional one-question check, offered first to "I'm new to reef fish" an
 
 Supported now:
 
-- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 340 circle-1 species in circle-1 entries, plus 11 Dauin species of circle 3 (since #496).
+- Species per entry, in commonness order (`cmi`, "Species order: the commonness index"; `r`, `cs` kept); 469 circle-1 species in circle-1 entries (2026-11-08: every species takes its family's circle, Q214; until then the 11 Dauin species of circle-1 entries were circle 3).
 - PDF Latin name (`name`), WoRMS name (`now`, 28 species) and synonyms, iNaturalist id.
 - English common name (`common`) for 419 of the 420 game species.
 - Genus from the PDF name; IMR sub-entries with cues (`sub`).
