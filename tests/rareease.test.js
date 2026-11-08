@@ -87,6 +87,24 @@ test('before Open Water, a pool dominated by hard photos: those under ease 4 com
   assert.ok(share(F, L) <= F.RARE.SHARE + 0.03);
 });
 
+test('observations mixing easy and hard photos: their hard photos count too (Codex review #729)', () => {
+  // 12 observations, each one ease-4 photo among twenty ease-3 ones (mixed observations exist in 24 units of
+  // fish-game.json): counting each observation as easy left 91% of the draws under ease 4.
+  const L = [];
+  for (let i = 0; i < 12; i++) {
+    L.push({f: `easy${i}`, o: `o${i}`, e: 4});
+    for (let j = 0; j < 20; j++) L.push({f: `hard${i}-${j}`, o: `o${i}`, e: 3});
+  }
+  const E = engine('fish', L),
+    r = share(E, L);
+  assert.ok(r <= E.RARE.SHARE + 0.03, `under ease 4: ${(100 * r).toFixed(1)}%`);
+  assert.ok(r > 0.02, `no wall (${(100 * r).toFixed(1)}%)`);
+  // Mixed and pure observations together: the 240-hard pool with every easy photo inside a hard observation's.
+  const M = pool().map((p, i) => (i < 12 ? {...p, o: `oh${i}`} : p)),
+    F = engine('fish', M);
+  assert.ok(share(F, M) <= F.RARE.SHARE + 0.03);
+});
+
 test('past Open Water the hard photos come back at the targeting', () => {
   const L = pool(),
     E = engine('fish', L, {th: 1.2, score: 0.6, ok: 12}),
@@ -110,7 +128,7 @@ test('a family with few easy photos: its few easiest count as the easy ones', ()
   assert.ok(one > 0, 'still drawn');
 });
 
-test('rareCap: the hard observations weigh at most the share, whatever their number', () => {
+test('rareCap: the hard photos weigh at most the share, whatever their number', () => {
   const E = engine('fish', pool());
   for (const nh of [5, 50, 500, 5000]) {
     const keys = ['e1', 'e2', ...Array.from({length: nh}, (_, i) => `h${i}`)],

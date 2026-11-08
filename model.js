@@ -22,18 +22,21 @@ const PICKD = {P: TARGET_P, AIM, SIGMA: 0.7, VARIETY: 3, FLOOR: 0.05, SINGLE: DO
 // under ease 4 may come, but rarely"). The prior and the aim alone made it a share of the draws that followed the photo
 // counts: a starter family holds about two thirds of its photos under ease 4, and its ability passes 1 after two or
 // three right answers while its progress is still under Open Water, so about one photo in five shown there was under
-// ease 4 (the fish smoke's bound broke on one seed in ten). So until a unit reaches Open Water (LV_AT[0]) the observations whose
-// judged photos are all under RARE.E (or under the unit's RARE.FEW easiest when it has fewer: the Soapfishes have 2)
-// weigh together at most RARE.SHARE of the draw, whatever their number (rareCap); within an observation that also has
-// an easy photo, its harder ones take the same factor. No wall: they still come. A photo with no judged ease (every
-// coral photo) is never one of them, so the corals' draw is unchanged. docs/LEARNING.md "Rarely under ease 4".
-const RARE = {E: 4, FEW: 3, SHARE: 0.1};
-// The factor the hard observations' weights take so they make at most `share` of the draw (1 when they already do, or
-// when nothing else can be drawn). sc: each observation's weight; isHard(k): whether observation k is a hard one.
-function rareCap(keys, sc, isHard, share = RARE.SHARE) {
+// ease 4 (the fish smoke's bound broke on one seed in ten). So until a unit reaches Open Water (LV_AT[0]) its photos
+// under RARE.E (or under its RARE.FEW easiest when it has fewer: the Soapfishes have 2) make at most RARE.SHARE of the
+// photos drawn, whatever their number (rareCap): each takes one factor, in the choice of the observation (by the hard
+// part of its weight, so an observation with one easy photo among many hard ones counts as mostly hard) and in the
+// choice of its photo. No wall: they still come, the least answered first as before (calBonus). A photo with no judged
+// ease (every coral photo) is never one of them, so the corals' draw is unchanged. docs/LEARNING.md "Rarely under ease
+// 4 before Open Water".
+const RARE = {E: 4, FEW: 3, SHARE: 0.1}; // SHARE: Pierre, 2026-11-08 (Q252)
+// The factor the hard photos' weights take so they make at most `share` of the draw (1 when they already do, or when
+// nothing else can be drawn). sc: each observation's weight; hardOf(k): the share of observation k's photo weight that
+// is hard (0 to 1). Exact for a question showing one photo (the fish); for several views, the share of the photos drawn.
+function rareCap(keys, sc, hardOf, share = RARE.SHARE) {
   let mh = 0,
     me = 0;
-  keys.forEach(k => (isHard(k) ? (mh += sc[k]) : (me += sc[k])));
+  keys.forEach(k => ((mh += sc[k] * hardOf(k)), (me += sc[k] * (1 - hardOf(k)))));
   return me > 0 && mh > (share / (1 - share)) * me ? ((share / (1 - share)) * me) / mh : 1;
 }
 // One difficulty controller (independent review of 2026-11-02, item 4, after Papousek, Pelanek & Stanislav 2014, who
@@ -250,10 +253,12 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
       .sort((a, b) => b - a);
   if (es.length && genScore(n) + 1e-9 < LV_AT[0]) {
     const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
-      hardK = k => ph(k).every(hard);
+      sum = L => L.reduce((t, p) => t + w(p), 0);
     hard = p => p.e > 0 && p.e < bar;
-    hardF = rareCap(keys, sc, hardK);
-    if (hardF < 1) keys.forEach(k => hardK(k) && (sc[k] *= hardF));
+    // Each observation's hard part: the share of its photos' weight under the bar (its photo is drawn on those weights).
+    const hs = Object.fromEntries(keys.map(k => [k, sum(ph(k)) ? sum(ph(k).filter(hard)) / sum(ph(k)) : 0]));
+    hardF = rareCap(keys, sc, k => hs[k]);
+    if (hardF < 1) keys.forEach(k => (sc[k] *= 1 - hs[k] + hardF * hs[k]));
   }
   const o = top ? obs[wpick(keys, k => sc[k])] : keys.length ? obs[pick(keys)] : {};
   const one = v => {

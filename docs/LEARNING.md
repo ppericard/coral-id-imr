@@ -2850,7 +2850,7 @@ Water scored on its judged ease; 20 seeds):
 |---|---|---|
 | `main` before the judging batches of 2026-11-08 (8ff76f9) | 64 / 300 = 21.3% | 2 of 20 |
 | `main` after them (77cecab) | 66 / 300 = 22.0% | 2 of 20 |
-| with `RARE` | 26 / 300 = 8.7% (at most 3 of 15) | 0 of 20 |
+| with `RARE` | 25 / 300 = 8.3% (at most 3 of 15) | 0 of 20 |
 
 So the batches did not cause it (the starter families already held about two thirds of their photos under ease 4 before
 them: Damselfishes 65% of 1,029 photos then, 67% of 1,100 now); they only moved the seeded sequence onto a failing seed. The cause is in the
@@ -2860,30 +2860,64 @@ the Gaussian targeting tells them apart little; and a photo's chance is its weig
 so the share under ease 4 follows the pool's counts. In a pool dominated by hard photos (12 easy against 240, the unit
 test) the draw gave 68% under ease 4 before Open Water.
 
-**`model.js` `RARE`, `rareCap`**: until a unit reaches Open Water (`LV_AT[0]`), the observations whose judged photos are
-all under ease `RARE.E` (4; for a unit with fewer than `RARE.FEW` (3) photos at 4 or more, under its third easiest, as
-the smoke's per-entry check reads it) weigh together at most `RARE.SHARE` (0.1) of the observation draw, whatever their
-number: their weights take one factor, `share / (1 − share)` × the others' total / theirs, applied last (after the
-variety and the floor, so neither lifts them back). In an observation that also has an easy photo, its harder photos
-take the same factor. When they already weigh less (a new unit, whose lean keeps them near 2-9%), nothing changes; past
-Open Water nothing changes. No wall: they still come, about one in ten at most. A photo with no judged ease (every coral
-photo) is never one of them, so the corals' draw is unchanged. `tests/rareease.test.js` runs `photoSet` in Node on the
-hard-dominated pool; `tests/fish.smoke.js` keeps its bound (a third over 15 photos: with the share at most a tenth, a
-seed fails about once in a thousand).
+**`model.js` `RARE`, `rareCap`** (Pierre, 2026-11-08, Q252: the share 0.1): until a unit reaches Open Water
+(`LV_AT[0]`), its photos under ease `RARE.E` (4; for a unit with fewer than `RARE.FEW` (3) photos at 4 or more, under
+its third easiest, as the smoke's per-entry check reads it) make at most `RARE.SHARE` (0.1) of the photos drawn,
+whatever their number. Each observation's hard part is the share of its photos' draw weight that is under the bar; the
+hard photos take one factor, `share / (1 − share)` × the easy part's total / the hard part's, both in the choice of the
+observation (its weight × (1 − hard part + factor × hard part)) and in the choice of its photo, so an observation with
+one easy photo among twenty hard ones counts as mostly hard (Codex review #729: counted as easy it let 91% through).
+Exact for a question showing one photo, as the fish do. Applied last (after the variety and the floor, so neither lifts
+them back). When they already weigh less (a new unit, whose lean keeps them near 2-9%), nothing changes; past Open
+Water nothing changes. No wall: they still come, about one in ten at most, and among them the least answered still come
+first (the factor is the same for all of them, so `calBonus`'s lean towards unrated photos is kept). A photo with no
+judged ease (every coral photo) is never one of them, so the corals' draw is unchanged. `tests/rareease.test.js` runs
+`photoSet` in Node on hard-dominated and mixed pools; `tests/fish.smoke.js` keeps its bound (a third over 15 photos: with
+the share at most a tenth, a seed fails about once in a thousand).
 
 Every circle-1 family (`photoSet` drawn 600 times per stage on a fresh fish player, 4 plausible choices; the stages a
 new family, 3 right answers with the ability 1.2, 6 answers with 1.5, all under Open Water), share under ease 4, worst
 and mean over the 28 families: before 22% / 10%, 38% / 21%, 54% / 32% (Lizardfishes, Spadefishes, Fusiliers: 79-86%
-of their pools under ease 4); with `RARE` 12% / 7%, 14% / 10%, 12% / 10%. The start barely moves: the lean already
-holds it there, except on the families with few easy photos (Moorish Idol 22% → 12%, Triggerfishes 21% → 9%).
+of their pools under ease 4); with `RARE` 11% / 7%, 12% / 10%, 12% / 10%. The start barely moves: the lean already
+holds it there, except on the families with few easy photos (Moorish Idol 22% → 10%, Triggerfishes 21% → 10%). Past
+Open Water (the bar at 60%, 70%, 85% with 12, 25, 60 answers and the ability 0.5, 1.2, 2) nothing moves: worst / mean
+33% / 18%, 53% / 35%, 79% / 61% before, 34% / 18%, 55% / 35%, 82% / 60% after (seeded noise).
 
-**Learning outcomes** (`tools/learnsim.js --subject fish`, 3 profiles × 5 seeds × 300 questions, `main` 77cecab before →
-after; ± one sd over the seeds): true knowledge of the slate at 300 beginner 0.41 → 0.40, lectureRA 0.53 → 0.54,
-strongRA 0.69 → 0.66 (±0.02-0.05); units met 15 → 14, 17 → 18, 19 → 19; right 74 → 72%, 77 → 76%, 77 → 79%; the
-progress shown 25.6 → 24.6%, 23.6 → 23.4%, 20.4 → 17.8% (±2.5-4.5); look-alike accuracy unchanged (0.88, 0.91, 0.94 →
-0.92). Within the seeds' noise; the strong player's progress may come a little later (fewer hard photos before Open
-Water, whose right answers move the ability most). The real-log check (L12) cannot judge it: the sheet replays no fish
-answer.
+**Learning outcomes** (rule L11 tier 1: `tools/learnsim.js --subject fish`, the four profiles × 5 seeds × 300
+questions, `main` 77cecab against this change on the same seeds; the run now logs each question's `preOW`, whether
+its unit was under Open Water and the lowest judged ease shown). Declared before the runs: primary, the share of photos
+under ease 4 among the questions drawn under Open Water, questions 1-300, pooled, down; guardrails, true knowledge of
+the slate at 300 (margin 0.02) and units met at 100 and 300 (margin 2), the stats study's margins (one-sided 90% bound
+of the paired difference, per profile).
+
+| Measure | beginner | lectureRA | strongRA | expert |
+|---|---|---|---|---|
+| **Under ease 4 before Open Water** (primary) | 21.1% → 8.8% | 20.2% → 9.9% | 19.9% → 8.7% | 40.1% → 10.2% |
+| True knowledge, slate, q300 (bound) | 0.406 → 0.386 (−0.056) | 0.535 → 0.535 (−0.036) | 0.693 → 0.674 (−0.034) | 0.942 → 0.942 (−0.002) |
+| Units met, q100 (bound) | 17.4 → 16.4 (−1.8) | 15.0 → 15.8 (−1.0) | 14.0 → 13.2 (−1.9) | 13.0 → 12.6 (−1.8) |
+| Units met, q300 (bound) | 25.6 → 23.6 (−6.2) | 23.6 → 23.4 (−3.5) | 20.4 → 18.6 (−5.6) | 26.0 → 23.2 (−4.6) |
+| Right %, q300 | 74.0 → 75.0 | 77.2 → 77.8 | 76.8 → 76.4 | 95.0 → 96.4 |
+| Progress shown, q300 | 14.8 → 14.4 | 17.2 → 18.6 | 19.2 → 18.4 | 25.6 → 23.8 |
+
+The primary falls in 19 of 20 pairs (stratified exact sign-flip, standardised per profile: p = 4 × 10⁻⁶ two-sided).
+Guardrails: units met at 100 held in every profile; true knowledge at 300 held for the expert, unclear for the three
+others (mean −0.02 to 0; pooled −0.010, bound −0.021); units met at 300 unclear for three profiles and **breached for the
+expert** (−2.8, 0 of 5 seeds up; pooled −1.7, bound −3.1). So the opening of new units comes a little later: fewer hard
+photos before Open Water means smaller ability steps on a right answer. Tier 2 (30 common seeds) runs next for these
+two guardrails; its result will replace this sentence.
+
+**Getting unrated photos rated** (Pierre's worry with Q252). Every trusted answer rates its photo on the sheet
+(`Code.gs` `stats_`: the same Elo for the corals' and the fish's photos, whatever the unit's level, a player's answer
+weighing n / (n + `PHOTO_W.N` 10) after their n answers), and the app reads the ratings for every subject (`PSTAT`,
+`photoDiff`, `calBonus`). The cap is one factor on all the hard photos of a unit, so among them the never-answered still
+weigh up to 3 times more (`calBonus`), and the exploration questions (`CAL.RATE`, among the observations never seen)
+still reach them, capped before Open Water and not after. In the runs above, 75-96% of a player's first 300 questions
+are under Open Water; the hard-photo answers in those 300 fall from 65-146 to 30-82 per player (almost all on photos
+never answered before), while past Open Water their share is unchanged (37-74%). With about 1,400 fish answers a week
+(about 6,000 a month) and 7,327 photos under ease 4 in play, that is roughly 0.2 answers per hard photo per month before
+and 0.1 after, if every answer came from players under Open Water: either way the pool is far larger than the traffic,
+and the hard photos get rated where players meet them, past Open Water. A separate exploration share before Open Water
+(1%) would add at most 1% of those answers, a tenth of what the cap already lets through, so none was added.
 
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, at Open Water since Q205)
 
