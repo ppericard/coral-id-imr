@@ -799,11 +799,12 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
 // all, across devices): the winks in fish.json order (whale shark, thresher sharks), wink i due at the first photo-quiz
 // question from WINK.AT[i] answers of the player's own record for the subject (answersSoFar: P, so a reload or a sign-in
 // keeps the count) and at least the gap between the first two after the last one shown (a player already past both
-// thresholds meets them 350 answers apart, never back to back). A wink beyond WINK.AT (none yet) would come the same gap
+// thresholds meets them 200 answers apart, never back to back). A wink beyond WINK.AT (none yet) would come the same gap
 // later (winkAt). Shown once per player: the winks shown travel with the player (reefid-sync-fish-wink {wink id: answer
 // count when shown}, merged by union at a sync: winkMerge), so another device of the same account never shows one again.
-// Never over a card (the first-meeting cards, an offer).
-const WINK = {AT: [300, 650]};
+// Never over a card (the first-meeting cards, an offer). Earlier (Pierre, 2026-11-08): the whale shark from 200 answers,
+// the thresher sharks from 400 (they were 300 and 650).
+const WINK = {AT: [200, 400]};
 const winkGap = () => (WINK.AT.length > 1 ? WINK.AT[1] - WINK.AT[0] : WINK.AT[0]);
 // The answer count from which wink i is due.
 const winkAt = i => (i < WINK.AT.length ? WINK.AT[i] : WINK.AT[WINK.AT.length - 1] + (i - WINK.AT.length + 1) * winkGap());
@@ -1413,6 +1414,7 @@ function quizPhoto(cur = 'quiz') {
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
+  else if (!noOpen() && promptOk() && bonusBackDue()) (promptMark(), bonusBackShow());
   zoomHint(); // once per device, never over a card or offer shown just above
   topUp(); // the questions after this one, chosen while it is played (planNext)
 }
@@ -1601,6 +1603,38 @@ function bonusOfferShow(S = bonusOfferDue() || SETS()[0]) {
     esc: 2,
     note: S.note,
     onClose: topUp // leaving the page closes it unanswered (route): the offer comes back
+  });
+}
+// The back card (Pierre, 2026-11-08): once, to a player who turned an opt-in set on under its earlier rules (app.js UNITS
+// sets rv, back: the fish scientific genera, on from Open Water before; Advanced now), never to one who never turned it
+// on or turned it off. "Close them for now": off (their progress kept, not asked; a set's auto units, an IMR player's
+// IMR genera, stay in play); "Keep them": on. Both record the choice under rv (bonusSet), synced, so it is asked once.
+// A prompt like the offer (promptOk); leaving the page closes it unanswered: it comes back.
+const bonusBackDue = () => SETS().find(S => S.back && S.rv && Q[S.k] === true && (Q[S.k + 'V'] || 0) < S.rv) || null;
+function bonusBackShow(S = bonusBackDue()) {
+  if (!S) return;
+  const B = S.back,
+    keep = S.auto ? S.auto() : [];
+  cardShow({
+    kind: 'bonus',
+    cls: 'intro',
+    kick: S.kick,
+    title: B.title,
+    body: `<p>${B.body}</p>${keep.length && B.imr ? `<p class="ulnote">${B.imr} ${keep.map(uname).join(', ')}</p>` : ''}`,
+    // Closed, a question on screen about a unit no longer in play (a genus just closed) is replaced at once, unanswered
+    // (Codex review #720). The card is gone before its button's on runs (app.js cardShow act).
+    primary: {
+      text: B.no,
+      attr: 'data-sciback',
+      on: () => {
+        bonusSet(false, S.k);
+        if (QOPEN && SHOWNQ && !pool().includes(SHOWNQ[1])) (dropPlans(), route());
+      }
+    },
+    secondary: {text: B.yes, on: () => bonusSet(true, S.k)},
+    esc: 2,
+    note: S.note,
+    onClose: topUp
   });
 }
 // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50), over the question,
