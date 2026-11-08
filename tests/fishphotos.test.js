@@ -109,29 +109,31 @@ print(json.dumps([
   ]);
 });
 
-test('select, a species not confirmed near Dauin: Pierre own first, then free licences across the Philippines nearest first, NC to fill, abroad last', () => {
+test('select, a species not confirmed near Dauin: Pierre own first, then the Philippines nearest first, the licence only breaking ties, abroad last', () => {
   const out = J(`${OBS}
 it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
 pools = {'dauin': [it(1, 'cc-by-nc'), it(2, 'cc-by'), it(3, 'cc-by-nc', u='ppericard')], 'region': [it(4, 'cc0', ll=(10.3, 123.9))], 'ph': [it(5, 'cc-by', ll=(14.6, 121.0)), it(6, 'cc-by-nc', ll=(14.6, 121.0))],
          'world': [it(8, 'cc-by-nc', u='ppericard', ll=(-8.5, 115.2), inph=False)]}
 W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
 print(json.dumps([[o['id'] for o in select(pools, r, {}, None, W)] for r in (1, 2, 5, 7, 9)]))`);
+  // The licence is the last key (Pierre, 2026-11-08, Q284: variety before licences): distance first, so the NC photo
+  // of Dauin comes before the CC0 one of the region; within a tier, an open photo before an NC one of equal variety.
   assert.deepStrictEqual(out, [
     [3], // Pierre's own first, whatever its licence
     [3, 8], // his own abroad too
-    [3, 8, 2, 4, 5], // then CC BY Dauin, CC0 region, CC BY Luzon: the free ones, nearest first
-    [3, 8, 2, 4, 5, 1, 6], // NC only to fill, nearest first
-    [3, 8, 2, 4, 5, 1, 6, 7] // the Philippines exhausted: abroad
+    [3, 8, 2, 1, 4], // then Dauin (CC BY before CC BY-NC: a tie), the region
+    [3, 8, 2, 1, 4, 5, 6], // then the rest of the Philippines, CC BY before CC BY-NC
+    [3, 8, 2, 1, 4, 5, 6, 7] // the Philippines exhausted: abroad
   ]);
 });
 
-test('select, a species confirmed near Dauin: Pierre own first, then from anywhere by licence, not by distance', () => {
+test('select, a species confirmed near Dauin: Pierre own first, then from anywhere, not by distance, the licence breaking ties', () => {
   const out = J(`${OBS}
 it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
 pools = {'dauin': [it(1, 'cc-by-nc'), it(3, 'cc-by-nc', u='ppericard')], 'ph': [it(5, 'cc-by-nc', ll=(14.6, 121.0))]}
 W = lambda: [{**it(7, 'cc0', ll=(-8.5, 115.2), inph=False), 'tier': 'world'}]
 print(json.dumps([[o['id'] for o in select(pools, r, {'ph': True}, None, W, anywhere=True)] for r in (2, 4)]))`);
-  // The CC0 photo from abroad comes before the NC ones from Dauin, even while the Philippines have more.
+  // Equal variety: the CC0 photo from abroad comes before the NC ones from Dauin (a tie), even while the Philippines have more.
   assert.deepStrictEqual(out[0], [3, 7]);
   assert.deepStrictEqual(out[1].slice(0, 2), [3, 7]);
   assert.deepStrictEqual(out[1].slice(2).sort(), [1, 5]);
@@ -164,6 +166,28 @@ n = Counter({('s', ''): 5})
 print(json.dumps([a, [o['id'] for o in select(pools, 1, {}, n)]]))`);
   assert.deepStrictEqual(out[0], ['a', 'b', 'c']);
   assert.deepStrictEqual(out[1], [3]); // the juvenile, when adults are already plenty
+});
+
+test('select: the licence never costs variety (Pierre, 2026-11-08, Q284): a new observer or life stage before an open licence', () => {
+  const out = J(`${OBS}
+from collections import Counter
+it = lambda *a, **k: usable_obs(ob(*a, **k), set(), set())
+pools = lambda: {'dauin': [it(1, 'cc-by', u='a'), it(2, 'cc-by-nc', u='b')]}
+seen_a = lambda: Counter({('u', 'a'): 1})
+stage = lambda: {'dauin': [it(1, 'cc0'), it(2, 'cc-by-nc', an=[(1, 8)])]}
+adults = lambda: Counter({('s', ''): 3})
+print(json.dumps([
+  [o['id'] for o in select(pools(), 1, {}, seen_a())],
+  [o['id'] for o in select(pools(), 1, {'ph': True}, seen_a(), lambda: [], anywhere=True)],
+  [o['id'] for o in select(stage(), 1, {}, adults())],
+  [o['id'] for o in select(pools(), 1, {})],
+]))`);
+  assert.deepStrictEqual(out, [
+    [2], // observer a is already in the list: b's NC photo first
+    [2], // the same for a species confirmed near Dauin
+    [2], // a juvenile when adults are plenty, NC or not
+    [1] // equal variety: the open licence breaks the tie
+  ]);
 });
 
 test('species of the game: circle 1 in teaching order, out species and other circles left out, --only by species or entry', () => {
@@ -663,17 +687,18 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   const C = JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8'));
   assert.strictEqual(C.v, 1);
   assert.deepStrictEqual(Object.keys(C.cand), ['s1', 's2', 's4']);
-  // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines (CC BY
-  // Luzon, then NC Dauin); the CC0 one abroad would come only once they are exhausted and room is left.
+  // Not confirmed near Dauin: Pierre's own first (found though fish.json counted none), then the Philippines nearest
+  // first (NC Dauin, then CC BY Luzon: the licence only breaks ties, Q284); the CC0 one abroad would come only once they
+  // are exhausted and room is left.
   assert.deepStrictEqual(
     C.cand.s4.map(p => p.o.split('/').pop()),
-    ['23', '21', '20']
+    ['23', '20', '21']
   );
   assert.strictEqual(C.cand.s4[0].own, true);
   const s1 = C.cand.s1,
     row = p => [p.o.split('/').pop(), p.lic, p.loc, p.own];
   // Pierre's own first (NC, Needs ID); then CC BY from Luzon and CC0 from abroad before the NC ones of Dauin, which the
-  // Philippines still have more of; never the share-alike ones.
+  // Philippines still have more of (equal variety: the licence breaks the tie); never the share-alike ones.
   assert.deepStrictEqual(row(s1[0]), ['1', 'cc-by-nc', 'dauin', true]);
   assert.deepStrictEqual(s1.slice(1).map(row).sort(), [
     ['10', 'cc0', 'world', false],
