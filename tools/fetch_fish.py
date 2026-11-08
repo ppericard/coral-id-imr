@@ -37,8 +37,11 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   rule C7), so a species with very different juveniles does not end up with 30 adults and no juvenile; FishBase
   (tools/fetch_fishbase.py) fills what is left, phases first. The cap counts the photos still usable (added by Pierre,
   set in by the pre-sort, or waiting); what Pierre rejects, excludes or sends elsewhere, and what the pre-sort sets aside
-  without doubt, frees room for the next run. Each observation brings up to PER_OBS photos (fish observations rarely hold
-  several individuals; more photos of one fish are near-duplicates). One function for both tools: species_room.
+  without doubt, frees room for the next run. Each observation brings ALL its photos (Pierre, 2026-11-08: no limit per
+  observation any more, 4 until then; the judging pass marks the near-duplicates within an observation, judging/FISH.md
+  keep), and its photos count against the cap by weight (Pierre, 2026-11-08, Q226, option b): its first photo 1, each
+  further photo EXTRA_W (0.5) (obs_cost), so an observation with many photos takes less room than as many observations;
+  a refill brings the photos an observation already among the candidates still has. One function for both tools: species_room.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
   src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
@@ -63,7 +66,9 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   open part of its room was searched to the end less than RECHECK_DAYS ago. Then FishBase fills what iNaturalist left
   (tools/fetch_fishbase.py, offline) and --rep tags the covers, for the refilled species only. The new candidates wait
   for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's auto-sort applies.
-  --refill --plan prints, offline, the short species, the pick and the skipped ones; it writes nothing.
+  --refill --plan prints, offline, the short species, the pick and the skipped ones; it writes nothing. A refill first
+  runs --topup over every species of its circles: the other photos of the observations fetched under the old limit of 4
+  per observation (topup; one request per 200 such observations).
 
 Network: iNaturalist API v2 (only the fields used), read only, a pause of PAUSE s between calls, generic User-Agent.
 Every reply is cached, trimmed, in tools/.cache/fish_photos.json (git-ignored): a rerun is offline and gives the same
@@ -74,6 +79,7 @@ nothing.
 
     python3 tools/fetch_fish.py [--circle 1] [--cap N] [--only s091,t05] [--refresh | --offline | --plan] [--rep]
     python3 tools/fetch_fish.py --refill [--circle 1 --circle 2 --circle 3] [--max N] [--today YYYY-MM-DD] [--plan]
+    python3 tools/fetch_fish.py --topup [--circle 1 ...] [--only s091] [--offline | --plan]
 (--cap N: one fixed cap for every species instead of cap_of, for a test or a one-off; the phase rooms still apply.)
 Tests: node --test tests/fishphotos.test.js (offline fixtures).
 """
@@ -106,7 +112,11 @@ DAUIN = (9.19, 123.26)
 DAUIN_KM, REGION_KM = 40, 250  # as tools/fetch_local.py
 PH = 6873  # iNaturalist place: the Philippines
 PIERRE = "ppericard"
-PER_OBS = 4  # photos taken of one observation at most
+# How an observation's photos count against the cap (Pierre, 2026-11-08: every photo of an observation is taken, "weight
+# the choice so one observation does not bring too many, never blocking"; Q226, option b: the first photo 1, each further
+# photo half, "better for learning on the species already full"): obs_cost.
+EXTRA_W = 0.5
+OLD_LIMIT = 4  # photos per observation at most until 2026-11-08: the observations --topup completes
 # The cap per species (Pierre, 2026-11-05, Q36; before: 20 observations per species, 2026-11-04): 30 photos for a stable
 # species, +10 per extra phase, at most 60; each extra phase aims at PER_PHASE photos of its own, the rest is free.
 BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
@@ -299,12 +309,28 @@ def usable_obs(o, used, excl):
     P = [p for p in o["ph"] if lic_ok(p[2], own) and str(p[0]) not in used and str(p[0]) not in excl and p[1]]
     if not P:
         return None
-    P = P[:PER_OBS]
     st = sorted({STAGE[tuple(a)] for a in o.get("an", []) if tuple(a) in STAGE})
     return {**o, "P": P, "own": own, "cls": min(lic_class(p[2], own) for p in P), "tier": tier_of(o), "st": "/".join(st), "h": hord(o["id"])}
 
 
-def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None, photos=False):
+def obs_url(oid):
+    return f"https://www.inaturalist.org/observations/{oid}"
+
+
+def obs_cost(held, k):
+    """The room k more photos of one observation take when it already holds `held` photos of the species (Pierre,
+    2026-11-08, Q226, option b): its first photo 1, each further photo EXTRA_W (0.5)."""
+    if k <= 0:
+        return 0
+    return (0 if held else 1 - EXTRA_W) + EXTRA_W * k
+
+
+def obs_fit(held, room):
+    """How many more photos of one observation holding `held` fit in `room` (obs_cost)."""
+    return max(0, int((room - (0 if held else 1 - EXTRA_W)) // EXTRA_W))
+
+
+def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None, photos=False, held=None):
     """Pick up to `room` observations (Pierre, 2026-11-03). Pierre's own first (class 0), from any pool. Then, for a
     species confirmed near Dauin (anywhere=True): every place at once, abroad included (world() fetched), by licence
     class (1 CC0 / CC BY, then 2 NC), not by distance. Otherwise: by licence class, and within a class nearest first
@@ -314,10 +340,15 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     abroad); n: Counter of ('u', login) / ('s', stage) already in the species' list. claimed: the iNaturalist photo ids
     already taken (updated here): iNaturalist lets one photo belong to several observations, so a photo is taken once,
     by the first observation picked, and an observation left with no photo of its own is skipped without taking room
-    (Codex review #463). photos=True: room counts photos (the cap of Q36), and an observation's photos are cut to the room
-    left; otherwise one observation is one unit of room. Returns [item, ...] in order, each with only its own photos in P."""
+    (Codex review #463). photos=True: room counts photos (the cap of Q36) as obs_cost does: every photo of an observation is
+    taken, the first for 1 and each further one for EXTRA_W, and an observation is cut only to the room left; held
+    ({observation url: photos it holds}, updated here) is what the species already keeps, so the other photos of an
+    observation among its candidates come at their cost and its observer and life stage are not counted again.
+    Otherwise one observation is one unit of room. Returns [item, ...] in order, each with only its own photos in P and
+    the room it took in cost."""
     n = Counter() if n is None else n
     claimed = set() if claimed is None else claimed
+    held = {} if held is None else held
     taken, seen = [], set()
 
     def take(L):
@@ -328,16 +359,19 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
             L.remove(o)
             seen.add(o["id"])
             P = [p for p in o["P"] if str(p[0]) not in claimed]
-            if photos:
-                P = P[:room]
+            h = held.get(obs_url(o["id"]), 0)
+            if photos and obs_cost(h, len(P)) > room:
+                P = P[:obs_fit(h, room)]  # short of room: what fits (a new observation needs 1 for its first photo)
             if not P:
                 continue
-            o["P"] = P
+            o["P"], o["cost"] = P, obs_cost(h, len(P)) if photos else 1
             claimed.update(str(p[0]) for p in P)
             taken.append(o)
-            n["u", o["u"]] += 1
-            n["s", o["st"]] += 1
-            room -= len(P) if photos else 1
+            if not h:
+                n["u", o["u"]] += 1
+                n["s", o["st"]] += 1
+            held[obs_url(o["id"])] = h + len(P)
+            room -= o["cost"]
 
     allp = [o for t in (*TIERS, "world") for o in pools.get(t, [])]
     take([o for o in allp if o["own"]])
@@ -355,6 +389,61 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
         for cls in (1, 2):
             take([o for o in W if o["cls"] == cls])
     return taken
+
+
+def topup(args):
+    """--topup (Codex review #715 on Pierre's 2026-11-08 decision): the other photos of the observations fetched under the
+    old limit of 4 photos per observation, whatever the species' room: an observation holding exactly OLD_LIMIT candidate
+    records (whatever their state: a near-duplicate set aside or a photo rejected does not stop it) is asked again by id
+    (200 a request, rule C7) and every photo of it not taken yet comes, each for EXTRA_W of room (obs_cost): this never
+    blocks; a species it puts over its cap only waits longer for new observations (nothing is removed). One that holds
+    any other number was fetched since 2026-11-08, whole or cut by the room (the searches then bring the rest: an
+    observation among the candidates is no longer skipped); one with a photo
+    Pierre sent elsewhere, or no longer identified as that species on iNaturalist, brings nothing more. The --refill runs it for every species of its circles first. Returns
+    {species id: photos added}."""
+    rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
+    fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
+    have = rd(args.cand).get("cand", {})
+    _, excl = state(cur, sug)
+    moved = moved_of(cur)
+    only = set(filter(None, (args.only or "").split(",")))
+    used = {pid(p["f"]) for L in have.values() for p in L} - {None}
+    want = {}
+    for s, _ in species_list(fish, set(args.circle), only):
+        L = have.get(s["id"], [])
+        recs = Counter(p["o"] for p in L)
+        bad = {p["o"] for p in L if p["f"] in moved}
+        for o, k in recs.items():
+            tail = o.rsplit("/", 1)[-1]
+            if k == OLD_LIMIT and o not in bad and o.startswith(obs_url("")) and tail.isdigit():
+                want[int(tail)] = s
+    net = Net(args.cache, offline=args.offline, refresh=args.refresh, plan=args.plan)
+    added = Counter()
+    ids = sorted(want)
+    try:
+        for i in range(0, len(ids), 200):
+            # Never captive, as every search (Codex review #715).
+            d = net.get(f"id={','.join(map(str, ids[i:i + 200]))}&captive=false&per_page=200", FIELDS + ",taxon.ancestor_ids")
+            for o in (d or {}).get("results", []):
+                s = want.get(o["id"])
+                # Still identified as that species (its taxon or an ancestor, as phase_obs): one re-identified since
+                # brings nothing (Codex review #715).
+                it = usable_obs(o, used, excl) if s and s.get("inat") in (o.get("tx") or []) else None
+                if not it:
+                    continue
+                for p in it["P"]:
+                    used.add(str(p[0]))
+                    have[s["id"]].append(record(s, it, p))
+                    added[s["id"]] += 1
+    finally:
+        net.save()
+    print(f"topup: {len(ids)} observations holding {OLD_LIMIT} photos asked again, +{sum(added.values())} photos for "
+          f"{len(added)} species", flush=True)
+    if added and not args.plan:
+        order = [s["id"] for s in fish["species"]]
+        dump({"v": 1, "cand": {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}},
+             str(args.cand))
+    return dict(added)
 
 
 def cap_of(phases):
@@ -450,13 +539,14 @@ def phase_room(phases, cap, held):
     """The room of one species: {"room": photos still to take (cap - photos kept), "rooms": {phase: photos to take of
     that phase first}, "free": the rest, of any phase}. held: Counter of the photos it keeps by photo_phase ("" adult or
     not known). Each extra phase aims at PER_PHASE photos of its own (the +10 it brings to the cap); when the room is
-    shorter than what the phases lack, it is shared out one photo at a time, in PHASES order."""
+    shorter than what the phases lack, it is shared out one photo at a time, in PHASES order; a half photo of room left
+    (obs_cost) stays free."""
     room = max(0, cap - sum(held.values()))
     need = {ph: max(0, PER_PHASE - held.get(ph, 0)) for ph in PHASES if ph in phases}
     rooms, left = dict.fromkeys(need, 0), room
-    while left and any(rooms[ph] < need[ph] for ph in need):
+    while left >= 1 and any(rooms[ph] < need[ph] for ph in need):
         for ph in need:
-            if left and rooms[ph] < need[ph]:
+            if left >= 1 and rooms[ph] < need[ph]:
                 rooms[ph] += 1
                 left -= 1
     return {"room": room, "rooms": rooms, "free": left}
@@ -464,17 +554,22 @@ def phase_room(phases, cap, held):
 
 def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap=None):
     """Everything the cap of Q36 says about species s (entry t), shared by tools/fetch_fish.py and tools/fetch_fishbase.py:
-    {"cap", "phases" (species_phases), "have" (photos still usable), "held" ({phase: photos kept of it}), "room", "rooms",
-    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of."""
+    {"cap", "phases" (species_phases), "have" (photos still usable, weighted per observation: obs_cost), "held"
+    ({phase: photos kept of it, counted the same way}), "obs" ({observation: photos still usable}), "room", "rooms",
+    "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of. An
+    observation's first usable photo in list order counts 1, the others EXTRA_W."""
     sug = sug or {}
     phases = species_phases(s, t, L, sug, game, fb, moved)
     c = cap_of(phases) if cap is None else cap
-    held = Counter()
+    held, obs = Counter(), Counter()
     for p in L:
         if not gone(p["f"]):
+            o = p.get("o") or p["f"]
             x = photo_phase(p, sug.get(p["f"]))
-            held[x if x in phases else ""] += 1
-    return {"cap": c, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, **phase_room(phases, c, held)}
+            held[x if x in phases else ""] += obs_cost(obs[o], 1)
+            obs[o] += 1
+    return {"cap": c, "phases": phases, "have": sum(held.values()), "held": {ph: held[ph] for ph in phases}, "obs": dict(obs),
+            **phase_room(phases, c, held)}
 
 
 def moved_of(cur):
@@ -639,8 +734,8 @@ def fill(c, used):
     allows, from the phase search abroad); then, from the general searches as before Q36, the free room and the rooms of
     the phases iNaturalist cannot search on (intermediate: the judging tags tell them later). The room of a searchable
     phase that iNaturalist cannot fill stays open for that phase: FishBase fills it next (tools/fetch_fishbase.py), or a
-    later run; never adults in a juvenile's place."""
-    s, R, n, near = c["s"], c["R"], c["n"], c["near"]
+    later run; never adults in a juvenile's place. Room as obs_cost counts it (held: the photos each observation keeps)."""
+    s, R, n, near, held = c["s"], c["R"], c["n"], c["near"], c["held"]
     taken, left = [], R["room"]
     free = R["free"] + sum(r for ph, r in R["rooms"].items() if ph not in INAT_PHASE)
     for ph in PHASES:
@@ -652,14 +747,14 @@ def fill(c, used):
             if ph in item_phases(it):
                 pools.setdefault(it["tier"], []).append(it)
         W = c["pw"].get(ph, [])
-        got = select(pools, r, {"ph": c["pmore"].get(ph, True)}, n, lambda: W, anywhere=near, claimed=used, photos=True)
+        got = select(pools, r, {"ph": c["pmore"].get(ph, True)}, n, lambda: W, anywhere=near, claimed=used, photos=True, held=held)
         for o in got:
             o["phase"] = ph
         taken += got
-        left -= sum(len(o["P"]) for o in got)
+        left -= sum(o["cost"] for o in got)
     free = min(free, left)
     if free > 0:
-        taken += select(c["pools"], free, c["more"], n, c["world"], anywhere=near, claimed=used, photos=True)
+        taken += select(c["pools"], free, c["more"], n, c["world"], anywhere=near, claimed=used, photos=True, held=held)
     return taken
 
 
@@ -701,11 +796,15 @@ def run(args):
             sid = s["id"]
             L = have.setdefault(sid, [])
             R = species_room(s, t, L, gone, sugf, game.get(sid, ()), (fbsrc.get(sid) or {}).get("photos") or (), moved, args.cap)
+            held = R.pop("obs")
             plan[sid] = {"name": s["name"], "entry": t["id"], **R}
             if R["room"] <= 0:
                 plan[sid]["add"] = {}
                 continue
-            known = {p["o"] for p in L}
+            # Every photo of an observation (Pierre, 2026-11-08): one already among the candidates brings its other photos
+            # (usable_obs leaves out those taken), unless Pierre sent one of its photos to another species or out of the
+            # fish (its identification is in doubt: as before, nothing more of it).
+            known = {p["o"] for p in L if p["f"] in moved}
             Q = queries(s["inat"])
             got, more, pools = {}, {}, {}
             # Pierre's own, asked for every species (Codex review #463): fish.json present.own is a count from the last
@@ -713,8 +812,8 @@ def run(args):
             names = ["own", *TIERS]
             # A refill reads on (pages) while a search brings fewer usable photos than the room, so a species whose
             # newest observations are all known still finds the older ones, and the end of a search is known.
-            enough = lambda res, known=known, need=R["room"]: sum(
-                len(it["P"]) for o in res if f"https://www.inaturalist.org/observations/{o['id']}" not in known
+            enough = lambda res, known=known, need=R["room"], held=held: sum(
+                obs_cost(held.get(obs_url(o["id"]), 0), len(it["P"])) for o in res if obs_url(o["id"]) not in known
                 for it in [usable_obs(o, used, excl)] if it) >= need
             for k in names:
                 got[k] = pages(net, Q[k], enough) if deep else net.get(Q[k])
@@ -753,7 +852,7 @@ def run(args):
 
             # Confirmed near Dauin (present.near: 2+ Research Grade observers within 40 km, or the IMR list): photos from
             # anywhere, by licence (Pierre, 2026-11-03).
-            ctx.append({"s": s, "t": t, "R": R, "n": n, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
+            ctx.append({"s": s, "t": t, "R": R, "n": n, "held": held, "known": known, "byid": byid, "all": dict(byid), "pools": pools,
                         "more": more, "world": world, "near": bool((s.get("present") or {}).get("near")), "pmore": {}, "pw": {},
                         "omore": omore, "wm": wm, "pwmore": {}})
 
@@ -784,7 +883,9 @@ def run(args):
             for c in C:
                 items(c, got[c["s"]["inat"]])
                 c["pmore"][ph] = more[c["s"]["inat"]]
-            have_ph = lambda c: sum(len(it["P"]) for it in c["all"].values() if ph in item_phases(it) and it["tier"] != "world")
+            # What the Philippines bring to the phase, counted as the room is (obs_cost; Codex review #715).
+            have_ph = lambda c: sum(obs_cost(c["held"].get(obs_url(it["id"]), 0), len(it["P"])) for it in c["all"].values()
+                                    if ph in item_phases(it) and it["tier"] != "world")
             W = [c for c in C if (c["s"].get("present") or {}).get("ph")
                  and (c["near"] or (not c["pmore"][ph] and have_ph(c) < c["R"]["rooms"][ph]))]
             if W:
@@ -799,8 +900,11 @@ def run(args):
             sid = s["id"]
             taken = fill(c, used)
             add = Counter(LOC[o["tier"]] for o in taken for _ in o["P"])
+            spent = Counter({"free": 0})
+            for o in taken:
+                spent[o.get("phase") or "free"] += o["cost"]
             plan[sid].update({"add": dict(add), "phase_add": dict(Counter(o["phase"] for o in taken for _ in o["P"] if o.get("phase"))),
-                              "end": ends(c)})
+                              "spent": dict(spent), "end": ends(c)})
             if args.plan:
                 continue
             L = have[sid]
@@ -893,11 +997,12 @@ def exhausted(P):
     their searches read to the end (P["end"]), or nothing found for them. "No more candidates is no more candidates"."""
     padd = P.get("phase_add") or {}
     total = sum((P.get("add") or {}).values())
-    left = {"free": P["free"] + sum(r for ph, r in P["rooms"].items() if ph not in INAT_PHASE) - (total - sum(padd.values()))}
-    got = {"free": total - sum(padd.values())}
+    got = {"free": total - sum(padd.values()), **padd}
+    spent = P.get("spent") or got  # the room taken (obs_cost); photos when not given
+    left = {"free": P["free"] + sum(r for ph, r in P["rooms"].items() if ph not in INAT_PHASE) - spent.get("free", 0)}
     for ph in INAT_PHASE:
         if P["rooms"].get(ph):
-            left[ph], got[ph] = P["rooms"][ph] - padd.get(ph, 0), padd.get(ph, 0)
+            left[ph], got[ph] = P["rooms"][ph] - spent.get(ph, 0), padd.get(ph, 0)
     end = P.get("end") or {}
     return sorted(k for k, v in left.items() if v > 0 and (end.get(k) or not got[k]))
 
@@ -922,6 +1027,8 @@ def refill(args):
     """--refill (Pierre, 2026-11-06, Q171): the short species only, at most --max a run, with the rules of run; then the
     exhaustion memory, FishBase (offline) and the iNaturalist covers (--rep) for the species refilled."""
     today = datetime.date.fromisoformat(args.today) if args.today else datetime.datetime.now(datetime.timezone.utc).date()
+    if not args.plan:
+        topup(argparse.Namespace(**{**vars(args), "only": "", "refresh": not args.offline}))
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
     fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
     have = rd(args.cand).get("cand", {})
@@ -974,7 +1081,8 @@ def main(argv=None):
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")
     m.add_argument("--plan", action="store_true", help="print what a run would add, from the cache only; write nothing")
     a.add_argument("--rep", action="store_true", help="only tag the candidates that are their taxon's iNaturalist cover (rep)")
-    a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171)")
+    a.add_argument("--refill", action="store_true", help="refill the short species only, at most --max (Q171); runs --topup first")
+    a.add_argument("--topup", action="store_true", help="the other photos of observations holding OLD_LIMIT (4) photos, asked by id")
     a.add_argument("--max", type=int, default=REFILL_MAX, help=f"--refill: species refilled at most (default {REFILL_MAX})")
     a.add_argument("--today", help="--refill: the day, YYYY-MM-DD (tests; default today, UTC)")
     a.add_argument("--memory", default=str(REFILL), help="--refill: what was searched to the end (tools/fish_refill.json)")
@@ -987,7 +1095,7 @@ def main(argv=None):
     a.add_argument("--cache", default=str(ROOT / "tools" / ".cache" / "fish_photos.json"))
     args = a.parse_args(argv)
     args.circle = args.circle or [1]
-    return refill(args) if args.refill else run(args)
+    return refill(args) if args.refill else topup(args) if args.topup else run(args)
 
 
 if __name__ == "__main__":
