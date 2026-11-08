@@ -158,6 +158,15 @@
 //   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
 //   answers per photo (docs/LEARNING.md "Photo exposure"); preOW (2026-11-08), each question's [under Open Water, the
 //   lowest judged ease shown] (docs/LEARNING.md "Rarely under ease 4 before Open Water").
+// - The levels and the score (2026-11-08, rule L11's measures, docs/LEARNING.md "Validating a learning change"): at each
+//   checkpoint, kinds, per kind of unit (the subject's rank for its slate: genus, family; app.js rankOf for a set's units,
+//   the fish scientific genera; bonus for the corals' bonus genera), its units, those met, at Open Water and at Advanced
+//   (LV_AT), the judge's D* and E = bar - D* over those met; score, the shown score (model.js headPct) and, for a subject
+//   with a global score, its components (core.js treeScore: entries, genera, common, scientific, S, credit, raw; by
+//   circle); plateau, the longest stretch of answers so far without a new high of the shown score. Per run: owAt and
+//   advAt, the answer at which each unit first reached Open Water and Advanced; kinds, each unit's kind; c3, the answer
+//   at which circle 3 was offered (the card) and first met. tools/learncmp.js reads them, with the photo exposure (expo,
+//   preOW above).
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -532,7 +541,10 @@ function play(cfg) {
   // The judge's domain score D*(t): success naming a photo of t alone (one view) with no choices, over t's theoretical
   // photo distribution (distOf). Item learner: recognition alone (no guess); field and exemplar: every slate genus a
   // possible answer.
-  const dOne = (t, d) => (field ? pField(t, SL, d, true) : exem ? pEx(t, SL, d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
+  // The possible answers for a unit outside the slate (a fish scientific genus, a coral bonus genus: the per-kind measures,
+  // Codex review #783): the units of its own kind, itself included; a slate unit keeps the slate.
+  const vocabOf = t => (SL.includes(t) ? SL : [...new Set([t, ...UALL.filter(g => kindOf(g) === kindOf(t))])]);
+  const dOne = (t, d) => (field ? pField(t, vocabOf(t), d, true) : exem ? pEx(t, vocabOf(t), d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
   const dStar = t => {
     const [mu, sd] = distOf(t);
     // GH holds the physicists' Gauss-Hermite nodes (weight e^(-x^2)) with weights over sqrt(pi): a standard normal z is
@@ -678,6 +690,7 @@ function play(cfg) {
     // The first-meeting cards, read through: each teaches like one right answer.
     (q.intro || []).forEach(g => (teach(g, prof.rate), exem && exAdd(g, rAt(0), null), nCards++));
     // --beyond: the card offering a part of the slate by choice (fish circle 3), answered.
+    if (c3.offer === null && i >= 0 && document.querySelector('.unlock.intro [data-opens]')) c3.offer = i + 1;
     const ob = BEYOND && document.querySelector(`.unlock.intro [data-${BEYOND === 'yes' ? 'opens' : 'notnow'}]`);
     if (ob) ob.click();
     // The bonus genera offer (every slate genus met): accepted.
@@ -836,6 +849,54 @@ function play(cfg) {
       gs: Object.fromEntries(met.map(g => [g, Math.round(genScore(g) * 1000) / 1000]))
     };
   };
+  // The levels and the score (2026-11-08, rule L11's measures; docs/LEARNING.md "Validating a learning change"): every
+  // unit of the game by kind (the subject's own rank for its slate, app.js rankOf for a set's units, the corals' bonus
+  // genera apart), the answer at which each first reached Open Water and Advanced (LV_AT), the shown score after every
+  // answer (headPct: the fish global score, else the units' mean) for its plateaus, and when circle 3 came (offered, met).
+  const SETU = typeof SETS === 'function' ? [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(g => !SL.includes(g)) : [],
+    kindOf = g => (SL.includes(g) ? SUBJ.rank : BON.includes(g) ? 'bonus' : (typeof rankOf === 'function' && rankOf(g)) || 'other'),
+    UALL = [...new Set([...SL, ...SETU, ...BON])],
+    KINDS = [...new Set(UALL.map(kindOf))],
+    owAt = {},
+    advAt = {},
+    C3 = typeof UNITS === 'object' && UNITS[SUBJ.id].circles ? UNITS[SUBJ.id].circles()[2] || [] : [],
+    c3 = {offer: null, met: null},
+    shownPct = () => (typeof headPct === 'function' ? headPct(SL) : progPct(SL)),
+    plat = {best: shownPct(), since: 0, max: 0};
+  const levelsRow = () =>
+    Object.fromEntries(
+      KINDS.map(k => {
+        const G = UALL.filter(g => kindOf(g) === k),
+          met = G.filter(introduced),
+          ds = met.map(dStar);
+        return [
+          k,
+          {
+            n: G.length,
+            met: met.length,
+            ow: G.filter(g => genScore(g) + 1e-9 >= LV_AT[0]).length,
+            adv: G.filter(g => genScore(g) + 1e-9 >= LV_AT[1]).length,
+            dStar: mean(ds),
+            over: mean(met.map((g, j) => genScore(g) - ds[j]))
+          }
+        ];
+      })
+    );
+  const scoreRow = () => {
+    const h = typeof headScore === 'function' ? headScore() : null,
+      r4 = x => Math.round(x * 1e4) / 1e4,
+      comp = o => ({
+        entries: r4(o.entries),
+        genera: r4(o.genera),
+        common: r4(o.common),
+        scientific: r4(o.scientific),
+        S: r4(o.S),
+        credit: r4(o.credit),
+        raw: r4(o.raw),
+        pct: o.pct
+      });
+    return h ? {...comp(h), by: Object.fromEntries(Object.entries(h.by || {}).map(([c, o]) => [c, comp(o)]))} : {pct: shownPct()};
+  };
   let cur = 'quiz';
   for (let i = 0; i < N; i++) {
     // --custom: once N genera are unlocked, they are the custom quiz's selection for --drill questions, then the Quiz again.
@@ -858,6 +919,17 @@ function play(cfg) {
     }
     const {q, t, good, set, e, first} = ask(null, i, cur);
     if (cust && cur !== 'quiz') (cust.nq++, (cust.ok += good ? 1 : 0));
+    UALL.forEach(g => {
+      if (!introduced(g) || (g in owAt && g in advAt)) return;
+      const b = genScore(g) + 1e-9;
+      if (!(g in owAt) && b >= LV_AT[0]) owAt[g] = i + 1;
+      if (!(g in advAt) && b >= LV_AT[1]) advAt[g] = i + 1;
+    });
+    if (c3.met === null && C3.some(introduced)) c3.met = i + 1;
+    // Plateaus: the answers since the shown score last reached a new high, the longest such stretch so far.
+    const sp = shownPct();
+    if (sp > plat.best) ((plat.best = sp), (plat.since = 0));
+    else plat.max = Math.max(plat.max, ++plat.since);
     // The first TRACE answers, for the fallback rules (tools/fallback.py): what the app logged with each answer (e, th,
     // mode), whether it was the genus's first answer, and the global level, the opening hold and the genera met after it.
     if (i < TRACE) {
@@ -950,6 +1022,10 @@ function play(cfg) {
         agains: nAgain,
         cards: nCards,
         f: fieldRow(),
+        // The levels by kind of unit, the score shown and its components (scoreRow), the longest plateau so far.
+        kinds: levelsRow(),
+        score: scoreRow(),
+        plateau: plat.max,
         // By photo count (photo memory): cumulative questions on the group's genera, their genera met.
         grp: Object.fromEntries(
           Object.entries(GRP).map(([k, G]) => {
@@ -1081,6 +1157,11 @@ function play(cfg) {
     nph: NPH,
     expo,
     preOW,
+    // The answer at which each unit first reached Open Water / Advanced, each unit's kind, and circle 3 (offered, met).
+    owAt,
+    advAt,
+    kinds: Object.fromEntries(UALL.map(g => [g, kindOf(g)])),
+    c3,
     pool: seed === 1 ? POOL : null,
     pairs: PAIRS.length,
     breaks: out,
@@ -1182,6 +1263,37 @@ const FKEYS = [
   ['selOpen', 'selOpen', 2],
   ['selOver', 'selOver', 2]
 ];
+// The levels and the score (per profile and checkpoint, means over the seeds): the shown score and, when the subject has
+// a global score, its Entries and credit components; per kind of unit, units at Open Water / Advanced and E = bar - D*
+// over the units met; the longest plateau so far; then per run the answer of the first unit at Open Water and circle 3.
+function levelTable(runs) {
+  const m = v => {
+      v = v.filter(x => typeof x === 'number' && !isNaN(x));
+      return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null;
+    },
+    f = (x, d) => (x === null ? '-' : x.toFixed(d)),
+    lines = ['\nLevels and score: score% (entries / credit), per kind ow / adv (E = bar - D*), plateau: the longest stretch of answers without a new high of the shown score'];
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      kinds = [...new Set(R.flatMap(r => Object.values(r.kinds || {})))];
+    lines.push(`\n${name}`);
+    CPS.forEach((q, i) => {
+      const rows = R.map(r => r.rows[i]).filter(Boolean),
+        sc = k => m(rows.map(w => (w.score || {})[k])),
+        kd = (k, x) => m(rows.map(w => ((w.kinds || {})[k] || {})[x]));
+      lines.push(
+        `  ${String(q).padStart(5)}  score ${f(sc('pct'), 1)}${sc('entries') === null ? '' : ` (${f(sc('entries'), 3)} / ${f(sc('credit'), 3)})`}  ` +
+          kinds.map(k => `${k} ${f(kd(k, 'ow'), 1)} / ${f(kd(k, 'adv'), 1)} (${f(kd(k, 'over'), 3)})`).join('  ') +
+          `  plateau ${f(m(rows.map(w => w.plateau)), 1)}`
+      );
+    });
+    const first = R.map(r => Math.min(...Object.entries(r.owAt || {}).filter(([g]) => (r.kinds || {})[g] !== 'bonus').map(([, a]) => a))).filter(isFinite);
+    lines.push(
+      `  first unit at Open Water: answer ${f(m(first), 1)} (${first.length}/${R.length} runs); circle 3 offered ${R.filter(r => r.c3 && r.c3.offer).length}/${R.length}, met ${R.filter(r => r.c3 && r.c3.met).length}/${R.length} runs`
+    );
+  }
+  return lines.join('\n');
+}
 function fieldTable(runs) {
   const ms = v => {
     v = v.filter(x => typeof x === 'number' && !isNaN(x));
@@ -1485,6 +1597,7 @@ function openTable(runs) {
   );
   console.log(table(S));
   console.log(fieldTable(runs));
+  console.log(levelTable(runs));
   // Millepora met / first asked and the bonus offer, per profile: median question over the runs where it happened.
   const med = A => {
     const v = A.filter(x => typeof x === 'number').sort((a, b) => a - b);

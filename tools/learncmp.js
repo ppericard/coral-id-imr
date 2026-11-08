@@ -46,6 +46,29 @@ const overOf = f => {
 // The share of photos under ease 4 among the questions 1..cp on a unit under Open Water (learnsim preOW: per question
 // [1 if under Open Water, the lowest judged ease shown, 0 for none]); a photo with no judged ease is never one of them
 // (model.js RARE). None when no photo of the run has a judged ease (the corals).
+// The units at a level at a checkpoint, every kind but the corals' bonus genera (learnsim rows kinds: {kind: {ow, adv}}).
+const levels = (run, cp, k) => {
+  const K = (rowAt(run, cp) || {}).kinds;
+  return K ? Object.entries(K).reduce((t, [kd, o]) => t + (kd === 'bonus' ? 0 : o[k] || 0), 0) : null;
+};
+// The answer at which the first unit (the corals' bonus genera left out) reached Open Water; none if no unit did.
+const firstOW = run => {
+  const A = Object.entries(run.owAt || {})
+    .filter(([g]) => (run.kinds || {})[g] !== 'bonus')
+    .map(([, a]) => a);
+  return A.length ? Math.min(...A) : null;
+};
+// Answers on photos under ease 4 (judged), whatever the unit's level, and answers per distinct photo shown, questions 1..cp.
+const hardAnswers = (run, cp) => {
+  const P = (run.preOW || []).slice(0, cp);
+  return P.some(x => x[1] > 0) ? P.filter(x => x[1] > 0 && x[1] < 4).length : null;
+};
+const perPhoto = (run, cp) => {
+  const E = (run.expo || []).slice(0, cp),
+    n = E.reduce((t, e) => t + e.length - 2, 0),
+    u = new Set(E.flatMap(e => e.slice(2))).size;
+  return u ? n / u : null;
+};
 const hardShare = (run, cp) => {
   const P = (run.preOW || []).slice(0, cp);
   if (!P.length || !P.some(x => x[1] > 0)) return null;
@@ -70,11 +93,18 @@ const MEASURES = {
   right: {label: 'Right % since the previous checkpoint', kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).right ?? null},
   prog: {label: "The app's progress %", kind: 'row', dg: 1, get: (r, cp) => (rowAt(r, cp) || {}).prog ?? null},
   thErr: {label: '|Elo - logit(know)|, units met', kind: 'row', dg: 3, get: (r, cp) => (rowAt(r, cp) || {}).thErr ?? null},
-  // Measured by learnsim from the measures of ROADMAP "Validation tools", step 2: not in the files yet.
-  score: {label: 'The global score as shown', kind: 'row', dg: 1, get: null},
-  firstOW: {label: 'Answers to the first unit at Open Water', kind: 'run', dg: 1, get: null},
-  unitsOW: {label: 'Units at Open Water', kind: 'row', dg: 1, get: null},
-  plateau: {label: 'Longest plateau of the shown score', kind: 'run', dg: 0, get: null}
+  // The levels and the score (learnsim rows' kinds, score, plateau; the run's owAt, c3).
+  score: {label: 'The global score as shown', kind: 'row', dg: 1, get: (r, cp) => ((rowAt(r, cp) || {}).score || {}).pct ?? null},
+  entries: {label: 'Score component: Entries', kind: 'row', dg: 3, get: (r, cp) => ((rowAt(r, cp) || {}).score || {}).entries ?? null},
+  credit: {label: 'Score component: credit', kind: 'row', dg: 3, get: (r, cp) => ((rowAt(r, cp) || {}).score || {}).credit ?? null},
+  firstOW: {label: 'Answers to the first unit at Open Water', kind: 'run', dg: 1, get: r => firstOW(r)},
+  unitsOW: {label: 'Units at Open Water', kind: 'row', dg: 1, get: (r, cp) => levels(r, cp, 'ow')},
+  unitsAdv: {label: 'Units at Advanced', kind: 'row', dg: 1, get: (r, cp) => levels(r, cp, 'adv')},
+  plateau: {label: 'Longest plateau of the shown score', kind: 'run', dg: 0, get: r => ((r.rows || []).slice(-1)[0] || {}).plateau ?? null},
+  c3: {label: 'Answer at which circle 3 was met', kind: 'run', dg: 1, get: r => (r.c3 || {}).met ?? null},
+  // Photo exposure (learnsim expo and preOW, questions 1..N): answers on photos under ease 4, answers per photo shown.
+  hardAns: {label: 'Answers on photos under ease 4', kind: 'window', dg: 1, get: (r, cp) => hardAnswers(r, cp)},
+  perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)}
 };
 // LEARNING.md "Guardrails and margins": harm -1 when lower is worse, +1 when higher is; the margin is abs, or rel times
 // the before mean when larger ("the larger"); coralAbs: the corals' own margin (units met: 2 genera, as before).
@@ -297,7 +327,7 @@ function list() {
   return L.join('\n');
 }
 
-module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf};
+module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf, levels, firstOW, hardAnswers, perPhoto};
 
 if (require.main === module) {
   const args = process.argv.slice(2),
