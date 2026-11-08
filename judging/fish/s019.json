@@ -95,6 +95,76 @@
   "fish-s019-cand-625637581": {
    "code": "p1g1ss12",
    "keep": "best"
+  },
+  "fish-s019-cand-363949600": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s019-cand-363949613": {
+   "code": "o1g0slmj2",
+   "keep": "dup"
+  },
+  "fish-s019-cand-363950401": {
+   "code": "h1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s019-cand-318138549": {
+   "code": "o1g1mm1j2",
+   "keep": "best"
+  },
+  "fish-s019-cand-753912669": {
+   "code": "o1d1mm1j1",
+   "keep": "best"
+  },
+  "fish-s019-cand-624494342": {
+   "code": "p1g2smm1",
+   "keep": "best"
+  },
+  "fish-s019-cand-624494346": {
+   "code": "p0g2ssm1",
+   "keep": "dup"
+  },
+  "fish-s019-cand-617006402": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s019-cand-617006401": {
+   "code": "d1g1sm12",
+   "keep": "alt"
+  },
+  "fish-s019-cand-378711824": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s019-cand-615476905": {
+   "code": "p1d2bsx1",
+   "keep": "best"
+  },
+  "fish-s019-cand-731619591": {
+   "code": "o1d2mm12",
+   "keep": "best"
+  },
+  "fish-s019-cand-731619590": {
+   "code": "o1g2mmm2",
+   "keep": "dup"
+  },
+  "fish-s019-cand-663375845": {
+   "code": "p1g1msx1",
+   "keep": "best",
+   "note": "A large marine animal fills the frame; the bannerfish is tiny beside it."
+  },
+  "fish-s019-cand-630754501": {
+   "code": "o1g1smm2",
+   "keep": "best"
+  },
+  "fish-s019-cand-757374085": {
+   "code": "o1g1slm3",
+   "keep": "best",
+   "note": "A fin of another fish enters the lower right corner."
+  },
+  "fish-s019-cand-609185159": {
+   "code": "p1g1slm3",
+   "keep": "best"
   }
  }
 }

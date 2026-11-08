@@ -131,6 +131,127 @@
   "fish-s121-cand-755481025": {
    "code": "p1g0sm1a2",
    "keep": "best"
+  },
+  "fish-s121-cand-395560854": {
+   "code": "o1g2bs1j1",
+   "keep": "dup"
+  },
+  "fish-s121-cand-395560962": {
+   "code": "p1g2bm1j1",
+   "keep": "dup"
+  },
+  "fish-s121-cand-395561008": {
+   "code": "p1g2bl1j1",
+   "keep": "best",
+   "note": "Small crop (219 px) of a murky photo."
+  },
+  "fish-s121-cand-395561106": {
+   "code": "o1g2bsxj1",
+   "keep": "dup"
+  },
+  "fish-s121-cand-276508975": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s121-cand-276508977": {
+   "code": "d1g1sm1j1",
+   "keep": "dup"
+  },
+  "fish-s121-cand-227857912": {
+   "code": "p1g1bs1j1",
+   "keep": "dup"
+  },
+  "fish-s121-cand-227857930": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s121-cand-367881215": {
+   "code": "p1g1sl1ja2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "In a glass tank, not in the sea: maybe captive."
+  },
+  "fish-s121-cand-367881274": {
+   "code": "p1g1slmja2",
+   "keep": "dup"
+  },
+  "fish-s121-cand-600514932": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s121-cand-600514954": {
+   "code": "o1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s121-cand-758083174": {
+   "code": "d1g2ms11",
+   "keep": "best"
+  },
+  "fish-s121-cand-614081379": {
+   "code": "o1g2bl11",
+   "keep": "best"
+  },
+  "fish-s121-cand-601596680": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s121-cand-616315291": {
+   "code": "p1g1smmj2",
+   "keep": "best"
+  },
+  "fish-s121-cand-704584180": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s121-cand-629014329": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s121-cand-629014385": {
+   "code": "p1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s121-cand-629014391": {
+   "code": "o1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s121-cand-595709637": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s121-cand-725219984": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s121-cand-618915826": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s121-cand-596645941": {
+   "code": "o1g1slm3",
+   "keep": "dup"
+  },
+  "fish-s121-cand-596645920": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s121-cand-596645927": {
+   "code": "p1g0sl14",
+   "keep": "alt",
+   "unsure": [
+    "keep"
+   ],
+   "note": "No black side spot visible, unlike the other photos of this observation: may show another fish."
+  },
+  "fish-s121-cand-596646005": {
+   "code": "h1g1slm2",
+   "keep": "dup"
+  },
+  "fish-s121-cand-690034064": {
+   "code": "p1g1sl1a2",
+   "keep": "best"
   }
  }
 }
