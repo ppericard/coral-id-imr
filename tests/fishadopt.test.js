@@ -457,3 +457,44 @@ test('a saved copy without the fish rules version: the fish replay asked for aga
   assert.strictEqual(a.rvApplied(), C.RV, "the corals' unchanged");
   assert.strictEqual(a.ctx.SYNC.dirty, true, 'a save scheduled: it brings the replay again');
 });
+
+// Codex review #779: the sheet's floor may raise the level's typed opportunities; this device's larger answer count (30
+// saved, 20 logged: answers from before fish logging) keeps its own level in replayedOf, which undid the floor (73% to 0%).
+test("a device with more answers than the log keeps the floor's typed opportunities at adoption", async () => {
+  const s = loadCodeGs(withFiles()),
+    dp = C.domFromCounts({ok: 6, ko: 0, h: '111111'}, 0.5, 4, 0).dp,
+    high = {
+      'f:Damselfishes': {ok: 6, ko: 0, h: '111111', u: 6, dp, ds: 0.9},
+      'f:Wrasses': {ok: 2, ko: 0, h: '11', u: 2, dp, ds: 0.3, conf: {'f:Damselfishes': 2}, off: {'f:Damselfishes': 2}},
+      '~level': {ok: 30, ko: 0, th: 1, tyk: {f: 10}}
+    },
+    typed = Array.from({length: 10}, (_, i) => ({...fa('t' + i, i), m: 'quiz|t', a: 'f:Damselfishes', ok: 1, ch: ''})),
+    other = Array.from({length: 10}, (_, i) => ({
+      ...fa('o' + i, 20 + i),
+      g: 'f:Angelfishes',
+      a: 'f:Angelfishes',
+      ok: 1,
+      ch: 'f:Angelfishes f:Butterflyfishes f:Groupers f:Snappers'
+    }));
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-fish-progress': JSON.stringify(high)},
+    summary: {},
+    answers: [...typed, ...other]
+  });
+  const a = app({
+    sheet: atv(s),
+    ls: {'reefid-sync-fish-progress': JSON.stringify(high), 'reefid-sync-coral-rv': String(C.RV)},
+    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(high)), srv: 1}
+  });
+  await a.syncPush();
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  const P = a.fish();
+  assert.ok(P['~level'].ok >= 30, "this device's larger count kept");
+  assert.ok(
+    bar(P, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9,
+    `${bar(P, 'f:Damselfishes')} vs ${bar(high, 'f:Damselfishes')}`
+  );
+  assert.deepStrictEqual(a.base()['~level'].tyk, P['~level'].tyk, 'the same in the shared baseline');
+});

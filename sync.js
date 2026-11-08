@@ -270,6 +270,17 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       // sheet floors it against the account's saved copy (Code.gs replay_, core.js replayFloor), so every device adopts
       // the same record and keeps it as their shared baseline (replayBase; Codex review #779).
       M = replayedOf({P: R}, P, rp.rv);
+    // A floored replay's typed opportunities (core.js replayFloor may raise the level's, which a unit's false-alarm rate
+    // reads): kept per rank when this device's larger answer count keeps its own level (replayedOf), here and in the
+    // shared baseline below, so the adoption does not undo the floor (Codex review #779).
+    const tyk = S.replayed && S.replayed.floor ? ((R && R[LEVEL]) || {}).tyk : null,
+      tykUp = L => {
+        if (!tyk || !L || typeof L !== 'object') return;
+        const o = {...(L.tyk || {})};
+        Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
+        L.tyk = o;
+      };
+    tykUp(M[LEVEL]);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
@@ -293,6 +304,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
       SYNC[S.base[0]] = replayBase(rp.rec, M, rp.rv, SYNC[S.base[0]]);
+      tykUp(SYNC[S.base[0]][LEVEL]);
       // The replay counts every logged answer of this subject; the flag goes once every subject replayed has its own.
       if (SYNC.lg) {
         SYNC.lgOk = [...new Set([...(SYNC.lgOk || []), S.id])];
