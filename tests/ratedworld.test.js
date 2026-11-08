@@ -162,3 +162,51 @@ test('D* over the game photos only; a typed miss on a slate genus may name a bon
     fo = RW.typedOthers(RW.engine(F, RW.world(F, 1)).G, [F.slate[0], F.slate[1], g], F.slate[0], () => true);
   assert.deepStrictEqual(fo, [F.slate[1]]); // a family's typed miss names a family, never a genus
 });
+
+// --app sheet (Q315 level 2): the sheet's photo Elo replayed on a population's own log and served to every player.
+test('the sheet mode: a population logs its answers with seconds, the ratings it serves are learned from them', () => {
+  const U = RW.unitsOf('coral'),
+    W = RW.world(U, 3),
+    TW = RW.timeWorld(U, W, 3, 'rho25'),
+    T0 = RW.timeWorld(U, W, 3, 'rho0');
+  assert.ok(Math.abs(TW.rho - RW.RT.RHO) < 0.08, `beta against d ${TW.rho}`);
+  assert.ok(Math.abs(T0.rho) < 0.08, `unrelated ${T0.rho}`);
+  assert.ok(RW.timeWorld(U, W, 3, 'fast').rho > 0.1, 'fast photos easy: positively related overall');
+  assert.throws(() => RW.timeWorld(U, W, 3, 'nope'));
+  const q = {ph: [Object.keys(TW.beta)[0]], ok: 1, typed: false};
+  assert.strictEqual(RW.secOf(TW, 3, 0, 7, q), RW.secOf(TW, 3, 0, 7, q), 'the same answer, the same seconds');
+  const o = {subject: 'coral', seed: 3, N: 30, cps: [30], profiles: ['beginner', 'expert'], every: 10},
+    a = RW.runPop(null, {...o, pk: 0, recover: ['rho0', 'views']}),
+    b = RW.runPop(null, {...o, pk: 0, recover: ['rho0', 'views']}),
+    c = RW.runPop(null, {...o, pk: 2, times: 'rho0'});
+  assert.deepStrictEqual(a, b, 'the same seed, the same population');
+  assert.strictEqual(a.runs.length, 2);
+  assert.deepStrictEqual(
+    a.runs.map(r => r.profile),
+    ['beginner', 'expert']
+  );
+  assert.strictEqual(a.pop.answers, 60);
+  assert.deepStrictEqual(Object.keys(a.pop.rec).sort(), ['rho0', 'rho25', 'views'], 'with pk 0 every case asked is recovered');
+  assert.deepStrictEqual(Object.keys(c.pop.rec), ['rho0'], "with pk 2 only the log's own case");
+  const at = a.pop.at[0];
+  assert.ok(at.q === 30 && at.photos > 10 && at.err > 0 && at.gdErr > 0, JSON.stringify(at));
+  a.pop.rec.rho0.ll.forEach(x => assert.ok(x > 0 && x < 1.5));
+  assert.ok(RW.KGRID.includes(a.pop.rec.rho0.kLL) && RW.KGRID.includes(a.pop.rec.rho0.kErr));
+  // With pk 0 the seconds change nothing: the case of the log's seconds leaves the answers as they are.
+  const d = RW.runPop(null, {...o, pk: 0, times: 'views'});
+  assert.deepStrictEqual(
+    d.runs.map(r => r.expo),
+    a.runs.map(r => r.expo)
+  );
+  // The ratings served: the sheet's replay (core.js eloReplay) with the photo k asked.
+  const log = [['p1', 1, 'Acropora', 'Acropora', 1, 'quiz|k4', 'x', null, null, null, 'Acropora Porites', 0, 3, 0]],
+    s = RW.sheetStats(log, 2);
+  assert.ok(s.photos.x && 'Acropora' in s.gd);
+  assert.strictEqual(require('../core.js').RTIME.PK, 2, 'the photo k given back');
+  // learncmp reads the population measures, one value per seed.
+  const F = (r, pk) => ({subject: 'coral', world: 'rated', seeds: 1, questions: 30, checkpoints: [30], pk, runs: r.runs, pop: [r.pop]}),
+    R = L.compare(F(a, 0), F(c, 2), {primary: {at: L.parseAt('rateErr@30'), dir: 'down'}});
+  assert.ok(R.primary.pop && R.primary.n === 1);
+  assert.ok(R.pops.rateErr[0].n === 1 && R.recK.before.rho0.kLL.length === 1);
+  assert.match(L.report(R), /The sheet's photo ratings/);
+});

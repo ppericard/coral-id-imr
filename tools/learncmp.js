@@ -112,8 +112,19 @@ const MEASURES = {
   // Photo exposure (learnsim expo and preOW, questions 1..N): answers on photos under ease 4, answers per photo shown.
   hardAns: {label: 'Answers on photos under ease 4', kind: 'window', dg: 1, get: (r, cp) => hardAnswers(r, cp)},
   perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)},
-  genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)}
+  genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
+  // The sheet's photo ratings in the rated world's population (--app sheet, tools/ratedworld.js runPop): one value per
+  // seed (the population shares them), at the checkpoints of the players' answers; harm: +1 when higher is worse.
+  rateErr: {label: 'Photo rating error against the truth (centred RMS, photos answered)', kind: 'pop', dg: 4, harm: 1, get: (p, cp) => popAt(p, cp, 'err')},
+  rateErrW: {label: 'Photo rating error, weighed by answers', kind: 'pop', dg: 4, harm: 1, get: (p, cp) => popAt(p, cp, 'errW')},
+  rateCorr: {label: 'Correlation of the photo ratings with the truth', kind: 'pop', dg: 4, harm: -1, get: (p, cp) => popAt(p, cp, 'corr')},
+  gdErr: {label: 'Genus offset error against the truth (centred RMS)', kind: 'pop', dg: 4, harm: 1, get: (p, cp) => popAt(p, cp, 'gdErr')}
 };
+// A population measure at a checkpoint (a pop record of runPop: at [{q, err, errW, corr, gdErr}]).
+function popAt(p, cp, k) {
+  const a = ((p && p.at) || []).find(x => x.q === cp);
+  return a && num(a[k]) ? a[k] : null;
+}
 // LEARNING.md "Guardrails and margins": harm -1 when lower is worse, +1 when higher is; the margin is abs, or rel times
 // the before mean when larger ("the larger"); coralAbs: the corals' own margin (units met: 2 genera, as before).
 const GUARDRAILS = [
@@ -188,7 +199,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
     profiles = [...new Set([...Object.keys(B.profiles || {}), ...keys.map(k => IB.get(k).profile)])].filter(p => keys.some(k => IB.get(k).profile === p)),
     only = [...IB.keys()].filter(k => !IA.has(k)).concat([...IA.keys()].filter(k => !IB.has(k)));
   // The settings that should match for a paired comparison (a change under test may differ on purpose: shown, not refused).
-  const SET = ['subject', 'questions', 'seeds', 'seed0', 'learnerKind', 'tau', 'truth', 'stats', 'sheetv', 'world'],
+  const SET = ['subject', 'questions', 'seeds', 'seed0', 'learnerKind', 'tau', 'truth', 'stats', 'sheetv', 'world', 'dist', 'app', 'times', 'pk'],
     differ = SET.filter(k => JSON.stringify(B[k] ?? null) !== JSON.stringify(A[k] ?? null)).map(k => `${k} ${JSON.stringify(B[k] ?? null)} / ${JSON.stringify(A[k] ?? null)}`);
   const reach = (F, m, cp) => {
     const M = MEASURES[m];
@@ -224,7 +235,42 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
       .filter(a => a.per.some(x => x.n > 0));
     return {m: G.m, label: M.label, harm: G.harm, measured: at.length > 0, at};
   });
+  // The population measures (both files from --app sheet): per seed, every checkpoint both reach, the paired difference,
+  // its one-sided bound on the side of harm and the exact sign-flip over the seeds (two-sided).
+  const pops = {},
+    popIdx = F => new Map((F.pop || []).map(p => [p.seed, p])),
+    PB = popIdx(B),
+    PA = popIdx(A),
+    seeds = [...PB.keys()].filter(k => PA.has(k)).sort((a, b) => a - b);
+  if (seeds.length)
+    Object.entries(MEASURES)
+      .filter(([, M]) => M.kind === 'pop')
+      .forEach(([m, M]) => {
+        pops[m] = (A.checkpoints || [])
+          .filter(cp => (B.checkpoints || []).includes(cp))
+          .map(cp => {
+            const b = seeds.map(k => M.get(PB.get(k), cp)),
+              a = seeds.map(k => M.get(PA.get(k), cp)),
+              p = paired(b, a, M.harm, conf),
+              d = seeds.map((k, i) => (num(a[i]) && num(b[i]) ? a[i] - b[i] : null)).filter(num);
+            return {cp, ...p, p: signFlip(d).p};
+          });
+      });
+  // The k the log recovers, per case (runPop rec): from each file.
+  const recK = F => Object.fromEntries([...new Set((F.pop || []).flatMap(p => Object.keys(p.rec || {})))].map(c => [c, {kLL: (F.pop || []).map(p => (p.rec[c] || {}).kLL), kErr: (F.pop || []).map(p => (p.rec[c] || {}).kErr), rho: mean((F.pop || []).map(p => (p.rho || {})[c]).filter(num))}]));
   let prim = null;
+  if (primary && MEASURES[primary.at[0]].kind === 'pop') {
+    const [m, cp] = primary.at,
+      dir = primary.dir === 'up' ? 1 : -1,
+      M = MEASURES[m],
+      P = seeds.map(k => ({seed: k, b: M.get(PB.get(k), cp), a: M.get(PA.get(k), cp)})).filter(x => num(x.b) && num(x.a)),
+      d = P.map(x => x.a - x.b),
+      sf = signFlip(d),
+      T = d.reduce((t, x) => t + x, 0);
+    if (!P.length) throw new Error(`${key(m, cp)}: no seed both files hold (--app sheet runs)`);
+    prim = {m, cp, dir: primary.dir, label: M.label, alpha, pop: true, n: P.length, T, p: sf.p, exact: sf.exact, draws: sf.draws, way: d.filter(x => dir * x > 0).length, clear: sf.p <= alpha && dir * T > 0, ...paired(P.map(x => x.b), P.map(x => x.a), -dir, conf), per: []};
+    primary = null;
+  }
   if (primary) {
     const [m, cp] = primary.at,
       dir = primary.dir === 'up' ? 1 : -1,
@@ -255,7 +301,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
     });
     prim = {m, cp, dir: primary.dir, label: MEASURES[m].label, alpha, ...sf, way: P.filter(x => dir * x.d > 0).length, clear, per};
   }
-  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim};
+  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, recK: {before: recK(B), after: recK(A)}};
 }
 
 // The report, Markdown ready for a PR.
@@ -268,7 +314,16 @@ function report(R, nameB = 'before', nameA = 'after') {
   L.push(`Looks declared: ${R.looks} (one-sided bounds at ${(100 * R.conf).toFixed(1)}%, the primary at ${R.alpha.toFixed(4)})`);
   if (R.differ.length) L.push(`Settings that differ: ${R.differ.join('; ')}`);
   if (R.only.length) L.push(`Runs in one file only, left out: ${R.only.join(', ')}`);
-  if (R.primary) {
+  if (R.primary && R.primary.pop) {
+    const P = R.primary,
+      dg = MEASURES[P.m].dg;
+    L.push('');
+    L.push(`**Primary: ${P.label}, ${key(P.m, P.cp)}, ${P.dir}** (declared before running; one value per seed)`);
+    L.push(
+      `${v(P.before, dg)} -> ${v(P.after, dg)}, paired difference ${f(P.d, dg)} (sd ${v(P.sd, dg)}); exact sign-flip over the ${P.n} seeds: p ${pv(P.p)} two-sided, ${P.way} of ${P.n} seeds ${P.dir}: ` +
+        (P.clear ? `**clear (${P.dir})**` : P.p <= P.alpha ? '**significant against the declared direction**' : 'no clear difference')
+    );
+  } else if (R.primary) {
     const P = R.primary,
       dg = MEASURES[P.m].dg;
     L.push('');
@@ -320,6 +375,20 @@ function report(R, nameB = 'before', nameA = 'after') {
         : 'Every guardrail measured is held.'
   );
   if (none.length) L.push(`Not measured by these files: ${none.join('; ')}.`);
+  if (R.seeds && R.seeds.length) {
+    L.push('');
+    L.push(`**The sheet's photo ratings** (one value per seed, ${R.seeds.length} seeds; before -> after, paired difference [one-sided ${(100 * R.conf).toFixed(1)}% bound on the side of harm], exact sign-flip p two-sided)`);
+    L.push('');
+    L.push('| Measure | At | Before -> after | Difference [bound] | Seeds worse | p |');
+    L.push('|---|---|---|---|---|---|');
+    Object.entries(R.pops).forEach(([m, at]) => {
+      const dg = MEASURES[m].dg;
+      at.forEach(x => L.push(`| ${MEASURES[m].label} | ${x.cp} | ${v(x.before, dg)} -> ${v(x.after, dg)} | ${f(x.d, dg)} [${f(x.bound, dg)}] | ${x.worse}/${x.n} | ${pv(x.p)} |`));
+    });
+    ['before', 'after'].forEach(w =>
+      Object.entries(R.recK[w]).forEach(([c, o]) => L.push(`k recovered on the ${w} file's logs, times ${c} (beta-d correlation ${v(o.rho, 2)}): by log-loss ${o.kLL.join(' ')}; by rating error ${o.kErr.join(' ')}`))
+    );
+  }
   return L.join('\n');
 }
 

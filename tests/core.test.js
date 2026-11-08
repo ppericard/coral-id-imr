@@ -35,7 +35,9 @@ const {
   photoAway,
   photoIndex,
   photoCropOf,
-  scoreOf
+  scoreOf,
+  RTIME,
+  photoTimeW
 } = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
@@ -139,6 +141,79 @@ test('hierarchical photo Elo: a photo nobody answered starts at its genus offset
   assert.ok(gd.Acropora[1] > 0 && gd.Acropora[1] < 40, JSON.stringify(gd));
 });
 
+// Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); rules version 10): a right answer's step on its photos
+// and on its genus offset, times clamp(1 - RTIME.PK z, 0.5, 1.5), z its log seconds against the player's own earlier
+// median (from the 11th timed answer); a miss, a typed answer, an enlarged photo or no seconds: 1.
+test('photoTimeW: a fast right answer moves its photo and genus offset more, a slow one less', () => {
+  const past = [];
+  // Ana, trusted: 30 timed answers on Porites at 5 s (her median), 4 in 5 right.
+  for (let i = 0; i < 30; i++)
+    past.push([
+      'Ana',
+      i,
+      'Porites',
+      i % 5 ? 'Porites' : 'Acropora',
+      i % 5 ? 1 : 0,
+      'quiz|k4',
+      `porites-${i % 6}`,
+      null,
+      null,
+      null,
+      'Porites Acropora Favia Montipora',
+      0,
+      5
+    ]);
+  const last = (ok, sec, big, mode = 'quiz|k4') => [
+      ...past,
+      [
+        'Ana',
+        99,
+        'Acropora',
+        ok ? 'Acropora' : 'Porites',
+        ok,
+        mode,
+        'acropora-1',
+        null,
+        null,
+        null,
+        mode.includes('|t') ? '' : 'Porites Acropora Favia Montipora',
+        0,
+        sec,
+        big
+      ]
+    ],
+    photo = rows => eloOf(rows)['acropora-1'][0],
+    gd = rows => genusOffsetsOf(rows).Acropora[0];
+  const none = last(1, null, 0),
+    fast = last(1, 2, 0),
+    slow = last(1, 20, 0);
+  assert.ok(photo(fast) < photo(none) && photo(none) < photo(slow), [photo(fast), photo(none), photo(slow)].join(' '));
+  assert.ok(gd(fast) < gd(none) && gd(none) < gd(slow), [gd(fast), gd(none), gd(slow)].join(' '));
+  // The weight on the step: at most 1.5, at least 0.5 (clamped), exactly as photoTimeW says.
+  const T = {};
+  past.forEach(r => photoTimeW(T, r[12], 0.25, r[4], 0));
+  assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 2, 0.25, 1, 0), RTIME.HI, '2 s against 5 s: the most');
+  assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 20, 0.25, 1, 0), RTIME.LO, '20 s against 5 s: the least');
+  const w = photoTimeW({...T, rt: {...T.rt}}, 5.5, 0.25, 1, 0);
+  assert.ok(Math.abs(w - (1 - RTIME.PK * Math.log(5.5 / 5))) < 1e-9, String(w));
+  assert.strictEqual(RTIME.PK, 2, 'the k chosen on the real log (Q315)');
+  // Weight 1: a miss, an enlarged photo, a typed answer, no seconds, and the player's first RTIME.MIN timed answers.
+  assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 2, 0.25, 0, 0), 1);
+  assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 2, 0.25, 1, 1), 1);
+  assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 2, 0, 1, 0), 1);
+  assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, null, 0.25, 1, 0), 1);
+  assert.strictEqual(photoTimeW({}, 2, 0.25, 1, 0), 1);
+  assert.strictEqual(photo(last(1, 2, 1)), photo(none), 'enlarged: as without seconds');
+  assert.strictEqual(photo(last(1, 2, 0, 'quiz|t')), photo(last(1, null, 0, 'quiz|t')), 'typed: as without seconds');
+  assert.strictEqual(photo(last(0, 2, 0)), photo(last(0, null, 0)), 'a miss: as without seconds');
+  // The time is added after its own weight, and a typed answer's never: the median is of the earlier untyped answers.
+  const U = {};
+  photoTimeW(U, 3, 0, 1, 0);
+  assert.deepStrictEqual(U, {}, 'a typed answer adds no time');
+  photoTimeW(U, 3, 0.5, 0, 0);
+  assert.deepStrictEqual(U.rt, {30: 1}, "a miss's time counts in the median");
+});
+
 test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   const s = loadCodeGs();
   const photos = ['acropora-1', 'acropora-2', 'porites-1', 'porites-2', 'favia-1'];
@@ -162,7 +237,11 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
             m: ['quiz-duel', 'quiz', 'quiz|k2', 'quiz|k3', 'quiz'][i % 5],
             // Every 5th: a plain "quiz" with 2 choices ("Again: A or B?" logged before 2026-11-02), rated 1 in 2 (v20).
             ch: i % 5 === 4 ? 'Acropora Porites' : 'Acropora Porites Favites Montipora',
-            ph: ph.join(' ')
+            ph: ph.join(' '),
+            // Q315 (rules version 10): the seconds weigh a right answer's photo and genus-offset steps, an enlarged photo
+            // (every 7th) and a missing time (every 11th) leave them at 1.
+            ...(i % 11 === 10 ? {} : {rt: 2 + ((i * 7) % 13) * 0.7}),
+            ...(i % 7 === 6 ? {zm: 1} : {})
           }
         ]
       });
@@ -170,7 +249,11 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
   const T = {token: 'ghp_write000000000000000000'},
     rows = s.post({readAnswers: 1, ...T}).rows,
     st = s.get({stats: '1'});
-  assert.deepStrictEqual(eloOf(rows), st.photos);
+  assert.ok(rows.some(r => typeof r[12] === 'number') && rows.some(r => r[13] === 1), 'seconds and enlarged in the rows');
+  // As served (JSON: a rating rounded to -0 reads 0).
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(eloOf(rows))), st.photos);
+  // Without the seconds the ratings differ: the test above covers the time weight in both copies.
+  assert.notDeepStrictEqual(eloOf(rows.map(r => r.slice(0, 12))), st.photos);
   // v31: the genus offsets of the hierarchical photo Elo, the same in the sheet and the admin's replay.
   assert.deepStrictEqual(genusOffsetsOf(rows), st.gd);
   assert.deepStrictEqual(Object.keys(st.gd).sort(), ['Acropora', 'Favia', 'Porites']);

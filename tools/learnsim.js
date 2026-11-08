@@ -12,6 +12,8 @@
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
 //                          [--subject coral|fish] [--photos fish-photos.json] [--calib '{"u":1,"pool":1e9}'] [--ach]
 //                          [--beyond yes|no]
+//   node tools/learnsim.js --world rated [--app truth|own|sheet] ...  the rated world (tools/ratedworld.js); --app sheet
+//                          [--times rho25|rho0|views|fast] [--pk 2] [--every 25] [--recover ...]: the sheet's photo Elo
 // --ach (2026-11-06, the fish achievements, rule L8: each one's timing checked with the real game): the answer at which
 // each achievement of the record first came, median per profile over the runs.
 // --beyond (2026-11-08, the fish achievements of circle 3): how the player answers the card that offers a part of the
@@ -285,10 +287,22 @@ const SEEDS = Number(arg('seeds', 5)),
   APPK = arg('app', 'truth'),
   // --coralsd: the corals' genus spread in the rated world (default tools/ratedworld.js RATED.CORAL_GD, 0.286; 0.37 the
   // sensitivity variant).
-  CORALSD = Number(arg('coralsd', 0)) || null;
+  CORALSD = Number(arg('coralsd', 0)) || null,
+  // --app sheet (2026-11-09, Q315 level 2): the rated world's players, one per profile, play one world in turn and the
+  // app reads the sheet's photo Elo replayed on their own log (tools/ratedworld.js runPop); --times the case of the
+  // simulated seconds (rho25, rho0, views, fast), --pk the photo k of the sheet's replay (core.js RTIME.PK; 0 the rule
+  // before Q315), --every the rounds between two refreshes of the ratings served, --recover the cases whose k is also
+  // recovered on the log (with --pk 0 only).
+  TIMESK = arg('times', 'rho25'),
+  PKX = Number(arg('pk', require('../core.js').RTIME.PK)),
+  EVERY = Number(arg('every', 25)),
+  RECOVER = arg('recover', '')
+    .split(',')
+    .filter(Boolean);
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
 if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
-if (!['truth', 'own'].includes(APPK)) throw new Error('--app truth or own');
+if (!['truth', 'own', ...(WORLD === 'rated' ? ['sheet'] : [])].includes(APPK)) throw new Error('--app truth or own (sheet: the rated world)');
+if (!(PKX >= 0 && EVERY >= 1)) throw new Error('--pk 0 or more, --every 1 or more');
 if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
 if (arg('world', 'app') === 'rated' ? !['count', 'item'].includes(LEARN) : !['item', 'field', 'exemplar'].includes(LEARN))
   throw new Error(arg('world', 'app') === 'rated' ? '--learner count or item in the rated world' : '--learner item, field or exemplar');
@@ -1605,7 +1619,7 @@ function openTable(runs) {
         return null;
       }
     })();
-    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit});
+    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, pk: PKX, every: EVERY, recover: RECOVER});
   }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   if (STATS === 'live') STATS_JSON = await liveStats();

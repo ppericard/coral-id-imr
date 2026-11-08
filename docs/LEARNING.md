@@ -4673,6 +4673,37 @@ kept, declared before the test; option (3), enlarging, waits for data; the secon
 level 2, the real-log replay the primary (players the unit; corals primary, fish exploratory). Next steps: ROADMAP
 "Time in the photo rating".
 
+**The declared replay (2026-11-09) and option (1) as the candidate (rules version 10, sheet vNEXT).** The protocol
+declared before computing (the sheet's Answers tab read 2026-11-09 06:35 Manila, read-only; corals 2,906 answers of 14
+players, fish 1,734 of 8; every answer scored before it moves anything with the app's own scorer `core.js`
+`scoreAnswer`, its photo difficulty from `photoDiff` on the replayed photo Elo; the coefficient of each variant chosen
+leave one player out; next-answer log-loss against the replay of today's rules, × 10⁻³ per answer, mean of players,
+one-sided exact sign-flip over players, Holm over the three):
+
+| Variant (corals) | Estimate [95%] | Players better | Holm | Coefficient chosen |
+| --- | --- | --- | --- | --- |
+| (2) A: time intensity from right answers only, in `photoDiff`'s prior | −4.05 [−9.16, +1.07] | 9 of 14 | 0.107 | c 4 (the grid's top) |
+| (2) B: time intensity from all answers | −3.53 [−8.26, +1.20] | 8 of 14 | 0.107 | c 4 |
+| (1): the weight on a right answer's photo and genus-offset steps | −1.97 [−3.14, −0.80] | 10 of 14 | **0.003, clear** | k 2 (the curve flat from 1 to 3) |
+
+A against B −0.52 (p 0.43), A against (1) −2.08 [−6.66, +2.50] (p 0.35): no variant beats another. Fish (exploratory):
+nothing clear ((1) −0.28 [−1.08, +0.53]; 11% of the fish answers had another player's time on their photo). A's gain
+comes from the fast photos only (90.3% right where 81.4% was expected); on the slow ones it over-corrects. **Decided by
+Pierre, 2026-11-09 (Q315)**: option (1) kept as the candidate; (2) A and B kept for a re-test once there are more and
+more varied players, not discarded (ROADMAP "Time in the photo rating"). Built: in `Code.gs` `stats_` and `core.js`
+`eloReplay` together, through one function (`core.js` `photoTimeW`, `RTIME.PK` = 2), a right answer's step on its
+photos and on its genus offset is taken times clamp(1 − 2 z, 0.5, 1.5), z its log seconds against the median of the
+player's own earlier timed answers (from their 11th, as the player's rule `rtWeight`: every timed answer of theirs
+counts in the median, right or wrong, a typed one excepted); a miss, a typed answer, an answer with a photo enlarged and
+one without seconds weigh 1 (the cut-offs of the measurement: no rapid-guess cut, the 600 s cap). The weighed counts that
+damp later steps do not take the weight, nor do the memory offsets' steps. The photo ratings, genus offsets and memory
+offsets the sheet serves move, and with them every replayed progress: rules version 10, the standard card. The app
+changes nothing and needs no gate (rule D4): it reads the ratings the sheet serves. **It goes live only after the rule
+L11 level-2 simulation below is in and read.**
+
+**The level-2 simulation** (rule L11; the rated world's sheet mode, `--app sheet`, built for it: "Validating a learning
+change"). See the PR for the declared protocol and the results.
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis*.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
@@ -4835,7 +4866,23 @@ every choice after), the photo aimed lower by the opening hold's ease and the pl
 `confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
-photo statistics, as the fish today; the sheet's photo Elo is not simulated). `--dist normal|tail|t3`. Circle 3 stays
+photo statistics, as the fish today). `--app sheet` (2026-11-09, Q315; `tools/ratedworld.js` `runPop`): the sheet's photo
+Elo simulated. One job per seed: the profiles' players, one each, play the seed's world in turn (one answer each, round
+after round; each its own ability offset π and generators), their answers logged as the Answers tab holds them, with
+seconds; every `--every` rounds (25: 100 answers of four players) `core.js` `eloReplay` (as `Code.gs` `stats_`, with the
+photo k `--pk`, `RTIME.PK` by default, 0 the rule before Q315) is replayed on the log and served to every player's app
+(`PSTAT`, `PGD`, `PMEM`, as `?stats=1`), so the ratings the draw reads are learned from the population's own answers. The
+seconds (`RT`): log t = T0 + the mean of the photos' time intensity β + (case `views`) 0.3 per view beyond the first −
+the player's speed τ (sd 0.44) − 0.4 if right + log 1.5 if typed + N(0, 0.57²), T0 log 6.5 s (the real medians 3.9-11.2
+s, the photo sd 0.35, "Response time: genus and photo"); `--times`: `rho25` β correlated 0.25 with the photo's true
+difficulty, `rho0` unrelated, `views` unrelated and more views slower (time against difficulty: one view alone is
+harder), `fast` the fast photos easy and the slow ones uninformative. The file's `pop`, per seed: the served ratings
+against the truth at each checkpoint (`rateErr`, the centred root mean square of rating − true difficulty over the
+photos answered; weighed by answers; their correlation; the genus offsets against μ, `gdErr`) and the k the log would
+choose (`--recover`: each k of 0-3 replayed, by the next-answer log-loss of the sheet's own expectation and by the
+rating error; with `--pk 0` the answers do not depend on the seconds, so one run recovers k for every case, the seconds
+regenerated on the same answers). learncmp reads them as population measures, one value per seed (an exact sign-flip
+over the seeds), beside the per-profile guardrails. `--dist normal|tail|t3`. Circle 3 stays
 closed unless `--beyond yes`, as in the app world (its offer left unanswered). The scientific names' offer, once a family
 is at Advanced, is accepted, except by the casual diver. The learner: the profile's know per unit (`tools/learnprof.js`,
 as the app world), the run's π, recognition sig(logit know + π − d − 0.5) on the true difficulty d of the photo shown,

@@ -6,7 +6,9 @@
 > never stacked with (2); two variants tested, the time intensity from all answers or from right answers only (both
 > with rapid-guess cut-offs), the one that predicts better kept, declared before the test; option (3), enlarging, waits
 > for data; the seconds stay logged. Validation: rule L11 level 2, the real-log replay the primary, players the unit,
-> corals primary and fish exploratory. Where it stands: [ROADMAP](../ROADMAP.md) "Time in the photo rating";
+> corals primary and fish exploratory. **Measured the same morning** (the declared replay): option (1) clear, (2) A
+> and B not; Pierre then kept **option (1) as the candidate** (Q315, 2026-11-09), (2) kept for a re-test with more
+> players. Where it stands: [ROADMAP](../ROADMAP.md) "Time in the photo rating";
 > [LEARNING.md](../LEARNING.md) "Response time as information on difficulty". Each reference says how it was checked.
 
 Written 2026-11-09 (Manila). Read-only review. Nothing in the repo was changed. Sources are listed at the end with links. Where I could

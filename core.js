@@ -1705,16 +1705,21 @@
   // moves the player's level; the photos and the memory offsets move on trusted players' answers only (trustOf, v17),
   // weighed as above. All against the same expectation, photo memory included (until v25 the level ignored memory
   // and the photos used the fixed rule, so the two pulled apart).
+  // A right answer's photo and genus-offset steps are weighed by its seconds (photoTimeW, Q315; rows' seconds at 12 and the
+  // enlarged mark at 13, as in readAnswers rows; rules version 10).
   // Returns the photo ratings P (the residual, [rating, weighed answers, weighed right, answers]), the genus of each photo
   // PG, the genus offsets G ([offset, weighed answers]), the player levels R ([level, answers, information]), the memory
   // offsets mem (rounded as served) and memn, the trusted answers behind each bucket (a question with several photos
   // shares its answer between their buckets). Every photo of a question is of the genus shown (one colony, rule P4).
-  function eloReplay(rows) {
+  // each(row, e, trusted): called on every answer with photos with its expectation, before it moves anything (the rated
+  // world's next-answer log-loss, tools/ratedworld.js runPop).
+  function eloReplay(rows, {each = null} = {}) {
     const P = {},
       PG = {},
       G = {},
       R = Object.create(null), // by player, no prototype (trustOf)
       H = {},
+      T = {},
       trust = trustOf(rows),
       mem = MEM.PRIOR.slice(),
       I = [0, 0, 0, 0],
@@ -1726,10 +1731,13 @@
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const fs = r[6].split(/\s+/).filter(Boolean);
-        if (!r[0] || !fs.length) return;
+        if (!r[0]) return;
         const ok = r[4] ? 1 : 0,
-          g = guessOf(r[5], r[10]),
-          ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
+          g = guessOf(String(r[5] || ''), r[10]),
+          // Every timed answer counts in the player's median, one without photos too (Code.gs stats_ in step).
+          tw = photoTimeW((T[r[0]] = T[r[0]] || {}), r[12], g, ok, Number(r[13]) === 1);
+        if (!fs.length) return;
+        const ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
         const gs = String(r[2] || ''),
           go = (G[gs] = G[gs] || [0, 0]),
           ph = fs.map(f => ((PG[f] = gs), (P[f] = P[f] || [0, 0, 0, 0]))),
@@ -1739,18 +1747,20 @@
           e = g + (1 - g) * s,
           d = ok - e,
           n = ra[1];
+        if (each) each(r, e, !!trust[r[0]]);
         if (trust[r[0]]) {
           const w = n / (n + PHOTO_W.N),
             D = (1 - g) * s * (1 - s),
             v = Math.max(1e-6, e * (1 - e)),
             A = [0, 0, 0, 0];
+          // The steps weighed by the answer's time (tw), not the counts.
           ph.forEach(p => {
-            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * d * w;
+            p[0] -= (0.8 / (1 + p[2] / 10) / ph.length) * d * w * tw;
             p[2] += w;
             p[1] += ok * w;
             p[3]++;
           });
-          go[0] -= (GENUS_K / (1 + go[1] / 10)) * d * w;
+          go[0] -= (GENUS_K / (1 + go[1] / 10)) * d * w * tw;
           go[1] += w;
           hs.forEach(h => (A[memBucket(h)] += 1 / hs.length));
           for (let j = 1; j < 4; j++)
@@ -3692,7 +3702,11 @@
   // The earlier times live in the global level's record (P[LEVEL].rt: how many timed answers took each number of tenths
   // of a second, {"45": 3, ...}; a few hundred keys at most), so the median is exact, the record compact, two devices'
   // records add up (mergeProgress) and the full replay rebuilds it from the log (replayProgress).
-  const RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10};
+  // PK (Pierre, 2026-11-09, Q315: option (1) kept as the candidate): the k of the same weight on the photo side, a right
+  // answer's steps on its photos and on its genus offset in the sheet's photo Elo (photoTimeW, eloReplay, Code.gs stats_):
+  // 2, chosen by leave one player out on the real log (the curve flat from 1 to 3; docs/LEARNING.md "Response time as
+  // information on difficulty"). The same z, LO, HI and MIN as the player's rule.
+  const RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10, PK: 2};
   // The tenths of a second of a timed answer, or 0 when it does not count (no seconds, 0, a typed answer: k infinite).
   const rtTenths = (sec, k) => (typeof sec === 'number' && isFinite(sec) && isFinite(k) ? Math.round(Math.min(600, sec) * 10) : 0);
   // The median log(seconds) of the times in rt, null with fewer than RTIME.MIN (the mean of the two middle ones when even).
@@ -3721,10 +3735,11 @@
     return n % 2 ? at((n - 1) / 2) : (at(n / 2 - 1) + at(n / 2)) / 2;
   }
   // The weight of a right answer's ability steps from its seconds, against the player's earlier times (G: P[LEVEL]).
-  function rtWeight(G, sec, k, good) {
+  // K: the slope (RTIME.K for the player's steps; RTIME.PK for the photo's, photoTimeW).
+  function rtWeight(G, sec, k, good, K = RTIME.K) {
     const x = rtTenths(sec, k),
       m = good && x > 0 ? rtMedian(G && G.rt) : null;
-    return m === null ? 1 : Math.min(RTIME.HI, Math.max(RTIME.LO, 1 - RTIME.K * (Math.log(x / 10) - m)));
+    return m === null ? 1 : Math.min(RTIME.HI, Math.max(RTIME.LO, 1 - K * (Math.log(x / 10) - m)));
   }
   // The answer's seconds added to the player's times (after its own steps: z is against the earlier answers only).
   function rtAdd(G, sec, k) {
@@ -3732,6 +3747,24 @@
     if (!G || x <= 0) return;
     G.rt = G.rt || {};
     G.rt[x] = (G.rt[x] || 0) + 1;
+  }
+  // Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); rule L1: the seconds of an answer are evidence about
+  // that answer): in the sheet's photo Elo (eloReplay, Code.gs stats_, which calls this one function), a right answer's
+  // step on its photos and on its genus offset is taken times rtWeight with RTIME.PK, z its log seconds against the median
+  // of the player's own earlier timed answers (from their 11th; every answer of theirs with seconds counts in the median,
+  // a typed one excepted, enlarged or not, right or wrong, trusted or not). A fast right answer says "easier photo" as it
+  // says "known genus" on the player's side (one surprise moves both sides, Pelanek 2016). A miss, a typed answer, an
+  // answer with a photo enlarged (the seconds hold the time spent enlarged) and one without seconds: weight 1. T: the
+  // player's own times ({rt}, as P[LEVEL] keeps them), changed in place (this answer's time added after its weight);
+  // sec the seconds (null without), g the question's guess rate (guessOf: 0 for a typed one), ok 0 | 1, big 1 when a photo
+  // was enlarged. Measured on the real log (2026-11-09, 2,906 coral answers of 14 players, each answer predicted before it
+  // moved anything, players the unit): -1.97 x 10^-3 log-loss per answer [-3.14, -0.80], 10 of 14 players better (Holm
+  // 0.003); fish not clear (docs/LEARNING.md "Response time as information on difficulty").
+  function photoTimeW(T, sec, g, ok, big) {
+    const k = g > 0 ? 1 / g : Infinity,
+      w = ok && !big ? rtWeight(T, sec, k, true, RTIME.PK) : 1;
+    rtAdd(T, sec, k);
+    return w;
   }
 
   // One scorer for an answer (Pierre, 2026-11-06, Q132; docs/reviews/2026-11-06-engine-coherence-review.md F1, F6;
@@ -4050,6 +4083,12 @@
       // from the sheet's Notes tab, key card.rv8.ps (named when this was rules version 8, before PR #638 took that
       // number; the key is kept so the row Pierre adds stays as written: never in the repo; progress.js rvNotice).
       msg: RV_SORRY
+    },
+    {
+      v: 10,
+      at: '2026-11-09',
+      why: "Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); sheet vNEXT): in the sheet's photo Elo, a right answer's step on its photos and on its genus offset is taken times clamp(1 - 2 z, 0.5, 1.5), z its log seconds against the player's own earlier median (RTIME.PK, photoTimeW); the photo memory offsets and the genus offsets the replay uses change with it, as in rules version 3",
+      msg: RV_CARD
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -5339,6 +5378,7 @@
     rtMedian,
     rtWeight,
     rtAdd,
+    photoTimeW,
     rvMsgs,
     learnedOf,
     PAGES,
@@ -5423,6 +5463,7 @@
     mergeOld,
     mergeProgress,
     eloOf,
+    eloReplay,
     genusOffsetsOf,
     GENUS_K,
     levelMargin,
