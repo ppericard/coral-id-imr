@@ -143,9 +143,14 @@ function rotFit(i) {
   if (!i.isConnected || !P) return ROTRO && (ROTRO.unobserve(i), P && ROTRO.unobserve(P));
   const r = rotNorm(i.dataset.rot);
   if (getComputedStyle(i).objectFit === 'cover') {
-    // The tile's shape, measured once before the image box is swapped; its width then follows the tile.
-    if (!+i.dataset.ra && i.clientWidth && i.clientHeight) i.dataset.ra = i.clientWidth / i.clientHeight;
-    const bw = P.clientWidth,
+    // The image's slot, measured once before its box is swapped: a tile's photo fills its box and then follows the
+    // tile's width; a fixed-size thumbnail that shares its parent (a family's in the sidebar grid, 44 x 33, beside its
+    // text) keeps its own width (sw; Codex review #793: the parent's width blew it up over the text).
+    if (!+i.dataset.ra && i.clientWidth && i.clientHeight) {
+      i.dataset.ra = i.clientWidth / i.clientHeight;
+      if (Math.abs(i.clientWidth - P.clientWidth) > 1) i.dataset.sw = i.clientWidth;
+    }
+    const bw = +i.dataset.sw || P.clientWidth,
       v = +i.dataset.ra && rotCover(bw, bw / +i.dataset.ra, r);
     // Upright or half a turn: the box stays as it is (rotCover null), the photo is turned in it, the same cover cut
     // (Codex review #793: a 180° draft showed upright on the tiles).
@@ -161,7 +166,7 @@ function rotFit(i) {
       margin: `${v.mv}px ${v.mh}px`,
       transform: `rotate(${r}deg)`
     });
-    P.style.overflow = 'hidden';
+    if (!+i.dataset.sw) P.style.overflow = 'hidden';
     return;
   }
   // The photo's shape as shown: its crop (object-view-box inset) taken off its natural size.

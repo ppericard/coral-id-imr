@@ -361,6 +361,21 @@ test('rotFit: a tile turned a quarter gets its box swapped, a half-turn is turne
   q.dataset.rot = '180';
   ctx.rotFit(q);
   assert.deepStrictEqual([q.style.width, q.style.height, q.style.margin, q.style.transform], ['', '', '', 'rotate(180deg)']);
+  // A fixed-size thumbnail beside its text (a family's in the sidebar's .adm-g grid: 44 x 33 in a 246 px row): its own
+  // slot, swapped to 33 x 44 and turned back into 44 x 33, never the row's width (Codex review #793); the row not clipped.
+  const th = tile(90);
+  Object.assign(th, {clientWidth: 44, clientHeight: 33});
+  th.parentElement.clientWidth = 246;
+  ctx.rotFit(th);
+  assert.deepStrictEqual(
+    [th.style.width, th.style.height, th.style.margin, th.style.transform, th.parentElement.style.overflow],
+    ['33px', '44px', '-5.5px 5.5px', 'rotate(90deg)', undefined]
+  );
+  // Measured again after the swap (its box now 33 x 44, a ResizeObserver call): the same slot.
+  Object.assign(th, {clientWidth: 33, clientHeight: 44});
+  th.parentElement.clientWidth = 300;
+  ctx.rotFit(th);
+  assert.deepStrictEqual([th.style.width, th.style.height], ['33px', '44px']);
   // A whole photo (contain): a quarter scaled to stay whole, a half-turn as it is.
   const w = tile(90, 'contain');
   ctx.rotFit(w);
