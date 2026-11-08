@@ -25,7 +25,7 @@
 //    SMOKE_ONLY=a,b   only these parts (pages.smoke.js: main, overlays, basics, credits, visit, tips, signin, replay);
 //                     PAGES_ONLY=x, the older name, still works.
 //    SMOKE_PART=name  one group of parts, for CI shards (pages.smoke.js: main, overlays, rest, more; fish.smoke.js: main,
-//                     fresh); tests/smokeparts.test.js fails when a group has no job in checks.yml.
+//                     fresh; admin.smoke.js: main, more); tests/smokeparts.test.js fails when a group has no job in checks.yml.
 //    SMOKE_W=390      only these viewport widths in a smoke's width loop (pages.smoke.js main, admin.smoke.js).
 //    An unknown name fails at once, so a typo never passes as a run that checked nothing; a partial run says so at the end.
 const fs = require('fs'),

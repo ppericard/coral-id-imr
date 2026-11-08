@@ -74,7 +74,8 @@ jobs:
       fail-fast: false
       # The longest smokes run in groups, one runner each, so no job is the long pole (tests/slot.js: SMOKE_PART for
       # pages.smoke.js and fish.smoke.js, whose groups cover every part between them or the run fails, and
-      # tests/smokeparts.test.js fails when a group is in no job here; SMOKE_W for admin.smoke.js, one width each).
+      # tests/smokeparts.test.js fails when a group is in no job here; admin.smoke.js runs whole at 390, in two groups at
+      # 1280, SMOKE_W one width each).
       matrix:
         include:
           - name: pages main
@@ -108,10 +109,16 @@ jobs:
             smoke: admin
             w: '390'
             what: Admin demo test at 390 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
-          - name: admin 1280
+          - name: admin 1280 main
             smoke: admin
             w: '1280'
-            what: Admin demo test at 1280 px (admin.html?demo, every page and the main actions on made-up data, nothing sent)
+            part: main
+            what: Admin demo test at 1280 px, main (admin.html?demo, every page, Analyses, To do, Activity, Health; made-up data, nothing sent)
+          - name: admin 1280 more
+            smoke: admin
+            w: '1280'
+            part: more
+            what: Admin demo test at 1280 px, players and photos (Players' actions, Candidates, the auto-sort, Publish; made-up data, nothing sent)
           - name: profiles
             smoke: profiles
             what: Learning path test (a beginner, an IMR RA, an expert through the real quiz; docs/LEARNING.md)

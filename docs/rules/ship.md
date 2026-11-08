@@ -126,7 +126,7 @@ you change logic they cover (a photo rule: `tests/photos.test.js`; the question 
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
 `.github/workflows/checks.yml`: JS syntax, tests, JSON, `data.json` layout, Python, versions, and each Playwright smoke
 in its own parallel job `smoke (<name>)` (pages in four groups and fish in two, `SMOKE_PART`, each group in a job of its
-own or `tests/smokeparts.test.js` fails; admin in two halves, `SMOKE_W`),
+own or `tests/smokeparts.test.js` fails; admin whole at 390 px and in two groups at 1280, `SMOKE_W` / `SMOKE_PART`),
 `fail-fast: false` so every failing smoke reports; a new push cancels the run still going on the PR. **Session hooks**
 (`.claude/settings.json`) print the Manila time and the Rule 0 window at each session start and prompt
 (`tools/brief.py --short`, `--time`), running main's reviewed copy of the script
