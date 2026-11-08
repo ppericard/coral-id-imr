@@ -43,11 +43,9 @@ jobs:
       # Pillow (tools/requirements.txt): tests/fishgame.test.js runs the fish photo download on a fixture.
       - name: Python packages
         run: pip install -r tools/requirements.txt
-      # One test file per core (test-suite audit, 2026-11-09): node's default, one less than the cores, left a core idle
-      # while the files that wait on git, Python or a timer ran (tests/slot.test.js: 11 s for under 2 s of CPU).
       - name: Unit tests
         run: |
-          node --test --test-concurrency=4 tests/*.test.js
+          node --test tests/*.test.js
       # Every JSON file git tracks: the root's, tools/ and judging/ (tools/check_json.py; Deploy Pages runs it too).
       - name: JSON files parse
         run: |
