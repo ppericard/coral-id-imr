@@ -47,6 +47,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
+      # The admin's Publish and the Candidate photos bot commit to main without running Checks: a JSON file they broke, or a
+      # data.json out of its layout, fails the deploy here, and the last good site stays live (repo hygiene audit, 2026-11-08).
+      - name: Check the data files (every tracked JSON parses; the data.json layout)
+        run: |
+          python3 tools/check_json.py
+          python3 tools/datajson.py --check
       - uses: actions/configure-pages@v6
       - name: Stage the static site
         run: |
