@@ -971,7 +971,14 @@ async function overlays(b, base) {
       await p.reload();
       await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     }
-    await p.waitForTimeout(2500);
+    // Not a fixed wait: start-up says when its one-time cards are settled (progress.js window.CARDS_SAID, read true only
+    // once APP_READY is set, after sorryNotice ran); the apology, if due, is on screen by then. Its first-run record proves
+    // the decision was made (sorryNotice writes it before deciding).
+    const said = await p
+      .waitForFunction(() => window.CARDS_SAID && localStorage.getItem('reefid-sorry-first'), null, {timeout: 25000})
+      .then(() => true)
+      .catch(() => false);
+    if (!said) fails.push(`apology card, ${lab}: start-up never settled its cards`);
     if (await p.$('.sorry'))
       fails.push(
         `apology card, ${lab}: ${want ? 'shown twice' : 'shown'} ${await p.evaluate(() => localStorage.getItem('reefid-sorry-first'))}`
@@ -2070,9 +2077,18 @@ async function replayAdoptCheck(base) {
     });
     if (!card || card.t !== 'A test update') fails.push(`replay: no card for the version with a msg: ${JSON.stringify(card)}`);
     if (card) await p.click('.unlock.rvmsg .next');
+    // The next load: a card that came back would show after its first sync (sync.js noticeLater). Not a fixed wait:
+    // start-up says when its cards are settled (progress.js window.CARDS_SAID), and the sheet's log, emptied first,
+    // proves that came after this load's pull, never before it.
+    await p.evaluate(() => localStorage.setItem('test-sheet-log', '[]'));
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForTimeout(2500);
+    const said = await p
+      .waitForFunction(() => window.CARDS_SAID, null, {timeout: 25000})
+      .then(() => p.evaluate(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get)))
+      .catch(() => null);
+    if (said === null) fails.push('replay: at the next load, start-up never settled its cards');
+    else if (!said) fails.push('replay: at the next load, start-up said its cards were settled before the sync');
     if (await p.$('.unlock.rvmsg, .unlock.recalc')) fails.push('replay: a card came back after it was seen');
     await c.close();
   }
@@ -2185,11 +2201,15 @@ async function noticesAfterSync(base) {
     p
       .waitForFunction(() => JSON.parse(localStorage.getItem('test-sheet-log') || '[]').some(x => x.get), null, {timeout: 15000})
       .catch(() => fails.push('notices: the device never loaded the account'));
+  // Not a fixed wait: start-up says when its one-time cards are settled on the merged state (progress.js
+  // window.CARDS_SAID, after sync.js noticesGo): every card or toast due is on screen by then.
+  const settled = (p, at) =>
+    p.waitForFunction(() => window.CARDS_SAID, null, {timeout: 25000}).catch(() => fails.push(`notices: ${at}, start-up never settled`));
   // Told on another device: nothing, before or after the sync.
   {
     const [c, p] = await open('slow', true);
     await loaded(p);
-    await p.waitForTimeout(3000);
+    await settled(p, 'told on another device');
     const s = await shown(p);
     if (s.length) fails.push(`notices: told on another device, shown again here: ${JSON.stringify(s)}`);
     const r = await p.evaluate(() => ({
@@ -2205,6 +2225,8 @@ async function noticesAfterSync(base) {
     const [c, p] = await open('slow', false);
     const early = await shown(p);
     if (early.length) fails.push(`notices: shown before the sync: ${JSON.stringify(early)}`);
+    // The signal is no earlier than the decisions it stands for (the checks above and below rely on it).
+    if (await p.evaluate(() => window.CARDS_SAID)) fails.push('notices: start-up said its cards were settled before the sync');
     await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => fails.push('notices: the new update note never showed'));
     await p.click('.unlock.recalc .next').catch(() => {});
     await p.waitForSelector('.unlock.mxlost', {timeout: 8000}).catch(() => fails.push("notices: the learned mark's card never showed"));
@@ -2236,7 +2258,7 @@ async function noticesAfterSync(base) {
     await p.reload();
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     await loaded(p);
-    await p.waitForTimeout(3000);
+    await settled(p, 'the next load');
     const again = await shown(p);
     if (again.length) fails.push(`notices: shown again at the next load: ${JSON.stringify(again)}`);
     await c.close();
@@ -4389,11 +4411,12 @@ async function subjTour(b, base) {
   return fails;
 }
 
-// The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|rest one of
-// the two halves CI runs on separate runners, SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
+// The parts of this smoke, in the order they run; SMOKE_ONLY=tips,signin runs some of them, SMOKE_PART=main|overlays|
+// rest|more one of the four groups CI runs on separate runners (each in a job of smokes.yml: tests/smokeparts.test.js),
+// SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
-// admin.html?readonly; overlays: cards, prompts and the one-tap question (run inside main's 390 pass, as always); relief:
-// the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
+// admin.html?readonly; overlays: cards, prompts and the one-tap question (inside main's 390 pass when both run, else on
+// their own); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour).
@@ -4417,8 +4440,10 @@ const PARTS = [
 
 (async () => {
   const run = slot.parts(PARTS, {
-      main: ['main', 'overlays'],
-      rest: ['basics', 'credits', 'visit', 'tips', 'relief', 'start', 'subjtour', 'newplayer', 'onepath', 'signin', 'replay', 'notices']
+      main: ['main', 'tips', 'onepath', 'newplayer'],
+      overlays: ['overlays'],
+      more: ['relief', 'start', 'signin', 'replay', 'notices'],
+      rest: ['basics', 'credits', 'visit', 'subjtour']
     }),
     ws = slot.widths(WIDTHS);
   await slot('pages.smoke');
