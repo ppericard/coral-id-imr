@@ -497,9 +497,12 @@ const server = http.createServer((req, res) => {
     ok(
       G.every(n => {
         const w = GX(n).views.wide;
-        // the first of its reference-level photos when it has any (core.js refFirst), else its easiest
-        const top = w.filter(p => refFirst(p) === refFirst(w[0]));
-        return !w.length || (GX(n).cover === w[0].f && top.every(p => photoDiff(n, p) >= photoDiff(n, w[0])));
+        // the first of its reference-level photos when it has any (core.js refFirst), else its easiest; an open licence
+        // breaking ties among equals (core.js easyCover, Q270), so the cover may be another of the order's equal leaders
+        if (!w.length) return true;
+        const top = w.filter(p => refFirst(p) === refFirst(w[0])),
+          c = w.find(p => p.f === GX(n).cover);
+        return !!c && c.f === easyCover(w).f && refFirst(c) === refFirst(w[0]) && top.every(p => photoDiff(n, p) >= photoDiff(n, c));
       }),
       "sci: a genus card's photo is its easiest (reference level first)"
     );

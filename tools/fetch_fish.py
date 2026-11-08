@@ -20,11 +20,13 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 - Order (`select`, Pierre, 2026-11-03): Pierre's own observations FIRST for every species, whatever their licence (his
   are CC BY or CC BY-NC, credited "Pierre Pericard"), in the Philippines or the IWP. Then:
   - a species confirmed near Dauin (fish.json present.near: Research Grade by 2+ observers within 40 km, or the
-    IMR list): photos from anywhere in the Philippines and the IWP, ordered by licence (CC0 / CC BY before NC), not by distance;
-  - any other species: the Philippines first, by licence then nearest (within 40 km of Dauin, within REGION_KM = 250 km,
+    IMR list): photos from anywhere in the Philippines and the IWP, not by distance;
+  - any other species: the Philippines first, nearest first (within 40 km of Dauin, within REGION_KM = 250 km,
     the rest of the country), and abroad only for a species confirmed in the Philippines (present.ph, the presence rule of tools/presence.py), only when the
     Philippines are exhausted (every Philippine observation the search can see is taken and room is left; when the one
-    page read is not all of them, later pages may still hold some, so nothing from abroad), by licence too.
+    page read is not all of them, later pages may still hold some, so nothing from abroad).
+  The licence (CC0 / CC BY before NC) is only the last tie-break, after the variety below (Pierre, 2026-11-08, Q284:
+  "je ne veux pas que ça soit au coût de la variété"; from 2026-11-03 it came before the distance and the variety).
 - Quality varied on purpose (Pierre: poor iNaturalist photos stand in for SVS video frames, on which EventMeasure
   identifications are made): no ordering by votes (that favours the best photos), no quality filter. The order is a
   fixed hash of the observation id (neutral, reproducible), then the least represented observer and life stage first
@@ -100,6 +102,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line, as cand.json
+from rights import rights_rank  # noqa: E402  the rights of a photo, as core.js rightsRank (Q270)
 
 API = "https://api.inaturalist.org/v2/observations?"
 TAXA = "https://api.inaturalist.org/v2/taxa/"
@@ -159,10 +162,11 @@ REFILL = ROOT / "tools" / "fish_refill.json"  # what was searched to the end, pe
 
 
 def lic_class(lic, own):
-    """0 Pierre's own (whatever its licence), 1 CC0 / CC BY, 2 NC: the order fish photos are taken in (Pierre, 2026-11-03)."""
+    """0 Pierre's own (whatever its licence), 1 CC0 / CC BY, 2 NC (tools/rights.py): select's tie-break between
+    observations of equal variety, 0 and 1 alike (Pierre, 2026-11-08, Q270 and Q284; a bucket of the order until then)."""
     if own:
         return 0
-    return 1 if lic in ("cc0", "cc-by") else 2
+    return 1 + rights_rank({"lic": lic})
 
 
 def lic_ok(lic, own):
@@ -331,12 +335,14 @@ def obs_fit(held, room):
 
 
 def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=None, photos=False, held=None):
-    """Pick up to `room` observations (Pierre, 2026-11-03). Pierre's own first (class 0), from any pool. Then, for a
-    species confirmed near Dauin (anywhere=True): every place at once, abroad included (world() fetched), by licence
-    class (1 CC0 / CC BY, then 2 NC), not by distance. Otherwise: by licence class, and within a class nearest first
-    (dauin, region, ph); abroad (world(), fetched only then) only when the Philippines are exhausted: room is left and no
-    Philippine search had more results than it read (more[tier]). Within a bucket, the least represented observer and
-    life stage first, then the fixed hash order. pools: {tier: [items from usable_obs]} (tier "world": Pierre's own
+    """Pick up to `room` observations (Pierre, 2026-11-03). Pierre's own first, from any pool. Then, for a species
+    confirmed near Dauin (anywhere=True): every place at once, abroad included (world() fetched), not by distance.
+    Otherwise: nearest first (dauin, region, ph); abroad (world(), fetched only then) only when the Philippines are
+    exhausted: room is left and no Philippine search had more results than it read (more[tier]). Within a bucket, the
+    least represented observer and life stage first, then the licence (an open one before CC BY-NC: rights_rank of its
+    best photo, the class `cls` of usable_obs), then the fixed hash order. The licence is only that tie-break (Pierre,
+    2026-11-08, Q284: "je ne veux pas que ça soit au coût de la variété"; from 2026-11-03 it was a bucket before the
+    distance and the variety). pools: {tier: [items from usable_obs]} (tier "world": Pierre's own
     abroad); n: Counter of ('u', login) / ('s', stage) already in the species' list. claimed: the iNaturalist photo ids
     already taken (updated here): iNaturalist lets one photo belong to several observations, so a photo is taken once,
     by the first observation picked, and an observation left with no photo of its own is skipped without taking room
@@ -355,7 +361,7 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
         nonlocal room
         L = [o for o in L if o["id"] not in seen]
         while L and room > 0:
-            o = min(L, key=lambda o: (n["u", o["u"]], n["s", o["st"]], o["h"]))
+            o = min(L, key=lambda o: (n["u", o["u"]], n["s", o["st"]], o["cls"] > 1, o["h"]))
             L.remove(o)
             seen.add(o["id"])
             P = [p for p in o["P"] if str(p[0]) not in claimed]
@@ -378,16 +384,12 @@ def select(pools, room, more, n=None, world=lambda: [], anywhere=False, claimed=
     if anywhere:
         if room > 0:
             allp += world()
-        for cls in (1, 2):
-            take([o for o in allp if o["cls"] == cls])
+        take(allp)
         return taken
-    for cls in (1, 2):
-        for t in TIERS:
-            take([o for o in pools.get(t, []) if o["cls"] == cls])
+    for t in TIERS:
+        take(pools.get(t, []))
     if room > 0 and not any(more.get(t) for t in TIERS):
-        W = world()
-        for cls in (1, 2):
-            take([o for o in W if o["cls"] == cls])
+        take(world())
     return taken
 
 

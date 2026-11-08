@@ -185,8 +185,18 @@ test('one game list per view: each photo once, the featured game photos first, P
   each(D, (n, g, v, s) => {
     const F = s.game.map(p => p.f);
     assert.strictEqual(new Set(F).size, F.length, `${n} ${v}: a photo twice`);
-    const lead = s.feat.filter(p => s.game.includes(p)).map(p => p.f);
-    assert.deepStrictEqual(F.slice(0, lead.length), lead, `${n} ${v}: featured first`);
+    // The featured photos of the quality order lead (the game list keeps no licence: core.js byQ0, Codex review #742);
+    // the featured shown may hold, at the same quality and source, an open photo in place of an NC one (Q270).
+    const lead = s.feat.filter(p => s.game.includes(p)),
+      sig = p => [q(p.f), !!p.imr, !!p.own].join(),
+      byF = new Map(s.game.map(p => [p.f, p]));
+    assert.deepStrictEqual(
+      F.slice(0, lead.length)
+        .map(f => sig(byF.get(f)))
+        .sort(),
+      lead.map(sig).sort(),
+      `${n} ${v}: featured first`
+    );
     const rest = F.slice(lead.length).map(q),
       firstPoor = rest.indexOf(1);
     assert.ok(firstPoor < 0 || rest.slice(firstPoor).every(x => x === 1), `${n} ${v}: Poor photos last`);
