@@ -437,7 +437,7 @@ const photoSrc = p =>
     ? ''
     : p.imr
       ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
-      : p.o && p.o.includes('inaturalist.org')
+      : /^https?:\/\/(www\.)?inaturalist\.org\//.test(p.o || '')
         ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
         : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
           p.via === 'fishbase' && p.o
