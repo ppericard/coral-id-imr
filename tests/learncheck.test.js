@@ -88,3 +88,34 @@ test('the primary is passed to its own world only', () => {
   assert.match(calls[0], /--primary score@3000:up$/);
   fs.rmSync(dir, {recursive: true});
 });
+
+// Codex review #791: a measure name with a digit (learncmp's c3) is a valid primary; anything else stays refused.
+test('the input check takes every learncmp measure as the primary, and refuses the rest', () => {
+  const check = env =>
+    (() => {
+      try {
+        execFileSync('bash', ['-c', step('Check the inputs')], {
+          env: {
+            PATH: process.env.PATH,
+            AFTER: 'x',
+            BEFORE: 'main',
+            SEEDS: '10',
+            QUESTIONS: '300',
+            ANSWERS: '3000',
+            LOOKS: '1',
+            ARGS: '',
+            ...env
+          },
+          stdio: 'pipe'
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    })();
+  const L = require('../tools/learncmp.js');
+  Object.keys(L.MEASURES).forEach(m => assert.ok(check({PRIMARY: `${m}@${L.MEASURES[m].kind === 'run' ? 'run' : 300}:down`}), m));
+  assert.ok(check({PRIMARY: 'c3@run:down'}));
+  assert.ok(check({PRIMARY: ''}));
+  ['c3@run:down;id', '3c@run:up', 'score@x:up', 'score@300:sideways'].forEach(p => assert.ok(!check({PRIMARY: p}), p));
+});

@@ -87,7 +87,7 @@ jobs:
           ok seeds "$SEEDS" '^[1-9][0-9]?$'
           ok questions "$QUESTIONS" '^[1-9][0-9]{0,4}$'
           ok answers "$ANSWERS" '^[1-9][0-9]{0,5}$'
-          ok primary "$PRIMARY" '^([A-Za-z]+@([0-9]+|run):(up|down))?$'
+          ok primary "$PRIMARY" '^([A-Za-z][A-Za-z0-9]*@([0-9]+|run):(up|down))?$' # learncmp's MEASURE@CHECKPOINT (c3@run)
           ok looks "$LOOKS" '^[1-9]$'
           ok args "$ARGS" '^[A-Za-z0-9 ,.:@_=-]{0,200}$'
       - uses: actions/checkout@v7
