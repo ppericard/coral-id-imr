@@ -1,53 +1,109 @@
 # IMR Reef ID
 
-> **AI agent or new developer given only this repository's link? Start here.** Read [AGENTS.md](AGENTS.md) (the constitution: Rule 0, the merge contract, the index of the rules in [docs/rules/](docs/rules/)), then [docs/HANDOVER.md](docs/HANDOVER.md) (how to work with the owner, how to set up a working copy and what lives outside GitHub, a ready-made first prompt), then [docs/STATUS.md](docs/STATUS.md) (where things stand, what the owner still has to do), then [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog). Nothing outside this repository is needed to understand or continue the project.
+A web app that teaches the **coral genera and reef fish of Dauin, Philippines** to the Research Assistants (RAs) of the
+Institute for Marine Research (IMR), who label survey photos in ReefCloud (corals) and survey videos in EventMeasure
+(fish). Live: <https://ppericard.github.io/coral-id-imr/>. Alpha; fish in beta, open to every player since 2026-11-06.
 
-A static web app for learning the coral genera on the IMR (Institute for Marine Research, Dauin, Philippines) survey slate (the surveyed genera, the starred look-alikes and fire coral, *Millepora*), with reef fish in beta (the admin's only for now: the IMR survey families, `docs/FISH_PATH.md`).
-
-Named IMR Coral ID until 2026-11-03 (corals now, fish and benthos next); the address and the repository name (`coral-id-imr`) change later, with a migration for players (ROADMAP). The organisation and app names live in one place, `core.js` `ORG`; `tools/rename_app.py` writes them into the static files. <!-- rename-app: keep -->
-
-Live: <https://ppericard.github.io/coral-id-imr/> · Built for the Research Assistants trained at IMR, whose first task is genus-level labelling of benthic photos in ReefCloud.
-
-**Deployment:** [Pages setup and recovery](docs/PAGES.md) (single Actions source; required migration from branch publishing).
-
-**Docs:** [AGENTS.md](AGENTS.md) (the constitution for any agent or developer; rules in [docs/rules/](docs/rules/)) · [docs/HANDOVER.md](docs/HANDOVER.md) (how to take over) · [docs/STATUS.md](docs/STATUS.md) (where things stand) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (files, data, admin, sync, deploy) · [docs/ROADMAP.md](docs/ROADMAP.md) (prioritised backlog, content questions) · [docs/DESIGN.md](docs/DESIGN.md) (design tokens and components) · [docs/reviews/](docs/reviews/README.md) (expert reviews).
+**Players**: just open the live site. **Developers and AI agents**: read [AGENTS.md](AGENTS.md) first (the rules, who
+merges, how a change ships), then [docs/HANDOVER.md](docs/HANDOVER.md).
 
 ## What's inside
 
-- **Learn**: the Genera page (photos or short ID tips, in IMR lecture-group or slate order); a genus sheet per genus with your level on it and what it still needs, three photo views (colony, close-up, corallites), the IMR lecture notes, a mnemonic, the Coral ID Key criteria (from the Coral Finder book, by page) and "Don't confuse with"; Look-alikes, a deck of classic pair montages.
-- **Practice**: Quiz (name the genus from photos, adaptive difficulty), Custom quiz (the same quiz on the genera you pick), look-alike duels and Memory (colony ↔ corallites). Once every slate genus is met, a card offers 5 bonus genera off the slate that are common at Dauin (⚙ Bonus genera, any time); they join the quiz and duels one at a time, outside the slate score.
-- **Identify**: the Coral ID Key, a clue-based ranking that follows the Coral Finder 2022 book (growth form, then box, then corallite clues), also listing 27 non-IMR genera seen at Dauin.
-- **My progress**: learned / learning / review per genus on a 6-step colour scale, synced to a Google Sheet when an RA signs in.
-- **Settings** (⚙): light/dark theme, five colour palettes (Depth by default), colour-blind mode (blue/orange instead of green/red).
-- **Tools**: prototypes (mind map, corallite anatomy, look-alike web…) that graduate to the main app only once Pierre approves.
+One path for both subjects (corals, fish), switched at the top of Home:
 
-## Running locally
+- **Learn**: corals: Coral basics, the Genera page, a sheet per genus (three photo views, IMR lecture notes, look-alikes),
+  Look-alikes; fish: the families, a sheet per family, genus and species.
+- **Practice**: an adaptive photo quiz with typed answers slipped in; corals also Custom quiz, Look-alike duels, Memory.
+- **Identify**: the Coral ID Key (tap the clues you see, get a ranked shortlist); the Fish ID Key is coming.
+- **Progress**: My progress per unit, the public leaderboard (🏆, one per subject, opt-out) and achievements.
+- **Admin** (`admin.html`, Pierre only): photo curation, players, reports, analyses, for every subject.
+
+## How it works
+
+Plain HTML, CSS and JavaScript: no build step, no package manager. The content is JSON (`data.json` for corals,
+`fish.json` and its photo files for fish). Photos are served from Cloudflare R2 (`core.js` `PHOTO_BASE`); when R2 fails,
+a photo falls back to its online original (iNaturalist, FishBase) or to `img/`. A service worker (`sw.js`) keeps the app
+working offline. Signed-in progress syncs to a Google Sheet through an Apps Script, [`tools/sync/Code.gs`](tools/sync/Code.gs),
+which updates itself from `main`. Pierre's choices are made in the admin; **Publish** commits `curation.json` to `main`,
+and the Candidate photos workflow then fetches the approved photos. The deploy stamps the version numbers (`?v=`, the
+Lab's `LAB_V`, `sw.js` `V`): never edit them. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Run locally
 
 ```sh
 python3 -m http.server 8000
-# open http://localhost:8000
+# app: http://localhost:8000 · admin on made-up data: http://localhost:8000/admin.html?demo
 ```
 
-The app is plain HTML/CSS/JS with no build step. `data.json` holds all genus data; photos are WebP in four sizes (1600, 960, 480 and 240 px) on Cloudflare R2, which the app reads first (`core.js` `PHOTO_BASE`); `img/` keeps only the photos with no other backup (IMR lecture photos, page art), the others fall back to their online original (iNaturalist, FishBase). Version numbers (`?v=`) are stamped at deploy: never edit them (AGENTS.md).
+## Test
 
-## Photos
+As CI runs them ([checks.yml](.github/workflows/checks.yml): Node 26, Python 3.15, Playwright 1.64.1; no `package.json`):
 
-- IMR Lecture 6 photos, used with IMR permission for internal training. Do not reuse outside IMR. They come first everywhere and are used in games.
-- Pierre's own iNaturalist photos (user `ppericard`), then other iNaturalist observers (CC licences), credited in the enlarged view and, in games, after the answer.
-- No photo from the Coral Finder 2022 book (© R. Kelley / BYOGUIDES): its crops were removed on 2026-11-08. The book stays a cited source (its pages, criteria and look-alikes); the Coral ID Key's boxes are our own drawings.
+```sh
+npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
+node tests/run.js                        # the unit tests, in the machine slot
+node tests/pages.smoke.js                # Playwright smokes: pages, draw, fish, admin, profiles, net
+python3 tools/check_versions.py
+python3 tools/stack_check.py --check
+python3 tools/datajson.py --check
+```
 
-`tools/` holds the build and import scripts; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for which ones are still re-runnable.
+## Repository layout
 
-## Photo curation
+| Path | What |
+|---|---|
+| `index.html`, `app.js`, `core.js`, `*.js`, `*.css` | The app; `core.js` holds the pure functions shared with the admin and the sheet script |
+| `admin.html`, `admin*.js` | Pierre's back-office |
+| `*.json` | Content, Pierre's curation (`curation.json`) and machine suggestions |
+| `img/`, `fonts/` | The photos with no other backup; the self-hosted fonts |
+| `proto/` | Lab prototypes and graduated tools (the Coral ID Key) |
+| `tools/` | Build, import and analysis scripts; `tools/sync/` the sheet script |
+| `tests/` | Unit tests (`*.test.js`) and Playwright smokes (`*.smoke.js`) |
+| `judging/` | The photo-judging package for an outside agent |
+| `docs/` | The documentation below |
 
-`admin.html` (not linked from the app) is a back-office to pick, per genus, the cover photo, the featured photos of each view (up to 3, in order), photos to hide everywhere (games included) and photos to move to another view, and new candidate photos (`data.json` `cand`) to add to a view (`add`). Each photo is tagged by origin (IMR lecture, Pierre, iNaturalist Dauin / Philippines / elsewhere, from `p.loc`) with a filter. It writes `curation.json`, which `app.js` applies on top of `data.json` (`applyCuration`), so rebuilding `data.json` never loses these choices.
+## Docs
 
-Every click is kept as a draft in the browser; Publish merges the draft key by key onto the latest published `curation.json` (so choices published from another device are kept) and commits it to `main` through the GitHub API with a fine-grained token (this repository only, Contents read and write). The token is stored in the browser, encrypted with the admin password; the password only unlocks the token, the token is what allows writing. Without a token, `admin.html?readonly` opens the page to download the JSON. `index.html?draft` previews unsaved choices in the same browser.
+- [AGENTS.md](AGENTS.md): the constitution: Rule 0, the merge contract, the index of the rules.
+- [docs/HANDOVER.md](docs/HANDOVER.md): where things are, what lives outside GitHub, the one-time setups.
+- [docs/INTEGRATOR.md](docs/INTEGRATOR.md): how the integrator runs the work day to day.
+- [docs/STATUS.md](docs/STATUS.md): where things stand now.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): files, data, admin, sync, photos, deploy.
+- [docs/LEARNING.md](docs/LEARNING.md): the learning model and the research behind it.
+- [docs/FISH_PATH.md](docs/FISH_PATH.md): the fish naming path.
+- [docs/ROADMAP.md](docs/ROADMAP.md): deferred ideas, open questions, declined ideas.
+- [docs/PAGES.md](docs/PAGES.md): GitHub Pages setup and recovery.
+- [docs/SECURITY.md](docs/SECURITY.md): what is exposed and what protects it.
+- [docs/FORMATS.md](docs/FORMATS.md): the question formats adopted, and why.
+- [docs/DESIGN.md](docs/DESIGN.md): design tokens and components.
+- [docs/rules/](docs/rules/README.md): Pierre's standing rules, one file per theme.
+- [judging/FISH.md](judging/FISH.md): the fish photo-judging rubric.
 
-Photo quality: `quality.json` holds a first automatic rating per photo (3 good, 2 fair, 1 poor) from `tools/photo_quality.py` (sharpness of the best-focused area, contrast, colour cast, pixel size). Pierre's corrections are in `curation.json` under `quality` (`{f: level}`); the effective level is the correction, else the automatic one. The admin has a second entry point, "By quality", listing every photo by level across genera. Poor photos (identifiable but low quality, like ReefCloud images) are in games, where the players' answers rate how hard each one is.
+## Content and rights
 
-Exclusion: `curation.json` `exclude` (`{f: reason}`) removes a photo for good (a person in frame, a drawing, an AI image…): `applyCuration` drops it from every list, and the build scripts skip it (`tools/excluded.py`). Hide, by contrast, is a per-genus choice that can be undone with Show again.
+**Code and compiled data.** © 2026 Pierre Pericard, all rights reserved (see [LICENSE](LICENSE)). No open-source
+licence is granted. Much of the code was written with AI coding assistants under his direction.
 
-## Photo judging by an outside agent
+**Photos.** Every photo keeps its author and licence, shown in the app (enlarge a photo) and recorded in the data files
+(`a` credit, `lic` licence, `o` source page).
+- **Pierre Pericard's own photos** (iNaturalist user `ppericard`): © Pierre Pericard.
+- **Other iNaturalist observers**: © their authors, under the licence each chose: CC0, CC BY or CC BY-NC. No share-alike
+  or no-derivatives photos are used. Some photos are cropped.
+- **FishBase** (fish only): © their authors, CC BY-NC 4.0 as FishBase states it.
+- **IMR Lecture 6 photos** (corals only): used for IMR's internal training. Their rights are uncertain, as many were
+  not taken by IMR; they are being traced to their original sources and will be credited or replaced. Not for reuse.
+  The fish side uses no IMR lecture photos.
+- **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): no photo of the book is used; its crops were removed on
+  2026-11-08. The book stays a cited source (its pages, criteria and look-alikes); the Coral ID Key's boxes are our own
+  drawings.
 
-The photo judgement work (growth form, quality, view, wrong genus, several corals, near-duplicates, featured picks, candidates worth adding) can be handed to another AI agent, e.g. Codex. The package lives in `judging/`: `BRIEF.md` (rules and categories), `PROMPT.md` (what to paste into the agent), `schema.json` (output format, one file per genus in `judging/out/`) and `manifest.json` (every photo to judge, built by `tools/judging_manifest.py`). `tools/judging_import.py --check` validates the agent's files; without `--check` it imports them as suggestions only: `suggest.json` (listed last in the admin To do, views All and Reports, one Accept or Dismiss at a time; dismissals are kept in `curation.json` `seen`, "keep off games" in `use`), plus IMR growth forms in `forms.json` `gf` (letters defined in `forms.json` `forms`), quality in `quality.json` and Featured picks in `picks.json`. Pierre's own choices in `curation.json` always win and are never written by the import.
+**Text and data.** The coral genus list, ID tips and lecture notes come from IMR Lecture 6; the fish cues, look-alikes
+and IMR names from IMR's fish presentation and reference list (© IMR, used in the app for IMR's training, not for
+reuse). The fish families follow *Reef Fish Identification: Tropical Pacific* (Allen, Steene, Humann and DeLoach, cited).
+Taxonomy follows the World Register of Marine Species (WoRMS, cited). Size and depth facts come from Reef Life Survey
+and FishBase, cited per species. Fonts: Source Sans 3 and Barlow Condensed (SIL Open Font License).
+
+**Reuse.** Nothing here is offered for reuse. A Creative Commons photo can be reused under its own licence from its
+original source, not from this repository. Rights holders: open an issue to change a credit or have a photo removed.
+
+*This notice is not legal advice.*
