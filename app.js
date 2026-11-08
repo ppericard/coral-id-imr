@@ -508,6 +508,27 @@ function fishGenera(X, F) {
   const sp = new Map((F.species || []).map(s => [s.id, s])),
     gens = new Map((F.genera || []).map(g => [g.id, g])),
     sci = [];
+  // A family IMR gives no cue for (circles 2-3, the Soapfishes): its ID marks (fish.json marks, our own words from the
+  // sources it lists, msrc: tools/fish_sheets.json) show where the IMR cues show (the feedback, the first-meeting card,
+  // the families page, the cards), under a label naming those sources, never as IMR's (Pierre, 2026-11-08: "court terme,
+  // assez urgent"; "On publie").
+  (F.families || []).forEach(f => {
+    const E = X.gen[f.id],
+      by = [
+        ...new Set(
+          (f.msrc || [])
+            .map(s =>
+              String(s.t || '')
+                .split(',')[0]
+                .trim()
+            )
+            .filter(Boolean)
+        )
+      ].join(', ');
+    if (!E || E.qt || !(f.marks || []).length) return;
+    E.qt = f.marks;
+    E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
+  });
   (F.families || [])
     .filter(f => f.circle === 1 && X.gen[f.id])
     .forEach(f => {
@@ -1616,7 +1637,7 @@ const UNITS = {
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
-    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
+    help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
     sets: [
       // The scientific genera (fishGenera, above; docs/FISH_PATH.md "Levels", branch B): offered once a family is at
