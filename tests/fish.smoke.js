@@ -628,7 +628,7 @@ const server = http.createServer((req, res) => {
       const srcOf = a => (/src="([^"]*)"/.exec(a) || [])[1],
         cards = [...document.querySelectorAll('#view .tipg')].map(a => ({
           n: slateGenera().find(n => unameT(n) === (a.querySelector('.tipph b') || {}).textContent),
-          src: (a.querySelector('.tipph img') || {src: ''}).getAttribute('src')
+          src: (a.querySelector('.tipph img') || {getAttribute: () => ''}).getAttribute('src')
         })),
         cur = Object.keys(((CUR || {}).fish || {}).genera || {}).filter(n => FISH.gen[n] && FISH.gen[n].coverP);
       return {
