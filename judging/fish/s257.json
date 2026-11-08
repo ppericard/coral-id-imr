@@ -83,6 +83,133 @@
   "fish-s257-cand-726171885": {
    "code": "p1g2ssx1",
    "keep": "best"
+  },
+  "fish-s257-cand-572079325": {
+   "code": "p1g1sm1j2",
+   "keep": "best",
+   "note": "Observer tags it juvenile; the striped pattern is shared with initial-phase adults, so the flag follows the observer."
+  },
+  "fish-s257-cand-572079361": {
+   "code": "p1g1ssmj1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-276796272": {
+   "code": "o1g1ssmj1",
+   "keep": "best",
+   "note": "Three fish; a small striped one at the bottom left. Observer tags it juvenile."
+  },
+  "fish-s257-cand-450273192": {
+   "code": "o1g2sm1j2",
+   "keep": "best"
+  },
+  "fish-s257-cand-396387438": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s257-cand-396387447": {
+   "code": "o1g1ssmj1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-329855699": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s257-cand-349253076": {
+   "code": "p1g2ss1j1",
+   "keep": "best"
+  },
+  "fish-s257-cand-107433627": {
+   "code": "p1g2ms11",
+   "keep": "best"
+  },
+  "fish-s257-cand-107433633": {
+   "code": "p1g2ms11",
+   "keep": "dup"
+  },
+  "fish-s257-cand-107433825": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s257-cand-630350273": {
+   "code": "p1g1ss11",
+   "keep": "best"
+  },
+  "fish-s257-cand-348320413": {
+   "code": "o1g2ms12",
+   "keep": "best"
+  },
+  "fish-s257-cand-9307090": {
+   "code": "p1g2bms1",
+   "keep": "best"
+  },
+  "fish-s257-cand-11301156": {
+   "code": "o1g2bss1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-915938": {
+   "code": "o1g1ssm2",
+   "keep": "best"
+  },
+  "fish-s257-cand-619062418": {
+   "code": "o1g1ssm1",
+   "keep": "best"
+  },
+  "fish-s257-cand-619062427": {
+   "code": "o1g1ssx1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-650442558": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s257-cand-608768167": {
+   "code": "p1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s257-cand-626120480": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s257-cand-591904324": {
+   "code": "o1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s257-cand-730140992": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s257-cand-752968479": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s257-cand-330365719": {
+   "code": "p1g2bmm1",
+   "keep": "best"
+  },
+  "fish-s257-cand-597780168": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s257-cand-330831314": {
+   "code": "o1g2bm11",
+   "keep": "best",
+   "note": "Tiny low-resolution original (300 px)."
+  },
+  "fish-s257-cand-631823976": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s257-cand-428518428": {
+   "code": "o1g2sss1",
+   "keep": "best"
+  },
+  "fish-s257-cand-669326565": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s257-cand-176252174": {
+   "code": "p1g2bs11",
+   "keep": "best"
   }
  }
 }
