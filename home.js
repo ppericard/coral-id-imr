@@ -131,8 +131,9 @@ ${idoor}
       </section>
       <section>
         <h3>Photos</h3>
-        <p>Besides the IMR lecture photos, most photos are Pierre Pericard’s own and those of <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a> (CC BY, CC BY-NC, CC BY-SA, CC BY-NC-SA or CC0). Many thanks to them.</p>
-        <p>Every photo keeps its own credit: enlarge a photo to see its author and licence, with a link to the original observation.</p>
+        <p>Most photos are those of <a href="${inat}" target="_blank" rel="noopener">iNaturalist</a> observers, Pierre Pericard among them, who share them under <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener">Creative Commons licences</a>: CC0, CC BY or CC BY-NC. Some are cropped. Many thanks to them.${ab.map(a => (a.photos ? ' ' + a.photos : '')).join('')}</p>
+        <p>Coral photos also come from IMR Lecture 6, for IMR’s internal training. Their rights are uncertain, as many were not taken by IMR: they are being traced to their original sources, to be credited or replaced.</p>
+        <p>Every photo keeps its own credit: enlarge a photo to see its author and licence, with a link to its original page.</p>
       </section>
       <section>
         <h3>References</h3>
