@@ -2837,7 +2837,7 @@ the ability 0.5), not the bar alone: with the bar alone and the start's ability,
 photos about 3% of the time (10% before), a state no player reaches; at that Open Water state they come about a third
 of the time.
 
-### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, at Open Water since Q205)
+### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
 photo, then 4 genus names". Built on its own branch for his review (admin-only beta), on the engine as it is: a genus is one
@@ -2846,7 +2846,21 @@ constant. What is new is structural: a unit has a rank (`rankOf`), and a questio
 rank of the unit asked (`model.js` `distractors`, `quiz.js` `typeMatch`). Its wrong choices follow rule L7 as an entry's do:
 genera of other identification groups first (the entry's group as the genus's form), then its sibling genera in the same IMR
 entry as traps (`look`), then the player's own mix-ups. A family's genera came into play at Advanced, the level at which its
-species open (FISH_PATH "Unlock rules"), at Open Water since 2026-11-07 (Q205, #702: Advanced came far too late under #646's bar), as an opt-in set ("Scientific names"), and open one at a time by the usual rule.
+species open (FISH_PATH "Unlock rules"), at Open Water from 2026-11-07 (Q205, #702: Advanced came far too late under #646's bar), and back at Advanced since 2026-11-08 (Pierre, after a regular player found them "too early, too strong", with no presentation and no ID cues), as an opt-in set ("Scientific names"), and open one at a time by the usual rule.
+
+**The IMR genera of an IMR player** (Pierre, 2026-11-08, Q219-Q221): for a player who ever answered "I'm at IMR" to the fish
+first-launch question (Q227: `model.js` `imrSaid`, from the synced `reefid-sync-fish-start` history `h` or its fallback trail
+`fb` 'imr-…', whatever the answer in force now; an inferred answer does not count), the genera the IMR course names alone (`imrg`: Chromis,
+Dascyllus, Pomacentrus, Amphiprion as Anemonefish, Heniochus as Bannerfish, Naso as Unicornfish; not IMR's "Surgeonfish",
+which names three genera, Q220) join the units in play without the offer once their family is at Open Water (`app.js`
+`sciOpen`, the set's `auto`, played whatever the set's state: `bonusList`), and open by the usual rule (their card, then
+`openPick`, `openPace`). Nothing else changes: a genus question's choices are genera, a family question's families, so a
+photo of a genus not opened (Abudefduf, Acanthurus) or of one opened, asked at family level, is right as its family (Q221;
+a Naso photo is right as Surgeonfishes). It applies to every player with that answer, existing ones included (Pierre,
+2026-11-08): it reads the current scores, so the IMR genera of a family already past Open Water become candidates at once,
+one card at a time at the opening's pace. Not counted in the progress, as the other genera. A player who turned the set on
+before 2026-11-08 gets a one-time card offering to close it (`quiz.js` `bonusBackShow`, the set's `rv` recorded with the
+choice as `Q.sciV`).
 
 Measured (rule L11: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
 player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
