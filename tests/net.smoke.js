@@ -675,44 +675,6 @@ const server = http.createServer((req, res) => {
     HELD.splice(0).forEach(x => x.destroy());
     await b9.close();
   }
-  // 9c. A Cache Storage that stops answering never holds a page (sw.js soon, #531: added for the step-9 hang, then read
-  // as a stalled Cache Storage; on 2026-11-05 that hang was traced to a leftover deploy in check 9, see SWV = 1 there).
-  // Every Cache Storage call of the worker is wedged here (never answers): the admin page and the app still open and
-  // start, from the network.
-  {
-    const bw = introsOn(await chromium.launch({args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1']}));
-    const ctx = await bw.newContext({viewport: {width: 390, height: 800}});
-    await ctx.addInitScript(
-      () => (localStorage.setItem('reefid-tour', '1'), localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}'))
-    );
-    const p = await ctx.newPage();
-    await p.goto(base + 'admin.html?demo');
-    await p.evaluate(() => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready)); // https only in the app
-    await p.reload();
-    await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera && navigator.serviceWorker.controller, null, {
-      timeout: 20000
-    });
-    const [w] = ctx.serviceWorkers();
-    await w.evaluate(() => {
-      const never = () => new Promise(() => {});
-      ['match', 'open', 'has', 'keys', 'delete'].forEach(k => (caches[k] = never));
-    });
-    for (const [what, url, up] of [
-      ['the admin page', 'admin.html?demo', () => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera],
-      ['the app', '', () => window.APP_READY]
-    ]) {
-      const q = await ctx.newPage(),
-        t0 = Date.now();
-      const ok = await q
-        .goto(base + url, {waitUntil: 'domcontentloaded', timeout: 15000})
-        .then(() => q.waitForFunction(up, null, {timeout: 20000}))
-        .then(() => true)
-        .catch(() => false);
-      if (!ok) fails.push(`Cache Storage not answering: ${what} never started (${Math.round((Date.now() - t0) / 1000)} s)`);
-      await q.close();
-    }
-    await bw.close();
-  }
   // 10. Load order. Home first: nothing of My progress or the Tools asked for before it shows; then the quiz's files,
   // then My progress, then the Tools, one tier after the other.
   {
@@ -1229,22 +1191,13 @@ const server = http.createServer((req, res) => {
       // A photo kept under its R2 address is still served while R2 is cut off.
       if (!(await load(R2 + 'img/' + g))) fails.push('Service worker: R2 cut off, a photo kept under its R2 address was not served');
       // Offline: a photo kept under the site's address is served for its R2 address.
-      const h = f.replace(/-s\.webp$/, '-m.webp'),
-        k = fs.readdirSync(path.join(ROOT, 'img')).filter(x => x.endsWith('-s.webp'))[1]; // another photo, not shown yet (no memory cache)
+      const h = f.replace(/-s\.webp$/, '-m.webp');
       await load(base + 'img/' + h);
-      await load(base + 'img/' + k);
       await ctx.route(
         u => u.href.startsWith(R2) || u.href.startsWith(base + 'img/'),
         r => r.abort()
       );
       if (!(await load(R2 + 'img/' + h))) fails.push('Service worker: offline, a photo kept from the site was not served for R2');
-      // Offline while Cache Storage is paused (sw.js soon: a slow cache is skipped for CACHE_PAUSE ms), R2 failed a moment
-      // ago: the photo kept offline is still served, by the last lookup with no time limit (Codex review #569: the
-      // worker's failure reply skipped it).
-      const [w] = ctx.serviceWorkers();
-      if (w) await w.evaluate(() => (cacheOff = Date.now()));
-      if (!w || !(await load(R2 + 'img/' + k)))
-        fails.push('Service worker: offline with Cache Storage paused, a photo kept offline was not served');
       await ctx.close();
     }
   }

@@ -41,7 +41,7 @@
    "keep": "dup"
   },
   "fish-s377-cand-177203128": {
-   "code": "o1d1sl12",
+   "code": "o1g1sl13",
    "keep": "best"
   },
   "fish-s377-cand-177203137": {
@@ -77,11 +77,11 @@
    "keep": "best"
   },
   "fish-s377-cand-210520457": {
-   "code": "p1n0sm13",
+   "code": "p1g0sm13",
    "keep": "best"
   },
   "fish-s377-cand-210520463": {
-   "code": "p1n0sl13",
+   "code": "p1g0sl14",
    "keep": "dup"
   },
   "fish-s377-cand-657094022": {
@@ -93,7 +93,7 @@
    "keep": "best"
   },
   "fish-s377-cand-210521820": {
-   "code": "o0n0sm12",
+   "code": "o0g0sm13",
    "keep": "best"
   },
   "fish-s377-cand-657092898": {
@@ -101,15 +101,15 @@
    "keep": "best"
   },
   "fish-s377-cand-249626948": {
-   "code": "p1n0sm13",
+   "code": "p1g0sm13",
    "keep": "best"
   },
   "fish-s377-cand-249626961": {
-   "code": "p1n0sl13",
+   "code": "p1g0sl13",
    "keep": "dup"
   },
   "fish-s377-cand-249626956": {
-   "code": "p1n0sl13",
+   "code": "p1g0sl13",
    "keep": "dup"
   },
   "fish-s377-cand-657092337": {
@@ -129,7 +129,7 @@
    "keep": "dup"
   },
   "fish-s377-cand-180639960": {
-   "code": "p1n0sm13",
+   "code": "p1g0sm13",
    "keep": "best"
   },
   "fish-s377-cand-602190445": {
@@ -182,12 +182,60 @@
    "note": "Near-identical to fish-s377-cand-319030554 (another observation, same seahorse and scene)"
   },
   "fish-s377-cand-12789628": {
-   "code": "p1n0sm13",
+   "code": "p1g0sm13",
    "keep": "best"
   },
   "fish-s377-cand-480044606": {
-   "code": "o1n0ssx1",
+   "code": "o1g0ssx1",
    "keep": "best"
+  },
+  "fish-s377-cand-254866252": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s377-cand-346968620": {
+   "code": "p1d0bl1c1",
+   "keep": "best"
+  },
+  "fish-s377-cand-346968785": {
+   "code": "o1g0bl1c1",
+   "keep": "dup"
+  },
+  "fish-s377-cand-346968787": {
+   "code": "o1g0bl1c1",
+   "keep": "dup"
+  },
+  "fish-s377-cand-346968791": {
+   "code": "o0g0bl1c1",
+   "keep": "dup"
+  },
+  "fish-s377-cand-104892693": {
+   "code": "p1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-525940065": {
+   "code": "o0g1ml1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-259019970": {
+   "code": "p1g0slsc2",
+   "keep": "best"
+  },
+  "fish-s377-cand-179585114": {
+   "code": "p1d0sm1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-651403211": {
+   "code": "o1d0sm1c2",
+   "keep": "best"
+  },
+  "fish-s377-cand-220383603": {
+   "code": "o0g0bm1a1",
+   "keep": "dup"
+  },
+  "fish-s377-cand-480044636": {
+   "code": "p1g0sm1c3",
+   "keep": "alt"
   }
  }
 }

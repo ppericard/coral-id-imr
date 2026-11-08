@@ -83,6 +83,54 @@
   "fish-s225-cand-732413277": {
    "code": "p1g2sl13",
    "keep": "best"
+  },
+  "fish-s225-cand-649150827": {
+   "code": "o1g2ms12",
+   "keep": "best"
+  },
+  "fish-s225-cand-330075701": {
+   "code": "p1g2bm12",
+   "keep": "best"
+  },
+  "fish-s225-cand-745822789": {
+   "code": "p1d1ml13",
+   "keep": "best"
+  },
+  "fish-s225-cand-759565668": {
+   "code": "d1d1ms12",
+   "keep": "best"
+  },
+  "fish-s225-cand-759565669": {
+   "code": "d1d1ms12",
+   "keep": "dup"
+  },
+  "fish-s225-cand-597172177": {
+   "code": "o0g1ms12",
+   "keep": "best"
+  },
+  "fish-s225-cand-329783843": {
+   "code": "p1g1bm12",
+   "keep": "best"
+  },
+  "fish-s225-cand-745384497": {
+   "code": "o1d1ml12",
+   "keep": "best"
+  },
+  "fish-s225-cand-655330923": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s225-cand-746424990": {
+   "code": "o1d1ml12",
+   "keep": "best",
+   "unsure": [
+    "keep"
+   ],
+   "note": "Near-identical to obs 405773844's photo 745384497 (same observer, same fish): a duplicate across observations."
+  },
+  "fish-s225-cand-597524141": {
+   "code": "o1g1mm12",
+   "keep": "best"
   }
  }
 }
