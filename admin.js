@@ -7308,6 +7308,14 @@ function liveMerge(all, j, roster) {
   return {add};
 }
 // livemerge: end
+// The player list read again for the light read: a read that fails keeps the last good list (loadUsers would leave
+// {err}, and every signed-in player would show as a device not signed in; Codex review #775).
+function liveUsers() {
+  const U0 = USERS;
+  return loadUsers(true).then(() => {
+    if ((!USERS || USERS.err) && U0 && !U0.err) USERS = U0;
+  });
+}
 // The next light read, LIVE_READ.MS after the last read (the whole log's or a light one), or none while not wanted.
 function liveArm() {
   clearTimeout(liveT);
@@ -7331,7 +7339,7 @@ function liveRead() {
           // The whole log and the player list again, the page kept: a failed read keeps the log held and tries again in
           // a minute (loadStats leaves an unreadable log as {old}; Codex review #775). An unfolded session's saved copy too.
           sheetDrop('ans');
-          return Promise.all([loadStats(), loadUsers(true)]).then(() => {
+          return Promise.all([loadStats(), liveUsers()]).then(() => {
             if (!ANS || ANS.old) ANS = a0;
             else savedClear();
             if (cur === 'players/activity') render();
@@ -7344,7 +7352,10 @@ function liveRead() {
         } else a0.at = Date.now();
         const U = (USERS && USERS.users) || [],
           known = new Map(U.map(u => [u.id, u.name]));
-        if (m.add.some(r => !r[11] && !known.has(r[0]))) loadUsers(true).then(() => cur === 'players/activity' && render());
+        // A signed-in player of the log the list does not hold (a new account, or an earlier read of the list that
+        // failed): the list again, at each light read until it holds them (Codex review #775).
+        if ((ANS.all || ANS.rows || []).some(r => !r[11] && !known.has(r[0])))
+          liveUsers().then(() => cur === 'players/activity' && render());
         // A player's saved copy read for an unfolded session (achievements, cards, learned genera) follows their new
         // answers, as ↻ does (savedClear; Codex review #775).
         if (m.add.some(r => known.has(r[0]) && known.get(r[0]) in PSAVED)) savedClear();

@@ -202,7 +202,7 @@ function liveAdmin({v = Number(/const LIVE_SHEET = (\d+);/.exec(admin)[1]), rows
       PSAVED: {},
       cleared: 0,
       savedClear: () => ctx.cleared++,
-      loadUsers: () => (ctx.users++, Promise.resolve()),
+      loadUsers: () => (ctx.users++, ctx.usersFail ? (ctx.USERS = {err: 'Offline'}) : 0, Promise.resolve()),
       Date: {now: () => ctx.now},
       now: 1e6,
       document: {visibilityState: 'visible', on: {}, addEventListener: (k, f) => (ctx.document.on[k] = f)},
@@ -321,6 +321,19 @@ test('Activity: the answers given since are added; a gap reads the whole log in 
   await c.L.liveRead();
   await new Promise(r => setImmediate(r));
   assert.strictEqual(c.ctx.users, 1);
+  // The list could not be read (offline): the last good one kept, and asked again at the next light read, though it
+  // brings no new answer, until it holds the new player (Codex review #775).
+  const g = liveAdmin({reply: () => ({ok: true, rows: [row('A', 1), row('N', 8)], last: {A: 1, N: 8}, n: 2, k: 2})}),
+    U0 = g.ctx.USERS;
+  g.ctx.usersFail = true;
+  await g.L.liveRead();
+  await new Promise(r => setImmediate(r));
+  assert.deepStrictEqual([g.ctx.users, g.ctx.USERS === U0], [1, true]);
+  g.ctx.usersFail = false;
+  g.ctx.now += 60000;
+  await g.L.liveRead();
+  await new Promise(r => setImmediate(r));
+  assert.strictEqual(g.ctx.users, 2, 'asked again with no new answer');
   // A failed read keeps the log and waits a minute.
   const d = liveAdmin({reply: () => ({ok: false, error: 'server'})}),
     h = d.ctx.ANS;
