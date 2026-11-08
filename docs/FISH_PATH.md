@@ -397,6 +397,8 @@ Decided from the admin pooling study:
 
 ## Formats and their order
 
+The study behind these formats, and which ideas were adopted and why: [FORMATS.md](FORMATS.md).
+
 1. Photo, then 4 entry names (built).
 2. Typed entry name (built); "Again" and look-alike duels (built).
 3. Photo, then 4 species names, in the name-display schedule.
