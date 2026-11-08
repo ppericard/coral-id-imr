@@ -48,6 +48,8 @@ jobs:
         with:
           python-version: '3.15'
       - uses: actions/configure-pages@v6
+      # git archive leaves out what .gitattributes marks export-ignore (docs/, tests/, tools/, judging/, .github/, .claude/):
+      # the site is the app, the admin, the Lab, the data and the photos only (tests/artifact.test.js).
       - name: Stage the static site
         run: |
           mkdir -p "$RUNNER_TEMP/pages"
