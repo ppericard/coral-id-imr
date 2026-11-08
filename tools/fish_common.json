@@ -659,6 +659,9 @@
   "s675": {"sp":"Pleurosicya micheli","names":[{"name":"Stony coral ghostgoby","from":["dauin","fb2","inatMain"]},{"name":"Michel's ghost goby","from":["fbMain","fb3","inat"],"alt":["Michael's ghostgoby"]}]},
   "s676": {"sp":"Tomiyamichthys oni","names":[{"name":"Monster shrimpgoby","from":["dauin","fbMain","fb1","inatMain"]}]},
   "s677": {"sp":"Trimma taylori","names":[{"name":"Yellow cavegoby","from":["dauin","fb3","inatMain"]}],"left":["Yellow pygmygoby"]},
-  "s678": {"sp":"Valenciennea strigata","names":[{"name":"Bluestreak goby","from":["dauin","fb1","inatMain"]},{"name":"Blueband goby","from":["fbMain","fb2","inat"]}]}
+  "s678": {"sp":"Valenciennea strigata","names":[{"name":"Bluestreak goby","from":["dauin","fb1","inatMain"]},{"name":"Blueband goby","from":["fbMain","fb2","inat"]}]},
+  "s679": {"sp":"Priacanthus starnesi","names":[],"noFishBase":true},
+  "s680": {"sp":"Hazeus profusus","names":[]},
+  "s681": {"sp":"Hazeus maculipinna","names":[]}
  }
 }

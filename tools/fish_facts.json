@@ -649,5 +649,7 @@
   "s675": {"rls": "pleurosicya-micheli", "len": 3, "lsrc": "rls", "dep": [10, 50], "dsrc": "rls", "fb": 25509},
   "s676": {"fb": 23644, "len": 11, "lsrc": "fishbase", "lt": "SL", "dep": [10, 30], "dsrc": "fishbase"},
   "s677": {"rls": "trimma-taylori", "len": 4, "lsrc": "rls", "fb": 12752, "dep": [20, 50], "dsrc": "fishbase"},
-  "s678": {"rls": "valenciennea-strigata", "len": 18, "lsrc": "rls", "dep": [1, 25], "dsrc": "rls", "fb": 6575}
+  "s678": {"rls": "valenciennea-strigata", "len": 18, "lsrc": "rls", "dep": [1, 25], "dsrc": "rls", "fb": 6575},
+  "s680": {"fb": 69587, "len": 2.9, "lsrc": "fishbase", "lt": "SL"},
+  "s681": {"fb": 25493, "len": 3.7, "lsrc": "fishbase", "lt": "SL", "dep": [null, 20], "dsrc": "fishbase"}
 }

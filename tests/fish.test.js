@@ -668,8 +668,9 @@ test('common names: a PDF slip shows the FishBase spelling, the PDF form accepte
   assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
 });
 
-test('common names proposal: 1 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
-  const P = read('tools/fish_common.json').species;
+test('common names proposal: 0 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
+  const P = read('tools/fish_common.json').species,
+    SRC_NAMES = read('tools/fish_common_src.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
   F.species
     .filter(s => s.circle)
@@ -677,7 +678,15 @@ test('common names proposal: 1 to 3 per game species, the PDF name first, source
       const p = P[s.id];
       assert.ok(p, `${s.id} ${s.name}: no proposal`);
       assert.strictEqual(p.sp, s.name);
-      assert.ok(p.names.length >= 1 && p.names.length <= 3, `${s.name}: ${p.names.length} names`);
+      assert.ok(p.names.length <= 3, `${s.name}: ${p.names.length} names`);
+      // None only for a species no reference names (Pierre, 2026-11-08, Q247: such a species has no common-name unit;
+      // a name is never invented): no name of its own, none from FishBase or iNaturalist.
+      const ref = SRC_NAMES[s.id] || {};
+      if (!p.names.length)
+        assert.ok(
+          !s.common && [ref.fb, ref.inat].every(x => !x || (!x.main && !(x.names || []).length)),
+          `${s.name}: no name although a reference has one`
+        );
       // The PDF name first, as written; a PDF name flagged as a likely slip (check) shows FishBase's spelling, the PDF form
       // still accepted when typed (Pierre, 2026-11-05).
       if (s.common && !(s.check && (p.names[0].alt || []).includes(s.common)))
@@ -697,7 +706,8 @@ test('common names proposal: 1 to 3 per game species, the PDF name first, source
 // name accepted as a spelling (alt) counts in the shared-name check (Dascyllus trimaculatus' "Three spot damsel" is
 // Pomacentrus tripunctatus' PDF name); a spelling that links two groups merges them (Antennarius striatus).
 test('common names proposal: FishBase main name, shared spellings, linked spellings', () => {
-  const P = read('tools/fish_common.json').species;
+  const P = read('tools/fish_common.json').species,
+    SRC_NAMES = read('tools/fish_common_src.json').species;
   const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
   const keys = p => p.names.flatMap(n => [n.name, ...(n.alt || [])]).map(norm);
   assert.ok(keys(P.s088).includes('agilechromis'), 'Chromis agilis: Agile chromis proposed');

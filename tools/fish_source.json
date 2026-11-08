@@ -813,6 +813,9 @@
   {"id": "s675", "name": "Pleurosicya micheli", "common": "Stony coral ghostgoby", "src": "dauin"},
   {"id": "s676", "name": "Tomiyamichthys oni", "common": "Monster shrimpgoby", "src": "dauin"},
   {"id": "s677", "name": "Trimma taylori", "common": "Yellow cavegoby", "src": "dauin"},
-  {"id": "s678", "name": "Valenciennea strigata", "common": "Bluestreak goby", "src": "dauin"}
+  {"id": "s678", "name": "Valenciennea strigata", "common": "Bluestreak goby", "src": "dauin"},
+  {"id": "s679", "name": "Priacanthus starnesi", "common": "", "src": "dauin"},
+  {"id": "s680", "name": "Hazeus profusus", "common": "", "src": "dauin"},
+  {"id": "s681", "name": "Hazeus maculipinna", "common": "", "src": "dauin"}
 ]
 }
