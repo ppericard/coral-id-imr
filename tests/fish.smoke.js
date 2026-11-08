@@ -8,7 +8,7 @@
 //   "I'm at IMR": the IMR-tagged families open first;
 // - winks: a surprise card for a circle-1 player too (Pierre, 2026-11-03), its absurd choices and feedback lines from
 //   fish.json, never counted (progress, answers, log unchanged); late (Pierre, 2026-11-06): none in the first answers
-//   (quiz.js WINK.AT: 300), once due shown once, then not again for the player (reefid-sync-fish-wink, travels);
+//   (quiz.js WINK.AT: 200), once due shown once, then not again for the player (reefid-sync-fish-wink, travels);
 // - typed answers: the entry's names (IMR name, family, sub-entries) read as the entry;
 // - progress per subject kept apart: fish answers in reefid-sync-fish-progress only, the corals' untouched; switching
 //   back to corals brings the coral slate and progress back;

@@ -799,11 +799,12 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
 // all, across devices): the winks in fish.json order (whale shark, thresher sharks), wink i due at the first photo-quiz
 // question from WINK.AT[i] answers of the player's own record for the subject (answersSoFar: P, so a reload or a sign-in
 // keeps the count) and at least the gap between the first two after the last one shown (a player already past both
-// thresholds meets them 350 answers apart, never back to back). A wink beyond WINK.AT (none yet) would come the same gap
+// thresholds meets them 200 answers apart, never back to back). A wink beyond WINK.AT (none yet) would come the same gap
 // later (winkAt). Shown once per player: the winks shown travel with the player (reefid-sync-fish-wink {wink id: answer
 // count when shown}, merged by union at a sync: winkMerge), so another device of the same account never shows one again.
-// Never over a card (the first-meeting cards, an offer).
-const WINK = {AT: [300, 650]};
+// Never over a card (the first-meeting cards, an offer). Earlier (Pierre, 2026-11-08): the whale shark from 200 answers,
+// the thresher sharks from 400 (they were 300 and 650).
+const WINK = {AT: [200, 400]};
 const winkGap = () => (WINK.AT.length > 1 ? WINK.AT[1] - WINK.AT[0] : WINK.AT[0]);
 // The answer count from which wink i is due.
 const winkAt = i => (i < WINK.AT.length ? WINK.AT[i] : WINK.AT[WINK.AT.length - 1] + (i - WINK.AT.length + 1) * winkGap());
