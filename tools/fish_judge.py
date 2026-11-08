@@ -98,17 +98,25 @@ def load_refs(fish=None):
     return out
 
 
-def add_refs(photos, J, added=(), fish=None):
+def load_keep():
+    """tools/fish_judge.json "keep": {reference photo id: best | alt | dup}, judged against the photos of its observation
+    in play (Pierre, 2026-11-08, Q218; tools/fish_game.py in_play)."""
+    return json.loads(SRC.read_text(encoding="utf-8")).get("keep") or {}
+
+
+def add_refs(photos, J, added=(), fish=None, dup=frozenset()):
     """The reference photos (tools/fish_refs.json) into their entries' game photos, in place. A photo already in the game
     takes the rep tag only (rtag marks a tag set here), and stays whatever its level (Codex review #660: a game photo is
     never removed for being a reference photo). A new one joins at the end once judged (J; apply then keeps it only at the
     reference level, ref_level), unless its observation is already in the game (one photo per observation, rule P4: the
     game photo stays). core.js easyRank orders the list. A rerun gives the same file: a joined photo tools/fish_refs.json
-    no longer lists leaves, a tag it no longer lists goes."""
+    no longer lists leaves, a tag it no longer lists goes. dup: the reference photos judged duplicates of their
+    observation's photos (load_keep): never joined, and one that joined leaves (Codex review #715); a game photo of its own
+    stays."""
     R = load_refs(fish)
     want = {r["f"]: r for L in R.values() for r in L}
     for tid in list(photos):
-        photos[tid] = [p for p in photos[tid] if not p.get("from") or p["f"] in want]
+        photos[tid] = [p for p in photos[tid] if not p.get("from") or (p["f"] in want and p["f"] not in dup)]
         for p in photos[tid]:
             if p.get("rtag") and p["f"] not in want:
                 p.pop("rep", None)
@@ -122,7 +130,7 @@ def add_refs(photos, J, added=(), fish=None):
                     have.update({k: v for k, v in r.items() if k != "for"})
                 elif r.get("rep") and have.get("rep") != r["rep"]:
                     have.update(rep=r["rep"], rtag=1)
-            elif r["f"] in J and not any(p["o"] == r["o"] for p in L):
+            elif r["f"] in J and r["f"] not in dup and not any(p["o"] == r["o"] for p in L):
                 L.append({k: v for k, v in r.items() if k != "for"})
 
 
@@ -152,7 +160,7 @@ def apply(photos, fish=None):
         L = photos.setdefault(tid, [])
         have = {p["o"] for p in L}
         L.extend(dict(p) for p in extra if p["o"] not in have)
-    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish)
+    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish, {f for f, k in load_keep().items() if k == "dup"})
     k = 0
     for tid, L in photos.items():
         for p in L:

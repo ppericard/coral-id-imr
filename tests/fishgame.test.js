@@ -558,3 +558,19 @@ test('fish_game.py --plan: prints the photos in play and what to download, offli
   const out = execFileSync('python3', ['tools/fish_game.py', '--plan'], {cwd: ROOT, encoding: 'utf8'});
   assert.match(out, /^in play: \d+ photos over \d+ species \(Pierre's adds \d+, candidates judged sure \d+, reference photos \d+\)/);
 });
+
+// The stopgap list (fish-photos.json, tools/fish_judge.py add_refs) honours a reference photo judged dup too (Codex
+// review #715): never joins, and one that joined leaves; a game photo of its own stays (never removed for being a
+// reference photo).
+test('fish_judge.py add_refs: a reference photo judged dup never joins the stopgap list, and one that joined leaves', () => {
+  const out = JSON.parse(
+    py(`import fish_judge as FJ
+R = lambda f, o: {'f': f, 'o': o, 'src': 'x', 'from': 'taxon', 'for': ['s1']}
+FJ.load_refs = lambda fish=None: {'t1': [R('fa', 'oa'), R('fb', 'ob'), R('fc', 'oc'), {**R('fd', 'od'), 'from': None}]}
+photos = {'t1': [{'f': 'x1', 'o': 'o9'}, {**R('fc', 'oc'), 'for': None}, {'f': 'fd', 'o': 'od'}]}
+FJ.add_refs(photos, {'fa': 'p1g0sl15', 'fb': 'p1g0sl15'}, (), fish={}, dup={'fa', 'fc', 'fd'})
+print(json.dumps([p['f'] for p in photos['t1']]))`)
+  );
+  // fa (dup) never joins, fb joins; fc (dup) had joined and leaves; fd, a game photo of its own, stays.
+  assert.deepStrictEqual(out, ['x1', 'fd', 'fb']);
+});
