@@ -4702,7 +4702,7 @@ const WIDTHS = [390, 1280];
       await ready();
       // Two photos rated otherwise than published, in one draft.
       const st = await q.evaluate(() => {
-        const L = Object.keys(PHOTOS).slice(0, 3),
+        const L = Object.keys(PHOTOS).slice(0, 5),
           s = L.map(f => (SAVED.quality || {})[f] || 0),
           v = s.map(x => (x === 1 ? 3 : 1));
         DRAFT.quality = {...(DRAFT.quality || {}), [L[0]]: v[0], [L[1]]: v[1]};
@@ -4791,6 +4791,85 @@ const WIDTHS = [390, 1280];
           fails.push(`${F}: the other tab of the same token did not lock at the sign out ${JSON.stringify({both, token: u2.token})}`);
         if ((await quality(st.L.slice(0, 2))).join() !== st.v.slice(0, 2).join())
           fails.push(`${F}: the draft did not come back after the sign out of two tabs ${JSON.stringify(await quality(st.L))}`);
+        // Codex review #798: the other tab holds edits that never reached the shared draft, a note still being typed (its
+        // ptFlush, 0.8 s after typing) or a click whose write failed (draftLost). At this tab's sign out it seals them, this
+        // tab's seal under them, in its place; if it cannot seal them, it stays unlocked with them in plain and says so.
+        const L5 = st.L.slice(3, 5),
+          v5 = st.v.slice(3, 5),
+          bothLoad = () =>
+            Promise.all([q.waitForEvent('load'), q2.waitForEvent('load', {timeout: 15000})]).then(
+              () => true,
+              () => false
+            );
+        for (const how of ['note', 'lost']) {
+          await q2.evaluate(
+            ([how, f, v]) => {
+              if (how === 'note')
+                ptFlush = () => {
+                  ptFlush = () => {};
+                  DRAFT.quality = {...DRAFT.quality, [f]: v};
+                  saveDraft();
+                };
+              else {
+                DRAFT.quality = {...DRAFT.quality, [f]: v};
+                draftLost = true;
+              }
+            },
+            [how, ...(how === 'note' ? [L5[0], v5[0]] : [L5[1], v5[1]])]
+          );
+          const ld = bothLoad();
+          await signOut();
+          const ok = await ld;
+          await ready();
+          await q2.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 60000});
+          await q.waitForTimeout(2000);
+          await q.reload();
+          await ready();
+          const g = await quality(st.L),
+            left = await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed'));
+          const want = [...st.v.slice(0, 3), v5[0], how === 'lost' ? v5[1] : st.s[4]];
+          if (!ok || g.slice(0, 2).join() !== want.slice(0, 2).join() || g.slice(3).join() !== want.slice(3).join() || left)
+            fails.push(
+              `${F}: the other tab's ${how === 'note' ? 'note being typed' : 'unwritten click'} was not sealed before it locked ${JSON.stringify({ok, g, want, left: !!left})}`
+            );
+          await q2.waitForTimeout(500);
+        }
+        {
+          // Its seal cannot be written: it stays unlocked, its edit in its draft and back in plain, with a warning.
+          await q2.evaluate(
+            ([f, v]) => {
+              window.smokeStay = 1;
+              const set = Storage.prototype.setItem;
+              window.smokeSet = set;
+              Storage.prototype.setItem = function (k, x) {
+                if (k === 'demo:reefid-admin-sealed') throw new DOMException('full', 'QuotaExceededError');
+                return set.call(this, k, x);
+              };
+              DRAFT.quality = {...DRAFT.quality, [f]: v};
+              draftLost = true;
+            },
+            [L5[1], st.s[4] === 2 ? 3 : 2]
+          );
+          await Promise.all([q.waitForEvent('load'), signOut()]);
+          await ready();
+          await q2.waitForTimeout(2000);
+          const r = await q2.evaluate(f => {
+            if (window.smokeSet) Storage.prototype.setItem = window.smokeSet; // gone if it reloaded
+            const pl = JSON.parse(localStorage.getItem('demo:reefid-curation-draft') || '{}');
+            return {
+              stay: typeof smokeStay !== 'undefined',
+              token: TOKEN,
+              mine: (DRAFT.quality || {})[f],
+              plain: (pl.quality || {})[f],
+              toast: (document.querySelector('.adm-toast:not([hidden])') || {}).textContent || ''
+            };
+          }, L5[1]);
+          const v = st.s[4] === 2 ? 3 : 2;
+          if (!r.stay || r.token !== 'demo' || r.mine !== v || r.plain !== v || !/could not be sealed/.test(r.toast))
+            fails.push(
+              `${F}: the other tab, unable to seal its edit, did not stay unlocked with it in plain and a warning ${JSON.stringify(r)}`
+            );
+        }
         // The other tab now holds another token: a Sign out here leaves it unlocked.
         await q2.evaluate(() => {
           TOKEN = 'another-token';
@@ -4815,6 +4894,24 @@ const WIDTHS = [390, 1280];
           );
         }, st.L[2]);
         if (kb[0] < 1e6 || kb[1] < 1e6) fails.push(`${F}: a click after another tab's sign out wrote the draft without its base ${kb}`);
+        // Codex review #798: a seal restored here is dropped from the list as it is then, never from the one read before:
+        // another token's window may have sealed its draft meanwhile.
+        await q.evaluate(async () => {
+          await sealDraft();
+          window.smokeR = await unsealDraft();
+        });
+        const X = {iv: 'AAAAAAAAAAAAAAAA', ct: btoa('X'.repeat(48)), t: 2, z: 1};
+        await q2.evaluate(X => {
+          const L = JSON.parse(localStorage.getItem('demo:reefid-admin-sealed') || '[]');
+          localStorage.setItem('demo:reefid-admin-sealed', JSON.stringify([X, ...L]));
+        }, X);
+        const dl = await q.evaluate(() => {
+          const had = !!window.smokeR;
+          if (had) smokeR.drop();
+          return {had, left: localStorage.getItem('demo:reefid-admin-sealed')};
+        });
+        if (!dl.had || dl.left !== JSON.stringify([X]))
+          fails.push(`${F}: restoring a seal dropped a seal added meanwhile by another window ${JSON.stringify(dl)}`);
         await c.close();
         continue;
       }
@@ -4883,7 +4980,7 @@ const WIDTHS = [390, 1280];
           )
           .then(() => q.evaluate(() => document.querySelector('.adm-toast').textContent))
           .catch(() => '');
-        const got = await quality(st.L);
+        const got = await quality(st.L.slice(0, 3));
         if (got.join() !== [st.v[0], v2, st.v[2]].join() || (await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed'))))
           fails.push(
             `${F}: a newer plain draft and the sealed one did not merge, the newer winning ${JSON.stringify({got, want: [st.v[0], v2, st.v[2]]})}`
@@ -4892,7 +4989,7 @@ const WIDTHS = [390, 1280];
           fails.push(`${F}: no note names what the sealed draft brought back and where the newer one was kept: ${JSON.stringify(note)}`);
         // That tab's Undo step, kept for this tab, has the sealed draft under it too: one Undo keeps the sealed rating.
         await q.evaluate(() => undo());
-        const un = await quality(st.L);
+        const un = await quality(st.L.slice(0, 3));
         if (un.join() !== [st.v[0], v2, st.s[2]].join())
           fails.push(
             `${F}: an Undo step kept with the plain draft dropped the sealed draft ${JSON.stringify({un, want: [st.v[0], v2, st.s[2]]})}`

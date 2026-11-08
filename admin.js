@@ -6594,8 +6594,9 @@ const plainOff = () =>
       if (!DEMO && keyBefore(k)) localStorage.removeItem(keyBefore(k));
     } catch (e) {}
   });
-// True once no plain draft is left (sealed, or nothing unpublished in it), false when it stays as it was.
-async function sealDraft() {
+// True once no plain draft is left (sealed, or nothing unpublished in it), false when it stays as it was. over: a seal
+// this one replaces (it holds that one's draft), taken out of the list in the same write.
+async function sealDraft(over) {
   if (!TOKEN || !DRAFT) return true;
   takeOther(); // the clicks of another admin tab come in first
   if (!status0().parts.length) {
@@ -6608,15 +6609,19 @@ async function sealDraft() {
     iv = crypto.getRandomValues(new Uint8Array(12)),
     ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, await sealKey(TOKEN), z ? await gzip(raw, 1) : raw),
     L = store.get(SEALED, []),
-    S = [{iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0}, ...(Array.isArray(L) ? L : [])].slice(0, 3);
-  if (snap !== at) return sealDraft(); // a click came in while it was being sealed
+    S = [
+      {iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0},
+      ...(Array.isArray(L) ? L : []).filter(x => !over || x.ct !== over)
+    ].slice(0, 3);
+  if (snap !== at) return sealDraft(over); // a click came in while it was being sealed
   plainOff();
   if (store.set(SEALED, S)) return true;
   putDraft(); // it did not fit: the draft goes back as it was
   store.set('reefid-curation-base', SAVED);
   return false;
 }
-// The draft this token sealed at its last sign out, if any: {d, b, drop}; drop() removes it once it is in the draft.
+// The draft this token sealed at its last sign out, if any: {d, b, ct, drop}; drop() removes it once it is in the draft:
+// that seal only, from the list as it is then (another token's window may have added its own since; Codex review #798).
 async function unsealDraft() {
   const L = store.get(SEALED, null);
   if (!TOKEN || !Array.isArray(L) || !L.length) return null;
@@ -6629,7 +6634,12 @@ async function unsealDraft() {
         return {
           d: o.d,
           b: Array.isArray(o.x) ? sealPatch(o.d, o.x) : null,
-          drop: () => store.set(SEALED, L.length > 1 ? L.filter((x, j) => j !== i) : null)
+          ct: L[i].ct,
+          drop: () => {
+            const C = store.get(SEALED, []),
+              R = Array.isArray(C) ? C.filter(x => x && x.ct !== L[i].ct) : [];
+            return store.set(SEALED, R.length ? R : null);
+          }
         };
     } catch (e) {} // sealed by another token
   }
@@ -6692,9 +6702,32 @@ addEventListener('storage', e => {
   } catch (x) {}
   if (k)
     tokMark(TOKEN)
-      .then(m => m === k && TOKEN && lockNow())
+      .then(m => m === k && TOKEN && !signingOut && lockOther())
       .catch(() => {});
 });
+// Another tab of this token signed out, with its seal of the shared draft. What this tab holds that never reached that
+// draft (a note typed in the last 0.8 s, clicks whose write failed: draftLost) is sealed here, the other seal under it,
+// in its place; if that cannot be sealed either, this tab stays unlocked with its draft in plain and says so (Codex
+// review #798). With nothing of its own left, it just locks.
+async function lockOther() {
+  signingOut = true;
+  const at = snap,
+    lost = draftLost;
+  ptFlush();
+  let ok = snap === at && !lost;
+  if (!ok)
+    try {
+      const S = await unsealDraft().catch(() => null);
+      if (S) {
+        DRAFT = mergeCur(SAVED, DRAFT, S.b ? mergeCur(S.b, S.d, SAVED) : mergeOld(S.d, SAVED));
+        snap = JSON.stringify(DRAFT);
+      }
+      ok = await sealDraft(S && S.ct);
+    } catch (e) {}
+  if (ok) return lockNow();
+  signingOut = false;
+  toast('Signed out in another tab, but the last changes of this one could not be sealed: Publish them, or Sign out here.', 15000);
+}
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
 // names exist then). A token refused drops them all, so nothing read with it is kept.
 const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'reports'];
