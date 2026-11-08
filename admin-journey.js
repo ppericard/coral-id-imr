@@ -25,7 +25,14 @@ function journeyCards(name, T = ASUBJ) {
 }
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
 // How the first-launch answer was given (model.js startSet via), and the fallback cards (core.js CHOICE).
-const JSTART = {tour: 'in the welcome tour', card: 'on the card before the quiz', fallback: 'from the fallback card', inferred: 'inferred'},
+// admin: Pierre's change on Players (core.js startAdminSet, sheet v99).
+const JSTART = {
+    tour: 'in the welcome tour',
+    card: 'on the card before the quiz',
+    fallback: 'from the fallback card',
+    inferred: 'inferred',
+    admin: 'changed by you on Players'
+  },
   JFB = {lo: 'harder than predicted by', hi: 'easier than predicted by'};
 // "I know corals well" etc.; inferred (an existing player with CHOICE.ASK answers or more, never asked): said so.
 // An answer's words (core.js startText): the corals' question, whose record (reefid-sync-coral-start) the journey reads.
