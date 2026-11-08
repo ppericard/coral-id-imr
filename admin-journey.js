@@ -67,6 +67,18 @@ const jStart = (S, before) => {
     })
   ];
 };
+// joffslate: begin
+// The word beside a unit outside the slate: its rank when the slate's units are of another rank (a fish scientific genus
+// beside the families: "genus"), else "bonus" (a coral bonus genus). The rank from the unit's id (f:, g:, s:), as
+// core.js rankKey (Pierre, 2026-11-08: the fish genera are not bonus).
+const JRANK = {f: 'family', g: 'genus', s: 'species'};
+const jRankOf = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
+const jOffSlate = (n, slate) => {
+  const r = jRankOf(n),
+    first = slate && slate.values().next().value;
+  return r !== jRankOf(first) && JRANK[r] ? JRANK[r] : 'bonus';
+};
+// joffslate: end
 const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
   jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
@@ -482,7 +494,7 @@ function renderJourney(name, anonId = '') {
           .slice(0, 2)
           .map(([x, n]) => `<i>${esc(jName(x))}</i> ${n}×`)
           .join(', ');
-        return `<tr><td>${jUnit(g)}${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ' <small>bonus</small>'}</td>${full ? `<td class="n">${cardCell(g, s)}</td>` : ''}<td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
+        return `<tr><td>${jUnit(g)}${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ` <small>${jOffSlate(g, J.slate)}</small>`}</td>${full ? `<td class="n">${cardCell(g, s)}</td>` : ''}<td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 
