@@ -2891,7 +2891,7 @@ first (the factor is the same for all of them, so `calBonus`'s lean towards unra
 question (`CAL.RATE`, among the observations never seen) stays within the cap: before Open Water, once every easy
 observation of the unit has been seen, only the seen hard ones are left out, the seen easy ones stay (Codex review #729:
 otherwise the exploration drew only hard photos, 36% under ease 4 over all questions in the unit test). A photo with no
-judged ease (every coral photo) is never one of them, so the corals' draw is unchanged. `tests/rareease.test.js` runs
+judged ease (every coral photo) is never one of them, so the corals' draw is unchanged. `tests/rareease*.test.js` run
 `photoSet` in Node on hard-dominated and mixed pools; `tests/fish.smoke.js` keeps its bound (a third over 15 photos: with
 the share at most a tenth, a seed fails about once in a thousand).
 
@@ -2924,7 +2924,7 @@ Every guardrail is held in every profile (the bound inside its margin; at 300 ev
 either way). Tier 1 is conclusive and the value was Pierre's (Q252), not a calibration chosen here, so no tier 2. On
 this `main` the share before Open Water had risen to 29-49% (the families of #727 and the judged candidates), so the
 change matters more than the 20-seed replay above suggests. No genus came in the first 300 questions (genera open at
-Advanced since #720), so the simulation does not exercise the families-only scope; `tests/rareease.test.js` does. A
+Advanced since #720), so the simulation does not exercise the families-only scope; `tests/rareease-rank.test.js` does. A
 first tier-1 run of 2026-11-08 with the cap on every unit (genera too) and `main` 77cecab is superseded: there the
 units met at 300 fell for the expert (26.0 → 23.2), which this run, families only, does not reproduce.
 
@@ -4536,7 +4536,7 @@ code or the docs unless marked *inferred*):
 
 The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
 `OPEN.K`, a card every 2 answers, at most 3 openings in 15, `RARE`) and runs the real `core.js` (`domStep`,
-`treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.test.js` does, so the draw is the
+`treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.js` does, so the draw is the
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
 
