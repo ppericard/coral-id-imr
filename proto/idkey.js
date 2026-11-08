@@ -625,7 +625,7 @@ LAB.add({
       `M${r1(x + r0 * Math.cos(a))} ${r1(y + r0 * Math.sin(a))} L${r1(x + r * Math.cos(a))} ${r1(y + r * Math.sin(a))}`;
     const rays = (x, y, n, r0, r, t = 0) => [...Array(n)].map((_, i) => ray(x, y, t + (i * 2 * Math.PI) / n, r0, r)).join(' ');
     // A calice seen from above: its pit (.c), septa from the rim inwards, the columella in the middle.
-    const calice = (x, y, r, n = 12) =>
+    const calice = (x, y, r, n = r < 8 ? 8 : 12) =>
       r < 4
         ? `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}"/>`
         : `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}"/><path class="st" d="${rays(x, y, n, r * 0.25, r)}"/><circle class="w" cx="${r1(x)}" cy="${r1(y)}" r="${r1(Math.max(1, r * 0.16))}"/>`;
@@ -634,7 +634,8 @@ LAB.add({
       const P = [];
       for (let j = -1, i = 0; j * d * 0.87 < 120 + d; j++)
         for (let x = -d + (j % 2 ? d / 2 : 0); x < 160 + d; x += d, i++) P.push([x + jit(i, 1) * d * k, j * d * 0.87 + jit(i, 2) * d * k]);
-      return P;
+      // Only the cells that reach into the drawing.
+      return P.filter(([x, y]) => x > -0.6 * d && x < 160 + 0.6 * d && y > -0.6 * d && y < 120 + 0.6 * d);
     };
     // Corallites with separate walls: each calice ringed by its own wall (.f), the surface between them grey (.g).
     const separate = d =>
@@ -658,7 +659,7 @@ LAB.add({
         P.map(([x, y]) => `<path class="st" d="${hex(x, y, d / Math.sqrt(3))}"/>`).join('') +
         P.map(
           ([x, y]) =>
-            `<path class="c" d="${hex(x, y, (d / Math.sqrt(3)) * 0.72)}"/>${d >= 20 ? `<path class="st" d="${rays(x, y, 12, d * 0.08, d * 0.36)}"/>` : ''}<circle class="w" cx="${r1(x)}" cy="${r1(y)}" r="${r1(Math.max(1, d * 0.06))}"/>`
+            `<path class="c" d="${hex(x, y, (d / Math.sqrt(3)) * 0.72)}"/>${d >= 30 ? `<path class="st" d="${rays(x, y, 12, d * 0.08, d * 0.36)}"/>` : ''}<circle class="w" cx="${r1(x)}" cy="${r1(y)}" r="${r1(Math.max(1, d * 0.06))}"/>`
         ).join('') +
         BAR
       );
@@ -716,7 +717,7 @@ LAB.add({
         `<path class="h thin" d="${lines}"/>` +
         P.map(([x, y]) => `<circle class="c" cx="${r1(x)}" cy="${r1(y)}" r="${r1(d * 0.12)}"/>`).join('') +
         (edge
-          ? '<path class="bg" d="M0 86 C40 82 60 90 90 86 C120 82 140 88 160 85 V120 H0 Z"/><path class="f" d="M-2 84 C40 80 60 88 90 84 C120 80 140 86 162 83 V90 C140 93 120 87 90 91 C60 95 40 87 -2 91 Z"/><path class="b" d="M10 112 H96"/>'
+          ? '<path class="bg" d="M-10 86 C40 82 60 90 90 86 C120 82 140 88 170 85 V140 H-10 Z"/><path class="f" d="M-2 84 C40 80 60 88 90 84 C120 80 140 86 162 83 V90 C140 93 120 87 90 91 C60 95 40 87 -2 91 Z"/><path class="b" d="M10 112 H96"/>'
           : '') +
         BAR
       );
@@ -880,7 +881,7 @@ LAB.add({
           d += ` Q${r1(x + w / 2)} ${r1(78 - h * 2)} ${r1(Math.min(154, x + w))} 78`;
           x += w;
         }
-        return `<path class="f" d="${d} L154 92 C120 96 40 96 6 92 Z"/><path class="st" d="M10 86 C50 88 110 88 150 86"/><path class="b" d="M10 104 H150"/><path class="st" d="M30 92 L26 104 M128 92 L132 104"/>`;
+        return `<path class="f" d="${d} L154 92 C120 96 40 96 6 92 Z"/><path class="st" d="M10 86 C50 88 110 88 150 86"/><path class="f" d="M72 95 L74 104 H86 L88 95 Z"/><path class="b" d="M10 104 H150"/>`;
       })(),
       // Encrusting with rounded corallites (Turbinaria, Astreopora): a thin crust over the rock, round corallites raised on it.
       P2: (() => {
