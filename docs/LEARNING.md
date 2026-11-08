@@ -1704,7 +1704,7 @@ met the 39 slate genera almost at once.
 
 ### One genus difficulty (2026-11-06, Q133)
 
-Pierre approved (2026-11-06) the coherence review's F3 (`docs/reviews/2026-11-06-engine-coherence-review.md`): the app
+Pierre approved (2026-11-06) the coherence review's F3 (PR #664): the app
 had its own estimate of a genus's difficulty (`model.js` `genusDiff`: the mean `photoDiff` over today's game photos +
 `OPEN.CONF` × the confusion above `CONF.TRAP`), beside the sheet's genus offset `gd` that measures the same quantity.
 The confusion term counted the misses a second time, since the photo ratings already come from them, and the mean
@@ -3257,7 +3257,7 @@ from a main checkout, its app ignoring the seconds), `node tools/abilityeval.js 
 
 ### One scorer (2026-11-06, Q132; rules version 6, sheet v61)
 
-Pierre approved (2026-11-06) the coherence review's F1 and F6 (`docs/reviews/2026-11-06-engine-coherence-review.md`):
+Pierre approved (2026-11-06) the coherence review's F1 and F6 (PR #664):
 the same answer was scored twice, live in `quiz.js` `answer` and again in `core.js` `replayProgress`, and the replay
 worked the photo difficulty back out of the rounded `e` the app logged.
 
@@ -4081,6 +4081,141 @@ interval is [−0.0148, −0.0120] (a clear gain), with the players as the unit 
 
 Figures recorded in this file before 2026-11-05 as "paired log-loss difference per answer ± its standard error" (and
 "× 10⁻³ ± SE") are the per-answer figure: read their intervals as too narrow, and "n standard errors" as fewer.
+
+## Validating a learning change (rule L11; proposed 2026-11-08, waiting for Pierre's OK)
+
+Pierre, 2026-11-08: the engines and the simulations moved a lot these last days, so the way a change is validated must
+still fit what was built, and follow his suggestion: a fully rated world where photos, players and every unit (coral
+genera; fish families, genera, species) have continuous Elo difficulties or abilities drawn from stated distributions,
+with the engine running on them. What the check was until now, and where it no longer fits (each point checked in the
+code or the docs unless marked *inferred*):
+
+- **One world, the real data's.** `tools/learnsim.js`'s learner reads each photo's difficulty from the app's own
+  estimate (`photoDiff`; for the fish, the judged-ease prior) unless `--truth` is given, so a change to the estimate
+  changes the world too ("Limits" below). No unit difficulty unless `--stats` carries the sheet's offsets; no player
+  ability spread (each profile is one fixed player; the spread is the draws'). `--truth gen` gives photos a normal spread
+  around their genus, the corals only (*inferred* from its code: it reads the coral views).
+- **Profiles built for the corals.** The four profiles know every 5th unit in data order (`i % 5 < m`); `--subject fish`
+  plays the same four on the fish units. No casual diver (common names only), no IMR RA who knows the IMR families, no
+  lecture RA for fish, no names choice.
+- **Learners whose teaching ignores the photo.** The item learner gains `rate × (1 − know)` after a right answer and
+  1.5 times that after a miss (`MISS`; the genus wrongly picked 0.5 times, `PICKED`), whatever the photo: a photo
+  diet changes what it learns only through which units are asked and how often it misses, so easier photos, fewer
+  misses, teach it a little less, never because the photo itself was clearer. The scratch rated world of 2026-11-08
+  ("Fish: the global score, built") learns by the number of answers alone, so there only which units are asked
+  counts.
+- **Measures of the old yardsticks.** `knowSlate` (success on an average photo among choices), `progGap` (bar − that
+  know: the judge's D\* replaced it for the bar), `prog` (the fish % as the families' mean, not the global score of
+  Q242), units met. Nothing on the per-unit levels (Open Water, Advanced), the global score and its components, plateaus,
+  the hard-photo share before Open Water (a run field since #729 only) or the photo exposure that rates the photos.
+- **A horizon of the families only.** 300 questions; a fish run takes about 1 minute per worker (checked on 2026-11-08:
+  30 runs of 300 questions in 867 s on 2 workers), so the tree (genera from a family's Open Water or Advanced, species,
+  circle 3 at 55% of the circle-1 Entries) and the score's later shape (10,000-100,000 answers) are out of its reach.
+  `tools/fishscore.js` keeps the formula of 2026-11-04 on the old moving-average bar.
+- **Margins never set.** Rule L11 asks for guardrail margins "set once in LEARNING.md"; PRs have used the statistics
+  study's examples (true knowledge 0.02, genera met 2, §3.2 "for example"). A pacing measure the change is meant to move
+  then reads as a breach (#729: units met at 300, expert −2.8).
+
+**The two worlds.**
+
+| | The app world | The rated world |
+| --- | --- | --- |
+| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | a Node mode of learnsim (to build; until then the scratch harness, "Fish: the global score, built") |
+| Photos | the real pools, the app's estimate or `--truth` | d = μ(unit) + ε, ε ~ N(0, 0.46²) (the coral photo spread of the Analyses tab); heavy tails: 15% of the photos +1.5, or a scaled t with 3 degrees of freedom; judged ease e = round(3 − (ε + N(0, 0.35²)) / 0.5) on 1-5 |
+| Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ the spread of the sheet's `gd` (to measure) |
+| Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
+| The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
+| Learner | item (default), field, exemplar | by the number of answers, and one whose gain depends on the answer and its feedback (as the item learner's) |
+| Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
+| Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | 4 profiles × 20 seeds × 2 arms × 3,000 answers in under a minute |
+
+The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
+`OPEN.K`, a card every 2 answers, at most 3 openings in 15, `RARE`) and runs the real `core.js` (`domStep`,
+`treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.test.js` does, so the draw is the
+app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
+a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
+
+**Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
+levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
+re-simulation's IMR RA):
+
+| Profile | Who | Corals | Fish |
+| --- | --- | --- | --- |
+| Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
+| Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% (today's `lectureRA` picks 2 genera in 5 by data order) | the IMR families half known; both names; the IMR genera from Open Water (#720) |
+| Strong RA | an RA with practice behind the lecture | 3 genera in 5 at 85%, the others 10% | the IMR families and their genera well known; both names |
+| Expert | knows nearly everything | every genus at 93% | families and genera well known, species partly; both names |
+
+**Measures** every run reports (the guardrails among them in the table below):
+
+- per-unit knowledge: the judge's D\* (one photo alone, no choices, over the unit's photo distribution), by kind of unit
+  (families, genera, species by common and by scientific name), and the bar against it, E = bar − D\*;
+- the global score as shown and its components (`core.js` `treeScore`: Entries, Genera, Common names, Scientific
+  names, credit; by circle), at each checkpoint;
+- the levels: the answers to the first unit at Open Water, units at Open Water and at Advanced by kind at each
+  checkpoint, the answer at which circle 3 opens;
+- plateaus: the longest stretch of answers without one more point of the shown score;
+- the photos: the share under ease 4 among the questions on units under Open Water, and the photo exposure that rates
+  them (answers per photo, answers on photos under ease 4);
+- right %, the Elo error against D\*, units met, `open/15`.
+
+**Guardrails and margins** (Pierre's "smallest change that matters", in each measure's units; one-sided 90% bound of the
+paired difference on the side of harm; proposed, for his OK):
+
+| Guardrail | Checkpoints | Margin | Why this margin |
+| --- | --- | --- | --- |
+| True knowledge (D\*, or `knowSlate` in the app world) | 300 and 600 questions; 1,000 and 3,000 answers | −0.02 | 2 photos in 100 named less well: the statistics study's scale, and below what a player can feel |
+| E = bar − D\*, the over-claim side | the same | +0.03 | the bar must not promise more than the player can do; 3 points of a bar is about the smallest step a player reads |
+| The global score as shown | 1,000 and 3,000 answers (rated world) | −1 point | the % is shown rounded to the point: one point is the smallest change a player sees |
+| Answers to the first unit at Open Water | the run | +20% or +10 answers, the larger | the first level is the hook; a wait a fifth longer is felt, 10 answers is a short session's worth |
+| Units at Open Water | 300 questions; 1,000 answers | −2 units or −5%, the larger | two families or genera fewer is what a player sees on My progress; 5% scales it to a large set |
+| Longest plateau of the shown score | the run | +20% | Pierre's "fast at the start, slow after", without a flat stretch a fifth longer |
+| Share under ease 4 before Open Water | questions 1-300; answers 1-1,000 | +0.05 | half of the 0.1 Pierre set (Q252): a change must not undo half of it unnoticed |
+| Units met | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera, as before) | the pace of new units, as the CI test reads it; two units is a card or two a session |
+
+None comes from the seeds' spread, which only sizes the seeds. A change meant to move one of them declares that cost
+and its accepted bound before running (rule L11).
+
+**Levels and runtimes** (rule L11: the PR declares the level, the integrator checks it):
+
+| Level | App world | Rated world | Time (checked 2026-11-08 unless marked) |
+| --- | --- | --- | --- |
+| 0 | - | - | the CI |
+| 1 | the subject touched, its profiles × 5 seeds × 300 questions | - | corals about 2 minutes on 4 cores; fish about 5 minutes per arm (*inferred*) |
+| 2 | as level 1 | 10 seeds per profile (20 if a result is near a margin) × 3,000 answers (10,000 when the change reaches genera, species or the score's shape), normal photos and one heavy-tailed variant | the rated world under a minute |
+| 3 | 30-40 seeds, sized from the spread seen | 40 seeds × 30,000 answers, both distributions | fish app world about an hour for both arms on 2 workers, so a manual GitHub Action; rated world about half an hour on 4 cores (*inferred* from a 10,000-answer run) |
+
+A large expected effect (several times its margin) is read at the level's fewest seeds; more seeds only when a result is
+near a margin. Neither world belongs in the hourly analyses Action (its 2 hours serve the real log).
+
+**First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
+unit under Open Water; exploratory, the protocol not yet
+approved; the rated world by the scratch harness with the cap mimicked as `rareCap` does, 4 profiles × 20 seeds × 3,000
+answers, told the truth; the app world re-read from #729's own 5-seed runs, 5 seeds × 300 questions). Paired
+difference, in brackets its one-sided 90% bound on the side of harm:
+
+| Measure | Rated world, normal photos | Rated world, heavy tails (15% +1.5) | App world (#729's runs) |
+| --- | --- | --- | --- |
+| **Under ease 4 before Open Water** (primary) | 27-51% → 9-10%, 80 of 80 pairs down | 30-53% → 9-10%, 80 of 80 | 20-40% → 9-10%, 19 of 20 |
+| Answers to the first family at Open Water | −2.1 to −0.6 (+8.0 worst) | −10.7 to +9.9 (+17.9 worst, IMR RA) | −6.0 pooled (−0.5) |
+| Families at Open Water, 1,000 answers / 300 questions | −0.6 to +0.5 (−2.1 worst, expert) | −1.0 to +0.9 (−2.6, expert) | +0.05 pooled (−0.49) |
+| Global score shown, 3,000 answers | −0.2 to +0.4 points (−0.6) | −0.4 to +0.3 (−0.7) | not measured (no genus bars in the runs) |
+| Circle-1 Entries component, 1,000 answers / 300 questions | +0.002 to +0.007 | −0.009 to +0.010 | **−0.041 pooled (−0.063)** |
+| True knowledge D\* of the families, 3,000 answers | −0.010 to 0 (−0.022) | −0.008 to +0.002 (−0.016) | (knowledge at 300: unclear, #729) |
+| Longest plateau of the shown score | −13 to +33 answers (+53, about +16%) | −18 to +25 (+48) | - |
+| Answers on photos under ease 4, answers 1-3,000 | −39% to −46% | −37% to −47% | - |
+
+What it says: the primary moves as intended in every world and profile; the levels, the score and the plateaus hold
+within the proposed margins, except the expert's families at Open Water at 1,000 answers with heavy tails (bound −2.6
+against −2.1 for 5% of 42: unclear) and the IMR RA's wait for the first Open Water with heavy tails (bound +17.9 answers
+against +12: unclear); in the app world the families' bars run lower (a right answer on an easier photo proves less to
+the domain-score bar), about −0.04 of the Entries component at 300 questions. And one thing the families-only check
+could not see: in the tree, every unit opened later (a genus, a species, a name) starts under Open Water, so 50-54% of
+a player's first 10,000 answers are on such units (rated world, 10 seeds, the IMR RA and the casual diver), and the cap
+cuts the answers on photos under ease 4 by about 30% over those 10,000 (IMR RA 5,582 → 3,904), not only in the first 300
+questions: the rating of the hard photos (Q252) slows for as long as the tree keeps opening units. In the rated world
+the learner learns by the number of answers, so its unchanged knowledge says nothing about whether easier photos teach less.
 
 ## Simulation (`tests/profiles.smoke.js`, CI)
 
