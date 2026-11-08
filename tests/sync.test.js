@@ -2191,10 +2191,12 @@ test('sheet replays per subject: the fish progress replayed from its own answers
     [['Ana', 4]],
     "the corals' tab keeps the corals' record only"
   );
-  // Reused while the rows are the same (a marker comes back); fish.json read once (cached).
+  // Reused while the rows are the same (a marker comes back); fish.json read once for the replay's units and once for
+  // the fish photo pool (sheet vNEXT: stats_ checks the answers' photos against every subject's, photoCheck_), each then
+  // cached (the pool's other files are not served here: not asked again for 10 minutes).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
-  assert.strictEqual(f.n.f, 1);
+  assert.strictEqual(f.n.f, 2);
   // Applied: nothing; an unknown subject or a bad value: nothing.
   assert.ok(!s.get({name: 'Ana', pin: '1234', rv_fish: String(C.rvOf('fish'))}).replays);
   assert.ok(!s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {coral: 0, nope: 0, fish: 'x'}}).replays);

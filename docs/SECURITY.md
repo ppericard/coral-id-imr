@@ -56,16 +56,26 @@ Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
   photo memory or format offset (`stats_`), and the Analyses report leaves them out (`readAnswers` serves the ids as
   `excluded`, `tools/analyses.js` drops their rows; the change makes the report stale, so it is refitted). The player's
   own progress, level and leaderboard place stay as they are, and their answers stay in the log. **Count again** undoes
-  it. A delete, merge or archive moves or drops the row (rule D7): answers kept as "~deleted <id>" stay left out. This is
+  it. A delete, merge or archive moves or drops the row (rule D7): answers kept as "~deleted <id>" stay left out. A
+  device left out that signs in stays out: its row follows its answers to the name's admin id, so the whole account is
+  then left out (the integrator, 2026-11-09; the admin can count it again), and the Alerts tab says so by both admin ids
+  ("left out of the statistics: device <id> signed in as <id>, left out too"). This is
   for a player or device that is clearly not playing for real but still passes the trust rule, which is a bot that reads
   the right answers.
 - **Photos of another unit**: an answer whose photos are game photos of another unit or subject, and none of its own
   (`photoCheck_` against every subject's game photos, `pools_`: a coral photo whose file starts with the genus counts as
   that genus's, for an older app or a photo moved since; a photo in no pool is unsure), is **logged as every answer and
-  never refused**: an old app, a renamed unit or a photo moved since must not lose a real answer. It rates no photo and
-  no photo memory (`stats_`; `readStats` `skip` counts them). On write, the first send of each 6-hour window with such
-  answers adds one line to the **Alerts** tab under the sender's admin id ("photos not of the unit shown: <id> (n of m
-  answers)"), never a name. On write only the pools already cached are used, so nothing is fetched under the script lock.
+  never refused**: an old app, a renamed unit or a photo moved since must not lose a real answer. A fish answer at the
+  genus or species level (`g:Chromis`, `s:Chromis ternatensis`) is checked against its family's photos (the fish pool's
+  units), an old fish entry id (`t01`) as the family it became. It rates no photo and no photo memory, and gives no photo
+  its genus offset (`stats_`; `readStats` `skip` counts them; nor does a left-out answer). On write, the first send of
+  each 6-hour window with such answers adds one line to the **Alerts** tab under the sender's admin id ("photos not of
+  the unit shown: <id> (n of m answers)"), never a name. On write only the pools already cached are used, so nothing is
+  fetched under the script lock; `stats_` reads every subject's pool when it is not cached. The pools are cached 6 hours
+  in parts (the fish pool, about 390 KB, is over the script cache's 100 KB a value).
+- Not covered: a coral photo the admin moved to another genus whose file is not named after its genus (`imrl-…`, an
+  IMR lecture photo): an answer given before the move, under its old genus, is taken as another unit's and stops rating
+  (it is kept; rare, and only loses ratings).
 
 ## Removed accounts (v55)
 

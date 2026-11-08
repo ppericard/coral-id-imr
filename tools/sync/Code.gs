@@ -225,6 +225,13 @@ function doPost_(e){
       relabel_('Answers', 1, '~anon ' + p.anon, name);
       pagesMove_('~anon ' + p.anon, name);  // v30: the sheets opened on the device go with its answers (Codex review #423)
       rplDrop_('~anon ' + p.anon);  // v55: the device's full replay record goes too (its answers are the name's now; every subject's)
+      // vNEXT (the integrator, 2026-11-09, review of #801): a device left out of the statistics stays out once signed in:
+      // its row follows its answers to the name's admin id (the whole account then, which the admin can count again in
+      // Players), with an Alerts line under both admin ids, never a name.
+      if (sxMove_('~anon ' + p.anon, name)) {
+        rosterChanged_();
+        try { sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), safe_('left out of the statistics: device ' + aid_('~anon ' + p.anon) + ' signed in as ' + aid_(name) + ', left out too')]); } catch (e) {}
+      }
     }
     logAnswers_(name, f.fresh, f.seen, p.dev);
     if (!p.av) oldApp_('save', name);  // after the code check (Codex review #373)
@@ -771,7 +778,7 @@ function stats_(){
   const salt = anonSalt_(), sx = sxSet_(), EX = {}, isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
   Object.keys(trust).forEach(w => { if (trust[w] && isEx(w)) trust[w] = false; });
   // vNEXT: an answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
-  const idx = (() => { try { return photoIdx_(CORE_.replaySubject()); } catch (e) { return null; } })();  // the corals' read, the others' cached
+  const idx = (() => { try { return photoIdx_(); } catch (e) { return null; } })();  // every subject's, read when not cached (pools_)
   out.skip = {excluded: 0, photos: 0};
   rows.forEach(r => {
     const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
@@ -782,13 +789,16 @@ function stats_(){
     const pk = !trust[who] || photoCheck_(idx, CORE_.rowSubject(r), sg, fs) !== 'other';
     if (!pk) out.skip.photos++;
     const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
-    const gs = String(r[2] || ''), go = G[gs] = G[gs] || [0, 0];  // v31: the genus offset, shared by the photos of the genus
-    const ph = fs.map(f => (PG[f] = gs, P[f] = P[f] || [0, 0, 0, 0])), b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
+    // vNEXT (review of #801): only an answer that rates (rt) makes a genus offset and gives its photos their genus (PG,
+    // the served difficulty's offset); any other names a photo's genus only while no rating answer has (a photo nobody
+    // rated, served at weight 0), so a left-out or flagged answer moves no photo difficulty and adds no offset.
+    const rt = trust[who] && pk, gs = String(r[2] || ''), go = rt ? (G[gs] = G[gs] || [0, 0]) : G[gs] || [0, 0];  // v31: the genus offset, shared by the photos of the genus
+    const ph = fs.map(f => ((rt || !(f in PG)) && (PG[f] = gs), P[f] = P[f] || [0, 0, 0, 0])), b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
     // One expectation for the photos and the player, with the player's memory of these photos (v26).
     const hs = fs.map(f => H[who + '|' + f] = H[who + '|' + f] || [0, 0]);
     const s = sig(ra[0] - b - memFam_(hs, mem)), e = g + (1 - g) * s, d = ok - e, n = ra[1];
     // The photos and the memory offsets move on trusted players' answers, weighed by their experience.
-    if (trust[who] && pk) {
+    if (rt) {
       const w = n / (n + PHOTO_W.N), D = (1 - g) * s * (1 - s), v = Math.max(1e-6, e * (1 - e)), A = [0, 0, 0, 0];
       // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
       ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d * w; p[2] += w; p[1] += ok * w; p[3]++; });
@@ -803,7 +813,7 @@ function stats_(){
   // [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
   // photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
   // v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
-  Object.keys(P).forEach(f => out.photos[f] = [Math.round((G[PG[f]][0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
+  Object.keys(P).forEach(f => out.photos[f] = [Math.round(((G[PG[f]] || [0])[0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
   Object.keys(G).forEach(n => out.gd[n] = [Math.round(G[n][0] * 100) / 100, Math.round(G[n][1] * 10) / 10]);
   // v55: the answers a deleted account left ("~deleted <id>") rate the photos, never a player: no ability for them.
   const arch = archivedSet_();  // v58: an archive's answers rate the photos, never a player either
@@ -1358,7 +1368,8 @@ function sxPut_(id, on){
 }
 // An account removed (rule D7): its row goes, or follows its answers to the id they keep (into: a delete that keeps the
 // answers as "~deleted <id>", an archive's new name), so what was left out stays out and nothing points to the name.
-function sxMove_(from, into){ if (sxPut_(aid_(from), false) && into) sxPut_(aid_(into), true); }
+// Returns whether from had a row.
+function sxMove_(from, into){ const had = sxPut_(aid_(from), false); if (had && into) sxPut_(aid_(into), true); return had; }
 // v55 (Pierre, 2026-11-05, Q84-Q91: "when an account is deleted, the information tied to it is cleaned up; archived
 // means not used in normal operation"). Deletes everything of an account but its Removed tombstone (the caller writes
 // it): RAs, Progress data, By genus, Replayed, Groups, its page summaries (Pages, Q88: per-player behaviour, no photo
@@ -1659,11 +1670,13 @@ function exposure_(rows, by){
   });
 }
 // Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
-// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool1<id>; about
-// 40 KB each). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
+// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool2<id>, cut in
+// parts by cacheBigPut_: the corals' about 43 KB, the fish's about 390 KB, over the script cache's 100 KB a value). A
+// subject whose files cannot be read is left out, and not asked again for 10 minutes.
 // only (vNEXT): true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that
-// subject's pool fetched when not cached, the others from the cache only (stats_).
-function pools_(only){
+// subject's pool fetched when not cached, the others from the cache only. ups (vNEXT): an object given gets each
+// subject's parent units, cached with its pool (unitUp_: a fish genus or species to its family; photoCheck_).
+function pools_(only, ups){
   const c = CacheService.getScriptCache(), out = {}, files = {};
   const site_ = name => {
     if (name in files) return files[name];
@@ -1675,37 +1688,79 @@ function pools_(only){
     return files[name] = v;
   };
   CORE_.SUBJECTS.filter(S => S.pool).forEach(S => {
-    const k = 'pool1' + S.id, hit = c.get(k);
-    if (hit) { try { const v = JSON.parse(hit); if (v) out[S.id] = v; return; } catch (e) {} }
+    const k = 'pool2' + S.id, hit = cacheBigGet_(c, k);
+    if (hit) { try { const v = JSON.parse(hit); if (v && v.p) { out[S.id] = v.p; if (ups) ups[S.id] = v.u || {}; } return; } catch (e) {} }
     if (only === true || (only && only !== S.id)) return;
-    let P = null;
-    try { P = CORE_.unitPool(S, S.pool.files.map(site_)); } catch (e) { P = null; }
+    let P = null, U = {};
+    try { const F = S.pool.files.map(site_); P = CORE_.unitPool(S, F); if (P) U = unitUp_(F[0]); } catch (e) { P = null; }
     if (!P || !Object.keys(P).length) { try { c.put(k, 'null', 600); } catch (e) {} return; }
     out[S.id] = P;
-    try { c.put(k, JSON.stringify(P), 21600); } catch (e) {}
+    if (ups) ups[S.id] = U;
+    try { cacheBigPut_(c, k, JSON.stringify({p: P, u: U}), 21600); } catch (e) {}
   });
   return out;
 }
+// vNEXT: a value over the script cache's 100 KB a value (Apps Script CacheService) is put in parts of CACHE_PART
+// characters (at most 3 bytes each in UTF-8: under 100 KB), k + '#' + i, then k as '#<parts>'; one part gone and it is
+// read as missing (null), so the caller builds it again. A short value is put as it is (a value never starts with '#').
+const CACHE_PART = 32000;
+function cacheBigPut_(c, k, v, ttl){
+  if (v.length <= CACHE_PART) { c.put(k, v, ttl); return; }
+  const parts = {};
+  let n = 0;
+  for (let i = 0, j = 0; i < v.length; i = j) {
+    j = Math.min(v.length, i + CACHE_PART);
+    if (j < v.length && /[\ud800-\udbff]/.test(v.charAt(j - 1))) j--;  // never a character cut in two
+    parts[k + '#' + n++] = v.slice(i, j);
+  }
+  c.putAll(parts, ttl);
+  c.put(k, '#' + n, ttl);  // last: a reader never takes the parts before they are all in
+}
+function cacheBigGet_(c, k){
+  const v = c.get(k);
+  if (!v || v.charAt(0) !== '#') return v;
+  const keys = Array.from({length: Number(v.slice(1)) || 0}, (_, i) => k + '#' + i), got = keys.length ? c.getAll(keys) : {};
+  return keys.length && keys.every(x => typeof got[x] === 'string') ? keys.map(x => got[x]).join('') : null;
+}
+// vNEXT (review of #801): a subject's units above the ones its pool holds, from its first pool file: fish.json's genera
+// (g:Chromis) and species (by sheet id, s:Chromis ternatensis, and by id) to their family (f:Damselfishes), the unit
+// the fish pool groups its photos under (core.js unitPool); {} for a file without them (the corals' data.json).
+function unitUp_(F){
+  const up = {};
+  if (!F || !Array.isArray(F.genera)) return up;
+  F.genera.forEach(g => { if (g && g.id && g.family) up[g.id] = g.family; });
+  (F.species || []).forEach(x => {
+    const fam = x && (x.family || up['g:' + String(x.name || '').split(' ')[0]]);
+    if (!fam) return;
+    if (x.id) up[x.id] = fam;
+    if (x.name) up['s:' + x.name] = fam;
+  });
+  return up;
+}
 // vNEXT (Pierre, 2026-11-08, ROADMAP "Security follow-ups": check server-side that an answer's photos belong to the unit
-// shown): every subject's game photos (pools_, the compact list the games draw from) as {photo: ['subject|unit', …]}; null
-// when no pool could be read (then no answer is checked).
+// shown): every subject's game photos (pools_, the compact list the games draw from) as {at: {photo: ['subject|unit', …]},
+// up: {subject id: its parent units, unitUp_}}; null when no pool could be read (then no answer is checked).
 function photoIdx_(only){
-  const pools = pools_(only), idx = {};
-  Object.keys(pools).forEach(sid => Object.keys(pools[sid]).forEach(u => pools[sid][u].forEach(c => c.forEach(f => (idx[f] = idx[f] || []).push(sid + '|' + u)))));
-  return Object.keys(idx).length ? idx : null;
+  const up = {}, pools = pools_(only, up), at = {};
+  Object.keys(pools).forEach(sid => Object.keys(pools[sid]).forEach(u => pools[sid][u].forEach(c => c.forEach(f => (at[f] = at[f] || []).push(sid + '|' + u)))));
+  return Object.keys(at).length ? {at, up} : null;
 }
 // An answer's photos against the unit it shows: 'ok' when one of them is a game photo of that unit in that subject, or is
 // named after it (a coral photo's file starts with its genus: an older app, a photo given to another genus since), or the
 // answer has no photo; 'other' when none is and one at least is a game photo of another unit or subject (a fish photo
 // under a coral genus); 'unknown' when no photo is in any pool (out of play now, renamed, made up). Only 'other' is
 // flagged: such an answer is logged and counts for the player as any other, and only rates no photo (stats_).
+// The unit is also taken as the subject renamed it (core.js renamedId: an old fish entry t01 is f:Damselfishes) and as
+// its parent unit (unitUp_: a fish genus g:Chromis or species s:Chromis ternatensis is its family's, whose photos the
+// fish pool groups; review of #801).
 function photoCheck_(idx, sid, unit, fs){
   if (!idx || !fs.length) return 'ok';
-  const key = sid + '|' + unit, own = lc_(unit);
+  const S = CORE_.SUBJECTS.find(x => x.id === sid), up = (idx.up || {})[sid] || {}, own = lc_(unit), keys = [];
+  [unit, CORE_.renamedId(S, unit)].forEach(u => [u, up[u]].forEach(x => { if (x && keys.indexOf(sid + '|' + x) < 0) keys.push(sid + '|' + x); }));
   let other = 0;
   for (let i = 0; i < fs.length; i++) {
-    const at = idx[fs[i]];
-    if ((at && at.indexOf(key) >= 0) || lc_(fs[i].split('-')[0]) === own) return 'ok';
+    const at = idx.at[fs[i]];
+    if ((at && at.some(x => keys.indexOf(x) >= 0)) || lc_(fs[i].split('-')[0]) === own) return 'ok';
     if (at) other++;
   }
   return other ? 'other' : 'unknown';

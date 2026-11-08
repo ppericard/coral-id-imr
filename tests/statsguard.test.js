@@ -2,7 +2,10 @@
 // of the statistics (Code.gs sxSet_, statsExclude), and an answer whose photos are of another unit rates no photo
 // (photoCheck_, photoAlert_), the answer itself always kept. Against the in-memory sheet (tests/gas.js).
 const test = require('node:test'),
-  assert = require('node:assert');
+  assert = require('node:assert'),
+  fs = require('fs'),
+  path = require('path');
+const C = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
 const TOK = 'ghp_write000000000000000000';
@@ -10,12 +13,13 @@ const at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString();
 const ans = (id, extra = {}) => ({id, t: at(0), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-wide-1', ...extra});
 // Twelve right answers: clearly above chance (TRUST), so the sender rates the photos.
 const run = (k, extra = {}) => Array.from({length: 12}, (_, i) => ans(k + i, {t: at(i), ...extra}));
-// The games' photos per unit as pools_ caches them (pool1<subject>): two coral genera and one fish unit.
+// The games' photos per unit as pools_ caches them (pool2<subject>: {p: pool, u: parent units}): two coral genera and one
+// fish unit.
 const POOL = {
   coral: {Acropora: [['acropora-wide-1', 'acropora-medium-1']], Porites: [['porites-wide-9']]},
   fish: {'f:pomacentridae': [['fi123']]}
 };
-const pools = s => Object.entries(POOL).forEach(([k, v]) => (s.cache['pool1' + k] = JSON.stringify(v)));
+const pools = s => Object.entries(POOL).forEach(([k, v]) => (s.cache['pool2' + k] = JSON.stringify({p: v, u: {}})));
 // Stats are cached 10 minutes: drop them (and put the pools back) before reading again.
 // How many answers rated a photo (stats_ photos [difficulty, weighed, right, answers]; 0 when none or never shown).
 const rated = (st, f) => (st.photos[f] || [0, 0, 0, 0])[3];
@@ -112,4 +116,144 @@ test('no pool read: nothing is checked, nothing is flagged', () => {
   const st = s.post({readStats: 1, token: TOK});
   assert.strictEqual(rated(st, 'porites-wide-9'), 12);
   assert.strictEqual(st.skip.photos, 0);
+});
+
+// Review of #801 (P2-1; the integrator, 2026-11-09: a left-out device stays left out after sign-in, the admin can count
+// the account again): the row follows the device's answers to the name's admin id, with an Alerts line by ids only.
+test('a device left out of the statistics stays out once it signs in, under a new or an existing name', () => {
+  for (const name of ['NewName', 'Old']) {
+    const s = loadCodeGs(),
+      id = n => s.ctx.aid_(n);
+    if (name === 'Old') s.post({name, pin: '1234', data: {}, summary: {}, answers: run('o', {ph: 'acropora-medium-1'})});
+    s.post({anon: 'device0001', anonAnswers: run('d')});
+    s.post({statsExclude: id('~anon device0001'), on: true, token: TOK});
+    assert.strictEqual(rated(fresh(s), 'acropora-wide-1'), 0);
+    const r = s.post({name, pin: '1234', data: {}, summary: {}, answers: [], anon: 'device0001'});
+    assert.ok(r.ok, JSON.stringify(r));
+    const st = fresh(s);
+    assert.strictEqual(rated(st, 'acropora-wide-1'), 0, name + ": the device's answers stay out under the name");
+    assert.strictEqual(rated(st, 'acropora-medium-1'), 0, name + ': the whole account is left out');
+    assert.deepStrictEqual(s.post({users: 1, token: TOK}).excluded, [id(name)], 'the row moved, none left on the device id');
+    const A = s.sheets.Alerts.rows.slice(1).map(x => String(x[1]));
+    assert.deepStrictEqual(A, [
+      'left out of the statistics: device ' + id('~anon device0001') + ' signed in as ' + id(name) + ', left out too'
+    ]);
+    assert.ok(!A.some(x => x.includes(name)), 'ids only, never a name');
+    // The admin counts the account again: everything rates.
+    s.post({statsExclude: id(name), on: false, token: TOK});
+    assert.strictEqual(rated(fresh(s), 'acropora-wide-1'), 12);
+  }
+  // A device never left out: no row, no Alerts line.
+  const s = loadCodeGs();
+  s.post({anon: 'device0002', anonAnswers: run('d')});
+  s.post({name: 'Zed', pin: '1234', data: {}, summary: {}, answers: [], anon: 'device0002'});
+  assert.ok(!s.sheets.Alerts);
+  assert.deepStrictEqual(s.post({users: 1, token: TOK}).excluded, []);
+});
+
+// P2-2: an answer that rates nothing (left out, or its photos flagged as another unit's) gives a photo no genus: the
+// served difficulty (genus offset + residual) and the genus offsets stay as the rating answers made them.
+test('a left-out or flagged answer moves no photo difficulty and adds no genus offset', () => {
+  const base = loadCodeGs();
+  base.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a')});
+  const want = fresh(base);
+  // A left-out player logs Ana's photo under a made-up genus; a trusted player logs it under Porites (flagged 'other').
+  const s = loadCodeGs();
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a')});
+  s.post({name: 'Mal', pin: '1111', data: {}, summary: {}, answers: run('m', {g: 'Zzz', a: 'Zzz', t: at(30)})});
+  s.post({statsExclude: s.ctx.aid_('Mal'), on: true, token: TOK});
+  s.post({name: 'Tom', pin: '2222', data: {}, summary: {}, answers: run('u', {g: 'Porites', a: 'Porites', t: at(40)})});
+  const st = fresh(s);
+  assert.strictEqual(st.skip.photos, 12, "Tom's Porites answers are flagged");
+  assert.deepStrictEqual(st.photos['acropora-wide-1'], want.photos['acropora-wide-1']);
+  assert.ok(!('Zzz' in st.gd), 'no genus offset for the left-out answers');
+  assert.deepStrictEqual(Object.keys(st.gd), ['Acropora'], 'Porites rated by no answer: no offset');
+});
+
+// P2-3 and P2-4: the real game pools, read from this checkout as the script reads them from GitHub main, against the
+// script cache's 100 KB a value (the fish pool is about 390 KB): cached in parts, so stats_ (which rates the corals'
+// answers only) and the write check (every subject's) see the fish photos; a fish answer at the genus or species level
+// is checked against its family's photos.
+const ROOT = path.join(__dirname, '..');
+const site = n => url => {
+  const m = /raw\.githubusercontent\.com\/[^/]+\/[^/]+\/main\/(.+)$/.exec(url);
+  if (!m || !fs.existsSync(path.join(ROOT, m[1]))) return null;
+  n[m[1]] = (n[m[1]] || 0) + 1;
+  const t = fs.readFileSync(path.join(ROOT, m[1]), 'utf8');
+  return {getResponseCode: () => 200, getContentText: () => t};
+};
+test('the real pools fit the script cache in parts: fish photos are checked, a fish genus or species by its family', () => {
+  const fish = C.SUBJECTS.find(S => S.id === 'fish'),
+    FP = C.unitPool(
+      fish,
+      fish.pool.files.map(f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')))
+    );
+  assert.ok(JSON.stringify(FP).length > 100 * 1024, 'the fish pool is over one cache value');
+  const n = {},
+    s = loadCodeGs({fetch: site(n), cacheMax: 100 * 1024}),
+    dam = FP['f:Damselfishes'][0][0],
+    bfly = FP['f:Butterflyfishes'][0][0],
+    F = (k, g, ph, x = {}) => run(k, {g, a: g, ph, s: 'fish', ...x}),
+    alerts = () => (s.sheets.Alerts ? s.sheets.Alerts.rows.slice(1).map(x => String(x[1])) : []),
+    drop = () =>
+      Object.keys(s.cache)
+        .filter(k => k.startsWith('stats'))
+        .forEach(k => delete s.cache[k]);
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a', {ph: 'imrl-p8_g36'})});
+  s.post({name: 'Bot', pin: '3333', data: {}, summary: {}, answers: run('b', {ph: bfly})});
+  // stats_ reads the pools (none cached yet): a fish photo under a coral genus rates nothing.
+  let st = s.post({readStats: 1, token: TOK});
+  assert.strictEqual(rated(st, 'imrl-p8_g36'), 12);
+  assert.strictEqual(rated(st, bfly), 0, 'a fish photo under a coral genus rates nothing');
+  assert.strictEqual(st.skip.photos, 12);
+  // Cached in parts, each under 100 KB: read again without any file fetched.
+  assert.match(String(s.cache.pool2fish), /^#\d+$/);
+  assert.ok(Number(s.cache.pool2fish.slice(1)) >= 4);
+  const before = JSON.stringify(n);
+  drop();
+  st = s.post({readStats: 1, token: TOK});
+  assert.strictEqual(JSON.stringify(n), before, 'no file read again');
+  assert.strictEqual(rated(st, bfly), 0);
+  // On write, against the cached pools: honest fish answers (the family, a genus and a species of it, an old entry id,
+  // t01: the Damselfishes, each with a damselfish photo) are never flagged; a fish photo under a coral genus, or a
+  // butterflyfish photo under a damselfish genus, is.
+  s.post({
+    name: 'Fin',
+    pin: '1111',
+    data: {},
+    summary: {},
+    answers: [...F('f', 'f:Damselfishes', dam), ...F('g', 'g:Chromis', dam, {rk: 'genus'})]
+  });
+  s.post({
+    name: 'Gil',
+    pin: '2222',
+    data: {},
+    summary: {},
+    answers: [...F('s', 's:Chromis ternatensis', dam, {rk: 'species'}), ...F('o', 't01', dam)]
+  });
+  assert.deepStrictEqual(alerts(), [], 'no honest fish send is flagged');
+  s.post({name: 'Bot2', pin: '5555', data: {}, summary: {}, answers: run('c', {ph: bfly})});
+  s.post({name: 'Ivy', pin: '6666', data: {}, summary: {}, answers: F('j', 'g:Chromis', bfly, {rk: 'genus'})});
+  assert.deepStrictEqual(alerts(), [
+    'photos not of the unit shown: ' + s.ctx.aid_('Bot2') + ' (12 of 12 answers)',
+    'photos not of the unit shown: ' + s.ctx.aid_('Ivy') + ' (12 of 12 answers)'
+  ]);
+  // A part gone from the cache: the pool is read again, never a part taken for the whole.
+  delete s.cache['pool2fish#1'];
+  drop();
+  assert.strictEqual(rated(s.post({readStats: 1, token: TOK}), bfly), 0);
+  assert.strictEqual(n['fish-photos.json'], 2);
+});
+
+test('a value over the cache limit is put in parts and read back whole; a lost part reads as missing', () => {
+  const s = loadCodeGs({cacheMax: 100 * 1024}),
+    c = s.ctx.CacheService.getScriptCache(),
+    v = 'é'.repeat(31999) + '\u{1F41F}' + 'x'.repeat(70000);
+  s.ctx.cacheBigPut_(c, 'big', v, 60);
+  assert.strictEqual(s.cache.big, '#4');
+  assert.strictEqual(s.ctx.cacheBigGet_(c, 'big'), v, 'a character on a cut stays whole');
+  s.ctx.cacheBigPut_(c, 'small', '{"a":1}', 60);
+  assert.strictEqual(s.ctx.cacheBigGet_(c, 'small'), '{"a":1}');
+  delete s.cache['big#2'];
+  assert.strictEqual(s.ctx.cacheBigGet_(c, 'big'), null);
 });
