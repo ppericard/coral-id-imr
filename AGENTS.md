@@ -68,15 +68,17 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   The machine is protected by `tests/slot.js` (one Playwright run at a time per 2 cores, rule W14), not by holding
   subagents back.
 - **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold:
-  1. every check is green on the current head, and no failed job was re-run to get green (rule W23);
+  1. every check is green on the current head, and no failed job was re-run to get green (rule W23); in a merge train
+     (rule W26), green on its own head and the train that holds it green;
   2. every Codex finding is fixed or answered, every review thread resolved;
   3. **every choice in it was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
      words (quoted with their date in the PR's "Decisions" section), or a decided process (once he agreed how a thing
      is done and checked the first results, its outputs ship without asking him item by item: fish photo judging on the
      agreed rubric, per-species photo pre-proposals; only a change to the process itself waits for him); the PR's
      "Choices I made" section is empty;
-  4. it was rebased on `origin/main` right before the merge (Publish commits land without PRs) and goes in as a squash
-     merge titled `… (#N)` (rule W18).
+  4. it was rebased on `origin/main` right before the merge (Publish commits land without PRs), or it rides a green
+     merge train whose tree `main` then equals (rule W26), and goes in as a squash merge titled `… (#N)` (rule W18); a
+     PR that changes `Code.gs` gets its `VERSION` from the integrator at that moment (rule D3).
 - **The integrator decides the small choices; Pierre decides the ones that matter**: he validates every choice with an
   impact, not micro-details. **With impact**, to Pierre: something players see
   or feel differently (a new screen, a game rule, a learning value, content, a photo choice), anything costly to undo,
@@ -203,7 +205,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 **Sheet and data** ([docs/rules/sheet.md](docs/rules/sheet.md))
 - **D1** Tests never reach the real sheet.
 - **D2** Player names: real in chat, anonymous in the repo.
-- **D3** A `Code.gs` or `core.js` change bumps `VERSION`.
+- **D3** A `Code.gs` or `core.js` change carries one changes file; the integrator assigns `VERSION` at merge.
 - **D4** The app never gets ahead of the sheet script.
 - **D5** Every progress-rule change appends a rules version.
 - **D6** A recalculation of everyone's progress is announced.
@@ -222,6 +224,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked; a guess is labelled.
 - **W25** Use the quota with care, never at the cost of the result.
+- **W26** Several ready PRs merge through one green merge train (`tools/train.py`).
 
 ## Read on demand
 
@@ -234,7 +237,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 | The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs | [ship](docs/rules/ship.md) W12-W24 |
+| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W26 |
 
 ## Ship checklist
 
@@ -246,7 +249,8 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
    the one smoke part you touch (rule W14). Heavy runs take the slot; clean up behind you (rule W24).
 4. Never edit `?v=`, `LAB_V` or `sw.js` `V` (rule W15); `data.json` only through `tools/datajson.py` (rule W16).
 5. UI: look at it, light and dark, phone and desktop (rule W17).
-6. `Code.gs` or `core.js` changed: rules D3-D5. Tests never reach the real sheet (rule D1).
+6. `Code.gs` or `core.js` changed: rules D3-D5 (a `tools/sync/changes/` file, never `VERSION`). Tests never reach the
+   real sheet (rule D1).
 7. Docs in the same PR (rule W19); ideas not built into ROADMAP (rule W5).
 8. PR from the template, Decisions filled; rebase on `origin/main` before each push (rule W18).
 9. `@codex review` after each push; fix or answer every finding; never re-run a failed job (rule W23).
@@ -259,5 +263,6 @@ For Codex's PR review, the rules cheapest to miss:
 - The engine never names or tests a subject (`'fish'`, `SUBJ === SUBJECTS[k]`): a `SUBJECTS` field or a `UNITS` function (rule S1).
 - No real player or staff name anywhere in the repo, tests included: the admin's anonymous id, P1, P2… or made-up names; never keep a note off GitHub because it holds names, pseudonymise it (rule D2).
 - A feature that needs sheet script version N turns on only when the script reports `v >= N`, else behaves as before (rule D4).
-- Anything that moves a player's progress appends a rules version to `core.js` `RVS` and bumps `Code.gs` `VERSION` (rule D5).
+- Anything that moves a player's progress appends a rules version to `core.js` `RVS` (rule D5).
+- A PR never edits `Code.gs` `const VERSION` nor its header's history line: a `Code.gs` (or `core.js`) change adds one `tools/sync/changes/<branch>.md` and the integrator assigns the version at merge (rule D3).
 - Tests never reach the real sheet: no made-up host, patched `LOCAL` or stubbed `navigator.webdriver` (rule D1).
