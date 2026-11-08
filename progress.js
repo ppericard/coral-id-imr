@@ -1171,6 +1171,24 @@ const RECALC = {
     }
   ]
 };
+// Whether start-up has settled its one-time cards (recalcNotice, mxLostNotice, rvNotice, sorryNotice, subjHello, the
+// achievements' toasts): tests wait for window.CARDS_SAID rather than for a fixed time, as for window.RECALC_SAID. True
+// once the app is ready (app.js SETUP 2 sets APP_READY after calling them), the notices that waited for the visit's first
+// sync have run on the merged state (sync.js noticesReady), subjHello is not waiting for its calm moment (helloT), and
+// no card waits to try again (noticeAgain) unless a card or the tour it waits behind is on screen: every card due is
+// then on screen, decided against, or behind one that is. Read live, so a page change that closes a card unseen (it
+// comes back 300 ms later) reads false until it is back.
+const NOTICE_AGAIN = new Set();
+function noticeAgain(fn, ms) {
+  const t = setTimeout(() => (NOTICE_AGAIN.delete(t), fn()), ms);
+  NOTICE_AGAIN.add(t);
+  return t;
+}
+const noticeStop = t => (clearTimeout(t), NOTICE_AGAIN.delete(t));
+Object.defineProperty(window, 'CARDS_SAID', {
+  configurable: true,
+  get: () => !!window.APP_READY && noticesReady() && !helloT && (!NOTICE_AGAIN.size || !!document.querySelector('#tour, .unlock'))
+});
 function recalcNotice() {
   if (noticeLater('recalc', recalcNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   if (SUBJ !== SUBJECTS[0]) return inSubject(SUBJECTS[0].id, recalcNotice); // the recalculations announced were the corals'
@@ -1188,7 +1206,7 @@ function recalcNotice() {
   if (!played) return void (store.set(RECALC.KEY, last), said('none'));
   // Something else on screen (the tour, a card): try again a little later, until the screen is clear.
   if (document.querySelector('.recalc')) return void said('shown'); // already on screen
-  if (document.querySelector('#tour, .unlock')) return void setTimeout(recalcNotice, 2000);
+  if (document.querySelector('#tour, .unlock')) return void noticeAgain(recalcNotice, 2000);
   said('shown');
   const k = due[0].kind || 'update';
   cardShow({
@@ -1203,7 +1221,7 @@ function recalcNotice() {
     enter: 1,
     // Leaving the page (route) closes it unseen; it comes back once the new page is drawn (Codex review #367: a returning
     // player opening straight at #practice/quiz had it closed by the first route, before ever seeing it).
-    onClose: how => how === 'route' && setTimeout(recalcNotice, 300)
+    onClose: how => how === 'route' && noticeAgain(recalcNotice, 300)
   });
 }
 // A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
@@ -1242,7 +1260,7 @@ let mxLostT = 0;
 // card would show (a sync merged a copy that has it), is not told: it goes to told here, silently.
 const mxTok = (n, mx) => `mx:${n}@${mx}`;
 function mxLostNotice() {
-  clearTimeout(mxLostT);
+  noticeStop(mxLostT);
   if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   let M = store.get(MXL.KEY, {}) || {};
   const done = Object.keys(M.due || {}).filter(n => toldHas(mxTok(n, M.due[n])) || (P[n] && P[n].mx));
@@ -1256,7 +1274,7 @@ function mxLostNotice() {
   const due = M.due || {},
     L = Object.keys(due).sort();
   if (!L.length || document.querySelector('.mxlost')) return;
-  if (document.querySelector('#tour, .unlock')) return void (mxLostT = setTimeout(mxLostNotice, 2000));
+  if (document.querySelector('#tour, .unlock')) return void (mxLostT = noticeAgain(mxLostNotice, 2000));
   cardShow({
     kind: 'update',
     cls: 'mxlost',
@@ -1281,7 +1299,7 @@ function mxLostNotice() {
     },
     esc: 1,
     enter: 1,
-    onClose: how => how === 'route' && (mxLostT = setTimeout(mxLostNotice, 300))
+    onClose: how => how === 'route' && (mxLostT = noticeAgain(mxLostNotice, 300))
   });
 }
 // The announcement card of a rules version (core.js RVS msg; Pierre, 2026-11-03: announcement cards show as soon as the
@@ -1330,7 +1348,7 @@ const rvPs = m => {
   return t ? `<p class="cardps"><small>${esc(t)}</small></p>` : '';
 };
 function rvNotice() {
-  clearTimeout(rvT);
+  noticeStop(rvT);
   if (noticeLater('rv', rvNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   let M = store.get(RVN.KEY, {}) || {};
   // Seen on another device since it was due here: told, silently.
@@ -1343,7 +1361,7 @@ function rvNotice() {
     // A version whose standard card replaced its apology (rvNoticeAdd std): the standard card.
     x = r0 && (M.std || []).includes(r0.v) ? {...r0, msg: RV_CARD} : r0;
   if (!x || document.querySelector('.rvmsg')) return;
-  if (document.querySelector('#tour, .unlock')) return void (rvT = setTimeout(rvNotice, 2000));
+  if (document.querySelector('#tour, .unlock')) return void (rvT = noticeAgain(rvNotice, 2000));
   // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
   const [pf, pt] = (M.pct || {})[x.v] || [];
   cardShow({
@@ -1367,7 +1385,7 @@ function rvNotice() {
     },
     esc: 1,
     enter: 1,
-    onClose: how => how === 'route' && (rvT = setTimeout(rvNotice, 300))
+    onClose: how => how === 'route' && (rvT = noticeAgain(rvNotice, 300))
   });
 }
 // An apology, once (Pierre, 2026-11-04; core.js SORRY, sorryOf, sorryFelt, sorryText): to a player who really felt the
@@ -1395,7 +1413,7 @@ function sorryNotice() {
   }
   if (!sorryDue({felt: F, now, shown: store.get(SORRYK.KEY, 0) || toldHas('sorry')})) return; // or on another device (TOLD)
   if (document.querySelector('.sorry')) return; // already on screen
-  if (document.querySelector('#tour, .unlock')) return void setTimeout(sorryNotice, 2000);
+  if (document.querySelector('#tour, .unlock')) return void noticeAgain(sorryNotice, 2000);
   const x = sorryText(SYNC && SYNC.name, now, new Date(now).getTimezoneOffset());
   cardShow({
     kind: 'apology',
@@ -1406,7 +1424,7 @@ function sorryNotice() {
     primary: {text: 'Thanks', on: () => (store.set(SORRYK.KEY, Date.now()), toldAdd('sorry'))},
     esc: 1,
     enter: 1,
-    onClose: how => how === 'route' && setTimeout(sorryNotice, 300)
+    onClose: how => how === 'route' && noticeAgain(sorryNotice, 300)
   });
 }
 // The cards that tell a player about a subject (app.js UNITS hello), one per way the subject opens (core.js SUBJECTS open,
@@ -1436,6 +1454,7 @@ const helloDue = ({card, member, admin, seen, met, answers}) =>
 let helloT = 0;
 function subjHello() {
   clearTimeout(helloT);
+  helloT = 0; // no calm moment awaited (window.CARDS_SAID) unless set again below
   const home = () => (hashNow() || 'home') === 'home';
   if (!home() || noticeLater('hello', subjHello)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   // The 'all' card is the beta invitation: only while the subject keeps its beta label (SUBJECTS beta).
@@ -1458,6 +1477,7 @@ function subjHello() {
   if (due === 'met') return void store.set(key, 'met');
   if (due !== 'show') return;
   helloT = setTimeout(() => {
+    helloT = 0; // decided now: shown, or not now (window.CARDS_SAID)
     const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .hello');
     if (!home() || busy || store.get(key, null) || toldHas(tok) || !member(S) || !promptOk()) return;
     promptMark();
