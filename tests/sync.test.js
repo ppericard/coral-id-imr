@@ -966,7 +966,8 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
     ['Ben', 64, 0.5],
     ['Ana', 25, 1]
   ]);
-  // A tree that fails the checks keeps the one stored; a list (an older app) replaces it, read as before.
+  // A tree that fails the checks keeps the one stored; a list from an older app never replaces a tree (Codex review #730:
+  // the board would go back to the families' mean while the apps show the global score).
   s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: {f: [['=SUM(A1)', 1, 1]], s: []}}}, answers: []});
   s.post({
     name: 'Ana',
@@ -977,7 +978,11 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
   });
   assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
   s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae', 'f:Gobiidae']}}, answers: []});
-  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(['f:Pomacentridae', 'f:Gobiidae']));
+  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'an older app list: the tree kept');
+  // Before any tree, a list is kept and read as before (an app from before the score, sheet v95).
+  const t = seed();
+  t.post({name: 'Cy', pin: '2222', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae']}}, answers: []});
+  assert.strictEqual(t.props.BOARD_UNITS_fish, JSON.stringify(['f:Pomacentridae']));
 });
 
 test('board (v20): an admin hides a player from the leaderboard; their own syncs never bring them back', () => {

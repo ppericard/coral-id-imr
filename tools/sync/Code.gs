@@ -966,7 +966,7 @@ const BOARD_UNITS_ = 'BOARD_UNITS_';
 // do for the corals. A unit is a word of the answer log (the Answers tab's Genus shown), at most 400 of them.
 // v101: a subject with a global score (core.js SUBJECTS score) sends its tree instead, {f: [[family, weight, circle]],
 // s: [[weight, genus, species, [common names] (null: none at all), circle]]} (app.js UNITS tree, core.js treeScore), kept the same way once it
-// passes boardTreeOk_: every unit a word as above, every weight a finite number from 0 to 1000, every circle 1 to 9, at
+// passes boardTreeOk_ (and a list sent afterwards by an older app never replaces it): every unit a word as above, every weight a finite number from 0 to 1000, every circle 1 to 9, at
 // most 400 families and 1500 species entries, its JSON at most 9000 characters (a script property's limit).
 const BOARD_U_ = /^[A-Za-z][A-Za-z0-9: -]{0,39}$/;
 function boardTreeOk_(T){
@@ -984,12 +984,15 @@ function boardUnitsSave_(boards){
   const B0 = CORE_.SUBJECTS.find(x => x.board);
   CORE_.SUBJECTS.filter(S => S.board && S !== B0 && boards[S.id] && typeof boards[S.id] === 'object').forEach(S => {
     let json = null;
+    const props = PropertiesService.getScriptProperties();
     if (Array.isArray(boards[S.id])) {
+      // An app from before the score sends a list: it never replaces a tree a current app sent (Codex review #730), so the
+      // board stays on the scale My progress shows.
+      if (S.score && /^\{/.test(props.getProperty(BOARD_UNITS_ + S.id) || '')) return;
       const list = boards[S.id].map(String).filter(u => BOARD_U_.test(u)).slice(0, 400);
       if (list.length) json = JSON.stringify(list);
     } else if (S.score) json = boardTreeOk_(boards[S.id]);
     if (!json) return;
-    const props = PropertiesService.getScriptProperties();
     if (props.getProperty(BOARD_UNITS_ + S.id) !== json) props.setProperty(BOARD_UNITS_ + S.id, json);
   });
 }
