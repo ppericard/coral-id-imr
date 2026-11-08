@@ -127,7 +127,7 @@ const ver = p => (p.cr || p.iv ? `?c=${(p.cr || []).join('_')}${p.iv ? '.' + p.i
 // The site's photos come from Cloudflare R2 (core.js PHOTO_BASE) while R2 answers. Once an R2 photo failed on a page no
 // service worker controls (photoFail below), R2 is false and AWAY true for the rest of the visit: a photo with an online
 // original (iNaturalist, FishBase: core.js photoAway; Pierre, 2026-11-05) is read from there at a light size, the others
-// (IMR lecture photos, Coral Finder book scans, page art) from the site's img/. Under a service worker both stay as they
+// (IMR lecture photos, page art) from the site's img/. Under a service worker both stay as they
 // are: the worker keeps photos offline under their R2 address and fails at once while R2 is out (sw.js photo), and each
 // photo that fails falls back on its own. With PHOTO_BASE '' (R2 switched off), AWAY from the start: the photos with an
 // online original live on R2 only since step 2 of Photos out of the repo, so they come from that original.
@@ -425,7 +425,7 @@ const srcset = p =>
 // Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
 // One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
 // slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture
-// and Coral Finder book photos have no public page, so they get a plain label. Hidden on phones (no room, Pierre): there the
+// photos have no public page, so they get a plain label. Hidden on phones (no room, Pierre): there the
 // enlarged view's caption already carries the clickable source.
 const author = p =>
   (p.a || '')
@@ -435,28 +435,24 @@ const author = p =>
 const photoSrc = p =>
   !p
     ? ''
-    : p.cf
-      ? `<span class="psrc">Coral Finder p. ${esc(p.pg)}</span>`
-      : p.imr
-        ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
-        : p.o && p.o.includes('inaturalist.org')
-          ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
-          : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
-            p.via === 'fishbase' && p.o
-            ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p))}: open the FishBase photo page"><span class="pa">${esc(author(p).replace(/,\s*via FishBase$/i, ''))} · </span>FishBase ↗</a>`
-            : '';
+    : p.imr
+      ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
+      : /^https?:\/\/(www\.)?inaturalist\.org\//.test(p.o || '')
+        ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
+        : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
+          p.via === 'fishbase' && p.o
+          ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p))}: open the FishBase photo page"><span class="pa">${esc(author(p).replace(/,\s*via FishBase$/i, ''))} · </span>FishBase ↗</a>`
+          : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
 const credit = p =>
-  p.cf
-    ? `© R. Kelley / BYOGUIDES, Coral Finder 2022, p. ${esc(p.pg)}`
-    : p.imr
-      ? `IMR Lecture 6, slide ${esc(p.slide)}`
-      : `<i>${esc(p.t)}</i>${p.own && !p.nd ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
+  p.imr
+    ? `IMR Lecture 6, slide ${esc(p.slide)}`
+    : `<i>${esc(p.t)}</i>${p.own && !p.nd ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 // Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
 // which would give the genus away (rule P5); the full credit comes with the answer.
 const blindCredit = p => {
-  const n = p.cf ? 'R. Kelley / BYOGUIDES' : p.imr ? '' : author(p);
+  const n = p.imr ? '' : author(p);
   return p.imr ? ' · IMR lecture' : n ? ` · © ${esc(n)}` : '';
 };
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
@@ -857,7 +853,7 @@ function applyForms(d, c) {
 }
 // Photos of genus n that can illustrate Coral Finder front-page box id (e.g. 'B'): those whose IMR form maps to it
 // (forms.json "cf": Branching = Branching + Tabulate, ...; L = polyps extended), else the old letter. Colony views
-// first, then closer views. Never a "form not visible" photo, a multi-coral photo or a Coral Finder book photo.
+// first, then closer views. Never a "form not visible" photo or a multi-coral photo.
 const formPhotos = (n, id) => {
   const g = GX(n),
     ok = CFMAP[id] || '';
@@ -866,7 +862,7 @@ const formPhotos = (n, id) => {
   );
 };
 
-// Photos of genus n whose IMR growth form (p.form) is id, colony views first; never multi-coral or book photos.
+// Photos of genus n whose IMR growth form (p.form) is id, colony views first; never multi-coral photos.
 const imrFormPhotos = (n, id) => {
   const g = GX(n);
   return [...(g.views.wide || []), ...(g.views.medium || []), ...(DATA.course[n] || []).filter(p => p.v !== 'macro')].filter(
@@ -1422,13 +1418,11 @@ const UNITS = {
     // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
     species: () => '',
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (flag),
-    // and what the flag records: its genus and view}, null when no genus shows it (the views, more, approved book photos,
-    // the lecture photos).
+    // and what the flag records: its genus and view}, null when no genus shows it (the views, more, the lecture photos).
     photo: f => {
       for (const [n, g] of Object.entries(DATA.gen)) {
         for (const [v] of VIEWS) {
           if ([...(g.views[v] || []), ...((g.more || {})[v] || [])].some(p => p.f === f)) return {id: f, genus: n, view: v};
-          if ((g.book || []).some(p => p.f === f && p.view === v)) return {id: f, genus: n, view: v};
         }
         const c = (DATA.course[n] || []).find(p => p.f === f);
         if (c) return {id: f, genus: n, view: c.v};
@@ -2745,7 +2739,7 @@ Promise.all([
       '<p class="warn">Could not load the data. Check your connection. <button type="button" class="linkish" id="reload">Try again</button></p>';
     document.getElementById('reload').onclick = () => location.reload();
   });
-// A tab left open for days still follows Pierre's published curation (e.g. the CF book switch): when the tab comes back
+// A tab left open for days still follows Pierre's published curation (e.g. a new cover): when the tab comes back
 // into view (or every 30 min while visible), curation.json is read again; a change applies at the next screen (route),
 // never in the middle of a game.
 // A photo Pierre adds from the candidates waiting (cand.json) reaches data.json only when the Candidate photos Action has
@@ -2757,14 +2751,14 @@ const rawFs = () => {
   [...Object.values(RAW.gen || {}), ...Object.values((RAW.x || {}).gen || {})].forEach(g => {
     Object.values(g.views || {}).forEach(add);
     Object.values(g.more || {}).forEach(add);
-    add(g.book);
   });
   [RAW.cand, RAW.course].forEach(o => Object.values(o || {}).forEach(add));
   return s;
 };
+// A Coral Finder book crop curation.json still adds (core.js cfCrop) is gone for good: never a reason to fetch again.
 const addsMissing = c => {
   const have = rawFs();
-  return Object.values((c && c.genera) || {}).some(g => Object.keys(g.add || {}).some(f => !have.has(f)));
+  return Object.values((c && c.genera) || {}).some(g => Object.keys(g.add || {}).some(f => !have.has(f) && !cfCrop(f)));
 };
 function curRefresh() {
   if (!RAW || /[?&]draft\b/.test(location.search)) return;

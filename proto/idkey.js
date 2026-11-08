@@ -378,19 +378,8 @@ LAB.add({
       const varied = (g, k, n) => {
         const one = pv !== 'mix' && (g.views[pv] || []).length,
           c = one ? null : (n && formCover(n)) || cover(g);
-        // Coral Finder book photos (g.book) alternate with the field photos of the same view.
-        // Capped set per view (applySlots in app.js): featured photos, then up to 3 approved book photos.
-        const mix = v => {
-          const F = ((g.sl || {})[v] || {}).idkey || [],
-            A = F.filter(p => !p.cf && (!c || p.f !== c.f)).map(p => ({...p, view: v})),
-            B = F.filter(p => p.cf),
-            o = [];
-          while (A.length || B.length) {
-            if (A.length) o.push(A.shift());
-            if (B.length) o.push(B.shift());
-          }
-          return o;
-        };
+        // Capped set per view (core.js applySlots): the featured photos, then up to 5 from other observers.
+        const mix = v => (((g.sl || {})[v] || {}).idkey || []).filter(p => !c || p.f !== c.f).map(p => ({...p, view: v}));
         const L = (one ? [[pv]] : VIEWS).map(([v]) => mix(v));
         const out = c ? [c] : [],
           used = new Set(c ? [c.o] : []);
