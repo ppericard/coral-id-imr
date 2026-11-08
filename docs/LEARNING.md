@@ -3377,6 +3377,59 @@ anchor (74%) at most (`tests/treescore.test.js`); credit = S for a species with 
 | Every family learned | 100% | 50% |
 | Every family and every genus learned | 100% | 67% |
 
+### Fish: the progress replayed from the answer log (2026-11-08, Q298, Q310; fish rules version 1, sheet v112)
+
+Pierre, 2026-11-08: "recalculate every player's progress from their answers, then their achievements too". Until then no
+replay reached a fish player: the sheet replayed the corals only, so a fish bar lived on the device (rebuilt once from its
+counts under the domain-score bar, Q200). Fish answers are logged only since sheet v60 (2026-11-06), so a replay of the
+log alone would lose what was played before. Q298: measure the gap in the admin's way first; Q310: if it is small (the
+recomputed bar within ±5 points of the saved one for about 90% of fish players, nobody more than 10 below), build it with
+today's bar as a floor; if large, build nothing.
+
+**Measured** on the real log (rule L12), read-only, on an export of the sheet: the 1,292 fish answers logged from
+2026-11-06 13:07 to 2026-11-07 21:37 (every one with its scoring record) and the saved copies of the 8 fish players (all
+signed in). The admin's replay (`admin.js` `progOf`: `replayProgress` over each player's fish rows with the app's fish
+units, then `replayedOf` with the saved copy) against the saved copy as the player's app shows it at its next open (old
+unit ids renamed, `renameUnits`; records still under the moving average rebuilt from their counts, `domRecalcAll`). The
+per-player table stays outside the repository; the counts and distributions (the player is the unit, rule L11):
+
+| Measure | Within ±5 points | Changes (points, sorted) | Worst |
+|---|---|---|---|
+| Headline (`treeScore`, the fish global score) | 8 of 8 | −3, −1, −1, −1, −1, 0, 0, 0 | −3 |
+| Families' mean (`pctOf` over the slate) | 8 of 8 | −2, 0, 0, 0, 0, 0, 0, 0 | −2 |
+| Learned units | | 0 saved, 0 replayed for every player | |
+
+Small by Q310's measure. Per unit the replay moves more: of 203 unit bars, 122 unchanged, 183 within ±5, 10 more than 10
+points down (the lowest −21), the highest +3. Why the units differ while every row carries its scoring record was not
+checked; a guess: the device bars rebuilt from their counts on 2026-11-06 (Q200, an approximation the replay replaces).
+One player has 17 answers from before sheet v60, not in the log: `replayedOf` keeps a unit whose saved record has more
+answers than the log.
+
+**Built.** The sheet replays the fish progress as the corals' (`Code.gs` `replays_`: the fish rows, the fish units from
+`fish.json`, `core.js` `fishReplayGen`; none of `stats_`'s photo numbers, which are the corals'), under the fish rules
+versions of their own (`core.js` `FISH_RVS`, `rvOf`; the integrator, 2026-11-08: a fish replay must never replay the
+corals again, so no coral player gets a card for it), asked by the app with the fish rules version it applied
+(`reefid-sync-fish-rv`), adopted by `sync.js` `replayAdoptS` from sheet v112 (`core.js` `REPLAYS_SHEET`, rule D4).
+**The floor** (`core.js` `replayFloor`), applied by the sheet to the replay itself (`Code.gs` `replay_`), so every
+device of the account adopts the same record and keeps it as their shared merge baseline (Codex review #779: floored on
+each device, two devices disagreed and a recovered refused save counted its answers twice): against the account's saved
+copy, its units that came from no replay yet, a unit whose replayed bar reads below its saved bar keeps the replay's
+record (its answers the log's) with its domain score lifted to the saved bar, allowing for the false alarms the replay
+counts on it (a unit the log has nothing on keeps its saved record). So no unit's bar, and so no %, goes down at the
+first replay; a right answer never lowers the lifted score (`domStep`), a miss moves it as any bar. The reference is
+kept with the record, so a later replay of the same rules version (more answers, a version applied again) floors
+against the same bars; under a later fish rules version there is none (once, the integrator, 2026-11-08). Checked on
+the same data with the floor applied to the device's records: no unit and no headline down; one headline 1 point up,
+one families' mean 1 point up, the rest equal. Its card: fish rules version 1 takes the standard card (`RV_CARD`: only a move of 5 points or
+more; none on this data), told under the subject's id (`progress.js` `rvId`, `fish:1`), never as a coral version.
+
+What was checked (rule L11): the engine is unchanged (no learning rule moves), so no `tools/learnsim.js` run; the change is
+where a fish bar is computed, checked on the real log as above and by `tests/fishreplay.test.js` (the replay's units are
+the app's; the floor on fixed and random records, no unit or headline down) and `tests/fishadopt.test.js` (the app
+adopts it from `REPLAYS_SHEET` only, with the floor, its own rules version, no coral replay asked for, the reset cutoff
+and the refused-save flag). Not adopted yet by a device that never signed in (the sheet can serve it, `sreset`,
+`sstart`; ROADMAP).
+
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard
@@ -4542,20 +4595,68 @@ code or the docs unless marked *inferred*):
 
 | | The app world | The rated world |
 | --- | --- | --- |
-| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | a Node mode of learnsim (to build; until then the scratch harness, "Fish: the global score, built") |
+| Tool | `node tools/learnsim.js [--subject fish]`, the real app in Chromium | `node tools/learnsim.js --world rated [--subject fish]` (`tools/ratedworld.js`) |
 | Photos | the real pools, the app's estimate or `--truth` | d = μ(unit) + ε, ε ~ N(0, 0.46²) (the coral photo spread of the Analyses tab); heavy tails: 15% of the photos +1.5, or a scaled t with 3 degrees of freedom; judged ease e = round(3 − (ε + N(0, 0.35²)) / 0.5) on 1-5 |
 | Units | the sheet's offsets with `--stats`, else 0 | fish: family μ ~ N(0, 0.37²), +0.5 in a declared look-alike group; genus and species μ ~ parent + N(0, 0.3²), +0.3 with siblings; corals: genus μ ~ N(0, σ²), σ the spread of the sheet's `gd` (to measure) |
 | Players | one fixed player per profile | an ability offset π ~ N(0, 0.5²) per run |
 | The app's estimates | its own | told the truth ("fully rated"), or its own Elo |
 | Learner | item (default), field, exemplar | by the number of answers, and one whose gain depends on the answer and its feedback (as the item learner's) |
 | Horizon | 300 questions (600 when the change acts later) | 3,000 answers at level 2 (10,000 when it touches genera, species or the score's shape), 30,000 at level 3 |
-| Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | 4 profiles × 20 seeds × 2 arms × 3,000 answers in under a minute |
+| Speed (checked 2026-11-08) | about 1 minute per 300-question fish run per worker | about 4 s per 300 answers and 80-160 s per 3,000 per worker on a loaded machine (the app's own `photoSet` on pools of up to 1,600 photos); the scratch harness, which did not run it, took under a minute for 4 × 20 × 2 × 3,000 |
 
 The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo choice, typed questions, `drawW`,
 `OPEN.K`, a card every 2 answers, at most 3 openings in 15, `RARE`) and runs the real `core.js` (`domStep`,
 `treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.js` does, so the draw is the
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
+
+**The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
+are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
+cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.
+A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π;
+the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
+the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
+genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the
+domain-score bar, the global level, rule L2), so the aim, the start's lean, `photoSet` (Gaussian choice, `RARE`, the
+floor), typed questions, `drawW`, `shaky`, `openChance`, `openPace`, `openRight`, `openPick`, the opening hold and the
+exam are the app's own. Only the planner is written there, as `quiz.js` `planPhoto` reads: the first cards, a card when
+the path allows one, a unit opened on a card asked once ready, the target by `nextTarget`, the choices by
+`distractors` with the traps `trapsFor` asks (the plausible choices `plausibleK` count while the traps are fewer than 2,
+every choice after), the photo aimed lower by the opening hold's ease and the player's own mix-ups (`holdEase`,
+`confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
+duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
+true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
+photo statistics, as the fish today; the sheet's photo Elo is not simulated). `--dist normal|tail|t3`. Circle 3 stays
+closed unless `--beyond yes`, as in the app world (its offer left unanswered). The scientific names' offer, once a family
+is at Advanced, is accepted, except by the casual diver. The learner: the profile's know per unit (`tools/learnprof.js`,
+as the app world), the run's π, recognition sig(logit know + π − d − 0.5) on the true difficulty d of the photo shown,
+else a guess among the choices (typed: "I don't know" half the time); it learns by the number of answers (rate × (1 −
+know) per answer on the unit and per card). D\*: its mean chance on each of the unit's game photos alone. Rows hold what
+learncmp reads (`dStar`, `knowSlate`, `met`, `right`, `prog`, `f`, `kinds`, `score`, `plateau`; per run `owAt`, `advAt`,
+`c3`, `expo`, `preOW`), at the guardrails' checkpoints (100, 300, 1,000, 3,000, 10,000, 30,000) up to the horizon.
+
+**The corals** (2026-11-08, step 5): the coral units as the app builds them (`core.js` `applyCuration` and `applySlots`,
+`app.js` `applyForms` and `imrFormsOf` cut out the same way; the extra genera, Millepora and the bonus genera, too): the
+40 genera of the slate and the bonus genera, their game photos in their three views (a question shows those
+`photoSet` picks; one view alone is the single-view case). Each genus's μ ~ N(0, `RATED.CORAL_GD`²), **0.286: the SD of the
+sheet's genus offsets `gd` as #637 measured them with the photos rated against the genus ability (Q136); 0.370 with
+today's rating against the level, the sensitivity variant (`--coralsd 0.37`)**; no photo has a
+judged ease, so the share under ease 4 is not measured there. The bonus genera are offered once every slate genus is
+met and accepted, as in the app world; there is no global score, so the shown score is the units' mean (`progPct`).
+**The learners**: `--learner count` (the default), by the number of answers, as above; `--learner item`, whose gain
+depends on the answer and its feedback, as learnsim's item learner: a right answer teaches rate × (1 − know), a miss
+1.5 times that (`ITEM.MISS`), the unit wrongly given 0.5 times (`ITEM.PICKED`), a card as one right answer.
+
+```
+node tools/learnsim.js --world rated --subject fish --seeds 10 --questions 3000 --out before.json [--dist tail] [--app own]
+node tools/learncmp.js before.json after.json --primary score@3000:up
+```
+
+First numbers (2026-11-08, told the truth, normal photos, 5 seeds, π −1.26 to 0.25), at 1,000 answers: the beginner
+31.6% shown (17.8 families at Open Water, 77% right over answers 301-1,000), the lecture RA 36.6% (24.6 families, 77%
+right). The app world's of 2026-11-08 above (before #727, the earlier profiles): 37% and 41%, 75-81% right. So the rated
+world reads about 5 points lower, the right rate within the range; the same check on today's app world with these
+profiles is in the PR that built it (#787).
 
 **Profiles** (the same list for both subjects where it applies; in the rated world each run also draws π). The two IMR
 levels are those used so far (learnsim's `lectureRA` and `strongRA`, the first-launch answer "IMR course", the
@@ -4565,9 +4666,20 @@ re-simulation's IMR RA):
 | --- | --- | --- | --- |
 | Beginner | knows nothing of the subject | every genus at 2% | every family at the floor; both names |
 | Casual diver | a diver who knows the common fish by sight, wants their common names | - | the common families a little; common names only |
-| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% (today's `lectureRA` picks 2 genera in 5 by data order) | the IMR families half known; both names; the IMR genera from Open Water (#720) |
+| Lecture RA | an RA who has just had the IMR lecture: knows the course's names and groups, has practised little | the lecture's genera at 55%, the others 10% | the IMR families half known; both names; the IMR genera from Open Water (#720) |
 | Strong RA | an RA with practice behind the lecture | 3 genera in 5 at 85%, the others 10% | the IMR families and their genera well known; both names |
 | Expert | knows nearly everything | every genus at 93% | families and genera well known, species partly; both names |
+
+Built in `tools/learnprof.js` (one list, loaded by learnsim in Node and in the page; the rated world reads the same list),
+never by data order. The default list of a subject is every profile with a part for it (`--profiles` picks others;
+`strongBack` and `spotty` stay by name). Corals: the lecture RA knows the 34 genera numbered on the IMR slate at 0.55;
+the strong RA the IMR lecture groups in the course's order until 60% of the slate is covered (groups 1 to 7, 26
+genera with their starred look-alikes) at 0.85; the others 0.1. Fish: the lecture RA knows the circle-1 families at
+0.5 and their IMR genera too (`imrg`); the strong RA the circle-1 families and every genus of theirs at 0.85; the others
+0.1; the expert every family and genus at 0.93; the beginner everything at 0.02; the casual diver, at 0.3, the most
+common families near Dauin (their weights in the global score's tree) until they carry half of the weight, the rest at
+0.02, and declines the scientific names (Not now on the set's offer). First-launch answer with `--choice auto`: the
+casual diver "new". Learning rate as before (0.12; the expert 0.05).
 
 **Measures** every run reports (the guardrails among them in the table below):
 
@@ -4610,6 +4722,38 @@ and its accepted bound before running (rule L11).
 
 A large expected effect (several times its margin) is read at the level's fewest seeds; more seeds only when a result is
 near a margin. Neither world belongs in the hourly analyses Action (its 2 hours serve the real log).
+
+**Commands.** Each arm runs on the same seeds, then `tools/learncmp.js` pairs the two files and judges them (offline,
+under a second; `--list` prints its measures and guardrails):
+
+```
+node tools/learnsim.js --subject fish --out before.json          # on main; the change's branch: --out after.json
+node tools/learncmp.js before.json after.json --primary hard@300:down [--cost met@100:-3] [--looks 2] [--json r.json]
+```
+
+It pairs the runs by (profile, seed) and prints, ready for the PR: the primary (`MEASURE@CHECKPOINT:up|down`, declared
+before running), the stratified sign-flip pooled over the profiles (each pair's difference over its profile's root mean
+square difference, a scale a sign flip leaves unchanged so the test stays exact; T the sum; two-sided p, exact up to 20
+pairs, else 100,000 draws from seed 1, as #729 read it), clear when p ≤ 0.05 / looks and T goes the declared way, and
+only then each profile's paired t under Holm; then every guardrail of the table above at the checkpoints both files
+reach, per profile: before → after, the paired difference and its one-sided bound at 1 − 0.10 / looks on the side of
+harm (paired t), held, unclear or breached, and the before/after correlation r in `--json`. A guardrail is judged against
+its margin ("the larger" against the before mean of that profile; the corals' units met against 2 genera), or against
+the bound a `--cost` declares. Settings that differ between the files are printed, runs in one file only are left out.
+A guardrail with no valid pair (the share under ease 4 on the corals, whose photos have no judged ease) is listed as not
+measured, never held.
+
+What learnsim measures for it (each run's rows at the checkpoints, `tools/learnsim.js` header): `kinds`, per kind of
+unit (the subject's rank for its slate, `rankOf` for a set's units such as the fish scientific genera, the corals' bonus
+genera apart) the units, those met, at Open Water and at Advanced, D\* and E = bar − D\* over those met; `score`, the
+shown score (`headPct`) and, for the fish, its components (`treeScore`: entries, genera, common, scientific, S, credit,
+raw, by circle); `plateau`, the longest stretch so far without a new high of the shown score; per run `owAt` and `advAt`
+(the answer at which each unit first reached each level) and `c3` (circle 3 offered, met); with `expo` and `preOW`, the
+photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
+(the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
+`unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
+`perPhoto` (answers per photo shown), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
+exist yet, so their kinds are empty until they do.
 
 **First run: the cap under ease 4 before Open Water** (#729, `RARE.SHARE` 0.1; level 2: it changes the fish draw for every
 unit under Open Water; exploratory, the protocol not yet

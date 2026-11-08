@@ -163,6 +163,15 @@
 //   photos shown], and pool (seed 1's runs), each game genus's photos as [file, colony]: repeats, photos never shown,
 //   answers per photo (docs/LEARNING.md "Photo exposure"); preOW (2026-11-08), each question's [under Open Water, the
 //   lowest judged ease shown] (docs/LEARNING.md "Rarely under ease 4 before Open Water").
+// - The levels and the score (2026-11-08, rule L11's measures, docs/LEARNING.md "Validating a learning change"): at each
+//   checkpoint, kinds, per kind of unit (the subject's rank for its slate: genus, family; app.js rankOf for a set's units,
+//   the fish scientific genera; bonus for the corals' bonus genera), its units, those met, at Open Water and at Advanced
+//   (LV_AT), the judge's D* and E = bar - D* over those met; score, the shown score (model.js headPct) and, for a subject
+//   with a global score, its components (core.js treeScore: entries, genera, common, scientific, S, credit, raw; by
+//   circle); plateau, the longest stretch of answers so far without a new high of the shown score. Per run: owAt and
+//   advAt, the answer at which each unit first reached Open Water and Advanced; kinds, each unit's kind; c3, the answer
+//   at which circle 3 was offered (the card) and first met. tools/learncmp.js reads them, with the photo exposure (expo,
+//   preOW above).
 const http = require('http'),
   fs = require('fs'),
   os = require('os'),
@@ -171,25 +180,11 @@ const {chromium} = require('playwright');
 const {memStorage} = require('./memstorage.js');
 const ROOT = path.join(__dirname, '..');
 
-// Profiles: the three players of profiles.smoke.js (same definitions: beginner, RA = "lectureRA", expert) and a strong
-// RA who knows 60% of the genera well (docs/LEARNING.md, the open-all offer and the opening hold). know of slate genus i
-// (slateGenera() order: data.json, then Millepora) = hi when i % 5 < m, else lo; bonus genera = lo. rate: RATE of the learner below.
-const PROFILES = {
-  beginner: {m: 0, hi: 0.02, lo: 0.02, rate: 0.12},
-  lectureRA: {m: 2, hi: 0.55, lo: 0.1, rate: 0.12},
-  strongRA: {m: 3, hi: 0.85, lo: 0.1, rate: 0.12},
-  expert: {m: 5, hi: 0.93, lo: 0.93, rate: 0.05},
-  // A strong player who knows 80% of the genera well and the rest hardly: few genera stay shaky, so the opening runs at
-  // full speed, and a genus never answered starts from their high global level (2026-11-04, the run of 2026-11-03 that
-  // fell from 83% to 50% right after 7 genera opened in 16 answers). Not in the default list: run it with --profiles
-  // strongBack --questions 60 --breaks 8h --after 40 (that player came back from an 8-hour break).
-  strongBack: {m: 4, hi: 0.9, lo: 0.1, rate: 0.12},
-  // A spotty player (2026-11-06, Pierre on #611: "a trainer who knows the Acroporidae but not the Merulinidae"): knows the
-  // genera of some IMR lecture groups as an expert does (hi) and the others hardly (lo), by family rather than by slate
-  // position, so a rule that borrows from the global level is checked on the genera it does not know. grp: the lecture
-  // groups known (app learn.js shownGroup: a starred genus in the group of its look-alikes).
-  spotty: {grp: [1, 2, 3, 4, 5], hi: 0.93, lo: 0.05, rate: 0.08}
-};
+// Profiles (2026-11-08, rule L11): tools/learnprof.js, the same list for both subjects and both worlds, by lecture group,
+// family, circle or commonness rather than data order; loaded in the page too (an init script), where its knownUnits
+// reads the app's own units. The default list: every profile with a part for the subject (the corals: beginner, lecture
+// RA, strong RA, expert; the fish: and the casual diver).
+const {PROFILES, defaults: DEFAULT_PROFILES, profOf} = require('./learnprof.js');
 // The learner's constants (above). LOOK 3: a declared look-alike draws an unrecognised photo as much as the genus
 // itself (a coin toss in a look-alike duel), an unrelated genus 1.3 against 4. ELIM 0.5: a genus known for sure is
 // half as tempting. MISS 1.5, PICKED 0.5: feedback after a miss teaches more, and a little about the genus picked.
@@ -248,7 +243,7 @@ const SEEDS = Number(arg('seeds', 5)),
   // (core.js COVER_SHEET 56) is off: today's rules on the same code, for paired comparisons.
   SHEETV = Number(arg('sheetv', 1000)),
   QN = Number(arg('questions', 300)),
-  NAMES = arg('profiles', 'beginner,lectureRA,strongRA,expert').split(','),
+  NAMES = arg('profiles', DEFAULT_PROFILES(arg('subject', 'coral')).join(',')).split(','),
   WORKERS = Number(arg('workers', Math.max(1, Math.min(4, os.cpus().length)))),
   OUT = arg('out', null),
   STATS = arg('stats', null),
@@ -269,21 +264,34 @@ const SEEDS = Number(arg('seeds', 5)),
   CHOICE = arg('choice', 'new'),
   FALLBACK = arg('fallback', 'keep'),
   VARS = JSON.parse(arg('vars', '{}')),
-  AUTO = {beginner: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
+  AUTO = {beginner: 'new', casualDiver: 'new', lectureRA: 'imr', strongRA: 'know', expert: 'know'},
   BACK = arg('back', 'keep'),
   MET = arg('met', 'Acropora,Porites,Pocillopora,Montipora,Millepora').split(',').filter(Boolean),
   RTON = arg('rt', 'on') !== 'off',
   RTAPP = arg('rtapp', 'on') !== 'off',
   RTLOG = arg('rtlog', null),
-  LEARN = arg('learner', 'item'),
+  LEARN = arg('learner', arg('world', 'app') === 'rated' ? 'count' : 'item'), // the rated world's: count (tools/ratedworld.js)
   TAU = Number(arg('tau', 0.5)),
   CUSTOMN = Number(arg('custom', 0)),
   DRILL = Number(arg('drill', 200)),
   SUBJECT = arg('subject', 'coral'),
   PHOTOS = arg('photos', null),
-  CALIBX = JSON.parse(arg('calib', '{}'));
+  CALIBX = JSON.parse(arg('calib', '{}')),
+  // --world rated (2026-11-08, rule L11): the rated world in Node (tools/ratedworld.js) instead of the app in Chromium;
+  // --dist its photo distribution (normal, tail: 15% of the photos 1.5 harder, t3), --app what the app knows (truth: every
+  // photo and unit rated; own: its judged-ease prior alone). --questions counts its answers.
+  WORLD = arg('world', 'app'),
+  DIST = arg('dist', 'normal'),
+  APPK = arg('app', 'truth'),
+  // --coralsd: the corals' genus spread in the rated world (default tools/ratedworld.js RATED.CORAL_GD, 0.286; 0.37 the
+  // sensitivity variant).
+  CORALSD = Number(arg('coralsd', 0)) || null;
+if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
+if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
+if (!['truth', 'own'].includes(APPK)) throw new Error('--app truth or own');
 if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
-if (!['item', 'field', 'exemplar'].includes(LEARN)) throw new Error('--learner item, field or exemplar');
+if (arg('world', 'app') === 'rated' ? !['count', 'item'].includes(LEARN) : !['item', 'field', 'exemplar'].includes(LEARN))
+  throw new Error(arg('world', 'app') === 'rated' ? '--learner count or item in the rated world' : '--learner item, field or exemplar');
 if (!(TAU >= 0 && TAU <= 1)) throw new Error('--tau between 0 and 1');
 if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or more genera, --drill 1 or more questions');
 {
@@ -294,7 +302,10 @@ if (CUSTOMN && !(CUSTOMN >= 2 && DRILL >= 1)) throw new Error('--custom 2 or mor
     LEARNER.MEM = v.length === 1 ? [v[0], v[0], v[0], v[0]] : v;
   }
 }
-for (const n of NAMES) if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
+for (const n of NAMES) {
+  if (!PROFILES[n]) throw new Error(`unknown profile ${n} (${Object.keys(PROFILES).join(', ')})`);
+  if (!PROFILES[n][SUBJECT]) throw new Error(`profile ${n} has no ${SUBJECT} part (${DEFAULT_PROFILES(SUBJECT).join(', ')})`);
+}
 const CPS = [
   ...new Set(
     [50, 100, 200, 300]
@@ -449,7 +460,16 @@ function play(cfg) {
   const SL = slateGenera(),
     TRACE = 80,
     know = {};
-  SL.forEach((g, i) => (know[g] = (prof.grp ? prof.grp.includes(shownGroup(g)) : i % 5 < prof.m) ? prof.hi : prof.lo));
+  // The slate units the profile knows (tools/learnprof.js: by lecture group, family, circle or commonness).
+  const UN = typeof UNITS === 'object' ? UNITS[SUBJ.id] : {},
+    knows = LEARNPROF.knownUnits(prof, {
+      SL,
+      group: shownGroup,
+      numbered: g => ((DATA.gen || {})[g] || {}).n > 0,
+      core: UN.core ? UN.core() : [],
+      tree: UN.tree && UN.tree() ? UN.tree().f : []
+    });
+  SL.forEach(g => (know[g] = knows.has(g) ? prof.hi : prof.lo));
   BON.forEach(g => (know[g] = prof.lo));
   // The units of the subject's opt-in sets (app.js UNITS sets: the fish scientific genera), learned like any unit from the
   // profile's low start (2026-11-08, the fish achievements on genera): before, they were never taught (not in know), so
@@ -457,7 +477,11 @@ function play(cfg) {
   if (typeof SETS === 'function')
     SETS()
       .flatMap(S => (S.all ? S.all() : S.units()))
-      .forEach(g => g in know || (know[g] = prof.lo));
+      .forEach(g => {
+        if (g in know) return;
+        // A set's unit (a fish scientific genus) by its family (GX parent): gen (tools/learnprof.js).
+        know[g] = LEARNPROF.genKnown(prof, knows, (GX(g) || {}).parent, (GX(g) || {}).imrg) ? prof.hi : prof.lo;
+      });
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
     if (g in know) know[g] += x * (1 - know[g]);
@@ -538,7 +562,10 @@ function play(cfg) {
   // The judge's domain score D*(t): success naming a photo of t alone (one view) with no choices, over t's theoretical
   // photo distribution (distOf). Item learner: recognition alone (no guess); field and exemplar: every slate genus a
   // possible answer.
-  const dOne = (t, d) => (field ? pField(t, SL, d, true) : exem ? pEx(t, SL, d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
+  // The possible answers for a unit outside the slate (a fish scientific genus, a coral bonus genus: the per-kind measures,
+  // Codex review #783): the units of its own kind, itself included; a slate unit keeps the slate.
+  const vocabOf = t => (SL.includes(t) ? SL : [...new Set([t, ...UALL.filter(g => kindOf(g) === kindOf(t))])]);
+  const dOne = (t, d) => (field ? pField(t, vocabOf(t), d, true) : exem ? pEx(t, vocabOf(t), d, true).p : sig(logit(kn(t)) - d - L.SINGLE));
   const dStar = t => {
     const [mu, sd] = distOf(t);
     // GH holds the physicists' Gauss-Hermite nodes (weight e^(-x^2)) with weights over sqrt(pi): a standard normal z is
@@ -684,13 +711,16 @@ function play(cfg) {
     // The first-meeting cards, read through: each teaches like one right answer.
     (q.intro || []).forEach(g => (teach(g, prof.rate), exem && exAdd(g, rAt(0), null), nCards++));
     // --beyond: the card offering a part of the slate by choice (fish circle 3), answered.
+    if (c3.offer === null && i >= 0 && document.querySelector('.unlock.intro [data-opens]')) c3.offer = i + 1;
     const ob = BEYOND && document.querySelector(`.unlock.intro [data-${BEYOND === 'yes' ? 'opens' : 'notnow'}]`);
     if (ob) ob.click();
     // The bonus genera offer (every slate genus met): accepted.
     const bo = document.querySelector('.unlock [data-bonus]');
     if (bo) {
       if (bon.offer === null && i >= 0) bon.offer = i + 1;
-      bo.click();
+      // A player who wants the common names only (PROFILES names) declines the scientific names: Not now.
+      const no = prof.names === 'common' && bo.closest('.unlock').querySelector('.next.sec');
+      (no || bo).click();
     }
     for (let b, k = 0; k < 50 && (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not([data-back]):not(.sec)')); k++) {
       b.click();
@@ -842,6 +872,54 @@ function play(cfg) {
       gs: Object.fromEntries(met.map(g => [g, Math.round(genScore(g) * 1000) / 1000]))
     };
   };
+  // The levels and the score (2026-11-08, rule L11's measures; docs/LEARNING.md "Validating a learning change"): every
+  // unit of the game by kind (the subject's own rank for its slate, app.js rankOf for a set's units, the corals' bonus
+  // genera apart), the answer at which each first reached Open Water and Advanced (LV_AT), the shown score after every
+  // answer (headPct: the fish global score, else the units' mean) for its plateaus, and when circle 3 came (offered, met).
+  const SETU = typeof SETS === 'function' ? [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(g => !SL.includes(g)) : [],
+    kindOf = g => (SL.includes(g) ? SUBJ.rank : BON.includes(g) ? 'bonus' : (typeof rankOf === 'function' && rankOf(g)) || 'other'),
+    UALL = [...new Set([...SL, ...SETU, ...BON])],
+    KINDS = [...new Set(UALL.map(kindOf))],
+    owAt = {},
+    advAt = {},
+    C3 = typeof UNITS === 'object' && UNITS[SUBJ.id].circles ? UNITS[SUBJ.id].circles()[2] || [] : [],
+    c3 = {offer: null, met: null},
+    shownPct = () => (typeof headPct === 'function' ? headPct(SL) : progPct(SL)),
+    plat = {best: shownPct(), since: 0, max: 0};
+  const levelsRow = () =>
+    Object.fromEntries(
+      KINDS.map(k => {
+        const G = UALL.filter(g => kindOf(g) === k),
+          met = G.filter(introduced),
+          ds = met.map(dStar);
+        return [
+          k,
+          {
+            n: G.length,
+            met: met.length,
+            ow: G.filter(g => genScore(g) + 1e-9 >= LV_AT[0]).length,
+            adv: G.filter(g => genScore(g) + 1e-9 >= LV_AT[1]).length,
+            dStar: mean(ds),
+            over: mean(met.map((g, j) => genScore(g) - ds[j]))
+          }
+        ];
+      })
+    );
+  const scoreRow = () => {
+    const h = typeof headScore === 'function' ? headScore() : null,
+      r4 = x => Math.round(x * 1e4) / 1e4,
+      comp = o => ({
+        entries: r4(o.entries),
+        genera: r4(o.genera),
+        common: r4(o.common),
+        scientific: r4(o.scientific),
+        S: r4(o.S),
+        credit: r4(o.credit),
+        raw: r4(o.raw),
+        pct: o.pct
+      });
+    return h ? {...comp(h), by: Object.fromEntries(Object.entries(h.by || {}).map(([c, o]) => [c, comp(o)]))} : {pct: shownPct()};
+  };
   let cur = 'quiz';
   for (let i = 0; i < N; i++) {
     // --custom: once N genera are unlocked, they are the custom quiz's selection for --drill questions, then the Quiz again.
@@ -864,6 +942,17 @@ function play(cfg) {
     }
     const {q, t, good, set, e, first} = ask(null, i, cur);
     if (cust && cur !== 'quiz') (cust.nq++, (cust.ok += good ? 1 : 0));
+    UALL.forEach(g => {
+      if (!introduced(g) || (g in owAt && g in advAt)) return;
+      const b = genScore(g) + 1e-9;
+      if (!(g in owAt) && b >= LV_AT[0]) owAt[g] = i + 1;
+      if (!(g in advAt) && b >= LV_AT[1]) advAt[g] = i + 1;
+    });
+    if (c3.met === null && C3.some(introduced)) c3.met = i + 1;
+    // Plateaus: the answers since the shown score last reached a new high, the longest such stretch so far.
+    const sp = shownPct();
+    if (sp > plat.best) ((plat.best = sp), (plat.since = 0));
+    else plat.max = Math.max(plat.max, ++plat.since);
     // The first TRACE answers, for the fallback rules (tools/fallback.py): what the app logged with each answer (e, th,
     // mode), whether it was the genus's first answer, and the global level, the opening hold and the genera met after it.
     if (i < TRACE) {
@@ -956,6 +1045,10 @@ function play(cfg) {
         agains: nAgain,
         cards: nCards,
         f: fieldRow(),
+        // The levels by kind of unit, the score shown and its components (scoreRow), the longest plateau so far.
+        kinds: levelsRow(),
+        score: scoreRow(),
+        plateau: plat.max,
         // By photo count (photo memory): cumulative questions on the group's genera, their genera met.
         grp: Object.fromEntries(
           Object.entries(GRP).map(([k, G]) => {
@@ -1078,6 +1171,7 @@ function play(cfg) {
   }
   return {
     known: SL.filter(g => k0[g] >= 0.5), // the genera the profile knows from the start (the spotty profile's groups)
+    knows: [...knows], // the slate units at the profile's hi (tools/learnprof.js)
     credit,
     rows,
     entry,
@@ -1087,6 +1181,11 @@ function play(cfg) {
     nph: NPH,
     expo,
     preOW,
+    // The answer at which each unit first reached Open Water / Advanced, each unit's kind, and circle 3 (offered, met).
+    owAt,
+    advAt,
+    kinds: Object.fromEntries(UALL.map(g => [g, kindOf(g)])),
+    c3,
     pool: seed === 1 ? POOL : null,
     pairs: PAIRS.length,
     breaks: out,
@@ -1118,6 +1217,7 @@ async function run(browser, base, name, seed) {
   // localStorage in the page's own memory, before anything writes to it (tools/memstorage.js: a run is one long
   // evaluate, and the browser's storage queued about 1.5 MB an answer in the renderer until it crashed, #734).
   await ctx.addInitScript(memStorage);
+  await ctx.addInitScript({path: path.join(__dirname, 'learnprof.js')}); // the profiles' rules, LEARNPROF
   await ctx.addInitScript(([st, rtapp, sv, subj]) => {
     localStorage.setItem('reefid-tour', '"done"');
     localStorage.setItem('reefid-sync-subject', JSON.stringify(subj));
@@ -1147,7 +1247,7 @@ async function run(browser, base, name, seed) {
   await p.evaluate(() => window.loadTier && window.loadTier(5));
   await p.waitForLoadState('networkidle');
   const r = await p.evaluate(play, {
-    prof: PROFILES[name],
+    prof: profOf(name, SUBJECT),
     seed,
     N: QN,
     cps: CPS,
@@ -1192,6 +1292,37 @@ const FKEYS = [
   ['selOpen', 'selOpen', 2],
   ['selOver', 'selOver', 2]
 ];
+// The levels and the score (per profile and checkpoint, means over the seeds): the shown score and, when the subject has
+// a global score, its Entries and credit components; per kind of unit, units at Open Water / Advanced and E = bar - D*
+// over the units met; the longest plateau so far; then per run the answer of the first unit at Open Water and circle 3.
+function levelTable(runs) {
+  const m = v => {
+      v = v.filter(x => typeof x === 'number' && !isNaN(x));
+      return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null;
+    },
+    f = (x, d) => (x === null ? '-' : x.toFixed(d)),
+    lines = ['\nLevels and score: score% (entries / credit), per kind ow / adv (E = bar - D*), plateau: the longest stretch of answers without a new high of the shown score'];
+  for (const name of NAMES) {
+    const R = runs.filter(r => r.profile === name),
+      kinds = [...new Set(R.flatMap(r => Object.values(r.kinds || {})))];
+    lines.push(`\n${name}`);
+    CPS.forEach((q, i) => {
+      const rows = R.map(r => r.rows[i]).filter(Boolean),
+        sc = k => m(rows.map(w => (w.score || {})[k])),
+        kd = (k, x) => m(rows.map(w => ((w.kinds || {})[k] || {})[x]));
+      lines.push(
+        `  ${String(q).padStart(5)}  score ${f(sc('pct'), 1)}${sc('entries') === null ? '' : ` (${f(sc('entries'), 3)} / ${f(sc('credit'), 3)})`}  ` +
+          kinds.map(k => `${k} ${f(kd(k, 'ow'), 1)} / ${f(kd(k, 'adv'), 1)} (${f(kd(k, 'over'), 3)})`).join('  ') +
+          `  plateau ${f(m(rows.map(w => w.plateau)), 1)}`
+      );
+    });
+    const first = R.map(r => Math.min(...Object.entries(r.owAt || {}).filter(([g]) => (r.kinds || {})[g] !== 'bonus').map(([, a]) => a))).filter(isFinite);
+    lines.push(
+      `  first unit at Open Water: answer ${f(m(first), 1)} (${first.length}/${R.length} runs); circle 3 offered ${R.filter(r => r.c3 && r.c3.offer).length}/${R.length}, met ${R.filter(r => r.c3 && r.c3.met).length}/${R.length} runs`
+    );
+  }
+  return lines.join('\n');
+}
 function fieldTable(runs) {
   const ms = v => {
     v = v.filter(x => typeof x === 'number' && !isNaN(x));
@@ -1462,6 +1593,17 @@ function openTable(runs) {
 }
 
 (async () => {
+  if (WORLD === 'rated') {
+    require('../tests/slot.js').guard('tools/learnsim.js'); // heavy at level 3 (40 seeds x 30,000 answers): in a machine slot
+    const commit = (() => {
+      try {
+        return require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], {cwd: ROOT}).toString().trim();
+      } catch (e) {
+        return null;
+      }
+    })();
+    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit});
+  }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   if (STATS === 'live') STATS_JSON = await liveStats();
   const t0 = Date.now();
@@ -1495,6 +1637,7 @@ function openTable(runs) {
   );
   console.log(table(S));
   console.log(fieldTable(runs));
+  console.log(levelTable(runs));
   // Millepora met / first asked and the bonus offer, per profile: median question over the runs where it happened.
   const med = A => {
     const v = A.filter(x => typeof x === 'number').sort((a, b) => a - b);
@@ -1609,12 +1752,13 @@ function openTable(runs) {
               return null;
             }
           })(),
+          subject: SUBJECT, // tools/learncmp.js reads it (the corals' margins)
           seeds: SEEDS,
           seed0: SEED0,
           sheetv: SHEETV,
           questions: QN,
           checkpoints: CPS,
-          profiles: Object.fromEntries(NAMES.map(n => [n, PROFILES[n]])),
+          profiles: Object.fromEntries(NAMES.map(n => [n, profOf(n, SUBJECT)])),
           learner: LEARNER,
           learnerKind: LEARN,
           tau: LEARN === 'field' ? TAU : null,

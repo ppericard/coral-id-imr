@@ -95,7 +95,7 @@ const boardUnits = () =>
 // info: what the request did, for a failed save's report (sheetCall).
 const syncGet = (a = SYNC, info = {}) =>
   sheetCall(
-    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${ptParam(a.log)}`,
+    `${SYNC_URL}?name=${encodeURIComponent(a.name)}&pin=${encodeURIComponent(a.pin)}&av=${appVer()}&rv=${rvAsk()}${rvsParam()}${ptParam(a.log)}`,
     undefined,
     info,
     'load'
@@ -122,11 +122,42 @@ const syncGet = (a = SYNC, info = {}) =>
 // adopted, whatever it carries, so the app does exactly what it did before (an older script sends no replay, and the
 // rv field the requests carry is ignored there).
 const RVK = 'reefid-sync-coral-rv';
-const rvApplied = () => Number(store.get(RVK, 0)) || 0;
+// The other subjects whose progress the sheet replays (core.js SUBJECTS replayed: fish; Pierre, 2026-11-08, ROADMAP "Fish
+// progress replayed from the answer log"): each with its own rules version applied (rvKey: reefid-sync-<subject>-rv,
+// travelling with the progress data as RVK does), asked for with the requests (rvs, the load's rv_<subject>) and adopted
+// as the corals' replay is (replayAdoptS), under its own rules versions (core.js rvsOf: fish FISH_RVS), but only from the
+// script that replays it under this app's rules (core.js REPLAYS_SHEET; rule D4): before, that subject does exactly what it
+// did (no rules version, the plain merge).
+const rpSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed);
+const rvKey = S => (!S || S.replay ? RVK : subjKey(S.id, 'rv'));
+const rpOn = (S, v) => !!S && (!!S.replay || (!!S.replayed && Number(v) >= REPLAYS_SHEET));
+const rvApplied = S => Number(store.get(rvKey(S), 0)) || 0;
 // The rules version a request says: the one applied here, or 0 while this device holds answers the sheet logged from a
 // refused save (SYNC.lg, syncOnce): its merge baseline lacks them, so a saved copy another device built from the log
 // (a replay) may already count them, and only the replay of the log tells (mergeSaved; Codex review #399).
-const rvAsk = () => (SYNC && SYNC.lg ? 0 : rvApplied());
+// Per subject the sheet replays: the flag holds for a subject until its own replay of the log is adopted (lgOk), so the
+// corals' adoption does not clear it for the fish progress, whose baseline lacks the fish answers still.
+const lgFor = S => !!(SYNC && SYNC.lg && !(SYNC.lgOk || []).includes((S || SUBJECTS[0]).id));
+const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
+// Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
+// subject), null before they are in.
+const rpUnits = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].gen ? UNITS[S.id].gen() : null);
+// The other subjects' versions a request says, each only once a reply said the script replays it (sheetV), so an older
+// script is never asked for a replay the app would not adopt, and once its units are in (the replay waits for them).
+const rvsAsk = () =>
+  Object.fromEntries(
+    rpSubjects()
+      .filter(S => rpOn(S, sheetV()) && rpUnits(S))
+      .map(S => [S.id, rvAsk(S)])
+  );
+const rvsParam = () =>
+  Object.entries(rvsAsk())
+    .map(([k, v]) => `&rv_${encodeURIComponent(k)}=${v}`)
+    .join('');
+// A subject's replay in a reply: the corals' replay, another's in replays (Code.gs replays_).
+const rpOf = (j, S) => (!j ? null : S.replay ? j.replay : (j.replays || {})[S.id]);
+// The reset of each other subject replayed, as a request carried it (the replay's cutoff, replayAdoptS).
+const rpCuts = () => Object.fromEntries(rpSubjects().map(S => [S.id, store.get(subjKey(S.id, 'reset'), '') || '']));
 // The time (ms) of the oldest answer of a queue, null when it holds none. Sent with the requests that can bring a replay
 // (pt): the sheet (v28) then lists in replay.ids every answer it replayed from that time on, so replayAdopt never counts
 // again an answer the sheet already has, however many a lost reply left queued here (up to 2,000; Codex review #399).
@@ -153,18 +184,46 @@ function holdAdopt(h, log, ids) {
   if (typeof holdSync === 'function') holdSync(h, subjEntries(log, SUBJ.id), ids);
 }
 // The replay is the progress of the subject the sheet replays (core.js SUBJECTS replay: the corals): adopted as that
-// subject whatever the subject on screen (inSubject; the fish progress is never replayed: its answers are logged only).
+// subject whatever the subject on screen (inSubject). Another subject the sheet replays (SUBJECTS replayed: fish) is
+// adopted the same way, as itself (replaysAdopt, replayAdoptS).
 function replayAdopt(rp, pending, v, cut, pre) {
+  return replayAdoptS(
+    SUBJECTS.find(x => x.replay),
+    rp,
+    pending,
+    v,
+    cut,
+    pre
+  );
+}
+// Every other subject's replay a reply carries (rpOf), each as itself; cuts: their resets as the request carried them
+// (rpCuts). True when one was adopted.
+function replaysAdopt(j, pending, cuts) {
+  return rpSubjects().reduce((a, S) => replayAdoptS(S, rpOf(j, S), pending, j && j.v, cuts ? cuts[S.id] : undefined) || a, false);
+}
+// The headline % of a progress record of the subject on screen (model.js headPct: its global score, else the mean of
+// its units' bars), for the recalculation card.
+const headOf = X => {
+  const U = typeof UNITS === 'object' ? UNITS[SUBJ.id] : null,
+    T = typeof scoreOn === 'function' && scoreOn() && U && U.tree ? U.tree() : null,
+    L = typeof slateGenera === 'function' ? slateGenera() : [];
+  return T ? treeScore(X, T, SUBJ.score).pct : pctOf(X, L);
+};
+function replayAdoptS(S, rp, pending, v, cut, pre) {
   sheetSeen({v});
-  const LS = SUBJECTS.find(x => x.replay);
-  if (LS && LS !== SUBJ) return inSubject(LS.id, () => replayAdopt(rp, pending, v, cut));
+  if (S && S !== SUBJ) return inSubject(S.id, () => replayAdoptS(S, rp, pending, v, cut));
+  if (!S) return false;
   pending = subjEntries(pending, SUBJ.id); // this device's queued answers of that subject on top, never another's
-  if (!(Number(v) >= RV_SHEET)) return false;
+  if (!(Number(v) >= RV_SHEET) || !rpOn(S, v)) return false;
   if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
   // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
-  if (rp.rv < rvApplied() || (rp.rv === rvApplied() && !(SYNC && SYNC.lg))) return false;
+  if (rp.rv < rvApplied(S) || (rp.rv === rvApplied(S) && !lgFor(S))) return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
-  if (cut !== undefined && cut !== (store.get('reefid-sync-coral-reset', '') || '')) return false;
+  if (cut !== undefined && cut !== (store.get(sKey('reset'), '') || '')) return false;
+  // The units the replay reads (core.js replayProgress gen): the corals' from data.json, another subject's from its own
+  // data (UNITS gen: fish.json's, loaded with the subject); not in yet: the next reply brings it again.
+  const gen = S.replay ? {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})} : rpUnits(S);
+  if (!gen) return false;
   // Signed in with anonymous answers not moved to the account yet (signIn; the first save's reply clears SYNC.anon before
   // it adopts): a replay of the account's log alone would leave them out.
   if (SYNC && SYNC.anon) return false;
@@ -176,35 +235,60 @@ function replayAdopt(rp, pending, v, cut, pre) {
     return false;
   }
   try {
-    const from = rvApplied(),
+    // Its own rules versions (core.js rvsOf): the cards due are this subject's (progress.js rvNoticeAdd, its sid).
+    const from = rvApplied(S),
       played = answersSoFar() > 0 || Object.values(P).some(s => s && typeof s === 'object' && (s.ok || 0) + (s.ko || 0) > 0),
       had = new Set((rp.ids || []).map(String)),
-      reset = store.get('reefid-sync-coral-reset', '') || '',
+      reset = store.get(sKey('reset'), '') || '',
       me = '~me',
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
-      gen = {...((DATA && DATA.x && DATA.x.gen) || {}), ...((DATA && DATA.gen) || {})},
+      // The sheet's photo numbers are the corals' (Code.gs stats_): another subject's replay reads none, nor does this
+      // device's on top of it (its answers carry their scoring record).
+      st = S.replay ? {mem: PMEM, conf: PCONF, fmt: Number(v) >= FMT_SHEET ? PFMT : {}, gd: typeof PGD === 'object' ? PGD : {}} : {},
       // This device's answers on top, under the rules of the script that sent the replay: the answer time only from
       // core.js RT_SHEET, as the live game (model.js rtOn; rule D4, Codex review #444).
       R = rows.length
         ? replayProgress(rows, {
             gen,
-            mem: PMEM,
-            conf: PCONF,
+            mem: st.mem,
+            conf: st.conf,
             // The per-format offsets, from the script that serves them (core.js FMT_SHEET, fmtsOf), as the live game.
-            fmt: Number(v) >= FMT_SHEET ? PFMT : {},
+            fmt: st.fmt,
             start: {[me]: {P: rp.rec, n: 0, used: 0, rep: 0}},
             time: Number(v) >= RT_SHEET,
             // The domain-score bar only from the script that replays it (core.js DOM_SHEET), as the live game (model.js
             // domRules); the genus offsets for an answer logged without them (an older app's).
             dom: Number(v) >= DOM_SHEET,
-            gd: typeof PGD === 'object' ? PGD : {},
+            gd: st.gd,
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
             starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {}
           })[me].P
         : rp.rec,
       before = copy(P),
-      M = replayedOf({P: R}, P, rp.rv);
+      // Today's bars as a floor at a subject's first replay (SUBJECTS replayed floor; Q310) are in the replay itself: the
+      // sheet floors it against the account's saved copy (Code.gs replay_, core.js replayFloor), so every device adopts
+      // the same record and keeps it as their shared baseline (replayBase; Codex review #779).
+      M0 = replayedOf({P: R}, P, rp.rv);
+    let M = M0;
+    // A unit replayedOf keeps from this device (more answers here than in the log: answers from before fish logging)
+    // beside the replayed records: their mix-ups and offers on it may read it lower than it was here, so its bar of
+    // before is floored too, in this device's progress (core.js replayFloor; Codex review #779).
+    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && P[g] && !P[g].rv);
+    if (S.replayed && S.replayed.floor && keptHere.length) M = replayFloor(M, P, keptHere);
+    // A floored replay's typed opportunities (core.js replayFloor may raise the level's, which a unit's false-alarm rate
+    // reads): kept per rank when this device's larger answer count keeps its own level (replayedOf), here (the replay
+    // with this device's answers on top, R) and in the shared baseline below (the sheet's replay alone, rp.rec: this
+    // device's unsent answers stay its own; Codex review #779), so the adoption does not undo the floor.
+    const fl = !!(S.replayed && S.replayed.floor),
+      tykUp = (L, X) => {
+        const tyk = fl && X && X[LEVEL] && X[LEVEL].tyk;
+        if (!tyk || !L || typeof L !== 'object') return;
+        const o = {...(L.tyk || {})};
+        Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
+        L.tyk = o;
+      };
+    tykUp(M[LEVEL], R);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
@@ -220,24 +304,29 @@ function replayAdopt(rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
-    store.set(RVK, rp.rv);
+    store.set(rvKey(S), rp.rv);
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
     // device's answers the sheet has not counted yet, which stay this device's own (P minus the base) and go on top at
     // the next merge (core.js replayBase). Left at the saved copy, another device saving its own adoption of the same log
     // made this one count the replayed answers twice (Codex review #399: 2 became 4); built from this device's copy, an
     // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
-      SYNC.base = replayBase(rp.rec, M, rp.rv, SYNC.base);
-      delete SYNC.lg; // the replay counts every logged answer
+      SYNC[S.base[0]] = replayBase(rp.rec, M, rp.rv, SYNC[S.base[0]]);
+      tykUp((SYNC[S.base[0]] || {})[LEVEL], rp.rec);
+      // The replay counts every logged answer of this subject; the flag goes once every subject replayed has its own.
+      if (SYNC.lg) {
+        SYNC.lgOk = [...new Set([...(SYNC.lgOk || []), S.id])];
+        if ([SUBJECTS.find(x => x.replay), ...rpSubjects().filter(x => rpOn(x, v))].every(x => !x || SYNC.lgOk.includes(x.id)))
+          (delete SYNC.lg, delete SYNC.lgOk);
+      }
       store.set('reefid-account', SYNC);
     }
     save();
     // The progress % before and after, for a card shown only to the players whose % moved (core.js RVS msg.only). pre:
     // the % this device showed before the sync that brought the replay (mergeSaved), as the pull may already have merged
     // a copy another device saved after its own adoption (Codex review #399: 83% to 33%, compared as 33 to 33).
-    const L = typeof slateGenera === 'function' ? slateGenera() : [];
     if (played && typeof rvNoticeAdd === 'function')
-      rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : pctOf(before, L), pctOf(P, L)]);
+      rvNoticeAdd(from, rp.rv, [typeof pre === 'number' ? pre : headOf(before), headOf(P)], S.replay ? undefined : S.id);
     if (!SUBJ_VISIT && hashNow() === 'progress') route(); // not while visiting: the page shows another subject
     return true;
   } catch (e) {
@@ -301,7 +390,12 @@ function mergeSavedIn(j) {
 function mergeSubject(j, d, S, mine) {
   const [BK, PK] = S.base;
   // The % shown before this sync, for the recalculation card (replayAdopt).
-  const pre = typeof slateGenera === 'function' ? pctOf(P, slateGenera()) : undefined;
+  const pre = typeof slateGenera === 'function' ? headOf(P) : undefined;
+  // A subject whose progress the sheet replays under this app's rules (the corals; fish from its script, rpOn): its
+  // rules version applied (rvKey) and its replay (rpOf) take part in the merge below; any other merges as before.
+  const RO = rpOn(S, j.v),
+    RK = rvKey(S),
+    rpS = rpOf(j, S);
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   // The surprise cards (winks) shown on another device: once per player, whatever a reset (quiz.js winkMerge).
   if (typeof winkMerge === 'function') winkMerge(d[sKey('wink')]);
@@ -323,7 +417,7 @@ function mergeSubject(j, d, S, mine) {
   // reset is asked for with the save that brings it (the rules version back to 0): other devices, an older app among
   // them, may have answered after the reset time from a copy without it, and those answers count (they are in the log
   // after the reset).
-  if (lr > rr) return void (S.replay && store.set(RVK, 0));
+  if (lr > rr) return void (RO && store.set(RK, 0));
   // The Bonus genera choice (fish: the scientific genera) made on another device, if more recent than this one's (or made there
   // only; Codex review #371); after the reset check, so a choice saved before this device's newer reset does not come back.
   try {
@@ -358,13 +452,12 @@ function mergeSubject(j, d, S, mine) {
     // The sheet's replay since the reset is asked for again (the rules version back to 0) when this copy may lack
     // answers: answers played here after that reset and not in the sheet yet (the save that follows logs them), or a
     // copy under older rules than this device applied (saved by an older app, or before its device's replay came back).
-    if (S.replay && (subjEntries(SYNC.log, S.id).some(a => String(a.t || '') > rr) || (Number(d[RVK]) || 0) < rvApplied()))
-      store.set(RVK, 0);
+    if (RO && (subjEntries(SYNC.log, S.id).some(a => String(a.t || '') > rr) || (Number(d[RK]) || 0) < rvApplied(S))) store.set(RK, 0);
     store.set(sKey('progress'), P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
     if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
     notesSeen(j);
-    if (S.replay) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
+    if (RO) replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
     prog();
     return;
   }
@@ -385,36 +478,42 @@ function mergeSubject(j, d, S, mine) {
   // copy's, so its next request (the save of this very sync, or one asked for now after a pull) gets the replay of the
   // whole log again, every answer of every device counted once, this device's unsent ones on top (replayAdopt). The
   // cost: one more replay.
-  // Only a subject the sheet replays (SUBJECTS replay: the corals) has a rules version; the others merge as before the replay.
-  const rvSaved = S.replay ? Number(d[RVK]) || 0 : Infinity;
+  // Only a subject the sheet replays (the corals; fish from its script: RO) has a rules version; the others merge as before the replay.
+  const rvSaved = RO ? Number(d[RK]) || 0 : Infinity;
   // Answers this device had logged from a refused save (SYNC.lg): another device may have saved them already, in its
   // replay of the log, and the merge would add them again as this device's own (Codex review #399: 3 answers, a baseline
   // of 2, a saved replay of the 3: 3 + 3 - 2 = 4, kept for good). The replay of the log, which the load asked for
   // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
   notesSeen(j);
-  const recovered = !!(S.replay && SYNC.lg && j.replay && replayAdopt(j.replay, SYNC.log, j.v, undefined, pre));
-  if (!mine && !recovered) {
-    if (rvSaved >= rvApplied()) {
+  const recovered = !!(RO && lgFor(S) && rpS && replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre));
+  // Another subject replayed (fish) whose replay could not be adopted here (its units not in yet, or the reply without
+  // it): its merge would add the answers of the refused save again (Codex review #779: a baseline of 2, 3 here and a
+  // saved replay of 3 gave 4), so it waits, this device's progress as it is, and its rules version goes back to 0, so
+  // the replay of its whole log is asked for and adopted once it can be (replayAdoptS), whatever saves come before.
+  const waitRp = !S.replay && RO && lgFor(S) && !recovered;
+  if (waitRp) store.set(RK, 0);
+  if (!mine && !recovered && !waitRp) {
+    if (rvSaved >= rvApplied(S)) {
       // In place: other code holds P by name only, but keep the same object anyway.
       const M = mergeProgress(SYNC[BK] || {}, P, R);
       // A copy under newer rules than this device applied (another device adopted their replay): a learned mark that
       // replay took away is not taken here by the merge, which would tell nothing (the mark gone before mxRecalc sees it;
       // Codex review #399). It stays until this device adopts the same replay (replayAdopt, in this very sync when the
       // reply carries it, else at the next), which decides it with this device's own card (told once per account: core.js TOLD, progress.js mxLostNotice).
-      if (S.replay && rvSaved > rvApplied())
+      if (RO && rvSaved > rvApplied(S))
         Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
-    } else store.set(RVK, rvSaved);
+    } else store.set(RK, rvSaved);
   }
   store.set('reefid-account', SYNC);
   store.set(sKey('progress'), P);
   if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
   if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
   notesSeen(j);
-  if (S.replay) replayAdopt(j.replay, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
+  if (RO) replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre); // the sheet's full replay, when newer than the one applied here (v28)
   prog();
 }
 // Saving when the line or the sheet fails (Pierre, 2026-11-05: the red "Not saved" came up "a bit too often": the
@@ -542,7 +641,7 @@ const archivedOf = (j, me) => !!(j && j.ok && ((!j.found && typeof me.srv === 'n
 function syncOnce(tries = 0) {
   const me = SYNC,
     info = {}; // what this try's requests did (sheetCall), for a failed save's report
-  let rev, sent, log, cut;
+  let rev, sent, log, cut, cuts, rvs;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   // Script v11: a name the admin removed or merged answers 'gone' (with the name it joined): recorded below, no send.
   return syncGet(me, info)
@@ -558,6 +657,8 @@ function syncOnce(tries = 0) {
       const pd0 = progData();
       sent = Object.fromEntries(SUBJECTS.map(S => [S.id, JSON.parse(pd0[subjKey(S.id, 'progress')] || '{}') || {}]));
       cut = store.get('reefid-sync-coral-reset', '') || ''; // the reset this save's data carries, the replay's cutoff (corals: replayAdopt)
+      cuts = rpCuts(); // and the other subjects' replayed (replaysAdopt)
+      rvs = rvsAsk();
       // The answers the sheet can file (core.js logOk): a subject it does not replay waits for LOG_SHEET (rule D4), queued.
       log = (me.log || []).filter(a => logOk(a, sheetV()));
       SUBJECTS.forEach(S => (me[S.base[1]] = pd0[subjKey(S.id, 'progress')] || ''));
@@ -576,6 +677,7 @@ function syncOnce(tries = 0) {
             answers: log,
             av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
             rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
+            ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
             ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
             // First send after signing in: the answers this device sent anonymously move to this name (script v12).
             ...(me.anon ? {anon: me.anon} : {}),
@@ -603,7 +705,7 @@ function syncOnce(tries = 0) {
         const done = new Set(log.map(x => x.id));
         me.log = (me.log || []).filter(x => !done.has(x.id));
         // Logged, but the progress carrying them not saved: the merge baseline lacks answers the log has (rvAsk).
-        if (!j.ok) me.lg = 1;
+        if (!j.ok) ((me.lg = 1), delete me.lgOk);
         store.set('reefid-account', me);
       }
       // The retry is a whole sync of its own: its result skips the steps below (they would apply this round's sent copy).
@@ -623,6 +725,7 @@ function syncOnce(tries = 0) {
           delete me[S.base[1]];
         });
         delete me.lg; // the saved copy now holds the answers it lacked
+        delete me.lgOk;
         if (typeof j.rev === 'number') me.srv = j.rev;
         delete me.err;
         if (!j.log && log.length) me.err = 'net';
@@ -639,7 +742,7 @@ function syncOnce(tries = 0) {
         if (me.rev === rev) delete me.dirty;
         // The full replay over every answer now logged (v28), plus any answer given while this send was on its way.
         notesSeen(j);
-        const adopted = replayAdopt(j.replay, me.log, j.v, cut);
+        const adopted = replayAdopt(j.replay, me.log, j.v, cut) | replaysAdopt(j, me.log, cuts);
         // A replay adopted from a save's reply leaves the saved copy at the rules version that save carried, the older one:
         // another device would take it for an older app's copy and ask for the replay again, then leave its own copy the
         // same way, each in turn (mergeSaved; Codex review #399). So the device saves again at once, with the adopted
@@ -757,11 +860,13 @@ function syncPull() {
         }
         return j;
       }
-      const rv0 = rvApplied();
+      // Every subject the sheet replays (the corals, fish: rvKey), each version applied before the merge (Codex review #779).
+      const rvNow = () => [SUBJECTS.find(x => x.replay), ...rpSubjects()].filter(Boolean).map(rvApplied),
+        rv0 = rvNow();
       groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
       if (j.found) mergeSaved(j);
       repsSeen(j); // the player's reports (v57), as syncOnce
-      if (rvApplied() < rv0) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
+      if (rvNow().some((v, i) => v < rv0[i])) syncSoon(); // a saved copy under older rules (mergeSaved): the save brings the replay again
       delete me.err;
       me.last = new Date().toISOString();
       store.set('reefid-account', me);
@@ -1365,7 +1470,7 @@ function signIn(name, pin, j) {
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
-    localStorage.removeItem(RVK);
+    [RVK, ...rpSubjects().map(rvKey)].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name
@@ -1377,6 +1482,14 @@ function signIn(name, pin, j) {
     try {
       localStorage.removeItem(RVK);
     } catch (e) {}
+  // Another subject replayed (fish): its answers played here signed out join the account's log with the first save, so
+  // the replay of the whole of it is asked for then (every answer of that subject in it once).
+  rpSubjects().forEach(S => {
+    if (subjEntries(SYNC.log, S.id).length || SYNC.anon)
+      try {
+        localStorage.removeItem(rvKey(S));
+      } catch (e) {}
+  });
   if (ach) achMerge(JSON.stringify(ach));
   st.forEach(([k, r]) => r && store.set(k, startUnion(store.get(k, null), r)));
   wk.forEach(([k, r]) => r && store.set(k, winkUnion(store.get(k, null), r)));
@@ -1477,7 +1590,8 @@ function signOutClear(all) {
     ...SUBJECTS.flatMap(S => [
       // the first-launch question's answer is the player's too (model.js startSet)
       // and the surprise cards it has met (quiz.js WINKK; Codex review #652: the next player would inherit them)
-      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'start', 'wink'].map(k => subjKey(S.id, k)),
+      // rv: the rules version its progress was replayed with (replayAdoptS; the corals' is RVK)
+      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'start', 'wink'].map(k => subjKey(S.id, k)),
       ...['hold', 'comeback'].map(k => subjDev(S.id, k))
     ]),
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)

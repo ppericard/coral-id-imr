@@ -1314,30 +1314,56 @@ function mxLostNotice() {
 // At start-up (app.js SETUP 2, after the two cards above) and right after an adoption.
 const RVN = {KEY: 'reefid-rv-msg'};
 const rvTold = v => toldHas('rv:' + v); // its card seen on another device of the account (core.js TOLD)
-function rvNoticeAdd(from, to, pct) {
+// A rules version's card id: the corals' version number as before, another subject's (core.js SUBJECTS replayed: fish,
+// its own rules versions FISH_RVS) '<subject>:<version>' (fish:1), so two subjects' versions of one number never meet.
+const rvId = (sid, v) => (!sid || sid === replaySubject() ? v : sid + ':' + v);
+// Every rules version that may have a card, each with its id (k).
+const rvAll = () => [
+  ...RVS.map(r => ({...r, k: r.v})),
+  ...replayedSubjects().flatMap(id => rvsOf(id).map(r => ({...r, k: rvId(id, r.v)})))
+];
+// The corals' versions first, by number, then the other subjects', by subject then number.
+const rvOrder = (a, b) =>
+  typeof a === 'number' && typeof b === 'number'
+    ? a - b
+    : typeof a === 'number'
+      ? -1
+      : typeof b === 'number'
+        ? 1
+        : String(a).localeCompare(String(b), undefined, {numeric: true});
+// sid: the subject replayed (the corals when none; fish from sync.js replayAdoptS), whose rules versions from..to these are.
+function rvNoticeAdd(from, to, pct, sid) {
   const M = store.get(RVN.KEY, {}) || {},
-    told = [...new Set([...(M.told || []), ...RVS.map(r => r.v).filter(rvTold)])],
+    told = [
+      ...new Set([
+        ...(M.told || []),
+        ...rvAll()
+          .map(r => r.k)
+          .filter(rvTold)
+      ])
+    ],
     due = (M.due || []).filter(v => !told.includes(v)),
-    pc = M.pct || {};
+    pc = M.pct || {},
+    k = x => rvId(sid, x.v);
   // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
   // cards, the standard one included (rvMsgs skip).
-  let L = rvMsgs(from, to);
+  let L = rvMsgs(from, to, false, sid);
   const sorry = L.find(x => x.msg.down),
     std = [];
   if (sorry && !(pct && pct[0] - pct[1] >= (sorry.msg.min || 0))) {
-    L = rvMsgs(from, to, true);
+    L = rvMsgs(from, to, true, sid);
     // No earlier version in the jump with the standard card (an upgrade from the version just before): the standard card
     // under the apology's version (M.std; rvNotice shows RV_CARD for it; Codex review #646).
-    if (!L.some(x => x.msg === RV_CARD)) (L.push({v: sorry.v, msg: RV_CARD}), std.push(sorry.v));
+    if (!L.some(x => x.msg === RV_CARD)) (L.push({v: sorry.v, msg: RV_CARD}), std.push(k(sorry)));
   }
   L.forEach(x => {
-    if (told.includes(x.v) || due.includes(x.v)) return;
+    if (told.includes(k(x)) || due.includes(k(x))) return;
     if (x.msg.only === 'changed' && !(pct && pct[0] !== pct[1] && Math.abs(pct[1] - pct[0]) >= (x.msg.min || 0))) return;
-    if (pct) pc[x.v] = pct;
-    due.push(x.v);
+    if (pct) pc[k(x)] = pct;
+    due.push(k(x));
   });
   const st = [...new Set([...(M.std || []).filter(v => !std.length || v !== std[0]), ...std.filter(v => due.includes(v))])];
-  store.set(RVN.KEY, {due: due.sort((a, b) => a - b), told, pct: pc, ...(st.length ? {std: st} : {})});
+  store.set(RVN.KEY, {due: due.sort(rvOrder), told, pct: pc, ...(st.length ? {std: st} : {})});
   if (window.APP_READY) rvNotice();
 }
 let rvT = 0;
@@ -1357,13 +1383,15 @@ function rvNotice() {
     M = {...M, due: M.due.filter(v => !elsewhere.includes(v)), told: [...new Set([...(M.told || []), ...elsewhere])]};
     store.set(RVN.KEY, M);
   }
-  const r0 = RVS.find(r => (M.due || []).includes(r.v) && r.msg && !(M.told || []).includes(r.v)),
+  const r0 = rvAll()
+      .filter(r => (M.due || []).includes(r.k) && r.msg && !(M.told || []).includes(r.k))
+      .sort((a, b) => rvOrder(a.k, b.k))[0],
     // A version whose standard card replaced its apology (rvNoticeAdd std): the standard card.
-    x = r0 && (M.std || []).includes(r0.v) ? {...r0, msg: RV_CARD} : r0;
+    x = r0 && (M.std || []).includes(r0.k) ? {...r0, msg: RV_CARD} : r0;
   if (!x || document.querySelector('.rvmsg')) return;
   if (document.querySelector('#tour, .unlock')) return void (rvT = noticeAgain(rvNotice, 2000));
   // The progress ring in the medallion: the % after the recalculation, the one before faint behind it (app.js cardRing).
-  const [pf, pt] = (M.pct || {})[x.v] || [];
+  const [pf, pt] = (M.pct || {})[x.k] || [];
   cardShow({
     kind: x.msg.kind || 'update',
     cls: 'rvmsg',
@@ -1378,8 +1406,8 @@ function rvNotice() {
       text: 'Got it',
       on: () => {
         const N = store.get(RVN.KEY, {}) || {};
-        store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.v), told: [...new Set([...(N.told || []), x.v])]});
-        toldAdd('rv:' + x.v);
+        store.set(RVN.KEY, {...N, due: (N.due || []).filter(v => v !== x.k), told: [...new Set([...(N.told || []), x.k])]});
+        toldAdd('rv:' + x.k);
         rvNotice(); // the next version's card, if any
       }
     },

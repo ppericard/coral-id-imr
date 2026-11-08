@@ -488,7 +488,7 @@ def urlopen(req, timeout=0):
 ff.urllib.request.urlopen = urlopen
 ff.time.sleep = pauses.append
 net = ff.Net(os.path.join(tempfile.mkdtemp(), 'c.json'))
-print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p >= 10)]))`
+print(json.dumps([ff.covers(net, [501]), len(calls), sum(1 for p in pauses if p >= 5)]))  # tools/inat.py WAITS`
       ],
       {cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}
     )

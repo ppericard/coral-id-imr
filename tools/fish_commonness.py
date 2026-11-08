@@ -23,9 +23,11 @@ Usage: python3 tools/fish_commonness.py [ENTRY...]   offline: per species of eac
        python3 tools/fish_commonness.py --fetch [--refresh]   asks iNaturalist (about 1 request a second; replies cached in
                                                        tools/.cache/fish_commonness.json, git-ignored) and rewrites
                                                        tools/fish_commonness_inat.json; then python3 tools/build_fish.py --commonness
-Requests: per entry and ring ONE /v1/observations/species_counts with every species of the entry; distinct observers
-(/v1/observations/observers, per_page=1) only for a species with 2+ observations in that ring (0 or 1 observation
-gives 0 or 1 observer). Applied to fish.json by tools/build_fish.py (`apply()`: the full build, --near, --commonness).
+Requests: per ring /v1/observations/species_counts over the taxa of every entry, 100 a request (each entry reads the rows
+under its own taxa, as its own search would give them); distinct observers only for a species with 2+ observations in
+that ring (0 or 1 observation gives 0 or 1 observer): those with few observations counted together from their
+observations (tools/inat.py observer_counts), the others by /v1/observations/observers (per_page=1). Through
+tools/inat.py: about one request a second, the project's User-Agent, 429 / 5xx retried after a pause (rule C7). Applied to fish.json by tools/build_fish.py (`apply()`: the full build, --near, --commonness).
 """
 import argparse
 import json
@@ -36,12 +38,14 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import inat  # noqa: E402  (the one paced, retried iNaturalist client; rule C7)
+
 ROOT = Path(__file__).resolve().parent.parent
 INPUTS = ROOT / "tools" / "fish_commonness.json"
 INAT_FILE = ROOT / "tools" / "fish_commonness_inat.json"
 CACHE = ROOT / "tools" / ".cache" / "fish_commonness.json"
 API = "https://api.inaturalist.org/v1/"
-UA = {"User-Agent": "coral-id-imr/1.0 (fish commonness)", "Accept": "application/json"}
 RINGS = {"d40": "lat=9.19&lng=123.26&radius=40", "r250": "lat=9.19&lng=123.26&radius=250", "ph": "place_id=6873"}
 FILTERS = "quality_grade=research,needs_id&captive=false"
 
@@ -188,24 +192,13 @@ def apply(fish, inputs=None, inat=None):
 # ---- iNaturalist (--fetch)
 class Net:
     def __init__(self, refresh=False):
-        self.refresh, self.asked, self.last = refresh, set(), 0.0
+        self.refresh, self.asked = refresh, set()
         self.c = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
 
     def get(self, url):
         if url in self.c and not (self.refresh and url not in self.asked):
             return self.c[url]
-        for k in range(6):
-            time.sleep(max(0.0, 1.0 - (time.time() - self.last)))
-            self.last = time.time()
-            try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
-                    v = json.loads(r.read())
-                break
-            except Exception as e:  # noqa: BLE001  (429 throttling, network, timeout: retried after a pause)
-                print(f"  retry {url[:100]} ({e})", file=sys.stderr)
-                time.sleep(5 * (k + 1))
-        else:
-            raise RuntimeError(f"failed: {url}")
+        v = inat.get(url)  # paced, 429 / 5xx retried after a pause (rule C7)
         self.c[url] = v
         self.asked.add(url)
         if len(self.asked) % 40 == 0:
@@ -220,36 +213,57 @@ class Net:
 
 
 def fetch(fish, net):
-    """{species id: [inat id, observers 40 km, 250 km, Philippines]} for every species of a teaching node."""
+    """{species id: [inat id, observers 40 km, 250 km, Philippines]} for every species of a teaching node. The counts of
+    every entry come from one species_counts search per ring over all their taxa (inat.BATCH a request; each entry's
+    counts as its own search gives them: the rows under its taxa, each given to its deepest taxon); the observers of the
+    taxa with few observations are counted together (inat.observer_counts), the others asked one by one."""
     S = {s["id"]: s for s in fish["species"]}
-    out = {}
+    entries = []
     for t in fish["teach"]:
         sp = [S[i] for i in t.get("species", []) if S[i].get("inat")]
-        if not sp:
-            continue
-        # Counted per taxon, then given to every species on it: two species of the index can share one iNaturalist
-        # taxon (s104 / s105 on 559534, Codex #497).
-        taxa = sorted({s["inat"] for s in sp})
-        ids = ",".join(str(x) for x in taxa)
-        nobs = {x: {} for x in taxa}
-        for ring, where in RINGS.items():
+        if sp:
+            # Counted per taxon, then given to every species on it: two species of the index can share one iNaturalist
+            # taxon (s104 / s105 on 559534, Codex #497).
+            entries.append((t, sp, sorted({s["inat"] for s in sp})))
+    alltaxa = sorted({x for _, _, taxa in entries for x in taxa})
+    rows = {ring: [] for ring in RINGS}
+    for ring, where in RINGS.items():
+        for B in inat.chunks(alltaxa, inat.BATCH):
             page = 1
             while True:
-                res = net.get(f"{API}observations/species_counts?taxon_id={ids}&{where}&{FILTERS}&per_page=500&page={page}")
-                for r in res["results"]:
-                    tx = r["taxon"]
-                    anc = (tx.get("ancestor_ids") or []) + [tx["id"]]
-                    x = next((a for a in reversed(anc) if a in nobs), None)
-                    if x:
-                        nobs[x][ring] = nobs[x].get(ring, 0) + r["count"]
+                res = net.get(f"{API}observations/species_counts?taxon_id={','.join(map(str, B))}&{where}&{FILTERS}&per_page=500&page={page}")
+                rows[ring] += res["results"]
                 if page * 500 >= res["total_results"]:
                     break
                 page += 1
+    counts, need = [], {ring: {} for ring in RINGS}
+    for t, sp, taxa in entries:
+        nobs = {x: {} for x in taxa}
+        for ring in RINGS:
+            for r in rows[ring]:
+                tx = r["taxon"]
+                anc = (tx.get("ancestor_ids") or []) + [tx["id"]]
+                x = next((a for a in reversed(anc) if a in nobs), None)
+                if x:
+                    nobs[x][ring] = nobs[x].get(ring, 0) + r["count"]
+        for s in sp:
+            for ring in RINGS:
+                c = nobs[s["inat"]].get(ring, 0)
+                if c >= 2:  # 0 or 1 observation gives 0 or 1 observer
+                    need[ring][s["inat"]] = max(c, need[ring].get(s["inat"], 0))
+        counts.append((t, sp, nobs))
+    users = {}
+    for ring, where in RINGS.items():
+        q = f"{where}&{FILTERS}"
+        users[ring] = inat.observer_counts(net.get, need[ring], q, lambda x, q=q: net.get(
+            f"{API}observations/observers?taxon_id={x}&{q}&per_page=1")["total_results"])
+    out = {}
+    for t, sp, nobs in counts:
         for s in sp:
             row = [s["inat"]]
-            for ring, where in RINGS.items():
+            for ring in RINGS:
                 c = nobs[s["inat"]].get(ring, 0)
-                row.append(c if c < 2 else net.get(f"{API}observations/observers?taxon_id={s['inat']}&{where}&{FILTERS}&per_page=1")["total_results"])
+                row.append(c if c < 2 else users[ring][s["inat"]])
             out[s["id"]] = row
         print(f"  {t['id']} {t['name']}: {len(sp)} species", file=sys.stderr)
     return out

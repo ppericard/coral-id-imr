@@ -1602,6 +1602,9 @@ const UNITS = {
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
     // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
     tree: () => (FISH ? FISH.tree : null),
+    // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
+    // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
+    gen: () => (FISH ? FISH.gen : null),
     core: () => (FISH ? FISH.c1 : []),
     // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
     // families, those that open right after them, those beyond the course.
@@ -2478,8 +2481,22 @@ const $help = document.getElementById('help'),
 // top-level title or intro, the title is dropped and the intro moves behind ? . route() only resets the help box.
 // The last line of the ? help on every page (Pierre, 2026-11-03: the credits footer left the pages): About and credits,
 // the privacy notice and Send feedback (rule U14), two taps from anywhere. So the ? shows on every page.
+// Send feedback with a game question on screen carries that question's unit and photos (quiz.js qNow; Pierre, 2026-11-08,
+// Q309), read when it is sent.
+const fbCtx = () => {
+  const q = () => (typeof qNow === 'function' && qNow()) || {};
+  return {
+    k: 'page',
+    get g() {
+      return q().g || '';
+    },
+    get ph() {
+      return q().ph || [];
+    }
+  };
+};
 const helpEnd = () =>
-  `<p class="note hend"><a href="${esc(hr('about'))}">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn({k: 'page'}, 'Send feedback') : ''}</p>`;
+  `<p class="note hend"><a href="${esc(hr('about'))}">About &amp; credits</a> · <a href="privacy.html">Privacy</a>${typeof repBtn === 'function' ? ' · ' + repBtn(fbCtx(), 'Send feedback') : ''}</p>`;
 function pageHelp() {
   const root = $v.querySelector(':scope > .lab') || $v;
   const found = [...root.querySelectorAll(':scope > h2:not(.vh), :scope > .lede, :scope > .tips, :scope > h3.label, :scope > .gloss')];
@@ -3016,8 +3033,26 @@ function curRefresh() {
 let UPDATED = false,
   QOPEN = false,
   swAt = Date.now();
+// A page no service worker controls (a browser without one, such as a chat app's built-in browser or some private
+// windows, or one that blocks it) never sees a takeover: at the same moments, it reads the deployed page's build number
+// (<meta name="build">, the deploy's run number: tools/stamp_versions.py) and a newer one counts as a takeover (UPDATED,
+// the same calm reload). Newer, not different: a host's cache still serving the older page must not reload it in a loop.
+// A copy never deployed has no build: nothing to compare.
+const newBuild = (mine, page) => {
+  const m = /<meta name="build" content="(\d+)">/.exec(page || '');
+  return !!m && /^\d+$/.test(mine || '') && +m[1] > +mine;
+};
+const buildCheck = () => {
+  const b = document.querySelector('meta[name="build"]');
+  if (!b || UPDATED) return;
+  fetch(location.pathname, {cache: 'no-store'})
+    .then(r => (r.ok ? r.text() : ''))
+    .then(t => newBuild(b.content, t) && (UPDATED = true))
+    .catch(() => {});
+};
 const swCheck = () => {
   swAt = Date.now();
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) buildCheck();
   if ('serviceWorker' in navigator)
     navigator.serviceWorker
       .getRegistration()

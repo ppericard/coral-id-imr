@@ -34,7 +34,7 @@ the reference level (core.js refLevel) (tools/fish_judge.json
 photos), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
 point (judging/FISH.md). One already in the list is tagged in place.
 
-Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the observations, read only, about one request a second (rule C7), generic User-Agent, every reply cached
+Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the observations, read only, through tools/inat.py (about one request a second, the project's User-Agent, 429 / 5xx retried after a pause; rule C7), every reply cached
 (trimmed) in tools/.cache/fish_refs.json (git-ignored), and each photo's observation found by its id window too: a rerun
 is offline. Taxa 30 a request; one or two observation searches per taxon with a usable reference photo (the faved 200
 in the box, then anywhere while a photo is missing), then one or two id-window searches per photo still missing.

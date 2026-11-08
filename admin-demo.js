@@ -294,7 +294,7 @@
       rp(1, 'Carla Demo', 'multi', g2, '', '', 'Demo report: two colonies in this photo.', 'quiz', pics[g2][0].f, 'practice/quiz'),
       rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, 'learn/genus/' + g3),
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
-      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'feedback', '', 'home'),
+      rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'page', '', 'home'),
       // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
       rp(
         5,
@@ -306,6 +306,58 @@
         'Demo fish report: not a damselfish.',
         'quiz',
         'fi464458713',
+        'fish/practice/quiz'
+      ),
+      // Send feedback from a game: the question's unit and photos come with it (app.js helpEnd, quiz.js qNow).
+      rp(
+        7,
+        'Ben Demo',
+        'bug',
+        g3,
+        '',
+        '',
+        'Demo feedback: this photo took long to load.',
+        'page',
+        (pics[g3][1] || pics[g3][0]).f,
+        'practice/quiz'
+      ),
+      // A fish species sheet: the script keeps no s: id (Code.gs logReports_), its page names the species.
+      rp(
+        8,
+        'Eli Demo',
+        'info',
+        '',
+        '',
+        '',
+        'Demo fish feedback: a typo on this species.',
+        'sheet',
+        '',
+        'fish/learn/species/Chromis%20ternatensis'
+      ),
+      // The fish ID marks' "Report or correct a line" (learn.js fishMarks): a sheet's report, not a game's.
+      rp(
+        9,
+        'Eli Demo',
+        'info',
+        'f:Damselfishes',
+        '',
+        '',
+        'Demo fish feedback: one mark reads oddly.',
+        'marks',
+        '',
+        'fish/learn/family/Damselfishes'
+      ),
+      // A fish game report on a curated candidate photo in play (Not this offered).
+      rp(
+        10,
+        'Eli Demo',
+        'photo',
+        'f:Damselfishes',
+        '',
+        '',
+        'Demo fish report: blurry.',
+        'quiz',
+        'fish-s084-cand-527402743',
         'fish/practice/quiz'
       ),
       // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.

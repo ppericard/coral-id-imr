@@ -63,7 +63,11 @@ first (Pierre, 2026-11-04: "common beats easy" to start; fish_commonness.apply()
 tools/fish_commonness.json and tools/fish_commonness_inat.json; docs/FISH_PATH.md). Ids are stable and never names: they live in the source file (teaching nodes t01..., species s001...), never
 reuse or renumber one (`retired` lists the ids taken out).
 
-Network: WoRMS and iNaturalist, read only, a short pause between calls, generic User-Agent. Every reply is cached in
+Network: WoRMS and iNaturalist, read only, through tools/inat.py (0.3 s between WoRMS requests, 1 s between iNaturalist
+ones, the project's User-Agent, 429 / 5xx retried after a pause; rule C7); the presence counts of every species are asked
+together (presence_prefetch: species_counts 100 taxa a request, the observers of the species with few observations
+read together), each count exactly what its one-species request answers, a species the batch cannot count exactly
+asked alone. Every reply is cached in
 tools/.cache/fish.json (git-ignored), so a rerun is offline and gives the same file; --refresh asks again (counts and
 names move over time), --offline fails instead of asking. The output is deterministic: one record per line, sorted.
 
@@ -96,10 +100,8 @@ OUT = ROOT / "fish.json"
 CACHE = ROOT / "tools" / ".cache" / "fish.json"
 V = 1  # fish.json format version
 
-UA = {"User-Agent": "coral-id-imr/1.0", "Accept": "application/json"}
 WORMS = "https://www.marinespecies.org/rest/"
 INAT = "https://api.inaturalist.org/v1/"
-PAUSE = {WORMS: 0.3, INAT: 1.0}
 DAUIN = "lat=9.19&lng=123.26&radius=40"
 PH = "place_id=6873"
 PIERRE = "ppericard"  # his observations: usable photos (rule S2); one observer like anyone for presence (2026-11-04)
@@ -108,6 +110,7 @@ INAT_RANKS = {"class", "subclass", "infraclass", "superorder", "order", "suborde
               "subfamily", "supertribe", "tribe", "subtribe", "genus", "subgenus", "species"}
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from presence import NEAR_OBSERVERS, PH_OBSERVERS, listed, near_dauin, ph_confirmed  # noqa: E402  (the rule, once)
+import inat  # noqa: E402  (the one paced, retried client: WoRMS 0.3 s, iNaturalist 1 s between requests; rule C7)
 
 LOW = {"Subspecies", "Variety", "Forma", "Natio", "Mutatio"}  # synonyms below the species: not kept
 
@@ -124,25 +127,10 @@ class Net:
             return self.c[url]
         if self.offline:
             sys.exit(f"--offline: not cached: {url}")
-        base = WORMS if url.startswith(WORMS) else INAT
-        for k in range(6):
-            time.sleep(PAUSE[base])
-            try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
-                    body = r.read()
-                v = json.loads(body) if body.strip() else None
-                break
-            except urllib.error.HTTPError as e:
-                if e.code in (204, 404):
-                    v = None
-                    break
-                err = e
-            except Exception as e:  # noqa: BLE001  (network, timeout, bad JSON: retried)
-                err = e
-            print(f"  retry {url[:90]} ({err})", file=sys.stderr)
-            time.sleep(5 * (k + 1))
-        else:
-            raise RuntimeError(f"failed: {url}")
+        try:
+            v = inat.get(url, missing=True)  # paced per host, 429 / 5xx retried after a pause; 204 / 404: None
+        except (OSError, ValueError) as e:
+            raise RuntimeError(f"failed: {url} ({e})") from e
         self.c[url] = v
         self.asked.add(url)
         self.new += 1
@@ -239,9 +227,61 @@ def inat_taxon(name, rank, alt=()):
 
 
 def inat_count(tid, where, grade="research"):
-    """Observations of a taxon (and below it); grade "" = any quality grade."""
+    """Observations of a taxon (and below it); grade "" = any quality grade. From the batch when presence_prefetch
+    counted it."""
+    if (tid, where, grade) in PRE:
+        return PRE[tid, where, grade]
     g = f"&quality_grade={grade}" if grade else ""
     return (NET.get(f"{INAT}observations?taxon_id={tid}{g}&{where}&per_page=0") or {}).get("total_results", 0)
+
+
+# The presence counts of every species, asked together before the species loop (rule C7; #784): {(taxon, where, grade): observations, ("u", taxon, where): distinct Research Grade observers}, each
+# what the one-species request (inat_count, observers) answers; what is not in it is asked alone, as before.
+PRE = {}
+COUNTS = ((f"user_login={PIERRE}", ""), (PH, "research"), (DAUIN, "research"), (DAUIN, "needs_id"))
+
+
+class _Miss(Exception):
+    pass
+
+
+def presence_prefetch(items):
+    """Fills PRE for items [(taxon, imr, names)] (presence()'s arguments), in presence()'s order of need: the four counts
+    (species_counts, 100 taxa a request), the observers near Dauin of the species with Research Grade observations there,
+    then those in the Philippines of the species the rule still needs them for. An --offline run whose cache lacks a
+    batched reply leaves PRE empty (every count then asked alone, from the cache)."""
+    PRE.clear()
+
+    def get(url):
+        if NET.offline and url not in NET.c:
+            raise _Miss(url)
+        return NET.get(url)
+
+    tids = sorted({t for t, _, _ in items})
+    try:
+        for where, grade in COUNTS:
+            q = (f"quality_grade={grade}&" if grade else "") + where
+            for t, n in inat.leaf_counts(get, tids, q).items():
+                if n is not None:
+                    PRE[t, where, grade] = n
+        rg_p = {t: inat_count(t, PH) for t in tids}
+        rg_d = {t: inat_count(t, DAUIN) if rg_p[t] else 0 for t in tids}
+        solo = lambda where: lambda t: observers(t, where)[0]  # noqa: E731
+        for t, n in inat.observer_counts(get, {t: rg_d[t] for t in tids if rg_d[t]}, f"quality_grade=research&{DAUIN}",
+                                         solo(DAUIN)).items():
+            PRE["u", t, DAUIN] = n
+        need = {t for t, imr, names in items if rg_p[t] >= PH_OBSERVERS and not listed("fish", names)
+                and not near_dauin(PRE.get(("u", t, DAUIN), 0), imr)}
+        for t, n in inat.observer_counts(get, {t: rg_p[t] for t in sorted(need)}, f"quality_grade=research&{PH}", solo(PH)).items():
+            PRE["u", t, PH] = n
+    except _Miss:
+        PRE.clear()
+
+
+def observer_count(tid, where):
+    """Distinct observers of Research Grade observations of a taxon in a place (observers()), from the batch when
+    presence_prefetch counted them."""
+    return PRE["u", tid, where] if ("u", tid, where) in PRE else observers(tid, where)[0]
 
 
 def presence(tid, imr=False, names=()):
@@ -263,7 +303,7 @@ def presence(tid, imr=False, names=()):
         p["own"] = own
     p.update(near_fields(tid, p, imr))
     chk = listed("fish", names)
-    u = observers(tid, PH)[0] if rg_p >= PH_OBSERVERS and not (chk or p["near"]) else None
+    u = observer_count(tid, PH) if rg_p >= PH_OBSERVERS and not (chk or p["near"]) else None
     why = ph_confirmed(rg_p, u, chk, p["near"])
     p.update({"rg": rg_p, "chk": chk, "ph": bool(why), "phBy": why})
     if u is not None:
@@ -289,7 +329,7 @@ def observers(tid, where):
 
 def near_fields(tid, p, imr=False):
     """present.dauinU (distinct Research Grade observers within 40 km of Dauin), near (near_dauin) and nearBy (why)."""
-    n, _ = observers(tid, DAUIN) if p.get("dauin") else (0, [])
+    n = observer_count(tid, DAUIN) if p.get("dauin") else 0
     why = near_dauin(n, imr)
     return {"dauinU": n, "near": bool(why), "nearBy": why}
 
@@ -950,8 +990,13 @@ def build(src, report):
             report["mismatch"].append(f"{s['name']} (WoRMS {node['name']}): iNaturalist {iname}")
         x["inat"] = tid
         if tid:
-            r = tree[x["aid"]]
-            x["present"] = presence(tid, bool(s.get("pdf")), [s["name"], x["now"], r["name"], iname, *syn.get(x["aid"], [])])
+            x["_pres"] = (tid, bool(s.get("pdf")), [s["name"], x["now"], tree[x["aid"]]["name"], iname, *syn.get(x["aid"], [])])
+    presence_prefetch([x["_pres"] for x in species if x["inat"]])  # every species' counts together (rule C7)
+    for x in species:
+        s = x["s"]
+        tid = x["inat"]
+        if tid:
+            x["present"] = presence(*x.pop("_pres"))
         else:
             imr = ["imr"] if s.get("pdf") else []
             # Not on iNaturalist: only the IMR list can confirm it (near Dauin, so in the Philippines).

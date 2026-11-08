@@ -985,6 +985,45 @@ async function overlays(b, base) {
       );
     await c.close();
   }
+  // Q309: Send feedback (the ? help's last line) with a game question on screen carries that question's unit and photos, as
+  // a report does (app.js fbCtx, quiz.js qNow); sent from a page with no question, neither.
+  {
+    const [c, p] = await open({viewport: {width: 390, height: 800}}, () => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-recalc', '"typed-questions-2026-11"');
+      localStorage.getItem('reefid-sync-coral-progress') ||
+        localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({Acropora: {ok: 3, ko: 1, h: '1101'}}));
+    });
+    const feedback = async () => {
+      await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => x.remove()));
+      await p.click('#help');
+      await p.click('#helpbox [data-rep]');
+      await p.check('#repdlg input[name="why"][value="bug"]');
+      await p.click('#repdlg button[type="submit"]');
+      await p.waitForTimeout(300);
+      return p.evaluate(() => JSON.parse(localStorage.getItem('reefid-reports') || '[]').pop() || null);
+    };
+    await p.goto(base + '#practice/quiz');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    await p.waitForSelector('#view [data-c]');
+    // The corallites hint, when the question has one: its photo is one of those shown, so it goes too (Codex review #785).
+    const hint = await p.evaluate(() => !!document.getElementById('hintb'));
+    if (hint) await p.click('#hintb');
+    const q = await p.evaluate(() => ({
+      now: qNow(),
+      shown: [...document.querySelectorAll('#view .qstage img[data-f]')].map(i => i.dataset.f)
+    }));
+    const r = await feedback();
+    if (!r || !q.now || r.m !== 'page' || !r.g || r.g !== q.now.g || !r.ph || r.ph !== q.shown.join(' ') || r.w !== 'practice/quiz')
+      fails.push(`Send feedback from a game: ${JSON.stringify({r, q, hint})}`);
+    await p.evaluate(() => (location.hash = 'about'));
+    await p.waitForSelector('#view [data-rep]', {timeout: 10000}).catch(() => {});
+    const a = await feedback();
+    if (!a || a.g || a.ph || a.w !== 'about') fails.push(`Send feedback from About: ${JSON.stringify(a)}`);
+    await c.close();
+  }
   // Q65: the Contributions. A report sent pops up its tier at once (1st, 5th, 10th), signed out; an "Other" report counts
   // only with a note, several reports on one photo count once; the learning count on #ach leaves them out.
   {
