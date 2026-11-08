@@ -149,11 +149,10 @@ Registered by `app.js` once every tier is in (https only); it serves the app off
   no network once cached. The other app files (the page, `curation.json`, the manifest): revalidated with the server; a
   cached copy is served after `SLOW` (2 s) on a slow line while the network refreshes it. The page's reply never waits
   for its cache write (written in the event's lifetime, at most 30 s).
-- **Safety net** (`soon`, #531): a reply waits at most `CACHE_WAIT` (3 s) for Cache Storage, then is served from the
-  network as if nothing were cached, and Cache Storage is not asked for `CACHE_PAUSE` (60 s); offline, the cache is asked
-  with no time limit. The net.smoke step-9 hang it was added for was traced on 2026-11-05 to a navigation that reached
-  the old worker in the instant Chromium stopped it for a version swap (the test now opens the admin on the version
-  already installed), not to a stalled Cache Storage.
+- **No time limit on Cache Storage**: every reply waits for it (the `soon` limit of #531 was removed on 2026-11-08). It
+  was added for the net.smoke step-9 hang, read then as a stalled Cache Storage; that hang was traced on 2026-11-05 to a
+  navigation that reached the old worker in the instant Chromium stopped it for a version swap (the test now opens the
+  admin on the version already installed, #615), and no Cache Storage stall has been seen.
 
 ## Subjects (the taxon model, 2026-11-03)
 
@@ -214,7 +213,7 @@ The service worker's messages to the pages follow the same names (`reefid-ver?`)
 
 **Migration in the sheet** (sheet v33): a player's Data JSON is keyed by these names. Until every device runs the renamed app, an app from before the rename still saves (and reads) the old names. So the app reads either (`core.js` `keysIn` on every reply that carries a player's data: `syncGet`, admin `userPost`; the new name wins) and sends the new names **plus a copy under the old ones** (`withLegacy`, while `LEGACY_SEND` is true: an old app reading a record without its names would merge its progress with an empty one and drop the saved record). `Code.gs` reads either through `dataKey_` (progress for the leaderboard % and the abilities, reset for the opening hold, achievements). Turn `LEGACY_SEND` off with the domain move (ROADMAP). The salt of the code hashes and anonymous ids (`Code.gs` `SALT`, `admin.js`) stays `'imr-coral-id'`: changing it would lock every player out.
 
-**Caches** (`sw.js`): the shell cache `reefid-shell-vN` (`imr-coral-id-vN` before; on activation every other cache with either prefix goes, `REPLACES`), the admin's files `reefid-admin-files` (2026-11-04, `ADM`, `ADM_FILE`: admin*.js, admin.css, autosort.js, analysis.js, one entry per file, a new `?v=` replacing the older; no deploy deletes it, so the first admin visit after a deploy downloads only the files that changed; code only, no player data), and the photo cache `imr-photos-v1`, not renamed: a new name would have thrown away (or copied while the app waits) up to 2,500 offline photos per phone; it gets one with the domain move, whose new origin starts with empty caches anyway. The worker asks the open pages their version under both message names (`VER_ASK`), so a page from before the rename is not reloaded mid-question. A reply never waits on Cache Storage more than 3 s (`soon`, `CACHE_WAIT`): it had now and then stopped answering in CI, holding a page for good; past that the reply comes from the network and Cache Storage is left alone for 60 s (`CACHE_PAUSE`), except offline, where it is asked with no limit (`late`).
+**Caches** (`sw.js`): the shell cache `reefid-shell-vN` (`imr-coral-id-vN` before; on activation every other cache with either prefix goes, `REPLACES`), the admin's files `reefid-admin-files` (2026-11-04, `ADM`, `ADM_FILE`: admin*.js, admin.css, autosort.js, analysis.js, one entry per file, a new `?v=` replacing the older; no deploy deletes it, so the first admin visit after a deploy downloads only the files that changed; code only, no player data), and the photo cache `imr-photos-v1`, not renamed: a new name would have thrown away (or copied while the app waits) up to 2,500 offline photos per phone; it gets one with the domain move, whose new origin starts with empty caches anyway. The worker asks the open pages their version under both message names (`VER_ASK`), so a page from before the rename is not reloaded mid-question.
 <!-- rename-app: keep-end -->
 
 ## Data files
