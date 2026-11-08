@@ -638,7 +638,7 @@
         })
       );
     }
-    S = {rows, frows, users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
+    S = {rows, frows, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     if (V >= 81)
       await Promise.all(
@@ -737,7 +737,7 @@
       ); // v58: archives, flag 2
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
     // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged.
-    out.rows = S.rows.map(r => [
+    out.rows = [...S.rows, ...S.after].map(r => [
       aid(r[0]),
       r[1],
       r[2],
@@ -753,10 +753,13 @@
       r[12] ?? null,
       r[13] ?? null
     ]);
-    // v60: the other subject's answers, the subject at index 17 (core.js LOG_SUBJ).
+    // v60: the other subject's answers, the subject at index 17 (core.js LOG_SUBJ). The answers given while the page is
+    // open (DEMO_ANSWER, S.after) are the tab's last rows: moved after them.
+    const after = out.rows.splice(S.rows.length);
     S.frows.forEach(r =>
       out.rows.push([aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], 0, r[12], r[13], null, null, null, r[18]])
     );
+    out.rows.push(...after);
     Object.values(S.users).forEach(u => {
       if (arch.has(lc(u.name))) return; // v58: an archive is no player
       const P = JSON.parse(u.data['reefid-sync-coral-progress'] || '{}'),
@@ -766,6 +769,23 @@
     });
     return out;
   }
+  // The admin's light read (Code.gs live_, from admin.js LIVE_SHEET; Pierre, 2026-11-08): the log's last 50 rows as
+  // answers() serves them, each player's last answer time (an archive's and a deleted account's left out), the rows.
+  function liveReply() {
+    const R = answers().rows,
+      last = {};
+    R.forEach(r => r[11] !== 2 && r[1] > (last[r[0]] || 0) && (last[r[0]] = r[1]));
+    return {ok: true, rows: R.slice(-50), last, n: R.length, k: Math.min(R.length, 50)};
+  }
+  // A demo player answers now (tests/admin.smoke.js: Activity's light read brings it): a copy of their last answer, at
+  // this time, as the tab's last row.
+  window.DEMO_ANSWER = (name = 'Carla Demo') => {
+    const L = [...S.rows, ...S.after].filter(r => r[0] === name).sort((a, b) => a[1] - b[1]),
+      r = L[L.length - 1].slice();
+    r[1] = Date.now();
+    r[7] = 'live' + S.after.length;
+    S.after.push(r);
+  };
   function stats() {
     // The Analyses group's made-up players (demoLog) stay out of the photo ratings and confusions: the other pages'
     // numbers (the full replay on Players, the journeys) stay those of the original demo. They have a level like anyone.
@@ -1066,6 +1086,8 @@
       if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
+      // The light read (admin.js LIVE_SHEET): an older script takes it for a progress write without a name ('input').
+      if (p.readLive) return ok(V >= LIVE_SHEET ? liveReply() : {ok: false, error: 'input'});
       // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
       if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head));
       if (

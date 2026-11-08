@@ -2745,6 +2745,62 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px Recent sessions: no other signed-in player`);
       }
     }
+    if (once) {
+      // Once: a live Activity (Pierre, 2026-11-08: "Les deux"). From sheet LIVE_SHEET the page reads the newest answers
+      // every minute while it is open and in view (admin.js liveArm, liveRead; the demo's readLive): an answer Carla gives
+      // now shows in her session without ↻; hidden, nothing is read; back in view, a read at once. Before it (this page,
+      // the demo's default script), no light read at all (rule D4). The minute is cut to 1.5 s here.
+      const LV = Number(/const LIVE_SHEET = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'))[1]);
+      const lives = q => q.evaluate(() => window.DEMO_CALLS.filter(c => c.k === 'readLive').length);
+      if (await lives(p)) fails.push(`${w}px live Activity: a light read before LIVE_SHEET`);
+      const q = await p.context().newPage();
+      q.on('pageerror', e => fails.push(`${w}px live Activity page error: ${e.message}`));
+      await q.goto(base + `admin.html?demo&v=${LV}#players/activity`);
+      await q.waitForSelector('[data-recent] tbody tr', {timeout: 20000}).catch(() => {});
+      const carla = () =>
+        q.evaluate(() => {
+          const tr = [...document.querySelectorAll('[data-recent] tbody tr[data-sopen]')].find(r =>
+            /Carla Demo/.test(r.cells[0].textContent)
+          );
+          return tr ? Number(tr.cells[2].textContent) : 0;
+        });
+      const n0 = await carla();
+      await q.evaluate(() => {
+        LIVE_READ.MS = 1500;
+        liveArm();
+        window.DEMO_ANSWER('Carla Demo');
+      });
+      const got = await q
+        .waitForFunction(
+          n => {
+            const tr = [...document.querySelectorAll('[data-recent] tbody tr[data-sopen]')].find(r =>
+              /Carla Demo/.test(r.cells[0].textContent)
+            );
+            return tr && Number(tr.cells[2].textContent) === n + 1;
+          },
+          n0,
+          {timeout: 15000}
+        )
+        .then(() => true)
+        .catch(() => false);
+      const l1 = await lives(q);
+      if (!got || n0 !== 24 || !l1)
+        fails.push(`${w}px live Activity: Carla's new answer not shown ${JSON.stringify({n0, n: await carla(), l1})}`);
+      const vis = st =>
+        q.evaluate(st => {
+          Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => st});
+          document.dispatchEvent(new Event('visibilitychange'));
+        }, st);
+      await vis('hidden');
+      const h0 = await lives(q);
+      await q.waitForTimeout(4000);
+      const h1 = await lives(q);
+      if (h1 !== h0) fails.push(`${w}px live Activity: ${h1 - h0} light reads while hidden`);
+      await vis('visible');
+      await q.waitForTimeout(800);
+      if ((await lives(q)) !== h1 + 1) fails.push(`${w}px live Activity: no light read at once back in view`);
+      await q.close();
+    }
     // A session unfolds its summary under it and folds again (Pierre, 2026-11-05): Carla's session playing now (made-up
     // demo data, admin-demo.js) says what she made of it in words, then start → end, length, answers, right, progress
     // before → after, the success chart, her new genera, events, achievements (25% progress, earned in it) and a link to

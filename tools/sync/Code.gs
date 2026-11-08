@@ -176,9 +176,9 @@ function doPost_(e){
   if (Array.isArray(p.events)) return json_(events_(p));  // v19: error reports and one-tap answers (see events_)
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
-  if (p.readStats || p.readAnswers) {  // admin (v14): per-player numbers, see doGet
+  if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; vNEXT readLive (live_)
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
-    return json_(p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
+    return json_(p.readLive ? live_() : p.readStats ? stats_() : answers_({name: p.aname, pin: p.apin}));
   }
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart)
   const {name, pin} = clean_(p);
@@ -522,13 +522,46 @@ function answers_(q){
   const big = {}; const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
   // v98: a surprise card's answer (core.js winkRow) is served to no reader: the admin's pages and analyses never count it.
-  if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, LOG.length).filter(r => r[0] && !CORE_.winkRow(r))
-    .map(r => { const sj = CORE_.rowSubject(r); return [id(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
-      .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i])), [String(r[11] || ''), anonFlag_(r[0], arch)],
-        [12, 13, 14].map(i => r[i] === '' || r[i] == null ? null : Number(r[i])), [String(r[15] || ''), r[16] === '' || r[16] == null ? null : Number(r[16])],
-        [sj, String(r[18] || '') || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '', String(r[19] || ''), String(r[20] || ''), String(r[21] || '')], [CORE_.scoreRec(r[SC_COL])]); });
+  if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, LOG.length).filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, 8).getValues().filter(r => r[0] && !arch.has(lc_(r[0])))  // v58: no archive
     .forEach(r => out.players[id(r[0])] = [Number(r[2]) || 0, Number(r[3]) || 0, Number(r[4]) || 0, abilities_(big[String(r[0]).toLowerCase()] || r[7])]);
+  return out;
+}
+// One Answers row as readAnswers serves it (above): id, the player's admin id (aid_, memoised by the caller); arch, the
+// archived names (anonFlag_). Also the rows of the admin's light read (live_), so both read alike.
+function answerOut_(r, id, arch){
+  const sj = CORE_.rowSubject(r);
+  return [id(r[0]), new Date(r[1]).getTime() || 0, String(r[2]), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6])]
+    .concat([8, 9, 10].map(i => r[i] === '' ? null : Number(r[i])), [String(r[11] || ''), anonFlag_(r[0], arch)],
+      [12, 13, 14].map(i => r[i] === '' || r[i] == null ? null : Number(r[i])), [String(r[15] || ''), r[16] === '' || r[16] == null ? null : Number(r[16])],
+      [sj, String(r[18] || '') || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '', String(r[19] || ''), String(r[20] || ''), String(r[21] || '')], [CORE_.scoreRec(r[SC_COL])]);
+}
+// The admin's light read (vNEXT, Pierre 2026-11-08: "Les deux", a live Players › Activity): POST {readLive: 1, token} →
+// {ok, rows, last, n, k}, re-read every minute while that page is open and in view (admin.js liveRead), where readAnswers
+// sends the whole tab. rows: the Answers tab's last LIVE_N rows with a player, as readAnswers serves them (answerOut_),
+// in the tab's order, a surprise card's left out (core.js winkRow). last: {admin id (aid_): time ms of the player's last
+// answer}, every player and device not signed in with one, a deleted account's answers and an archive's left out
+// (anonFlag_ 2, as no reader counts them as a player), read from the Activity tab (one row per player, its QUERY's max
+// time) while it holds the script's formula, else from the Name, Time and Mode columns. n: the tab's answer rows (from
+// row 2), k: how many of the last were read (the window). Admins only (isAdmin_, whose answer is kept 10 minutes, so a read every minute asks GitHub once in ten). A
+// read only, as readAnswers: no script lock, nothing written, so it never makes a save or an anonymous send wait.
+const LIVE_N = 50;
+function live_(){
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), out = {ok: true, rows: [], last: {}, n: 0, k: 0};
+  if (!sh || sh.getLastRow() < 2) return out;
+  const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();
+  const n = out.n = sh.getLastRow() - 1, k = out.k = Math.min(n, LIVE_N), w = sh.getMaxColumns ? Math.min(LOG.length, sh.getMaxColumns()) : LOG.length;
+  out.rows = sh.getRange(n - k + 2, 1, k, w).getValues().map(r => w < LOG.length ? r.concat(new Array(LOG.length - w).fill('')) : r)
+    .filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
+  const act = ss.getSheetByName('Activity'), f = act ? act.getRange(1, 1).getFormula() : '';
+  const L = act && act.getLastRow() > 1 && (f === ACTIVITY || f === ACTIVITY_V1)  // V1: from before the first surprise card, none to leave out
+    ? act.getRange(2, 1, act.getLastRow() - 1, 4).getValues().map(r => [r[0], r[3]])
+    : sh.getRange(2, 1, n, 6).getValues().filter(r => r[0] && !CORE_.winkRow(r)).map(r => [r[0], r[1]]);
+  L.forEach(([nm, t]) => {
+    if (!nm || anonFlag_(nm, arch) === 2) return;
+    const i = id(nm), ms = new Date(t).getTime() || 0;
+    if (ms > (out.last[i] || 0)) out.last[i] = ms;
+  });
   return out;
 }
 // Per-genus ability (th) from an RA's saved progress, nothing else from it.
