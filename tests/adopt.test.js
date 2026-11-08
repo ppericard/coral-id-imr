@@ -805,6 +805,7 @@ test('the recalculation card is due only when the progress % moved by 5 points o
     ctx = {
       ...C,
       window: {},
+      toldHas: () => false, // sync.js: no card told on another device
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   vm.createContext(ctx);
@@ -868,6 +869,7 @@ function ach(A) {
       ACHNEW: 'reefid-ach-new',
       achUnseen: () => [],
       achDot: () => {},
+      noticesReady: () => true, // sync.js: the visit's first sync is over
       store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
     };
   ctx.syncSoon = () => ctx.synced++;
@@ -1273,4 +1275,21 @@ test('fish answers: kept queued for an older script, sent from v60 under their s
   );
   assert.strictEqual(b.got[0].replay.n, 2, "the device's replay counts its 2 coral rows");
   assert.ok(!b.got[0].replay.rec.t01, 'no fish unit in the replayed coral record');
+});
+
+test('a recheck that waits for the first sync runs as the subject it was asked for (Codex review #736)', () => {
+  const a = ach({_v: 2, met10: 10, learn1: 20}),
+    q = [],
+    subj = [];
+  a.ctx.SUBJ = {id: 'coral'};
+  a.ctx.noticesReady = () => false;
+  a.ctx.noticeLater = (k, fn) => q.push([k, fn]);
+  a.ctx.inSubject = (id, fn) => (subj.push(id), fn());
+  assert.strictEqual(JSON.stringify(a.achRecheck()), '[]', 'waits');
+  assert.strictEqual(a.rec().learn1, 20, 'nothing taken back before the sync');
+  a.ctx.SUBJ = {id: 'fish'}; // another subject on screen when the sync ends
+  a.ctx.noticesReady = () => true;
+  q.forEach(([, fn]) => fn());
+  assert.deepStrictEqual([q.map(x => x[0]), subj], [['achRecheck:coral'], ['coral']]);
+  assert.strictEqual(a.rec().learn1, undefined, "taken back on the corals' own snapshot");
 });
