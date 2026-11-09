@@ -31,7 +31,7 @@ what is read, one train at a time, ambiguous asks asked back, structural problem
 
 Tonight, within W27 (three agents at most): #840 then #839 through the queue. Then, one at a time:
 
-1. **The opening burst** (Pierre ~16:40, several players, Emelie C on corals now): a mid player with few genera answers
+1. **The opening burst** (Pierre ~16:40, several players, P11 on corals now): a mid player with few genera answers
    everything right, the engine opens many genera in a row and the success rate collapses for a while. Read-only on the
    real log first (who, how often, how deep, how long), then 2-3 ways to soften it without slowing experts, each with
    its benefits and risks, checked in short simulations. To Pierre in the morning report.
