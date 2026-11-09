@@ -2919,6 +2919,10 @@ const getR = (u, o, n = 3) =>
 // service worker cache), the app uses the last copy it saw instead of none, so excluded or moved photos never come back
 // into the games (code re-review 2026-11-01, H1).
 const CUR_LAST = 'reefid-curation-last';
+// The players' copy (curation-play.json, written by the deploy from curation.json: tools/curplay.py; Pierre, 2026-11-09):
+// what the app reads of it, without the admin's working state (auto-sort logs, fish judging tags and ease), a third of
+// its size. A site without it (a local server where tools/curplay.py was not run) answers 404: curation.json then.
+const curFetch = (o, get = getR) => get('curation-play.json', o).then(r => (r.status === 404 ? get('curation.json', o) : r));
 // Start-up never waits for it when a copy is kept (Pierre, 2026-11-01: fluid on poor connections; it was a round trip
 // before every first screen, up to the service worker's timeout): the kept copy is used, and curRefresh reads the
 // published one right after; a change applies at the next screen, as for a tab left open.
@@ -2932,7 +2936,7 @@ const curation = () => {
   }
   return dr
     ? Promise.resolve(dr)
-    : getR('curation.json', {cache: 'no-cache'})
+    : curFetch({cache: 'no-cache'})
         .then(okJson)
         .then(c => {
           store.set(CUR_LAST, c);
@@ -3124,7 +3128,7 @@ const addsMissing = c => {
 function curRefresh() {
   if (!RAW || /[?&]draft\b/.test(location.search)) return;
   curAt = Date.now();
-  fetch('curation.json', {cache: 'no-cache'})
+  curFetch({cache: 'no-cache'}, fetch)
     .then(r => (r.ok ? r.json() : null))
     .then(c => {
       if (c) store.set(CUR_LAST, c);

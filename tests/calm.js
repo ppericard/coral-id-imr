@@ -6,8 +6,24 @@
 // Playwright as it is. Every launch takes the machine slot first (tests/slot.js, rule W24): a smoke that forgot to call
 // slot() still waits its turn; one that did runs in its own slot at once.
 const path = require('path'),
+  fs = require('fs'),
+  {execFileSync} = require('child_process'),
   pw = require('playwright'),
   slot = require('./slot.js');
+// The players' copy of the curation (curation-play.json, which the deploy writes: tools/curplay.py), written here too
+// when it is missing or older than curation.json, so every smoke plays the file the site serves.
+const ROOT = path.join(__dirname, '..');
+const curPlay = () => {
+  const mt = f => {
+    try {
+      return fs.statSync(path.join(ROOT, f)).mtimeMs;
+    } catch (e) {
+      return -1;
+    }
+  };
+  if (mt('curation-play.json') < mt('curation.json'))
+    execFileSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), ROOT], {stdio: 'ignore'});
+};
 const calm = b => {
   const nc = b.newContext.bind(b);
   b.newContext = (o = {}) => nc({reducedMotion: 'reduce', ...o});
@@ -18,6 +34,7 @@ module.exports = {
   chromium: {
     launch: async (...a) => {
       await slot(path.basename(process.argv[1] || 'smoke'));
+      curPlay();
       return calm(await pw.chromium.launch(...a));
     }
   }

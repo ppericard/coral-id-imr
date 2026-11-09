@@ -48,7 +48,7 @@ const SHELL = [
   'fonts/source-sans-3-italic.woff2',
   'fonts/barlow-condensed-700-normal.woff2',
   'manifest.webmanifest',
-  'curation.json',
+  'curation-play.json',
   'proto/lab.js?v=85',
   'proto/lab.css?v=57',
   'home-art.js?v=6',
@@ -77,7 +77,7 @@ const SHELL = [
 // A shell file for the new version (2026-11-05, found while looking for a device left on an old app; ~86 kbit/s at the field
 // station). A versioned file (?v=: a new content is a new URL) or a font that a cache already holds, the version being
 // replaced's, is copied from it rather than downloaded again: most deploys change a few files, and the install, which
-// the takeover waits for, downloaded the whole shell (about 1 MB). The other files (the page, curation.json, the
+// the takeover waits for, downloaded the whole shell (about 1 MB). The other files (the page, curation-play.json, the
 // manifest, the icon) are asked from the server itself (cache: 'no-cache', a revalidation): taken from the browser's HTTP
 // cache (GitHub Pages: 10 minutes), the new version could hold the page of the deploy before and run its old code.
 const fixed = u => /[?&]v=/.test(u) || u.startsWith('fonts/');
@@ -245,7 +245,7 @@ self.addEventListener('fetch', e => {
           })
       )
     );
-  // The other app files (the page itself, curation.json, the manifest): revalidated with the server. On a slow link
+  // The other app files (the page itself, curation-play.json, the manifest): revalidated with the server. On a slow link
   // (field, boat) a file already cached is served after SLOW ms instead of waiting for the network, which still refreshes
   // the cache in the background (code re-review 2026-11-01, L1).
   // The page's reply never waits for its cache copy (2026-11-04, net.smoke step 9: the admin page never reached

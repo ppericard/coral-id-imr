@@ -135,7 +135,7 @@ const server = http.createServer((req, res) => {
       }
     );
     if (opts.inat !== false) await inatLocal(ctx);
-    if (opts.hangCuration) await ctx.route(base + 'curation.json', () => {}); // never answers
+    if (opts.hangCuration) await ctx.route(base + 'curation-play.json', () => {}); // never answers (the app's copy: tools/curplay.py)
     if (opts.failFull) {
       await ctx.route(/\/img\/[^/]+(?<!-s)\.webp/, r => r.abort('connectionreset'));
       // An iNaturalist photo (r: 1, app.js img(); Millepora's until 2026-11-03): its bigger file ('large') fails too and its 480 px one
@@ -167,7 +167,7 @@ const server = http.createServer((req, res) => {
     await p.goto(base + '#practice/quiz');
     await ready(p);
     await p.close();
-    await ctx.route(base + 'curation.json', () => {});
+    await ctx.route(base + 'curation-play.json', () => {});
     const p2 = await ctx.newPage();
     p2.on('pageerror', e => errs.push(e.message));
     const t = Date.now();
