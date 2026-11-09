@@ -2,7 +2,7 @@
 
 > **Copied into the repo for the handover (2026-11-01).** Original: a private Claude doc on claude.ai (not reachable from another account).
 >
-> **Status since:** findings 1-6 fixed in PR #271 (classic-token fallback + read-only link on the lock screen, Undo survives a reload, "Which no?" help, Candidates never need emptying, phone coverage tables fit, excluded lecture photos show genus and slide); finding 2 fixed by #263 (Code.gs v8, deployed). Still open: testing the token steps with a real collaborator account (ROADMAP "A second admin"); from "Smaller things", hover+key shortcuts in Forms/Quality, Sign out keeping the draft on a shared device, and uneven page titles were not addressed (low).
+> **Status since:** findings 1-6 fixed in PR #271 (classic-token fallback + read-only link on the lock screen, Undo survives a reload, "Which no?" help, Candidates never need emptying, phone coverage tables fit, excluded lecture photos show genus and slide); finding 2 fixed by #263 (Code.gs v8, deployed). Still open: testing the token steps with a real collaborator account (ROADMAP "A second admin"); from "Smaller things", the hover+key shortcuts in Forms/Quality (keys now act on the focused photo only), Sign out keeping the draft on a shared device (now sealed with the token) and the uneven page titles (now none on any admin page) were fixed on 2026-11-08.
 
 Nov 1, 2026 · Pierre Pericard
 
