@@ -108,6 +108,25 @@ test('a singular is the family itself: answered at once, right, no spelling step
   }
 });
 
+// Codex review #834: a scientific name is never read in an English number: its slip keeps the spelling step.
+test('a scientific name has no plural or singular: "Zebrasomas", "Amphiprions", "Halichoere" are slips', () => {
+  const m = (t, rk) =>
+    C.typeMatchIn(
+      NAMES.filter(o => rankOf(o.g) === rk),
+      t,
+      C.typeNormAll
+    );
+  for (const [t, g, rk] of [
+    ['Zebrasomas', 'g:Zebrasoma', 'genus'],
+    ['Amphiprions', 'g:Amphiprion', 'genus'],
+    ['Halichoere', 'g:Halichoeres', 'genus'],
+    ['Amphiprions', 'f:Damselfishes', ''],
+    ['Pomacentridaes', 'f:Damselfishes', '']
+  ])
+    assert.deepStrictEqual([t, m(t, rk).g, C.typeVerdict(m(t, rk), g)], [t, g, 'close']);
+  assert.strictEqual(C.typeVerdict(m('Grouper', ''), 'f:Groupers'), 'exact'); // a common name keeps both numbers
+});
+
 test('a name below the family: right as its family, said what it is; a word of one species only: said so', () => {
   for (const [text, t, read] of [
     ['anglerfish', 'f:Frogfishes', '“anglerfish” is a name of some Frogfishes.'],

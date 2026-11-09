@@ -22,6 +22,8 @@
 import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+import fish_short  # noqa: E402  (fish-game.json's short form)
 IMG = os.path.join(ROOT, 'img')
 SIZES = ((1600, 78, ''), (960, 72, '-m'), (480, 72, '-s'), (240, 70, '-t'))
 SUFFIXES = tuple(s for _, _, s in SIZES)
@@ -126,7 +128,9 @@ def records(root=ROOT, files=DATA):
                 if isinstance(v, (dict, list)): walk(v)
     for fn in files:
         p = os.path.join(root, fn)
-        if os.path.exists(p): walk(json.load(open(p, encoding='utf-8')))
+        if os.path.exists(p):
+            d = json.load(open(p, encoding='utf-8'))
+            walk(fish_short.full_doc(d) if fn == 'fish-game.json' else d)  # its records whole (the short form: o, src)
     return out
 
 

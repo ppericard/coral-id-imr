@@ -6,7 +6,18 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const ROOT = path.join(__dirname, '..');
-const {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, unitSubj, repCtx, repOn} = require('../reports.js');
+const {
+  REP_STATUS,
+  repStatus,
+  repStatusSet,
+  repsReconcile,
+  repsOrder,
+  unitSubj,
+  repCtx,
+  repOn,
+  REP_WHY,
+  repWhyText
+} = require('../reports.js');
 const {SUBJECTS, merge3} = require('../core.js');
 const CORAL = SUBJECTS.find(s => !s.hash),
   FISH = SUBJECTS.find(s => s.hash);
@@ -193,6 +204,31 @@ test('repCtx: the fields as they are, whatever the row', () => {
   assert.deepStrictEqual([c.id, c.t, c.who, c.ok, c.why, c.note, c.fix], ['x9', 5, 'P2', 0, 'multi', 'n', 'F']);
   assert.deepStrictEqual(repCtx(null).photos, []);
   assert.strictEqual(repCtx([]).subj, '');
+});
+
+// Pierre, 2026-11-09: a fish report read "Several corals". A reason names the organism in its subject's words (core.js
+// SUBJECTS several, one), as the player's dialog put it (sync.js REP_WHY); the sheet keeps the key, so old reports too.
+test('repWhyText: a reason in its subject words, every key the dialog sends', () => {
+  const fish = repCtx(row({why: 'multi', g: 'f:Wrasses', m: 'quiz'})),
+    coral = repCtx(row({why: 'multi', g: 'Acropora', m: 'quiz'}));
+  assert.strictEqual(repWhyText(fish, FISH), 'Several fish species');
+  assert.strictEqual(repWhyText(coral, CORAL), 'Several corals');
+  assert.strictEqual(repWhyText(repCtx(row({why: 'wrong', g: 'f:Wrasses', m: 'photo'})), FISH), 'Wrong family');
+  assert.strictEqual(repWhyText(repCtx(row({why: 'wrong', g: 'Acropora', m: 'quiz'})), CORAL), 'Wrong answer');
+  assert.strictEqual(repWhyText(repCtx(row({why: 'nope'})), CORAL), 'nope');
+  assert.strictEqual(repWhyText(repCtx(row({why: '__proto__'})), CORAL), '__proto__');
+  // every reason the player's dialog offers has its words here, none naming the corals outright
+  const SY = fs.readFileSync(path.join(ROOT, 'sync.js'), 'utf8'),
+    keys = new Set(
+      [
+        ...SY.slice(SY.indexOf('const REP_WHY = {'))
+          .split('};')[0]
+          .matchAll(/\['(\w+)', '/g)
+      ].map(m => m[1])
+    );
+  assert.ok(keys.size >= 6);
+  keys.forEach(k => assert.ok(REP_WHY[k], k));
+  Object.values(REP_WHY).forEach(t => assert.doesNotMatch(t, /coral|fish/i));
 });
 
 test('admin.html loads reports.js after core.js and before admin.js', () => {

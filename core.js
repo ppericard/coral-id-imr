@@ -879,6 +879,11 @@
         ...(start.has(t.id) ? {first: 1} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
+        // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
+        // plural or singular (fishTypeNames; Codex review #834: "Amphiprions").
+        sciNames: [...new Set([...(t.sci || []), ...imrGen.map(g => g.name), ...[...(teachOf.get(t.id) || [])].map(x => x.fam)])].filter(
+          Boolean
+        ),
         ...([...(teachOf.get(t.id) || [])].flatMap(fishOften).length ? {oft: [...(teachOf.get(t.id) || [])].flatMap(fishOften)} : {})
       };
     });
@@ -961,6 +966,28 @@
       b = /-cand-fb-(.+)$/.exec(s) || /^fb(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
+  // fish-game.json's short form (Pierre, 2026-11-09: "observation id + extension instead of full URLs"; tools/fish_short.py
+  // writes it, this is its copy): a record's o, an iNaturalist observation, as its id alone, and its src, the original on
+  // iNaturalist's open-data bucket, as its extension alone when the photo is the record's own (the id in its name,
+  // fishPid). fishGameRow gives a record its addresses back, keys in their order (the record as it was written before);
+  // a record already whole (the file before the short form) is the same object. fishGameRead: the file, every record whole.
+  // Every reader of fish-game.json reads it through fishGameRead: the app (fishLoad), the admin, the sheet's photo pools
+  // (POOLS entries), the tools and the tests. A page of an older version that meets the short file keeps every photo (its
+  // src is still set) but its fallback to the original and its observation link are broken until it updates.
+  const FISH_OBS = 'https://www.inaturalist.org/observations/',
+    FISH_ORIG = 'https://inaturalist-open-data.s3.amazonaws.com/photos/';
+  const fishGameRow = p => {
+    if (!p || typeof p !== 'object') return p;
+    const id = (/^i(\d+)$/.exec(fishPid(p.f)) || [])[1],
+      o = typeof p.o === 'string' && /^\d+$/.test(p.o),
+      s = typeof p.src === 'string' && /^[a-z0-9]{2,5}$/.test(p.src) && !!id;
+    if (!o && !s) return p;
+    return {...p, ...(o ? {o: FISH_OBS + p.o} : {}), ...(s ? {src: FISH_ORIG + id + '/original.' + p.src} : {})};
+  };
+  const fishGameRead = G =>
+    G && G.photos && typeof G.photos === 'object'
+      ? {...G, photos: Object.fromEntries(Object.entries(G.photos).map(([t, L]) => [t, Array.isArray(L) ? L.map(fishGameRow) : L]))}
+      : G;
   // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
   // draw favours at the start, judging/FISH.md), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
   // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
@@ -1084,10 +1111,16 @@
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
     short.filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k))).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft));
-    // The other number of every name, as the name it comes from (its own name's: the unit's own, alt 0).
-    Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x)))))
-    );
+    // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
+    // scientific name's (a unit of a scientific rank, a family's sciNames: Codex review #834, "Zebrasomas", "Halichoere"
+    // were read exactly), which keeps its spelling step.
+    Object.values(gen || {})
+      .filter(g => !g.rank)
+      .forEach(g =>
+        (g.names || [g.name]).forEach(
+          (x, i) => !(g.sciNames || []).includes(x) && typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x))))
+        )
+      );
     typeKnown(out, known);
     typeOff(out, known);
     return out;
@@ -3242,7 +3275,7 @@
       return out;
     },
     entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (gm || {}).photos, cur, f), (ph || {}).sheet);
+      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur, f), (ph || {}).sheet);
       return Object.fromEntries(
         Object.values(F.gen)
           .filter(g => !g.wink)
@@ -5628,6 +5661,8 @@
     fishTypeNames,
     fishNameIndex,
     typeForms,
+    fishGameRow,
+    fishGameRead,
     renamedId,
     sheetIdOf,
     fishTree,
