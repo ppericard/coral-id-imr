@@ -3855,7 +3855,9 @@
   // {to} in p being the two %). Every version takes RV_CARD (Pierre, 2026-11-03, a standing rule: rule D5);
   // Pierre is asked only for a different text. The sync script, which embeds this file
   // (tools/sync_core.py), replays a player's log again when their stored replay is older than RV, and the app adopts a
-  // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay".
+  // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay". The leaderboards follow
+  // on their own (rule D8): the script's 15-minute trigger replays every listed player behind the new version (Code.gs
+  // boardWarm_), and each board ranks them by what their app will adopt (board_, replayAdopted); nothing to add here.
   // The standard recalculation card (Pierre, 2026-11-03: "only to the players whose progress the replay moves a lot; if
   // it moves everyone a lot, everyone gets it"): shown to a player whose progress % the adoption moved by 5 points or
   // more, either way (progress.js rvNoticeAdd), with the two %.
@@ -4592,6 +4594,31 @@
     }
     return out;
   }
+  // A floored replay's typed opportunities per rank (replayFloor may raise the level's, which a unit's false-alarm rate
+  // reads): L, a level record, takes X's level's where they are more (in place; sync.js replayAdoptS, replayAdopted).
+  function tykRaise(L, X) {
+    const tyk = X && X[LEVEL] && X[LEVEL].tyk;
+    if (!tyk || !L || typeof L !== 'object') return;
+    const o = {...(L.tyk || {})};
+    Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
+    L.tyk = o;
+  }
+  // The progress a device holds once it adopts a replay (sync.js replayAdoptS), and so the one the leaderboard ranks a
+  // player by once their saved copy is behind the rules (Code.gs board_; Pierre, 2026-11-09, rule D8). R: the replay (with
+  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version, floor: the subject is
+  // replayed with a floor (SUBJECTS replayed floor). replayedOf of R over P; with a floor, a unit kept from P (more
+  // answers there than in the log) beside the replayed records is floored at its bar in P (their mix-ups and offers on it
+  // may read it lower than it was), and the level's typed opportunities per rank are at least R's (tykRaise; Codex review
+  // #779), so the adoption does not undo the floor.
+  function replayAdopted(R, P, rv, floor) {
+    const S = isObj(P) ? P : {};
+    let M = replayedOf({P: R}, S, rv);
+    if (!floor) return M;
+    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && S[g] && !S[g].rv);
+    if (keptHere.length) M = replayFloor(M, S, keptHere);
+    tykRaise(M[LEVEL], R);
+    return M;
+  }
 
   // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
   // open the genus sheets": does a beginner use them more, does a sheet reader progress faster?). First-party, one
@@ -5186,6 +5213,8 @@
     START_CAP,
     replayedOf,
     replayFloor,
+    tykRaise,
+    replayAdopted,
     replayBase,
     logRow,
     ELO,
