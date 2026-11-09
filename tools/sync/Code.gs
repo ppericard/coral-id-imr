@@ -4343,7 +4343,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The admin's badge on a leaderboard row (Code.gs board_ vNEXT: a 4th field 1 on the rows of the accounts the admin
   // marked from the admin page, users_ userBadge): shown only from a reply of a script that sends it (rule D4); an older
   // script sends rows of three fields and the board looks as before. Nothing a player sends sets it.
-  const BADGE_SHEET = 121;
+  const BADGE_SHEET = 122;
   const boardBadge = (row, v) => Number(v) >= BADGE_SHEET && Array.isArray(row) && row[3] === 1;
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
