@@ -1271,8 +1271,10 @@ function anWright(a) {
     star = g => typeof starRefs === 'function' && typeof DATA !== 'undefined' && DATA && starRefs(DATA, g).length > 0,
     hi = Math.max(...W.th.map(x => x[1])),
     lo = Math.min(...W.th.map(x => x[1])),
-    beyond = W.g.filter(x => x[1] > hi).sort((p, q) => q[1] - p[1]),
-    easy = W.g.filter(x => x[1] < lo - W.m).sort((p, q) => p[1] - q[1]),
+    // every player: from each player's own prediction on the genus when the report has them (x[4], x[5]: the lowest and
+    // highest; Codex review #830), else from the places on the scale
+    beyond = W.g.filter(x => (x[5] != null ? x[5] < 0 : x[1] > hi)).sort((p, q) => q[1] - p[1]),
+    easy = W.g.filter(x => (x[4] != null ? x[4] > W.m : x[1] < lo - W.m)).sort((p, q) => p[1] - q[1]),
     it = L => L.map(x => `<i>${esc(x[0])}</i>`).join(' · '),
     // no signed number (#601): a player's place as the chance of recognising a typical genus beyond guessing, a genus's
     // difficulty as the chance the typical player recognises it beyond guessing, each with its likely range

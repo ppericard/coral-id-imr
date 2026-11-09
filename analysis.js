@@ -1859,10 +1859,25 @@
           r3(Math.sqrt(fixVar(lp[j]) + P.cv[j] + cvv * d * d))
         ];
       }),
+      // + the lowest and highest chance (log-odds beyond guessing) the model gives a player on the genus, each player at
+      // their own practice with their own slope and the genus's (Codex review #830: a place read off the typical practice
+      // alone dropped the genus slope times each player's distance to it, so "every player" could be wrong)
       g: G.L.map((x, j) => {
         const [v, cvv] = vs(GS, gj && gj.get(x)),
-          d = lt - lc;
-        return [x, r3(-G.u[j] - v * d), cnt[x], r3(Math.sqrt(fixVar(lt) + G.cv[j] + cvv * d * d))];
+          d = lt - lc,
+          own = live.map(i => {
+            const [vp] = vs(PS, pj && pj.get(P.L[i])),
+              di = lp[i] - lc;
+            return M.b[0] + M.b[1] * lp[i] + P.u[i] + vp * di + G.u[j] + v * di;
+          });
+        return [
+          x,
+          r3(-G.u[j] - v * d),
+          cnt[x],
+          r3(Math.sqrt(fixVar(lt) + G.cv[j] + cvv * d * d)),
+          r3(Math.min(...own)),
+          r3(Math.max(...own))
+        ];
       }),
       mid: r3(M.b[0] + M.b[1] * lt), // the typical player's place: a genus's chance for them is sig(mid - difficulty)
       m: r3(logit(MASTER))
@@ -4047,6 +4062,8 @@
         if (a.ix)
           r.A[k].ix = a.ix.map(t => ({k: t.k, ix: 1, df: t.df, W: t.W, n: t.n, fam: t.fam, p: t.p, pa: t.pa, v: t.v, need: t.need}));
         if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
+        // the common learning slope reads the slope spreads (plainOf; Codex review #830)
+        if (k === 'learn' && a.b1 != null) r.A[k].b1 = a.b1;
       });
       body -= len[M];
       body += measure(M);
