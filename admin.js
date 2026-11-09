@@ -6981,6 +6981,13 @@ async function sealIn(over) {
     DRAFT.genera = DRAFT.genera || {};
     snap = JSON.stringify(DRAFT);
   }
+  // Right before the plain draft is cleared, what is stored is read once more (a click another tab saved while this one
+  // awaited the token's hash or key, its storage event not come yet: Codex review #798): with something new taken in, it
+  // goes round again, so a draft with something to publish is sealed, never cleared.
+  const at0 = snap;
+  ptFlush();
+  takeOther();
+  if (snap !== at0) return sealIn(over);
   if (!status0().parts.length) {
     plainOff();
     const L = store.get(SEALED, []),

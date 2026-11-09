@@ -5306,7 +5306,7 @@ const WIDTHS = [390, 1280];
           ),
           L = Object.keys(PHOTOS)
             .filter(f => !cand.has(f) && !C.includes(JSON.stringify(f)))
-            .slice(0, 9),
+            .slice(0, 10),
           s = L.map(f => (SAVED.quality || {})[f] || 0),
           v = s.map(x => (x === 1 ? 3 : 1));
         DRAFT.quality = {...(DRAFT.quality || {}), [L[0]]: v[0], [L[1]]: v[1]};
@@ -5791,9 +5791,46 @@ const WIDTHS = [390, 1280];
                 `${F}: a seal written while another tab opened this token's seal was dropped with it ${JSON.stringify({got, n2})}`
               );
           }
+          // (3) Codex review #798: this tab signs out with nothing to publish (its token's hash and key held 3 s) while the
+          // other tab saves a rating on a photo no step before rated, then is closed. The rating, stored meanwhile, is read
+          // again right before the plain draft would be cleared: it is sealed, and back at the next unlock.
+          {
+            const f = st.L[9];
+            await reopen(q2);
+            await q.evaluate(() => {
+              DRAFT = clone(SAVED);
+              saveDraft();
+              const dg = crypto.subtle.digest.bind(crypto.subtle);
+              crypto.subtle.digest = (...a) => new Promise(r => setTimeout(r, 3000)).then(() => dg(...a));
+            });
+            await q3.evaluate(() => (window.smokeN = 0));
+            await c.route(admin, held);
+            await q.evaluate(() => void signOut());
+            await q.waitForFunction(() => signingOut, null, {timeout: 10000});
+            await q2.evaluate(f => {
+              DRAFT.quality = {...DRAFT.quality, [f]: 3};
+              saveDraft();
+            }, f);
+            await q2.close();
+            const done = await q3
+              .waitForFunction(() => smokeN >= 1, null, {timeout: 45000})
+              .then(
+                () => true,
+                () => false
+              );
+            await c.unroute(admin, held);
+            await leaveQ();
+            await q.goto(base + 'admin.html?demo#photos/review/quality');
+            await ready();
+            const got = await quality([f]);
+            if (!done || got[0] !== 3)
+              fails.push(
+                `${F}: a rating another tab saved while this one signed out with nothing to publish was deleted ${JSON.stringify({done, got})}`
+              );
+          }
           await q3.close();
         }
-        await q2.close();
+        if (!q2.isClosed()) await q2.close();
         await q.goto(base + 'admin.html?demo#inbox/todo/points/astrea-reefcloud');
         await ready();
         await q.waitForSelector('[data-ptn]', {timeout: 20000});
