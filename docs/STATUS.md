@@ -5,80 +5,80 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-09, about 00:15 Manila, by the integrator, during the night (Rule 0: the morning report). **A new
-integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
+Written 2026-11-09, about 17:10 Manila, by the integrator (Rule 0: the end-of-day protocol). **A new integrator starts
+here, then reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
-Last checked: reports and events: 2026-11-08 ~07:20 Manila (4 fish reports on 11-07; events: "Can't find variable: shownGroup" twice on 11-06 on one device, one "left with a card open" on the Scientific names offer on 11-07, two saves failed and not recovered)
+Last checked: reports and events: 2026-11-08 ~07:20 Manila (not read on 11-09: first thing tomorrow)
 
 ## Now
 
-Fish is open to every player (beta). Main: sheet script **v112**. Codex's usage limit (merges stopped at 23:35) lifted
-by Pierre with credits on the 11-09 morning (Q314). Overnight Claude reviews (two rounds) of #793, #795, #798-#801: every
-finding fixed with a test, green.
+Main: sheet script **v126**. On 11-09 Pierre asked to close the open PRs one by one before any new topic; 49 PRs merged
+(#769, #793-#844 but #808 and #833, `git log`), and the day's lessons became **rule W27** (#843: at most three agents,
+PRs from `main` only, no two open PRs on one sensitive file, two Codex rounds then cut the scope, simulations capped at
+what is read, one train at a time, ambiguous asks asked back, structural problems found and decided by the agents).
 
-- **Waiting, all green** (17/17 checks, 2026-11-09 00:10), no Codex review of their heads: #793 rotate a photo, #794 fish
-  Analyses, #795 rights badges, #796 #797 #802 #803 fish judging (Blennies, Gobies), #798 admin low items, #799 lighter
-  saves, #800 fish Stops and Health, #801 security follow-ups. **#769** (learnsim): Codex-clean, a draft (Pierre's hands).
-- **Code.gs PRs, one per train**: #794 (before #800: a small `core.js` conflict), #799, #800, #801, each versioned by
-  `tools/sheet_version.py --assign` at its turn: their gates (all 113 tonight) become 113, 114… in merge order.
-- **Merged tonight** (`git log`): #756-#759, #766-#768, #770-#792 (#760-#765 closed into #766): merge speed (Q305; CI
-  209 s -> 134 s), fish rubric 6 and 4,120 candidates judged (Q308, Q311), the 17 new families live, sheet v109-v112
-  (device id Q312, live Activity, the fish replay Q310), Visits (Q301-Q304), reports bar (Q309), common names (Q313),
-  ID marks of 40 families, install nudge, the 7 L11 tools, iNaturalist batching, #790 (the #664 re-check's bug).
+- **#840** trust the log (its new rule; Q330, Q332): round 2 found 3 more on the checkpoint shift, so cut (W27): units,
+  bars and % follow the log; the level's "answers so far" keeps main's rule, its follow-up on `claude/level-count-from-log`
+  (tell Pierre: P8's total still reads 170 until then). Then `--assign` v127 and train; the leaderboard follows within
+  ~15 min of the sheet update (rule D8). After it is live: read Progress data rows 9 and 10 once each has synced (unit
+  counts as the log); if not, correct those two by hand (Q322 a). No card for anyone (Q330, Q332).
+- **#839** other-species split (Q323; P3 wording Q336 OK): green, Codex asked again; after #840, merge `main`,
+  `sync_core --fix`, then `--assign`.
+- **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (the sealing cut out of #798, Q334; its design note
+  `docs/reviews/2026-11-09-admin-signout-seal.md` recommends one IndexedDB store with every draft write in one
+  transaction, invisible to Pierre); `/home/user/find-the-x` (Find the X, uncommitted, paused); `claude/load-order-b`
+  and the uncommitted load-order (d) (worktrees under `.claude/worktrees/`); `claude/analyses-fsrs` (AV 14, local).
 
 ## Next
 
-This morning: the waiting PRs land (Q314 lifted); the Reports and Events tabs read since 11-08 07:20; then ROADMAP "Backlog in priority order".
+Pierre's quota is spent: no agent tonight or on 11-10; the next integrator (another account) starts 11-11 morning,
+first INTEGRATOR.md "Handover of 2026-11-09 evening", then #840 and #839 through the queue. Then, one at a time:
+
+1. **The opening burst** (Pierre ~16:40, several players, P11 on corals now): a mid player with few genera answers
+   everything right, the engine opens many genera in a row and the success rate collapses for a while. Read-only on the
+   real log first (who, how often, how deep, how long), then 2-3 ways to soften it without slowing experts, each with
+   its benefits and risks, checked in short simulations. To Pierre in the morning report.
+2. **Faster learning checks** (W27): tier 2 as a parallel matrix (profile × arm) and answers capped at what is read;
+   target under 30 min (Q208's look 2 took 37 s; its full heavy-tail run 3 h).
+3. Docs: #822's heavy-tail table and look 2 into LEARNING.md; INTEGRATOR: Rule 0's reading (16:30-17:30 opens nothing
+   new, questions that close a topic under way are fine).
+4. Then ROADMAP "Backlog in priority order": the Matrix plan (#826 tiles done, Find the X paused, then Matrix), Q208 C
+   if the data justify it (#822's measure: accepting the scientific names delays every family at Advanced by 2,300-3,300
+   answers), the load-order (b) and (d) PRs, the seal rebuild.
 
 ## Questions for Pierre
 
 Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
 mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- **Q208** (set aside 11-08): families not met before the scientific genera, or genera on their own pace? **Q230**
-  out-of-zone taxon-page photos: waits for real arguments.
-- **Not numbered**: **Show the species after a family or genus answer** (species, common and scientific name, right or
-  wrong; Pierre ~20:10): before the species level? **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124** asked
-  again. Apply the **152 curated tag and ease proposals** (`judging/fish-light-q308.json` "curation", 105 flash n -> g)
-  in the admin? A **stopgap `fish-photos.json`** so unjudged species show remote photos meanwhile (~10,100 candidates
-  in 468 species unjudged)? The **R2 crop workflow**: done? **Rule D5**, a one-line change for his OK: "adds an entry
-  at the end of the subject's rules versions (`core.js` `RVS` for the corals, `FISH_RVS` for the fish)". **Eel-tailed
-  catfishes** (parked below): what he wants from it. Re-read the **Q305 rule texts** (#757 Decisions) and #758's
-  W12/W14 wording. `PFMT` (per-format offsets) also leaks the corals' values to fish (#805): not in Q317's answer.
-- FYI. Delegated tonight, to check in use: Visits (#777: device rows with installed / browser and "not known", a
-  two-subject visit on each side, one row per Lab page), the reports bar, Home's header switch, the privacy text, the
-  install nudge (#768: 10 answers = a session, a visit = a 30-min gap, every touch screen, Home only, a ⚙ Settings row,
-  any close ends it). Rule C7's pointer to a deleted ROADMAP row now reads "Every tool goes through `tools/inat.py`, one
-  paced, retried client (#784)." Without species units, a player who declines scientific names plateaus at 50% once
-  the families are mastered (rated world). Eagle rays and Cat sharks have no species near Dauin: not in play.
-- Answered 11-08: Q121 / Q300 the rewrite; Q301-Q304 Visits (#777); Q305 a, b, d, not c (#757); Q306, Q307 (#753);
-  Q308 fish light g / d / n (#759); Q309 reports bar (#785); Q310 fish replay, today's bar a floor (#776, #779); Q311
-  fish batches (#766, #780, #781); Q312 device id on answers (#774); Q313 fish common names, corrected in use (#778).
-- Answered 11-09 (rule L1, LEARNING.md, ROADMAP): Q314 Codex limit lifted (credits); Q315 a time intensity per photo in
-  `photoDiff`'s prior, (1) only as the declared comparison, all vs right answers two declared variants, (3) waits, L11
-  level 2; Q316 componential difficulty (rank + family + genus + species + photo, shrunk, a Kalman split, v31 parity;
-  offline fit, then sheet, then app); Q136 reopened into Q316 (per-genus ability centred on zero?); Q317 fish prior
-  kept, later a memory boost decaying with time since last shown (read-only table first), rule L1 exception.
+- **Q230** out-of-zone taxon-page photos: waits for real arguments.
+- **Not numbered, from before**: **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124**; apply the **152 curated
+  tag and ease proposals** (`judging/fish-light-q308.json`)? The **R2 crop workflow**: done? **Eel-tailed catfishes**
+  (parked below): what he wants from it. `PFMT` (per-format offsets) also leaks the corals' values to fish (#805).
+- Answered 11-09: Q314 Codex limit lifted; Q315-Q317, Q136 (LEARNING.md); Q318 net z (#808); Q319, Q320, Q331, Q333
+  strict typed names (#834: a name counts only if it designates the photo's own taxon; a right genus or species name
+  counts; errors count); Q321 Matrix plan; Q322 trust the log, 4 rows (only rows 9, 10 hold doubles); Q323, Q336 (#839);
+  Q324, Q335 #808 closed, its conclusions kept (#844); Q325 tiles (#826); Q326 Analyses (#829-#832); Q327 Visits
+  (#836); Q328 🌱 after the admin's name, no rename (#841); Q329 load order a (#837); Q330, Q332 no exception, no floor,
+  no card (#840); Q334 #798 split (#798, the seal on its branch); Q208 A (#822).
 
-Last question number: Q317
+Last question number: Q336
 
 ## Pierre's hands
 
 Actions only Pierre can do.
 
-- **#769: click "Ready for review"** (the session's permission classifier refused it three times).
-- **Drop the Coral Finder crops from R2** (Actions > "Drop the book crops from R2", dry run first; HANDOVER "Coral Finder
-  book crops on R2"); **delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
+- **Delete the branch `claude/q208-probe-declined`** (a one-line probe for #822's measurement; the classifier refused
+  the delete).
+- **Drop the Coral Finder crops from R2** (Actions > "Drop the book crops from R2", dry run first); **delete his
+  rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
 - From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
   morning report scheduled task from claude.ai; the 8 unsure fish candidates and the expert analyses' photos (11-06);
   genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for
-  the 11 fish entries with no reference-level photo (Barracuda, Seamoths, Scorpionfishes, Flying gurnards, Stargazers,
-  Snake eels, Garden eels, Rays, Reef sharks, Whale shark, Thresher sharks).
-- **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know; pre-sort the near-Dauin observations left
-  above genus (links: `git show 4c8251a:docs/STATUS.md`); show the Astrea question to a trainer (To do › Points). To do ›
-  Out of the presence rule, the 14 share-alike coral photos, more photos for the thinnest genera (Coverage › Thinnest).
-- **Protect `main`**, **clean merged branches** (HANDOVER); archive tags `f46f11c` (`archive/cards-mockups`), `dd491b0`
-  (`archive/fishprog-mockups`), then delete `claude/admiring-ramanujan-nw3mxr-cards`, `…-fishprog`, `…-calib-study`.
+  the 11 fish entries with no reference-level photo.
+- **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know (links: `git show 4c8251a:docs/STATUS.md`).
+- **Protect `main`**, **clean merged branches** (HANDOVER); archive tags `f46f11c`, `dd491b0`, then delete
+  `claude/admiring-ramanujan-nw3mxr-cards`, `…-fishprog`, `…-calib-study`.
 - Renew the admin GitHub token before late January 2027; say his Lab Keep / Trim votes; look for the IMR benthic deck.
 
 ## Parked after hours
@@ -86,14 +86,13 @@ Actions only Pierre can do.
 Ideas Pierre dictated after 17:30, untouched until the morning, then turned into work or a ROADMAP row (Rule 0).
 
 - (integrator, from Pierre's session) the limit of 8 shaky genera fills with the hardest look-alike families: it held an
-  expert's openings for 138 answers. Revisit with the progress rebuild.
-- (Pierre ~20:10) after every family or genus answer, right or wrong, show the photo's species, common and scientific
-  name (ROADMAP row "Show the species after a family or genus answer").
-- (Pierre ~20:20) "Eel-tailed Catfish is really a family with its own thumbnail in the book's index" (in the game:
-  circle 3, *Plotosus lineatus*). Ask what he wants from it (a circle, a cover, more species?).
+  expert's openings for 138 answers. Revisit with the opening burst (Next 1).
+- (Pierre 11-08 ~20:20) "Eel-tailed Catfish is really a family with its own thumbnail in the book's index" (circle 3,
+  *Plotosus lineatus*). Ask what he wants from it (a circle, a cover, more species?).
 
 ## Last stop
 
-2026-11-09 ~00:15 Manila, integrator, night: the acceleration (#756-#758), then trains of the decided work (Q308-Q313,
-the 11-08 delegation); stopped at 23:35 by Codex's limit. Mid-flight: the 11 green PRs of "Now"; #769 (Pierre's click).
-
+2026-11-09 ~17:10 Manila, integrator, end of day: the open PRs closed one by one (49 merged); Pierre stopped new topics,
+found the day's cost too high for the result (#798's six Codex rounds, a dozen agents, a three-hour simulation,
+misread asks built twice): rule W27; his quota at 5%, a new integrator from 11-11. Mid-flight: #840 (the W27 cut, its
+last Codex check), #839 (after #840).
