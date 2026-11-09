@@ -2140,6 +2140,39 @@ body.adm-cmode .adm-toast {
     padding-right: 6px;
   }
 }
+/* A fish photo tile's tag rows (Tags: admin.js fishTile, Q309): Ease, the phase and the rubric's rows, under its
+   buttons across the tile; Tags pressed while they show. */
+.adm-ftrows {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+.adm-ftrows .adm-qseg,
+.adm-ftrows .adm-ftags {
+  flex: none;
+  width: 100%;
+  margin: 0;
+}
+.adm-ftile .adm-acts > button[data-fu='tags'][aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+/* A family page's tile with its tag rows unfolded takes the room its rows need (its tiles are too narrow for five buttons a
+   row): the whole row of the grid on a phone, two columns from the tablet size class (rule U4; three or more columns
+   there). To do's and Health's tiles (adm-qgrid) are wide enough already: one a row on a phone, 260 px or more wider. */
+@media (max-width: 599px) {
+  .adm-grid > .adm-ftile.is-tags {
+    grid-column: 1 / -1;
+  }
+}
+@media (min-width: 600px) {
+  .adm-grid:not(.adm-qgrid) > .adm-ftile.is-tags {
+    grid-column: span 2;
+  }
+}
 /* Triage, flagged photos: Done closes the flag once fixed with the tile's tools. */
 .adm-flagged .adm-tdone {
   flex: 1 1 100%;
@@ -3623,8 +3656,10 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 }
 .adm-hphotos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
+}
+.adm-hphotos:not(.adm-qgrid) {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 .adm-htile {
   margin: 0;
@@ -3644,17 +3679,18 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-htile figcaption > span {
   color: var(--muted);
 }
-.adm-htile .adm-hnum {
+.adm-hphotos .adm-hnum {
   display: block;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 /* The photo's difficulty reading (recBadge) on its own line under right · answers. */
-.adm-htile .adm-hnum + .adm-hnum {
+.adm-hphotos .adm-hnum + .adm-hnum {
   margin-top: 2px;
 }
+/* Health's photos carry the tools of their page (Q309): the To do tiles' grid (adm-qgrid), one tile a row on a phone. */
 @media (max-width: 599px) {
-  .adm-hphotos {
+  .adm-hphotos:not(.adm-qgrid) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }

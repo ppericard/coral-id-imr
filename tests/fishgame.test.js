@@ -550,9 +550,11 @@ test('fishPhotos: Pierre’s curation applies at once, to the curated photos and
 });
 
 test('fish-game.json: the layout tools/fish_game.py writes, only photos in play, downloaded (no r), in the R2 list', () => {
-  const G = read('fish-game.json'),
+  const G = C.fishGameRead(read('fish-game.json')), // its records whole (the file's short form)
     text = fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8');
   assert.strictEqual(G.v, 1);
+  // Written in the short form (tools/fish_short.py): no iNaturalist observation address in full.
+  assert.ok(!text.includes('"o":"https://www.inaturalist.org/observations/'), 'run python3 tools/fish_game.py --rewrite');
   assert.strictEqual(
     py(`import fish_game as G\nsys.stdout.write(G.dumps(json.load(open('fish-game.json'))))`),
     text,

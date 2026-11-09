@@ -60,7 +60,7 @@ test('index.html: img-src allows every host of the photos’ online originals', 
       Object.values(o).forEach(walk);
     };
   for (const f of ['data.json', 'cand.json', 'fish-photos.json', 'fish-game.json'])
-    walk(JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')));
+    walk(require('../core.js').fishGameRead(JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')))); // records whole
   assert.ok(hosts.size >= 2, 'online originals found');
   hosts.forEach(h => assert.ok(img.includes(h), `${h} missing from index.html img-src`));
 });
