@@ -11,13 +11,15 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 9; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 10; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
   // 7: player profiles (who)
   // 8: the Wright map and the genus × player residuals (Learning wright, res)
   // 9: Time and difficulty (tdiff): others' answer time and enlarging on a photo, time intensity beside difficulty
+  // 10: interactions (ix): enlarging × view (Zoom), pair × view (Confusions), format × practice (Learning), one omnibus
+  // test each in the exploratory family
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
@@ -860,7 +862,8 @@
       ],
       player: livePl(D, Object.values(by)).sort((a, b) => b.z / b.n - a.z / a.n),
       views: Object.values(views),
-      ent: entOf(M.V, M.X, [null, 'rel', 'hab'])
+      ent: entOf(M.V, M.X, [null, 'rel', 'hab']),
+      ix: ixOf([zoomIx(D, B, seed + 31)])
     };
   }
 
@@ -1152,6 +1155,374 @@
       : null;
   }
 
+  /* ---------- Interactions: does one effect depend on another? (the multifactor visualisation study, §5 item 6) ---------- */
+  // The upper tail of a chi-square with k degrees of freedom: Q(k/2, x/2), the regularized incomplete gamma (its series
+  // below a + 1, its continued fraction above: Numerical Recipes 6.2), with Lanczos's log gamma.
+  function lgam(z) {
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = z,
+      t = z + 5.5,
+      s = 1.000000000190015;
+    t -= (z + 0.5) * Math.log(t);
+    c.forEach(v => (s += v / ++y));
+    return -t + Math.log((2.5066282746310005 * s) / z);
+  }
+  function chi2q(x, k) {
+    if (!(x > 0)) return 1;
+    if (!isFinite(x)) return 0;
+    const a = k / 2,
+      y = x / 2,
+      ln = a * Math.log(y) - y - lgam(a);
+    if (y < a + 1) {
+      let t = 1 / a,
+        s = t;
+      for (let n = 1; n < 1000 && Math.abs(t) > Math.abs(s) * 1e-15; n++) ((t *= y / (a + n)), (s += t));
+      return clamp(1 - s * Math.exp(ln), 0, 1);
+    }
+    let b = y + 1 - a,
+      c = 1e300,
+      d = 1 / b,
+      h = d;
+    for (let i = 1; i < 1000; i++) {
+      const an = -i * (i - a);
+      b += 2;
+      d = an * d + b;
+      c = b + an / c;
+      if (Math.abs(d) < 1e-300) d = 1e-300;
+      if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d;
+      h *= d * c;
+      if (Math.abs(d * c - 1) < 1e-15) break;
+    }
+    return clamp(Math.exp(ln) * h, 0, 1);
+  }
+  // The chi-square value with upper tail p (bisection on chi2q).
+  function chi2inv(p, k) {
+    let lo = 0,
+      hi = Math.max(10, 4 * k);
+    while (chi2q(hi, k) > p) hi *= 2;
+    for (let i = 0; i < 100; i++) {
+      const m = (lo + hi) / 2;
+      if (chi2q(m, k) > p) lo = m;
+      else hi = m;
+    }
+    return (lo + hi) / 2;
+  }
+  // b' V^-1 b, and the covariance of bootstrap draws (rows of equal length).
+  const quad = (b, V) => {
+    const s = solve(
+      V.map(r => r.slice()),
+      b
+    );
+    return Math.max(0, sum(b.map((v, i) => v * s[i])));
+  };
+  const covOf = L => {
+    const k = L[0].length,
+      m = L[0].map((_, j) => mean(L.map(r => r[j])));
+    return m.map((_, a) => m.map((__, c) => sum(L.map(r => (r[a] - m[a]) * (r[c] - m[c]))) / (L.length - 1)));
+  };
+  // A linear combination c'b of a fit's fixed effects with its 95% interval from the model's covariance (plus a random
+  // effect's conditional variance cv, when the combination holds one).
+  const lin = (M, c, u = 0, cv = 0) => {
+    const est = sum(c.map((v, a) => v * M.b[a])) + u,
+      va = sum(c.map((v, a) => sum(c.map((w, d) => v * w * (M.V ? M.V[a][d] : 0))))) + cv,
+      se = Math.sqrt(Math.max(0, va));
+    return [r3(est), r3(est - Z * se), r3(est + Z * se)];
+  };
+  // The omnibus test of an interaction: do the coefficients of its product columns (cols, in the fit M) all vanish? A
+  // Wald chi-square from the model's covariance and, with BIX_MIN bootstrap draws or more (over players: the same cluster
+  // bootstrap, BIX draws, a covariance needs some 200: Efron & Tibshirani 1993), from the draws' covariance; the larger p
+  // of the two, as the wider of the two intervals elsewhere (p0). One test per interaction, exploratory (correct: the
+  // Benjamini-Hochberg family; Pierre's primary effects stay those of Q69). inm: every product coefficient inside the
+  // smallest effect that matters with its 95% interval (the wider of the two): "no difference that would matter".
+  const BIX = 199,
+    BIX_MIN = 50,
+    IX_N = 30; // answers (offers) a level needs to enter an interaction
+  function ixTest(k, M, cols, draws, n, sesoi = 0.25) {
+    const df = cols.length;
+    if (!df || !M.V || cols.some(c => !isFinite(M.b[c]))) return null;
+    const b = cols.map(c => M.b[c]),
+      Vm = cols.map(a => cols.map(c => M.V[a][c])),
+      Wm = quad(b, Vm),
+      pm = chi2q(Wm, df),
+      D = (draws || []).filter(r => r.every(isFinite)),
+      Vb = D.length >= BIX_MIN ? covOf(D) : null,
+      Wb = Vb ? quad(b, Vb) : null,
+      pb = Vb ? chi2q(Wb, df) : null,
+      se = b.map((_, i) => Math.sqrt(Math.max(Vm[i][i], Vb ? Vb[i][i] : 0)));
+    return {
+      k,
+      ix: 1,
+      df,
+      W: r3(Vb && Wb < Wm ? Wb : Wm),
+      pm: sig3(pm),
+      pb: sig3(pb),
+      p0: Math.max(pm, pb == null ? 0 : pb),
+      draws: D.length,
+      n,
+      sesoi,
+      b: b.map(r3),
+      se: se.map(r3),
+      inm: b.every((v, i) => Math.abs(v) + Z * se[i] <= sesoi) ? 1 : 0
+    };
+  }
+  // The draws of an interaction's product coefficients: the cluster bootstrap over players (boot) of fit(S).b[cols];
+  // BIX draws for the latest milestone (B = BOOT), BIX_MIN for the earlier ones and Recompute here (B = 199), so the
+  // three interactions add about a sixth to the Action's time at the latest milestone (estimated from 60 draws on 7,200
+  // synthetic answers, 2026-11-09).
+  const ixB = B => (B >= BOOT ? BIX : B >= 199 ? BIX_MIN : 0);
+  function ixDraws(D, fit, cols, B, seed) {
+    if (!ixB(B)) return null;
+    const L = [];
+    boot(
+      D,
+      S => {
+        // not the estimate on the sample itself (boot's BSE call, Recompute here): draws only
+        if (S === D) return null;
+        const b = fit(S).b;
+        L.push(cols.map(c => b[c]));
+        return null;
+      },
+      ixB(B),
+      seed
+    );
+    return L;
+  }
+  // Enlarging × the view shown (Enlarging photos): the Zoom model with each view's own level and its own effect of
+  // enlarging (against a colony photo), views with IX_N answers and 5 enlarged or more. Lines: for each view, the
+  // log-odds against the app's expectation, not enlarged and enlarged (the player at their own habit).
+  const IX_V = ['medium', 'macro', 'multi'];
+  function zoomIxFit(D, L) {
+    const rate = {};
+    D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
+    const rc = centre(D.map(a => rate[a.p][0] / rate[a.p][1])),
+      X = D.map((a, i) => {
+        const rel = a.z - rate[a.p][0] / rate[a.p][1],
+          v = L.map(x => (a.qv === x ? 1 : 0));
+        return [1, rel, rc[i], ...v, ...v.map(x => x * rel)];
+      });
+    return glmm(
+      D.map(a => a.y),
+      X,
+      [
+        factor(
+          'player',
+          D.map(a => a.p)
+        )
+      ],
+      {off: Float64Array.from(D.map(a => a.x)), g: Float64Array.from(D.map(a => a.g0))}
+    );
+  }
+  function zoomIx(D0, B, seed) {
+    const cnt = {};
+    D0.forEach(a => {
+      const c = (cnt[a.qv] = cnt[a.qv] || [0, 0]);
+      c[0]++;
+      c[1] += a.z;
+    });
+    const ok = v => cnt[v] && cnt[v][0] >= IX_N && cnt[v][1] >= 5,
+      L = IX_V.filter(ok);
+    if (!ok('wide') || !L.length) return null;
+    const D = D0.filter(a => a.qv === 'wide' || L.includes(a.qv)),
+      k = L.length,
+      M = zoomIxFit(D, L),
+      cols = L.map((_, j) => 3 + k + j),
+      t = ixTest(
+        'view',
+        M,
+        cols,
+        ixDraws(D, S => zoomIxFit(S, L), cols, B, seed),
+        D.length
+      );
+    if (!t) return null;
+    // enlarging is read against the player's own habit (rel = z - the player's rate): for a player at the typical rate rb
+    // (the rows' mean, as the habit column is centred on), not enlarging is rel = -rb, enlarging 1 - rb (Codex review #829)
+    const rate = {};
+    D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
+    const rb = mean(D.map(a => rate[a.p][0] / rate[a.p][1])),
+      cz = (j, rel) => [1, rel, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map((_, i) => (i === j - 1 ? rel : 0))],
+      c0 = j => cz(j, -rb),
+      c1 = j => cz(j, 1 - rb);
+    t.lv = ['wide', ...L].map((v, j) => ({
+      k: v,
+      n: cnt[v][0],
+      z: cnt[v][1],
+      off: lin(M, c0(j)),
+      on: lin(M, c1(j)),
+      d: lin(
+        M,
+        c1(j).map((x, i) => x - c0(j)[i])
+      )
+    }));
+    return t;
+  }
+  // The pair × the view shown (Genera mixed up; ROADMAP "Analyses: next views"): where a miss goes, by view, pair by pair.
+  // Among the questions missed with choices, each wrong genus offered is a chance to be the one picked (the Confusions
+  // model on missed questions only: the view's main effect on missing is the photo analysis's; asked on every offer, a
+  // pair often mixed up would show a "pair × view" effect from the log-odds scale alone, as misses rise on harder views),
+  // with, for the IX_PAIRS pairs most offered together on a colony and on another view (IX_N offers each), the pair's own
+  // effect of each such view. Lines: each pair's chance to be the one picked, by view (its own effect included), and a
+  // typical pair's.
+  const IX_PAIRS = 6,
+    IX_NM = 20; // offers on missed questions a pair needs on a view
+  function missRows(A) {
+    const E = [];
+    A.forEach(a => {
+      if (a.typed || a.y || a.ch.length < 2 || !a.ch.includes(a.a)) return;
+      a.ch.forEach(c => {
+        if (c === a.g) return;
+        E.push({p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
+      });
+    });
+    return E;
+  }
+  function confIxFit(E, P) {
+    const X = E.map(e => {
+      const v = [e.qv === 'medium' ? 1 : 0, e.qv === 'macro' ? 1 : 0, e.qv === 'multi' ? 1 : 0];
+      return [1, ...v, Math.log(e.k - 1), ...P.map(([pr, w]) => (e.pair === pr && e.qv === w ? 1 : 0))];
+    });
+    return glmm(
+      E.map(e => e.y),
+      X,
+      [
+        factor(
+          'pair',
+          E.map(e => e.pair)
+        ),
+        factor(
+          'player',
+          E.map(e => e.p)
+        )
+      ],
+      {tau0: 0.3}
+    );
+  }
+  function confIx(A, B, seed) {
+    const E = missRows(A),
+      by = {};
+    E.forEach(e => {
+      const o = (by[e.pair] = by[e.pair] || {k: e.pair, off: 0, mix: 0, v: {}}),
+        w = e.qv || 'wide',
+        c = (o.v[w] = o.v[w] || [0, 0]);
+      o.off++;
+      o.mix += e.y;
+      c[0]++;
+      c[1] += e.y;
+    });
+    const top = Object.values(by)
+      .filter(o => o.v.wide && o.v.wide[0] >= IX_NM && IX_V.some(w => o.v[w] && o.v[w][0] >= IX_NM))
+      .sort((a, b) => b.off - a.off || (a.k < b.k ? -1 : 1))
+      .slice(0, IX_PAIRS);
+    const P = top.flatMap(o => IX_V.filter(w => o.v[w] && o.v[w][0] >= IX_NM).map(w => [o.k, w]));
+    if (!P.length) return null;
+    const fit = S => confIxFit(S, P),
+      M = fit(E),
+      cols = P.map((_, j) => 5 + j),
+      t = ixTest('pairview', M, cols, ixDraws(E, fit, cols, B, seed), E.length);
+    if (!t) return null;
+    const Fp = M.F[0],
+      pj = new Map(Fp.L.map((x, j) => [x, j])),
+      base = w => [1, w === 'medium' ? 1 : 0, w === 'macro' ? 1 : 0, w === 'multi' ? 1 : 0, Math.log(3)],
+      views = ['wide', ...IX_V.filter(w => P.some(x => x[1] === w))];
+    t.views = views;
+    t.typ = views.map(w => lin(M, [...base(w), ...P.map(() => 0)]));
+    t.pairs = top.map(o => {
+      const j = pj.get(o.k);
+      return {
+        k: o.k,
+        off: o.off,
+        mix: o.mix,
+        v: views.map(w => {
+          const at = P.findIndex(x => x[0] === o.k && x[1] === w);
+          return [
+            w,
+            o.v[w] ? o.v[w][0] : 0,
+            o.v[w] ? o.v[w][1] : 0,
+            ...(w === 'wide' || at >= 0
+              ? lin(M, [...base(w), ...P.map((_, i) => (i === at ? 1 : 0))], Fp.u[j], Fp.cv[j])
+              : [null, null, null])
+          ];
+        })
+      };
+    });
+    return t;
+  }
+  // The format × practice (Learning with practice): the Learning model with a two-choice level, and the practice slope of
+  // two-choice and typed questions apart from that of four choices (formats with 100 answers or more, answered at more
+  // than one level of practice). Lines: the log-odds of recognising beyond guessing by practice, per format.
+  const IX_F = [
+      ['four', '4 choices'],
+      ['two', '2 choices'],
+      ['typed', 'Typed']
+    ],
+    IX_GRID = [0, 1, 2, 4, 8, 16, 32];
+  const fgOf = a => (a.typed ? 'typed' : a.f === 'again' || a.f === 'qduel' || a.f === 'duel' ? 'two' : 'four');
+  function lnIxFit(D, L) {
+    const X = D.map(a => {
+      const l = Math.log(1 + a.n),
+        g = fgOf(a);
+      return [
+        1,
+        l,
+        a.afterMiss,
+        a.afterAgain,
+        a.typed,
+        a.exam,
+        a.back,
+        L.includes('two') && g === 'two' ? 1 : 0,
+        ...L.map(x => (g === x ? l : 0))
+      ];
+    });
+    return glmm(
+      D.map(a => a.y),
+      X,
+      [
+        factor(
+          'player',
+          D.map(a => a.p)
+        ),
+        factor(
+          'genus',
+          D.map(a => a.g)
+        )
+      ],
+      {g: Float64Array.from(D.map(a => a.g0))}
+    );
+  }
+  function lnIx(D, B, seed) {
+    const cnt = {};
+    D.forEach(a => {
+      const g = fgOf(a),
+        c = (cnt[g] = cnt[g] || {n: 0, s: new Set()});
+      c.n++;
+      c.s.add(a.n); // every practice count it was asked at (Codex review #829: capped at 2, later practice read as none)
+    });
+    const ok = g => cnt[g] && cnt[g].n >= 100 && cnt[g].s.size > 1,
+      L = ['two', 'typed'].filter(ok);
+    if (!ok('four') || !L.length) return null;
+    const fit = S => lnIxFit(S, L),
+      M = fit(D),
+      cols = L.map((_, j) => 8 + j),
+      t = ixTest('fmtpractice', M, cols, ixDraws(D, fit, cols, B, seed), D.length);
+    if (!t) return null;
+    t.grid = IX_GRID;
+    t.lv = IX_F.filter(([g]) => g === 'four' || L.includes(g)).map(([g, label]) => ({
+      k: g,
+      label,
+      n: cnt[g].n,
+      pts: IX_GRID.map(x => {
+        const l = Math.log(1 + x);
+        return [x, ...lin(M, [1, l, 0, 0, g === 'typed' ? 1 : 0, 0, 0, g === 'two' ? 1 : 0, ...L.map(y => (y === g ? l : 0))])];
+      })
+    }));
+    return t;
+  }
+  // The interactions an analysis carries (the ones that could be fitted).
+  const ixOf = L => {
+    const T = L.filter(Boolean);
+    return T.length ? T : undefined;
+  };
+
   /* ---------- 5. Confusions: pair × view, each player against the pooled rates ---------- */
   const CF_X = [
     ['medium', 'Close-up shown (vs colony)'],
@@ -1269,7 +1640,8 @@
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
       ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
-      map: mixMap(E, M, F)
+      map: mixMap(E, M, F),
+      ix: ixOf([confIx(A, B, seed + 31)])
     };
   }
 
@@ -1590,7 +1962,8 @@
       b1: M.b[1],
       ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])]),
       wright: wrightOf(D, M, F),
-      res: resOf(D, M, F, seed)
+      res: resOf(D, M, F, seed),
+      ix: ixOf([lnIx(D, B, seed + 31)])
     };
   }
 
@@ -2635,7 +3008,11 @@
     // a photo's time intensity linked to its difficulty: + log seconds per logit of the photo's own difficulty (0: none;
     // the tests of Time and difficulty plant one)
     // blind: the share of a photo's own difficulty the app's expectation misses (0: the app knows it, up to its noise)
-    td: {link: 0, blind: 0}
+    td: {link: 0, blind: 0},
+    // interactions (0: none; the tests of the interactions plant them): enlarging on a corallite photo, on the log-odds;
+    // a look-alike's pull on a corallite photo for the even-numbered genera, on the log of its weight; the practice slope
+    // of typed answers, on top of the others'
+    ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0}
   };
   // o: {players: [[id, ability, answers, enlarge rate]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
   // start, end (ms), seed, subject}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
@@ -2647,8 +3024,8 @@
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
       // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
-      pickW = (L, look) => {
-        const w = L.map(x => (look.includes(x) ? T.mix : 1));
+      pickW = (L, look, pull = 1) => {
+        const w = L.map(x => (look.includes(x) ? T.mix * pull : 1));
         let r = R() * sum(w);
         return L.find((x, i) => (r -= w[i]) < 0) || L[L.length - 1];
       },
@@ -2704,10 +3081,11 @@
             T.learn.b0 +
             T.learn.slope * Math.log(1 + s.n) +
             (s.miss && f !== 'again' ? T.learn.afterMiss + (s.again ? T.learn.again : 0) : 0) +
-            (s.last ? T.back * Math.log(1 + days) : 0),
+            (s.last ? T.back * Math.log(1 + days) : 0) +
+            (f === 'typed' ? T.ix.typedSlope * Math.log(1 + s.n) : 0),
           [cg, ez] = T.fmt[f] || [f === 'qduel' ? 0.5 : 0.25, 0],
           z = R() < enl * (p.v === 'wide' ? 1.5 : 0.6) ? 1 : 0,
-          e2 = eta + ez + (z ? T.zoom : 0),
+          e2 = eta + ez + (z ? T.zoom + (p.v === 'macro' ? T.ix.zoomMacro : 0) : 0),
           right = R() < cg + (1 - cg) * sig(e2) ? 1 : 0,
           look = (o.look[g] || []).filter(x => o.photos[x]),
           ch = [g];
@@ -2720,7 +3098,13 @@
         const app = f === 'typed' ? 0 : f === 'k2' ? 0.5 : f === 'k4' ? 0.25 : 0.5,
           // the app's expectation: its own estimate of eta (a little off), its fixed guess rate
           E = app + (1 - app) * sig(eta + T.td.blind * mean(ph.map(x => bph[x.f])) + nrm() * 0.1),
-          ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pickW(ch.slice(1), look),
+          ans = right
+            ? g
+            : f === 'typed'
+              ? R() < 0.5
+                ? ''
+                : pick(G)
+              : pickW(ch.slice(1), look, p.v === 'macro' && G.indexOf(g) % 2 === 0 ? Math.exp(T.ix.pairMacro) : 1),
           sec = Math.exp(
             T.rt.b0 +
               rp +
@@ -3252,6 +3636,24 @@
     return Object.assign(e, {v: 'thin', need: isFinite(need) ? nice(need) : null});
   }
 
+  // The verdict of an interaction's omnibus test after its correction: clear when its adjusted p is at most the level;
+  // "no clear effect" when every product coefficient lies inside the margin (inm); else not enough data yet, with the
+  // answers that would carry it to either verdict if the pattern held (the Wald chi-square grows with the answers; the
+  // intervals shrink as 1/sqrt(n)).
+  function settleIx(e, pr, level) {
+    const pa = Math.min(1, pr),
+      lev = pr > 0 ? Math.min(level, (level * e.p) / pr) : level;
+    Object.assign(e, {pa: sig3(pa), p: sig3(e.p), need: null});
+    if (pa <= level) return Object.assign(e, {v: 'clear'});
+    if (e.inm) return Object.assign(e, {v: 'margin'});
+    const clear = e.W > 0 ? (e.n * chi2inv(lev, e.df)) / e.W : Infinity,
+      margin = e.b.every(v => Math.abs(v) < e.sesoi)
+        ? e.n * Math.max(...e.b.map((v, i) => ((Z * e.se[i]) / (e.sesoi - Math.abs(v))) ** 2))
+        : Infinity,
+      need = Math.max(e.n + 1, Math.min(clear, margin));
+    return Object.assign(e, {v: 'thin', need: isFinite(need) ? nice(need) : null});
+  }
+
   // Applies both corrections to one milestone's results (runAll): each tested effect gets its family (fam: 1 primary,
   // 2 secondary), p, adjusted p (pa) and final verdict; the milestone gets mt: how many tests in each family.
   function correct(res) {
@@ -3276,6 +3678,8 @@
         T.push(e);
       })
     );
+    // the interactions' omnibus tests (ixTest): exploratory, one p each
+    Object.values(res.A).forEach(a => (a.ix || []).forEach(e => e.p0 != null && ((e.fam = 2), (e.p = e.p0), T.push(e))));
     const L1 = T.filter(e => e.fam === 1),
       L2 = T.filter(e => e.fam === 2),
       a1 = holm(
@@ -3287,7 +3691,7 @@
         true
       );
     L1.forEach((e, i) => settle(e, a1[i], ALPHA));
-    L2.forEach((e, i) => settle(e, a2[i], FDR));
+    L2.forEach((e, i) => (e.ix ? settleIx : settle)(e, a2[i], FDR));
     res.mt = {m1: L1.length, m2: L2.length, a: ALPHA, q: FDR};
     return res;
   }
@@ -3482,6 +3886,9 @@
         // what the plain reading needs stays: the typical values, and each format's own expected chance and guess rate
         // (Codex review #495: without them a lean milestone read its formats at 75% and 25%)
         r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
+        // an interaction keeps its test, not its lines
+        if (a.ix)
+          r.A[k].ix = a.ix.map(t => ({k: t.k, ix: 1, df: t.df, W: t.W, n: t.n, fam: t.fam, p: t.p, pa: t.pa, v: t.v, need: t.need}));
         if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
       });
       body -= len[M];
@@ -3586,6 +3993,13 @@
     resOf,
     tdFeat,
     tdiff,
+    chi2q,
+    chi2inv,
+    ixTest,
+    zoomIx,
+    confIx,
+    missRows,
+    lnIx,
     TD_K,
     TD_MIN
   };
