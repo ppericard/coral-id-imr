@@ -3054,6 +3054,35 @@ once they are in. Option C, a ceiling on the genus share while the families are 
 justify it. No progress rule moves (no `RVS` entry: the order of opening moves no unit's record, and the sheet does not
 replay it). Tests: `tests/familiesfirst.test.js`, `tests/fish.smoke.js` (sci part).
 
+**Checked** (#822, rule L11 level 2, declared before running):
+- **The declaration**: the primary is `genShare@300` (the share of answers 1-300 on scientific genera), down. World: rated, normal photos, app told the truth. The 5 fish profiles × 10 seeds × 10,000 answers. 2 looks, so bounds at 95% and the primary at 0.025.
+- **Primary: not clear.** Pooled sign-flip p 0.38, and only 3 of the 50 pairs moved: lecture RA 0.085 → 0.084, expert 0.078 → 0.075. The beginner, the casual diver and the strong RA came out the same, seed for seed.
+- **Guardrails: every one held** (table in #822):
+  - in the rated world, normal photos (heavy tails: see #822);
+  - in the app world (5 seeds × 600 questions, `--choice auto`), where every run is the same except the strong RA's.
+- **Why so small.** Simulated players meet every family in play early. Circles 1 and 2 hold 32 families, met by about 160-340 answers in the rated world. That is before, or about when, a family first reaches Advanced. So the rule rarely binds. The strong RA meets all 32 by about 160, and its first genus comes at 180-260 either way.
+- **The real log.** A replay cannot judge a change in what opens, so this was read instead: 4,760 answers, 9 fish players, read on 2026-11-09. 3 of the 9 met genera while a circle-1 family was still not met: 2, 4 and 7 genera. Two of those genera are IMR genera, which stay exempt. Those openings are what the rule changes.
+
+**Offer accepted against declined** (the measurement the Q208 study proposed; main, no code change):
+- **How it was run.** Rated world, normal photos, 10 seeds × 10,000 answers, the beginner, lecture RA, strong RA and expert. Read two ways: a paired run on the learning-check Action, with every profile declining in the second arm, and a scratch reader of the same seeds for the families alone. In the scratch reader the strong RA's accepted arm reached 4 seeds and the expert's none.
+- **Once accepted, genera take most of the questions** (the accepted arm):
+
+| Answers | Share on genera |
+| --- | --- |
+| 301-1,000 | 15-49% |
+| 1,001-3,000 | 70-78% |
+| 3,001-10,000 | 82-84% |
+
+  Declined, the share is 0, except the lecture RA, whose IMR genera come anyway: 16-17%.
+- **The family levels come much later**:
+  - families at Advanced at 1,000 answers: −2.8 for the beginner, −7.4 for the lecture RA, −11.8 for the strong RA;
+  - at 3,000 answers: −5 to −7;
+  - every circle-1 family at Advanced: at 4,050-4,500 answers accepted against 1,200-1,700 declined, so 2,300 to 3,300 answers later;
+  - the fifth family at Advanced: 40 to 107 answers later.
+- **The end state is the same.** At 10,000 answers, 31-32 of the 32 families are at Advanced and have passed their mastery exam in both arms. In this world the exams are passed; the app world found none passed in 8,000 answers.
+- **Small other effects.** Declining leaves the families' true knowledge (D\*) a little higher at 1,000 answers: +0.016 to +0.020. The score shown at 1,000 answers is 1.3-1.7 points higher declined for the beginner and lecture RA, and 1.9-3.4 points lower for the strong RA and expert. From 3,000 answers on, accepting is ahead: by 2.6-12.3 points at 3,000 and 13.6-18.3 at 10,000. The declined player stops at 42-46%, with no credit left to earn.
+- **What it says.** Accepting delays the family levels a lot, not where they end. By the study's own criterion ("if the delay is large, C is worth designing") this goes to Pierre for C. It is a simulation: the learner learns by the number of answers, and no measure exists yet of how hard a genus question is against a family question on the real log.
+
 Measured (rule L11: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
 player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
 entry questions, 27-37 genera met (the Parrotfish and Wrasse genera joining when those entries reached Advanced), every genus
