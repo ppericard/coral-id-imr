@@ -109,7 +109,7 @@ function session(seed, n) {
       mq: mode,
       fmtOf: C.fmtOf,
       fmtOff: C.fmtOff,
-      PFMT: pfmt,
+      pfmt: () => pfmt, // model.js pfmt: the device's offsets (this session plays a subject the sheet rates)
       // The domain-score bar's genus offsets (model.js genusDiff), which the device's ?stats=1 replies move too.
       domRules: () => true,
       genusDiff: t => pgd[t] || 0

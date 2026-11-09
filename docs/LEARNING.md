@@ -735,9 +735,76 @@ offset is 0). Where it acts:
   the opening hold and the comeback (they read the logged e), the sheet's photo ratings (they keep 1/k). The logged
   Expected stays the expectation before the offset, so the sheet always fits the same quantity.
 
-Tier 1 (`tools/learnsim.js`) cannot judge it: the simulator seeds the app's photo statistics without `fmt`, so every
-offset is 0 there and its runs are unchanged by construction; the real-log replay above is the check. The guess rates
-the data could not identify wait for the slope, whose diagnosis runs apart (Q147; ROADMAP "The expectation's slope").
+Tier 1 (`tools/learnsim.js`) could not judge it until 2026-11-09: the simulator seeded the app's photo statistics
+without `fmt`, so every offset was 0 there; it now seeds them as the app stores them (`--stats` with the sheet's `fmt`).
+The guess rates the data could not identify wait for the slope, whose diagnosis runs apart (Q147; ROADMAP "The
+expectation's slope").
+
+**Per subject** (Pierre, 2026-11-09: the same kind of leak as the photo memory's, #790, fixed the same way). The sheet
+fits `fmt` on the corals' answers only (`Code.gs` `stats_` reads the replayed subject's rows), yet until this change the
+app aimed and scored fish answers with it too: every fish scoring record logged `o` 0.18 (k4) and `t` −0.42 (typed),
+the ability steps took the corals' k2 +1.04, and the bar (`core.js` `domF`, `domBar`) both the question's offset and the
+typed one. Every use now reads `model.js` `pfmt()`: the sheet's offsets for the subject it rates (`SUBJECTS` `replay`:
+the corals, the very `PFMT` object, so nothing changes for them), and for any other subject **no offset, every format
+at 0** (the prudent value, put to Pierre in the PR): the app's own expectation before any fit (the fit's prior mean,
+`core.js` `FMT`, and what an older sheet gives, rule D4), which corrects nothing rather than by another subject's
+numbers, until a per-subject `?stats=1` fits the fish formats (ROADMAP admin plan PR 11). Checked by
+`tests/fishformat.test.js` (a fish expectation, scoring record and draw run with a `PFMT` that throws on any read; the
+corals read `PFMT` itself; `PFMT` read only through `pfmt`). **No fish rules version**: every fish answer since the
+scorer carries its scoring record and the replay (the sheet's, `Code.gs` `replay_`, and the device's, `sync.js`) reads
+its `o` and `t` as logged, a row without one taking the replay's `fmt`, which for fish is none (`st = {}`): the change
+picks the offsets of future fish answers and moves no saved progress (the same test pins it).
+
+- **Learning outcomes** (rule L11 level 1: one subject, one input). `tools/learnsim.js --subject fish --stats` with the
+  live `?stats=1` of 2026-11-09 07:11 Manila (k4 +0.15, k2 +1.11, k3 +1.23, Again +0.29, typed −0.42), the five fish
+  profiles × 5 seeds × 300 questions, before (main afb5701, the learnsim seeding above applied) and after on the same
+  seeds, judged by `tools/learncmp.js`; declared before running: primary `know@300:up` (no gain expected: a leak fix,
+  judged no worse by its guardrail), every guardrail, no cost declared, a second look on seeds 6-15 for a profile left
+  unclear (taken for the strong RA's share under ease 4; `--looks 2`). Paired difference after − before [one-sided 90%
+  bound on the side of harm, look 1], beginner / casual diver / lecture RA / strong RA / expert:
+
+  | Guardrail | Margin | Difference [bound] | Verdict |
+  | --- | --- | --- | --- |
+  | True knowledge @300 (primary: no clear difference, p 0.32, 20 of 25 pairs up) | −0.02 | +0.035 [+0.020] / +0.017 [+0.012] / −0.001 [−0.004] / −0.002 [−0.007] / 0 [0] | held |
+  | E = bar − D\* @300 | +0.03 | +0.098 [+0.124] / +0.098 [+0.118] / +0.116 [+0.131] / +0.091 [+0.109] / +0.090 [+0.113] | **breached for every profile** (−0.445 → −0.346, −0.415 → −0.317, −0.403 → −0.287, −0.417 → −0.327, −0.429 → −0.339) |
+  | Answers to the first family at Open Water | +23 / +30 / +18 / +10 / +10 | −18 [+13] / −64 [−22] / −47 [−23] / −16 [−9] / −16 [−12] | held |
+  | Families at Open Water @300 | −2 | +4.6 / +4.6 / +8.0 / +6.8 / +8.8 (bounds ≥ +2.4) | held |
+  | Longest plateau of the shown score | +11 / +9 / +11 / +8 / +8 | 0 [+9] / −2 [+6] / −9 [+5] / +3 [+5] / +1 [+5] | held |
+  | Share under ease 4 before Open Water @300 | +0.05 | +0.016 [+0.027] / −0.011 [0] / +0.009 [+0.022] / +0.033 [+0.054] / −0.005 [+0.026] | held (the strong RA unclear at look 1, held on the second look: 15 seeds, 95% bound, +0.017 [+0.035]) |
+  | Families met @100, @300 | −2 | +6.4 to +0.4 at 100; 32 at 300 in every run but the beginner's (30.8 → 32.0) | held |
+
+  What it says: the corals' offsets held the fish bar down (a 4-choice right answer counted 0.15 logits easier, the bar
+  measured against a typed format 0.42 harder), so without them every fish profile's bar rises by about 0.1 and its
+  families reach Open Water much sooner (the lecture RA's first at 42 answers instead of 89; 15 families at Open Water at
+  300 instead of 7). The bar stays well under the learner's true knowledge (E −0.29 to −0.35 after, −0.40 to −0.45
+  before): it still does not over-claim, it under-claims less. But the guardrail is one-sided and its margin was
+  crossed, a cost not declared before running, so it goes to Pierre (rule L11). **The corals, identical**: the same
+  runs on `--subject coral` (4 profiles × 5 seeds, the same stats with their `fmt`, afb5701 → this change) give the same
+  record in every run, its 300 answers included (genus, answer, photos, choices, expectation, scoring record with its
+  `o` and `t`; only the answer id and the wall-clock time differ), and the same summary (knowSlate 0.645 / 0.819 / 0.856
+  / 0.954, met 36.6 / 40 / 40 / 40).
+- **On the real log** (rule L12, read-only, the Answers tab read 2026-11-09 07:18 Manila: 1,734 scored fish answers of 9
+  players, 2026-11-06 to 11-08, every one with its scoring record; 1,240 of 6 players scored with a coral offset `o` other
+  than 0; the step's expectation with the offset as logged against the logged `e`, the expectation before any offset, the
+  value now used; declared before computing: per player, sign-flip):
+
+  | Format | Answers | Right | Expected, no offset | Expected, coral offset as logged | Log-loss none → coral |
+  | --- | --- | --- | --- | --- | --- |
+  | 4 choices (k4) | 1,249 | 88.9% | 80.7% | 82.2% | 0.362 → 0.355 |
+  | 2 plausible of 4 (k2) | 155 | 83.2% | 73.0% | 83.3% | 0.493 → 0.463 |
+  | Again | 192 | 77.1% | 80.9% | 83.3% | 0.499 → 0.508 |
+  | duel in the quiz | 95 | 91.6% | 86.3% | 86.5% | 0.266 → 0.265 |
+  | typed | 34 | 85.3% | 86.0% | 82.4% | 0.410 → 0.405 |
+  | 3 plausible of 4 (k3) | 9 | 55.6% | 35.0% | 38.5% | 0.771 → 0.741 |
+
+  On the 1,240 answers scored with a coral offset the log-loss is 0.405 with none against 0.396 with the corals' (per
+  player +0.004 for the corals' side, 5 of 6 players, sign-flip p 0.75); with today's coral offsets on every scored fish
+  answer, 9 players, the same (−0.010, p 0.63). The log cannot tell the two apart, and where it leans it leans to the
+  corals' offsets, not because they are the fish's but because the fish answers run above the app's expectation in
+  every frequent format but Again (4 choices: 89% right against 81% expected), which any positive offset partly
+  absorbs. The fix rests on its reason (no coral number on a fish answer), not on the log; the fish formats' own fit
+  waits for a per-subject `?stats=1`. The fish answers logged before it keep their coral `o` and `t`, which the replay
+  reads as logged.
 
 ### What the players say about the difficulty (one-tap questions, 2026-11-03)
 
