@@ -196,6 +196,7 @@ test('the sheet mode: a population logs its answers with seconds, the ratings it
     ['beginner', 'expert']
   );
   assert.strictEqual(a.pop.answers, 60);
+  assert.throws(() => RW.runPop(null, {...o, subject: 'fish'}), /corals only/, 'a fish photo has two true difficulties');
   assert.strictEqual(c.pop.gap, -0.22);
   const at = a.pop.at[0];
   assert.ok(at.q === 30 && at.photos > 10 && at.err > 0 && at.gdErr > 0, JSON.stringify(at));

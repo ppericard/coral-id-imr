@@ -4924,8 +4924,8 @@ every choice after), the photo aimed lower by the opening hold's ease and the pl
 `confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
-photo statistics, as the fish today); `--app sheet` (2026-11-09, `runPop`): the sheet's photo Elo simulated. The
-profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
+photo statistics, as the fish today); `--app sheet` (2026-11-09, `runPop`; the corals only: a fish photo is shared by a family's and a genus's questions,
+with two true difficulties): the sheet's photo Elo simulated. The profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
 log t = log 6.5 + the photos' time intensity β − the player's speed τ − 0.4 if right + log 1.5 if typed + `--gap` × the
 learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`, as "Q315 option 1: what three rounds
 showed" describes); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log

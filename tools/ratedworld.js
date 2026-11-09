@@ -624,6 +624,10 @@ function rateErr(st, TW, W) {
 function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
+  // The corals only (Codex review #844): the sheet rates the replayed subject's photos (Code.gs stats_), and a fish photo
+  // is shared by a family's and a scientific genus's questions with two true difficulties, which one truth per file
+  // (timeWorld) cannot hold: a fish run would judge its ratings against the wrong one.
+  if (U.subject !== 'coral') throw new Error('--app sheet: the corals only (a fish photo is shared by a family and a genus)');
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     TW = timeWorld(U, W, seed, times, {gap}),
     pls = profiles.map((profile, j) =>

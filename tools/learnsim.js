@@ -300,6 +300,7 @@ if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
 if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
 if (!['truth', 'own', ...(WORLD === 'rated' ? ['sheet'] : [])].includes(APPK)) throw new Error('--app truth or own (sheet: the rated world)');
 if (!(EVERY >= 1 && isFinite(GAPX))) throw new Error('--every 1 or more, --gap a number');
+if (APPK === 'sheet' && SUBJECT !== 'coral') throw new Error('--app sheet: the corals only (tools/ratedworld.js runPop)');
 if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
 if (arg('world', 'app') === 'rated' ? !['count', 'item'].includes(LEARN) : !['item', 'field', 'exemplar'].includes(LEARN))
   throw new Error(arg('world', 'app') === 'rated' ? '--learner count or item in the rated world' : '--learner item, field or exemplar');
