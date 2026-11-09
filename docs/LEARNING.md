@@ -4755,6 +4755,36 @@ rating − true difficulty over the photos answered, at 3,000 answers per player
   (five cells). Rule L11 sends this to Pierre. The change stays on its branch (#808) until he decides. **He chose
   (Q318, (a)) the real-log re-test with z net of the right answers' speed** (above), then a second level-2 round.
 
+**Round 2: the net form** (k 1.5, z against the median of the player's earlier right answers; #808, the protocol declared
+in the PR before any run). The same harness, right answers 0.67 times as long as misses (`RT.RIGHT`, as on the real log),
+fresh seeds 121-140 (20, one look, 95% bounds, the primary at 0.025); the app world served seed 121's ratings with k 0
+and k 1.5.
+
+| Times, photos | Rating error | Correlation with the truth | k recovered, median (log-loss / truth) | Guardrails not held (of 56) |
+| --- | --- | --- | --- | --- |
+| **rho25, normal: the primary** | 0.6779 → 0.6749, −0.0031 [+0.0085], p 0.65: **not clear** | +0.042, p < 0.001 | 0 / 0.5 | 3 unclear |
+| rho0, normal | +0.0054 [+0.0167]: unclear against +0.01 | −0.002 | 0 / 0 | 5 unclear |
+| views, normal | **+0.0169 [+0.0265], p 0.006: breaches +0.01** | −0.003 | 0 / 0 | **1 breached** (lecture RA's score at 1,000: −1.3 against −1) |
+| fast, normal | +0.0060 [+0.0165]: unclear against +0.01 | +0.049, p < 0.001 | 0.5 / 0.5 | **1 breached** (the same: −1.05) |
+| rho25, heavy tails | −0.0148 [−0.0049], p 0.019 (secondary) | +0.034, p < 0.001 | 0 / 0.5 | 5 unclear |
+| rho0, heavy tails | +0.0022 [+0.0108]: unclear against +0.01 | +0.008 | 0 / 0 | 5 unclear |
+
+- **The net z took the step asymmetry away.** With times unrelated to difficulty, the log-loss now chooses k 0 (13 to 16
+  of 20 seeds), and every k above 0 makes it worse (+0.25 to +0.29 × 10⁻³ at k 1.5). The correlation no longer moves.
+- **The ratings rank the photos better only when time is informative:** +0.042 with rho25, +0.049 with fast photos
+  easy, +0.034 with heavy tails. Their error against the truth still does not fall clearly: the primary is −0.0031.
+- **The log-loss no longer finds the planted information either.** With rho25 it chooses k 0 in 12 of 20 seeds, and k 1.5
+  costs +0.11 × 10⁻³, whereas the real log gains −1.03 × 10⁻³ at k 1.5.
+  - So the planted world does not hold what makes the real log gain. One candidate, not tested: on the real log, time
+    also follows the knowledge gap (−0.22 log per logit of ability − difficulty, "Response time: genus and photo"). The
+    planted model, log t = β_photo − τ + noise, leaves that out.
+- **The app world, one pair of rating sets:** correlation with the truth 0.305 → 0.340.
+  - Breached, as in round 1, both for the beginner: E +0.031 [+0.050] against +0.03, and the first unit at Open Water
+    57 → 77 (the seeds 15-83 → 25-149).
+  - Held: true knowledge (+0.002 to +0.028), units at Open Water, units met.
+- Verdict: **round 2 not passed as declared either**. The primary is not clear. The "nothing breaks" bound is breached
+  with views. Two rated cells (one guardrail) and two app cells are breached. Rule L11 sends this to Pierre (#808).
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis*.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
