@@ -4339,7 +4339,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // leaderboard rows, admin: 1 in its load reply), and only there (rule D4: an older script sends neither). markRow: a
   // leaderboard row of a reply of version v. markHtml: the mark itself, plain text after the name's element, outside its
   // text (the name stays the account's name).
-  const MARK_SHEET = 124;
+  const MARK_SHEET = 125;
   const markRow = (row, v) => Number(v) >= MARK_SHEET && Array.isArray(row) && row[3] === 1;
   const markHtml = () => `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`;
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
