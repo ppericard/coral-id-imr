@@ -212,6 +212,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **D6** A recalculation of everyone's progress is announced.
 - **D7** A deleted account leaves nothing in normal operation.
 - **D8** Every leaderboard follows a progress recalculation, for every player, at once.
+- **D9** The answer log is the reference for progress: trust it rather than the device.
 
 **Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French.

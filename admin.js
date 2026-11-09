@@ -8265,7 +8265,8 @@ function progOf(u, full, S = replayS()) {
       gen: M.gen,
       ...statsFor(S),
       since: reset ? {[u.id]: reset} : {},
-      starts: X.err ? {} : {[u.id]: X.start} // the first-launch answer (core.js startPriorAt)
+      starts: X.err ? {} : {[u.id]: X.start}, // the first-launch answer (core.js startPriorAt)
+      logFrom: logFromOf(S.id) // a player whose answers are all in the log: the replay's counts (core.js logTrusted)
     })[u.id],
     L = M.slate, // the slate as the app counts it (core.js slateOf; another subject's circles): the % and Learned are over it
     G = replayedOf(rep, X.err ? {} : X.P),

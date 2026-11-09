@@ -526,6 +526,9 @@ test('a saved copy without the fish rules version: the fish replay asked for aga
   assert.strictEqual(a.ctx.SYNC.dirty, true, 'a save scheduled: it brings the replay again');
 });
 
+// The answers of a player who played fish before its log began (their first logged answer within core.js PRELOG.MS of
+// the fish log's start, logTrusted): the saved copy's larger counts are kept (Q322 keeps that case).
+const early = (a, i) => ({...a, t: new Date(C.logFromOf('fish') + 60000 + 1000 * i).toISOString()});
 // Codex review #779: the sheet's floor may raise the level's typed opportunities; this device's larger answer count (30
 // saved, 20 logged: answers from before fish logging) keeps its own level in replayedOf, which undid the floor (73% to 0%).
 test("a device with more answers than the log keeps the floor's typed opportunities at adoption", async () => {
@@ -549,7 +552,7 @@ test("a device with more answers than the log keeps the floor's typed opportunit
     pin: '1234',
     data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-fish-progress': JSON.stringify(high)},
     summary: {},
-    answers: [...typed, ...other]
+    answers: [...typed, ...other].map(early)
   });
   const a = app({
     sheet: atv(s),
@@ -600,7 +603,7 @@ test('a unit kept from this device for its larger count keeps its bar beside the
     pin: '1234',
     data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-fish-progress': JSON.stringify(mine)},
     summary: {},
-    answers: [...own, ...wr]
+    answers: [...own, ...wr].map(early)
   });
   const a = app({
     sheet: atv(s),

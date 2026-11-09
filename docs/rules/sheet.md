@@ -137,3 +137,14 @@ the replays ahead, outside the script lock, into the Replayed tabs (`Code.gs` `b
 reads them (`board_`); never a per-subject or per-version step to remember.
 *Why:* a player who has not opened the app since a rules change kept an old score on the board. *Source:* Pierre,
 2026-11-09.
+
+### D9
+
+**The answer log is the reference for progress: trust it rather than the device.** When the sheet's replay of a
+player's log is adopted, its record of a unit, and its answer count, win over what the device holds, also when the
+device counts more answers there: those were counted twice. The one exception is a subject the player played before
+the sheet logged it (their first logged answer of that subject within an hour of the subject's log start, `core.js`
+`SUBJECTS` `logFrom`, `logTrusted`): the device's larger counts are kept, as those answers never reached the log. A
+subject logged from its first answer has no exception.
+*Why:* a save whose reply was lost let a device count answers twice, and the replay kept the doubles for good.
+*Source:* Pierre, 2026-11-09, Q322.

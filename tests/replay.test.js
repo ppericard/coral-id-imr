@@ -198,38 +198,51 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
   // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %
   // (Pierre, 2026-11-03).
   assert.strictEqual(C.RVS[0].msg, C.RV_CARD);
-  // A device that skips several versions with the standard card sees it once, at the last of them.
+  // A device that skips several versions with the standard card sees it once, at the last of them (the versions before
+  // rules version 9's apology).
+  const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v;
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV - 1),
-    C.RVS.slice(0, -1).filter((x, i) => x.msg && !C.RVS.slice(i + 1, -1).some(y => y.msg === x.msg))
+    C.rvMsgs(0, SV - 1),
+    C.RVS.slice(0, SV - 1).filter((x, i) => x.msg && !C.RVS.slice(i + 1, SV - 1).some(y => y.msg === x.msg))
   );
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV - 1).map(x => x.v),
-    [C.RV - 1],
-    'the versions before the last have the standard card: one card'
+    C.rvMsgs(0, SV - 1).map(x => x.v),
+    [SV - 1],
+    'the versions before the apology have the standard card: one card'
   );
   // The domain-score bar's apology (rules version 9, Pierre 2026-11-06; PR #611's card, Q109): every player whose %
   // moved by a point, its PS from the sheet's Notes tab; in a jump it replaces the standard card (it says more).
-  assert.strictEqual(C.RVS[C.RVS.length - 1].msg, C.RV_SORRY);
+  assert.strictEqual(SV, 9);
   assert.deepStrictEqual(
     [C.RV_SORRY.kind, C.RV_SORRY.only, C.RV_SORRY.min, C.RV_SORRY.ps, C.RV_SORRY.down],
     ['apology', 'changed', 1, 'card.rv8.ps', true]
   );
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV, true).map(x => x.v),
-    [C.RV - 1],
+    C.rvMsgs(0, SV, true).map(x => x.v),
+    [SV - 1],
     'the apology left out: the standard card back'
   );
   assert.match(C.RV_SORRY.pct, /\{from\}%.*\{to\}%/);
   assert.doesNotMatch(C.RV_SORRY.t + C.RV_SORRY.p, /\bbars?\b/i, 'never "bars": players say progress (Pierre)');
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV).map(x => x.v),
-    [C.RV],
+    C.rvMsgs(0, SV).map(x => x.v),
+    [SV],
     'a jump through the apology: the apology alone'
   );
   assert.deepStrictEqual(
-    C.rvMsgs(C.RV - 1, C.RV).map(x => x.v),
-    [C.RV]
+    C.rvMsgs(SV - 1, SV).map(x => x.v),
+    [SV]
+  );
+  // Rules version 10 (trust the log, Q322): the standard card; a jump through 9 and 10 shows the apology alone (it says
+  // more), from 9 the standard card of 10.
+  assert.strictEqual(C.RVS[9].msg, C.RV_CARD);
+  assert.deepStrictEqual(
+    C.rvMsgs(0, 10).map(x => x.v),
+    [9]
+  );
+  assert.deepStrictEqual(
+    C.rvMsgs(9, 10).map(x => x.v),
+    [10]
   );
   assert.deepStrictEqual(C.rvMsgs(C.RV, C.RV), []);
 });

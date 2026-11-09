@@ -3499,6 +3499,71 @@ adopts it from `REPLAYS_SHEET` only, with the floor, its own rules version, no c
 and the refused-save flag). Not adopted yet by a device that never signed in (the sheet can serve it, `sreset`,
 `sstart`; ROADMAP).
 
+### Trust the log rather than the device (2026-11-09, Q322; rules version 10, fish rules version 2, sheet vNEXT)
+
+Pierre, 2026-11-09 (Q322): a general rule, trust the log rather than the device (rule D9). Found with the lost-reply
+double count (#824): a device could hold some answers twice, and the replay kept the device's record of a unit whenever
+it held more answers than the log (`core.js` `replayedOf`: "a replay never loses progress", for answers that never
+reached the log), so a double count, once in the progress, stayed for good. Now a player whose answers of a subject
+are all in the log takes the replay's record of each unit the log has replayable answers on, and the level's answer
+count, also when the device holds more (`replayedOf`, `replayBase`; so the leaderboard too, `Code.gs` `board_`, rule D8).
+**Who is "all in the log"** (`core.js` `logTrusted`): each subject that was played before the sheet logged it says
+when its log began (`SUBJECTS` `logFrom`: the first logged answer of the corals, 2026-11-01 17:47 Manila, and of the
+fish, 2026-11-06 13:07, sheet v60); a player whose first logged answer of the subject (since their progress reset) came
+within `PRELOG.MS` (an hour) of that time was using the app when the log began, so their device may hold answers the
+log never had: their larger counts are kept, as before. The one player with fish answers from before the fish log
+(17, measured 2026-11-07) has their first logged fish answer in its first minute. A subject logged from its first
+answer (none yet) has no such period. The verdict travels with the replay (`replayProgress` `logFrom`, the level's
+`lg`), made by the sheet (`rplMake_`, `replayedAll_`) and the admin (`progOf`); a replay without it (an older script, a
+tool) keeps the rule before. The fish floor of the first replay stays across fish rules version 2 (`floorKept`: a
+version that changes no bar must not take one down by dropping the floor; Q310 "nobody goes back"). And an app never
+adopts a replay of a rules version newer than its own (`sync.js` `replayAdoptS`, `rvOf`): four accounts' devices had
+adopted rules version 9 on an app from before it, without the domain-score bar, and marked it applied for good.
+
+**Measured** on the real log (rule L12), read-only, 2026-11-09: the sheet's tabs (Answers, Progress data, RAs, Replayed
+Fish) loaded into the test sheet (`tests/gas.js`), each account replayed by main's script and by this one (coral replays
+made again in both), adopted over its saved copy as the app does (`replayAdopted`), the % over the slate (`pctOf`).
+Counts only; accounts by their row in the Progress data tab (P1 = row 2):
+
+| Account | Subject | Answers saved / logged / after | % now (saved copy) | % main's replay | % after |
+|---|---|---|---|---|---|
+| P1 | coral | 23 / 23 / 23 | 6 | 2 | 2 |
+| P2 | coral | 81 / 81 / 81 | 12 | 12 | 12 (from before the log: kept) |
+| P2 | fish | 25 / 25 / 25 | 1 | 1 | 1 |
+| P3 | coral | 378 / 378 / 378 | 49 | 22 | 22 |
+| P3 | fish | 204 / 204 / 204 | 23 | 23 | 23 |
+| P4 | coral | 112 / 112 / 112 | 10 | 9 | 9 |
+| P5 | coral | 691 / 691 / 691 | 26 | 26 | 26 |
+| P6 | coral | 424 / 424 / 424 | 26 | 27 | 27 |
+| P6 | fish | 650 / 633 / 650 | 52 | 52 | 52 (from before the log: kept) |
+| P7 | coral | 447 / 447 / 447 | 19 | 20 | 20 |
+| P7 | fish | 233 / 233 / 233 | 6 | 6 | 6 |
+| P8 | coral | 170 / 85 / 85 | 14 | 14 | 10 |
+| P8 | fish | 63 / 63 / 63 | 0 | 0 | 0 |
+| P9 | coral | 234 / 197 / 197 | 12 | 12 | 12 |
+| P9 | fish | 459 / 423 / 423 | 17 | 17 | 17 |
+| P11 | coral | 50 / 50 / 50 | 10 | 4 | 4 |
+| P12 | coral | 284 / 284 / 284 | 26 | 44 | 44 |
+| P12 | fish | 103 / 103 / 103 | 9 | 9 | 9 |
+| P13 | coral | 22 / 22 / 22 | 4 | 6 | 6 |
+| P13 | fish | 97 / 97 / 97 | 12 | 13 | 13 |
+| P14 | coral | 68 / 68 / 68 | 12 | 12 | 12 (from before the log: kept) |
+| P14 | fish | 27 / 27 / 27 | 4 | 4 | 4 |
+
+The rule itself (main's replay against this one, the same rows): two accounts' counts come down to the log (P8 coral
+170 to 85, every unit exactly twice, its % 14 to 10; P9 coral 234 to 197 and fish 459 to 423, its % unchanged), every
+other % equal. The fish floor dropped by a new fish rules version would have taken P3's fish % 23 to 21 and P13's 13
+to 10: kept, none moves. The rest of the "now" to "after" column is the new rules version itself, which every device
+adopts: P1 (no rules version applied) and P13 (corals at 8) adopt rules version 9 at their next sync on main too; P3,
+P11 and P12 hold rules version 9 without its domain-score bar (adopted by an app from before it, above), so their
+device shows a % from the former counts until a new version makes them adopt again: 49 to 22, 10 to 4, 26 to 44,
+each with the standard card (5 points or more). Kept from before the log: P6's 17 fish answers (as found on
+2026-11-07), and P2's and P14's corals (no excess: nothing kept).
+
+**Simulated** (rule L11, level 1, declared before running: the app world, corals and fish, the four profiles × 5 seeds
+× 300 questions, primary `prog@300:down`, no cost expected: `tools/learnsim.js` plays one device and adopts no replay,
+so the rule cannot act there): `tools/learncmp.js` main (a285c1b) against this branch, every pair equal: the primary no clear difference (corals 20 pairs, fish 25, T 0, p 1), every guardrail measured held at a difference of 0 (the global score and the hard-photo share not measured by these files).
+
 ### Response time (measured 2026-11-03; in the ability since 2026-11-04, rules version 4)
 
 Pierre, 2026-11-03: "the time I take to answer goes with the difficulty, either the photo is hard or the genus is hard
@@ -4051,7 +4116,8 @@ ROADMAP "Photo memory that fades with time".
     sheet v62): one surprise counted once ("One surprise, counted once"). v8 (2026-11-06, sheet v77): per-format
     offsets ("Per-format offsets"). v9 (2026-11-06, sheet v87): the domain-score bar ("The domain-score bar"), the genus
     offsets `gd` of `stats_` given to the replay for the rows logged without them; its card is the apology (the
-    Notes key `card.rv8.ps`, named before the renumbering). A device that skips several versions sees the standard card once, at the
+    Notes key `card.rv8.ps`, named before the renumbering). v10 (2026-11-09, sheet vNEXT; fish rules version 2): trust
+    the log rather than the device ("Trust the log rather than the device" below). A device that skips several versions sees the standard card once, at the
     last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between
     `// BEGIN core.js` and `// END core.js`, kept identical by `tools/sync_core.py`, checked in CI; its own `module`
@@ -4147,7 +4213,7 @@ ROADMAP "Photo memory that fades with time".
     them), the days answered right (`dd`, `dl`: the device's calendar days, for the comeback), the last
     observations shown (`ro`: the log keeps photo files, not observations), right with the corallites in view (`cor`:
     the log does not say which view a photo was in); and the whole record of a genus the log has fewer answers on than
-    the device (answers that never reached the log: a replay never loses progress). The opening hold is not in the
+    the device when the player played that subject before the sheet logged it (answers that never reached the log: the replay keeps them; rule D9, `core.js` `logTrusted`); for every other player the replay's record and counts win, also when the device holds more answers (rules version 10, "Trust the log rather than the device" below). The opening hold is not in the
     record: the sheet already replays it from the same log (`hold_`, "Held while the player falls behind"). The
     adoption runs through `model.js` `mxRecalc`: a learned mark it takes away is told with the card above (reason
     `bkt`; a mark taken by a later rules version would say "recalculated from all your answers with the app's current

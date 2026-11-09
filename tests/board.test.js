@@ -187,7 +187,7 @@ test('the fish board: the floor of the replay (Q310) and of the units kept from 
   const high = FIX.fish.saved,
     raw = C.replayProgress(
       FIX.fish.answers('anafish').map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(JSON.parse(FJSON))}
+      {gen: C.fishReplayGen(JSON.parse(FJSON)), logFrom: C.logFromOf('fish')}
     ).ana.P,
     rec = C.replayFloor(raw, high),
     M = C.replayAdopted(rec, high, C.rvOf('fish'), true);

@@ -1751,7 +1751,7 @@ test('v61 Answers: the scoring record kept, checked and replayed', () => {
   const st = s.get({stats: '1'}),
     want = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, logFrom: C.logFromOf('coral')}
     ).ana.P;
   assert.deepStrictEqual(r.replay.rec, want);
   // Scored from the records, not from the stats: other stats give the same record.
@@ -1780,7 +1780,7 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   const st = s.get({stats: '1'}),
     want = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, logFrom: C.logFromOf('coral')}
     ).ana.P;
   assert.deepStrictEqual(r.replay.rec, want, 'the same engine over the same rows');
   assert.deepStrictEqual([r.replay.rv, r.replay.n, r.replay.ids.length], [C.RV, 12, 12]);
@@ -1848,7 +1848,7 @@ test("v42: the player list carries each player's replayed progress, learned and 
     P = JSON.parse(data['reefid-sync-coral-progress']),
     rec = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd}
+      {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, logFrom: C.logFromOf('coral')}
     ).ana.P,
     G = C.replayedOf({P: rec}, P);
   const ana = r.users.find(u => u.name === 'Ana');
@@ -2015,7 +2015,7 @@ test('v36: the stored replay is not reused when the first-launch history changes
     want = c =>
       C.replayProgress(
         L.map(a => C.logRow(a, 'ana')),
-        {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, starts: {ana: rec(c)}}
+        {gen: GEN, mem: st.mem, conf: st.conf, gd: st.gd, starts: {ana: rec(c)}, logFrom: C.logFromOf('coral')}
       ).ana.P;
   assert.deepStrictEqual(r1.replay.rec, want('new'));
   assert.notDeepStrictEqual(want('know'), want('new'), 'the prior changes the replay of these answers');
@@ -2159,7 +2159,7 @@ const fa = (id, i, x = {}) =>
 const fishWant = (L, id, o = {}) =>
   C.replayProgress(
     L.map(a => C.logRow(a, id)),
-    {gen: FGEN, ...o}
+    {gen: FGEN, logFrom: C.logFromOf('fish'), ...o}
   )[id].P;
 
 test('sheet replays per subject: the fish progress replayed from its own answers, asked by its own rules version, kept in its own tab', () => {
@@ -2244,8 +2244,15 @@ test('sheet replays per subject: the fish replay floored against the saved copy,
     });
   assert.ok(bar(r2.replays.fish.rec, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9, 'still floored');
   assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, high);
-  // A record kept under an earlier rules version: the next version's replay is not floored (once).
+  // A record kept under the version before, the versions since all saying floor 'kept' (fish rules version 2, trust the
+  // log, Q322: core.js floorKept): still floored, against the same reference.
   T.rows[1][1] = C.rvOf('fish') - 1;
+  const r4 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {fish: 0}});
+  assert.ok(bar(r4.replays.fish.rec, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9, 'kept across a version that keeps it');
+  assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, high);
+  // A record kept under an earlier rules version with a version since that does not keep it: the replay is not floored
+  // (once).
+  T.rows[1][1] = 0;
   const r3 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {fish: 0}});
   assert.deepStrictEqual(r3.replays.fish.rec, fishWant([...F, fa('f9', 9)], 'ana'));
   assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')).F, {});

@@ -302,6 +302,10 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
   if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
   // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
   if (rp.rv < rvApplied(S) || (rp.rv === rvApplied(S) && !lgFor(S))) return false;
+  // Never a version newer than this app's own rules (core.js rvOf): an app that does not know it cannot hold what it
+  // brings (2026-11-09: devices still on an app from before rules version 9 adopted its replay without the domain-score
+  // bar and marked it applied, so they never took it again once updated); the app takes it once it is updated.
+  if (rp.rv > rvOf(S.id)) return false;
   if (typeof mxRecalc !== 'function') return false; // the quiz tier (model.js) not in yet: the next reply brings it again
   if (cut !== undefined && cut !== (store.get(sKey('reset'), '') || '')) return false;
   // The units the replay reads (core.js replayProgress gen): the corals' from data.json, another subject's from its own
