@@ -2995,7 +2995,7 @@
     const c = (counts || []).map(x => (typeof x === 'number' && isFinite(x) && x > 0 ? x : 0)),
       ord = c.map((x, i) => i).sort((i, j) => c[j] - c[i]),
       w = new Array(c.length);
-    for (let a = 0; a < ord.length;) {
+    for (let a = 0; a < ord.length; ) {
       let b = a;
       while (b + 1 < ord.length && c[ord[b + 1]] === c[ord[a]]) b++;
       const r = (a + 1 + b + 1) / 2; // the mean of ranks a+1 .. b+1
@@ -4901,6 +4901,9 @@
           if (Array.isArray(y)) o.ps[f] = [Math.max(x[0], Number(y[0]) || 0), Math.max(x[1], Number(y[1]) || 0)];
         });
         out[g] = o;
+      } else if (!r && b && n(b) > 0) {
+        // A unit the log has no answer on whose shared copy counts answers: discarded by the adoption (rule D9), so no
+        // baseline either; this device's unsent answers on it stay the difference and go on top (Codex review of #840).
       } else if (b) out[g] = dup(b);
     });
     return out;

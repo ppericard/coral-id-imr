@@ -145,6 +145,19 @@ test("an empty replay with an unsent answer: the baseline's level is the shared 
   assert.strictEqual(n(merged[C.LEVEL]), 5, 'every answer once');
 });
 
+// Codex review of #840 (round 3): a unit whose shared answers are not in the log is discarded from the merge baseline
+// too, so this device's unsent answer on it survives the next merge with a device that already adopted.
+test("a unit absent from the log: no baseline record, this device's unsent answer survives the next merge", () => {
+  const rec = {'~level': {ok: 1, ko: 0, th: 1}, Porites: {ok: 1, ko: 0, h: '1'}},
+    shared = {'~level': {ok: 3, ko: 0, th: 1}, Acropora: {ok: 3, ko: 0, h: '111'}},
+    M = {...C.replayAdopted(rec, shared, 2), Acropora: {ok: 1, ko: 0, h: '1'}}, // the unsent answer put back on top
+    B = C.replayBase(rec, M, 2, shared);
+  assert.ok(!B.Acropora, 'no baseline for a unit the log has no answer on');
+  const R = C.replayAdopted(rec, shared, 2), // another device already adopted: no Acropora
+    merged = C.mergeProgress(B, M, R);
+  assert.strictEqual(n(merged.Acropora), 1, 'the unsent answer is kept once');
+});
+
 test('progress from before the coral log: dropped as any answer the log does not have', () => {
   const A = Array.from({length: 12}, (_, i) => ans('c' + i, G[i % 4], 1, CORAL + 5 * 60000 + i * 60000)),
     rep = replay(A, GEN),

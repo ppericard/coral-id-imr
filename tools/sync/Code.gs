@@ -7229,6 +7229,9 @@ const CORE_ = (function () { const module = {exports: {}};
           if (Array.isArray(y)) o.ps[f] = [Math.max(x[0], Number(y[0]) || 0), Math.max(x[1], Number(y[1]) || 0)];
         });
         out[g] = o;
+      } else if (!r && b && n(b) > 0) {
+        // A unit the log has no answer on whose shared copy counts answers: discarded by the adoption (rule D9), so no
+        // baseline either; this device's unsent answers on it stay the difference and go on top (Codex review of #840).
       } else if (b) out[g] = dup(b);
     });
     return out;
