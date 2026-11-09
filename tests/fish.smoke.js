@@ -1249,7 +1249,36 @@ async function freshPlayers(b, base, errs) {
     if (!/©\s*\S/.test(blind.t) || blind.links || (blind.sp && blind.t.includes(blind.sp)))
       ui.push(`${width}px enlarged photo before the answer: ${JSON.stringify(blind)}`);
     await q.click('#lightbox [data-x]');
+    // The photo's species under the verdict (app.js taxonLine; Pierre, 2026-11-09): never before the answer (no line, its
+    // scientific name nowhere on the page), then one line after it, right or wrong, with Next still on screen.
+    const spq = await q.evaluate(() => {
+      const t = SHOWNQ[1],
+        f = ((SHOWNQ[4] || {}).shown || [])[0],
+        p = GX(t).views.wide.find(x => f && x.f === f.f) || {},
+        s = FISH.sps[p.sp] || {};
+      return {
+        sci: s.name || '',
+        common: cnList(s)[0] || '',
+        now: s.now && s.now !== s.name ? s.now : '',
+        line: !!document.querySelector('.fbsp')
+      };
+    });
+    const spBefore = await q.evaluate(sci => document.body.textContent.includes(sci), spq.sci);
+    if (!spq.sci || spq.line || spBefore)
+      ui.push(`${width}px the photo's species before the answer: ${JSON.stringify({...spq, spBefore})}`);
     await q.click('#view .ans [data-c]');
+    const spa = await q.evaluate(() => {
+      const l = document.querySelector('#after .fb h3 + .fbsp'),
+        nb = document.getElementById('next').getBoundingClientRect();
+      return {
+        text: l ? l.textContent.replace(/\s+/g, ' ').trim() : '',
+        nextIn: nb.bottom <= innerHeight && nb.top >= 0,
+        n: document.querySelectorAll('.fbsp').length
+      };
+    });
+    const spWant = `This photo: ${spq.common ? spq.common + ' · ' : ''}${spq.sci}${spq.now ? ` (now ${spq.now} in WoRMS)` : ''}`;
+    if (spa.text !== spWant || spa.n !== 1 || !spa.nextIn)
+      ui.push(`${width}px the photo's species after the answer: ${JSON.stringify({spa, spWant})}`);
     const after = await q.evaluate(() => {
       const fb = document.querySelector('#after .fb'),
         // the photo's page: its iNaturalist observation, or its FishBase photo page (a FishBase reference photo, #660)
