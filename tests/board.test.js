@@ -8,7 +8,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, madeBefore} = require('./gas.js');
 const C = require('../core.js');
 
 const ROOT = path.join(__dirname, '..'),
@@ -342,7 +342,7 @@ test('players named constructor, __proto__, toString: every board served, their 
   const f = withAll(),
     s = loadCodeGs({fetch: f.fetch}),
     names = ['constructor', '__proto__', 'toString', 'hasOwnProperty'];
-  names.forEach((n, i) => play(s, n, String(2000 + i), {}));
+  madeBefore(s, () => names.forEach((n, i) => play(s, n, String(2000 + i), {}))); // accounts from before the refusal of reserved names
   play(s, 'Ben', '1111', Object.fromEntries(BOARDED.map(S => [S.id, C.rvOf(S.id)])));
   BOARDED.forEach(S => assert.strictEqual(board(s, S).length, names.length + 1, S.id + ': served before the trigger'));
   assert.match(s.ctx.autoUpdate(), /^up to date/);
