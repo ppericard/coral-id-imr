@@ -195,9 +195,7 @@ def tile_crop(bb, W, H, frame=None):
 def tile_write(im, r, out, crop=None):
     """Photo r's tile from its original im (a PIL image), when r carries a box (bb): sets r['xc'] and writes
     out/{f}-x.webp, or sets r['xn'] (tile_crop's reason). Pierre's crop (crop, else r's cr) frames it, his rotation (ro)
-    turns it. Where the square reaches past the frame, the frame's blurred and darkened copy fills it (app.css: blur 22 px
-    and brightness 0.55 around a quiz photo)."""
-    from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+    turns it (tools/photos.py square: where the square reaches past the frame, the frame's blurred copy fills it)."""
     r.pop('xc', None)
     r.pop('xn', None)
     if not r.get('bb'):
@@ -208,38 +206,8 @@ def tile_write(im, r, out, crop=None):
     if not sq:
         r['xn'] = why
         return r
-    k = TILE / ((sq[2] - sq[0]) * W)  # tile px per original px
-    F = im.crop((round(fr[0] * W), round(fr[1] * H), round(fr[2] * W), round(fr[3] * H)))
-    fx, fy = fr[0] * W, fr[1] * H  # the frame's corner in the original
-    # The part of the frame inside the square, scaled to the tile.
-    a = (max(sq[0] * W, fx), max(sq[1] * H, fy), min(sq[2] * W, fr[2] * W), min(sq[3] * H, fr[3] * H))
-    part = F.crop((round(a[0] - fx), round(a[1] - fy), round(a[2] - fx), round(a[3] - fy)))
-    pw, ph = max(1, round((a[2] - a[0]) * k)), max(1, round((a[3] - a[1]) * k))
-    at = (round((a[0] - sq[0] * W) * k), round((a[1] - sq[1] * H) * k))
-    if (pw, ph) == (TILE, TILE):
-        t = part.resize((TILE, TILE), Image.LANCZOS)
-    else:
-        bg = F.copy()
-        bg.thumbnail((TILE, TILE))
-        g = max(TILE / bg.width, TILE / bg.height)
-        bg = bg.resize((max(TILE, round(bg.width * g)), max(TILE, round(bg.height * g))), Image.LANCZOS)
-        bg = bg.crop(((bg.width - TILE) // 2, (bg.height - TILE) // 2, (bg.width - TILE) // 2 + TILE, (bg.height - TILE) // 2 + TILE))
-        t = ImageEnhance.Brightness(bg.filter(ImageFilter.GaussianBlur(22))).enhance(0.55)
-        # The photo's edges that meet the band fade into it over FEATHER px, so no hard line runs across the tile.
-        m = Image.new('L', (pw, ph), 255)
-        dm = ImageDraw.Draw(m)
-        for i in range(FEATHER):
-            v = round(255 * (i + 1) / (FEATHER + 1))
-            if at[0] > 0:
-                dm.line([(i, 0), (i, ph - 1)], fill=v)
-            if at[0] + pw < TILE:
-                dm.line([(pw - 1 - i, 0), (pw - 1 - i, ph - 1)], fill=v)
-            if at[1] > 0:
-                dm.line([(0, i), (pw - 1, i)], fill=v)
-            if at[1] + ph < TILE:
-                dm.line([(0, ph - 1 - i), (pw - 1, ph - 1 - i)], fill=v)
-        t.paste(part.resize((pw, ph), Image.LANCZOS), at, m)
-    photos.turn(t, None, r.get('ro')).save(os.path.join(out, r['f'] + TILE_SUF + '.webp'), 'WEBP', quality=TILE_Q, method=5)
+    t = photos.square(im, sq, fr, r.get('ro'), TILE, FEATHER)
+    t.save(os.path.join(out, r['f'] + TILE_SUF + '.webp'), 'WEBP', quality=TILE_Q, method=5)
     r['xc'] = sq
     return r
 

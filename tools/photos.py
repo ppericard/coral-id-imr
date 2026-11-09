@@ -74,6 +74,48 @@ def turn(im, crop=None, rot=0):
     return im
 
 
+def square(im, sq, frame=None, rot=0, side=360, feather=8):
+    """A side x side square of photo im (a PIL image, the original): sq [l, t, r, b] as fractions of the original (it may
+    reach past the frame), frame Pierre's crop ([0, 0, 1, 1] none), then his rotation. Where the square reaches past the
+    frame, the frame's blurred and darkened copy fills it, as the app frames a quiz photo (app.css .qph::before: blur
+    22 px, brightness 0.55), the photo's edges fading into it over feather px. The fish tiles (tools/fish_game.py
+    tile_write)."""
+    from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+    W, H = im.size
+    fr = frame or [0, 0, 1, 1]
+    k = side / ((sq[2] - sq[0]) * W)  # square px per original px
+    F = im.crop((round(fr[0] * W), round(fr[1] * H), round(fr[2] * W), round(fr[3] * H)))
+    fx, fy = fr[0] * W, fr[1] * H  # the frame's corner in the original
+    # The part of the frame inside the square, scaled to it.
+    a = (max(sq[0] * W, fx), max(sq[1] * H, fy), min(sq[2] * W, fr[2] * W), min(sq[3] * H, fr[3] * H))
+    part = F.crop((round(a[0] - fx), round(a[1] - fy), round(a[2] - fx), round(a[3] - fy)))
+    pw, ph = max(1, round((a[2] - a[0]) * k)), max(1, round((a[3] - a[1]) * k))
+    at = (round((a[0] - sq[0] * W) * k), round((a[1] - sq[1] * H) * k))
+    if (pw, ph) == (side, side):
+        return turn(part.resize((side, side), Image.LANCZOS), None, rot)
+    bg = F.copy()
+    bg.thumbnail((side, side))
+    g = max(side / bg.width, side / bg.height)
+    bg = bg.resize((max(side, round(bg.width * g)), max(side, round(bg.height * g))), Image.LANCZOS)
+    x0, y0 = (bg.width - side) // 2, (bg.height - side) // 2
+    t = ImageEnhance.Brightness(bg.crop((x0, y0, x0 + side, y0 + side)).filter(ImageFilter.GaussianBlur(22))).enhance(0.55)
+    # The photo's edges that meet the band fade into it, so no hard line runs across the square.
+    m = Image.new('L', (pw, ph), 255)
+    dm = ImageDraw.Draw(m)
+    for i in range(feather):
+        v = round(255 * (i + 1) / (feather + 1))
+        if at[0] > 0:
+            dm.line([(i, 0), (i, ph - 1)], fill=v)
+        if at[0] + pw < side:
+            dm.line([(pw - 1 - i, 0), (pw - 1 - i, ph - 1)], fill=v)
+        if at[1] > 0:
+            dm.line([(0, i), (pw - 1, i)], fill=v)
+        if at[1] + ph < side:
+            dm.line([(0, ph - 1 - i), (pw - 1, ph - 1 - i)], fill=v)
+    t.paste(part.resize((pw, ph), Image.LANCZOS), at, m)
+    return turn(t, None, rot)
+
+
 def stale(p, crop=None, rot=0):
     """Whether photo record p's files lack Pierre's crop or rotation (data.json / fish-game.json cr, ro: what its files
     were made with), so they must be made again from the original."""
