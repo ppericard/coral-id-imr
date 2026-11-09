@@ -296,13 +296,16 @@ const SEEDS = Number(arg('seeds', 5)),
   TIMESK = arg('times', 'rho25'),
   PKX = Number(arg('pk', require('../core.js').RTIME.PK)),
   EVERY = Number(arg('every', 25)),
+  // --gap (Q324): the knowledge-gap term of the simulated seconds, log seconds per logit of the learner's true ability -
+  // difficulty on the question (the real log: -0.22, LEARNING.md "Response time: genus and photo"); 0 by default.
+  GAPX = Number(arg('gap', 0)),
   RECOVER = arg('recover', '')
     .split(',')
     .filter(Boolean);
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
 if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
 if (!['truth', 'own', ...(WORLD === 'rated' ? ['sheet'] : [])].includes(APPK)) throw new Error('--app truth or own (sheet: the rated world)');
-if (!(PKX >= 0 && EVERY >= 1)) throw new Error('--pk 0 or more, --every 1 or more');
+if (!(PKX >= 0 && EVERY >= 1 && isFinite(GAPX))) throw new Error('--pk 0 or more, --every 1 or more, --gap a number');
 if (!['coral', 'fish'].includes(SUBJECT)) throw new Error('--subject coral or fish');
 if (arg('world', 'app') === 'rated' ? !['count', 'item'].includes(LEARN) : !['item', 'field', 'exemplar'].includes(LEARN))
   throw new Error(arg('world', 'app') === 'rated' ? '--learner count or item in the rated world' : '--learner item, field or exemplar');
@@ -1619,7 +1622,7 @@ function openTable(runs) {
         return null;
       }
     })();
-    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, pk: PKX, every: EVERY, recover: RECOVER});
+    return require('./ratedworld.js').main({subject: SUBJECT, profiles: NAMES, seeds: SEEDS, seed0: SEED0, N: QN, workers: WORKERS, dist: DIST, app: APPK, beyond: BEYOND, learner: LEARN, coralSd: CORALSD, out: OUT, commit, times: TIMESK, pk: PKX, every: EVERY, recover: RECOVER, gap: GAPX});
   }
   await require('../tests/slot.js')('tools/learnsim.js'); // one Playwright run per 2 cores on this machine (tests/slot.js)
   if (STATS === 'live') STATS_JSON = await liveStats();

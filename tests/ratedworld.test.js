@@ -175,6 +175,16 @@ test('the sheet mode: a population logs its answers with seconds, the ratings it
   assert.throws(() => RW.timeWorld(U, W, 3, 'nope'));
   const q = {ph: [Object.keys(TW.beta)[0]], ok: 1, typed: false};
   assert.strictEqual(RW.secOf(TW, 3, 0, 7, q), RW.secOf(TW, 3, 0, 7, q), 'the same answer, the same seconds');
+  // Q324: the knowledge-gap term (--gap): a question the learner knows better (a larger true logit) is answered faster;
+  // without it (gap 0) the seconds are those of before, the noise drawn the same.
+  const TG = RW.timeWorld(U, W, 3, 'rho25', {gap: -0.22});
+  assert.strictEqual(TG.gap, -0.22);
+  assert.ok(RW.secOf(TG, 3, 0, 7, {...q, gap: 3}) < RW.secOf(TG, 3, 0, 7, {...q, gap: -1}));
+  assert.strictEqual(RW.secOf(TW, 3, 0, 7, {...q, gap: 3}), RW.secOf(TW, 3, 0, 7, q), 'gap 0: unchanged');
+  assert.ok(
+    Math.abs(Math.log(RW.secOf(TG, 3, 0, 7, {...q, gap: 2}) / RW.secOf(TG, 3, 0, 7, q)) + 0.44) < 0.06,
+    'a 2-logit gap: 0.44 log faster'
+  );
   const o = {subject: 'coral', seed: 3, N: 30, cps: [30], profiles: ['beginner', 'expert'], every: 10},
     a = RW.runPop(null, {...o, pk: 0, recover: ['rho0', 'views']}),
     b = RW.runPop(null, {...o, pk: 0, recover: ['rho0', 'views']}),

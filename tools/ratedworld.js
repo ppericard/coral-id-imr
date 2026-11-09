@@ -11,7 +11,7 @@
 //
 //   node tools/learnsim.js --world rated [--subject fish] [--seeds 10] [--questions 3000] [--profiles ...]
 //                          [--learner count|item] [--dist normal|tail|t3] [--app truth|own|sheet] [--beyond yes|no] [--out rated.json]
-//                          [--times rho25|rho0|views|fast] [--pk 2] [--every 25] [--recover rho25,rho0,views,fast]
+//                          [--times rho25|rho0|views|fast] [--pk 2] [--every 25] [--recover rho25,rho0,views,fast] [--gap -0.22]
 // --app sheet (2026-11-09, Q315 level 2): the sheet's photo Elo simulated on a population's own answers (runPop, below).
 //
 // The world of a seed (the same seed, the same world, so two versions of the app compare on it):
@@ -406,7 +406,10 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
     const d = mean(ph.map(p => trueD(t, p))),
-      rec = r() < pRec(t, d, ph.length === 1);
+      rec = r() < pRec(t, d, ph.length === 1),
+      // The learner's true logit on this question (ability - difficulty, recognition), before it learns from it: the
+      // knowledge-gap term of the simulated seconds (runPop, --gap).
+      gap = logit(know[t]) + pi - d - (ph.length === 1 ? RATED.SINGLE : 0);
     let c = t;
     if (!rec) {
       if (typed) c = r() < 0.5 ? '' : (same.length ? same[Math.floor(r() * same.length)] : '') || '';
@@ -508,7 +511,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       });
       blk = {n: 0, ok: 0};
     }
-    return {t, c, ok, k, typed, chs, ph: ph.map(p => p.f)};
+    return {t, c, ok, k, typed, chs, ph: ph.map(p => p.f), gap};
   };
   const result = () => ({
     profile,
@@ -547,7 +550,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
 const RT = {T0: Math.log(6.5), PHOTO: 0.35, PLAYER: 0.44, NOISE: 0.57, RIGHT: -0.4, TYPED: Math.log(1.5), VIEW: 0.3, RHO: 0.25, FAST: 0.5};
 const TIMES = ['rho25', 'rho0', 'views', 'fast'];
 // Each photo file's time intensity beta in world W for a case, and its true difficulty (the world's mu + eps).
-function timeWorld(U, W, seed, times) {
+function timeWorld(U, W, seed, times, {gap = 0} = {}) {
   if (!TIMES.includes(times)) throw new Error(`--times one of ${TIMES.join(', ')}`);
   const unitOf = {};
   [...U.slate, ...U.extra].forEach(n => Object.values(U.views(n)).forEach(L => L.forEach(p => (unitOf[p.f] = unitOf[p.f] || n))));
@@ -570,13 +573,15 @@ function timeWorld(U, W, seed, times) {
   const bm = files.reduce((t, f) => t + beta[f], 0) / files.length,
     sb = Math.sqrt(files.reduce((t, f) => t + (beta[f] - bm) ** 2, 0) / files.length) || 1,
     rho = files.reduce((t, f) => t + (beta[f] - bm) * (d[f] - m), 0) / files.length / sb / sdd;
-  return {times, beta, d, unitOf, rho};
+  return {times, beta, d, unitOf, rho, gap};
 }
-// The seconds of logged answer number i (from 0, in the log's order) of player j, its photos ph, right ok, typed.
-function secOf(TW, seed, j, i, {ph, ok, typed}) {
+// The seconds of logged answer number i (from 0, in the log's order) of player j, its photos ph, right ok, typed, and the
+// learner's true logit on it (gap: ability - difficulty), times TW.gap (0 unless --gap: Q324, the real log's -0.22 log per
+// logit; the seconds of a run without it are unchanged, the noise drawn the same).
+function secOf(TW, seed, j, i, {ph, ok, typed, gap = 0}) {
   const r = gen((seed * 2654435761) ^ (i * 2246822519) ^ (TIMES.indexOf(TW.times) * 40503 + 0x7f4a7c15)),
     tau = RT.PLAYER * normal(gen((seed * 3266489917) ^ (0x165667b1 + 7919 * (j + 1)))),
-    lt = RT.T0 + ph.reduce((t, f) => t + (TW.beta[f] || 0), 0) / ph.length + (TW.times === 'views' ? RT.VIEW * (ph.length - 1) : 0) - tau + (ok ? RT.RIGHT : 0) + (typed ? RT.TYPED : 0) + RT.NOISE * normal(r);
+    lt = RT.T0 + ph.reduce((t, f) => t + (TW.beta[f] || 0), 0) / ph.length + (TW.times === 'views' ? RT.VIEW * (ph.length - 1) : 0) - tau + (ok ? RT.RIGHT : 0) + (typed ? RT.TYPED : 0) + (TW.gap || 0) * gap + RT.NOISE * normal(r);
   return Math.round(Math.min(600, Math.max(0.1, Math.exp(lt))) * 10) / 10;
 }
 // The photo ratings as ?stats=1 serves them (eloOf, genusOffsetsOf, photoMemOf) from one replay with the photo k pk.
@@ -648,11 +653,11 @@ function recoverK(log, TW, W, seed) {
 // when pk is 0, the answers then not depending on the seconds). Returns {runs: one per player (runOne's), pop: {seed,
 // times, pk, rho (beta against d, per case), at: [{q, err, errW, corr, gdErr, photos}], rec: {case: recoverK}}}; keep:
 // also the log, the world W and its seconds TW (the app world's stats and truth from a population, Q315).
-function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', pk = C.RTIME.PK, every = 25, recover = [], keep = false, beyond = ''}) {
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', pk = C.RTIME.PK, every = 25, recover = [], keep = false, beyond = '', gap = 0}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
-    TW = timeWorld(U, W, seed, times),
+    TW = timeWorld(U, W, seed, times, {gap}),
     pls = profiles.map((profile, j) =>
       playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
     ),
@@ -669,7 +674,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
   for (let i = 0; i < N; i++) {
     pls.forEach((pl, j) => {
       const a = pl.step(i),
-        q = {ph: a.ph, ok: a.ok, typed: a.typed},
+        q = {ph: a.ph, ok: a.ok, typed: a.typed, gap: a.gap},
         mode = a.typed ? 'quiz|t' : `quiz|k${Math.max(2, Math.min(9, a.k))}`,
         row = [`p${j + 1}`, (i * pls.length + j) * 1000, a.t, a.c, a.ok ? 1 : 0, mode, a.ph.join(' '), null, null, null, a.chs.join(' '), 0, secOf(TW, seed, j, log.length, q), 0];
       row.j = j;
@@ -683,7 +688,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
     rec = {},
     rho = {};
   cases.forEach(c => {
-    const T = c === times ? TW : timeWorld(U, W, seed, c);
+    const T = c === times ? TW : timeWorld(U, W, seed, c, {gap});
     rho[c] = T.rho;
     rec[c] = recoverK(log, T, W, seed);
   });
@@ -705,7 +710,7 @@ async function main(o) {
     POP = [];
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
-    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, pk: o.pk, every: o.every, recover: o.recover});
+    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, pk: o.pk, every: o.every, recover: o.recover, gap: o.gap || 0});
     else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
   const runs = [];
   await Promise.all(
@@ -783,7 +788,7 @@ async function main(o) {
           coralSd: o.subject === 'coral' ? o.coralSd || RATED.CORAL_GD : null,
           app: o.app,
           beyond: o.beyond || null,
-          ...(pop ? {times: o.times, pk: o.pk, every: o.every, rt: RT, kgrid: KGRID, pop: POP} : {}),
+          ...(pop ? {times: o.times, pk: o.pk, every: o.every, gap: o.gap || 0, rt: RT, kgrid: KGRID, pop: POP} : {}),
           seconds: secs,
           runs
         },

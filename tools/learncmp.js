@@ -199,7 +199,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
     profiles = [...new Set([...Object.keys(B.profiles || {}), ...keys.map(k => IB.get(k).profile)])].filter(p => keys.some(k => IB.get(k).profile === p)),
     only = [...IB.keys()].filter(k => !IA.has(k)).concat([...IA.keys()].filter(k => !IB.has(k)));
   // The settings that should match for a paired comparison (a change under test may differ on purpose: shown, not refused).
-  const SET = ['subject', 'questions', 'seeds', 'seed0', 'learnerKind', 'tau', 'truth', 'stats', 'sheetv', 'world', 'dist', 'app', 'times', 'pk'],
+  const SET = ['subject', 'questions', 'seeds', 'seed0', 'learnerKind', 'tau', 'truth', 'stats', 'sheetv', 'world', 'dist', 'app', 'times', 'pk', 'gap'],
     differ = SET.filter(k => JSON.stringify(B[k] ?? null) !== JSON.stringify(A[k] ?? null)).map(k => `${k} ${JSON.stringify(B[k] ?? null)} / ${JSON.stringify(A[k] ?? null)}`);
   const reach = (F, m, cp) => {
     const M = MEASURES[m];
