@@ -69,6 +69,13 @@ const perPhoto = (run, cp) => {
     u = new Set(E.flatMap(e => e.slice(2))).size;
   return u ? n / u : null;
 };
+// The share of answers 1..cp on the fish scientific genera (kind genus in a run whose slate is families: learnsim kinds),
+// the measure of Q208's "families met first" (2026-11-09); none for the corals, whose slate units are genera.
+const genShare = (run, cp) => {
+  const K = run.kinds || {},
+    E = (run.expo || []).slice(0, cp);
+  return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'genus').length / E.length : null;
+};
 const hardShare = (run, cp) => {
   const P = (run.preOW || []).slice(0, cp);
   if (!P.length || !P.some(x => x[1] > 0)) return null;
@@ -104,7 +111,8 @@ const MEASURES = {
   c3: {label: 'Answer at which circle 3 was met', kind: 'run', dg: 1, get: r => (r.c3 || {}).met ?? null},
   // Photo exposure (learnsim expo and preOW, questions 1..N): answers on photos under ease 4, answers per photo shown.
   hardAns: {label: 'Answers on photos under ease 4', kind: 'window', dg: 1, get: (r, cp) => hardAnswers(r, cp)},
-  perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)}
+  perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)},
+  genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)}
 };
 // LEARNING.md "Guardrails and margins": harm -1 when lower is worse, +1 when higher is; the margin is abs, or rel times
 // the before mean when larger ("the larger"); coralAbs: the corals' own margin (units met: 2 genera, as before).
@@ -327,7 +335,7 @@ function list() {
   return L.join('\n');
 }
 
-module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf, levels, firstOW, hardAnswers, perPhoto};
+module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf, levels, firstOW, hardAnswers, perPhoto, genShare};
 
 if (require.main === module) {
   const args = process.argv.slice(2),
