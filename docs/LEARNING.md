@@ -3037,6 +3037,23 @@ choice as `Q.sciV`). Turned on by hand (⚙, My progress) while no family is at 
 Water (Pierre, 2026-11-08, Q240: `Q.sciH`, synced with the choice); by the offer, from its Advanced. The IMR-families-first
 opening order (`openPick`) reads the same "ever answered" rule (Q238).
 
+**Families met first** (Pierre, 2026-11-09, Q208 A; #822): once the offer is accepted, no new genus card opens while a family
+in play is still not met. "In play" means a family that may open now (`model.js` `mayOpen`: circle 1; circle 2 once every
+circle-1 family has been asked, `app.js` `fishGate`; circle 3 once the player said yes). When every family in play has been
+met, the genera open as before, each from its family's Advanced, one card at a time by the usual rule. `model.js` `openPick`
+(`laterWaits`) takes them out of the draw while `fresh` (the units not met that may open now) still holds a slate unit. Which
+units wait is `app.js` `setLater`: the units of a set marked `after` (the fish `sci` set only; the coral bonus genera do not
+have it). Exempt:
+- the IMR genera of an IMR player (the set's `auto` units, Q219), which keep coming from their family's Open Water during the
+  family phase;
+- the set turned on by hand before it was due (`Q.sciH`, Q240);
+- Open all (`openedAll`: a unit opened by Open all and not closed again by "One at a time").
+
+Nothing else changes: the pace (`openChance`, `openPace`), the units in play, and the share of the questions genera take
+once they are in. Option C, a ceiling on the genus share while the families are not solid, was left for later, if the data
+justify it. No progress rule moves (no `RVS` entry: the order of opening moves no unit's record, and the sheet does not
+replay it). Tests: `tests/familiesfirst.test.js`, `tests/fish.smoke.js` (sci part).
+
 Measured (rule L11: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
 player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
 entry questions, 27-37 genera met (the Parrotfish and Wrasse genera joining when those entries reached Advanced), every genus
@@ -4934,7 +4951,7 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
 (the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
 `unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
-`perPhoto` (answers per photo shown), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
+`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
 exist yet, so their kinds are empty until they do.
 
 **On a GitHub runner** (tier 2 and level 3, too long for the shared machine): Actions › "Learning check (tier 2)" › Run
