@@ -305,6 +305,42 @@ test('a save whose reply never came, though the sheet wrote it: the next sync lo
   }
 });
 
+// ROADMAP "A save whose reply is lost, then another device's save" (found 2026-11-08): the sheet wrote the save, its
+// reply never came, another device saved over it; this device then no longer finds its own copy at its next load, and
+// the plain merge counted its answers twice (2 here, 4 on the sheet). Its fate unknown, the device asks for the replay of
+// the log (SYNC.lg, sync.js fateUnknown), which counts each answer once by its id.
+test('a save whose reply never came, then another device saved over it: its answers count once, here and on the sheet', async () => {
+  for (const v of [LIGHT - 1, LIGHT]) {
+    const s = loadCodeGs(withData());
+    let lose = -1;
+    const A = page(s, {v, SYNC: acct(), lost: (k, b, n) => n === lose}),
+      B = page(s, {v, SYNC: acct()});
+    A.play('w0');
+    await A.syncPush();
+    await B.syncPull();
+    A.play('w1', 'Porites');
+    A.play('w2', 'Porites', 0);
+    lose = A.reqs.length + (v >= LIGHT ? 0 : 1); // the save (light: no load before it)
+    await A.syncPush();
+    assert.ok(A.ctx.SYNC.fail && A.ctx.SYNC.log.length === 2 && rowsOf(s) === 3, `v${v}: logged and written, the reply lost`);
+    const unknown = A.ctx.SYNC.lg; // its fate unknown here
+    await B.syncPull(); // the other device loads the copy the lost save wrote
+    B.play('w3', 'Montipora');
+    await B.syncPush(); // and saves over it
+    A.play('w4', 'Acropora', 0);
+    await A.syncPush();
+    await A.syncPull();
+    await B.syncPull();
+    assert.deepStrictEqual(
+      [rowsOf(s), total(A.ctx.P), total(B.ctx.P), savedTotal(s), A.ctx.SYNC.log.length, !!A.ctx.SYNC.lg],
+      [5, 5, 5, 5, 0, false],
+      `v${v}: every answer once`
+    );
+    assert.strictEqual((A.ctx.P.Porites.ok || 0) + (A.ctx.P.Porites.ko || 0), 2, `v${v}: the lost save's two answers, once`);
+    assert.strictEqual(unknown, 1, `v${v}: the replay asked for, the save's fate unknown`);
+  }
+});
+
 test('a slow line: the next save waits longer, counted from the first change; a fast line keeps 3 s', () => {
   const s = loadCodeGs(),
     A = page(s, {SYNC: acct()});
@@ -318,25 +354,34 @@ test('a slow line: the next save waits longer, counted from the first change; a 
   assert.strictEqual(B.saveWait(), B.SAVE_WAIT.MS, 'before LIGHT_SHEET: as ever');
 });
 
-test('property: light devices, a classic one, an older app, refusals and failed requests: every device ends with the rows of the log', async () => {
+test('property: light devices, classic ones, an older app, refusals, failed requests and lost replies: every device ends with the rows of the log', async () => {
   let seed = 11;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
   const G = ['Acropora', 'Porites', 'Montipora', 'Pocillopora'];
-  for (let run = 0; run < 30; run++) {
+  // Each run one mix of devices on the account: two light and a classic one, three light, three classic (an older script).
+  const MIX = [
+    [LIGHT, LIGHT, LIGHT - 1],
+    [LIGHT, LIGHT, LIGHT],
+    [LIGHT - 1, LIGHT - 1, LIGHT - 1]
+  ];
+  for (let run = 0; run < 60; run++) {
     const s = loadCodeGs(withData());
     let calm = false,
       k = 0;
-    // A save refused (busy) or a request that never reached the sheet (the line). Not a reply lost after the sheet wrote
-    // (below, one device): two devices then can count an answer twice, in the classic flow as in the light one.
+    // A save refused (busy), a request that never reached the sheet (the line), and a reply lost after the sheet applied
+    // the request (a load or a save: logged and written, the device never told; until the fate of such a save was taken
+    // as unknown, 8 to 11 runs in 40 counted answers twice, in the classic flow as in the light one).
     const chaos = {
       net: kind =>
         !calm && kind === 'post' && rnd() < 0.12
           ? {ok: false, error: 'busy'}
           : !calm && rnd() < 0.06
             ? new TypeError('Failed to fetch')
-            : undefined
+            : undefined,
+      lost: () => !calm && rnd() < 0.1
     };
-    const devs = [page(s, {SYNC: acct(), ...chaos}), page(s, {SYNC: acct(), ...chaos}), page(s, {v: LIGHT - 1, SYNC: acct(), ...chaos})];
+    const vs = MIX[run % MIX.length],
+      devs = vs.map(v => page(s, {v, SYNC: acct(), ...chaos}));
     // An app from before the light saves and the replay: it loads the copy, answers once, saves the whole of it.
     const older = () => {
       const j = s.get({name: 'Ana', pin: '1234'}),
@@ -379,7 +424,7 @@ test('property: light devices, a classic one, an older app, refusals and failed 
       assert.strictEqual(total(d.ctx.P), want, `run ${run}: device ${i} counts ${total(d.ctx.P)}, the log ${want}`);
     });
     assert.strictEqual(savedTotal(s), want, `run ${run}: the saved copy`);
-    const light = devs.slice(0, 2);
+    const light = devs.filter((d, i) => vs[i] >= LIGHT);
     light.forEach((d, i) =>
       assert.ok(
         d.reqs.some(r => r.body.dz),
