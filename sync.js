@@ -339,27 +339,11 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       before = copy(P),
       // Today's bars as a floor at a subject's first replay (SUBJECTS replayed floor; Q310) are in the replay itself: the
       // sheet floors it against the account's saved copy (Code.gs replay_, core.js replayFloor), so every device adopts
-      // the same record and keeps it as their shared baseline (replayBase; Codex review #779).
-      M0 = replayedOf({P: R}, P, rp.rv);
-    let M = M0;
-    // A unit replayedOf keeps from this device (more answers here than in the log: answers from before fish logging)
-    // beside the replayed records: their mix-ups and offers on it may read it lower than it was here, so its bar of
-    // before is floored too, in this device's progress (core.js replayFloor; Codex review #779).
-    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && P[g] && !P[g].rv);
-    if (S.replayed && S.replayed.floor && keptHere.length) M = replayFloor(M, P, keptHere);
-    // A floored replay's typed opportunities (core.js replayFloor may raise the level's, which a unit's false-alarm rate
-    // reads): kept per rank when this device's larger answer count keeps its own level (replayedOf), here (the replay
-    // with this device's answers on top, R) and in the shared baseline below (the sheet's replay alone, rp.rec: this
-    // device's unsent answers stay its own; Codex review #779), so the adoption does not undo the floor.
-    const fl = !!(S.replayed && S.replayed.floor),
-      tykUp = (L, X) => {
-        const tyk = fl && X && X[LEVEL] && X[LEVEL].tyk;
-        if (!tyk || !L || typeof L !== 'object') return;
-        const o = {...(L.tyk || {})};
-        Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
-        L.tyk = o;
-      };
-    tykUp(M[LEVEL], R);
+      // the same record and keeps it as their shared baseline (replayBase; Codex review #779). The record adopted: core.js
+      // replayAdopted (replayedOf, a unit kept from this device floored at its bar here, the floor's typed opportunities
+      // kept), the one the sheet's leaderboard ranks a player by until their app adopts it (Code.gs board_, rule D8).
+      fl = !!(S.replayed && S.replayed.floor),
+      M = replayAdopted(R, P, rp.rv, fl);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
@@ -383,7 +367,9 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
       SYNC[S.base[0]] = replayBase(rp.rec, M, rp.rv, SYNC[S.base[0]]);
-      tykUp((SYNC[S.base[0]] || {})[LEVEL], rp.rec);
+      // The floor's typed opportunities in the shared baseline too (the sheet's replay alone, rp.rec: this device's unsent
+      // answers stay its own; Codex review #779).
+      if (fl) tykRaise((SYNC[S.base[0]] || {})[LEVEL], rp.rec);
       // The replay counts every logged answer of this subject; the flag (lg) goes with the save that carries them (syncOnce).
       store.set('reefid-account', SYNC);
     }
