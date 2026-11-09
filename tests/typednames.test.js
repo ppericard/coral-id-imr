@@ -173,7 +173,7 @@ test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a p
   // Codex review #834: the correction names the shared name typed (Gobies), never the photo's family
   const gm = C.typeMatchIn(NAMES, 'gobis', C.typeNormAll),
     st = page().typeStep(gm, 'gobis', {r: 0, text: 'gobis'}, 'f:Dartfishes');
-  assert.strictEqual(st.spelled.replace(/<[^>]+>/g, ''), 'Gobies');
+  assert.strictEqual(st.spelled, '<span class="tysp">Gobi<b>e</b>s</span>'); // the letter left out marked
   assert.strictEqual(C.typeVerdict(C.typeMatchIn(NAMES, 'gobis', C.typeNormAll), 'f:Wrasses'), 'other');
 });
 
