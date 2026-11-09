@@ -4399,7 +4399,7 @@ function fishAdmin() {
     )
       .then(([f, ph, gm]) => {
         if (!f || !ph || !ph.photos) return;
-        const G = (gm && gm.photos) || {},
+        const G = (fishGameRead(gm) || {}).photos || {}, // its records whole (core.js: the file's short form)
           all = {};
         new Set([...Object.keys(ph.photos), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(ph.photos[t] || [])]));
         const F = fishGen(f, all),
@@ -5530,8 +5530,9 @@ async function fishLoad(withGame) {
   if (withGame && !FISHC.plays)
     await (FISHG =
       FISHG ||
-      get('fish-game.json').then(G => {
-        const L = Object.values((G && G.photos) || {}).flat();
+      get('fish-game.json').then(G0 => {
+        const G = fishGameRead(G0), // its records whole (core.js: the file's short form)
+          L = Object.values((G && G.photos) || {}).flat();
         // The judgment a game record carries (a reference photo is judged outside suggest.json), with its resolved phase.
         FISHC.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
         FISHC.plays = L;

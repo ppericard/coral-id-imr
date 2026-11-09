@@ -24,7 +24,8 @@ For each photo in play, from its fish-cand.json record (the original: iNaturalis
     lacks. A photo already downloaded is kept; it is downloaded again when its crop (cr) or rotation (ro) changes, its
     rewrite count iv bumped (the app puts it in the photo's address, app.js ver);
   - listed under its teaching entry (fish.json teach: the level-1 entry whose species list holds the species) as
-    {f, o (its observation, or the FishBase photo page), src, a, lic, t, sp (the species it is in play for), loc, own,
+    {f, o (its observation, or the FishBase photo page; an iNaturalist observation by its id alone), src (the original;
+    on iNaturalist, its extension alone when the photo is the record's own: tools/fish_short.py, core.js fishGameRow), a, lic, t, sp (the species it is in play for), loc, own,
     ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, else the pass's jt), ph (its phase, as the
     admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
@@ -34,6 +35,8 @@ species order, then the easiest, then by name (never Pierre's own by priority: Q
 
   python3 tools/fish_game.py [--out DIR] [--max N]   download what is new and write fish-game.json (run by tools/fetch_approved.py
                                            --fish in the Candidate photos workflow, after each Publish)
+  python3 tools/fish_game.py --rewrite     write fish-game.json again in the current layout (the short form), nothing
+                                           downloaded: after a merge that took another copy of it
   python3 tools/fish_game.py --plan        print what a run would download, the expected R2 volume, and the entries that
                                            would still use the stopgap; writes nothing, downloads nothing
 """
@@ -54,6 +57,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from fetch_fish import PHASE_WORD, PHASES  # noqa: E402  (the phase words, as autosort.js FPHW)
 import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
+import fish_short  # noqa: E402  (the file's short form: o and src)
 
 OUT_FILE = 'fish-game.json'
 V = 1
@@ -333,7 +337,8 @@ def dumps(d):
     """One top-level key per line, one photo per line (a Publish changes a few lines, not the file)."""
     c = lambda v: json.dumps(v, ensure_ascii=False, separators=(',', ':'))
     head = [f'{c(k)}:{c(v)}' for k, v in d.items() if k != 'photos']
-    ents = [f'{c(t)}:[\n' + ',\n'.join(c(p) for p in L) + '\n]' for t, L in d['photos'].items()]
+    # Each record in the short form (tools/fish_short.py: o and src without their common prefixes; Pierre, 2026-11-09).
+    ents = [f'{c(t)}:[\n' + ',\n'.join(c(fish_short.short(p)) for p in L) + '\n]' for t, L in d['photos'].items()]
     return '{' + ',\n'.join(head + ['"photos":{' + (('\n' + ',\n'.join(ents) + '\n') if ents else '') + '}']) + '}\n'
 
 
@@ -366,8 +371,10 @@ def download(r, c, out, get=opener, pause=FB_PAUSE):
 
 
 def load(root, name, default=None):
+    """A JSON file of root; fish-game.json with its records whole (fish_short.full_doc: either form)."""
     p = os.path.join(root, name)
-    return json.load(open(p, encoding='utf-8')) if os.path.exists(p) else default
+    d = json.load(open(p, encoding='utf-8')) if os.path.exists(p) else default
+    return fish_short.full_doc(d) if name == OUT_FILE else d
 
 
 def inputs(root=ROOT):
@@ -446,8 +453,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--out', default='r2-upload')
     ap.add_argument('--plan', action='store_true')
+    ap.add_argument('--rewrite', action='store_true')
     ap.add_argument('--max', type=int, default=MAX, help='at most this many downloads in this run (FISH_MAX)')
     a = ap.parse_args()
+    if a.rewrite:
+        d = load(ROOT, OUT_FILE)
+        with open(os.path.join(ROOT, OUT_FILE), 'w', encoding='utf-8') as fh:
+            fh.write(dumps(d))
+        print(f'{OUT_FILE} written again ({sum(len(L) for L in d["photos"].values())} photos)')
+        return
     if a.plan:
         fish, cur, cand, sug, refs, codes, crops, rkeep = inputs(ROOT)
         todo, keep, _ = plan(fish, cur, cand, sug, load(ROOT, OUT_FILE, {'photos': {}}), refs, codes, crops, rkeep=rkeep)

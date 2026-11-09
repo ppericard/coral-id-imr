@@ -370,7 +370,7 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
     .forEach(p => assert.ok(added.has(p.f) || (refs.has(p.f) && C.refLevel(p)), `${p.f}: a FishBase game photo outside the rules`));
   // The game as it plays (admin plan PR 7: the curated photos of fish-game.json, downloaded to R2, beside the stopgap):
   // a FishBase photo only while Pierre has it in play for that species (core.js fishOn), or a judged reference photo.
-  const GM = read('fish-game.json').photos,
+  const GM = C.fishGameRead(read('fish-game.json')).photos,
     X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR, F), PH.sheet);
   Object.values(X.gen).forEach(g =>
     g.views.wide
