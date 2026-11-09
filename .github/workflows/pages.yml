@@ -61,6 +61,10 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pages"
           git archive HEAD | tar -x -C "$RUNNER_TEMP/pages"
           echo "Published source: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      # The players' copy of the curation (Pierre, 2026-11-09): curation-play.json, what the app reads of curation.json
+      # (tools/curplay.py; curation.json itself served unchanged, for the admin). Before the stamps: sw.js V hashes it.
+      - name: Write the players' curation
+        run: python3 tools/curplay.py "$RUNNER_TEMP/pages"
       # Every ?v=, LAB_V and the sw.js cache name V from content hashes, the build number in the pages (Pierre,
       # 2026-11-04: PRs never edit a version number). On the staged copy only; a reference to no file fails the deploy.
       - name: Stamp the version numbers

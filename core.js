@@ -1980,10 +1980,25 @@
     '__lookupSetter__'
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
+  // The seedling 🌱 is the admin's own mark in his name (Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
+  // have"), given only by the admin page (Code.gs users_ userSeed, v123): a new account or an archive name holding it, or
+  // one of its look-alikes, anywhere is refused as reserved too. Seedling, herb, potted plant, shamrock, four-leaf clover,
+  // leaf fluttering in wind (any variation selector after it changes nothing: the base character is enough).
+  const SEED_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];
+  const SEED_RE = new RegExp('[' + SEED_LOOKALIKES.join('') + ']', 'u');
   const reservedName = name =>
+    SEED_RE.test(String(name == null ? '' : name)) ||
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
+  // The admin's own name with the seedling or without it (Code.gs users_ userSeed): on, the name and ' 🌱' after it (once);
+  // off, the name without its trailing seedling. The same name back when there is nothing to change.
+  const SEED = '\u{1F331}';
+  const seedName = (name, on) => {
+    const n = String(name == null ? '' : name).trim(),
+      bare = n.replace(new RegExp('\\s*' + SEED + '\\uFE0F?$', 'u'), '');
+    return on ? (bare === n ? n + ' ' + SEED : n) : bare;
+  };
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -5368,7 +5383,10 @@
     SORRY,
     firstName,
     RESERVED_NAMES,
+    SEED_LOOKALIKES,
     reservedName,
+    SEED,
+    seedName,
     sorryFelt,
     sorryOf,
     sorryDue,
