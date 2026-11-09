@@ -4256,6 +4256,12 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-an-sm.c3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.adm-an-sm.c4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.adm-an-sm.c5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
 .adm-an-sm figure {
   margin: 0;
   min-width: 0;
