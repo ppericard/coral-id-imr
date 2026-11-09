@@ -1371,17 +1371,14 @@ const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'play
 const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
-// A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine), its photos flagged on
-// the site (its flag) and its open reports (Q309: the reports follow the switch).
+// A subject's to-do count on the switch: what its To do lists. The corals' To do items (reports, flags, suggestions); for
+// a subject with its own part of curation.json, its photos flagged on the site (its flag) and its open reports (Q309: the
+// reports follow the switch). The auto-sort's Checks are not to-dos: they have their own count in Candidates › Checks
+// (Pierre, 2026-11-09: the fish switch showed ~1,100, mostly Checks, that To do never lists).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return (
-    Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length +
-    Object.keys(F.flag || {}).length +
-    repsOpen(S).length
-  );
+  return Object.keys(F.flag || {}).length + repsOpen(S).length;
 };
 // The To do count of the subject on screen (its tab, its views, the Inbox): the corals' tn; for a subject with its own part
 // of curation.json, its flags and its open reports (what its To do › Reports lists).
