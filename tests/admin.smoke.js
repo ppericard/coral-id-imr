@@ -3082,6 +3082,27 @@ const WIDTHS = [390, 1280];
       a = await tools(rsel);
       if (!/^Ease,.*View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
         fails.push(`${w}px To do › Reports, a fish photo's tag rows: ${JSON.stringify(a)}`);
+      // The Count row in plain words, each with its meaning on hover (Pierre, 2026-11-09: "Others" did not say several
+      // species); the stored codes unchanged.
+      const cnt = await p.evaluate(
+        s =>
+          [...document.querySelectorAll(s + ' .adm-ftrows [role="group"][aria-label="Count"] button')].map(b => [
+            b.dataset.fv,
+            b.textContent,
+            !!b.title
+          ]),
+        rsel
+      );
+      if (
+        JSON.stringify(cnt) !==
+        JSON.stringify([
+          ['1', 'One fish', true],
+          ['s', 'Same species', true],
+          ['m', 'Other species in view', true],
+          ['x', 'Unclear', true]
+        ])
+      )
+        fails.push(`${w}px To do › Reports, a fish photo's Count row: ${JSON.stringify(cnt)}`);
       if (w === 390) await shot('report-fish-tags-390', card('demorep11'));
       const d0 = await fishOf();
       await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
@@ -3138,6 +3159,36 @@ const WIDTHS = [390, 1280];
       await p.click('#undo');
       await settle();
       if ((await fishOf()) !== d1) fails.push(`${w}px To do › Reports: Undo after a corrected species`);
+      // The same into a species of another family: the tile follows that family (its rows, Feature, Cover), and Count
+      // Others still takes the photo out of play (Codex review #823).
+      const x = await p.evaluate(f => {
+        const s = FISHC.byF[f].sid,
+          u = FISHC.units.find(y => y.id === 'f:Damselfishes'),
+          to = u.species.find(y => FISHC.species[y] && !FISHC.species[y].out);
+        DRAFT.fish = fishAdd(fishNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
+        saveDraft();
+        render();
+        return to;
+      }, a.f);
+      await settle();
+      const xf = await tools(rsel),
+        xfam = await p.evaluate(s => (document.querySelector(s) || {}).dataset?.fam, rsel);
+      if (!xf || !xf.play || xf.fu !== want || xfam !== 'f:Damselfishes')
+        fails.push(`${w}px To do › Reports, a fish photo added under ${x} in another family: ${JSON.stringify({xf, xfam})}`);
+      else {
+        if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
+        await settle();
+        await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+        await settle();
+        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: fishOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
+        if (xo.seen !== 1 || xo.on) fails.push(`${w}px To do › Reports, Count Others on a photo in another family: ${JSON.stringify(xo)}`);
+        await p.click('#undo');
+        await settle();
+      }
+      await p.click('#undo');
+      await settle();
+      await p.evaluate(f => FT_OPEN.delete(f), a.f);
+      if ((await fishOf()) !== d1) fails.push(`${w}px To do › Reports: Undo after a species of another family`);
       if (w === 390) await shot('report-fish-390', card('demorep11'));
     }
     // The reports' action bar (Q309), once: status, the tools each report can use, the list following the subject switch.

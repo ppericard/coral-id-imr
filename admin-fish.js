@@ -33,7 +33,7 @@ const FTAGS = [
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
   {m: 'soft', b: 'blurred'},
   {l: 'large', m: 'medium', s: 'small'},
-  {s: 'several of its kind', m: 'other fish too', x: 'subject not obvious'}
+  {s: 'several of its kind', m: 'other species in view', x: 'subject not obvious'}
 ];
 const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', p: 'phase entry', r: 'reference photo'};
 const fishTagText = jt =>
@@ -102,10 +102,11 @@ const FROWS = [
     6,
     'Count',
     [
-      ['1', 'One'],
-      ['s', 'Several'],
-      ['m', 'Others'],
-      ['x', 'Unclear']
+      // Pierre, 2026-11-09: "Others" did not say the problem is several species on one photo; the codes stay (judging/FISH.md).
+      ['1', 'One fish', 'One fish (others, if any, tiny and far)'],
+      ['s', 'Same species', 'Several fish of the same species, the subject obvious (a pair, a school)'],
+      ['m', 'Other species in view', 'Other species in view too: several species on one photo (on a photo in play: out of play, rule P3)'],
+      ['x', 'Unclear', 'Unclear: which fish is asked about is not obvious (on a photo in play: out of play)']
     ]
   ]
 ];
@@ -121,10 +122,14 @@ const FPHASE_ROW = [
   ['female', 'Female'],
   ['male', 'Male']
 ];
-// One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's.
+// One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's. An option may carry
+// its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
   `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
-    .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
+    .map(
+      ([k, t, tip]) =>
+        `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</button>`
+    )
     .join('')}</span>`;
 // Pierre's values on a photo (the draft's fish part) and the pass's (j), for the rows: {mine, pass} per field.
 const fVals = (F, f, j) => ({
