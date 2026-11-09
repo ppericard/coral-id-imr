@@ -856,6 +856,47 @@ const WIDTHS = [390, 1280];
           await settle();
           d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1]}), f1);
           if (d.out) fails.push(`${w}px Families: Put back ${JSON.stringify(d)}`);
+          // Other species in view (Q323): an add whose count is k (confusion possible) or the legacy m with no pass to sort
+          // it is out of play, listed apart with Keep in play (count o) and Remove; Keep in play puts it back, one Undo step.
+          const ko = await p.evaluate(sid => {
+            const F = DRAFT.fish,
+              L = (FISHC.cand[sid] || []).filter(x => ![F.add, F.seen, F.exclude, F.out].some(m => m && x.f in m)).slice(0, 2);
+            if (L.length < 2) return null;
+            DRAFT.fish = {
+              ...F,
+              add: {...F.add, [L[0].f]: sid, [L[1].f]: sid},
+              tags: {...(F.tags || {}), [L[0].f]: 'p1g0smk', [L[1].f]: 'p1g0smm'}
+            };
+            if (SUG.fish) delete SUG.fish[L[1].f]; // not sorted by the pass
+            saveDraft();
+            render();
+            return L.map(x => x.f);
+          }, order.sid);
+          await settle();
+          if (!ko) fails.push(`${w}px Families: no candidates left for the other-species row`);
+          else {
+            d = await p.evaluate(
+              ([a, b, sec]) => ({
+                row: [...document.querySelectorAll('[data-fother] [data-f]')].map(t => t.dataset.f),
+                inPlay: [a, b].filter(f => document.querySelector(`${sec} [data-f="${f}"]`)),
+                acts: [...document.querySelectorAll(`[data-fother] [data-f="${a}"] [data-fu]`)].map(x => x.dataset.fu)
+              }),
+              [...ko, sec]
+            );
+            if (!ko.every(f => d.row.includes(f)) || d.inPlay.length || d.acts.join() !== 'zoom,keepo,remove')
+              fails.push(`${w}px Families: other species out of play ${JSON.stringify(d)}`);
+            await p.click(`[data-fother] [data-f="${ko[0]}"] [data-fu="keepo"]`);
+            await settle();
+            d = await p.evaluate(
+              ([a, sec]) => ({tag: DRAFT.fish.tags[a], inPlay: !!document.querySelector(`${sec} [data-f="${a}"]`)}),
+              [ko[0], sec]
+            );
+            if (d.tag !== 'p1g0smo' || !d.inPlay) fails.push(`${w}px Families: Keep in play ${JSON.stringify(d)}`);
+            await p.evaluate(() => undo());
+            await settle();
+            d = await p.evaluate(a => DRAFT.fish.tags[a], ko[0]);
+            if (d !== 'p1g0smk') fails.push(`${w}px Families: Undo of Keep in play left ${d}`);
+          }
           const f2 = await nth(2);
           await p.click(`${sec} [data-f="${f2}"] [data-fu="exclude"]`);
           await settle();

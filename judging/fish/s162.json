@@ -1,7 +1,7 @@
 {
  "photos": {
   "fish-s162-cand-435685881": {
-   "code": "p1g2ssm1",
+   "code": "p1g2ssk1",
    "keep": "best"
   },
   "fish-s162-cand-435685849": {
@@ -53,15 +53,19 @@
    "keep": "best"
   },
   "fish-s162-cand-451490168": {
-   "code": "p1g2bmm1",
-   "keep": "best"
+   "code": "p1g2bmk1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s162-cand-591241433": {
-   "code": "p1g1slmj2",
+   "code": "p1g1sloj2",
    "keep": "best"
   },
   "fish-s162-cand-459821720": {
-   "code": "p1g1ssm1",
+   "code": "p1g1sso1",
    "keep": "best"
   },
   "fish-s162-cand-459821718": {
@@ -137,11 +141,11 @@
    "keep": "dup"
   },
   "fish-s162-cand-328510681": {
-   "code": "p1g1smm3",
+   "code": "p1g1smo3",
    "keep": "best"
   },
   "fish-s162-cand-750020545": {
-   "code": "o1g1ssm1",
+   "code": "o1g1ssk1",
    "keep": "best"
   },
   "fish-s162-cand-31567723": {
@@ -161,7 +165,7 @@
    "keep": "best"
   },
   "fish-s162-cand-365330013": {
-   "code": "p1g1ssm2",
+   "code": "p1g1ssk2",
    "keep": "best"
   },
   "fish-s162-cand-346363279": {
@@ -173,7 +177,7 @@
    "keep": "best"
   },
   "fish-s162-cand-328510614": {
-   "code": "o1g2smm2",
+   "code": "o1g2smo2",
    "keep": "best"
   },
   "fish-s162-cand-328510611": {
@@ -185,11 +189,11 @@
    "keep": "dup"
   },
   "fish-s162-cand-328510719": {
-   "code": "o1g2ssm1",
+   "code": "o1g2sso1",
    "keep": "dup"
   },
   "fish-s162-cand-328510578": {
-   "code": "o1g1smm2",
+   "code": "o1g1smo2",
    "keep": "best"
   },
   "fish-s162-cand-461264224": {
@@ -197,7 +201,7 @@
    "keep": "best"
   },
   "fish-s162-cand-162116831": {
-   "code": "o1g0slm3",
+   "code": "o1g0slo3",
    "keep": "best"
   },
   "fish-s162-cand-121267632": {
@@ -233,7 +237,7 @@
    "keep": "best"
   },
   "fish-s162-cand-655331151": {
-   "code": "o1g2smm1",
+   "code": "o1g2smo1",
    "keep": "best"
   },
   "fish-s162-cand-655331184": {
@@ -249,7 +253,7 @@
    "keep": "dup"
   },
   "fish-s162-cand-471377855": {
-   "code": "o1g2ssm1",
+   "code": "o1g2sso1",
    "keep": "best"
   },
   "fish-s162-cand-590335293": {

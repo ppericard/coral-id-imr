@@ -18369,7 +18369,7 @@
  },
  "fish": {
   "fish-s001-cand-267097462": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -18434,7 +18434,7 @@
    "k": "best"
   },
   "fish-s001-cand-691655121": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -18574,7 +18574,7 @@
    "k": "best"
   },
   "fish-s002-cand-726144750": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -18614,7 +18614,7 @@
    "k": "best"
   },
   "fish-s002-cand-739038182": {
-   "jt": "p0g1bmm",
+   "jt": "p0g1bmk",
    "e": 1,
    "k": "best"
   },
@@ -18704,7 +18704,7 @@
    "k": "best"
   },
   "fish-s003-cand-625751577": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -18739,7 +18739,7 @@
    "k": "best"
   },
   "fish-s003-cand-688876560": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -18754,7 +18754,7 @@
    "k": "best"
   },
   "fish-s003-cand-705116444": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -18839,7 +18839,7 @@
    "k": "best"
   },
   "fish-s004-cand-305069458": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -18919,7 +18919,7 @@
    "k": "best"
   },
   "fish-s004-cand-608855346": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -18979,7 +18979,7 @@
    "k": "best"
   },
   "fish-s005-cand-479258027": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -19049,7 +19049,7 @@
    "k": "best"
   },
   "fish-s005-cand-625637552": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -19129,7 +19129,7 @@
    "k": "dup"
   },
   "fish-s006-cand-637583023": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -19144,7 +19144,7 @@
    "k": "best"
   },
   "fish-s006-cand-669331028": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -19209,7 +19209,7 @@
    "k": "dup"
   },
   "fish-s006-cand-696140311": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 2,
    "k": "best"
   },
@@ -19224,7 +19224,7 @@
    "k": "best"
   },
   "fish-s006-cand-708880296": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -19289,7 +19289,7 @@
    "k": "best"
   },
   "fish-s006-cand-756086846": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -19424,7 +19424,7 @@
    "k": "best"
   },
   "fish-s008-cand-243292389": {
-   "jt": "o1g0ssmj",
+   "jt": "o1g0sskj",
    "e": 2,
    "k": "best"
   },
@@ -19479,7 +19479,7 @@
    "k": "best"
   },
   "fish-s008-cand-355203331": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -19540,7 +19540,7 @@
    "k": "best"
   },
   "fish-s008-cand-621862283": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -19570,7 +19570,7 @@
    "k": "dup"
   },
   "fish-s008-cand-637578863": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -19580,7 +19580,7 @@
    "k": "best"
   },
   "fish-s008-cand-655259376": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -19645,7 +19645,7 @@
    "k": "best"
   },
   "fish-s008-cand-753075935": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -19665,7 +19665,7 @@
    "k": "best"
   },
   "fish-s009-cand-352668514": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -19730,7 +19730,7 @@
    "k": "dup"
   },
   "fish-s009-cand-695739574": {
-   "jt": "o1g1bsm",
+   "jt": "o1g1bsk",
    "e": 1,
    "k": "best"
   },
@@ -19770,7 +19770,7 @@
    "k": "best"
   },
   "fish-s009-cand-747868128": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -19820,7 +19820,7 @@
    "k": "best"
   },
   "fish-s010-cand-605878767": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -19845,7 +19845,7 @@
    "k": "dup"
   },
   "fish-s010-cand-610162372": {
-   "jt": "o1g0ssm",
+   "jt": "o1g0sso",
    "e": 2,
    "k": "best"
   },
@@ -19870,7 +19870,7 @@
    "k": "dup"
   },
   "fish-s010-cand-617024434": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -19920,7 +19920,7 @@
    "k": "best"
   },
   "fish-s010-cand-708879282": {
-   "jt": "p1d1ssm",
+   "jt": "p1d1ssk",
    "e": 1,
    "k": "best"
   },
@@ -19930,7 +19930,7 @@
    "k": "best"
   },
   "fish-s010-cand-731399068": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -20075,7 +20075,7 @@
    "k": "best"
   },
   "fish-s011-cand-665156750": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bso",
    "e": 1,
    "k": "best"
   },
@@ -20115,7 +20115,7 @@
    "k": "best"
   },
   "fish-s011-cand-748261332": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -20135,12 +20135,12 @@
    "k": "best"
   },
   "fish-s011-cand-757939590": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "alt"
   },
   "fish-s011-cand-757939616": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "dup"
   },
@@ -20170,7 +20170,7 @@
    "k": "best"
   },
   "fish-s012-cand-427593145": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -20195,7 +20195,7 @@
    "k": "best"
   },
   "fish-s012-cand-525979647": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -20310,12 +20310,12 @@
    "k": "dup"
   },
   "fish-s013-cand-267818349": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bsk",
    "e": 1,
    "k": "alt"
   },
   "fish-s013-cand-513265932": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -20505,7 +20505,7 @@
    "k": "best"
   },
   "fish-s014-cand-678710344": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -20520,7 +20520,7 @@
    "k": "dup"
   },
   "fish-s014-cand-687092182": {
-   "jt": "p1d1ssm",
+   "jt": "p1d1sso",
    "e": 1,
    "k": "best"
   },
@@ -20620,7 +20620,7 @@
    "k": "best"
   },
   "fish-s015-cand-419192269": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -20635,7 +20635,7 @@
    "k": "best"
   },
   "fish-s015-cand-459834260": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -20776,12 +20776,12 @@
    ]
   },
   "fish-s016-cand-605564337": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best"
   },
   "fish-s016-cand-606337877": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -20806,7 +20806,7 @@
    "k": "best"
   },
   "fish-s016-cand-617024354": {
-   "jt": "p1g1msm",
+   "jt": "p1g1msk",
    "e": 2,
    "k": "best"
   },
@@ -20847,7 +20847,7 @@
    "k": "best"
   },
   "fish-s016-cand-635944354": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -20857,7 +20857,7 @@
    "k": "dup"
   },
   "fish-s016-cand-635944421": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "dup"
   },
@@ -20867,7 +20867,7 @@
    "k": "best"
   },
   "fish-s016-cand-654099543": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -20962,7 +20962,7 @@
    "k": "best"
   },
   "fish-s016-cand-760911344": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smo",
    "e": 3,
    "k": "best"
   },
@@ -21062,7 +21062,7 @@
    "k": "best"
   },
   "fish-s017-cand-624627542": {
-   "jt": "o1g2ssm",
+   "jt": "o1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -21182,7 +21182,7 @@
    "k": "best"
   },
   "fish-s018-cand-742441732": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -21212,7 +21212,7 @@
    "k": "best"
   },
   "fish-s019-cand-332211750": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bso",
    "e": 1,
    "k": "best"
   },
@@ -21232,7 +21232,7 @@
    "k": "dup"
   },
   "fish-s019-cand-378711824": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -21247,7 +21247,7 @@
    "k": "dup"
   },
   "fish-s019-cand-609185159": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -21257,7 +21257,7 @@
    "k": "best"
   },
   "fish-s019-cand-613998801": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -21282,7 +21282,7 @@
    "k": "best"
   },
   "fish-s019-cand-624494342": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 1,
    "k": "best"
   },
@@ -21307,7 +21307,7 @@
    "k": "best"
   },
   "fish-s019-cand-630754501": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -21403,7 +21403,7 @@
    "k": "best"
   },
   "fish-s019-cand-757374085": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best",
    "n": "A fin of another fish enters the lower right corner."
@@ -21859,17 +21859,17 @@
    "k": "best"
   },
   "fish-s022-cand-378123994": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s022-cand-407522442": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
   "fish-s022-cand-407522449": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 2,
    "k": "dup"
   },
@@ -21954,12 +21954,12 @@
    "k": "dup"
   },
   "fish-s022-cand-754389093": {
-   "jt": "p1d2bsm",
+   "jt": "p1d2bso",
    "e": 1,
    "k": "best"
   },
   "fish-s023-cand-378698152": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -22019,7 +22019,7 @@
    "k": "best"
   },
   "fish-s023-cand-674473339": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -22064,7 +22064,7 @@
    "k": "best"
   },
   "fish-s024-cand-357893940": {
-   "jt": "o1g0ssm",
+   "jt": "o1g0ssk",
    "e": 2,
    "k": "best"
   },
@@ -22135,12 +22135,12 @@
    ]
   },
   "fish-s024-cand-610162209": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s024-cand-622414967": {
-   "jt": "o1g1mmm",
+   "jt": "o1g1mmo",
    "e": 3,
    "k": "best"
   },
@@ -22216,7 +22216,7 @@
    "k": "dup"
   },
   "fish-s024-cand-755349085": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best",
    "c": [
@@ -22262,7 +22262,7 @@
    "k": "best"
   },
   "fish-s025-cand-535847534": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -22272,7 +22272,7 @@
    "k": "best"
   },
   "fish-s025-cand-539446646": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -22297,12 +22297,12 @@
    "k": "best"
   },
   "fish-s025-cand-568857163": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 3,
    "k": "best"
   },
   "fish-s025-cand-592523110": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 1,
    "k": "best"
   },
@@ -22322,7 +22322,7 @@
    "k": "best"
   },
   "fish-s025-cand-610140804": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -22469,17 +22469,17 @@
    "k": "best"
   },
   "fish-s026-cand-302354820": {
-   "jt": "p1d1smm",
+   "jt": "p1d1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s026-cand-31492275": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 3,
    "k": "best"
   },
   "fish-s026-cand-37445701": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -22635,7 +22635,7 @@
    "k": "best"
   },
   "fish-s027-cand-601636642": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 4,
    "k": "best"
   },
@@ -22675,7 +22675,7 @@
    "k": "best"
   },
   "fish-s027-cand-682555342": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -22822,7 +22822,7 @@
    "k": "dup"
   },
   "fish-s028-cand-726145641": {
-   "jt": "o1d2mmm",
+   "jt": "o1d2mmo",
    "e": 2,
    "k": "best"
   },
@@ -22837,7 +22837,7 @@
    "k": "best"
   },
   "fish-s028-cand-752758568": {
-   "jt": "d1d1slm",
+   "jt": "d1d1slo",
    "e": 2,
    "k": "best"
   },
@@ -22847,7 +22847,7 @@
    "k": "dup"
   },
   "fish-s028-cand-755348968": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -22917,7 +22917,7 @@
    "k": "best"
   },
   "fish-s029-cand-625748286": {
-   "jt": "d0g1slm",
+   "jt": "d0g1slo",
    "e": 2,
    "k": "best"
   },
@@ -22968,7 +22968,7 @@
    "k": "best"
   },
   "fish-s029-cand-757136353": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best",
    "c": [
@@ -22989,7 +22989,7 @@
    "k": "best"
   },
   "fish-s030-cand-434875236": {
-   "jt": "p0g0slmj",
+   "jt": "p0g0sloj",
    "e": 3,
    "k": "alt"
   },
@@ -23004,7 +23004,7 @@
    "k": "dup"
   },
   "fish-s030-cand-485792976": {
-   "jt": "p1g2msmj",
+   "jt": "p1g2msoj",
    "e": 2,
    "k": "best"
   },
@@ -23150,7 +23150,7 @@
    "k": "best"
   },
   "fish-s030-cand-724521205": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bsk",
    "e": 1,
    "k": "best"
   },
@@ -23205,7 +23205,7 @@
    "k": "best"
   },
   "fish-s030-cand-752235290": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best",
    "c": [
@@ -23321,7 +23321,7 @@
    "k": "best"
   },
   "fish-s031-cand-696140270": {
-   "jt": "p1d2ssm",
+   "jt": "p1d2ssk",
    "e": 1,
    "k": "best"
   },
@@ -23795,7 +23795,7 @@
    "k": "dup"
   },
   "fish-s034-cand-375643005": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -23880,7 +23880,7 @@
    "k": "best"
   },
   "fish-s034-cand-688399087": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -24092,7 +24092,7 @@
    "n": "The observer tags it juvenile; its colours look like an adult's, so the flag follows the observer."
   },
   "fish-s036-cand-267112745": {
-   "jt": "o1d1slm",
+   "jt": "o1d1slo",
    "e": 2,
    "k": "best"
   },
@@ -24117,7 +24117,7 @@
    "k": "best"
   },
   "fish-s036-cand-333786776": {
-   "jt": "o1g3blm",
+   "jt": "o1g3blo",
    "e": 1,
    "k": "best"
   },
@@ -24169,7 +24169,7 @@
    "k": "best"
   },
   "fish-s036-cand-427617345": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -24179,7 +24179,7 @@
    "k": "dup"
   },
   "fish-s036-cand-465505381": {
-   "jt": "p1d2smm",
+   "jt": "p1d2smo",
    "e": 2,
    "k": "best"
   },
@@ -24189,7 +24189,7 @@
    "k": "best"
   },
   "fish-s036-cand-495094435": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -24229,12 +24229,12 @@
    "k": "best"
   },
   "fish-s036-cand-617070146": {
-   "jt": "p1g1mmm",
+   "jt": "p1g1mmo",
    "e": 2,
    "k": "best"
   },
   "fish-s036-cand-617070147": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -24459,7 +24459,7 @@
    "k": "best"
   },
   "fish-s038-cand-602637275": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -24504,7 +24504,7 @@
    "k": "dup"
   },
   "fish-s038-cand-623288508": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 2,
    "k": "best"
   },
@@ -24574,7 +24574,7 @@
    "k": "dup"
   },
   "fish-s039-cand-10070842": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -24653,7 +24653,7 @@
    "k": "best"
   },
   "fish-s039-cand-636279205": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bsk",
    "e": 1,
    "k": "best"
   },
@@ -24723,7 +24723,7 @@
    "k": "best"
   },
   "fish-s040-cand-249775910": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -24738,12 +24738,12 @@
    "k": "best"
   },
   "fish-s040-cand-312794401": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
   "fish-s040-cand-318722971": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 3,
    "k": "alt"
   },
@@ -24823,7 +24823,7 @@
    "k": "best"
   },
   "fish-s040-cand-452410915": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -24853,7 +24853,7 @@
    "k": "best"
   },
   "fish-s040-cand-66746519": {
-   "jt": "o1g1mmm",
+   "jt": "o1g1mmk",
    "e": 2,
    "k": "best"
   },
@@ -24953,12 +24953,12 @@
    "k": "best"
   },
   "fish-s041-cand-450641859": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
   "fish-s041-cand-46095165": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -25038,7 +25038,7 @@
    "k": "best"
   },
   "fish-s041-cand-712361826": {
-   "jt": "p1g2mmm",
+   "jt": "p1g2mmo",
    "e": 2,
    "k": "best"
   },
@@ -25188,7 +25188,7 @@
    "k": "dup"
   },
   "fish-s042-cand-77573415": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -25208,7 +25208,7 @@
    "k": "best"
   },
   "fish-s043-cand-338259079": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -25258,7 +25258,7 @@
    "k": "best"
   },
   "fish-s043-cand-635566039": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -25388,7 +25388,7 @@
    "k": "best"
   },
   "fish-s044-cand-622415231": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 2,
    "k": "best"
   },
@@ -25433,12 +25433,12 @@
    "k": "best"
   },
   "fish-s044-cand-665055598": {
-   "jt": "p1d2bsm",
+   "jt": "p1d2bsk",
    "e": 1,
    "k": "best"
   },
   "fish-s044-cand-670101427": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -25478,7 +25478,7 @@
    "k": "dup"
   },
   "fish-s044-cand-705145742": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -25513,7 +25513,7 @@
    "k": "best"
   },
   "fish-s044-cand-756242657": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 4,
    "k": "best"
   },
@@ -25553,7 +25553,7 @@
    "k": "dup"
   },
   "fish-s045-cand-176252032": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -25593,7 +25593,7 @@
    "k": "dup"
   },
   "fish-s045-cand-665641834": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -25634,7 +25634,7 @@
    "k": "best"
   },
   "fish-s045-cand-738717880": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "alt"
   },
@@ -25694,7 +25694,7 @@
    "k": "alt"
   },
   "fish-s046-cand-328915041": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -25874,7 +25874,7 @@
    "k": "best"
   },
   "fish-s047-cand-588334277": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -25914,7 +25914,7 @@
    "k": "best"
   },
   "fish-s048-cand-352670078": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -25934,7 +25934,7 @@
    "k": "dup"
   },
   "fish-s048-cand-452104172": {
-   "jt": "o0g1slm",
+   "jt": "o0g1slk",
    "e": 2,
    "k": "best"
   },
@@ -25949,7 +25949,7 @@
    "k": "best"
   },
   "fish-s048-cand-455846576": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -25964,12 +25964,12 @@
    "k": "alt"
   },
   "fish-s048-cand-459838927": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
   "fish-s048-cand-459838954": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "alt"
   },
@@ -25989,7 +25989,7 @@
    "k": "best"
   },
   "fish-s048-cand-555594994": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -26049,7 +26049,7 @@
    "k": "best"
   },
   "fish-s048-cand-682621370": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "alt"
   },
@@ -26089,7 +26089,7 @@
    "k": "best"
   },
   "fish-s048-cand-738760793": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "alt"
   },
@@ -26314,7 +26314,7 @@
    "k": "best"
   },
   "fish-s049-cand-732414147": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smk",
    "e": 2,
    "k": "best"
   },
@@ -26359,7 +26359,7 @@
    "k": "best"
   },
   "fish-s050-cand-164175119": {
-   "jt": "o1g3slm",
+   "jt": "o1g3slo",
    "e": 2,
    "k": "best"
   },
@@ -26384,9 +26384,13 @@
    "k": "alt"
   },
   "fish-s050-cand-245276721": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s050-cand-245276732": {
    "jt": "p1g2sms",
@@ -26394,7 +26398,7 @@
    "k": "dup"
   },
   "fish-s050-cand-245942758": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "alt"
   },
@@ -26434,7 +26438,7 @@
    "k": "best"
   },
   "fish-s050-cand-332387321": {
-   "jt": "p1g3ssm",
+   "jt": "p1g3sso",
    "e": 1,
    "k": "best"
   },
@@ -26554,7 +26558,7 @@
    "k": "best"
   },
   "fish-s051-cand-605459692": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -26589,12 +26593,12 @@
    "k": "best"
   },
   "fish-s051-cand-623597952": {
-   "jt": "d1g1slm",
+   "jt": "d1g1slk",
    "e": 3,
    "k": "alt"
   },
   "fish-s051-cand-623598697": {
-   "jt": "d1g1smm",
+   "jt": "d1g1smo",
    "e": 3,
    "k": "dup"
   },
@@ -26684,7 +26688,7 @@
    "k": "best"
   },
   "fish-s052-cand-253890736": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smkj",
    "e": 2,
    "k": "best"
   },
@@ -26709,7 +26713,7 @@
    "k": "best"
   },
   "fish-s052-cand-338480520": {
-   "jt": "p1g2slm",
+   "jt": "p1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -26734,7 +26738,7 @@
    "k": "best"
   },
   "fish-s052-cand-389985182": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -26754,7 +26758,7 @@
    "k": "best"
   },
   "fish-s052-cand-435716989": {
-   "jt": "p1g3ssm",
+   "jt": "p1g3sso",
    "e": 1,
    "k": "best"
   },
@@ -26824,7 +26828,7 @@
    "k": "best"
   },
   "fish-s052-cand-592777086": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -26844,7 +26848,7 @@
    "k": "best"
   },
   "fish-s052-cand-592999266": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 2,
    "k": "best"
   },
@@ -26854,7 +26858,7 @@
    "k": "dup"
   },
   "fish-s052-cand-597905943": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -26984,12 +26988,12 @@
    "k": "dup"
   },
   "fish-s053-cand-467147384": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 2,
    "k": "best"
   },
   "fish-s053-cand-498679809": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -27029,7 +27033,7 @@
    "k": "best"
   },
   "fish-s053-cand-648854957": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -27179,7 +27183,7 @@
    "k": "best"
   },
   "fish-s054-cand-467148722": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -27349,7 +27353,7 @@
    "k": "best"
   },
   "fish-s055-cand-646410409": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -27389,7 +27393,7 @@
    "k": "best"
   },
   "fish-s055-cand-726172240": {
-   "jt": "p1g2mlm",
+   "jt": "p1g2mlk",
    "e": 2,
    "k": "best"
   },
@@ -27449,7 +27453,7 @@
    "k": "best"
   },
   "fish-s056-cand-597052171": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -27510,7 +27514,7 @@
    "k": "dup"
   },
   "fish-s056-cand-698224255": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -27530,7 +27534,7 @@
    "k": "dup"
   },
   "fish-s056-cand-708879972": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -27660,7 +27664,7 @@
    "k": "best"
   },
   "fish-s057-cand-751536596": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -27745,7 +27749,7 @@
    "k": "dup"
   },
   "fish-s058-cand-580493852": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -27845,7 +27849,7 @@
    "k": "best"
   },
   "fish-s058-cand-744734077": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -28115,7 +28119,7 @@
    "k": "best"
   },
   "fish-s060-cand-605430896": {
-   "jt": "p1d1mmm",
+   "jt": "p1d1mmo",
    "e": 2,
    "k": "best"
   },
@@ -28155,7 +28159,7 @@
    "k": "best"
   },
   "fish-s060-cand-617164813": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0sso",
    "e": 2,
    "k": "best"
   },
@@ -28170,7 +28174,7 @@
    "k": "best"
   },
   "fish-s060-cand-639629100": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -28205,7 +28209,7 @@
    "k": "best"
   },
   "fish-s060-cand-757136323": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -28300,7 +28304,7 @@
    "k": "best"
   },
   "fish-s062-cand-708880268": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -28380,7 +28384,7 @@
    "k": "best"
   },
   "fish-s063-cand-378878340": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -28860,7 +28864,7 @@
    "k": "best"
   },
   "fish-s065-cand-740438063": {
-   "jt": "p1g1mmm",
+   "jt": "p1g1mmo",
    "e": 2,
    "k": "best"
   },
@@ -28870,7 +28874,7 @@
    "k": "best"
   },
   "fish-s066-cand-129401941": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -29065,9 +29069,13 @@
    "k": "dup"
   },
   "fish-s067-cand-682479463": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s067-cand-688979898": {
    "jt": "p1g2sm1",
@@ -29120,7 +29128,7 @@
    "k": "best"
   },
   "fish-s067-cand-724991322": {
-   "jt": "p1d1smm",
+   "jt": "p1d1smo",
    "e": 2,
    "k": "best"
   },
@@ -29235,7 +29243,7 @@
    "k": "best"
   },
   "fish-s068-cand-606375095": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -29310,7 +29318,7 @@
    "k": "best"
   },
   "fish-s069-cand-513903421": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -29320,7 +29328,7 @@
    "k": "best"
   },
   "fish-s069-cand-529002774": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -29360,7 +29368,7 @@
    "k": "best"
   },
   "fish-s069-cand-598173391": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -29375,7 +29383,7 @@
    "k": "best"
   },
   "fish-s069-cand-619852155": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -29435,7 +29443,7 @@
    "k": "best"
   },
   "fish-s070-cand-538922880": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -29590,7 +29598,7 @@
    "k": "best"
   },
   "fish-s071-cand-267094727": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -29660,7 +29668,7 @@
    "k": "best"
   },
   "fish-s071-cand-558076408": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -29745,7 +29753,7 @@
    "k": "best"
   },
   "fish-s072-cand-267341020": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1ssoj",
    "e": 1,
    "k": "best"
   },
@@ -29760,7 +29768,7 @@
    "k": "best"
   },
   "fish-s072-cand-467757437": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -29840,7 +29848,7 @@
    "k": "best"
   },
   "fish-s072-cand-630771956": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -29906,7 +29914,7 @@
    "k": "best"
   },
   "fish-s072-cand-723330547": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -30188,7 +30196,7 @@
    "k": "best"
   },
   "fish-s073-cand-64959636": {
-   "jt": "h1g2ssm",
+   "jt": "h1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -30213,7 +30221,7 @@
    "k": "best"
   },
   "fish-s073-cand-695219141": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -30998,7 +31006,7 @@
    "k": "best"
   },
   "fish-s078-cand-459838883": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -31038,7 +31046,7 @@
    "k": "dup"
   },
   "fish-s078-cand-501056454": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -31203,7 +31211,7 @@
    "k": "dup"
   },
   "fish-s079-cand-602133499": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -31728,7 +31736,7 @@
    "k": "best"
   },
   "fish-s082-cand-634295407": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -31923,7 +31931,7 @@
    "k": "dup"
   },
   "fish-s084-cand-370248175": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -31948,7 +31956,7 @@
    "k": "best"
   },
   "fish-s084-cand-541157307": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -31968,7 +31976,7 @@
    "k": "best"
   },
   "fish-s084-cand-597800376": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1ssoj",
    "e": 1,
    "k": "best"
   },
@@ -32043,7 +32051,7 @@
    "k": "best"
   },
   "fish-s084-cand-723330577": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -32083,7 +32091,7 @@
    "k": "best"
   },
   "fish-s084-cand-747894306": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -32313,7 +32321,7 @@
    "k": "best"
   },
   "fish-s086-cand-676572459": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -32533,7 +32541,7 @@
    "k": "best"
   },
   "fish-s089-cand-105023017": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -32558,7 +32566,7 @@
    "k": "best"
   },
   "fish-s089-cand-336795796": {
-   "jt": "p1g2slm",
+   "jt": "p1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -32608,7 +32616,7 @@
    "k": "dup"
   },
   "fish-s089-cand-451069270": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -32643,7 +32651,7 @@
    "k": "best"
   },
   "fish-s089-cand-487169493": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 2,
    "k": "alt"
   },
@@ -32673,7 +32681,7 @@
    "k": "best"
   },
   "fish-s089-cand-622416859": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -32903,7 +32911,7 @@
    "k": "best"
   },
   "fish-s090-cand-611182636": {
-   "jt": "p1d1ssmj",
+   "jt": "p1d1ssoj",
    "e": 1,
    "k": "dup"
   },
@@ -32983,7 +32991,7 @@
    "k": "best"
   },
   "fish-s091-cand-434743294": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -33043,7 +33051,7 @@
    "k": "best"
   },
   "fish-s091-cand-536912997": {
-   "jt": "p1g1mlm",
+   "jt": "p1g1mlo",
    "e": 3,
    "k": "best"
   },
@@ -33098,7 +33106,7 @@
    "k": "dup"
   },
   "fish-s091-cand-635590436": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -33379,7 +33387,7 @@
    "k": "best"
   },
   "fish-s092-cand-741771044": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -33484,7 +33492,7 @@
    "k": "best"
   },
   "fish-s093-cand-689559845": {
-   "jt": "o1g1bmm",
+   "jt": "o1g1bmk",
    "e": 1,
    "k": "best"
   },
@@ -33629,7 +33637,7 @@
    "k": "best"
   },
   "fish-s095-cand-10570881": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -33679,7 +33687,7 @@
    "k": "best"
   },
   "fish-s095-cand-292171050": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -33699,7 +33707,7 @@
    "k": "dup"
   },
   "fish-s095-cand-380211464": {
-   "jt": "h1g0slm",
+   "jt": "h1g0slk",
    "e": 2,
    "k": "best"
   },
@@ -33749,7 +33757,7 @@
    "k": "best"
   },
   "fish-s095-cand-541626559": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 1,
    "k": "best",
    "n": "Several chromis and a cleaner wrasse; the chromis are the obvious subject."
@@ -33765,7 +33773,7 @@
    "k": "best"
   },
   "fish-s095-cand-587049188": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -33960,7 +33968,7 @@
    "k": "best"
   },
   "fish-s096-cand-619822504": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -34055,7 +34063,7 @@
    "k": "best"
   },
   "fish-s096-cand-760160975": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0ssk",
    "e": 2,
    "k": "best"
   },
@@ -34160,12 +34168,12 @@
    "k": "best"
   },
   "fish-s097-cand-336344258": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "alt"
   },
   "fish-s097-cand-336344273": {
-   "jt": "p0g2slm",
+   "jt": "p0g2slo",
    "e": 2,
    "k": "best"
   },
@@ -34270,7 +34278,7 @@
    "k": "best"
   },
   "fish-s097-cand-596643170": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -34290,7 +34298,7 @@
    "k": "best"
   },
   "fish-s097-cand-682620565": {
-   "jt": "t1g2smm",
+   "jt": "t1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -34505,7 +34513,7 @@
    "k": "dup"
   },
   "fish-s098-cand-441740669": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -34550,7 +34558,7 @@
    "k": "best"
   },
   "fish-s099-cand-249024982": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -34600,7 +34608,7 @@
    "k": "best"
   },
   "fish-s099-cand-338347797": {
-   "jt": "p1g1bmm",
+   "jt": "p1g1bmo",
    "e": 2,
    "k": "best"
   },
@@ -34645,7 +34653,7 @@
    "k": "dup"
   },
   "fish-s099-cand-454334547": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -34765,7 +34773,7 @@
    "k": "best"
   },
   "fish-s100-cand-335320627": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -34890,7 +34898,7 @@
    "k": "best"
   },
   "fish-s101-cand-314885540": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -34980,7 +34988,7 @@
    "k": "dup"
   },
   "fish-s101-cand-392317359": {
-   "jt": "o1g2mmm",
+   "jt": "o1g2mmo",
    "e": 2,
    "k": "best"
   },
@@ -35080,7 +35088,7 @@
    "k": "best"
   },
   "fish-s101-cand-602439137": {
-   "jt": "p1d1smm",
+   "jt": "p1d1smo",
    "e": 2,
    "k": "best"
   },
@@ -35150,7 +35158,7 @@
    "k": "best"
   },
   "fish-s102-cand-532578859": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -35285,7 +35293,7 @@
    "k": "best"
   },
   "fish-s103-cand-727976935": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -35485,7 +35493,7 @@
    "k": "best"
   },
   "fish-s107-cand-602726293": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "dup"
   },
@@ -35930,7 +35938,7 @@
    "k": "dup"
   },
   "fish-s111-cand-707015849": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -36060,7 +36068,7 @@
    "k": "best"
   },
   "fish-s112-cand-619817568": {
-   "jt": "p1g0smmj",
+   "jt": "p1g0smkj",
    "e": 2,
    "k": "best"
   },
@@ -36085,7 +36093,7 @@
    "k": "best"
   },
   "fish-s112-cand-637615490": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -36190,7 +36198,7 @@
    "k": "best"
   },
   "fish-s113-cand-251136498": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -36260,7 +36268,7 @@
    "k": "dup"
   },
   "fish-s113-cand-298783427": {
-   "jt": "o1g0smmj",
+   "jt": "o1g0smoj",
    "e": 2,
    "k": "best"
   },
@@ -36300,7 +36308,7 @@
    "k": "best"
   },
   "fish-s113-cand-419986240": {
-   "jt": "p1g1mlm",
+   "jt": "p1g1mlo",
    "e": 2,
    "k": "best"
   },
@@ -36330,7 +36338,7 @@
    "k": "dup"
   },
   "fish-s113-cand-440302536": {
-   "jt": "o1g0ssmj",
+   "jt": "o1g0ssoj",
    "e": 1,
    "k": "best"
   },
@@ -36810,7 +36818,7 @@
    "k": "best"
   },
   "fish-s116-cand-596642361": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -36855,7 +36863,7 @@
    "k": "dup"
   },
   "fish-s117-cand-324387759": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -36875,7 +36883,7 @@
    "k": "best"
   },
   "fish-s117-cand-435188446": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -37165,9 +37173,13 @@
    "k": "dup"
   },
   "fish-s119-cand-351336703": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s119-cand-427400676": {
    "jt": "p1d0ss1j",
@@ -37195,9 +37207,13 @@
    "k": "dup"
   },
   "fish-s119-cand-464458634": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s119-cand-464458713": {
    "jt": "o1g0sm1",
@@ -37290,7 +37306,7 @@
    "k": "alt"
   },
   "fish-s119-cand-715639826": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -37644,7 +37660,7 @@
    "k": "dup"
   },
   "fish-s121-cand-597905146": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -37664,7 +37680,7 @@
    "k": "best"
   },
   "fish-s121-cand-602476459": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -37684,7 +37700,7 @@
    "k": "best"
   },
   "fish-s121-cand-616315291": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smkj",
    "e": 2,
    "k": "best"
   },
@@ -38139,7 +38155,7 @@
    "k": "best"
   },
   "fish-s123-cand-688045949": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bso",
    "e": 1,
    "k": "best"
   },
@@ -38214,7 +38230,7 @@
    "k": "dup"
   },
   "fish-s124-cand-412467243": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -38239,7 +38255,7 @@
    "k": "dup"
   },
   "fish-s124-cand-526518508": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -38374,7 +38390,7 @@
    "k": "dup"
   },
   "fish-s125-cand-438930600": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 2,
    "k": "best"
   },
@@ -38469,7 +38485,7 @@
    "k": "best"
   },
   "fish-s125-cand-555137845": {
-   "jt": "p1g2mmm",
+   "jt": "p1g2mmo",
    "e": 2,
    "k": "best"
   },
@@ -38539,7 +38555,7 @@
    "k": "best"
   },
   "fish-s126-cand-434274877": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -38739,7 +38755,7 @@
    "k": "best"
   },
   "fish-s127-cand-596392993": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -38779,7 +38795,7 @@
    "k": "dup"
   },
   "fish-s127-cand-618779231": {
-   "jt": "o1g1mmm",
+   "jt": "o1g1mmk",
    "e": 2,
    "k": "best"
   },
@@ -38804,7 +38820,7 @@
    "k": "best"
   },
   "fish-s127-cand-625637532": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -38999,7 +39015,7 @@
    "k": "best"
   },
   "fish-s128-cand-525944347": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -39014,7 +39030,7 @@
    "k": "alt"
   },
   "fish-s129-cand-459047354": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -39114,7 +39130,7 @@
    "k": "alt"
   },
   "fish-s129-cand-726171909": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -39179,7 +39195,7 @@
    "k": "best"
   },
   "fish-s130-cand-31613606": {
-   "jt": "d1g1msmj",
+   "jt": "d1g1mskj",
    "e": 1,
    "k": "best"
   },
@@ -39539,7 +39555,7 @@
    "k": "best"
   },
   "fish-s132-cand-275801603": {
-   "jt": "o1g2smmj",
+   "jt": "o1g2smoj",
    "e": 2,
    "k": "best"
   },
@@ -39671,7 +39687,7 @@
    "k": "best"
   },
   "fish-s132-cand-638016079": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -40001,7 +40017,7 @@
    "k": "best"
   },
   "fish-s134-cand-314597083": {
-   "jt": "p1d1slm",
+   "jt": "p1d1slo",
    "e": 3,
    "k": "best"
   },
@@ -40026,7 +40042,7 @@
    "k": "best"
   },
   "fish-s134-cand-444228435": {
-   "jt": "o1g1mlm",
+   "jt": "o1g1mlo",
    "e": 2,
    "k": "best"
   },
@@ -40036,12 +40052,12 @@
    "k": "dup"
   },
   "fish-s134-cand-444509186": {
-   "jt": "p1g3mlm",
+   "jt": "p1g3mlo",
    "e": 1,
    "k": "best"
   },
   "fish-s134-cand-468203449": {
-   "jt": "o1g2bmm",
+   "jt": "o1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -40171,7 +40187,7 @@
    "k": "best"
   },
   "fish-s135-cand-19667919": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 2,
    "k": "best"
   },
@@ -40201,7 +40217,7 @@
    "k": "best"
   },
   "fish-s135-cand-315467339": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -40486,9 +40502,13 @@
    "k": "best"
   },
   "fish-s137-cand-428492141": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s137-cand-508612656": {
    "jt": "p1g1sl1j",
@@ -40611,7 +40631,7 @@
    "k": "best"
   },
   "fish-s137-cand-597803721": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -40956,7 +40976,7 @@
    "k": "best"
   },
   "fish-s139-cand-694471533": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "alt"
   },
@@ -41221,17 +41241,17 @@
    "k": "best"
   },
   "fish-s142-cand-597403669": {
-   "jt": "o1g2mmm",
+   "jt": "o1g2mmo",
    "e": 1,
    "k": "best"
   },
   "fish-s142-cand-597564318": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 1,
    "k": "best"
   },
   "fish-s142-cand-597569894": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 1,
    "k": "best"
   },
@@ -41251,7 +41271,7 @@
    "k": "dup"
   },
   "fish-s142-cand-605534616": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 2,
    "k": "best"
   },
@@ -41291,7 +41311,7 @@
    "k": "best"
   },
   "fish-s142-cand-618230715": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 2,
    "k": "alt"
   },
@@ -41541,7 +41561,7 @@
    "k": "best"
   },
   "fish-s143-cand-596075645": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -41656,7 +41676,7 @@
    "k": "dup"
   },
   "fish-s143-cand-742453654": {
-   "jt": "o1g1bsm",
+   "jt": "o1g1bsk",
    "e": 1,
    "k": "best"
   },
@@ -41761,7 +41781,7 @@
    "k": "best"
   },
   "fish-s144-cand-625422247": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -41871,7 +41891,7 @@
    "k": "best"
   },
   "fish-s145-cand-379418190": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -42016,7 +42036,7 @@
    "k": "best"
   },
   "fish-s146-cand-519009673": {
-   "jt": "p1d0slm",
+   "jt": "p1d0slo",
    "e": 3,
    "k": "alt"
   },
@@ -42071,7 +42091,7 @@
    "k": "best"
   },
   "fish-s147-cand-469150078": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -42396,7 +42416,7 @@
    "k": "best"
   },
   "fish-s149-cand-618043226": {
-   "jt": "o0g2smm",
+   "jt": "o0g2smo",
    "e": 2,
    "k": "best"
   },
@@ -42411,7 +42431,7 @@
    "k": "dup"
   },
   "fish-s149-cand-636745651": {
-   "jt": "p1g2slm",
+   "jt": "p1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -42605,7 +42625,7 @@
    "k": "best"
   },
   "fish-s150-cand-682620463": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 1,
    "k": "best"
   },
@@ -42660,7 +42680,7 @@
    "k": "best"
   },
   "fish-s150-cand-756670997": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -42800,7 +42820,7 @@
    "k": "best"
   },
   "fish-s151-cand-324699745": {
-   "jt": "o1g2mmm",
+   "jt": "o1g2mmk",
    "e": 2,
    "k": "best"
   },
@@ -43159,7 +43179,7 @@
    "k": "dup"
   },
   "fish-s152-cand-194471450": {
-   "jt": "p1g1mmm",
+   "jt": "p1g1mmo",
    "e": 2,
    "k": "best"
   },
@@ -43169,7 +43189,7 @@
    "k": "best"
   },
   "fish-s152-cand-213161864": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -43609,7 +43629,7 @@
    "k": "dup"
   },
   "fish-s155-cand-636834622": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -43919,7 +43939,7 @@
    "k": "best"
   },
   "fish-s157-cand-604181495": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -43959,7 +43979,7 @@
    "k": "best"
   },
   "fish-s158-cand-243380246": {
-   "jt": "o1d1slm",
+   "jt": "o1d1slo",
    "e": 2,
    "k": "best"
   },
@@ -44054,7 +44074,7 @@
    "k": "best"
   },
   "fish-s158-cand-556364666": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -44149,7 +44169,7 @@
    "k": "best"
   },
   "fish-s159-cand-430594188": {
-   "jt": "p1g0smmj",
+   "jt": "p1g0smkj",
    "e": 2,
    "k": "best"
   },
@@ -44494,7 +44514,7 @@
    "k": "dup"
   },
   "fish-s160-cand-618482745": {
-   "jt": "p1g2msm",
+   "jt": "p1g2mso",
    "e": 1,
    "k": "best"
   },
@@ -44519,7 +44539,7 @@
    "k": "best"
   },
   "fish-s160-cand-625449789": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -44769,7 +44789,7 @@
    "k": "best"
   },
   "fish-s162-cand-162116831": {
-   "jt": "o1g0slmp",
+   "jt": "o1g0slop",
    "e": 3,
    "k": "best"
   },
@@ -44794,7 +44814,7 @@
    "k": "best"
   },
   "fish-s162-cand-328510578": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smop",
    "e": 2,
    "k": "best"
   },
@@ -44804,12 +44824,12 @@
    "k": "dup"
   },
   "fish-s162-cand-328510614": {
-   "jt": "o1g2smmp",
+   "jt": "o1g2smop",
    "e": 2,
    "k": "best"
   },
   "fish-s162-cand-328510681": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -44824,7 +44844,7 @@
    "k": "dup"
   },
   "fish-s162-cand-328510719": {
-   "jt": "o1g2ssmp",
+   "jt": "o1g2ssop",
    "e": 1,
    "k": "dup"
   },
@@ -44839,7 +44859,7 @@
    "k": "best"
   },
   "fish-s162-cand-365330013": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1sskp",
    "e": 2,
    "k": "best"
   },
@@ -44854,7 +44874,7 @@
    "k": "dup"
   },
   "fish-s162-cand-435685881": {
-   "jt": "p1g2ssmp",
+   "jt": "p1g2sskp",
    "e": 1,
    "k": "best"
   },
@@ -44864,9 +44884,13 @@
    "k": "best"
   },
   "fish-s162-cand-451490168": {
-   "jt": "p1g2bmmp",
+   "jt": "p1g2bmkp",
    "e": 1,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s162-cand-459821718": {
    "jt": "p1g1ssmp",
@@ -44874,7 +44898,7 @@
    "k": "dup"
   },
   "fish-s162-cand-459821720": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1ssop",
    "e": 1,
    "k": "best"
   },
@@ -44909,7 +44933,7 @@
    "k": "dup"
   },
   "fish-s162-cand-471377855": {
-   "jt": "o1g2ssmp",
+   "jt": "o1g2ssop",
    "e": 1,
    "k": "best"
   },
@@ -44994,7 +45018,7 @@
    "k": "best"
   },
   "fish-s162-cand-591241433": {
-   "jt": "p1g1slmjp",
+   "jt": "p1g1slojp",
    "e": 2,
    "k": "best"
   },
@@ -45049,7 +45073,7 @@
    "k": "dup"
   },
   "fish-s162-cand-655331151": {
-   "jt": "o1g2smmp",
+   "jt": "o1g2smop",
    "e": 1,
    "k": "best"
   },
@@ -45084,7 +45108,7 @@
    "k": "dup"
   },
   "fish-s162-cand-750020545": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1sskp",
    "e": 1,
    "k": "best"
   },
@@ -45139,7 +45163,7 @@
    "k": "best"
   },
   "fish-s163-cand-540177280": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -45229,7 +45253,7 @@
    "k": "best"
   },
   "fish-s163-cand-fb-Pshuc_u0": {
-   "jt": "p1g1slmpr",
+   "jt": "p1g1slopr",
    "e": 4,
    "k": "best"
   },
@@ -45274,7 +45298,7 @@
    "k": "best"
   },
   "fish-s164-cand-625984460": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -46014,7 +46038,7 @@
    "k": "best"
   },
   "fish-s169-cand-620809530": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -46084,7 +46108,7 @@
    "k": "best"
   },
   "fish-s170-cand-497208733": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -46539,7 +46563,7 @@
    "k": "best"
   },
   "fish-s173-cand-408312292": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -47139,7 +47163,7 @@
    "k": "best"
   },
   "fish-s176-cand-723987189": {
-   "jt": "p0g1slm",
+   "jt": "p0g1slk",
    "e": 3,
    "k": "best"
   },
@@ -47164,7 +47188,7 @@
    "k": "best"
   },
   "fish-s177-cand-484828583": {
-   "jt": "p1g2bsmj",
+   "jt": "p1g2bsoj",
    "e": 1,
    "k": "best"
   },
@@ -47199,7 +47223,7 @@
    "k": "best"
   },
   "fish-s177-cand-543821798": {
-   "jt": "p1g2bmmj",
+   "jt": "p1g2bmoj",
    "e": 1,
    "k": "best"
   },
@@ -47214,7 +47238,7 @@
    "k": "best"
   },
   "fish-s177-cand-596643162": {
-   "jt": "p1g2bmmj",
+   "jt": "p1g2bmkj",
    "e": 1,
    "k": "best"
   },
@@ -47254,7 +47278,7 @@
    "k": "alt"
   },
   "fish-s177-cand-646410295": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smoj",
    "e": 2,
    "k": "best"
   },
@@ -47304,7 +47328,7 @@
    "k": "best"
   },
   "fish-s177-cand-fb-Pllae_u0": {
-   "jt": "p1g0slmr",
+   "jt": "p1g0slor",
    "e": 5,
    "k": "best"
   },
@@ -47769,7 +47793,7 @@
    "k": "best"
   },
   "fish-s181-cand-655351834": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -48334,12 +48358,12 @@
    "k": "best"
   },
   "fish-s185-cand-152969494": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
   "fish-s185-cand-156049278": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -48429,12 +48453,12 @@
    "k": "best"
   },
   "fish-s185-cand-312143118": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
   "fish-s185-cand-312143140": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "dup"
   },
@@ -48529,7 +48553,7 @@
    "k": "best"
   },
   "fish-s185-cand-423032299": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1ssoj",
    "e": 1,
    "k": "best"
   },
@@ -48679,7 +48703,7 @@
    "k": "best"
   },
   "fish-s186-cand-577215476": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -48834,7 +48858,7 @@
    "k": "best"
   },
   "fish-s187-cand-39093175": {
-   "jt": "o0g1ssmp",
+   "jt": "o0g1sskp",
    "e": 2,
    "k": "best"
   },
@@ -48854,7 +48878,7 @@
    "k": "best"
   },
   "fish-s187-cand-459045998": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -48869,7 +48893,7 @@
    "k": "best"
   },
   "fish-s187-cand-591498829": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -48889,7 +48913,7 @@
    "k": "best"
   },
   "fish-s187-cand-603484200": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 3,
    "k": "best"
   },
@@ -48964,7 +48988,7 @@
    "k": "dup"
   },
   "fish-s187-cand-689545907": {
-   "jt": "o1g2mlmp",
+   "jt": "o1g2mlop",
    "e": 3,
    "k": "best"
   },
@@ -49119,7 +49143,7 @@
    "k": "best"
   },
   "fish-s188-cand-251332319": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1sskp",
    "e": 2,
    "k": "best"
   },
@@ -49149,7 +49173,7 @@
    "k": "dup"
   },
   "fish-s188-cand-327162354": {
-   "jt": "p1g1slmp",
+   "jt": "p1g1slkp",
    "e": 3,
    "k": "best"
   },
@@ -49184,7 +49208,7 @@
    "k": "dup"
   },
   "fish-s188-cand-382293220": {
-   "jt": "p1g3bsmp",
+   "jt": "p1g3bsop",
    "e": 1,
    "k": "best"
   },
@@ -49199,7 +49223,7 @@
    "k": "best"
   },
   "fish-s188-cand-433991565": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -49249,17 +49273,17 @@
    "k": "best"
   },
   "fish-s188-cand-506595525": {
-   "jt": "o1g1slmp",
+   "jt": "o1g1slop",
    "e": 3,
    "k": "best"
   },
   "fish-s188-cand-545406169": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 3,
    "k": "best"
   },
   "fish-s188-cand-545406170": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smkp",
    "e": 3,
    "k": "alt"
   },
@@ -49339,7 +49363,7 @@
    "k": "dup"
   },
   "fish-s189-cand-107572334": {
-   "jt": "o1g2slmp",
+   "jt": "o1g2slop",
    "e": 2,
    "k": "best"
   },
@@ -49424,17 +49448,17 @@
    "k": "best"
   },
   "fish-s189-cand-428703593": {
-   "jt": "p1g2ssmp",
+   "jt": "p1g2sskp",
    "e": 1,
    "k": "best"
   },
   "fish-s189-cand-428733765": {
-   "jt": "p1g2bsmp",
+   "jt": "p1g2bskp",
    "e": 1,
    "k": "best"
   },
   "fish-s189-cand-429411884": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 2,
    "k": "best"
   },
@@ -49489,7 +49513,7 @@
    "k": "best"
   },
   "fish-s189-cand-658725076": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1sskp",
    "e": 1,
    "k": "best"
   },
@@ -49554,7 +49578,7 @@
    "k": "best"
   },
   "fish-s189-cand-705117511": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -49569,7 +49593,7 @@
    "k": "best"
   },
   "fish-s189-cand-710254975": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 2,
    "k": "best"
   },
@@ -49604,7 +49628,7 @@
    "k": "dup"
   },
   "fish-s189-cand-727572785": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -49640,12 +49664,12 @@
    "k": "dup"
   },
   "fish-s189-cand-749045292": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1sskp",
    "e": 2,
    "k": "best"
   },
   "fish-s189-cand-749730916": {
-   "jt": "o1g2smmp",
+   "jt": "o1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -49655,7 +49679,7 @@
    "k": "best"
   },
   "fish-s189-cand-757112761": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1ssop",
    "e": 1,
    "k": "best"
   },
@@ -50010,12 +50034,12 @@
    "k": "best"
   },
   "fish-s191-cand-688443742": {
-   "jt": "p1g2ssmp",
+   "jt": "p1g2ssop",
    "e": 1,
    "k": "best"
   },
   "fish-s191-cand-698223399": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -50045,7 +50069,7 @@
    "k": "best"
   },
   "fish-s192-cand-377524690": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smkp",
    "e": 3,
    "k": "best"
   },
@@ -50060,7 +50084,7 @@
    "k": "dup"
   },
   "fish-s192-cand-435155472": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1ssop",
    "e": 2,
    "k": "best"
   },
@@ -50165,7 +50189,7 @@
    "k": "best"
   },
   "fish-s193-cand-176251902": {
-   "jt": "p1g3bsmp",
+   "jt": "p1g3bsop",
    "e": 1,
    "k": "best"
   },
@@ -50185,7 +50209,7 @@
    "k": "dup"
   },
   "fish-s193-cand-330407834": {
-   "jt": "p1g1slmp",
+   "jt": "p1g1slop",
    "e": 3,
    "k": "best"
   },
@@ -50205,12 +50229,12 @@
    "k": "best"
   },
   "fish-s193-cand-332783826": {
-   "jt": "o1g1smmjp",
+   "jt": "o1g1smkjp",
    "e": 2,
    "k": "best"
   },
   "fish-s193-cand-344684300": {
-   "jt": "p1g2bmmp",
+   "jt": "p1g2bmkp",
    "e": 1,
    "k": "best"
   },
@@ -50245,7 +50269,7 @@
    "k": "best"
   },
   "fish-s193-cand-527019653": {
-   "jt": "o1g0slmjp",
+   "jt": "o1g0slojp",
    "e": 2,
    "k": "best"
   },
@@ -50290,9 +50314,13 @@
    "k": "best"
   },
   "fish-s193-cand-551805479": {
-   "jt": "o1g2bmmp",
+   "jt": "o1g2bmkp",
    "e": 1,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s193-cand-552145669": {
    "jt": "p1g2bm1p",
@@ -50345,7 +50373,7 @@
    "k": "best"
   },
   "fish-s193-cand-601700521": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 2,
    "k": "best"
   },
@@ -50385,7 +50413,7 @@
    "k": "best"
   },
   "fish-s193-cand-617965685": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1sskp",
    "e": 1,
    "k": "best"
   },
@@ -50450,7 +50478,7 @@
    "k": "dup"
   },
   "fish-s193-cand-710255947": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smop",
    "e": 2,
    "k": "best"
   },
@@ -50470,7 +50498,7 @@
    "k": "best"
   },
   "fish-s193-cand-89109284": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1ssop",
    "e": 1,
    "k": "best"
   },
@@ -50715,7 +50743,7 @@
    "k": "best"
   },
   "fish-s195-cand-744733220": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smkp",
    "e": 2,
    "k": "best"
   },
@@ -50820,7 +50848,7 @@
    "k": "dup"
   },
   "fish-s196-cand-57675806": {
-   "jt": "p1g2bmmp",
+   "jt": "p1g2bmop",
    "e": 1,
    "k": "best"
   },
@@ -50835,12 +50863,12 @@
    "k": "best"
   },
   "fish-s196-cand-619312800": {
-   "jt": "p1g2bmmp",
+   "jt": "p1g2bmop",
    "e": 1,
    "k": "best"
   },
   "fish-s196-cand-619344036": {
-   "jt": "p1g2bsmp",
+   "jt": "p1g2bskp",
    "e": 1,
    "k": "best"
   },
@@ -50850,7 +50878,7 @@
    "k": "dup"
   },
   "fish-s196-cand-637583612": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -51180,7 +51208,7 @@
    "k": "best"
   },
   "fish-s199-cand-240739128": {
-   "jt": "p1g2bmmjp",
+   "jt": "p1g2bmkjp",
    "e": 1,
    "k": "dup"
   },
@@ -51333,7 +51361,7 @@
    "k": "best"
   },
   "fish-s199-cand-639618514": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smkp",
    "e": 2,
    "k": "best"
   },
@@ -51378,7 +51406,7 @@
    "k": "dup"
   },
   "fish-s199-cand-674463988": {
-   "jt": "p1g2bmmp",
+   "jt": "p1g2bmkp",
    "e": 1,
    "k": "best"
   },
@@ -51510,7 +51538,7 @@
    "k": "best"
   },
   "fish-s199-cand-89533900": {
-   "jt": "p1d2mmmp",
+   "jt": "p1d2mmop",
    "e": 2,
    "k": "best",
    "ph": "female"
@@ -51627,7 +51655,7 @@
    "k": "best"
   },
   "fish-s200-cand-543081686": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -51672,12 +51700,12 @@
    "k": "best"
   },
   "fish-s200-cand-607445534": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smkp",
    "e": 2,
    "k": "best"
   },
   "fish-s200-cand-607445550": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smkp",
    "e": 2,
    "k": "alt"
   },
@@ -51692,7 +51720,7 @@
    "k": "best"
   },
   "fish-s200-cand-625749600": {
-   "jt": "p1g1mmmp",
+   "jt": "p1g1mmop",
    "e": 3,
    "k": "best"
   },
@@ -51882,7 +51910,7 @@
    "k": "dup"
   },
   "fish-s201-cand-674463987": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smkp",
    "e": 2,
    "k": "best"
   },
@@ -51907,12 +51935,12 @@
    "k": "dup"
   },
   "fish-s201-cand-703824898": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
   "fish-s201-cand-705116938": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smkp",
    "e": 3,
    "k": "best"
   },
@@ -52172,7 +52200,7 @@
    "k": "best"
   },
   "fish-s203-cand-526519058": {
-   "jt": "p1g3bmmp",
+   "jt": "p1g3bmkp",
    "e": 1,
    "k": "best"
   },
@@ -52212,7 +52240,7 @@
    "k": "dup"
   },
   "fish-s203-cand-606251027": {
-   "jt": "o1g2bmmp",
+   "jt": "o1g2bmkp",
    "e": 1,
    "k": "best"
   },
@@ -52222,7 +52250,7 @@
    "k": "dup"
   },
   "fish-s203-cand-615720988": {
-   "jt": "o1g3smmp",
+   "jt": "o1g3smkp",
    "e": 1,
    "k": "best"
   },
@@ -52257,7 +52285,7 @@
    "k": "best"
   },
   "fish-s203-cand-637588984": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -52267,7 +52295,7 @@
    "k": "best"
   },
   "fish-s203-cand-658723259": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 2,
    "k": "best"
   },
@@ -52377,7 +52405,7 @@
    "k": "dup"
   },
   "fish-s204-cand-173716114": {
-   "jt": "p1g2ssmp",
+   "jt": "p1g2ssop",
    "e": 1,
    "k": "best"
   },
@@ -52527,12 +52555,12 @@
    "k": "best"
   },
   "fish-s205-cand-249153929": {
-   "jt": "o1g1mmmp",
+   "jt": "o1g1mmop",
    "e": 2,
    "k": "best"
   },
   "fish-s205-cand-279254339": {
-   "jt": "p1g1slmp",
+   "jt": "p1g1slop",
    "e": 3,
    "k": "best"
   },
@@ -52557,7 +52585,7 @@
    "k": "best"
   },
   "fish-s205-cand-350115780": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -52642,7 +52670,7 @@
    "k": "best"
   },
   "fish-s205-cand-607685700": {
-   "jt": "o1g1slmp",
+   "jt": "o1g1slop",
    "e": 3,
    "k": "best",
    "n": "A second, spotted parrotfish below may be another phase of the same species or another species."
@@ -52743,12 +52771,12 @@
    "k": "best"
   },
   "fish-s205-cand-653483277": {
-   "jt": "p1g0smmjp",
+   "jt": "p1g0smojp",
    "e": 2,
    "k": "best"
   },
   "fish-s205-cand-670802360": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 2,
    "k": "best"
   },
@@ -52773,7 +52801,7 @@
    "k": "best"
   },
   "fish-s205-cand-674464102": {
-   "jt": "p1g1mmmp",
+   "jt": "p1g1mmkp",
    "e": 2,
    "k": "best"
   },
@@ -52858,12 +52886,12 @@
    "k": "best"
   },
   "fish-s206-cand-270197259": {
-   "jt": "p1d1slmp",
+   "jt": "p1d1slkp",
    "e": 2,
    "k": "best"
   },
   "fish-s206-cand-314885607": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smop",
    "e": 2,
    "k": "best"
   },
@@ -52958,7 +52986,7 @@
    "k": "best"
   },
   "fish-s206-cand-545406261": {
-   "jt": "o1g1slmp",
+   "jt": "o1g1slop",
    "e": 3,
    "k": "best"
   },
@@ -52988,7 +53016,7 @@
    "k": "best"
   },
   "fish-s206-cand-603716725": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 3,
    "k": "best"
   },
@@ -53003,7 +53031,7 @@
    "k": "best"
   },
   "fish-s206-cand-607686368": {
-   "jt": "o1g1slmp",
+   "jt": "o1g1slop",
    "e": 3,
    "k": "best"
   },
@@ -53033,7 +53061,7 @@
    "k": "best"
   },
   "fish-s206-cand-615534091": {
-   "jt": "p1g1smmp",
+   "jt": "p1g1smop",
    "e": 2,
    "k": "best"
   },
@@ -53058,7 +53086,7 @@
    "k": "best"
   },
   "fish-s206-cand-659275203": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1sskp",
    "e": 2,
    "k": "best"
   },
@@ -53123,7 +53151,7 @@
    "k": "best"
   },
   "fish-s206-cand-760868668": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -53363,9 +53391,13 @@
    "k": "best"
   },
   "fish-s208-cand-396367777": {
-   "jt": "o1g2slm",
+   "jt": "o1g2slk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s208-cand-406521917": {
    "jt": "p1g2ss1",
@@ -53463,7 +53495,7 @@
    "k": "best"
   },
   "fish-s209-cand-249635442": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "alt"
   },
@@ -53533,7 +53565,7 @@
    "k": "best"
   },
   "fish-s209-cand-341445944": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -53618,7 +53650,7 @@
    "k": "best"
   },
   "fish-s210-cand-19754304": {
-   "jt": "p1g1slmj",
+   "jt": "p1g1sloj",
    "e": 2,
    "k": "best"
   },
@@ -53698,7 +53730,7 @@
    "k": "best"
   },
   "fish-s210-cand-583127584": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smk",
    "e": 2,
    "k": "best"
   },
@@ -53763,7 +53795,7 @@
    "k": "best"
   },
   "fish-s210-cand-625487515": {
-   "jt": "p1d1smm",
+   "jt": "p1d1smk",
    "e": 2,
    "k": "best"
   },
@@ -53813,7 +53845,7 @@
    "k": "best"
   },
   "fish-s211-cand-467755906": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -53898,17 +53930,17 @@
    "k": "best"
   },
   "fish-s211-cand-682745648": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s211-cand-698223352": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s211-cand-705148469": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -54088,7 +54120,7 @@
    "k": "best"
   },
   "fish-s212-cand-fb-Chchl_u9": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -54203,7 +54235,7 @@
    "k": "best"
   },
   "fish-s213-cand-744733482": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -54273,7 +54305,7 @@
    "k": "dup"
   },
   "fish-s214-cand-303792944": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -54358,7 +54390,7 @@
    "k": "dup"
   },
   "fish-s214-cand-608855478": {
-   "jt": "p1d1slm",
+   "jt": "p1d1slo",
    "e": 2,
    "k": "best"
   },
@@ -54493,7 +54525,7 @@
    "k": "best"
   },
   "fish-s215-cand-668267421": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -54573,7 +54605,7 @@
    "k": "best"
   },
   "fish-s216-cand-375995350": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -54633,7 +54665,7 @@
    "k": "best"
   },
   "fish-s216-cand-655330868": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -54713,7 +54745,7 @@
    "k": "best"
   },
   "fish-s217-cand-357894261": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -54893,7 +54925,7 @@
    "k": "best"
   },
   "fish-s218-cand-484034151": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -55103,7 +55135,7 @@
    "k": "best"
   },
   "fish-s219-cand-603911382": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -55153,7 +55185,7 @@
    "k": "best"
   },
   "fish-s220-cand-244185470": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -55163,7 +55195,7 @@
    "k": "best"
   },
   "fish-s220-cand-252631788": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -55203,7 +55235,7 @@
    "k": "best"
   },
   "fish-s220-cand-451154455": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -55218,7 +55250,7 @@
    "k": "best"
   },
   "fish-s220-cand-476255716": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -55233,7 +55265,7 @@
    "k": "dup"
   },
   "fish-s220-cand-49241947": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -55263,7 +55295,7 @@
    "k": "best"
   },
   "fish-s221-cand-209270686": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -55273,7 +55305,7 @@
    "k": "dup"
   },
   "fish-s221-cand-255143161": {
-   "jt": "p1d1smm",
+   "jt": "p1d1smo",
    "e": 2,
    "k": "best"
   },
@@ -55343,7 +55375,7 @@
    "k": "best"
   },
   "fish-s221-cand-592758182": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -55408,7 +55440,7 @@
    "k": "best"
   },
   "fish-s222-cand-330374657": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -55468,7 +55500,7 @@
    "k": "best"
   },
   "fish-s222-cand-556364652": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -55608,7 +55640,7 @@
    "k": "best"
   },
   "fish-s223-cand-453519639": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -55618,7 +55650,7 @@
    "k": "best"
   },
   "fish-s223-cand-458144279": {
-   "jt": "o1d1slm",
+   "jt": "o1d1slk",
    "e": 2,
    "k": "best"
   },
@@ -55733,7 +55765,7 @@
    "k": "best"
   },
   "fish-s223-cand-626125546": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -55753,7 +55785,7 @@
    "k": "best"
   },
   "fish-s223-cand-672954925": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 1,
    "k": "best"
   },
@@ -55788,7 +55820,7 @@
    "k": "best"
   },
   "fish-s223-cand-699577553": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 1,
    "k": "best"
   },
@@ -55837,7 +55869,7 @@
    "k": "best"
   },
   "fish-s224-cand-464458663": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -55872,9 +55904,13 @@
    "k": "best"
   },
   "fish-s224-cand-615721476": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s224-cand-626093838": {
    "jt": "p0g1ss1j",
@@ -55882,7 +55918,7 @@
    "k": "best"
   },
   "fish-s224-cand-626735473": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -56017,7 +56053,7 @@
    "k": "dup"
   },
   "fish-s224-cand-730663231": {
-   "jt": "o1g1bmm",
+   "jt": "o1g1bmk",
    "e": 1,
    "k": "best"
   },
@@ -56027,7 +56063,7 @@
    "k": "best"
   },
   "fish-s224-cand-732414803": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "alt"
   },
@@ -56047,7 +56083,7 @@
    "k": "best"
   },
   "fish-s224-cand-758106167": {
-   "jt": "p1g1bmm",
+   "jt": "p1g1bmk",
    "e": 1,
    "k": "best"
   },
@@ -56082,7 +56118,7 @@
    "k": "best"
   },
   "fish-s225-cand-409326832": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -56127,7 +56163,7 @@
    "k": "best"
   },
   "fish-s225-cand-607685006": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -56172,7 +56208,7 @@
    "k": "best"
   },
   "fish-s225-cand-727791700": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -56236,7 +56272,7 @@
    "k": "best"
   },
   "fish-s226-cand-133770085": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -56291,7 +56327,7 @@
    "k": "best"
   },
   "fish-s226-cand-342100198": {
-   "jt": "o1g2bmmj",
+   "jt": "o1g2bmkj",
    "e": 1,
    "k": "best"
   },
@@ -56361,7 +56397,7 @@
    "k": "best"
   },
   "fish-s226-cand-637588971": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -56411,7 +56447,7 @@
    "k": "dup"
   },
   "fish-s226-cand-668819886": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -56456,12 +56492,12 @@
    "k": "best"
   },
   "fish-s226-cand-705117577": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
   "fish-s226-cand-705117601": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "alt"
   },
@@ -56526,7 +56562,7 @@
    "k": "best"
   },
   "fish-s226-cand-753075806": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -56536,7 +56572,7 @@
    "k": "best"
   },
   "fish-s226-cand-753075930": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -56651,7 +56687,7 @@
    "k": "best"
   },
   "fish-s228-cand-451154408": {
-   "jt": "o1d2mlm",
+   "jt": "o1d2mlo",
    "e": 2,
    "k": "best"
   },
@@ -56767,7 +56803,7 @@
    "k": "best"
   },
   "fish-s228-cand-674473956": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -56822,7 +56858,7 @@
    "k": "dup"
   },
   "fish-s228-cand-690157696": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smkj",
    "e": 2,
    "k": "best"
   },
@@ -56837,13 +56873,13 @@
    "k": "dup"
   },
   "fish-s228-cand-698224584": {
-   "jt": "d1g0smm",
+   "jt": "d1g0smk",
    "e": 2,
    "k": "best",
    "n": "Two fish of other kinds lie beside the cigar wrasse on the sand."
   },
   "fish-s228-cand-750788837": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -56863,7 +56899,7 @@
    "k": "best"
   },
   "fish-s229-cand-108703519": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -56998,7 +57034,7 @@
    "k": "dup"
   },
   "fish-s230-cand-150627014": {
-   "jt": "p1d1slm",
+   "jt": "p1d1slo",
    "e": 3,
    "k": "best"
   },
@@ -57154,12 +57190,12 @@
    "k": "best"
   },
   "fish-s230-cand-435069600": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
   "fish-s230-cand-437807599": {
-   "jt": "p1d1smmj",
+   "jt": "p1d1smkj",
    "e": 2,
    "k": "best"
   },
@@ -57174,7 +57210,7 @@
    "k": "best"
   },
   "fish-s230-cand-469602558": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -57204,7 +57240,7 @@
    "k": "best"
   },
   "fish-s230-cand-513854748": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slk",
    "e": 3,
    "k": "best"
   },
@@ -57419,7 +57455,7 @@
    "k": "best"
   },
   "fish-s231-cand-705097201": {
-   "jt": "o1g2mmm",
+   "jt": "o1g2mmk",
    "e": 2,
    "k": "best"
   },
@@ -57464,7 +57500,7 @@
    "k": "best"
   },
   "fish-s232-cand-396085703": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smkj",
    "e": 2,
    "k": "best"
   },
@@ -57479,7 +57515,7 @@
    "k": "best"
   },
   "fish-s232-cand-431900908": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -57574,7 +57610,7 @@
    "k": "dup"
   },
   "fish-s233-cand-269208853": {
-   "jt": "o1g1mlm",
+   "jt": "o1g1mlo",
    "e": 2,
    "k": "best"
   },
@@ -57629,7 +57665,7 @@
    "k": "best"
   },
   "fish-s233-cand-433138419": {
-   "jt": "o1g2bmm",
+   "jt": "o1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -57644,7 +57680,7 @@
    "k": "dup"
   },
   "fish-s233-cand-518669183": {
-   "jt": "o1g1smmj",
+   "jt": "o1g1smkj",
    "e": 2,
    "k": "best"
   },
@@ -57729,7 +57765,7 @@
    "k": "best"
   },
   "fish-s233-cand-561365540": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -57754,7 +57790,7 @@
    "k": "best"
   },
   "fish-s233-cand-600010281": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -57779,7 +57815,7 @@
    "k": "best"
   },
   "fish-s233-cand-618824126": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -57845,7 +57881,7 @@
    "k": "best"
   },
   "fish-s233-cand-742654109": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -57885,7 +57921,7 @@
    "k": "best"
   },
   "fish-s234-cand-481976956": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "alt"
   },
@@ -57900,7 +57936,7 @@
    "k": "alt"
   },
   "fish-s234-cand-557966504": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -57910,7 +57946,7 @@
    "k": "best"
   },
   "fish-s234-cand-580493467": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -57955,7 +57991,7 @@
    "k": "best"
   },
   "fish-s234-cand-702698873": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -58035,7 +58071,7 @@
    "k": "best"
   },
   "fish-s235-cand-261944099": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -58045,7 +58081,7 @@
    "k": "best"
   },
   "fish-s235-cand-293544281": {
-   "jt": "o1g2slm",
+   "jt": "o1g2slk",
    "e": 2,
    "k": "best"
   },
@@ -58181,9 +58217,13 @@
    "k": "best"
   },
   "fish-s236-cand-335320613": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s236-cand-335320623": {
    "jt": "o1g1smm",
@@ -58206,7 +58246,7 @@
    "k": "dup"
   },
   "fish-s236-cand-346719492": {
-   "jt": "p1g1mlm",
+   "jt": "p1g1mlo",
    "e": 3,
    "k": "best"
   },
@@ -58226,7 +58266,7 @@
    "k": "best"
   },
   "fish-s236-cand-381827070": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -58236,7 +58276,7 @@
    "k": "best"
   },
   "fish-s236-cand-395569335": {
-   "jt": "p1d1smmj",
+   "jt": "p1d1smkj",
    "e": 2,
    "k": "best"
   },
@@ -58251,7 +58291,7 @@
    "k": "best"
   },
   "fish-s236-cand-460707119": {
-   "jt": "o1g1mmm",
+   "jt": "o1g1mmk",
    "e": 2,
    "k": "best",
    "n": "A red arrow drawn on the photo points at the fish."
@@ -58292,7 +58332,7 @@
    "k": "best"
   },
   "fish-s236-cand-59523123": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -58367,7 +58407,7 @@
    "k": "best"
   },
   "fish-s236-cand-756478831": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 2,
    "k": "best"
   },
@@ -58382,7 +58422,7 @@
    "k": "best"
   },
   "fish-s237-cand-270410204": {
-   "jt": "o1g1mlm",
+   "jt": "o1g1mlo",
    "e": 2,
    "k": "best"
   },
@@ -58402,7 +58442,7 @@
    "k": "best"
   },
   "fish-s237-cand-454682589": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -58557,7 +58597,7 @@
    "k": "best"
   },
   "fish-s239-cand-347748910": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "dup"
   },
@@ -58622,7 +58662,7 @@
    "k": "best"
   },
   "fish-s239-cand-472504797": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -58642,7 +58682,7 @@
    "k": "best"
   },
   "fish-s239-cand-641810308": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -58692,7 +58732,7 @@
    "k": "dup"
   },
   "fish-s240-cand-269000125": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -58752,9 +58792,13 @@
    "k": "dup"
   },
   "fish-s240-cand-453758327": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s240-cand-455718247": {
    "jt": "o1g1sm1",
@@ -58762,7 +58806,7 @@
    "k": "best"
   },
   "fish-s240-cand-45634691": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -58792,17 +58836,17 @@
    "k": "best"
   },
   "fish-s240-cand-545648393": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
   "fish-s240-cand-555852573": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
   "fish-s240-cand-556434300": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -58812,7 +58856,7 @@
    "k": "best"
   },
   "fish-s240-cand-582458206": {
-   "jt": "o1g2mmm",
+   "jt": "o1g2mmo",
    "e": 1,
    "k": "best",
    "n": "The wrasse swims over a large spotted fish (a ray?) that fills the background."
@@ -58968,7 +59012,7 @@
    "k": "best"
   },
   "fish-s241-cand-329931110": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -59013,7 +59057,7 @@
    "k": "best"
   },
   "fish-s241-cand-597648022": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -59028,17 +59072,17 @@
    "k": "best"
   },
   "fish-s241-cand-606191422": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
   "fish-s241-cand-625989041": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
   "fish-s241-cand-625989044": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "alt"
   },
@@ -59138,7 +59182,7 @@
    "k": "best"
   },
   "fish-s242-cand-590667033": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -59153,7 +59197,7 @@
    "k": "best"
   },
   "fish-s242-cand-636836236": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -59398,7 +59442,7 @@
    "k": "dup"
   },
   "fish-s243-cand-592263": {
-   "jt": "p1g1slmj",
+   "jt": "p1g1sloj",
    "e": 2,
    "k": "best"
   },
@@ -59458,7 +59502,7 @@
    "k": "dup"
   },
   "fish-s243-cand-758574588": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -59533,7 +59577,7 @@
    "k": "best"
   },
   "fish-s245-cand-696430986": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -59628,7 +59672,7 @@
    "k": "best"
   },
   "fish-s246-cand-220567056": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -59788,7 +59832,7 @@
    "k": "best"
   },
   "fish-s247-cand-655238122": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -60462,7 +60506,7 @@
    "k": "best"
   },
   "fish-s252-cand-468672499": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -60487,12 +60531,12 @@
    "k": "best"
   },
   "fish-s252-cand-572045869": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
   "fish-s252-cand-5831915": {
-   "jt": "p1g2slm",
+   "jt": "p1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -60512,7 +60556,7 @@
    "k": "dup"
   },
   "fish-s252-cand-613848232": {
-   "jt": "p0g0slm",
+   "jt": "p0g0slo",
    "e": 3,
    "k": "best"
   },
@@ -60692,7 +60736,7 @@
    "k": "best"
   },
   "fish-s254-cand-329852076": {
-   "jt": "o0g1smm",
+   "jt": "o0g1smk",
    "e": 2,
    "k": "best"
   },
@@ -60832,7 +60876,7 @@
    "k": "dup"
   },
   "fish-s254-cand-623581753": {
-   "jt": "d1g2smm",
+   "jt": "d1g2smk",
    "e": 1,
    "k": "best"
   },
@@ -60852,7 +60896,7 @@
    "k": "dup"
   },
   "fish-s254-cand-623595435": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 1,
    "k": "best"
   },
@@ -60917,7 +60961,7 @@
    "k": "best"
   },
   "fish-s255-cand-265918024": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -61072,9 +61116,13 @@
    "k": "alt"
   },
   "fish-s256-cand-265916874": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s256-cand-305767022": {
    "jt": "o1g1ml1",
@@ -61092,7 +61140,7 @@
    "k": "best"
   },
   "fish-s256-cand-357894175": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -61112,7 +61160,7 @@
    "k": "best"
   },
   "fish-s256-cand-377502066": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 3,
    "k": "best"
   },
@@ -61122,7 +61170,7 @@
    "k": "best"
   },
   "fish-s256-cand-436094069": {
-   "jt": "o1g0ssmj",
+   "jt": "o1g0sskj",
    "e": 2,
    "k": "best"
   },
@@ -61167,7 +61215,7 @@
    "k": "best"
   },
   "fish-s256-cand-638437109": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -61287,7 +61335,7 @@
    "k": "best"
   },
   "fish-s256-cand-744735101": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -61332,7 +61380,7 @@
    "k": "best"
   },
   "fish-s257-cand-276796272": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1ssoj",
    "e": 1,
    "k": "best",
    "n": "Three fish; a small striped one at the bottom left. Observer tags it juvenile."
@@ -61343,7 +61391,7 @@
    "k": "best"
   },
   "fish-s257-cand-330365719": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -61430,7 +61478,7 @@
    "k": "best"
   },
   "fish-s257-cand-603128419": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -61460,7 +61508,7 @@
    "k": "best"
   },
   "fish-s257-cand-619062418": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -61555,7 +61603,7 @@
    "k": "best"
   },
   "fish-s257-cand-915938": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -61620,7 +61668,7 @@
    "k": "best"
   },
   "fish-s258-cand-674336235": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -61645,7 +61693,7 @@
    "k": "best"
   },
   "fish-s258-cand-705206752": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -61760,7 +61808,7 @@
    "k": "alt"
   },
   "fish-s259-cand-448824111": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -61770,7 +61818,7 @@
    "k": "best"
   },
   "fish-s259-cand-451736338": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -61780,7 +61828,7 @@
    "k": "alt"
   },
   "fish-s259-cand-461754293": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -61875,7 +61923,7 @@
    "k": "best"
   },
   "fish-s260-cand-494557780": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -61915,7 +61963,7 @@
    "k": "dup"
   },
   "fish-s260-cand-650455094": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -62025,9 +62073,13 @@
    "k": "dup"
   },
   "fish-s261-cand-385019225": {
-   "jt": "o1g1mmm",
+   "jt": "o1g1mmk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s261-cand-421472226": {
    "jt": "p1d3mm1",
@@ -62195,7 +62247,7 @@
    "k": "best"
   },
   "fish-s262-cand-531666111": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -62340,9 +62392,13 @@
    "k": "best"
   },
   "fish-s263-cand-541157592": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s263-cand-550774164": {
    "jt": "p1g1sm1j",
@@ -62460,12 +62516,12 @@
    "k": "best"
   },
   "fish-s264-cand-504216884": {
-   "jt": "o1d0smm",
+   "jt": "o1d0smo",
    "e": 2,
    "k": "best"
   },
   "fish-s264-cand-505755416": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -62510,7 +62566,7 @@
    "k": "best"
   },
   "fish-s264-cand-557921914": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 2,
    "k": "best"
   },
@@ -62555,7 +62611,7 @@
    "k": "best"
   },
   "fish-s264-cand-615539699": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -62635,7 +62691,7 @@
    "k": "best"
   },
   "fish-s265-cand-555585142": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -62895,7 +62951,7 @@
    "k": "dup"
   },
   "fish-s266-cand-744733198": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -62981,7 +63037,7 @@
    "k": "best"
   },
   "fish-s267-cand-465281633": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -63041,7 +63097,7 @@
    "k": "best"
   },
   "fish-s267-cand-574864464": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -63051,7 +63107,7 @@
    "k": "best"
   },
   "fish-s267-cand-585493243": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -63101,7 +63157,7 @@
    "k": "best"
   },
   "fish-s267-cand-618833989": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smk",
    "e": 2,
    "k": "best"
   },
@@ -63151,12 +63207,12 @@
    "k": "best"
   },
   "fish-s267-cand-626138788": {
-   "jt": "p0g1smm",
+   "jt": "p0g1smo",
    "e": 2,
    "k": "best"
   },
   "fish-s267-cand-626138800": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -63416,7 +63472,7 @@
    "k": "best"
   },
   "fish-s269-cand-228390675": {
-   "jt": "p1g1slmj",
+   "jt": "p1g1sloj",
    "e": 2,
    "k": "best"
   },
@@ -63466,7 +63522,7 @@
    "k": "best"
   },
   "fish-s269-cand-437482301": {
-   "jt": "p1d1slmj",
+   "jt": "p1d1sloj",
    "e": 2,
    "k": "best"
   },
@@ -63476,9 +63532,13 @@
    "k": "best"
   },
   "fish-s269-cand-459838985": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s269-cand-468474991": {
    "jt": "o1g1ss1j",
@@ -63532,7 +63592,7 @@
    "k": "best"
   },
   "fish-s269-cand-545495833": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smoj",
    "e": 2,
    "k": "best"
   },
@@ -63587,7 +63647,7 @@
    "k": "best"
   },
   "fish-s269-cand-634647574": {
-   "jt": "o1g2mmm",
+   "jt": "o1g2mmo",
    "e": 1,
    "k": "best"
   },
@@ -63612,7 +63672,7 @@
    "k": "best"
   },
   "fish-s270-cand-116744912": {
-   "jt": "o1d1ssmj",
+   "jt": "o1d1ssoj",
    "e": 1,
    "k": "best"
   },
@@ -63632,17 +63692,17 @@
    "k": "dup"
   },
   "fish-s270-cand-447755892": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 2,
    "k": "best"
   },
   "fish-s270-cand-451819969": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 2,
    "k": "best"
   },
   "fish-s270-cand-455427214": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smk",
    "e": 2,
    "k": "best"
   },
@@ -63677,7 +63737,7 @@
    "k": "best"
   },
   "fish-s270-cand-463729434": {
-   "jt": "p1d1mlm",
+   "jt": "p1d1mlk",
    "e": 2,
    "k": "best"
   },
@@ -63737,7 +63797,7 @@
    "k": "dup"
   },
   "fish-s270-cand-540148639": {
-   "jt": "p1g1mlm",
+   "jt": "p1g1mlo",
    "e": 3,
    "k": "best"
   },
@@ -63793,7 +63853,7 @@
    "n": "A large yellow fish fills the frame; the cleaner wrasse is a small shape below it."
   },
   "fish-s270-cand-622110580": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -63828,7 +63888,7 @@
    "k": "dup"
   },
   "fish-s270-cand-626136903": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -63838,7 +63898,7 @@
    "k": "dup"
   },
   "fish-s270-cand-654690575": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -63848,7 +63908,7 @@
    "k": "best"
   },
   "fish-s270-cand-655330654": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "alt"
   },
@@ -63883,7 +63943,7 @@
    "k": "best"
   },
   "fish-s270-cand-758540529": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -63893,9 +63953,13 @@
    "k": "best"
   },
   "fish-s271-cand-244512249": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s271-cand-280234824": {
    "jt": "p1g1sl1",
@@ -63918,12 +63982,12 @@
    "k": "best"
   },
   "fish-s271-cand-379821826": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 1,
    "k": "best"
   },
   "fish-s271-cand-380007040": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -63943,7 +64007,7 @@
    "k": "best"
   },
   "fish-s271-cand-453758188": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -63978,7 +64042,7 @@
    "k": "dup"
   },
   "fish-s271-cand-606299936": {
-   "jt": "o1g1bmm",
+   "jt": "o1g1bmk",
    "e": 1,
    "k": "best"
   },
@@ -63993,7 +64057,7 @@
    "k": "best"
   },
   "fish-s271-cand-625747007": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -64033,7 +64097,7 @@
    "k": "best"
   },
   "fish-s272-cand-551805542": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -64043,7 +64107,7 @@
    "k": "best"
   },
   "fish-s272-cand-58900084": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -64083,7 +64147,7 @@
    "k": "best"
   },
   "fish-s272-cand-727572674": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -64103,7 +64167,7 @@
    "k": "best"
   },
   "fish-s272-cand-744735871": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -64243,7 +64307,7 @@
    "k": "best"
   },
   "fish-s273-cand-749045736": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0sso",
    "e": 2,
    "k": "best"
   },
@@ -64373,7 +64437,7 @@
    "k": "best"
   },
   "fish-s274-cand-80985202": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -64398,7 +64462,7 @@
    "k": "best"
   },
   "fish-s275-cand-265618693": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -64408,7 +64472,7 @@
    "k": "best"
   },
   "fish-s275-cand-273236567": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "dup"
   },
@@ -64548,7 +64612,7 @@
    "k": "best"
   },
   "fish-s276-cand-555050792": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -64668,7 +64732,7 @@
    "k": "alt"
   },
   "fish-s277-cand-625115364": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -64678,7 +64742,7 @@
    "k": "best"
   },
   "fish-s277-cand-674303784": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -64738,12 +64802,12 @@
    "k": "best"
   },
   "fish-s278-cand-238068263": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s278-cand-245064101": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -64848,7 +64912,7 @@
    "k": "best"
   },
   "fish-s278-cand-585722675": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -64958,12 +65022,12 @@
    "k": "best"
   },
   "fish-s279-cand-625101305": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
   "fish-s279-cand-639976992": {
-   "jt": "p1d2bsm",
+   "jt": "p1d2bsk",
    "e": 1,
    "k": "best"
   },
@@ -65133,7 +65197,7 @@
    "k": "best"
   },
   "fish-s280-cand-518680030": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -65163,7 +65227,7 @@
    "k": "best"
   },
   "fish-s280-cand-669401771": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -65188,7 +65252,7 @@
    "k": "best"
   },
   "fish-s281-cand-413930590": {
-   "jt": "p0g1smm",
+   "jt": "p0g1smk",
    "e": 2,
    "k": "best"
   },
@@ -65332,17 +65396,17 @@
    "k": "best"
   },
   "fish-s282-cand-90602540": {
-   "jt": "h1g1smm",
+   "jt": "h1g1smk",
    "e": 2,
    "k": "best"
   },
   "fish-s283-cand-159823981": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
   "fish-s283-cand-244050051": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -65402,7 +65466,7 @@
    "k": "best"
   },
   "fish-s283-cand-333603025": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -65477,9 +65541,13 @@
    "k": "dup"
   },
   "fish-s283-cand-733711413": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s283-cand-737472390": {
    "jt": "p1g1sss",
@@ -65587,7 +65655,7 @@
    "k": "best"
   },
   "fish-s284-cand-597977542": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -65682,7 +65750,7 @@
    "k": "best"
   },
   "fish-s285-cand-361922950": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -65747,7 +65815,7 @@
    "k": "dup"
   },
   "fish-s285-cand-682478427": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -65787,7 +65855,7 @@
    "k": "best"
   },
   "fish-s286-cand-161364081": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -66042,7 +66110,7 @@
    "k": "alt"
   },
   "fish-s287-cand-732203894": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -66052,12 +66120,12 @@
    "k": "best"
   },
   "fish-s288-cand-134776661": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 2,
    "k": "best"
   },
   "fish-s289-cand-177747278": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -66102,7 +66170,7 @@
    "k": "dup"
   },
   "fish-s289-cand-349452483": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 4,
    "k": "best"
   },
@@ -66117,7 +66185,7 @@
    "k": "best"
   },
   "fish-s289-cand-427397480": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -66192,7 +66260,7 @@
    "k": "best"
   },
   "fish-s290-cand-244050554": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -66257,7 +66325,7 @@
    "k": "alt"
   },
   "fish-s290-cand-428900625": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -66537,7 +66605,7 @@
    "k": "best"
   },
   "fish-s292-cand-538923471": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -66612,7 +66680,7 @@
    "k": "best"
   },
   "fish-s293-cand-224853869": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -66667,7 +66735,7 @@
    "k": "best"
   },
   "fish-s293-cand-609549317": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -66707,7 +66775,7 @@
    "k": "best"
   },
   "fish-s293-cand-715374591": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -66732,9 +66800,13 @@
    "k": "best"
   },
   "fish-s294-cand-32030600": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 4,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s294-cand-33053262": {
    "jt": "p1g1sl1r",
@@ -66787,7 +66859,7 @@
    "k": "best"
   },
   "fish-s295-cand-25978482": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -67032,12 +67104,12 @@
    "k": "alt"
   },
   "fish-s296-cand-349711418": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
   "fish-s296-cand-358787227": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -67072,7 +67144,7 @@
    "k": "best"
   },
   "fish-s296-cand-682724996": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "alt"
   },
@@ -67152,12 +67224,12 @@
    "k": "dup"
   },
   "fish-s297-cand-244084922": {
-   "jt": "p1d1slm",
+   "jt": "p1d1slk",
    "e": 3,
    "k": "best"
   },
   "fish-s297-cand-256322387": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -67192,12 +67264,16 @@
    "k": "best"
   },
   "fish-s297-cand-390613987": {
-   "jt": "d1g1smm",
+   "jt": "d1g1smk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s297-cand-390614034": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "alt"
   },
@@ -67207,7 +67283,7 @@
    "k": "best"
   },
   "fish-s297-cand-390614562": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "alt"
   },
@@ -67337,7 +67413,7 @@
    "k": "best"
   },
   "fish-s298-cand-390613985": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -67372,7 +67448,7 @@
    "k": "best"
   },
   "fish-s298-cand-625587170": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -67497,7 +67573,7 @@
    "k": "best"
   },
   "fish-s299-cand-612234025": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -67822,7 +67898,7 @@
    "k": "best"
   },
   "fish-s302-cand-27415826": {
-   "jt": "p1g2ssmj",
+   "jt": "p1g2ssoj",
    "e": 1,
    "k": "alt"
   },
@@ -67902,7 +67978,7 @@
    "k": "best"
   },
   "fish-s302-cand-618397466": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -67997,7 +68073,7 @@
    "k": "best"
   },
   "fish-s303-cand-278970905": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "alt"
   },
@@ -68027,7 +68103,7 @@
    "k": "best"
   },
   "fish-s303-cand-607046976": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -68157,7 +68233,7 @@
    "k": "best"
   },
   "fish-s305-cand-454450140": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -68182,7 +68258,7 @@
    "k": "best"
   },
   "fish-s305-cand-543033945": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -68342,7 +68418,7 @@
    "k": "dup"
   },
   "fish-s306-cand-553617925": {
-   "jt": "o1g2ssm",
+   "jt": "o1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -68387,12 +68463,12 @@
    "k": "best"
   },
   "fish-s306-cand-621366166": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1ssoj",
    "e": 1,
    "k": "best"
   },
   "fish-s306-cand-624883766": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -69022,12 +69098,12 @@
    "k": "dup"
   },
   "fish-s310-cand-419494967": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s310-cand-5634436": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -70182,7 +70258,7 @@
    "k": "best"
   },
   "fish-s317-cand-581594844": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -70292,7 +70368,7 @@
    "k": "dup"
   },
   "fish-s318-cand-566542515": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -70567,7 +70643,7 @@
    "k": "dup"
   },
   "fish-s319-cand-467220561": {
-   "jt": "p1g1msm",
+   "jt": "p1g1msk",
    "e": 2,
    "k": "best"
   },
@@ -70597,7 +70673,7 @@
    "k": "best"
   },
   "fish-s319-cand-565734064": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -70627,7 +70703,7 @@
    "k": "alt"
   },
   "fish-s319-cand-695416159": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -70712,7 +70788,7 @@
    "k": "dup"
   },
   "fish-s320-cand-418139154": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "dup"
   },
@@ -70827,7 +70903,7 @@
    "k": "best"
   },
   "fish-s320-cand-727572297": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -70837,7 +70913,7 @@
    "k": "alt"
   },
   "fish-s320-cand-727573029": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -71152,7 +71228,7 @@
    "k": "best"
   },
   "fish-s322-cand-603531344": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smo",
    "e": 3,
    "k": "best"
   },
@@ -71222,7 +71298,7 @@
    "k": "best"
   },
   "fish-s322-cand-689717266": {
-   "jt": "o0g0smm",
+   "jt": "o0g0smo",
    "e": 2,
    "k": "best"
   },
@@ -71252,7 +71328,7 @@
    "k": "dup"
   },
   "fish-s322-cand-727572437": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -71317,7 +71393,7 @@
    "k": "dup"
   },
   "fish-s323-cand-469858663": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -71827,7 +71903,7 @@
    "k": "best"
   },
   "fish-s326-cand-545364706": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -72002,7 +72078,7 @@
    "k": "best"
   },
   "fish-s327-cand-552019039": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -72187,7 +72263,7 @@
    "k": "best"
   },
   "fish-s328-cand-605749582": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -72412,7 +72488,7 @@
    "k": "best"
   },
   "fish-s330-cand-362476840": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -72427,7 +72503,7 @@
    "k": "best"
   },
   "fish-s330-cand-401448600": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "dup"
   },
@@ -72447,12 +72523,12 @@
    "k": "best"
   },
   "fish-s330-cand-411368218": {
-   "jt": "o0g1bmm",
+   "jt": "o0g1bmk",
    "e": 1,
    "k": "best"
   },
   "fish-s330-cand-411723702": {
-   "jt": "o1g1bmm",
+   "jt": "o1g1bmo",
    "e": 1,
    "k": "best"
   },
@@ -72528,7 +72604,7 @@
    "k": "best"
   },
   "fish-s330-cand-596512972": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -72538,7 +72614,7 @@
    "k": "dup"
   },
   "fish-s330-cand-596512975": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -72553,7 +72629,7 @@
    "k": "best"
   },
   "fish-s330-cand-650010007": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -72563,7 +72639,7 @@
    "k": "best"
   },
   "fish-s330-cand-698224568": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -72593,7 +72669,7 @@
    "k": "dup"
   },
   "fish-s331-cand-408425639": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -72638,7 +72714,7 @@
    "k": "best"
   },
   "fish-s331-cand-615475483": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -72763,7 +72839,7 @@
    "k": "best"
   },
   "fish-s332-cand-277430665": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -73003,7 +73079,7 @@
    "k": "best"
   },
   "fish-s333-cand-726172050": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -73028,7 +73104,7 @@
    "k": "dup"
   },
   "fish-s334-cand-346937931": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -73043,7 +73119,7 @@
    "k": "best"
   },
   "fish-s334-cand-397522782": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -73088,7 +73164,7 @@
    "k": "best"
   },
   "fish-s334-cand-543083106": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -73188,7 +73264,7 @@
    "k": "best"
   },
   "fish-s335-cand-411722617": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -73243,7 +73319,7 @@
    "k": "alt"
   },
   "fish-s335-cand-437004347": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "alt"
   },
@@ -73278,12 +73354,12 @@
    "k": "best"
   },
   "fish-s335-cand-689549889": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
   "fish-s335-cand-689549894": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "dup"
   },
@@ -73683,7 +73759,7 @@
    "k": "best"
   },
   "fish-s338-cand-352668322": {
-   "jt": "d1g2smm",
+   "jt": "d1g2smo",
    "e": 1,
    "k": "best"
   },
@@ -73708,7 +73784,7 @@
    "k": "dup"
   },
   "fish-s338-cand-469859262": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 2,
    "k": "best"
   },
@@ -73773,7 +73849,7 @@
    "k": "dup"
   },
   "fish-s338-cand-616624783": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -73843,7 +73919,7 @@
    "k": "dup"
   },
   "fish-s338-cand-729413252": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -73853,7 +73929,7 @@
    "k": "best"
   },
   "fish-s338-cand-743198559": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -74168,7 +74244,7 @@
    "k": "best"
   },
   "fish-s339-cand-635487363": {
-   "jt": "d1g2ssm",
+   "jt": "d1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -74598,7 +74674,7 @@
    "k": "best"
   },
   "fish-s341-cand-464925321": {
-   "jt": "d1g1slm",
+   "jt": "d1g1slk",
    "e": 2,
    "k": "best"
   },
@@ -74633,7 +74709,7 @@
    "k": "dup"
   },
   "fish-s341-cand-546256636": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -74678,7 +74754,7 @@
    "k": "best"
   },
   "fish-s341-cand-607697752": {
-   "jt": "d1g1mmm",
+   "jt": "d1g1mmk",
    "e": 1,
    "k": "best"
   },
@@ -74693,22 +74769,22 @@
    "k": "best"
   },
   "fish-s341-cand-619217435": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slk",
    "e": 3,
    "k": "best"
   },
   "fish-s341-cand-621817465": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
   "fish-s341-cand-621817484": {
-   "jt": "o1g2ssm",
+   "jt": "o1g2ssk",
    "e": 1,
    "k": "best"
   },
   "fish-s341-cand-624661621": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -74758,7 +74834,7 @@
    "k": "best"
   },
   "fish-s341-cand-638030601": {
-   "jt": "o1g2slm",
+   "jt": "o1g2slk",
    "e": 2,
    "k": "best"
   },
@@ -74793,7 +74869,7 @@
    "k": "dup"
   },
   "fish-s341-cand-669401717": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -74813,7 +74889,7 @@
    "k": "dup"
   },
   "fish-s341-cand-676630173": {
-   "jt": "d1g1ssm",
+   "jt": "d1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -74888,7 +74964,7 @@
    "k": "best"
   },
   "fish-s341-cand-726170446": {
-   "jt": "d1g1ssm",
+   "jt": "d1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -74918,7 +74994,7 @@
    "k": "best"
   },
   "fish-s342-cand-160680754": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slk",
    "e": 3,
    "k": "best"
   },
@@ -75008,7 +75084,7 @@
    "k": "dup"
   },
   "fish-s342-cand-384509757": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -75278,7 +75354,7 @@
    "k": "dup"
   },
   "fish-s343-cand-690937728": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -75318,7 +75394,7 @@
    "k": "best"
   },
   "fish-s343-cand-728427124": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -75328,7 +75404,7 @@
    "k": "best"
   },
   "fish-s343-cand-738683985": {
-   "jt": "o1g1mlm",
+   "jt": "o1g1mlo",
    "e": 2,
    "k": "best"
   },
@@ -75533,7 +75609,7 @@
    "k": "best"
   },
   "fish-s344-cand-746397871": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -75643,7 +75719,7 @@
    "k": "dup"
   },
   "fish-s345-cand-614430661": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bso",
    "e": 1,
    "k": "best"
   },
@@ -75873,7 +75949,7 @@
    "k": "best"
   },
   "fish-s346-cand-613871625": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -76198,7 +76274,7 @@
    "k": "best"
   },
   "fish-s348-cand-669345433": {
-   "jt": "o1g1bsm",
+   "jt": "o1g1bso",
    "e": 1,
    "k": "best"
   },
@@ -76283,7 +76359,7 @@
    "k": "best"
   },
   "fish-s348-cand-726172265": {
-   "jt": "p1g3blm",
+   "jt": "p1g3blo",
    "e": 1,
    "k": "best"
   },
@@ -76319,7 +76395,7 @@
    "k": "best"
   },
   "fish-s349-cand-330889341": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -76354,7 +76430,7 @@
    "k": "best"
   },
   "fish-s349-cand-464458785": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -76444,7 +76520,7 @@
    "k": "best"
   },
   "fish-s350-cand-45727064": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 4,
    "k": "best"
   },
@@ -76576,7 +76652,7 @@
    "k": "dup"
   },
   "fish-s350-cand-662484903": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -76821,7 +76897,7 @@
    "k": "dup"
   },
   "fish-s352-cand-244409421": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 4,
    "k": "alt"
   },
@@ -76986,7 +77062,7 @@
    "k": "dup"
   },
   "fish-s353-cand-609926191": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -77011,7 +77087,7 @@
    "k": "best"
   },
   "fish-s353-cand-674360597": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -77031,7 +77107,7 @@
    "k": "best"
   },
   "fish-s353-cand-688442704": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -77056,7 +77132,7 @@
    "k": "best"
   },
   "fish-s353-cand-727572990": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -77066,12 +77142,12 @@
    "k": "dup"
   },
   "fish-s353-cand-727600394": {
-   "jt": "p0g1bmm",
+   "jt": "p0g1bmo",
    "e": 1,
    "k": "best"
   },
   "fish-s353-cand-727600879": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -77371,7 +77447,7 @@
    "k": "dup"
   },
   "fish-s356-cand-526517445": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -77751,7 +77827,7 @@
    "k": "dup"
   },
   "fish-s359-cand-467757177": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -77851,17 +77927,17 @@
    "k": "best"
   },
   "fish-s359-cand-749045588": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "alt"
   },
   "fish-s359-cand-753075971": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
   "fish-s359-cand-757126147": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -77936,7 +78012,7 @@
    "k": "dup"
   },
   "fish-s360-cand-580748716": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -77946,7 +78022,7 @@
    "k": "dup"
   },
   "fish-s360-cand-582329659": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -78261,12 +78337,12 @@
    "k": "best"
   },
   "fish-s362-cand-748520611": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
   "fish-s362-cand-752095247": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -78466,7 +78542,7 @@
    "k": "best"
   },
   "fish-s363-cand-711509640": {
-   "jt": "o0g1smm",
+   "jt": "o0g1smo",
    "e": 2,
    "k": "dup"
   },
@@ -78901,7 +78977,7 @@
    "k": "best"
   },
   "fish-s364-cand-717646417": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -79231,7 +79307,7 @@
    "k": "alt"
   },
   "fish-s366-cand-160527528": {
-   "jt": "d1g1smm",
+   "jt": "d1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -79301,7 +79377,7 @@
    "k": "best"
   },
   "fish-s366-cand-688442820": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -79401,7 +79477,7 @@
    "k": "best"
   },
   "fish-s366-cand-712514495": {
-   "jt": "d1g1ssm",
+   "jt": "d1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -79511,12 +79587,12 @@
    "k": "dup"
   },
   "fish-s366-cand-723998077": {
-   "jt": "o1g1mlm",
+   "jt": "o1g1mlo",
    "e": 2,
    "k": "best"
   },
   "fish-s366-cand-723998080": {
-   "jt": "o1g1mlm",
+   "jt": "o1g1mlk",
    "e": 2,
    "k": "dup"
   },
@@ -79731,7 +79807,7 @@
    "k": "dup"
   },
   "fish-s367-cand-624584745": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -79826,7 +79902,7 @@
    "k": "best"
   },
   "fish-s368-cand-458211552": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -79861,7 +79937,7 @@
    "k": "dup"
   },
   "fish-s368-cand-617416500": {
-   "jt": "h1g1ssm",
+   "jt": "h1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -80036,7 +80112,7 @@
    "k": "best"
   },
   "fish-s369-cand-684745458": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0ssk",
    "e": 2,
    "k": "best"
   },
@@ -81146,7 +81222,7 @@
    "k": "dup"
   },
   "fish-s374-cand-397317105": {
-   "jt": "o0d1slm",
+   "jt": "o0d1slo",
    "e": 2,
    "k": "best"
   },
@@ -81216,7 +81292,7 @@
    "k": "best"
   },
   "fish-s374-cand-552611879": {
-   "jt": "p1d1slm",
+   "jt": "p1d1slo",
    "e": 2,
    "k": "best"
   },
@@ -81271,7 +81347,7 @@
    "k": "dup"
   },
   "fish-s374-cand-719974966": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -82152,7 +82228,7 @@
    "k": "best"
   },
   "fish-s378-cand-21151713": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -82167,7 +82243,7 @@
    "k": "best"
   },
   "fish-s378-cand-263303511": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -82262,7 +82338,7 @@
    "k": "dup"
   },
   "fish-s379-cand-175229502": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -85937,7 +86013,7 @@
    "k": "best"
   },
   "fish-s394-cand-484855814": {
-   "jt": "h0g1smm",
+   "jt": "h0g1smo",
    "e": 1,
    "k": "best"
   },
@@ -85957,7 +86033,7 @@
    "k": "dup"
   },
   "fish-s394-cand-489663585": {
-   "jt": "o0g2ssm",
+   "jt": "o0g2sso",
    "e": 1,
    "k": "best"
   },
@@ -86687,7 +86763,7 @@
    "k": "best"
   },
   "fish-s397-cand-610204748": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -86727,7 +86803,7 @@
    "k": "best"
   },
   "fish-s397-cand-668778682": {
-   "jt": "o1g1msm",
+   "jt": "o1g1msk",
    "e": 1,
    "k": "best"
   },
@@ -87067,7 +87143,7 @@
    "k": "best"
   },
   "fish-s399-cand-659435396": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -87107,7 +87183,7 @@
    "k": "best"
   },
   "fish-s399-cand-728832250": {
-   "jt": "d1g1smm",
+   "jt": "d1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -87167,7 +87243,7 @@
    "k": "best"
   },
   "fish-s400-cand-290575043": {
-   "jt": "o1g2slm",
+   "jt": "o1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -90037,7 +90113,7 @@
    "k": "best"
   },
   "fish-s417-cand-458489063": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "alt"
   },
@@ -90077,7 +90153,7 @@
    "k": "best"
   },
   "fish-s417-cand-513904213": {
-   "jt": "d1g2smm",
+   "jt": "d1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -90267,7 +90343,7 @@
    "k": "best"
   },
   "fish-s417-cand-694001645": {
-   "jt": "p0g2slm",
+   "jt": "p0g2slo",
    "e": 2,
    "k": "best"
   },
@@ -90277,7 +90353,7 @@
    "k": "best"
   },
   "fish-s417-cand-756219269": {
-   "jt": "p1g2msm",
+   "jt": "p1g2mso",
    "e": 1,
    "k": "best"
   },
@@ -91932,7 +92008,7 @@
    "k": "dup"
   },
   "fish-s425-cand-575460196": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -91947,7 +92023,7 @@
    "k": "best"
   },
   "fish-s425-cand-625283710": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -93071,7 +93147,7 @@
    "k": "best"
   },
   "fish-s432-cand-257006404": {
-   "jt": "o1d1smmc",
+   "jt": "o1d1smoc",
    "e": 1,
    "k": "best"
   },
@@ -93977,7 +94053,7 @@
    "k": "best"
   },
   "fish-s440-cand-612626739": {
-   "jt": "d0g1smm",
+   "jt": "d0g1smk",
    "e": 1,
    "k": "best"
   },
@@ -94447,7 +94523,7 @@
    "k": "best"
   },
   "fish-s442-cand-582793258": {
-   "jt": "o0g1smm",
+   "jt": "o0g1smo",
    "e": 2,
    "k": "best"
   },
@@ -94497,7 +94573,7 @@
    "k": "best"
   },
   "fish-s442-cand-615537379": {
-   "jt": "o0g0smm",
+   "jt": "o0g0smo",
    "e": 2,
    "k": "best"
   },
@@ -94664,7 +94740,7 @@
    "k": "dup"
   },
   "fish-s443-cand-459640565": {
-   "jt": "o0g0smm",
+   "jt": "o0g0smo",
    "e": 3,
    "k": "best"
   },
@@ -94829,7 +94905,7 @@
    "k": "best"
   },
   "fish-s443-cand-667106188": {
-   "jt": "o0g0slm",
+   "jt": "o0g0slo",
    "e": 2,
    "k": "best"
   },
@@ -95149,7 +95225,7 @@
    "k": "dup"
   },
   "fish-s445-cand-345519101": {
-   "jt": "h0g0ssm",
+   "jt": "h0g0ssk",
    "e": 1,
    "k": "best"
   },
@@ -95394,7 +95470,7 @@
    "k": "dup"
   },
   "fish-s446-cand-49569182": {
-   "jt": "o0g1smm",
+   "jt": "o0g1smk",
    "e": 1,
    "k": "best"
   },
@@ -96540,7 +96616,7 @@
    "k": "dup"
   },
   "fish-s451-cand-485702004": {
-   "jt": "p0g1smm",
+   "jt": "p0g1smo",
    "e": 2,
    "k": "best"
   },
@@ -97049,7 +97125,7 @@
    "k": "best"
   },
   "fish-s453-cand-378337462": {
-   "jt": "o0g0slm",
+   "jt": "o0g0slo",
    "e": 2,
    "k": "best"
   },
@@ -98184,7 +98260,7 @@
    "k": "best"
   },
   "fish-s462-cand-290987010": {
-   "jt": "d1g1slm",
+   "jt": "d1g1slk",
    "e": 2,
    "k": "best"
   },
@@ -98469,7 +98545,7 @@
    "k": "best"
   },
   "fish-s462-cand-732442096": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -98559,7 +98635,7 @@
    "k": "best"
   },
   "fish-s463-cand-40692920": {
-   "jt": "p1g2slm",
+   "jt": "p1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -98589,7 +98665,7 @@
    "k": "dup"
   },
   "fish-s463-cand-551654989": {
-   "jt": "p1g2slm",
+   "jt": "p1g2slo",
    "e": 2,
    "k": "best"
   },
@@ -98599,7 +98675,7 @@
    "k": "best"
   },
   "fish-s463-cand-59687195": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 2,
    "k": "best"
   },
@@ -98674,7 +98750,7 @@
    "k": "dup"
   },
   "fish-s463-cand-692666745": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -98734,7 +98810,7 @@
    "k": "best"
   },
   "fish-s463-cand-729413620": {
-   "jt": "p1g3bmm",
+   "jt": "p1g3bmk",
    "e": 1,
    "k": "best"
   },
@@ -98789,7 +98865,7 @@
    "k": "dup"
   },
   "fish-s463-cand-747237707": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 2,
    "k": "best"
   },
@@ -98889,7 +98965,7 @@
    "k": "dup"
   },
   "fish-s464-cand-428336290": {
-   "jt": "p1g2mlm",
+   "jt": "p1g2mlo",
    "e": 2,
    "k": "best"
   },
@@ -98944,7 +99020,7 @@
    "k": "dup"
   },
   "fish-s464-cand-688398640": {
-   "jt": "o1g3smm",
+   "jt": "o1g3smk",
    "e": 1,
    "k": "best"
   },
@@ -98979,7 +99055,7 @@
    "k": "best"
   },
   "fish-s464-cand-688441467": {
-   "jt": "p0g1slm",
+   "jt": "p0g1slk",
    "e": 2,
    "k": "best"
   },
@@ -99084,7 +99160,7 @@
    "k": "dup"
   },
   "fish-s464-cand-752940744": {
-   "jt": "d1g1ssm",
+   "jt": "d1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -99159,7 +99235,7 @@
    "k": "best"
   },
   "fish-s465-cand-325247793": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -99199,7 +99275,7 @@
    "k": "best"
   },
   "fish-s465-cand-568091361": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -99369,7 +99445,7 @@
    "k": "best"
   },
   "fish-s466-cand-120512085": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 3,
    "k": "best"
   },
@@ -99622,7 +99698,7 @@
    "k": "best"
   },
   "fish-s468-cand-597638488": {
-   "jt": "p1g3bmm",
+   "jt": "p1g3bmo",
    "e": 1,
    "k": "best"
   },
@@ -99652,7 +99728,7 @@
    "k": "best"
   },
   "fish-s468-cand-602927765": {
-   "jt": "p1g2mlm",
+   "jt": "p1g2mlo",
    "e": 2,
    "k": "best"
   },
@@ -99692,7 +99768,7 @@
    "k": "best"
   },
   "fish-s468-cand-618047304": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 1,
    "k": "best"
   },
@@ -99702,7 +99778,7 @@
    "k": "best"
   },
   "fish-s468-cand-621818186": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 1,
    "k": "best"
   },
@@ -99752,7 +99828,7 @@
    "k": "dup"
   },
   "fish-s468-cand-696137846": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 3,
    "k": "best"
   },
@@ -99852,12 +99928,12 @@
    "k": "best"
   },
   "fish-s469-cand-480620294": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
   "fish-s469-cand-481977123": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 2,
    "k": "best"
   },
@@ -99877,7 +99953,7 @@
    "k": "best"
   },
   "fish-s469-cand-556928333": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -99932,7 +100008,7 @@
    "k": "best"
   },
   "fish-s469-cand-621816421": {
-   "jt": "p1g1mlm",
+   "jt": "p1g1mlo",
    "e": 3,
    "k": "best"
   },
@@ -99972,7 +100048,7 @@
    "k": "best"
   },
   "fish-s470-cand-102012361": {
-   "jt": "p0g2slm",
+   "jt": "p0g2slo",
    "e": 2,
    "k": "best"
   },
@@ -99982,7 +100058,7 @@
    "k": "best"
   },
   "fish-s470-cand-232100352": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -100067,7 +100143,7 @@
    "k": "dup"
   },
   "fish-s470-cand-531283634": {
-   "jt": "d1g1ssmj",
+   "jt": "d1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -100137,7 +100213,7 @@
    "k": "dup"
   },
   "fish-s470-cand-612061670": {
-   "jt": "p1g1msmj",
+   "jt": "p1g1mskj",
    "e": 2,
    "k": "best"
   },
@@ -100162,7 +100238,7 @@
    "k": "dup"
   },
   "fish-s470-cand-622376648": {
-   "jt": "p1g2msmj",
+   "jt": "p1g2mskj",
    "e": 2,
    "k": "best"
   },
@@ -100352,7 +100428,7 @@
    "k": "best"
   },
   "fish-s472-cand-621109025": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -100362,7 +100438,7 @@
    "k": "best"
   },
   "fish-s472-cand-622110409": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -100588,7 +100664,7 @@
    "k": "dup"
   },
   "fish-s473-cand-614393345": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -100618,7 +100694,7 @@
    "k": "best"
   },
   "fish-s473-cand-733944990": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -100933,7 +101009,7 @@
    "k": "best"
   },
   "fish-s475-cand-563592901": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 2,
    "k": "best"
   },
@@ -101028,7 +101104,7 @@
    "k": "best"
   },
   "fish-s478-cand-615801373": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 2,
    "k": "best"
   },
@@ -101123,7 +101199,7 @@
    "k": "best"
   },
   "fish-s478-cand-730741029": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -101163,7 +101239,7 @@
    "k": "dup"
   },
   "fish-s479-cand-14336203": {
-   "jt": "p1d1slmj",
+   "jt": "p1d1sloj",
    "e": 2,
    "k": "best"
   },
@@ -101173,7 +101249,7 @@
    "k": "dup"
   },
   "fish-s479-cand-42008083": {
-   "jt": "p1g0smmj",
+   "jt": "p1g0smoj",
    "e": 1,
    "k": "best"
   },
@@ -101228,7 +101304,7 @@
    "k": "dup"
   },
   "fish-s479-cand-504713407": {
-   "jt": "p1g2bmm",
+   "jt": "p1g2bmo",
    "e": 1,
    "k": "best"
   },
@@ -101283,7 +101359,7 @@
    "k": "dup"
   },
   "fish-s479-cand-540088217": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -101303,7 +101379,7 @@
    "k": "dup"
   },
   "fish-s479-cand-556001658": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -101898,7 +101974,7 @@
    "k": "best"
   },
   "fish-s482-cand-593287555": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -102283,7 +102359,7 @@
    "k": "best"
   },
   "fish-s484-cand-541085257": {
-   "jt": "o0g0smm",
+   "jt": "o0g0smo",
    "e": 2,
    "k": "best"
   },
@@ -102428,7 +102504,7 @@
    "k": "best"
   },
   "fish-s485-cand-278051772": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -102458,7 +102534,7 @@
    "k": "best"
   },
   "fish-s485-cand-325543436": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0sso",
    "e": 2,
    "k": "best"
   },
@@ -102788,7 +102864,7 @@
    "k": "best"
   },
   "fish-s486-cand-671983876": {
-   "jt": "p1g1msm",
+   "jt": "p1g1mso",
    "e": 2,
    "k": "best"
   },
@@ -102798,12 +102874,12 @@
    "k": "best"
   },
   "fish-s486-cand-674629020": {
-   "jt": "o1g1msm",
+   "jt": "o1g1msk",
    "e": 2,
    "k": "best"
   },
   "fish-s486-cand-674629060": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 3,
    "k": "best"
   },
@@ -102918,7 +102994,7 @@
    "k": "best"
   },
   "fish-s487-cand-359762275": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -102928,7 +103004,7 @@
    "k": "dup"
   },
   "fish-s487-cand-431863876": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -103894,7 +103970,7 @@
    "k": "best"
   },
   "fish-s492-cand-695669180": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 3,
    "k": "best"
   },
@@ -104029,7 +104105,7 @@
    "k": "dup"
   },
   "fish-s493-cand-484513084": {
-   "jt": "o1g2bmm",
+   "jt": "o1g2bmk",
    "e": 1,
    "k": "best"
   },
@@ -104144,7 +104220,7 @@
    "k": "dup"
   },
   "fish-s494-cand-458237784": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "alt"
   },
@@ -104304,7 +104380,7 @@
    "k": "best"
   },
   "fish-s494-cand-760125259": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -104529,7 +104605,7 @@
    "k": "best"
   },
   "fish-s495-cand-732417837": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -105754,7 +105830,7 @@
    "k": "dup"
   },
   "fish-s502-cand-489644634": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 2,
    "k": "dup"
   },
@@ -105879,7 +105955,7 @@
    "k": "dup"
   },
   "fish-s503-cand-174686891": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -105964,7 +106040,7 @@
    "k": "best"
   },
   "fish-s503-cand-537878154": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -106004,7 +106080,7 @@
    "k": "best"
   },
   "fish-s503-cand-690734109": {
-   "jt": "o1g1ssmj",
+   "jt": "o1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -106039,7 +106115,7 @@
    "k": "best"
   },
   "fish-s504-cand-381537848": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -106124,7 +106200,7 @@
    "k": "best"
   },
   "fish-s504-cand-617950374": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -106154,7 +106230,7 @@
    "k": "best"
   },
   "fish-s504-cand-625635878": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -106294,7 +106370,7 @@
    "k": "best"
   },
   "fish-s505-cand-555683937": {
-   "jt": "o1g0slm",
+   "jt": "o1g0slk",
    "e": 3,
    "k": "best"
   },
@@ -106324,7 +106400,7 @@
    "k": "best"
   },
   "fish-s505-cand-583109881": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 3,
    "k": "best"
   },
@@ -106359,7 +106435,7 @@
    "k": "best"
   },
   "fish-s505-cand-617001841": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -106409,7 +106485,7 @@
    "k": "best"
   },
   "fish-s505-cand-756044651": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -106419,7 +106495,7 @@
    "k": "best"
   },
   "fish-s506-cand-464938070": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 3,
    "k": "best"
   },
@@ -106569,7 +106645,7 @@
    "k": "best"
   },
   "fish-s506-cand-756041360": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -106659,7 +106735,7 @@
    "k": "best"
   },
   "fish-s507-cand-618374840": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -106684,7 +106760,7 @@
    "k": "best"
   },
   "fish-s507-cand-637325571": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smkj",
    "e": 2,
    "k": "alt"
   },
@@ -106729,12 +106805,12 @@
    "k": "best"
   },
   "fish-s507-cand-674473946": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
   "fish-s507-cand-674628926": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smoj",
    "e": 2,
    "k": "best"
   },
@@ -106814,7 +106890,7 @@
    "k": "best"
   },
   "fish-s507-cand-731616970": {
-   "jt": "o1d2ssm",
+   "jt": "o1d2ssk",
    "e": 1,
    "k": "best"
   },
@@ -106829,7 +106905,7 @@
    "k": "best"
   },
   "fish-s507-cand-757887809": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1ssoj",
    "e": 1,
    "k": "best"
   },
@@ -106864,12 +106940,12 @@
    "k": "dup"
   },
   "fish-s508-cand-419191466": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
   "fish-s508-cand-435664602": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -106909,7 +106985,7 @@
    "k": "best"
   },
   "fish-s508-cand-459839170": {
-   "jt": "o1g0ssm",
+   "jt": "o1g0sso",
    "e": 1,
    "k": "best"
   },
@@ -106979,9 +107055,13 @@
    "k": "best"
   },
   "fish-s508-cand-596070783": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s508-cand-603707128": {
    "jt": "p1g1sm1",
@@ -107049,7 +107129,7 @@
    "k": "best"
   },
   "fish-s509-cand-356309407": {
-   "jt": "o1g0ssm",
+   "jt": "o1g0ssk",
    "e": 1,
    "k": "best"
   },
@@ -107214,7 +107294,7 @@
    "k": "best"
   },
   "fish-s510-cand-196651163": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smop",
    "e": 2,
    "k": "best"
   },
@@ -107355,7 +107435,7 @@
    "ph": "female"
   },
   "fish-s510-cand-439955611": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1ssop",
    "e": 1,
    "k": "best"
   },
@@ -107500,7 +107580,7 @@
    "ph": "female"
   },
   "fish-s510-cand-624897776": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smop",
    "e": 2,
    "k": "best"
   },
@@ -107534,7 +107614,7 @@
    "ph": "female"
   },
   "fish-s511-cand-161609432": {
-   "jt": "p1g0slmp",
+   "jt": "p1g0slkp",
    "e": 3,
    "k": "best",
    "ph": "female"
@@ -107587,7 +107667,7 @@
    "ph": "male"
   },
   "fish-s511-cand-440473088": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1ssop",
    "e": 1,
    "k": "best",
    "ph": "female"
@@ -107617,7 +107697,7 @@
    "ph": "male"
   },
   "fish-s511-cand-481976534": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1sskp",
    "e": 1,
    "k": "best"
   },
@@ -107674,7 +107754,7 @@
    "k": "dup"
   },
   "fish-s511-cand-588918426": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1sskp",
    "e": 1,
    "k": "best"
   },
@@ -107708,7 +107788,7 @@
    "ph": "male"
   },
   "fish-s511-cand-625122750": {
-   "jt": "o1g1ssmp",
+   "jt": "o1g1ssop",
    "e": 1,
    "k": "best"
   },
@@ -107735,7 +107815,7 @@
    "ph": "male"
   },
   "fish-s511-cand-655238549": {
-   "jt": "o1g2ssmp",
+   "jt": "o1g2sskp",
    "e": 1,
    "k": "best"
   },
@@ -107804,7 +107884,7 @@
    "k": "dup"
   },
   "fish-s511-cand-727978323": {
-   "jt": "p1g1ssmp",
+   "jt": "p1g1sskp",
    "e": 1,
    "k": "best"
   },
@@ -107874,7 +107954,7 @@
    "ph": "female"
   },
   "fish-s512-cand-32388625": {
-   "jt": "p1g0smmp",
+   "jt": "p1g0smkp",
    "e": 3,
    "k": "best",
    "ph": "male"
@@ -107892,7 +107972,7 @@
    "ph": "female"
   },
   "fish-s512-cand-338945652": {
-   "jt": "p1g2smmp",
+   "jt": "p1g2smkp",
    "e": 2,
    "k": "best",
    "ph": "female"
@@ -108031,7 +108111,7 @@
    "ph": "male"
   },
   "fish-s512-cand-501006889": {
-   "jt": "o1g1smmp",
+   "jt": "o1g1smkp",
    "e": 2,
    "k": "best",
    "ph": "male"
@@ -108384,7 +108464,7 @@
    "k": "best"
   },
   "fish-s513-cand-759543791": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -108489,7 +108569,7 @@
    "k": "best"
   },
   "fish-s514-cand-681554482": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -108659,7 +108739,7 @@
    "k": "dup"
   },
   "fish-s515-cand-471470053": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -108739,7 +108819,7 @@
    "k": "best"
   },
   "fish-s515-cand-705194926": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 3,
    "k": "best"
   },
@@ -108749,7 +108829,7 @@
    "k": "best"
   },
   "fish-s516-cand-357894360": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smo",
    "e": 3,
    "k": "best"
   },
@@ -108784,7 +108864,7 @@
    "k": "dup"
   },
   "fish-s516-cand-435663234": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -108889,12 +108969,12 @@
    "k": "best"
   },
   "fish-s516-cand-590967435": {
-   "jt": "o1g2ssm",
+   "jt": "o1g2sso",
    "e": 1,
    "k": "best"
   },
   "fish-s516-cand-622110945": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -108949,7 +109029,7 @@
    "k": "best"
   },
   "fish-s517-cand-575830905": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -108974,7 +109054,7 @@
    "k": "best"
   },
   "fish-s517-cand-601595628": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -109029,7 +109109,7 @@
    "k": "best"
   },
   "fish-s517-cand-682800623": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -109064,12 +109144,12 @@
    "k": "dup"
   },
   "fish-s517-cand-748261337": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
   "fish-s517-cand-748261568": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -109294,7 +109374,7 @@
    "k": "best"
   },
   "fish-s519-cand-555852551": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -109354,7 +109434,7 @@
    "k": "best"
   },
   "fish-s519-cand-624628650": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 3,
    "k": "best"
   },
@@ -109399,7 +109479,7 @@
    "k": "best"
   },
   "fish-s519-cand-760902754": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -109464,7 +109544,7 @@
    "k": "best"
   },
   "fish-s520-cand-624628585": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -109594,7 +109674,7 @@
    "k": "dup"
   },
   "fish-s521-cand-391809148": {
-   "jt": "o1g1smmj",
+   "jt": "o1g1smoj",
    "e": 2,
    "k": "best"
   },
@@ -109619,7 +109699,7 @@
    "k": "best"
   },
   "fish-s521-cand-613692038": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 2,
    "k": "best"
   },
@@ -109729,7 +109809,7 @@
    "k": "best"
   },
   "fish-s521-cand-723807274": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 3,
    "k": "alt"
   },
@@ -110239,7 +110319,7 @@
    "k": "dup"
   },
   "fish-s524-cand-330275009": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 2,
    "k": "best"
   },
@@ -110389,12 +110469,12 @@
    "k": "best"
   },
   "fish-s525-cand-290294491": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0ssk",
    "e": 1,
    "k": "best"
   },
   "fish-s525-cand-290295482": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0ssk",
    "e": 1,
    "k": "dup"
   },
@@ -110499,7 +110579,7 @@
    "k": "best"
   },
   "fish-s525-cand-724397671": {
-   "jt": "p1g0ssm",
+   "jt": "p1g0ssk",
    "e": 1,
    "k": "best"
   },
@@ -110604,7 +110684,7 @@
    "k": "best"
   },
   "fish-s526-cand-505609718": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -110634,7 +110714,7 @@
    "k": "best"
   },
   "fish-s526-cand-65914089": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 3,
    "k": "best"
   },
@@ -110764,7 +110844,7 @@
    "k": "best"
   },
   "fish-s527-cand-440305549": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 2,
    "k": "best"
   },
@@ -110834,7 +110914,7 @@
    "k": "best"
   },
   "fish-s527-cand-711999719": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smo",
    "e": 2,
    "k": "best"
   },
@@ -111069,7 +111149,7 @@
    "k": "best"
   },
   "fish-s529-cand-32030188": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slk",
    "e": 3,
    "k": "best"
   },
@@ -111389,7 +111469,7 @@
    "k": "best"
   },
   "fish-s531-cand-239281547": {
-   "jt": "p1g0smmj",
+   "jt": "p1g0smkj",
    "e": 2,
    "k": "best"
   },
@@ -111444,7 +111524,7 @@
    "k": "dup"
   },
   "fish-s531-cand-48737885": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -111599,7 +111679,7 @@
    "k": "dup"
   },
   "fish-s531-cand-731398088": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -111799,7 +111879,7 @@
    "k": "best"
   },
   "fish-s532-cand-689919156": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -111940,7 +112020,7 @@
    "n": "eggs on the anemone, no fish to see"
   },
   "fish-s533-cand-722729964": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -112045,7 +112125,7 @@
    "k": "best"
   },
   "fish-s534-cand-341253170": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -112785,9 +112865,13 @@
    "k": "best"
   },
   "fish-s537-cand-349632216": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s537-cand-349632649": {
    "jt": "p1g0sl1",
@@ -112805,7 +112889,7 @@
    "k": "best"
   },
   "fish-s537-cand-378124658": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -112820,7 +112904,7 @@
    "k": "best"
   },
   "fish-s537-cand-425063715": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -113270,7 +113354,7 @@
    "k": "best"
   },
   "fish-s539-cand-327364971": {
-   "jt": "o1g1slm",
+   "jt": "o1g1slk",
    "e": 2,
    "k": "best"
   },
@@ -113560,7 +113644,7 @@
    "k": "best"
   },
   "fish-s540-cand-679541193": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -113615,7 +113699,7 @@
    "k": "best"
   },
   "fish-s541-cand-406511838": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -113675,7 +113759,7 @@
    "k": "best"
   },
   "fish-s541-cand-458357010": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -113915,7 +113999,7 @@
    "k": "best"
   },
   "fish-s542-cand-556396907": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -113965,7 +114049,7 @@
    "k": "best"
   },
   "fish-s542-cand-623108471": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -114100,7 +114184,7 @@
    "k": "dup"
   },
   "fish-s543-cand-299803635": {
-   "jt": "p1g1smmj",
+   "jt": "p1g1smkj",
    "e": 2,
    "k": "best"
   },
@@ -114115,7 +114199,7 @@
    "k": "dup"
   },
   "fish-s543-cand-302426400": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1sso",
    "e": 1,
    "k": "best"
   },
@@ -114185,7 +114269,7 @@
    "k": "best"
   },
   "fish-s543-cand-403651888": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -114200,7 +114284,7 @@
    "k": "best"
   },
   "fish-s543-cand-405108232": {
-   "jt": "p1g1ssmj",
+   "jt": "p1g1sskj",
    "e": 1,
    "k": "best"
   },
@@ -114450,7 +114534,7 @@
    "k": "alt"
   },
   "fish-s545-cand-220379003": {
-   "jt": "p1g0smmj",
+   "jt": "p1g0smkj",
    "e": 2,
    "k": "best"
   },
@@ -114555,7 +114639,7 @@
    "k": "best"
   },
   "fish-s545-cand-593958388": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -114645,7 +114729,7 @@
    "k": "best"
   },
   "fish-s546-cand-297974085": {
-   "jt": "p1g2bsm",
+   "jt": "p1g2bso",
    "e": 1,
    "k": "best"
   },
@@ -114740,12 +114824,12 @@
    "k": "dup"
   },
   "fish-s546-cand-591272241": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
   "fish-s546-cand-591274656": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -114790,7 +114874,7 @@
    "k": "best"
   },
   "fish-s546-cand-713618209": {
-   "jt": "p1g3smm",
+   "jt": "p1g3smo",
    "e": 1,
    "k": "best"
   },
@@ -115825,7 +115909,7 @@
    "k": "best"
   },
   "fish-s552-cand-646328652": {
-   "jt": "p1g1ssm",
+   "jt": "p1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -115880,7 +115964,7 @@
    "k": "best"
   },
   "fish-s552-cand-81553229": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -116491,7 +116575,7 @@
    "n": "night livery: red mottled"
   },
   "fish-s556-cand-166548143": {
-   "jt": "o1g2smm",
+   "jt": "o1g2smk",
    "e": 2,
    "k": "best"
   },
@@ -116531,7 +116615,7 @@
    "k": "dup"
   },
   "fish-s556-cand-325008380": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slk",
    "e": 3,
    "k": "best"
   },
@@ -116547,7 +116631,7 @@
    "k": "best"
   },
   "fish-s556-cand-341450887": {
-   "jt": "p1g1smm",
+   "jt": "p1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -116764,7 +116848,7 @@
    "k": "best"
   },
   "fish-s557-cand-599343470": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -116914,7 +116998,7 @@
    "k": "dup"
   },
   "fish-s558-cand-614880999": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -117044,7 +117128,7 @@
    "k": "best"
   },
   "fish-s558-cand-744735784": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -117369,7 +117453,7 @@
    "k": "best"
   },
   "fish-s560-cand-552066993": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2sso",
    "e": 1,
    "k": "best"
   },
@@ -117579,7 +117663,7 @@
    "k": "best"
   },
   "fish-s561-cand-597638142": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -117604,7 +117688,7 @@
    "k": "best"
   },
   "fish-s561-cand-621833582": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -117634,7 +117718,7 @@
    "k": "best"
   },
   "fish-s561-cand-650479990": {
-   "jt": "o1g1slmj",
+   "jt": "o1g1slkj",
    "e": 1,
    "k": "best",
    "n": "arrow drawn on the photo; another fish behind"
@@ -117815,7 +117899,7 @@
    "k": "best"
   },
   "fish-s562-cand-618214463": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -117825,7 +117909,7 @@
    "k": "dup"
   },
   "fish-s562-cand-618214465": {
-   "jt": "p1g2ssm",
+   "jt": "p1g2ssk",
    "e": 1,
    "k": "best"
   },
@@ -117865,7 +117949,7 @@
    "k": "best"
   },
   "fish-s563-cand-337118606": {
-   "jt": "p1g1slm",
+   "jt": "p1g1slo",
    "e": 3,
    "k": "best"
   },
@@ -118700,7 +118784,7 @@
    "k": "dup"
   },
   "fish-s630-cand-375964351": {
-   "jt": "o1g0ssm",
+   "jt": "o1g0ssk",
    "e": 2,
    "k": "best"
   },
@@ -119760,7 +119844,7 @@
    "k": "best"
   },
   "fish-s635-cand-737474188": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smo",
    "e": 3,
    "k": "best"
   },
@@ -121609,7 +121693,7 @@
    "k": "best"
   },
   "fish-s646-cand-363071293": {
-   "jt": "o1g2msm",
+   "jt": "o1g2mso",
    "e": 1,
    "k": "best"
   },
@@ -122089,7 +122173,7 @@
    "k": "best"
   },
   "fish-s648-cand-fb-Gncau_u1": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smo",
    "e": 2,
    "k": "best"
   },
@@ -122209,7 +122293,7 @@
    "k": "best"
   },
   "fish-s649-cand-59383468": {
-   "jt": "o1g0ssm",
+   "jt": "o1g0ssk",
    "e": 2,
    "k": "best"
   },
@@ -122339,7 +122423,7 @@
    "k": "best"
   },
   "fish-s650-cand-538923205": {
-   "jt": "p1g0smm",
+   "jt": "p1g0smk",
    "e": 3,
    "k": "best"
   },
@@ -124044,7 +124128,7 @@
    "k": "dup"
   },
   "fish-s660-cand-452996007": {
-   "jt": "o1g0smm",
+   "jt": "o1g0smo",
    "e": 2,
    "k": "best"
   },
@@ -126984,7 +127068,7 @@
    "k": "best"
   },
   "fish-s677-cand-709916803": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -127034,7 +127118,7 @@
    "k": "best"
   },
   "fish-s678-cand-451736348": {
-   "jt": "o1g1ssm",
+   "jt": "o1g1ssk",
    "e": 1,
    "k": "best"
   },
@@ -127049,7 +127133,7 @@
    "k": "best"
   },
   "fish-s678-cand-463670098": {
-   "jt": "p1g2smm",
+   "jt": "p1g2smo",
    "e": 1,
    "k": "best"
   },
@@ -127109,7 +127193,7 @@
    "k": "best"
   },
   "fish-s678-cand-621189522": {
-   "jt": "o1g1smm",
+   "jt": "o1g1smk",
    "e": 2,
    "k": "best"
   },
@@ -127194,7 +127278,7 @@
    "k": "best"
   },
   "fish-s679-cand-247134533": {
-   "jt": "p1g0slm",
+   "jt": "p1g0slo",
    "e": 4,
    "k": "best"
   },
@@ -127304,7 +127388,7 @@
    "k": "best"
   },
   "fish-s679-cand-607067225": {
-   "jt": "p0g0slm",
+   "jt": "p0g0slo",
    "e": 3,
    "k": "dup"
   },

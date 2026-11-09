@@ -19,6 +19,9 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
     python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
+    python3 tools/judging_fish.py codes            re-apply the judging files' codes, unsure fields and notes to the
+                                                   candidates already judged in suggest.json "fish" (a re-judge of some
+                                                   tags, e.g. the other species split, Q323)
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
 
@@ -34,7 +37,7 @@ import urllib.request
 from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fish_judge import CODE, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
+from fish_judge import CODE, NEW_COUNT, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = lambda *a: os.path.join(ROOT, *a)  # noqa: E731
@@ -218,6 +221,9 @@ def check(sid):
             E.append(f"{at}: unknown fields {sorted(set(x) - FIELDS)}")
         if not CODE.match(str(x.get("code", ""))):
             E.append(f"{at}: code must follow judging/FISH.md \"Tags\" (e.g. p1g0sm14), not {x.get('code')!r}")
+        elif str(x["code"])[6] not in NEW_COUNT:
+            E.append(f"{at}: count m is the code before the split (Q323): o (other species, no risk of confusion) or k "
+                     "(other species one could take for the subject)")
         if x.get("keep") not in KEEP:
             E.append(f"{at}: keep must be one of {KEEP}")
         elif x["keep"] == "best":
@@ -303,10 +309,13 @@ def cmd_import(names, only_check, by):
     sys.exit(1 if bad else 0)
 
 
-def cmd_rep():
+def cmd_rep(fields=("jt", "e")):
     """Re-applies the reference flag (fish-cand.json `rep`, tools/fetch_fish.py --rep, tools/fetch_fishbase.py) to the
     judged candidates of suggest.json "fish", from their codes in judging/fish/<species>.json: a candidate tagged since its
-    judgement gets the flag r and the ease bonus, one no longer tagged loses them. Only those entries change."""
+    judgement gets the flag r and the ease bonus, one no longer tagged loses them. Only those entries change.
+    fields ("codes": also u and n): re-applies a re-judge of some photos' codes, unsure fields and notes (the other
+    species split of 2026-11-09, Q323) to the candidates already judged, without the whole species' --check (a species
+    may hold new candidates not judged yet, which the import refuses); waiting or decided alike."""
     S = load("suggest.json", {}) or {}
     Sf = S.get("fish") or {}
     n = 0
@@ -319,13 +328,18 @@ def cmd_rep():
             if not x or not old or not CODE.match(str(x.get("code", ""))):
                 continue
             new = entry(sid, x, p.get("rep"))
-            if (new["jt"], new["e"]) != (old.get("jt"), old.get("e")):
-                old["jt"], old["e"] = new["jt"], new["e"]
+            if any(new.get(k) != old.get(k) for k in fields):
+                for k in fields:
+                    if k in new:
+                        old[k] = new[k]
+                    else:
+                        old.pop(k, None)
                 n += 1
     with open(P("suggest.json"), "w", encoding="utf-8") as fh:
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
-    print(f"Reference flag re-applied: {n} judged candidates changed in suggest.json \"fish\".")
+    what = "Reference flag" if fields == ("jt", "e") else "Codes, unsure fields and notes"
+    print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"fish\".")
 
 
 def cmd_todo():
@@ -353,5 +367,7 @@ if __name__ == "__main__":
         cmd_todo()
     elif rest[:1] == ["rep"]:
         cmd_rep()
+    elif rest[:1] == ["codes"]:
+        cmd_rep(("jt", "e", "u", "n"))
     else:
         cmd_import(ids(rest) if rest else [], "--check" in a, BY)

@@ -9,7 +9,7 @@
    "keep": "best"
   },
   "fish-s067-cand-724991322": {
-   "code": "p1d1smm2",
+   "code": "p1d1smo2",
    "keep": "best"
   },
   "fish-s067-cand-710255111": {
@@ -85,8 +85,12 @@
    "keep": "best"
   },
   "fish-s067-cand-682479463": {
-   "code": "p1g1smm3",
-   "keep": "best"
+   "code": "p1g1smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s067-cand-355640367": {
    "code": "p1g2ss11",

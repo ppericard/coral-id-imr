@@ -412,6 +412,220 @@
         "FishBase, family Labridae: \"Most jaw teeth with gaps between them; teeth usually jutting outward\". The family sheet leaves this out until Pierre decides (rule C1: IMR's cue unchanged; Codex review #695)."
       ],
       "src": [{"t": "FishBase, family Labridae", "u": "https://www.fishbase.se/summary/FamilySummary.php?family=Labridae"}, {"t": "IMR fish presentation, Wrasse"}]
+    },
+    {
+      "id": "other-species-doubtful",
+      "kind": "content",
+      "subj": "fish",
+      "at": "2026-11-09",
+      "title": "Other species in view: confusion possible or not? (27 photos)",
+      "q": "In each photo, could another fish be taken for the main one at the level the game asks (its family, or its genus for a circle-1 species)? Answer \"no risk\" (the photo plays) or \"confusable\" (it stays out).",
+      "ctx": [
+        "Q323 (2026-11-09): the old count \"other species in view\" (m) is split in two, no risk of confusion (o, in play) and confusion possible (k, out of play, rule P3). An agent sorted the 1,047 photos that carried m (judging/FISH.md \"Other species: the split\"); these 27 were doubtful.",
+        "Meanwhile every one stays out of play (conservative). Photos 1-14 are photos you had in play (the auto-sort's adds): on their family page (Photos › Families) they now sit under \"Other species, out of play\"; Keep in play puts one back in one tap.",
+        "Photos 15-20 are stopgap or reference photos and 21-27 candidates still waiting: answer here and an agent applies it (tools/fish_judge.json, judging/fish).",
+        "The agent leaned \"no risk\" on 7 of them (photos 6, 7, 15, 17, 18, 23, 25), \"confusable\" on the others."
+      ],
+      "ask": "No risk / confusable",
+      "photos": [
+        {
+          "f": "fish-s162-cand-451490168",
+          "t": "Mirolabrichthys tuka",
+          "a": "no rights reserved",
+          "o": "https://www.inaturalist.org/observations/252233440",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/451490168/original.jpeg"
+        },
+        {
+          "f": "fish-s297-cand-390613987",
+          "t": "Ostorhinchus hartzfeldii",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/220615959",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/390613987/original.jpg"
+        },
+        {
+          "f": "fish-s294-cand-32030600",
+          "t": "Ostorhinchus luteus",
+          "a": "(c) Roger Rittmaster, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/20770689",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/32030600/original.jpeg"
+        },
+        {
+          "f": "fish-s067-cand-682479463",
+          "t": "Amblyglyphidodon curacao",
+          "a": "(c) 呂一起(Lyu yi-chi), some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/373440928",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/682479463/original.jpg"
+        },
+        {
+          "f": "fish-s119-cand-351336703",
+          "t": "Pomacentrus moluccensis",
+          "a": "(c) Slunky, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/199241106",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/351336703/original.jpeg"
+        },
+        {
+          "f": "fish-s119-cand-464458634",
+          "t": "Pomacentrus moluccensis",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/258818264",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/464458634/original.jpg"
+        },
+        {
+          "f": "fish-s137-cand-428492141",
+          "t": "Macolor niger",
+          "a": "(c) Nicola Crockford, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/240502598",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/428492141/original.jpeg"
+        },
+        {
+          "f": "fish-s050-cand-245276721",
+          "t": "Naso caesius",
+          "a": "(c) Peter, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/143025791",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/245276721/original.jpeg"
+        },
+        {
+          "f": "fish-s263-cand-541157592",
+          "t": "Bodianus axillaris",
+          "a": "(c) Debra Baker, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/300346955",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/541157592/original.jpg"
+        },
+        {
+          "f": "fish-s236-cand-335320613",
+          "t": "Halichoeres leucurus",
+          "a": "(c) Jim Moore (Maryland), some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/191182403",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/335320613/original.jpg"
+        },
+        {
+          "f": "fish-s240-cand-453758327",
+          "t": "Halichoeres scapularis",
+          "a": "(c) Jim Moore (Maryland), some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/253425024",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/453758327/original.jpg"
+        },
+        {
+          "f": "fish-s224-cand-615721476",
+          "t": "Hemigymnus melapterus",
+          "a": "(c) PampaSorro, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/338556272",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/615721476/original.jpg"
+        },
+        {
+          "f": "fish-s271-cand-244512249",
+          "t": "Labroides pectoralis",
+          "a": "no rights reserved",
+          "o": "https://www.inaturalist.org/observations/142603792",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/244512249/original.jpg"
+        },
+        {
+          "f": "fish-s256-cand-265916874",
+          "t": "Thalassoma lunare",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/153931490",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/265916874/original.jpg"
+        },
+        {
+          "f": "fi464458634",
+          "t": "Pomacentrus moluccensis",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY-NC)",
+          "o": "https://www.inaturalist.org/observations/258818264",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/464458634/original.jpg"
+        },
+        {
+          "f": "fi332302145",
+          "t": "Zanclus cornutus",
+          "a": "(c) Nicola Crockford, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/189658030",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/332302145/original.jpeg"
+        },
+        {
+          "f": "fi428492141",
+          "t": "Macolor niger",
+          "a": "(c) Nicola Crockford, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/240502598",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/428492141/original.jpeg"
+        },
+        {
+          "f": "fi552611754",
+          "t": "Halichoeres chrysus",
+          "a": "(c) Pierre Pericard, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/306431312",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/552611754/original.jpg"
+        },
+        {
+          "f": "fbPshuc_u1",
+          "t": "Pseudanthias huchtii",
+          "a": "(c) J.E. Randall, via FishBase, some rights reserved (CC BY-NC 4.0)",
+          "o": "https://www.fishbase.se/photos/PicturesSummary.php?ID=6567&what=species&pic=Pshuc_u1.jpg",
+          "src": "https://www.fishbase.se/images/species/Pshuc_u1.jpg"
+        },
+        {
+          "f": "fi32030600",
+          "t": "Ostorhinchus luteus",
+          "a": "(c) Roger Rittmaster, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/20770689",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/32030600/original.jpeg"
+        },
+        {
+          "f": "fish-s508-cand-596070783",
+          "t": "Centropyge bispinosa",
+          "a": "(c) Ben Costamagna, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/328891261",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/596070783/original.jpg"
+        },
+        {
+          "f": "fish-s283-cand-733711413",
+          "t": "Ostorhinchus moluccensis",
+          "a": "(c) Ben Costamagna, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/399879143",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/733711413/original.jpg"
+        },
+        {
+          "f": "fish-s537-cand-349632216",
+          "t": "Chromis analis",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/198376232",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/349632216/original.jpg"
+        },
+        {
+          "f": "fish-s193-cand-551805479",
+          "t": "Scarus dimidiatus",
+          "a": "(c) Tim, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/306013374",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/551805479/original.jpg"
+        },
+        {
+          "f": "fish-s208-cand-396367777",
+          "t": "Coris dorsomacula",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/223683869",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/396367777/original.jpg"
+        },
+        {
+          "f": "fish-s269-cand-459838985",
+          "t": "Labropsis manabei",
+          "a": "no rights reserved",
+          "o": "https://www.inaturalist.org/observations/256468178",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/459838985/original.jpg"
+        },
+        {
+          "f": "fish-s261-cand-385019225",
+          "t": "Pseudocheilinus evanidus",
+          "a": "(c) portioid, some rights reserved (CC BY)",
+          "o": "https://www.inaturalist.org/observations/217628872",
+          "src": "https://inaturalist-open-data.s3.amazonaws.com/photos/385019225/original.jpg"
+        }
+      ],
+      "src": [
+        {
+          "t": "judging/FISH.md, Tags (count) and \"Other species: the split\""
+        },
+        {
+          "t": "Pierre, 2026-11-09, Q323"
+        }
+      ]
     }
   ]
 }

@@ -731,22 +731,24 @@ def pid(f):
 
 def sure_out(j):
     """The pre-sort set it aside without doubt (autosort.js fishSure's rejects): a near-duplicate, the subject not obvious
-    (count x) or out of the water (flag a), with no `u` (unsure). Such a candidate no longer holds room."""
+    (count x), other species one could take for the subject (count k: rule P3, Q323) or out of the water (flag a), with
+    no `u` (unsure). Such a candidate no longer holds room."""
     if not j or j.get("u"):
         return False
     jt = j.get("jt") or ""
-    return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] == "x" or "a" in jt[7:]))
+    return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] in "xk" or "a" in jt[7:]))
 
 
-FISH_TAGS = re.compile(r"^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$")  # autosort.js FISH_TAGS
+FISH_TAGS = re.compile(r"^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$")  # autosort.js FISH_TAGS
 
 
 def sure_add(j):
     """The pre-sort's sure add (autosort.js fishSure's adds): best or alt, a rubric code and an ease, no `u`, not a
-    reject (sure_out)."""
+    reject (sure_out), a count an automatic route may put in play (core.js FISH_COUNT.play: never the unsorted m)."""
     if not j or j.get("u") or j.get("k") not in ("best", "alt") or sure_out(j):
         return False
-    return bool(FISH_TAGS.match(j.get("jt") or "")) and j.get("e") in (1, 2, 3, 4, 5)
+    jt = j.get("jt") or ""
+    return bool(FISH_TAGS.match(jt)) and jt[6] in "1so" and j.get("e") in (1, 2, 3, 4, 5)
 
 
 def state(cur, sug):

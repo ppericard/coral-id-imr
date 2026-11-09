@@ -3094,8 +3094,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // with the reference look in its tags (profile, whole, good light, true colours, sharp, large or medium, one fish or a
   // school of it; no juvenile, camouflage or out of water).
   const REF_LOOK = /^p1g0s[lm][1s]$/;
-  // In both cases one kind of fish (count 1 or s): never a photo with other kinds (m) or an unclear subject (x), rule P3
-  // (Codex review #660).
+  // In both cases one kind of fish (count 1 or s): never a photo with other species in view (o, k, the legacy m) or an
+  // unclear subject (x), rule P3 (Codex review #660; o is in play, not a reference: Q323).
   const refLevel = p =>
     !!p &&
     /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
@@ -3243,13 +3243,36 @@ const CORE_ = (function () { const module = {exports: {}};
     const o = ((F && F.out) || {})[f];
     return ((F && F.add) || {})[f] === sid && !(F.seen || {})[f] && !(F.exclude || {})[f] && (!o || o === sid);
   };
+  // The count tag (judging/FISH.md "Tags", the code's 7th letter) and play: 1 one fish, s several of its kind, o other
+  // species in view with no risk of taking one for the subject at the game's rank (in play), k other species one could
+  // take for the subject at that rank (never in play: rule P3), x the subject not obvious; m, the one code for other
+  // species before the split (Pierre, 2026-11-09, Q323), reads as not sorted yet, so as k until it is sorted.
+  // FISH_COUNT.play: the counts an automatic route may put in play (autosort.js fishSure, tools/fish_game.py
+  // judged_sure); FISH_COUNT.other: the counts never in play, whatever the route, Pierre's adds included.
+  const FISH_COUNT = {play: '1so', other: 'km'};
+  // fishCount(mine, pass): the count in force on a photo, from Pierre's tags (mine, curation.json fish tags) first, else
+  // the pass's or the game record's (pass, a jt); his legacy m is refined by the pass's o or k (the re-judge of
+  // 2026-11-09: judging/fish/*.json through suggest.json, which tools/fish_game.py writes into the game record's jt).
+  // '' with no tag. tools/fish_game.py count_of is its copy.
+  const fishCount = (mine, pass) => {
+    const c = String(mine || '').charAt(6),
+      q = String(pass || '').charAt(6);
+    return c === 'm' && /^[ok]$/.test(q) ? q : c || q;
+  };
+  // A photo with other species one could take for its subject, or not sorted yet (k, m): never in play (rule P3).
+  const fishOther = (mine, pass) => {
+    const c = fishCount(mine, pass);
+    return !!c && FISH_COUNT.other.includes(c);
+  };
   // fishIn(F, p, gone): game record p (fish-game.json) is in play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in
   // play", every fish photo in play hosted on R2): his own add (fishOn on its species), or a photo that entered by itself
   // (p.auto: a candidate judged sure, a reference photo judged at the reference level; tools/fish_game.py in_play) whose
   // photo id (fishPid) he did not reject, exclude or move with Not this (gone: those ids, fishGone; tools/fish_game.py
   // fish_in is its copy).
   // An automatic add of the auto-sort he undid counts as decided against too (its log code '-a...', autosort.js fishUndo:
-  // "the photo waits for his decision"; Codex review #674).
+  // "the photo waits for his decision"; Codex review #674). Never a photo whose count in force (fishCount: Pierre's tag,
+  // his legacy m refined by the record's) is other species one could take for its subject (fishOther, Q323), so his
+  // tag applies at once, before the workflow runs again.
   const fishGone = (cur, F = (cur && cur.fish) || {}) =>
     new Set(
       [
@@ -3258,7 +3281,8 @@ const CORE_ = (function () { const module = {exports: {}};
         ...Object.keys((cur && cur.exclude) || {})
       ].map(f => fishPid(f))
     );
-  const fishIn = (F, p, gone) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f))));
+  const fishIn = (F, p, gone) =>
+    !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f)))) && !fishOther(((F && F.tags) || {})[p.f], p.jt);
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
   // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
   // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
@@ -3323,8 +3347,9 @@ const CORE_ = (function () { const module = {exports: {}};
     new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
       const C = cu[t] || [],
         obs = new Set(C.map(p => p.o).filter(Boolean));
+      // A stopgap photo with other species one could take for its subject stays out too (fishOther: its jt, Q323).
       const S = ((stop || {})[t] || []).filter(
-        p => p && p.f && !gone.has(fishPid(p.f)) && !cid.has(fishPid(p.f)) && !(p.o && obs.has(p.o))
+        p => p && p.f && !gone.has(fishPid(p.f)) && !cid.has(fishPid(p.f)) && !(p.o && obs.has(p.o)) && !fishOther(null, p.jt)
       );
       if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length < FISHPH.MIN) return (out[t] = [...C, ...S]);
       const have = new Set(C.map(genus));
@@ -7787,6 +7812,9 @@ const CORE_ = (function () { const module = {exports: {}};
     rightsClass,
     rightsRank,
     fishOn,
+    FISH_COUNT,
+    fishCount,
+    fishOther,
     fishIn,
     fishGone,
     fishPid,

@@ -81,19 +81,24 @@
   // criteria only: the species is the iNaturalist experts' identification, never judged here.
   // - any field in `u` (unsure): Pierre's;
   // - a near-duplicate: rejected;
-  // - the subject not obvious (count x: which fish is asked about?) or out of the water (flag a): rejected, as several
-  //   corals are for corals;
+  // - the subject not obvious (count x: which fish is asked about?), other species one could take for the subject at the
+  //   game's rank (count k: rule P3) or out of the water (flag a): rejected, as several corals are for corals;
+  // - other species in view, not sorted yet (count m, the code before Pierre's split, 2026-11-09, Q323): his, never
+  //   added (as k until sorted); other species in view with no risk of confusion (count o): added like one fish.
+  //   The counts it may add are core.js FISH_COUNT.play, the same as tools/fish_game.py judged_sure (tests/autosort.test.js).
   // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames; the ease
   //   says how hard, it is never a reason to set one aside).
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
   // The flags after the seven tags: j c a typed by the judge, p (phase) and r (a reference photo, its `rep`) added by the tool.
-  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/;
+  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/;
   function fishSure(j) {
     if (!j || (j.u && j.u.length)) return null;
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
     if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};
+    if (j.jt[6] === 'k') return {keep: 'reject', why: 'other species'};
     if (j.jt.slice(7).includes('a')) return {keep: 'reject', why: 'out of water'};
+    if (!FISH_COUNT.play.includes(j.jt[6])) return null;
     if (j.k === 'best' || j.k === 'alt') return {keep: 'add', tags: j.jt, ease: j.e, phase: j.ph || null, crop: j.c || null};
     return null;
   }
@@ -166,7 +171,7 @@
   // licence or Pierre's own before CC BY-NC (core.js rightsRank, a tie-break only: Pierre, 2026-11-08, Q270), then a fixed
   // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
   // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid} =
+  const {refScore, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid, FISH_COUNT, fishOther} =
     typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
@@ -194,9 +199,11 @@
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && (obsOf[p.f] = p.o || p.f)));
     const room = {};
     // In play as the swiper counts it (fishOn): a photo Pierre moved with Not this and added to its new species counts
-    // there (Codex review #602: fishMine reads its first species, where it is a reject).
+    // there (Codex review #602: fishMine reads its first species, where it is a reject). An add with other species one
+    // could take for its subject (core.js fishOther: his tag, his legacy m refined by the pass's; Q323) is out of play,
+    // so it holds no room.
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (!fishOn(F, f, sid)) return;
+      if (!fishOn(F, f, sid) || fishOther((F.tags || {})[f], ((sug || {})[f] || {}).jt)) return;
       (room[sid] = room[sid] || new Set()).add(obsOf[f] || f);
     });
     const N = {...F, add: {...(F.add || {})}, seen: {...(F.seen || {})}},
@@ -432,7 +439,7 @@
   // (p phase entry, r reference photo) kept as they were, in the rubric's order.
   const FFLAGORD = 'jcapr';
   function fishTag(code, pos, v) {
-    const c = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/.test(code || '') ? code : 'p1g0sm1';
+    const c = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/.test(code || '') ? code : 'p1g0sm1';
     if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
     const fl = new Set(c.slice(7));
     if (fl.has(pos)) fl.delete(pos);

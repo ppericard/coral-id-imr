@@ -33,7 +33,13 @@ const FTAGS = [
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
   {m: 'soft', b: 'blurred'},
   {l: 'large', m: 'medium', s: 'small'},
-  {s: 'several of its kind', m: 'other species in view', x: 'subject not obvious'}
+  {
+    s: 'several of its kind',
+    o: 'other species in view, no confusion',
+    k: 'other species in view, confusable',
+    m: 'other species in view, not sorted',
+    x: 'subject not obvious'
+  }
 ];
 const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', p: 'phase entry', r: 'reference photo'};
 const fishTagText = jt =>
@@ -103,9 +109,16 @@ const FROWS = [
     'Count',
     [
       // Pierre, 2026-11-09: "Others" did not say the problem is several species on one photo; the codes stay (judging/FISH.md).
+      // Other species split in two (Pierre, 2026-11-09, Q323): o in play, k out of play (rule P3); the legacy m (before the
+      // split, not sorted yet: as k) is read, never offered.
       ['1', 'One fish', 'One fish (others, if any, tiny and far)'],
       ['s', 'Same species', 'Several fish of the same species, the subject obvious (a pair, a school)'],
-      ['m', 'Other species in view', 'Other species in view too: several species on one photo (on a photo in play: out of play, rule P3)'],
+      ['o', 'Other species, no risk', "Other species in view, none could be taken for the subject at the game's level (stays in play)"],
+      [
+        'k',
+        'Other species, confusable',
+        'Other species in view, one could be taken for the subject (on a photo in play: out of play, rule P3)'
+      ],
       ['x', 'Unclear', 'Unclear: which fish is asked about is not obvious (on a photo in play: out of play)']
     ]
   ]
@@ -223,10 +236,11 @@ const fishName = sid => {
     t = FISHC.entry[sid];
   return {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
 };
-// The photos of a species in play (Pierre's keep holds the add), its own candidates first, then any other photo added to it.
+// The photos of a species in play (Pierre's keep holds the add, never other species one could take for the subject: core.js
+// fishOther, Q323), its own candidates first, then any other photo added to it.
 const fishInPlay = (F, sid) => {
   const L = Object.entries(F.add || {})
-      .filter(([f, s]) => s === sid && fishOn(F, f, sid))
+      .filter(([f, s]) => s === sid && fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((SUG.fish || {})[f] || {}).jt))
       .map(([f]) => (FISHC.byF[f] && {...FISHC.byF[f], j: (SUG.fish || {})[f]}) || {f}),
     seen = new Set(L.map(p => fishPid(p.f)));
   // And the photos the game plays whatever their route (the sure candidates, the reference photos), once each.
