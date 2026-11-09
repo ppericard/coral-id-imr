@@ -787,7 +787,13 @@ print(json.dumps([[G.cand_sure(c), G.box_of('f', {}, {'f': c})] for c in cases])
 test('the R2 lists: no line for no photo or tile; r2_sync.sh skips an empty name', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2list-'));
   fs.mkdirSync(path.join(dir, 'tools'));
-  fs.copyFileSync(path.join(ROOT, 'tools/photos.py'), path.join(dir, 'tools/photos.py'));
+  // tools/photos.py and every tools module it imports at its top (tools/fish_short.py, #819), so it runs from the copy.
+  const src = fs.readFileSync(path.join(ROOT, 'tools/photos.py'), 'utf8'),
+    mods = [...src.matchAll(/^import ([\w, ]+)/gm)].flatMap(m => m[1].split(',').map(x => x.trim()));
+  ['photos', ...mods]
+    .filter(m => fs.existsSync(path.join(ROOT, 'tools', m + '.py')))
+    .forEach(m => fs.copyFileSync(path.join(ROOT, 'tools', m + '.py'), path.join(dir, 'tools', m + '.py')));
+  assert.ok(fs.existsSync(path.join(dir, 'tools/fish_short.py')), 'photos.py imports tools/fish_short.py');
   fs.writeFileSync(path.join(dir, 'fish-game.json'), JSON.stringify({photos: {t01: [{f: 'a', src: INAT(1)}]}}));
   const out = k => execFileSync('python3', [path.join(dir, 'tools/photos.py'), k], {cwd: dir, encoding: 'utf8'});
   assert.strictEqual(out('--r2-tiles'), '');

@@ -278,7 +278,7 @@ def box_todo(only=(), n=None):
     have no box yet (tools/fish_judge.json boxes, a candidate's suggest.json bb), the easiest first, then by name, one per
     observation, at most n per entry, in fish.json order."""
     import fish_game as G
-    game = json.loads((ROOT / "fish-game.json").read_text(encoding="utf-8")).get("photos") or {}
+    game = G.load(str(ROOT), G.OUT_FILE, {}).get("photos") or {}  # its records whole (tools/fish_short.py)
     boxes = G.boxes_in(str(ROOT))
     sug = (json.loads((ROOT / "suggest.json").read_text(encoding="utf-8")) or {}).get("fish") or {}
     out = {}
