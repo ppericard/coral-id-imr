@@ -1595,6 +1595,8 @@ let session = {ok: 0, n: 0, h: []},
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
 //   load()   its data, before its pages open (corals: data.json, always loaded; fish: fishLoad)
+//   doorsFirst  Home's doors may be drawn before data.json, their band empty until it comes (beforeData): the doors' words
+//            are the corals' (home.js viewHome without DATA)
 //   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
 //   tour     the welcome tour's words for its steps on this subject, where they differ from the steps' own (tour.js words)
 //   slate()  the units the games teach and the progress counts ("the slate" in the code): for corals the IMR coral slate
@@ -1648,6 +1650,8 @@ const UNITS = {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
     identify: 'idkey',
     load: () => Promise.resolve(),
+    // Home's doors drawn before data.json, the band's photos once it is in (beforeData).
+    doorsFirst: true,
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
@@ -2475,9 +2479,9 @@ function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
   QOPEN = false; // a question left unanswered for another page (the quiz draws its next one: question())
-  // A tab tapped while the app is still loading (slow line, RA review 2026-11-02): nothing to draw yet; the start-up's
-  // own route() opens the page tapped, from the hash.
-  if (!DATA) return;
+  // A tab tapped while the app is still loading (slow line, RA review 2026-11-02): Home's doors, or the loading bar for
+  // any other page (beforeData); the start-up's own route() opens the page tapped, from the hash.
+  if (!DATA) return void beforeData();
   // Load times (loadMark): the quiz is opened when tapped, before its files arrive (Codex review #362: a wait behind
   // "Loading…" was left out of the photo wait).
   if (hashNow() === 'quiz') loadMark('qo');
@@ -2669,7 +2673,10 @@ function pageHelp() {
     $helpbox.innerHTML =
       (h2 ? `<h3>${esc(h2.textContent)}</h3>` : '') +
       intro.map(x => x.outerHTML).join('') +
-      (window.tour ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>' : '') +
+      // The tour needs the data (tour.js): not offered on Home's doors drawn before it (beforeData).
+      (window.tour && DATA
+        ? '<p class="note htour"><button type="button" class="linkish" data-tour>Replay the welcome tour</button></p>'
+        : '') +
       helpEnd();
     $help.hidden = false;
   }
@@ -3091,6 +3098,56 @@ function need(n) {
       .then(() => (HAVE = Math.max(HAVE, n)));
   return TIERP[n];
 }
+// Home's doors before the data (Pierre, 2026-11-02, ROADMAP "Load order, further steps" (a), reopened 2026-11-09): on a
+// first visit data.json and the curation come after Home's scripts, so the doors are drawn as soon as those have run
+// (BOOT), the Learn door's band dark (home.js viewHome without DATA, as while its lazy photos load); the start-up's
+// route() draws Home again with the band's photos once the data is in (homeAgain). Only for a subject whose doors need
+// none of its own files (UNITS doorsFirst: the corals; the fish Home waits for its families). Any other page asked for
+// before the data shows the loading bar and asks for its tier at once (as route() for a page before its tier); the
+// welcome tour, the cards and the notices wait for the data, as before.
+let EARLY = false,
+  dataFailed = false;
+const atHome = h => !h || h === 'home';
+function beforeData() {
+  if (dataFailed) return; // the start-up's "Could not load the data" stays on screen
+  const h = hashNow();
+  EARLY = atHome(h) && !!UNITS[SUBJ.id].doorsFirst && !!window.viewHome;
+  if (EARLY) {
+    resetHelp();
+    viewHome();
+    return;
+  }
+  const nt = pageTier(h);
+  if (nt > 1) need(nt);
+  // The start-up's own bar stays (with its "Slow connection" line); one is drawn again only over the early doors.
+  if (!$v.querySelector('.boot'))
+    $v.innerHTML = `<div class="boot"><p class="note">Loading…</p><progress id="bootp" max="${bootMax(nt)}" value="${window.bootTick ? bootTick.n() : 0}" aria-label="Loading"></progress></div>`;
+  else if (nt > 1) {
+    const bp = document.getElementById('bootp');
+    if (bp) bp.max = Math.max(bp.max, bootMax(nt));
+  }
+}
+// The data in with the early doors on screen: Home drawn again with its band, keeping where the player was (the scroll,
+// the ? help open, the focus: the same control, by its place among the page's links and buttons; the two drawings differ
+// only by the band's photos).
+function homeAgain() {
+  const y = scrollY,
+    open = !$helpbox.hidden,
+    a = document.activeElement,
+    at = a && $v.contains(a) ? [...$v.querySelectorAll('a[href], button')].indexOf(a) : -1;
+  EARLY = false;
+  route();
+  if (!atHome(hashNow())) return; // route() sent the address elsewhere
+  if (y) window.scrollTo(0, y);
+  if (open) {
+    $helpbox.hidden = false;
+    $help.setAttribute('aria-expanded', 'true');
+    hdrMetrics();
+  }
+  const b = at >= 0 && $v.querySelectorAll('a[href], button')[at];
+  if (b) b.focus({preventScroll: true});
+}
+domReady.then(() => DATA || beforeData());
 {
   const n = pageTier(hashNow()),
     bp = document.getElementById('bootp');
@@ -3123,7 +3180,7 @@ Promise.all([
     // subject's old records, which waits for the data (model.js domRecalcAll).
     if (typeof domRecalcAll === 'function') domRecalcAll();
     showSubj();
-    route();
+    EARLY && atHome(hashNow()) ? homeAgain() : route();
     started();
     if (CUR_KEPT) curRefresh();
     if (window.tourFirst) tourFirst();
@@ -3140,6 +3197,7 @@ Promise.all([
       .then(() => need(5));
   })
   .catch(() => {
+    dataFailed = true;
     $v.innerHTML =
       '<p class="warn">Could not load the data. Check your connection. <button type="button" class="linkish" id="reload">Try again</button></p>';
     document.getElementById('reload').onclick = () => location.reload();

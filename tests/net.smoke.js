@@ -780,6 +780,56 @@ const server = http.createServer((req, res) => {
     if (errs.length) fails.push(`#${h} first: ` + errs.slice(0, 3).join(' | '));
     await ctx.close();
   }
+  // Home's doors before the data (ROADMAP "Load order, further steps" (a); app.js beforeData): with data.json held, the
+  // doors come, their band empty and no tour offered in ?; a tap on Practice shows the loading bar, Back brings the doors
+  // again; once data.json is in, Home is drawn again with its band, the scroll and the open help kept.
+  {
+    const {ctx, p, errs} = await ctxOf();
+    let free;
+    const held = new Promise(ok => (free = ok));
+    await ctx.route(/\/data\.json\?v=/, async r => (await held, r.fallback()));
+    await p.goto(base, {waitUntil: 'commit'});
+    const early = await p
+      .waitForFunction(() => document.querySelector('#view .hdoors'), null, {timeout: 20000})
+      .then(() =>
+        p.evaluate(() => ({data: !!DATA, tiles: document.querySelectorAll('#view .hdtiles img').length, routed: 'ROUTED' in window}))
+      )
+      .catch(() => null);
+    if (!early) fails.push('Doors first: Home did not come while data.json was held');
+    else if (early.data || early.tiles || early.routed) fails.push(`Doors first: not drawn before the data (${JSON.stringify(early)})`);
+    if (early) {
+      await p.click('#help');
+      if (await p.$('#helpbox [data-tour]')) fails.push('Doors first: the tour offered in ? before the data');
+      await p.click('#help');
+      await p.evaluate(() => (location.hash = routeOut('quiz')));
+      await p
+        .waitForFunction(() => document.querySelector('#view .boot #bootp') && !document.querySelector('#view .hdoors'), null, {
+          timeout: 5000
+        })
+        .catch(() => fails.push('Doors first: Practice tapped before the data did not show the loading bar'));
+      await p.goBack();
+      await p
+        .waitForFunction(() => document.querySelector('#view .hdoors'), null, {timeout: 5000})
+        .catch(() => fails.push('Doors first: Back before the data did not bring the doors again'));
+      await p.evaluate(() => scrollTo(0, 120));
+      await p.click('#help');
+      const y = await p.evaluate(() => scrollY);
+      free();
+      await p
+        .waitForFunction(() => window.ROUTED === '' && document.querySelectorAll('#view .hdtiles img').length > 0, null, {timeout: 20000})
+        .catch(() => fails.push('Doors first: the band never filled once data.json came'));
+      const after = await p.evaluate(() => ({
+        y: scrollY,
+        help: !document.getElementById('helpbox').hidden,
+        tour: !!document.querySelector('#helpbox [data-tour]')
+      }));
+      if (after.y !== y || !after.help || !after.tour)
+        fails.push(`Doors first: Home drawn again lost the player's place (${JSON.stringify({y, ...after})})`);
+    }
+    free();
+    if (errs.length) fails.push('Doors first: ' + errs.slice(0, 3).join(' | '));
+    await ctx.close();
+  }
   // 6. Service worker install on an unstable line: every app file fails once, the install still completes.
   {
     const ctx = await b.newContext({viewport: {width: 390, height: 800}});
