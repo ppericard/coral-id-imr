@@ -640,7 +640,7 @@ test('v21 load events: load times, the line and the CDN server, nothing else kep
   assert.strictEqual(d.t0, 3600);
 });
 
-test('vNEXT fromhome events: the first page opened from Home, its seconds on Home, the tier wait and the tour, nothing else', () => {
+test('v124 fromhome events: the first page opened from Home, its seconds on Home, the tier wait and the tour, nothing else', () => {
   const s = loadCodeGs();
   s.post({
     dev: 'dev0000003',

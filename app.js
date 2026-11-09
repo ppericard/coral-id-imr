@@ -2506,11 +2506,11 @@ function cardRing(pct, was) {
 }
 // The first page opened from Home in a visit (ROADMAP "Load order, further steps" (c); Pierre, 2026-11-02, reopened
 // 2026-11-09): which page players go to first, so the tiers can follow real use (index.html). One 'fromhome' event a visit
-// (sheet vNEXT: the Events tab, its page in the message column), the first time route() leaves a Home it drew for another
+// (sheet v124: the Events tab, its page in the message column), the first time route() leaves a Home it drew for another
 // page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
 // the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
 // those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
-const FROMHOME_SHEET = 123;
+const FROMHOME_SHEET = 124;
 const fromHomeOn = () => typeof sheetV === 'function' && sheetV() >= FROMHOME_SHEET;
 let HOME_AT = 0,
   homeLeft = false,
