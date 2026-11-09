@@ -11,13 +11,19 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 9; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 12; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
   // 7: player profiles (who)
   // 8: the Wright map and the genus × player residuals (Learning wright, res)
   // 9: Time and difficulty (tdiff): others' answer time and enlarging on a photo, time intensity beside difficulty
+  // 10: interactions (ix): enlarging × view (Zoom), pair × view (Confusions), format × practice (Learning), one omnibus
+  // test each in the exploratory family
+  // 11: random practice slopes in Learning (each player's and genus's own), their spreads, per-genus learning curves
+  // (gcurve), the player profiles' learning slope
+  // 12: model checks (chk): each binary model's predictions of a player left out, calibration, quantile residuals, the
+  // paired log-loss against the app's expectation; Answer time's residuals
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
@@ -77,7 +83,9 @@
   }
   // Sets b, each factor's tau2 and u from the warm state (null when there is none or it does not apply).
   function warmGet(kind, p, F) {
-    const W = FAST ? WARM[sigOf(kind, p, F)] : null;
+    // never while a player is left out (HOLD, checkOf): a coefficient only their answers move would keep the full fit's
+    // value, learnt from those answers (Codex review #831); the fit starts from 0 instead
+    const W = FAST && HOLD == null ? WARM[sigOf(kind, p, F)] : null;
     if (!W) return null;
     F.forEach((f, k) => {
       f.tau2 = W.f[k].tau2;
@@ -124,7 +132,8 @@
 
   /* ---------- Random-effect factors ---------- */
   // keys[i]: the level of row i (a string), or a list of levels sharing the row (a question's photos, weight 1/m each).
-  function factor(name, keys) {
+  // wt: a random slope instead (one level a row, its weight wt[i], the covariate: Z u adds wt[i] u_level); sl marks it.
+  function factor(name, keys, wt) {
     const N = keys.length,
       idx = new Map(),
       L = [],
@@ -138,7 +147,7 @@
       K.forEach(x => {
         if (!idx.has(x)) (idx.set(x, L.length), L.push(x));
         lev.push(idx.get(x));
-        w.push(1 / K.length);
+        w.push(wt ? wt[i] : 1 / K.length);
       });
     }
     start[N] = lev.length;
@@ -157,7 +166,8 @@
       cnt,
       u: new Float64Array(n),
       cv: new Float64Array(n),
-      tau2: 0
+      tau2: 0,
+      sl: wt ? 1 : 0
     };
   }
   // Z u for one factor, into out (row contributions).
@@ -332,6 +342,9 @@
       W = new Float64Array(N);
     let b = new Array(p).fill(0);
     F.forEach(f => ((f.tau2 = o.tau0 || 0.5), f.u.fill(0), f.cv.fill(0)));
+    // a player left out (HOLD, checkOf): their rows weigh nothing
+    const fp = HOLD == null ? null : F.find(f => f.name === 'player'),
+      wt = fp ? Float64Array.from({length: N}, (_, i) => (baseOf(fp.L[fp.lev[fp.start[i]]]) === HOLD ? 0 : 1)) : null;
     const Wm = warmGet('glmm', p, F);
     if (Wm) {
       b = Wm.b.slice();
@@ -349,6 +362,7 @@
           P = clamp(g[i] + (1 - g[i]) * s, 1e-9, 1 - 1e-9);
         S[i] = ((y[i] - P) * d) / (P * (1 - P));
         W[i] = (d * d) / (P * (1 - P)) + 1e-12;
+        if (wt && !wt[i]) ((S[i] = 0), (W[i] = 1e-12));
       }
     };
     // X flattened into one typed array (row i at i * p): the same sums in the same order, several times faster than
@@ -389,10 +403,13 @@
         const gj = new Float64Array(f.n),
           hj = new Float64Array(f.n),
           hk = new Float64Array(f.n);
-        // hj bounds the curvature of a level shared with others in a row (see lmm); hk is its own, for the variance.
+        // hj bounds the curvature of a level shared with others in a row (see lmm); hk is its own, for the variance. A
+        // random slope has one level a row: its curvature is exact, its weight squared (a weight can exceed 1 or be < 0).
         for (let i = 0; i < N; i++)
           for (let q = f.start[i]; q < f.start[i + 1]; q++)
-            ((gj[f.lev[q]] += f.w[q] * S[i]), (hj[f.lev[q]] += f.w[q] * W[i]), (hk[f.lev[q]] += f.w[q] * f.w[q] * W[i]));
+            ((gj[f.lev[q]] += f.w[q] * S[i]),
+              (hj[f.lev[q]] += (f.sl ? f.w[q] * f.w[q] : f.w[q]) * W[i]),
+              (hk[f.lev[q]] += f.w[q] * f.w[q] * W[i]));
         const du = new Float64Array(f.n);
         let ss = 0;
         for (let j = 0; j < f.n; j++) {
@@ -793,7 +810,12 @@
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
       player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
-      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])])
+      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])]),
+      chk: checkLmm(
+        M,
+        D.map(a => Math.log(a.s)),
+        X
+      )
     };
   }
 
@@ -860,7 +882,9 @@
       ],
       player: livePl(D, Object.values(by)).sort((a, b) => b.z / b.n - a.z / a.n),
       views: Object.values(views),
-      ent: entOf(M.V, M.X, [null, 'rel', 'hab'])
+      ent: entOf(M.V, M.X, [null, 'rel', 'hab']),
+      ix: ixOf([zoomIx(D, B, seed + 31)]),
+      chk: checkOf(D, zoomFit, a => a.g0, seed, true)
     };
   }
 
@@ -977,6 +1001,12 @@
       photos: P.n,
       typ: typOf(D),
       effects,
+      chk: checkOf(
+        D,
+        S => phFit(S).M,
+        a => a.g0,
+        seed
+      ),
       views: tab(
         x => x[0],
         k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k
@@ -1152,6 +1182,523 @@
       : null;
   }
 
+  /* ---------- Can we trust this model? (model checks; the multifactor visualisation study, §5 item 8) ---------- */
+  // Leave one player out: the answers of player HOLD weigh nothing in a fit (glmm), so the fit's prediction of them is the
+  // model's for a player it has never seen (their own effects stay at their prior mean, 0).
+  let HOLD = null;
+  // Sign-flip test over players (LEARNING.md "Real-answer replay": players are the unit): the two-sided p of the mean of
+  // d, each d's sign flipped at random; exact up to 16 players, else 9999 draws from a fixed seed.
+  function signFlip(d) {
+    const n = d.length,
+      m0 = Math.abs(mean(d)) - 1e-12;
+    if (!n) return null;
+    let hit = 0,
+      tot = 0;
+    if (n <= 16)
+      for (let s = 0; s < 1 << n; s++) {
+        let t = 0;
+        for (let i = 0; i < n; i++) t += s & (1 << i) ? -d[i] : d[i];
+        tot++;
+        if (Math.abs(t / n) >= m0) hit++;
+      }
+    else {
+      const R = rng(9973);
+      for (let k = 0; k < 9999; k++) {
+        let t = 0;
+        for (let i = 0; i < n; i++) t += R() < 0.5 ? -d[i] : d[i];
+        tot++;
+        if (Math.abs(t / n) >= m0) hit++;
+      }
+      ((hit += 1), (tot += 1));
+    }
+    return hit / tot;
+  }
+  // The t quantile at 97.5% with k degrees of freedom (Cornish-Fisher on the normal's; within 1% from 3 degrees).
+  const t975 = k => {
+    const z = Z,
+      g1 = (z ** 3 + z) / 4,
+      g2 = (5 * z ** 5 + 16 * z ** 3 + 3 * z) / 96,
+      g3 = (3 * z ** 7 + 19 * z ** 5 + 17 * z ** 3 - 15 * z) / 384;
+    return k === 1 ? 12.706 : k === 2 ? 4.303 : z + g1 / k + g2 / k ** 2 + g3 / k ** 3;
+  };
+  const CHK_BANDS = 5, // calibration bands of the predictions (equal counts)
+    CHK_Q = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]; // the QQ plot's probabilities
+  // A binary model's check (rows R: {y, p, gone, E (the app's expected chance, or null)}; fit(R): the glmm result whose eta
+  // is row-aligned, g(r): the row's guess rate): each player left out in turn (players with 20 answers or more, from 3
+  // players), the model's prediction of their answers; then (cal) the predictions in CHK_BANDS bands of equal counts, the
+  // answers right and predicted in each; (qq) the randomized quantile residuals (Dunn & Smyth 1996: uniform when the
+  // predictions are right) at the CHK_Q probabilities; (ll, cmp: a model on the app's expectation as its offset, Zoom and
+  // Comeback: the app's chance and corrections to it) the paired log-loss of the model's prediction against the app's own
+  // expected chance, players as the unit (a model without that offset knows nothing of a new player's level, which the
+  // app does: no fair comparison): each player's mean difference, their mean, a 95% t
+  // interval over the players and a sign-flip p (negative: the model predicts new players' answers better than the app).
+  // Descriptive, outside the multiple-testing correction (as the Wright map and the second skill).
+  // The predictions of player id's rows by a fit in which their rows weigh nothing (fast: the bootstrap's looser fit,
+  // warm-started from the full one). NaN elsewhere.
+  // A new player's own effects are unknown: their chance is averaged over the players the fit has (each one's fitted level,
+  // and in Learning their slope at the row's practice), not read at the average player (Codex review #831: with a player
+  // SD of 2, 81.8% at the average player against 71.5% averaged over players). Over the fitted players rather than over
+  // N(0, tau2): with this fit (PQL-like: its spreads shrunk, its intercept towards the average over players, ROADMAP
+  // "what the correction leaves open" (e)), the normal integral over-predicted the generator's own mix-ups by 2-6 points in
+  // every band, while the fitted players' own effects average to what they answered.
+  function predictOut(R, fit, g, id, fast = true, P = new Float64Array(R.length).fill(NaN)) {
+    HOLD = id;
+    FAST = fast;
+    try {
+      const M = fit(R),
+        fp = M.F.find(f => f.name === 'player'),
+        fs = M.F.find(f => f.name === 'player slope'),
+        sl = fs ? new Map(fs.L.map((k, j) => [baseOf(k), fs.u[j]])) : null,
+        U = fp ? fp.L.map((k, j) => [baseOf(k), fp.u[j]]).filter(([k]) => k !== id) : [];
+      R.forEach((r, i) => {
+        if (r.p !== id) return;
+        const w = fs ? fs.w[fs.start[i]] : 0,
+          q0 = U.length ? mean(U.map(([k, u]) => sig(M.eta[i] + u + (sl ? (sl.get(k) || 0) * w : 0)))) : sig(M.eta[i]);
+        P[i] = clamp(g(r) + (1 - g(r)) * q0, 1e-6, 1 - 1e-6);
+      });
+    } catch (e) {
+      void e;
+    } finally {
+      HOLD = null;
+      FAST = false;
+    }
+    return P;
+  }
+  function checkOf(R, fit, g, seed, cmp) {
+    const cnt = new Map();
+    R.forEach(r => !r.gone && cnt.set(r.p, (cnt.get(r.p) || 0) + 1));
+    const ids = [...cnt.keys()].filter(p => cnt.get(p) >= 20).sort();
+    if (ids.length < 3 || R.length < 200) return null;
+    const P = new Float64Array(R.length).fill(NaN);
+    ids.forEach(id => predictOut(R, fit, g, id, true, P));
+    const I = R.map((r, i) => i).filter(i => isFinite(P[i]));
+    if (I.length < 100) return null;
+    const S = I.slice().sort((a, b) => P[a] - P[b] || a - b),
+      cal = Array.from({length: CHK_BANDS}, (_, k) => {
+        const L = S.slice(Math.floor((k * S.length) / CHK_BANDS), Math.floor(((k + 1) * S.length) / CHK_BANDS));
+        return [L.length, r3(mean(L.map(i => R[i].y))), r3(mean(L.map(i => P[i]))), r3(P[L[0]]), r3(P[L[L.length - 1]])];
+      }),
+      U = rng((seed || 1) + 777),
+      u = I.map(i => (R[i].y ? 1 - P[i] + U() * P[i] : U() * (1 - P[i]))),
+      qq = CHK_Q.map(p => [p, r3(q(u, p))]);
+    const by = new Map();
+    I.forEach(i => {
+      const r = R[i];
+      if (!cmp || r.E == null || !isFinite(r.E)) return;
+      const e = clamp(r.E, 1e-6, 1 - 1e-6),
+        ll = x => -(r.y ? Math.log(x) : Math.log(1 - x));
+      (by.get(r.p) || by.set(r.p, []).get(r.p)).push(ll(P[i]) - ll(e));
+    });
+    const d = [...by.values()].filter(L => L.length >= 10).map(mean);
+    let ll = null;
+    if (d.length >= 3) {
+      const m = mean(d),
+        se = Math.sqrt(sum(d.map(v => (v - m) ** 2)) / (d.length - 1) / d.length),
+        h = t975(d.length - 1) * se;
+      ll = {d: r3e(m), lo: r3e(m - h), hi: r3e(m + h), p: sig3(signFlip(d)), players: d.length};
+    }
+    return {n: I.length, players: ids.length, cal, qq, ll};
+  }
+  const r3e = v => (v == null || !isFinite(v) ? null : Number(v.toPrecision(3)));
+  // A Gaussian model's check (Answer time): its residuals in the fit (not left out: the time model's players are many
+  // answers each), standardized, at the normal's CHK_Q quantiles (a straight line: log time is as normal as the model says).
+  function checkLmm(M, y, X) {
+    if (!M || !M.F) return null;
+    const N = y.length,
+      z = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      let v = y[i];
+      for (let a = 0; a < X[0].length; a++) v -= X[i][a] * (isFinite(M.b[a]) ? M.b[a] : 0);
+      M.F.forEach(f => {
+        for (let k = f.start[i]; k < f.start[i + 1]; k++) v -= f.w[k] * f.u[f.lev[k]];
+      });
+      z[i] = v / Math.sqrt(M.s2 || 1);
+    }
+    const L = Array.from(z);
+    return {n: N, qq: CHK_Q.map(p => [r3(nq(p)), r3(q(L, p))])};
+  }
+
+  /* ---------- Interactions: does one effect depend on another? (the multifactor visualisation study, §5 item 6) ---------- */
+  // The upper tail of a chi-square with k degrees of freedom: Q(k/2, x/2), the regularized incomplete gamma (its series
+  // below a + 1, its continued fraction above: Numerical Recipes 6.2), with Lanczos's log gamma.
+  function lgam(z) {
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = z,
+      t = z + 5.5,
+      s = 1.000000000190015;
+    t -= (z + 0.5) * Math.log(t);
+    c.forEach(v => (s += v / ++y));
+    return -t + Math.log((2.5066282746310005 * s) / z);
+  }
+  function chi2q(x, k) {
+    if (!(x > 0)) return 1;
+    if (!isFinite(x)) return 0;
+    const a = k / 2,
+      y = x / 2,
+      ln = a * Math.log(y) - y - lgam(a);
+    if (y < a + 1) {
+      let t = 1 / a,
+        s = t;
+      for (let n = 1; n < 1000 && Math.abs(t) > Math.abs(s) * 1e-15; n++) ((t *= y / (a + n)), (s += t));
+      return clamp(1 - s * Math.exp(ln), 0, 1);
+    }
+    let b = y + 1 - a,
+      c = 1e300,
+      d = 1 / b,
+      h = d;
+    for (let i = 1; i < 1000; i++) {
+      const an = -i * (i - a);
+      b += 2;
+      d = an * d + b;
+      c = b + an / c;
+      if (Math.abs(d) < 1e-300) d = 1e-300;
+      if (Math.abs(c) < 1e-300) c = 1e-300;
+      d = 1 / d;
+      h *= d * c;
+      if (Math.abs(d * c - 1) < 1e-15) break;
+    }
+    return clamp(Math.exp(ln) * h, 0, 1);
+  }
+  // The chi-square value with upper tail p (bisection on chi2q).
+  function chi2inv(p, k) {
+    let lo = 0,
+      hi = Math.max(10, 4 * k);
+    while (chi2q(hi, k) > p) hi *= 2;
+    for (let i = 0; i < 100; i++) {
+      const m = (lo + hi) / 2;
+      if (chi2q(m, k) > p) lo = m;
+      else hi = m;
+    }
+    return (lo + hi) / 2;
+  }
+  // b' V^-1 b, and the covariance of bootstrap draws (rows of equal length).
+  const quad = (b, V) => {
+    const s = solve(
+      V.map(r => r.slice()),
+      b
+    );
+    return Math.max(0, sum(b.map((v, i) => v * s[i])));
+  };
+  const covOf = L => {
+    const k = L[0].length,
+      m = L[0].map((_, j) => mean(L.map(r => r[j])));
+    return m.map((_, a) => m.map((__, c) => sum(L.map(r => (r[a] - m[a]) * (r[c] - m[c]))) / (L.length - 1)));
+  };
+  // A linear combination c'b of a fit's fixed effects with its 95% interval from the model's covariance (plus a random
+  // effect's conditional variance cv, when the combination holds one).
+  const lin = (M, c, u = 0, cv = 0) => {
+    const est = sum(c.map((v, a) => v * M.b[a])) + u,
+      va = sum(c.map((v, a) => sum(c.map((w, d) => v * w * (M.V ? M.V[a][d] : 0))))) + cv,
+      se = Math.sqrt(Math.max(0, va));
+    return [r3(est), r3(est - Z * se), r3(est + Z * se)];
+  };
+  // The omnibus test of an interaction: do the coefficients of its product columns (cols, in the fit M) all vanish? A
+  // Wald chi-square from the model's covariance and, with BIX_MIN bootstrap draws or more (over players: the same cluster
+  // bootstrap, BIX draws, a covariance needs some 200: Efron & Tibshirani 1993), from the draws' covariance; the larger p
+  // of the two, as the wider of the two intervals elsewhere (p0). One test per interaction, exploratory (correct: the
+  // Benjamini-Hochberg family; Pierre's primary effects stay those of Q69). inm: every product coefficient inside the
+  // smallest effect that matters with its 95% interval (the wider of the two): "no difference that would matter".
+  const BIX = 199,
+    BIX_MIN = 50,
+    IX_N = 30; // answers (offers) a level needs to enter an interaction
+  function ixTest(k, M, cols, draws, n, sesoi = 0.25) {
+    const df = cols.length;
+    if (!df || !M.V || cols.some(c => !isFinite(M.b[c]))) return null;
+    const b = cols.map(c => M.b[c]),
+      Vm = cols.map(a => cols.map(c => M.V[a][c])),
+      Wm = quad(b, Vm),
+      pm = chi2q(Wm, df),
+      D = (draws || []).filter(r => r.every(isFinite)),
+      Vb = D.length >= BIX_MIN ? covOf(D) : null,
+      Wb = Vb ? quad(b, Vb) : null,
+      pb = Vb ? chi2q(Wb, df) : null,
+      se = b.map((_, i) => Math.sqrt(Math.max(Vm[i][i], Vb ? Vb[i][i] : 0)));
+    return {
+      k,
+      ix: 1,
+      df,
+      W: r3(Vb && Wb < Wm ? Wb : Wm),
+      pm: sig3(pm),
+      pb: sig3(pb),
+      p0: Math.max(pm, pb == null ? 0 : pb),
+      draws: D.length,
+      n,
+      sesoi,
+      b: b.map(r3),
+      se: se.map(r3),
+      inm: b.every((v, i) => Math.abs(v) + Z * se[i] <= sesoi) ? 1 : 0
+    };
+  }
+  // The draws of an interaction's product coefficients: the cluster bootstrap over players (boot) of fit(S).b[cols];
+  // BIX draws for the latest milestone (B = BOOT), BIX_MIN for the earlier ones and Recompute here (B = 199), so the
+  // three interactions add about a sixth to the Action's time at the latest milestone (estimated from 60 draws on 7,200
+  // synthetic answers, 2026-11-09).
+  const ixB = B => (B >= BOOT ? BIX : B >= 199 ? BIX_MIN : 0);
+  function ixDraws(D, fit, cols, B, seed) {
+    if (!ixB(B)) return null;
+    const L = [];
+    boot(
+      D,
+      S => {
+        // not the estimate on the sample itself (boot's BSE call, Recompute here): draws only
+        if (S === D) return null;
+        const b = fit(S).b;
+        L.push(cols.map(c => b[c]));
+        return null;
+      },
+      ixB(B),
+      seed
+    );
+    return L;
+  }
+  // Enlarging × the view shown (Enlarging photos): the Zoom model with each view's own level and its own effect of
+  // enlarging (against a colony photo), views with IX_N answers and 5 enlarged or more. Lines: for each view, the
+  // log-odds against the app's expectation, not enlarged and enlarged (the player at their own habit).
+  const IX_V = ['medium', 'macro', 'multi'];
+  function zoomIxFit(D, L) {
+    const rate = {};
+    D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
+    const rc = centre(D.map(a => rate[a.p][0] / rate[a.p][1])),
+      X = D.map((a, i) => {
+        const rel = a.z - rate[a.p][0] / rate[a.p][1],
+          v = L.map(x => (a.qv === x ? 1 : 0));
+        return [1, rel, rc[i], ...v, ...v.map(x => x * rel)];
+      });
+    return glmm(
+      D.map(a => a.y),
+      X,
+      [
+        factor(
+          'player',
+          D.map(a => a.p)
+        )
+      ],
+      {off: Float64Array.from(D.map(a => a.x)), g: Float64Array.from(D.map(a => a.g0))}
+    );
+  }
+  function zoomIx(D0, B, seed) {
+    const cnt = {};
+    D0.forEach(a => {
+      const c = (cnt[a.qv] = cnt[a.qv] || [0, 0]);
+      c[0]++;
+      c[1] += a.z;
+    });
+    const ok = v => cnt[v] && cnt[v][0] >= IX_N && cnt[v][1] >= 5,
+      L = IX_V.filter(ok);
+    if (!ok('wide') || !L.length) return null;
+    const D = D0.filter(a => a.qv === 'wide' || L.includes(a.qv)),
+      k = L.length,
+      M = zoomIxFit(D, L),
+      cols = L.map((_, j) => 3 + k + j),
+      t = ixTest(
+        'view',
+        M,
+        cols,
+        ixDraws(D, S => zoomIxFit(S, L), cols, B, seed),
+        D.length
+      );
+    if (!t) return null;
+    // enlarging is read against the player's own habit (rel = z - the player's rate): for a player at the typical rate rb
+    // (the rows' mean, as the habit column is centred on), not enlarging is rel = -rb, enlarging 1 - rb (Codex review #829)
+    const rate = {};
+    D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
+    const rb = mean(D.map(a => rate[a.p][0] / rate[a.p][1])),
+      cz = (j, rel) => [1, rel, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map((_, i) => (i === j - 1 ? rel : 0))],
+      c0 = j => cz(j, -rb),
+      c1 = j => cz(j, 1 - rb);
+    t.lv = ['wide', ...L].map((v, j) => ({
+      k: v,
+      n: cnt[v][0],
+      z: cnt[v][1],
+      off: lin(M, c0(j)),
+      on: lin(M, c1(j)),
+      d: lin(
+        M,
+        c1(j).map((x, i) => x - c0(j)[i])
+      )
+    }));
+    return t;
+  }
+  // The pair × the view shown (Genera mixed up; ROADMAP "Analyses: next views"): where a miss goes, by view, pair by pair.
+  // Among the questions missed with choices, each wrong genus offered is a chance to be the one picked (the Confusions
+  // model on missed questions only: the view's main effect on missing is the photo analysis's; asked on every offer, a
+  // pair often mixed up would show a "pair × view" effect from the log-odds scale alone, as misses rise on harder views),
+  // with, for the IX_PAIRS pairs most offered together on a colony and on another view (IX_N offers each), the pair's own
+  // effect of each such view. Lines: each pair's chance to be the one picked, by view (its own effect included), and a
+  // typical pair's.
+  const IX_PAIRS = 6,
+    IX_NM = 20; // offers on missed questions a pair needs on a view
+  function missRows(A) {
+    const E = [];
+    A.forEach(a => {
+      if (a.typed || a.y || a.ch.length < 2 || !a.ch.includes(a.a)) return;
+      a.ch.forEach(c => {
+        if (c === a.g) return;
+        E.push({p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
+      });
+    });
+    return E;
+  }
+  function confIxFit(E, P) {
+    const X = E.map(e => {
+      const v = [e.qv === 'medium' ? 1 : 0, e.qv === 'macro' ? 1 : 0, e.qv === 'multi' ? 1 : 0];
+      return [1, ...v, Math.log(e.k - 1), ...P.map(([pr, w]) => (e.pair === pr && e.qv === w ? 1 : 0))];
+    });
+    return glmm(
+      E.map(e => e.y),
+      X,
+      [
+        factor(
+          'pair',
+          E.map(e => e.pair)
+        ),
+        factor(
+          'player',
+          E.map(e => e.p)
+        )
+      ],
+      {tau0: 0.3}
+    );
+  }
+  function confIx(A, B, seed) {
+    const E = missRows(A),
+      by = {};
+    E.forEach(e => {
+      const o = (by[e.pair] = by[e.pair] || {k: e.pair, off: 0, mix: 0, v: {}}),
+        w = e.qv || 'wide',
+        c = (o.v[w] = o.v[w] || [0, 0]);
+      o.off++;
+      o.mix += e.y;
+      c[0]++;
+      c[1] += e.y;
+    });
+    const top = Object.values(by)
+      .filter(o => o.v.wide && o.v.wide[0] >= IX_NM && IX_V.some(w => o.v[w] && o.v[w][0] >= IX_NM))
+      .sort((a, b) => b.off - a.off || (a.k < b.k ? -1 : 1))
+      .slice(0, IX_PAIRS);
+    const P = top.flatMap(o => IX_V.filter(w => o.v[w] && o.v[w][0] >= IX_NM).map(w => [o.k, w]));
+    if (!P.length) return null;
+    const fit = S => confIxFit(S, P),
+      M = fit(E),
+      cols = P.map((_, j) => 5 + j),
+      t = ixTest('pairview', M, cols, ixDraws(E, fit, cols, B, seed), E.length);
+    if (!t) return null;
+    const Fp = M.F[0],
+      pj = new Map(Fp.L.map((x, j) => [x, j])),
+      base = w => [1, w === 'medium' ? 1 : 0, w === 'macro' ? 1 : 0, w === 'multi' ? 1 : 0, Math.log(3)],
+      views = ['wide', ...IX_V.filter(w => P.some(x => x[1] === w))];
+    t.views = views;
+    t.typ = views.map(w => lin(M, [...base(w), ...P.map(() => 0)]));
+    t.pairs = top.map(o => {
+      const j = pj.get(o.k);
+      return {
+        k: o.k,
+        off: o.off,
+        mix: o.mix,
+        v: views.map(w => {
+          const at = P.findIndex(x => x[0] === o.k && x[1] === w);
+          return [
+            w,
+            o.v[w] ? o.v[w][0] : 0,
+            o.v[w] ? o.v[w][1] : 0,
+            ...(w === 'wide' || at >= 0
+              ? lin(M, [...base(w), ...P.map((_, i) => (i === at ? 1 : 0))], Fp.u[j], Fp.cv[j])
+              : [null, null, null])
+          ];
+        })
+      };
+    });
+    return t;
+  }
+  // The format × practice (Learning with practice): the Learning model with a two-choice level, and the practice slope of
+  // two-choice and typed questions apart from that of four choices (formats with 100 answers or more, answered at more
+  // than one level of practice). Lines: the log-odds of recognising beyond guessing by practice, per format.
+  const IX_F = [
+      ['four', '4 choices'],
+      ['two', '2 choices'],
+      ['typed', 'Typed']
+    ],
+    IX_GRID = [0, 1, 2, 4, 8, 16, 32];
+  const fgOf = a => (a.typed ? 'typed' : a.f === 'again' || a.f === 'qduel' || a.f === 'duel' ? 'two' : 'four');
+  function lnIxFit(D, L) {
+    const X = D.map(a => {
+      const l = Math.log(1 + a.n),
+        g = fgOf(a);
+      return [
+        1,
+        l,
+        a.afterMiss,
+        a.afterAgain,
+        a.typed,
+        a.exam,
+        a.back,
+        L.includes('two') && g === 'two' ? 1 : 0,
+        ...L.map(x => (g === x ? l : 0))
+      ];
+    });
+    // the Learning model's random slopes too (lnFit), so a format's slope is not read off a few players' own
+    const l0 = D.map(a => Math.log(1 + a.n)),
+      lc = mean(l0);
+    return glmm(
+      D.map(a => a.y),
+      X,
+      [
+        factor(
+          'player',
+          D.map(a => a.p)
+        ),
+        factor(
+          'genus',
+          D.map(a => a.g)
+        ),
+        factor(
+          'player slope',
+          D.map(a => a.p),
+          l0.map(v => v - lc)
+        ),
+        factor(
+          'genus slope',
+          D.map(a => a.g),
+          l0.map(v => v - lc)
+        )
+      ],
+      {g: Float64Array.from(D.map(a => a.g0))}
+    );
+  }
+  function lnIx(D, B, seed) {
+    const cnt = {};
+    D.forEach(a => {
+      const g = fgOf(a),
+        c = (cnt[g] = cnt[g] || {n: 0, s: new Set()});
+      c.n++;
+      c.s.add(a.n); // every practice count it was asked at (Codex review #829: capped at 2, later practice read as none)
+    });
+    const ok = g => cnt[g] && cnt[g].n >= 100 && cnt[g].s.size > 1,
+      L = ['two', 'typed'].filter(ok);
+    if (!ok('four') || !L.length) return null;
+    const fit = S => lnIxFit(S, L),
+      M = fit(D),
+      cols = L.map((_, j) => 8 + j),
+      t = ixTest('fmtpractice', M, cols, ixDraws(D, fit, cols, B, seed), D.length);
+    if (!t) return null;
+    t.grid = IX_GRID;
+    t.lv = IX_F.filter(([g]) => g === 'four' || L.includes(g)).map(([g, label]) => ({
+      k: g,
+      label,
+      n: cnt[g].n,
+      pts: IX_GRID.map(x => {
+        const l = Math.log(1 + x);
+        return [x, ...lin(M, [1, l, 0, 0, g === 'typed' ? 1 : 0, 0, 0, g === 'two' ? 1 : 0, ...L.map(y => (y === g ? l : 0))])];
+      })
+    }));
+    return t;
+  }
+  // The interactions an analysis carries (the ones that could be fitted).
+  const ixOf = L => {
+    const T = L.filter(Boolean);
+    return T.length ? T : undefined;
+  };
+
   /* ---------- 5. Confusions: pair × view, each player against the pooled rates ---------- */
   const CF_X = [
     ['medium', 'Close-up shown (vs colony)'],
@@ -1269,7 +1816,14 @@
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
       ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
-      map: mixMap(E, M, F)
+      map: mixMap(E, M, F),
+      ix: ixOf([confIx(A, B, seed + 31)]),
+      chk: checkOf(
+        E,
+        S => confFit(S).M,
+        () => 0,
+        seed
+      )
     };
   }
 
@@ -1349,8 +1903,14 @@
     ['back', 'Comeback question']
   ];
   const MASTER = 0.8; // mastery = 80% recognised beyond guessing, the app's target success
+  // Random practice slopes (Pierre, 2026-11-04, ROADMAP "Analyses: next views": per-genus learning slopes; 2026-11-05,
+  // the player profiles' learning slope): each player and each genus its own slope on log(1 + answers on the genus),
+  // around the common one, uncorrelated with its own level (lme4's (1 | g) + (0 + x | g)); the covariate centred on the
+  // answers' mean (lc), so each level stays the level at typical practice. F: player, genus, player slope, genus slope.
   function lnFit(D) {
-    const X = D.map(a => [1, Math.log(1 + a.n), a.afterMiss, a.afterAgain, a.typed, a.exam, a.back]),
+    const L = D.map(a => Math.log(1 + a.n)),
+      lc = mean(L),
+      X = D.map((a, i) => [1, L[i], a.afterMiss, a.afterAgain, a.typed, a.exam, a.back]),
       F = [
         factor(
           'player',
@@ -1359,6 +1919,16 @@
         factor(
           'genus',
           D.map(a => a.g)
+        ),
+        factor(
+          'player slope',
+          D.map(a => a.p),
+          L.map(v => v - lc)
+        ),
+        factor(
+          'genus slope',
+          D.map(a => a.g),
+          L.map(v => v - lc)
         )
       ];
     const M = glmm(
@@ -1367,24 +1937,30 @@
       F,
       {g: Float64Array.from(D.map(a => a.g0))}
     );
-    return {M, F, X};
+    return {M, F, X, lc};
   }
+  // A genus's (or player's) own intercept and slope on log(1 + answers): b0 + u - v lc and b1 + v (the slope's weight is
+  // log(1 + answers) - lc).
+  const ownLine = (M, lc, u = 0, v = 0) => [M.b[0] + u - v * lc, M.b[1] + v];
   // Answers to reach MASTER: 0 when the start is already there, whatever the slope (Codex review #441); 999 = not
   // reached (a flat or falling slope below it).
   // 95% interval of the answers to MASTER from the joint uncertainty of the intercept and the slope (their covariance in
   // the fit, V: 2 x 2) and of the genus's own effect (u, its conditional variance cv): seeded draws (Codex review #441:
   // varying the slope alone gave [0, 0] for an intercept above the target whatever its own uncertainty).
-  function masterCI(b0, b1, V, u = 0, cv = 0, seed = 1) {
+  function masterCI(b0, b1, V, u = 0, cv = 0, seed = 1, sl = null) {
     const R = rng(seed),
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       a = Math.sqrt(Math.max(0, V[0][0])),
       c = a ? V[1][0] / a : 0,
       d = Math.sqrt(Math.max(0, V[1][1] - c * c)),
       L = [];
+    // sl: [cv of the own slope, lc] (lnFit): b0 and b1 are then the own line (ownLine), the slope's draw moving both
     for (let k = 0; k < 1000; k++) {
       const z1 = nrm(),
-        z2 = nrm();
-      L.push(toMaster(b0 + a * z1, b1 + c * z1 + d * z2, u + Math.sqrt(Math.max(0, cv)) * nrm()));
+        z2 = nrm(),
+        uu = u + Math.sqrt(Math.max(0, cv)) * nrm(),
+        dv = sl ? Math.sqrt(Math.max(0, sl[0])) * nrm() : 0;
+      L.push(toMaster(b0 + a * z1 - dv * (sl ? sl[1] : 0), b1 + c * z1 + d * z2 + dv, uu));
     }
     return [q(L, 0.025), q(L, 0.975)];
   }
@@ -1396,9 +1972,13 @@
   // the app chose for it included). A genus level with a player: about 50% recognised beyond guessing; 80% when the player
   // sits logit(0.8) above it (the app's target). A snapshot of the bank's reach, not of the questions asked: the app aims
   // near 80%, so it makes players and genera meet. th: [id, place, answers, SE]; g: [genus, difficulty, answers, SE].
-  function wrightOf(D, M, F) {
+  // From random slopes (lnFit): each place at its own slope too, the slope's conditional variance in its SE.
+  function wrightOf(D, M, F, lc = 0) {
     const P = F[0],
       G = F[1],
+      PS = F[2],
+      GS = F[3],
+      vs = (f, j) => (f ? [f.u[j], f.cv[j]] : [0, 0]),
       by = new Map(),
       cnt = {},
       gone = goneOf(D);
@@ -1428,9 +2008,39 @@
         live.map(j => lp[j]),
         0.5
       ); // the typical player: the median current practice, their own effect 0
+    const pj = PS ? new Map(PS.L.map((k, j) => [k, j])) : null,
+      gj = GS ? new Map(GS.L.map((k, j) => [k, j])) : null;
     return {
-      th: live.map(j => [P.L[j], r3(M.b[0] + M.b[1] * lp[j] + P.u[j]), by.get(P.L[j]).length, r3(Math.sqrt(fixVar(lp[j]) + P.cv[j]))]),
-      g: G.L.map((x, j) => [x, r3(-G.u[j]), cnt[x], r3(Math.sqrt(fixVar(lt) + G.cv[j]))]),
+      th: live.map(j => {
+        const [v, cvv] = vs(PS, pj && pj.get(P.L[j])),
+          d = lp[j] - lc;
+        return [
+          P.L[j],
+          r3(M.b[0] + M.b[1] * lp[j] + P.u[j] + v * d),
+          by.get(P.L[j]).length,
+          r3(Math.sqrt(fixVar(lp[j]) + P.cv[j] + cvv * d * d))
+        ];
+      }),
+      // + the lowest and highest chance (log-odds beyond guessing) the model gives a player on the genus, each player at
+      // their own practice with their own slope and the genus's (Codex review #830: a place read off the typical practice
+      // alone dropped the genus slope times each player's distance to it, so "every player" could be wrong)
+      g: G.L.map((x, j) => {
+        const [v, cvv] = vs(GS, gj && gj.get(x)),
+          d = lt - lc,
+          own = live.map(i => {
+            const [vp] = vs(PS, pj && pj.get(P.L[i])),
+              di = lp[i] - lc;
+            return M.b[0] + M.b[1] * lp[i] + P.u[i] + vp * di + G.u[j] + v * di;
+          });
+        return [
+          x,
+          r3(-G.u[j] - v * d),
+          cnt[x],
+          r3(Math.sqrt(fixVar(lt) + G.cv[j] + cvv * d * d)),
+          r3(Math.min(...own)),
+          r3(Math.max(...own))
+        ];
+      }),
       mid: r3(M.b[0] + M.b[1] * lt), // the typical player's place: a genus's chance for them is sig(mid - difficulty)
       m: r3(logit(MASTER))
     };
@@ -1501,19 +2111,74 @@
       p: pl.map((p, j) => [p, ...ax.map(a => r3(a.vec[j] * Math.sqrt(a.val)))])
     };
   }
+  // Per-genus learning curves (the study's §5 item 7; ROADMAP "Analyses: next views", per-genus learning slopes): for
+  // each genus, its own slope (the common one + its random slope, with the fit's variance of the common slope and the
+  // random slope's conditional variance), its chance of recognising it beyond guessing at the typical player's current
+  // practice (as the Wright map), and, by the answers already given on it (BINS), the right answers against the fitted
+  // chance (the model's own prediction of each answer, its player and photo set included). Flat: a slope clearly under
+  // the smallest that matters (0.1 per log answer), one-sided, after a Benjamini-Hochberg correction over the genera
+  // (a lead: two forms to teach apart?). Sorted by how far below the app's 80% target each one stays.
+  const LN_BINS = [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 4],
+    [5, 8],
+    [9, 16],
+    [17, 32],
+    [33, 1e9]
+  ];
+  function gcurveOf(D, M, F, lc) {
+    const G = F[1],
+      GS = F[3],
+      by = new Map(G.L.map((g, j) => [g, {j, R: []}])),
+      lp = [];
+    D.forEach((a, i) => by.get(a.g).R.push(i));
+    const pl = new Map();
+    D.forEach(a => !a.gone && (pl.get(a.p) || pl.set(a.p, []).get(a.p)).push(a.n));
+    pl.forEach(L => lp.push(Math.log(1 + q(L.slice(-PROF_N), 0.5))));
+    const lt = lp.length ? q(lp, 0.5) : lc,
+      v11 = M.V ? M.V[1][1] : 0,
+      L = G.L.map(g => {
+        const {j, R} = by.get(g),
+          own = ownLine(M, lc, G.u[j], GS.u[j]),
+          se = Math.sqrt(Math.max(0, v11 + GS.cv[j])),
+          players = new Set(R.filter(i => !D[i].gone).map(i => D[i].p)).size;
+        return {
+          k: g,
+          n: R.length,
+          players,
+          sl: [r3(own[1]), r3(own[1] - Z * se), r3(own[1] + Z * se)],
+          pf: (z => (z < 0 ? ntail(z) : 1 - ntail(z)))((own[1] - 0.1) / Math.max(se, 1e-9)),
+          at: r3(sig(own[0] + own[1] * lt)),
+          b: LN_BINS.map(([lo, hi]) => {
+            const S = R.filter(i => D[i].n >= lo && D[i].n <= hi);
+            return S.length ? [lo, S.length, sum(S.map(i => D[i].y)), r3(sum(S.map(i => D[i].g0 + (1 - D[i].g0) * sig(M.eta[i]))))] : null;
+          }).filter(Boolean),
+          line: [r3(own[0]), r3(own[1])]
+        };
+      });
+    // one-sided p of "its slope is at least 0.1" (pf: small when the slope lies clearly below), corrected over the genera
+    const pa = bh(L.map(x => x.pf));
+    L.forEach((x, i) => {
+      x.flat = pa[i] <= FDR ? 1 : 0;
+      delete x.pf;
+    });
+    return {lt: r3(lt), lc: r3(lc), m: MASTER, g: L.sort((a, b) => a.at - b.at || (a.k < b.k ? -1 : 1))};
+  }
   function learning(A, B, seed) {
     const D = A;
     if (D.length < 200) return thin(D.length, 200);
-    const {M, F, X} = lnFit(D),
+    const {M, F, X, lc} = lnFit(D),
       n = D.length,
       bi = boot(
         D,
         S => {
           const r = lnFit(S),
-            o = {};
+            o = {sd_pslope: Math.sqrt(r.F[2].tau2), sd_gslope: Math.sqrt(r.F[3].tau2)};
           LN_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
           o.n_all = toMaster(r.M.b[0], r.M.b[1], 0);
-          r.F[1].L.forEach((g, j) => (o['n:' + g] = toMaster(r.M.b[0], r.M.b[1], r.F[1].u[j])));
+          r.F[1].L.forEach((g, j) => (o['n:' + g] = toMaster(...ownLine(r.M, r.lc, 0, r.F[3].u[j]), r.F[1].u[j])));
           return o;
         },
         B,
@@ -1522,6 +2187,9 @@
     const effects = LN_X.map(([k, l], j) =>
       eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', k === 'slope' ? 0.1 : 0.25, n, {rows: M.nz[j + 1]})
     );
+    // how much the learning slope differs between genera and between players (random slopes; spreads are never primary)
+    effects.push(sdEff('sd_gslope', 'SD genus learning slope', F[3].tau2, F[3].n, bi, 'logit', 0.1, n, mean([...F[3].cv])));
+    effects.push(sdEff('sd_pslope', 'SD player learning slope', F[2].tau2, F[2].n, bi, 'logit', 0.1, n, mean([...F[2].cv])));
     // Not in the answer log: the first-meeting card and the side-by-side comparison leave no row (ROADMAP).
     effects.push({k: 'card', label: 'First-meeting card', v: 'nolog', n});
     effects.push({k: 'side', label: 'Side-by-side comparison', v: 'nolog', n});
@@ -1537,14 +2205,14 @@
       [M.V[0][0], M.V[0][1]],
       [M.V[1][0], M.V[1][1]]
     ];
-    const genus = G.L.map((g, j) => {
-      const est = toMaster(M.b[0], M.b[1], G.u[j]),
-        sdu = Math.sqrt(G.cv[j]);
-      let [lo, hi] = masterCI(M.b[0], M.b[1], V2, G.u[j], G.cv[j], j + 1);
-      void sdu;
-      if (bi && bi['n:' + g]) ((lo = Math.min(lo, bi['n:' + g][0])), (hi = Math.max(hi, bi['n:' + g][1])));
-      return {k: g, n: cnt[g].n, players: cnt[g].p.size, right: cnt[g].y / cnt[g].n, u: G.u[j], est, lo, hi};
-    }).sort((a, b) => a.est - b.est);
+    const GS = F[3],
+      genus = G.L.map((g, j) => {
+        const own = ownLine(M, lc, 0, GS.u[j]),
+          est = toMaster(own[0], own[1], G.u[j]);
+        let [lo, hi] = masterCI(own[0], own[1], V2, G.u[j], G.cv[j], j + 1, [GS.cv[j], lc]);
+        if (bi && bi['n:' + g]) ((lo = Math.min(lo, bi['n:' + g][0])), (hi = Math.max(hi, bi['n:' + g][1])));
+        return {k: g, n: cnt[g].n, players: cnt[g].p.size, right: cnt[g].y / cnt[g].n, u: G.u[j], est, lo, hi};
+      }).sort((a, b) => a.est - b.est);
     const BINS = [
       [0, 0],
       [1, 1],
@@ -1589,8 +2257,16 @@
       b0: M.b[0],
       b1: M.b[1],
       ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])]),
-      wright: wrightOf(D, M, F),
-      res: resOf(D, M, F, seed)
+      wright: wrightOf(D, M, F, lc),
+      res: resOf(D, M, F, seed),
+      gcurve: gcurveOf(D, M, F, lc),
+      chk: checkOf(
+        D,
+        S => lnFit(S).M,
+        a => a.g0,
+        seed
+      ),
+      ix: ixOf([lnIx(D, B, seed + 31)])
     };
   }
 
@@ -1664,7 +2340,18 @@
         prevE: mean(S.map(a => a.prev.E))
       };
     });
-    return {n, far: far.length, back: C.length, players: players(D), typ: typOf(D), effects, bands, b0: M.b[0], b1: M.b[1]};
+    return {
+      n,
+      far: far.length,
+      back: C.length,
+      players: players(D),
+      typ: typOf(D),
+      effects,
+      bands,
+      b0: M.b[0],
+      b1: M.b[1],
+      chk: checkOf(D, backFit, a => a.g0, seed, true)
+    };
   }
 
   /* ---------- 8. Sessions: how long they last and what ends them (discrete-time survival) ---------- */
@@ -2021,6 +2708,7 @@
       km: curve,
       at: [5, 10, 20, 40, 80].map(k => ({k, s: at(k)})),
       desc,
+      chk: checkOf(rows, ssFit, () => 0, seed),
       ent: entOf(
         M.V,
         rows.map(r => r.X),
@@ -2048,12 +2736,13 @@
     ['stop', 'Stopping after misses'], // extra chance to end the session after 2+ misses in a row, against after other answers (points)
     ['len', 'Session length'], // median answers per session (log for the map)
     ['wk', 'Sessions per week'], // sessions per week over the window (at least a week; log for the map)
-    ['eve', 'Evening play'] // share of answers from 17:00 to midnight, Manila time
+    ['eve', 'Evening play'], // share of answers from 17:00 to midnight, Manila time
+    ['slope', 'Learning slope'] // the player's own slope in the Learning model (lnFit, random slopes) on all their answers
   ];
   // The behaviours of every player in D (any set of answers, prep's shape, in time order): {id: [value or null per
   // PROF_F]}. Kept apart from the window so a later analysis can run it on successive windows of a player's history
   // (Pierre, 2026-11-05: whole-history trajectories are a later level).
-  function profFeat(D) {
+  function profFeat(D, slopes) {
     const by = new Map();
     D.forEach(a => (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
     const out = {},
@@ -2073,6 +2762,8 @@
         FAST = false;
       }
     }
+    // the learning slope, given (slopes: {id: slope}, profiles: from all the player's answers)
+    if (slopes) ids.forEach(id => slopes[id] != null && (out[id][fi('slope')] = slopes[id]));
     // enlarging, net of the views: everyone's rate for the view shown is what the app's choice of photo predicts
     const vr = {};
     D.filter(a => a.z != null).forEach(a => {
@@ -2227,13 +2918,30 @@
       .map(L => [...new Set(L.map(i => ids[i]))])
       .filter(L => L.length);
   }
+  // Each player's own learning slope: the Learning model with random slopes (lnFit) on all the answers, the common slope
+  // + the player's own. A slope needs the whole range of practice: on the last PROF_N answers alone most answers come
+  // late, on genera already practised, and the slopes it gave did not follow the planted ones (2026-11-09).
+  function slopeOf(A) {
+    if (A.length < 200 || players(A) < 3) return null;
+    FAST = true;
+    try {
+      const {M, F} = lnFit(A),
+        o = {};
+      if (isFinite(M.b[1])) F[2].L.forEach((id, j) => (o[id] = M.b[1] + F[2].u[j]));
+      return o;
+    } catch (e) {
+      return null;
+    } finally {
+      FAST = false;
+    }
+  }
   function profiles(A, B, seed) {
     // a deleted account's answers (gone, sheet v55) make no profile (Pierre, 2026-11-05, Q86)
     const by = new Map();
     A.forEach(a => !a.gone && (by.get(a.p) || by.set(a.p, []).get(a.p)).push(a));
     const win = [...by.entries()].filter(([, L]) => L.length >= PROF_LOW).map(([id, L]) => [id, L.slice(-PROF_N)]),
       D = win.flatMap(([, L]) => L).sort((a, b) => a.t - b.t),
-      V0 = profFeat(D),
+      V0 = profFeat(D, slopeOf(A)),
       V = Object.fromEntries(Object.entries(V0).map(([id, L]) => [id, L.map((v, f) => profScale(PROF_F[f][0], v))])),
       cnt = Object.fromEntries(win.map(([id, L]) => [id, L.length])),
       main = win.filter(([id]) => cnt[id] >= PROF_MIN).map(([id]) => id),
@@ -2626,7 +3334,8 @@
   const TRUTH = {
     rt: {b0: 1.6, right: -0.35, typed: 0.4, enl: 0.6, two: -0.1, sdPlayer: 0.3, sdGenus: 0.15, sdPhoto: 0.2, sdRes: 0.45},
     ph: {medium: 0.3, macro: 0.7, fair: 0.25, poor: 0.7, sharp: -0.25, own: 0, inat: 0.35, alone: 0.5, sdPhoto: 0.3},
-    learn: {b0: -0.3, slope: 0.55, afterMiss: -0.3, again: 0.4},
+    // flatG: the first flatG genera are not learned with practice (slope 0; the tests of the per-genus curves plant it)
+    learn: {b0: -0.3, slope: 0.55, afterMiss: -0.3, again: 0.4, flatG: 0},
     fmt: {k2: [0.4, 0], typed: [0, -0.6], again: [0.5, 0.2]}, // [true guess rate, extra ease (logit, - = harder)]
     zoom: 0.3,
     mix: 4, // a wrong answer goes to a look-alike offered 4 times as often as to another genus offered (the mix-up map)
@@ -2635,9 +3344,13 @@
     // a photo's time intensity linked to its difficulty: + log seconds per logit of the photo's own difficulty (0: none;
     // the tests of Time and difficulty plant one)
     // blind: the share of a photo's own difficulty the app's expectation misses (0: the app knows it, up to its noise)
-    td: {link: 0, blind: 0}
+    td: {link: 0, blind: 0},
+    // interactions (0: none; the tests of the interactions plant them): enlarging on a corallite photo, on the log-odds;
+    // a look-alike's pull on a corallite photo for the even-numbered genera, on the log of its weight; the practice slope
+    // of typed answers, on top of the others'
+    ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0}
   };
-  // o: {players: [[id, ability, answers, enlarge rate]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
+  // o: {players: [[id, ability, answers, enlarge rate, own learning slope (added to the common one; optional)]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
   // start, end (ms), seed, subject}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
   // carries it in the Subject column (index 17, core.js LOG_SUBJ), as the sheet serves another subject's answers (the
   // fish: units f:Damselfishes, g:Chromis, photos of one view).
@@ -2647,8 +3360,8 @@
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
       // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
-      pickW = (L, look) => {
-        const w = L.map(x => (look.includes(x) ? T.mix : 1));
+      pickW = (L, look, pull = 1) => {
+        const w = L.map(x => (look.includes(x) ? T.mix * pull : 1));
         let r = R() * sum(w);
         return L.find((x, i) => (r -= w[i]) < 0) || L[L.length - 1];
       },
@@ -2679,7 +3392,8 @@
     const rows = [],
       span = (o.end || Date.now()) - (o.start || 0);
     o.players.forEach(([id, th, nAns, enl], pi) => {
-      const rp = nrm() * T.rt.sdPlayer,
+      const psl = o.players[pi][4] || 0, // the player's own learning slope (the profiles' tests plant it)
+        rp = nrm() * T.rt.sdPlayer,
         st = {};
       let t = (o.start || 0) + R() * span * 0.2,
         miss = 0,
@@ -2702,12 +3416,13 @@
             mean(ph.map(x => bph[x.f])) -
             (ph.length === 1 ? T.ph.alone : 0) +
             T.learn.b0 +
-            T.learn.slope * Math.log(1 + s.n) +
+            (G.indexOf(g) < T.learn.flatG ? 0 : T.learn.slope + psl) * Math.log(1 + s.n) +
             (s.miss && f !== 'again' ? T.learn.afterMiss + (s.again ? T.learn.again : 0) : 0) +
-            (s.last ? T.back * Math.log(1 + days) : 0),
+            (s.last ? T.back * Math.log(1 + days) : 0) +
+            (f === 'typed' ? T.ix.typedSlope * Math.log(1 + s.n) : 0),
           [cg, ez] = T.fmt[f] || [f === 'qduel' ? 0.5 : 0.25, 0],
           z = R() < enl * (p.v === 'wide' ? 1.5 : 0.6) ? 1 : 0,
-          e2 = eta + ez + (z ? T.zoom : 0),
+          e2 = eta + ez + (z ? T.zoom + (p.v === 'macro' ? T.ix.zoomMacro : 0) : 0),
           right = R() < cg + (1 - cg) * sig(e2) ? 1 : 0,
           look = (o.look[g] || []).filter(x => o.photos[x]),
           ch = [g];
@@ -2720,7 +3435,13 @@
         const app = f === 'typed' ? 0 : f === 'k2' ? 0.5 : f === 'k4' ? 0.25 : 0.5,
           // the app's expectation: its own estimate of eta (a little off), its fixed guess rate
           E = app + (1 - app) * sig(eta + T.td.blind * mean(ph.map(x => bph[x.f])) + nrm() * 0.1),
-          ans = right ? g : f === 'typed' ? (R() < 0.5 ? '' : pick(G)) : pickW(ch.slice(1), look),
+          ans = right
+            ? g
+            : f === 'typed'
+              ? R() < 0.5
+                ? ''
+                : pick(G)
+              : pickW(ch.slice(1), look, p.v === 'macro' && G.indexOf(g) % 2 === 0 ? Math.exp(T.ix.pairMacro) : 1),
           sec = Math.exp(
             T.rt.b0 +
               rp +
@@ -2895,7 +3616,9 @@
       exam: {name: 'Mastery exam questions instead of ordinary ones', o: 'right'},
       back: {name: 'Comeback questions after a break instead of ordinary ones', o: 'right'},
       card: {name: 'The first-meeting card', o: 'right'},
-      side: {name: 'The side-by-side comparison', o: 'right'}
+      side: {name: 'The side-by-side comparison', o: 'right'},
+      sd_gslope: {name: 'How much genera differ in how fast practice helps', o: 'right', who: 'genus', slope: 1},
+      sd_pslope: {name: 'How much players differ in how fast practice helps', o: 'right', who: 'player', slope: 1}
     },
     back: {
       slope: {
@@ -3031,6 +3754,19 @@
       g = P.o === 'right' ? T.g : 0,
       fin = v => v != null && isFinite(v);
     // A spread between players, genera, photos or pairs: the typical range, one spread either side of the average.
+    // A spread of the learning slope: the gain from twice as many answers, one spread either side of the common slope.
+    if (e.sd && P.slope) {
+      const b1 = a && isFinite(a.b1) ? a.b1 : 0,
+        gain = v => shiftP(T.p, T.g, LN2 * v) - T.p,
+        lo = gain(b1 - e.est),
+        hi = gain(b1 + e.est),
+        what = `a typical ${P.who} gains between ${ptsOf(lo)} and ${ptsOf(hi)} of right answers from twice as many answers on it`;
+      Object.assign(out, {scale: 'pts', base: gain(b1), val: e.est, lo, hi});
+      if (e.v === 'clear') ((out.tone = 'info'), (out.text = `They differ: ${what}.`));
+      else if (e.v === 'margin') ((out.tone = 'none'), (out.text = `They hardly differ: ${what}.`));
+      else out.text = `Too early to tell how much they differ (${what}, if the estimate holds).`;
+      return out;
+    }
     if (e.sd) {
       const who = P.who || 'one';
       let lo, hi, f;
@@ -3252,6 +3988,24 @@
     return Object.assign(e, {v: 'thin', need: isFinite(need) ? nice(need) : null});
   }
 
+  // The verdict of an interaction's omnibus test after its correction: clear when its adjusted p is at most the level;
+  // "no clear effect" when every product coefficient lies inside the margin (inm); else not enough data yet, with the
+  // answers that would carry it to either verdict if the pattern held (the Wald chi-square grows with the answers; the
+  // intervals shrink as 1/sqrt(n)).
+  function settleIx(e, pr, level) {
+    const pa = Math.min(1, pr),
+      lev = pr > 0 ? Math.min(level, (level * e.p) / pr) : level;
+    Object.assign(e, {pa: sig3(pa), p: sig3(e.p), need: null});
+    if (pa <= level) return Object.assign(e, {v: 'clear'});
+    if (e.inm) return Object.assign(e, {v: 'margin'});
+    const clear = e.W > 0 ? (e.n * chi2inv(lev, e.df)) / e.W : Infinity,
+      margin = e.b.every(v => Math.abs(v) < e.sesoi)
+        ? e.n * Math.max(...e.b.map((v, i) => ((Z * e.se[i]) / (e.sesoi - Math.abs(v))) ** 2))
+        : Infinity,
+      need = Math.max(e.n + 1, Math.min(clear, margin));
+    return Object.assign(e, {v: 'thin', need: isFinite(need) ? nice(need) : null});
+  }
+
   // Applies both corrections to one milestone's results (runAll): each tested effect gets its family (fam: 1 primary,
   // 2 secondary), p, adjusted p (pa) and final verdict; the milestone gets mt: how many tests in each family.
   function correct(res) {
@@ -3276,6 +4030,8 @@
         T.push(e);
       })
     );
+    // the interactions' omnibus tests (ixTest): exploratory, one p each
+    Object.values(res.A).forEach(a => (a.ix || []).forEach(e => e.p0 != null && ((e.fam = 2), (e.p = e.p0), T.push(e))));
     const L1 = T.filter(e => e.fam === 1),
       L2 = T.filter(e => e.fam === 2),
       a1 = holm(
@@ -3287,7 +4043,7 @@
         true
       );
     L1.forEach((e, i) => settle(e, a1[i], ALPHA));
-    L2.forEach((e, i) => settle(e, a2[i], FDR));
+    L2.forEach((e, i) => (e.ix ? settleIx : settle)(e, a2[i], FDR));
     res.mt = {m1: L1.length, m2: L2.length, a: ALPHA, q: FDR};
     return res;
   }
@@ -3482,7 +4238,12 @@
         // what the plain reading needs stays: the typical values, and each format's own expected chance and guess rate
         // (Codex review #495: without them a lean milestone read its formats at 75% and 25%)
         r.A[k] = {n: a.n, players: a.players, thin: a.thin, err: a.err, typ: a.typ, effects: a.effects, lean: 1};
+        // an interaction keeps its test, not its lines
+        if (a.ix)
+          r.A[k].ix = a.ix.map(t => ({k: t.k, ix: 1, df: t.df, W: t.W, n: t.n, fam: t.fam, p: t.p, pa: t.pa, v: t.v, need: t.need}));
         if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
+        // the common learning slope reads the slope spreads (plainOf; Codex review #830)
+        if (k === 'learn' && a.b1 != null) r.A[k].b1 = a.b1;
       });
       body -= len[M];
       body += measure(M);
@@ -3586,6 +4347,19 @@
     resOf,
     tdFeat,
     tdiff,
+    chi2q,
+    chi2inv,
+    ixTest,
+    zoomIx,
+    confIx,
+    missRows,
+    lnIx,
+    lnFit,
+    gcurveOf,
+    checkOf,
+    predictOut,
+    checkLmm,
+    signFlip,
     TD_K,
     TD_MIN
   };

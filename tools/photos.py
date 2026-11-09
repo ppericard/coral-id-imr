@@ -19,6 +19,9 @@
 #                                       is missing from img/, or a photo with one is in img/ (CI)
 #   python3 tools/photos.py --r2-list   the photos that live on R2 only, one per line (tools/r2_sync.sh checks the
 #                                       bucket has their four files)
+#   python3 tools/photos.py --r2-tiles  the fish photos with a tile (fish-game.json xc: a fifth file, {f}-x.webp, the
+#                                       360 px square of "Find the X" and Matrix, tools/fish_game.py), one per line
+#                                       (tools/r2_sync.sh checks the bucket has it too)
 import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,6 +74,48 @@ def turn(im, crop=None, rot=0):
         # PIL's ROTATE_90 turns counter-clockwise: 90 degrees clockwise is its ROTATE_270 (exact, no resampling).
         im = im.transpose({90: Image.Transpose.ROTATE_270, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_90}[r])
     return im
+
+
+def square(im, sq, frame=None, rot=0, side=360, feather=8):
+    """A side x side square of photo im (a PIL image, the original): sq [l, t, r, b] as fractions of the original (it may
+    reach past the frame), frame Pierre's crop ([0, 0, 1, 1] none), then his rotation. Where the square reaches past the
+    frame, the frame's blurred and darkened copy fills it, as the app frames a quiz photo (app.css .qph::before: blur
+    22 px, brightness 0.55), the photo's edges fading into it over feather px. The fish tiles (tools/fish_game.py
+    tile_write)."""
+    from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
+    W, H = im.size
+    fr = frame or [0, 0, 1, 1]
+    k = side / ((sq[2] - sq[0]) * W)  # square px per original px
+    F = im.crop((round(fr[0] * W), round(fr[1] * H), round(fr[2] * W), round(fr[3] * H)))
+    fx, fy = fr[0] * W, fr[1] * H  # the frame's corner in the original
+    # The part of the frame inside the square, scaled to it.
+    a = (max(sq[0] * W, fx), max(sq[1] * H, fy), min(sq[2] * W, fr[2] * W), min(sq[3] * H, fr[3] * H))
+    part = F.crop((round(a[0] - fx), round(a[1] - fy), round(a[2] - fx), round(a[3] - fy)))
+    pw, ph = max(1, round((a[2] - a[0]) * k)), max(1, round((a[3] - a[1]) * k))
+    at = (round((a[0] - sq[0] * W) * k), round((a[1] - sq[1] * H) * k))
+    if (pw, ph) == (side, side):
+        return turn(part.resize((side, side), Image.LANCZOS), None, rot)
+    bg = F.copy()
+    bg.thumbnail((side, side))
+    g = max(side / bg.width, side / bg.height)
+    bg = bg.resize((max(side, round(bg.width * g)), max(side, round(bg.height * g))), Image.LANCZOS)
+    x0, y0 = (bg.width - side) // 2, (bg.height - side) // 2
+    t = ImageEnhance.Brightness(bg.crop((x0, y0, x0 + side, y0 + side)).filter(ImageFilter.GaussianBlur(22))).enhance(0.55)
+    # The photo's edges that meet the band fade into it, so no hard line runs across the square.
+    m = Image.new('L', (pw, ph), 255)
+    dm = ImageDraw.Draw(m)
+    for i in range(feather):
+        v = round(255 * (i + 1) / (feather + 1))
+        if at[0] > 0:
+            dm.line([(i, 0), (i, ph - 1)], fill=v)
+        if at[0] + pw < side:
+            dm.line([(pw - 1 - i, 0), (pw - 1 - i, ph - 1)], fill=v)
+        if at[1] > 0:
+            dm.line([(0, i), (pw - 1, i)], fill=v)
+        if at[1] + ph < side:
+            dm.line([(0, ph - 1 - i), (pw - 1, ph - 1 - i)], fill=v)
+    t.paste(part.resize((pw, ph), Image.LANCZOS), at, m)
+    return turn(t, None, rot)
 
 
 def stale(p, crop=None, rot=0):
@@ -140,6 +185,13 @@ def online(recs=None):
     return {f for f, L in recs.items() if any(p.get('src') and not p.get('r') for p in L)}
 
 
+def tiles(recs=None):
+    """The fish photos with a tile on R2 (tools/fish_game.py tile_write: xc on a downloaded record with an online original;
+    its file {f}-x.webp, never in img/)."""
+    recs = records() if recs is None else recs
+    return {f for f, L in recs.items() if any(p.get('src') and not p.get('r') and p.get('xc') for p in L)}
+
+
 def gitonly(recs=None):
     """The photos whose only copy outside R2 is git: downloaded, with no online original (IMR lecture photos, page art)."""
     recs = records() if recs is None else recs
@@ -196,8 +248,11 @@ def check(folder=IMG, recs=None):
 
 
 if __name__ == '__main__':
-    if '--r2-list' in sys.argv:
-        print('\n'.join(sorted(online())))
+    if '--r2-list' in sys.argv or '--r2-tiles' in sys.argv:
+        # One name a line, nothing at all for none (tools/r2_sync.sh would read an empty line as a file: Codex review #826).
+        L = sorted(online() if '--r2-list' in sys.argv else tiles())
+        if L:
+            print('\n'.join(L))
         sys.exit(0)
     if '--check' in sys.argv:
         bad = check()

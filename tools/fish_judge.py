@@ -19,7 +19,11 @@ This script:
 tools/fish_photos.py calls apply() whenever it rebuilds the photo list, so a rebuild keeps the judgements.
   - adds the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) to their entries once judged; --sheets
     DIR --refs draws the sheets of those photos (with --todo: the ones not judged yet).
-Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo] [--refs]]
+  - with --boxes DIR: the box pass (judging/FISH.md "The fish's box"): the photos in play (fish-game.json) whose tags pass
+    the tile rule (tools/fish_game.py tile_tags) and that have no box yet, the easiest first, one per observation, at most
+    --n per entry (--only limits the entries), on sheets of 9 at 420 x 315 px with a 10 x 10 grid; the judge writes each
+    fish's box into tools/fish_judge.json boxes. DIR outside the repository; delete it after.
+Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo] [--refs]] [--boxes DIR [--only ..] [--n N]]
 """
 import argparse
 import json
@@ -269,6 +273,75 @@ def sheets(out, only=(), todo=False, refs=False):
     print(f"{len(index)} photos on {len({i['sheet'] for i in index})} sheets in {out / 'sheets'}")
 
 
+def box_todo(only=(), n=None):
+    """{teaching id: [records]} of the box pass: the photos in play (fish-game.json) whose tags pass the tile rule and that
+    have no box yet (tools/fish_judge.json boxes, a candidate's suggest.json bb), the easiest first, then by name, one per
+    observation, at most n per entry, in fish.json order."""
+    import fish_game as G
+    game = G.load(str(ROOT), G.OUT_FILE, {}).get("photos") or {}  # its records whole (tools/fish_short.py)
+    boxes = G.boxes_in(str(ROOT))
+    sug = (json.loads((ROOT / "suggest.json").read_text(encoding="utf-8")) or {}).get("fish") or {}
+    out = {}
+    for tid, L in game.items():
+        if only and tid not in only:
+            continue
+        seen, got = set(), []
+        for p in sorted(L, key=lambda p: (-(p.get("e") or 0), p["f"])):
+            if not G.tile_tags(p.get("jt")) or G.box_of(p["f"], boxes, sug) or p.get("o") in seen:
+                continue
+            seen.add(p.get("o"))
+            got.append(p)
+        if got:
+            out[tid] = got[:n] if n else got
+    return out
+
+
+def box_sheets(out, only=(), n=None):
+    """The box pass's contact sheets: 9 photos a sheet (3 x 3), each at 420 x 315 px from iNaturalist's medium size (500
+    px; FishBase's own file), a 10 x 10 grid over it labelled 0-10 on its edges, so the box reads to half a tenth."""
+    import time
+    import urllib.request
+    from PIL import Image, ImageDraw, ImageFont
+    todo = box_todo(only, n)
+    (out / "img").mkdir(parents=True, exist_ok=True)
+    (out / "sheets").mkdir(parents=True, exist_ok=True)
+    CW, CH, BAR, COLS, ROWS, PAD = 420, 315, 22, 3, 3, 16
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 13)
+    except OSError:
+        font = ImageFont.load_default()
+    index = []
+    flat = [(tid, p) for tid, L in todo.items() for p in L]
+    for s in range(0, len(flat), COLS * ROWS):
+        sheet = Image.new("RGB", ((CW + 2 * PAD) * COLS, (CH + BAR + 2 * PAD) * ROWS), (40, 40, 40))
+        d = ImageDraw.Draw(sheet)
+        for i, (tid, p) in enumerate(flat[s:s + COLS * ROWS]):
+            f = out / "img" / f"{p['f']}.jpg"
+            if not f.exists():
+                u = p["src"].replace("/original.", "/medium.")
+                with urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "coral-id-imr/1.0"}), timeout=60) as r:
+                    f.write_bytes(r.read())
+                time.sleep(0.5)  # gentle on iNaturalist's photo host
+            im = Image.open(f).convert("RGB")
+            im.thumbnail((CW, CH))
+            cx, cy = (i % COLS) * (CW + 2 * PAD), (i // COLS) * (CH + BAR + 2 * PAD)
+            x0, y0 = cx + PAD + (CW - im.width) // 2, cy + BAR + PAD + (CH - im.height) // 2
+            sheet.paste(im, (x0, y0))
+            for k in range(11):  # the 10 x 10 grid, labelled on the edges
+                gx, gy = x0 + round((im.width - 1) * k / 10), y0 + round((im.height - 1) * k / 10)
+                c = (255, 255, 0) if k == 5 else (255, 255, 255)
+                d.line([gx, y0, gx, y0 + im.height - 1], fill=c)
+                d.line([x0, gy, x0 + im.width - 1, gy], fill=c)
+                d.text((gx - 3, y0 - 14), str(k), fill=(255, 255, 255), font=font)
+                d.text((x0 - 14, gy - 7), str(k), fill=(255, 255, 255), font=font)
+            d.rectangle([cx, cy, cx + CW + 2 * PAD - 1, cy + BAR - 1], fill=(255, 255, 210))
+            d.text((cx + 4, cy + 4), f"{s + i + 1}  {tid}  {p.get('t', '')[:40]}", fill=(0, 0, 0), font=font)
+            index.append({"sheet": f"box_{s // 9 + 1}", "k": s + i + 1, "tid": tid, "f": p["f"], "t": p.get("t"), "jt": p.get("jt")})
+        sheet.save(out / "sheets" / f"box_{s // 9 + 1}.jpg", quality=85)
+    (out / "index.json").write_text(json.dumps(index, indent=0), encoding="utf-8")
+    print(f"{len(index)} photos to box on {len({i['sheet'] for i in index})} sheets in {out / 'sheets'}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="exit 1 when fish-photos.json is not up to date")
@@ -276,7 +349,14 @@ def main():
     ap.add_argument("--only", default="", help="with --sheets: these entries only (comma-separated teaching ids)")
     ap.add_argument("--todo", action="store_true", help="with --sheets: only the photos not judged yet")
     ap.add_argument("--refs", action="store_true", help="with --sheets: the reference photos of tools/fish_refs.json")
+    ap.add_argument("--boxes", type=Path, help="the box pass: sheets of the photos in play that wait for a fish box")
+    ap.add_argument("--n", type=int, help="with --boxes: at most this many photos per entry")
     a = ap.parse_args()
+    if a.boxes:
+        import slot
+
+        slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
+        return box_sheets(a.boxes, set(filter(None, a.only.split(","))), a.n)
     if a.sheets:
         import slot
 

@@ -767,8 +767,8 @@ body.adm-dragging * {
 .adm-subj a[aria-pressed='true'] .sji {
   color: var(--accent);
 }
-/* Inert on a shared page (admin.js SHARED: the list of players, the same on both sides): it shows the side the other
-   pages are on, and takes no click. */
+/* Inert on a shared page (admin.js SHARED: the list of players and Visits, the same on both sides): it shows the side
+   the other pages are on, and takes no click. */
 .adm-subj.off {
   opacity: 0.45;
 }
@@ -4301,6 +4301,36 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-an-leg span.dash::before {
   border-top-style: dashed;
 }
+/* Small multiples (smallLines): one small chart a panel, its name above it */
+.adm-an-sm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 12px;
+}
+.adm-an-sm.c2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.adm-an-sm.c3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.adm-an-sm.c4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.adm-an-sm.c5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.adm-an-sm figure {
+  margin: 0;
+  min-width: 0;
+}
+.adm-an-sm figcaption {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink);
+}
+.adm-an-ix {
+  margin: 0 0 8px;
+}
 .adm-an-convs {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -4749,6 +4779,25 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+/* A subject's mark (its icon, as on the switch): a page's subject on All, the subjects of a visit (Pierre, 2026-11-09:
+   Visits shared by every subject). */
+.adm-vsj {
+  display: inline-flex;
+  vertical-align: -3px;
+  margin-right: 4px;
+  color: var(--accent);
+}
+.adm-vsjs {
+  display: inline-flex;
+  white-space: nowrap;
+}
+.adm-vsjs .adm-vsj {
+  margin-right: 2px;
+}
+.adm-vfilt .adm-sseg button .sji {
+  vertical-align: -3px;
+  margin-right: 4px;
 }
 .adm-vwho {
   color: var(--muted);

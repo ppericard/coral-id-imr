@@ -26,8 +26,9 @@
   };
   window.viewHome = function () {
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
-    const names = Object.keys(DATA.gen),
-      fish = !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
+    // Before the data (app.js beforeData: the corals' doors, UNITS doorsFirst), no names: the band stays empty until it comes.
+    const names = DATA ? Object.keys(DATA.gen) : [],
+      fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
     // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
     // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header's switch (app.js
     // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
@@ -59,6 +60,8 @@
           .slice(0, 12)
           .map(g => `<img ${ph(g, 'macro')} alt="" loading="lazy">`)
           .join('');
+    // Before the data (app.js beforeData) the Identify door's photo waits too, dark like the band: drawn at once, its 60 KB
+    // shared the slow line with data.json and the curation and put the band ~5 s later at 86 kbit/s (tools/perf.js field).
     // Door 2, Identify: the current subject's tool only (Pierre, 2026-11-04; ROADMAP "Identify per subject"): the Coral ID
     // Key, or the Fish ID Key, coming soon (viewFishKey below), with a photo of one of the IMR families as its art.
     const key = UNITS[SUBJ.id].identify,
@@ -83,7 +86,7 @@
         </section>`
       : `
         <section class="hdoor identify">
-          <a class="hdart rc" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true"><img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy"></a>
+          <a class="hdart rc" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${DATA ? `<img src="${photoUrl('img/reefcloud-example-m.webp')}" srcset="${photoUrl('img/reefcloud-example-m.webp')} 760w${saver() ? '' : `, ${photoUrl('img/reefcloud-example.webp')} 1240w`}" sizes="(max-width:599.98px) 92vw, 920px" alt="" loading="lazy">` : ''}</a>
           <div class="hdbody">
             <p class="hdwhen">On ReefCloud<span class="wide"> · or a photo from your dive</span></p>
             <h2>Identify a coral</h2>

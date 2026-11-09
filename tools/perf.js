@@ -10,6 +10,9 @@
 // thread blocked by long tasks (> 50 ms) during the run.
 //   node tools/perf.js field      the field link only (see FIELD below): first visit over HTTP/2, as GitHub Pages serves
 //                                 it, at the bandwidth of a real RA's first visit; reports the load order.
+//   FIELD_KBIT=400 node tools/perf.js field    the same line at another bandwidth (kbit/s; default 86)
+//   FIELD=phone:home node tools/perf.js field  only Home on a phone (its doors, then the photos of its band)
+// "Home" is its doors drawn (#view .hdoors: before the data, app.js beforeData), "band" the Learn door's photos in it.
 const http = require('http'),
   http2 = require('http2'),
   os = require('os'),
@@ -64,6 +67,7 @@ const NET = {
 const PROFILES = [
   {name: 'good phone, 4G', net: '4G', cpu: 1},
   {name: 'good phone, slow 3G', net: 'slow 3G', cpu: 1},
+  {name: 'mid phone, 4G', net: '4G', cpu: 4},
   {name: 'brick, 3G', net: '3G', cpu: 6},
   {name: 'brick, slow 3G', net: 'slow 3G', cpu: 6},
   {name: 'brick, 3G, unstable (1 request in 5 fails)', net: '3G', cpu: 6, fail: 5}
@@ -76,7 +80,7 @@ const PROFILES = [
 // Three first visits per device: Home then straight to the quiz (first photo, then Next -> photo for questions 2-5,
 // the player taking ~8 s per question as a fluent RA does, and getting the second one wrong), Home then My progress, and Home left open 30 s before the
 // quiz. "Asked at" = when the server got the first request for a file.
-const FIELD = {rate: 86e3 / 8, lat: 400, read: 5000, feedback: 3000};
+const FIELD = {rate: (+process.env.FIELD_KBIT || 86) * 125, lat: 400, read: 5000, feedback: 3000};
 const FIELD_DEV = [
   {name: 'phone', ctx: {viewport: {width: 390, height: 800}, deviceScaleFactor: 2, isMobile: true, hasTouch: true}},
   {name: 'desktop', ctx: {viewport: {width: 1280, height: 800}}}
@@ -135,7 +139,9 @@ async function field() {
   const base = `https://127.0.0.1:${h2.address().port}/`;
   const b = await chromium.launch({args: ['--ignore-certificate-errors']});
   for (const dev of FIELD_DEV)
-    for (const mode of ['quiz', 'progress', 'stay']) {
+    for (const mode of ['quiz', 'progress', 'stay', 'home']) {
+      // 'home' (Home alone) only when asked by FIELD.
+      if (mode === 'home' && !process.env.FIELD) continue;
       // FIELD=phone:quiz,desktop:stay runs only those.
       if (process.env.FIELD && !process.env.FIELD.split(',').includes(dev.name + ':' + mode)) continue;
       const ctx = await b.newContext({...dev.ctx, ignoreHTTPSErrors: true});
@@ -169,15 +175,20 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       const cards = () => p.evaluate(() => document.querySelectorAll('.unlock .ulcard .next:not(.sec)').forEach(x => x.click()));
       await p.goto(base, {waitUntil: 'commit'});
       await p.waitForFunction(() => document.querySelector('#view .hdoors'), null, {timeout: 300000, polling: 100});
-      const tHome = Date.now() - st.t0;
-      out.push(`Home ${S(tHome)} (${Math.round(st.bytes / 1024)} KB before)`);
+      const tHome = Date.now() - st.t0,
+        kHome = Math.round(st.bytes / 1024);
+      const band = () => p.waitForFunction(() => document.querySelector('#view .hdtiles img'), null, {timeout: 300000, polling: 100});
+      if (mode === 'home') {
+        await band();
+        out.push(`Home ${S(tHome)} (${kHome} KB before), band ${S(Date.now() - st.t0)} (${Math.round(st.bytes / 1024)} KB before)`);
+      } else out.push(`Home ${S(tHome)} (${kHome} KB before)`);
       if (mode === 'stay') await p.waitForTimeout(30000);
       let t = Date.now();
       if (mode === 'progress') {
         await p.evaluate(() => (location.hash = routeOut('progress')));
         await p.waitForFunction(() => document.querySelector('#view .pring'), null, {timeout: 300000, polling: 100});
         out.push(`My progress +${S(Date.now() - t)} after the click`);
-      } else {
+      } else if (mode !== 'home') {
         await p.evaluate(() => (location.hash = routeOut('quiz')));
         const ok = await shown();
         out.push(`${mode === 'stay' ? 'after 30 s on Home, ' : ''}first quiz photo +${ok ? S(Date.now() - t) : 'never'} after the click`);
@@ -216,7 +227,9 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       const firstImg = Object.entries(st.asked).find(([f]) => f.startsWith('img/'));
       if (firstImg) out.push(`first photo asked at ${S(firstImg[1])}; ${Math.round(st.bytes / 1024)} KB by the end`);
       if (errs.length) out.push('page errors: ' + errs.slice(0, 3).join(' | '));
-      console.log(`field link, ${dev.name}, ${mode === 'quiz' ? 'Home -> quiz' : mode === 'progress' ? 'Home -> My progress' : 'Home 30 s -> quiz'}\n  ${out.join('\n  ')}`);
+      console.log(
+        `field link (${FIELD.rate / 125} kbit/s), ${dev.name}, ${{quiz: 'Home -> quiz', progress: 'Home -> My progress', stay: 'Home 30 s -> quiz', home: 'Home'}[mode]}\n  ${out.join('\n  ')}`
+      );
       await ctx.close();
     }
   await b.close();
@@ -288,8 +301,10 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
       } catch (e) {}
     });
     const out = [];
-    // Home drawn (the start-up's first page; the quiz and the other pages may still be on their way, index.html tiers).
+    // Home drawn (the start-up's first page; the quiz and the other pages may still be on their way, index.html tiers):
+    // its doors, then the photos of its band (app.js beforeData: the doors may come before the data).
     const ready = () => p.waitForFunction(() => document.querySelector('#view .hdoors'), null, {timeout: 180000});
+    const band = () => p.waitForFunction(() => document.querySelector('#view .hdtiles img'), null, {timeout: 180000});
     const photoShown = () =>
       p.waitForFunction(() => [...document.querySelectorAll('#view .qph img')].some(i => i.complete && i.naturalWidth > 0), null, {timeout: 60000}).then(
         () => true,
@@ -300,10 +315,12 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     await p.goto(base);
     await ready().catch(() => out.push('  cold start: never ready'));
     const tHome = Date.now() - t;
+    await band().catch(() => {});
+    const tBand = Date.now() - t;
     t = Date.now();
     await p.evaluate(() => (location.hash = routeOut('quiz')));
     const ok1 = await photoShown();
-    out.push(`  cold start: Home ${s1(tHome)}, first quiz photo +${ok1 ? s1(Date.now() - t) : 'never (60 s)'}, ${Math.round(bytes / 1024)} KB`);
+    out.push(`  cold start: Home ${s1(tHome)} (band ${s1(tBand)}), first quiz photo +${ok1 ? s1(Date.now() - t) : 'never (60 s)'}, ${Math.round(bytes / 1024)} KB`);
     out.push(
       `  photos: ${await p.evaluate(() => (navigator.connection || {}).effectiveType || '?')} reported, Auto works as ${await p.evaluate(() => (typeof saver === 'function' && saver() ? 'Saver' : 'by box'))}`
     );
@@ -372,10 +389,12 @@ localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
     await p.goto(base);
     await ready().catch(() => {});
     const tW = Date.now() - t;
+    await band().catch(() => {});
+    const tWB = Date.now() - t;
     t = Date.now();
     await p.evaluate(() => (location.hash = routeOut('quiz')));
     const ok2 = await photoShown();
-    out.push(`  warm start: Home ${s1(tW)}, quiz photo +${ok2 ? s1(Date.now() - t) : 'never'}, ${Math.round(bytes / 1024)} KB`);
+    out.push(`  warm start: Home ${s1(tW)} (band ${s1(tWB)}), quiz photo +${ok2 ? s1(Date.now() - t) : 'never'}, ${Math.round(bytes / 1024)} KB`);
     out.push(`  main thread blocked (long tasks): ${s1(await p.evaluate(() => window.__lt))}`);
     console.log(`${pr.name}\n${out.join('\n')}`);
     await ctx.close();
