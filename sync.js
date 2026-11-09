@@ -208,7 +208,20 @@ const rvApplied = S => Number(store.get(rvKey(S), 0)) || 0;
 // adopts it again (replayAdoptS), the answers queued here on top. It went for a subject once its replay was adopted
 // (lgOk) until the lighter saves (LIGHT_SHEET), which meet a refused save far more often (a 'stale' with answers, each
 // time another device saved first) and found the gap.
+// A save whose fate is unknown here sets the same flag (fateUnknown): its reply never came (the line, a request cut by
+// the background, no answer in SAVE.TIMEOUT, a reply that is not the sheet's JSON) or the script failed in it (server).
+// The sheet may have logged its answers and written its copy, and another device may have saved over that copy since:
+// this device then no longer finds its own copy at its next load (mergeSubject: the pending copy compared with the saved
+// one), and the plain merge counted those answers twice, once in the other device's copy and once as its own (found
+// 2026-11-08 building the lighter saves; ROADMAP "A save whose reply is lost, then another device's save"). Only the
+// replay of the log tells, every answer counted once by its id: the cost is a replay in the replies of the next load
+// and save after each lost reply (a lost save reply is rare: the Events tab's failed syncs are mostly loads).
 const lgFor = () => !!(SYNC && SYNC.lg);
+function fateUnknown(me) {
+  if (SYNC !== me) return;
+  me.lg = 1;
+  store.set('reefid-account', me);
+}
 const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
 // subject), null before they are in.
@@ -539,11 +552,15 @@ function mergeSubject(j, d, S, mine) {
   // (rvAsk), counts every one once: adopted, it replaces the merge; without it, the merge as usual.
   notesSeen(j);
   const recovered = !!(RO && lgFor(S) && rpS && replayAdoptS(S, rpS, SYNC.log, j.v, undefined, pre));
-  // Another subject replayed (fish) whose replay could not be adopted here (its units not in yet, or the reply without
-  // it): its merge would add the answers of the refused save again (Codex review #779: a baseline of 2, 3 here and a
-  // saved replay of 3 gave 4), so it waits, this device's progress as it is, and its rules version goes back to 0, so
-  // the replay of its whole log is asked for and adopted once it can be (replayAdoptS), whatever saves come before.
-  const waitRp = !S.replay && RO && lgFor(S) && !recovered;
+  // A subject whose replay could not be adopted here (fish: its units not in yet; any: the reply without it, an answer
+  // queued here older than the log's last one): its merge would add the answers of the refused save, or of a save whose
+  // fate is unknown (fateUnknown), again (Codex review #779: a baseline of 2, 3 here and a saved replay of 3 gave 4), so
+  // it waits, this device's progress as it is, and its rules version goes back to 0, so the replay of its whole log is
+  // asked for and adopted once it can be (replayAdoptS), whatever saves come before: the copy this device saves says that
+  // version, which no other device merges (it asks for the replay too). The corals merged here until the lost replies
+  // were found (2026-11-09), and a double count, once in the progress, was there for good: a replay keeps a unit from the
+  // device when it holds more answers than the log (core.js replayedOf).
+  const waitRp = RO && lgFor(S) && !recovered;
   if (waitRp) store.set(RK, 0);
   if (!mine && !recovered && !waitRp) {
     if (rvSaved >= rvApplied(S)) {
@@ -757,12 +774,17 @@ function syncOnce(tries = 0, pulled = null) {
           ...(light ? {light: 1} : {})
         };
       return (light ? lightBody(me, o) : Promise.resolve(JSON.stringify(o))).then(body =>
-        sheetCall(SYNC_URL, {method: 'POST', body}, info, 'save')
+        sheetCall(SYNC_URL, {method: 'POST', body}, info, 'save').catch(x => {
+          fateUnknown(me);
+          throw x;
+        })
       );
     })
     .then(j => {
       if (!j || SYNC !== me) return j;
       if (j.v) sheetSeen(j); // the script that answered: an older one turns the light saves off (rule D4)
+      // The script failed somewhere in the save (Code.gs fail_: an exception), maybe after logging or writing it.
+      if (j.error === 'server') fateUnknown(me);
       // A light save the sheet could not read (zip: sent again unpacked) or whose delta did not rebuild the copy it holds
       // (delta: the copy loaded again, the data sent whole): nothing was logged or written, the same sync goes again.
       if ((j.error === 'zip' || j.error === 'delta') && tries < 3) {

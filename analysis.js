@@ -84,7 +84,9 @@
   }
   // Sets b, each factor's tau2 and u from the warm state (null when there is none or it does not apply).
   function warmGet(kind, p, F) {
-    const W = FAST ? WARM[sigOf(kind, p, F)] : null;
+    // never while a player is left out (HOLD, checkOf): a coefficient only their answers move would keep the full fit's
+    // value, learnt from those answers (Codex review #831); the fit starts from 0 instead
+    const W = FAST && HOLD == null ? WARM[sigOf(kind, p, F)] : null;
     if (!W) return null;
     F.forEach((f, k) => {
       f.tau2 = W.f[k].tau2;
@@ -1254,12 +1256,27 @@
   // Descriptive, outside the multiple-testing correction (as the Wright map and the second skill).
   // The predictions of player id's rows by a fit in which their rows weigh nothing (fast: the bootstrap's looser fit,
   // warm-started from the full one). NaN elsewhere.
+  // A new player's own effects are unknown: their chance is averaged over the players the fit has (each one's fitted level,
+  // and in Learning their slope at the row's practice), not read at the average player (Codex review #831: with a player
+  // SD of 2, 81.8% at the average player against 71.5% averaged over players). Over the fitted players rather than over
+  // N(0, tau2): with this fit (PQL-like: its spreads shrunk, its intercept towards the average over players, ROADMAP
+  // "what the correction leaves open" (e)), the normal integral over-predicted the generator's own mix-ups by 2-6 points in
+  // every band, while the fitted players' own effects average to what they answered.
   function predictOut(R, fit, g, id, fast = true, P = new Float64Array(R.length).fill(NaN)) {
     HOLD = id;
     FAST = fast;
     try {
-      const M = fit(R);
-      R.forEach((r, i) => r.p === id && (P[i] = clamp(g(r) + (1 - g(r)) * sig(M.eta[i]), 1e-6, 1 - 1e-6)));
+      const M = fit(R),
+        fp = M.F.find(f => f.name === 'player'),
+        fs = M.F.find(f => f.name === 'player slope'),
+        sl = fs ? new Map(fs.L.map((k, j) => [baseOf(k), fs.u[j]])) : null,
+        U = fp ? fp.L.map((k, j) => [baseOf(k), fp.u[j]]).filter(([k]) => k !== id) : [];
+      R.forEach((r, i) => {
+        if (r.p !== id) return;
+        const w = fs ? fs.w[fs.start[i]] : 0,
+          q0 = U.length ? mean(U.map(([k, u]) => sig(M.eta[i] + u + (sl ? (sl.get(k) || 0) * w : 0)))) : sig(M.eta[i]);
+        P[i] = clamp(g(r) + (1 - g(r)) * q0, 1e-6, 1 - 1e-6);
+      });
     } catch (e) {
       void e;
     } finally {
@@ -1502,8 +1519,14 @@
         D.length
       );
     if (!t) return null;
-    const c0 = j => [1, 0, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map(() => 0)],
-      c1 = j => [1, 1, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map((_, i) => (i === j - 1 ? 1 : 0))];
+    // enlarging is read against the player's own habit (rel = z - the player's rate): for a player at the typical rate rb
+    // (the rows' mean, as the habit column is centred on), not enlarging is rel = -rb, enlarging 1 - rb (Codex review #829)
+    const rate = {};
+    D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
+    const rb = mean(D.map(a => rate[a.p][0] / rate[a.p][1])),
+      cz = (j, rel) => [1, rel, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map((_, i) => (i === j - 1 ? rel : 0))],
+      c0 = j => cz(j, -rb),
+      c1 = j => cz(j, 1 - rb);
     t.lv = ['wide', ...L].map((v, j) => ({
       k: v,
       n: cnt[v][0],
@@ -1669,7 +1692,7 @@
       const g = fgOf(a),
         c = (cnt[g] = cnt[g] || {n: 0, s: new Set()});
       c.n++;
-      c.s.add(Math.min(a.n, 2));
+      c.s.add(a.n); // every practice count it was asked at (Codex review #829: capped at 2, later practice read as none)
     });
     const ok = g => cnt[g] && cnt[g].n >= 100 && cnt[g].s.size > 1,
       L = ['two', 'typed'].filter(ok);
@@ -2055,10 +2078,25 @@
           r3(Math.sqrt(fixVar(lp[j]) + P.cv[j] + cvv * d * d))
         ];
       }),
+      // + the lowest and highest chance (log-odds beyond guessing) the model gives a player on the genus, each player at
+      // their own practice with their own slope and the genus's (Codex review #830: a place read off the typical practice
+      // alone dropped the genus slope times each player's distance to it, so "every player" could be wrong)
       g: G.L.map((x, j) => {
         const [v, cvv] = vs(GS, gj && gj.get(x)),
-          d = lt - lc;
-        return [x, r3(-G.u[j] - v * d), cnt[x], r3(Math.sqrt(fixVar(lt) + G.cv[j] + cvv * d * d))];
+          d = lt - lc,
+          own = live.map(i => {
+            const [vp] = vs(PS, pj && pj.get(P.L[i])),
+              di = lp[i] - lc;
+            return M.b[0] + M.b[1] * lp[i] + P.u[i] + vp * di + G.u[j] + v * di;
+          });
+        return [
+          x,
+          r3(-G.u[j] - v * d),
+          cnt[x],
+          r3(Math.sqrt(fixVar(lt) + G.cv[j] + cvv * d * d)),
+          r3(Math.min(...own)),
+          r3(Math.max(...own))
+        ];
       }),
       mid: r3(M.b[0] + M.b[1] * lt), // the typical player's place: a genus's chance for them is sig(mid - difficulty)
       m: r3(logit(MASTER))
@@ -4263,6 +4301,8 @@
         if (a.ix)
           r.A[k].ix = a.ix.map(t => ({k: t.k, ix: 1, df: t.df, W: t.W, n: t.n, fam: t.fam, p: t.p, pa: t.pa, v: t.v, need: t.need}));
         if (Array.isArray(a.table) && k === 'fmt') r.A[k].table = a.table.map(t => ({k: t.k, n: t.n, E: t.E, g0: t.g0}));
+        // the common learning slope reads the slope spreads (plainOf; Codex review #830)
+        if (k === 'learn' && a.b1 != null) r.A[k].b1 = a.b1;
       });
       body -= len[M];
       body += measure(M);

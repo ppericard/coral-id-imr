@@ -1,0 +1,11 @@
+{"note": "Coral photos that show a coral skeleton (rule P6, Pierre, 2026-11-09: never shown, the features cannot be seen properly). Each one looked at at 500 px or more, in the pass of 2026-11-09 that screened every coral photo the app shows (genus views and more, IMR lecture photos, comparison images, the candidates Pierre added, the Coral ID Key's extra genera) and the waiting candidates the candidate pass had noted as a bare skeleton. tools/apply_skeletons.py marks each record skel: 1 in data.json and cand.json; core.js applyCuration drops it from every list, the admin and tools/fetch_local.py skip it (tests/skeletons.test.js). A live colony that is only pale or bleached, or held out of the water, is not a skeleton. A wrong entry is removed here and the tool run again.",
+"photos": {
+"goniastrea-wide-172172259": {"g": "Goniastrea", "note": "A dead colony lying on a beach: bare skeleton on dry sand, out of the water"},
+"tubipora-x-59495931": {"g": "Tubipora", "note": "A loose red skeleton fragment on sand, out of the water"},
+"fungia-cand-629914325": {"g": "Fungia", "note": "Bare skeleton on a wooden table (waiting candidate, already excluded by the auto-sort)"},
+"heliopora-cand-181616771": {"g": "Heliopora", "note": "Bare skeleton on a beach (waiting candidate, set aside by the candidate pass)"},
+"heliopora-cand-181616803": {"g": "Heliopora", "note": "Bare skeleton on a beach, close (waiting candidate, already excluded by the auto-sort)"},
+"heliopora-cand-181616836": {"g": "Heliopora", "note": "Bare skeleton on a beach (waiting candidate, already excluded by the auto-sort)"},
+"tubipora-cand-303711251": {"g": "Tubipora", "note": "A loose red skeleton fragment on sand, out of the water (waiting candidate, already excluded by the auto-sort)"}
+}
+}
