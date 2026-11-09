@@ -963,8 +963,9 @@
   // fish_in is its copy).
   // An automatic add of the auto-sort he undid counts as decided against too (its log code '-a...', autosort.js fishUndo:
   // "the photo waits for his decision"; Codex review #674). Never a photo whose count in force (fishCount: Pierre's tag,
-  // his legacy m refined by the record's) is other species one could take for its subject (fishOther, Q323), so his
-  // tag applies at once, before the workflow runs again.
+  // his legacy m refined by the record's) is other species one could take for its subject (fishOther, Q323): in the admin,
+  // which reads his whole curation, his tag applies at once; the players' curation leaves the tags out (tools/curplay.py),
+  // so the app reads the record's jt, which tools/fish_game.py writes from his tag.
   const fishGone = (cur, F = (cur && cur.fish) || {}) =>
     new Set(
       [
