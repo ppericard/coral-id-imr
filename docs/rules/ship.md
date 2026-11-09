@@ -326,7 +326,7 @@ Many agents share one 4-core machine with a small disk: a load near 16 brought i
 - **Heavy tools** call the guard at the top of their heavy path, after the usage check: Node
   `require('../tests/slot.js').guard('tools/x.js')`, Python `import slot; slot.guard('tools/x.py')` (`tools/slot.py`); it
   re-runs the tool in a slot and exits with its code. Guarded: `tools/analyses.js`, `abilityeval.js`, `fallbackeval.js`,
-  `realcheck.js`, `memreplay.js`, `fishscore.js`; `photo_metrics.py`, `photo_quality.py`, `find_dups.py`, `photos.py`
+  `realcheck.js`, `memreplay.js`; `photo_metrics.py`, `photo_quality.py`, `find_dups.py`, `photos.py`
   (when it writes), `judging_cand.py` (sheets, detail), `judging_fish.py` (sheets), `fish_judge.py` (`--sheets`),
   `fetch_approved.py`. A new heavy tool gets the guard (`tests/slot.test.js` lists them); any other heavy command runs as
   `node tests/slot.js -- cmd args`.

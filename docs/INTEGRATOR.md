@@ -118,6 +118,9 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   diff after `--write` and revert unrelated hunks.
 - **Stacked PRs**: merging a PR whose base is another PR's branch merges into that branch, not main (it happened with
   #667 into #663; harmless, but check `base.ref` before merging).
+- **Never put stacked PRs in a train** (2026-11-08 night, the fish judging stack #760-#766): after the first one is
+  squashed, the next one conflicts with the squash commit. Land a stack as its top PR (one squash holding every
+  commit) and close the others with a pointer to it ("landed in #N").
 - **CI waits**: poll a PR with a small loop (head sha → check-runs → Codex state), not with chained sleeps; the
   machine runs heavy tests through `node tests/slot.js --name X -- <cmd>` (one at a time; sims at 1 worker, chunks ≤ 20
   min). The container restarted 3 times on 11-06 (never memory).
@@ -132,10 +135,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   grid column never wider than the screen, the row wraps. #709's safety net (an invisible card closes itself after
   2.5 s, now also checking left/right) and its events (`empty card closed`, `left with a card open`) stay: read the
   Events tab now and then for any other card that hides. Lesson: test every new card at 390 px with a long list.
-- **Idea, not on the ROADMAP yet**: the Answers rows carry no device id, and Events have the device but only the date,
-  so a session cannot be traced to a device (Pierre asked on 11-07). Log the device id with each answer.
-- **Open PRs**: none after the 11-08 drain and the history rewrite. #664 (engine coherence review) merged as a reference
-  doc; its 8 decisions get a read-only re-check (ROADMAP row). #637 (photos rated against the genus ability, Q136) was
+- **Open PRs**: STATUS "Now" (on 2026-11-09 night, 11 green PRs waiting for Codex's usage limit, #769 a draft). #664
+  (engine coherence review) merged as a reference doc; its re-check is done (ROADMAP row): C1 decided by Pierre on 2026-11-09 (Q316: componential difficulty model; Q136 reopened with it). #637 (photos rated against the genus ability, Q136) was
   closed unmerged; its branch stays (ROADMAP "Photos rated against the genus ability"). The old worktree
   `photo-genus-ability` (2 commits not on the remote head) is in a pre-rewrite clone: patches only, never a push.
 - **Branch `claude/fish-todo-wip`** (no PR): unfinished, untested follow-up of #686's audit, fish.exclude matched by
@@ -145,11 +146,11 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
 - **Backlog, in Pierre's earlier order of interest** (ROADMAP rows):
   1. the **species level and the global fish score** (decided 11-04: 100% only with common and scientific names of
      every species; the path is a tree; a right genus is partial credit);
-  2. **ID marks for the 23 fish families with no IMR cue** (circles 2-3, Soapfishes): the feedback shows nothing there;
-     genus and species ID marks;
-  3. the **species name in small type after a family or genus answer** (ROADMAP, "later");
-  4. **photo rotation in the admin** (ROADMAP, "later");
-  5. per-subject **photo stats and Health** in the admin (admin plan row 11);
+  2. the fish families' ID marks are in (#773, the 40 with no IMR cue); genus and species ID marks are left;
+  3. the **species after a family or genus answer** (Pierre asked again on 11-08 ~20:10: species, common and scientific
+     name; morning question: before the species level?);
+  4. **photo rotation in the admin** (#793, waiting for Codex);
+  5. per-subject **photo stats and Health** in the admin (#800, waiting for Codex);
   6. the **exam over two visits** on fixed-difficulty photos; **ability uncertainty** (Glicko / Kalman, #651's remedy);
   7. the new bar's **live confirmation** (seeds 61-90) and its **τ baseline**, held until after the fish rush;
   8. #641's confusion-group questions a-j and #651's 5 choices for Pierre (not numbered yet).

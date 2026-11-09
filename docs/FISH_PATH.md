@@ -99,7 +99,7 @@ is the design's shorthand, and internal identifiers may keep it.
   name of one (`single`: *Nudiantennarius subteres*, Deep-water frogfish; *Cryptocentrus nigrocellatus*). Pierre, 2026-11-05: no
   third rule, and a PDF slip shows FishBase's spelling, the PDF form accepted when typed. **664 game species (2026-11-08)**: 3
   with no name (Q247), 392 with 1, 248 with 2, 21 with 3 (circle 1: 271 / 180 / 20). Since every listed name is needed, more
-  names make the common-name branch longer: in the score simulation (`tools/fishscore.js --names tools/fish_common.json`, on
+  names make the common-name branch longer: in the score simulation (`tools/fishscore.js --names tools/fish_common.json`, retired since, on
   the 442 species of 2026-11-05) a common-names-only player reaches 80% after about 2.6 times as many answers as with one name each.
 - **In the game** (`app.js`, for the species level, which asks them): `cnShow`, the listed name a multiple-choice question shows,
   the one asked least so far, the list's order on a tie (so every name comes round); `cnTypeNames`, the typed names: only the
@@ -454,7 +454,7 @@ on families only to an IMR RA with every species open:
       genus 55%; every common name 80%; every scientific name 85%; every common name and every genus 90%; everything with both names 100%.
     - It is not additive across the branches (an additive split would put families alone near 65%), every right answer on either branch
       moves the score, and it needs no case per branch.
-    - **Simulated** (2026-11-04, `tools/fishscore.js`, 5 seeds, a model of the path since the species level is not built;
+    - **Simulated** (2026-11-04, `tools/fishscore.js`, since retired, 5 seeds, a model of the path since the species level is not built;
       docs/LEARNING.md "Fish: the global score, simulated"): the anchors are exact; the entries give 25% within the first ~1,000
       answers (the fast start); the genus's half credit removes a flat stretch at 49% on the scientific branch; no long plateau
       on one branch or on both side by side. Two effects of the anchors themselves, not of *a* or *b*: a player who completes one

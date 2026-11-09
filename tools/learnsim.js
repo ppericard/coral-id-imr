@@ -316,7 +316,7 @@ const CPS = [
       )
   )
 ].sort((a, b) => a - b);
-// Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf, mem, gd, v}), to rate the photos as live
+// Photo statistics of the sync sheet (?stats=1 answer, or {photos, conf, mem, gd, fmt, v}), to rate the photos as live
 // players do; without it every photo's difficulty is 0 (no sheet), as in CI (the Easy/Medium/Hard sets before 2026-11-03).
 // --stats live reads them from the sheet at start (read-only, the GET the app makes) with av=learnsim: a ?stats=1 read
 // without an app version is logged by the sheet as an app from before 2026-11-03 (Code.gs v25 'old'; 2026-11-05: the
@@ -1234,7 +1234,10 @@ async function run(browser, base, name, seed) {
           photos: st.photos || {},
           conf: st.conf || {},
           ...(st.mem ? {mem: st.mem} : {}),
-          ...(st.gd ? {gd: st.gd} : {})
+          ...(st.gd ? {gd: st.gd} : {}),
+          // The per-format offsets (?stats=1 fmt, sheet v77; 2026-11-09): the app reads them as the live game does
+          // (model.js PFMT, core.js fmtsOf from a sheet that reports v >= FMT_SHEET); before, every offset was 0 here.
+          ...(st.fmt ? {fmt: st.fmt} : {})
         })
       );
   }, [STATS_JSON, RTAPP, SHEETV, SUBJECT]);

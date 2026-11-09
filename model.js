@@ -64,7 +64,7 @@ function rareCap(keys, sc, hardOf, share = RARE.SHARE) {
 // docs/LEARNING.md "Beginners and experts".
 // core.js aimOf: the miss weight (core.js pgMissW) and the sheet's full replay take the same aim.
 const aimP = () => aimOf((P[LEVEL] || {}).th || 0);
-// df: the format's offset (core.js fmtOff, the sheet's PFMT; Pierre, 2026-11-06, Q138): a format the players find easier
+// df: the format's offset (core.js fmtOff, the subject's pfmt; Pierre, 2026-11-06, Q138): a format the players find easier
 // than its guess rate allows (df > 0, e.g. 2 plausible choices among 4) gets a photo that much harder, so the question is
 // still aimed at aimP in its format; 0 with an older sheet (the aim as before).
 const aimOff = (k = 4, df = 0) => {
@@ -150,7 +150,7 @@ const colonyMem = (obs, ps) =>
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
 // PICKD.P in that format (aimOff); f: its format (core.js fmtOf: 'k4', 'again', 'duel', 'typed'…), whose offset the aim
-// takes (fmtOff, PFMT).
+// takes (fmtOff, the subject's pfmt).
 function photoSet(n, skip, shift = 0, k = 4, f = '') {
   const g = GX(n),
     two = g.levels === 2,
@@ -178,7 +178,8 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     // at the start by the difficulty engine itself): the target sits early logits lower on a unit with few answers,
     // fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals (their target as before).
     lean = calibOf(SUBJ).early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
-    tgt = ability(n) + shift - aimOff(k, fmtOff(PFMT, f)) - (single ? PICKD.SINGLE : 0) - lean;
+    tgt = ability(n) + shift - aimOff(k, fmtOff(pfmt(), f)) - (single ? PICKD.SINGLE : 0) - lean,
+    pm = pmem();
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
@@ -190,7 +191,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
       k = mem[p.o || p.f];
     let r = Math.exp((-x * x) / 2) * calBonus(p);
     // Spread the repeats (photo memory, Pierre 2026-11-03): a photo already shown weighs e^offset of its memory bucket
-    // (core.js MEM, the sheet's estimate PMEM): the odds memory adds to a right answer on it, divided out. With the
+    // (core.js MEM, the subject's offsets pmem): the odds memory adds to a right answer on it, divided out. With the
     // offsets of 2026-11-03, about x 0.64 shown never right, x 0.33 right once, x 0.18 right twice or more (it was x 0.6
     // from right twice only). Soft: a genus whose photos are all known still shows them, the least remembered first.
     // It matters most in a genus with few photos, where repeats come soonest.
@@ -198,7 +199,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     // reference look; Pierre, 2026-11-06) weighs its subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? calibOf(SUBJ).ref : 1);
-    else r *= Math.exp(PMEM[memBucket(k)]);
+    else r *= Math.exp(pm[memBucket(k)]);
     return hardF < 1 && hard(p) ? r * hardF : r;
   };
   const obs = {};
@@ -1121,11 +1122,25 @@ let PCONF = (store.get('reefid-photo-stats', {}) || {}).conf || {};
 // right once, right twice or more, estimated by the sheet from every trusted answer; the prior (the old fixed rule)
 // with an older sheet or offline. famOf: the offset of the photos of a question, as the player knows them now.
 let PMEM = memOf((store.get('reefid-photo-stats', {}) || {}).mem);
+// The offsets of the subject in play (pmem): PMEM is fitted on the answers of the one subject the sheet rates (Code.gs
+// stats_ reads its replayed rows, SUBJECTS replay: the corals), so a subject it does not rate yet (fish: no per-subject
+// ?stats=1, ROADMAP admin plan PR 11) draws, scores and recalculates with the prior (core.js MEM.PRIOR, memOf of nothing):
+// no coral offset touches a fish answer (re-check of #664, F8; the integrator's call). The corals: PMEM, as before.
+const PMEM0 = memOf();
+const pmem = () => (SUBJ.replay ? PMEM : PMEM0);
 // Per-format offsets (Pierre, 2026-11-06, Q138; core.js fmtOffsetsOf, sheet v77 ?stats=1 fmt): {format: [offset, answers]},
 // how much easier (in logits) the players found each question format than its guess rate 1/k allows, added to the
 // expectation of the ability steps (quiz.js answer) and taken off the photo's aim (aimOff); read only from a sheet that
 // reports v >= FMT_SHEET (rule D4, core.js fmtsOf): {} before, every offset 0.
 let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));
+// The format offsets of the subject in play (pfmt), as pmem for the photo memory: PFMT is fitted on the answers of the one
+// subject the sheet rates (Code.gs stats_ reads its replayed rows, SUBJECTS replay: the corals), so a subject it does not
+// rate yet (fish: no per-subject ?stats=1, ROADMAP admin plan PR 11) aims and scores with every format at 0, never with a
+// coral offset (Pierre, 2026-11-09): the app's own expectation before any fit (the fit's prior mean, core.js FMT; what an
+// older sheet gives), the prudent value, correcting nothing rather than by the corals' k2 +1.11 or typed -0.42 of that
+// day. The corals: PFMT, the very object, as before.
+const PFMT0 = Object.freeze({});
+const pfmt = () => (SUBJ.replay ? PFMT : PFMT0);
 // Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: no pop-up, the bars move
 // down 1-3 points; core.js memRecalc): every genus record not marked yet (s.pm), at load and after each pull of the
 // synced progress (sync.js mergeSaved), and in quiz.js answer before a record's first answer. Saved and synced when it
@@ -1134,7 +1149,7 @@ function memRecalcAll() {
   let ch = false;
   mxRecalc(() =>
     Object.keys(P).forEach(n => {
-      if (n !== LEVEL && memRecalc(P[n], PMEM)) ch = true;
+      if (n !== LEVEL && memRecalc(P[n], pmem())) ch = true;
     })
   );
   if (ch) save();
@@ -1218,7 +1233,7 @@ function mxLost(L, why = {}) {
 const famOf = (n, ph) => {
   const ps = (P[n] || {}).ps || {},
     hs = ph.map(p => ps[p.f]);
-  return memFam(hs, PMEM);
+  return memFam(hs, pmem());
 };
 const sig = x => 1 / (1 + Math.exp(-x));
 // A photo's difficulty: the sheet's rating (its genus's offset + its own residual, sheet v31) blended with the genus's

@@ -505,8 +505,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (good) session.ok++;
   // A record from before the photo memory is recalculated first, once (core.js memRecalc; a new record is only marked).
   mxRecalc(() => {
-    memRecalc(s, PMEM);
-    if (!good && GX(c)) memRecalc(st(c), PMEM);
+    memRecalc(s, pmem());
+    if (!good && GX(c)) memRecalc(st(c), pmem());
   });
   const nw = ph.filter(p => !(s.ps || {})[p.f]).length;
   const solo = ph.length === 1 ? PICKD.SINGLE : 0; // one view alone is harder than the same photo with the others
@@ -526,7 +526,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // - look, a genus the player gets confused with among the choices (model.js pgWeight), after the offers are counted;
   // - R, Rc: the recall of the genus shown and of the genus given on a comeback question (model.js recallAt).
   // A corallites hint revealed after the answer when it was not opened: seen, never recognised (hint).
-  // The question's format and its offset (core.js fmtOf, fmtOff; the sheet's PFMT, Pierre 2026-11-06, Q138): the ability
+  // The question's format and its offset (core.js fmtOf, fmtOff; the subject's pfmt, Pierre 2026-11-06, Q138): the ability
   // steps expect the question as the players really find its format (a 2-choice question easier than 1 in 2 explains).
   // Never from the custom quiz, which serves no exam question (Pierre, 2026-11-03: exams only in the photo quiz).
   const exq = EXAMQ === target && cur !== CUSTOM_H;
@@ -568,10 +568,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // The answer time (core.js rtWeight, model.js rtOn): only once the sheet replays it; recorded either way.
     timed: rtOn(),
     // The format's offset (core.js fmtOff; 0 with a sheet before FMT_SHEET), logged in sc (o) with the rest.
-    df: fmtOff(PFMT, fmtOf(mq, chs.length)),
+    df: fmtOff(pfmt(), fmtOf(mq, chs.length)),
     // The typed format's offset (core.js domF dt): the domain score is the share of photos named typed and alone, so the
     // bar measures against the typed format's calibrated difficulty (Codex review #646); logged t.
-    dt: fmtOff(PFMT, 'typed'),
+    dt: fmtOff(pfmt(), 'typed'),
     // The domain-score bar (core.js domStep, model.js domRules: only once the sheet replays it, rule D4): the genus
     // offsets of the genus shown and of the genus given (model.js genusDiff, the photo population's mean difficulty),
     // logged with the answer so the replay meets the same ones.
@@ -1992,7 +1992,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     kq = typed ? TYPED.k : few ? plausibleK(t, ch) : ch.length,
     // Aimed lower by the hold's ease and by this player's own mix-ups among the choices (model.js confTerm; none typed).
     cf = typed ? 0 : confTerm(t, ch, kq),
-    // Its format (core.js fmtOf, as answer logs it): the aim takes the format's offset (model.js aimOff, PFMT).
+    // Its format (core.js fmtOf, as answer logs it): the aim takes the format's offset (model.js aimOff, pfmt).
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : kq < 4 ? (kq >= 3 ? 'k3' : 'k2') : 'k4',
     set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).

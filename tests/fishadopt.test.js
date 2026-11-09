@@ -280,19 +280,25 @@ test('a fish reset made on this device while the save was on its way: its replay
   assert.strictEqual(a.replaysAdopt(j, [], {fish: T(30)}), true);
 });
 
-test('answers logged from a refused save (SYNC.lg): the flag holds for fish until its own replay is adopted', () => {
+test('answers logged from a refused save (SYNC.lg): the replay of every subject is adopted again until a save carries them', () => {
   const s = loadCodeGs(withFiles());
   seed(s, {});
   const a = app({
       sheet: s,
       ls: {'reefid-sync-fish-rv': String(FRV), 'reefid-sync-coral-rv': String(C.RV)},
-      SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, lg: 1, lgOk: ['coral']}
+      SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, lg: 1}
     }),
     j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.REPLAYS_SHEET};
   assert.strictEqual(j.replays.fish.rv, FRV);
-  // The corals' replay already adopted: the same version again for fish, its baseline lacking the logged answers.
+  // The same version again for fish, its baseline lacking the logged answers.
   assert.strictEqual(a.replaysAdopt(j, [], undefined), true);
-  assert.ok(!a.ctx.SYNC.lg && !a.ctx.SYNC.lgOk, 'cleared once every subject replayed has its own');
+  const once = JSON.stringify(a.store.get('reefid-sync-fish-progress', {}));
+  // The flag holds until a save carries the answers: the saved copy lacks them still, and another device saving over it
+  // meanwhile would have them dropped at the next merge (sync.js lgFor).
+  assert.ok(a.ctx.SYNC.lg, 'kept until a save');
+  assert.strictEqual(a.replaysAdopt(j, [], undefined), true, 'adopted again while it holds');
+  assert.strictEqual(JSON.stringify(a.store.get('reefid-sync-fish-progress', {})), once, 'to the same progress');
+  delete a.ctx.SYNC.lg; // a save came through (syncOnce)
   assert.strictEqual(a.replaysAdopt(j, [], undefined), false, 'then once per version, as the corals');
 });
 

@@ -906,6 +906,61 @@
     return {...F, mont: M};
   }
 
+  // Photo rotation (Pierre, 2026-11-08; pure, tests/rotate.test.js): curation.json rot {f: 90 | 180 | 270} for the corals,
+  // fish.rot for the fish, degrees clockwise, set in the crop editor (admin.js cropEditor) and applied to the files at
+  // Publish by the photo workflow (tools/photos.py turn: the crop, in fractions of the original, cut first, then the cut
+  // turned; so the crop box turns with the photo and a crop never changes when the photo is turned).
+  const ROTS = [90, 180, 270];
+  // A rotation as stored, 0 for none (any multiple of 90, negative included; anything else is none).
+  const rotNorm = v => (v === null || v === '' || !Number.isFinite(+v) || +v % 90 ? 0 : ((+v % 360) + 360) % 360 || 0);
+  // One step left (d -90) or right (d 90) from r.
+  const rotStep = (r, d) => rotNorm((rotNorm(r) + d + 360) % 360);
+  // The rotation map M with photo f turned by r: none takes f out (the published key stays small).
+  function rotSet(M, f, r) {
+    const o = {...(M || {})};
+    if (rotNorm(r)) o[f] = rotNorm(r);
+    else delete o[f];
+    return o;
+  }
+  // Where a point of the original photo (x, y in fractions) lands in the file the workflow makes with crop c ([l, t, r, b],
+  // null for none) and rotation r (tools/photos.py turn), in fractions of that file; null when the crop cut it off.
+  function photoAt(x, y, c, r) {
+    const [l, t, R, b] = c || [0, 0, 1, 1];
+    if (x < l || x > R || y < t || y > b) return null;
+    const u = (x - l) / (R - l),
+      v = (y - t) / (b - t);
+    return {90: [1 - v, u], 180: [1 - u, 1 - v], 270: [v, 1 - u]}[rotNorm(r)] || [u, v];
+  }
+  // The file's size in px from an original of w x h px with crop c and rotation r (the crop rounded as the workflow does).
+  function turnedSize(w, h, c, r) {
+    const [l, t, R, b] = c || [0, 0, 1, 1],
+      cw = Math.round(R * w) - Math.round(l * w),
+      ch = Math.round(b * h) - Math.round(t * h);
+    return rotNorm(r) % 180 ? [ch, cw] : [cw, ch];
+  }
+  // A drag on screen (dx, dy px) over a box turned r degrees clockwise (CSS rotate), in the box's own axes: the crop
+  // editor's frame stays in fractions of the original photo while the photo is shown turned.
+  function rotDelta(dx, dy, r) {
+    return {90: [dy, -dx], 180: [-dx, -dy], 270: [-dy, dx]}[rotNorm(r)] || [dx, dy];
+  }
+  // The scale that keeps a preview fitted whole (object-fit contain, or sized to the photo: the lightbox, the swiper),
+  // of aspect ia (width / height as shown, its crop included), whole inside its box (bw x bh px) once turned r degrees:
+  // the turned file fitted whole in that box.
+  function rotScale(bw, bh, r, ia) {
+    if (!(rotNorm(r) % 180) || !(bw > 0 && bh > 0)) return 1;
+    const a = ia > 0 ? ia : bw / bh,
+      cw = Math.min(bw, bh * a),
+      ch = cw / a;
+    return Math.min(bw / ch, bh / cw);
+  }
+  // A tile's photo (object-fit cover in a bw x bh box) turned a quarter: the image box swapped to bh x bw, its cover cut
+  // made there, then turned, so it covers the tile exactly as the turned file will (Codex review #793: scaling the tile's
+  // own cover cut cut the photo twice); the margins keep the tile's own size. Upright or half a turn: nothing to change.
+  function rotCover(bw, bh, r) {
+    if (!(rotNorm(r) % 180) || !(bw > 0 && bh > 0)) return null;
+    return {w: bh, h: bw, mv: (bh - bw) / 2, mh: (bw - bh) / 2};
+  }
+
   // The code of a decision (see the top of the file). on = which fields were applied ({quality, form}); a Check records
   // the whole judgment.
   function autoCode(s, on = {quality: true, form: true}, check = false, crop = false) {
@@ -1077,6 +1132,15 @@
   };
 
   const API = {
+    ROTS,
+    rotNorm,
+    rotStep,
+    rotSet,
+    photoAt,
+    turnedSize,
+    rotDelta,
+    rotScale,
+    rotCover,
     AUTO,
     fnv,
     autoCheck,
