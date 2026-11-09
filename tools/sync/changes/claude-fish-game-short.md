@@ -1,0 +1,1 @@
+the shared core reads fish-game.json in its short form (Pierre, 2026-11-09: an iNaturalist observation by its id and the original photo by its extension instead of full addresses, tools/fish_short.py): `fishGameRead` gives every record its addresses back before the fish photo pools are built (`POOLS` entries); the pools are the same as from the file before
