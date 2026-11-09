@@ -118,7 +118,21 @@
   }
   // A report shown on subject S's side: its own, or one about no subject (on every side).
   const repOn = (ctx, S) => !ctx.subj || ctx.subj === S.id;
-  const API = {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, REP_NOGAME, unitSubj, repCtx, repOn};
+  // A report's reason in the admin, in the words of its subject S (core.js SUBJECTS several and one), as the player's
+  // dialog put it (sync.js REP_WHY): "Several corals", "Several fish species"; a wrong answer outside a game is "Wrong
+  // genus", "Wrong family". The sheet keeps the reason's key (multi, wrong…), so an old report reads the same way.
+  const REP_WHY = {
+    wrong: 'Wrong answer',
+    multi: 'Several {things}',
+    photo: 'Bad photo',
+    info: 'Wrong information',
+    bug: 'Bug',
+    idea: 'Suggestion',
+    other: 'Other'
+  };
+  const repWhyText = (ctx, S) =>
+    ctx.why === 'wrong' && !ctx.game ? 'Wrong ' + S.one : own(REP_WHY, ctx.why) ? REP_WHY[ctx.why].replace('{things}', S.several) : ctx.why;
+  const API = {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, REP_NOGAME, unitSubj, repCtx, repOn, REP_WHY, repWhyText};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

@@ -360,6 +360,20 @@
         'fish-s084-cand-527402743',
         'fish/practice/quiz'
       ),
+      // A fish game report "Several fish species" on a photo in play (Pierre, 2026-11-09: a wrasse beside a goatfish): the
+      // photo carries every tool of its family's page, its count tag among them.
+      rp(
+        11,
+        'Eli Demo',
+        'multi',
+        'f:Wrasses',
+        '',
+        '',
+        'Demo fish report: a goatfish beside the wrasse.',
+        'quiz',
+        'fish-s245-cand-660037998',
+        'fish/practice/quiz'
+      ),
       // Sheet v55: an account deleted with its answers kept: its reports stay without the name, never verified.
       Object.assign(
         rp(

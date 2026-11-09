@@ -26,8 +26,9 @@
   };
   window.viewHome = function () {
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
-    const names = Object.keys(DATA.gen),
-      fish = !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
+    // Before the data (app.js beforeData: the corals' doors, UNITS doorsFirst), no names: the band stays empty until it comes.
+    const names = DATA ? Object.keys(DATA.gen) : [],
+      fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
     // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
     // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header's switch (app.js
     // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is

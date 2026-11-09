@@ -117,7 +117,7 @@ test('fish Feature: his featured photos of a species, in his order, those in pla
 test("real data: every curated fish cover in play is the card's photo, the admin's and the app's alike", () => {
   const f = read('fish.json'),
     P = read('fish-photos.json'),
-    gm = read('fish-game.json'),
+    gm = C.fishGameRead(read('fish-game.json')),
     cu = read('curation.json'),
     X = app(),
     FISH = X.run({f, ph: P, gm: gm.photos ? gm : {photos: {}}}, cu),
@@ -160,7 +160,7 @@ test('fish first-meeting card: his ★ Cover wins over a reference-level photo (
 test("real data: a curated cover below the automatic choice is still the family's card (Q289)", () => {
   const cu = read('curation.json'),
     X = app(),
-    FISH = X.run({f: read('fish.json'), ph: read('fish-photos.json'), gm: read('fish-game.json')}, cu);
+    FISH = X.run({f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))}, cu);
   const low = Object.entries((cu.fish || {}).genera || {}).filter(([id, k]) => {
     const g = FISH.gen[id];
     return g && g.coverP && C.fishPid(g.coverP.f) === C.fishPid(k.cover) && !C.refLevel(g.coverP) && g.views.wide.some(C.refLevel);
@@ -206,7 +206,7 @@ test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q29
   assert.strictEqual(ctx.wp({...g, wink: {photos: ['gone']}}).f, a.f, 'none chosen in play: the best');
   // On the real files: the Thresher sharks' card is his cover (curation.json fish genera), in play.
   const cu = read('curation.json'),
-    FISH = app().run({f: read('fish.json'), ph: read('fish-photos.json'), gm: read('fish-game.json')}, cu);
+    FISH = app().run({f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))}, cu);
   FISH.winks
     .filter(n => FISH.gen[n].coverP)
     .forEach(n => assert.strictEqual(C.fishPid(ctx.wp(FISH.gen[n]).f), C.fishPid(cu.fish.genera[n].cover), n));

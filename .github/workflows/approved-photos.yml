@@ -10,7 +10,8 @@ on:
     # curation.json: Pierre's Publish; the judgements: a judged batch puts photos in play by themselves (Q180, Q199;
     # tools/fish_game.py in_play: suggest.json for the candidates, tools/fish_judge.json and tools/fish_refs.json for the
     # reference photos; Codex review #674); tools/fish_game.py itself: a change to what enters play (Q212: the reference
-    # photos judged sure like a candidate, whatever their level) is downloaded and uploaded at its merge.
+    # photos judged sure like a candidate, whatever their level) is downloaded and uploaded at its merge. A fish's box
+    # (tools/fish_judge.json boxes, suggest.json bb) makes its tile, {f}-x.webp, uploaded the same way (Q321 D4).
     paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py]
   workflow_dispatch:
 permissions:
