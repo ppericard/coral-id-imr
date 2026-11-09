@@ -100,7 +100,7 @@ test('the sheet: a light save rebuilds the copy from a delta, adds the old names
   assert.strictEqual(C.dataSum(C.keysIn(st.data)), C.dataSum(X2), 'the copy another device wrote');
   assert.ok(typeof st.hold === 'number' && Array.isArray(st.holdIds));
   const old = s.post({name: 'Ana', pin: '1234', data: C.withLegacy(X2), summary: {}, answers: [], at: 1});
-  assert.deepStrictEqual(old, {ok: false, error: 'stale', log: true, rev: 2, v: old.v}, 'an app before vNEXT: the reply it always had');
+  assert.deepStrictEqual(old, {ok: false, error: 'stale', log: true, rev: 2, v: old.v}, 'an app before v116: the reply it always had');
 });
 
 test('the sheet: a stale light save reads its own row before the lock goes, so an admin delete then never sends another player’s copy', () => {
@@ -137,7 +137,7 @@ test('the sheet: a load of the copy the device already holds comes back without 
     A = Array.from({length: 30}, (_, i) => qa('h' + i, 'Acropora', i % 3, T(i)));
   s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: A});
   const full = s.get({name: 'Ana', pin: '1234'});
-  assert.ok(full.data && !full.same && full.holdIds.length === 30, 'an app before vNEXT: the copy and the last ids');
+  assert.ok(full.data && !full.same && full.holdIds.length === 30, 'an app before v116: the copy and the last ids');
   const same = s.get({name: 'Ana', pin: '1234', have: '1', light: '1'});
   assert.deepStrictEqual([same.same, 'data' in same, same.rev, same.hold], [1, false, 1, full.hold]);
   assert.deepStrictEqual(same.holdIds, [], 'nothing queued: no ids');

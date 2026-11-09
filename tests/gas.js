@@ -194,7 +194,7 @@ function loadCodeGs(opts = {}) {
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, lock, get, post};
 }
-// A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody, sheet vNEXT) unwrapped,
+// A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody, sheet v116) unwrapped,
 // its gzip read (z) or as it came (lt); anything else as it is. Tests that look at what the app sent read it this way.
 function bodyOf(t) {
   const o = typeof t === 'string' ? JSON.parse(t) : t;

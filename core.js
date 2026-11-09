@@ -192,7 +192,7 @@
       });
     return out;
   }
-  // Lighter saves (sheet vNEXT, docs/ROADMAP.md "Lighter saves on slow lines"; sync.js syncOnce, Code.gs doPost_): a
+  // Lighter saves (sheet v116, docs/ROADMAP.md "Lighter saves on slow lines"; sync.js syncOnce, Code.gs doPost_): a
   // device that knows the saved copy at the revision it saves against sends only what changed since (dataDelta), and the
   // sheet rebuilds the whole copy from its own (dataPatch), keeping it only if it is exactly the copy the device holds
   // (dataSum, checked by both sides on the same spelling). A player's data is {key: the JSON text of its value}.
