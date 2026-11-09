@@ -91,6 +91,9 @@ function loadCodeGs(opts = {}) {
     fetched = [],
     lock = opts.lock || {busy: false};
   const ss = {getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = makeSheet(n))};
+  const cacheFits = v => {
+    if (opts.cacheMax && Buffer.byteLength(String(v), 'utf8') > opts.cacheMax) throw new Error('Argument too large: value');
+  };
   const ctx = {
     SpreadsheetApp: {getActiveSpreadsheet: () => ss},
     Utilities: {
@@ -98,13 +101,29 @@ function loadCodeGs(opts = {}) {
       Charset: {UTF_8: 'utf8'},
       computeDigest: (alg, s) => [...crypto.createHash('sha256').update(String(s), 'utf8').digest()],
       base64Encode: bytes => Buffer.from(bytes.map(b => b & 255)).toString('base64'),
+      // Byte[] as Apps Script gives them (signed); a blob of them, and its gunzip (Utilities.ungzip: a blob not in gzip
+      // throws, as there).
+      base64Decode: t => [...Buffer.from(String(t), 'base64')].map(b => (b > 127 ? b - 256 : b)),
+      newBlob: (bytes, type) => ({bytes, type, getBytes: () => bytes}),
+      ungzip: blob => {
+        const out = require('zlib').gunzipSync(Buffer.from(blob.bytes.map(b => b & 255)));
+        return {getBytes: () => [...out], getDataAsString: () => out.toString('utf8')};
+      },
       getUuid: () => crypto.randomUUID()
     },
+    // opts.cacheMax: the largest value in bytes (Apps Script: 100 KB), over which put and putAll throw as Apps Script
+    // does ("Argument too large"); none by default.
     CacheService: {
       getScriptCache: () => ({
         get: k => cache[k] ?? null,
+        getAll: keys => Object.fromEntries(keys.filter(k => k in cache).map(k => [k, cache[k]])),
         put: (k, v) => {
+          cacheFits(v);
           cache[k] = v;
+        },
+        putAll: o => {
+          Object.values(o).forEach(cacheFits);
+          Object.assign(cache, o);
         },
         remove: k => {
           delete cache[k];
@@ -148,14 +167,18 @@ function loadCodeGs(opts = {}) {
       newTrigger: () => ({timeBased: () => ({everyMinutes: () => ({create() {}})})})
     },
     // opts.lock = {busy: true}: the script lock is held by another request, as Apps Script then answers: waitLock throws
-    // its "Lock timeout" exception, tryLock gives false. Set lock.busy back to false to free it.
+    // its "Lock timeout" exception, tryLock gives false. Set lock.busy back to false to free it. lock.onRelease runs at each
+    // releaseLock.
     LockService: {
       getScriptLock: () => ({
         waitLock() {
           if (lock.busy) throw new Error('Lock timeout: another process was holding the lock for too long.');
         },
         tryLock: () => !lock.busy,
-        releaseLock() {}
+        // lock.onRelease: what another request does the moment this one lets the lock go (a test's race).
+        releaseLock() {
+          if (lock.onRelease) lock.onRelease();
+        }
       })
     },
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},
@@ -171,4 +194,11 @@ function loadCodeGs(opts = {}) {
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, lock, get, post};
 }
-module.exports = {loadCodeGs, makeSheet};
+// A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody, sheet v116) unwrapped,
+// its gzip read (z) or as it came (lt); anything else as it is. Tests that look at what the app sent read it this way.
+function bodyOf(t) {
+  const o = typeof t === 'string' ? JSON.parse(t) : t;
+  if (o && typeof o.z === 'string') return JSON.parse(require('zlib').gunzipSync(Buffer.from(o.z, 'base64')).toString('utf8'));
+  return o && o.lt && typeof o.lt === 'object' ? o.lt : o;
+}
+module.exports = {loadCodeGs, makeSheet, bodyOf};

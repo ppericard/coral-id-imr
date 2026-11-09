@@ -1802,10 +1802,12 @@ test('v28: a player whose app applied an older rules version gets the replay of 
   const g = s.get({name: 'Ana', pin: '1234', rv: '0'});
   assert.deepStrictEqual(g.data, data);
   assert.deepStrictEqual(g.replay.rec, want);
-  // Stored: a second request reuses it (a marker put in the tab comes back), data.json read once (cached).
+  // Stored: a second request reuses it (a marker put in the tab comes back), data.json read once for the replay's genera
+  // (cached); the replay, under the script lock, fetches no photo pool (sheet v115: stats_ there reads the cached pools
+  // only), and the public stats above, which hold no lock, read it once for the corals' photo pool (cached).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv: '0'}).replay.rec, {mark: 1});
-  assert.strictEqual(f.n.c, 1);
+  assert.strictEqual(f.n.c, 2);
   // An app that applied this version gets nothing.
   assert.ok(!s.get({name: 'Ana', pin: '1234', rv: String(C.RV)}).replay);
   assert.ok(!s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rv: C.RV}).replay);
@@ -2190,7 +2192,8 @@ test('sheet replays per subject: the fish progress replayed from its own answers
     [['Ana', 4]],
     "the corals' tab keeps the corals' record only"
   );
-  // Reused while the rows are the same (a marker comes back); fish.json read once (cached).
+  // Reused while the rows are the same (a marker comes back); fish.json read once (cached), never for the photo pools
+  // under the script lock (sheet v115).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
   assert.strictEqual(f.n.f, 1);

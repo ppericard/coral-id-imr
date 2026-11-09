@@ -3396,6 +3396,15 @@
   // B (999); the earlier ones are looks at a smaller log (history), so they take Bh (199) newest first, as long as their
   // answers add up to at most hcap (60,000: about 25 minutes in the Action), and none beyond (the model's own interval
   // only): a whole recompute (new AV, new photo features) stays inside the Action's 2 hours as the log grows.
+  // The answers the report reads: the log's rows without those of the players and devices the admin left out of the
+  // statistics (sheet v115, Players' Leave out: readAnswers excluded, the player list's excluded; their admin ids, the
+  // rows' first column). The same rule for the stored report (tools/analyses.js) and the admin's Recompute here
+  // (admin-analyses.js anRecompute; Codex review #801).
+  function leftOut(rows, excluded) {
+    const L = Array.isArray(rows) ? rows : [],
+      sx = new Set(Array.isArray(excluded) ? excluded : []);
+    return sx.size ? L.filter(r => !(r && sx.has(r[0]))) : L;
+  }
   // live (the admin's Recompute here only, never the stored report): all the answers as one more point after the
   // milestones, named in live, with B draws like the newest milestone (the one selected by default).
   function report(rows, meta, prev, o = {}) {
@@ -3521,6 +3530,7 @@
     bh,
     correct,
     photoMeta,
+    leftOut,
     fpOf,
     hashOf,
     report,

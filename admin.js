@@ -97,23 +97,92 @@ const img = (p, s) =>
     : AWAY && p.src
       ? photoOnline(p.src, s ? 's' : '')
       : `${R2 ? PHOTO_BASE : ''}img/${p.f}${s ? '-s' : ''}.webp${ver(p)}`;
+// The rotation baked into the file of the photo whose online original is shown at address u (data.json / fish-game.json
+// ro, after its crop: tools/photos.py turn), found as core.js photoCropOf finds its crop: 90, 180 or 270, else 0 (none, a
+// photo still remote, any other address). Here, not in core.js: the sheet script holds a copy of core.js (rule D3).
+const photoRoOf = u => {
+  const p = typeof u === 'string' && photoIdx().src.get(u.replace(/#.*$/, '').replace(/\/(?:small|medium|large)\.(\w+)$/, '/original.$1'));
+  return p && !p.r ? rotNorm(p.ro) : 0;
+};
 document.addEventListener(
   'error',
   e => {
     if (!(e.target instanceof HTMLImageElement)) return;
-    // The published crop, baked into the site's files, drawn on the original (core.js photoCropOf; Codex review #569);
-    // crSrc draws it on the next renders (AWAY). Under a service worker, as app.js away: only this photo moves, and the
-    // tab keeps asking R2, where the worker keeps its offline copies (and has retried R2 already).
+    // The published crop and rotation, baked into the site's files, drawn on the original (core.js photoCropOf, Codex
+    // review #569; photoRoOf, turned by rotFit once it loads, review #793); crSrc draws them on the next renders (AWAY).
+    // Under a service worker, as app.js away: only this photo moves, and the tab keeps asking R2, where the worker keeps
+    // its offline copies (and has retried R2 already).
     const sw = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
     const away = i => {
       if (!photoFallback(i, photoLook)) return false;
       if (!sw) ((R2 = false), (AWAY = true));
-      const c = photoCropOf(i.getAttribute('src') || '', photoIdx());
+      const u = i.getAttribute('src') || '',
+        c = photoCropOf(u, photoIdx()),
+        ro = photoRoOf(u);
       if (c && !i.style.getPropertyValue('object-view-box')) i.style.setProperty('object-view-box', c);
+      if (ro && !i.dataset.rot) i.dataset.rot = ro;
       return true;
     };
     // R2 once more first (core.js photoRetry: a passing error), then the online original or the site.
     if ((!sw && photoRetry(e.target, away)) || away(e.target)) e.stopImmediatePropagation();
+  },
+  true
+);
+// A draft rotation drawn on a preview (crSrc's data-rot): turned by CSS once the photo has loaded, and again when its
+// box changes size. A tile's photo (object-fit cover) gets its box swapped before it is turned, so it covers the tile as
+// the turned file will (autosort.js rotCover; the tile clips it, its shape kept in data-ra); a whole photo (the lightbox,
+// the swiper) is scaled to stay whole (rotScale). The files themselves are turned at Publish (tools/photos.py turn).
+const ROTRO =
+  typeof ResizeObserver === 'undefined'
+    ? null
+    : new ResizeObserver(E =>
+        E.forEach(e => (e.target.dataset.rot ? [e.target] : e.target.querySelectorAll(':scope > img[data-rot]')).forEach(rotFit))
+      );
+function rotFit(i) {
+  const P = i.parentElement;
+  if (!i.isConnected || !P) return ROTRO && (ROTRO.unobserve(i), P && ROTRO.unobserve(P));
+  const r = rotNorm(i.dataset.rot);
+  if (getComputedStyle(i).objectFit === 'cover') {
+    // The image's slot, measured once before its box is swapped: a tile's photo fills its box and then follows the
+    // tile's width; a fixed-size thumbnail that shares its parent (a family's in the sidebar grid, 44 x 33, beside its
+    // text) keeps its own width (sw; Codex review #793: the parent's width blew it up over the text).
+    if (!+i.dataset.ra && i.clientWidth && i.clientHeight) {
+      i.dataset.ra = i.clientWidth / i.clientHeight;
+      if (Math.abs(i.clientWidth - P.clientWidth) > 1) i.dataset.sw = i.clientWidth;
+    }
+    const bw = +i.dataset.sw || P.clientWidth,
+      v = +i.dataset.ra && rotCover(bw, bw / +i.dataset.ra, r);
+    // Upright or half a turn: the box stays as it is (rotCover null), the photo is turned in it, the same cover cut
+    // (Codex review #793: a 180° draft showed upright on the tiles).
+    if (!(r % 180)) {
+      Object.assign(i.style, {width: '', height: '', maxWidth: '', margin: '', transform: r ? `rotate(${r}deg)` : ''});
+      return;
+    }
+    if (!v) return;
+    Object.assign(i.style, {
+      width: v.w + 'px',
+      height: v.h + 'px',
+      maxWidth: 'none',
+      margin: `${v.mv}px ${v.mh}px`,
+      transform: `rotate(${r}deg)`
+    });
+    if (!+i.dataset.sw) P.style.overflow = 'hidden';
+    return;
+  }
+  // The photo's shape as shown: its crop (object-view-box inset) taken off its natural size.
+  const m = (i.style.getPropertyValue('object-view-box') || '').match(/inset\(([\d.]+)% ([\d.]+)% ([\d.]+)% ([\d.]+)%\)/),
+    [t, rr, b, l] = m ? m.slice(1).map(x => x / 100) : [0, 0, 0, 0],
+    ia = i.naturalWidth && i.naturalHeight ? (i.naturalWidth * (1 - l - rr)) / (i.naturalHeight * (1 - t - b)) : 0,
+    k = rotScale(i.clientWidth, i.clientHeight, r, ia);
+  i.style.transform = r ? `rotate(${r}deg)${k !== 1 ? ` scale(${+k.toFixed(4)})` : ''}` : '';
+}
+document.addEventListener(
+  'load',
+  e => {
+    const i = e.target;
+    if (!(i instanceof HTMLImageElement) || !i.dataset.rot) return;
+    rotFit(i);
+    if (ROTRO) [i, i.parentElement].forEach(x => x && ROTRO.observe(x));
   },
   true
 );
@@ -409,6 +478,12 @@ function togglePin(f, c) {
 // tools/fetch_approved.py applies them when it downloads the photo (and redoes it if the crop changes).
 const crOf = f => (DRAFT.crop || {})[f],
   crChanged = () => !same(DRAFT.crop || {}, SAVED.crop || {});
+// Rotations (curation.json "rot" {f: 90 | 180 | 270} degrees clockwise; Pierre, 2026-11-08): set in the crop editor,
+// applied to the files at Publish after the crop (tools/photos.py turn; autosort.js rotNorm, rotSet).
+const roOf = f => rotNorm((DRAFT.rot || {})[f]),
+  roChanged = () => !same(DRAFT.rot || {}, SAVED.rot || {});
+// The Crop button is on for a photo cropped or turned.
+const crOn = f => !!(crOf(f) || roOf(f));
 const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // A photo's src and its draft crop as a preview (object-view-box). A downloaded photo's local file already has the
 // published crop in it (data.json "cr", tools/fetch_approved.py): shown as is while the draft keeps that crop, and the
@@ -418,15 +493,19 @@ const snChanged = () => !same(DRAFT.single || {}, SAVED.single || {});
 // le faire de manière automatique"): shown on it until he adds it, then written to his crops when he adds it (ACT.addc),
 // where he can change it as any crop. His own crop, or Full photo ([0, 0, 1, 1]), always wins.
 const sugCrop = p => (p && p.j && p.j.c && !crOf(p.f) ? p.j.c : null);
+// A crop [l, t, r, b] as object-view-box's inset(top right bottom left).
+const vbox = c =>
+  `inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)`;
+// The rotation goes the same way: the files have the published one baked in (data.json / fish-game.json "ro"); a draft
+// rotation is drawn on the original, after its crop, by a CSS rotate (data-rot, rotFit). p.j.ro: a fish photo's (fuP).
 const crSrc = (p, s) => {
   const c = crOf(p.f) || sugCrop(p),
+    ro = p.j && p.j.ro != null ? rotNorm(p.j.ro) : roOf(p.f),
     // Once R2 failed, a downloaded photo comes from its online original, uncropped (img(), AWAY): its crop is drawn.
-    baked = !p.r && p.cr && !(AWAY && p.src);
-  if (baked && same(c, p.cr)) return `src="${img(p, s)}"`;
+    baked = !p.r && (p.cr || p.ro) && !(AWAY && p.src);
+  if (baked && same(c, p.cr) && ro === rotNorm(p.ro)) return `src="${img(p, s)}"`;
   const src = baked && p.src ? p.src.replace('/original.', s ? '/medium.' : '/large.') : img(p, s);
-  return c
-    ? `src="${src}" style="object-view-box:inset(${+(c[1] * 100).toFixed(1)}% ${+((1 - c[2]) * 100).toFixed(1)}% ${+((1 - c[3]) * 100).toFixed(1)}% ${+(c[0] * 100).toFixed(1)}%)"`
-    : `src="${src}"`;
+  return `src="${src}"${c ? ` style="object-view-box:${vbox(c)}"` : ''}${ro ? ` data-rot="${ro}"` : ''}`;
 };
 const qTag = p => {
   const q = qOf(p.f);
@@ -1186,7 +1265,7 @@ function tile(n, p, v, st) {
       <span class="adm-qseg adm-vseg" role="group" aria-label="View">${moves}</span>
       <button type="button" data-act="cover" class="${isCover ? 'on' : ''}" title="Cover">★ Cover</button>
       <button type="button" data-act="hide" title="Remove">Remove</button>
-      ${p.src ? `<button type="button" data-act="crop" class="${crOf(p.f) ? 'on' : ''}" aria-pressed="${!!crOf(p.f)}">Crop</button>` : ''}
+      ${p.src ? `<button type="button" data-act="crop" class="${crOn(p.f) ? 'on' : ''}" aria-pressed="${crOn(p.f)}">Crop</button>` : ''}
       ${p.from ? '' : notThis(n)}`
       }${st.extra || ''}
     </div></figure>`;
@@ -1215,6 +1294,7 @@ function status0() {
       cdChanged() ? 'candidate reviews' : '',
       mtChanged() ? 'look-alike montages' : '',
       crChanged() ? 'crops' : '',
+      roChanged() ? 'rotations' : '',
       snChanged() ? 'several corals' : '',
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
@@ -1702,8 +1782,11 @@ const fuImr = u =>
       ? `<span class="adm-src adm-imrt" title="IMR course: taught with the ${esc(u.imrWith)}">IMR</span>`
       : '';
 // A fish photo with its crop for the previews (crSrc, through its suggested-crop path): Pierre's (curation.json fish crop,
-// [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655).
-const fuP = p => (p ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null}} : p);
+// [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655); and his rotation (fish rot).
+const fuP = p =>
+  p
+    ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT.fish || {}).rot || {})[p.f])}}
+    : p;
 const fuHref = id => '#' + ASUBJ.hash + FAMS + '/' + encodeURIComponent(id);
 // Everything the page needs from the draft, once per render: each species' photos in play, the photos sent elsewhere
 // with Not this, and the species whose photos changed since the published file (the list's dots).
@@ -3192,7 +3275,7 @@ const HELP = {
   kcov: `<p>What the genus sheets and the Coral ID Key can draw from, per genus and view (a sheet shows the first 6 photos of a view, the Coral ID Key the 3 featured plus up to ${CAP.inat} from other iNat observers): the IMR genera and the book's other genera seen at Dauin (Not IMR). Every photo of the view counts (field and IMR lecture photos), except hidden and multi-coral ones. Big number = photos, small = distinct colonies with a photo that is not Poor; the colour follows those good colonies (as on Games). Forms = growth forms seen on Colony and Close-up photos; Species = distinct species named on the photos (hover for the list). Order: Thinnest, Thickest (to prune), A–Z; or click Colony, Close-up or Corallites to sort by that view (again to reverse). A dark outline marks a Key-only genus's Colony or Close-up cell at its cap (${CAP.sheet} colonies in the games' count, as many as a sheet and the Coral ID Key show), an orange one a cell over it. Click a row to open the genus.</p>`,
   rights: `<p>The rights each photo comes with, for a later commercial version (licence study, 8 Nov 2026). Each photo tile shows its class: <b>own</b> your photos (whatever their licence), <b>open</b> CC0 or CC BY, <b>NC</b> the rest (CC BY-NC, share-alike, or no licence read), <b>IMR</b> IMR lecture photos, <b>book</b> the Coral Finder book (none since 8 Nov 2026); hover it for the licence. <b>Ready</b> = commercial-ready: own + open, the only ones a paid app could use. Corals: every photo a genus page lists now (field and IMR lecture photos, not hidden), per genus or per species (the species named on the photo; <i>genus only</i> for the photos named to the genus, the IMR lecture ones among them). Fish: the photos in play, per family, genus or species. A class no photo has gets no column. <b>Least ready</b> first (the lowest share, then the most photos), or the <b>List</b> order. Click a row to open its genus or family. Information only: nothing is moved or left out for it; between photos otherwise equal, the open ones already come first (the licence tie-break, Q270). Coverage › Games shows the total in one line.</p>`,
   cov: `<p><b>Rights</b> (the first line): the photos commercial-ready (yours, CC0 or CC BY) out of every photo of the genus pages, and each rights class; the link opens Coverage › Rights.</p><p><b>Where to look</b> (the banner above the grid): the genus and view cells most worth a candidate search now, most reasons first; hover one for its reasons, click it to open the genus; <b>All N</b> opens the full list (reasons, filters, sort; see its own help), <b>Fold</b> closes it.</p><p>Game photos per genus and view, for every genus a game can ask (the IMR slate, Millepora and the bonus genera): what the quiz and the other games can draw from. Field and IMR lecture photos (no multi-coral, hidden or sheet-only photo; Poor photos count, the players' answers rate how hard they are; Colony leaves out photos where the form is not visible, except for a genus with a single growth form). Big number = photos, small = distinct colonies when fewer. The "excl." line under it counts the photos of that view left out of games and why: multi-coral (several corals in the photo), no form (form not visible), sheet only, removed. The colour follows the colonies: dark red none, red 1-2 (thin: RAs may learn the photos instead of the genus), orange 3-4, light green 5-7, green 8 or more. The bar shows where the photos come from (IMR, Pierre, iNat Dauin, Philippines, elsewhere), the + count the candidates waiting. A dark outline marks a full cell (${CELL_MAX} colonies, the cap: its candidates wait outside the Candidates queue), an orange one a cell over the cap (prune it by adding a better photo there: the swiper then asks which colony to replace). Order: Thinnest (least covered first), Thickest (most photos first, to prune over-covered genera), Lecture; or click Colony, Close-up or Corallites to sort by that view (again to reverse). Click a row to open the genus.</p>`,
-  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
+  users: `<p>Everyone who signed in to save their progress, by name (needs the sync sheet script v11 and this page's GitHub token: names are only shown to admins). <b>One list for every subject</b>: the same page on the Corals and the Fish side (the switch is greyed here; the other pages stay on the side it shows). Click a column title to sort by it, again to reverse; "you" marks the name synced in this browser; a greyed name (muted, italic) is hidden from the leaderboard. A long name or value ends in "…" so the table stays narrow: hover it for the whole text. <b>Last</b> = their last answer in any subject, to the minute: <b>now</b> (green) = less than ${RECENT.NOW} minutes ago, then "12 min ago", "3 h ago" (today), "yesterday 18:40" ("yest. 18:40" on a phone), then the date (hover for the date and time); times are 24 h; sorted by its exact time, most recent first by default (one tap on Last brings that back). How quickly answers reach the sheet: see Activity's help. <b>Devices</b> = the devices they opened the app on (from the pages-opened summaries, sheet v30); <b>Groups</b> = the beta groups they are in. Then <b>one group of columns per subject</b>: <b>Answers</b>, <b>Right</b> (every game), <b>Last</b> answer and <b>Sessions</b> in that subject (answers less than ${HEALTH.GAP} minutes apart; small: their median length); <b>Photos</b> and <b>Spread</b> (sheet v81; the photo exposure study of 2026-11-06): <b>Photos</b> = Seen %, the game photos they have been shown out of the game photos of the units they have met (it grows with the answers: a busy player looks good); <b>Spread</b> = Spread %, the one to act on: in time order, of their questions on a unit that still had colonies (one observation, all its views) they had never been shown, the share that showed one; 100% = no colony came back while an unseen one was left; low Spread = the draw turns round a few colonies; both computed by the sheet (hover a cell for its counts); <b>Progress</b> (the corals: replayed from every answer in the log with the current rules, what the app will show the player; <b>↻ saved 44%</b> beside one = what the copy saved in the sheet still says: the player has not opened the app since a recalculation, or their last answers are not saved yet). Everything else about a player is on their <b>Journey</b> (Journey → under the row; it opens on the subject they played last, its own Corals | Fish at the top): their Elo, quiz and duel right shares, days, sessions, units met and learned, games, mix-ups. Click a row for the Journey and the account tools; their reports count shows there too (To do › Reports lists them). <b>Not signed in</b>: answers of devices that never signed in, by anonymous id, per subject; they count in Activity. The answers an account deleted with its answers kept left behind are no player: they only rate photo difficulty and confusions (sheet v55), never listed here, in Activity, Health, a Journey or the Analyses' per-player results. Tick test runs or junk and <b>Delete the answers of the selected ids</b> (permanent, asks first; sheet v17). <b>Leave out</b> (a player's bar, or a device's Statistics column; sheet vNEXT): their answers no longer rate the photos, confusions and formats, and the Analyses leave them out; their own progress, level and leaderboard place stay, and they stay listed, marked <b>out</b>; <b>Count again</b> undoes it. For a player or device that passes the trust rule without really playing (a bot reading the right answers). Photo difficulty and confusions count only players whose answers are clearly above chance (10 answers or more), signed in or not (sheet v18), each answer weighing more as the player's level settles, repeats against what they remember of the photo (sheet v17).</p><p><b>Merge into</b>: one person signed in under two names (a typo, a second phone). Their progress is combined (answers add up), their answers and reports move to the name kept, and the other name is deleted. <b>Delete…</b> shows two choices, no default (sheet v55): <b>Delete everything</b> (a test account, or a player who asked: their answers and reports go too) or <b>Delete, keep answers anonymously</b> (their answers stay without the name, only for photo difficulty; their reports stay too, read "from a removed account" in the Inbox, never thanked). Either way the account, its progress, page summaries, beta groups and its name in the logs go; only its line under <b>Removed</b> stays. Both are permanent and ask first. <b>Archive…</b> (sheet v58): a record kept apart under another name ("Pierre-test"), out of normal operation: no player row, leaderboard, achievement share or beta group; its answers only rate the photos; listed read-only under <b>Archived</b> (its Journey, Delete); its devices are told it is archived, and the name is free to start fresh. Players can also delete their own account in the app (About › Delete my account, sheet v58): everything goes, as <b>Delete everything</b>. A phone still signed in with a removed name is told to sign out; someone new can still pick that name with another code.</p><p><b>Starting answer</b> (sheet v99): under a player's row, their answer to each subject's first-launch question ("How well do you know corals?") and its history: date, answer, how it was given (welcome tour, card, fallback card, inferred, or changed by you). <b>Change…</b> lists the answers; pick one, then <b>Change</b> (or Cancel). The new answer is added to the history, never replacing it, and goes to their phones at their next sync; it sets the level their new genera start from from now on (earlier answers keep the level they had). The level card can still come, as after an answer given in the app: it counts only the answers after your change (from 40 of them). A subject they have not answered shows nothing: the app asks them.</p><p><b>Beta group</b> (a subject that opens to a group of players, not to everyone; sheet v48): the players that subject opens to, besides you. <b>Beta</b> column, in that subject's group = In or not; <b>Add</b> / <b>Remove</b> in a player's row; <b>Add all</b> above the table puts every player listed in it (asks first). The app opens the subject for them at their next sync (signed-in players only); someone who signs up later is not in it until you add them. A merge keeps the membership; an archive or a delete removes it.</p>`,
   // A getter: SESS (the session summary's thresholds) is in admin-journey.js, loaded after this file.
   get stats() {
     return `<p><b>Recent sessions</b>: the last ${RECENT.N} sessions of every player, newest first (a session = one player's answers less than ${HEALTH.GAP} minutes apart, as on Analyses › Stops and a Journey): the name when they signed in (opens their Journey), else the anonymous id of their device (as on Players). Last = their last answer; <b>now</b> (green row) = less than ${RECENT.NOW} minutes ago. Length = first to last answer. Modes: quiz (look-alike duels slipped into it included), duel (the Duel tab), typed. "as of" = when the answers were read: <b>↻</b> reads them again (no automatic reload: each read fetches the whole answer log).</p>
@@ -3209,7 +3292,7 @@ const HELP = {
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
   diff: `<p>Every photo with answers, hardest (or easiest) first, with its quality to re-rate (the former Photo stats › Photo list). How hard each photo is for the RAs, learned from every quiz and duel answer in the sync sheet (Elo), read as <b>recognised by N%</b> (below); then the answers that rated it and the right %, weighed by each player's experience (sheet v17: a player's first answers count little). Few answers = rough; ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (shared with Photos). The site uses it to weigh answers in "learned" (a right answer on a hard photo counts more). Re-rate a photo's quality here if it does not match how hard it plays.</p>`,
-  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
+  genus: `<p>Every click is saved at once as a draft in this browser; <b>Publish</b> sends it to the site. <b>Undo</b> / <b>Redo</b> (Ctrl+Z, Ctrl+Shift+Z) step back one click at a time. <b>Crop</b> (a photo with an online original): drag the frame or its corners; ⟲ and ⟳ turn the photo a quarter left or right, 0° puts it back upright; Save keeps both, one Undo step. The site's files are cut, then turned, after Publish (the Candidates' Crop is the same). An <b>out of rule</b> tag marks a photo taken abroad of a species the presence rule does not confirm in the Philippines (3+ Research Grade observers there, or 1+ and a checklist, or 2+ near Dauin; rule C8): yours to keep or remove, never removed automatically. A <b>share-alike</b> tag marks a photo under CC BY-SA or CC BY-NC-SA (no longer taken for corals): yours to keep or remove in To do, never removed automatically. A <b>WoRMS:</b> tag (outlined) gives the name WoRMS accepts now when the photo's name (iNaturalist's when it was fetched) is a former name, a former genus or iNaturalist's own spelling (its tooltip says which); information only, nothing is renamed (from the reference of names that tools/taxonomy.py refreshes from WoRMS and iNaturalist).</p>
     <p>The first 3 photos of each view are its featured photos (top of the genus sheet, Coral ID Key). Drag a photo into the first 3 places to put it there, out of them to drop it (the next best moves up); places you haven't set fill automatically. Drag to another view to move a photo, or from the candidates to add it. <b>Remove</b> takes a photo off the site (games included) and lists it with the candidates below, where you can add it back.</p>
     <p><b>Which no?</b> <b>Remove</b>: off the site, back with the candidates. <b>Reject</b> (Candidates): reviewed and not wanted, it stays a candidate. <b>Skip</b>: decide later. <b>Not this</b>: wrong genus, or only fit for a look-alike comparison. <b>×</b>: excluded for good (a person, a drawing, unusable).</p>
     <p>The letters on each photo are its growth form (see Growth form).</p>
@@ -3235,7 +3318,7 @@ const HELP = {
     <p><b>Where players stop.</b> A session = one player's answers less than ${HEALTH.GAP} minutes apart; a session whose last answer is more recent is still going and not counted as ended. Answers per session and sessions per player. How sessions ended: the misses in a row on their last answers, for short sessions (${HEALTH.EARLY} answers or fewer) against longer ones: more short sessions ending on misses than long ones = players quitting in frustration. Last shown: the genus and game of the last question of the short sessions.</p>
     <p><b>Genus sheets opened</b> (sheet v30). From the summary each visit sends (the pages opened and for how long, under the player's anonymous id, never a name; Players and Journey join it to the answers): per experience band (answers so far when the visit was made), the players and the visits, and the share that opened at least one genus sheet. A player who changed band counts in each. Not known = a summary without the answers so far.</p>`,
   excluded: `<p>Excluded photos are removed from every genus, game and candidate list, and imports skip them. Restore puts one back.</p>`,
-  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
+  fcand: `<p>Every fish candidate you have not decided, one at a time, the thinnest species first (observations in play against its target: ${FISHT.obs}, ${FISHT.top} for the cheatsheet's species), its photos together: the pass's best photo of each observation, other angles, near-duplicates, the easiest first, then reference photos, whoever took them. <b>+ Add</b> (key 1; dashed when the pass would add it) puts it in play for its species with the pass's tags, ease, phase and crop; <b>✕ Reject</b> (←), <b>Skip</b> (→), × excludes for good. Undo steps back; Publish sends it all.</p><p><b>At target</b>: a species with its target in play stops taking candidates (another photo of an observation already in play still comes); the chip shows them. <b>Set aside</b>: the pass is sure they go (near-duplicate, subject not obvious, out of the water) but the auto-sort is off. <b>In play</b>: the species' photos in play, most of them the auto-sort's proposals; tap one to enlarge it, <b>Out of play</b> takes it off (counted as a correction of the auto-sort).</p><p><b>Checks</b>: about 1 in 20 sure photos the fish auto-sort did not apply, for you to answer blind (no judgment, no suggestion); the toast then gives its answer. The <b>Auto</b> chip opens its line. Its agreement on keep over your last ${AUTO.win} checks and corrections turns it off under ${Math.round(100 * AUTO.min.keep)}% (after ${AUTO.n0}). Details: the disagreements and every fish auto decision, each with Undo.</p><p><b>Rows</b>: Ease (5 easy … 1 hard), Phase for the entries whose phases differ, and behind <b>Tags</b> the rubric's tags (view, whole, light, colour loss, clarity, size, count) and the Juvenile and Camouflage flags. Dashed = the pass's value; a click makes it yours (an Undo of the auto decision then leaves it). <b>Crop</b>: as for the corals, with ⟲ ⟳ to turn the photo. <b>Not this</b>: the experts got the species wrong: send it to another species of its entry or any game species (it waits there as a candidate, marked "from"), or No game species; a moved photo can go back. <b>New</b> on the phase tag: a phase none of the species' photos in play shows; those come first in their species.</p>`
 };
 // The pages that show a difficulty or Elo reading: their "?" ends with the method (REC_HELP).
 const REC_PAGES = new Set(['journey', 'users', 'stats', 'statslog', 'statsph', 'diff', 'health', 'statsneeds', 'cov', 'cand']);
@@ -3757,20 +3840,58 @@ const XP_BANDS = [
   ['50-300 answers', 50, 300],
   ['Over 300 answers', 301, Infinity]
 ];
-// Analyses › Learning › Stops › Genus sheets: of the visits and the players of each band, the share that opened at least one genus sheet.
-function healthSheets() {
-  const head = '<h3>Genus sheets opened</h3>';
+// sheetsbysubj: begin
+// The sheets a subject's players read and the pages its visits show (Stops, per subject: the Corals | Fish switch, rule
+// A4). The corals' genus sheets are counted from the summary's genera (g: core.js PAGES.GENUS keeps coral genus names
+// only); another subject's from its sheet page (its page prefix SUBJECTS pv + 'learn.genus'). A page name is in the
+// corals' words whatever the subject (core.js pageName: a page's identity), so a fish family, genus or species sheet
+// (g-f:…, g-g:…, g-s:…) is always logged 'fish.learn.genus': one name for its sheets of every rank, no count per rank
+// (tests/health.test.js checks pageName). One visit summary x: null when the visit showed none of the subject's pages (a
+// fish visit for the corals' Stops is still a visit: the corals have no prefix), else [times a sheet was opened, seconds
+// on them].
+const sheetWord = S => (S.sheets ? Object.keys(S.sheets) : [S.one]),
+  sheetsTitle = S => {
+    const L = sheetWord(S),
+      t = L.length > 1 ? L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1] : L[0];
+    return t[0].toUpperCase() + t.slice(1) + ' sheets opened';
+  },
+  sheetVisit = (x, S) => {
+    if (!S.sheets) return Object.values(x.g || {}).reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]);
+    const R = x.r || {};
+    if (!Object.keys(R).some(k => k.startsWith(S.pv))) return null;
+    const v = R[S.pv + 'learn.genus'];
+    return v ? [v[0], v[1]] : [0, 0];
+  };
+// The column of the units a subject's questions ask (Stops' last shown): Genus; the fish "Family", or "Family or genus"
+// with the words of its Analyses pages (SUBJECTS analyses one).
+const stopWord = S => {
+  const w = (S.analyses && S.analyses.one) || S.one;
+  return w[0].toUpperCase() + w.slice(1);
+};
+// Their plural (Health's "Genera that don't take off"): Genera; the fish "Families", or "Families and genera" (SUBJECTS
+// analyses many).
+const manyWord = S => {
+  const w = (S.analyses && S.analyses.many) || S.many;
+  return w[0].toUpperCase() + w.slice(1);
+};
+// sheetsbysubj: end
+// Analyses › Learning › Stops › Genus sheets: of the visits and the players of each band, the share that opened at least
+// one of the subject's sheets.
+function healthSheets(S = ASUBJ) {
+  const head = `<h3>${esc(sheetsTitle(S))}</h3>`,
+    one = S.sheets ? '' : S.one + ' ';
   if (!PGS) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">Loading…</p></section>`;
   if (PGS.err) return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}<p class="note">${esc(PGS.err)}</p></section>`;
   // One visit = the summaries with the same visit id; a player = the admin's id, else the device.
   const VS = Object.create(null);
   PGS.rows.forEach(x => {
+    const sv = sheetVisit(x, S);
+    if (!sv) return;
     const who = x.id || 'dev:' + x.dev,
       v = (VS[who + '|' + x.vi] = VS[who + '|' + x.vi] || {who, na: x.na, sheet: false, s: 0});
     if (x.na != null && (v.na == null || x.na < v.na)) v.na = x.na;
-    const gs = Object.values(x.g);
-    if (gs.some(([n]) => n > 0)) v.sheet = true;
-    v.s += gs.reduce((t, a) => t + a[1], 0);
+    if (sv[0] > 0) v.sheet = true;
+    v.s += sv[1];
   });
   const visits = Object.values(VS),
     rowOf = (t, L) => {
@@ -3791,7 +3912,7 @@ function healthSheets() {
     unknown = visits.filter(v => !bandOf(v));
   return `<section class="adm-scard adm-hsec full" data-health="sheets">${head}${
     visits.length
-      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Experience</th><th class="n">Players</th><th class="n" title="Players who opened at least one genus sheet">Opened one</th><th></th><th class="n">Visits</th><th class="n" title="Visits with at least one genus sheet opened">With one</th></tr></thead><tbody>${rows.join('')}${unknown.length ? rowOf('Not known', unknown) : ''}${rowOf('<b>All</b>', visits)}</tbody></table></div>`
+      ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Experience</th><th class="n">Players</th><th class="n" title="Players who opened at least one ${esc(one)}sheet">Opened one</th><th></th><th class="n">Visits</th><th class="n" title="Visits with at least one ${esc(one)}sheet opened">With one</th></tr></thead><tbody>${rows.join('')}${unknown.length ? rowOf('Not known', unknown) : ''}${rowOf('<b>All</b>', visits)}</tbody></table></div>`
       : '<p class="note">None yet.</p>'
   }</section>`;
 }
@@ -4122,12 +4243,13 @@ const FISHS = SUBJECTS.find(S => S.admin.cur && S.sheets) || null;
 const famHref = id => '#' + (FISHS ? FISHS.hash : ASUBJ.hash) + FAMS + '/' + encodeURIComponent(id);
 // A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus or
 // species in italics (its id's prefix off), each with its family's page once the fish data are read (fishAdmin).
-const repUnit = x => {
+// bare: without the subject's name after it (a page that is that subject's already: its Stops).
+const repUnit = (x, bare) => {
   const S = unitSubj(x);
   if (!S || !S.sheets) return `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
   const fam = FISHA && FISHA.fam[x],
     nm = FISHA && FISHA.gen[x] ? esc(FISHA.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
-  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam))}">${nm}</a>` : nm} <small>(${esc(S.name.toLowerCase())})</small>`;
+  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
 // A fish photo's tile in To do (a report's or a flag's): the photo (its observation), its family, and the tools of the
 // family's page (renderFishUnits; Q309): × Exclude (fishExclude), Remove (fishReject), Not this (a candidate photo only:
@@ -5798,7 +5920,7 @@ function renderCand() {
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${srcTag(p)}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : jLine(p)}
-      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOf(p.f) ? ' on' : ''}" data-crop aria-pressed="${!!crOf(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
+      <div class="adm-acts adm-swacts">${qSeg(p, chk)}${fSeg(p, chk)}<div class="adm-swrow">${p.from ? '' : notThis(n)}<button type="button" class="adm-swcrop${crOn(p.f) ? ' on' : ''}" data-crop aria-pressed="${crOn(p.f)}">Crop</button><button type="button" data-skip>Skip</button></div></div>
       <div class="adm-swbar"><button type="button" class="rej" data-rej>✕ Reject</button>${views.map(([w], i) => `<button type="button" class="add${sug(w) ? ' sug' : ''}" data-add="${w}" title="${sug(w) ? 'Suggested · ' : ''}Add (${i + 1})">+ ${label(n, w)}</button>`).join('')}</div>
     </section>${autoBlock(true)}`;
     if (nx) new Image().src = img(nx.p);
@@ -5920,13 +6042,18 @@ function candKeys() {
 // Crop editor (full screen): drag the frame or its corners; Save keeps it in the draft, Full photo removes it.
 // The frame is in fractions of the ORIGINAL photo, so the editor always shows the original (iNat large), never the
 // local file, which is already cropped once a crop has been applied (re-editing used to compound the two crops).
-// opt (the fish Candidates, admin-fish.js): {start, save(v, full)} in place of the coral crops (curation.json crop).
+// ⟲ / ⟳ turn the photo a quarter left or right, 0° puts it back (Pierre, 2026-11-08: curation.json rot): the photo and
+// its frame turn together (a CSS rotate of the box), the frame staying in fractions of the original, as the workflow
+// cuts the crop first and then turns it (tools/photos.py turn). Save writes the crop and the rotation as one Undo step.
+// opt (the fish Candidates, admin-fish.js): {start, rot, save(v, full, rot)} in place of the coral crops and rotations.
 function cropEditor(p, opt) {
   const lb = $('lightbox'),
     c0 = (opt ? opt.start : crOf(p.f) || sugCrop(p)) || [0, 0, 1, 1];
-  let c = c0.slice();
+  let c = c0.slice(),
+    ro = rotNorm(opt ? opt.rot : roOf(p.f));
   lb.innerHTML = `<div class="adm-crop"><div class="adm-cropbox"><img src="${p.src ? p.src.replace('/original.', '/large.') : img(p)}" alt="" draggable="false"><div class="adm-cropfr"><i data-h="lt"></i><i data-h="rt"></i><i data-h="lb"></i><i data-h="rb"></i></div></div>
-    <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div></div>`;
+    <div class="adm-cropbar"><button type="button" data-c="cancel">Cancel</button><button type="button" data-c="full">Full photo</button><button type="button" class="ok" data-c="save">Save</button></div>
+    <div class="adm-cropbar adm-rotbar" role="group" aria-label="Rotation"><button type="button" data-r="-90" title="Rotate left" aria-label="Rotate left">⟲</button><button type="button" data-r="0" title="No rotation" aria-label="No rotation"${ro ? '' : ' disabled'}>0°</button><button type="button" data-r="90" title="Rotate right" aria-label="Rotate right">⟳</button></div></div>`;
   lb.hidden = false;
   const box = lb.querySelector('.adm-cropbox'),
     im = box.querySelector('img'),
@@ -5943,13 +6070,20 @@ function cropEditor(p, opt) {
   // On a touch screen the photo keeps EDGE px from each side (Pierre, 2026-11-02: a crop dragged to the screen's edge
   // set off the phone's back / forward swipe, and the page changed).
   const EDGE = matchMedia('(pointer: coarse)').matches ? 40 : 12;
+  // Turned a quarter, the box (the photo's own frame) shows h x w: it is sized so that fits, and its margins give the
+  // page the room it takes turned.
   const fit = () => {
     const W = innerWidth - 2 * EDGE,
-      H = innerHeight - 110,
+      H = innerHeight - 170,
       r = im.naturalWidth / im.naturalHeight || 1.33,
-      w = Math.min(W, H * r);
+      q = ro % 180,
+      w = q ? Math.min(H, W * r) : Math.min(W, H * r),
+      h = w / r;
     box.style.width = w + 'px';
-    box.style.height = w / r + 'px';
+    box.style.height = h + 'px';
+    box.style.transform = ro ? `rotate(${ro}deg)` : '';
+    box.style.margin = q ? `${(w - h) / 2}px ${(h - w) / 2}px` : '';
+    lb.querySelector('[data-r="0"]').disabled = !ro;
     draw();
   };
   im.complete ? fit() : (im.onload = fit);
@@ -5960,13 +6094,14 @@ function cropEditor(p, opt) {
     const h = e.target.dataset.h || (e.target === fr ? 'move' : null);
     if (!h) return;
     box.setPointerCapture(e.pointerId);
-    const r = box.getBoundingClientRect();
-    drag = {h, x: e.clientX, y: e.clientY, c: c.slice(), w: r.width, hh: r.height};
+    // The box's own size (offsetWidth: before its rotation), the drag turned back into its axes (rotDelta).
+    drag = {h, x: e.clientX, y: e.clientY, c: c.slice(), w: box.offsetWidth, hh: box.offsetHeight};
   };
   box.onpointermove = e => {
     if (!drag) return;
-    const dx = (e.clientX - drag.x) / drag.w,
-      dy = (e.clientY - drag.y) / drag.hh,
+    const [mx, my] = rotDelta(e.clientX - drag.x, e.clientY - drag.y, ro),
+      dx = mx / drag.w,
+      dy = my / drag.hh,
       o = drag.c,
       cl = (v, a, b) => Math.min(b, Math.max(a, v));
     if (drag.h === 'move') {
@@ -5992,6 +6127,13 @@ function cropEditor(p, opt) {
     lb.innerHTML = '';
     removeEventListener('resize', fit);
   };
+  lb.querySelectorAll('[data-r]').forEach(
+    b =>
+      (b.onclick = () => {
+        ro = +b.dataset.r ? rotStep(ro, +b.dataset.r) : 0;
+        fit();
+      })
+  );
   lb.querySelectorAll('[data-c]').forEach(
     b =>
       (b.onclick = () => {
@@ -6004,7 +6146,7 @@ function cropEditor(p, opt) {
         if (a === 'save' && opt) {
           const v = c.map(x => Math.round(x * 1000) / 1000);
           close();
-          return opt.save(v, v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1);
+          return opt.save(v, v[0] <= 0 && v[1] <= 0 && v[2] >= 1 && v[3] >= 1, ro);
         }
         if (a === 'save') {
           const v = c.map(x => Math.round(x * 1000) / 1000),
@@ -6015,6 +6157,9 @@ function cropEditor(p, opt) {
           if (full && !(((SUG && SUG.cand) || {})[p.f] || {}).c) delete DRAFT.crop[p.f];
           else if (full) DRAFT.crop[p.f] = [0, 0, 1, 1];
           else DRAFT.crop[p.f] = v;
+          // An empty map stays (output() leaves it out of the file): with the key gone, the next merge (merge3) would drop
+          // the rotations another device published meanwhile, as a reset crop leaves DRAFT.crop {} (review #793).
+          DRAFT.rot = rotSet(DRAFT.rot, p.f, ro);
           saveDraft();
         }
         close();
@@ -6085,6 +6230,13 @@ const output = () => {
     .forEach(k => {
       crop[k] = DRAFT.crop[k];
     });
+  // Rotations: only a real one (90, 180, 270) is published.
+  const rot = {};
+  Object.keys(DRAFT.rot || {})
+    .sort()
+    .forEach(k => {
+      if (rotNorm(DRAFT.rot[k])) rot[k] = rotNorm(DRAFT.rot[k]);
+    });
   const single = {};
   Object.keys(DRAFT.single || {})
     .sort()
@@ -6133,6 +6285,7 @@ const output = () => {
     ...(Object.keys(seen).length ? {seen} : {}),
     ...(Object.keys(mont).length ? {mont} : {}),
     ...(Object.keys(crop).length ? {crop} : {}),
+    ...(Object.keys(rot).length ? {rot} : {}),
     ...(Object.keys(tile).length ? {tile} : {}),
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
@@ -6204,6 +6357,7 @@ function pubSummary() {
     [repsChangedN(), 'report status', 'report statuses'],
     [nDiff(DRAFT.flag, SAVED.flag), 'triage flag'],
     [nDiff(DRAFT.crop, SAVED.crop), 'crop'],
+    [nDiff(DRAFT.rot, SAVED.rot), 'rotation'],
     [nDiff(DRAFT.single, SAVED.single), 'several-corals mark'],
     [nDiff(DRAFT.mont, SAVED.mont), 'look-alike pair'],
     [nDiff(DRAFT.tile, SAVED.tile), 'growth-form tile'],
@@ -6220,6 +6374,7 @@ function pubSummary() {
     // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
     [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
     [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
+    [nDiff((DRAFT.fish || {}).rot, (SAVED.fish || {}).rot), 'fish photo rotation'],
     // A fish look-alike pair's picks (Photos › Look-alikes: phase, photos, hidden; curation.json fish mont).
     [nDiff((DRAFT.fish || {}).mont, (SAVED.fish || {}).mont), 'fish look-alike pair'],
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
@@ -6256,13 +6411,14 @@ async function save() {
     cd = cdChanged(),
     mt = mtChanged(),
     cr = crChanged(),
+    ro = roChanged(),
     sn = snChanged(),
     tl = tlChanged(),
     au = auChanged(),
     fi = fiChanged(),
     pt = ptChanged(),
     rp = rpChanged();
-  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || sn || tl || au || fi || pt || rp) || !TOKEN) return;
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi || pt || rp) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -6278,7 +6434,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -8329,6 +8485,14 @@ const delOn = () => (USERS.v || 0) >= DEL_SHEET;
 // Sheet v58: Archive (userArchive, Board -2) and the Archived fold (users_ archived).
 const ARCH_SHEET = 58;
 const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
+// Out of the statistics (sheet v115, ROADMAP "Security follow-ups", Pierre 2026-11-08): a player or a device not signed in
+// the admin leaves out: their answers rate no photo and leave the Analyses report; their own progress stays. The ids come
+// with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
+const EXCL_SHEET = 115;
+const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
+const isExcl = id => !!id && (USERS.excluded || []).includes(id);
+const exclBtn = id =>
+  `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}"${exclOn() ? '' : ` disabled title="Needs the sheet script v${EXCL_SHEET}"`}>${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
 // Sheet v99: Change the starting answer (users_ userStart; core.js startAdminSet).
 const START_ADMIN_SHEET = 99;
 const startAdmOn = () => (USERS.v || 0) >= START_ADMIN_SHEET;
@@ -8442,6 +8606,7 @@ function renderUsers() {
       <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
       ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
+      ${u.id ? `<span>${isExcl(u.id) ? 'Out of the statistics' : 'In the statistics'} ${exclBtn(u.id)}</span>` : ''}
       ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
       ${SUBJECTS.filter(S => groupOn(S))
         .map(
@@ -8474,7 +8639,7 @@ function renderUsers() {
   const act = U.filter(u => u.at && Date.now() - u.at < 7 * 864e5).length;
   function cell(k, u) {
     return k === 'name'
-      ? `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}`
+      ? `${pname(u.name, u.board === -1)}${isMe(u.id) ? ' <small>you</small>' : ''}${isExcl(u.id) ? ' <small class="adm-uex" title="Out of the statistics">out</small>' : ''}`
       : k === 'dev'
         ? (d => (d == null ? '…' : d || '–'))(devsOf(u))
         : k === 'groups'
@@ -8515,10 +8680,10 @@ function renderUsers() {
           `<tr class="adm-urow${uOpen === u.name ? ' open' : ''}${isMe(u.id) ? ' me' : ''}" data-uopen="${esc(u.name)}">${COLS.map(c => `<td${c.g0 ? ' class="adm-ug0"' : ''}>${c.cl(u)}</td>`).join('')}<td>${uOpen === u.name ? '▾' : '▸'}</td></tr>${uOpen === u.name ? detail(u) : ''}`
       ).join('')}</tbody></table></div></section>`) +
     (anon.length
-      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th>${SUBJECTS.map(S => `<th title="Answers in ${esc(S.name)}">${esc(S.name)}</th>`).join('')}<th>First</th><th>Last</th></tr></thead><tbody>${anon
+      ? `<details class="adm-uremoved" open><summary>Not signed in (${anon.length})</summary><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th><input type="checkbox" data-aall aria-label="Select all"></th><th>Id</th>${SUBJECTS.map(S => `<th title="Answers in ${esc(S.name)}">${esc(S.name)}</th>`).join('')}<th>First</th><th>Last</th><th>Statistics</th></tr></thead><tbody>${anon
           .map(
             ([id, a]) =>
-              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#${esc(SUBJECTS.reduce((b, S) => ((a.by[S.id] || 0) > (a.by[b.id] || 0) ? S : b), SUBJECTS[0]).hash)}players/list/anon/${encodeURIComponent(id)}" data-own title="Journey"><code>${esc(id)}</code></a></td>${SUBJECTS.map(S => `<td>${a.by[S.id] || '–'}</td>`).join('')}<td>${days(a.first)}</td><td>${ago(a.last)}</td></tr>`
+              `<tr><td><input type="checkbox" data-aid="${esc(id)}" aria-label="Select ${esc(id)}"></td><td><a href="#${esc(SUBJECTS.reduce((b, S) => ((a.by[S.id] || 0) > (a.by[b.id] || 0) ? S : b), SUBJECTS[0]).hash)}players/list/anon/${encodeURIComponent(id)}" data-own title="Journey"><code>${esc(id)}</code></a></td>${SUBJECTS.map(S => `<td>${a.by[S.id] || '–'}</td>`).join('')}<td>${days(a.first)}</td><td>${ago(a.last)}</td><td>${isExcl(id) ? '<small class="adm-uex">out</small> ' : ''}${exclBtn(id)}</td></tr>`
           )
           .join(
             ''
@@ -8598,6 +8763,23 @@ function bindUsers() {
               : toast(`Not done (${(j && j.error) || 'offline'}${j && j.error === 'input' ? ': needs the sheet script v20' : ''}).`)
           )
           .catch(() => toast('Not done (offline).'));
+      })
+  );
+  $v.querySelectorAll('[data-ustat]').forEach(
+    b =>
+      (b.onclick = () => {
+        const id = b.dataset.ustat,
+          on = b.dataset.on === '1';
+        b.disabled = true;
+        userPost({statsExclude: id, on})
+          .then(j => {
+            if (!(j && j.ok)) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+            USERS.excluded = j.excluded || [];
+            sheetAgain('stats'); // the photo ratings change: read them again when shown
+            toast(on ? `${id} left out of the statistics.` : `${id} counted in the statistics again.`);
+            render();
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
       })
   );
   // The beta group (sheet v48, groupOn): one player in or out (one click, no confirmation: Remove undoes Add), or every
@@ -9333,16 +9515,25 @@ function needsBody() {
 }
 // Photos everyone misses (Health): missed by many players (manyMiss), and under PH_LOW right over all their answers
 // (everyoneMisses) or a difficulty PH_FAR or more above the median of their genus's rated photos.
-function healthBad(R) {
+// S: the subject whose photos they are (the one on screen; the Corals | Fish switch, rule A4): the corals' game photos
+// (allPhotos), another subject's as the admin reads them (fishAdmin: each fish photo with its family, genus = the family).
+// The sheet rates the corals' photos only (core.js SUBJECTS replay), so a fish photo is counted on its answers alone. A
+// fish photo already handled in the draft (fishRepTile's tools: × excluded, Not this, Removed) is out of the list before
+// it is sorted and cut (Codex review #800): acting on the photos shown brings the next ones in.
+function healthBad(R, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
   // 2. Photos everyone misses: answers from the log (each answer counts once for every photo it showed), difficulty
   // from the photo Elo against the median of the genus's rated photos.
-  const PS = photoStats(),
+  const PS = S.sheets ? {} : photoStats(),
     META = Object.create(null);
-  allPhotos()
-    .filter(p => p.view !== 'cand')
-    .forEach(p => (META[p.f] = META[p.f] || p));
+  const FD = (DRAFT && DRAFT.fish) || {},
+    done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f];
+  if (S.sheets) Object.values((FISHA && FISHA.ph) || {}).forEach(p => done(p.f) || (META[p.f] = META[p.f] || {...p, genus: p.entry}));
+  else
+    allPhotos()
+      .filter(p => p.view !== 'cand')
+      .forEach(p => (META[p.f] = META[p.f] || p));
   const PH = photoAnswers(R, f => !!META[f]);
   const GMED = Object.create(null);
   Object.values(META).forEach(p => {
@@ -9372,8 +9563,28 @@ function healthBad(R) {
     .sort((a, b) => a.r - b.r || b.n - a.n);
   return BAD;
 }
-// Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first.
-function healthGenera(BY) {
+// Genera that don't take off (Health), most stuck players first. BY = R by player, oldest first. S: the subject on screen;
+// its units (healthUnits): the corals' game genera (GAME), another subject's slate and its genera met in the answers.
+// A subject with sheets at several ranks: its slate (fishAdmin: the app's UNITS slate, the fish families) and, each in a
+// row of its own, the genera its players met (an answer's unit with the genus prefix, SUBJECTS sheets genus: g:Chromis,
+// the scientific genera of app.js fishGenera, offered once a family is learnt; FISHA.slate never holds them).
+const healthUnits = (BY, S) => {
+  if (!S.sheets) return [...GAME];
+  const L = [...((FISHA && FISHA.slate) || [])],
+    has = new Set(L),
+    gp = S.sheets.genus;
+  if (gp)
+    Object.values(BY).forEach(A =>
+      A.forEach(r => {
+        const u = r[2];
+        if (typeof u !== 'string' || !u.startsWith(gp) || u.length <= gp.length || has.has(u)) return;
+        has.add(u);
+        L.push(u);
+      })
+    );
+  return L;
+};
+function healthGenera(BY, S = ASUBJ) {
   const H = HEALTH,
     median = healthMedian;
   // 3. Genera that don't take off: per game genus (isGame: the slate, Millepora, the bonus genera once on), each player's right rate on the photos of it (answers where it was
@@ -9385,7 +9596,7 @@ function healthGenera(BY) {
       (PG[k] = PG[k] || []).push(r[4]);
     })
   );
-  const GR = [...GAME]
+  const GR = healthUnits(BY, S)
     .map(n => {
       const P = Object.keys(BY)
         .map(id => PG[id + '|' + n])
@@ -9419,8 +9630,9 @@ function healthLine0() {
     BY = Object.create(null);
   R.forEach(r => (BY[r[0]] = BY[r[0]] || []).push(r));
   Object.values(BY).forEach(L => L.sort((a, b) => a[1] - b[1]));
-  const bad = R.length ? healthBad(R).length : 0,
-    stuck = R.length ? healthGenera(BY).filter(g => g.stuck).length : 0,
+  // the corals' To do (its page), whatever the subject on screen when it is computed (MEMO)
+  const bad = R.length ? healthBad(R, ADM0).length : 0,
+    stuck = R.length ? healthGenera(BY, ADM0).filter(g => g.stuck).length : 0,
     L = [
       bad && `${bad} photo${bad === 1 ? '' : 's'} everyone misses`,
       stuck && `${stuck} ${stuck === 1 ? 'genus' : 'genera'} players are stuck on`
@@ -9446,7 +9658,11 @@ function statsHealth() {
     bindStats();
     return;
   }
-  const R = playerRows();
+  // Stops and Health: the subject on screen's answers (rowsOf; the Corals | Fish switch, rule A4). Another subject's units
+  // and photos come from its data (admin.js fishAdmin), read once.
+  const R = rowsOf();
+  if (ASUBJ.sheets && !FISHA)
+    fishAdmin().then(() => (cur === 'analyses/learning/stops' || cur === 'inbox/todo/health') && FISHA && render());
   if (!R.length) {
     $v.innerHTML = head + '<p class="note">No answers yet.</p>';
     bindStats();
@@ -9539,10 +9755,8 @@ function statsHealth() {
     <div><h4>Last shown, sessions ≤${H.EARLY}</h4>${
       early.length
         ? tbl(
-            ['Genus', 'n:Sessions'],
-            top(early, r => r[2], 5).map(
-              ([g, n]) => `<tr><td><a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a></td><td class="n">${n}</td></tr>`
-            )
+            [stopWord(ASUBJ), 'n:Sessions'],
+            top(early, r => r[2], 5).map(([g, n]) => `<tr><td>${repUnit(g, true)}</td><td class="n">${n}</td></tr>`)
           ) +
           tbl(
             ['Game', 'n:Sessions'],
@@ -9552,21 +9766,32 @@ function statsHealth() {
     }</div></div></section>`;
 
   const BAD = healthBad(R);
-  const MAXPH = 24,
+  // Its photo tiles' Not this (a candidate photo: fishRepTile reads FISHC.byF) needs the family pages' data (fishLoad), as
+  // Reports does: read once there are photos to show, and Health drawn again when it comes (Codex review #800).
+  if (!stops && ASUBJ.sheets && BAD.length && !FISHC) fishLoad().then(() => cur === 'inbox/todo/health' && ASUBJ.sheets && render());
+  // Another subject's photo: its tile with the tools of its family's page (fishRepTile: × Exclude, Remove, Not this, Open
+  // in Families), the numbers in its caption.
+  const fishTile = o =>
+      fishRepTile(o.p, {
+        cap: `<span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>`
+      }),
+    MAXPH = 24,
     phTile = o =>
       `<figure class="adm-htile"><button type="button" class="adm-ph" data-zf="${esc(o.p.f)}" data-g="${esc(o.p.genus)}" aria-label="Enlarge"><img src="${img(o.p, 1)}" alt="" loading="lazy"></button>
       <figcaption><a class="adm-gen" href="${esc(genusHref(o.p.genus))}" title="Open the genus"><i>${esc(o.p.genus)}</i></a> <span>${esc(label(o.p.genus, o.p.view))}</span>
       <span class="adm-hnum"><b${o.r < H.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${o.miss}/${o.pl} players</span></span>${o.d != null ? `<span class="adm-hnum">recognised by ${recBadge(o.d, {short: 1, raw: 'photo difficulty', more: o.far != null ? `${rawNum(o.far)} against the median of its genus's photos (${rawNum(o.gm)}: recognised by ${recPct(o.gm)})` : ''})}${o.far != null && o.far >= H.PH_FAR ? ' · <span data-hgenus>harder than its genus</span>' : ''}</span>` : ''}</figcaption></figure>`;
   const phSec = `<section class="adm-scard adm-hsec full" data-health="photos"><h3>Photos everyone misses <small>${BAD.length}</small></h3>${
     BAD.length
-      ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH).map(phTile).join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
+      ? `<div class="adm-hphotos">${BAD.slice(0, MAXPH)
+          .map(ASUBJ.sheets ? fishTile : phTile)
+          .join('')}</div>${BAD.length > MAXPH ? `<p class="note">+${BAD.length - MAXPH} more</p>` : ''}`
       : '<p class="note">None.</p>'
   }</section>`;
 
   const GR = healthGenera(BY);
-  const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>Genera that don't take off</h3><div class="adm-tscroll tall">${tbl(
+  const gSec = `<section class="adm-scard adm-hsec g" data-health="genera"><h3>${esc(manyWord(ASUBJ))} that don't take off</h3><div class="adm-tscroll tall">${tbl(
     [
-      'Genus',
+      stopWord(ASUBJ),
       'n:Players',
       'Median right',
       '',
@@ -9574,7 +9799,7 @@ function statsHealth() {
     ],
     GR.map(
       g =>
-        `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
+        `<tr><td>${repUnit(g.n, true)}</td><td class="n">${g.met || '–'}</td><td class="n">${g.m == null ? '–' : pct(g.m, 1)}</td><td>${g.m == null ? '' : sbar(g.m, 1, g.m < H.G_LOW ? 'bad' : '')}</td><td class="n">${g.long ? `<b${g.stuck ? ' class="warnc"' : ''}>${g.stuck}</b> / ${g.long}` : '–'}</td></tr>`
     )
   )}</div></section>`;
 
@@ -9589,6 +9814,8 @@ function statsHealth() {
       `<div class="adm-sgrid adm-health">${stopSec}${healthSheets()}</div>`
     : head + `<div class="adm-sgrid adm-health">${phSec}${gSec}</div>`;
   bindStats();
+  // another subject's photo tiles: the tools of its family's page (× Exclude, Remove, Not this)
+  if (!stops && ASUBJ.sheets) bindFishRep();
   // The pages summaries (sheet v30) come with their own read: the section fills in when they arrive, and is read again
   // once stale.
   if (stops) pagesFresh('analyses/learning/stops');

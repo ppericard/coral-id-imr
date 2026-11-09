@@ -1149,6 +1149,37 @@ const WIDTHS = [390, 1280];
     });
     if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
       fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
+    // Recompute here leaves out the players and devices left out of the statistics, as the stored report does (analysis.js
+    // leftOut; Codex review #801): a left-out sender's rows never reach the worker. The worker is stubbed, then put back.
+    const anx = await p.evaluate(async () => {
+      const subj = subjRows(ANS.all, ASUBJ.id),
+        id = subj[0] && subj[0][0],
+        W0 = window.Worker,
+        E = USERS || ANS, // the player list's ids when loaded, else the log's (anRecompute reads them in that order)
+        U0 = E.excluded;
+      let got = null;
+      window.Worker = function () {
+        this.postMessage = m => (got = m.rows);
+        this.terminate = () => {};
+      };
+      E.excluded = [id];
+      anRecompute();
+      for (let i = 0; i < 50 && !got; i++) await new Promise(r => setTimeout(r, 100));
+      window.Worker = W0;
+      E.excluded = U0;
+      ANWORK = null;
+      ANLOCS[ASUBJ.id] = null;
+      ANLOC = null;
+      render();
+      return {
+        all: subj.length,
+        mine: subj.filter(r => r[0] === id).length,
+        sent: got && got.length,
+        left: got && got.filter(r => r[0] === id).length
+      };
+    });
+    if (!anx.mine || anx.left !== 0 || anx.sent !== anx.all - anx.mine)
+      fails.push(`${w}px Analyses: Recompute here with a sender left out ${JSON.stringify(anx)}`);
     for (const h of [
       'analyses/speed/answer-time',
       'analyses/speed/enlarging',
@@ -1391,9 +1422,11 @@ const WIDTHS = [390, 1280];
         }
       // Pierre, 2026-11-08: each subject's analyses ("fish when the fish analyses exist"). From the script that stores one
       // report per subject (analysis.js AN_SUBJ_SHEET), the fish side's Analyses draw the fish report: its own status line
-      // and milestone, its views but What makes a photo hard and the live views (one line on its Overview says so), the
-      // fish words and unit names, never a coral genus; the corals' side keeps its own report. A script before it: the fish
-      // side has no report (rule D4), the corals' unchanged. At 1280, and the Overview and Mix-ups at 360 px too.
+      // and milestone, its views but What makes a photo hard and the live views but Stops (one line on its Overview says so),
+      // the fish words and unit names, never a coral genus; the corals' side keeps its own report. Its Stops is the live
+      // view drawn from the fish answers, not from the report (checked with fish Health, below: "Fish admin at parity"). A
+      // script before it: the fish side has no report (rule D4), the corals' unchanged. At 1280, and the Overview and
+      // Mix-ups at 360 px too.
       {
         const GATE = require('../analysis.js').AN_SUBJ_SHEET;
         for (const [v, vw] of [
@@ -1457,14 +1490,16 @@ const WIDTHS = [390, 1280];
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Pairs, Learning › Answer log, Learning › Stops.')
+            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Pairs, Learning › Answer log.')
               fe.push(`the line on what is not there: "${at.not}"`);
-            // every view the fish side has, each drawn from the fish report
+            // every view the fish side has: Stops (live) and the others, each drawn from the fish report
             const H = await fq.evaluate(() =>
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h)))
             );
-            if (H.length !== 10 || H.some(h => /photos$|pairs$|answer-log$|stops$/.test(h))) fe.push(`its views ${H.join(' ')}`);
-            for (const h of vw === 1280 ? H : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
+            if (H.length !== 11 || H.some(h => /photos$|pairs$|answer-log$/.test(h)) || !H.includes('analyses/learning/stops'))
+              fe.push(`its views ${H.join(' ')}`);
+            // the views drawn from the fish report (Stops, the live one, has no report to draw)
+            for (const h of vw === 1280 ? H.filter(h => !/stops$/.test(h)) : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
               at = await look('fish/' + h);
               if (at.none || !/^Fish: /.test(at.badge) || at.words || at.ids.length || at.coral || at.wide > 0)
                 fe.push(`#fish/${h} ${JSON.stringify({...at, views: undefined})}`);
@@ -2309,6 +2344,63 @@ const WIDTHS = [390, 1280];
               timeout: 10000
             })
             .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
+          await q.close();
+        }
+        // Out of the statistics (sheet EXCL_SHEET, ROADMAP "Security follow-ups"): a player's bar and every device not signed in
+        // carry Leave out / Count again, one click each way; a player left out is marked "out" in the list. Before it the
+        // buttons are there, disabled, with the version they wait for.
+        {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px stats exclusion page error: ${e.message}`));
+          const calm = () =>
+            q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+                timeout: 20000
+              })
+              .then(() => q.waitForTimeout(300))
+              .catch(() => fails.push(`${w}px stats exclusion: never settled`));
+          const st = () =>
+            q.evaluate(() => {
+              const row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Ben Demo'),
+                bar = document.querySelector('.adm-ubar [data-ustat]'),
+                anon = [...document.querySelectorAll('.adm-uremoved [data-ustat]')];
+              return {
+                out: !!(row && row.querySelector('.adm-uex')),
+                bar: bar ? [bar.textContent, bar.disabled, bar.title] : null,
+                anon: anon.length,
+                anonOut: document.querySelectorAll('.adm-uremoved .adm-uex').length,
+                ex: (USERS.excluded || []).length
+              };
+            });
+          const X = await p.evaluate(() => EXCL_SHEET);
+          await q.goto(base + `admin.html?demo&v=${X - 1}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ben Demo"]');
+          let e = await st();
+          if (!e.bar || !e.bar[1] || !e.bar[2].endsWith('v' + X)) fails.push(`${w}px stats exclusion before v${X}: ${JSON.stringify(e)}`);
+          await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ben Demo"]');
+          e = await st();
+          if (!e.bar || e.bar[0] !== 'Leave out' || e.bar[1] || e.out || !e.anon)
+            fails.push(`${w}px stats exclusion: before ${JSON.stringify(e)}`);
+          await q.click('.adm-ubar [data-ustat]');
+          await calm();
+          if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Ben Demo"]');
+          e = await st();
+          if (!e.out || e.ex !== 1 || !e.bar || e.bar[0] !== 'Count again')
+            fails.push(`${w}px stats exclusion: Leave out ${JSON.stringify(e)}`);
+          await q.click('.adm-uremoved [data-ustat]');
+          await calm();
+          e = await st();
+          if (e.ex !== 2 || e.anonOut !== 1) fails.push(`${w}px stats exclusion: a device not signed in ${JSON.stringify(e)}`);
+          if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Ben Demo"]');
+          await q.click('.adm-ubar [data-ustat]');
+          await calm();
+          e = await st();
+          if (e.out || e.ex !== 1) fails.push(`${w}px stats exclusion: Count again ${JSON.stringify(e)}`);
           await q.close();
         }
         // Two subjects on the Players pages (Pierre, 2026-11-06): with every subject's answers logged (sheet v60; the demo's
@@ -3735,6 +3827,190 @@ const WIDTHS = [390, 1280];
       if (hs.wide > 0) fails.push(`${w}px Stops: page ${hs.wide} px wider than the window`);
       if (hs.sheets.join(' | ') !== SHEETS_ALL) fails.push(`${w}px Stops genus sheets: ${JSON.stringify(hs.sheets)}`);
     }
+    // Fish admin at parity (Pierre, 2026-11-08: "j'ai besoin d'avoir les outils pour pouvoir continuer d'avancer"): Stops
+    // and Health follow the Corals | Fish switch (rule A4). With the demo's fish answers (the script of today: its three
+    // fish players), Stops counts the fish players, names the fish units in their own column and counts the fish sheets
+    // opened; Health lists every unit of the fish slate and every fish genus answered by name, nothing of the corals'.
+    // Once, at 1280 and 360 px.
+    if (once) {
+      const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]);
+      for (const vw of [1280, 360]) {
+        const fc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/analyses/learning/stops`);
+        await fq
+          .waitForFunction(
+            () =>
+              cur === 'analyses/learning/stops' &&
+              FISHA &&
+              /Players/.test((document.querySelector('.adm-kpis') || {}).textContent || '') &&
+              /\d/.test((document.querySelector('[data-health="sheets"] tbody') || {}).textContent || ''),
+            null,
+            {timeout: 90000}
+          )
+          .catch(() => fe.push('Stops not drawn'));
+        const st = await fq.evaluate(() => {
+          const V = document.getElementById('view'),
+            k = [...document.querySelectorAll('.adm-kpis > *')].map(e => e.textContent);
+          return {
+            players: (k.find(t => /Players/.test(t)) || '').replace(/\D/g, ''),
+            want: String(new Set(rowsOf().map(r => r[0])).size),
+            sheets: (document.querySelector('[data-health="sheets"] h3') || {}).textContent || '',
+            last: [...V.querySelectorAll('[data-health="stop"] th')].map(e => e.textContent),
+            // the subject's words for its units (admin.js stopWord: SUBJECTS analyses one, else one)
+            word: stopWord(ASUBJ),
+            ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+            open: document.querySelectorAll('[data-health="sheets"] tbody tr').length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+        if (
+          st.want === '0' ||
+          st.players !== st.want ||
+          st.sheets !== 'Family, genus and species sheets opened' ||
+          !/^Family/.test(st.word) ||
+          !st.last.includes(st.word) ||
+          st.ids.length ||
+          !st.open ||
+          st.wide > 0
+        )
+          fe.push(`Stops ${JSON.stringify(st)}`);
+        await fq.evaluate(() => (location.hash = '#fish/inbox/todo/health'));
+        await fq
+          .waitForFunction(() => cur === 'inbox/todo/health' && document.querySelector('[data-health="genera"] tbody tr'), null, {
+            timeout: 60000
+          })
+          .catch(() => fe.push('Health not drawn'));
+        const hl = await fq.evaluate(() => {
+          const V = document.getElementById('view');
+          return {
+            h3: [...V.querySelectorAll('h3')].map(e => e.textContent.replace(/\s*\d+$/, '')),
+            rows: V.querySelectorAll('[data-health="genera"] tbody tr').length,
+            // its slate (the families) and the scientific genera its answers met (g:Chromis), one row each
+            slate:
+              FISHA.slate.length +
+              new Set(
+                rowsOf()
+                  .map(r => r[2])
+                  .filter(u => typeof u === 'string' && u.startsWith(ASUBJ.sheets.genus) && !FISHA.slate.includes(u))
+              ).size,
+            head: (V.querySelector('[data-health="genera"] th') || {}).textContent || '',
+            want: [stopWord(ASUBJ), `Photos everyone misses | ${manyWord(ASUBJ)} that don't take off`],
+            ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+            coral: V.querySelectorAll('[data-health="photos"] .adm-htile').length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+        if (
+          !/^Families/.test(hl.want[1].split(' | ')[1]) ||
+          hl.h3.join(' | ') !== hl.want[1] ||
+          hl.rows !== hl.slate ||
+          hl.head !== hl.want[0] ||
+          hl.ids.length ||
+          hl.coral ||
+          hl.wide > 0
+        )
+          fe.push(`Health ${JSON.stringify(hl)}`);
+        if (fe.length) fails.push(`${vw}px Fish Stops and Health: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
+      // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
+      // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
+      // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health. With 25
+      // photos everyone misses (24 shown: statsHealth MAXPH), one Removed leaves the list and the 25th comes in.
+      {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          fc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        await fc.route(
+          u => u.pathname === '/suggest.json',
+          async r => {
+            const j = await (await r.fetch()).json();
+            delete j.fish;
+            await r.fulfill({json: j});
+          }
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/inbox/todo/health`);
+        await fq
+          .waitForFunction(
+            () => cur === 'inbox/todo/health' && FISHA && ANS && document.querySelector('[data-health="genera"] tbody tr'),
+            null,
+            {
+              timeout: 90000
+            }
+          )
+          .catch(() => fe.push('Health not drawn'));
+        // three players miss a candidate photo in play (fish-cand.json and the fish photos) three times each, first in the
+        // list, and 24 other fish photos twice each
+        const pre = await fq.evaluate(async () => {
+          const was = !!FISHC,
+            C = await fetch('fish-cand.json').then(r => r.json()),
+            cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
+            D = DRAFT.fish || {},
+            open = Object.keys(FISHA.ph).filter(x => !['exclude', 'out', 'seen'].some(k => (D[k] || {})[x])),
+            f = open.find(x => cf.has(x)),
+            more = open.filter(x => x !== f).slice(0, 24),
+            r0 = rowsOf()[0];
+          if (!f || !r0 || more.length < 24) return {was, f, r0: !!r0};
+          let t = Date.now() - 600 * 60e3;
+          const add = ['nt1', 'nt2', 'nt3'].flatMap(id =>
+            [f, f, f, ...more.flatMap(x => [x, x])].map(x =>
+              Object.assign([...r0], {0: id, 1: (t += 1000), 2: FISHA.ph[x].entry, 4: 0, 6: x})
+            )
+          );
+          ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+          render();
+          return {was, f, r0: true};
+        });
+        if (pre.was || !pre.f || !pre.r0) fe.push(`not a fresh session with a candidate photo: ${JSON.stringify(pre)}`);
+        else
+          await fq
+            .waitForFunction(f => document.querySelector(`[data-health="photos"] [data-ff="${CSS.escape(f)}"] [data-fr="not"]`), pre.f, {
+              timeout: 60000
+            })
+            .catch(async () =>
+              fe.push(
+                `no Not this on ${pre.f}: ${JSON.stringify(
+                  await fq.evaluate(f => ({fishc: !!FISHC, tile: !!document.querySelector(`[data-ff="${CSS.escape(f)}"]`)}), pre.f)
+                )}`
+              )
+            );
+        if (!fe.length) {
+          const shown = () => fq.evaluate(() => [...document.querySelectorAll('[data-health="photos"] .adm-frep')].map(e => e.dataset.ff)),
+            S0 = await shown(),
+            gone = S0.find(x => x !== pre.f);
+          if (S0.length !== 24 || !/\+1 more/.test(await fq.textContent('[data-health="photos"]')))
+            fe.push(`25 photos everyone misses: ${S0.length} shown`);
+          else {
+            await fq.click(`[data-health="photos"] [data-ff="${gone}"] [data-fr="remove"]`);
+            await fq
+              .waitForFunction(
+                ([g, L]) => {
+                  const F = [...document.querySelectorAll('[data-health="photos"] .adm-frep')].map(e => e.dataset.ff);
+                  return F.length === 24 && !F.includes(g) && F.some(x => !L.includes(x));
+                },
+                [gone, S0],
+                {timeout: 15000}
+              )
+              .catch(async () => fe.push(`after Remove on ${gone}: ${JSON.stringify(await shown())}`));
+          }
+        }
+        if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
+    }
     // Activity's analysis cards are on Analyses › Learning › Answer log, and only there (one role per admin page).
     {
       const cards = () => p.evaluate(() => [...document.querySelectorAll('#view .adm-scard h3')].map(h => h.textContent.trim()));
@@ -4656,6 +4932,145 @@ const WIDTHS = [390, 1280];
         if ((await p.evaluate(() => JSON.stringify([DRAFT.genera, DRAFT.seen || {}, DRAFT.exclude || {}, DRAFT.auto || {}]))) !== coral0)
           fails.push(`${w}px Fish Candidates 5b: a coral key changed`);
       }
+      // Rotate a photo (Pierre, 2026-11-08: curation.json rot, fish.rot): in the crop editor, ⟳ ⟳ ⟲ is a quarter right,
+      // the photo and its frame turned together (the box turned, sized to fit, a drag in its own axes); Save puts it in
+      // the draft as one Undo step, drawn at once on the tile (data-rot), the Crop button on, the draft and Publish's
+      // summary counting it; Undo takes it back, Redo again; 0° resets it. Then the same on the fish Candidates
+      // (fish.rot), and both left in the draft for the Publish below.
+      {
+        await go('photos/candidates');
+        const G = await p.evaluate(() => Object.keys(DATA.gen).find(n => photos(n).some(x => x.src && !x.r && !crOf(x.f) && !roOf(x.f))));
+        await goGenus(G);
+        const f = await p.evaluate(() => {
+          const b = [...document.querySelectorAll('#view .adm-tile[data-f] [data-act="crop"]')].find(
+            x => !crOf(x.closest('[data-f]').dataset.f)
+          );
+          return b && b.closest('[data-f]').dataset.f;
+        });
+        const tile = `#view .adm-tile[data-f="${f}"]`,
+          st0 = await p.evaluate(() => ({title: document.getElementById('save').title, sum: pubSummary(), h: HIST.length}));
+        if (!f) fails.push(`${w}px Rotate: no photo with the Crop tool on ${G}`);
+        else {
+          await p.click(`${tile} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox .adm-rotbar [data-r="90"]');
+          const ed0 = await p.evaluate(() => ({zero: document.querySelector('#lightbox [data-r="0"]').disabled}));
+          await p.click('#lightbox [data-r="90"]');
+          await p.click('#lightbox [data-r="90"]');
+          await p.click('#lightbox [data-r="-90"]');
+          const ed = await p.evaluate(() => {
+            const b = document.querySelector('#lightbox .adm-cropbox'),
+              r = b.getBoundingClientRect();
+            return {
+              t: b.style.transform,
+              zero: document.querySelector('#lightbox [data-r="0"]').disabled,
+              // Turned a quarter: on screen its width is its own height, and it fits the window.
+              swap: Math.abs(r.width - b.offsetHeight) < 2 && Math.abs(r.height - b.offsetWidth) < 2,
+              fits: r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1
+            };
+          });
+          if (!ed0.zero || ed.t !== 'rotate(90deg)' || ed.zero || !ed.swap || !ed.fits)
+            fails.push(`${w}px Rotate: the editor ${JSON.stringify({ed0, ed})}`);
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const r1 = await p.evaluate(
+            ([f, t]) => ({
+              rot: (DRAFT.rot || {})[f],
+              crop: (DRAFT.crop || {})[f],
+              steps: HIST.length,
+              tile: (document.querySelector(t + ' .adm-ph img') || {}).dataset?.rot,
+              on: !!document.querySelector(t + ' [data-act="crop"].on'),
+              title: document.getElementById('save').title,
+              sum: pubSummary(),
+              out: (output().rot || {})[f]
+            }),
+            [f, tile]
+          );
+          if (
+            r1.rot !== 90 ||
+            r1.crop !== undefined ||
+            r1.steps !== st0.h + 1 ||
+            r1.tile !== '90' ||
+            !r1.on ||
+            !/rotations/.test(r1.title) ||
+            /rotations/.test(st0.title) ||
+            !/^1 rotation$/m.test(r1.sum) ||
+            /rotation/.test(st0.sum) ||
+            r1.out !== 90
+          )
+            fails.push(`${w}px Rotate: saved ${JSON.stringify({st0, r1})}`);
+          const state = () =>
+            p.evaluate(
+              ([f, t]) => ({rot: (DRAFT.rot || {})[f], tile: (document.querySelector(t + ' .adm-ph img') || {}).dataset?.rot || null}),
+              [f, tile]
+            );
+          await p.click('#undo');
+          await settle();
+          const r2 = await state();
+          await p.click('#redo');
+          await settle();
+          const r3 = await state();
+          if (r2.rot !== undefined || r2.tile !== null || r3.rot !== 90 || r3.tile !== '90')
+            fails.push(`${w}px Rotate: Undo / Redo ${JSON.stringify({r2, r3})}`);
+          // 0° in the editor, opened on the photo turned: back upright, the photo's key gone but the map kept (an empty
+          // rot, as a reset crop leaves crop {}: the next merge keeps another device's rotations; review #793), nothing
+          // published for it; Undo brings the turn back.
+          await p.click(`${tile} [data-act="crop"]`);
+          await p.waitForSelector('#lightbox [data-r="0"]:not([disabled])');
+          await p.click('#lightbox [data-r="0"]');
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const r4 = {
+            ...(await state()),
+            map: await p.evaluate(f => !!DRAFT.rot && typeof DRAFT.rot === 'object' && !(f in DRAFT.rot) && !(f in (output().rot || {})), f)
+          };
+          if (r4.rot !== undefined || r4.tile !== null || !r4.map || /rotation/.test(await p.evaluate(() => pubSummary())))
+            fails.push(`${w}px Rotate: 0° ${JSON.stringify(r4)}`);
+          await p.click('#undo');
+          await settle();
+          if ((await state()).rot !== 90) fails.push(`${w}px Rotate: Undo of 0°`);
+        }
+        // The fish Candidates: the same editor writes fish.rot, a quarter left = 270, drawn on the card.
+        await go('fish/photos/candidates');
+        if (await p.$('.adm-fsw [data-fcrop]')) {
+          const ff = await p.evaluate(() => document.querySelector('.adm-fsw').dataset.f);
+          await p.click('.adm-fsw [data-fcrop]');
+          await p.waitForSelector('#lightbox .adm-rotbar [data-r="-90"]');
+          await p.click('#lightbox [data-r="-90"]');
+          await p.click('#lightbox [data-c="save"]');
+          await settle();
+          const r5 = await p.evaluate(
+            f => ({
+              rot: ((DRAFT.fish || {}).rot || {})[f],
+              coral: (DRAFT.rot || {})[f],
+              card: (document.querySelector('.adm-fsw .adm-swph img') || {}).dataset?.rot,
+              on: !!document.querySelector('.adm-fsw [data-fcrop].on'),
+              sum: pubSummary(),
+              out: ((output().fish || {}).rot || {})[f]
+            }),
+            ff
+          );
+          if (
+            r5.rot !== 270 ||
+            r5.coral !== undefined ||
+            r5.card !== '270' ||
+            !r5.on ||
+            !/^1 fish photo rotation$/m.test(r5.sum) ||
+            r5.out !== 270
+          )
+            fails.push(`${w}px Rotate: fish ${JSON.stringify(r5)}`);
+          // Publish's confirm lists both (refused here: the Publish below sends them).
+          const m = await p.evaluate(() => {
+            const c = window.confirm;
+            let m = null;
+            window.confirm = x => ((m = x), false);
+            document.getElementById('save').click();
+            window.confirm = c;
+            return m;
+          });
+          if (!/^1 rotation$/m.test(m || '') || !/^1 fish photo rotation$/m.test(m || ''))
+            fails.push(`${w}px Rotate: Publish's summary ${JSON.stringify(m)}`);
+        } else fails.push(`${w}px Rotate: no fish candidate with the Crop tool`);
+      }
       errs.length = 0;
       if (await p.isEnabled('#save')) {
         await p.click('#save');
@@ -4666,6 +5081,8 @@ const WIDTHS = [390, 1280];
           fails.push(`${w}px Publish: the auto-sort log or the retests are not published`);
         if (!(await p.evaluate(() => Object.keys((output().fish || {}).auto || {}).length && (output().fish || {}).out)))
           fails.push(`${w}px Publish: the fish curation is not published`);
+        if (!(await p.evaluate(() => Object.keys(SAVED.rot || {}).length && Object.keys((SAVED.fish || {}).rot || {}).length)))
+          fails.push(`${w}px Publish: the rotations are not published`);
       } else fails.push(`${w}px Publish: button still disabled after a change`);
       // Quality and Growth form keys (second admin review, 2026-11-01: hover + key fired by accident): a key acts only on
       // the photo that has the focus, never on one the mouse is over, never with Ctrl/Alt/Cmd, never for a stray key.
