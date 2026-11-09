@@ -11,7 +11,7 @@ const test = require('node:test'),
   path = require('path'),
   vm = require('vm');
 const C = require('../core.js');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, madeBefore} = require('./gas.js');
 const {page} = require('./syncpage.js');
 
 const TOK = 'ghp_write000000000000000000';
@@ -31,15 +31,6 @@ const qa = (id, i) => ({
   th: 1
 });
 const run = k => Array.from({length: 14}, (_, i) => qa(k + i, i));
-// Accounts made before the refusal: the script's check switched off while they are made, then on again.
-const before = (s, f) => {
-  vm.runInContext('CORE_.__rn = CORE_.reservedName; CORE_.reservedName = () => false', s.ctx);
-  try {
-    f();
-  } finally {
-    vm.runInContext('CORE_.reservedName = CORE_.__rn; delete CORE_.__rn', s.ctx);
-  }
-};
 const polluted = s =>
   vm.runInContext('[Object.prototype, Object, Function.prototype, Array.prototype].map(o => Object.keys(o).join()).join("|")', s.ctx);
 const clear = s => Object.keys(s.cache).forEach(k => delete s.cache[k]);
@@ -68,7 +59,7 @@ test('reservedName: every member name of Object.prototype and prototype, as a wo
 
 test('the sheet refuses a new account or an archive under a reserved name; an account that has one keeps working', () => {
   const s = loadCodeGs({fetch});
-  before(s, () => assert.ok(s.post({name: 'valueOf', pin: '1234', data: prog(2), summary: {}, answers: run('v')}).ok));
+  madeBefore(s, () => assert.ok(s.post({name: 'valueOf', pin: '1234', data: prog(2), summary: {}, answers: run('v')}).ok));
   ['Constructor', '__proto__', 'TOSTRING', 'Bob hasOwnProperty', 'prototype', 'isPrototypeOf B.'].forEach(name => {
     const g0 = s.get({name, pin: '1234'});
     assert.strictEqual(g0.ok && g0.found, false, name + ': no account');
@@ -114,7 +105,7 @@ test('players named like Object.prototype members: every admin read, group and c
   const s = loadCodeGs({fetch});
   vm.runInContext("CORE_.SUBJECTS.find(S => S.id === 'fish').open = 'group'", s.ctx);
   assert.ok(s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {pct: 5}, answers: run('ana')}).ok);
-  before(s, () =>
+  madeBefore(s, () =>
     OLD.forEach((n, j) =>
       assert.ok(
         s.post({
@@ -229,7 +220,7 @@ test('core.js maps by player: trustOf, playSplit, levelMargin (eloReplay) and ex
 
 test('the app: a save refused as reserved stops and says so; an account that has such a name syncs as before', async () => {
   const s = loadCodeGs({fetch});
-  before(s, () => assert.ok(s.post({name: 'toString', pin: '1234', data: prog(1), summary: {}, answers: []}).ok));
+  madeBefore(s, () => assert.ok(s.post({name: 'toString', pin: '1234', data: prog(1), summary: {}, answers: []}).ok));
   // An app from before the form refused it signed in under a reserved name: the save is refused, red at once, no retry.
   const A = page(s, {SYNC: {name: 'Constructor', pin: '1234', log: [], base: {}, dirty: true}});
   A.play('c1');

@@ -201,4 +201,14 @@ function bodyOf(t) {
   if (o && typeof o.z === 'string') return JSON.parse(require('zlib').gunzipSync(Buffer.from(o.z, 'base64')).toString('utf8'));
   return o && o.lt && typeof o.lt === 'object' ? o.lt : o;
 }
-module.exports = {loadCodeGs, makeSheet, bodyOf};
+// Accounts made before the sheet refused reserved names (Code.gs doPost_, core.js reservedName; Pierre, 2026-11-09): f
+// runs with the script's check switched off (a test's players named constructor or __proto__), then it is on again.
+function madeBefore(s, f) {
+  vm.runInContext('CORE_.__rn = CORE_.reservedName; CORE_.reservedName = () => false', s.ctx);
+  try {
+    return f();
+  } finally {
+    vm.runInContext('CORE_.reservedName = CORE_.__rn; delete CORE_.__rn', s.ctx);
+  }
+}
+module.exports = {loadCodeGs, makeSheet, bodyOf, madeBefore};
