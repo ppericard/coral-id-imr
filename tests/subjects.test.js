@@ -184,7 +184,7 @@ test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per obs
   X.c1.forEach(n => assert.ok(X.gen[n].views.wide.length, `${n} has photos`));
 });
 
-test('typed fish names: the IMR name, its parts, the family names, the sub-entries; a shared family is "which one?"', () => {
+test('typed fish names: the IMR name, its parts, the family names, the sub-entries', () => {
   const X = C.fishGen(F, PH.photos),
     N = C.fishTypeNames(X.gen),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
@@ -256,6 +256,92 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
   assert.strictEqual(g('rat fish').g, 'a');
   // without the word to drop (the corals, or an older call), only the names themselves
   assert.strictEqual(C.typeMatchIn(C.fishTypeNames(X.gen), 'trigger', C.typeNormAll), null);
+});
+
+// The three plain fixes of the names study (Pierre, 2026-11-09): a name and its other number are one name; a name typed
+// exactly is never read as a slip of another (the name index, fishNameIndex); a name several
+// families share (a family the book splits) is all of them, never "which one? check the spelling" (Q319).
+test('typed fish names: singular and plural are one name, a known name is never a slip of another, a shared one is all of them', () => {
+  const S = C.subjectOf('fish'),
+    X = C.fishGen(F, PH.photos),
+    N = C.fishTypeNames(X.gen, S.typeDrop, C.fishNameIndex(F)),
+    m = t => C.typeMatchIn(N, t, C.typeNormAll);
+  // the singulars of the book's labels, read exactly as the family (no spelling step, no "which one?")
+  [
+    ['seahorse', 'f:Seahorses'],
+    ['moray', 'f:Morays'],
+    ['grouper', 'f:Groupers'],
+    ['blenny', 'f:Blennies'],
+    ['convict blenny', 'f:ConvictBlennies'],
+    ['pipefish', 'f:Pipefishes'],
+    ['jawfish', 'f:Jawfishes'],
+    ['soapfish', 'f:Soapfishes'],
+    ['sweetlip', 'f:Sweetlips'],
+    ['hawkfish', 'f:Hawkfishes'],
+    ['wrasses', 'f:Wrasses'], // and the plural of IMR's singular
+    ['snappers', 'f:Snappers']
+  ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
+  assert.strictEqual(m('grouper').alt, undefined); // the family's own name in the other number: no "read as" line
+  // goby: the Gobies' singular, and a word two of the three dartfishes carry: both (Q319)
+  assert.deepStrictEqual([...m('goby').shared].sort(), ['f:Dartfishes', 'f:Gobies']);
+  assert.deepStrictEqual(m('goby').by['f:Dartfishes'], {
+    vr: 'k',
+    n: 2,
+    of: 3,
+    sc: F.vn.find(([x]) => x === 'goby')[1].find(([f]) => f === 'f:Dartfishes')[4]
+  });
+  // never another family by the spelling tolerance (anglerfish, tuskfish, firefish, goldie were the Angelfishes, the
+  // Boxfishes, the Filefishes, the Soldierfishes): a name of the family whose species carry it (the name index, Q320), or
+  // a word known to be no family's (one species' only: tuskfish, goldie)
+  [
+    ['anglerfish', 'f:Frogfishes'],
+    ['firefish', 'f:Lionfishes'],
+    ['batfish', 'f:Spadefishes'],
+    ['hogfish', 'f:Wrasses']
+  ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
+  // tuskfish, goldie: one species' words, that species' family's names on a photo of it (Q333)
+  assert.deepStrictEqual([m('tuskfish').g, m('tuskfish').sc.length, m('goldie').g], ['f:Wrasses', 1, 'f:Anthias']);
+  assert.strictEqual(m('anglerfsh').g, 'f:Frogfishes'); // a slip of it: the spelling step, as everywhere
+  assert.strictEqual(m('anglerfsh').exact, false);
+  // "dart": the Dartfishes' own short form, and a jack's word ("Smallspotted dart"): both (Q319), each as the photo shows it (Q333)
+  assert.deepStrictEqual([...m('dart').shared].sort(), ['f:Dartfishes', 'f:Jacks']);
+  // the IMR entries' scientific families the book splits: typed exactly, all of their families (Q319), never one of
+  // them by spelling (Holocentridae read as Holocentrinae, Syngnathidae as the Pipefishes only)
+  [
+    ['Holocentridae', ['f:Soldierfishes', 'f:Squirrelfishes']],
+    ['Syngnathidae', ['f:Seahorses', 'f:Pipefishes']],
+    ['Scorpaenidae', ['f:Lionfishes', 'f:Scorpionfishes']],
+    ['Serranidae', ['f:Groupers', 'f:Soapfishes', 'f:Anthias']]
+  ].forEach(([t, L]) => {
+    assert.deepStrictEqual([t, [...m(t).shared].sort(), m(t).exact], [t, [...L].sort(), true]);
+    L.forEach(g => assert.strictEqual(C.typeVerdict(m(t), g), 'exact', t + ' ' + g));
+    assert.strictEqual(C.typeVerdict(m(t), 'f:Wrasses'), 'other', t);
+  });
+  assert.strictEqual(m('Haemulidae').g, 'f:Sweetlips'); // an IMR family name of one book family: that family
+  // a slip between two names stays "which one?" (a spelling tie)
+  assert.ok(m('pipefishes') && m('pipefishes').g === 'f:Pipefishes');
+  assert.ok(m('pilefishes').near);
+  // the name index: the species' listed names and scientific names, the genera's, the kind words (fish.json vn), each
+  // with the family it lifts to and its role; a word of a "False ..." name is none
+  const I = C.fishNameIndex(F),
+    has = (x, g, vr) => I.some(e => e.x.toLowerCase() === x && e.g === g && e.vr === vr);
+  assert.ok(has('peacock razorfish', 'f:Wrasses', 'sp'));
+  assert.ok(has('iniistius pavo', 'f:Wrasses', 'ss'));
+  assert.ok(has('iniistius', 'f:Wrasses', 'gs'));
+  assert.ok(has('hogfishes', 'f:Wrasses', 'gc'));
+  assert.ok(has('razorfish', 'f:Wrasses', 'k') && has('razorfish', 'f:Shrimpfishes', 'k'));
+  assert.ok(I.some(e => e.x === 'tuskfish' && e.g === 'f:Wrasses' && e.sc.length === 1));
+  assert.ok(
+    !I.some(e => /^(puffer|moorish ?idol|stonefish)$/i.test(e.x) && e.vr === 'k' && e.g !== 'f:Puffers'),
+    'no word of a False name'
+  );
+  assert.deepStrictEqual(C.typeForms('Gobies'), ['Goby']);
+  assert.deepStrictEqual(C.typeForms('Grouper'), ['Groupers']);
+  assert.deepStrictEqual(C.typeForms('Pipefishes'), ['Pipefish']);
+  assert.deepStrictEqual(C.typeForms('Seahorses & pipefishes'), ['Seahorses & pipefish']);
+  assert.deepStrictEqual([C.typeForms('Anthias'), C.typeForms('Chromis'), C.typeForms('Pomacentridae')], [[], [], []]);
+  // the corals' reading is unchanged: no known names, no other number
+  assert.deepStrictEqual(C.typeMatchIn([{k: 'acropora', g: 'Acropora', old: ''}], 'acropra'), {g: 'Acropora', old: '', exact: false});
 });
 
 test('mergeUsers: each subject on its own, a subject neither account played stays out, fish opt-ins kept', () => {

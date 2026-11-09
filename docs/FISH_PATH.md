@@ -97,8 +97,8 @@ is the design's shorthand, and internal identifiers may keep it.
   the main name of the most, then the most FishBase records, then FishBase's main name before iNaturalist's, then by name).
   Spellings of one name count once (Pearl-scaled / Pearlscale angelfish; Neon damsel / damselfish), the others kept to accept
   when typed. A name two game species share is dropped from the one that does not own it; a PDF name shared stays, flagged
-  (4 pairs on 2026-11-08: "Twospot wrasse", "Seagrass wrasse", Twotone / Two-tone wrasse, Blackstripe(d) cardinalfish: to settle
-  before species questions ship, "Gaps"). A species with no name of its own and none found in both references gets the main
+  (4 pairs on 2026-11-08: "Twospot wrasse", "Seagrass wrasse", Twotone / Two-tone wrasse, Blackstripe(d) cardinalfish:
+  each accepted for both species, "Also used for…", Pierre, 2026-11-09, Q319). A species with no name of its own and none found in both references gets the main
   name of one (`single`: *Nudiantennarius subteres*, Deep-water frogfish; *Cryptocentrus nigrocellatus*). Pierre, 2026-11-05: no
   third rule, and a PDF slip shows FishBase's spelling, the PDF form accepted when typed. **664 game species (2026-11-08)**: 3
   with no name (Q247), 392 with 1, 248 with 2, 21 with 3 (circle 1: 271 / 180 / 20). Since every listed name is needed, more
@@ -107,7 +107,8 @@ is the design's shorthand, and internal identifiers may keep it.
 - **In the game** (`app.js`, for the species level, which asks them): `cnShow`, the listed name a multiple-choice question shows,
   the one asked least so far, the list's order on a tie (so every name comes round); `cnTypeNames`, the typed names: only the
   listed names and their recorded spellings (the usual spelling tolerance applies, `core.js` `typeMatchIn`), no other name the
-  references give, no short form; a shared name asks "which one?". On a genus question, a listed name typed gets the "common
+  references give, no short form; a name two species list is right for each, "Also used for…" (Q319); a kind word of
+  the name index (razorfish) is known, the nudge. On a genus question, a listed name typed gets the "common
   name" nudge (Q237, `typeOther`). Still to build with the species level: one common-name unit per listed name in the score
   tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null` without one, so the two `single` species
   read as nameless until then).
@@ -124,6 +125,36 @@ is the design's shorthand, and internal identifiers may keep it.
   `tools/fish_source.json` (copied to `fish.json`), Clownfish on Anemonefish (in Damselfish). "clown", "clownfish" typed
   read "✓ Yes, Anemonefish (often called clownfish): it's Damselfish" (`core.js` `fishOften`, `oft`; `quiz.js`
   `typeStep`, the spelling step's one-line style).
+- **One name in both numbers, a known name never a slip, a shared name all of its families** (Pierre, 2026-11-09, the
+  names study's plain fixes and Q319; docs/reviews/2026-11-09-shared-common-names.md): every name is also read in the
+  other number of its last word (`core.js` `typeForms`: "Grouper", "Goby", "Pipefish" are the Groupers, the Gobies, the
+  Pipefishes, exactly, no spelling step; never a scientific name's, which keeps its spelling step); a name the game
+  knows (the name index, below) is read as such, never as a slip of another family (anglerfish was read as the
+  Angelfishes, tuskfish as the Boxfishes); a name Pierre turns off is known, the player told "“X” is a name some fish
+  species go by: this question needs the family.";
+  the IMR entries' scientific families the book splits (Holocentridae, Syngnathidae, Serranidae, Scorpaenidae,
+  Synanceiidae, Gobiidae) name each of their families (`typeMatchIn` `shared`): right on any of them, the feedback
+  saying "“Holocentridae” is also used for the Squirrelfishes."; on another family a wrong answer that counts against the
+  photo's family only, no mix-up recorded, "“Serranidae” names the Groupers, the Soapfishes and the Anthias." (`quiz.js` `typeUnit`,
+  `typeRead`). "Close to X and Y: which one? Check the spelling." is left for a slip between two names.
+- **The name index: a family question accepts a name that designates the photo's own taxon** (Pierre, 2026-11-09,
+  Q319, Q320; ~15:45 Manila, Q333: "if someone types Razorfish on a photo of a wrasse that really is a razorfish, then
+  yes, it counts for the family; but you cannot type Razorfish for a wrasse that is not a razorfish"; and "we won't
+  penalise someone who knows the genus's name, or even the species'; but the mistakes must be penalised"; ARCHITECTURE.md
+  "The name index"). Right: a name of the family as a whole (its labels, IMR's name, its scientific names, its `aka` and
+  `often`), and a name of part of it only on a photo of that part: its genus or species, scientific or common (Iniistius,
+  Iniistius pavo, Peacock razorfish on a peacock razorfish), a word its own species carries (`fish.json` `vn`:
+  razorfish on an *Iniistius* or a shrimpfish, toby on a *Canthigaster*), an IMR genus or sub-entry (Chromis on a
+  *Chromis*, Unicornfish on a *Naso*, Clownfish on an anemonefish; `core.js` `fishGen` `scopes`). A name of part of the
+  family that does not designate the photo is a mistake, counted against the photo's family only, no mix-up (no unit
+  given, Q319): razorfish on a cleaner wrasse, Chromis on a *Dascyllus*, Unicornfish on an *Acanthurus* (`core.js`
+  `typeFits`). A name of another family stays that family's: a wrong answer against both (rule L2). After the answer,
+  one line says what the name is: "“Peacock razorfish” is one of the Wrasses.", "“Iniistius” is a genus of the Wrasses.",
+  "“Razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes."; on a photo it does not designate,
+  "“razorfish” is a name of some Wrasses, not this one. It is also used for the Shrimpfishes."; on another family,
+  "“Razorfish” names the Shrimpfishes and some Wrasses.". Pierre's exceptions in `curation.json` `fish` `names` (`off`,
+  `on` and `often` give a name to the whole family: "✓ Yes, it's Shrimpfishes (often called razorfish)"); the admin page
+  to edit them is still to build (ROADMAP "Fish common names").
 - Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
   Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
   sharks).
@@ -333,9 +364,9 @@ Gaps before species questions ship:
   photo memory; the fish pre-sort's automatic decisions (`FISHCHK`) make this workable. Targets: "Fish photos and the admin".
 - **Species-level look-alikes**, with the cue that tells each side apart. Only entries have `look` today. Sources: "Fish photos and the
   admin"; how the cues are taught: "How cues are taught" there.
-- **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both.
+- **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319).
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; four shared PDF names to settle ("Common names").
+- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; the four shared PDF names right for both species (Q319).
 - Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but nothing is computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish (`SUBJECTS` `replay: false`); those come with a per-subject `?stats=1`.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)

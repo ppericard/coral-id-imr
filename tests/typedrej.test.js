@@ -247,7 +247,7 @@ test('a family question, and the corals: the spelling message as before (no comm
 test('answer logs the refused texts (rj) with a typed answer, nothing when there were none', () => {
   const a = cut(quiz, 'function answer(', '\nfunction ', {file: 'quiz.js'});
   assert.match(a, /\.\.\.\(tq && tq\.rj && tq\.rj\.length \? \{rj: tq\.rj\.slice\(0, TYPEDQ_RJ\)\} : \{\}\),/);
-  assert.match(quiz, /\(m, text, sp, rj\) => \{\n\s+Object\.assign\(TYPEDQ \|\| \{\}, \{m, text, sp, rj\}\);/);
+  assert.match(quiz, /\(m, text, sp, rj\) => \{\n\s+Object\.assign\(TYPEDQ \|\| \{\}, \{m, text, sp, rj(, [^}]*)?\}\);/);
 });
 
 // The sheet: the same answers with and without refused texts give every reader the same numbers.

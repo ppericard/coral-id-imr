@@ -55,7 +55,9 @@ const TYPEDQ_RJ = 10; // the refused texts a typed answer logs at most (typeBind
 // Every name a player may type: every genus the app knows (the slate's and the extra ones) and their old names.
 // For fish, every teaching entry and the other names it goes by (core.js fishTypeNames), read as whole names.
 const typeNames = () => {
-  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ) TYPEN = {d: DATA, s: SUBJ, L: UNITS[SUBJ.id].names()};
+  // read again when the data, the subject or Pierre's curation (its names: curation.json fish.names) changes
+  const c = typeof CUR === 'undefined' ? null : CUR;
+  if (!TYPEN || TYPEN.d !== DATA || TYPEN.s !== SUBJ || TYPEN.c !== c) TYPEN = {d: DATA, s: SUBJ, c, L: UNITS[SUBJ.id].names()};
   return TYPEN.L;
 };
 // rk: the rank of the unit asked (app.js rankOf): a typed answer is read among the names of that rank only (a fish
@@ -129,14 +131,20 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     const text = inp.value.trim();
     if (!text) return inp.focus();
     // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
-    if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t) === 'exact' ? 1 : 0, text});
+    if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t, o.sp) === 'exact' ? 1 : 0, text});
     const m = read(text);
-    if (!m || m.near) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
+    if (!m || m.near || m.known) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
     const kind = !m && S === SUBJ ? typeKind(text, rk) : '';
     if (kind) msg.textContent = typeKindMsg(text, kind, one);
     else if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
+    // A name the game knows that is no unit's (core.js typeMatchIn known: a species' name, or a word of one): said so,
+    // never read as a slip of another unit's name, and giving nothing away.
+    else if (m.known)
+      msg.textContent = m.w
+        ? `“${text}” is a name some ${S.several} go by: this question needs the ${one}.`
+        : `“${text}” is a species' name: this question needs its ${one}.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
-    else if (o.t && typeVerdict(m, o.t) === 'close') {
+    else if (o.t && typeVerdict(m, o.t, o.sp) === 'close') {
       first = {m, text};
       form.classList.add('retry');
       msg.innerHTML = `<span class="tymed" aria-hidden="true">✏️</span><span><b>So close!</b> Right ${esc(one)}: just fix the spelling and try once more.</span>`;
@@ -158,16 +166,62 @@ const typeSpell = (text, name) => {
     .join('')
     .replace(/<\/b><b>/g, ''); // neighbouring letters in one bold run
 };
+// The unit a typed reading m gives on a question on unit t: its unit; for a name several units share (core.js
+// typeMatchIn shared: Holocentridae, the Soldierfishes' and the Squirrelfishes'), t when t is one of them (right,
+// Pierre, 2026-11-09, Q319), else none: a wrong answer that counts against t only, no mix-up recorded (Q319), as "I
+// don't know" is scored (answer: no unit given), its text logged (ty); '' for "I don't know".
+// A name of part of the unit asked (core.js typeFits: razorfish, Chromis, a species' name) on a photo it does not
+// designate (sp: the photo's species) is a mistake (Pierre, 2026-11-09 ~15:45 Manila, Q333): no unit given either, so it
+// counts against t only, no mix-up.
+const typeUnit = (m, t, sp) => (!m ? '' : typeFits(m, t, sp) ? t : m.shared || m.g === t ? '' : m.g || '');
+// Units as a list in a sentence: "A", "A and B", "A, B and C".
+const unameList = L => L.join(', ').replace(/, ([^,]*)$/, ' and $1');
+// A unit as a name typed reaches it (core.js fishNameIndex: r = {vr, n, of}, its role and how many of its species carry
+// the name): "some Wrasses" for a word only some of its species carry, else "the Shrimpfishes".
+const typeWhose = (g, r = {}) => `${['k', 'gc'].includes(r.vr) && !(r.n && r.n === r.of) ? 'some' : 'the'} ${uname(g)}`;
+// What a name below the family says of unit g (r: its reading, typeWhose's): "“Peacock razorfish” is one of the
+// Wrasses." (a species' name), "“Iniistius” is a genus of the Wrasses.", "“Anglerfish” is a name of some Frogfishes."
+// (a kind word, a genus's common name, a name of Pierre's); '' for the family's own names.
+// not: the name is of part of g only and the photo is not of that part (Q333): "…, not this one." (a name of part of g
+// with no role of its own, an IMR genus or sub-entry: "“Chromis” is a name of some Damselfishes, not this one.").
+const typeSays = (text, g, r = {}, not = false) => {
+  const end = not ? ', not this one.' : '.';
+  return ['sp', 'ss'].includes(r.vr)
+    ? `“${esc(text)}” is one of the ${uname(g)}${end}`
+    : r.vr === 'gs'
+      ? `“${esc(text)}” is a genus of the ${uname(g)}${end}`
+      : ['k', 'gc', 'cur'].includes(r.vr)
+        ? `“${esc(text)}” is a name of ${typeWhose(g, r)}${end}`
+        : not
+          ? `“${esc(text)}” is a name of some ${uname(g)}${end}`
+          : '';
+};
 // How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact, or when
-// the spelling step was asked: typeStep says it in the verdict's own line).
-const typeRead = (m, text, sp) =>
-  !m || m.exact || sp
+// the spelling step was asked: typeStep says it in the verdict's own line); a name below the family, what it is
+// (typeSays). A name several units share (m.shared, Q319), on the question on unit t: right, what it is for t and the
+// others it is used for ("“Razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes."); wrong, every
+// unit it names ("“Razorfish” names some Wrasses and the Shrimpfishes.").
+// ps: the photo's species (core.js typeFits): a name of part of t that does not designate them says so, "not this one".
+const typeRead = (m, text, sp, t, ps) => {
+  const not = !!m && (m.shared ? m.shared.includes(t) : m.g === t) && !typeFits(m, t, ps);
+  if (m && m.shared) {
+    const by = m.by || {},
+      who = L => unameList(L.map(g => typeWhose(g, by[g])));
+    if (!m.shared.includes(t)) return `“${esc(text)}” names ${who(m.shared)}.`;
+    const mine = typeSays(text, t, by[t], not),
+      rest = who(m.shared.filter(g => g !== t));
+    return mine ? `${mine} It is also used for ${rest}.` : `“${esc(text)}” is also used for ${rest}.`;
+  }
+  if (m && not) return typeSays(text, t, m, true);
+  if (m && m.vr && m.exact) return typeSays(text, m.g, m);
+  return !m || m.exact || sp
     ? ''
     : m.old
       ? m.alt
         ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
         : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
       : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
+};
 // The spelling step's outcome (typeBind sp) for the verdict's one line (Pierre, 2026-11-06: one line, "✓ Yes, but not
 // quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked or the
 // retype was exact (Pierre, 2026-11-06: no mistake left to point out, so the plain "✓ Yes, it's X"). Else {spelled}: the
@@ -175,12 +229,17 @@ const typeRead = (m, text, sp) =>
 // upright), and old: the name typed was an old one (alt: another name of a fish entry), so the line names the unit after it.
 // A name in common use typed (m.oft, core.js fishOften: Clownfish), with no spelling left to fix: {oft}, so the line says
 // the usual name gently (Pierre, 2026-11-06, Q164: "✓ Yes, Anemonefish (often called clownfish)").
-const typeStep = (m, text, sp) => {
+const typeStep = (m, text, sp, t) => {
   if (!m) return null;
-  if (!sp || m.exact || sp.r) return m.oft ? {oft: m.oft} : null;
-  const name = m.old || unameT(m.g),
+  const oft = m.shared ? ((m.by || {})[t] || {}).oft : m.oft;
+  if (!sp || m.exact || sp.r) return oft ? {oft} : null;
+  const name = (m.shared && m.name) || m.old || unameT(m.g || t),
     s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
-  return {spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+  // A name several units share (razorfish, Holocentridae): the name as it is spelled, nothing more: it is no old name
+  // nor another name of the unit (Codex review #834).
+  if (m.shared) return {spelled: s, plain: true, old: false, alt: false};
+  const u = GX(m.g || t);
+  return {spelled: !m.old && u && u.name && !u.rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
@@ -298,19 +357,23 @@ function question(cur, target, choices, prompt, set, kq) {
   };
   $v.querySelectorAll('[data-c]').forEach(b => (b.onclick = () => go(b.dataset.c)));
   // A typed question: the genus read is the answer ('' for "I don't know"), what was typed goes with it (TYPEDQ).
-  const tf = $v.querySelector('.tyform');
+  const tf = $v.querySelector('.tyform'),
+    // the photo's own species (app.js photoTaxon): a name of part of the unit counts only when it designates them (Q333)
+    tx = tf && photoTaxon(ph, target),
+    typeSp = tx && tx.rank === 'species' ? [tx.id] : [];
   if (tf)
     typeBind(
       tf,
       (m, text, sp, rj) => {
-        Object.assign(TYPEDQ || {}, {m, text, sp, rj});
-        go(m ? m.g : '');
+        Object.assign(TYPEDQ || {}, {m, text, sp, rj, ps: typeSp});
+        go(typeUnit(m, target, typeSp));
       },
       SUBJ,
       rankOf(target),
       GX(target).one || SUBJ.one,
       {
         t: target,
+        sp: typeSp,
         // The spelling step (typeBind): the answer is given, only its spelling waits; the hint stays as it was. The nudge
         // makes the answer column taller: the stage gives up that room so it stays on one screen (Codex review #616).
         close: () => {
@@ -749,10 +812,14 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
   const tyIn = tq && $v.querySelector('#tyin');
   // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
-  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c ? 'ko' : 'idk');
-  const idk = !!tq && !c,
-    read = tq ? typeRead(tq.m, tq.text, tq.sp) : '',
-    step = tq && good ? typeStep(tq.m, tq.text, tq.sp) : null;
+  // A name several units share, the photo's not among them, gives no unit (typeUnit) but is a wrong answer, not "I don't know".
+  // A name read but no unit given (a name several units share, or of part of the unit and not of this photo: typeUnit)
+  // is a wrong answer, not "I don't know".
+  const shw = !!(tq && tq.m && !c);
+  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c || shw ? 'ko' : 'idk');
+  const idk = !!tq && !c && !shw,
+    read = tq ? typeRead(tq.m, tq.text, tq.sp, target, tq.ps) : '',
+    step = tq && good ? typeStep(tq.m, tq.text, tq.sp, target) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
   document.getElementById('after').innerHTML =
@@ -814,8 +881,10 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
     said = !step
       ? `it's ${name}`
       : step.oft
-        ? `<b>${esc(step.oft[0])}</b> (often called ${esc(step.oft[1].toLowerCase())}): it's ${name}`
-        : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
+        ? step.oft[0] === unameT(target) // a name Pierre marks "often" for the family itself (curation.json fish.names)
+          ? `it's ${name} (often called ${esc(step.oft[1].toLowerCase())})`
+          : `<b>${esc(step.oft[0])}</b> (often called ${esc(step.oft[1].toLowerCase())}): it's ${name}`
+        : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
