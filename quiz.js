@@ -802,7 +802,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).
   document.getElementById('after').innerHTML =
-    `${fbBody(target, c, good, idk, again, ph, read, step)}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
+    `${fbBody(target, c, good, idk, again, ph, read, step, photoTaxon(seenPh, target))}${repBtn({g: target, a: c, ph: ph.map(p => p.f), m: modeBase(cur)})}</div>
     <button class="next" type="button" id="next">Next <kbd>↵</kbd></button>`;
   // Phones: the feedback opens as a bottom sheet so the answer and Next show without scrolling (app.css .q.done).
   const qq = $v.querySelector('.q');
@@ -837,8 +837,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
 // another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
 // its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
 // look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet. step: a
-// typed answer's spelling step (typeStep), said in the verdict's one line.
-function fbBody(target, c, good, idk, again, ph, read, step) {
+// typed answer's spelling step (typeStep), said in the verdict's one line. tx: the photo's own taxon (app.js photoTaxon),
+// said in one short line under the verdict (taxonLine), right or wrong.
+function fbBody(target, c, good, idk, again, ph, read, step, tx) {
   const g = GX(target),
     fish = !!g.name,
     C = !good && GX(c) ? GX(c) : null,
@@ -869,7 +870,7 @@ function fbBody(target, c, good, idk, again, ph, read, step) {
   // No tips box at all for a unit with no cue, summary or mnemonic (a fish family of circles 2-3 with no IMR cue: an
   // empty box drew a bare rounded bar, Pierre 2026-11-07, Barracudas).
   return `<div class="fb">
-    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${read ? `<p class="vs tyread">${read}</p>` : ''}
+    <h3 class="${good ? 'ok cheer' : idk ? 'idk' : 'ko'}${step ? ' tystep' : ''}"><span class="v">${good ? '✓ Yes' : idk ? 'No worries' : '✗ No'},</span> ${said}</h3>${taxonLine(tx)}${read ? `<p class="vs tyread">${read}</p>` : ''}
     ${g.qt || g.sum || g.mn ? `<div class="tipbox fbtips">${g.qt ? `<p class="label">${tipsLabel(g)}</p>` : ''}${g.qt || g.sum ? tipsList(g, 'imrfb') : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}${vs}
     ${more}`;
 }
