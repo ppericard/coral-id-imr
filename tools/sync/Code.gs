@@ -2907,7 +2907,13 @@ const CORE_ = (function () { const module = {exports: {}};
   // A reference-level photo (refLevel, below) comes before every other photo (Pierre, 2026-11-06: a player starts an
   // entry on reference photos, never on one prolific observer's easy photos): the cover and each list's first photos;
   // the draw favours them too (model.js photoSet, SUBJECTS calib ref). The ease ranks within each of the two groups.
-  const fHash = f => [...String(f)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  // (a loop over the name's characters, as the spread [...f] read them, without building the array: easyRank hashes
+  // every photo of a list, some 15,000 fish photos at each build; performance pass, 2026-11-09)
+  const fHash = f => {
+    let h = 2166136261;
+    for (const c of String(f)) h = Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0;
+    return h;
+  };
   // Reference level (Pierre, 2026-11-06 14:02: "reference photos" are every photo of reference quality, whoever took
   // it, not only a source's cover): a reference source's own photo (rep) judged very easy, or any photo judged ease 5
   // with the reference look in its tags (profile, whole, good light, true colours, sharp, large or medium, one fish or a
@@ -5440,16 +5446,24 @@ const CORE_ = (function () { const module = {exports: {}};
     tol: n => (n <= 6 ? 1 : 2)
   };
   // Optimal string alignment distance (Levenshtein + a swap of two neighbouring letters, the commonest typo).
+  // Three rows of the matrix only (the row being filled, the one above and, for the swap, the one above that): the same
+  // values as the whole matrix, without allocating it (performance pass, 2026-11-09; tests/typefast.test.js).
   function typeDist(a, b) {
-    const d = Array.from({length: a.length + 1}, (_, i) => [i, ...Array(b.length).fill(0)]);
-    for (let j = 1; j <= b.length; j++) d[0][j] = j;
-    for (let i = 1; i <= a.length; i++)
-      for (let j = 1; j <= b.length; j++) {
+    const m = b.length;
+    let p2 = new Array(m + 1).fill(0),
+      p1 = Array.from({length: m + 1}, (_, j) => j),
+      r = new Array(m + 1).fill(0);
+    for (let i = 1; i <= a.length; i++) {
+      r[0] = i;
+      for (let j = 1; j <= m; j++) {
         const c = a[i - 1] === b[j - 1] ? 0 : 1;
-        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
-        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        let v = Math.min(p1[j] + 1, r[j - 1] + 1, p1[j - 1] + c);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, p2[j - 2] + 1);
+        r[j] = v;
       }
-    return d[a.length][b.length];
+      [p2, p1, r] = [p1, r, p2];
+    }
+    return p1[m];
   }
   const typeNorm = s =>
     String(s || '')
@@ -5483,7 +5497,10 @@ const CORE_ = (function () { const module = {exports: {}};
   function typeMatchIn(names, text, norm = typeNorm) {
     const t = norm(text);
     if (t.length < 3) return null;
+    // A name whose length differs from the text's by more than its tolerance is skipped unread: the distance is at
+    // least the difference in length (each edit changes it by one at most), so the filter below would drop it anyway.
     const all = names
+      .filter(x => Math.abs(x.k.length - t.length) <= TYPE.tol(x.k.length))
       .map(x => ({...x, d: typeDist(t, x.k)}))
       .filter(x => x.d <= TYPE.tol(x.k.length))
       .sort((a, b) => a.d - b.d);
@@ -5510,12 +5527,25 @@ const CORE_ = (function () { const module = {exports: {}};
   // for a unit's own name or a scientific name of it (-idae, -inae: Damselfishes, Damselfish, Pomacentridae; Scarinae
   // for the book's Parrotfishes), 'common' for any
   // other name it goes by (Anemonefish, Clownfish) or a common name at the rank asked, '' otherwise.
+  // The names of the lists, read once per norm and name (the same lists come at every refused text): typeElse's own.
+  const TYPE_NORMED = new Map();
+  const typeNormed = norm => {
+    let c = TYPE_NORMED.get(norm);
+    if (!c) TYPE_NORMED.set(norm, (c = new Map()));
+    if (c.size > 50000) c.clear(); // a bound, far above the subjects' lists
+    return s => {
+      let k = c.get(s);
+      if (k === undefined) c.set(s, (k = norm(s)));
+      return k;
+    };
+  };
   function typeElse(text, other, x = {}, norm = typeNorm) {
-    const sci = new Set((x.sci || []).map(norm)),
+    const nm = typeNormed(norm),
+      sci = new Set((x.sci || []).map(nm)),
       t = norm(text);
     if (!t || sci.has(t)) return '';
     const m = typeMatchIn(
-      (other || []).filter(o => !sci.has(norm(o.old))),
+      (other || []).filter(o => !sci.has(nm(o.old))),
       text,
       norm
     );
@@ -5525,7 +5555,7 @@ const CORE_ = (function () { const module = {exports: {}};
       return own ? (x.rank ? x.rank(m.g) : '') || '' : 'common';
     }
     const c = typeMatchIn(
-      (x.common || []).filter(n => !sci.has(norm(n))).map(n => ({k: norm(n), g: 'common', old: ''})),
+      (x.common || []).filter(n => !sci.has(nm(n))).map(n => ({k: nm(n), g: 'common', old: ''})),
       text,
       norm
     );

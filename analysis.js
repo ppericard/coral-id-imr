@@ -2399,10 +2399,23 @@
   const TD_K = 3, // shrinkage: 3 = residual variance / photo variance of the time (LEARNING.md "Response time: genus and photo")
     TD_MIN = 10, // a player's timed answers before their median counts (core.js RTIME.MIN)
     TD_ZB = 0.1; // the bins of the others' mean z (fast below -0.1, slow above 0.1)
-  const medOf = L => {
-    const S = L.slice().sort((a, b) => a - b),
-      n = S.length;
+  // The median of a list in order (medS), of any list (medOf). A player's log seconds are kept in order as they come
+  // (tdIns, a sorted insert), so each answer's median needs no sort of the whole history (performance pass, 2026-11-09:
+  // the same medians); a NaN (a negative time) breaks the order, so its player's list is then sorted as before.
+  const medS = S => {
+    const n = S.length;
     return n % 2 ? S[(n - 1) / 2] : (S[n / 2 - 1] + S[n / 2]) / 2;
+  };
+  const medOf = L => medS(L.slice().sort((a, b) => a - b));
+  const tdIns = (S, x) => {
+    let lo = 0,
+      hi = S.length;
+    while (lo < hi) {
+      const m = (lo + hi) >> 1;
+      if (S[m] <= x) lo = m + 1;
+      else hi = m;
+    }
+    S.splice(lo, 0, x);
   };
   // Each answer's own z (or null) and the others' shrunk means on its photo (slow, enl; null when no other answer).
   function tdFeat(A) {
@@ -2411,9 +2424,9 @@
       out = [];
     A.forEach(a => {
       let p = P.get(a.p);
-      if (!p) P.set(a.p, (p = {L: [], e: 0, n: 0}));
+      if (!p) P.set(a.p, (p = {L: [], S: [], nan: false, e: 0, n: 0}));
       const timed = a.s != null && !a.typed,
-        z = timed && p.L.length >= TD_MIN ? Math.log(a.s) - medOf(p.L) : null,
+        z = timed && p.L.length >= TD_MIN ? Math.log(a.s) - (p.nan ? medOf(p.L) : medS(p.S)) : null,
         f = a.ph[0],
         h = f ? F.get(f) || (F.set(f, []), F.get(f)) : null,
         o = h ? h.filter(x => x.p !== a.p) : [],
@@ -2428,7 +2441,12 @@
         ne: en.length
       });
       if (h) h.push({p: a.p, zr: a.y && z != null && !a.z ? z : null, en: a.z != null && p.n ? a.z - p.e / p.n : null});
-      if (timed) p.L.push(Math.log(a.s));
+      if (timed) {
+        const v = Math.log(a.s);
+        p.L.push(v);
+        if (v !== v) p.nan = true;
+        else tdIns(p.S, v);
+      }
       if (a.z != null) ((p.e += a.z), (p.n += 1));
     });
     return out;

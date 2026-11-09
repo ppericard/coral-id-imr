@@ -47,4 +47,6 @@ test('fish: a narrower targeting for unanswered photos, the floor shared over th
   // Answers narrow it for both subjects alike: the prior's uncertainty fades as a photo is rated.
   const R = engine('fish', {r: [0, 0, 0, 20]});
   assert.ok(R.calSd({f: 'r'}) < R.calSd({f: 'new'}));
+  // photoSet reads calU once per draw and passes it in: the same width as reading it at each photo.
+  [{f: 'r'}, {f: 'new'}].forEach(p => assert.strictEqual(R.calSd(p, R.calU()), R.calSd(p), p.f));
 });

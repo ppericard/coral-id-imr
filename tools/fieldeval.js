@@ -37,7 +37,11 @@ const args = process.argv.slice(2),
   },
   files = args.filter((a, i) => !a.startsWith('--') && !(i && args[i - 1].startsWith('--')));
 const mean = v => v.reduce((a, x) => a + x, 0) / v.length,
-  sd = v => Math.sqrt(v.reduce((a, x) => a + (x - mean(v)) ** 2, 0) / (v.length - 1)),
+  // the mean once, not at each value (it was quadratic; the same value)
+  sd = v => {
+    const m = mean(v);
+    return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1));
+  },
   num = x => typeof x === 'number' && isFinite(x),
   f = (x, d = 3) => (num(x) ? (x >= 0 ? ' ' : '') + x.toFixed(d) : '-');
 // Mean and 95% t interval of a list.

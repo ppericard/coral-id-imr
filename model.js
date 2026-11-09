@@ -128,7 +128,8 @@ const calBonus = p => 1 + CAL.B / (1 + nAnswers(p) / CAL.N);
 // corals): fish photos all carry a judged ease, so a narrower targeting lets that prior lead while their answers are few
 // (Pierre, 2026-11-06 15:33, Q186).
 const calU = () => calibOf(SUBJ).u ?? CAL.U;
-const calSd = p => Math.sqrt(PICKD.SIGMA ** 2 + calU() / (1 + nAnswers(p) / CAL.N));
+// u: calU(), passed in by a caller that reads it once for many photos (photoSet).
+const calSd = (p, u = calU()) => Math.sqrt(PICKD.SIGMA ** 2 + u / (1 + nAnswers(p) / CAL.N));
 // The draw's floor for a unit of nObs observations (photoSet): PICKD.FLOOR of the best one's weight each, shared over the
 // subject's pool when the unit has more (SUBJECTS calib pool; unbounded for the corals: PICKD.FLOOR, as before), so in
 // a big pool the floor's mass does not drown the prior's lean (Pierre, 2026-11-06 15:33, Q186).
@@ -174,10 +175,14 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     single = calQ || Math.random() < singleP(n, shift),
     s = P[n] || {},
     ro = s.ro || [],
+    // The subject's calibration, read once for the whole draw (performance pass, 2026-11-09: calibOf builds a new
+    // object, and w below reads it at every photo weight; the same values, so the same draws).
+    cal = calibOf(SUBJ),
+    calu = cal.u ?? CAL.U,
     // The start's lean (SUBJECTS calib early, Pierre 2026-11-06 14:17-14:18: no wall, the easy photos strongly favoured
     // at the start by the difficulty engine itself): the target sits early logits lower on a unit with few answers,
     // fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals (their target as before).
-    lean = calibOf(SUBJ).early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
+    lean = cal.early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
     tgt = ability(n) + shift - aimOff(k, fmtOff(pfmt(), f)) - (single ? PICKD.SINGLE : 0) - lean,
     pm = pmem();
   const h = [...recent(n).slice(-5)],
@@ -187,7 +192,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     hard = () => false;
   // off: extra difficulty when the colony only has one view, so the question will show it alone (SINGLE).
   const w = (p, off = 0) => {
-    const x = (photoDiff(n, p) + off - tgt) / calSd(p),
+    const x = (photoDiff(n, p) + off - tgt) / calSd(p, calu),
       k = mem[p.o || p.f];
     let r = Math.exp((-x * x) / 2) * calBonus(p);
     // Spread the repeats (photo memory, Pierre 2026-11-03): a photo already shown weighs e^offset of its memory bucket
@@ -198,7 +203,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     // A reference-level photo never seen (core.js refLevel: a reference source's own, or judged ease 5 with the
     // reference look; Pierre, 2026-11-06) weighs its subject's calibration ref times more (SUBJECTS calib: 3 for fish, 1
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
-    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? calibOf(SUBJ).ref : 1);
+    if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
     return hardF < 1 && hard(p) ? r * hardF : r;
   };
@@ -216,6 +221,8 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   // colony already met is no new photo, and it loses the never-seen bonus. For fish, an observation's other photos of
   // the same fish. The question's expectation and the progress still read each photo's own record (famOf, pgMemW).
   const mem = colonyMem(obs, s.ps || {});
+  // Each observation's photos, every view, listed once (ph below reads them several times).
+  const phs = Object.fromEntries(keys.map(k => [k, Object.values(obs[k]).flat()]));
   // All the photos of a question come from ONE observation (Pierre, 2026-11-01: zoom levels of different colonies shown
   // together read as one coral and teach a wrong picture). Colonies photographed at several zooms are favoured, by cov,
   // the share of the views they have, in a single-view question and in a beginner's multi-view one (Pierre, 2026-11-06,
@@ -236,7 +243,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   const sc = Object.fromEntries(keys.map(k => [k, score(k)]));
   // Rarely under ease 4 before Open Water (RARE): each observation's hard part, the share of its photos' weight under
   // the bar (its photo is drawn on those weights); the cap itself comes last, below.
-  const ph = k => Object.values(obs[k]).flat(),
+  const ph = k => phs[k],
     es = keys
       .flatMap(ph)
       .map(p => p.e || 0)
@@ -248,7 +255,10 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     const bar = Math.min(RARE.E, es[Math.min(RARE.FEW, es.length) - 1]),
       sum = L => L.reduce((t, p) => t + w(p), 0);
     hard = p => p.e > 0 && p.e < bar;
-    keys.forEach(k => (hs[k] = sum(ph(k)) ? sum(ph(k).filter(hard)) / sum(ph(k)) : 0));
+    keys.forEach(k => {
+      const t = sum(ph(k));
+      hs[k] = t ? sum(ph(k).filter(hard)) / t : 0;
+    });
   }
   // The exploration share (Pierre, 2026-11-06, Q188): a calibration question draws among the colonies this player has
   // never seen, while the unit has one the draw can show; still on the targeting and the calibration bonus, so at the
