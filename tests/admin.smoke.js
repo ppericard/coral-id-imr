@@ -1311,7 +1311,8 @@ const WIDTHS = [390, 1280];
         const c = document.getElementById('anc-can-we-trust-this-model');
         return c && {words: c.querySelectorAll('.adm-an-says-l li').length, charts: c.querySelectorAll('.adm-an-sm figure svg').length};
       });
-      if (!ck || ck.words < (/answer-time/.test(h) ? 1 : 2) || ck.charts < 1) fails.push(`${w}px Analyses #${h} model check: ${JSON.stringify(ck)}`);
+      if (!ck || ck.words < (/answer-time/.test(h) ? 1 : 2) || ck.charts < 1)
+        fails.push(`${w}px Analyses #${h} model check: ${JSON.stringify(ck)}`);
     }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
