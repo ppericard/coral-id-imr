@@ -1,4 +1,4 @@
-// The seedling 🌱 in the admin's own name (sheet vNEXT; Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
+// The seedling 🌱 in the admin's own name (sheet v123; Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
 // have"): no player can make a name holding it or one of its look-alikes (core.js reservedName: the sign-up and an archive
 // name are refused as reserved); the admin page renames its own account with it or back (Code.gs users_ userSeed, with
 // the GitHub token and the account's code), moving the whole record and leaving a Removed row so the account's other

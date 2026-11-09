@@ -1981,7 +1981,7 @@
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
   // The seedling 🌱 is the admin's own mark in his name (Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
-  // have"), given only by the admin page (Code.gs users_ userSeed, vNEXT): a new account or an archive name holding it, or
+  // have"), given only by the admin page (Code.gs users_ userSeed, v123): a new account or an archive name holding it, or
   // one of its look-alikes, anywhere is refused as reserved too. Seedling, herb, potted plant, shamrock, four-leaf clover,
   // leaf fluttering in wind (any variation selector after it changes nothing: the base character is enough).
   const SEED_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];

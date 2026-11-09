@@ -8441,7 +8441,7 @@ const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
 const EXCL_SHEET = 115;
 const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
-// The seedling 🌱 in the admin's own name (sheet vNEXT, core.js seedName): only on the row of the account signed in on
+// The seedling 🌱 in the admin's own name (sheet v123, core.js seedName): only on the row of the account signed in on
 // this browser (its code proves it to the sheet), from the script that does it.
 const SEED_SHEET = 123;
 const seedOn = () => (USERS.v || 0) >= SEED_SHEET;
@@ -8711,7 +8711,7 @@ function bindUsers() {
   };
   // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
   // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
-  // The seedling in the admin's own name (sheet vNEXT, Code.gs users_ userSeed; Pierre, 2026-11-09, Q328): the account
+  // The seedling in the admin's own name (sheet v123, Code.gs users_ userSeed; Pierre, 2026-11-09, Q328): the account
   // signed in on this browser is renamed with ' 🌱' or back, its code sent to prove it is this account; the app here
   // follows the new name, the account's other devices are told to sign in under it. One click each way (rule A2).
   $v.querySelectorAll('[data-useed]').forEach(
