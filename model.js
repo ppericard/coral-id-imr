@@ -64,7 +64,7 @@ function rareCap(keys, sc, hardOf, share = RARE.SHARE) {
 // docs/LEARNING.md "Beginners and experts".
 // core.js aimOf: the miss weight (core.js pgMissW) and the sheet's full replay take the same aim.
 const aimP = () => aimOf((P[LEVEL] || {}).th || 0);
-// df: the format's offset (core.js fmtOff, the sheet's PFMT; Pierre, 2026-11-06, Q138): a format the players find easier
+// df: the format's offset (core.js fmtOff, the subject's pfmt; Pierre, 2026-11-06, Q138): a format the players find easier
 // than its guess rate allows (df > 0, e.g. 2 plausible choices among 4) gets a photo that much harder, so the question is
 // still aimed at aimP in its format; 0 with an older sheet (the aim as before).
 const aimOff = (k = 4, df = 0) => {
@@ -150,7 +150,7 @@ const colonyMem = (obs, ps) =>
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
 // PICKD.P in that format (aimOff); f: its format (core.js fmtOf: 'k4', 'again', 'duel', 'typed'…), whose offset the aim
-// takes (fmtOff, PFMT).
+// takes (fmtOff, the subject's pfmt).
 function photoSet(n, skip, shift = 0, k = 4, f = '') {
   const g = GX(n),
     two = g.levels === 2,
@@ -178,7 +178,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     // at the start by the difficulty engine itself): the target sits early logits lower on a unit with few answers,
     // fading as PDIFF.W / (PDIFF.W + answers on it); 0 for the corals (their target as before).
     lean = calibOf(SUBJ).early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
-    tgt = ability(n) + shift - aimOff(k, fmtOff(PFMT, f)) - (single ? PICKD.SINGLE : 0) - lean,
+    tgt = ability(n) + shift - aimOff(k, fmtOff(pfmt(), f)) - (single ? PICKD.SINGLE : 0) - lean,
     pm = pmem();
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
@@ -1133,6 +1133,14 @@ const pmem = () => (SUBJ.replay ? PMEM : PMEM0);
 // expectation of the ability steps (quiz.js answer) and taken off the photo's aim (aimOff); read only from a sheet that
 // reports v >= FMT_SHEET (rule D4, core.js fmtsOf): {} before, every offset 0.
 let PFMT = fmtsOf(store.get('reefid-photo-stats', {}));
+// The format offsets of the subject in play (pfmt), as pmem for the photo memory: PFMT is fitted on the answers of the one
+// subject the sheet rates (Code.gs stats_ reads its replayed rows, SUBJECTS replay: the corals), so a subject it does not
+// rate yet (fish: no per-subject ?stats=1, ROADMAP admin plan PR 11) aims and scores with every format at 0, never with a
+// coral offset (Pierre, 2026-11-09): the app's own expectation before any fit (the fit's prior mean, core.js FMT; what an
+// older sheet gives), the prudent value, correcting nothing rather than by the corals' k2 +1.11 or typed -0.42 of that
+// day. The corals: PFMT, the very object, as before.
+const PFMT0 = Object.freeze({});
+const pfmt = () => (SUBJ.replay ? PFMT : PFMT0);
 // Progress saved before the photo memory, recalculated once and silently (Pierre, 2026-11-03: no pop-up, the bars move
 // down 1-3 points; core.js memRecalc): every genus record not marked yet (s.pm), at load and after each pull of the
 // synced progress (sync.js mergeSaved), and in quiz.js answer before a record's first answer. Saved and synced when it
