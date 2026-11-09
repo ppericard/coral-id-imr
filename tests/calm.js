@@ -33,8 +33,8 @@ module.exports = {
   ...pw,
   chromium: {
     launch: async (...a) => {
-      await slot(path.basename(process.argv[1] || 'smoke'));
       curPlay();
+      await slot(path.basename(process.argv[1] || 'smoke'));
       return calm(await pw.chromium.launch(...a));
     }
   }
