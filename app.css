@@ -2553,6 +2553,13 @@ kbd {
 .fb .tyread {
   margin: 0 0 6px;
 }
+/* The photo's own species, one short line under the verdict after every answer (app.js taxonLine): small and quiet, so the
+   answer stays what the eye catches. */
+.fb .fbsp {
+  margin: 0 0 6px;
+  font-size: var(--fs-s);
+  color: var(--muted);
+}
 .fb .keyid {
   margin: 0;
   font-size: var(--fs-s);

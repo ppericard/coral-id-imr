@@ -48,6 +48,8 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
     sent.push(body || Object.fromEntries(url.searchParams));
     const j = sheet ? (body ? sheet.post(body) : sheet.get(Object.fromEntries(url.searchParams))) : {ok: false};
     got.push(j);
+    // A reply that never came (the sheet's stub answers an Error: it may have applied the request all the same).
+    if (j instanceof Error) return Promise.reject(j);
     return Promise.resolve({json: () => JSON.parse(JSON.stringify(j))});
   };
   const ctx = {
@@ -69,7 +71,7 @@ function app({ls = {}, P = {}, SYNC = null, sheet = null} = {}) {
       visibilityState: 'visible'
     },
     window: {addEventListener: () => {}},
-    navigator: {onLine: true},
+    navigator: {onLine: true, userAgent: 'Mozilla/5.0 (node test)'},
     setInterval: () => 0,
     setTimeout: () => 0,
     clearTimeout: () => {},
@@ -680,7 +682,7 @@ test('an admin merge of two replayed accounts brings the replay of both historie
   assert.deepStrictEqual([back.ok + back.ko, back.h], [30, '0000000000']);
 });
 
-test('property: devices, unsent answers, an older client and a reset in flight: every device ends with the rows of the log', async () => {
+test('property: devices, unsent answers, lost replies, an older client and a reset in flight: every device ends with the rows of the log', async () => {
   // A small deterministic random generator, so a failure replays the same way.
   let seed = 7;
   const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
@@ -708,14 +710,16 @@ test('property: devices, unsent answers, an older client and a reset in flight: 
     // Answers logged before any device here, with the progress write lost.
     const first = Array.from({length: 1 + Math.floor(rnd() * 3)}, (_, i) => ans('f' + run + i, G[i % 4], rnd() < 0.8));
     s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}'}, summary: {}, answers: first});
-    // Two devices on this app; a save may be refused (busy) and a reset may come while a save is on its way.
+    // Two devices on this app; a save may be refused (busy), its reply lost once the sheet applied it (logged and
+    // written, the device never told: ROADMAP "A save whose reply is lost, then another device's save"), and a reset may
+    // come while a save is on its way.
     const sheetFor = () => ({
       get: q => s.get(q),
       post: b => {
         if (b.name && !calm && rnd() < 0.2) return {ok: false, error: 'busy'};
         const r = s.post(b);
         if (during) (during(), (during = null));
-        return r;
+        return b.name && !calm && rnd() < 0.1 ? new TypeError('Failed to fetch') : r;
       }
     });
     const devs = [0, 1].map(() => app({sheet: sheetFor(), SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}}));
