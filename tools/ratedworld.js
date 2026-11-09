@@ -10,7 +10,9 @@
 // Both subjects: the fish units built as the app builds them (above), the corals' too (coralUnits); --learner count or item.
 //
 //   node tools/learnsim.js --world rated [--subject fish] [--seeds 10] [--questions 3000] [--profiles ...]
-//                          [--learner count|item] [--dist normal|tail|t3] [--app truth|own] [--beyond yes|no] [--out rated.json]
+//                          [--learner count|item] [--dist normal|tail|t3] [--app truth|own|sheet] [--beyond yes|no] [--out rated.json]
+//                          [--times rho25|rho0|views|fast] [--every 25] [--gap -0.22]
+// --app sheet (2026-11-09, Q315 level 2): the sheet's photo Elo simulated on a population's own answers (runPop, below).
 //
 // The world of a seed (the same seed, the same world, so two versions of the app compare on it):
 // - each family's difficulty mu ~ N(0, FAM^2), + LOOK when it has declared look-alikes; each scientific genus's mu ~ its
@@ -320,9 +322,18 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
-    {ctx, M, G} = engine(U, W, {app, seed, beyond}),
+    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep});
+  for (let i = 0; i < N; i++) pl.step(i);
+  return pl.result();
+}
+// One player in world W (runOne's, or one of a population's: runPop): step(i) plays answer i + 1 and returns it ({t, c,
+// ok, k, typed, chs, ph: the files shown}); result() the run as runOne returns it. rseed seeds the app's and the learner's
+// generators (the world's seed by default), pi the player's ability offset (the world's by default); ctx the app's vm
+// (runPop serves it the sheet's statistics).
+function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi}) {
+  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond}),
     prof = LP.profOf(profile, U.subject),
-    r = gen((seed * 2654435761) ^ 0x9e3779b9),
+    r = gen((rseed * 2654435761) ^ 0x9e3779b9),
     slate = U.slate,
     knows = LP.knownUnits(prof, {
       SL: slate,
@@ -336,7 +347,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
   U.extra.forEach(n => (know[n] = LP.genKnown(prof, knows, G[n].parent, G[n].imrg) ? prof.hi : prof.lo));
   const teach = (n, x = 1) => n in know && (know[n] += Math.min(1, prof.rate * x) * (1 - know[n])),
     trueD = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0),
-    pRec = (n, d, single = true) => sig(logit(know[n]) + W.pi - d - (single ? RATED.SINGLE : 0)),
+    pRec = (n, d, single = true) => sig(logit(know[n]) + pi - d - (single ? RATED.SINGLE : 0)),
     dStar = n => {
       const L = judgePhotos(ctx, G, n);
       return L.length ? L.reduce((t, p) => t + pRec(n, trueD(n, p)), 0) / L.length : null;
@@ -369,7 +380,7 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
   };
   const P = () => ctx.P,
     shown = () => (U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score).pct : M.progPct(slate));
-  for (let i = 0; i < N; i++) {
+  const step = i => {
     const at = M.answersSoFar(),
       list = ctx.pool();
     // The opt-in set's offer (app.js UNITS sets): the fish scientific names once a family is at Advanced, accepted or
@@ -395,7 +406,10 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
     const d = mean(ph.map(p => trueD(t, p))),
-      rec = r() < pRec(t, d, ph.length === 1);
+      rec = r() < pRec(t, d, ph.length === 1),
+      // The learner's true logit on this question (ability - difficulty, recognition), before it learns from it: the
+      // knowledge-gap term of the simulated seconds (runPop, --gap).
+      gap = logit(know[t]) + pi - d - (ph.length === 1 ? RATED.SINGLE : 0);
     let c = t;
     if (!rec) {
       if (typed) c = r() < 0.5 ? '' : (same.length ? same[Math.floor(r() * same.length)] : '') || '';
@@ -497,11 +511,12 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
       });
       blk = {n: 0, ok: 0};
     }
-  }
-  return {
+    return {t, c, ok, k, typed, chs, ph: ph.map(p => p.f), gap};
+  };
+  const result = () => ({
     profile,
     seed,
-    pi: W.pi,
+    pi,
     rows,
     owAt,
     advAt,
@@ -512,10 +527,135 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
     knows: [...knows],
     right: rights / Math.max(1, N),
     ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
-  };
+  });
+  return {step, result, ctx, M, G, trueD};
 }
 
-module.exports = {RATED, ITEM, world, piOf, engine, runOne, fishUnits, coralUnits, unitsOf, question, noteRecent, judgePhotos, typedOthers};
+// The sheet's photo Elo in the rated world (--app sheet; Q315 level 2, rule L11): a population of players, one per
+// profile, plays the same world in turn (one answer each, round after round), their answers logged as the Answers tab
+// holds them (readAnswers rows, with seconds), and every EVERY rounds the sheet's photo Elo (core.js eloOf,
+// genusOffsetsOf, photoMemOf, as Code.gs stats_) is replayed on the log and served to every player's app (PSTAT, PGD, PMEM:
+// model.js photoDiff, genusDiff, famOf), as ?stats=1 serves them. So the photo ratings the draw reads are learned from
+// the players' own answers, and a change to the rating changes what every player meets.
+// Response times (RT, the one place their distribution is stated; LEARNING.md "Response time: genus and photo": the
+// player's medians 3.9 to 11.2 s, a photo sd 0.35 in log, a residual about 0.57, a right answer 0.67 times as long as a
+// miss, RIGHT = log 0.67, as on the real log): an
+// answer's log seconds = T0 + the mean over its photos of the photo's time intensity beta + (views only) VIEW per view
+// beyond the first - the player's speed tau + RIGHT if right + TYPED if typed + NOISE x N(0, 1), drawn from a generator
+// of its own per answer (the answers and the draws never depend on it unless the rating reads it). beta by case (TIMES):
+// rho25, beta correlated 0.25 with the photo's true difficulty d = mu + eps; rho0, unrelated; views, unrelated, and
+// each view beyond the first VIEW slower (a single view is harder but faster: time against difficulty); fast, the fast
+// photos easy and the slow ones uninformative (u = FAST z(d) + sqrt(1 - FAST^2) N: beta = PHOTO u when u < 0, else PHOTO
+// |N'|).
+const RT = {T0: Math.log(6.5), PHOTO: 0.35, PLAYER: 0.44, NOISE: 0.57, RIGHT: -0.4, TYPED: Math.log(1.5), VIEW: 0.3, RHO: 0.25, FAST: 0.5};
+const TIMES = ['rho25', 'rho0', 'views', 'fast'];
+// Each photo file's time intensity beta in world W for a case, and its true difficulty (the world's mu + eps).
+function timeWorld(U, W, seed, times, {gap = 0} = {}) {
+  if (!TIMES.includes(times)) throw new Error(`--times one of ${TIMES.join(', ')}`);
+  const unitOf = {};
+  [...U.slate, ...U.extra].forEach(n => Object.values(U.views(n)).forEach(L => L.forEach(p => (unitOf[p.f] = unitOf[p.f] || n))));
+  const files = Object.keys(W.eps).sort(),
+    d = Object.fromEntries(files.map(f => [f, (W.mu[unitOf[f]] || 0) + W.eps[f]])),
+    m = files.reduce((t, f) => t + d[f], 0) / files.length,
+    sdd = Math.sqrt(files.reduce((t, f) => t + (d[f] - m) ** 2, 0) / files.length) || 1,
+    r = gen((seed * 1597334677) ^ 0x2545f491),
+    beta = {};
+  files.forEach(f => {
+    const z = (d[f] - m) / sdd,
+      x = normal(r),
+      x2 = normal(r);
+    if (times === 'rho25') beta[f] = RT.PHOTO * (RT.RHO * z + Math.sqrt(1 - RT.RHO ** 2) * x);
+    else if (times === 'fast') {
+      const u = RT.FAST * z + Math.sqrt(1 - RT.FAST ** 2) * x;
+      beta[f] = u < 0 ? RT.PHOTO * u : RT.PHOTO * Math.abs(x2);
+    } else beta[f] = RT.PHOTO * x;
+  });
+  const bm = files.reduce((t, f) => t + beta[f], 0) / files.length,
+    sb = Math.sqrt(files.reduce((t, f) => t + (beta[f] - bm) ** 2, 0) / files.length) || 1,
+    rho = files.reduce((t, f) => t + (beta[f] - bm) * (d[f] - m), 0) / files.length / sb / sdd;
+  return {times, beta, d, unitOf, rho, gap};
+}
+// The seconds of logged answer number i (from 0, in the log's order) of player j, its photos ph, right ok, typed, and the
+// learner's true logit on it (gap: ability - difficulty), times TW.gap (0 unless --gap: Q324, the real log's -0.22 log per
+// logit; the seconds of a run without it are unchanged, the noise drawn the same).
+function secOf(TW, seed, j, i, {ph, ok, typed, gap = 0}) {
+  const r = gen((seed * 2654435761) ^ (i * 2246822519) ^ (TIMES.indexOf(TW.times) * 40503 + 0x7f4a7c15)),
+    tau = RT.PLAYER * normal(gen((seed * 3266489917) ^ (0x165667b1 + 7919 * (j + 1)))),
+    lt = RT.T0 + ph.reduce((t, f) => t + (TW.beta[f] || 0), 0) / ph.length + (TW.times === 'views' ? RT.VIEW * (ph.length - 1) : 0) - tau + (ok ? RT.RIGHT : 0) + (typed ? RT.TYPED : 0) + (TW.gap || 0) * gap + RT.NOISE * normal(r);
+  return Math.round(Math.min(600, Math.max(0.1, Math.exp(lt))) * 10) / 10;
+}
+// The photo ratings as ?stats=1 serves them (core.js eloOf, genusOffsetsOf, photoMemOf, as Code.gs stats_). A change to
+// the sheet's rating (Q315's option (1), PR #808: a right answer's steps weighed by its seconds, core.js photoTimeW,
+// with its k as an arm, --pk, and the k recovered on the log) changes this one function and its replay.
+function sheetStats(log) {
+  return {photos: C.eloOf(log), gd: C.genusOffsetsOf(log), mem: C.photoMemOf(log).mem};
+}
+// How far the served ratings are from the truth: over the photos answered, the root mean square of (rating - true d)
+// once their mean difference is taken out (the Elo's zero is not the world's), plain (err) and weighed by the photo's
+// answers (errW: what the draw meets), their correlation (corr); over the units answered, the same for the genus offsets
+// against mu (gdErr).
+function rateErr(st, TW, W) {
+  const F = Object.keys(st.photos).filter(f => st.photos[f][3] > 0 && f in TW.d),
+    cRMS = (xs, ys, ws) => {
+      const tw = ws.reduce((a, x) => a + x, 0),
+        md = xs.reduce((a, x, i) => a + ws[i] * (x - ys[i]), 0) / tw;
+      return Math.sqrt(xs.reduce((a, x, i) => a + ws[i] * (x - ys[i] - md) ** 2, 0) / tw);
+    },
+    b = F.map(f => st.photos[f][0]),
+    d = F.map(f => TW.d[f]),
+    mb = b.reduce((a, x) => a + x, 0) / b.length,
+    md = d.reduce((a, x) => a + x, 0) / d.length,
+    cov = b.reduce((a, x, i) => a + (x - mb) * (d[i] - md), 0),
+    vb = b.reduce((a, x) => a + (x - mb) ** 2, 0),
+    vd = d.reduce((a, x) => a + (x - md) ** 2, 0),
+    gs = Object.keys(st.gd).filter(n => n in W.mu && st.gd[n][1] > 0);
+  return {
+    photos: F.length,
+    err: F.length ? cRMS(b, d, F.map(() => 1)) : null,
+    errW: F.length ? cRMS(b, d, F.map(f => st.photos[f][3])) : null,
+    corr: vb > 0 && vd > 0 ? cov / Math.sqrt(vb * vd) : null,
+    gdErr: gs.length ? cRMS(gs.map(n => st.gd[n][0]), gs.map(n => W.mu[n]), gs.map(() => 1)) : null
+  };
+}
+// One population (above): seed, N answers per player, cps the checkpoints (per player), profiles, times the case of its
+// seconds, gap their knowledge-gap term (secOf), every the rounds between two refreshes of the ratings served. Returns
+// {runs: one per player (runOne's), pop: {seed, times, gap, rho (beta against d), at: [{q, err, errW, corr, gdErr,
+// photos}]}}; keep: also the log, the world W and its seconds TW (an app world's stats and truth from a population).
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0}) {
+  if (subject) U = unitsOf(subject);
+  if (!U.slate) U = unitsOfX(U);
+  const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
+    TW = timeWorld(U, W, seed, times, {gap}),
+    pls = profiles.map((profile, j) =>
+      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
+    ),
+    log = [],
+    at = [];
+  log.times = times;
+  const serve = () => {
+    const st = sheetStats(log);
+    pls.forEach(pl => {
+      pl.ctx.__st = st;
+      vm.runInContext('PSTAT = __st.photos; PGD = __st.gd; PMEM = memOf(__st.mem); GDIFF = {};', pl.ctx);
+    });
+  };
+  for (let i = 0; i < N; i++) {
+    pls.forEach((pl, j) => {
+      const a = pl.step(i),
+        q = {ph: a.ph, ok: a.ok, typed: a.typed, gap: a.gap},
+        mode = a.typed ? 'quiz|t' : `quiz|k${Math.max(2, Math.min(9, a.k))}`,
+        row = [`p${j + 1}`, (i * pls.length + j) * 1000, a.t, a.c, a.ok ? 1 : 0, mode, a.ph.join(' '), null, null, null, a.chs.join(' '), 0, secOf(TW, seed, j, log.length, q), 0];
+      row.j = j;
+      row.q = q;
+      log.push(row);
+    });
+    if ((i + 1) % every === 0) serve();
+    if (cps.includes(i + 1)) at.push({q: i + 1, ...rateErr(sheetStats(log), TW, W)});
+  }
+  return {runs: pls.map(pl => pl.result()), pop: {seed, times, gap, rho: TW.rho, at, answers: log.length}, ...(keep ? {log, W, TW} : {})};
+}
+
+module.exports = {RATED, ITEM, RT, TIMES, world, piOf, engine, runOne, runPop, playerOf, timeWorld, secOf, sheetStats, rateErr, fishUnits, coralUnits, unitsOf, question, noteRecent, judgePhotos, typedOthers};
 
 // The rated world's checkpoints: the guardrails' (LEARNING.md) up to the horizon, and the horizon.
 const checkpoints = N => [...new Set([100, 300, 1000, 3000, 10000, 30000].filter(q => q <= N).concat([N]))].sort((a, b) => a - b);
@@ -526,7 +666,12 @@ async function main(o) {
     t0 = Date.now(),
     cps = checkpoints(o.N),
     jobs = [];
-  for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++) for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
+  const pop = o.app === 'sheet',
+    POP = [];
+  // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
+  for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
+    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0});
+    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -538,7 +683,8 @@ async function main(o) {
           w.postMessage(j);
         };
         w.on('message', r => {
-          runs.push(r);
+          if (r.pop) (runs.push(...r.runs), POP.push(r.pop));
+          else runs.push(r);
           process.stderr.write(`\r${runs.length} runs, ${Math.round((Date.now() - t0) / 1000)} s`);
           next();
         });
@@ -554,9 +700,19 @@ async function main(o) {
       return v.length ? v.reduce((a, x) => a + x, 0) / v.length : null;
     },
     f = (x, d) => (x === null ? '-' : x.toFixed(d));
+  POP.sort((a, b) => a.seed - b.seed);
   console.log(
-    `\nRated world (${o.subject}; learner ${o.learner}; photos ${o.dist}, the app ${o.app === 'truth' ? 'told the truth' : 'on its own estimate'}): ${o.profiles.join(', ')}; ${o.seeds} seeds x ${o.N} answers; ${runs.length} runs in ${secs.toFixed(0)} s`
+    `\nRated world (${o.subject}; learner ${o.learner}; photos ${o.dist}, the app ${o.app === 'truth' ? 'told the truth' : o.app === 'sheet' ? `on the sheet's photo Elo of the population (times ${o.times}, gap ${o.gap || 0})` : 'on its own estimate'}): ${o.profiles.join(', ')}; ${o.seeds} seeds x ${o.N} answers; ${runs.length} runs in ${secs.toFixed(0)} s`
   );
+  if (pop) {
+    console.log('Photo ratings against the truth (per player answers: rating error, weighed by answers, correlation, genus offsets error), mean of seeds:');
+    cps.forEach((q, i) => {
+      const A = POP.map(p => p.at[i]).filter(Boolean),
+        g = k => m(A.map(x => x[k]));
+      console.log(`  ${String(q).padStart(6)}  err ${f(g('err'), 3)}  errW ${f(g('errW'), 3)}  corr ${f(g('corr'), 3)}  gdErr ${f(g('gdErr'), 3)}  photos ${f(g('photos'), 0)}`);
+    });
+    console.log(`  beta against the true difficulty: ${f(m(POP.map(p => p.rho)), 2)} (times ${o.times}, gap ${o.gap || 0})`);
+  }
   const K = [...new Set(runs.flatMap(r => Object.values(r.kinds)))];
   console.log(`right%: since the previous checkpoint; D*: true knowledge of the slate; E: bar - D*, slate units met; OW / Adv: ${K.join(', ')} at Open Water / Advanced`);
   for (const p of o.profiles) {
@@ -590,6 +746,7 @@ async function main(o) {
           coralSd: o.subject === 'coral' ? o.coralSd || RATED.CORAL_GD : null,
           app: o.app,
           beyond: o.beyond || null,
+          ...(pop ? {times: o.times, every: o.every, gap: o.gap || 0, rt: RT, pop: POP} : {}),
           seconds: secs,
           runs
         },
@@ -606,5 +763,5 @@ module.exports.checkpoints = checkpoints;
 // A worker thread of main: runs the jobs it is sent.
 if (!require('worker_threads').isMainThread && require('worker_threads').workerData === 1) {
   const {parentPort} = require('worker_threads');
-  parentPort.on('message', j => parentPort.postMessage(runOne(null, j)));
+  parentPort.on('message', j => parentPort.postMessage(j.pop ? {pop: 1, ...runPop(null, j)} : runOne(null, j)));
 }

@@ -162,3 +162,56 @@ test('D* over the game photos only; a typed miss on a slate genus may name a bon
     fo = RW.typedOthers(RW.engine(F, RW.world(F, 1)).G, [F.slate[0], F.slate[1], g], F.slate[0], () => true);
   assert.deepStrictEqual(fo, [F.slate[1]]); // a family's typed miss names a family, never a genus
 });
+
+// --app sheet (Q315 level 2): the sheet's photo Elo replayed on a population's own log and served to every player.
+test('the sheet mode: a population logs its answers with seconds, the ratings it serves are learned from them', () => {
+  const U = RW.unitsOf('coral'),
+    W = RW.world(U, 3),
+    TW = RW.timeWorld(U, W, 3, 'rho25'),
+    T0 = RW.timeWorld(U, W, 3, 'rho0');
+  assert.ok(Math.abs(TW.rho - RW.RT.RHO) < 0.08, `beta against d ${TW.rho}`);
+  assert.ok(Math.abs(T0.rho) < 0.08, `unrelated ${T0.rho}`);
+  assert.ok(RW.timeWorld(U, W, 3, 'fast').rho > 0.1, 'fast photos easy: positively related overall');
+  assert.throws(() => RW.timeWorld(U, W, 3, 'nope'));
+  const q = {ph: [Object.keys(TW.beta)[0]], ok: 1, typed: false};
+  assert.strictEqual(RW.secOf(TW, 3, 0, 7, q), RW.secOf(TW, 3, 0, 7, q), 'the same answer, the same seconds');
+  // Q324: the knowledge-gap term (--gap): a question the learner knows better (a larger true logit) is answered faster;
+  // without it (gap 0) the seconds are those of before, the noise drawn the same.
+  const TG = RW.timeWorld(U, W, 3, 'rho25', {gap: -0.22});
+  assert.strictEqual(TG.gap, -0.22);
+  assert.ok(RW.secOf(TG, 3, 0, 7, {...q, gap: 3}) < RW.secOf(TG, 3, 0, 7, {...q, gap: -1}));
+  assert.strictEqual(RW.secOf(TW, 3, 0, 7, {...q, gap: 3}), RW.secOf(TW, 3, 0, 7, q), 'gap 0: unchanged');
+  assert.ok(
+    Math.abs(Math.log(RW.secOf(TG, 3, 0, 7, {...q, gap: 2}) / RW.secOf(TG, 3, 0, 7, q)) + 0.44) < 0.06,
+    'a 2-logit gap: 0.44 log faster'
+  );
+  const o = {subject: 'coral', seed: 3, N: 30, cps: [30], profiles: ['beginner', 'expert'], every: 10},
+    a = RW.runPop(null, o),
+    b = RW.runPop(null, o),
+    c = RW.runPop(null, {...o, times: 'rho0', gap: -0.22});
+  assert.deepStrictEqual(a, b, 'the same seed, the same population');
+  assert.strictEqual(a.runs.length, 2);
+  assert.deepStrictEqual(
+    a.runs.map(r => r.profile),
+    ['beginner', 'expert']
+  );
+  assert.strictEqual(a.pop.answers, 60);
+  assert.strictEqual(c.pop.gap, -0.22);
+  const at = a.pop.at[0];
+  assert.ok(at.q === 30 && at.photos > 10 && at.err > 0 && at.gdErr > 0, JSON.stringify(at));
+  // The sheet's rating reads no seconds today: the times' case and gap leave the answers as they are.
+  assert.deepStrictEqual(
+    c.runs.map(r => r.expo),
+    a.runs.map(r => r.expo)
+  );
+  // The ratings served: the sheet's replay (core.js eloOf, genusOffsetsOf, photoMemOf).
+  const log = [['p1', 1, 'Acropora', 'Acropora', 1, 'quiz|k4', 'x', null, null, null, 'Acropora Porites', 0, 3, 0]],
+    s = RW.sheetStats(log);
+  assert.ok(s.photos.x && 'Acropora' in s.gd && s.mem.length === 4);
+  // learncmp reads the population measures, one value per seed.
+  const F = r => ({subject: 'coral', world: 'rated', seeds: 1, questions: 30, checkpoints: [30], runs: r.runs, pop: [r.pop]}),
+    R = L.compare(F(a), F(c), {primary: {at: L.parseAt('rateErr@30'), dir: 'down'}});
+  assert.ok(R.primary.pop && R.primary.n === 1);
+  assert.ok(R.pops.rateErr[0].n === 1);
+  assert.match(L.report(R), /The sheet's photo ratings/);
+});

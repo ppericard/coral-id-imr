@@ -4673,6 +4673,95 @@ kept, declared before the test; option (3), enlarging, waits for data; the secon
 level 2, the real-log replay the primary (players the unit; corals primary, fish exploratory). Next steps: ROADMAP
 "Time in the photo rating".
 
+### Q315 option 1: what three rounds showed (2026-11-09, PR #808, closed unmerged)
+
+**The outcome: three level-2 rounds, and none passed as declared.** Option (1) weighed a right answer's photo-Elo step
+and its genus-offset step by its response time. Pierre chose on 2026-11-09 (Q335) to close #808 without merging it and
+to keep its conclusions here. Nothing in the engine changed. What was kept:
+- the rated world's sheet mode with its simulated response times (`--app sheet`, `--times`, `--gap`);
+- learncmp's population measures;
+- an admin fix found on the way (#808's salvage).
+
+**The real-log replay** (the sheet's Answers tab read 2026-11-09, read-only; corals 2,906 answers of 14 players).
+- The protocol was declared before computing. Each answer was predicted before it moved anything, with the app's own
+  scorer, and the players were the unit. Three primaries went under Holm.
+- **Variants A and B of option (2)**, the time intensity in `photoDiff`'s prior: A from right answers only, B from all
+  answers. A gave −4.05 × 10⁻³ log-loss per answer [−9.16, +1.07], B −3.53 [−8.26, +1.20]. Neither was clear (Holm
+  0.107).
+- **Option (1), the raw form**: z = log seconds minus the median of every earlier timed answer of the player, k 2. It gave
+  −1.97 × 10⁻³ [−3.14, −0.80], 10 of 14 players better, Holm 0.003, clear.
+- **Option (1), the net form** (Q318, after round 1): z against the median of the player's earlier right answers only. It
+  gave −1.03 × 10⁻³ [−1.71, −0.34], 10 of 14 players, p 0.0015, k 1.5 the commonest choice (the curve flat from 1 to 3).
+- The raw form beat the net form by +0.94 [+0.23, +1.65], which is at most the part the step asymmetry took. The
+  right/wrong photo step ratio was 0.219 under today's rule, 0.231 with the raw z, and 0.219 with the net z.
+- Fish: nothing clear in any variant.
+
+**What was built** (on #808's branch only): `core.js` `photoTimeW` and `RTIME.PK`, called by both `Code.gs` `stats_` and
+`eloReplay`. A right answer's photo and genus-offset steps were multiplied by clamp(1 − k z, 0.5, 1.5). A miss, a typed
+answer, an enlarged photo and an untimed answer weighed 1. The change was rules version 10. The stats cache was keyed by
+the rules version.
+
+**The level-2 protocol, the same in all three rounds and declared in the PR before each run.**
+- **The world.** The rated world, corals, `--app sheet`: one player per coral profile, 3,000 answers each (12,000
+  pooled). The sheet's photo Elo was replayed on the population's own log every 100 answers and served to every player's
+  app.
+- **The arms.** Before was k 0 (today's rule), after the k under test.
+- **The time cases.**
+  - `rho25`: β_photo correlated 0.25 with the true difficulty d.
+  - `rho0`: unrelated.
+  - `views`: unrelated, each view beyond the first 0.3 log slower, so time runs against difficulty.
+  - `fast`: fast photos easy, slow ones uninformative.
+  - All four with normal photos, plus `rho25` and `rho0` with heavy tails.
+- **The primary**: the photo ratings' centred root mean square error against the true difficulty at 3,000 answers per
+  player (`rateErr@3000`, `rho25` normal, down; one value per seed, an exact sign-flip).
+- **The key secondary**: the ratings' correlation with the truth.
+- **"Nothing breaks"**: the rating error at most +0.01 with `rho0`, `views` and `fast`.
+- **The guardrails** of the table above, per profile.
+- **The app world**: 4 profiles × 5 seeds × 300 questions, served one population's ratings with k 0 and with the k under
+  test.
+
+**The three rounds:**
+
+| Round | The rule tested | The simulated seconds | Seeds | Primary (rating error, after − before) | Breached |
+| --- | --- | --- | --- | --- | --- |
+| 1 | raw z, k 2 | log t = log 6.5 + β_photo − τ (sd 0.44) − 0.4 if right + log 1.5 if typed + N(0, 0.57²) | 101-120 | −0.0018 [+0.0126], p 0.83 | "nothing breaks" with views (+0.014); the strong RA's plateau (fast); app world: E, first Open Water and plateaus for the early profiles |
+| 2 | net z, k 1.5 | the same | 121-140 | −0.0031 [+0.0085], p 0.65 | "nothing breaks" with views (+0.017); the lecture RA's score at 1,000 (views, fast); app world: the beginner's E and first Open Water |
+| 3 | net z, k 1.5 | the same − 0.22 × (θ − d), the real log's knowledge-gap term (Q324) | 121-140 | **+0.0105** [+0.0210], p 0.10 | "nothing breaks" with rho0 (+0.015) and views (+0.013); app world: the beginner's first Open Water (40 → 100 answers) |
+
+**What the rounds showed:**
+- **The ranking gets better while the spread gets worse.** The weight orders the photos better whenever time carries
+  difficulty. In round 3 the correlation with the truth rose +0.020 to +0.069 in every case.
+- But the error does not fall, and in round 3 it rises. The truth's own choice of k is 0 in most seeds. The weight spreads
+  the ratings more than it informs them.
+- **The raw z mixes in an asymmetry.** Right answers are faster than misses, so against every answer's median they
+  weigh more than 1 on average. That makes a right answer's step larger than a miss's whatever the photo.
+  - In round 1 the log-loss chose k > 0 even with uninformative times, and an exploratory check with right answers as
+    fast as misses removed it.
+  - The net z removes the asymmetry: in round 2 the log-loss chose k 0 with uninformative times.
+- **The real log's signature needs the knowledge-gap term.**
+  - Without it (round 2) the planted world could not produce the real log's gain: with rho25 the log-loss chose k 0.
+  - With it (round 3) the log-loss gain at k 1.5 is −0.64 to −1.10 × 10⁻³ in every case, matching the real log's −1.03.
+  - So a log-loss gain on the real log is expected from time tracking the knowledge gap. It does not show that the
+    ratings get closer to the truth.
+- **Every app-world check put the beginner's first Open Water later**: +38, +20 and +60 answers. These are noisy, from one
+  pair of rating sets each.
+
+**What a future variant must do:**
+- Keep the ratings' spread in check. The weight's mean must stay at 1 for right answers (the net z does that), and its
+  extra variance must be paid for, for instance with a smaller k or by also damping the step.
+- Pass the same primary, in the same rounds, with the gap term on (`--gap -0.22`).
+- Wait for more players, and more varied ones. The real-log figures come from 14 coral players, a few of them with most
+  of the answers.
+
+**Options (2) A and B** (the time intensity in `photoDiff`'s prior, Pierre's first choice of Q315) were measured once on
+the real log, not clearly, and never built or simulated. They are kept for the same re-test.
+
+**When to come back:**
+- the corals have about 20 timed players and about 5,000 timed answers ("Response time: genus and photo" sized it);
+- the real-log replay is run again with both forms of option (1) and options (2) A/B under the same declared protocol;
+- only a variant clear there goes into level 2, starting from the rated world's sheet mode with `--gap`.
+ROADMAP "Time in the photo rating".
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis*.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
@@ -4835,7 +4924,15 @@ every choice after), the photo aimed lower by the opening hold's ease and the pl
 `confTerm`), the last two observations held back (`s.ro`), the exam questions by `examSet` and `examTyped`. Not in it: the Again after a miss, the
 duels slipped into the quiz, the comeback and breaks, the surprise cards. `--app truth`: `photoDiff` gives each photo's
 true difficulty and the unit offsets make `genusDiff` give each unit's μ; `--app own`: the judged-ease prior alone (no
-photo statistics, as the fish today; the sheet's photo Elo is not simulated). `--dist normal|tail|t3`. Circle 3 stays
+photo statistics, as the fish today); `--app sheet` (2026-11-09, `runPop`): the sheet's photo Elo simulated. The
+profiles' players, one each, play the seed's world in turn; their answers are logged with simulated seconds (`RT`:
+log t = log 6.5 + the photos' time intensity β − the player's speed τ − 0.4 if right + log 1.5 if typed + `--gap` × the
+learner's true logit + noise; `--times` sets β: `rho25`, `rho0`, `views`, `fast`, as "Q315 option 1: what three rounds
+showed" describes); every `--every` rounds `core.js` `eloOf`, `genusOffsetsOf` and `photoMemOf` are replayed on the log
+and served to every player's app (`PSTAT`, `PGD`, `PMEM`), and the file's `pop` holds, per seed, the served ratings
+against the truth at each checkpoint (`rateErr`, the centred root mean square error; weighed by answers; the
+correlation; the genus offsets' `gdErr`), which learncmp reads as population measures, one value per seed (an exact
+sign-flip over the seeds). `--dist normal|tail|t3`. Circle 3 stays
 closed unless `--beyond yes`, as in the app world (its offer left unanswered). The scientific names' offer, once a family
 is at Advanced, is accepted, except by the casual diver. The learner: the profile's know per unit (`tools/learnprof.js`,
 as the app world), the run's π, recognition sig(logit know + π − d − 0.5) on the true difficulty d of the photo shown,
