@@ -159,6 +159,42 @@ photo, so to about a tenth of its side; the crop keeps the whole fish with a mar
 2026-11-04): written into `fish-photos.json` as `c`, never applied by the app or by a script; the admin will show it for
 Pierre to accept or change, as for coral candidates (ROADMAP).
 
+## The fish's box (rubric 7, 2026-11-09)
+
+Pierre, 2026-11-09 (Q321 D4): "Find the X" and Matrix show a fish photo as a small square tile, so it must show almost
+only the fish, tight around it. The size tag cannot tell that (`l` covers a fish from a third of the frame to all of it),
+so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` cuts the tile from it.
+
+- **Which photos**: every photo whose tags pass the tile rule (`tools/fish_game.py` `tile_tags`): profile or slight
+  oblique (`p`, `o`), whole (`1`), good light (`g`), colour loss `0` or `1`, sharp (`s`), large or medium (`l`, `m`), one
+  fish (`1`), no `j`, `c` or `a` flag. Any other photo gets no box.
+- **The box**: `[left, top, right, bottom]` as fractions of the original photo (the crop's format), the tightest box
+  around the whole subject fish, its fins and fin filaments included (an idol's streamer, a lyretail's threads). Read on
+  a 10 x 10 grid to half a tenth (0.05), rounded outward, never cutting the fish. When the photo does not settle it (the
+  fish runs out of the frame after all, the subject is unclear, a thread may or may not be the fish's), leave the box out:
+  a photo without a box simply has no tile.
+- **Where it goes**: a candidate's box is its judging file's `bb` (imported into `suggest.json` `"fish"` `bb`; `unsure`
+  may name `bb`, which withholds its tile only: a candidate with no other doubt still enters play); a photo already judged (a game, reference or stopgap photo, or a candidate judged
+  before rubric 7) gets it from a **box pass**: `python3 tools/fish_judge.py --boxes <dir> [--only t01,t02] [--n 3]` draws
+  the photos in play that pass the tile rule and have no box yet (the easiest first, one per observation), 9 to a sheet at
+  420 x 315 px with a labelled 10 x 10 grid; the boxes go into `tools/fish_judge.json` `boxes` {photo: box}, and the pass
+  into `passes`. The candidate sheets (`tools/judging_fish.py sheets`) carry tick marks every tenth on the photo's edges for
+  the same reading.
+- **No machine method**: there is no fish detector in the repository, and a saliency or edge heuristic is unreliable on
+  reef backgrounds (the Matrix study of 2026-11-09), so the judge's eye is the source, as for every other tag. The
+  judging passes box the photos already judged as they go: the first two box passes (2026-11-09) boxed 172 photos, about
+  7 per circle-1 entry (168 tiles kept, 4 too small in the original), so 21 of the 27 circle-1 families have 6
+  observations with a tile; the rest wait for the next rounds, entry by entry, the starter core first.
+
+**The tile** (`tools/fish_game.py` `tile_crop`, `tile_write`; Q321 D4): the box's longer side plus 10% of it on each
+side (less, down to none, where the photo's short side is shorter), squared, centred on the fish, kept inside Pierre's
+crop; written as `{f}-x.webp`, a 360 px square, next to the photo's four files on R2. A fish longer than the photo's short
+side (a field-guide profile across a wide photo) keeps its square: the band past the photo's edge is filled with the
+photo's blurred, darkened copy, as the app frames every quiz photo. It is kept only when the fish fills at least 70% of
+the tile (its longer side) and the box is at least 320 px wide in the original; the photo's record in `fish-game.json`
+carries `bb` and either `xc` (the tile's square) or `xn` (why not: `res` too small in the original, `cut` cut by Pierre's
+crop, `fill`). Pierre checks the first tiles on one contact sheet (Q321 D4); after that, nothing item by item (rule W10).
+
 ## What the app does with it (docs/LEARNING.md "Fish photos judged")
 
 - **Prior difficulty** (`model.js` `photoDiff`): a photo's own difficulty starts at (3 − ease) x the subject's `calib.ease` (0.5
@@ -204,10 +240,11 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
      `teach[].phase`) when the photo shows which: `subadult`, `intermediate`, `terminal`, `female` or `male`. A juvenile
      is the code's `j` flag; an adult needs no tag.
    - `crop` (optional): as "A proposed crop" above.
-   - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`) and `note` (140 characters at most; required with
+   - `bb` (for a photo whose code passes the tile rule): the fish's box, as "The fish's box" above.
+   - `unsure` (the fields you doubt: `code`, `keep`, `phase`, `crop`, `bb`) and `note` (140 characters at most; required with
      `unsure`).
 3. `python3 tools/judging_fish.py --check <id>` until it passes, then `python3 tools/judging_fish.py` imports every
-   passing species into `suggest.json` `"fish"`: `{jt, e, k, ph, c, u, n}`, `jt` and `e` after the caps as in
+   passing species into `suggest.json` `"fish"`: `{jt, e, k, ph, c, bb, u, n}`, `jt` and `e` after the caps as in
    `fish-photos.json`. Commit only `judging/fish/*.json` and `suggest.json`.
 
 **What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`): `best` or `alt` → **in play at once**, with its

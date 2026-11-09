@@ -25,9 +25,10 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
 
-judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, unsure, note}}}; suggest.json "fish"
-{photo: {jt, e, k, ph, c, u, n}} (autosort.js fishSure reads it): jt the tags and e the ease after the rubric's caps
-(tools/fish_judge.py cap, the same as the game photos' jt and e in fish-photos.json), c the proposed crop; "by" {species: {fish: {by, at, n}}}. Re-importing a species replaces its candidates' entries; the rest is kept.
+judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, bb, unsure, note}}}; suggest.json "fish"
+{photo: {jt, e, k, ph, c, bb, u, n}} (autosort.js fishSure reads it): jt the tags and e the ease after the rubric's caps
+(tools/fish_judge.py cap, the same as the game photos' jt and e in fish-photos.json), c the proposed crop, bb the fish's
+box (judging/FISH.md "The fish's box": every photo whose code passes the tile rule; tools/fish_game.py cuts its tile); "by" {species: {fish: {by, at, n}}}. Re-importing a species replaces its candidates' entries; the rest is kept.
 """
 import datetime
 import json
@@ -38,6 +39,7 @@ from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fish_judge import CODE, NEW_COUNT, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
+from fish_game import box_ok  # noqa: E402  the fish's box, as the tile tool reads it
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 P = lambda *a: os.path.join(ROOT, *a)  # noqa: E731
@@ -65,7 +67,7 @@ for _t in FISH["teach"]:
 # juvenile is the code's j flag, an adult needs no tag. Never another category (rule C2).
 PHASES = ("subadult", "intermediate", "terminal", "female", "male")
 KEEP = ("best", "alt", "dup")
-FIELDS = {"code", "keep", "phase", "crop", "unsure", "note"}
+FIELDS = {"code", "keep", "phase", "crop", "bb", "unsure", "note"}
 
 
 def ids(args):
@@ -121,6 +123,21 @@ def fetch(p, size="medium"):
 TILES = 12  # photos per contact sheet at most
 
 
+def ticks(im):
+    """Tick marks every tenth of the photo on its four edges (longer at the half), to read the fish's box (bb) to half a
+    tenth without a grid over the fish (judging/FISH.md "The fish's box")."""
+    from PIL import ImageDraw
+    d = ImageDraw.Draw(im)
+    W, H = im.size
+    for k in range(1, 10):
+        n = 16 if k == 5 else 9
+        x, y = round(W * k / 10), round(H * k / 10)
+        for a, b in (((x, 0), (x, n)), ((x, H - 1 - n), (x, H - 1)), ((0, y), (n, y)), ((W - 1 - n, y), (W - 1, y))):
+            d.line([a, b], fill=(0, 0, 0), width=3)
+            d.line([a, b], fill=(255, 255, 255), width=1)
+    return im
+
+
 def pack(groups, size=TILES):
     """The contact sheets of a species: its observations' photos (groups, one list per observation, in order) in sheets of
     at most `size`, an observation never split over two sheets: one that does not fit in what is left of a sheet starts the
@@ -146,7 +163,7 @@ def sheet(sid, k, L, start=0):
         except Exception as e:  # noqa: BLE001
             print(f"  could not load {p['f']}: {e}")
             im = Image.new("RGB", (H, H), (90, 90, 90))
-        ims.append(im.resize((max(1, round(im.width * H / im.height)), H)))
+        ims.append(ticks(im.resize((max(1, round(im.width * H / im.height)), H))))
     rows = [ims[i:i + 4] for i in range(0, len(ims), 4)]
     W = max(sum(i.width for i in r) + GAP * (len(r) - 1) for r in rows)
     S = Image.new("RGB", (W, len(rows) * H + GAP * (len(rows) - 1)), (255, 255, 255))
@@ -243,6 +260,10 @@ def check(sid):
                                   and 0 <= c[0] < c[2] <= 1 and 0 <= c[1] < c[3] <= 1):
             E.append(f"{at}: crop must be [left, top, right, bottom] fractions of the photo, 0 <= left < right <= 1, "
                      "0 <= top < bottom <= 1")
+        b = x.get("bb")
+        if b is not None and not box_ok(b):
+            E.append(f"{at}: bb must be the fish's box [left, top, right, bottom], fractions of the photo, 0 <= left < right <= 1, "
+                     "0 <= top < bottom <= 1")
     missing = [f for f in mine if f not in j["photos"]]
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
@@ -269,6 +290,8 @@ def entry(sid, x, rep=None):
         e["ph"] = x["phase"]
     if x.get("crop") and x["crop"] != [0, 0, 1, 1]:
         e["c"] = x["crop"]  # a proposal, as the game photos' (judging/FISH.md "A proposed crop")
+    if x.get("bb"):
+        e["bb"] = x["bb"]  # the fish's box, for its tile (judging/FISH.md "The fish's box")
     if x.get("unsure"):
         e["u"] = sorted(x["unsure"])
     if x.get("note"):

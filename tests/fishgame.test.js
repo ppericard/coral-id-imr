@@ -595,3 +595,263 @@ print(json.dumps([p['f'] for p in photos['t1']]))`)
   // fa (dup) never joins, fb joins; fc (dup) had joined and leaves; fd, a game photo of its own, stays.
   assert.deepStrictEqual(out, ['x1', 'fd', 'fb']);
 });
+
+// The tiles (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix; judging/FISH.md "The fish's
+// box"): a photo in play whose tags pass the tile rule and that has the fish's box gets a 360 px square, {f}-x.webp, cut
+// around the fish; kept when the fish fills 70% of it and the box is 320 px wide in the original.
+test('fish_game.py tile_crop: the box plus 10% squared, inside the frame; a long fish keeps its square; res and cut refused', () => {
+  const got = JSON.parse(
+    py(`import fish_game as G
+cases = [
+  ([0.4, 0.4, 0.6, 0.6], 2000, 1500, None),        # in the middle: 400 x 300 px box, a 480 px square around it
+  ([0.0, 0.3, 0.3, 0.6], 2000, 1500, None),        # at the left edge: moved back inside
+  ([0.1, 0.0, 0.8, 1.0], 2000, 1500, None),        # 1500 px tall, the photo too: the margin gives way, no band
+  ([0.05, 0.3, 0.95, 0.7], 2000, 1000, None),      # 1800 px long, the photo 1000 high: the square passes the edges
+  ([0.4, 0.4, 0.55, 0.6], 2000, 1500, None),       # 300 px wide: res
+  ([0.1, 0.1, 0.7, 0.9], 2000, 1500, [0, 0, 0.5, 1]),  # past Pierre's crop: cut
+  ([0.05, 0.1, 0.45, 0.5], 2000, 1500, [0, 0, 0.5, 1]),  # inside his crop: framed by it
+]
+print(json.dumps([G.tile_crop(b, W, H, fr) for b, W, H, fr in cases]))`)
+  );
+  const side = ([l, t, r, b], W, H) => [Math.round((r - l) * W), Math.round((b - t) * H)];
+  // 1: a 480 px square (400 + 2 x 40) centred on the box.
+  assert.deepStrictEqual(got[0], [[0.38, 0.34, 0.62, 0.66], null]);
+  // 2: 720 px square (600 x 1.2) from the photo's left edge, centred on the box vertically.
+  assert.deepStrictEqual(got[1], [[0, 0.21, 0.36, 0.69], null]);
+  assert.deepStrictEqual(side(got[1][0], 2000, 1500), [720, 720]);
+  // 3: the margin gives way to the photo's height: a 1500 px square, inside it.
+  assert.deepStrictEqual(side(got[2][0], 2000, 1500), [1500, 1500]);
+  assert.ok(got[2][0][1] >= 0 && got[2][0][3] <= 1);
+  // 4: 1800 px long in a 2000 x 1000 photo: its margin as far as the photo's width allows (2000, not 2160), its square
+  // past the top and bottom edges, equally (the band the blurred copy fills).
+  const [l4, t4, r4, b4] = got[3][0];
+  assert.deepStrictEqual(side(got[3][0], 2000, 1000), [2000, 2000]);
+  assert.deepStrictEqual([l4, r4, t4, b4], [0, 1, -0.5, 1.5]);
+  assert.deepStrictEqual(
+    [got[4], got[5]],
+    [
+      [null, 'res'],
+      [null, 'cut']
+    ]
+  );
+  // 7: framed by his crop (the left half, 1000 x 1500): the square stays inside it.
+  const [l7, , r7] = got[6][0];
+  assert.ok(l7 >= 0 && r7 <= 0.5, JSON.stringify(got[6]));
+  // The tile rule on the tags: profile or slight oblique, whole, good light, colour loss 0-1, sharp, large or medium, one
+  // fish, no j, c or a (Q321 D4).
+  const tags = [
+    'p1g0sl1',
+    'o1g1sm1r',
+    'p1g0sl1p',
+    'h1g0sl1',
+    'p0g0sl1',
+    'p1d0sl1',
+    'p1n0sl1',
+    'p1g2sl1',
+    'p1g0ml1',
+    'p1g0ss1',
+    'p1g0sls',
+    'p1g0sl1j',
+    'p1g0sl1c',
+    ''
+  ];
+  assert.deepStrictEqual(JSON.parse(py(`import fish_game as G\nprint(json.dumps([G.tile_tags(t) for t in ${JSON.stringify(tags)}]))`)), [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ]);
+});
+
+test(
+  'fish_game.py: the tiles made with the download, alone for a photo already in play, refused, and in the R2 list',
+  {skip: !pil && 'Pillow missing'},
+  () => {
+    const dir = world(),
+      w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o)),
+      size = f => py(`from PIL import Image; print(Image.open(${JSON.stringify(f)}).size)`).trim();
+    fs.mkdirSync(path.join(dir, 'tools'));
+    // The stub's originals are 400 x 300. 102: 340 px long (the photo 300 high: its square passes the edges); 101: past
+    // Pierre's crop (the left half); 201: a juvenile (no tile, whatever its box); 105 (the pass's box, suggest.json bb):
+    // 160 px wide.
+    const judge = boxes => w('tools/fish_judge.json', {photos: {}, boxes});
+    judge({
+      'fish-s001-cand-102': [0.05, 0.1, 0.9, 0.8],
+      'fish-s001-cand-101': [0.1, 0.1, 0.7, 0.9],
+      'fish-s002-cand-201': [0.05, 0.1, 0.9, 0.8]
+    });
+    w('suggest.json', {fish: {...SUG.fish, 'fish-s001-cand-105': {...SUG.fish['fish-s001-cand-105'], bb: [0.1, 0.1, 0.5, 0.5]}}});
+    const out = path.join(dir, 'up'),
+      r = run(dir, out),
+      by = () =>
+        Object.fromEntries(
+          Object.values(JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8')).photos)
+            .flat()
+            .map(p => [p.f, p])
+        );
+    assert.deepStrictEqual([r.done, r.n], [5, 5]);
+    let B = by();
+    assert.deepStrictEqual(B['fish-s001-cand-102'].bb, [0.05, 0.1, 0.9, 0.8]);
+    assert.ok(B['fish-s001-cand-102'].xc && !B['fish-s001-cand-102'].xn);
+    assert.strictEqual(size(path.join(out, 'fish-s001-cand-102-x.webp')), '(360, 360)');
+    assert.deepStrictEqual([B['fish-s001-cand-101'].xn, B['fish-s001-cand-105'].xn], ['cut', 'res']);
+    assert.ok(!('bb' in B['fish-s002-cand-201']), 'a juvenile: no tile');
+    assert.deepStrictEqual(
+      fs.readdirSync(out).filter(f => f.endsWith('-x.webp')),
+      ['fish-s001-cand-102-x.webp']
+    );
+    // The R2 list knows the tile (tools/r2_sync.sh checks the bucket has it).
+    assert.strictEqual(
+      py(`import photos\nprint(sorted(photos.tiles(photos.records(${JSON.stringify(dir)}))))`).trim(),
+      "['fish-s001-cand-102']"
+    );
+    // A box for a photo already in play (the FishBase one): its tile alone, the original fetched again (FishBase retried),
+    // its four files left as they are.
+    judge({'fish-s001-cand-102': [0.05, 0.1, 0.9, 0.8], 'fish-s003-cand-fb-Fiwra_u0': [0, 0.05, 0.85, 0.95]});
+    const out2 = path.join(dir, 'up2'),
+      r2 = run(dir, out2);
+    assert.deepStrictEqual([r2.done, r2.n], [0, 5]);
+    assert.deepStrictEqual(fs.readdirSync(out2), ['fish-s003-cand-fb-Fiwra_u0-x.webp']);
+    assert.strictEqual(r2.calls.filter(u => /Fiwra/.test(u)).length, 3);
+    B = by();
+    assert.ok(B['fish-s003-cand-fb-Fiwra_u0'].xc);
+    assert.ok(!('bb' in B['fish-s001-cand-101']), 'its box gone: no tile');
+    // Nothing new: nothing fetched, the same bytes.
+    const before = fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'),
+      r3 = run(dir, path.join(dir, 'up3'));
+    assert.deepStrictEqual([r3.done, r3.calls.length], [0, 0]);
+    assert.strictEqual(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8'), before);
+    // A changed box waits for the next run when the run's room is taken (limit): its old tile is no longer named meanwhile.
+    judge({'fish-s001-cand-102': [0.1, 0.1, 0.95, 0.8], 'fish-s003-cand-fb-Fiwra_u0': [0, 0.05, 0.85, 0.95]});
+    const r4 = run(dir, path.join(dir, 'up4'), 0);
+    assert.deepStrictEqual([r4.done, r4.wait, r4.calls.length], [0, 2, 0]); // 107 too (refused at each download)
+    assert.ok(!('bb' in by()['fish-s001-cand-102']) && !by()['fish-s001-cand-102'].xc, 'the changed box waits');
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+);
+
+// The boxes of the box passes (tools/fish_judge.json boxes; judging/FISH.md "The fish's box"): each a box inside the photo,
+// as tools/fish_game.py box_ok reads it; a candidate's (judging/fish/<species>.json bb) is checked by
+// tools/judging_fish.py --check.
+test('tools/fish_judge.json boxes: [left, top, right, bottom] inside the photo', () => {
+  const boxes = read('tools/fish_judge.json').boxes || {};
+  Object.entries(boxes).forEach(([f, b]) =>
+    assert.ok(
+      Array.isArray(b) && b.length === 4 && b[0] >= 0 && b[1] >= 0 && b[0] < b[2] && b[1] < b[3] && b[2] <= 1 && b[3] <= 1,
+      `${f}: ${b}`
+    )
+  );
+  const bad = JSON.parse(
+    py(
+      `import fish_game as G\nprint(json.dumps([f for f, b in json.load(open('tools/fish_judge.json')).get('boxes', {}).items() if not G.box_ok(b)]))`
+    )
+  );
+  assert.deepStrictEqual(bad, []);
+});
+
+// Codex review #826: a doubt on the fish's box only withholds the photo's tile; the candidate stays sure (in play by
+// itself, proposed by the auto-sort) when nothing else is doubted; any other doubt keeps it out, as before.
+test('unsure bb: the tile withheld, the candidate still in play by itself (fish_game.py cand_sure, autosort.js fishSure)', () => {
+  const {fishSure} = require('../autosort.js'),
+    j = u => ({jt: 'p1g0sm1', e: 4, k: 'best', bb: [0.1, 0.1, 0.9, 0.9], ...(u ? {u} : {})}),
+    cases = [null, ['bb'], ['code'], ['bb', 'crop']];
+  const got = JSON.parse(
+    py(`import fish_game as G
+cases = ${JSON.stringify(cases.map(j))}
+print(json.dumps([[G.cand_sure(c), G.box_of('f', {}, {'f': c})] for c in cases]))`)
+  );
+  assert.deepStrictEqual(got, [
+    [true, [0.1, 0.1, 0.9, 0.9]],
+    [true, null],
+    [false, [0.1, 0.1, 0.9, 0.9]],
+    [false, null]
+  ]);
+  assert.deepStrictEqual(
+    cases.map(u => !!fishSure(j(u))),
+    [true, true, false, false]
+  );
+});
+
+// Codex review #826: the R2 lists print nothing for none (tools/r2_sync.sh would read an empty line as a file), and the
+// script skips an empty name anyway.
+test('the R2 lists: no line for no photo or tile; r2_sync.sh skips an empty name', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2list-'));
+  fs.mkdirSync(path.join(dir, 'tools'));
+  // tools/photos.py and every tools module it imports at its top (tools/fish_short.py, #819), so it runs from the copy.
+  const src = fs.readFileSync(path.join(ROOT, 'tools/photos.py'), 'utf8'),
+    mods = [...src.matchAll(/^import ([\w, ]+)/gm)].flatMap(m => m[1].split(',').map(x => x.trim()));
+  ['photos', ...mods]
+    .filter(m => fs.existsSync(path.join(ROOT, 'tools', m + '.py')))
+    .forEach(m => fs.copyFileSync(path.join(ROOT, 'tools', m + '.py'), path.join(dir, 'tools', m + '.py')));
+  assert.ok(fs.existsSync(path.join(dir, 'tools/fish_short.py')), 'photos.py imports tools/fish_short.py');
+  fs.writeFileSync(path.join(dir, 'fish-game.json'), JSON.stringify({photos: {t01: [{f: 'a', src: INAT(1)}]}}));
+  const out = k => execFileSync('python3', [path.join(dir, 'tools/photos.py'), k], {cwd: dir, encoding: 'utf8'});
+  assert.strictEqual(out('--r2-tiles'), '');
+  assert.strictEqual(out('--r2-list'), 'a\n');
+  fs.rmSync(dir, {recursive: true, force: true});
+  const sh = fs.readFileSync(path.join(ROOT, 'tools/r2_sync.sh'), 'utf8');
+  assert.strictEqual((sh.match(/while read -r f; do \[ -z "\$f" \] \|\| printf/g) || []).length, 2);
+  // The loop as the script writes it, under its own shell options: an empty line adds nothing and fails nothing.
+  const r = execFileSync(
+    'bash',
+    ['-c', `set -euo pipefail; { printf '\\n' | while read -r f; do [ -z "$f" ] || printf '%s\\n' "$f-x.webp"; done; } | sort`],
+    {
+      encoding: 'utf8'
+    }
+  );
+  assert.strictEqual(r, '');
+});
+
+// Codex review #826: the tiles of photos already in play are fetched as the downloads are: FishBase's one at a time.
+test('fish_game.py: the tile-only pass asks FishBase one photo at a time', {skip: !pil && 'Pillow missing'}, () => {
+  const dir = world(),
+    w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o)),
+    c = structuredClone(CAND),
+    cur = structuredClone(CUR),
+    fb = id => ({...c.cand.s003[0], f: `fish-s003-cand-fb-Fi${id}_u0`, src: `https://www.fishbase.de/images/species/Fi${id}_u0.jpg`});
+  ['aa', 'bb', 'cc'].forEach(id => {
+    c.cand.s003.push(fb(id));
+    cur.fish.add[`fish-s003-cand-fb-Fi${id}_u0`] = 's003';
+    cur.fish.tags = {...cur.fish.tags, [`fish-s003-cand-fb-Fi${id}_u0`]: 'p1g0sl1'};
+  });
+  w('fish-cand.json', c);
+  w('curation.json', cur);
+  fs.mkdirSync(path.join(dir, 'tools'));
+  w('tools/fish_judge.json', {photos: {}});
+  const S = `
+import io, threading, time, fish_game as G
+from PIL import Image
+lock, live, top = threading.Lock(), [0], [0]
+def get(url):
+    if 'fishbase' in url:
+        with lock:
+            live[0] += 1; top[0] = max(top[0], live[0])
+        time.sleep(0.05)
+        with lock:
+            live[0] -= 1
+    b = io.BytesIO(); Image.new('RGB', (400, 300), (20, 90, 160)).save(b, 'JPEG'); return b.getvalue()
+`;
+  py(`${S}\nG.run(${JSON.stringify(path.join(dir, 'up1'))}, root=${JSON.stringify(dir)}, get=get, pause=0, workers=4)`);
+  const boxes = Object.fromEntries(['aa', 'bb', 'cc', 'wra'].map(id => [`fish-s003-cand-fb-Fi${id}_u0`, [0, 0.05, 0.85, 0.95]]));
+  w('tools/fish_judge.json', {photos: {}, boxes});
+  const r = JSON.parse(
+    py(`${S}\nG.run(${JSON.stringify(path.join(dir, 'up2'))}, root=${JSON.stringify(dir)}, get=get, pause=0, workers=4)
+print(json.dumps({'top': top[0], 'tiles': sorted(f for f in __import__('os').listdir(${JSON.stringify(path.join(dir, 'up2'))}))}))`)
+      .trim()
+      .split('\n')
+      .pop()
+  );
+  assert.strictEqual(r.top, 1, 'never two FishBase requests at once');
+  assert.strictEqual(r.tiles.length, 4);
+  fs.rmSync(dir, {recursive: true, force: true});
+});

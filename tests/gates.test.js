@@ -75,9 +75,14 @@ const GATES = {
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
-  // The seedling in the admin's own name (admin.js seedOn, Code.gs users_ userSeed): Add / Remove on the admin's own row
-  // from the script that renames; before, the button is disabled with what it needs.
-  SEED_SHEET: (v, N) => fn('admin.js', 'const seedOn = ', '\n', 'seedOn', {USERS: v === undefined ? {} : {v}, SEED_SHEET: N})(),
+  // The admin's mark after the admin's account name (core.js markRow, Code.gs board_): from the script that sends it;
+  // before, no row shows it, a 4th field or not. The account line follows the same gate (sync.js markSeen).
+  MARK_SHEET: v => {
+    const {markRow} = require('../core.js');
+    assert.strictEqual(markRow(['Ana', 50, null], v), false, 'a row of three fields never has it');
+    assert.strictEqual(markRow(['Ana', 50, null, 0], v), false);
+    return markRow(['Ana', 50, null, 1], v);
+  },
   EXCL_SHEET: (v, N) => fn('admin.js', 'const exclOn = ', '\n', 'exclOn', {USERS: v === undefined ? {} : {v}, EXCL_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
