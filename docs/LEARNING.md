@@ -3037,6 +3037,52 @@ choice as `Q.sciV`). Turned on by hand (⚙, My progress) while no family is at 
 Water (Pierre, 2026-11-08, Q240: `Q.sciH`, synced with the choice); by the offer, from its Advanced. The IMR-families-first
 opening order (`openPick`) reads the same "ever answered" rule (Q238).
 
+**Families met first** (Pierre, 2026-11-09, Q208 A; #822): once the offer is accepted, no new genus card opens while a family
+in play is still not met. "In play" means a family that may open now (`model.js` `mayOpen`: circle 1; circle 2 once every
+circle-1 family has been asked, `app.js` `fishGate`; circle 3 once the player said yes). When every family in play has been
+met, the genera open as before, each from its family's Advanced, one card at a time by the usual rule. `model.js` `openPick`
+(`laterWaits`) takes them out of the draw while `fresh` (the units not met that may open now) still holds a slate unit. Which
+units wait is `app.js` `setLater`: the units of a set marked `after` (the fish `sci` set only; the coral bonus genera do not
+have it). Exempt:
+- the IMR genera of an IMR player (the set's `auto` units, Q219), which keep coming from their family's Open Water during the
+  family phase;
+- the set turned on by hand before it was due (`Q.sciH`, Q240);
+- Open all (`openedAll`: a unit opened by Open all and not closed again by "One at a time").
+
+Nothing else changes: the pace (`openChance`, `openPace`), the units in play, and the share of the questions genera take
+once they are in. Option C, a ceiling on the genus share while the families are not solid, was left for later, if the data
+justify it. No progress rule moves (no `RVS` entry: the order of opening moves no unit's record, and the sheet does not
+replay it). Tests: `tests/familiesfirst.test.js`, `tests/fish.smoke.js` (sci part).
+
+**Checked** (#822, rule L11 level 2, declared before running):
+- **The declaration**: the primary is `genShare@300` (the share of answers 1-300 on scientific genera), down. World: rated, normal photos, app told the truth. The 5 fish profiles × 10 seeds × 10,000 answers. 2 looks, so bounds at 95% and the primary at 0.025.
+- **Primary: not clear.** Pooled sign-flip p 0.38, and only 3 of the 50 pairs moved: lecture RA 0.085 → 0.084, expert 0.078 → 0.075. The beginner, the casual diver and the strong RA came out the same, seed for seed.
+- **Guardrails: every one held** (table in #822):
+  - in the rated world, normal photos (heavy tails: see #822);
+  - in the app world (5 seeds × 600 questions, `--choice auto`), where every run is the same except the strong RA's.
+- **Why so small.** Simulated players meet every family in play early. Circles 1 and 2 hold 32 families, met by about 160-340 answers in the rated world. That is before, or about when, a family first reaches Advanced. So the rule rarely binds. The strong RA meets all 32 by about 160, and its first genus comes at 180-260 either way.
+- **The real log.** A replay cannot judge a change in what opens, so this was read instead: 4,760 answers, 9 fish players, read on 2026-11-09. 3 of the 9 met genera while a circle-1 family was still not met: 2, 4 and 7 genera. Two of those genera are IMR genera, which stay exempt. Those openings are what the rule changes.
+
+**Offer accepted against declined** (the measurement the Q208 study proposed; main, no code change):
+- **How it was run.** Rated world, normal photos, 10 seeds × 10,000 answers, the beginner, lecture RA, strong RA and expert. Read two ways: a paired run on the learning-check Action, with every profile declining in the second arm, and a scratch reader of the same seeds for the families alone. In the scratch reader the strong RA's accepted arm reached 4 seeds and the expert's none.
+- **Once accepted, genera take most of the questions** (the accepted arm):
+
+| Answers | Share on genera |
+| --- | --- |
+| 301-1,000 | 15-49% |
+| 1,001-3,000 | 70-78% |
+| 3,001-10,000 | 82-84% |
+
+  Declined, the share is 0, except the lecture RA, whose IMR genera come anyway: 16-17%.
+- **The family levels come much later**:
+  - families at Advanced at 1,000 answers: −2.8 for the beginner, −7.4 for the lecture RA, −11.8 for the strong RA;
+  - at 3,000 answers: −5 to −7;
+  - every circle-1 family at Advanced: at 4,050-4,500 answers accepted against 1,200-1,700 declined, so 2,300 to 3,300 answers later;
+  - the fifth family at Advanced: 40 to 107 answers later.
+- **The end state is the same.** At 10,000 answers, 31-32 of the 32 families are at Advanced and have passed their mastery exam in both arms. In this world the exams are passed; the app world found none passed in 8,000 answers.
+- **Small other effects.** Declining leaves the families' true knowledge (D\*) a little higher at 1,000 answers: +0.016 to +0.020. The score shown at 1,000 answers is 1.3-1.7 points higher declined for the beginner and lecture RA, and 1.9-3.4 points lower for the strong RA and expert. From 3,000 answers on, accepting is ahead: by 2.6-12.3 points at 3,000 and 13.6-18.3 at 10,000. The declined player stops at 42-46%, with no credit left to earn.
+- **What it says.** Accepting delays the family levels a lot, not where they end. By the study's own criterion ("if the delay is large, C is worth designing") this goes to Pierre for C. It is a simulation: the learner learns by the number of answers, and no measure exists yet of how hard a genus question is against a family question on the real log.
+
 Measured (rule L11: no learnsim fish profile exists; the real app in Chromium instead, a scratch run, one seed): an admin
 player with the four starter entries at Advanced, answering right, 300 more answers: 130-144 genus questions and 154-168
 entry questions, 27-37 genera met (the Parrotfish and Wrasse genera joining when those entries reached Advanced), every genus
@@ -4649,8 +4695,8 @@ The analyses:
 7. **Comeback**: after a right answer on a genus, right ~ offset (that answer's expectation) + log(1 + days since) + (player): the forgetting slope; and the comeback questions' right − expected (the FSRS curve of "Comeback after a break").
 Two views show how effects and genera relate (the multifactor visualisation study of 2026-11-05, `docs/reviews/2026-11-05-multifactor-viz-study.md`, Pierre's Q70-Q77; tested on planted structure in `tests/analysis-verdicts.test.js`):
 
-- **Effects hard to tell apart** (`entOf`, every analysis with two effects or more from one model): the correlation of the estimates, from the fixed effects' covariance marginal over the random effects (the model's own, `cov2cor(vcov(fit))` in R; signs follow the effects as reported, so two difficulties keep their sign); the correlation of the conditions in the answers (the design matrix's columns) and each condition's variance inflation factor over every condition of the model (VIF, the diagonal of the inverse correlation matrix). Read in words past |r| = 0.6 for the estimates (read the two together: their sum is sure when r < 0, their difference when r > 0; each alone is not), 0.7 for the conditions (Dormann et al. 2013) and VIF 5. Formats: each format's guess rate against its difficulty, fitted together (`fmtFit` `cr`). With few players the Wald covariance understates the between-player part; the correlation of the bootstrap draws would include it (ROADMAP).
-- **The mix-up map** (`mixMap`, in Confusions): similarity of two genera = the lower end of the 95% range of their pair's shrunk effect in the Confusions model (how much more often, at the least, they are mixed up than a typical pair, per offer: offers, not counts, which mirror the app's traps), 0 for a pair not clearly above a typical one or never offered, so chance alone makes no family; distance = 1 − similarity / the largest; average linkage (`hclust`, Lance-Williams, deterministic ties); families = the groups of two or more left when the tree is cut at 0.8 (`MIX_CUT`, `cutTree`). Each cell (shown → answered) carries its rate shrunk towards its pair's model rate by 20 offers' worth (`MIX_K`), so a direction shows only with many offers. Across: the 3 cells most mixed up between two families, 2 mix-ups at least, above a typical pair. The synthetic log plays look-alikes as mix-ups (`TRUTH.mix`: a look-alike offered is picked 4 times as often as another genus when the answer is wrong), so the demo's map has families.
+- **Effects hard to tell apart** (`entOf`, every analysis with two effects or more from one model): the correlation of the estimates, from the fixed effects' covariance marginal over the random effects (the model's own, `cov2cor(vcov(fit))` in R; signs follow the effects as reported, so two difficulties keep their sign); the correlation of the conditions in the answers (the design matrix's columns) and each condition's variance inflation factor over every condition of the model (VIF, the diagonal of the inverse correlation matrix). Read in words past |r| = 0.6 for the estimates (read the two together: their sum is sure when r < 0, their difference when r > 0; each alone is not), 0.7 for the conditions (Dormann et al. 2013) and VIF 5. Formats: each format's guess rate against its difficulty, fitted together (`fmtFit` `cr`). With few players the Wald covariance understates the between-player part; the correlation of the bootstrap draws would include it (ROADMAP). From `AV` 13 (the study's later item for this view, "once there are 200 draws or more"), with 200 bootstrap draws or more (the latest milestone's 999), `rb`: the correlations of the effects' values over the draws, on the draws where every reported effect has one (`nb`): over the players, so it carries what the model's covariance, conditional on its random effects, leaves out; the admin reads it in place of the model's (the model's beside it in the table). `boot` keeps each draw's values from 200 draws (`ENT_B`). Tested on made-up draws (−0.894 planted, given back within 0.05; under 200 draws, the model's alone).
+- **The mix-up map** (`mixMap`, in Confusions): similarity of two genera = the lower end of the 95% range of their pair's shrunk effect in the Confusions model (how much more often, at the least, they are mixed up than a typical pair, per offer: offers, not counts, which mirror the app's traps), 0 for a pair not clearly above a typical one or never offered, so chance alone makes no family; distance = 1 − similarity / the largest; average linkage (`hclust`, Lance-Williams, deterministic ties); families = the groups of two or more left when the tree is cut at 0.8 (`MIX_CUT`, `cutTree`). Each cell (shown → answered) carries its rate shrunk towards its pair's model rate by 20 offers' worth (`MIX_K`), so a direction shows only with many offers. Across: the 3 cells most mixed up between two families, 2 mix-ups at least, above a typical pair. The synthetic log plays look-alikes as mix-ups (`TRUTH.mix`: a look-alike offered is picked 4 times as often as another genus when the answer is wrong), so the demo's map has families. **Its stability** (`AV` 13, `mixStab`, `mixFams`; the study's later item: "bootstrap over players, cut only at a stable height"): in each bootstrap draw of the Confusions model, the draw's own families (the same cut); each family's best Jaccard with one of them (0 when none shares a genus), averaged over the draws; stable from 0.75 (Hennig 2007, as the player profiles' groups). The admin names the stable families as found again when the players are drawn again, the others as not stable yet; without draws (the demo) it says they are not checked yet. The cut stays at 0.8 (a stable height is read, not searched for: another cut is a choice for Pierre). Tested on the planted families (`tests/analysis-verdicts.test.js`: 3 strong families each found in all 30 draws; weak ones under 0.75).
 
 **The Wright map** (`wrightOf`, in Learning): players and genera on the Learning model's one scale, the log-odds of recognising beyond guessing for a typical question: a player's place = the intercept + the practice slope at their own current practice (the median answers already given on the genus over their last 300 answers) + their own effect; a genus's difficulty = minus its own effect (the photos the app chose for it included). Level = about 50% beyond guessing; logit(0.8) above = the app's 80% target. Each place's likely range carries the intercept's and the slope's uncertainty with their covariance, beside the player's or genus's own effect (Codex review #620); a genus's chance is read for the typical player (median current practice, own effect 0). A snapshot of the bank's reach, not of the questions asked (the app aims near 80%, so it makes players and genera meet). **A second skill?** (`resOf`, Pierre's Q77: residuals, never a PCA of raw right / wrong answers): the genus × player table of standardised residuals after the Learning model (sum(right − P) / sqrt(sum P(1 − P) + 2) per cell, 0 when never met; players with 100 answers or more, genera met by 2 of them or more; each player's column centred), a PCA of the players' columns (genera as points, players as arrows). The first axis's share of the spread is set against the same share in 99 tables built from answer logs simulated from the fit itself (Linacre 1998, Raîche 2005; a share, as the simulated logs are not refitted). Descriptive, no verdict, outside the multiple-testing correction (a single check; making it a tested effect is a question for Pierre). Tested on a planted second skill (odd players better on odd genera, 0.8 on the log-odds: share 0.73-0.80 against at most 0.31 in the simulations; one skill: within them).
 
@@ -4940,7 +4986,7 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
 (the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
 `unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
-`perPhoto` (answers per photo shown), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
+`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
 exist yet, so their kinds are empty until they do.
 
 **On a GitHub runner** (tier 2 and level 3, too long for the shared machine): Actions › "Learning check (tier 2)" › Run
