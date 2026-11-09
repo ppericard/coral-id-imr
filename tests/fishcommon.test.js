@@ -8,7 +8,8 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path'),
   vm = require('vm'),
-  block = require('./block.js');
+  block = require('./block.js'),
+  {matcher} = require('./typenear.js');
 const C = require('../core.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
@@ -28,8 +29,11 @@ vm.runInContext(
   ctx
 );
 const {cnList, cnShow, cnTypeNames} = ctx.M;
+// match: typeMatchIn over every typed name, read on the names near the text only (tests/typenear.js: the same answer,
+// without an edit distance to each of the 1,300 names; the sweep below took 80 s). The last test checks the two agree.
 const TN = cnTypeNames(GAME),
-  match = text => C.typeMatchIn(TN, text, norm);
+  full = text => C.typeMatchIn(TN, text, norm),
+  match = matcher(TN, norm);
 
 test('every game species has 1 to 3 listed names, each with a source; none only when no reference names it (Q247)', () => {
   const n = {0: 0, 1: 0, 2: 0, 3: 0};
@@ -142,4 +146,38 @@ test('typed: the listed names and their spellings are accepted, as their species
   assert.strictEqual(C.typeVerdict(match('Lemon damselfish'), 's119'), 'exact', 'a recorded spelling of a listed name');
   assert.strictEqual(C.typeVerdict(match('Reticulated damselfsh'), 's086'), 'close', 'a slip: the spelling step, as everywhere');
   assert.strictEqual(C.typeVerdict(match('Lemon'), 's119'), 'none', 'no short form');
+});
+
+test('match reads as typeMatchIn on every name: exact, close, shared, other and no answers alike (tests/typenear.js)', () => {
+  // Every 100th listed name and every 250th reference name, with four slips each (a letter dropped, two neighbours swapped, one changed,
+  // one added), the names the sweep above names, and texts too short or near nothing.
+  const listed = GAME.flatMap(s => (s.cn || []).flat()),
+    refs = GAME.flatMap(s => ((SRCN[s.id] || {}).inat || {}).names || []),
+    base = [...listed.filter((x, i) => i % 100 === 0), ...refs.filter((x, i) => i % 250 === 0)],
+    slips = base.flatMap(x => [
+      x.slice(0, 3) + x.slice(4),
+      x.slice(0, 2) + x[3] + x[2] + x.slice(4),
+      x.slice(0, -2) + (x.at(-2) === 'q' ? 'z' : 'q') + x.at(-1),
+      x + 'e'
+    ]),
+    texts = [
+      ...base,
+      ...slips,
+      'Twospot wrasse',
+      'Yellow damsel',
+      'Headband humbug',
+      'Lemon damselfish',
+      'Reticulated damselfsh',
+      'Lemon',
+      'ab',
+      'qqqqqq'
+    ];
+  const kinds = new Set();
+  texts.forEach(t => {
+    const m = full(t);
+    assert.deepStrictEqual(match(t), m, t);
+    kinds.add(!m ? 'none' : m.near ? 'near' : m.exact ? 'exact' : 'close');
+  });
+  assert.deepStrictEqual([...kinds].sort(), ['close', 'exact', 'near', 'none'], 'every kind of answer compared');
+  assert.ok(texts.length > 100, String(texts.length));
 });

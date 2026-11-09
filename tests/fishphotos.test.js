@@ -610,7 +610,8 @@ print(json.dumps([[sorted({x.split('.')[0] for x in S}) for S in P], [len(S) for
 test('fish-cand.json: every candidate photo once (one photo can belong to several iNaturalist observations)', () => {
   const C = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-cand.json'), 'utf8')).cand,
     ids = Object.values(C).flatMap(L => L.map(p => p.f.split('-').pop())),
-    dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+    seen = new Set(),
+    dup = ids.filter(x => seen.has(x) || !seen.add(x)); // one pass (indexOf at each id was quadratic: 3 s)
   assert.deepStrictEqual(dup, []);
 });
 
