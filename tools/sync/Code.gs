@@ -3243,6 +3243,9 @@ const CORE_ = (function () { const module = {exports: {}};
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
         // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
         // plural or singular (fishTypeNames; Codex review #834: "Amphiprions").
+        // The names among them that designate part of it only (Pierre, 2026-11-09 ~15:45 Manila, Q333): an IMR genus or
+        // sub-entry (Chromis, Anemonefish, Clownfish, Unicornfish), each with the species it designates (fishTypeNames sc).
+        scopes: fishScopes(imrGen, [...(teachOf.get(t.id) || [])]),
         sciNames: [...new Set([...(t.sci || []), ...imrGen.map(g => g.name), ...[...(teachOf.get(t.id) || [])].map(x => x.fam)])].filter(
           Boolean
         ),
@@ -3420,6 +3423,15 @@ const CORE_ = (function () { const module = {exports: {}};
       ])
     ].filter(Boolean);
   }
+  // The names of part of a family (fishGen scopes): {name: [species ids]}, its IMR genera (their tag and scientific name:
+  // the genus's species) and its IMR entries' sub-entries (their name and other names: the sub-entry's species).
+  function fishScopes(imrGen, T) {
+    const S = {},
+      put = (x, L) => x && (L || []).length && (S[x] = [...new Set([...(S[x] || []), ...L])]);
+    (imrGen || []).forEach(g => [g.imr, g.name].forEach(x => put(x, g.species)));
+    (T || []).forEach(e => (e.sub || []).forEach(u => [u.name, ...(u.aka || []), ...(u.often || [])].forEach(x => put(x, u.species))));
+    return S;
+  }
   // The names in common use that a typed answer may give, accepted as right but corrected gently (Pierre, 2026-11-06,
   // Q164: "✓ Yes, Anemonefish (often called clownfish)"): [[the usual name, the name often used]], from the node's and
   // its sub-entries' often (tools/fish_source.json).
@@ -3445,11 +3457,18 @@ const CORE_ = (function () { const module = {exports: {}};
   // never taken for a slip of another (Angelfishes).
   function fishTypeNames(gen, drop = '', known = []) {
     const out = [],
-      add = (k, g, x, i, oft) =>
-        k && !out.some(o => o.k === k && o.g === g) && out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {})}),
+      // sc: the species a name designates when it names part of the unit only (Q333); one key of a unit read by two
+      // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
+      add = (k, g, x, i, oft, sc) => {
+        if (!k) return;
+        const o = out.find(y => y.k === k && y.g === g);
+        if (o) return typeWiden(o, sc);
+        out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})});
+      },
+      scOf = (g, x) => (g.scopes || {})[x],
       oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x))))
+      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
     );
     const d = typeNormAll(drop);
     if (!d) return out;
@@ -3464,15 +3483,17 @@ const CORE_ = (function () { const module = {exports: {}};
           const one = o.k.endsWith(d + 'es') ? [o.k.slice(0, -2), x.replace(/es$/i, '')] : o.k.endsWith(d) ? [o.k + 'es', x + 'es'] : null;
           return m && k.length >= 3 && k !== o.k
             ? [
-                {k, g: o.g, x: m[1].trim(), oft: o.oft},
-                {k: k + 's', g: o.g, x: m[1].trim() + 's', oft: o.oft},
-                ...(one ? [{k: one[0], g: o.g, x: one[1].trim(), own: !o.old, oft: o.oft}] : [])
+                {k, g: o.g, x: m[1].trim(), oft: o.oft, sc: o.sc},
+                {k: k + 's', g: o.g, x: m[1].trim() + 's', oft: o.oft, sc: o.sc},
+                ...(one ? [{k: one[0], g: o.g, x: one[1].trim(), own: !o.old, oft: o.oft, sc: o.sc}] : [])
               ]
             : [];
         })
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
-    short.filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k))).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft));
+    short
+      .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
+      .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
     // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
     // scientific name's (a unit of a scientific rank, a family's sciNames: Codex review #834, "Zebrasomas", "Halichoere"
     // were read exactly), which keeps its spelling step.
@@ -3480,12 +3501,20 @@ const CORE_ = (function () { const module = {exports: {}};
       .filter(g => !g.rank)
       .forEach(g =>
         (g.names || [g.name]).forEach(
-          (x, i) => !(g.sciNames || []).includes(x) && typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x))))
+          (x, i) =>
+            !(g.sciNames || []).includes(x) &&
+            typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
         )
       );
     typeKnown(out, known);
     typeOff(out, known);
     return out;
+  }
+  // One key of a unit read by two names: the wider of the two (no sc: the whole unit; else the species of both).
+  function typeWiden(o, sc) {
+    if (!o.sc) return;
+    if (!sc) delete o.sc;
+    else o.sc = [...new Set([...o.sc, ...sc])];
   }
   // Pierre's 'off' (curation.json fish.names, fishNameIndex: {x, off: family id}), applied once every name is in: no name
   // of that family, in either number, reads x any more, whatever brought it (a genus's common name, the family's own,
@@ -3512,14 +3541,25 @@ const CORE_ = (function () { const module = {exports: {}};
           const k = typeNormAll(y);
           if (k.length < 3) return;
           if (seen.has(k + '|' + e.g)) {
-            // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it (Codex review #834)
-            const o = e.oft && out.find(x => x.k === k && x.g === e.g);
-            if (o && !o.oft) o.oft = e.oft;
+            // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it (Codex review #834), and
+            // the wider reading holds
+            const o = out.find(x => x.k === k && x.g === e.g && !x.known);
+            if (o && e.oft && !o.oft) o.oft = e.oft;
+            if (o) typeWiden(o, e.sc);
             return;
           }
           seen.add(k + '|' + e.g);
           have.add(k);
-          out.push({k, g: e.g, old: y, alt: 1, vr: e.vr, ...(e.n ? {n: e.n, of: e.of} : {}), ...(e.oft ? {oft: e.oft} : {})});
+          out.push({
+            k,
+            g: e.g,
+            old: y,
+            alt: 1,
+            vr: e.vr,
+            ...(e.n ? {n: e.n, of: e.of} : {}),
+            ...(e.oft ? {oft: e.oft} : {}),
+            ...(e.sc ? {sc: e.sc} : {})
+          });
         })
       );
     (known || [])
@@ -3572,24 +3612,27 @@ const CORE_ = (function () { const module = {exports: {}};
       C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
       off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
       oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
-      put = (x, g, vr, n, of) => {
+      put = (x, g, vr, n, of, sc) => {
         if (!x || !fam.has(g)) return;
         if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
         const o = oft(x, g);
-        out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {})});
+        out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length ? {sc} : {})});
       };
     const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
     game.forEach(s => {
-      (s.cn || []).forEach(L => L.forEach(x => put(x, s.family, 'sp')));
-      [s.name, s.now].forEach(x => put(x, s.family, 'ss'));
+      (s.cn || []).forEach(L => L.forEach(x => put(x, s.family, 'sp', 0, 0, [s.id])));
+      [s.name, s.now].forEach(x => put(x, s.family, 'ss', 0, 0, [s.id]));
     });
     const inGame = new Set(game.map(s => s.genus));
-    ((F && F.genera) || []).filter(g => inGame.has(g.id)).forEach(g => (put(g.name, g.family, 'gs'), put(g.common, g.family, 'gc')));
+    ((F && F.genera) || [])
+      .filter(g => inGame.has(g.id))
+      .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
+    // A kind word designates the species that carry it (Q333: "razorfish" on a cleaner wrasse is a mistake); Pierre's
+    // on or often gives it to the whole family.
     ((F && F.vn) || []).forEach(([x, owners]) =>
-      (owners || []).forEach(([g, r, n, of]) => {
+      (owners || []).forEach(([g, r, n, of, sp]) => {
         const c = (C[typeNormAll(x)] || {})[g];
-        if (r === 'k' || c === 'on' || c === 'often') put(x, g, 'k', n, of);
-        else out.push({x, g: '', vr: 'w', w: 1});
+        put(x, g, 'k', n, of, c === 'on' || c === 'often' ? null : sp);
       })
     );
     // Pierre's own names (on), the index's or not.
@@ -5962,7 +6005,15 @@ const CORE_ = (function () { const module = {exports: {}};
             by: Object.fromEntries(
               gs.map(g => {
                 const x = best.find(y => y.g === g);
-                return [g, {...(x.vr ? {vr: x.vr} : {}), ...(x.n ? {n: x.n, of: x.of} : {}), ...(x.oft ? {oft: x.oft} : {})}];
+                return [
+                  g,
+                  {
+                    ...(x.vr ? {vr: x.vr} : {}),
+                    ...(x.n ? {n: x.n, of: x.of} : {}),
+                    ...(x.oft ? {oft: x.oft} : {}),
+                    ...(x.sc ? {sc: x.sc} : {})
+                  }
+                ];
               })
             )
           }
@@ -5974,7 +6025,8 @@ const CORE_ = (function () { const module = {exports: {}};
       ...(best[0].alt ? {alt: 1} : {}),
       ...(best[0].oft ? {oft: best[0].oft} : {}),
       ...(best[0].vr ? {vr: best[0].vr} : {}),
-      ...(best[0].n ? {n: best[0].n, of: best[0].of} : {})
+      ...(best[0].n ? {n: best[0].n, of: best[0].of} : {}),
+      ...(best[0].sc ? {sc: best[0].sc} : {})
     };
   }
   // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
@@ -6037,11 +6089,25 @@ const CORE_ = (function () { const module = {exports: {}};
   // answer, as before); 'none': nothing close, or two names as close (no answer: the player is asked to check the spelling).
   // A name several units share ({shared}): as one of t's names when t is one of them, else 'other'; a known name that is
   // no unit's ({known}): 'none'.
-  function typeVerdict(m, t) {
+  // sp: the species of the photo (its own taxon, quiz.js): a name of part of t only reads as t when it designates them
+  // (typeFits; Q333), else 'other'.
+  function typeVerdict(m, t, sp) {
     if (!m || m.near || m.known) return 'none';
-    if (m.shared) return !m.shared.includes(t) ? 'other' : m.exact ? 'exact' : 'close';
+    if (!typeFits(m, t, sp)) return 'other';
+    if (m.shared) return m.exact ? 'exact' : 'close';
     if (m.g !== t) return 'other';
     return m.exact ? 'exact' : 'close';
+  }
+  // Does the reading m name unit t as the photo shows it (Pierre, 2026-11-09 ~15:45 Manila, Q333: "if someone types
+  // Razorfish on a photo of a wrasse that really is a razorfish, then yes, it counts for the family; but you cannot type
+  // Razorfish for a wrasse that is not a razorfish"; and "we won't penalise someone who knows the genus's name, or even
+  // the species'; but the mistakes must be penalised")? A name of t as a whole, or of part of t (sc: its species) when the
+  // photo's species sp are among them; sp unknown ([]): read as before, nothing proves a mistake.
+  function typeFits(m, t, sp) {
+    if (!m || m.near || m.known) return false;
+    const r = m.shared ? (m.shared.includes(t) ? (m.by || {})[t] || {} : null) : m.g === t ? m : null;
+    if (!r) return false;
+    return !r.sc || !(sp || []).length || r.sc.some(x => sp.includes(x));
   }
   // The letters of name to show in bold once a retyped spelling is still wrong (quiz.js typeSpell): those the typed text
   // got wrong, left out or swapped, along typeDist's alignment; a letter typed in excess marks the letter of name where it
@@ -8046,6 +8112,7 @@ const CORE_ = (function () { const module = {exports: {}};
     fishNames,
     fishTypeNames,
     fishNameIndex,
+    typeFits,
     typeForms,
     fishGameRow,
     fishGameRead,

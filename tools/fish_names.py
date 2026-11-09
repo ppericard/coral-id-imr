@@ -8,12 +8,13 @@ other spelling, which holds FishBase typos such as "Scrawled tilefish"; never a 
 one): its longest ending of 1 to 3 words that is a family's name (the book's labels, IMR's names and their parts, the
 regional key's labels, each in both numbers), else a family name ending its last word ("shrimpgoby": goby), else its last
 word; singular, letters only to compare. Its owners: each family whose game species carry it, with n (how many of them)
-and of (how many game species the family has). Role `k` (accepted at a family question, Q320) when at least 2 of the
-family's species carry it, or all of them; role `w` (known: never read as a slip of another family's name, but not a
-name of that family, unless Pierre turns it on in curation.json fish.names) otherwise. A kind word that is already a
-name of its only family (wrasse, grouper) is left out: core.js reads the families' own names.
+and of (how many game species the family has), and those species. A family question accepts the word only on a photo
+of one of those species (Pierre, 2026-11-09 ~15:45 Manila, Q333: a common name counts right only if it designates the
+photo's own taxon; "razorfish" on a cleaner wrasse is a mistake). Role `k` when at least 2 of the family's species carry
+it, or all of them (a word of the family's: "some Wrasses"), `w` otherwise (one species' word); both read the same. A
+kind word that is already a name of its only family (wrasse, grouper) is left out: core.js reads the families' own names.
 
-fish.json vn: [[the word as shown, [[family id, role, n, of], ...]], ...], sorted by the word. The app adds the rest of the
+fish.json vn: [[the word as shown, [[family id, role, n, of, [species ids]], ...]], ...], sorted by the word. The app adds the rest of the
 index from fish.json itself (core.js fishNameIndex: the species' listed names, their scientific names, the genera's
 scientific and common names) and Pierre's exceptions (curation.json fish.names).
 
@@ -132,7 +133,7 @@ def index(o, src):
         owners = []
         for f in fams:
             n, of = len(e["f"][f]), size[f]
-            owners.append([f, "k" if n >= 2 or n == of else "w", n, of])
+            owners.append([f, "k" if n >= 2 or n == of else "w", n, of, sorted(e["f"][f])])
         x = sorted(e["x"].items(), key=lambda kv: (-kv[1], kv[0]))[0][0]
         out.append([x, owners])
     return sorted(out, key=lambda r: (norm(r[0]), r[0]))
@@ -150,10 +151,10 @@ def main():
     shared = [r for r in vn if sum(1 for x in r[1] if x[1] == "k") > 1]
     k = [r for r in vn if any(x[1] == "k" for x in r[1])]
     w = [r for r in vn if not any(x[1] == "k" for x in r[1])]
-    print(f"{len(vn)} kind words: {len(k)} accepted for a family (role k), {len(shared)} of them for several, "
-          f"{len(w)} known only (role w)")
+    print(f"{len(vn)} kind words: {len(k)} carried by 2 or more of a family's species or all of them (role k), "
+          f"{len(shared)} of them in several families, {len(w)} by one species (role w)")
     for r in shared + k + w:
-        print(f"  {r[0]}: " + ", ".join(f"{fam.get(f, f)} {x} {n}/{of}" for f, x, n, of in r[1]))
+        print(f"  {r[0]}: " + ", ".join(f"{fam.get(f, f)} {x} {n}/{of}" for f, x, n, of, _ in r[1]))
     if "--check" in sys.argv and o.get("vn") != vn:
         sys.exit("fish.json vn is not what the species' names give: run python3 tools/build_fish.py --commonness")
 

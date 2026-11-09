@@ -284,7 +284,12 @@ test('typed fish names: singular and plural are one name, a known name is never 
   assert.strictEqual(m('grouper').alt, undefined); // the family's own name in the other number: no "read as" line
   // goby: the Gobies' singular, and a word two of the three dartfishes carry: both (Q319)
   assert.deepStrictEqual([...m('goby').shared].sort(), ['f:Dartfishes', 'f:Gobies']);
-  assert.deepStrictEqual(m('goby').by['f:Dartfishes'], {vr: 'k', n: 2, of: 3});
+  assert.deepStrictEqual(m('goby').by['f:Dartfishes'], {
+    vr: 'k',
+    n: 2,
+    of: 3,
+    sc: F.vn.find(([x]) => x === 'goby')[1].find(([f]) => f === 'f:Dartfishes')[4]
+  });
   // never another family by the spelling tolerance (anglerfish, tuskfish, firefish, goldie were the Angelfishes, the
   // Boxfishes, the Filefishes, the Soldierfishes): a name of the family whose species carry it (the name index, Q320), or
   // a word known to be no family's (one species' only: tuskfish, goldie)
@@ -294,11 +299,12 @@ test('typed fish names: singular and plural are one name, a known name is never 
     ['batfish', 'f:Spadefishes'],
     ['hogfish', 'f:Wrasses']
   ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
-  ['tuskfish', 'goldie'].forEach(t => assert.deepStrictEqual([t, !!m(t).known, C.typeVerdict(m(t), 'f:Wrasses')], [t, true, 'none']));
+  // tuskfish, goldie: one species' words, that species' family's names on a photo of it (Q333)
+  assert.deepStrictEqual([m('tuskfish').g, m('tuskfish').sc.length, m('goldie').g], ['f:Wrasses', 1, 'f:Anthias']);
   assert.strictEqual(m('anglerfsh').g, 'f:Frogfishes'); // a slip of it: the spelling step, as everywhere
   assert.strictEqual(m('anglerfsh').exact, false);
-  // "dart" is the Dartfishes' own short form: it stays theirs (a jack's "Smallspotted dart" is one species' name)
-  assert.strictEqual(m('dart').g, 'f:Dartfishes');
+  // "dart": the Dartfishes' own short form, and a jack's word ("Smallspotted dart"): both (Q319), each as the photo shows it (Q333)
+  assert.deepStrictEqual([...m('dart').shared].sort(), ['f:Dartfishes', 'f:Jacks']);
   // the IMR entries' scientific families the book splits: typed exactly, all of their families (Q319), never one of
   // them by spelling (Holocentridae read as Holocentrinae, Syngnathidae as the Pipefishes only)
   [
@@ -324,7 +330,7 @@ test('typed fish names: singular and plural are one name, a known name is never 
   assert.ok(has('iniistius', 'f:Wrasses', 'gs'));
   assert.ok(has('hogfishes', 'f:Wrasses', 'gc'));
   assert.ok(has('razorfish', 'f:Wrasses', 'k') && has('razorfish', 'f:Shrimpfishes', 'k'));
-  assert.ok(I.some(e => e.x === 'tuskfish' && !e.g && e.w));
+  assert.ok(I.some(e => e.x === 'tuskfish' && e.g === 'f:Wrasses' && e.sc.length === 1));
   assert.ok(
     !I.some(e => /^(puffer|moorish ?idol|stonefish)$/i.test(e.x) && e.vr === 'k' && e.g !== 'f:Puffers'),
     'no word of a False name'

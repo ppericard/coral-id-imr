@@ -45,6 +45,7 @@ function page(names = NAMES) {
     typeMatchIn: C.typeMatchIn,
     typeElse: C.typeElse,
     typeVerdict: C.typeVerdict,
+    typeFits: C.typeFits,
     typeDiff: C.typeDiff,
     uname: n => (X.gen[n] || {}).name || n,
     unameT: n => (X.gen[n] || {}).name || n,
@@ -81,17 +82,18 @@ function form() {
   return el;
 }
 // A family question on t: what typing text gives (the unit answered, the message shown, the texts refused).
-function family(text, t, names) {
+// sp: the photo's species (quiz.js typeSp, from app.js photoTaxon), [] when not known.
+function family(text, t, names, sp = []) {
   const M = page(names),
     f = form();
   let got = null;
-  M.typeBind(f.form, (m, x, s, rj) => (got = {m, rj, c: M.typeUnit(m, t)}), FISH, '', 'family', {t});
+  M.typeBind(f.form, (m, x, s, rj) => (got = {m, rj, c: M.typeUnit(m, t, sp)}), FISH, '', 'family', {t, sp});
   const msg = f.type(text);
   return {
     got,
     msg,
     retry: f.cls.has('retry'),
-    read: got ? M.typeRead(got.m, text, null, t) : '',
+    read: got ? M.typeRead(got.m, text, null, t, sp) : '',
     step: got ? M.typeStep(got.m, text, null, t) : null
   };
 }
@@ -127,7 +129,7 @@ test('a scientific name has no plural or singular: "Zebrasomas", "Amphiprions", 
   assert.strictEqual(C.typeVerdict(m('Grouper', ''), 'f:Groupers'), 'exact'); // a common name keeps both numbers
 });
 
-test('a name below the family: right as its family, said what it is; a word of one species only: said so', () => {
+test('a name below the family: right as its family, said what it is (the photo not known: nothing proves a mistake)', () => {
   for (const [text, t, read] of [
     ['anglerfish', 'f:Frogfishes', '“anglerfish” is a name of some Frogfishes.'],
     ['firefish', 'f:Lionfishes', '“firefish” is a name of some Lionfishes.'],
@@ -144,13 +146,62 @@ test('a name below the family: right as its family, said what it is; a word of o
   const w = family('Peacock razorfish', 'f:Pipefishes');
   assert.strictEqual(w.got.c, 'f:Wrasses');
   assert.strictEqual(w.read, '“Peacock razorfish” is one of the Wrasses.');
-  for (const text of ['tuskfish', 'goldie']) {
-    const r = family(text, 'f:Wrasses');
-    assert.strictEqual(r.got, null, text); // no answer yet
-    assert.strictEqual(r.msg, `“${text}” is a name some fish species go by: this question needs the family.`);
+  // dart: the Dartfishes' own short form, and a jack's ("Smallspotted dart"): right on that jack, a mistake on another
+  assert.strictEqual(family('dart', 'f:Dartfishes', NAMES, [sid('Ptereleotris evides')]).got.c, 'f:Dartfishes');
+  assert.strictEqual(family('dart', 'f:Jacks', NAMES, [sid('Trachinotus baillonii')]).got.c, 'f:Jacks');
+  assert.strictEqual(
+    family('dart', 'f:Jacks', NAMES, [F.species.find(x => x.family === 'f:Jacks' && x.circle && !/Trachinotus/.test(x.name)).id]).got.c,
+    ''
+  );
+});
+
+// Pierre, 2026-11-09 ~15:45 Manila (Q333): a typed name counts right only if it designates the photo's own taxon: the
+// family as a whole, or its genus or species (scientific or common), or a name its own species carries. A name carried
+// only by other species of the family is a mistake, counted against the photo's family only (no unit given, Q319).
+const sid = name => F.species.find(x => x.name === name).id;
+test('a name of part of the family counts only on a photo it designates (Q333): razorfish on a cleaner wrasse is a mistake', () => {
+  const pavo = [sid('Iniistius pavo')],
+    cleaner = [sid('Labroides dimidiatus')];
+  // the photo's own genus or species, scientific or common, and a name its species carries: right
+  for (const text of ['Iniistius', 'Iniistius pavo', 'Peacock razorfish', 'razorfish', 'Wrasses', 'wrasse']) {
+    const r = family(text, 'f:Wrasses', NAMES, pavo);
+    assert.deepStrictEqual([text, r.got.c, /not this one/.test(r.read)], [text, 'f:Wrasses', false]);
   }
-  // dart stays the Dartfishes' own short form (a jack's "Smallspotted dart" is one species' name)
-  assert.strictEqual(family('dart', 'f:Jacks').got.c, 'f:Dartfishes');
+  // on a cleaner wrasse: a mistake, no unit given (against the Wrasses only, no mix-up), said so
+  const r = family('razorfish', 'f:Wrasses', NAMES, cleaner);
+  assert.strictEqual(r.got.c, '');
+  assert.strictEqual(r.read, '“razorfish” is a name of some Wrasses, not this one. It is also used for the Shrimpfishes.');
+  assert.strictEqual(C.typeVerdict(r.got.m, 'f:Wrasses', cleaner), 'other'); // never "So close! Right family"
+  for (const [text, read] of [
+    ['Peacock razorfish', '“Peacock razorfish” is one of the Wrasses, not this one.'],
+    ['Iniistius', '“Iniistius” is a genus of the Wrasses, not this one.'],
+    ['hogfish', '“hogfish” is a name of some Wrasses, not this one.'],
+    ['tuskfish', '“tuskfish” is a name of some Wrasses, not this one.']
+  ]) {
+    const x = family(text, 'f:Wrasses', NAMES, cleaner);
+    assert.deepStrictEqual([text, x.got.c, x.read], [text, '', read]);
+  }
+  assert.strictEqual(family('Labroides', 'f:Wrasses', NAMES, cleaner).got.c, 'f:Wrasses'); // its own genus
+  assert.strictEqual(family('Bluestreak cleaner wrasse', 'f:Wrasses', NAMES, cleaner).got.c, 'f:Wrasses');
+  assert.strictEqual(family('tuskfish', 'f:Wrasses', NAMES, [sid('Choerodon anchorago')]).got.c, 'f:Wrasses'); // its own word
+  // razorfish on a shrimpfish: its own name
+  assert.strictEqual(family('razorfish', 'f:Shrimpfishes', NAMES, [sid('Aeoliscus strigatus')]).got.c, 'f:Shrimpfishes');
+  // the IMR names of part of a family: Chromis on a Dascyllus is a mistake; on a Chromis right; the family's own names
+  // whatever the photo (Damselfish; Surgeonfish, the label's singular, on a unicornfish)
+  const dasc = [sid('Dascyllus aruanus')];
+  const ch = family('Chromis', 'f:Damselfishes', NAMES, dasc);
+  assert.deepStrictEqual([ch.got.c, ch.read], ['', '“Chromis” is a name of some Damselfishes, not this one.']);
+  assert.strictEqual(family('Chromis', 'f:Damselfishes', NAMES, [sid('Chromis viridis')]).got.c, 'f:Damselfishes');
+  assert.strictEqual(family('Damselfish', 'f:Damselfishes', NAMES, dasc).got.c, 'f:Damselfishes');
+  assert.strictEqual(family('Clownfish', 'f:Damselfishes', NAMES, dasc).got.c, ''); // an anemonefish's name
+  const naso = [F.species.find(x => /^Naso /.test(x.name) && x.circle).id],
+    acan = [F.species.find(x => /^Acanthurus /.test(x.name) && x.circle).id];
+  assert.strictEqual(family('Surgeonfish', 'f:Surgeonfishes', NAMES, naso).got.c, 'f:Surgeonfishes');
+  assert.strictEqual(family('Unicornfish', 'f:Surgeonfishes', NAMES, acan).got.c, '');
+  assert.strictEqual(family('Unicornfish', 'f:Surgeonfishes', NAMES, naso).got.c, 'f:Surgeonfishes');
+  assert.strictEqual(family('Tang', 'f:Surgeonfishes', NAMES, naso).got.c, 'f:Surgeonfishes'); // the family's aka
+  // a name of another family stays that family's (rule L2), whatever the photo
+  assert.strictEqual(family('Peacock razorfish', 'f:Pipefishes', NAMES, [sid('Dunckerocampus dactyliophorus')]).got.c, 'f:Wrasses');
 });
 
 test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a pipefish wrong, no unit given (Q319)', () => {

@@ -1298,11 +1298,12 @@ async function freshPlayers(b, base, errs) {
     // A name several families share typed (Pierre, 2026-11-09, Q319): right on each of them and said so; on another
     // family a wrong answer with no unit given (no "Your answer would show" block), every family it names said.
     const shared = await q.evaluate(() => {
-      const at = (t, g) => {
+      // sp: the photo's species (Q333: a name of part of the family counts only on a photo it designates)
+      const at = (t, g, sp = []) => {
         const m = typeMatch(t),
-          c = typeUnit(m, g),
+          c = typeUnit(m, g, sp),
           d = document.createElement('div');
-        d.innerHTML = fbBody(g, c, c === g, false, false, [], typeRead(m, t, null, g), typeStep(m, t, null, g));
+        d.innerHTML = fbBody(g, c, c === g, false, false, [], typeRead(m, t, null, g, sp), typeStep(m, t, null, g));
         return [
           c,
           d.querySelector('h3').textContent.replace(/\s+/g, ' ').trim(),
@@ -1316,7 +1317,9 @@ async function freshPlayers(b, base, errs) {
         shr: at('razorfish', 'f:Shrimpfishes'),
         ini: at('razorfish', 'f:Wrasses'),
         pipe: at('razorfish', 'f:Pipefishes'),
-        sp: at('Peacock razorfish', 'f:Wrasses')
+        sp: at('Peacock razorfish', 'f:Wrasses'),
+        // a cleaner wrasse typed "razorfish": a mistake, said so (Pierre, 2026-11-09 ~15:45 Manila, Q333)
+        cl: at('razorfish', 'f:Wrasses', [Object.keys(FISH.spn).find(i => FISH.spn[i] === 'Labroides dimidiatus')])
       };
     });
     if (
@@ -1334,7 +1337,10 @@ async function freshPlayers(b, base, errs) {
       shared.pipe[0] !== '' ||
       shared.pipe[2] !== '“razorfish” names the Shrimpfishes and some Wrasses.' ||
       !/^✓ Yes, it's Wrasses/.test(shared.sp[1]) ||
-      shared.sp[2] !== '“Peacock razorfish” is one of the Wrasses.'
+      shared.sp[2] !== '“Peacock razorfish” is one of the Wrasses.' ||
+      shared.cl[0] !== '' ||
+      !/^✗ No, it's Wrasses/.test(shared.cl[1]) ||
+      shared.cl[2] !== '“razorfish” is a name of some Wrasses, not this one. It is also used for the Shrimpfishes.'
     )
       ui.push(`${width}px a shared name typed: ${JSON.stringify(shared)}`);
     await wide('the answer');

@@ -1,6 +1,12 @@
 # Shared common names: one rule set for every level (design study)
 
-**Status: decided (Pierre, 2026-11-09).** Q319: the recommendations of decisions 1, 3, 4 and 5 (a shared name whose
+**Status: decided (Pierre, 2026-11-09), made strict at ~15:45 Manila (Q333).** Q333 replaces decision 1's "right
+whenever the photo's family is among the owners": a typed name counts right only if it designates the photo's own taxon
+(its family as a whole, its genus or species, scientific or common, or a name its own species carries); "razorfish" on a
+cleaner wrasse is a mistake, counted against the photo's family only (decision 4), and "we won't penalise someone who
+knows the genus's name, or even the species'". So §4.2's rule 2 and §4.3's "kind words carried by 2+ species" read, since
+Q333, "on a photo of a species that carries the name"; the feedback texts were OK'd (Q331), plus "…, not this one." for a
+name of part of the family not designating the photo. Before Q333: Q319: the recommendations of decisions 1, 3, 4 and 5 (a shared name whose
 owners include the photo's unit is right and explained, counts the same as the label; a wrong shared name counts against
 the photo's family only, no mix-up recorded; the four PDF pairs accepted for both species with "Also used for…"); Q320:
 decision 2's recommendation (the wider family-level acceptance published and corrected in use, like Q313); and the

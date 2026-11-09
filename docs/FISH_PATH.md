@@ -125,27 +125,33 @@ is the design's shorthand, and internal identifiers may keep it.
 - **One name in both numbers, a known name never a slip, a shared name all of its families** (Pierre, 2026-11-09, the
   names study's plain fixes and Q319; docs/reviews/2026-11-09-shared-common-names.md): every name is also read in the
   other number of its last word (`core.js` `typeForms`: "Grouper", "Goby", "Pipefish" are the Groupers, the Gobies, the
-  Pipefishes, exactly, no spelling step); a name the game knows that is no family's (`fishKnownNames`: every listed
-  species name, a word of each name shown, the genera's common names) is read as such, never as a slip of another family
-  (anglerfish was read as the Angelfishes, tuskfish as the Boxfishes); a word known to be no family's (one species'
-  only: tuskfish) tells the player "“Tuskfish” is a name some fish species go by: this question needs the family.";
+  Pipefishes, exactly, no spelling step; never a scientific name's, which keeps its spelling step); a name the game
+  knows (the name index, below) is read as such, never as a slip of another family (anglerfish was read as the
+  Angelfishes, tuskfish as the Boxfishes); a name Pierre turns off is known, the player told "“X” is a name some fish
+  species go by: this question needs the family.";
   the IMR entries' scientific families the book splits (Holocentridae, Syngnathidae, Serranidae, Scorpaenidae,
   Synanceiidae, Gobiidae) name each of their families (`typeMatchIn` `shared`): right on any of them, the feedback
   saying "“Holocentridae” is also used for the Squirrelfishes."; on another family a wrong answer that counts against the
   photo's family only, no mix-up recorded, "“Serranidae” names the Groupers, the Soapfishes and the Anthias." (`quiz.js` `typeUnit`,
   `typeRead`). "Close to X and Y: which one? Check the spelling." is left for a slip between two names.
-- **The name index: a family question accepts the names below it** (Pierre, 2026-11-09, Q319, Q320: published and
-  corrected in use, like Q313; ARCHITECTURE.md "The name index"): a listed name of one of its species (Peacock
-  razorfish), a species' or a genus's scientific name (Iniistius pavo, Iniistius), a genus's common name (Hogfish), and
-  a kind word at least 2 of its species carry, or all of them (`fish.json` `vn`: razorfish, toby, spinefoot, hind,
-  demoiselle, sergeant, anglerfish, firefish, batfish, coris...), each right as its family and counted as its label is.
-  A word several families' species carry is right on each (Q319): razorfish (the Shrimpfishes, some Wrasses), goby (the
-  Gobies, some Dartfishes), bream (the Coral Breams, some Emperors). After the answer, one line says what the name is:
-  "“Peacock razorfish” is one of the Wrasses.", "“Iniistius” is a genus of the Wrasses.", "“Anglerfish” is a name of
-  some Frogfishes.", "“Razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes."; on another family,
-  "“Razorfish” names the Shrimpfishes and some Wrasses." (no unit given: a miss on the photo's family only, no mix-up,
-  Q319). Pierre's exceptions in `curation.json` `fish` `names` (`off`, `on`, `often`: "✓ Yes, it's Shrimpfishes (often
-  called razorfish)"); the admin page to edit them is still to build (ROADMAP "Fish common names").
+- **The name index: a family question accepts a name that designates the photo's own taxon** (Pierre, 2026-11-09,
+  Q319, Q320; ~15:45 Manila, Q333: "if someone types Razorfish on a photo of a wrasse that really is a razorfish, then
+  yes, it counts for the family; but you cannot type Razorfish for a wrasse that is not a razorfish"; and "we won't
+  penalise someone who knows the genus's name, or even the species'; but the mistakes must be penalised"; ARCHITECTURE.md
+  "The name index"). Right: a name of the family as a whole (its labels, IMR's name, its scientific names, its `aka` and
+  `often`), and a name of part of it only on a photo of that part: its genus or species, scientific or common (Iniistius,
+  Iniistius pavo, Peacock razorfish on a peacock razorfish), a word its own species carries (`fish.json` `vn`:
+  razorfish on an *Iniistius* or a shrimpfish, toby on a *Canthigaster*), an IMR genus or sub-entry (Chromis on a
+  *Chromis*, Unicornfish on a *Naso*, Clownfish on an anemonefish; `core.js` `fishGen` `scopes`). A name of part of the
+  family that does not designate the photo is a mistake, counted against the photo's family only, no mix-up (no unit
+  given, Q319): razorfish on a cleaner wrasse, Chromis on a *Dascyllus*, Unicornfish on an *Acanthurus* (`core.js`
+  `typeFits`). A name of another family stays that family's: a wrong answer against both (rule L2). After the answer,
+  one line says what the name is: "“Peacock razorfish” is one of the Wrasses.", "“Iniistius” is a genus of the Wrasses.",
+  "“Razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes."; on a photo it does not designate,
+  "“razorfish” is a name of some Wrasses, not this one. It is also used for the Shrimpfishes."; on another family,
+  "“Razorfish” names the Shrimpfishes and some Wrasses.". Pierre's exceptions in `curation.json` `fish` `names` (`off`,
+  `on` and `often` give a name to the whole family: "✓ Yes, it's Shrimpfishes (often called razorfish)"); the admin page
+  to edit them is still to build (ROADMAP "Fish common names").
 - Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
   Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
   sharks).
