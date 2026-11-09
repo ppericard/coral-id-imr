@@ -1345,6 +1345,22 @@ const WIDTHS = [390, 1280];
       if (!gc || gc.panels < 20 || gc.rows !== gc.panels || !gc.words || gc.wide > 0)
         fails.push(`${w}px Analyses each genus with practice: ${JSON.stringify(gc)}`);
     }
+    // Can we trust this model? (the study's §5 item 8): under each binary analysis its words (calibration, residuals) and
+    // charts; under Answer time, its residuals' line and chart
+    for (const h of [
+      'analyses/speed/answer-time',
+      'analyses/speed/enlarging',
+      'analyses/learning/practice',
+      'analyses/learning/sessions'
+    ]) {
+      await go(h);
+      const ck = await p.evaluate(() => {
+        const c = document.getElementById('anc-can-we-trust-this-model');
+        return c && {words: c.querySelectorAll('.adm-an-says-l li').length, charts: c.querySelectorAll('.adm-an-sm figure svg').length};
+      });
+      if (!ck || ck.words < (/answer-time/.test(h) ? 1 : 2) || ck.charts < 1)
+        fails.push(`${w}px Analyses #${h} model check: ${JSON.stringify(ck)}`);
+    }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
     {

@@ -1559,6 +1559,103 @@ function anGcurve(a) {
   );
 }
 
+// Can we trust this model? (analysis.js checkOf, checkLmm; the study's §5 item 8): folded under each analysis. Its
+// predictions of each player left out, band by band against what they answered; the quantile residuals against a
+// straight line; for a model built on the app's own expected chance, whether it predicts new players better than the app.
+const AN_CHK_OUT = {
+  sess: 'sessions ended',
+  conf: 'wrong genera picked'
+};
+function anChk(a, key) {
+  const C = a.chk;
+  if (!C || !C.qq) return '';
+  const pt = v => Math.round(Math.abs(v) * 100),
+    words = [];
+  if (C.cal) {
+    const off = C.cal.map(b => b[1] - b[2]),
+      worst = off.reduce((m, v, i) => (Math.abs(v) > Math.abs(off[m]) ? i : m), 0),
+      w = C.cal[worst];
+    words.push(
+      pt(off[worst]) <= 3
+        ? `For players it has not seen, its predictions match what they answered within ${pt(off[worst]) || 1} points in every band.`
+        : `For players it has not seen, it is off by ${pt(off[worst])} points where it predicts ${pc(w[3])} to ${pc(w[4])}: ${pc(w[1])} ${AN_CHK_OUT[key] || 'right'} against ${pc(w[2])} predicted.`
+    );
+    const dq = Math.max(...C.qq.map(x => Math.abs(x[1] - x[0])));
+    words.push(
+      dq <= 0.02
+        ? 'Its answers spread as the model expects.'
+        : `Its answers spread unlike the model expects (up to ${pt(dq)} points off the straight line): read its ranges with care.`
+    );
+  } else {
+    const dq = Math.max(...C.qq.map(x => Math.abs(x[1] - x[0])));
+    words.push(
+      dq <= 0.1
+        ? 'Answer times spread around the model’s predictions as a normal curve, as it assumes.'
+        : `Answer times spread unlike a normal curve (up to ${dq.toFixed(2)} off the straight line): read its ranges with care.`
+    );
+  }
+  if (C.ll) {
+    const L = C.ll,
+      f = v => anNum(v * 1000, 1);
+    words.push(
+      L.hi < 0
+        ? `For players it has not seen, it predicts answers better than the app’s own expected chance (log-loss ${f(L.d)} per 1,000 answers, likely ${f(L.lo)} to ${f(L.hi)}; ${L.players} players): the app could learn from it.`
+        : L.lo > 0
+          ? `For players it has not seen, it predicts answers less well than the app’s own expected chance (log-loss ${f(L.d)} per 1,000 answers, likely ${f(L.lo)} to ${f(L.hi)}; ${L.players} players).`
+          : `For players it has not seen, it predicts answers about as well as the app’s own expected chance, within the range (log-loss ${f(L.d)} per 1,000 answers, likely ${f(L.lo)} to ${f(L.hi)}; ${L.players} players).`
+    );
+  }
+  const diag = [
+      [0, 0],
+      [1, 1]
+    ],
+    panels = C.cal
+      ? [
+          {
+            label: 'Answered against predicted, by band',
+            series: [
+              {label: 'Answered', pts: C.cal.map(b => [b[2], b[1], b[0]]), dots: true},
+              {label: 'Exact', pts: diag, dash: true}
+            ]
+          },
+          {
+            label: 'Quantile residuals',
+            series: [
+              {label: 'Answered', pts: C.qq.map(x => [x[0], x[1]]), dots: true},
+              {label: 'Exact', pts: diag, dash: true}
+            ]
+          }
+        ]
+      : [
+          {
+            label: 'Residuals against a normal curve',
+            series: [
+              {label: 'Answered', pts: C.qq.map(x => [x[0], x[1]]), dots: true},
+              {label: 'Exact', pts: C.qq.map(x => [x[0], x[0]]), dash: true}
+            ]
+          }
+        ],
+    o = C.cal
+      ? {xmin: 0, xmax: 1, ymin: 0, ymax: 1, xticks: [0, 0.5, 1], xf: v => Math.round(v * 100) + '%'}
+      : {xmin: -1.7, xmax: 1.7, ymin: -1.7, ymax: 1.7, xticks: [-1.5, 0, 1.5], xf: v => v.toFixed(1), yf: v => v.toFixed(1)};
+  return anCard(
+    'Can we trust this model?',
+    `<ul class="adm-an-says-l">${words.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` +
+      smallLines(panels, Object.assign(o, {h: 170, min: 260, max: 2, legs: ['Answered', 'Exact']})) +
+      (C.cal
+        ? anTable(
+            ['Predicted', '#Answers', '#Predicted', '#Answered'],
+            C.cal.map(
+              b =>
+                `<tr><td>${pc(b[3])} – ${pc(b[4])}</td><td class="n">${anInt(b[0])}</td><td class="n">${anPc(b[2])}</td><td class="n">${anPc(b[1])}</td></tr>`
+            )
+          )
+        : ''),
+    'wide',
+    false
+  );
+}
+
 /* ---------- Views ---------- */
 // The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
 // to answer, ending a session, mixing up genera, the app's own estimate), sorted as the page asks, coloured by verdict, the
@@ -1664,7 +1761,7 @@ function anView(key, rep, R) {
     );
   const lean = a.lean ? AN_LEAN : '';
   const parts = [anEffects(a, key)];
-  if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []), anEnt(a, key));
+  if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []), anEnt(a, key), anChk(a, key));
   // a compacted milestone keeps its interactions' verdicts (analysis.js compact): their cards, without the levels (Codex
   // review #829)
   else parts.push(...(a.ix || []).map(t => anIx(a, t.k)));
@@ -2387,6 +2484,7 @@ const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
   <p><b>Where it comes from.</b> A GitHub Action (tools/analyses.js) reads the answer log from the sync sheet every hour and keeps one report per subject: once a subject's answers reach its next round thousand (or the code changed), it redoes every analysis on that subject's first 1000, 2000, 3000, … answers in time order (the milestones: round thousands only), then stores the report in the sheet (private). Each subject's answers are counted apart: the fish answers never move the corals' analyses, nor the coral answers the fish's. The Corals | Fish switch picks the report. On the fish side the units are the families and scientific genera the questions ask; What makes a photo hard is not there (the fish photos' features, judged ease, phase and framing, are not in the analyses yet), nor the views drawn from the corals' live answer log (Pairs, Answer log, Stops). This page only draws it. The switch picks a milestone, the newest by default; the line beside it gives the subject, the milestone fitted last, the subject's answers since it and when the next one comes. <b>Recompute here</b> runs the same code in this tab, on any device (phone included; its progress shows on the button), and its result stays in this tab; it adds a look at all the answers so far, <b>now (N answers), this tab only</b>, never stored. <b>As the answers came in</b>: each result and its likely range at every milestone.</p>
   <p><b>Effects hard to tell apart</b> (folded, under each analysis's charts). Two results whose estimates are strongly correlated (r beyond ±0.6) cannot be told apart well by the data: when they are negatively correlated, one could be a bit higher and the other a bit lower with almost as good a fit, so each alone is fragile and their sum is sure; positively correlated, both could be higher (or lower) together, so their difference is sure. It is a property of the estimates (from the model's own covariance), not a link between the two in the world. <b>Conditions in the answers</b>: how often two situations come together in the answers (beyond ±0.7, worth knowing); <b>VIF</b>: how much of a condition the other conditions of the model predict (1 = none; beyond 5, entangled). Columns are numbered as the rows; in a cell, ▲ means the two go the same way, ▼ opposite ways.</p>
+  <p><b>Can we trust this model?</b> (folded, under each analysis's charts). Each player is left out in turn and the model, fitted on the others, predicts their answers: in five bands of predictions, what they answered against what was predicted (on the straight line: the predictions are right for players it has never seen); the quantile residuals (each answer's place within what the model expected, on the straight line when the model is right; Dunn & Smyth 1996); and, for the models built on the app's own expected chance (Enlarging photos, After a break: the app's chance plus their corrections), whether they predict those players' answers better than the app alone (log-loss per 1,000 answers, each player one vote, the range a 95% t interval over the players; a sign-flip test over the players behind it). Answer time: its residuals against a normal curve, in the fit. A check, not a result: outside the correction for many results.</p>
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
   an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers), kept as history: each is another look at the same growing log, not a new finding.</p>${AN_HELP_COMMON}`,
