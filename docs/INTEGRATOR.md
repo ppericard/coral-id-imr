@@ -118,7 +118,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   diff after `--write` and revert unrelated hunks.
 - **Stacked PRs**: merging a PR whose base is another PR's branch merges into that branch, not main (it happened with
   #667 into #663; harmless, but check `base.ref` before merging).
-- **Never put stacked PRs in a train** (2026-11-08 night, the fish judging stack #760-#766): after the first one is
+- **No stacked PRs at all** (rule W27, Pierre, 2026-11-09: "on fait des PR sur main"; never ask him to change a base
+  by hand). Older note: **never put stacked PRs in a train** (2026-11-08 night, the fish judging stack #760-#766): after the first one is
   squashed, the next one conflicts with the squash commit. Land a stack as its top PR (one squash holding every
   commit) and close the others with a pointer to it ("landed in #N").
 - **CI waits**: poll a PR with a small loop (head sha → check-runs → Codex state), not with chained sleeps; the

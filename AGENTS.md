@@ -228,6 +228,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W11** Say what you checked; a guess is labelled.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Several ready PRs merge through one green merge train (`tools/train.py`).
+- **W27** Bounded cost: at most three agents, PRs from `main` only, two Codex rounds then cut the scope.
 
 ## Read on demand
 
@@ -240,7 +241,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 | The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W26 |
+| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
 
 ## Ship checklist
 

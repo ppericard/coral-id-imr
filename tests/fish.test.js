@@ -855,3 +855,30 @@ test('reference photos: game photo rules, in play once judged, the cover where o
     })
   );
 });
+
+// The name index's kind words (tools/fish_names.py, written into fish.json vn by build_fish.py; Pierre, 2026-11-09,
+// Q319, Q320): what the species' names give, each family with its role (k: 2 of its species or more, or all of them;
+// w: known only), never a word of a "False ..." name, never a family's own name.
+test('fish.json vn: the kind words of the species names, as tools/fish_names.py gives them', () => {
+  require('child_process').execFileSync('python3', ['tools/fish_names.py', '--check'], {cwd: require('path').join(__dirname, '..')});
+  const vn = new Map(F.vn.map(([x, o]) => [x, o]));
+  const id = n => F.species.find(x => x.name === n).id;
+  assert.deepStrictEqual(vn.get('razorfish'), [
+    ['f:Shrimpfishes', 'k', 2, 2, [id('Aeoliscus strigatus'), id('Centriscus scutatus')].sort()],
+    ['f:Wrasses', 'k', 4, 84, ['Iniistius pavo', 'Iniistius pentadactylus', 'Iniistius aneitensis', 'Iniistius dea'].map(id).sort()]
+  ]);
+  assert.deepStrictEqual(vn.get('tuskfish'), [['f:Wrasses', 'w', 1, 84, [id('Choerodon anchorago')]]]);
+  assert.ok(!vn.has('wrasse') && !vn.has('moorish idol') && !vn.has('puffer'), "a family's own name, a False name's");
+  F.vn.forEach(([x, o]) =>
+    o.forEach(([f, r, n, of, sp]) =>
+      assert.ok(
+        F.families.some(y => y.id === f) &&
+          (r === 'k') === (n >= 2 || n === of) &&
+          n <= of &&
+          sp.length === n &&
+          sp.every(i => SP.get(i).family === f),
+        x
+      )
+    )
+  );
+});
