@@ -2160,15 +2160,16 @@ body.adm-cmode .adm-toast {
   border-color: var(--accent);
   color: var(--accent-ink);
 }
-/* A tile with its tag rows unfolded takes the room its rows need: the whole row of the grid on a phone, two columns on a
-   wider screen (a family page's tiles are too narrow for five buttons a row). */
-@media (max-width: 699px) {
+/* A family page's tile with its tag rows unfolded takes the room its rows need (its tiles are too narrow for five buttons a
+   row): the whole row of the grid on a phone, two columns from the tablet size class (rule U4; three or more columns
+   there). To do's and Health's tiles (adm-qgrid) are wide enough already: one a row on a phone, 260 px or more wider. */
+@media (max-width: 599px) {
   .adm-grid > .adm-ftile.is-tags {
     grid-column: 1 / -1;
   }
 }
-@media (min-width: 700px) {
-  .adm-grid > .adm-ftile.is-tags {
+@media (min-width: 600px) {
+  .adm-grid:not(.adm-qgrid) > .adm-ftile.is-tags {
     grid-column: span 2;
   }
 }

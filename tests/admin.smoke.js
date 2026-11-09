@@ -3120,6 +3120,24 @@ const WIDTHS = [390, 1280];
       }
       await p.evaluate(f => FT_OPEN.delete(f), a.f);
       await go('fish/inbox/todo/reports');
+      // Moved with Not this, then added under its corrected species: in play there, with every tool (Codex review #823).
+      const d1 = await fishOf();
+      const to = await p.evaluate(f => {
+        const s = FISHC.byF[f].sid,
+          u = FISHC.units.find(x => x.id === 'f:Wrasses'),
+          to = u.species.find(x => x !== s && FISHC.species[x] && !FISHC.species[x].out);
+        DRAFT.fish = fishAdd(fishNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
+        saveDraft();
+        render();
+        return to;
+      }, a.f);
+      await settle();
+      const mv = await tools(rsel);
+      if (!mv || !mv.play || mv.fu !== want)
+        fails.push(`${w}px To do › Reports, a fish photo added under its corrected species ${to}: ${JSON.stringify(mv)}`);
+      await p.click('#undo');
+      await settle();
+      if ((await fishOf()) !== d1) fails.push(`${w}px To do › Reports: Undo after a corrected species`);
       if (w === 390) await shot('report-fish-390', card('demorep11'));
     }
     // The reports' action bar (Q309), once: status, the tools each report can use, the list following the subject switch.

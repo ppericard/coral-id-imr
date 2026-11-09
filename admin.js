@@ -1890,10 +1890,18 @@ const fuFamM = u => {
   const M = fuDataM();
   return (M.E[u.id] = M.E[u.id] || fuFam(u, M.D));
 };
-// The state of photo f in the draft: 'excluded', 'not this', 'removed', or '' (in play or undecided).
+// The state of photo f in the draft: 'excluded', 'not this', 'removed', or '' (in play or undecided). A photo moved with
+// Not this and then added under its corrected species is in play there (core.js fishOn), not "not this" (Codex review #823).
 const fishState = f => {
-  const F = DRAFT.fish || {};
-  return (F.exclude || {})[f] ? 'excluded' : (F.out || {})[f] ? 'not this' : (F.seen || {})[f] ? 'removed' : '';
+  const F = DRAFT.fish || {},
+    o = (F.out || {})[f];
+  return (F.exclude || {})[f]
+    ? 'excluded'
+    : o && !((F.add || {})[f] === o && fishOn(F, f, o))
+      ? 'not this'
+      : (F.seen || {})[f]
+        ? 'removed'
+        : '';
 };
 // p: the photo's record; o: {sid, fam (its family id), play (in play: on its family's page), st: {num} (featured),
 // cover (the cover shown), picked (his pick), XI (fishIdx of the draft's fish part), lead (caption first), cap (caption
@@ -1903,7 +1911,7 @@ function fishTile(p, o) {
   const F = DRAFT.fish || {},
     f = p.f,
     sid = o.sid,
-    out = fishState(f),
+    out = o.play ? '' : fishState(f),
     cand = !!(FISHC && FISHC.byF[f]),
     x = (o.XI || fishIdx(F))[f],
     J = fuJ(f),
