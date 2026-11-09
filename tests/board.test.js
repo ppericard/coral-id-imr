@@ -22,11 +22,12 @@ const resp = (code, body) => ({
 });
 // data.json and fish.json from GitHub (counted), and the script itself at the same version: autoUpdate finds itself up
 // to date and runs the leaderboard's replays (boardWarm_).
-const withAll = (n = {data: 0, fish: 0}) => ({
+// hook.data: run at the first fetch of data.json (inside the first coral replay the trigger makes, outside the lock).
+const withAll = (n = {data: 0, fish: 0}, hook = {}) => ({
   n,
   fetch: url =>
     /\/main\/data\.json$/.test(url)
-      ? (n.data++, resp(200, DJSON))
+      ? (n.data++ || !hook.data || hook.data(), resp(200, DJSON))
       : /\/main\/fish\.json$/.test(url)
         ? (n.fish++, resp(200, FJSON))
         : /\/main\/tools\/sync\/Code\.gs/.test(url)
@@ -293,5 +294,78 @@ test('a new rules version of any subject leaves no board stale: the players up t
     assert.notDeepStrictEqual(board(s, S), [savedRow(S, 'Ben')]);
     // The other subjects' boards: their players still up to date, as saved.
     BOARDED.filter(X => X !== S).forEach(X => assert.deepStrictEqual(board(s, X), [savedRow(X, 'Ben')], X.id));
+  });
+});
+
+// Codex review #810 (rule D7): a replay made outside the lock while the account is deleted never brings its rows back.
+test('an account deleted while the trigger replays it: none of its replays written, the other players still are', () => {
+  const hook = {},
+    f = withAll(undefined, hook),
+    s = loadCodeGs({fetch: f.fetch});
+  play(s, 'Ana', '1234', {});
+  play(s, 'Ben', '1111', {});
+  hook.data = () => assert.ok(s.post({selfDelete: 1, dname: 'Ana', dpin: '1234'}).deleted, 'deleted mid-run');
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.strictEqual(f.n.data, 1, 'the delete ran inside the replay');
+  BOARDED.forEach(S => {
+    assert.deepStrictEqual(
+      s.sheets[tabOf(S.id)].rows.slice(1).map(r => r[0]),
+      ['Ben'],
+      S.id + ': nothing of the deleted account'
+    );
+    assert.deepStrictEqual(board(s, S), [shown(s, S, 'Ben')]);
+  });
+  assert.ok(!s.sheets.Answers.rows.some(r => r[0] === 'Ana'));
+});
+
+test('answers logged while the trigger replays: that replay dropped, made again over them at the next run', () => {
+  const hook = {},
+    f = withAll(undefined, hook),
+    s = loadCodeGs({fetch: f.fetch}),
+    S = C.subjectOf(C.replaySubject());
+  play(s, 'Ana', '1234', {});
+  hook.data = () =>
+    assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+  s.ctx.autoUpdate();
+  assert.ok(!s.sheets.Replayed || !s.sheets.Replayed.rows.slice(1).some(r => r[0] === 'Ana'), 'made over 12 rows, 13 now: not written');
+  s.ctx.autoUpdate();
+  assert.deepStrictEqual(
+    s.sheets.Replayed.rows.slice(1).map(r => [r[0], r[2]]),
+    [['Ana', 13]]
+  );
+  clearBoards(s);
+  assert.deepStrictEqual(board(s, S), [shown(s, S, 'Ana')]);
+});
+
+// Codex review #810: a player named after a member of Object.prototype is an entry like any other.
+test('players named constructor, __proto__, toString: every board served, their replays made', () => {
+  const f = withAll(),
+    s = loadCodeGs({fetch: f.fetch}),
+    names = ['constructor', '__proto__', 'toString', 'hasOwnProperty'];
+  names.forEach((n, i) => play(s, n, String(2000 + i), {}));
+  play(s, 'Ben', '1111', Object.fromEntries(BOARDED.map(S => [S.id, C.rvOf(S.id)])));
+  BOARDED.forEach(S => assert.strictEqual(board(s, S).length, names.length + 1, S.id + ': served before the trigger'));
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  BOARDED.forEach(S => {
+    assert.deepStrictEqual(
+      s.sheets[tabOf(S.id)].rows
+        .slice(1)
+        .map(r => r[0])
+        .sort(),
+      [...names].sort(),
+      S.id + ': each replayed'
+    );
+    const rows = board(s, S);
+    names.forEach(n =>
+      assert.deepStrictEqual(
+        rows.find(r => r[0] === n),
+        shown(s, S, n),
+        S.id + ' ' + n
+      )
+    );
+    assert.deepStrictEqual(
+      rows.find(r => r[0] === 'Ben'),
+      savedRow(S, 'Ben')
+    );
   });
 });

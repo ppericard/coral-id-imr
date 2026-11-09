@@ -1337,7 +1337,8 @@ function board_(sid){
     const X = boardRpl_(S), D = datas_(ra);
     const dataOf = r => { try { return JSON.parse(D[lc_(r[0])] || '{}'); } catch (e) { return null; } };
     const progOf = d => { try { const P = JSON.parse((first ? dataKey_(d, 'progress') : d[pk]) || '{}'); return P && typeof P === 'object' ? P : null; } catch (e) { return null; } };
-    const nowOf = r => { const d = dataOf(r), P = d ? progOf(d) : null; return P ? X.adopted(String(r[0]), d, P) : P; };
+    // A player whose replay cannot be read or adopted keeps the saved copy's: one account never breaks the board.
+    const nowOf = r => { const d = dataOf(r), P = d ? progOf(d) : null; try { return P ? X.adopted(String(r[0]), d, P) : P; } catch (e) { return P; } };
     // v63: the level the app shows (progress.js eloLine): '~level'.th as saved (the app's eloScore rounds the Elo, so
     // every device reads the same number), once its record counts ELO_MIN answers, else null. vNEXT: the replayed level
     // for a player behind the rules (core.js replayedOf: the replay's ability, the larger answer count), as their app
@@ -1363,9 +1364,10 @@ function board_(sid){
 // The RAs rows a leaderboard lists: with a name, not opted out (Board 0), hidden by an admin (-1, v20) or archived (-2).
 const boardRows_ = ra => ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().filter(r => r[0] && !(r[9] !== '' && Number(r[9]) <= 0));
 // Every player's saved data as readData_ reads it (the Progress data tab, else the RAs Data column), by lower-case
-// name, from one read of each tab: {name: JSON text}.
+// name, from one read of each tab: {name: JSON text}, with no prototype (a player named constructor or __proto__ is an
+// entry like any other; Codex review #810).
 function datas_(ra){
-  const out = {}, dt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DATA_TAB);
+  const out = Object.create(null), dt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in out)) out[k] = r.slice(2).map(String).join('') || '{}'; });
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().forEach(r => { const k = String(r[0]).toLowerCase(), h = String(r[7] || ''); if (r[0] !== '' && !(k in out)) out[k] = h && h !== '@' + DATA_TAB ? h : '{}'; });
   return out;
@@ -1373,7 +1375,8 @@ function datas_(ra){
 // The leaderboard's replays (vNEXT; Pierre, 2026-11-09, rule D8: "whenever progress is recalculated, the leaderboard
 // must be recalculated automatically, even if people do not reconnect"). For any subject with rules versions (core.js
 // rvsOf: the corals' RVS, another subject's SUBJECTS replayed rvs; none: nothing to do), from one read of its answers
-// and of its Replayed tab, both only once a player behind is met:
+// and of its Replayed tab, both only once a player behind is met, each by name in a map with no prototype (Codex review
+// #810: a player named constructor):
 // - need(name, data): null when the saved data applied the subject's last rules version (its rv key, core.js subjKey
 //   'rv', as sync.js rvKey saves it), else the replay that player calls for: its reset and first-launch answer (as the
 //   player's own sync asks for it: load_, replays_), rows since the reset, the record kept (rec: null unless it is today's
@@ -1388,9 +1391,9 @@ function boardRpl_(S){
   const savedOf = d => { try { const o = JSON.parse(subjData_(d, CORE_.subjKey(sid, 'progress')) || 'null'); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } };
   const need = (name, d) => {
     if (!top || !d || rvOf(d) >= top) return null;
-    if (!mine) { mine = {}; (main ? answerRows_() : subjRows_(sid)).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
+    if (!mine) { mine = Object.create(null); (main ? answerRows_() : subjRows_(sid)).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
     if (!kept) {
-      kept = {};
+      kept = Object.create(null);
       const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab);
       if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in kept)) kept[k] = {at: i + 2, r: r}; });
     }
@@ -1409,44 +1412,63 @@ function boardRpl_(S){
 // The leaderboard's replays made ahead (vNEXT, rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
 // public board_ only reads them: for every subject with a leaderboard and rules versions, each player it lists whose
 // saved copy is behind today's rules and whose replay is not kept for today's rules, row count and reset gets it made
-// (rplMake_, outside the script lock: data.json, fish.json and the photo stats are fetched here if not cached) and
-// written to the subject's Replayed tab under a short lock (skipped when the lock is busy or the row changed since it
-// was read: a player's own sync wrote it; the next run tries again), the same record that player's next sync reuses
-// (replay_). New replays start only within BOARD_WARM_MS of the run's start (Apps Script's 6-minute limit), the rest at
-// the next run. A board that got one is dropped from the cache. Returns the number of replays written.
+// (rplMake_, outside the script lock: data.json, fish.json and the photo stats are fetched here if not cached), the same
+// record that player's next sync reuses (replay_). New replays start only within BOARD_WARM_MS of the run's start (Apps
+// Script's 6-minute limit), the rest at the next run. Then every one is written to its subject's Replayed tab under one
+// short lock, each only if, read again under the lock, nothing it was made from changed meanwhile (Codex review #810,
+// rule D7: a replay made while the account was deleted must not bring its row back): the account is still there under
+// the same name and code, listed (not archived, hidden or opted out), with the same saved data (a delete, a merge, an
+// archive, a save, a reset), the same answers of that subject since its reset (the Answers tab read again: a delete, a
+// merge, a claim of a device's answers, answers logged), and its Replayed row as it was read (a player's own sync wrote
+// it); else it is dropped, and the next run makes it again if it is still needed. Nothing is written when the lock is
+// busy. A board that got one is dropped from the cache. Returns the number of replays written.
 const BOARD_WARM_MS = 150000;
 function boardWarm_(){
   const t0 = Date.now(), ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs');
   if (!ra || ra.getLastRow() < 2) return 0;
-  const rows = boardRows_(ra), D = datas_(ra), cache = CacheService.getScriptCache();
-  let made = 0;
+  const rows = boardRows_(ra), D = datas_(ra), pend = [];
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => {
     const X = boardRpl_(S);
     if (!X.top) return;
-    let m = 0;
     rows.forEach(r => {
       if (Date.now() - t0 > BOARD_WARM_MS) return;
-      const name = String(r[0]);
+      const name = String(r[0]), json = D[lc_(name)];
       let d;
-      try { d = JSON.parse(D[lc_(name)] || '{}'); } catch (e) { return; }
-      const x = X.need(name, d);
-      if (!x || x.rec) return;
-      const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.arg, x.saved, x.prev, X.top);
-      if (!mk) return;
-      const lock = LockService.getScriptLock();
-      if (!lock.tryLock(LOCK_MS)) return;
+      try { d = JSON.parse(json || '{}'); } catch (e) { return; }
+      // One player's replay that fails is left out (the next run tries again), never the others'.
       try {
-        const sh = sheet_(X.tab, RPL.HEAD), at = find_(sh, name),
-          now = at ? sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0] : null,
-          id = q => (q ? [q[1], q[2], q[3]].map(String).join('|') : '');
-        if (id(now) !== id(x.row)) return;
-        rplPut_(sh, at, name, X.top, x.n, x.cell, mk.rec, mk.F);
-        m++;
-      } finally { lock.releaseLock(); }
+        const x = X.need(name, d);
+        if (!x || x.rec) return;
+        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.arg, x.saved, x.prev, X.top);
+        if (mk) pend.push({S: S, X: X, name: name, hash: r[6], json: json, x: x, mk: mk});
+      } catch (e) {}
     });
-    if (m) { try { cache.remove(boardCache_(S)); } catch (e) {} }
-    made += m;
   });
+  if (!pend.length) return 0;
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(LOCK_MS)) return 0;
+  const done = new Set();
+  let made = 0;
+  try {
+    ROWS_ = null;  // the Answers tab read again, under the lock
+    const acct = Object.create(null), now = datas_(ra),
+      ans = rs => rs.map(r => String(r[7]) + '@' + (new Date(r[1]).getTime() || 0)).join('|'),
+      id = q => (q ? [q[0], q[1], q[2], q[3]].map(String).join('|') : '');
+    if (ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().forEach(r => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in acct)) acct[k] = r; });
+    pend.forEach(p => { try {
+      const k = p.name.toLowerCase(), a = acct[k];
+      if (!a || String(a[0]) !== p.name || a[6] !== p.hash || (a[9] !== '' && Number(a[9]) <= 0) || now[k] !== p.json) return;
+      if (ans(rplMine_(p.name, p.x.since, p.X.arg)) !== ans(p.x.rows)) return;
+      const sh = sheet_(p.X.tab, RPL.HEAD), at = find_(sh, p.name),
+        row = at ? sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0] : null;
+      if (id(row) !== id(p.x.row)) return;
+      rplPut_(sh, at, p.name, p.X.top, p.x.n, p.x.cell, p.mk.rec, p.mk.F);
+      done.add(p.S);
+      made++;
+    } catch (e) {} });
+  } finally { lock.releaseLock(); }
+  const cache = CacheService.getScriptCache();
+  done.forEach(S => { try { cache.remove(boardCache_(S)); } catch (e) {} });
   return made;
 }
 
@@ -6535,7 +6557,10 @@ const CORE_ = (function () { const module = {exports: {}};
         const x = (o.gd || {})[g];
         return Math.round((Array.isArray(x) ? Number(x[0]) || 0 : Number(x) || 0) * 1000) / 1000;
       },
-      out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
+      // By player, with no prototype (Codex review #810: a player named constructor or __proto__ is an entry like any
+      // other, never an inherited member), and read from starts and since only as their own entries.
+      out = Object.assign(Object.create(null), o.start ? JSON.parse(JSON.stringify(o.start)) : {}),
+      ownOf = (m, k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined);
     const prior = (t, n) => {
       const a = gen[t] || {},
         b = gen[n] || {};
@@ -6562,7 +6587,7 @@ const CORE_ = (function () { const module = {exports: {}};
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
-        if (since[id] && !(r[1] > since[id])) return;
+        if (ownOf(since, id) && !(r[1] > since[id])) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -6590,7 +6615,7 @@ const CORE_ = (function () { const module = {exports: {}};
         if (wrong) rec(c);
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
-        const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
+        const pr = startPriorAt(ownOf(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
         // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
