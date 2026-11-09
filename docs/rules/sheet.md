@@ -87,6 +87,8 @@ replay"). Run `python3 tools/sync_core.py --fix` and add the sheet changes file 
   more, either way** (everyone, if it moves everyone that much), `{from}` and `{to}` in its text giving the two %. Ask
   Pierre only if a version needs a different text. A device that skips several versions with the same card sees it
   once (`core.js` `rvMsgs`).
+- **The leaderboards follow on their own** (rule D8): nothing to add for them, whatever the subject; `tests/board.test.js`
+  checks it for every subject with a board and rules versions.
 
 *Why:* progress is recalculated from the whole answer log, automatically, never by a human click, now and whenever the
 progress engine changes. *Source:* Pierre, 2026-11-03; the changes file, 2026-11-08 (Q305).
@@ -123,3 +125,15 @@ behaviour in the same PR (`Code.gs` `deleteAccount_`; ARCHITECTURE.md "Progress 
 *Why:* keeping data as an archive is fine, but archived means not used in normal operation; a test account's report,
 kept after its delete, was shown in the Inbox as a live player's. *Source:* Pierre, 2026-11-05 (the deleted-accounts
 audit, Q84-Q91).
+
+### D8
+
+**Whenever progress is recalculated, every leaderboard is recalculated with it, even for players who never reconnect.**
+A new rules version of any subject (rule D5: `core.js` `RVS`, `FISH_RVS`, a future subject's `rvs`) reaches that
+subject's leaderboard for every player at once: a player whose saved copy applied an older version is ranked by the
+progress and level their app will hold once it adopts the replay of their log (`core.js` `replayAdopted`, the floor of a
+subject replayed with one included), a player up to date by their saved copy. The sync script's 15-minute trigger makes
+the replays ahead, outside the script lock, into the Replayed tabs (`Code.gs` `boardWarm_`), and the public board only
+reads them (`board_`); never a per-subject or per-version step to remember.
+*Why:* a player who has not opened the app since a rules change kept an old score on the board. *Source:* Pierre,
+2026-11-09.

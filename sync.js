@@ -339,27 +339,11 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       before = copy(P),
       // Today's bars as a floor at a subject's first replay (SUBJECTS replayed floor; Q310) are in the replay itself: the
       // sheet floors it against the account's saved copy (Code.gs replay_, core.js replayFloor), so every device adopts
-      // the same record and keeps it as their shared baseline (replayBase; Codex review #779).
-      M0 = replayedOf({P: R}, P, rp.rv);
-    let M = M0;
-    // A unit replayedOf keeps from this device (more answers here than in the log: answers from before fish logging)
-    // beside the replayed records: their mix-ups and offers on it may read it lower than it was here, so its bar of
-    // before is floored too, in this device's progress (core.js replayFloor; Codex review #779).
-    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && P[g] && !P[g].rv);
-    if (S.replayed && S.replayed.floor && keptHere.length) M = replayFloor(M, P, keptHere);
-    // A floored replay's typed opportunities (core.js replayFloor may raise the level's, which a unit's false-alarm rate
-    // reads): kept per rank when this device's larger answer count keeps its own level (replayedOf), here (the replay
-    // with this device's answers on top, R) and in the shared baseline below (the sheet's replay alone, rp.rec: this
-    // device's unsent answers stay its own; Codex review #779), so the adoption does not undo the floor.
-    const fl = !!(S.replayed && S.replayed.floor),
-      tykUp = (L, X) => {
-        const tyk = fl && X && X[LEVEL] && X[LEVEL].tyk;
-        if (!tyk || !L || typeof L !== 'object') return;
-        const o = {...(L.tyk || {})};
-        Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
-        L.tyk = o;
-      };
-    tykUp(M[LEVEL], R);
+      // the same record and keeps it as their shared baseline (replayBase; Codex review #779). The record adopted: core.js
+      // replayAdopted (replayedOf, a unit kept from this device floored at its bar here, the floor's typed opportunities
+      // kept), the one the sheet's leaderboard ranks a player by until their app adopts it (Code.gs board_, rule D8).
+      fl = !!(S.replayed && S.replayed.floor),
+      M = replayAdopted(R, P, rp.rv, fl);
     // Answers of this device's queue older than the replay's last one (an offline device, another one logging since):
     // on top of the replay they would count after newer answers, out of time order (Codex review #399: 20 right answers
     // played offline before 10 misses logged elsewhere gave pg 0.96 and ten right answers last, for 0.19 and ten
@@ -383,7 +367,9 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // unsent answer went into the base and was lost at the next merge (Codex review #399: 3 became 2).
     if (SYNC) {
       SYNC[S.base[0]] = replayBase(rp.rec, M, rp.rv, SYNC[S.base[0]]);
-      tykUp((SYNC[S.base[0]] || {})[LEVEL], rp.rec);
+      // The floor's typed opportunities in the shared baseline too (the sheet's replay alone, rp.rec: this device's unsent
+      // answers stay its own; Codex review #779).
+      if (fl) tykRaise((SYNC[S.base[0]] || {})[LEVEL], rp.rec);
       // The replay counts every logged answer of this subject; the flag (lg) goes with the save that carries them (syncOnce).
       store.set('reefid-account', SYNC);
     }
@@ -855,9 +841,10 @@ function syncOnce(tries = 0, pulled = null) {
         store.set('reefid-account', me);
         if (adopted && tries < 3) return syncOnce(tries + 1);
       } else if (j && SYNC === me) {
-        // A refused code, a removed account, the wrong-code wait: red at once, no retry mends them. Anything else the sheet
+        // A refused code, a removed account, the wrong-code wait, a new account under a reserved name (v119: an app from
+        // before the form refused it signed in under one): red at once, no retry mends them. Anything else the sheet
         // answered (busy, stale again, lock or server from v50, a failed write) is a passing failure, tried again.
-        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived') {
+        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived' || j.error === 'reserved') {
           me.err = j.error;
           if (j.error === 'gone') me.into = j.into || '';
           delete me.fail;
@@ -1749,7 +1736,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
     box.classList.add(bad ? 'warn' : 'on');
     box.innerHTML = bad
-      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : SYNC.err === 'reserved' ? 'Sign out, then sign in with another name.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
         ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
@@ -1835,6 +1822,12 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
                     : 'Check the name and the 4-digit code.'
             );
           if (j.found) return isYou(name, pin, j);
+          // A new account under a reserved name (core.js reservedName; Pierre, 2026-11-09) is never made: said here, before
+          // the first save would send it (the sheet refuses it too, from v119). An account that has one signs in as before.
+          if (reservedName(name)) {
+            msg('This name is reserved, please choose another.');
+            return f.n.focus({preventScroll: true});
+          }
           enter(name, pin, j);
         })
         .catch(e =>
