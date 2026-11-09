@@ -961,6 +961,28 @@
       b = /-cand-fb-(.+)$/.exec(s) || /^fb(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
+  // fish-game.json's short form (Pierre, 2026-11-09: "observation id + extension instead of full URLs"; tools/fish_short.py
+  // writes it, this is its copy): a record's o, an iNaturalist observation, as its id alone, and its src, the original on
+  // iNaturalist's open-data bucket, as its extension alone when the photo is the record's own (the id in its name,
+  // fishPid). fishGameRow gives a record its addresses back, keys in their order (the record as it was written before);
+  // a record already whole (the file before the short form) is the same object. fishGameRead: the file, every record whole.
+  // Every reader of fish-game.json reads it through fishGameRead: the app (fishLoad), the admin, the sheet's photo pools
+  // (POOLS entries), the tools and the tests. A page of an older version that meets the short file keeps every photo (its
+  // src is still set) but its fallback to the original and its observation link are broken until it updates.
+  const FISH_OBS = 'https://www.inaturalist.org/observations/',
+    FISH_ORIG = 'https://inaturalist-open-data.s3.amazonaws.com/photos/';
+  const fishGameRow = p => {
+    if (!p || typeof p !== 'object') return p;
+    const id = (/^i(\d+)$/.exec(fishPid(p.f)) || [])[1],
+      o = typeof p.o === 'string' && /^\d+$/.test(p.o),
+      s = typeof p.src === 'string' && /^[a-z0-9]{2,5}$/.test(p.src) && !!id;
+    if (!o && !s) return p;
+    return {...p, ...(o ? {o: FISH_OBS + p.o} : {}), ...(s ? {src: FISH_ORIG + id + '/original.' + p.src} : {})};
+  };
+  const fishGameRead = G =>
+    G && G.photos && typeof G.photos === 'object'
+      ? {...G, photos: Object.fromEntries(Object.entries(G.photos).map(([t, L]) => [t, Array.isArray(L) ? L.map(fishGameRow) : L]))}
+      : G;
   // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
   // draw favours at the start, judging/FISH.md), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
   // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
@@ -1958,10 +1980,25 @@
     '__lookupSetter__'
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
+  // The seedling 🌱 is the admin's own mark in his name (Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
+  // have"), given only by the admin page (Code.gs users_ userSeed, v123): a new account or an archive name holding it, or
+  // one of its look-alikes, anywhere is refused as reserved too. Seedling, herb, potted plant, shamrock, four-leaf clover,
+  // leaf fluttering in wind (any variation selector after it changes nothing: the base character is enough).
+  const SEED_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];
+  const SEED_RE = new RegExp('[' + SEED_LOOKALIKES.join('') + ']', 'u');
   const reservedName = name =>
+    SEED_RE.test(String(name == null ? '' : name)) ||
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
+  // The admin's own name with the seedling or without it (Code.gs users_ userSeed): on, the name and ' 🌱' after it (once);
+  // off, the name without its trailing seedling. The same name back when there is nothing to change.
+  const SEED = '\u{1F331}';
+  const seedName = (name, on) => {
+    const n = String(name == null ? '' : name).trim(),
+      bare = n.replace(new RegExp('\\s*' + SEED + '\\uFE0F?$', 'u'), '');
+    return on ? (bare === n ? n + ' ' + SEED : n) : bare;
+  };
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -3121,7 +3158,7 @@
       return out;
     },
     entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (gm || {}).photos, cur, f), (ph || {}).sheet);
+      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur, f), (ph || {}).sheet);
       return Object.fromEntries(
         Object.values(F.gen)
           .filter(g => !g.wink)
@@ -5346,7 +5383,10 @@
     SORRY,
     firstName,
     RESERVED_NAMES,
+    SEED_LOOKALIKES,
     reservedName,
+    SEED,
+    seedName,
     sorryFelt,
     sorryOf,
     sorryDue,
@@ -5467,6 +5507,8 @@
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
+    fishGameRow,
+    fishGameRead,
     renamedId,
     sheetIdOf,
     fishTree,
