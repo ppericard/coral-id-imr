@@ -11,7 +11,7 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const C = require('../core.js');
-const {loadCodeGs, bodyOf} = require('./gas.js');
+const {loadCodeGs, bodyOf, madeBefore} = require('./gas.js');
 
 const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
@@ -563,7 +563,10 @@ test('a unit kept from this device for its larger count keeps its bar beside the
 test("today's script with an empty Replayed Fish tab: a fish-only player's replay asked, stored, adopted", async () => {
   for (const nm of ['Ana', 'constructor']) {
     const s = loadCodeGs(withFiles());
-    s.post({name: nm, pin: '1234', data: {'reefid-sync-fish-progress': JSON.stringify(today)}, summary: {}, answers: F});
+    // An account from before the refusal of reserved names (tests/gas.js madeBefore).
+    madeBefore(s, () =>
+      s.post({name: nm, pin: '1234', data: {'reefid-sync-fish-progress': JSON.stringify(today)}, summary: {}, answers: F})
+    );
     s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Replayed Fish'); // as on the real sheet: empty, no header
     const a = app({
       sheet: s,

@@ -2,7 +2,7 @@
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const test = require('node:test'),
   assert = require('node:assert');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, madeBefore} = require('./gas.js');
 // Every reply carries the script's VERSION as v: read from the script, so a version bump edits no test (a number
 // pinned here collided between every pair of PRs that bump it).
 const SV = Number(
@@ -2392,7 +2392,7 @@ test('replays of players named constructor, __proto__, toString: their own answe
   ['constructor', '__proto__', 'toString'].forEach(nm => {
     const s = loadCodeGs({fetch: withFish().fetch}),
       F = Array.from({length: 9}, (_, i) => fa('f' + i, i));
-    s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: F, rv: C.RV});
+    madeBefore(s, () => s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: F, rv: C.RV})); // an account from before the refusal of reserved names
     const r = s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [], rv: 0, rvs: {fish: 0}, at: 1});
     assert.deepStrictEqual(r.replays.fish.rec, fishWant(F, nm.toLowerCase()), nm + ': the fish replay of its answers');
     assert.deepStrictEqual([r.replay && r.replay.n, r.replay && r.replay.rec], [0, {}], nm + ': the corals, none logged');
@@ -2408,7 +2408,7 @@ test('a kept replay record is never reused for a player keyed like an inherited 
       F = Array.from({length: 9}, (_, i) => fa('f' + i, i)),
       K = Array.from({length: 4}, (_, i) => qa('k' + i, i)),
       ask = () => s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [], rv: 0, rvs: {fish: 0}});
-    s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [...K, ...F], rv: C.RV});
+    madeBefore(s, () => s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [...K, ...F], rv: C.RV})); // as above
     const r0 = ask(),
       want = {fish: r0.replays.fish.rec, coral: r0.replay.rec};
     assert.deepStrictEqual(want.fish, fishWant(F, nm.toLowerCase()), nm + ': its fish answers');
