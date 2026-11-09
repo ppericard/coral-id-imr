@@ -53,7 +53,10 @@ is the design's shorthand, and internal identifiers may keep it.
   "Scientific names" (offer card once an entry is at Advanced: Open Water from 2026-11-07, Q205, back to Advanced on 2026-11-08,
   Pierre, "too early, too strong"; ⚙ row, and My progress while off: the offer never locks the setting, Pierre 2026-11-08;
   turned on by hand before any family is at Advanced, a family's genera come from its Open Water, Q240): a family's genera join the game when the family reaches Advanced and open one at a time
-  (an IMR player meets the IMR course's genera without the offer from their family's Open Water: below); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
+  (an IMR player meets the IMR course's genera without the offer from their family's Open Water: below), **families met first**
+  (Pierre, 2026-11-09, Q208 A): no genus card while a family in play (one that may open now: circle 2 once open, circle 3 once
+  said yes) is still not met; exempt the IMR genera of an IMR player, the set turned on by hand early (Q240) and Open all
+  (docs/LEARNING.md "Fish: scientific genera"); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
   one (Chromis, Dascyllus, Pomacentrus), else its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).

@@ -1904,6 +1904,9 @@ const UNITS = {
         units: () =>
           FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid(), !!Q.sciH).units : [],
         auto: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid()).auto : []),
+        // Families met first (Pierre, 2026-11-09, Q208 A): no genus card while a family in play is still not met (setLater,
+        // model.js openPick); its auto units, the set turned on by hand early (Q240) and Open all are exempt.
+        after: 1,
         due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
         // rv: the rules a choice is made under (Q.sciV, synced with the choice): 1 since the offer moved back to Advanced
         // (2026-11-08). A player who turned them on before (Q.sci true, no sciV) gets the back card once (quiz.js
@@ -1948,6 +1951,14 @@ if (Q.bon === undefined && Q.bu > 1) {
 // The units of the opt-in sets the player has on, and those a set brings without asking (its auto: an IMR player's IMR
 // genera), each once.
 const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...(S.auto ? S.auto() : [])]))];
+// A unit of a set that opens after the slate (its after; Pierre, 2026-11-09, Q208 A: the fish scientific genera once the
+// offer is accepted), so it waits while a slate unit in play is still to open (model.js openPick), unless its set brings it
+// by itself (auto: an IMR player's IMR genera, Q219) or the player turned the set on by hand before it was due (Q[k + 'H'],
+// Q240). Open all is model.js's (openedAll).
+const setLater = n => {
+  const S = setOf(n);
+  return !!(S && S.after) && !Q[S.k + 'H'] && !(S.auto && S.auto().includes(n));
+};
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 opened by itself, 2026-11-06 to 2026-11-07, keep it: Pierre,
 // 2026-11-07). A unit of a part that is off never opens (model.js mayOpen); one already open stays open.
