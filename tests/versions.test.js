@@ -133,6 +133,21 @@ test('a changed data file changes the hash of the script that names it', () => {
   }
 });
 
+// Codex review #818: the shell keeps the players' curation, which the deploy writes before the stamps (pages.yml); the
+// copies above write it too (copy). A site without it fails the stamp, as the deploy would without that step.
+test("the players' curation is in the stamped copy; a site without it fails the stamp", () => {
+  const d = copy();
+  try {
+    assert.ok(fs.existsSync(path.join(d, 'curation-play.json')), 'copy() writes curation-play.json');
+    fs.rmSync(path.join(d, 'curation-play.json'));
+    const r = run(STAMP, d);
+    assert.notStrictEqual(r.status, 0);
+    assert.match(r.stderr, /SHELL keeps a file that is not there: curation-play\.json/);
+  } finally {
+    fs.rmSync(d, {recursive: true, force: true});
+  }
+});
+
 test('a reference to no file fails the stamp; references that disagree fail the check', () => {
   const d = copy();
   try {
