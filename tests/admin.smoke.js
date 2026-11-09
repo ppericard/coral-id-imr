@@ -1259,6 +1259,28 @@ const WIDTHS = [390, 1280];
       if (wr.labels < 20 || wr.dots < 5 || wr.skill < 10 || !wr.words || wr.wide > 0)
         fails.push(`${w}px Analyses Wright map and second skill: ${JSON.stringify(wr)}`);
     }
+    // Does it depend on …? (the study's §5 item 6): each interaction card answers in one line with its verdict, its levels
+    // drawn (the demo's log has all three), 12 px text at least, no sideways scroll
+    for (const [h, id] of [
+      ['analyses/speed/enlarging', 'anc-does-enlarging-help-more-on-some-views'],
+      ['analyses/difficulty/mix-ups', 'anc-does-the-view-change-where-misses-go-pair-by-pair'],
+      ['analyses/learning/practice', 'anc-does-practice-help-every-format-alike']
+    ]) {
+      await go(h);
+      const ix = await p.evaluate(id => {
+        const c = document.getElementById(id);
+        return (
+          c && {
+            says: !!c.querySelector('.adm-an-ix .adm-an-v'),
+            marks: c.querySelectorAll('svg circle, svg path.an-line').length,
+            small: [...c.querySelectorAll('svg text')].filter(t => parseFloat(getComputedStyle(t).fontSize) < 12).length,
+            wide: document.documentElement.scrollWidth - innerWidth
+          }
+        );
+      }, id);
+      if (!ix || !ix.says || ix.marks < 3 || ix.small || ix.wide > 0)
+        fails.push(`${w}px Analyses #${h} interaction: ${JSON.stringify(ix)}`);
+    }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
     {
