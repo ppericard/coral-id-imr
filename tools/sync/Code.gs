@@ -1732,8 +1732,8 @@ function users_(p){
   // (core.js reservedName refuses the seedling and its look-alikes in a new account or an archive name), so only this
   // gives one, and a name it frees after a delete, a merge or an archive can never be taken again. The record moves
   // whole, as an archive moves it but staying live: RAs row (name, and the code hash for the new name), saved progress,
-  // By genus, answers, reports, pages, beta groups, statistics exclusion, log mentions, Removed's Into (rule D7); the
-  // replays are made again. The old name gets a Removed row pointing to the new one, so the account's other devices are
+  // By genus, answers, reports, pages, beta groups, statistics exclusion, log mentions, Removed's Into, every subject's
+  // replay record (rule D7). The old name gets a Removed row pointing to the new one, so the account's other devices are
   // told to sign in under it ('gone', into) and their answers follow it. Under the script lock. Answers {ok, name};
   // errors: input (no name or code), user, pin, wait, archived, exists (the new name is taken), long (over 40 characters),
   // same (nothing to change).
@@ -1763,7 +1763,9 @@ function users_(p){
       sxMove_(from, into);
       relabel_('Removed', 3, from, into);  // names merged into it before point to the new name
       redact_(from, into);
-      rplDrop_(from);
+      // Its replay records follow it, never dropped: a subject's record keeps the floor reference of its first replay (F),
+      // which a replay made again would no longer have (Codex review #835).
+      rplTabs_().forEach(t => relabel_(t, 1, from, into));
       // The account's own earlier name rows (a seedling taken, then given back): its row is live again under that name.
       const rm = ss.getSheetByName('Removed');
       if (rm && rm.getLastRow() > 1) {

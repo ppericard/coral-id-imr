@@ -5,7 +5,8 @@
 // devices follow; a name it frees can never be taken again (rule D7). Made-up names; the in-memory sheet (tests/gas.js),
 // nothing leaves this process (rule D1).
 const test = require('node:test'),
-  assert = require('node:assert');
+  assert = require('node:assert'),
+  vm = require('vm');
 const C = require('../core.js');
 const {loadCodeGs, madeBefore} = require('./gas.js');
 
@@ -78,6 +79,15 @@ test("the admin's own account gets the seedling: token and code checked, the who
     'token'
   );
   assert.deepStrictEqual(names(s), ['Ana B.', 'Cy D.']);
+  // Each subject's replay record (its first replay's floor reference among it; Codex review #835), kept as it is.
+  const tabs = vm.runInContext('rplTabs_()', s.ctx);
+  assert.ok(tabs.length >= 2, tabs.join());
+  tabs.forEach(t =>
+    vm.runInContext(
+      `sheet_(${JSON.stringify(t)}, RPL.HEAD).appendRow(['Ana B.', 7, 2, 0, 0, '{"F":1}']); sheet_(${JSON.stringify(t)}, RPL.HEAD).appendRow(['Cy D.', 7, 0, 0, 0, '{}'])`,
+      s.ctx
+    )
+  );
   // Given: the record moves whole under the new name, with the same code.
   const r = seed(s, 'ana b.', '1234', true);
   assert.strictEqual(r.ok, true, JSON.stringify(r));
@@ -90,6 +100,16 @@ test("the admin's own account gets the seedling: token and code checked, the who
   assert.strictEqual(s.sheets.Answers.rows.slice(1).filter(x => x[0] === 'Ana B. ' + SEED).length, 2);
   assert.ok(s.sheets.Reports.rows.slice(1).every(x => x[1] !== 'Ana B.'));
   assert.strictEqual(s.get({name: 'Ana B. ' + SEED, pin: '0000'}).error, 'pin');
+  tabs.forEach(t =>
+    assert.deepStrictEqual(
+      s.sheets[t].rows.slice(1).map(x => [x[0], x[5]]),
+      [
+        ['Ana B. ' + SEED, '{"F":1}'],
+        ['Cy D.', '{}']
+      ],
+      t
+    )
+  );
   // The board and the player list show the new name.
   assert.deepStrictEqual(
     s.get({board: '1'}).rows.map(x => x[0]),
