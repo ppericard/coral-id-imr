@@ -20,6 +20,8 @@ const copy = () => {
     if (fs.statSync(p).isFile()) fs.copyFileSync(p, path.join(d, f));
   }
   for (const dir of ['proto', 'fonts']) fs.cpSync(path.join(ROOT, dir), path.join(d, dir), {recursive: true});
+  // The players' curation, which the deploy writes before the stamps (pages.yml, tools/curplay.py).
+  assert.strictEqual(spawnSync('python3', [path.join(ROOT, 'tools', 'curplay.py'), d]).status, 0);
   return d;
 };
 const run = (tool, ...a) => spawnSync('python3', [tool, ...a], {cwd: ROOT, encoding: 'utf-8'});
@@ -128,6 +130,21 @@ test('a changed data file changes the hash of the script that names it', () => {
     assert.notStrictEqual(B['app.js'], A['app.js']);
   } finally {
     [a, b].forEach(d => fs.rmSync(d, {recursive: true, force: true}));
+  }
+});
+
+// Codex review #818: the shell keeps the players' curation, which the deploy writes before the stamps (pages.yml); the
+// copies above write it too (copy). A site without it fails the stamp, as the deploy would without that step.
+test("the players' curation is in the stamped copy; a site without it fails the stamp", () => {
+  const d = copy();
+  try {
+    assert.ok(fs.existsSync(path.join(d, 'curation-play.json')), 'copy() writes curation-play.json');
+    fs.rmSync(path.join(d, 'curation-play.json'));
+    const r = run(STAMP, d);
+    assert.notStrictEqual(r.status, 0);
+    assert.match(r.stderr, /SHELL keeps a file that is not there: curation-play\.json/);
+  } finally {
+    fs.rmSync(d, {recursive: true, force: true});
   }
 });
 
