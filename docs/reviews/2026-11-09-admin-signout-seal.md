@@ -27,40 +27,46 @@ wipe). Today Pierre is the only admin; the shared-device case is a precaution fo
   clicks, which still write outside it. Each fix closed one window between a write and a removal; the next review found
   the next one.
 
-## 3. Models that remove the whole class
+## 3. Three models that remove the whole class
+
+The class has one root: **a step at sign-out that must be atomic across tabs, over storage that cannot be.** A model
+ends the class only if it removes that step or makes the storage atomic.
 
 - **A. One writer.** Only one admin tab per browser may edit, holding a `navigator.locks` lock as long as it is open. The
-  other tabs are read-only, with a "Take over" button. Sign-out is then one tab sealing its own memory, with no
-  cross-tab merging.
-  *Cost:* it drops the two-tab editing that exists today (code re-review M4), adds a read-only state and a hand-over to
-  the interface, and needs a decision from Pierre.
-- **B. One transactional store.** The draft and the seals move to IndexedDB. Every click's write, every seal and every
-  unseal is one read-write transaction; the browser runs these one after another across tabs and applies each all or
-  nothing.
-  *Cost:* a rewrite of the draft layer (`putDraft`, `takeOther`, Undo, the auto-sorts), because every write becomes
-  asynchronous. It also needs a migration from `localStorage` and a change to the site's `?draft` preview. About a week.
-- **C. No sealing at sign-out.**
-  - **C1, the draft always stored sealed.** The draft is always stored encrypted under its token, in a key of that token
-    (`reefid-curation-draft:<mark>`). There is never a plain draft, and Sign out only forgets the token. Two tokens never
-    share a draft, and no step happens at sign-out, so there is nothing to race.
-    *Cost:* each save encrypts a gzipped curation (about 0.1 s; done when the page is idle, not on every click). The
-    `?draft` preview of the site stops working, because it would need the token. Existing plain drafts need a one-time
-    migration.
-  - **C2, Sign out asks.** With an unpublished draft, Sign out says so and offers Publish, or signing out with the draft
-    left in this browser, as today. Discarding is not offered, because rule A1 forbids a wipe.
-    *Cost:* nothing technical, but the shared-device leak stays when the admin chooses to leave the draft.
+  other tabs are read-only, with a "Take over" button. Sign-out is then one tab sealing its own memory.
+  - *Benefits:* the simplest sign-out, with no cross-tab merging left at all.
+  - *Risks:* Pierre sees it. Two-tab editing, which exists today (code re-review M4), goes away, and a second tab opens
+    read-only. Taking over must hand the draft across cleanly.
+- **B. One transactional store.** The draft and the seals move from `localStorage` to IndexedDB. Every click's write
+  (including the two-tab merge), every seal and every unseal is one read-write transaction on that store. The browser runs
+  these one after another across tabs and applies each all or nothing, from one shared copy.
+  - *Benefits:* nothing changes for Pierre. Clicks are still kept at once, two tabs still merge, and Sign out still seals.
+    It also fixes the older two-tab merge's stale reads.
+  - *Risks:* a rewrite of the draft layer, because every write becomes asynchronous: `putDraft`, `takeOther`, Undo, the
+    auto-sorts, and the site's `?draft` preview, which must read IndexedDB. Existing drafts need a one-time migration.
+    About a week, with a real-size test of each case.
+- **C. The draft always stored sealed.** The draft is always stored encrypted under its token, in a key of that token.
+  There is never a plain draft, and Sign out only forgets the token, so no step happens at sign-out and there is nothing to
+  race.
+  - *Benefits:* the least code. Most of this branch carries over: the gzip, the base stored as a diff, the token mark and
+    the AES-GCM key. Two tokens never share a draft.
+  - *Risks:* Pierre sees it. The site's `?draft` preview stops working, because it would need the token. Each save
+    encrypts a gzipped curation, about 0.1 s, so saves are batched when the page is idle, and a crash in that moment can
+    lose the last click. Existing plain drafts need a one-time migration.
 
-## 4. Recommendation
+## 4. Recommendation: B
 
-Ask Pierre first whether a shared device is real, now or with a second admin soon.
+B is the only model that changes nothing Pierre sees, and it removes the whole class by construction. Every read and
+write of the draft and the seals becomes one atomic transaction on one shared store. "Read the draft, take the plain copy
+off, write the seal" can then no longer be split by another tab's click, seal or unseal. Every case Codex found was such a
+split, and so was the stale copy behind the last ones.
 
-- **If not:** take **C2**, a small PR with no crypto and no races. Keep this branch parked.
-- **If yes:** take **C1**. It removes the sign-out step itself, which is where every race came from, and it costs less
-  than B. Most of this branch carries over: the gzip, the base stored as a diff, the token mark and the AES-GCM key. The
-  broadcast, `lockOther`, one-seal-per-token and the seal lock go away.
-- **A** is not recommended: it takes away a feature to fix a precaution.
+A and C remove the class too, but each takes something away that Pierre uses: two editing tabs, or the `?draft` preview.
 
-Still open on this branch, and not to be fixed here:
-- Codex thread 4509429142: its fix (re-reading the stored draft before a clean clear) is in the branch, but Codex never
-  reviewed it again.
-- The seal list is still one `localStorage` key, read and written whole.
+Restart from B on this branch:
+1. First a storage module for the draft: async get, put and merge in one transaction, with tests. Nothing else changes.
+2. Then the seal on top of it, as one transaction.
+
+Still open here, and not to be fixed on the current design:
+- Codex thread 4509429142, whose fix Codex never reviewed again.
+- The seal list kept as one `localStorage` key.
