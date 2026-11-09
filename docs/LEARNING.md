@@ -4701,8 +4701,51 @@ offsets the sheet serves move, and with them every replayed progress: rules vers
 changes nothing and needs no gate (rule D4): it reads the ratings the sheet serves. **It goes live only after the rule
 L11 level-2 simulation below is in and read.**
 
-**The level-2 simulation** (rule L11; the rated world's sheet mode, `--app sheet`, built for it: "Validating a learning
-change"). See the PR for the declared protocol and the results.
+**The level-2 simulation** (rule L11, 2026-11-09, #808; the protocol declared in the PR before any run). Rated world,
+corals, `--app sheet` ("Validating a learning change"): one player per coral profile, 3,000 answers each (12,000
+pooled), the ratings served every 100 answers; before `--pk 0` (the rule before), after `--pk 2`, both on the same code;
+seeds 101-110, then 111-120 as declared (two looks: one-sided bounds at 95%, the primary at 0.025). The app world (level 1
+part): the real app, 4 profiles × 5 seeds × 300 questions, served the photo Elo of rated seed 101's population log with
+k 0 and with k 2, the photos' true difficulty that world's. At 20 seeds (rated world; rating error = centred RMS of
+rating − true difficulty over the photos answered, at 3,000 answers per player; one value per seed, exact sign-flip):
+
+| Times, photos | Rating error | Correlation with the truth | Genus offsets' error | k recovered, median (log-loss / truth) | Guardrails not held (of 56 cells) |
+| --- | --- | --- | --- | --- | --- |
+| **rho25** (β correlated 0.25 with d), normal: **the primary** | 0.6956 → 0.6938, −0.0018 [+0.0126], p 0.83: **not clear** | +0.034 [+0.020], 17 of 20 seeds, p 0.0004 | −0.006 [+0.014] | 1 / 0.5 | 3 unclear (the score shown, beginner and lecture RA) |
+| rho0 (unrelated), normal | +0.0048 [+0.0199], p 0.59: unclear against the +0.01 declared | +0.006, p 0.56 | −0.005 | 0.5 / 0 | 6 unclear |
+| views (unrelated, more views slower), normal | **+0.0144 [+0.0270], p 0.06: breaches the +0.01 declared** | +0.007, p 0.44 | +0.013 | 0.5 / 0 | 5 unclear |
+| fast (fast photos easy, slow ones uninformative), normal | −0.0078 [+0.0069], p 0.37: held | +0.055 [+0.042], p < 0.001 | −0.012 | 1 / 0.5 | **1 breached** (longest plateau, strong RA: +80 answers against +73), 7 unclear |
+| rho25, heavy tails | +0.0092 [+0.0222], p 0.23 | +0.011, p 0.18 | +0.016 | 1 / 0.5 | 9 unclear |
+| rho0, heavy tails | +0.0094 [+0.0218], p 0.21: unclear against +0.01 | −0.007, p 0.41 | +0.001 | 0.5 / 0 | 9 unclear |
+
+- **The primary is not clear**: the weight does not bring the ratings closer to the truth (−0.0018, 9 of 20 seeds
+  down). They rank the photos better when the time carries information (correlation +0.034 with rho25, +0.055 with
+  fast photos easy; nothing with rho0 or views), but their spread grows with it, so the error does not fall.
+- **k recovered.** On the before arm's logs, where the answers do not depend on the seconds, each log was replayed with
+  k from 0 to 3.
+  - By the truth (the rating error), the k chosen is 0.5 with rho25 and with fast photos easy (k 2 about neutral there:
+    +0.0006 and −0.0013), and 0 when time is unrelated (rho0 in 15 of 20 seeds, views in 19 of 20). Against k 0, k 2
+    adds +0.010 (rho0) and +0.013 (views).
+  - By the next-answer log-loss of the sheet's own expectation, the real log's criterion, k comes out above 0 in every
+    case, the unrelated ones included (median 0.5). Its gains are −0.08 to −0.31 × 10⁻³ per answer at k 2, a tenth of
+    the real log's −1.97.
+  - Why, exploratory (4 seeds, not declared): with right answers as fast as misses, the log-loss gain with unrelated
+    times turns into a loss (+0.30 × 10⁻³ at k 2), and its k falls to 0. In this world the gain comes from right answers
+    being faster than the player's median. Their mean weight above 1 makes their steps larger than a miss's. It does not
+    come from information on difficulty.
+  - So the k a log-loss replay chooses is no proof that time is informative. A re-test of the real log with z taken net
+    of the right answers' mean would tell the two apart.
+- **The app world**: the k 2 ratings rank the photos a little better (correlation with the truth 0.305 → 0.334), but on
+  this one pair of rating sets, with 5 seeds, guardrails are breached:
+  - E (bar − D\*) for the beginner: +0.035 [+0.055] against +0.03;
+  - the beginner's answers to the first Open Water: 47 → 85, the seeds 27-68 → 35-178;
+  - the longest plateau, beginner, lecture RA and strong RA: +8 to +9 answers against +3 to +9.
+  - Nothing on true knowledge (held, −0.003 to +0.007) or units met (held).
+- **The first look** (10 seeds) had two further breaches (the expert's plateau with rho25 and rho0, the lecture RA's
+  score at 1,000 with rho0 and heavy tails); with 20 seeds they are within their bounds (unclear).
+- Verdict: **level 2 not passed as declared**. The primary is not clear. The declared "nothing breaks" bound is breached
+  with views, where time runs against difficulty. Guardrails are breached in the rated world (one) and in the app world
+  (five cells). Rule L11 sends this to Pierre. The change stays on its branch (#808) until he decides.
 
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
