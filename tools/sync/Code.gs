@@ -3187,6 +3187,11 @@ const CORE_ = (function () { const module = {exports: {}};
         ...(start.has(t.id) ? {first: 1} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
+        // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
+        // plural or singular (fishTypeNames; Codex review #834: "Amphiprions").
+        sciNames: [...new Set([...(t.sci || []), ...imrGen.map(g => g.name), ...[...(teachOf.get(t.id) || [])].map(x => x.fam)])].filter(
+          Boolean
+        ),
         ...([...(teachOf.get(t.id) || [])].flatMap(fishOften).length ? {oft: [...(teachOf.get(t.id) || [])].flatMap(fishOften)} : {})
       };
     });
@@ -3413,10 +3418,16 @@ const CORE_ = (function () { const module = {exports: {}};
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
     short.filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k))).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft));
-    // The other number of every name, as the name it comes from (its own name's: the unit's own, alt 0).
-    Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x)))))
-    );
+    // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
+    // scientific name's (a unit of a scientific rank, a family's sciNames: Codex review #834, "Zebrasomas", "Halichoere"
+    // were read exactly), which keeps its spelling step.
+    Object.values(gen || {})
+      .filter(g => !g.rank)
+      .forEach(g =>
+        (g.names || [g.name]).forEach(
+          (x, i) => !(g.sciNames || []).includes(x) && typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x))))
+        )
+      );
     typeKnown(out, known);
     return out;
   }
