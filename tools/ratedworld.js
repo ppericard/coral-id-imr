@@ -647,13 +647,13 @@ function recoverK(log, TW, W, seed) {
 // when pk is 0, the answers then not depending on the seconds). Returns {runs: one per player (runOne's), pop: {seed,
 // times, pk, rho (beta against d, per case), at: [{q, err, errW, corr, gdErr, photos}], rec: {case: recoverK}}}; keep:
 // also the log, the world W and its seconds TW (the app world's stats and truth from a population, Q315).
-function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', pk = C.RTIME.PK, every = 25, recover = [], keep = false}) {
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', pk = C.RTIME.PK, every = 25, recover = [], keep = false, beyond = ''}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     TW = timeWorld(U, W, seed, times),
     pls = profiles.map((profile, j) =>
-      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', learner, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
+      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
     ),
     log = [],
     at = [];
@@ -704,7 +704,7 @@ async function main(o) {
     POP = [];
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
-    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, pk: o.pk, every: o.every, recover: o.recover});
+    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, pk: o.pk, every: o.every, recover: o.recover});
     else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
   const runs = [];
   await Promise.all(

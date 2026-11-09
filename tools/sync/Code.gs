@@ -883,6 +883,10 @@ function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
   Object.keys(T).forEach(w => { const t = T[w]; out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z; });
   return out;
 }
+// The cache key of stats_'s reply (v17), keyed by the rules version (vNEXT, Codex review #808): a script that rates the
+// photos under new rules never serves the reply an older script cached (up to 10 minutes), so a replay under the new
+// rules version is never made with the former photo statistics.
+const statsKey_ = () => 'stats17.' + CORE_.RV;
 // read (v115): true where no script lock is held (the public stats, readStats): the game pools are read from GitHub
 // when not cached (pools_); otherwise (a replay under the lock) only the cached pools are used, so nothing is fetched
 // under the lock (the pools are warmed by the public stats every app asks for, and by the admin's player list).
@@ -890,7 +894,7 @@ function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
 // cached); stats made under the lock with a pool not cached yet are cached with chk: 0, which a read never takes: it
 // reads the pools and makes them again (Codex review #801), and a replay under the lock takes them as they are.
 function stats_(read){
-  const cache = CacheService.getScriptCache(), hit = cache.get('stats17');
+  const cache = CacheService.getScriptCache(), hit = cache.get(statsKey_());
   if (hit) { const v = JSON.parse(hit); if (!read || v.chk) return v; }
   // v115 (review of #801): every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
   // such as constructor or __proto__ logged before word_ refused them is an entry like any other, never an inherited one.
@@ -957,7 +961,7 @@ function stats_(read){
   // (core.js fmtOffsetsOf, the app's PFMT: its ability steps and its photo aim, logged in each answer's scoring record;
   // the full replay below takes it for the rows logged without one, rules version 8).
   out.fmt = CORE_.fmtOffsetsOf(rows.filter(r => !isEx(lc_(r[0]))).map(r => rowOf_(lc_(r[0]), r)));  // v115: without the excluded
-  try { cache.put('stats17', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  try { cache.put(statsKey_(), JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   return out;
 }
 
@@ -1081,7 +1085,7 @@ function rosterAt_(){
 // v80, each other subject's, the achievement shares achs15, the photo stats and abilities stats15) are dropped, and the
 // Analyses report marked stale.
 function rosterChanged_(){
-  ['achs15', 'stats17'].concat(CORE_.SUBJECTS.filter(S => S.board).map(boardCache_)).forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
+  ['achs15', statsKey_()].concat(CORE_.SUBJECTS.filter(S => S.board).map(boardCache_)).forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
   try { PropertiesService.getScriptProperties().setProperty('ROSTER_AT', String(Date.now())); } catch (e) {}
 }
 function analyses_(p){
@@ -1853,7 +1857,7 @@ function users_(p){
       const named = new Set(ss.getSheetByName('RAs') && ra.getLastRow() > 1 ? ra.getRange(2, 1, ra.getLastRow() - 1, 1).getValues().map(r => aid_(String(r[0]), salt)) : []);
       pagesDrop_(new Set([...ids].filter(x => !named.has(x))));
       [...ids].filter(x => SX_ID.test(x) && !named.has(x)).forEach(x => sxPut_(x, false));  // v115: no row left for ids with no answer
-      try { CacheService.getScriptCache().remove('stats17'); } catch (e) {}
+      try { CacheService.getScriptCache().remove(statsKey_()); } catch (e) {}
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
   }
