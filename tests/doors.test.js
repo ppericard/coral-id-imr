@@ -188,6 +188,7 @@ test('home.js viewHome without DATA: the corals doors, the band empty', () => {
   assert.match(h, /class="hdoors"/);
   assert.match(h, /<span class="hdtiles"><\/span>/, 'the band empty');
   assert.match(h, /Identify a coral/);
+  assert.ok(!/reefcloud-example/.test(h), "the Identify door's photo waits for the data too (it shared the slow line)");
   assert.match(h, /data-subj="coral"/, 'the subject row as once the data is in');
   assert.match(h, /New to corals\?/, 'the basics line, from the device alone');
 });
