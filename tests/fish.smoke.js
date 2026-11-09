@@ -2536,8 +2536,9 @@ async function freshPlayers(b, base, errs) {
       const q = await c.newPage(),
         pe = [];
       q.on('pageerror', e => pe.push(e.message));
-      // Held until the page shows model.js has run (and, for fish.json first, until the fish data is built): the order of
-      // a slow line, without a fixed wait. A wait that fails is a failure, never a file released early (Codex review #732).
+      // Held until the page shows model.js has run (and, for fish.json first, until the fish data is in: FISHRAW; the units
+      // themselves wait for the first build, which needs data.json): the order of a slow line, without a fixed wait. A wait
+      // that fails is a failure, never a file released early (Codex review #732).
       const after = (what, arg) =>
         q
           .waitForFunction(what, arg, {timeout: 30000, polling: 50})
@@ -2549,7 +2550,7 @@ async function freshPlayers(b, base, errs) {
         });
       if (hold.data)
         await c.route(/\/data\.json/, async r => {
-          await after(fish => typeof domRecalcAll === 'function' && (!fish || !!FISH), !!hold.fish);
+          await after(fish => typeof domRecalcAll === 'function' && (!fish || !!FISHRAW), !!hold.fish);
           await r.continue();
         });
       await q.goto(base + hash);

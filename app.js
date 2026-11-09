@@ -819,6 +819,10 @@ const fishLoad = () =>
       // curated photos are not required: without them every family plays on the stopgap's.
       if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
       FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
+      // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
+      // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
+      // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.
+      if (!DATA) return FISH;
       const F = fishBuild();
       if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
       // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
@@ -1905,7 +1909,8 @@ const BENTHIC_NOTE =
   "Not a hard coral and not on the IMR coral list, but it's on the IMR benthic slate and very common at Dauin, including in ReefCloud photos.";
 // A genus of the games: the slate (coral and benthic) or a bonus genus.
 const gameGenus = n => !!DATA.gen[n] || isBenthic(n) || isBonus(n);
-const pool = () => [...slateGenera(), ...bonusList()].filter(n => photoSet(n).shown.length);
+// (Those with a game photo to show: model.js photoAny, the answer of photoSet(n).shown.length without a draw.)
+const pool = () => [...slateGenera(), ...bonusList()].filter(photoAny);
 // The plain sentence (Pierre, 2026-11-03): one everyday-words line per genus (data.json `plain`, tools/apply_plain_sheets.py),
 // clear for everyone, beginners included. Right under the photo of the genus sheet and of the first-meeting card, before
 // the ID tips and lecture notes, in body text with no label (Pierre's review: a muted labelled line above the photo was

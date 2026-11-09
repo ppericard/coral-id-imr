@@ -300,6 +300,22 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
   // A colony with only closer + corallites shows the closer view, the corallites as the hint.
   return {shown: [one('wide'), one('medium')].filter(Boolean), hint: one('macro')};
 }
+// Whether photoSet(n) shows a photo (its shown list not empty), told without drawing one (performance pass, 2026-11-09:
+// app.js pool asks it of every unit, several times a question, and a draw costs a millisecond or more on a big fish
+// family). photoSet shows one exactly when some photo of n passes its filters (form, gamePhotoOk, a name) in a view it
+// needs: each observation then holds such a view, and every branch of photoSet returns at least one photo of the one it
+// picks; with none, nothing. Its filters are copied here; tests/photoany.test.js compares the two on varied units.
+function photoAny(n) {
+  const g = GX(n),
+    two = g.levels === 2,
+    need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'],
+    oneForm = imrFormsOf(n).length === 1;
+  return need.some(v =>
+    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])].some(
+      p => (v !== 'wide' || p.form !== 'x' || oneForm) && gamePhotoOk(n, p) && p.f !== undefined
+    )
+  );
+}
 // The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
 // right before (else the least seen), the hardest of them. Null when the genus has no game photo.
 function examSet(n) {
