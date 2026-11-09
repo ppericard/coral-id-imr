@@ -174,7 +174,7 @@ so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` c
   fish runs out of the frame after all, the subject is unclear, a thread may or may not be the fish's), leave the box out:
   a photo without a box simply has no tile.
 - **Where it goes**: a candidate's box is its judging file's `bb` (imported into `suggest.json` `"fish"` `bb`; `unsure`
-  may name `bb`, which keeps it out); a photo already judged (a game, reference or stopgap photo, or a candidate judged
+  may name `bb`, which withholds its tile only: a candidate with no other doubt still enters play); a photo already judged (a game, reference or stopgap photo, or a candidate judged
   before rubric 7) gets it from a **box pass**: `python3 tools/fish_judge.py --boxes <dir> [--only t01,t02] [--n 3]` draws
   the photos in play that pass the tile rule and have no box yet (the easiest first, one per observation), 9 to a sheet at
   420 x 315 px with a labelled 10 x 10 grid; the boxes go into `tools/fish_judge.json` `boxes` {photo: box}, and the pass

@@ -85,9 +85,10 @@ copy img
 # (the app would show that photo from its online original, core.js photoAway).
 want=$(mktemp) have=$(mktemp)
 {
-  python3 tools/photos.py --r2-list | while read -r f; do printf '%s\n' "$f.webp" "$f-m.webp" "$f-s.webp" "$f-t.webp"; done
+  # An empty name (no photo, no tile yet) adds no file (Codex review #826).
+  python3 tools/photos.py --r2-list | while read -r f; do [ -z "$f" ] || printf '%s\n' "$f.webp" "$f-m.webp" "$f-s.webp" "$f-t.webp"; done
   # The fish tiles (fish-game.json xc: tools/fish_game.py), a fifth file of those photos.
-  python3 tools/photos.py --r2-tiles | while read -r f; do printf '%s\n' "$f-x.webp"; done
+  python3 tools/photos.py --r2-tiles | while read -r f; do [ -z "$f" ] || printf '%s\n' "$f-x.webp"; done
 } | sort >"$want"
 rclone lsf "r2:${R2_BUCKET}/img" --files-only --fast-list | sort >"$have"
 missing=$(comm -23 "$want" "$have")

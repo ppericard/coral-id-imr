@@ -242,10 +242,17 @@ def judged_sure(jt, e):
     return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in '1s' and 'a' not in jt[7:]
 
 
+def unsure(j):
+    """The fields of a judgement the judge doubted that weigh on the photo itself (autosort.js fishUnsure): every unsure
+    field but the fish's box, whose doubt only withholds the photo's tile (box_of; Codex review #826)."""
+    return [x for x in ((j or {}).get('u') or []) if x != 'bb']
+
+
 def cand_sure(j):
-    """A judged candidate that enters play by itself (suggest.json "fish" {jt, e, k, ph, c, u}; Pierre, 2026-11-06, Q180):
-    autosort.js fishSure's add (no unsure field, keep best or alt, never dup) on a sure judgement (judged_sure)."""
-    if not j or j.get('u') or j.get('k') not in ('best', 'alt'):
+    """A judged candidate that enters play by itself (suggest.json "fish" {jt, e, k, ph, c, bb, u}; Pierre, 2026-11-06, Q180):
+    autosort.js fishSure's add (no unsure field but the box, keep best or alt, never dup) on a sure judgement
+    (judged_sure)."""
+    if not j or unsure(j) or j.get('k') not in ('best', 'alt'):
         return False
     return judged_sure(j.get('jt'), j.get('e'))
 
@@ -550,15 +557,25 @@ def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write
             print('failed:', x[0]['f'], e)
     # The tiles of photos already downloaded whose box is new or changed (plan: bb, no xc nor xn); one that fails loses
     # bb, so the next run tries again.
+    # FishBase's one at a time, after the rest, as the downloads above (Codex review #826).
     tl = [r for r in keep.values() if r.get('bb') and not ('xc' in r or 'xn' in r)]
+    tfb = [r for r in tl if (urllib.parse.urlsplit(r['src']).hostname or '') in FB_HOSTS]
+
+    def tile_failed(r, e):
+        r.pop('bb', None)
+        print('tile failed:', r['f'], e)
     with cf.ThreadPoolExecutor(workers) as ex:
-        futs = {ex.submit(tile_only, r, out, get, pause): r for r in tl}
+        futs = {ex.submit(tile_only, r, out, get, pause): r for r in tl if r not in tfb}
         for fut in cf.as_completed(futs):
             try:
                 fut.result()
             except Exception as e:
-                futs[fut].pop('bb', None)
-                print('tile failed:', futs[fut]['f'], e)
+                tile_failed(futs[fut], e)
+    for r in tfb:
+        try:
+            tile_only(r, out, get, pause)
+        except Exception as e:
+            tile_failed(r, e)
     d = doc(fish, keep)
     if d['photos'] == (prev or {}).get('photos') and (prev or {}).get('built'):
         d['built'] = prev['built']  # nothing changed: the same bytes, no commit

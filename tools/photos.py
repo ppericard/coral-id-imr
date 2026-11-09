@@ -244,11 +244,11 @@ def check(folder=IMG, recs=None):
 
 
 if __name__ == '__main__':
-    if '--r2-list' in sys.argv:
-        print('\n'.join(sorted(online())))
-        sys.exit(0)
-    if '--r2-tiles' in sys.argv:
-        print('\n'.join(sorted(tiles())))
+    if '--r2-list' in sys.argv or '--r2-tiles' in sys.argv:
+        # One name a line, nothing at all for none (tools/r2_sync.sh would read an empty line as a file: Codex review #826).
+        L = sorted(online() if '--r2-list' in sys.argv else tiles())
+        if L:
+            print('\n'.join(L))
         sys.exit(0)
     if '--check' in sys.argv:
         bad = check()

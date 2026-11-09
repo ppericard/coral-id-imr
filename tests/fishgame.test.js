@@ -756,3 +756,94 @@ test('tools/fish_judge.json boxes: [left, top, right, bottom] inside the photo',
   );
   assert.deepStrictEqual(bad, []);
 });
+
+// Codex review #826: a doubt on the fish's box only withholds the photo's tile; the candidate stays sure (in play by
+// itself, proposed by the auto-sort) when nothing else is doubted; any other doubt keeps it out, as before.
+test('unsure bb: the tile withheld, the candidate still in play by itself (fish_game.py cand_sure, autosort.js fishSure)', () => {
+  const {fishSure} = require('../autosort.js'),
+    j = u => ({jt: 'p1g0sm1', e: 4, k: 'best', bb: [0.1, 0.1, 0.9, 0.9], ...(u ? {u} : {})}),
+    cases = [null, ['bb'], ['code'], ['bb', 'crop']];
+  const got = JSON.parse(
+    py(`import fish_game as G
+cases = ${JSON.stringify(cases.map(j))}
+print(json.dumps([[G.cand_sure(c), G.box_of('f', {}, {'f': c})] for c in cases]))`)
+  );
+  assert.deepStrictEqual(got, [
+    [true, [0.1, 0.1, 0.9, 0.9]],
+    [true, null],
+    [false, [0.1, 0.1, 0.9, 0.9]],
+    [false, null]
+  ]);
+  assert.deepStrictEqual(
+    cases.map(u => !!fishSure(j(u))),
+    [true, true, false, false]
+  );
+});
+
+// Codex review #826: the R2 lists print nothing for none (tools/r2_sync.sh would read an empty line as a file), and the
+// script skips an empty name anyway.
+test('the R2 lists: no line for no photo or tile; r2_sync.sh skips an empty name', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'r2list-'));
+  fs.mkdirSync(path.join(dir, 'tools'));
+  fs.copyFileSync(path.join(ROOT, 'tools/photos.py'), path.join(dir, 'tools/photos.py'));
+  fs.writeFileSync(path.join(dir, 'fish-game.json'), JSON.stringify({photos: {t01: [{f: 'a', src: INAT(1)}]}}));
+  const out = k => execFileSync('python3', [path.join(dir, 'tools/photos.py'), k], {cwd: dir, encoding: 'utf8'});
+  assert.strictEqual(out('--r2-tiles'), '');
+  assert.strictEqual(out('--r2-list'), 'a\n');
+  fs.rmSync(dir, {recursive: true, force: true});
+  const sh = fs.readFileSync(path.join(ROOT, 'tools/r2_sync.sh'), 'utf8');
+  assert.strictEqual((sh.match(/while read -r f; do \[ -z "\$f" \] \|\| printf/g) || []).length, 2);
+  // The loop as the script writes it, under its own shell options: an empty line adds nothing and fails nothing.
+  const r = execFileSync(
+    'bash',
+    ['-c', `set -euo pipefail; { printf '\\n' | while read -r f; do [ -z "$f" ] || printf '%s\\n' "$f-x.webp"; done; } | sort`],
+    {
+      encoding: 'utf8'
+    }
+  );
+  assert.strictEqual(r, '');
+});
+
+// Codex review #826: the tiles of photos already in play are fetched as the downloads are: FishBase's one at a time.
+test('fish_game.py: the tile-only pass asks FishBase one photo at a time', {skip: !pil && 'Pillow missing'}, () => {
+  const dir = world(),
+    w = (f, o) => fs.writeFileSync(path.join(dir, f), JSON.stringify(o)),
+    c = structuredClone(CAND),
+    cur = structuredClone(CUR),
+    fb = id => ({...c.cand.s003[0], f: `fish-s003-cand-fb-Fi${id}_u0`, src: `https://www.fishbase.de/images/species/Fi${id}_u0.jpg`});
+  ['aa', 'bb', 'cc'].forEach(id => {
+    c.cand.s003.push(fb(id));
+    cur.fish.add[`fish-s003-cand-fb-Fi${id}_u0`] = 's003';
+    cur.fish.tags = {...cur.fish.tags, [`fish-s003-cand-fb-Fi${id}_u0`]: 'p1g0sl1'};
+  });
+  w('fish-cand.json', c);
+  w('curation.json', cur);
+  fs.mkdirSync(path.join(dir, 'tools'));
+  w('tools/fish_judge.json', {photos: {}});
+  const S = `
+import io, threading, time, fish_game as G
+from PIL import Image
+lock, live, top = threading.Lock(), [0], [0]
+def get(url):
+    if 'fishbase' in url:
+        with lock:
+            live[0] += 1; top[0] = max(top[0], live[0])
+        time.sleep(0.05)
+        with lock:
+            live[0] -= 1
+    b = io.BytesIO(); Image.new('RGB', (400, 300), (20, 90, 160)).save(b, 'JPEG'); return b.getvalue()
+`;
+  py(`${S}\nG.run(${JSON.stringify(path.join(dir, 'up1'))}, root=${JSON.stringify(dir)}, get=get, pause=0, workers=4)`);
+  const boxes = Object.fromEntries(['aa', 'bb', 'cc', 'wra'].map(id => [`fish-s003-cand-fb-Fi${id}_u0`, [0, 0.05, 0.85, 0.95]]));
+  w('tools/fish_judge.json', {photos: {}, boxes});
+  const r = JSON.parse(
+    py(`${S}\nG.run(${JSON.stringify(path.join(dir, 'up2'))}, root=${JSON.stringify(dir)}, get=get, pause=0, workers=4)
+print(json.dumps({'top': top[0], 'tiles': sorted(f for f in __import__('os').listdir(${JSON.stringify(path.join(dir, 'up2'))}))}))`)
+      .trim()
+      .split('\n')
+      .pop()
+  );
+  assert.strictEqual(r.top, 1, 'never two FishBase requests at once');
+  assert.strictEqual(r.tiles.length, 4);
+  fs.rmSync(dir, {recursive: true, force: true});
+});
