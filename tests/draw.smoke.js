@@ -1432,12 +1432,9 @@ const server = http.createServer((req, res) => {
     }
     return {fails: [...new Set(fails)], draws, genera: genera.length};
   });
-  // Learned under the former model (core.js memRecalc, model.js mxRecalc, progress.js mxLostNotice and achRecheck):
-  // progress saved with a learned genus, then a reload (the drop happens at load, before achievements are set up).
-  // Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned without (BKT): an announcement card
-  // at start-up, on the page opened, before any answer and even at the start of a new visit (never held: rule
-  // D6), once; the mark and learn1 gone, learn1 not brought back by the sheet's older copy, nothing again on reload or
-  // answers. A drop at a pull: the card at once, or right after another card open then.
+  // Learned under the former model (core.js memRecalc, model.js mxRecalc): progress saved with a learned genus, then a
+  // reload (the drop happens at load). Learned with s.pg (since 2026-11-02): nothing told, nothing taken back. Learned
+  // without (BKT): the mark goes, silently (Q332), its badge kept.
   {
     const t = await p.evaluate(() => slateGenera()[3]);
     // Two genera answered (a comeback needs two), the last answer `ago` ms back.
@@ -1501,70 +1498,26 @@ const server = http.createServer((req, res) => {
       a = await play(15);
     if (a0 || a.seen || a.mx !== 1762150000000 || a.learn1 !== 1000 || a.gone || (a.M && Object.keys(a.M.due || {}).length))
       fail('learned with s.pg was touched', {a0, a});
-    // A new visit (2 hours since the last answer): the card shows anyway, at start-up, over Home.
+    // Learned without s.pg (BKT): the mark goes at load, silently (Pierre, 2026-11-09 ~15:40 Manila, Q332: every
+    // recalculation silent, the learned-mark card too): no card, the learned-based achievement kept as for a mark lost in
+    // play, nothing due; at a pull, the same.
     await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 2 * 3600e3);
     await load();
     const c0 = await card(),
-      before = await p.evaluate(
-        t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null), noOpen: noOpen(), h: hashNow()}),
-        t
-      );
-    if (!c0 || c0.a !== 360 || !before.noOpen || !c0.p.includes(t) || !/badge earned with it is taken back/.test(c0.p))
-      fail('no card at start-up, before any answer', {c0, before});
-    if (before.mx || before.A.learn1 || !before.A._gone || !before.A._gone.learn1 || before.A.met10 !== 1000 || !before.M.due[t])
-      fail('at load', before);
-    // The sheet's copy, from before the drop: learn1 does not come back.
-    const merged = await p.evaluate(() => {
-      achMerge(JSON.stringify({_v: ACH_V, learn1: 1000, met10: 900}));
-      return store.get(ACHK, {});
-    });
-    if (merged.learn1 || merged.met10 !== 900) fail('a merge brought the badge back', merged);
-    await p.click('.unlock.mxlost .next');
+      before = await p.evaluate(t => ({mx: P[t].mx, A: store.get(ACHK, {}), M: store.get(MXL.KEY, null)}), t);
+    if (c0 || before.mx || before.A.learn1 !== 1000 || (before.A._gone || {}).learn1 || Object.keys((before.M || {}).due || {}).length)
+      fail('a mark taken away at load was told, or its badge taken back', {c0, before});
     const b1 = await play(15);
-    if (b1.seen || b1.mx || b1.M.due[t] || b1.M.told[t] !== 1) fail('after OK', b1);
-    await load();
-    const c2 = await card(),
-      b2 = await play(12);
-    if (c2 || b2.seen || b2.learn1 || b2.mx) fail('again after a reload', {c2, b2});
-    // With an update note due at the same load (progress.js RECALC, here the typed-questions announcement): both cards,
-    // one after the other, neither lost: the note first (recalcNotice runs first at start-up), the learned card once it
-    // is closed (it waits for any card on screen, tried again every 2 s).
-    await seed({ok: 13, ko: 1, h: '1111111110', L: 0.9997, mx: 1, pm: 1}, 0);
-    await p.evaluate(() => store.set('reefid-recalc', RECALC.L[RECALC.L.length - 2].id));
-    await load();
-    const both = () =>
-      p.evaluate(() => ({
-        recalc: [...document.querySelectorAll('.unlock.recalc h3')].map(x => x.textContent),
-        mx: !!document.querySelector('.unlock.mxlost'),
-        n: document.querySelectorAll('.unlock').length
-      }));
-    const d0 = await both();
-    if (d0.recalc.length !== 1 || d0.recalc[0] !== (await p.evaluate(() => RECALC.L[RECALC.L.length - 1].t)) || d0.mx || d0.n !== 1)
-      fail('update note and learned card due together: not the note alone first', d0);
-    await p.click('.unlock.recalc .next');
-    await p.waitForSelector('.unlock.mxlost', {timeout: 5000}).catch(() => {});
-    const d1 = await both(),
-      c5 = await card();
-    if (d1.recalc.length || !d1.mx || d1.n !== 1 || !c5 || !c5.p.includes(t)) fail('the learned card did not follow the note', {d1, c5});
-    await p.click('.unlock.mxlost .next').catch(() => {});
-    await load();
-    const d2 = await both();
-    if (d2.recalc.length || d2.mx) fail('a card came back after both were seen', d2);
-    // A drop brought by a pull while another card is open: the card waits for it, then shows on its own.
+    if (b1.seen || b1.mx) fail('a card in play after the silent drop', b1);
     const u = await p.evaluate(() => {
-      const u = slateGenera()[5],
-        d = document.createElement('div');
-      d.className = 'unlock other';
-      document.body.append(d);
+      const u = slateGenera()[5];
       P[u] = {ok: 12, ko: 0, h: '1111111111', L: 0.999, mx: 1, pm: 1};
       memRecalcAll();
       return u;
     });
-    const c3 = await card();
-    await p.evaluate(() => document.querySelector('.unlock.other').remove());
-    await p.waitForTimeout(2500);
-    const c4 = await card();
-    if (c3 || !c4 || !c4.p.includes(u)) fail('a drop at a pull, behind another card', {c3, c4});
+    const c4 = await card(),
+      gone = await p.evaluate(u => !(P[u] || {}).mx, u);
+    if (c4 || !gone) fail('a drop at a pull: told, or the mark kept', {c4, gone});
     await p.evaluate(() => localStorage.removeItem(MXL.KEY));
   }
   await b.close();
@@ -1575,7 +1528,7 @@ const server = http.createServer((req, res) => {
     process.exit(1);
   }
   console.log(
-    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, openings only after a right answer, starred genera after their references, prompt spacing, custom quiz, learned marks of the former model taken back.`
+    `Question draw OK: ${out.draws} draws over ${out.genera} genera at 4 player levels, answer choices at 0-3 traps, mastery exam, typed questions, first meetings, openings only after a right answer, starred genera after their references, prompt spacing, custom quiz, learned marks of the former model taken away silently.`
   );
 })().catch(e => {
   console.error(e);

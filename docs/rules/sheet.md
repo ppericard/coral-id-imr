@@ -78,31 +78,29 @@ deployed, and tell Pierre. This holds in the alpha phase too (rule W3).
 **Every change to a progress rule appends a rules version.** A change to anything that moves a player's progress (what
 an answer weighs, the moving average, the ability step, the photo memory, what the replay keeps from the device:
 `core.js` `replayProgress`, `replayedOf` and what they call) adds an entry at the end of `core.js` `RVS` (`v` the next
-number, `at`, `why`, `msg`). The sync sheet then replays every player's log with the new rules at their next sign-in,
+number, `at`, `why`, `msg: null`). The sync sheet then replays every player's log with the new rules at their next sign-in,
 load or save, and each device adopts it once (`Code.gs` `replay_`, `sync.js` `replayAdopt`; LEARNING.md "Full
 replay"). Run `python3 tools/sync_core.py --fix` and add the sheet changes file (rule D3).
-- **Every rules version takes the standard recalculation card, `msg: RV_CARD`** (don't ask Pierre per version): an
-  announcement card in plain words (`core.js`), shown once at app open on every device that skipped the version, never
-  held (rule D6; `only: 'changed'`, `min: 5`), **only to the players whose progress % the replay moved by 5 points or
-  more, either way** (everyone, if it moves everyone that much), `{from}` and `{to}` in its text giving the two %. Ask
-  Pierre only if a version needs a different text. A device that skips several versions with the same card sees it
-  once (`core.js` `rvMsgs`).
+- **No card: the recalculated progress replaces the old one everywhere without telling the player** (every device, the
+  sheet, the leaderboards: rule D8). A rules version carries `msg: null`, and a jump to it shows no card, not even one of
+  a version it skips (`core.js` `rvMsgs`). The standard card (`RV_CARD`) and the apology (`RV_SORRY`) stay only in the
+  versions before rules version 10, for the record. *Source:* Pierre, 2026-11-09 ~14:45 Manila (Q330).
 - **The leaderboards follow on their own** (rule D8): nothing to add for them, whatever the subject; `tests/board.test.js`
   checks it for every subject with a board and rules versions.
 
 *Why:* progress is recalculated from the whole answer log, automatically, never by a human click, now and whenever the
-progress engine changes. *Source:* Pierre, 2026-11-03; the changes file, 2026-11-08 (Q305).
+progress engine changes. *Source:* Pierre, 2026-11-03; the changes file, 2026-11-08 (Q305); no card, 2026-11-09 ~14:45
+Manila (Q330).
 
 ### D6
 
-**Announce a recalculation of everyone's progress with a real pop-up.** When a change recalculates every player's
-progress, returning players see one pop-up at their next visit, in plain words, without the algorithm's details
-(`RECALC` in `progress.js`: give it a new `ID` and text). Discreet notes are for new features, not for this. One
-exception so far: the photo memory recalculation of 2026-11-03 is silent (the bars only move down 1-3 points;
-`core.js` `memRecalc`).
-- **A learned mark taken away by a recalculation is never silent** (players know they test an early beta): run the
-  recalculation through `model.js` `mxRecalc`, which tells the players concerned once with a card and takes back the
-  learned-based achievements they no longer meet (LEARNING.md "Learned under the former model").
+**A recalculation of everyone's progress is not announced** (Pierre, 2026-11-09 ~14:45 Manila, Q330): the progress is
+updated everywhere without telling the player, no pop-up (`RECALC` in `progress.js` is for new features' notes, not for
+this) and no rules-version card (rule D5). Until then a recalculation of everyone's progress was announced with a real
+pop-up (Pierre, 2026-11-02).
+- **A learned mark taken away by a recalculation is silent too** (Pierre, 2026-11-09 ~15:40 Manila, Q332): run the
+  recalculation through `model.js` `mxRecalc`, which tells nothing and keeps the learned-based achievements, as a mark
+  lost in play does.
 - **Announcement cards are never held**: a card that announces a rule change, a learned mark taken away or a big new app
   version shows as soon as the player opens or reconnects to the app (once the first page is drawn and the progress is
   in, and right after a pull that brings the change), on whatever page they land on, once per account, marked seen by its
@@ -112,8 +110,9 @@ exception so far: the photo memory recalculation of 2026-11-03 is silent (the ba
   `noticeLater`, `core.js` `TOLD`; Pierre, 2026-11-08). The other prompts
   (sign-in nudge, one-tap question, open-all and bonus genera offers) keep `promptOk`.
 
-*Source:* Pierre, 2026-11-02; learned marks and cards never held, 2026-11-03; after the first sync, once per account,
-2026-11-08.
+*Source:* Pierre, 2026-11-02; cards never held, 2026-11-03; after the first sync, once per account, 2026-11-08; a
+recalculation not announced, 2026-11-09 ~14:45 Manila (Q330); a learned mark taken away silent too, 2026-11-09 ~15:40
+Manila (Q332).
 
 ### D7
 
@@ -131,8 +130,8 @@ audit, Q84-Q91).
 **Whenever progress is recalculated, every leaderboard is recalculated with it, even for players who never reconnect.**
 A new rules version of any subject (rule D5: `core.js` `RVS`, `FISH_RVS`, a future subject's `rvs`) reaches that
 subject's leaderboard for every player at once: a player whose saved copy applied an older version is ranked by the
-progress and level their app will hold once it adopts the replay of their log (`core.js` `replayAdopted`, the floor of a
-subject replayed with one included), a player up to date by their saved copy. The sync script's 15-minute trigger makes
+progress and level their app will hold once it adopts the replay of their log (`core.js` `replayAdopted`), a player up
+to date by their saved copy. The sync script's 15-minute trigger makes
 the replays ahead, outside the script lock, into the Replayed tabs (`Code.gs` `boardWarm_`), and the public board only
 reads them (`board_`); never a per-subject or per-version step to remember.
 *Why:* a player who has not opened the app since a rules change kept an old score on the board. *Source:* Pierre,
@@ -142,9 +141,7 @@ reads them (`board_`); never a per-subject or per-version step to remember.
 
 **The answer log is the reference for progress: trust it rather than the device.** When the sheet's replay of a
 player's log is adopted, its record of a unit, and its answer count, win over what the device holds, also when the
-device counts more answers there: those were counted twice. The one exception is a subject the player played before
-the sheet logged it (their first logged answer of that subject within an hour of the subject's log start, `core.js`
-`SUBJECTS` `logFrom`, `logTrusted`): the device's larger counts are kept, as those answers never reached the log. A
-subject logged from its first answer has no exception.
+device counts more answers there: those were counted twice. The log is the only reference: answers it does not have
+are dropped, those played before it began too, and no bar is kept as a floor (a bar may go down).
 *Why:* a save whose reply was lost let a device count answers twice, and the replay kept the doubles for good.
-*Source:* Pierre, 2026-11-09, Q322.
+*Source:* Pierre, 2026-11-09, Q322; no exception, no floor, Q330.

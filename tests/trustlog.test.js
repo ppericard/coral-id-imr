@@ -1,10 +1,10 @@
-// Trust the log rather than the device (Pierre, 2026-11-09, Q322; core.js logTrusted, replayProgress logFrom,
-// replayedOf, replayBase; rules version 10, fish rules version 2): a player whose answers of a subject are all in the log
-// takes the replay's record of a unit, and its answer count, also when the saved copy holds more answers there (they
-// were counted twice: a save whose reply was lost, then another device's save, PR #824). A player who played a subject
-// before its log began keeps the saved copy's larger counts, as before. The fixtures are the patterns found on the real
-// sheet on 2026-11-09 (counts only, made-up names): a whole record doubled, small excesses on some units, fish only, and
-// the fish answers from before the fish log. Nothing leaves this process (rule D1).
+// The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330; core.js replayedOf, replayBase, replayAdopted;
+// rules version 10, fish rules version 2, no card): the replay's record of a unit and its answer count win over the
+// device's, also when the device holds more answers there (they were counted twice: a save whose reply was lost, then
+// another device's save, PR #824), and a unit the log has no answer on loses the answers the device counts on it. No
+// exception for answers played before the log began, no floor. The fixtures are the patterns found on the real sheet on
+// 2026-11-09 (counts only, made-up names): a whole record doubled, small excesses on some units, fish only, and the fish
+// answers from before the fish log. Nothing leaves this process (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -15,9 +15,9 @@ const {page, LIGHT, withData, loadCodeGs} = require('./syncpage.js');
 const DATA = require('../data.json'),
   GEN = {...((DATA.x && DATA.x.gen) || {}), ...DATA.gen},
   FGEN = C.fishReplayGen(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'))),
-  CORAL = C.logFromOf('coral'),
-  FISH = C.logFromOf('fish'),
-  H = C.PRELOG.MS;
+  CORAL = Date.UTC(2026, 10, 1, 9, 47), // the coral log's first answer
+  FISH = Date.UTC(2026, 10, 6, 5, 7), // the fish log's first answer (sheet v60)
+  H = 3600000;
 const G = ['Acropora', 'Porites', 'Montipora', 'Pocillopora', 'Favites', 'Fungia', 'Goniopora', 'Turbinaria', 'Pavona', 'Galaxea'];
 const FU = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Angelfishes', 'f:Wrasses', 'f:Groupers'];
 // A replayable answer (the app's log entry: photos, choices, e and th), at time t (ms).
@@ -38,12 +38,12 @@ const ans = (id, g, ok, t, units = G) => ({
 const n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0);
 const counts = P => Object.fromEntries(Object.keys(P).map(u => [u, n(P[u])]));
 const total = P => Object.keys(P).reduce((t, u) => (u === C.LEVEL ? t : t + n(P[u])), 0);
-const replay = (A, gen, logFrom, id = 'ana') =>
+const replay = (A, gen, id = 'ana') =>
   C.replayProgress(
     A.map(a => C.logRow(a, id)),
-    {gen, ...(logFrom === undefined ? {} : {logFrom})}
+    {gen}
   )[id];
-// The saved copy a device holds: the adopted replay, with its counts on some units times k (2: counted twice) or plus d.
+// The saved copy a device holds: the adopted replay, with its counts on some units changed by f (null: as it is).
 const inflate = (P, f) =>
   Object.fromEntries(
     Object.entries(JSON.parse(JSON.stringify(P))).map(([u, r]) => {
@@ -52,44 +52,17 @@ const inflate = (P, f) =>
     })
   );
 
-test('logTrusted: answers all in the log from an hour after the log began, a subject without a pre-log period always', () => {
-  assert.ok(CORAL > 0 && FISH > CORAL, 'the corals and the fish have a log start');
-  assert.strictEqual(C.logTrusted(FISH, FISH), false, 'a device in use when the log began');
-  assert.strictEqual(C.logTrusted(FISH, FISH + H - 1), false);
-  assert.strictEqual(C.logTrusted(FISH, FISH + H), true);
-  assert.strictEqual(C.logTrusted(0, 0), true, 'no pre-log period');
-  const A = [0, 1, 2].map(i => ans('t' + i, G[i], 1, CORAL + 2 * H + i * 1000));
-  assert.strictEqual(replay(A, GEN, CORAL).P[C.LEVEL].lg, 1, 'marked on the replay itself');
-  assert.strictEqual(replay(A, GEN, CORAL + 2 * H).P[C.LEVEL].lg, undefined, 'its first answer within the hour');
-  assert.strictEqual(replay(A, GEN, 0).P[C.LEVEL].lg, 1, 'a subject logged from its first answer');
-  assert.strictEqual(replay(A, GEN).P[C.LEVEL].lg, undefined, 'no logFrom given (a tool, an older script): as before');
-  // Since a progress reset: the first answer after it.
-  const R = C.replayProgress(
-    A.map(a => C.logRow(a, 'ana')),
-    {gen: GEN, logFrom: CORAL + 2 * H, since: {ana: CORAL + 2 * H + 500}}
-  ).ana;
-  assert.strictEqual(R.n, 2);
-  assert.strictEqual(R.P[C.LEVEL].lg, undefined, 'the first answer since the reset, within the hour of that log start');
-  // Going on from a record (a device's unsent answers on top of the sheet's replay): the record's verdict stays.
-  const base = replay(A, GEN, CORAL + 2 * H),
-    on = C.replayProgress([C.logRow(ans('t9', G[0], 1, CORAL + 9 * H), 'me')], {gen: GEN, logFrom: CORAL, start: {me: base}}).me;
-  assert.strictEqual(on.P[C.LEVEL].lg, undefined, 'not marked by the answers on top');
-});
-
-test('a whole record counted twice: the replay of the log wins, every unit and the level, once trusted to the log', () => {
+test('a whole record counted twice: the replay of the log wins, every unit and the level', () => {
   // 30 answers on 10 genera in half an hour, two days after the coral log began; the saved copy holds each twice.
   const A = Array.from({length: 30}, (_, i) => ans('w' + i, G[i % 10], i % 4 !== 3, CORAL + 48 * H + i * 60000)),
-    rep = replay(A, GEN, CORAL),
+    rep = replay(A, GEN),
     once = C.replayedOf(rep, {}, C.RV),
     twice = inflate(once, (u, r) => [2 * (r.ok || 0), 2 * (r.ko || 0)]);
   assert.strictEqual(total(twice), 60);
-  const M = C.replayAdopted(rep.P, twice, C.RV, false);
+  const M = C.replayAdopted(rep.P, twice, C.RV);
   assert.deepStrictEqual(counts(M), counts(once), 'every unit and the level as in the log');
   assert.strictEqual(total(M), 30);
   assert.strictEqual(n(M[C.LEVEL]), 30, "the level's answer count too");
-  // The rule before (no lg on the replay): the saved copy's larger counts kept.
-  const old = C.replayAdopted(replay(A, GEN).P, twice, C.RV, false);
-  assert.strictEqual(total(old), 60, 'kept twice before');
   // The merge baseline after the adoption is the replay's record, its level's count included.
   const B = C.replayBase(rep.P, M, C.RV, twice);
   assert.strictEqual(n(B[C.LEVEL]), 30);
@@ -98,11 +71,11 @@ test('a whole record counted twice: the replay of the log wins, every unit and t
 
 test('small excesses on some units (one to three answers counted twice): corrected, the other units unchanged', () => {
   const A = Array.from({length: 40}, (_, i) => ans('e' + i, G[i % 8], i % 5 !== 0, CORAL + 72 * H + i * 30000)),
-    rep = replay(A, GEN, CORAL),
+    rep = replay(A, GEN),
     once = C.replayedOf(rep, {}, C.RV),
     plus = {Acropora: 1, Porites: 3, Fungia: 2},
     saved = inflate(once, (u, r) => (plus[u] ? [(r.ok || 0) + plus[u], r.ko || 0] : null)),
-    M = C.replayAdopted(rep.P, saved, C.RV, false);
+    M = C.replayAdopted(rep.P, saved, C.RV);
   assert.strictEqual(total(saved), 46);
   assert.deepStrictEqual(counts(M), counts(once));
   G.slice(0, 8)
@@ -110,36 +83,54 @@ test('small excesses on some units (one to three answers counted twice): correct
     .forEach(u => assert.deepStrictEqual(M[u], once[u], u + ': as replayed'));
 });
 
-test('fish only: a fish player trusted to the fish log gets the fish replay; one who played fish before its log keeps the extra', () => {
+test('fish only: the fish replay wins, the answers from before the fish log dropped, no floor', () => {
   const A = Array.from({length: 20}, (_, i) => ans('f' + i, FU[i % 5], i % 3 !== 2, FISH + 30 * H + i * 30000, FU)),
-    rep = replay(A, FGEN, FISH),
+    rep = replay(A, FGEN),
     once = C.replayedOf(rep, {}, C.rvOf('fish')),
     saved = inflate(once, (u, r) => (u === 'f:Damselfishes' || u === 'f:Wrasses' ? [(r.ok || 0) + 2, r.ko || 0] : null));
-  assert.strictEqual(rep.P[C.LEVEL].lg, 1);
-  assert.deepStrictEqual(counts(C.replayAdopted(rep.P, saved, C.rvOf('fish'), true)), counts(once));
+  assert.deepStrictEqual(counts(C.replayAdopted(rep.P, saved, C.rvOf('fish'))), counts(once));
   // Played before the fish log began (the first logged fish answer in the log's first minute, as on 2026-11-06): its 17
-  // answers from before are in no log, and the saved copy keeps them (four on each of four families, one on a fifth).
+  // answers from before are in no log, so they go (Q330: the log is the only reference), four on each of four families,
+  // one on a fifth.
   const B = Array.from({length: 20}, (_, i) => ans('p' + i, FU[i % 5], i % 3 !== 2, FISH + 30000 + i * 60000, FU)),
-    pre = replay(B, FGEN, FISH),
+    pre = replay(B, FGEN),
     early = C.replayedOf(pre, {}, C.rvOf('fish')),
     extra = {'f:Damselfishes': 4, 'f:Butterflyfishes': 4, 'f:Angelfishes': 4, 'f:Wrasses': 4, 'f:Groupers': 1},
-    kept = inflate(early, (u, r) => (extra[u] ? [(r.ok || 0) + extra[u], r.ko || 0] : null));
-  assert.strictEqual(pre.P[C.LEVEL].lg, undefined);
-  const M = C.replayAdopted(pre.P, kept, C.rvOf('fish'), true);
-  assert.strictEqual(total(M), 37, 'the 17 answers from before the log kept');
-  FU.forEach(u => assert.strictEqual(n(M[u]), n(kept[u]), u));
+    kept = inflate(early, (u, r) => (extra[u] ? [(r.ok || 0) + extra[u], r.ko || 0] : null)),
+    M = C.replayAdopted(pre.P, kept, C.rvOf('fish'));
+  assert.strictEqual(total(kept), 37);
+  assert.strictEqual(total(M), 20, 'the 17 answers from before the log dropped');
+  // No floor: a saved bar higher than the log's comes down (the unit's bar is the replay's).
+  const high = JSON.parse(JSON.stringify(early));
+  high['f:Damselfishes'].ds = 0.99;
+  assert.strictEqual(C.replayAdopted(pre.P, high, C.rvOf('fish'))['f:Damselfishes'].ds, early['f:Damselfishes'].ds);
+  assert.ok(!('floor' in (C.subjectOf('fish').replayed || {})), 'no subject is replayed with a floor');
 });
 
-test('progress from before the coral log: a player whose first logged answer came as the log began keeps the saved counts', () => {
+test('a unit the log has no answer on: its answers on the device go; a unit with none stays as it is', () => {
+  const A = Array.from({length: 6}, (_, i) => ans('u' + i, G[i % 2], 1, CORAL + 48 * H + i * 60000)),
+    rep = replay(A, GEN),
+    saved = {
+      ...C.replayedOf(rep, {}, C.RV),
+      Pavona: {ok: 3, ko: 1, h: '1101'}, // answers in no log
+      Galaxea: {ok: 0, ko: 0, h: ''} // a record with no answer
+    },
+    M = C.replayAdopted(rep.P, saved, C.RV);
+  assert.ok(!('Pavona' in M), 'answers in no log: dropped');
+  assert.deepStrictEqual(M.Galaxea, saved.Galaxea, 'no answer either: kept');
+  assert.strictEqual(total(M), 6);
+});
+
+test('progress from before the coral log: dropped as any answer the log does not have', () => {
   const A = Array.from({length: 12}, (_, i) => ans('c' + i, G[i % 4], 1, CORAL + 5 * 60000 + i * 60000)),
-    rep = replay(A, GEN, CORAL),
-    saved = inflate(C.replayedOf(rep, {}, C.RV), (u, r) => [(r.ok || 0) + 5, r.ko || 0]);
-  assert.strictEqual(rep.P[C.LEVEL].lg, undefined);
-  const M = C.replayAdopted(rep.P, saved, C.RV, false);
-  assert.deepStrictEqual(counts(M), counts(saved), 'a replay never loses the answers the log never had');
+    rep = replay(A, GEN),
+    saved = inflate(C.replayedOf(rep, {}, C.RV), (u, r) => (u === C.LEVEL ? null : [(r.ok || 0) + 5, r.ko || 0])),
+    M = C.replayAdopted(rep.P, saved, C.RV);
+  assert.strictEqual(total(saved), 32);
+  assert.strictEqual(total(M), 12);
 });
 
-test('property: trusted players end with the log, players from before the log with the larger of the two (400 cases)', () => {
+test('property: every adoption ends with the log, whatever the saved copy holds (400 cases)', () => {
   let seed = 0x5eed;
   const rnd = () => (seed = (Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) + 0x9e3779b9) >>> 0) / 2 ** 32,
     int = k => Math.floor(rnd() * k);
@@ -147,13 +138,11 @@ test('property: trusted players end with the log, players from before the log wi
     const fish = rnd() < 0.4,
       U = fish ? FU : G,
       gen = fish ? FGEN : GEN,
-      from = fish ? FISH : CORAL,
-      trusted = rnd() < 0.7,
-      t0 = from + (trusted ? H + int(200 * H) : int(H)),
+      t0 = (fish ? FISH : CORAL) + int(200 * H),
       A = Array.from({length: 3 + int(30)}, (_, i) => ans('q' + k + 'x' + i, U[int(U.length)], rnd() < 0.7, t0 + i * 45000, U)),
-      rep = replay(A, gen, from),
+      rep = replay(A, gen),
       once = C.replayedOf(rep, {}, 1),
-      // The saved copy: some units counted twice or more, some behind the log (a device that has not synced them yet).
+      // The saved copy: some units counted twice or more, some behind the log, some the log has no answer on.
       saved = inflate(once, (u, r) =>
         u === C.LEVEL
           ? [(r.ok || 0) + int(5), r.ko || 0]
@@ -163,25 +152,25 @@ test('property: trusted players end with the log, players from before the log wi
               ? [Math.max(0, (r.ok || 0) - 1), r.ko || 0]
               : null
       ),
-      M = C.replayAdopted(rep.P, saved, 1, !!fish);
-    assert.strictEqual(!!rep.P[C.LEVEL].lg, trusted, `case ${k}: the verdict`);
-    Object.keys(once).forEach(u => {
-      const want = trusted ? n(once[u]) : Math.max(n(once[u]), n(saved[u]));
-      assert.strictEqual(n(M[u]), want, `case ${k} ${trusted ? 'trusted' : 'before the log'}: ${u}`);
-    });
+      extra = U.filter(u => !once[u] && rnd() < 0.3);
+    extra.forEach(u => (saved[u] = {ok: 1 + int(3), ko: int(2), h: '1'}));
+    const M = C.replayAdopted(rep.P, saved, 1);
+    Object.keys(once).forEach(u => assert.strictEqual(n(M[u]), n(once[u]), `case ${k}: ${u}`));
+    extra.forEach(u => assert.ok(!(u in M), `case ${k}: ${u} in no log, dropped`));
+    assert.strictEqual(total(M), A.length, `case ${k}: every answer of the log once`);
     // Adopting the same replay again over the adopted record changes no count.
-    assert.deepStrictEqual(counts(C.replayAdopted(rep.P, M, 1, !!fish)), counts(M), `case ${k}: again`);
+    assert.deepStrictEqual(counts(C.replayAdopted(rep.P, M, 1)), counts(M), `case ${k}: again`);
   }
 });
 
-// End to end: the sheet's replay (Code.gs replay_ with the subject's logFrom) adopted by the app (sync.js replayAdoptS)
-// of a device whose saved copy holds a whole record twice under rules version 9: once the script replays rules version
-// 10, the device takes the log's counts, and its next save puts them on the sheet.
-test('a device holding its record twice under the rules before: the next sync takes the log, the save corrects the sheet', async () => {
+// End to end: the sheet's replay (Code.gs replay_) adopted by the app (sync.js replayAdoptS) of a device whose saved copy
+// holds a whole record twice under rules version 9: once the script replays rules version 10, the device's own progress
+// takes the log's counts on every unit, its unsent answer on top, its next save puts them on the sheet, and no card.
+test('a device holding its record twice under the rules before: the next sync takes the log, its unsent answer on top, no card', async () => {
   for (const v of [LIGHT - 1, LIGHT]) {
     const s = loadCodeGs(withData()),
       A = Array.from({length: 12}, (_, i) => ans('d' + v + 'x' + i, G[i % 4], i % 3 !== 2, CORAL + 48 * H + i * 60000)),
-      rep = replay(A, GEN, CORAL),
+      rep = replay(A, GEN),
       twice = inflate(C.replayedOf(rep, {}, C.RV - 1), (u, r) => [2 * (r.ok || 0), 2 * (r.ko || 0)]),
       data = {'reefid-sync-coral-progress': JSON.stringify(twice), 'reefid-sync-coral-rv': JSON.stringify(C.RV - 1)};
     s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: A});
@@ -191,11 +180,18 @@ test('a device holding its record twice under the rules before: the next sync ta
       P: JSON.parse(JSON.stringify(twice)),
       ls: {'reefid-sync-coral-progress': JSON.stringify(twice), 'reefid-sync-coral-rv': String(C.RV - 1)}
     });
+    let cards = 0;
+    D.ctx.rvNoticeAdd = (from, to) => (cards += C.rvMsgs(from, to).length);
     assert.strictEqual(total(D.ctx.P), 24);
+    // One answer played here, not sent yet: counted on top of the replay, never lost.
+    D.play('d' + v + 'new', 'Pavona', 1, new Date(CORAL + 49 * H).toISOString());
     await D.syncPush();
     await D.syncPull();
     const saved = JSON.parse(C.keysIn(s.get({name: 'Ana', pin: '1234'}).data)['reefid-sync-coral-progress']);
-    assert.deepStrictEqual([D.rvApplied(), total(D.ctx.P), n(D.ctx.P[C.LEVEL]), total(saved)], [C.RV, 12, 12, 12], `v${v}`);
+    assert.deepStrictEqual([D.rvApplied(), total(D.ctx.P), total(saved), D.ctx.SYNC.log.length], [C.RV, 13, 13, 0], `v${v}`);
+    G.slice(0, 4).forEach(u => assert.strictEqual(n(D.ctx.P[u]), n(rep.P[u]), `v${v} ${u}: the log's`));
+    assert.strictEqual(n(D.ctx.P.Pavona), 1, `v${v}: the unsent answer kept`);
+    assert.strictEqual(cards, 0, `v${v}: no card (Q330)`);
   }
 });
 
@@ -217,4 +213,12 @@ test('a replay of a rules version the app does not know yet: not adopted, the ve
   D.ctx.SYNC.dirty = false;
   await D.syncPull();
   assert.strictEqual(D.rvApplied(), 0, 'a newer version than this app knows: not taken');
+});
+
+test('no card for a recalculation any more (Q330): rules version 10 and fish rules version 2 have none, nor a jump to them', () => {
+  assert.strictEqual(C.RVS.find(x => x.v === 10).msg, null);
+  assert.strictEqual(C.rvsOf('fish').find(x => x.v === 2).msg, null);
+  assert.deepStrictEqual(C.rvMsgs(0, 10), [], "not even rules version 9's apology in the jump");
+  assert.deepStrictEqual(C.rvMsgs(9, 10), []);
+  assert.deepStrictEqual(C.rvMsgs(0, 2, false, 'fish'), []);
 });

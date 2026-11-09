@@ -95,7 +95,10 @@ const dataOf = (P, rv = {}) =>
 const allSaved = () => Object.fromEntries(BOARDED.map(S => [S.id, FIX[S.id].saved]));
 // A player saved with an app that asks for no replay (no rv): their answers logged, their copy as sent.
 function play(s, name, pin, rv, extra = {}) {
-  const answers = BOARDED.flatMap(S => FIX[S.id].answers(name.toLowerCase() + S.id));
+  // Answer ids from the name's letter codes: an id holding "__proto__" is refused when logged (Code.gs protoWord_), and
+  // the log is the only reference (rule D9), so such a player would have no answer at all.
+  const id = [...name.toLowerCase()].map(c => c.charCodeAt(0).toString(36)).join(''),
+    answers = BOARDED.flatMap(S => FIX[S.id].answers('p' + id + S.id));
   const summary = Object.assign({}, ...BOARDED.map(S => FIX[S.id].summary), extra);
   const r = s.post({name, pin, data: dataOf(allSaved(), rv), summary, answers});
   assert.ok(r.ok && !r.replay && !r.replays, JSON.stringify(r).slice(0, 200));
@@ -107,10 +110,9 @@ const keptOf = (s, sid, name) => {
   const o = JSON.parse(row.slice(5).join(''));
   return o && o.F ? o.P : o;
 };
-const flOf = S => !!(S.replayed && S.replayed.floor);
 // What the player's app will show once it adopts the kept replay: core.js replayAdopted over the saved copy.
 const shown = (s, S, name, top = C.rvOf(S.id)) => {
-  const M = C.replayAdopted(keptOf(s, S.id, name), FIX[S.id].saved, top, flOf(S)),
+  const M = C.replayAdopted(keptOf(s, S.id, name), FIX[S.id].saved, top),
     L = M['~level'];
   return [name, C.pctOf(M, FIX[S.id].units), L && (L.ok || 0) + (L.ko || 0) >= 200 ? L.th : null];
 };
@@ -177,24 +179,22 @@ test('a player behind the rules: every board shows the replayed progress and lev
   });
 });
 
-test('the fish board: the floor of the replay (Q310) and of the units kept from the saved copy, as the app adopts it', () => {
+test('the fish board: the replay of the log as the app adopts it, no floor (Q330): a saved bar above the log comes down', () => {
   const S = C.subjectOf('fish');
-  assert.ok(flOf(S), 'fish replayed with a floor');
   const f = withAll(),
     s = loadCodeGs({fetch: f.fetch});
   play(s, 'Ana', '1234', {});
   s.ctx.autoUpdate();
   const high = FIX.fish.saved,
-    raw = C.replayProgress(
+    rec = C.replayProgress(
       FIX.fish.answers('anafish').map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(JSON.parse(FJSON)), logFrom: C.logFromOf('fish')}
+      {gen: C.fishReplayGen(JSON.parse(FJSON))}
     ).ana.P,
-    rec = C.replayFloor(raw, high),
-    M = C.replayAdopted(rec, high, C.rvOf('fish'), true);
-  assert.deepStrictEqual(keptOf(s, 'fish', 'Ana'), rec, "the sheet's floored replay");
+    M = C.replayAdopted(rec, high, C.rvOf('fish'));
+  assert.deepStrictEqual(keptOf(s, 'fish', 'Ana'), rec, "the sheet's replay, not floored");
   assert.deepStrictEqual(board(s, S), [['Ana', C.pctOf(M, FUNITS), null]]);
-  // Each unit at least its saved bar (nobody goes back), the Angelfishes the log has nothing on as saved.
-  FUNITS.filter(u => high[u]).forEach(u => assert.ok(C.scoreOf(M[u], M, u) >= C.scoreOf(high[u], high, u) - 1e-9, u));
+  // A unit the log has no answer on, with answers saved (the Angelfishes): its answers go (rule D9).
+  FUNITS.filter(u => high[u] && !rec[u] && (high[u].ok || high[u].ko)).forEach(u => assert.ok(!M[u], u));
 });
 
 test('the opt-out, an admin hide and an archive hold on every board; such a player gets no replay made', () => {

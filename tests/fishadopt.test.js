@@ -1,6 +1,6 @@
 // The fish progress replayed by the sheet, adopted by the app (ROADMAP "Fish progress replayed from the answer log";
-// Pierre, 2026-11-08, Q298, Q310): sync.js replayAdoptS for another subject than the corals, with today's bars as a floor
-// (core.js replayFloor), under its own rules versions (core.js FISH_RVS), only from the script that replays it under this
+// Pierre, 2026-11-08, Q298): sync.js replayAdoptS for another subject than the corals, the log the only reference (no floor
+// since fish rules version 2: Pierre, 2026-11-09, Q330), under its own rules versions (core.js FISH_RVS), only from the script that replays it under this
 // app's rules (core.js REPLAYS_SHEET; rule D4).
 // The app's own sync.js run in Node on stubs, against the sync script on an in-memory sheet (tests/gas.js); nothing
 // leaves this process (rule D1). The harness is tests/adopt.test.js's, with a subject switch (inSubject) that really
@@ -189,7 +189,7 @@ const atv = (s, v = C.REPLAYS_SHEET) => ({get: q => ({...s.get(q), v}), post: b 
   FRV = C.rvOf('fish');
 const seed = (s, data) => s.post({name: 'Ana', pin: '1234', data: {'reefid-sync-coral-progress': '{}', ...data}, summary: {}, answers: F});
 
-test("the fish replay adopted from the script that replays it: today's bars a floor, the rest replayed, its own rules version", async () => {
+test('the fish replay adopted from the script that replays it: the log alone, no floor, its own rules version, no card', async () => {
   const s = loadCodeGs(withFiles()),
     data = {'reefid-sync-fish-progress': JSON.stringify(today)};
   seed(s, data);
@@ -211,33 +211,67 @@ test("the fish replay adopted from the script that replays it: today's bars a fl
   assert.strictEqual(a.rvApplied(FS), FRV, 'its own rules version');
   assert.strictEqual(a.rvApplied(), C.RV, "the corals' untouched");
   assert.ok(!a.sent.some(b => (b.rv !== undefined && Number(b.rv) < C.RV) || b.rv === '0'), 'no coral replay asked for');
-  // The floor, by the sheet against the saved copy (Code.gs replay_): the damselfishes' bar stays (the replayed one is
-  // lower), on the replay's record, its answers the log's (9), under the rules version.
+  // No floor (Q330): the damselfishes' bar is the replay's, lower than the saved one, its answers the log's (9), under
+  // the rules version.
   assert.ok(bar(want, 'f:Damselfishes') < bar(today, 'f:Damselfishes'));
-  assert.ok(bar(P, 'f:Damselfishes') >= bar(today, 'f:Damselfishes') - 1e-9);
+  assert.ok(Math.abs(bar(P, 'f:Damselfishes') - bar(want, 'f:Damselfishes')) < 1e-9);
   assert.deepStrictEqual([P['f:Damselfishes'].ok, P['f:Damselfishes'].ko, P['f:Damselfishes'].rv], [6, 3, FRV]);
   // The butterflyfishes (a false alarm, never held here): the replay's, under its rules version.
   assert.strictEqual(P['f:Butterflyfishes'].rv, FRV);
   assert.deepStrictEqual(P['f:Butterflyfishes'].dp, want['f:Butterflyfishes'].dp);
-  // No logged answer: kept as it was.
-  assert.deepStrictEqual(P['f:Angelfishes'], today['f:Angelfishes']);
-  // No bar went down.
-  Object.keys(today).forEach(n => n !== '~level' && assert.ok(bar(P, n) >= bar(today, n) - 1e-9, n));
-  // The adopted version goes with the next save; the merge baseline is the replay's, the floored unit's too.
+  // No logged answer: its saved answers go (rule D9).
+  assert.ok(!P['f:Angelfishes']);
+  // The adopted version goes with the next save; the merge baseline is the replay's.
   const last = [...a.sent].reverse().find(b => b.data);
   assert.strictEqual(JSON.parse(last.data['reefid-sync-fish-rv']), FRV);
   assert.deepStrictEqual(a.base()['f:Damselfishes'].ds, P['f:Damselfishes'].ds);
   assert.strictEqual(a.base()['f:Butterflyfishes'].rv, FRV);
-  // Its card: the fish rules versions from none, told as the fish subject's (progress.js rvNoticeAdd sid).
+  // Told as the fish subject's (progress.js rvNoticeAdd sid), with no card due (Q330: no card for a recalculation).
   assert.deepStrictEqual(
     a.cards.map(c => c.slice(0, 3)),
     [['fish', 0, FRV]]
   );
+  assert.deepStrictEqual(C.rvMsgs(0, FRV, false, 'fish'), []);
   // Adopted once: the next sync asks with the version applied and gets nothing more.
   const n = a.cards.length;
   await a.syncPush();
   assert.strictEqual(a.cards.length, n);
   assert.ok(!a.sent.slice(-2).some(b => b.rvs && b.rvs.fish < FRV));
+});
+
+// Rule D9 (Pierre, 2026-11-09, Q322, Q330): a device holding its fish record twice under fish rules version 1 takes the
+// log's counts on every unit at its next sync, and its save puts them on the sheet.
+test('a device holding its fish record twice: every unit takes the log, on the device and on the sheet', async () => {
+  const s = loadCodeGs(withFiles()),
+    want = C.replayedOf(
+      {
+        P: C.replayProgress(
+          F.map(x => C.logRow(x, 'ana')),
+          {gen: FGEN}
+        ).ana.P
+      },
+      {},
+      FRV - 1
+    ),
+    twice = Object.fromEntries(Object.entries(want).map(([u, r]) => [u, {...r, ok: 2 * (r.ok || 0), ko: 2 * (r.ko || 0)}])),
+    n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0),
+    data = {'reefid-sync-fish-progress': JSON.stringify(twice), 'reefid-sync-fish-rv': JSON.stringify(FRV - 1)};
+  seed(s, data);
+  const a = app({
+    sheet: atv(s, SV),
+    ls: {...data, 'reefid-sync-coral-rv': String(C.RV)},
+    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(twice)), srv: 1}
+  });
+  a.store.set('reefid-sheet-v', SV);
+  await a.syncPush();
+  await a.syncPull();
+  const P = a.fish(),
+    saved = JSON.parse(C.keysIn(s.get({name: 'Ana', pin: '1234'}).data)['reefid-sync-fish-progress']);
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  Object.keys(want).forEach(u => {
+    assert.strictEqual(n(P[u]), n(want[u]), u + ': the log on the device');
+    assert.strictEqual(n(saved[u]), n(want[u]), u + ': the log on the sheet');
+  });
 });
 
 test('an older script (before REPLAYS_SHEET): no fish replay asked for or adopted, the fish progress as before', async () => {
@@ -413,7 +447,7 @@ test('fish: a save whose reply never came, then another device saved over it: it
 // Codex review #779: the floor is the sheet's, so every device of the account adopts the same record. A second device
 // that never adopted it, its progress as the account's before the replay, keeps its bars when it pulls the first one's
 // save (it was taken to the other device's lower record and its rules version, and floored no more).
-test("a second device pulls the first one's adopted fish replay: its bars stay, nothing counted twice", async () => {
+test("a second device pulls the first one's adopted fish replay: the same record, nothing counted twice", async () => {
   const s = loadCodeGs(withFiles());
   seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
   const dev = () =>
@@ -428,7 +462,6 @@ test("a second device pulls the first one's adopted fish replay: its bars stay, 
   await A.syncPush();
   B.store.set('reefid-sheet-v', C.REPLAYS_SHEET);
   await B.syncPull();
-  Object.keys(today).forEach(u => u !== '~level' && assert.ok(bar(B.fish(), u) >= bar(today, u) - 1e-9, u));
   assert.deepStrictEqual(B.fish()['f:Damselfishes'], A.fish()['f:Damselfishes'], 'the same record on both');
   assert.strictEqual(n(B.fish(), 'f:Damselfishes'), 9);
   // B answers nothing more, A saves again, B pulls: still 9 (the shared baseline is the replay).
@@ -437,10 +470,10 @@ test("a second device pulls the first one's adopted fish replay: its bars stay, 
   assert.strictEqual(n(B.fish(), 'f:Damselfishes'), 9);
 });
 
-// Codex review #779: a refused save's answers, all logged, recovered by the replay while the floor keeps a higher bar:
-// the shared baseline must be the replay's record (its 9 answers), or another device's save of the same replay adds them
-// again (a baseline of 6, 9 here: 12).
-test('a refused save recovered by the floored replay: the baseline takes the replay, nothing counted twice', async () => {
+// Codex review #779: a refused save's answers, all logged, recovered by the replay: the shared baseline must be the
+// replay's record (its 9 answers), or another device's save of the same replay adds them again (a baseline of 6, 9
+// here: 12). A higher saved bar is not kept (no floor, Q330).
+test('a refused save recovered by the replay: the baseline takes the replay, nothing counted twice', async () => {
   const s = loadCodeGs(withFiles()),
     six = C.replayedOf(
       {
@@ -475,7 +508,7 @@ test('a refused save recovered by the floored replay: the baseline takes the rep
   assert.strictEqual(a.rvApplied(FS), FRV, 'recovered by the replay');
   assert.strictEqual(n(a.fish()), 9);
   assert.strictEqual(n(a.base()), 9, 'the baseline counts the logged answers (was 6)');
-  assert.ok(bar(a.fish(), 'f:Damselfishes') >= bar(savedHigh, 'f:Damselfishes') - 1e-9, 'the floor held');
+  assert.ok(bar(a.fish(), 'f:Damselfishes') < bar(savedHigh, 'f:Damselfishes'), "the replay's bar: no floor");
   // Another device saves the same replay; this one pulls: 9, not 12.
   s.post({
     name: 'Ana',
@@ -526,12 +559,9 @@ test('a saved copy without the fish rules version: the fish replay asked for aga
   assert.strictEqual(a.ctx.SYNC.dirty, true, 'a save scheduled: it brings the replay again');
 });
 
-// The answers of a player who played fish before its log began (their first logged answer within core.js PRELOG.MS of
-// the fish log's start, logTrusted): the saved copy's larger counts are kept (Q322 keeps that case).
-const early = (a, i) => ({...a, t: new Date(C.logFromOf('fish') + 60000 + 1000 * i).toISOString()});
-// Codex review #779: the sheet's floor may raise the level's typed opportunities; this device's larger answer count (30
-// saved, 20 logged: answers from before fish logging) keeps its own level in replayedOf, which undid the floor (73% to 0%).
-test("a device with more answers than the log keeps the floor's typed opportunities at adoption", async () => {
+// Rule D9 (Pierre, 2026-11-09, Q322, Q330): a fish player's saved answers from before the fish log (30 saved, 20 logged) are
+// in no log: the adoption takes the log's counts, its level's too, with no floor.
+test("a device with more answers than the log (played before the fish log): the log's counts and level, no floor (Q330)", async () => {
   const s = loadCodeGs(withFiles()),
     dp = C.domFromCounts({ok: 6, ko: 0, h: '111111'}, 0.5, 4, 0).dp,
     high = {
@@ -552,7 +582,7 @@ test("a device with more answers than the log keeps the floor's typed opportunit
     pin: '1234',
     data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-fish-progress': JSON.stringify(high)},
     summary: {},
-    answers: [...typed, ...other].map(early)
+    answers: [...typed, ...other]
   });
   const a = app({
     sheet: atv(s),
@@ -561,13 +591,12 @@ test("a device with more answers than the log keeps the floor's typed opportunit
   });
   await a.syncPush();
   assert.strictEqual(a.rvApplied(FS), FRV);
-  const P = a.fish();
-  assert.ok(P['~level'].ok >= 30, "this device's larger count kept");
-  assert.ok(
-    bar(P, 'f:Damselfishes') >= bar(high, 'f:Damselfishes') - 1e-9,
-    `${bar(P, 'f:Damselfishes')} vs ${bar(high, 'f:Damselfishes')}`
-  );
-  assert.deepStrictEqual(a.base()['~level'].tyk, P['~level'].tyk, 'the same in the shared baseline');
+  const P = a.fish(),
+    n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0);
+  assert.strictEqual(n(P['~level']), 20, "the log's 20 answers, not the 30 saved");
+  assert.strictEqual(n(P['f:Damselfishes']), 10, "the log's 10 typed answers");
+  assert.ok(!P['f:Wrasses'], 'a unit the log has no answer on: its saved answers go');
+  assert.deepStrictEqual(a.base()['~level'].ok, P['~level'].ok, 'the same in the shared baseline');
 });
 
 // Codex review #779: this device's unsent typed answer goes on top of the replay in its own progress, never into the
@@ -582,43 +611,6 @@ test("an unsent typed answer at adoption: its typed opportunity in this device's
   assert.strictEqual(a.replaysAdopt(j, [mine], undefined), true);
   assert.ok(((a.fish()['~level'] || {}).tyk || {}).f >= 1, "in this device's progress");
   assert.ok(!((a.base()['~level'] || {}).tyk || {}).f, 'not in the shared baseline');
-});
-
-// Codex review #779: a unit with more answers here than in the log (from before fish logging) keeps this device's record
-// (replayedOf), beside replayed records whose offers and mix-ups on it read it lower: its bar of before is floored too.
-test('a unit kept from this device for its larger count keeps its bar beside the replayed mix-ups on it', async () => {
-  const s = loadCodeGs(withFiles()),
-    dp = C.domFromCounts({ok: 10, ko: 0, h: '1111111111'}, 0.5, 4, 0).dp,
-    mine = {'f:Damselfishes': {ok: 10, ko: 0, h: '1111111111', u: 10, dp, ds: 0.8}, '~level': {ok: 10, ko: 0, th: 1}},
-    own = Array.from({length: 5}, (_, i) => ({...fa('d' + i, i), a: 'f:Damselfishes', ok: 1})),
-    wr = Array.from({length: 10}, (_, i) => ({
-      ...fa('w' + i, 10 + i),
-      g: 'f:Wrasses',
-      a: i === 0 ? 'f:Damselfishes' : 'f:Wrasses',
-      ok: i === 0 ? 0 : 1,
-      ch: 'f:Wrasses f:Damselfishes f:Angelfishes f:Butterflyfishes'
-    }));
-  s.post({
-    name: 'Ana',
-    pin: '1234',
-    data: {'reefid-sync-coral-progress': '{}', 'reefid-sync-fish-progress': JSON.stringify(mine)},
-    summary: {},
-    answers: [...own, ...wr].map(early)
-  });
-  const a = app({
-    sheet: atv(s),
-    ls: {'reefid-sync-fish-progress': JSON.stringify(mine), 'reefid-sync-coral-rv': String(C.RV)},
-    SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(mine)), srv: 1}
-  });
-  await a.syncPush();
-  assert.strictEqual(a.rvApplied(FS), FRV);
-  const P = a.fish();
-  assert.strictEqual(P['f:Damselfishes'].ok, 10, "this device's record, its larger count");
-  assert.ok(C.faOf(P, 'f:Damselfishes') > 0, 'the replayed mix-ups on it');
-  assert.ok(
-    bar(P, 'f:Damselfishes') >= bar(mine, 'f:Damselfishes') - 1e-9,
-    `${bar(P, 'f:Damselfishes')} vs ${bar(mine, 'f:Damselfishes')}`
-  );
 });
 
 // Production, 2026-11-09: no fish player was ever replayed. Their apps asked at every sync, but the sheet's "Replayed Fish"
@@ -655,12 +647,13 @@ test("today's script with an empty Replayed Fish tab: a fish-only player's repla
     assert.strictEqual(a.rvApplied(FS), FRV, nm + ': adopted');
     const P = a.fish();
     assert.deepStrictEqual([P['f:Damselfishes'].ok, P['f:Damselfishes'].ko, P['f:Damselfishes'].rv], [6, 3, FRV]);
-    assert.ok(bar(P, 'f:Damselfishes') >= bar(today, 'f:Damselfishes') - 1e-9, nm + ': the floor');
+    assert.ok(bar(P, 'f:Damselfishes') < bar(today, 'f:Damselfishes'), nm + ": the replay's bar, no floor (Q330)");
     assert.deepStrictEqual(
       a.cards.map(c => c.slice(0, 3)),
       [['fish', 0, FRV]],
-      nm + ': its card once'
+      nm + ': told once, no card due'
     );
+    assert.deepStrictEqual(C.rvMsgs(0, FRV, false, 'fish'), []);
     await a.syncPush();
     assert.strictEqual(a.cards.length, 1, nm + ': once');
     assert.strictEqual(JSON.parse(s.get({name: nm, pin: '1234'}).data['reefid-sync-fish-rv']), FRV, nm + ': saved');

@@ -232,7 +232,8 @@ async function overlays(b, base) {
       // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), the
       // apology of rules version 9 (core.js RV_SORRY), and the learned mark taken away (progress.js mxLostNotice), through
       // their real callers.
-      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      // (rules version 8's standard card: from rules version 10 a recalculation has no card, Q330)
+      ['update', () => (store.set('reefid-rv-msg', {due: [8], told: [], pct: {8: [50, 42]}}), rvNotice())],
       [
         'apology',
         () => (

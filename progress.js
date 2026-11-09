@@ -1224,8 +1224,8 @@ function recalcNotice() {
     onClose: how => how === 'route' && noticeAgain(recalcNotice, 300)
   });
 }
-// A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
-// early beta): told once on this device by an announcement card, like recalcNotice (rule D6: never held, no
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): silent for now (Pierre, 2026-11-09 ~15:40
+// Manila, Q332: mxRecalc no longer calls mxLost); when it told it: once on this device by an announcement card, like recalcNotice (rule D6: never held, no
 // visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
 // answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
 // (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or

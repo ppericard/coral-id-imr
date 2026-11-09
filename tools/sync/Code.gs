@@ -576,17 +576,11 @@ const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), St
 // sid: the subject replayed, the corals by default (replays_ for the others: their own rows, units and tab, and no
 // photo memory offsets, pooled confusions, format or genus offsets, which stats_ computes for the corals only: an answer
 // logged with its scoring record, as every fish answer is, replays as the game scored it).
-// saved: that subject's progress as the player's saved copy holds it (replays_), the floor's reference at its first replay.
-// A subject replayed with a floor (core.js SUBJECTS replayed floor: fish; Pierre, 2026-11-08, Q310, "today's bar as a
-// floor, nobody goes back"; the integrator, 2026-11-08: per unit, once) is floored here, on the sheet, so every device of
-// the account adopts the same record and keeps it as their shared baseline (sync.js replayAdoptS, core.js replayBase;
-// Codex review #779): core.js replayFloor of the replay against the floor's reference, the saved copy's units that no
-// replay gave yet (no rv), frozen with the record at the subject's first replay under a rules version (the record is
-// kept as {P: record, F: reference}), so a later replay of the same version (more answers, a reset of the version
-// applied) floors against the same bars; under a later rules version, none (once).
-function replay_(key, since, appRv, pt, start, sid, saved){
+// vNEXT: no floor any more (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down); until then the
+// fish replay was floored here against the account's saved bars at its first replay (kept as {P: record, F: reference},
+// which rplRec_ still reads).
+function replay_(key, since, appRv, pt, start, sid){
   const main = !sid || sid === CORE_.replaySubject(), top = rplTop_(sid);  // its own rules versions (core.js rvOf)
-  const fl = rplFloor_(sid);
   if (typeof appRv !== 'number' || !isFinite(appRv) || appRv >= top) return null;
   const who = lc_(key), mine = rplMine_(key, since, sid);
   const n = mine.length;
@@ -597,24 +591,21 @@ function replay_(key, since, appRv, pt, start, sid, saved){
   // made with another history is not reused; Codex review #428). Without a history: the reset time alone, as before.
   const fp = CORE_.startFp(start), sinceKey = rplSince_(since, start);
   const sh = sheet_(main ? RPL.TAB : rplTab_(sid), RPL.HEAD), at = find_(sh, key);
-  let prev = null;  // the record kept, for the floor's reference
   if (at) {
-    const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0];
-    prev = rplRead_(row);
+    const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0], prev = rplRead_(row);
     // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__": lc_ keeps
     // no other): core.js replayProgress before v117 read that member as their record and replayed none of their answers
     // (Codex review #812), so a record kept for them may be wrong; made again instead, the same for every other player.
-    if (prev && !(who in Object.prototype) && rplFresh_(row, top, n, sinceKey)) return {rv: top, n: n, rec: rplRec_(prev.o, fl), ids: ids, fp: fp};
+    if (prev && !(who in Object.prototype) && rplFresh_(row, top, n, sinceKey)) return {rv: top, n: n, rec: rplRec_(prev.o), ids: ids, fp: fp};
   }
-  const made = rplMake_(who, mine, since, start, sid, saved, prev, top);
+  const made = rplMake_(who, mine, since, start, sid);
   if (!made) return null;
-  rplPut_(sh, at, key, top, n, fp ? sinceKey : since, made.rec, made.F);
+  rplPut_(sh, at, key, top, n, fp ? sinceKey : since, made.rec);
   return {rv: top, n: n, rec: made.rec, ids: ids, fp: fp};  // fp: the first-launch history it applied (the app checks it)
 }
 // The pieces of replay_, shared with the leaderboard (board_, boardWarm_; v118). A subject's last rules version (core.js
-// rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs) and whether it is replayed with a floor.
+// rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs).
 const rplTop_ = sid => CORE_.rvOf(!sid ? CORE_.replaySubject() : sid);
-const rplFloor_ = sid => !!sid && sid !== CORE_.replaySubject() && !!(CORE_.subjectOf(sid).replayed || {}).floor;
 // The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one.
 const rplSince_ = (since, start) => (fp => (fp ? since + '#' + fp : String(since)))(CORE_.startFp(start));
 // The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
@@ -622,38 +613,26 @@ function rplMine_(key, since, sid){
   const main = !sid || sid === CORE_.replaySubject(), who = lc_(key);
   return (main ? answerRows_() : subjRows_(sid)).filter(r => lc_(r[0]) === who && (new Date(r[1]).getTime() || 0) > since);
 }
-// A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for a floored one); null when broken.
+// A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for one floored before vNEXT); null when broken.
 function rplRead_(row){
   try { return {rv: Number(row[1]), since: String(row[3]).split('#')[0], o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) { return null; }
 }
 // Reused while the rules, the row count and the reset are the same.
 const rplFresh_ = (row, top, n, sinceKey) => Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey;
-// The replayed record of a record kept (a floored one keeps {P: record, F: reference}).
-const rplRec_ = (o, fl) => (fl && o && o.F ? o.P || {} : o);
-// The replay itself (core.js replayProgress) over the player's rows (mine), floored for a subject replayed with a floor;
-// prev: the record kept (rplRead_), the floor's reference. {rec, F}, null without the units (gen_, subjGen_: fetched
-// when not cached, so never under the script lock for the leaderboard).
-function rplMake_(who, mine, since, start, sid, saved, prev, top){
-  const main = !sid || sid === CORE_.replaySubject(), fl = rplFloor_(sid), rows = mine.map(r => rowOf_(who, r));
+// The replayed record of a record kept (one floored before vNEXT kept {P: record, F: reference}).
+const rplRec_ = o => (o && o.P && o.F ? o.P : o);
+// The replay itself (core.js replayProgress) over the player's rows (mine). {rec}, null without the units (gen_,
+// subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
+function rplMake_(who, mine, since, start, sid){
+  const main = !sid || sid === CORE_.replaySubject(), rows = mine.map(r => rowOf_(who, r));
   const gen = main ? gen_() : subjGen_(sid);
   if (!gen) return null;
-  // logFrom (vNEXT; Pierre, 2026-11-09, Q322: trust the log rather than the device): a player whose answers are all in
-  // the log gets the replay's counts, also when the saved copy holds more (core.js logTrusted, replayedOf).
-  const st = main ? stats_() : {}, rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}, logFrom: CORE_.logFromOf(main ? CORE_.replaySubject() : sid)})[who];
-  let rec = rep ? rep.P : {};
-  // The floor's reference: the one kept with this version's record, none after an earlier version's (once), else the
-  // saved copy's units no replay gave yet. A record kept from before a progress reset (another Since) keeps nothing: the
-  // reset clears the progress, its floor with it (Codex review #779), and the floor is the saved copy's again. vNEXT:
-  // a later version that leaves the bars as they were (core.js floorKept: each version since says floor 'kept', as the
-  // fish rules version 2, trust the log, Q322) keeps the reference kept, so it takes no bar down.
-  const same = prev && prev.o && prev.o.F && prev.since === String(since);
-  const F = !fl ? null : same ? (prev.rv === top || CORE_.floorKept(sid, prev.rv, top) ? prev.o.F : {}) : floorRef_(sid, saved);
-  if (F && Object.keys(F).length) rec = CORE_.replayFloor(rec, F);
-  return {rec: rec, F: F};
+  const st = main ? stats_() : {}, rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}})[who];
+  return {rec: rep ? rep.P : {}};
 }
 // Writes the record at row at (0: a new row) of tab sh, in CHUNK-character parts.
-function rplPut_(sh, at, key, top, n, sinceCell, rec, F){
-  const json = JSON.stringify(F ? {P: rec, F: F} : rec), parts = [];
+function rplPut_(sh, at, key, top, n, sinceCell, rec){
+  const json = JSON.stringify(rec), parts = [];
   for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
   const r = at || sh.getLastRow() + 1, old = at ? sh.getLastColumn() : 0, out = [safe_(key), top, n, sinceCell, new Date()].concat(parts);
   while (out.length < old) out.push('');  // chunks left over from a longer record
@@ -677,23 +656,12 @@ function replays_(key, data, rvs, pt, alt, held){
         const o = alt ? (x => (x && typeof x === 'object' ? x[id] : undefined)) : null,
           since = alt ? resetAt_(o(alt.reset)) : resetOf_(data, id),
           st = alt ? o(alt.start) : startOf_(data, id),
-          saved = alt ? null : (x => { try { return JSON.parse(x || 'null'); } catch (e) { return null; } })(subjData_(data, CORE_.subjKey(id, 'progress'))),
-          rp = replay_(key, since, rvs[id], typeof pt === 'number' ? pt : NaN, st && typeof st === 'object' ? st : null, id, saved);
+          rp = replay_(key, since, rvs[id], typeof pt === 'number' ? pt : NaN, st && typeof st === 'object' ? st : null, id);
         if (rp) out[id] = rp;
       } catch (err) {}
     });
   } finally { if (lock) lock.releaseLock(); }
   return Object.keys(out).length ? out : null;
-}
-// The floor's reference of a subject's first replay (replay_): the units of its saved progress (the player's data, old
-// unit ids renamed: core.js renameUnits) that came from no replay yet (no rv), as saved, with its global level as
-// context only (its typed opportunities count in a unit's false-alarm rate, core.js faOf: the saved bars are read with
-// them; Codex review #779; replayFloor never floors the level); {} when no unit.
-function floorRef_(sid, saved){
-  const P = CORE_.renameUnits(CORE_.subjectOf(sid), saved && typeof saved === 'object' ? saved : {}), out = {}, L = CORE_.LEVEL;
-  Object.keys(P || {}).forEach(g => { if (g !== L && P[g] && typeof P[g] === 'object' && !P[g].rv) out[g] = P[g]; });
-  if (Object.keys(out).length && P[L] && typeof P[L] === 'object') out[L] = P[L];
-  return out;
 }
 // The tab keeping another subject's replay records: "Replayed Fish", as RPL.TAB keeps the corals'.
 const rplTab_ = sid => RPL.TAB + ' ' + CORE_.subjectOf(sid).name;
@@ -1396,15 +1364,14 @@ function datas_(ra){
 // - need(name, data): null when the saved data applied the subject's last rules version (its rv key, core.js subjKey
 //   'rv', as sync.js rvKey saves it), else the replay that player calls for: its reset and first-launch answer (as the
 //   player's own sync asks for it: load_, replays_), rows since the reset, the record kept (rec: null unless it is today's
-//   rules, row count and reset: rplFresh_), the kept row (row, at) and the saved progress (saved, the floor's reference);
+//   rules, row count and reset: rplFresh_) and the kept row (row, at);
 // - adopted(name, data, P): the progress P (the saved copy's) as the player's app will hold it once it adopts that
-//   replay (core.js replayAdopted, the floor of SUBJECTS replayed floor), P itself when none is needed or kept.
+//   replay (core.js replayAdopted), P itself when none is needed or kept.
 function boardRpl_(S){
   const sid = S.id, top = CORE_.rvsOf(sid).length ? rplTop_(sid) : 0, main = sid === CORE_.replaySubject(), arg = main ? undefined : sid,
-    fl = rplFloor_(sid), tab = main ? RPL.TAB : rplTab_(sid);
+    tab = main ? RPL.TAB : rplTab_(sid);
   let mine = null, kept = null;
   const rvOf = d => { try { const v = Number(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'rv')) || '0')); return isFinite(v) ? v : 0; } catch (e) { return 0; } };
-  const savedOf = d => { try { const o = JSON.parse(subjData_(d, CORE_.subjKey(sid, 'progress')) || 'null'); return o && typeof o === 'object' ? o : null; } catch (e) { return null; } };
   const need = (name, d) => {
     if (!top || !d || rvOf(d) >= top) return null;
     if (!mine) { mine = Object.create(null); (main ? answerRows_() : subjRows_(sid)).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
@@ -1417,13 +1384,13 @@ function boardRpl_(S){
       rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
     return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) ? sinceKey : since, rows: rows, n: rows.length,
-      row: c ? c.r : null, prev: prev, saved: savedOf(d), rec: prev && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o, fl) : null};
+      row: c ? c.r : null, rec: prev && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o) : null};
   };
   const adopted = (name, d, P) => {
     const x = need(name, d);
-    return x && x.rec && typeof x.rec === 'object' ? CORE_.replayAdopted(x.rec, CORE_.renameUnits(S, P), top, fl) : P;
+    return x && x.rec && typeof x.rec === 'object' ? CORE_.replayAdopted(x.rec, CORE_.renameUnits(S, P), top) : P;
   };
-  return {sid: sid, top: top, arg: arg, fl: fl, tab: tab, need: need, adopted: adopted};
+  return {sid: sid, top: top, arg: arg, tab: tab, need: need, adopted: adopted};
 }
 // The leaderboard's replays made ahead (v118, rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
 // public board_ only reads them: for every subject with a leaderboard and rules versions, each player it lists whose
@@ -1455,7 +1422,7 @@ function boardWarm_(){
       try {
         const x = X.need(name, d);
         if (!x || x.rec) return;
-        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.arg, x.saved, x.prev, X.top);
+        const mk = rplMake_(lc_(name), x.rows, x.since, x.start, X.arg);
         if (mk) pend.push({S: S, X: X, name: name, hash: r[6], json: json, x: x, mk: mk});
       } catch (e) {}
     });
@@ -1478,7 +1445,7 @@ function boardWarm_(){
       const sh = sheet_(p.X.tab, RPL.HEAD), at = find_(sh, p.name),
         row = at ? sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0] : null;
       if (id(row) !== id(p.x.row)) return;
-      rplPut_(sh, at, p.name, p.X.top, p.x.n, p.x.cell, p.mk.rec, p.mk.F);
+      rplPut_(sh, at, p.name, p.X.top, p.x.n, p.x.cell, p.mk.rec);
       done.add(p.S);
       made++;
     } catch (e) {} });
@@ -2081,7 +2048,7 @@ function replayedAll_(users, dcol){
     }
     if (!rec) {
       // v119: the player's own entry only (a player named constructor never takes the map's inherited member).
-      const R = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}, logFrom: CORE_.logFromOf(CORE_.replaySubject())}),
+      const R = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}}),
         rep = Object.prototype.hasOwnProperty.call(R, k) ? R[k] : null;
       rec = rep ? rep.P : {};
       const json = JSON.stringify(rec), parts = [];
@@ -2779,9 +2746,6 @@ const CORE_ = (function () { const module = {exports: {}};
       optin: ['bon'],
       rank: 'genus',
       replay: true,
-      // The time of the first answer the sheet logged of this subject (the Answers tab, 2026-11-01 17:47 Manila): the
-      // answers a device played before it never reached the log (core.js logTrusted; Pierre, 2026-11-09, Q322).
-      logFrom: Date.UTC(2026, 10, 1, 9, 47),
       pool: {files: ['data.json', 'curation.json'], of: 'slots'},
       tiers: true,
       ach: true,
@@ -2871,12 +2835,8 @@ const CORE_ = (function () { const module = {exports: {}};
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
-      // floor: the saved bars before its first replay are kept as a floor, by the sheet (Code.gs replay_, replayFloor;
-      // Pierre, 2026-11-08, Q310: "nobody goes back").
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, floor: true},
-      // Its answers logged from sheet v60 (2026-11-06 13:07 Manila, the first fish answer in the Answers tab): the ones a
-      // device played before never reached the log (core.js logTrusted; Pierre, 2026-11-09, Q322).
-      logFrom: Date.UTC(2026, 10, 6, 5, 7),
+      // No floor: the log is the only reference, a fish bar may go down (Pierre, 2026-11-09, Q330).
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -4115,9 +4075,9 @@ const CORE_ = (function () { const module = {exports: {}};
   // with today's rules (tools/memreplay.js) those genera stand at 78-83%, under the exam's entry. Their learned mark
   // (and any exam in course) is dropped at every call (load, pull, answer: a copy from another device that still has it
   // loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam passed since
-  // (s.pg kept beside s.mx) is left alone. Not silent (Pierre, 2026-11-03: players know they test an early beta): the
-  // app sees the mark go (model.js mxRecalc), tells the player once with a card (progress.js mxLostNotice) and takes back the
-  // learned-based achievements the progress no longer meets (achRevoke, progress.js achRecheck).
+  // (s.pg kept beside s.mx) is left alone. Silent (Pierre, 2026-11-09 ~15:40 Manila, Q332): the app sees the mark go
+  // (model.js mxRecalc) and tells nothing; until then a card told it once (progress.js mxLostNotice) and the
+  // learned-based achievements the progress no longer met were taken back (achRevoke, progress.js achRecheck).
   // Since the sheet's full replay (replayProgress, RVS; 2026-11-03) this is only the fallback for a device that never
   // reaches the sheet: a record adopted from the replay carries pm 1, so it is never corrected here.
   function memRecalc(s, mem) {
@@ -6356,8 +6316,9 @@ const CORE_ = (function () { const module = {exports: {}};
     {
       v: 10,
       at: '2026-11-09',
-      why: "Trust the log rather than the device (Pierre, 2026-11-09, Q322): a player whose answers are all in the log (core.js logTrusted) takes the replay's record of a genus, and its answer count, also when the saved copy holds more answers there: they were counted twice (a save whose reply was lost, then another device's save: PR #824). The answers played before the log began are kept as before.",
-      msg: RV_CARD
+      why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330): the progress is updated everywhere without telling the player.
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -6369,16 +6330,15 @@ const CORE_ = (function () { const module = {exports: {}};
     {
       v: 1,
       at: '2026-11-08',
-      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (nobody goes back)",
+      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (until fish rules version 2)",
       msg: RV_CARD
     },
     {
       v: 2,
       at: '2026-11-09',
-      // The floor of the first fish replay stays (core.js floorKept): this version changes no bar but a unit's counted twice.
-      floor: 'kept',
-      why: "Trust the log rather than the device (Pierre, 2026-11-09, Q322): a fish player whose answers are all in the log (core.js logTrusted: their first logged fish answer more than an hour after the fish log began) takes the replay's record of a unit, and its answer count, also when the saved copy holds more answers there: they were counted twice (a save whose reply was lost, then another device's save: PR #824). The answers played before the fish log began are kept as before.",
-      msg: RV_CARD
+      why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a unit and its answer count win over the saved copy, also when the copy holds more answers there (counted twice, or played before the fish log began: in no log, so dropped), and no floor any more: a unit's bar may go down.",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
+      msg: null
     }
   ];
   // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
@@ -6387,13 +6347,6 @@ const CORE_ = (function () { const module = {exports: {}};
     return S.replay ? RVS : S.replayed && typeof S.replayed.rvs === 'function' ? S.replayed.rvs() : [];
   };
   const rvOf = id => (L => (L.length ? L[L.length - 1].v : 0))(rvsOf(id));
-  // A subject replayed with a floor (SUBJECTS replayed floor) keeps the floor of its first replay under a later rules
-  // version only when every version after the one it was made under says floor: 'kept' (Code.gs rplMake_): a version that
-  // changes no bar of the subject (fish rules version 2, trust the log: Q322) must not take one down by dropping it.
-  const floorKept = (id, from, to) => {
-    const L = rvsOf(id).filter(x => x.v > Number(from) && x.v <= Number(to));
-    return L.length > 0 && L.every(x => x.floor === 'kept');
-  };
   // The sync script version from which the sheet replays (Code.gs replay_, v28). The app never gets ahead of the sheet
   // script (rule D4, Pierre 2026-11-03): it adopts a replay (sync.js replayAdopt) and the admin shows replayed
   // values (admin.js progOf) only when the script's replies say v >= RV_SHEET; otherwise both do what they did before.
@@ -6422,8 +6375,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
   const LOG_SHEET = 60;
   // The sync script version that replays the other subjects' progress under this app's rules (SUBJECTS replayed: fish,
-  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS,
-  // with today's bars as a floor, Code.gs replay_ and replayFloor) only once the script's replies say v >= REPLAYS_SHEET
+  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS)
+  // only once the script's replies say v >= REPLAYS_SHEET
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 112;
@@ -6439,6 +6392,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
   // sid: the subject whose rules versions they are (rvsOf: the corals' RVS by default, fish FISH_RVS).
   const rvMsgs = (from, to, skip = false, sid) => {
+    // No card for a recalculation any more (Pierre, 2026-11-09 ~14:45 Manila, Q330): a jump to a version without a card
+    // shows none, not even the card of a version it skips.
+    const V = (sid ? rvsOf(sid) : RVS).find(x => x.v === to);
+    if (V && !V.msg) return [];
     const L = (sid ? rvsOf(sid) : RVS)
       .filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology'))
       .filter((x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg));
@@ -6671,10 +6628,6 @@ const CORE_ = (function () { const module = {exports: {}};
     if (old && old in data) out[old] = json;
     return {data: out, start};
   }
-  // o.logFrom (Pierre, 2026-11-09, Q322: trust the log rather than the device): the subject's logFrom (logFromOf; 0 for
-  // a subject logged from its first answer). Given, each player replayed from no record (not o.start) whose answers are
-  // all in the log by logTrusted gets ~level lg 1: replayedOf then takes the replay's counts, also when the device holds
-  // more. Not given (a tool, a test, an older script): no lg, the saved copy's larger counts kept as before.
   function replayProgress(rows, o = {}) {
     const gen = o.gen || {},
       starts = o.starts || {},
@@ -6695,8 +6648,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // Keyed by player id: no prototype, so a player named "constructor" or "__proto__" is a player like any other
       // (a plain object read Object's own constructor for one, and replayed nothing). own: an id's entry of a map given.
       out = Object.assign(Object.create(null), o.start ? JSON.parse(JSON.stringify(o.start)) : {}),
-      own = (m, k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined),
-      first = Object.create(null); // each player's first answer replayed (since their reset), for logTrusted
+      own = (m, k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined);
     const prior = (t, n) => {
       const a = gen[t] || {},
         b = gen[n] || {};
@@ -6724,7 +6676,6 @@ const CORE_ = (function () { const module = {exports: {}};
       .forEach(r => {
         const id = r[0];
         if (own(since, id) && !(r[1] > own(since, id))) return;
-        if (!(id in first)) first[id] = r[1];
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -6797,11 +6748,6 @@ const CORE_ = (function () { const module = {exports: {}};
           if (!keepsMark(x, pl.P, c)) x.lm = r[1];
         }
       });
-    if (typeof o.logFrom === 'number')
-      Object.keys(first).forEach(id => {
-        const L = out[id] && out[id].P && out[id].P[LEVEL];
-        if (L && !(o.start && own(o.start, id)) && logTrusted(o.logFrom, first[id])) L.lg = 1;
-      });
     return out;
   }
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
@@ -6844,31 +6790,20 @@ const CORE_ = (function () { const module = {exports: {}};
   //   a saved exam of 4 questions passed kept its 4); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
   //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
   //   (cor: the log does not say which view a photo was shown in);
-  // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or, for a player
-  //   whose answers may not all be in the log (no lg on the replay's level: logTrusted), fewer answers on than the saved
-  //   copy (answers played before the log began never reached it); a player whose answers are all in the log (lg) takes
-  //   the replay's record also when the saved copy holds more answers: they were counted twice (Pierre, 2026-11-09, Q322:
-  //   trust the log rather than the device; a reply lost then another device's save, PR #824);
-  // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
-  //   cards met and the prompts, so it never goes back), the replay's for a player trusted to the log (lg, kept on it),
-  //   with the answer times (rt) of the same side, the later at, rv when given.
+  // - the log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): a genus the log has answers on takes the
+  //   replay's record and counts also when the saved copy holds more answers there (they were counted twice: a reply
+  //   lost then another device's save, PR #824), its counts and recent results only when none of them is replayable; a
+  //   genus the log has no answer on keeps the saved record only if it holds no answer either (its answers are in no
+  //   log: dropped);
+  // - LEVEL: the replayed ability (th, vr), the replay's answer count with its answer times (rt), the later at, rv when
+  //   given.
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
   const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
-  // Trust the log rather than the device (Pierre, 2026-11-09, Q322): a player's answers of a subject are all in the log
-  // unless the subject was played before its log began (SUBJECTS logFrom: the corals' and the fish's first logged answer)
-  // and the player's first logged answer of it (since their reset) came within PRELOG.MS of that time: a device in use
-  // when the log began sent its answers from then on (the one player with fish answers from before the log, 2026-11-07:
-  // the same minute), so its saved copy may hold answers the log never had, which the replay keeps (replayedOf). A
-  // subject logged from its first answer (no logFrom) is always in the log.
-  const PRELOG = {MS: 3600000};
-  const logFromOf = id => Number((SUBJECTS.find(S => S.id === id) || {}).logFrom) || 0;
-  const logTrusted = (from, t0) => !(from > 0) || Number(t0) >= from + PRELOG.MS;
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},
-      trust = !!(isObj(R[LEVEL]) && R[LEVEL].lg),
       out = {},
       n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0),
       dup = x => JSON.parse(JSON.stringify(x)),
@@ -6888,9 +6823,8 @@ const CORE_ = (function () { const module = {exports: {}};
         if (r) {
           if (typeof r.th === 'number') o.th = r.th;
           if (typeof r.vr === 'number') o.vr = r.vr;
-          // The answer times (rt) go with the count: the replay's when it has every answer the device has, or when every
-          // answer of the player is in the log (lg).
-          if (!s || trust || n(r) >= n(s)) {
+          // The answer count and its times (rt): the log's.
+          {
             [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
             if (isObj(r.tyk)) o.tyk = dup(r.tyk);
             else delete o.tyk;
@@ -6899,23 +6833,20 @@ const CORE_ = (function () { const module = {exports: {}};
           }
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
-          if (trust) o.lg = 1;
-          else delete o.lg;
         }
         out[g] = o;
         return;
       }
-      if (!r || !r.u || (s && n(s) > n(r) && !trust)) {
-        if (s) out[g] = kept(s);
-        else if (r) {
-          // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
-          out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
-          if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
-          else if (typeof r.pg === 'number') out[g].pg = r.pg;
-          // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
-          ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
-          if (r.ty) out[g].ty = r.ty;
-        }
+      if (!r || !r.u) {
+        // No answer of the log on it: the saved record only when it counts no answer either (rule D9).
+        if (!r) return void (s && !n(s) && (out[g] = kept(s)));
+        // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
+        out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+        if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
+        else if (typeof r.pg === 'number') out[g].pg = r.pg;
+        // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
+        ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
+        if (r.ty) out[g].ty = r.ty;
         return;
       }
       const o = {};
@@ -6952,9 +6883,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // - adopted from the replay (M[g].rv is rv): the replayed record as the app holds it without this device's copy
   //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
   //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
-  // - kept from this device's copy (the log has fewer answers on it): B's record, as before;
-  // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
-  //   keeps the larger count), unless every answer of the player is in the log (lg: the replay's, as replayedOf).
+  // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
+  // - the global level: the replay's, its answer count and answer times (rt) included (the log is the reference, rule D9).
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -6966,15 +6896,7 @@ const CORE_ = (function () { const module = {exports: {}};
         r = R[g];
       if (g === LEVEL) {
         if (!r) return b && (out[g] = dup(b));
-        const o = dup(r);
-        if (b && n(b) > n(r) && !r.lg) {
-          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
-          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
-          else delete o.tyk;
-          if (isObj(b.rt)) o.rt = dup(b.rt);
-          else delete o.rt;
-        }
-        out[g] = o;
+        out[g] = dup(r);
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
         Object.keys((b && b.ps) || {}).forEach(f => {
@@ -6988,87 +6910,13 @@ const CORE_ = (function () { const module = {exports: {}};
     return out;
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
-  // The floor of a subject's first replay (SUBJECTS replayed floor; Pierre, 2026-11-08, Q310: "today's bar as a floor,
-  // nobody goes back"; measured on the fish players first, LEARNING.md "Fish: the progress replayed from the answer log";
-  // the integrator, 2026-11-08: per unit, once). Applied by the sheet to the replayed record (Code.gs replay_), against
-  // the account's saved copy, so every device adopts the same record and keeps it as their shared baseline (sync.js
-  // replayAdoptS, replayBase; Codex review #779). M: the replayed record; P: the reference, the saved units that came
-  // from no replay yet (no rv). A unit of P the replay has no record of keeps P's. A unit whose bar (barOf) in M reads
-  // below its bar in P keeps the replay's record, its answers the log's (so no answer is counted twice in a merge), with
-  // its domain score (ds) lifted so that its bar reads P's: a right answer never lowers ds (domStep), a miss moves it
-  // the posterior's way, as for any bar. The lift allows for the false alarms the replay counts on the unit (faOf: the
-  // other records' conf and off; Codex review #779); should a domain score of 1 not be enough, the other records count,
-  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), the level its typed
-  // opportunities on that rank (P's when more; P's level is read as context, never floored), and the lift is made again. A
-  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's but
-  // for those typed opportunities; a learned mark or an exam in course comes from the device
-  // (replayedOf). Returns a copy of M floored.
-  // only: the units to floor (default every unit of P that came from no replay), their bars read in P whole.
-  function replayFloor(M, P, only) {
-    const out = {...(M || {})},
-      S = isObj(P) ? P : {},
-      dup = x => JSON.parse(JSON.stringify(x)),
-      L = (only || Object.keys(S)).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
-    L.forEach(g => isObj(out[g]) || (out[g] = dup(S[g])));
-    const lift = (g, want) => (out[g] = {...dup(out[g]), ds: Math.min(1, Math.round((want + faOf(out, g)) * 1e4 + 0.5) / 1e4)});
-    // Passes until none changes: a record taken whole brings its own conf and off, which other units' bars read.
-    for (let k = 0, ch = true; ch && k <= L.length; k++) {
-      ch = false;
-      L.forEach(g => {
-        const want = barOf(S[g], S, g);
-        if (barOf(out[g], out, g) >= want - 1e-9) return;
-        ch = true;
-        if (!domOn(out[g])) return void (out[g] = dup(S[g]));
-        lift(g, want);
-        if (barOf(out[g], out, g) >= want - 1e-9) return;
-        // More false alarms on it than a domain score of 1 leaves room for: on it, the other records count the mix-ups
-        // and offers P counts (fewer mix-ups, more offers), then the lift again.
-        Object.keys(out).forEach(t => {
-          const x = out[t],
-            y = isObj(S[t]) ? S[t] : {},
-            on = r => (r.conf || {})[g] || (r.off || {})[g];
-          if (t === g || t === LEVEL || !isObj(x) || !(on(x) || on(y))) return;
-          const o = (out[t] = dup(x));
-          if (o.conf && o.conf[g]) o.conf[g] = Math.min(o.conf[g], (y.conf || {})[g] || 0);
-          const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
-          if (f) o.off = {...(o.off || {}), [g]: f};
-        });
-        // and the typed opportunities of its rank, which faOf counts too (the rank's typed answers less the unit's own):
-        // at least P's, net of each side's own (Codex review #779).
-        const rk = rankKey(g),
-          lv = isObj(out[LEVEL]) ? out[LEVEL] : {},
-          net = Math.max(0, (((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0) - (S[g].ty || 0)),
-          ty = net + ((out[g] && out[g].ty) || 0);
-        if (ty > ((lv.tyk || {})[rk] || 0)) out[LEVEL] = {...dup(lv), tyk: {...(lv.tyk || {}), [rk]: ty}};
-        lift(g, want);
-      });
-    }
-    return out;
-  }
-  // A floored replay's typed opportunities per rank (replayFloor may raise the level's, which a unit's false-alarm rate
-  // reads): L, a level record, takes X's level's where they are more (in place; sync.js replayAdoptS, replayAdopted).
-  function tykRaise(L, X) {
-    const tyk = X && X[LEVEL] && X[LEVEL].tyk;
-    if (!tyk || !L || typeof L !== 'object') return;
-    const o = {...(L.tyk || {})};
-    Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
-    L.tyk = o;
-  }
   // The progress a device holds once it adopts a replay (sync.js replayAdoptS), and so the one the leaderboard ranks a
   // player by once their saved copy is behind the rules (Code.gs board_; Pierre, 2026-11-09, rule D8). R: the replay (with
-  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version, floor: the subject is
-  // replayed with a floor (SUBJECTS replayed floor). replayedOf of R over P; with a floor, a unit kept from P (more
-  // answers there than in the log) beside the replayed records is floored at its bar in P (their mix-ups and offers on it
-  // may read it lower than it was), and the level's typed opportunities per rank are at least R's (tykRaise; Codex review
-  // #779), so the adoption does not undo the floor.
-  function replayAdopted(R, P, rv, floor) {
-    const S = isObj(P) ? P : {};
-    let M = replayedOf({P: R}, S, rv);
-    if (!floor) return M;
-    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && S[g] && !S[g].rv);
-    if (keptHere.length) M = replayFloor(M, S, keptHere);
-    tykRaise(M[LEVEL], R);
-    return M;
+  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version: replayedOf of R over
+  // P. No floor (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down; until then a subject could be
+  // replayed with the saved bars as a floor, and fish was).
+  function replayAdopted(R, P, rv) {
+    return replayedOf({P: R}, isObj(P) ? P : {}, rv);
   }
 
   // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
@@ -7663,8 +7511,6 @@ const CORE_ = (function () { const module = {exports: {}};
     startWt,
     START_CAP,
     replayedOf,
-    replayFloor,
-    tykRaise,
     replayAdopted,
     replayBase,
     logRow,
@@ -7682,10 +7528,6 @@ const CORE_ = (function () { const module = {exports: {}};
     DOM_SHEET,
     SCORE_SHEET,
     LOG_SHEET,
-    PRELOG,
-    floorKept,
-    logFromOf,
-    logTrusted,
     REPLAYS_SHEET,
     WINK_SHEET,
     logOk,

@@ -209,7 +209,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **D3** A `Code.gs` or `core.js` change carries one changes file; the integrator assigns `VERSION` at merge.
 - **D4** The app never gets ahead of the sheet script.
 - **D5** Every progress-rule change appends a rules version.
-- **D6** A recalculation of everyone's progress is announced.
+- **D6** A recalculation of progress is silent, a learned mark taken away included.
 - **D7** A deleted account leaves nothing in normal operation.
 - **D8** Every leaderboard follows a progress recalculation, for every player, at once.
 - **D9** The answer log is the reference for progress: trust it rather than the device.
