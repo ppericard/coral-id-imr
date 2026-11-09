@@ -181,7 +181,7 @@ const WIDTHS = [390, 1280];
             [FF[0][1]]: {jt: 'p1g0sm1', e: 5, k: 'best', ph: 'female'},
             [FF[1][1]]: {jt: 'p1g0sm1', e: 4, k: 'dup'},
             [FF[2][1]]: {jt: 'p1g0sm1', e: 5, k: 'best'},
-            [FC[1]]: {jt: 'o1g1ssm', e: 3, k: 'best', n: 'Demo check'}
+            [FC[1]]: {jt: 'o1g1sso', e: 3, k: 'best', n: 'Demo check'}
           }
         })
       })
@@ -3138,7 +3138,7 @@ const WIDTHS = [390, 1280];
       if (!/^Ease,.*View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
         fails.push(`${w}px To do › Reports, a fish photo's tag rows: ${JSON.stringify(a)}`);
       // The Count row in plain words, each with its meaning on hover (Pierre, 2026-11-09: "Others" did not say several
-      // species); the stored codes unchanged.
+      // species); other species split by the risk of confusion (Q323): k takes a photo in play out, o keeps it.
       const cnt = await p.evaluate(
         s =>
           [...document.querySelectorAll(s + ' .adm-ftrows [role="group"][aria-label="Count"] button')].map(b => [
@@ -3153,14 +3153,15 @@ const WIDTHS = [390, 1280];
         JSON.stringify([
           ['1', 'One fish', true],
           ['s', 'Same species', true],
-          ['m', 'Other species in view', true],
+          ['o', 'Other species, no risk', true],
+          ['k', 'Other species, confusable', true],
           ['x', 'Unclear', true]
         ])
       )
         fails.push(`${w}px To do › Reports, a fish photo's Count row: ${JSON.stringify(cnt)}`);
       if (w === 390) await shot('report-fish-tags-390', card('demorep11'));
       const d0 = await fishOf();
-      await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+      await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="k"]');
       await settle();
       const rep = await p.evaluate(
         ([f, sel]) => ({
@@ -3172,7 +3173,7 @@ const WIDTHS = [390, 1280];
         [a.f, rsel]
       );
       const after = await fishOf();
-      if (rep.tag !== 'm' || rep.seen !== 1 || rep.add || rep.out !== 'removed')
+      if (rep.tag !== 'k' || rep.seen !== 1 || rep.add || rep.out !== 'removed')
         fails.push(`${w}px To do › Reports, Count Others on a fish photo in play: ${JSON.stringify(rep)}`);
       await p.click('#undo');
       await settle();
@@ -3188,7 +3189,7 @@ const WIDTHS = [390, 1280];
       if (!b || b.fu !== a.fu || b.rows !== a.rows || b.wide)
         fails.push(`${w}px Families: a photo's tools differ from its report's ${JSON.stringify({a, b})}`);
       else {
-        await p.click(fsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+        await p.click(fsel + ' .adm-ftrows [data-ft="6"][data-fv="k"]');
         await settle();
         if ((await fishOf()) !== after) fails.push(`${w}px Families: Count Others does not write what the report's tile writes`);
         await p.click('#undo');
@@ -3233,7 +3234,7 @@ const WIDTHS = [390, 1280];
       else {
         if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
         await settle();
-        await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+        await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="k"]');
         await settle();
         const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: fishOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
         if (xo.seen !== 1 || xo.on) fails.push(`${w}px To do › Reports, Count Others on a photo in another family: ${JSON.stringify(xo)}`);
@@ -5080,7 +5081,7 @@ const WIDTHS = [390, 1280];
         }, FC);
         if (
           r1.add !== FC[0] ||
-          r1.tags !== 'o1g1ssm' ||
+          r1.tags !== 'o1g1sso' ||
           r1.ease !== 3 ||
           !/^\?a@[0-9a-z]+$/.test(r1.code || '') ||
           r1.left ||
