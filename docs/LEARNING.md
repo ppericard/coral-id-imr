@@ -79,7 +79,7 @@ than to an exam on people who already know (Pierre). A new player is a beginner,
 - **One player level shown** (Pierre, 2026-11-06, Q134; the engine coherence review's F4): the global level is the only
   level players see, as an Elo (`progress.js` `eloScore` = 1000 + 200 × th, from `ELO_MIN` = 200 answers of its record):
   My progress, the leaderboard (`Code.gs` `board_` reads `~level` from each player's saved progress, sheet v63; from
-  vNEXT, for a player whose copy is behind the rules, the replayed level their app will adopt, rule D8; the player's own
+  v118, for a player whose copy is behind the rules, the replayed level their app will adopt, rule D8; the player's own
   row shows the device's level) and the Elo achievements. The header shows progress, not a level. The
   sheet's own chain `stats_` `R` (start `PLAYER0` −1, K 0.6 / (1 + n/40), no answer time, no mix-up term, no start prior)
   stays internal: it is the player term of the photo Elo (the expectation that rates the photos, their genus offsets and

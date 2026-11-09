@@ -1,4 +1,4 @@
-// The leaderboard recalculated with today's rules (sheet vNEXT; Pierre, 2026-11-09, rule D8: "whenever progress is
+// The leaderboard recalculated with today's rules (sheet v118; Pierre, 2026-11-09, rule D8: "whenever progress is
 // recalculated, the leaderboard must be recalculated automatically, even if people do not reconnect"): a player whose
 // saved copy applied an older rules version of a subject is ranked on that subject's board by the progress their app
 // will hold once it adopts the replay of their log (core.js replayAdopted), from the replay kept in the Replayed tab
