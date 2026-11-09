@@ -419,7 +419,9 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
 5. **"Find the X"** (one name, 4 photos), **fish only**, slipped into the quiz like duels (a small share, spaced, never on a unit not met),
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
 
-Later, not agreed yet: Matrix (4 photos matched to 4 names), photo-to-trait (needs per-photo trait tags), the 0-2 correct variant. The
+Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
+both show the square fish tiles (`judging/FISH.md` "The fish's box"). Later, not agreed yet: photo-to-trait (needs per-photo
+trait tags), the 0-2 correct variant. The
 coral Lab prototype of photo-to-trait, "Spot the feature" (`proto/spot.js`), stays in the Lab for now (Pierre, 2026-11-04).
 
 ## Parked

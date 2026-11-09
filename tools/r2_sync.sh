@@ -81,10 +81,14 @@ if [ -n "$DIR" ]; then
   exit 0
 fi
 copy img
-# Every photo that lives on R2 only has its four files there: a missing one fails the run (the app would show that
-# photo from its online original, core.js photoAway).
+# Every photo that lives on R2 only has its four files there, and its tile when it has one: a missing one fails the run
+# (the app would show that photo from its online original, core.js photoAway).
 want=$(mktemp) have=$(mktemp)
-python3 tools/photos.py --r2-list | while read -r f; do printf '%s\n' "$f.webp" "$f-m.webp" "$f-s.webp" "$f-t.webp"; done | sort >"$want"
+{
+  python3 tools/photos.py --r2-list | while read -r f; do printf '%s\n' "$f.webp" "$f-m.webp" "$f-s.webp" "$f-t.webp"; done
+  # The fish tiles (fish-game.json xc: tools/fish_game.py), a fifth file of those photos.
+  python3 tools/photos.py --r2-tiles | while read -r f; do printf '%s\n' "$f-x.webp"; done
+} | sort >"$want"
 rclone lsf "r2:${R2_BUCKET}/img" --files-only --fast-list | sort >"$have"
 missing=$(comm -23 "$want" "$have")
 if [ -n "$missing" ]; then

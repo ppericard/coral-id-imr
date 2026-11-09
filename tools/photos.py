@@ -19,6 +19,9 @@
 #                                       is missing from img/, or a photo with one is in img/ (CI)
 #   python3 tools/photos.py --r2-list   the photos that live on R2 only, one per line (tools/r2_sync.sh checks the
 #                                       bucket has their four files)
+#   python3 tools/photos.py --r2-tiles  the fish photos with a tile (fish-game.json xc: a fifth file, {f}-x.webp, the
+#                                       360 px square of "Find the X" and Matrix, tools/fish_game.py), one per line
+#                                       (tools/r2_sync.sh checks the bucket has it too)
 import json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -136,6 +139,13 @@ def online(recs=None):
     return {f for f, L in recs.items() if any(p.get('src') and not p.get('r') for p in L)}
 
 
+def tiles(recs=None):
+    """The fish photos with a tile on R2 (tools/fish_game.py tile_write: xc on a downloaded record with an online original;
+    its file {f}-x.webp, never in img/)."""
+    recs = records() if recs is None else recs
+    return {f for f, L in recs.items() if any(p.get('src') and not p.get('r') and p.get('xc') for p in L)}
+
+
 def gitonly(recs=None):
     """The photos whose only copy outside R2 is git: downloaded, with no online original (IMR lecture photos, page art)."""
     recs = records() if recs is None else recs
@@ -194,6 +204,9 @@ def check(folder=IMG, recs=None):
 if __name__ == '__main__':
     if '--r2-list' in sys.argv:
         print('\n'.join(sorted(online())))
+        sys.exit(0)
+    if '--r2-tiles' in sys.argv:
+        print('\n'.join(sorted(tiles())))
         sys.exit(0)
     if '--check' in sys.argv:
         bad = check()
