@@ -1,1 +1,0 @@
-the shared core leaves the coral skeleton photos out of every photo list: applyCuration drops a photo marked `skel` (data.json, written by `tools/apply_skeletons.py` from `judging/skeletons.json`) wherever it is, as it drops an excluded one (rule P6, Pierre, 2026-11-09: coral skeletons are never shown, the features cannot be seen properly); nothing the script computes changes.
