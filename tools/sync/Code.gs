@@ -1170,7 +1170,9 @@ function behind_(p){
     sheet_('Events', EVH).appendRow([new Date(), dev, 'old', safe_('app behind: build ' + b + ', newest ' + top.b + ' for ' + Math.floor(h) + ' h, page open ' + Math.round(up) + ' min'), '', '', '', text_(p.av, 20), '', 'old' + now.toString(36)]);
   } catch (e) {}
 }
-const EVK = {err: 1, photo: 1, sync: 1, pulse: 1, load: 1, pages: 1};
+// vNEXT 'fromhome': the first page a visit opens from Home (app.js fromHome; ROADMAP "Load order, further steps" (c)):
+// its page name in the message column, {s: seconds on Home, w: its tier not in yet, tr: the welcome tour ran} in the detail.
+const EVK = {err: 1, photo: 1, sync: 1, pulse: 1, load: 1, pages: 1, fromhome: 1};
 // v30: the player behind a request's 'pages' events, as the admin knows them (aid_: the id readAnswers and the player
 // list use), never the name. A signed-in player's request carries the name and code (ename, epin), checked like a load:
 // a right code gives aid_(name); a wrong one, an unknown or a throttled name give '' and count no failure (the reply is
@@ -1229,8 +1231,9 @@ function events_(p){
         ? JSON.stringify({r: ['easy', 'ok', 'hard'].indexOf(x.r) >= 0 ? x.r : '', m: word_(x.m, /^[a-z-]*$/, 20), n: num(x.n, 0, 10000), rr: num(x.rr, 0, 100), lv: num(x.lv, -5, 5), met: num(x.met, 0, 100)})
         : x.k === 'load'
           ? JSON.stringify({p0: pg(x.p0), t0: num(x.t0, 0, 3600), qo: num(x.qo, 0, 86400), q1: num(x.q1, 0, 86400), nx: pg(x.nx), bps: num(x.bps, 0, 1e7), kb: num(x.kb, 0, 1e7), sw: x.sw ? 1 : 0, sv: x.sv ? 1 : 0, th: word_(x.th, /^(dark|light)$/, 5), w: num(x.w, 0, 10000), st: x.st ? 1 : 0})
-          : x.k === 'pages' ? JSON.stringify(CORE_.pagesClean(x)) : '';
-      return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.k === 'load' ? word_(x.pop, /^[a-zA-Z0-9, -]*$/, 60) : x.k === 'pages' ? who : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
+          : x.k === 'pages' ? JSON.stringify(CORE_.pagesClean(x))
+            : x.k === 'fromhome' ? JSON.stringify({s: num(x.s, 0, 86400), w: x.w ? 1 : 0, tr: x.tr ? 1 : 0}) : '';
+      return [new Date(x.t || Date.now()), dev, x.k, text_(x.k === 'pulse' ? x.r : x.k === 'photo' ? x.f : x.k === 'load' ? word_(x.pop, /^[a-zA-Z0-9, -]*$/, 60) : x.k === 'pages' ? who : x.k === 'fromhome' ? pg(x.to) : x.msg, 300), text_(x.src, 160), text_(x.pg, 80), det, text_(x.av, 20), text_(x.ua, 40), String(x.id)];
     };
     // The pages summaries in their own tab (v30), the other events in Events; an id already in its tab is skipped.
     [['Events', L.filter(x => x.k !== 'pages')], [PAGES_TAB, L.filter(x => x.k === 'pages')]].forEach(([tab, M]) => {
