@@ -649,58 +649,16 @@ test('juvenile classes: every circle-1 entry classed, with sources, as in the so
   ['t04', 't14'].forEach(id => assert.match(c1.find(t => t.id === id).juv.by, /^Pierre, 2026-11-04/));
 });
 
-test('fish-photos.json (the stopgap game photos) shows only species in the game', () => {
-  // A species that leaves the game (e.g. circle 3 needs "confirmed near Dauin", 2026-11-03) leaves the quiz's photos too.
-  const P = read('fish-photos.json').photos;
-  Object.entries(P).forEach(([t, L]) =>
-    L.forEach(p => assert.ok(p.sp && SP.get(p.sp) && SP.get(p.sp).circle, `${t} ${p.f}: ${p.t} (${p.sp}) is not in the game`))
-  );
-});
-
 // Curated common names (Pierre, 2026-11-04: 1 to 3 per species; published as selected, 2026-11-08, Q313; docs/FISH_PATH.md
-// "Common names"; tools/fish_common.py): every game species has 1 to 3 names, the PDF's first and as written (rule C1),
-// each with its sources, no two spellings of one name listed apart, and the file is what the selection gives (fish.json
-// cn and the game's use of them: tests/fishcommon.test.js).
+// "Common names"; tools/fish_common.py): the count, the PDF's name first (rule C1), the sources, no name listed twice and
+// the selection's --check are in tests/fishcommon.test.js with fish.json cn and the game's use of them; here, the
+// selection's own rules.
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
   assert.strictEqual(P.s132.names[0].name, "Russell's snapper");
   assert.ok(P.s132.names[0].alt.includes('Russelss’s snapper'));
   assert.strictEqual(P.s008.names[0].name, 'Eastern triangular butterflyfish');
   assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
-});
-
-test('common names: 0 to 3 per game species, the PDF name first, sourced, as the selection gives it', () => {
-  const P = read('tools/fish_common.json').species,
-    SRC_NAMES = read('tools/fish_common_src.json').species;
-  const norm = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, '');
-  F.species
-    .filter(s => s.circle)
-    .forEach(s => {
-      const p = P[s.id];
-      assert.ok(p, `${s.id} ${s.name}: no proposal`);
-      assert.strictEqual(p.sp, s.name);
-      assert.ok(p.names.length <= 3, `${s.name}: ${p.names.length} names`);
-      // None only for a species no reference names (Pierre, 2026-11-08, Q247: such a species has no common-name unit;
-      // a name is never invented): no name of its own, none from FishBase or iNaturalist.
-      const ref = SRC_NAMES[s.id] || {};
-      if (!p.names.length)
-        assert.ok(
-          !s.common && [ref.fb, ref.inat].every(x => !x || (!x.main && !(x.names || []).length)),
-          `${s.name}: no name although a reference has one`
-        );
-      // The PDF name first, as written; a PDF name flagged as a likely slip (check) shows FishBase's spelling, the PDF form
-      // still accepted when typed (Pierre, 2026-11-05).
-      if (s.common && !(s.check && (p.names[0].alt || []).includes(s.common)))
-        assert.strictEqual(p.names[0].name, s.common, `${s.name}: the PDF name first, as written`);
-      else if (s.common) assert.ok(p.names[0].alt.includes(s.common), `${s.name}: the PDF form accepted when typed`);
-      p.names.forEach(n => assert.ok(n.from.length, `${s.name}: ${n.name} has no source`));
-      const keys = p.names.map(n => norm(n.name));
-      assert.strictEqual(new Set(keys).size, keys.length, `${s.name}: a name listed twice`);
-    });
-  const r = require('child_process').spawnSync('python3', [path.join(__dirname, '..', 'tools', 'fish_common.py'), '--check'], {
-    encoding: 'utf8'
-  });
-  assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });
 
 // Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a

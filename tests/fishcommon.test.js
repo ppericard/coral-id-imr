@@ -35,7 +35,7 @@ const TN = cnTypeNames(GAME),
   full = text => C.typeMatchIn(TN, text, norm),
   match = matcher(TN, norm);
 
-test('every game species has 1 to 3 listed names, each with a source; none only when no reference names it (Q247)', () => {
+test('every game species has 1 to 3 listed names, each with a source, the PDF name first, none listed twice; none only when no reference names it (Q247)', () => {
   const n = {0: 0, 1: 0, 2: 0, 3: 0};
   GAME.forEach(s => {
     const p = P[s.id],
@@ -57,9 +57,21 @@ test('every game species has 1 to 3 listed names, each with a source; none only 
       `${s.name}: fish.json cn is not tools/fish_common.json`
     );
     p.names.forEach(x => assert.ok(x.from.length, `${s.name}: ${x.name} has no source`));
+    assert.strictEqual(p.sp, s.name);
+    // The PDF name first, as written; a PDF name flagged as a likely slip (check) shows FishBase's spelling, the PDF form
+    // still accepted when typed (Pierre, 2026-11-05).
+    if (s.common && !(s.check && (p.names[0].alt || []).includes(s.common)))
+      assert.strictEqual(p.names[0].name, s.common, `${s.name}: the PDF name first, as written`);
+    else if (s.common) assert.ok(p.names[0].alt.includes(s.common), `${s.name}: the PDF form accepted when typed`);
+    // No two spellings of one name listed apart.
+    const keys = p.names.map(x => x.name.toLowerCase().replace(/[\s\-‐‑'’`]/g, ''));
+    assert.strictEqual(new Set(keys).size, keys.length, `${s.name}: a name listed twice`);
   });
   F.species.filter(s => !s.circle).forEach(s => assert.ok(!s.cn, `${s.name}: out of the game, no list`));
   assert.ok(n[1] && n[2] && n[3] && n[0] <= 5, JSON.stringify(n));
+  // The file is what the selection gives (tools/fish_common.py --check).
+  const r = require('child_process').spawnSync('python3', [path.join(ROOT, 'tools', 'fish_common.py'), '--check'], {encoding: 'utf8'});
+  assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });
 
 test('the order: the species’ own (PDF) name first, then the most shared (in the most references)', () => {
