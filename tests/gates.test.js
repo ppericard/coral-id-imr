@@ -72,6 +72,9 @@ const GATES = {
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
+  // The seedling in the admin's own name (admin.js seedOn, Code.gs users_ userSeed): Add / Remove on the admin's own row
+  // from the script that renames; before, the button is disabled with what it needs.
+  SEED_SHEET: (v, N) => fn('admin.js', 'const seedOn = ', '\n', 'seedOn', {USERS: v === undefined ? {} : {v}, SEED_SHEET: N})(),
   EXCL_SHEET: (v, N) => fn('admin.js', 'const exclOn = ', '\n', 'exclOn', {USERS: v === undefined ? {} : {v}, EXCL_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
@@ -140,14 +143,6 @@ const GATES = {
       j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
     assert.strictEqual(ok(j, true), true, "the first subject's board from any script");
     return ok(j, false);
-  },
-  // The admin's badge on a leaderboard row (core.js boardBadge, progress.js BADGE_SVG; Code.gs board_ marks the rows of
-  // the accounts users_ userBadge marked): from the script that sends it; before, no row shows it, a 4th field or not.
-  BADGE_SHEET: v => {
-    const {boardBadge} = require('../core.js');
-    assert.strictEqual(boardBadge(['Ana', 50, null], v), false, 'a row of three fields never has it');
-    assert.strictEqual(boardBadge(['Ana', 50, null, 0], v), false);
-    return boardBadge(['Ana', 50, null, 1], v);
   },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   // The per-format offsets (core.js fmtsOf, ?stats=1 fmt; Q138): from the version that serves them and replays with them;

@@ -8441,8 +8441,16 @@ const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
 const EXCL_SHEET = 115;
 const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
-// The admin's badge (sheet vNEXT, core.js BADGE_SHEET): Give / Remove on the row's bar from the script that keeps it.
-const badgeOn = () => (USERS.v || 0) >= BADGE_SHEET;
+// The seedling 🌱 in the admin's own name (sheet vNEXT, core.js seedName): only on the row of the account signed in on
+// this browser (its code proves it to the sheet), from the script that does it.
+const SEED_SHEET = 123;
+const seedOn = () => (USERS.v || 0) >= SEED_SHEET;
+const seedBtn = u => {
+  const sy = store.get('reefid-account', null) || {};
+  if (!sy.name || !sy.pin || String(sy.name).trim().toLowerCase() !== String(u.name).trim().toLowerCase()) return '';
+  const has = seedName(u.name, false) !== u.name.trim();
+  return `<span>${has ? `${SEED} in your name` : `No ${SEED} in your name`} <button type="button" class="adm-fchip" data-useed data-on="${has ? 0 : 1}"${seedOn() ? '' : ` disabled title="Needs the sheet script v${SEED_SHEET}"`}>${has ? 'Remove' : 'Add'}</button></span>`;
+};
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
   `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}"${exclOn() ? '' : ` disabled title="Needs the sheet script v${EXCL_SHEET}"`}>${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
@@ -8559,7 +8567,7 @@ function renderUsers() {
       <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
       ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
-      <span>${u.badge ? 'Admin badge' : 'No admin badge'} <button type="button" class="adm-fchip" data-ubadge="${esc(u.name)}" data-on="${u.badge ? 0 : 1}"${badgeOn() ? '' : ` disabled title="Needs the sheet script v${BADGE_SHEET}"`}>${u.badge ? 'Remove' : 'Give'}</button></span>
+      ${seedBtn(u)}
       ${u.id ? `<span>${isExcl(u.id) ? 'Out of the statistics' : 'In the statistics'} ${exclBtn(u.id)}</span>` : ''}
       ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
       ${SUBJECTS.filter(S => groupOn(S))
@@ -8703,6 +8711,23 @@ function bindUsers() {
   };
   // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
   // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
+  // The seedling in the admin's own name (sheet vNEXT, Code.gs users_ userSeed; Pierre, 2026-11-09, Q328): the account
+  // signed in on this browser is renamed with ' 🌱' or back, its code sent to prove it is this account; the app here
+  // follows the new name, the account's other devices are told to sign in under it. One click each way (rule A2).
+  $v.querySelectorAll('[data-useed]').forEach(
+    b =>
+      (b.onclick = () => {
+        const sy = store.get('reefid-account', null) || {},
+          on = b.dataset.on === '1';
+        b.disabled = true;
+        userPost({userSeed: on, aname: sy.name, apin: sy.pin})
+          .then(j => {
+            if (j && j.ok && j.name) store.set('reefid-account', {...sy, name: j.name});
+            done(on ? `Your name is now "${j && j.name}".` : `Your name is "${j && j.name}" again.`, j);
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
+      })
+  );
   $v.querySelectorAll('[data-uboard]').forEach(
     b =>
       (b.onclick = () => {
@@ -8717,25 +8742,6 @@ function bindUsers() {
               : toast(`Not done (${(j && j.error) || 'offline'}${j && j.error === 'input' ? ': needs the sheet script v20' : ''}).`)
           )
           .catch(() => toast('Not done (offline).'));
-      })
-  );
-  // The admin's badge on the leaderboards (sheet vNEXT, Code.gs users_ userBadge; Pierre, 2026-11-09): one click each way,
-  // no confirmation (rule A2: Remove undoes Give). Only the badge changes; the boards show it within a minute.
-  $v.querySelectorAll('[data-ubadge]').forEach(
-    b =>
-      (b.onclick = () => {
-        const name = b.dataset.ubadge,
-          on = b.dataset.on === '1';
-        b.disabled = true;
-        userPost({userBadge: name, on})
-          .then(j => {
-            if (!(j && j.ok)) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
-            const u = USERS.users.find(x => x.name === name);
-            if (u) u.badge = j.badge;
-            toast(on ? `"${name}" has the admin badge.` : `"${name}" no longer has the admin badge.`);
-            render();
-          })
-          .catch(() => (toast('Not done (offline).'), render()));
       })
   );
   $v.querySelectorAll('[data-ustat]').forEach(

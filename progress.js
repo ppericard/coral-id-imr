@@ -465,19 +465,13 @@ const loadBoard = (S = boardSubj()) => {
       .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now(), v: j.v});
+        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now()});
         else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
   }
   return boardP[k];
 };
-// The admin's badge (Pierre, 2026-11-09: "a small icon next to my name on the leaderboard, a wink at the fact that I'm the
-// admin, an icon the others are not allowed to have ... a little plant just starting"): a seedling drawn here, after the
-// name and outside its text, on the rows the sheet marks (core.js boardBadge, Code.gs board_ / users_ userBadge), never
-// from the name: a name holding a seedling emoji stays text inside the name's own box, which this drawing never is in.
-// Tokens only (--good leaves and stem, --cf-ink seed and soil), so it follows the theme and the palettes.
-const BADGE_SVG = `<svg class="badm" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="Admin"><title>Admin</title><path class="badm-soil" d="M2.5 14.25h11"/><ellipse class="badm-seed" cx="8" cy="12.6" rx="2.1" ry="1.25"/><path class="badm-stem" d="M8 12.2V7.4"/><path class="badm-leaf" d="M8 8.4C7.6 5.9 5.6 4.5 2.9 4.7c.1 2.6 2.1 4.1 5.1 3.7z"/><path class="badm-leaf" d="M8 7.4c.2-2.9 2.3-4.6 5.2-4.4-.1 2.8-2.2 4.6-5.2 4.4z"/></svg>`;
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
@@ -523,7 +517,7 @@ function paintBoard(B, S = boardSubj()) {
       ? `<ol class="blist">${B.rows
           .map(
             (r, i) =>
-              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${boardBadge(r, B.v) ? BADGE_SVG : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><b class="bname">${esc(r[0])}</b><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
           )
           .join('')}</ol>`
       : '<p class="note">Nobody yet: be the first.</p>');
