@@ -1335,8 +1335,14 @@
         D.length
       );
     if (!t) return null;
-    const c0 = j => [1, 0, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map(() => 0)],
-      c1 = j => [1, 1, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map((_, i) => (i === j - 1 ? 1 : 0))];
+    // enlarging is read against the player's own habit (rel = z - the player's rate): for a player at the typical rate rb
+    // (the rows' mean, as the habit column is centred on), not enlarging is rel = -rb, enlarging 1 - rb (Codex review #829)
+    const rate = {};
+    D.forEach(a => ((rate[a.p] = rate[a.p] || [0, 0]), (rate[a.p][0] += a.z), (rate[a.p][1] += 1)));
+    const rb = mean(D.map(a => rate[a.p][0] / rate[a.p][1])),
+      cz = (j, rel) => [1, rel, 0, ...L.map((_, i) => (i === j - 1 ? 1 : 0)), ...L.map((_, i) => (i === j - 1 ? rel : 0))],
+      c0 = j => cz(j, -rb),
+      c1 = j => cz(j, 1 - rb);
     t.lv = ['wide', ...L].map((v, j) => ({
       k: v,
       n: cnt[v][0],
@@ -1489,7 +1495,7 @@
       const g = fgOf(a),
         c = (cnt[g] = cnt[g] || {n: 0, s: new Set()});
       c.n++;
-      c.s.add(Math.min(a.n, 2));
+      c.s.add(a.n); // every practice count it was asked at (Codex review #829: capped at 2, later practice read as none)
     });
     const ok = g => cnt[g] && cnt[g].n >= 100 && cnt[g].s.size > 1,
       L = ['two', 'typed'].filter(ok);

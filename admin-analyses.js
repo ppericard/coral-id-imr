@@ -1423,14 +1423,17 @@ const anRange = (x, f) => (x && x[0] != null ? `${f(x[0])} <small class="adm-an-
 const AN_IX_DRAW = {
   // what enlarging changes on each view, in points of right answers for a typical player and question
   view: (t, T) => {
-    const pts = d => ANALYSIS.shiftP(T.p, T.g, d) - T.p,
+    // the change between the view's two predicted levels, its range the difference's at the un-enlarged level (Codex review
+    // #829: read at the typical chance, it contradicted the two levels shown beside it)
+    const P = v => ANALYSIS.shiftP(T.p, T.g, v),
+      chg = l => [P(l.on[0]) - P(l.off[0]), P(l.off[0] + l.d[1]) - P(l.off[0]), P(l.off[0] + l.d[2]) - P(l.off[0])],
       rows = t.lv.map(l => ({
         label: AN_VW[l.k] || l.k,
-        est: pts(l.d[0]),
-        lo: pts(l.d[1]),
-        hi: pts(l.d[2]),
+        est: chg(l)[0],
+        lo: chg(l)[1],
+        hi: chg(l)[2],
         tone: 'info',
-        title: `${AN_VW[l.k] || l.k}: enlarging changes right answers by ${anPts(pts(l.d[0]))} (likely ${anPts(pts(l.d[1]))} to ${anPts(pts(l.d[2]))})`
+        title: `${AN_VW[l.k] || l.k}: enlarging changes right answers by ${anPts(chg(l)[0])} (likely ${anPts(chg(l)[1])} to ${anPts(chg(l)[2])})`
       }));
     return (
       dotRange(rows, {nul: 0, lab: 'no change', tf: anPts, title: 'What enlarging changes, view by view'}) +
@@ -1438,7 +1441,7 @@ const AN_IX_DRAW = {
         ['View shown', '#Answers', '#Enlarged', '#Right, not enlarged', '#Right, enlarged', '#Enlarging changes'],
         t.lv.map(
           l =>
-            `<tr><td>${esc(AN_VW[l.k] || l.k)}</td><td class="n">${anInt(l.n)}</td><td class="n">${anInt(l.z)}</td><td class="n">${anRange(l.off, v => anPc(ANALYSIS.shiftP(T.p, T.g, v)))}</td><td class="n">${anRange(l.on, v => anPc(ANALYSIS.shiftP(T.p, T.g, v)))}</td><td class="n">${anRange(l.d, v => anPts(pts(v)))}</td></tr>`
+            `<tr><td>${esc(AN_VW[l.k] || l.k)}</td><td class="n">${anInt(l.n)}</td><td class="n">${anInt(l.z)}</td><td class="n">${anRange(l.off, v => anPc(ANALYSIS.shiftP(T.p, T.g, v)))}</td><td class="n">${anRange(l.on, v => anPc(ANALYSIS.shiftP(T.p, T.g, v)))}</td><td class="n">${anRange(chg(l), anPts)}</td></tr>`
         )
       )
     );
@@ -1617,6 +1620,9 @@ function anView(key, rep, R) {
   const lean = a.lean ? AN_LEAN : '';
   const parts = [anEffects(a, key)];
   if (!a.lean) parts.push(...(ANV[key] ? ANV[key](a, R) : []), anEnt(a, key));
+  // a compacted milestone keeps its interactions' verdicts (analysis.js compact): their cards, without the levels (Codex
+  // review #829)
+  else parts.push(...(a.ix || []).map(t => anIx(a, t.k)));
   parts.push(anConv(rep, key));
   return head + lean + `<div class="adm-sgrid adm-an-grid">${parts.join('')}</div>`;
 }
