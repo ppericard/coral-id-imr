@@ -137,6 +137,18 @@ is the design's shorthand, and internal identifiers may keep it.
   Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
   sharks).
 
+## The photo's species after every answer (Pierre, 2026-11-07 and 2026-11-08, go 2026-11-09)
+
+- After every answer to a family or genus question, right or wrong (typed or multiple choice, the quiz, duels, the exam),
+  one short line under the verdict names the species of the photo shown: its first curated common name ("Common names"
+  above) and its PDF name in italics, "This photo: Zigzag wrasse · *Halichoeres scapularis*"; a name WoRMS has changed
+  adds "(now *X* in WoRMS)", as the species sheet says it (rule S2); a species with no common name (Q247), the scientific
+  name alone. So players slowly meet the species names before the species level asks them.
+- Never before the answer, and never a name that could be wrong: the species is the one the photo is in play for
+  (`fish-game.json` `sp`, Pierre's curation applied), named to the species on iNaturalist (Research Grade, or Pierre's own:
+  rule S2) or by FishBase. The corals say a photo's species the same way, only inside the genus asked and when sure
+  (Research Grade or Pierre's own), else nothing more. `app.js` `photoTaxon`, `taxonLine`, `UNITS` `taxon`.
+
 ## The very start (fish beta feedback, Pierre, 2026-11-04)
 
 The first fish questions must be easy and readable. Two decisions, each built in its own code PR:
