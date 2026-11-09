@@ -53,6 +53,8 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
       body = o && o.body ? bodyOf(o.body) : null; // a light save unwrapped, as the script reads it
     sent.push(body || Object.fromEntries(url.searchParams));
     const j = sheet ? (body ? sheet.post(body) : sheet.get(Object.fromEntries(url.searchParams))) : {ok: false};
+    // A reply that never came (the sheet's stub answers an Error: it may have applied the request all the same).
+    if (j instanceof Error) return Promise.reject(j);
     return Promise.resolve({json: () => JSON.parse(JSON.stringify(j))});
   };
   const ls0 = storage(ls),
@@ -76,7 +78,7 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
       visibilityState: 'visible'
     },
     window: {addEventListener: () => {}},
-    navigator: {onLine: true},
+    navigator: {onLine: true, userAgent: 'Mozilla/5.0 (node test)'},
     setInterval: () => 0,
     setTimeout: () => 0,
     clearTimeout: () => {},
@@ -346,6 +348,66 @@ test('a refused save while the fish units are not in: no merge, the replay of th
   );
   assert.strictEqual(n(a.fish()), 9);
   assert.strictEqual(a.rvApplied(FS), FRV);
+});
+
+// ROADMAP "A save whose reply is lost, then another device's save" (found 2026-11-08), on the fish side: the sheet wrote
+// the save, its reply never came, another device saved over it; the plain merge counted the lost save's answers twice.
+// Its fate unknown (SYNC.lg, sync.js fateUnknown), the fish replay of the log counts each answer once by its id, from
+// the script that replays fish (REPLAYS_SHEET) as with the light saves (today's script).
+test('fish: a save whose reply never came, then another device saved over it: its answers count once', async () => {
+  for (const v of [C.REPLAYS_SHEET, SV]) {
+    const s = loadCodeGs(withFiles());
+    let lose = false;
+    const sheet = {
+        get: q => ({...s.get(q), v}),
+        post: b => {
+          const r = {...s.post(b), v};
+          return lose && b.name && !(lose = false) ? new TypeError('Failed to fetch') : r;
+        }
+      },
+      dev = () => {
+        const a = app({sheet, ls: {'reefid-subject': JSON.stringify('fish')}, SYNC: {name: 'Ana', pin: '1234', log: [], base: {}}});
+        a.ctx.SUBJ = FS; // on the fish side
+        a.ctx.P = {};
+        a.store.set('reefid-sheet-v', v);
+        return a;
+      },
+      play = (a, i) => {
+        const x = fa('l' + i, i),
+          r = (a.ctx.P[x.g] = a.ctx.P[x.g] || {ok: 0, ko: 0, h: ''});
+        r[x.ok ? 'ok' : 'ko']++;
+        r.h = (r.h + x.ok).slice(-10);
+        a.ctx.SYNC.log = [...a.ctx.SYNC.log, x];
+        a.ctx.SYNC.dirty = true;
+        a.store.set('reefid-sync-fish-progress', a.ctx.P);
+      },
+      n = P => Object.keys(P).reduce((t, u) => (u === '~level' ? t : t + (P[u].ok || 0) + (P[u].ko || 0)), 0),
+      rows = () => s.sheets.Answers.rows.slice(1).filter(r => r[0] === 'Ana').length,
+      saved = () => n(JSON.parse(C.keysIn(s.get({name: 'Ana', pin: '1234'}).data)['reefid-sync-fish-progress'] || '{}')),
+      A = dev(),
+      B = dev();
+    play(A, 0);
+    await A.syncPush();
+    await B.syncPull();
+    play(A, 1);
+    play(A, 2);
+    lose = true;
+    await A.syncPush();
+    assert.ok(!lose && rows() === 3 && A.ctx.SYNC.log.length === 2, `v${v}: logged and written, the reply lost`);
+    await B.syncPull(); // the other device loads the copy the lost save wrote
+    play(B, 3);
+    await B.syncPush(); // and saves over it
+    play(A, 4);
+    await A.syncPush();
+    await A.syncPull();
+    await B.syncPull();
+    assert.deepStrictEqual(
+      [rows(), n(A.fish()), n(B.fish()), saved(), A.ctx.SYNC.log.length, !!A.ctx.SYNC.lg],
+      [5, 5, 5, 5, 0, false],
+      `v${v}: every answer once`
+    );
+    assert.strictEqual(A.rvApplied(FS), FRV, `v${v}: the fish replay adopted`);
+  }
 });
 
 // Codex review #779: the floor is the sheet's, so every device of the account adopts the same record. A second device

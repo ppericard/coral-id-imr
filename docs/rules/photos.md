@@ -90,3 +90,13 @@ before the answer (it would give the answer away); hidden on phones, where the e
 source. Before the answer the enlarged quiz photo credits its author by name only, no taxon and no link (`blindCredit()`
 in `app.js`).
 *Source:* Pierre, 2026-11-01; the blind credit, 2026-11-03; subject-neutral wording, 2026-11-06.
+
+### P6
+
+**Corals: no photo of a coral skeleton anywhere** (a bare skeleton or a specimen, often white on a table, a beach or a
+plain background): not in the games, the comparisons, the genus sheets, the Coral ID Key, Memory or Coral basics. A
+live colony that is only pale or bleached is not a skeleton. The photos judged by eye are listed in
+`judging/skeletons.json`, marked `skel` in the data (`tools/apply_skeletons.py`) and dropped by every reader
+(`tests/skeletons.test.js`).
+*Why:* the features cannot be seen properly on a skeleton.
+*Source:* Pierre, 2026-11-09.

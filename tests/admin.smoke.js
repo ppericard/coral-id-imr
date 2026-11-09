@@ -977,11 +977,25 @@ const WIDTHS = [390, 1280];
       if (at.hash !== '#' + other.hash + 'inbox/todo/reports' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
         fails.push(`${w}px Subjects: Forward to the ${other.id} Reports ${JSON.stringify(at)}`);
       if (at.wide > 0) fails.push(`${w}px Subjects: page ${at.wide} px wider than the window`);
+      // The switch stays on the page on screen (Pierre, 2026-11-09): the other side's Reports, not its page used last.
       await p.click(`#subj [data-subj="${S[0].id}"]`);
       await settle();
       at = await seg();
-      if (at.subj[0][1] !== 'true' || at.hash !== '#players/activity')
-        fails.push(`${w}px Subjects: back to ${S[0].id} ${JSON.stringify(at)}`);
+      if (at.subj[0][1] !== 'true' || at.hash !== '#inbox/todo/reports')
+        fails.push(`${w}px Subjects: back to ${S[0].id} on the same page ${JSON.stringify(at)}`);
+      // A page one side lacks (a coral genus page): the other side's view of the same tab or group, one it has.
+      const gen = await p.evaluate(() => Object.keys(DATA.gen)[0]);
+      await p.evaluate(g => (location.hash = '#photos/genera/live/' + encodeURIComponent(g)), gen);
+      await settle();
+      await p.click(`#subj [data-subj="${other.id}"]`);
+      await settle();
+      const land = await p.evaluate(() => ({
+        hash: location.hash,
+        ok: typeof hasPage === 'function' && hasPage(ASUBJ, cur),
+        page: typeof cur === 'string' ? cur : ''
+      }));
+      if (!land.ok || !land.hash.startsWith('#' + other.hash + 'photos/'))
+        fails.push(`${w}px Subjects: a coral genus page switched to ${other.id} ${JSON.stringify(land)}`);
     }
     // A shorter address opens its first view; an old (pre-refonte) or unknown address opens its group's first view, else
     // the landing page, the address replaced in place (rule W3: old addresses are not translated; Q53-Q56). A deep link

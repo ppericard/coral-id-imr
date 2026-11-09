@@ -71,7 +71,7 @@ function page(s, {v = LIGHT, SYNC = null, P = {}, ls = {}, net = () => undefined
       visibilityState: 'visible'
     },
     window: {addEventListener: () => {}},
-    navigator: {onLine: true},
+    navigator: {onLine: true, userAgent: 'Mozilla/5.0 (node test)'},
     setInterval: () => 0,
     setTimeout: () => 0,
     clearTimeout: () => {},
