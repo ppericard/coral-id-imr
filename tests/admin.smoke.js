@@ -5412,7 +5412,20 @@ const WIDTHS = [390, 1280];
           // writes one, each from its own copy of the storage. Then this tab loads and opens the draft. Says whether the
           // other tab locked (reloaded).
           admin = u => u.pathname.endsWith('/admin.html'),
-          holdQ = r => (r.request().frame().page() === q ? r.abort() : r.continue()),
+          // The reload held off loads a blank page instead ("held"), so where the tab is stays certain.
+          held = r => r.fulfill({contentType: 'text/html', body: '<!doctype html><title>held</title>'}),
+          holdQ = r => (r.request().frame().page() === q ? held(r) : r.continue()),
+          // A new document for this tab: a reload held off can leave the old one in place, or land on its error page while
+          // the next navigation starts (that one is then tried again).
+          leaveQ = async () => {
+            await q.waitForFunction(() => document.title === 'held', null, {timeout: 30000}).catch(() => {});
+            for (let i = 0; ; i++)
+              try {
+                return await q.goto(base + 'no-such-page');
+              } catch (e) {
+                if (i > 4 || !/interrupted/.test(e.message)) throw e;
+              }
+          },
           signOutHeld = async during => {
             await c.route(admin, holdQ);
             const l2 = q2.waitForEvent('load', {timeout: 30000}).then(
@@ -5424,6 +5437,7 @@ const WIDTHS = [390, 1280];
             const ok = await l2;
             await idle(q2);
             await c.unroute(admin, holdQ);
+            await leaveQ();
             await q.goto(base + 'admin.html?demo#photos/review/quality');
             await ready();
             return ok;
@@ -5494,7 +5508,7 @@ const WIDTHS = [390, 1280];
             [st.L[5], st.s[5] === 2 ? 3 : 2]
           );
           const hold = u => u.pathname.endsWith('/admin.html');
-          await c.route(hold, r => r.abort());
+          await c.route(hold, held);
           await signOut();
           await q2
             .waitForFunction(
@@ -5525,6 +5539,7 @@ const WIDTHS = [390, 1280];
               `${F}: the other tab, unable to seal its edit, did not stay unlocked with it in plain and a warning ${JSON.stringify(r)}`
             );
           await c.unroute(hold);
+          await leaveQ();
           await q.goto(base + 'admin.html?demo#photos/review/quality');
           await ready();
           await idle(q2);
@@ -5599,6 +5614,7 @@ const WIDTHS = [390, 1280];
           await idle(q2);
           const after = await q2.evaluate(f => (DRAFT.quality || {})[f], f5);
           await c.unroute(admin, holdQ);
+          await leaveQ();
           await q.goto(base + 'admin.html?demo#photos/review/quality');
           await ready();
           if (back !== v5b || after !== v5b)
@@ -5627,6 +5643,61 @@ const WIDTHS = [390, 1280];
         // Codex review #798: while it seals the page is read-only (a "Sealing…" layer, every editor inert), so a note typed
         // then cannot be lost: what the note field shows when the page leaves is what the next unlock opens. The keys are
         // typed late in a held encryption, past the note's 0.8 s wait before it is written.
+        // Codex review #798: two tabs of one token signing out at once leave one seal, holding what each had of its own. Each
+        // rated a photo the other has not seen; their encryptions are held (3 s and 1 s), so both start before either ends,
+        // and the later one takes the earlier one in. Neither comes back unlocked meanwhile (the demo would, at once); a third
+        // page counts their two sign-out broadcasts and reads the seals.
+        {
+          const E = [st.L[3], st.L[4]],
+            q3 = await c.newPage();
+          await q2.goto(base + 'admin.html?demo#photos/review/quality');
+          await idle(q2);
+          await q3.goto(base + 'no-such-page');
+          const marked = () =>
+            q3.evaluate(async () => {
+              const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('reefid-admin-signout|demo')),
+                m = btoa(String.fromCharCode(...new Uint8Array(h))).slice(0, 22);
+              return JSON.parse(localStorage.getItem('demo:reefid-admin-sealed') || '[]').filter(x => x && x.m === m).length;
+            });
+          const n0 = await marked();
+          await q3.evaluate(() => {
+            window.smokeN = 0;
+            addEventListener('storage', e => e.key === 'demo:reefid-admin-signout' && e.newValue && smokeN++);
+          });
+          for (const [pg, f, ms] of [
+            [q, E[0], 3000],
+            [q2, E[1], 1000]
+          ])
+            await pg.evaluate(
+              ([f, ms]) => {
+                const enc = crypto.subtle.encrypt.bind(crypto.subtle);
+                crypto.subtle.encrypt = (...a) => new Promise(r => setTimeout(r, ms)).then(() => enc(...a));
+                DRAFT.quality = {...DRAFT.quality, [f]: 3}; // in this tab only
+              },
+              [f, ms]
+            );
+          const noAdmin = held;
+          await c.route(admin, noAdmin);
+          await Promise.all([q.evaluate(() => void signOut()), q2.evaluate(() => void signOut())]);
+          const both = await q3
+            .waitForFunction(() => smokeN >= 2, null, {timeout: 45000})
+            .then(
+              () => true,
+              () => false
+            );
+          const n1 = await marked();
+          await c.unroute(admin, noAdmin);
+          await leaveQ();
+          await q.goto(base + 'admin.html?demo#photos/review/quality');
+          await ready();
+          const got = await quality(E),
+            n2 = await marked();
+          await q3.close();
+          if (!both || n0 !== 0 || n1 !== 1 || got.join() !== '3,3' || n2 !== 0)
+            fails.push(
+              `${F}: two tabs of one token signing out at once did not leave one seal with both tabs' clicks ${JSON.stringify({both, n0, n1, got, n2})}`
+            );
+        }
         await q2.close();
         await q.goto(base + 'admin.html?demo#inbox/todo/points/astrea-reefcloud');
         await ready();

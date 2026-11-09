@@ -6918,22 +6918,40 @@ async function sealDraft(over) {
     plainOff();
     return true;
   }
+  // A token keeps one seal (Codex review #798: two tabs of one token signing out at once left two, and the older came back
+  // later as unpublished work). Its earlier seals (a mark of the token beside each, not the token) are taken into this one
+  // first, unless this tab already holds the draft they sealed (its revision known here), against the revision they had
+  // seen, as two tabs' drafts are merged (takeTab): what was undone here since stays undone. over: one already taken in.
+  const mark = await tokMark(TOKEN),
+    key = await sealKey(TOKEN),
+    seen = new Set(over ? [over] : []);
+  for (const x of mineSealed(mark)) {
+    if (seen.has(x.ct)) continue;
+    seen.add(x.ct);
+    const o = await openSeal(x, key).catch(() => null);
+    if (!o || (o.r && REVS[o.r])) continue;
+    DRAFT = mergeCur((o.s && REVS[o.s]) || SAVED, DRAFT, o.b ? mergeCur(o.b, o.d, SAVED) : mergeOld(o.d, SAVED));
+    DRAFT.genera = DRAFT.genera || {};
+    snap = JSON.stringify(DRAFT);
+  }
   const at = snap,
+    rev = `${TAB}.${++REV}`,
     z = typeof CompressionStream === 'function' && typeof DecompressionStream === 'function',
-    raw = new TextEncoder().encode(JSON.stringify({d: DRAFT, x: sealDiff(DRAFT, SAVED)})),
+    raw = new TextEncoder().encode(JSON.stringify({d: DRAFT, x: sealDiff(DRAFT, SAVED), r: rev, s: SEEN})),
     iv = crypto.getRandomValues(new Uint8Array(12)),
-    ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, await sealKey(TOKEN), z ? await gzip(raw, 1) : raw),
-    L = store.get(SEALED, []),
-    S = [
-      {iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0},
-      ...(Array.isArray(L) ? L : []).filter(x => !over || x.ct !== over)
-    ].slice(0, 3);
+    ct = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, z ? await gzip(raw, 1) : raw);
+  REVS[rev] = clone(DRAFT);
   // A click here, a note typed here (flushed now, not 0.8 s later), or a draft another tab wrote meanwhile (read from
-  // storage now: its storage event may not have come yet) goes round again. SEAL_REV: the draft revision sealed, for the
-  // other tabs to tell whether their last write is in it.
+  // storage now: its storage event may not have come yet) goes round again, and so does a seal of this token another tab
+  // wrote meanwhile. SEAL_REV: the draft revision sealed, for the other tabs to tell whether their last write is in it.
   ptFlush();
   takeOther();
-  if (snap !== at) return sealDraft(over);
+  if (snap !== at || mineSealed(mark).some(x => !seen.has(x.ct))) return sealDraft(over);
+  const L = store.get(SEALED, []),
+    S = [
+      {iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0, m: mark},
+      ...(Array.isArray(L) ? L : []).filter(x => x && x.m !== mark && x.ct !== over)
+    ].slice(0, 3);
   SEAL_REV = SEEN;
   plainOff();
   if (store.set(SEALED, S)) return true;
@@ -6941,27 +6959,37 @@ async function sealDraft(over) {
   store.set('reefid-curation-base', SAVED);
   return false;
 }
-// The draft this token sealed at its last sign out, if any: {d, b, ct, drop}; drop() removes it once it is in the draft:
-// that seal only, from the list as it is then (another token's window may have added its own since; Codex review #798).
+// The seals of the token whose mark is given, as stored now.
+const mineSealed = mark => (store.get(SEALED, []) || []).filter(x => x && x.m === mark);
+// One seal opened with its token's key: {d, b, r, s} (r: the revision sealed, s: the one it had seen); throws for a seal
+// of another token.
+async function openSeal(x, key) {
+  const pt = new Uint8Array(await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(x.iv)}, key, unb64(x.ct))),
+    o = JSON.parse(new TextDecoder().decode(x.z ? await gzip(pt, 0) : pt));
+  if (!o || !o.d || !o.d.genera) throw new Error('not a draft');
+  return {d: o.d, b: Array.isArray(o.x) ? sealPatch(o.d, o.x) : null, r: o.r || null, s: o.s || null};
+}
+// The draft this token sealed at its last sign out, if any: {d, b, ct, drop}, the newest of its seals. drop() removes it
+// once it is in the draft, with every other seal of this token (one seal per token), from the list as it is then:
+// another token's window may have added its own since (Codex review #798).
 async function unsealDraft() {
   const L = store.get(SEALED, null);
   if (!TOKEN || !Array.isArray(L) || !L.length) return null;
-  const k = await sealKey(TOKEN);
+  const k = await sealKey(TOKEN),
+    mark = await tokMark(TOKEN).catch(() => null);
   for (let i = 0; i < L.length; i++) {
     try {
-      const pt = new Uint8Array(await crypto.subtle.decrypt({name: 'AES-GCM', iv: unb64(L[i].iv)}, k, unb64(L[i].ct))),
-        o = JSON.parse(new TextDecoder().decode(L[i].z ? await gzip(pt, 0) : pt));
-      if (o && o.d && o.d.genera)
-        return {
-          d: o.d,
-          b: Array.isArray(o.x) ? sealPatch(o.d, o.x) : null,
-          ct: L[i].ct,
-          drop: () => {
-            const C = store.get(SEALED, []),
-              R = Array.isArray(C) ? C.filter(x => x && x.ct !== L[i].ct) : [];
-            return store.set(SEALED, R.length ? R : null);
-          }
-        };
+      const o = await openSeal(L[i], k);
+      return {
+        d: o.d,
+        b: o.b,
+        ct: L[i].ct,
+        drop: () => {
+          const C = store.get(SEALED, []),
+            R = Array.isArray(C) ? C.filter(x => x && x.ct !== L[i].ct && !(mark && x.m === mark)) : [];
+          return store.set(SEALED, R.length ? R : null);
+        }
+      };
     } catch (e) {} // sealed by another token
   }
   return null;
@@ -7070,12 +7098,7 @@ async function lockOther(rev) {
   let ok = snap === at && !lost && !unseen;
   if (!ok)
     try {
-      const S = await unsealDraft().catch(() => null);
-      if (S) {
-        DRAFT = mergeCur(SAVED, DRAFT, S.b ? mergeCur(S.b, S.d, SAVED) : mergeOld(S.d, SAVED));
-        snap = JSON.stringify(DRAFT);
-      }
-      ok = await sealDraft(S && S.ct);
+      ok = await sealDraft(); // the other tab's seal of this token taken in, and replaced (one seal per token)
     } catch (e) {}
   if (ok) return lockNow();
   sealing(false);
