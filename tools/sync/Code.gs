@@ -1408,10 +1408,8 @@ function boardRpl_(S){
     const since = resetOf_(d, arg), start = startOf_(d, arg), sinceKey = rplSince_(since, start),
       rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
-    // A record kept for a key every plain object inherits is never read, as replay_ never reuses it (Codex review #812):
-    // made again by the next boardWarm_.
     return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) ? sinceKey : since, rows: rows, n: rows.length,
-      row: c ? c.r : null, prev: prev, saved: savedOf(d), rec: prev && !(lc_(name) in Object.prototype) && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o, fl) : null};
+      row: c ? c.r : null, prev: prev, saved: savedOf(d), rec: prev && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o, fl) : null};
   };
   const adopted = (name, d, P) => {
     const x = need(name, d);
