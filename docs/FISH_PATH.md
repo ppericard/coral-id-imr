@@ -121,6 +121,18 @@ is the design's shorthand, and internal identifiers may keep it.
   `tools/fish_source.json` (copied to `fish.json`), Clownfish on Anemonefish (in Damselfish). "clown", "clownfish" typed
   read "✓ Yes, Anemonefish (often called clownfish): it's Damselfish" (`core.js` `fishOften`, `oft`; `quiz.js`
   `typeStep`, the spelling step's one-line style).
+- **One name in both numbers, a known name never a slip, a shared name all of its families** (Pierre, 2026-11-09, the
+  names study's plain fixes and Q319; docs/reviews/2026-11-09-shared-common-names.md): every name is also read in the
+  other number of its last word (`core.js` `typeForms`: "Grouper", "Goby", "Pipefish" are the Groupers, the Gobies, the
+  Pipefishes, exactly, no spelling step); a name the game knows that is no family's (`fishKnownNames`: every listed
+  species name, a word of each name shown, the genera's common names) is read as such, never as a slip of another family
+  (anglerfish was read as the Angelfishes, tuskfish as the Boxfishes), and the player is told "“Anglerfish” is a name some
+  fish species go by: this question needs the family." (until the name index accepts those names);
+  the IMR entries' scientific families the book splits (Holocentridae, Syngnathidae, Serranidae, Scorpaenidae,
+  Synanceiidae, Gobiidae) name each of their families (`typeMatchIn` `shared`): right on any of them, the feedback
+  saying "“Holocentridae” is also used for Squirrelfishes."; on another family a wrong answer that counts against the
+  photo's family only, no mix-up recorded, "“Serranidae” names Groupers, Soapfishes and Anthias." (`quiz.js` `typeUnit`,
+  `typeRead`). "Close to X and Y: which one? Check the spelling." is left for a slip between two names.
 - Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
   Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
   sharks).

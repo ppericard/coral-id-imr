@@ -739,7 +739,7 @@ function cnShow(s, asked) {
 // The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
 // typeNormAll: [{k, g: the species id, old, alt}], each listed name and its recorded spellings (old: the spelling typed,
 // alt: 1), nothing else: no other name the references give, no short form without "fish" (fishTypeNames' drop is the
-// families'). A name two species list names both (typeMatchIn near: "which one?").
+// families'). A name two species list names both (typeMatchIn shared: right for each of them, Q319).
 function cnTypeNames(L) {
   const out = [];
   (L || []).forEach(s =>
@@ -1756,7 +1756,9 @@ const UNITS = {
         }
       return null;
     },
-    names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop),
+    // The typed names: the entries' (core.js fishTypeNames) and the names the game knows that are no entry's (fishKnownNames:
+    // the species' common names and their last words), read as such, never as a slip of an entry's name.
+    names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, FISHRAW && FISHRAW.f ? fishKnownNames(FISHRAW.f) : []),
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the

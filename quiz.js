@@ -131,10 +131,16 @@ function typeBind(form, done, S = SUBJ, rk, one = S.one, o = {}) {
     // The retype: one only, whatever it reads as (exact or not, the first reading is the answer).
     if (first) return end(first.m, first.text, {r: typeVerdict(read(text), o.t) === 'exact' ? 1 : 0, text});
     const m = read(text);
-    if (!m || m.near) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
+    if (!m || m.near || m.known) rj.length < TYPEDQ_RJ && rj.push(text.slice(0, 40));
     const kind = !m && S === SUBJ ? typeKind(text, rk) : '';
     if (kind) msg.textContent = typeKindMsg(text, kind, one);
     else if (!m) msg.textContent = `“${text}” is not a ${one} in the game: check the spelling.`;
+    // A name the game knows that is no unit's (core.js typeMatchIn known: a species' name, or a word of one): said so,
+    // never read as a slip of another unit's name, and giving nothing away.
+    else if (m.known)
+      msg.textContent = m.w
+        ? `“${text}” is a name some ${S.several} go by: this question needs the ${one}.`
+        : `“${text}” is a species' name: this question needs its ${one}.`;
     else if (m.near) msg.textContent = `Close to ${m.near.map(unameT).join(' and ')}: which one? Check the spelling.`;
     else if (o.t && typeVerdict(m, o.t) === 'close') {
       first = {m, text};
@@ -158,16 +164,31 @@ const typeSpell = (text, name) => {
     .join('')
     .replace(/<\/b><b>/g, ''); // neighbouring letters in one bold run
 };
+// The unit a typed reading m gives on a question on unit t: its unit; for a name several units share (core.js
+// typeMatchIn shared: Holocentridae, the Soldierfishes' and the Squirrelfishes'), t when t is one of them (right,
+// Pierre, 2026-11-09, Q319), else none: a wrong answer that counts against t only, no mix-up recorded (Q319), as "I
+// don't know" is scored (answer: no unit given), its text logged (ty); '' for "I don't know".
+const typeUnit = (m, t) => (!m ? '' : m.shared ? (m.shared.includes(t) ? t : '') : m.g || '');
+// Units as a list in a sentence: "A", "A and B", "A, B and C".
+const unameList = L =>
+  L.map(uname)
+    .join(', ')
+    .replace(/, ([^,]*)$/, ' and $1');
 // How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact, or when
-// the spelling step was asked: typeStep says it in the verdict's own line).
-const typeRead = (m, text, sp) =>
-  !m || m.exact || sp
-    ? ''
-    : m.old
-      ? m.alt
-        ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
-        : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
-      : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
+// the spelling step was asked: typeStep says it in the verdict's own line). A name several units share (m.shared), on
+// the question on unit t: right, the others it is used for; wrong, every unit it names (Q319).
+const typeRead = (m, text, sp, t) =>
+  m && m.shared
+    ? m.shared.includes(t)
+      ? `“${esc(text)}” is also used for ${unameList(m.shared.filter(g => g !== t))}.`
+      : `“${esc(text)}” names ${unameList(m.shared)}.`
+    : !m || m.exact || sp
+      ? ''
+      : m.old
+        ? m.alt
+          ? `You wrote ${esc(m.old)}, read as ${uname(m.g)}.` // another name of a fish entry (its family, a sub-entry)
+          : `You wrote the old name, ${esc(m.old)}, read as ${uname(m.g)}.`
+        : `You wrote “${esc(text)}”, read as ${uname(m.g)}.`;
 // The spelling step's outcome (typeBind sp) for the verdict's one line (Pierre, 2026-11-06: one line, "✓ Yes, but not
 // quite: it's spelled Galaxea", in place of "Yes, it's Galaxea" plus a second line), null when none was asked or the
 // retype was exact (Pierre, 2026-11-06: no mistake left to point out, so the plain "✓ Yes, it's X"). Else {spelled}: the
@@ -304,7 +325,7 @@ function question(cur, target, choices, prompt, set, kq) {
       tf,
       (m, text, sp, rj) => {
         Object.assign(TYPEDQ || {}, {m, text, sp, rj});
-        go(m ? m.g : '');
+        go(typeUnit(m, target));
       },
       SUBJ,
       rankOf(target),
@@ -749,9 +770,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // A typed answer: the field takes the right / wrong look of a choice, a quiet one after "I don't know".
   const tyIn = tq && $v.querySelector('#tyin');
   // A retype still not exact (the spelling step, typeBind): right, but the field says the spelling is not.
-  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c ? 'ko' : 'idk');
-  const idk = !!tq && !c,
-    read = tq ? typeRead(tq.m, tq.text, tq.sp) : '',
+  // A name several units share, the photo's not among them, gives no unit (typeUnit) but is a wrong answer, not "I don't know".
+  const shw = !!(tq && tq.m && tq.m.shared && !c);
+  if (tyIn) tyIn.classList.add(good ? (tq.sp && !tq.sp.r ? 'close' : 'ok') : c || shw ? 'ko' : 'idk');
+  const idk = !!tq && !c && !shw,
+    read = tq ? typeRead(tq.m, tq.text, tq.sp, target) : '',
     step = tq && good ? typeStep(tq.m, tq.text, tq.sp) : null;
   // The feedback: a genus's (IMR ID tips, mnemonic, Coral ID Key criteria) or a fish entry's (IMR cues, how to tell the look-alike
   // apart, the sub-entries and phases), chosen by what the record holds (fbBody).

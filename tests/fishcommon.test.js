@@ -131,8 +131,10 @@ test('typed: the listed names and their spellings are accepted, as their species
     (s.cn || []).flat().forEach(x => {
       const m = match(x),
         own = owners.get(norm(x));
-      // A name two species list (flagged shared in tools/fish_common.json: "Twospot wrasse") asks "which one?".
-      if (new Set(own).size > 1) return assert.ok(m && m.near && m.near.includes(s.id), `${x}: both species`);
+      // A name two species list (flagged shared in tools/fish_common.json: "Twospot wrasse") is right for both (Pierre,
+      // 2026-11-09, Q319: typeMatchIn shared).
+      if (new Set(own).size > 1)
+        return assert.ok(m && m.shared && m.shared.includes(s.id) && C.typeVerdict(m, s.id) === 'exact', `${x}: both species`);
       assert.ok(m && m.g === s.id && m.exact, `${s.name}: ${x} not accepted`);
       assert.strictEqual(C.typeVerdict(m, s.id), 'exact');
     })
@@ -188,8 +190,11 @@ test('match reads as typeMatchIn on every name: exact, close, shared, other and 
   texts.forEach(t => {
     const m = full(t);
     assert.deepStrictEqual(match(t), m, t);
-    kinds.add(!m ? 'none' : m.near ? 'near' : m.exact ? 'exact' : 'close');
+    kinds.add(!m ? 'none' : m.near ? 'near' : m.shared ? 'shared' : m.exact ? 'exact' : 'close');
   });
-  assert.deepStrictEqual([...kinds].sort(), ['close', 'exact', 'near', 'none'], 'every kind of answer compared');
+  assert.ok(
+    ['close', 'exact', 'none', 'shared'].every(k => kinds.has(k)),
+    'every kind of answer compared: ' + [...kinds]
+  );
   assert.ok(texts.length > 100, String(texts.length));
 });
