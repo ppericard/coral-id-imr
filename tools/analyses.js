@@ -117,11 +117,16 @@ async function sheetRun(io, token, o = {}) {
     io.log(`Could not read the answer log (${(ans && ans.error) || 'no reply'}). Nothing done.`);
     return 'refused';
   }
-  // The analyses are one subject's (the corals'): sheet v60 logs every subject's answers (core.js subjRows), counted as the
-  // head counts them (subjCounts).
-  const count = C.subjCounts(ans.rows)[subject] || 0;
-  ans.rows = C.subjRows(ans.rows, subject);
-  // Judged again on the log read: a script before v105 counted every subject's rows in its head.
+  // The analyses are one subject's (the corals'): sheet v60 logs every subject's answers (core.js subjRows).
+  // Sheet v115: the players and devices the admin left out of the statistics (Players, readAnswers excluded) are left out
+  // of the report too (analysis.js leftOut, as the admin's Recompute here); an exclusion changed makes the stored report
+  // stale (the sheet's rosterChanged_), so it is refitted.
+  ans.rows = A.leftOut(C.subjRows(ans.rows, subject), ans.excluded);
+  // Judged again on the log read, on the answers the report reads: the stored report's count (report answers) is that
+  // same count, so an unchanged log never stores again (Codex review #801: with answers left out, the sheet's head counts
+  // every row, an upper bound; it only decides whether the log is read), and a script before v105 counted every
+  // subject's rows in its head.
+  const count = ans.rows.length;
   const q = plan(count, st, o.force, !!head.stale);
   if (!q.go) {
     io.log(planText(count, q, subject));
