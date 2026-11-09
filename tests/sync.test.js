@@ -2364,6 +2364,67 @@ test('sheet replays per subject: a delete, a merge or an archive drops the fish 
   assert.deepStrictEqual(names(), ['Ana']);
 });
 
+// Production, 2026-11-09: the sheet's "Replayed Fish" tab stood empty, without its header (made by anything but the
+// script), and find_ on a tab of no row throws: every fish replay failed before it was stored or sent (replays_ leaves a
+// failed subject out), so no fish player was ever replayed while their apps asked at every sync.
+test('v117 an empty Replayed tab made by hand: the replay gets its header and its record, and is sent', () => {
+  const s = loadCodeGs({fetch: withFish().fetch}),
+    F = Array.from({length: 9}, (_, i) => fa('f' + i, i));
+  s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: F, rv: C.RV});
+  s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Replayed Fish');
+  const r = s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: [], rv: C.RV, rvs: {fish: 0}, at: 1});
+  assert.ok(r.replays && r.replays.fish, 'the fish replay sent');
+  assert.deepStrictEqual(r.replays.fish.rec, fishWant(F, 'ana'));
+  const T = s.sheets['Replayed Fish'];
+  assert.deepStrictEqual([...T.rows[0]], ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record'], 'its header');
+  assert.deepStrictEqual(
+    Array.from(T.rows.slice(1), x => [x[0], x[1], x[2]]),
+    [['Ana', C.rvOf('fish'), 9]],
+    'its record'
+  );
+  // A load asks for it too (rv_fish): the record kept is the one sent.
+  assert.strictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.n, 9);
+});
+
+// Codex review #810: a player named after an Object property is a player like any other in the replay (core.js
+// replayProgress keyed by player id: a plain object read Object's constructor for "constructor", and replayed nothing).
+test('replays of players named constructor, __proto__, toString: their own answers, each subject', () => {
+  ['constructor', '__proto__', 'toString'].forEach(nm => {
+    const s = loadCodeGs({fetch: withFish().fetch}),
+      F = Array.from({length: 9}, (_, i) => fa('f' + i, i));
+    s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: F, rv: C.RV});
+    const r = s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [], rv: 0, rvs: {fish: 0}, at: 1});
+    assert.deepStrictEqual(r.replays.fish.rec, fishWant(F, nm.toLowerCase()), nm + ': the fish replay of its answers');
+    assert.deepStrictEqual([r.replay && r.replay.n, r.replay && r.replay.rec], [0, {}], nm + ': the corals, none logged');
+  });
+});
+
+// Codex review #812: before v117 core.js replayProgress replayed none of the answers of a player keyed "constructor" or
+// "__proto__" (it read the member every plain object inherits as their record), so a record kept for them may be wrong:
+// replay_ never reuses one for such a key and makes it again, each subject; another player's is reused as before.
+test('a kept replay record is never reused for a player keyed like an inherited member: made again', () => {
+  ['Ana', 'constructor', '__proto__'].forEach(nm => {
+    const s = loadCodeGs({fetch: withFish().fetch}),
+      F = Array.from({length: 9}, (_, i) => fa('f' + i, i)),
+      K = Array.from({length: 4}, (_, i) => qa('k' + i, i)),
+      ask = () => s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [], rv: 0, rvs: {fish: 0}});
+    s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [...K, ...F], rv: C.RV});
+    const r0 = ask(),
+      want = {fish: r0.replays.fish.rec, coral: r0.replay.rec};
+    assert.deepStrictEqual(want.fish, fishWant(F, nm.toLowerCase()), nm + ': its fish answers');
+    assert.strictEqual(r0.replay.n, 4, nm + ': its coral answers');
+    // A record kept with today's rules, the same rows and reset, as one made by the replay before the fix would be.
+    s.sheets['Replayed Fish'].rows[1][5] = '{"mark":1}';
+    s.sheets.Replayed.rows[1][5] = '{"mark":1}';
+    const r = ask();
+    if (nm === 'Ana') assert.deepStrictEqual([r.replays.fish.rec, r.replay.rec], [{mark: 1}, {mark: 1}], 'reused');
+    else {
+      assert.deepStrictEqual([r.replays.fish.rec, r.replay.rec], [want.fish, want.coral], nm + ': made again');
+      assert.notStrictEqual(s.sheets.Replayed.rows[1][5], '{"mark":1}', nm + ': and kept');
+    }
+  });
+});
+
 // Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
 // subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
 test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {
