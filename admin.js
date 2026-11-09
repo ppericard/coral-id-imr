@@ -1405,6 +1405,17 @@ const hasPage = (S, p) =>
 const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'players/list');
 // A player's page (a journey, a device's): the switch keeps it, as the page's own subject toggle does (renderJourney).
 const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
+// The page on screen as seen from subject S (the subject switch): its view (a thing a page is about, a genus, a family, a
+// point, belongs to one side, so the view it sits under), that view itself when S has it, else the view S opens for the
+// same tab or group (admRoute: a fish Photos › Families for the corals' Photos › Genera).
+const sameOn = (S, p) => {
+  const v = ADM_PAGES.filter(x => under(p, x)).sort((a, b) => b.length - a.length)[0] || p;
+  if (hasPage(S, v) && !shared(v)) return v;
+  // the same tab on that side, else the same group (admRoute may name a tab whose views that side does not have)
+  const seg = v.split('/'),
+    ok = x => x && hasPage(S, x) && !shared(x) && ADM_PAGES.includes(x);
+  return [seg.slice(0, 2).join('/'), seg[0]].map(x => admRoute(x, S)).find(ok) || homeOf(S);
+};
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
 // A subject's to-do count on the switch: what its To do lists. The corals' To do items (reports, flags, suggestions); for
@@ -1652,7 +1663,6 @@ function navs(tn, xn) {
     seen[T[0]] = page;
     store.set(subjK('reefid-admin-nav-tab'), seen);
   }
-  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-nav-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
     href = h => (h === LIVE ? genusHash() : '#' + (shared(h) ? '' : ASUBJ.hash) + h),
     // The subject's pages only: a view it has, a tab with one, a group with one.
@@ -1684,14 +1694,9 @@ function navs(tn, xn) {
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      // The subject's page used last (a remembered value is checked against today's addresses).
-      // A player's page stays that player's (their journey in the other subject).
-      const back = store.get(subjK('reefid-admin-nav-last', S), ''),
-        to = playerPage(cur)
-          ? cur
-          : typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) && !shared(back)
-            ? back
-            : homeOf(S);
+      // The same page on the other side (Pierre, 2026-11-09: the switch stays on the page on screen, never the side's
+      // page used last): sameOn. A player's page stays that player's (their journey in the other subject).
+      const to = playerPage(cur) ? cur : sameOn(S, cur);
       return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the
