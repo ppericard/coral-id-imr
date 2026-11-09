@@ -1,4 +1,4 @@
-// The seedling 🌱 after the admin's account name (sheet vNEXT; Pierre, 2026-11-09, Q328 corrected: "an icon the others
+// The seedling 🌱 after the admin's account name (sheet v125; Pierre, 2026-11-09, Q328 corrected: "an icon the others
 // are not allowed to have", added on its own, the name unchanged, no step for him): the account the admin page is signed
 // in to when it reads the answer log with a valid token becomes the admin's account (Code.gs answers_, adminAcct_: its
 // code hash, one at most); its leaderboard rows carry a 4th field 1 and its load reply admin: 1, which the app shows as
