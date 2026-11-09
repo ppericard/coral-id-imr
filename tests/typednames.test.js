@@ -115,14 +115,14 @@ test('a species name or a word of one: said so, never read as another family', (
 test('a name several families share: right for each, explained; on another family, wrong with no unit given (Q319)', () => {
   const r = family('Holocentridae', 'f:Soldierfishes');
   assert.strictEqual(r.got.c, 'f:Soldierfishes');
-  assert.strictEqual(r.read, '“Holocentridae” is also used for Squirrelfishes.');
+  assert.strictEqual(r.read, '“Holocentridae” is also used for the Squirrelfishes.');
   const s = family('Syngnathidae', 'f:Seahorses');
   assert.strictEqual(s.got.c, 'f:Seahorses');
-  assert.strictEqual(s.read, '“Syngnathidae” is also used for Pipefishes.');
+  assert.strictEqual(s.read, '“Syngnathidae” is also used for the Pipefishes.');
   const w = family('Serranidae', 'f:Wrasses');
   assert.strictEqual(w.got.c, ''); // no unit: counts against the Wrasses only, no mix-up (quiz.js answer)
   assert.ok(w.got.m.shared);
-  assert.strictEqual(w.read, '“Serranidae” names Groupers, Soapfishes and Anthias.');
+  assert.strictEqual(w.read, '“Serranidae” names the Groupers, the Soapfishes and the Anthias.');
   assert.strictEqual(w.msg, ''); // an answer, not a "which one?"
 });
 

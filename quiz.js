@@ -169,9 +169,9 @@ const typeSpell = (text, name) => {
 // Pierre, 2026-11-09, Q319), else none: a wrong answer that counts against t only, no mix-up recorded (Q319), as "I
 // don't know" is scored (answer: no unit given), its text logged (ty); '' for "I don't know".
 const typeUnit = (m, t) => (!m ? '' : m.shared ? (m.shared.includes(t) ? t : '') : m.g || '');
-// Units as a list in a sentence: "A", "A and B", "A, B and C".
+// Units as a list in a sentence: "the A", "the A and the B", "the A, the B and the C".
 const unameList = L =>
-  L.map(uname)
+  L.map(g => 'the ' + uname(g))
     .join(', ')
     .replace(/, ([^,]*)$/, ' and $1');
 // How a typed answer was read, said after it: an old name, or a spelling the tolerance accepted ('' when exact, or when

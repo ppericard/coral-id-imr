@@ -130,8 +130,8 @@ is the design's shorthand, and internal identifiers may keep it.
   fish species go by: this question needs the family." (until the name index accepts those names);
   the IMR entries' scientific families the book splits (Holocentridae, Syngnathidae, Serranidae, Scorpaenidae,
   Synanceiidae, Gobiidae) name each of their families (`typeMatchIn` `shared`): right on any of them, the feedback
-  saying "“Holocentridae” is also used for Squirrelfishes."; on another family a wrong answer that counts against the
-  photo's family only, no mix-up recorded, "“Serranidae” names Groupers, Soapfishes and Anthias." (`quiz.js` `typeUnit`,
+  saying "“Holocentridae” is also used for the Squirrelfishes."; on another family a wrong answer that counts against the
+  photo's family only, no mix-up recorded, "“Serranidae” names the Groupers, the Soapfishes and the Anthias." (`quiz.js` `typeUnit`,
   `typeRead`). "Close to X and Y: which one? Check the spelling." is left for a slip between two names.
 - Other common names, accepted when typed, never shown (Pierre, 2026-11-06, Q164: all OK): `aka`: Tang (Surgeonfish & Unicornfish), Cowfish and Trunkfish (Boxfish),
   Leatherjacket (Filefish), Moray eel (Morays & ribbon eels), Stingray (Rays), Trevally (Jacks), Thresher (Thresher
