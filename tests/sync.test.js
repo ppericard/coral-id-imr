@@ -2367,7 +2367,7 @@ test('sheet replays per subject: a delete, a merge or an archive drops the fish 
 // Production, 2026-11-09: the sheet's "Replayed Fish" tab stood empty, without its header (made by anything but the
 // script), and find_ on a tab of no row throws: every fish replay failed before it was stored or sent (replays_ leaves a
 // failed subject out), so no fish player was ever replayed while their apps asked at every sync.
-test('vNEXT an empty Replayed tab made by hand: the replay gets its header and its record, and is sent', () => {
+test('v117 an empty Replayed tab made by hand: the replay gets its header and its record, and is sent', () => {
   const s = loadCodeGs({fetch: withFish().fetch}),
     F = Array.from({length: 9}, (_, i) => fa('f' + i, i));
   s.post({name: 'Ana', pin: '1234', data: prog(3), summary: {}, answers: F, rv: C.RV});
