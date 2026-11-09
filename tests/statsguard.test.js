@@ -9,6 +9,8 @@ const C = require('../core.js');
 const {loadCodeGs} = require('./gas.js');
 
 const TOK = 'ghp_write000000000000000000';
+// The stats reply's cache key (Code.gs statsKey_: keyed by the rules version, Codex review #808).
+const SK = 'stats17.' + C.RV;
 const at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString();
 const ans = (id, extra = {}) => ({id, t: at(0), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-wide-1', ...extra});
 // Twelve right answers: clearly above chance (TRUST), so the sender rates the photos.
@@ -384,13 +386,13 @@ test('unchecked stats made under the lock are never served as checked by the pub
   // A fish photo under a coral genus, then a replay under the lock: its stats are made with no pool, and cached.
   s.post({name: 'Bot', pin: '3333', data: {}, summary: {}, answers: run('b', {ph: bfly}), rv: 0});
   assert.ok(!s.cache.pool2fish, 'nothing fetched under the lock');
-  assert.strictEqual(JSON.parse(s.cache.stats17).chk, 0, 'cached as unchecked');
-  assert.strictEqual(rated(JSON.parse(s.cache.stats17), bfly), 12);
+  assert.strictEqual(JSON.parse(s.cache[SK]).chk, 0, 'cached as unchecked');
+  assert.strictEqual(rated(JSON.parse(s.cache[SK]), bfly), 12);
   // The public stats: the pools read, the ratings checked, cached as checked.
   const pub = s.get({stats: '1'});
   assert.strictEqual(rated(pub, bfly), 0, 'the fish photo under a coral genus rates nothing');
   assert.match(String(s.cache.pool2fish), /^#\d+$/);
-  assert.strictEqual(JSON.parse(s.cache.stats17).chk, 1);
+  assert.strictEqual(JSON.parse(s.cache[SK]).chk, 1);
   assert.strictEqual(rated(s.post({readStats: 1, token: TOK}), bfly), 0);
   // A replay under the lock now takes the checked stats from the cache.
   const before = JSON.stringify(n);

@@ -248,7 +248,7 @@ test('eloOf gives the same photo ratings as Code.gs stats_', () => {
     }
   // A reply cached by the script before this rules version (its key stats17, up to 10 minutes) is never served: the cache
   // is keyed by the rules version (Codex review #808), so a replay under the new rules never reads the former ratings.
-  s.cache.stats17 = JSON.stringify({ok: true, photos: {}, ras: {}, conf: {}, mem: MEM.PRIOR, memn: [0, 0, 0, 0], gd: {}, fmt: {}});
+  s.cache.stats17 = JSON.stringify({ok: true, photos: {}, ras: {}, conf: {}, mem: MEM.PRIOR, memn: [0, 0, 0, 0], gd: {}, fmt: {}, chk: 1});
   const T = {token: 'ghp_write000000000000000000'},
     rows = s.post({readAnswers: 1, ...T}).rows,
     st = s.get({stats: '1'});
