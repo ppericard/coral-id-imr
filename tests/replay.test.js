@@ -150,7 +150,7 @@ test('replayedOf: the replayed bars with the saved exams, not one passed under t
   assert.strictEqual(G.A.mx, saved.A.mx);
   assert.ok(!G.C.mx && G.C.pg === rep.P.C.pg, 'an exam passed under BKT is taken again');
   assert.ok(!G.D, 'its answers in no log: they go (rule D9, Q330)');
-  assert.deepStrictEqual([G[C.LEVEL].ok, G[C.LEVEL].ko], [2, 0], "the log's answer count");
+  assert.deepStrictEqual([G[C.LEVEL].ok, G[C.LEVEL].ko], [5, 1], "the larger answer count of the two: the app's clock");
   assert.strictEqual(G[C.LEVEL].th, rep.P[C.LEVEL].th, 'the replayed global level');
   assert.strictEqual(C.learnedOf(G, L), 1);
   assert.strictEqual(C.learnedOf(saved, L), 2);

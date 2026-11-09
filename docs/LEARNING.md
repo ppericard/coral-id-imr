@@ -3505,8 +3505,10 @@ Pierre, 2026-11-09 (Q322, Q330; rule D9): the answer log is the reference for pr
 Found with the lost-reply double count (#824): a device could hold some answers twice, and the replay kept the device's
 record of a unit whenever it held more answers than the log (`core.js` `replayedOf`, written to keep the answers played
 before the log), so a double count, once in the progress, stayed for good. Now the replay's record of each unit the log
-has answers on, and the level's answer count, win over the device's also when the device holds more; a unit the log has
-no answer on loses the answers the device counts on it (`replayedOf`, `replayBase`; so the leaderboard too, `Code.gs`
+has answers on wins over the device's also when the device holds more; a unit the log has no answer on loses the answers
+the device counts on it; the level takes the replay's ability, its answer count staying the larger of the two, the app's
+clock (the exam's gaps, the cards met, the openings and the prompts are stored at the count they happened at; Codex
+review of #840: a count halved held the openings back) (`replayedOf`, `replayBase`; so the leaderboard too, `Code.gs`
 `board_`, rule D8). No exception for answers played before a subject's log began (Q330: the log is the only reference),
 and no floor: the fish replay is no longer floored against the saved bars of its first replay (`replayFloor`, `Code.gs`
 `floorRef_` removed), so a fish bar may go down. No card for the recalculation (rule D5): rules version 10 and fish rules

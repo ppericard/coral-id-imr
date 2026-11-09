@@ -1345,6 +1345,22 @@ function rvNoticeAdd(from, to, pct, sid) {
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {},
     k = x => rvId(sid, x.v);
+  // A version without a card (from rules version 10, Pierre 2026-11-09 ~14:45 Manila, Q330: a recalculation is not
+  // told): the cards of this subject still due here go too (Codex review of #840: a card queued before the upgrade
+  // showed after it).
+  const VS = sid ? rvsOf(sid) : RVS,
+    V = VS.find(x => x.v === to);
+  if (V && !V.msg) {
+    const ids = VS.map(x => rvId(sid, x.v)),
+      keep = v => !ids.includes(v);
+    store.set(RVN.KEY, {
+      due: due.filter(keep),
+      told,
+      pct: Object.fromEntries(Object.entries(pc).filter(([v]) => keep(isNaN(v) ? v : Number(v)))),
+      ...((M.std || []).filter(keep).length ? {std: M.std.filter(keep)} : {})
+    });
+    return;
+  }
   // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
   // cards, the standard one included (rvMsgs skip).
   let L = rvMsgs(from, to, false, sid);

@@ -4532,8 +4532,11 @@
   //   lost then another device's save, PR #824), its counts and recent results only when none of them is replayable; a
   //   genus the log has no answer on keeps the saved record only if it holds no answer either (its answers are in no
   //   log: dropped);
-  // - LEVEL: the replayed ability (th, vr), the replay's answer count with its answer times (rt), the later at, rv when
-  //   given.
+  // - LEVEL: the replayed ability (th, vr), the larger answer count of the two with the answer times (rt) of the same
+  //   side, the later at, rv when given: the level's count is the app's clock (answersSoFar keys the exam's gaps, the
+  //   cards met, the openings and the prompts, each stored at the count it happened at), so it never goes back (Codex
+  //   review of #840: a count halved left those checkpoints ahead of it, and the openings waited); the progress, the
+  //   units' counts and bars, is the log's (rule D9).
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
@@ -4560,8 +4563,8 @@
         if (r) {
           if (typeof r.th === 'number') o.th = r.th;
           if (typeof r.vr === 'number') o.vr = r.vr;
-          // The answer count and its times (rt): the log's.
-          {
+          // The answer times (rt) go with the count: the replay's when it has every answer the device has.
+          if (!s || n(r) >= n(s)) {
             [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
             if (isObj(r.tyk)) o.tyk = dup(r.tyk);
             else delete o.tyk;
@@ -4621,7 +4624,8 @@
   //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
   //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
   // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
-  // - the global level: the replay's, its answer count and answer times (rt) included (the log is the reference, rule D9).
+  // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
+  //   keeps the larger count: the app's clock).
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -4633,7 +4637,15 @@
         r = R[g];
       if (g === LEVEL) {
         if (!r) return b && (out[g] = dup(b));
-        out[g] = dup(r);
+        const o = dup(r);
+        if (b && n(b) > n(r)) {
+          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
+          else delete o.tyk;
+          if (isObj(b.rt)) o.rt = dup(b.rt);
+          else delete o.rt;
+        }
+        out[g] = o;
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
         Object.keys((b && b.ps) || {}).forEach(f => {

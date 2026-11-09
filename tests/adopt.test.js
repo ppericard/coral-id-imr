@@ -865,6 +865,28 @@ test('the recalculation card is due only when the progress % moved by 5 points o
   assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[SV], undefined]);
 });
 
+// No card for a recalculation from rules version 10 (Pierre, 2026-11-09 ~14:45 Manila, Q330): a card queued before the
+// upgrade (here rules version 9's apology, not seen yet) goes too, for the subject that jumps (Codex review of #840).
+test('a jump to a rules version without a card drops the cards of that subject still due', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    block = cut(src, 'const RVN = ', 'let rvT = 0;'),
+    saved = {},
+    ctx = {
+      ...C,
+      window: {},
+      toldHas: () => false,
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  vm.createContext(ctx);
+  vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
+  ctx.store.set('reefid-rv-msg', {due: [9, 'fish:1'], told: [], pct: {9: [50, 40], 'fish:1': [10, 20]}});
+  ctx.add(9, 10, [40, 30]);
+  const M = ctx.store.get('reefid-rv-msg', {});
+  assert.deepStrictEqual([M.due, M.pct], [['fish:1'], {'fish:1': [10, 20]}], "the corals' card gone, the fish one kept");
+  ctx.add(1, 2, [20, 20], 'fish');
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [], 'then the fish one, at its own version without a card');
+});
+
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
 function ach(A) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),

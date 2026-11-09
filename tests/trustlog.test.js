@@ -60,12 +60,14 @@ test('a whole record counted twice: the replay of the log wins, every unit and t
     twice = inflate(once, (u, r) => [2 * (r.ok || 0), 2 * (r.ko || 0)]);
   assert.strictEqual(total(twice), 60);
   const M = C.replayAdopted(rep.P, twice, C.RV);
-  assert.deepStrictEqual(counts(M), counts(once), 'every unit and the level as in the log');
+  G.slice(0, 10).forEach(u => assert.strictEqual(n(M[u]), n(once[u]), u + ': as in the log'));
   assert.strictEqual(total(M), 30);
-  assert.strictEqual(n(M[C.LEVEL]), 30, "the level's answer count too");
-  // The merge baseline after the adoption is the replay's record, its level's count included.
+  // The level's answer count is the app's clock (the exam's gaps, the cards met, the openings and the prompts are stored
+  // at the count they happened at): it never goes back (Codex review of #840).
+  assert.strictEqual(n(M[C.LEVEL]), 60);
+  assert.strictEqual(M[C.LEVEL].th, rep.P[C.LEVEL].th, "the replay's ability");
+  // The merge baseline after the adoption is the replay's record.
   const B = C.replayBase(rep.P, M, C.RV, twice);
-  assert.strictEqual(n(B[C.LEVEL]), 30);
   assert.strictEqual(total(B), 30);
 });
 
@@ -155,7 +157,10 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
       extra = U.filter(u => !once[u] && rnd() < 0.3);
     extra.forEach(u => (saved[u] = {ok: 1 + int(3), ko: int(2), h: '1'}));
     const M = C.replayAdopted(rep.P, saved, 1);
-    Object.keys(once).forEach(u => assert.strictEqual(n(M[u]), n(once[u]), `case ${k}: ${u}`));
+    Object.keys(once)
+      .filter(u => u !== C.LEVEL)
+      .forEach(u => assert.strictEqual(n(M[u]), n(once[u]), `case ${k}: ${u}`));
+    assert.strictEqual(n(M[C.LEVEL]), Math.max(n(once[C.LEVEL]), n(saved[C.LEVEL])), `case ${k}: the level's count, the app's clock`);
     extra.forEach(u => assert.ok(!(u in M), `case ${k}: ${u} in no log, dropped`));
     assert.strictEqual(total(M), A.length, `case ${k}: every answer of the log once`);
     // Adopting the same replay again over the adopted record changes no count.
