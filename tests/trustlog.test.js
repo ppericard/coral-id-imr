@@ -10,8 +10,6 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const C = require('../core.js');
-const vm = require('vm'),
-  block = require('./block.js');
 const {page, LIGHT, withData, loadCodeGs} = require('./syncpage.js');
 
 const DATA = require('../data.json'),
@@ -62,13 +60,14 @@ test('a whole record counted twice: the replay of the log wins, every unit and t
     twice = inflate(once, (u, r) => [2 * (r.ok || 0), 2 * (r.ko || 0)]);
   assert.strictEqual(total(twice), 60);
   const M = C.replayAdopted(rep.P, twice, C.RV);
-  assert.deepStrictEqual(counts(M), counts(once), 'every unit and the level as in the log');
+  G.slice(0, 10).forEach(u => assert.strictEqual(n(M[u]), n(once[u]), u + ': as in the log'));
   assert.strictEqual(total(M), 30);
-  assert.strictEqual(n(M[C.LEVEL]), 30, "the level's answer count too (rule D9)");
+  // The level's answer count keeps main's rule, the larger of the two (the app's checkpoints hang on it; the log's count
+  // there is a follow-up, branch claude/level-count-from-log); its ability is the replay's.
+  assert.strictEqual(n(M[C.LEVEL]), 60);
   assert.strictEqual(M[C.LEVEL].th, rep.P[C.LEVEL].th, "the replay's ability");
-  // The merge baseline after the adoption is the replay's record, its level's count included.
+  // The merge baseline after the adoption is the replay's record.
   const B = C.replayBase(rep.P, M, C.RV, twice);
-  assert.strictEqual(n(B[C.LEVEL]), 30);
   assert.strictEqual(total(B), 30);
 });
 
@@ -124,15 +123,26 @@ test('a unit the log has no answer on: its answers on the device go; a unit with
   assert.strictEqual(total(M), 6);
 });
 
-// Codex review of #840: a player with no answer in the log at all (an empty replay) keeps no unit, no answer count and no
-// ability.
-test('an empty replay: every unit with answers goes, the level count and the ability too', () => {
-  const M = C.replayAdopted({}, {'~level': {ok: 17, ko: 0, th: 2, vr: 0.1, rt: {5: 3}}, Acropora: {ok: 17, ko: 0, h: '11111'}}, 2);
+// Codex review of #840: a player with no answer in the log at all (an empty replay) keeps no unit with answers and no
+// ability; the level's count keeps main's rule (the larger).
+test('an empty replay: every unit with answers goes, the ability too; the level count kept', () => {
+  const M = C.replayAdopted({}, {'~level': {ok: 17, ko: 0, th: 2, vr: 0.1}, Acropora: {ok: 17, ko: 0, h: '11111'}}, 2);
   assert.ok(!M.Acropora);
-  assert.deepStrictEqual(
-    [M[C.LEVEL].ok, M[C.LEVEL].ko, M[C.LEVEL].th, M[C.LEVEL].vr, M[C.LEVEL].rt],
-    [0, 0, undefined, undefined, undefined]
-  );
+  assert.deepStrictEqual([M[C.LEVEL].ok, M[C.LEVEL].th, M[C.LEVEL].vr], [17, undefined, undefined]);
+});
+
+// Codex review of #840 (round 2): when the sheet sent no level (an empty log), the merge baseline's level is the shared
+// copy's, never the adopted one, which holds this device's unsent answers: the next merge keeps every answer once.
+test("an empty replay with an unsent answer: the baseline's level is the shared copy's, the next merge counts each answer once", () => {
+  const shared = {'~level': {ok: 3, ko: 0, th: 1}},
+    here = {'~level': {ok: 4, ko: 0, th: 1}, Acropora: {ok: 1, ko: 0, h: '1'}}, // one answer not sent yet
+    M = C.replayAdopted({}, here, 2),
+    B = C.replayBase({}, M, 2, shared);
+  assert.strictEqual(n(B[C.LEVEL]), 3, "the shared copy's level, not the adopted one with the unsent answer");
+  // Another device saved one more answer on the shared copy: 3 + 1 there, this device's own 1 on top.
+  const R = {'~level': {ok: 4, ko: 0, th: 1}, Porites: {ok: 1, ko: 0, h: '1'}},
+    merged = C.mergeProgress(B, M, R);
+  assert.strictEqual(n(merged[C.LEVEL]), 5, 'every answer once');
 });
 
 test('progress from before the coral log: dropped as any answer the log does not have', () => {
@@ -172,7 +182,7 @@ test('property: every adoption ends with the log, whatever the saved copy holds 
     Object.keys(once)
       .filter(u => u !== C.LEVEL)
       .forEach(u => assert.strictEqual(n(M[u]), n(once[u]), `case ${k}: ${u}`));
-    assert.strictEqual(n(M[C.LEVEL]), n(once[C.LEVEL]), `case ${k}: the level's count, the log's`);
+    assert.strictEqual(n(M[C.LEVEL]), Math.max(n(once[C.LEVEL]), n(saved[C.LEVEL])), `case ${k}: the level's count, the larger`);
     extra.forEach(u => assert.ok(!(u in M), `case ${k}: ${u} in no log, dropped`));
     assert.strictEqual(total(M), A.length, `case ${k}: every answer of the log once`);
     // Adopting the same replay again over the adopted record changes no count.
@@ -198,10 +208,7 @@ test('a device holding its record twice under the rules before: the next sync ta
       ls: {'reefid-sync-coral-progress': JSON.stringify(twice), 'reefid-sync-coral-rv': String(C.RV - 1)}
     });
     let cards = 0;
-    const shifts = [];
     D.ctx.rvNoticeAdd = (from, to) => (cards += C.rvMsgs(from, to).length);
-    D.ctx.countShift = d => shifts.push(d); // model.js: the checkpoints kept at a count follow it down
-    D.ctx.answersSoFar = () => n(D.ctx.P[C.LEVEL]); // model.js: the level's answer count
     assert.strictEqual(total(D.ctx.P), 24);
     // One answer played here, not sent yet: counted on top of the replay, never lost.
     D.play('d' + v + 'new', 'Pavona', 1, new Date(CORAL + 49 * H).toISOString());
@@ -212,73 +219,7 @@ test('a device holding its record twice under the rules before: the next sync ta
     G.slice(0, 4).forEach(u => assert.strictEqual(n(D.ctx.P[u]), n(rep.P[u]), `v${v} ${u}: the log's`));
     assert.strictEqual(n(D.ctx.P.Pavona), 1, `v${v}: the unsent answer kept`);
     assert.strictEqual(cards, 0, `v${v}: no card (Q330)`);
-    // The level: 24 counted, 12 logged, the unsent answer on top: 13, the checkpoints moved down by the 11 between.
-    assert.strictEqual(n(D.ctx.P[C.LEVEL]), 13, `v${v}: the level's count, the log's`);
-    assert.strictEqual(
-      shifts.filter(d => d > 0).reduce((t, d) => t + d, 0),
-      11,
-      `v${v}: the checkpoints moved down with the count: ${shifts}`
-    );
   }
-});
-
-// P8's case (Progress data row 9; made-up data): 170 answers saved, 85 logged. After the adoption its count is the log's 85
-// (rule D9), and every checkpoint kept at an answer count moves down with it (model.js countShift; Codex review of
-// #840): one already passed stays passed (the gap since the last unit opened, an exam's spacing, the prompt spacing)
-// and one ahead stays as far ahead (the comeback's floor), nothing fires again and nothing is lost.
-test("P8's count halved: the checkpoints kept at a count follow it, none passed fires again, none ahead is lost", () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    fn = block(src, 'function countShift(d) {', '\n}\n', {through: true}),
-    saved = {},
-    store = {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))},
-    ctx = {
-      store,
-      LEVEL: C.LEVEL,
-      P: {[C.LEVEL]: {ok: 150, ko: 20}, Acropora: {ok: 20, ko: 0, ex: {k: 1, v: ['wide'], at: 160}}},
-      INTRO: {KEY: 'intro', OFFER: {KEY: 'offer'}},
-      introMap: () => store.get('intro', {}),
-      COMEBACK: {KEY: 'comeback'},
-      cbLoad: () => store.get('comeback', {r: 0, t: 0, ok: 0, f: 0}),
-      CB: null,
-      PROMPT: {KEY: 'prompt'},
-      PULSEK: 'pulse',
-      SUBJ: {optin: ['bon']},
-      Q: {bonA: 150, bonN: 1},
-      saveQ: () => {},
-      planned: 0,
-      dropPlans: () => ctx.planned++
-    };
-  store.set('intro', {Acropora: [12, 1, 0, 's'], Porites: [168, 0, 0, 'c']});
-  store.set('offer', {at: 140, open: 1});
-  store.set('comeback', {r: 0, t: 0, ok: 0, f: 175});
-  store.set('prompt', 165);
-  store.set('pulse', {at: 166, q: 'x'});
-  vm.createContext(ctx);
-  vm.runInContext(fn + '\nthis.countShift = countShift;', ctx);
-  const count = () => (ctx.P[C.LEVEL].ok || 0) + (ctx.P[C.LEVEL].ko || 0),
-    since = () => count() - Math.max(...Object.values(ctx.introMap()).map(e => e[0])),
-    view = () => ({
-      sinceIntro: since(),
-      exam: count() - ctx.P.Acropora.ex.at,
-      offer: count() - store.get('offer').at,
-      floor: store.get('comeback').f - count(),
-      prompt: count() - store.get('prompt'),
-      pulse: count() - store.get('pulse').at,
-      bon: count() - ctx.Q.bonA
-    }),
-    before = view();
-  // The adoption: 170 answers, of which 85 counted twice, down to the log's 85.
-  ctx.P[C.LEVEL] = {ok: 75, ko: 10};
-  ctx.countShift(170 - count());
-  assert.strictEqual(count(), 85, "P8's count: the log's");
-  assert.deepStrictEqual(view(), before, 'every checkpoint as far behind or ahead of her count as before');
-  assert.strictEqual(ctx.CB.f, 90, 'the comeback floor, still 5 answers ahead');
-  assert.strictEqual(ctx.planned, 1, 'the questions planned ahead planned again');
-  // Nothing when the count did not go down.
-  const was = JSON.stringify(saved);
-  ctx.countShift(0);
-  ctx.countShift(-3);
-  assert.strictEqual(JSON.stringify(saved), was);
 });
 
 // A replay of a rules version newer than the app's own (core.js rvOf) is never adopted: an app that does not know the

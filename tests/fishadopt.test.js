@@ -268,10 +268,13 @@ test('a device holding its fish record twice: every unit takes the log, on the d
   const P = a.fish(),
     saved = JSON.parse(C.keysIn(s.get({name: 'Ana', pin: '1234'}).data)['reefid-sync-fish-progress']);
   assert.strictEqual(a.rvApplied(FS), FRV);
-  Object.keys(want).forEach(u => {
-    assert.strictEqual(n(P[u]), n(want[u]), u + ': the log on the device');
-    assert.strictEqual(n(saved[u]), n(want[u]), u + ': the log on the sheet');
-  });
+  // Every unit (the level's count keeps main's rule, the larger: a follow-up).
+  Object.keys(want)
+    .filter(u => u !== '~level')
+    .forEach(u => {
+      assert.strictEqual(n(P[u]), n(want[u]), u + ': the log on the device');
+      assert.strictEqual(n(saved[u]), n(want[u]), u + ': the log on the sheet');
+    });
 });
 
 test('an older script (before REPLAYS_SHEET): no fish replay asked for or adopted, the fish progress as before', async () => {
@@ -593,7 +596,7 @@ test("a device with more answers than the log (played before the fish log): the 
   assert.strictEqual(a.rvApplied(FS), FRV);
   const P = a.fish(),
     n = x => ((x && x.ok) || 0) + ((x && x.ko) || 0);
-  assert.strictEqual(n(P['~level']), 20, "the log's 20 answers, not the 30 saved (rule D9)");
+  assert.strictEqual(n(P['~level']), 30, "the level's count keeps main's rule, the larger (a follow-up: the log's)");
   assert.strictEqual(n(P['f:Damselfishes']), 10, "the log's 10 typed answers");
   assert.ok(!P['f:Wrasses'], 'a unit the log has no answer on: its saved answers go');
   assert.deepStrictEqual(a.base()['~level'].ok, P['~level'].ok, 'the same in the shared baseline');

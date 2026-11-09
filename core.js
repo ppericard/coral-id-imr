@@ -4776,10 +4776,10 @@
   //   lost then another device's save, PR #824), its counts and recent results only when none of them is replayable; a
   //   genus the log has no answer on keeps the saved record only if it holds no answer either (its answers are in no
   //   log: dropped);
-  // - LEVEL: the replayed ability (th, vr), the replay's answer count with its answer times (rt) and typed opportunities
-  //   (tyk), the later at, rv when given (rule D9: the count the log has, so answers counted twice go from the device
-  //   too); none of them when the log has no answer at all. A count that goes down moves every checkpoint the app keeps
-  //   at an answer count down with it (model.js countShift; Codex review of #840).
+  // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
+  //   cards met and the prompts, so it never goes back; the log's count there waits for checkpoints that do not hang on
+  //   it: a follow-up, branch claude/level-count-from-log) with the answer times (rt) of the same side, the later at,
+  //   rv when given; no ability when the log has no answer at all (rule D9; Codex review of #840).
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
@@ -4806,18 +4806,19 @@
         if (r) {
           if (typeof r.th === 'number') o.th = r.th;
           if (typeof r.vr === 'number') o.vr = r.vr;
-          // The answer count and its times (rt): the log's (rule D9).
-          [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
-          if (isObj(r.tyk)) o.tyk = dup(r.tyk);
-          else delete o.tyk;
-          if (isObj(r.rt)) o.rt = dup(r.rt);
-          else delete o.rt;
+          // The answer times (rt) go with the count: the replay's when it has every answer the device has.
+          if (!s || n(r) >= n(s)) {
+            [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
+            if (isObj(r.tyk)) o.tyk = dup(r.tyk);
+            else delete o.tyk;
+            if (isObj(r.rt)) o.rt = dup(r.rt);
+            else delete o.rt;
+          }
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
         } else if (s) {
-          // No answer in the log at all: no answer counted and no ability either (rule D9; Codex review of #840).
-          ['th', 'vr', 'lt', 'rt', 'tyk', 'streak'].forEach(f => delete o[f]);
-          [o.ok, o.ko] = [0, 0];
+          // No answer in the log at all: no ability either (rule D9; Codex review of #840); the count as above.
+          ['th', 'vr', 'lt'].forEach(f => delete o[f]);
         }
         out[g] = o;
         return;
@@ -4869,7 +4870,9 @@
   //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
   //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
   // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
-  // - the global level: the replay's, its answer count and answer times (rt) included (rule D9).
+  // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
+  //   keeps the larger count); when the sheet sent no level (no answer in the log), B's level, never the adopted one,
+  //   which holds this device's unsent answers (Codex review of #840).
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -4880,8 +4883,16 @@
       const b = isObj(B0[g]) ? B0[g] : null,
         r = R[g];
       if (g === LEVEL) {
-        if (!r) return M[g] && (out[g] = dup(M[g]));
-        out[g] = dup(r);
+        if (!r) return b && (out[g] = dup(b));
+        const o = dup(r);
+        if (b && n(b) > n(r)) {
+          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
+          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
+          else delete o.tyk;
+          if (isObj(b.rt)) o.rt = dup(b.rt);
+          else delete o.rt;
+        }
+        out[g] = o;
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
         Object.keys((b && b.ps) || {}).forEach(f => {
