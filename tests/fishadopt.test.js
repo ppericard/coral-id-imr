@@ -11,7 +11,7 @@ const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
 const C = require('../core.js');
-const {loadCodeGs} = require('./gas.js');
+const {loadCodeGs, bodyOf} = require('./gas.js');
 
 const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
@@ -50,7 +50,7 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
     cards = [];
   const answer = (u, o) => {
     const url = new URL(String(u)),
-      body = o && o.body ? JSON.parse(o.body) : null;
+      body = o && o.body ? bodyOf(o.body) : null; // a light save unwrapped, as the script reads it
     sent.push(body || Object.fromEntries(url.searchParams));
     const j = sheet ? (body ? sheet.post(body) : sheet.get(Object.fromEntries(url.searchParams))) : {ok: false};
     return Promise.resolve({json: () => JSON.parse(JSON.stringify(j))});
@@ -554,4 +554,47 @@ test('a unit kept from this device for its larger count keeps its bar beside the
     bar(P, 'f:Damselfishes') >= bar(mine, 'f:Damselfishes') - 1e-9,
     `${bar(P, 'f:Damselfishes')} vs ${bar(mine, 'f:Damselfishes')}`
   );
+});
+
+// Production, 2026-11-09: no fish player was ever replayed. Their apps asked at every sync, but the sheet's "Replayed Fish"
+// tab stood empty, without its header, and the script failed on it before storing or sending the replay (Code.gs
+// sheet_, find_). End to end at today's script (its own VERSION: light saves on), for a player who plays fish only, on
+// the fish side, named like an Object property (Codex review #810): asked, made, stored, adopted, told once.
+test("today's script with an empty Replayed Fish tab: a fish-only player's replay asked, stored, adopted", async () => {
+  for (const nm of ['Ana', 'constructor']) {
+    const s = loadCodeGs(withFiles());
+    s.post({name: nm, pin: '1234', data: {'reefid-sync-fish-progress': JSON.stringify(today)}, summary: {}, answers: F});
+    s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Replayed Fish'); // as on the real sheet: empty, no header
+    const a = app({
+      sheet: s,
+      ls: {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-subject': JSON.stringify('fish')},
+      SYNC: {name: nm, pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1}
+    });
+    a.ctx.SUBJ = FS; // on the fish side
+    a.ctx.P = JSON.parse(JSON.stringify(today));
+    await a.syncPush();
+    assert.strictEqual(a.store.get('reefid-sheet-v'), SV, "today's script");
+    assert.ok(
+      a.sent.some(b => b.light && b.rvs && b.rvs.fish === 0),
+      nm + ': asked with a light save'
+    );
+    const T = s.sheets['Replayed Fish'];
+    assert.deepStrictEqual(
+      Array.from(T.rows.slice(1), x => [x[0], x[1], x[2]]),
+      [[nm, FRV, 9]],
+      nm + ': stored'
+    );
+    assert.strictEqual(a.rvApplied(FS), FRV, nm + ': adopted');
+    const P = a.fish();
+    assert.deepStrictEqual([P['f:Damselfishes'].ok, P['f:Damselfishes'].ko, P['f:Damselfishes'].rv], [6, 3, FRV]);
+    assert.ok(bar(P, 'f:Damselfishes') >= bar(today, 'f:Damselfishes') - 1e-9, nm + ': the floor');
+    assert.deepStrictEqual(
+      a.cards.map(c => c.slice(0, 3)),
+      [['fish', 0, FRV]],
+      nm + ': its card once'
+    );
+    await a.syncPush();
+    assert.strictEqual(a.cards.length, 1, nm + ': once');
+    assert.strictEqual(JSON.parse(s.get({name: nm, pin: '1234'}).data['reefid-sync-fish-rv']), FRV, nm + ': saved');
+  }
 });

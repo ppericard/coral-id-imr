@@ -61,10 +61,14 @@ const SC_COL = LOG.indexOf('Scoring');
 const ACTIVITY = '=QUERY(Answers!A:F, "select A, count(E), sum(E), max(B) where A is not null and (F is null or F <> \'wink\') group by A order by max(B) desc label count(E) \'Answers\', sum(E) \'Right\', max(B) \'Last answer\'", 1)';
 const ACTIVITY_V1 = '=QUERY(Answers!A:E, "select A, count(E), sum(E), max(B) where A is not null group by A order by max(B) desc label count(E) \'Answers\', sum(E) \'Right\', max(B) \'Last answer\'", 1)';
 
+// vNEXT: a tab that exists but is empty (made by hand, or by anything but this function) gets its header too, as a new one
+// does. The tab "Replayed Fish" stood empty on the sheet, without its header: find_ on it threw, so every fish replay
+// failed before it was stored or sent (replays_ leaves a failed subject out), and no fish player was ever replayed.
 function sheet_(name, head){
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(name);
-  if (!sh) { sh = ss.insertSheet(name); if (head) { sh.appendRow(head); sh.setFrozenRows(1); sh.getRange(1, 1, 1, head.length).setFontWeight('bold'); if (head === HEAD) sh.hideColumns(7, 2); } }
+  if (!sh) sh = ss.insertSheet(name);
+  if (head && sh.getLastRow() < 1) { sh.appendRow(head); sh.setFrozenRows(1); sh.getRange(1, 1, 1, head.length).setFontWeight('bold'); if (head === HEAD) sh.hideColumns(7, 2); }
   return sh;
 }
 function hash_(name, pin){
@@ -73,6 +77,7 @@ function hash_(name, pin){
 const VERSION = 116;  // assigned at merge with the header line (tools/sheet_version.py --assign; a PR never edits either: rule D3); every reply carries it as v
 function json_(o){ o.v = VERSION; return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function find_(sh, name){
+  if (sh.getLastRow() < 1) return 0;  // vNEXT: an empty tab holds no name (a range of no row throws)
   const names = sh.getRange(1, 1, sh.getLastRow(), 1).getValues().map(r => String(r[0]).toLowerCase());
   const i = names.indexOf(name.toLowerCase());
   return i > 0 ? i + 1 : 0;
@@ -6398,7 +6403,10 @@ const CORE_ = (function () { const module = {exports: {}};
         const x = (o.gd || {})[g];
         return Math.round((Array.isArray(x) ? Number(x[0]) || 0 : Number(x) || 0) * 1000) / 1000;
       },
-      out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
+      // Keyed by player id: no prototype, so a player named "constructor" or "__proto__" is a player like any other
+      // (a plain object read Object's own constructor for one, and replayed nothing). own: an id's entry of a map given.
+      out = Object.assign(Object.create(null), o.start ? JSON.parse(JSON.stringify(o.start)) : {}),
+      own = (m, k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined);
     const prior = (t, n) => {
       const a = gen[t] || {},
         b = gen[n] || {};
@@ -6425,7 +6433,7 @@ const CORE_ = (function () { const module = {exports: {}};
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
-        if (since[id] && !(r[1] > since[id])) return;
+        if (own(since, id) && !(r[1] > own(since, id))) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -6453,7 +6461,7 @@ const CORE_ = (function () { const module = {exports: {}};
         if (wrong) rec(c);
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
-        const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
+        const pr = startPriorAt(own(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
         // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
