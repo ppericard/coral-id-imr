@@ -65,7 +65,7 @@ test('licOf, rightsClass: the app (core.js), the admin (presence.js) and Python 
   Object.values(D.course || {}).forEach(add);
   Object.values(read('cand.json').cand || {}).forEach(add);
   Object.values(read('fish-cand.json').cand || {}).forEach(add);
-  Object.values(read('fish-game.json').photos || {}).forEach(add);
+  Object.values(C.fishGameRead(read('fish-game.json')).photos || {}).forEach(add);
   Object.values(read('fish-photos.json').photos || {}).forEach(add);
   assert.ok(all.length > 1000, 'photo records read');
   const rec = all.map(p => ({
@@ -328,7 +328,7 @@ test("the facet on today's photos: every coral genus and fish species tallied, t
   assert.strictEqual(T.ready, T.own + T.open);
   assert.strictEqual(T.book, 0, 'no Coral Finder book photo since #748 (tests/nobook.test.js)');
   assert.ok(T.own > 0 && T.open > 0 && T.nc > 0 && T.imr > 0, JSON.stringify(T));
-  const fish = Object.values(read('fish-game.json').photos).flat();
+  const fish = Object.values(C.fishGameRead(read('fish-game.json')).photos).flat();
   const F = P.rightsTally(fish);
   assert.ok(F.n > 500, 'fish photos ' + F.n);
   assert.strictEqual(F.imr + F.book, 0, 'no IMR slide photo for fish (rule P1)');

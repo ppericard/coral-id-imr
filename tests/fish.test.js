@@ -831,7 +831,7 @@ test('reference photos: game photo rules, in play once judged, the cover where o
   // On the stopgap list, and on the game as it plays (core.js fishPhotos: Pierre's curated photos beside it; the reference
   // photos stay even on an entry that plays on its curated photos).
   const CUR = read('curation.json'),
-    GM = read('fish-game.json').photos,
+    GM = C.fishGameRead(read('fish-game.json')).photos,
     played = C.fishPhotos(PH, GM, CUR, F),
     // a photo Pierre rejected, excluded or moved as a candidate stays out (core.js fishPhotos)
     gone = new Set(
