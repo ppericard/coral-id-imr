@@ -831,6 +831,9 @@ const fishHome = () =>
       FISHH = null;
       throw e;
     }));
+// The subject's data still partial (the fish units on the stopgap's photos only, until fish-game.json is in): what reads
+// the units' photos once for good waits (model.js domRecalcAll, the one-time rebuild of an old record's bar).
+const dataPartial = () => !!(UNITS[SUBJ.id].partial && UNITS[SUBJ.id].partial());
 // Whether this device's service worker already holds fish-game.json (a launch after the first, the same version): then
 // start-up waits for it, as before, so Home shows the curated photos.
 const fishCached = () =>
@@ -844,7 +847,7 @@ const fishLoad = () =>
   FISHP ||
   (FISHP = Promise.all([fishHome(), json('fish-game.json?v=1')])
     .then(([raw, gm]) => {
-      FISHRAW = {...raw, gm: gm && gm.photos ? gm : {photos: {}}};
+      FISHRAW = {...raw, gm: gm && gm.photos ? gm : {photos: {}}, full: true};
       // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
       // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
       // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.
@@ -1694,6 +1697,8 @@ const UNITS = {
     load: () => fishLoad(),
     // What start-up waits for: the files of Home (fishHome), and the curated photos too when this device holds them.
     home: () => fishHome().then(() => fishCached().then(c => c && fishLoad())),
+    // Between the two: the units on the stopgap's photos only (dataPartial).
+    partial: () => !!FISHRAW && !FISHRAW.full,
     pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
     // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.

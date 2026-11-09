@@ -50,6 +50,7 @@ test('start-up waits for fish.json and fish-photos.json only; fish-game.json com
   await tick();
   assert.ok(home, 'Home is not held by fish-game.json');
   assert.strictEqual(Object.keys(A.M.FISHRAW.gm.photos).length, 0, 'the stopgap photos only, until fish-game.json');
+  assert.ok(!A.M.FISHRAW.full, 'partial (dataPartial: model.js domRecalcAll waits)');
   // The start-up's build() comes next (data.json in); then tier 2 asks for the rest.
   A.M.setData({gen: {}});
   let full = false;
@@ -66,7 +67,8 @@ test('start-up waits for fish.json and fish-photos.json only; fish-game.json com
   await tick();
   assert.ok(full);
   assert.deepStrictEqual(A.M.FISHRAW.gm, GM);
-  assert.deepStrictEqual(A.builds, [1, 'recalc'], 'the units built again with the curated photos');
+  assert.ok(A.M.FISHRAW.full);
+  assert.deepStrictEqual(A.builds, [1, 'recalc'], 'the units built again with the curated photos, then the one-time rebuild');
 });
 
 test('a device whose worker holds fish-game.json waits for it at start-up, as before (one build, by start-up)', async () => {
