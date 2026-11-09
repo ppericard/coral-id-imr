@@ -4265,7 +4265,10 @@
         const x = (o.gd || {})[g];
         return Math.round((Array.isArray(x) ? Number(x[0]) || 0 : Number(x) || 0) * 1000) / 1000;
       },
-      out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
+      // Keyed by player id: no prototype, so a player named "constructor" or "__proto__" is a player like any other
+      // (a plain object read Object's own constructor for one, and replayed nothing). own: an id's entry of a map given.
+      out = Object.assign(Object.create(null), o.start ? JSON.parse(JSON.stringify(o.start)) : {}),
+      own = (m, k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined);
     const prior = (t, n) => {
       const a = gen[t] || {},
         b = gen[n] || {};
@@ -4292,7 +4295,7 @@
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
-        if (since[id] && !(r[1] > since[id])) return;
+        if (own(since, id) && !(r[1] > own(since, id))) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -4320,7 +4323,7 @@
         if (wrong) rec(c);
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
-        const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
+        const pr = startPriorAt(own(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
         // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
