@@ -221,9 +221,10 @@ const typeStep = (m, text, sp, t) => {
   if (!m) return null;
   const oft = m.shared ? ((m.by || {})[t] || {}).oft : m.oft;
   if (!sp || m.exact || sp.r) return oft ? {oft} : null;
-  const name = m.old || unameT(m.g),
+  const name = m.old || unameT(m.g || t),
     s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
-  return {spelled: !m.old && GX(m.g) && GX(m.g).name && !GX(m.g).rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+  const u = GX(m.g || t);
+  return {spelled: !m.old && u && u.name && !u.rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability

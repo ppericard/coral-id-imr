@@ -147,6 +147,10 @@ test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a p
   assert.strictEqual(family('goby', 'f:Gobies').read, '“goby” is also used for some Dartfishes.');
   assert.strictEqual(family('goby', 'f:Dartfishes').read, '“goby” is a name of some Dartfishes. It is also used for the Gobies.');
   assert.strictEqual(family('bream', 'f:Emperors').got.c, 'f:Emperors');
+  // a slip of a shared name: the spelling step, as any name's (on another family, a wrong answer)
+  const g = family('gobis', 'f:Dartfishes');
+  assert.deepStrictEqual([g.got, g.retry], [null, true]);
+  assert.strictEqual(C.typeVerdict(C.typeMatchIn(NAMES, 'gobis', C.typeNormAll), 'f:Wrasses'), 'other');
 });
 
 test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {

@@ -3519,12 +3519,14 @@
       best = top.filter(x => !x.known);
     if (!best.length) return {known: 1, old: top[0].old, ...(top[0].w ? {w: 1} : {})};
     const gs = [...new Set(best.map(x => x.g))];
+    // One name several units share, typed exactly or with a slip (every closest name the same key): shared, the slip
+    // taking the spelling step as any name's; two names as close: near.
     if (gs.length > 1)
-      return best[0].d === 0
+      return best[0].d === 0 || best.every(x => x.k === best[0].k)
         ? {
             shared: gs,
             old: best[0].old,
-            exact: true,
+            exact: best[0].d === 0,
             // each unit's own reading of it: its role (vr), how many of its species carry it (n, of), its gentle name (oft)
             by: Object.fromEntries(
               gs.map(g => {
@@ -3602,11 +3604,11 @@
   // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
   // unchanged), but the player retypes it once (quiz.js typeBind); 'other': another unit's name, close or exact (a wrong
   // answer, as before); 'none': nothing close, or two names as close (no answer: the player is asked to check the spelling).
-  // A name several units share typed exactly ({shared}): 'exact' when t is one of them, else 'other'; a known name that is
+  // A name several units share ({shared}): as one of t's names when t is one of them, else 'other'; a known name that is
   // no unit's ({known}): 'none'.
   function typeVerdict(m, t) {
     if (!m || m.near || m.known) return 'none';
-    if (m.shared) return m.shared.includes(t) ? 'exact' : 'other';
+    if (m.shared) return !m.shared.includes(t) ? 'other' : m.exact ? 'exact' : 'close';
     if (m.g !== t) return 'other';
     return m.exact ? 'exact' : 'close';
   }
