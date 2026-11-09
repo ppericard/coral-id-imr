@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 11; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 12; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
@@ -22,6 +22,8 @@
   // test each in the exploratory family
   // 11: random practice slopes in Learning (each player's and genus's own), their spreads, per-genus learning curves
   // (gcurve), the player profiles' learning slope
+  // 12: model checks (chk): each binary model's predictions of a player left out, calibration, quantile residuals, the
+  // paired log-loss against the app's expectation; Answer time's residuals
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
@@ -81,7 +83,9 @@
   }
   // Sets b, each factor's tau2 and u from the warm state (null when there is none or it does not apply).
   function warmGet(kind, p, F) {
-    const W = FAST ? WARM[sigOf(kind, p, F)] : null;
+    // never while a player is left out (HOLD, checkOf): a coefficient only their answers move would keep the full fit's
+    // value, learnt from those answers (Codex review #831); the fit starts from 0 instead
+    const W = FAST && HOLD == null ? WARM[sigOf(kind, p, F)] : null;
     if (!W) return null;
     F.forEach((f, k) => {
       f.tau2 = W.f[k].tau2;
@@ -338,6 +342,9 @@
       W = new Float64Array(N);
     let b = new Array(p).fill(0);
     F.forEach(f => ((f.tau2 = o.tau0 || 0.5), f.u.fill(0), f.cv.fill(0)));
+    // a player left out (HOLD, checkOf): their rows weigh nothing
+    const fp = HOLD == null ? null : F.find(f => f.name === 'player'),
+      wt = fp ? Float64Array.from({length: N}, (_, i) => (baseOf(fp.L[fp.lev[fp.start[i]]]) === HOLD ? 0 : 1)) : null;
     const Wm = warmGet('glmm', p, F);
     if (Wm) {
       b = Wm.b.slice();
@@ -355,6 +362,7 @@
           P = clamp(g[i] + (1 - g[i]) * s, 1e-9, 1 - 1e-9);
         S[i] = ((y[i] - P) * d) / (P * (1 - P));
         W[i] = (d * d) / (P * (1 - P)) + 1e-12;
+        if (wt && !wt[i]) ((S[i] = 0), (W[i] = 1e-12));
       }
     };
     // X flattened into one typed array (row i at i * p): the same sums in the same order, several times faster than
@@ -802,7 +810,12 @@
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
       player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
-      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])])
+      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])]),
+      chk: checkLmm(
+        M,
+        D.map(a => Math.log(a.s)),
+        X
+      )
     };
   }
 
@@ -870,7 +883,8 @@
       player: livePl(D, Object.values(by)).sort((a, b) => b.z / b.n - a.z / a.n),
       views: Object.values(views),
       ent: entOf(M.V, M.X, [null, 'rel', 'hab']),
-      ix: ixOf([zoomIx(D, B, seed + 31)])
+      ix: ixOf([zoomIx(D, B, seed + 31)]),
+      chk: checkOf(D, zoomFit, a => a.g0, seed, true)
     };
   }
 
@@ -987,6 +1001,12 @@
       photos: P.n,
       typ: typOf(D),
       effects,
+      chk: checkOf(
+        D,
+        S => phFit(S).M,
+        a => a.g0,
+        seed
+      ),
       views: tab(
         x => x[0],
         k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k
@@ -1160,6 +1180,142 @@
     return F.length
       ? {k, r: k.map((_, a) => k.slice(0, a).map((__, b) => (a % 2 && b === a - 1 ? r3(-F[(a - 1) / 2].fit.cr) : null)))}
       : null;
+  }
+
+  /* ---------- Can we trust this model? (model checks; the multifactor visualisation study, §5 item 8) ---------- */
+  // Leave one player out: the answers of player HOLD weigh nothing in a fit (glmm), so the fit's prediction of them is the
+  // model's for a player it has never seen (their own effects stay at their prior mean, 0).
+  let HOLD = null;
+  // Sign-flip test over players (LEARNING.md "Real-answer replay": players are the unit): the two-sided p of the mean of
+  // d, each d's sign flipped at random; exact up to 16 players, else 9999 draws from a fixed seed.
+  function signFlip(d) {
+    const n = d.length,
+      m0 = Math.abs(mean(d)) - 1e-12;
+    if (!n) return null;
+    let hit = 0,
+      tot = 0;
+    if (n <= 16)
+      for (let s = 0; s < 1 << n; s++) {
+        let t = 0;
+        for (let i = 0; i < n; i++) t += s & (1 << i) ? -d[i] : d[i];
+        tot++;
+        if (Math.abs(t / n) >= m0) hit++;
+      }
+    else {
+      const R = rng(9973);
+      for (let k = 0; k < 9999; k++) {
+        let t = 0;
+        for (let i = 0; i < n; i++) t += R() < 0.5 ? -d[i] : d[i];
+        tot++;
+        if (Math.abs(t / n) >= m0) hit++;
+      }
+      ((hit += 1), (tot += 1));
+    }
+    return hit / tot;
+  }
+  // The t quantile at 97.5% with k degrees of freedom (Cornish-Fisher on the normal's; within 1% from 3 degrees).
+  const t975 = k => {
+    const z = Z,
+      g1 = (z ** 3 + z) / 4,
+      g2 = (5 * z ** 5 + 16 * z ** 3 + 3 * z) / 96,
+      g3 = (3 * z ** 7 + 19 * z ** 5 + 17 * z ** 3 - 15 * z) / 384;
+    return k === 1 ? 12.706 : k === 2 ? 4.303 : z + g1 / k + g2 / k ** 2 + g3 / k ** 3;
+  };
+  const CHK_BANDS = 5, // calibration bands of the predictions (equal counts)
+    CHK_Q = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95]; // the QQ plot's probabilities
+  // A binary model's check (rows R: {y, p, gone, E (the app's expected chance, or null)}; fit(R): the glmm result whose eta
+  // is row-aligned, g(r): the row's guess rate): each player left out in turn (players with 20 answers or more, from 3
+  // players), the model's prediction of their answers; then (cal) the predictions in CHK_BANDS bands of equal counts, the
+  // answers right and predicted in each; (qq) the randomized quantile residuals (Dunn & Smyth 1996: uniform when the
+  // predictions are right) at the CHK_Q probabilities; (ll, cmp: a model on the app's expectation as its offset, Zoom and
+  // Comeback: the app's chance and corrections to it) the paired log-loss of the model's prediction against the app's own
+  // expected chance, players as the unit (a model without that offset knows nothing of a new player's level, which the
+  // app does: no fair comparison): each player's mean difference, their mean, a 95% t
+  // interval over the players and a sign-flip p (negative: the model predicts new players' answers better than the app).
+  // Descriptive, outside the multiple-testing correction (as the Wright map and the second skill).
+  // The predictions of player id's rows by a fit in which their rows weigh nothing (fast: the bootstrap's looser fit,
+  // warm-started from the full one). NaN elsewhere.
+  // A new player's own effects are unknown: their chance is averaged over the players the fit has (each one's fitted level,
+  // and in Learning their slope at the row's practice), not read at the average player (Codex review #831: with a player
+  // SD of 2, 81.8% at the average player against 71.5% averaged over players). Over the fitted players rather than over
+  // N(0, tau2): with this fit (PQL-like: its spreads shrunk, its intercept towards the average over players, ROADMAP
+  // "what the correction leaves open" (e)), the normal integral over-predicted the generator's own mix-ups by 2-6 points in
+  // every band, while the fitted players' own effects average to what they answered.
+  function predictOut(R, fit, g, id, fast = true, P = new Float64Array(R.length).fill(NaN)) {
+    HOLD = id;
+    FAST = fast;
+    try {
+      const M = fit(R),
+        fp = M.F.find(f => f.name === 'player'),
+        fs = M.F.find(f => f.name === 'player slope'),
+        sl = fs ? new Map(fs.L.map((k, j) => [baseOf(k), fs.u[j]])) : null,
+        U = fp ? fp.L.map((k, j) => [baseOf(k), fp.u[j]]).filter(([k]) => k !== id) : [];
+      R.forEach((r, i) => {
+        if (r.p !== id) return;
+        const w = fs ? fs.w[fs.start[i]] : 0,
+          q0 = U.length ? mean(U.map(([k, u]) => sig(M.eta[i] + u + (sl ? (sl.get(k) || 0) * w : 0)))) : sig(M.eta[i]);
+        P[i] = clamp(g(r) + (1 - g(r)) * q0, 1e-6, 1 - 1e-6);
+      });
+    } catch (e) {
+      void e;
+    } finally {
+      HOLD = null;
+      FAST = false;
+    }
+    return P;
+  }
+  function checkOf(R, fit, g, seed, cmp) {
+    const cnt = new Map();
+    R.forEach(r => !r.gone && cnt.set(r.p, (cnt.get(r.p) || 0) + 1));
+    const ids = [...cnt.keys()].filter(p => cnt.get(p) >= 20).sort();
+    if (ids.length < 3 || R.length < 200) return null;
+    const P = new Float64Array(R.length).fill(NaN);
+    ids.forEach(id => predictOut(R, fit, g, id, true, P));
+    const I = R.map((r, i) => i).filter(i => isFinite(P[i]));
+    if (I.length < 100) return null;
+    const S = I.slice().sort((a, b) => P[a] - P[b] || a - b),
+      cal = Array.from({length: CHK_BANDS}, (_, k) => {
+        const L = S.slice(Math.floor((k * S.length) / CHK_BANDS), Math.floor(((k + 1) * S.length) / CHK_BANDS));
+        return [L.length, r3(mean(L.map(i => R[i].y))), r3(mean(L.map(i => P[i]))), r3(P[L[0]]), r3(P[L[L.length - 1]])];
+      }),
+      U = rng((seed || 1) + 777),
+      u = I.map(i => (R[i].y ? 1 - P[i] + U() * P[i] : U() * (1 - P[i]))),
+      qq = CHK_Q.map(p => [p, r3(q(u, p))]);
+    const by = new Map();
+    I.forEach(i => {
+      const r = R[i];
+      if (!cmp || r.E == null || !isFinite(r.E)) return;
+      const e = clamp(r.E, 1e-6, 1 - 1e-6),
+        ll = x => -(r.y ? Math.log(x) : Math.log(1 - x));
+      (by.get(r.p) || by.set(r.p, []).get(r.p)).push(ll(P[i]) - ll(e));
+    });
+    const d = [...by.values()].filter(L => L.length >= 10).map(mean);
+    let ll = null;
+    if (d.length >= 3) {
+      const m = mean(d),
+        se = Math.sqrt(sum(d.map(v => (v - m) ** 2)) / (d.length - 1) / d.length),
+        h = t975(d.length - 1) * se;
+      ll = {d: r3e(m), lo: r3e(m - h), hi: r3e(m + h), p: sig3(signFlip(d)), players: d.length};
+    }
+    return {n: I.length, players: ids.length, cal, qq, ll};
+  }
+  const r3e = v => (v == null || !isFinite(v) ? null : Number(v.toPrecision(3)));
+  // A Gaussian model's check (Answer time): its residuals in the fit (not left out: the time model's players are many
+  // answers each), standardized, at the normal's CHK_Q quantiles (a straight line: log time is as normal as the model says).
+  function checkLmm(M, y, X) {
+    if (!M || !M.F) return null;
+    const N = y.length,
+      z = new Float64Array(N);
+    for (let i = 0; i < N; i++) {
+      let v = y[i];
+      for (let a = 0; a < X[0].length; a++) v -= X[i][a] * (isFinite(M.b[a]) ? M.b[a] : 0);
+      M.F.forEach(f => {
+        for (let k = f.start[i]; k < f.start[i + 1]; k++) v -= f.w[k] * f.u[f.lev[k]];
+      });
+      z[i] = v / Math.sqrt(M.s2 || 1);
+    }
+    const L = Array.from(z);
+    return {n: N, qq: CHK_Q.map(p => [r3(nq(p)), r3(q(L, p))])};
   }
 
   /* ---------- Interactions: does one effect depend on another? (the multifactor visualisation study, §5 item 6) ---------- */
@@ -1661,7 +1817,13 @@
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
       ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
       map: mixMap(E, M, F),
-      ix: ixOf([confIx(A, B, seed + 31)])
+      ix: ixOf([confIx(A, B, seed + 31)]),
+      chk: checkOf(
+        E,
+        S => confFit(S).M,
+        () => 0,
+        seed
+      )
     };
   }
 
@@ -2098,6 +2260,12 @@
       wright: wrightOf(D, M, F, lc),
       res: resOf(D, M, F, seed),
       gcurve: gcurveOf(D, M, F, lc),
+      chk: checkOf(
+        D,
+        S => lnFit(S).M,
+        a => a.g0,
+        seed
+      ),
       ix: ixOf([lnIx(D, B, seed + 31)])
     };
   }
@@ -2172,7 +2340,18 @@
         prevE: mean(S.map(a => a.prev.E))
       };
     });
-    return {n, far: far.length, back: C.length, players: players(D), typ: typOf(D), effects, bands, b0: M.b[0], b1: M.b[1]};
+    return {
+      n,
+      far: far.length,
+      back: C.length,
+      players: players(D),
+      typ: typOf(D),
+      effects,
+      bands,
+      b0: M.b[0],
+      b1: M.b[1],
+      chk: checkOf(D, backFit, a => a.g0, seed, true)
+    };
   }
 
   /* ---------- 8. Sessions: how long they last and what ends them (discrete-time survival) ---------- */
@@ -2529,6 +2708,7 @@
       km: curve,
       at: [5, 10, 20, 40, 80].map(k => ({k, s: at(k)})),
       desc,
+      chk: checkOf(rows, ssFit, () => 0, seed),
       ent: entOf(
         M.V,
         rows.map(r => r.X),
@@ -4176,6 +4356,10 @@
     lnIx,
     lnFit,
     gcurveOf,
+    checkOf,
+    predictOut,
+    checkLmm,
+    signFlip,
     TD_K,
     TD_MIN
   };
