@@ -1266,6 +1266,33 @@ async function freshPlayers(b, base, errs) {
       oft.damsel[1]
     )
       ui.push(`${width}px a name in common use typed: ${JSON.stringify(oft)}`);
+    // A name several families share typed (Pierre, 2026-11-09, Q319): right on each of them and said so; on another
+    // family a wrong answer with no unit given (no "Your answer would show" block), every family it names said.
+    const shared = await q.evaluate(() => {
+      const at = (t, g) => {
+        const m = typeMatch(t),
+          c = typeUnit(m, g),
+          d = document.createElement('div');
+        d.innerHTML = fbBody(g, c, c === g, false, false, [], typeRead(m, t, null, g), typeStep(m, t, null, g));
+        return [
+          c,
+          d.querySelector('h3').textContent.replace(/\s+/g, ' ').trim(),
+          (d.querySelector('.tyread') || {}).textContent || '',
+          !!d.querySelector('.fb > p.vs:not(.tyread)')
+        ];
+      };
+      return {sol: at('Holocentridae', 'f:Soldierfishes'), wr: at('Holocentridae', 'f:Wrasses')};
+    });
+    if (
+      shared.sol[0] !== 'f:Soldierfishes' ||
+      !/^✓ Yes, it's Soldierfishes/.test(shared.sol[1]) ||
+      shared.sol[2] !== '“Holocentridae” is also used for the Squirrelfishes.' ||
+      shared.wr[0] !== '' ||
+      !/^✗ No, it's Wrasses/.test(shared.wr[1]) ||
+      shared.wr[2] !== '“Holocentridae” names the Soldierfishes and the Squirrelfishes.' ||
+      shared.wr[3]
+    )
+      ui.push(`${width}px a shared name typed: ${JSON.stringify(shared)}`);
     await wide('the answer');
     await q.evaluate(() => (location.hash = '#progress'));
     await q.waitForFunction(() => document.querySelector('#view .pgame'), null, {timeout: 15000});
