@@ -100,3 +100,65 @@ test('interactions: none for a subject whose photos have one view (the fish); th
   assert.strictEqual(A.confIx(D, 0, 1), null);
   assert.ok(A.lnIx(D, 0, 1), 'format × practice needs no view');
 });
+
+test('enlarging × view: the levels are the predicted chances without and with enlarging, at the typical habit', () => {
+  // Codex review #829: balanced log, half the answers enlarged by every player, true logits 0 without and 2 with on a
+  // colony photo (1 and 1 on corallites); the app's expectation an offset of 0
+  const R = A.rng(9),
+    D = [];
+  for (let p = 0; p < 8; p++)
+    for (let i = 0; i < 600; i++) {
+      const z = i % 2,
+        qv = i % 4 < 2 ? 'wide' : 'macro',
+        eta = qv === 'wide' ? 2 * z : 1;
+      D.push({p: 'P' + p, z, qv, x: 0, g0: 0, y: R() < 1 / (1 + Math.exp(-eta)) ? 1 : 0});
+    }
+  const t = A.zoomIx(D, 0, 1),
+    w = t.lv.find(l => l.k === 'wide');
+  assert.ok(Math.abs(w.off[0]) < 0.2 && Math.abs(w.on[0] - 2) < 0.25, JSON.stringify(w));
+  assert.ok(Math.abs(w.on[0] - w.off[0] - w.d[0]) < 1e-3, 'the change is the difference of the two levels');
+});
+
+test('format × practice: a format asked only after practice still enters the test', () => {
+  // Codex review #829: typed answers only from the 2nd answer on a genus on (the app's TYPED) were left out
+  const {photos, meta, look} = synthMeta(),
+    pl = Array.from({length: 12}, (_, i) => ['P' + i, ((i % 5) - 2) * 0.3, 600, 0.1]),
+    D = A.prep(A.synth({players: pl, photos, look, start: 0, end: 200 * 864e5, seed: 2}), meta).filter(a => !a.typed || a.n >= 2);
+  assert.ok(D.filter(a => a.typed).length >= 100);
+  const t = A.lnIx(D, 0, 1);
+  assert.ok(t && t.lv.some(l => l.k === 'typed'), JSON.stringify(t && t.lv.map(l => l.k)));
+});
+
+test('admin: a compacted milestone still shows its interactions’ verdicts', () => {
+  // Codex review #829: compact keeps the tests, the view drew them only for a full milestone
+  const vm = require('vm'),
+    src = require('fs').readFileSync(require('path').join(__dirname, '..', 'admin-analyses.js'), 'utf8'),
+    ctx = vm.createContext({
+      ANALYSIS: A,
+      store: {get: (k, d) => d, set() {}},
+      HELP: {},
+      addEventListener() {},
+      esc: x => String(x),
+      cur: 'analyses/speed/enlarging',
+      $v: {clientWidth: 800},
+      matchMedia: () => ({matches: true})
+    });
+  vm.runInContext(src, ctx);
+  ctx.kpis = L => L.map(([t, v]) => `<div><b>${v}</b><span>${t}</span></div>`).join('');
+  const zoom = {
+      n: 900,
+      players: 8,
+      effects: [],
+      typ: {p: 0.7, g: 0.25},
+      ix: [{k: 'view', ix: 1, df: 2, W: 20, n: 900, fam: 2, p: 1e-4, pa: 1e-4, v: 'clear', lv: []}],
+      player: Array.from({length: 50}, (_, i) => ({k: 'p' + i, n: 10}))
+    },
+    rep = {M: [1000, 2000], R: {1000: {A: {zoom}}, 2000: {A: {zoom: JSON.parse(JSON.stringify(zoom))}}}, answers: 2000};
+  A.compact(rep, JSON.stringify(rep).length - 100);
+  assert.ok(rep.R[1000].A.zoom.lean && rep.R[1000].A.zoom.ix[0].v === 'clear');
+  ctx.REP = rep;
+  assert.match(
+    vm.runInContext("anView('zoom', REP, REP.R[1000])", ctx),
+    /how much enlarging changes right answers clearly depends on the view/
+  );
+});

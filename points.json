@@ -80,6 +80,35 @@
       ]
     },
     {
+      "id": "anacropora-white-colony",
+      "kind": "content",
+      "subj": "coral",
+      "at": "2026-11-09",
+      "title": "IMR's white Anacropora colony: skeleton or live colony?",
+      "q": "Is this a coral skeleton (out everywhere, rule P6) or a live colony?",
+      "ctx": [
+        "IMR lecture photo (Lecture 6, slide 19), Anacropora, Colony view: white branches lit by a flash on a dark background. It stands on the reef among live encrusting organisms, so it reads as a live (pale or bleached) colony, not a loose skeleton; but it looks like one.",
+        "It is the lead Branching photo of Coral basics (growth forms step) and a game photo of Anacropora. An RA review (2026-11-01, item 7) saw a wrong-answer comparison where Anacropora appeared \"as a white skeleton on black\" next to a live Alveopora close-up: probably this photo.",
+        "IMR lecture photos are never excluded automatically (rule P1), so it is not on the skeleton list (judging/skeletons.json). If it should go: × Exclude on Anacropora's page; if it stays, Resolved."
+      ],
+      "ask": "Skeleton?",
+      "photos": [
+        {
+          "f": "imrl-p11_i7",
+          "t": "Anacropora",
+          "a": "IMR Lecture 6, slide 19"
+        }
+      ],
+      "src": [
+        {
+          "t": "docs/reviews/2026-11-01-ra-re-review.md, item 7"
+        },
+        {
+          "t": "Rule P6 (Pierre, 2026-11-09)"
+        }
+      ]
+    },
+    {
       "id": "favites-slide62-phymastrea",
       "kind": "names",
       "subj": "coral",

@@ -93,3 +93,41 @@ test('plainOf: the spread of the learning slope reads as the gain from twice as 
   assert.ok(/a typical genus gains between \+\d+ points and \+\d+ points of right answers from twice as many answers/.test(P.text), P.text);
   assert.strictEqual(P.tone, 'info');
 });
+
+test('Wright map: "every player" is read from each player’s own prediction on the genus, at their own practice', () => {
+  // Codex review #830: players at practice 0, 2 and 4 (log), a genus slope of 1, the rest 0: the first player's
+  // recognition of that genus is 50% (log-odds 0), so it is not recognised at 80% by every player
+  const mk = (n, keys, us, ws) => {
+      const f = A.factor(n, keys, ws);
+      us.forEach((u, j) => (f.u[j] = u));
+      return f;
+    },
+    D = [0, 0, 0].flatMap((_, i) => Array.from({length: 4}, () => ({p: 'P' + i, g: 'G', n: Math.round(Math.exp(2 * i) - 1)}))),
+    lc = 2,
+    F = [
+      mk('player', ['P0', 'P1', 'P2'], [0, 0, 0]),
+      mk('genus', ['G'], [0]),
+      mk('player slope', ['P0', 'P1', 'P2'], [0, 0, 0], [0, 0, 0]),
+      mk('genus slope', ['G'], [1], [0])
+    ],
+    W = A.wrightOf(D, {b: [0, 0], V: null}, F, lc),
+    g = W.g[0];
+  assert.ok(Math.abs(g[4] - -2) < 0.05 && Math.abs(g[5] - 2) < 0.05, JSON.stringify(g));
+});
+
+test('compact keeps the common learning slope: a slope spread reads the same on a compacted milestone', () => {
+  const learn = {
+      n: 900,
+      players: 8,
+      typ: {p: 0.75, g: 0.25},
+      b1: 0.6,
+      effects: [{k: 'sd_gslope', sd: true, est: 0.2, lo: 0.1, hi: 0.3, v: 'clear'}],
+      genus: Array.from({length: 60}, (_, i) => ({k: 'G' + i}))
+    },
+    rep = {M: [1000, 2000], R: {1000: {A: {learn}}, 2000: {A: {learn: JSON.parse(JSON.stringify(learn))}}}, answers: 2000},
+    before = A.plainOf('learn', learn.effects[0], learn).text;
+  A.compact(rep, JSON.stringify(rep).length - 100);
+  const lean = rep.R[1000].A.learn;
+  assert.ok(lean.lean);
+  assert.strictEqual(A.plainOf('learn', lean.effects[0], lean).text, before);
+});
