@@ -2504,6 +2504,29 @@ function cardRing(pct, was) {
       `<circle class="${c}" cx="32" cy="32" r="26" stroke-dasharray="${((C * Math.max(0, Math.min(100, p))) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 32 32)"/>`;
   return `<svg class="ulring" viewBox="0 0 64 64"><circle class="tr" cx="32" cy="32" r="26"/>${was != null && was !== pct ? arc(was, 'gh') : ''}${pct > 0 ? arc(pct, 'ar') : ''}<text x="32" y="38.5" text-anchor="middle">${pct}%</text></svg>`;
 }
+// The first page opened from Home in a visit (ROADMAP "Load order, further steps" (c); Pierre, 2026-11-02, reopened
+// 2026-11-09): which page players go to first, so the tiers can follow real use (index.html). One 'fromhome' event a visit
+// (sheet v124: the Events tab, its page in the message column), the first time route() leaves a Home it drew for another
+// page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
+// the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
+// those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
+const FROMHOME_SHEET = 124;
+const fromHomeOn = () => typeof sheetV === 'function' && sheetV() >= FROMHOME_SHEET;
+let HOME_AT = 0,
+  homeLeft = false,
+  toured = false;
+function fromHome(h, nt) {
+  if (document.getElementById('tour')) return void (toured = true);
+  if (homeLeft || !HOME_AT || (routeFrom !== '' && routeFrom !== 'home') || !h || h === 'home') return;
+  homeLeft = true;
+  if (!fromHomeOn()) return;
+  ev('fromhome', {
+    to: pageName(h, SUBJ.pv),
+    s: Math.round((performance.now() - HOME_AT) / 100) / 10,
+    w: nt > HAVE ? 1 : 0,
+    tr: toured ? 1 : 0
+  });
+}
 function route() {
   // A new version took over in the background (see UPDATED): the page reloads on the way to the next page.
   if (UPDATED) return location.reload();
@@ -2524,6 +2547,7 @@ function route() {
   // A page opened before its files arrived (first visit on a slow line, or a link straight to it) shows the loading bar
   // and asks for its tier now, ahead of the others (index.html), then opens.
   const nt = pageTier(hashNow());
+  fromHome(hashNow(), nt);
   if (nt > HAVE) {
     const h0 = hashNow();
     resetHelp();
@@ -2638,8 +2662,10 @@ function route() {
     quizDuel(a, b, left, from); // a page just opened starts a new duel run (quiz.js DUELRUN), unless back from its comparison
   } else if (h.startsWith('lab') && window.viewLab) viewLab(h);
   else if (window.labTool && labTool(h)) {
-  } else if ((!h || h === 'home') && window.viewHome) viewHome();
-  else UNITS[SUBJ.id].list();
+  } else if ((!h || h === 'home') && window.viewHome) {
+    viewHome();
+    if (!HOME_AT) HOME_AT = performance.now();
+  } else UNITS[SUBJ.id].list();
   window.scrollTo(0, 0);
   if (fsj) {
     const b = $v.querySelector(`.hsubj [data-subj="${fsj}"]`);
