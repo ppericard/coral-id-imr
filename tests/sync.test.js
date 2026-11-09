@@ -2399,6 +2399,32 @@ test('replays of players named constructor, __proto__, toString: their own answe
   });
 });
 
+// Codex review #812: before v117 core.js replayProgress replayed none of the answers of a player keyed "constructor" or
+// "__proto__" (it read the member every plain object inherits as their record), so a record kept for them may be wrong:
+// replay_ never reuses one for such a key and makes it again, each subject; another player's is reused as before.
+test('a kept replay record is never reused for a player keyed like an inherited member: made again', () => {
+  ['Ana', 'constructor', '__proto__'].forEach(nm => {
+    const s = loadCodeGs({fetch: withFish().fetch}),
+      F = Array.from({length: 9}, (_, i) => fa('f' + i, i)),
+      K = Array.from({length: 4}, (_, i) => qa('k' + i, i)),
+      ask = () => s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [], rv: 0, rvs: {fish: 0}});
+    s.post({name: nm, pin: '1234', data: prog(3), summary: {}, answers: [...K, ...F], rv: C.RV});
+    const r0 = ask(),
+      want = {fish: r0.replays.fish.rec, coral: r0.replay.rec};
+    assert.deepStrictEqual(want.fish, fishWant(F, nm.toLowerCase()), nm + ': its fish answers');
+    assert.strictEqual(r0.replay.n, 4, nm + ': its coral answers');
+    // A record kept with today's rules, the same rows and reset, as one made by the replay before the fix would be.
+    s.sheets['Replayed Fish'].rows[1][5] = '{"mark":1}';
+    s.sheets.Replayed.rows[1][5] = '{"mark":1}';
+    const r = ask();
+    if (nm === 'Ana') assert.deepStrictEqual([r.replays.fish.rec, r.replay.rec], [{mark: 1}, {mark: 1}], 'reused');
+    else {
+      assert.deepStrictEqual([r.replays.fish.rec, r.replay.rec], [want.fish, want.coral], nm + ': made again');
+      assert.notStrictEqual(s.sheets.Replayed.rows[1][5], '{"mark":1}', nm + ': and kept');
+    }
+  });
+});
+
 // Pierre, 2026-11-08: the corals' analyses are refitted every 1000 coral answers; the head counted every row of every
 // subject, so the fish answers moved the corals' count (the admin read "3,000 due within the hour" on 2,729 coral answers).
 test("v105 analyses head: each subject counted apart, the corals' answers never take the fish ones", () => {

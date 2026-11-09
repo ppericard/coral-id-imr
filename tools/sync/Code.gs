@@ -597,7 +597,10 @@ function replay_(key, since, appRv, pt, start, sid, saved){
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0];
     try { prev = {rv: Number(row[1]), since: String(row[3]).split('#')[0], o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) {}
-    if (prev && Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey) {
+    // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__": lc_ keeps
+    // no other): core.js replayProgress before v117 read that member as their record and replayed none of their answers
+    // (Codex review #812), so a record kept for them may be wrong; made again instead, the same for every other player.
+    if (prev && !(who in Object.prototype) && Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey) {
       return {rv: top, n: n, rec: fl && prev.o && prev.o.F ? prev.o.P || {} : prev.o, ids: ids, fp: fp};
     }
   }
