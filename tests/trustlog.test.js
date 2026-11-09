@@ -158,6 +158,23 @@ test("a unit absent from the log: no baseline record, this device's unsent answe
   assert.strictEqual(n(merged.Acropora), 1, 'the unsent answer is kept once');
 });
 
+// Codex review of #840 (round 4), the level as one rule: over a doubled save every progress field of the level (ability,
+// typed opportunities, answer times) is the log's, in the record adopted and in its merge baseline; only the plain count
+// (the checkpoints' clock) keeps the larger, until claude/level-count-from-log.
+test("the level over a doubled save: the log's ability, typed opportunities and times; only the count kept", () => {
+  const rec = {'~level': {ok: 10, ko: 0, th: 1, vr: 0.2, tyk: {f: 10}, rt: {n: 10, s: 30}}, Acropora: {ok: 5, ko: 0, h: '11111', ty: 5}},
+    saved = {
+      '~level': {ok: 20, ko: 0, th: 2, vr: 0.1, lt: 5, tyk: {f: 20}, rt: {n: 20, s: 60}},
+      Acropora: {ok: 10, ko: 0, h: '1111111111', ty: 10}
+    },
+    M = C.replayedOf({P: rec}, saved, 2),
+    B = C.replayBase(rec, M, 2, saved);
+  for (const L of [M[C.LEVEL], B[C.LEVEL]]) {
+    assert.deepStrictEqual([L.th, L.vr, L.lt, L.tyk, L.rt], [1, 0.2, undefined, {f: 10}, {n: 10, s: 30}]);
+    assert.strictEqual(n(L), 20, 'the count: the larger (the clock)');
+  }
+});
+
 test('progress from before the coral log: dropped as any answer the log does not have', () => {
   const A = Array.from({length: 12}, (_, i) => ans('c' + i, G[i % 4], 1, CORAL + 5 * 60000 + i * 60000)),
     rep = replay(A, GEN),

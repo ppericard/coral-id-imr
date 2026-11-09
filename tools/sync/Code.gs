@@ -7111,6 +7111,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
+  const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
   const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
@@ -7130,23 +7131,16 @@ const CORE_ = (function () { const module = {exports: {}};
       const s = isObj(S[g]) ? S[g] : null,
         r = isObj(R[g]) ? R[g] : null;
       if (g === LEVEL) {
+        // One rule for the level (rule D9; Codex reviews of #840): every field that feeds progress (the ability th, vr,
+        // lt, the typed opportunities tyk, the answer times rt) is the log's, absent when the log has none; only the
+        // plain answer count (ok, ko: the clock the checkpoints hang on) keeps the larger of the two until
+        // claude/level-count-from-log.
         const o = s ? dup(s) : {};
+        LEVEL_LOG.forEach(f => (r && r[f] !== undefined ? (o[f] = dup(r[f])) : delete o[f]));
         if (r) {
-          if (typeof r.th === 'number') o.th = r.th;
-          if (typeof r.vr === 'number') o.vr = r.vr;
-          // The answer times (rt) go with the count: the replay's when it has every answer the device has.
-          if (!s || n(r) >= n(s)) {
-            [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
-            if (isObj(r.tyk)) o.tyk = dup(r.tyk);
-            else delete o.tyk;
-            if (isObj(r.rt)) o.rt = dup(r.rt);
-            else delete o.rt;
-          }
+          if (!s || n(r) >= n(s)) [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
-        } else if (s) {
-          // No answer in the log at all: no ability either (rule D9; Codex review of #840); the count as above.
-          ['th', 'vr', 'lt'].forEach(f => delete o[f]);
         }
         out[g] = o;
         return;
@@ -7213,13 +7207,7 @@ const CORE_ = (function () { const module = {exports: {}};
       if (g === LEVEL) {
         if (!r) return b && (out[g] = dup(b));
         const o = dup(r);
-        if (b && n(b) > n(r)) {
-          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
-          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
-          else delete o.tyk;
-          if (isObj(b.rt)) o.rt = dup(b.rt);
-          else delete o.rt;
-        }
+        if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0]; // the clock only (replayedOf, LEVEL_LOG)
         out[g] = o;
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
