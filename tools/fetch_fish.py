@@ -752,12 +752,18 @@ def sure_add(j):
 
 
 def state(cur, sug):
-    """(gone(f), excluded photo ids): gone = rejected, excluded, sent elsewhere by Pierre, or set aside by the pre-sort."""
+    """(gone(f), excluded photo ids): gone = rejected, excluded, sent elsewhere by Pierre, set aside by the pre-sort, or an
+    add of his held out for other species one could take for its subject (tools/fish_game.py other_out: his tag, his
+    legacy m refined by the pass's o or k; Q323, Codex review #839): such a photo is not in play, so it frees room."""
+    from fish_game import other_out  # here, not at the top: tools/fish_game.py imports this module
     F = (cur or {}).get("fish") or {}
     ex = set(F.get("exclude") or {}) | set((cur or {}).get("exclude") or {})
     excl = {pid(f) for f in ex} - {None}
     S = (sug or {}).get("fish") or {}
-    gone = lambda f: f in (F.get("seen") or {}) or f in ex or f in (F.get("out") or {}) or (f not in (F.get("add") or {}) and sure_out(S.get(f)))
+    add, tags = F.get("add") or {}, F.get("tags") or {}
+    gone = lambda f: (f in (F.get("seen") or {}) or f in ex or f in (F.get("out") or {})
+                      or (f not in add and sure_out(S.get(f)))
+                      or (f in add and other_out(tags.get(f), (S.get(f) or {}).get("jt"))))
     return gone, excl
 
 

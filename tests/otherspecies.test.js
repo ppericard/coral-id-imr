@@ -199,3 +199,17 @@ test('the Candidates queue counts no add held out for other species (Codex revie
   const q = fishQueue(cands, sug, {s1: {}}, F).find(x => x.p.f === 'fish-s1-cand-8');
   assert.ok(q && q.n === 1 && !q.full, `the waiting candidate is offered under the target: ${JSON.stringify(q && {n: q.n, full: q.full})}`);
 });
+
+test('the fetcher frees the room of an add held out for other species (Codex review #839), as the game leaves it out', () => {
+  const R = py(`import fetch_fish as FF
+cur = {'fish': {'add': {'a': 's1', 'b': 's1', 'c': 's1', 'd': 's1', 'e': 's1'},
+                'tags': {'a': 'p1g0smk', 'b': 'p1g0smo', 'c': 'p1g0smm', 'd': 'p1g0smm', 'e': 'p1g0sm1'}}}
+sug = {'fish': {'d': {'jt': 'p1g0smo', 'e': 4, 'k': 'best'}, 'e': {'jt': 'p1g0smk', 'e': 4, 'k': 'best'}}}
+gone, _ = FF.state(cur, sug)
+print(json.dumps({f: gone(f) for f in 'abcde'}))`);
+  assert.deepStrictEqual(
+    R,
+    {a: true, b: false, c: true, d: false, e: false},
+    'k and the unsorted m free room; o, a sorted o and his one fish hold it'
+  );
+});
