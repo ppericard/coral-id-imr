@@ -63,7 +63,11 @@ test('fish: rejected, excluded and Not this photos are never in the game; curate
   const {fishGen, fishPhotos, fishPid, fishIn, fishGone} = require('../core.js'),
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
-    X = fishGen(read('fish.json'), fishPhotos(PH.photos, read('fish-game.json').photos, CUR, read('fish.json')), PH.sheet),
+    X = fishGen(
+      read('fish.json'),
+      fishPhotos(PH.photos, require('../core.js').fishGameRead(read('fish-game.json')).photos, CUR, read('fish.json')),
+      PH.sheet
+    ),
     gone = fishGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
     no = new Map();
   ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));
