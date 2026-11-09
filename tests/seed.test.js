@@ -1,31 +1,48 @@
-// The seedling 🌱 in the admin's own name (sheet v123; Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
-// have"): no player can make a name holding it or one of its look-alikes (core.js reservedName: the sign-up and an archive
-// name are refused as reserved); the admin page renames its own account with it or back (Code.gs users_ userSeed, with
-// the GitHub token and the account's code), moving the whole record and leaving a Removed row so the account's other
-// devices follow; a name it frees can never be taken again (rule D7). Made-up names; the in-memory sheet (tests/gas.js),
-// nothing leaves this process (rule D1).
+// The seedling 🌱 after the admin's account name (sheet v125; Pierre, 2026-11-09, Q328 corrected: "an icon the others
+// are not allowed to have", added on its own, the name unchanged, no step for him): the account the admin page is signed
+// in to when it reads the answer log with a valid token becomes the admin's account (Code.gs answers_, adminAcct_: its
+// code hash, one at most); its leaderboard rows carry a 4th field 1 and its load reply admin: 1, which the app shows as
+// a 🌱 after the name, outside the name's text (core.js markRow, markHtml; progress.js paintBoard; sync.js markSeen).
+// A delete, a merge or an archive clears it (rule D7), and no player can type the seedling or a look-alike in a new name
+// (core.js reservedName). Made-up names; the in-memory sheet (tests/gas.js), nothing leaves this process (rule D1).
 const test = require('node:test'),
   assert = require('node:assert'),
+  fs = require('fs'),
+  path = require('path'),
   vm = require('vm');
 const C = require('../core.js');
 const {loadCodeGs, madeBefore} = require('./gas.js');
+const {page, LIGHT, withData} = require('./syncpage.js');
+const block = require('./block.js');
 
-const TOK = 'ghp_write000000000000000000',
+const ROOT = path.join(__dirname, '..'),
+  read = f => fs.readFileSync(path.join(ROOT, f), 'utf8'),
+  TOK = 'ghp_write000000000000000000',
   SEED = C.SEED;
-const data = n => ({[C.subjKey('coral', 'progress')]: JSON.stringify({Acropora: {ok: n, ko: 0, pg: 0.6}})});
-const ans = (id, i) => ({
-  id,
-  t: new Date(Date.UTC(2026, 10, 3, 6, 0, i)).toISOString(),
-  g: 'Acropora',
-  a: 'Acropora',
-  ok: 1,
-  m: 'quiz',
-  ph: 'acropora-1'
+const BOARDS = C.SUBJECTS.filter(S => S.board),
+  FUNITS = ['f:Damselfishes', 'f:Butterflyfishes'];
+const data = () => ({
+  [C.subjKey('coral', 'progress')]: JSON.stringify({Acropora: {ok: 3, ko: 0, pg: 0.6}}),
+  [C.subjKey('fish', 'progress')]: JSON.stringify({'f:Damselfishes': {ok: 2, ko: 0, pg: 0.5}})
 });
-const play = (s, name, pin, n = 3, answers = []) =>
-  s.post({name, pin, data: data(n), summary: {genera: {Acropora: 'mid'}, board: 1}, answers});
+// A player's save as the app sends it; extra goes into the summary, more into the data (what a player could try to claim with).
+const play = (s, name, pin, extra = {}, more = {}) =>
+  s.post({
+    name,
+    pin,
+    data: Object.assign(data(), more),
+    summary: {genera: {Acropora: 'mid', Montipora: 'new'}, board: 1, boards: {fish: FUNITS}, ...extra},
+    answers: []
+  });
 const names = s => s.sheets.RAs.rows.slice(1).map(r => r[0]);
-const seed = (s, aname, apin, on, token = TOK) => s.post({userSeed: on, aname, apin, token});
+// The admin page's read of the answer log, signed in to a player account on that browser (admin.js loadStats).
+const adminRead = (s, aname, apin, token = TOK) => s.post({readAnswers: 1, aname, apin, token});
+const marked = (s, S) =>
+  s
+    .get({board: '1', s: S.id})
+    .rows.filter(r => r.length > 3)
+    .map(r => [r[0], r[3]]);
+const loadOf = (s, name, pin) => s.get({name, pin});
 
 test('the seedling and its look-alikes: refused for a new account or an archive name; an account that has one keeps working', () => {
   const {SEED_LOOKALIKES, reservedName} = C;
@@ -51,115 +68,232 @@ test('the seedling and its look-alikes: refused for a new account or an archive 
   assert.strictEqual(s.post({userArchive: {from: 'Old 🍀', into: 'Old 🌱 archive'}, token: TOK}).error, 'reserved');
 });
 
-test('seedName: the seedling after the name, once; back without it', () => {
-  assert.strictEqual(C.seedName('Ana B.', true), 'Ana B. ' + SEED);
-  assert.strictEqual(C.seedName(' Ana B. ', true), 'Ana B. ' + SEED);
-  assert.strictEqual(C.seedName('Ana B. ' + SEED, true), 'Ana B. ' + SEED);
-  assert.strictEqual(C.seedName('Ana B. ' + SEED, false), 'Ana B.');
-  assert.strictEqual(C.seedName('Ana B.' + SEED + '️', false), 'Ana B.');
-  assert.strictEqual(C.seedName('Ana B.', false), 'Ana B.');
-});
-
-test("the admin's own account gets the seedling: token and code checked, the whole record moves, its devices follow", () => {
+test("the admin's account: the one the admin page is signed in to, never from a player or without the token", () => {
   const s = loadCodeGs();
-  assert.ok(play(s, 'Ana B.', '1234', 3, [ans('a1', 1), ans('a2', 2)]).ok);
-  assert.ok(play(s, 'Cy D.', '5678').ok);
-  assert.ok(s.post({reports: [{id: 'r1', t: 1, why: 'wrong', g: 'Acropora'}], rname: 'Ana B.', rpin: '1234'}).ok);
-  // Refused: no token, a wrong token, a wrong code, an unknown name, no code; nothing changes.
-  assert.strictEqual(seed(s, 'Ana B.', '1234', true, null).error, 'token');
-  assert.strictEqual(seed(s, 'Ana B.', '1234', true, 'ghp_wrong00000000000000000').error, 'token');
-  assert.strictEqual(seed(s, 'Ana B.', '9999', true).error, 'pin');
-  assert.strictEqual(seed(s, 'Nobody', '1234', true).error, 'user');
-  assert.strictEqual(seed(s, 'Ana B.', '', true).error, 'input');
-  assert.strictEqual(seed(s, 'Ana B.', '1234', false).error, 'same');
-  // A player's own save can never make it: the name is refused at sign-up (above), and a save carrying userSeed without
-  // the token is the admin's request, refused.
+  ['Ana B.', 'Cy D.', 'Dee E.'].forEach((n, i) => assert.ok(play(s, n, '123' + i).ok, n));
+  BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [], 'nobody at first: ' + S.id));
+  // No token, a wrong token, a wrong code: nothing kept.
+  assert.strictEqual(adminRead(s, 'Ana B.', '1230', null).error, 'token');
+  assert.strictEqual(adminRead(s, 'Ana B.', '1230', 'ghp_wrong00000000000000000').error, 'token');
+  assert.ok(adminRead(s, 'Ana B.', '9999').ok);
+  assert.strictEqual(s.props.ADMIN_ACCT, undefined);
+  // A player's save claims nothing: an admin flag in the summary, the data or the request is ignored.
+  assert.ok(play(s, 'Cy D.', '1231', {admin: 1, badge: 1}, {_admin: '1', 'reefid-amark': '1'}).ok);
   assert.strictEqual(
-    s.post({name: 'Cy D.', pin: '5678', data: data(1), summary: {}, answers: [], userSeed: true, aname: 'Cy D.', apin: '5678'}).error,
+    s.post({name: 'Cy D.', pin: '1231', data: data(), summary: {}, answers: [], readAnswers: 1, aname: 'Cy D.', apin: '1231'}).error,
     'token'
   );
-  assert.deepStrictEqual(names(s), ['Ana B.', 'Cy D.']);
-  // Each subject's replay record (its first replay's floor reference among it; Codex review #835), kept as it is.
-  const tabs = vm.runInContext('rplTabs_()', s.ctx);
-  assert.ok(tabs.length >= 2, tabs.join());
-  tabs.forEach(t =>
-    vm.runInContext(
-      `sheet_(${JSON.stringify(t)}, RPL.HEAD).appendRow(['Ana B.', 7, 2, 0, 0, '{"F":1}']); sheet_(${JSON.stringify(t)}, RPL.HEAD).appendRow(['Cy D.', 7, 0, 0, 0, '{}'])`,
-      s.ctx
-    )
-  );
-  // Given: the record moves whole under the new name, with the same code.
-  const r = seed(s, 'ana b.', '1234', true);
-  assert.strictEqual(r.ok, true, JSON.stringify(r));
-  assert.strictEqual(r.name, 'Ana B. ' + SEED);
-  assert.deepStrictEqual(names(s), ['Ana B. ' + SEED, 'Cy D.']);
-  const ld = s.get({name: 'Ana B. ' + SEED, pin: '1234'});
-  assert.strictEqual(ld.found, true);
-  assert.deepStrictEqual(JSON.parse(ld.data[C.subjKey('coral', 'progress')]), {Acropora: {ok: 3, ko: 0, pg: 0.6}});
-  assert.ok(s.sheets.Answers.rows.slice(1).every(x => x[0] === 'Ana B. ' + SEED || x[0] !== 'Ana B.'));
-  assert.strictEqual(s.sheets.Answers.rows.slice(1).filter(x => x[0] === 'Ana B. ' + SEED).length, 2);
-  assert.ok(s.sheets.Reports.rows.slice(1).every(x => x[1] !== 'Ana B.'));
-  assert.strictEqual(s.get({name: 'Ana B. ' + SEED, pin: '0000'}).error, 'pin');
-  tabs.forEach(t =>
-    assert.deepStrictEqual(
-      s.sheets[t].rows.slice(1).map(x => [x[0], x[5]]),
-      [
-        ['Ana B. ' + SEED, '{"F":1}'],
-        ['Cy D.', '{}']
-      ],
-      t
-    )
-  );
-  // The board and the player list show the new name.
-  assert.deepStrictEqual(
-    s.get({board: '1'}).rows.map(x => x[0]),
-    ['Ana B. ' + SEED, 'Cy D.']
-  );
-  assert.deepStrictEqual(
-    s
-      .post({users: 1, token: TOK})
-      .users.map(u => u.name)
-      .sort(),
-    ['Ana B. ' + SEED, 'Cy D.']
-  );
-  // Another device still signed in under the old name: told to sign in under the new one; its answers follow it.
-  const g = s.get({name: 'Ana B.', pin: '1234'});
-  assert.deepStrictEqual([g.error, g.into], ['gone', 'Ana B. ' + SEED]);
-  const sv = play(s, 'Ana B.', '1234', 4, [ans('a3', 3)]);
-  assert.deepStrictEqual([sv.error, sv.into], ['gone', 'Ana B. ' + SEED]);
-  assert.strictEqual(s.sheets.Answers.rows.slice(1).filter(x => x[0] === 'Ana B. ' + SEED).length, 3);
-  // Nobody else takes it: the name exists (another code is refused), and once given back, deleted or archived, the
-  // sign-up refuses it.
-  assert.strictEqual(play(s, 'Ana B. ' + SEED, '4321').error, 'pin');
-  // Taken back (Remove): the old name is live again, with its code; its earlier Removed row is gone.
-  const back = seed(s, 'Ana B. ' + SEED, '1234', false);
-  assert.deepStrictEqual([back.ok, back.name], [true, 'Ana B.']);
-  assert.strictEqual(s.get({name: 'Ana B.', pin: '1234'}).found, true);
-  assert.ok(play(s, 'Ana B.', '1234').ok);
-  assert.deepStrictEqual(
-    s.sheets.Removed.rows.slice(1).map(x => [x[0], x[2]]),
-    [['Ana B. ' + SEED, 'Ana B.']]
-  );
-  assert.strictEqual(play(s, 'Ana B. ' + SEED, '4321').error, 'reserved', 'a seedling name freed is never taken again');
-  // Errors: a name taken, too long.
-  assert.ok(play(s, 'Eve F.', '2222').ok);
-  assert.ok(madeBefore(s, () => play(s, 'Eve F. ' + SEED, '3333')).ok);
-  assert.strictEqual(seed(s, 'Eve F.', '2222', true).error, 'exists');
-  const long = 'L'.repeat(39);
-  assert.ok(play(s, long, '2222').ok);
-  assert.strictEqual(seed(s, long, '2222', true).error, 'long');
+  assert.strictEqual(s.props.ADMIN_ACCT, undefined);
+  BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [], 'still nobody: ' + S.id));
+  // The admin page signed in to Ana's account reads the log: Ana's is the admin's account, by code hash, no name kept.
+  const r = adminRead(s, 'ana b.', '1230');
+  assert.ok(r.ok && r.me, JSON.stringify(r).slice(0, 200));
+  assert.ok(s.props.ADMIN_ACCT && !/Ana/i.test(s.props.ADMIN_ACCT));
+  BOARDS.forEach(S => {
+    assert.deepStrictEqual(marked(s, S), [['Ana B.', 1]], S.id);
+    s.get({board: '1', s: S.id})
+      .rows.filter(x => x[0] !== 'Ana B.')
+      .forEach(x => assert.strictEqual(x.length, 3, x[0]));
+  });
+  // The name itself is unchanged everywhere: the RAs row, the board's name field, the load.
+  assert.deepStrictEqual(names(s), ['Ana B.', 'Cy D.', 'Dee E.']);
+  assert.strictEqual(loadOf(s, 'Ana B.', '1230').admin, 1);
+  assert.strictEqual(loadOf(s, 'Cy D.', '1231').admin, undefined);
+  // Ana's own saves keep it; another account signed in on the admin page replaces it (one at most).
+  assert.ok(play(s, 'Ana B.', '1230').ok);
+  assert.deepStrictEqual(marked(s, BOARDS[0]), [['Ana B.', 1]]);
+  assert.ok(adminRead(s, 'Dee E.', '1232').ok);
+  BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [['Dee E.', 1]], S.id));
+  assert.strictEqual(loadOf(s, 'Ana B.', '1230').admin, undefined);
 });
 
-test('a seedling name freed by a delete, a merge or an archive can never be taken again', () => {
+test("a delete, a merge or an archive of the admin's account clears it: a new account under the name never shows it", () => {
   const s = loadCodeGs();
-  ['Ana B.', 'Cy D.', 'Dee E.', 'Eve F.'].forEach((n, i) => {
-    assert.ok(play(s, n, '123' + i).ok, n);
-    if (n !== 'Eve F.') assert.ok(seed(s, n, '123' + i, true).ok, n);
+  ['Ana B.', 'Cy D.', 'Dee E.', 'Eve F.'].forEach((n, i) => assert.ok(play(s, n, '123' + i).ok, n));
+  const each = [
+    ['Ana B.', '1230', () => s.post({userDelete: 'Ana B.', token: TOK})],
+    ['Cy D.', '1231', () => s.post({userArchive: {from: 'Cy D.', into: 'Cy-old'}, token: TOK})],
+    ['Dee E.', '1232', () => s.post({userMerge: {from: 'Dee E.', into: 'Eve F.', data: data()}, token: TOK})]
+  ];
+  each.forEach(([n, pin, drop]) => {
+    assert.ok(adminRead(s, n, pin).ok);
+    assert.ok(s.props.ADMIN_ACCT, n);
+    assert.ok(drop().ok, n);
+    assert.strictEqual(s.props.ADMIN_ACCT, undefined, n + ': cleared');
+    BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [], n + ' ' + S.id));
   });
-  assert.ok(s.post({userDelete: 'Ana B. ' + SEED, token: TOK}).ok);
-  assert.ok(s.post({userArchive: {from: 'Cy D. ' + SEED, into: 'Cy-old'}, token: TOK}).ok);
-  assert.ok(s.post({userMerge: {from: 'Dee E. ' + SEED, into: 'Eve F.', data: data(1)}, token: TOK}).ok);
-  ['Ana B. ' + SEED, 'Cy D. ' + SEED, 'Dee E. ' + SEED].forEach(n => assert.strictEqual(play(s, n, '9999').error, 'reserved', n));
-  // An archive cannot be given one either (its code no longer opens it).
-  assert.ok(!seed(s, 'Cy-old', '1231', true).ok);
+  // The names taken again (another code): no mark. An archived account never becomes the admin's.
+  assert.ok(play(s, 'Ana B.', '9999').ok);
+  assert.ok(play(s, 'Cy D.', '9998').ok);
+  assert.strictEqual(loadOf(s, 'Ana B.', '9999').admin, undefined);
+  assert.ok(adminRead(s, 'Cy-old', '1231').ok);
+  assert.strictEqual(s.props.ADMIN_ACCT, undefined);
+  BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [], S.id));
+  // The kept account of the merge becomes the admin's at the admin page's next read, signed in to it.
+  assert.ok(adminRead(s, 'Eve F.', '1233').ok);
+  assert.deepStrictEqual(marked(s, BOARDS[0]), [['Eve F.', 1]]);
+});
+
+// The app's board (progress.js paintBoard): the 🌱 after the admin's name element, outside its text, only on the marked
+// row of a script that sends the mark; every name escaped. A DOM stub: the list's HTML is read as written.
+const paint = (rows, v) => {
+  const box = {innerHTML: '', querySelector: () => null};
+  const ctx = {
+    document: {getElementById: id => (id === 'board' ? box : null)},
+    hashNow: () => 'board',
+    SYNC: null,
+    P: {},
+    LEVEL: '~level',
+    ELO_MIN: 200,
+    boardOn: () => true,
+    eloLine: () => '',
+    eloScore: x => Math.round(x),
+    esc: t => String(t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]),
+    markRow: C.markRow,
+    markHtml: C.markHtml,
+    SUBJ: {},
+    innerHeight: 800
+  };
+  vm.createContext(ctx);
+  const src = read('progress.js');
+  vm.runInContext(
+    block(src, 'const boardMe = ', '\n', {file: 'progress.js'}) +
+      '\n' +
+      block(src, 'function paintBoard(', '\n}\n', {through: 1, file: 'progress.js'}) +
+      '\nthis.paintBoard = paintBoard;',
+    ctx
+  );
+  ctx.paintBoard({rows, v}, ctx.SUBJ);
+  return box.innerHTML;
+};
+
+test("the app shows the 🌱 after the admin's name, outside its text, from a script that sends it; names escaped", () => {
+  const rows = [
+    ['Ana B.', 80, 1.2, 1],
+    ['<img src=x onerror=alert(1)>', 70, null],
+    ['Cy & "D"', 60, null, 0]
+  ];
+  const html = paint(rows, C.MARK_SHEET),
+    mark = C.markHtml();
+  assert.strictEqual(mark, `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`);
+  const li = html.match(/<li[^>]*>.*?<\/li>/g);
+  assert.strictEqual(li.length, 3);
+  assert.ok(li[0].includes('<b class="bname">Ana B.</b>' + mark + '</span>'), li[0]);
+  assert.ok(li[1].includes('<b class="bname">&lt;img src=x onerror=alert(1)&gt;</b></span>') && !li[1].includes('<img'), li[1]);
+  assert.ok(li[2].includes('<b class="bname">Cy &amp; &quot;D&quot;</b></span>') && !li[2].includes(SEED), li[2]);
+  assert.strictEqual(html.split(SEED).length - 1, 1, 'one mark');
+  (html.match(/<b class="bname">.*?<\/b>/g) || []).forEach(b => assert.ok(!b.includes(SEED), b));
+  [undefined, C.MARK_SHEET - 1].forEach(v => assert.ok(!paint(rows, v).includes(SEED), String(v)));
+});
+
+test('the account line: the mark from a load reply of a script that knows the admin, for that account only', () => {
+  const mem = {},
+    ctx = {store: {get: (k, d) => (k in mem ? mem[k] : d), set: (k, v) => (mem[k] = v)}, MARK_SHEET: C.MARK_SHEET, SYNC: {name: 'Ana B.'}};
+  vm.createContext(ctx);
+  const src = read('sync.js');
+  vm.runInContext(
+    block(src, 'const MARK_KEY = ', '\n// The ids of this player', {file: 'sync.js'}) +
+      '\nthis.markSeen = markSeen; this.markMine = markMine;',
+    ctx
+  );
+  const {markSeen, markMine} = ctx;
+  markSeen({ok: true, found: true, admin: 1, v: C.MARK_SHEET - 1}, 'Ana B.');
+  assert.strictEqual(markMine(), false, 'an older script');
+  markSeen({ok: true, found: true, admin: 1, v: C.MARK_SHEET}, 'Ana B.');
+  assert.strictEqual(markMine(), true);
+  markSeen({ok: true, log: true, v: C.MARK_SHEET}, 'Ana B.');
+  assert.strictEqual(markMine(), true, 'a save reply changes nothing');
+  ctx.SYNC = {name: 'Cy D.'};
+  assert.strictEqual(markMine(), false, 'another account on this device');
+  ctx.SYNC = {name: 'ana b.'};
+  markSeen({ok: true, found: true, v: C.MARK_SHEET}, 'ana b.');
+  assert.strictEqual(markMine(), false, "no longer the admin's");
+  ctx.SYNC = null;
+  assert.strictEqual(markMine(), false);
+});
+
+// Codex review #841 (P1): the admin page's log read takes the admin's account under the script lock, re-reading its row
+// there, so a delete, a merge or an archive (each under the lock) that comes while the read runs is never undone by it.
+test("a log read in progress never brings the admin's mark back after an archive, a delete or a merge", () => {
+  const races = [
+    ['an archive', s => s.post({userArchive: {from: 'Ana B.', into: 'Ana-old'}, token: TOK})],
+    ['a delete', s => s.post({userDelete: 'Ana B.', token: TOK})],
+    ['a merge', s => s.post({userMerge: {from: 'Ana B.', into: 'Cy D.', data: data()}, token: TOK})]
+  ];
+  races.forEach(([what, drop]) => {
+    const s = loadCodeGs();
+    assert.ok(play(s, 'Ana B.', '1230').ok);
+    assert.ok(play(s, 'Cy D.', '1231').ok);
+    // The other request runs once the read has checked the code and is about to keep the account: when it asks for the
+    // lock, or (without one) when it writes.
+    s.ctx.__drop = () => assert.ok(drop(s).ok, what);
+    vm.runInContext(
+      `(() => {
+        let armed = true;
+        const fire = () => { if (armed) { armed = false; __drop(); } };
+        const L = LockService.getScriptLock;
+        LockService.getScriptLock = () => { const l = L(); const t = l.tryLock; l.tryLock = ms => (fire(), t(ms)); return l; };
+        const S = adminSet_;
+        adminSet_ = h => (fire(), S(h));
+      })()`,
+      s.ctx
+    );
+    assert.ok(adminRead(s, 'Ana B.', '1230').ok, what);
+    assert.strictEqual(s.props.ADMIN_ACCT, undefined, what + ': no mark kept');
+    BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [], what + ' ' + S.id));
+  });
+  // The lock held by another request: nothing written; the next read keeps the account.
+  const s = loadCodeGs();
+  assert.ok(play(s, 'Ana B.', '1230').ok);
+  s.lock.busy = true;
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok, 'the read is served all the same');
+  assert.strictEqual(s.props.ADMIN_ACCT, undefined);
+  s.lock.busy = false;
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok);
+  assert.deepStrictEqual(marked(s, BOARDS[0]), [['Ana B.', 1]]);
+});
+
+// Codex review #841 (P2): a light save that skips the load (sync.js skipPull) builds its own reply from the copy it holds,
+// which says nothing of the admin: it must not take the mark away.
+test("the admin's own device keeps its mark through light saves that skip the load", async () => {
+  const s = loadCodeGs(withData()),
+    A = page(s, {v: Math.max(C.MARK_SHEET, LIGHT), SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
+  A.play('m0', 'Acropora', true);
+  await A.syncPush(); // a new account: a load (not found), then a save
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok);
+  await A.syncPull(); // a load: the account is the admin's
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(A.store.get('reefid-amark', null))), {n: 'ana b.', on: true});
+  const from = A.reqs.length;
+  for (let i = 1; i < 4; i++) {
+    A.play('m' + i, 'Porites', i % 2 === 0);
+    await A.syncPush();
+  }
+  assert.ok(
+    A.reqs.slice(from).every(r => r.kind === 'post'),
+    'light saves, no load'
+  );
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(A.store.get('reefid-amark', null))), {n: 'ana b.', on: true}, 'the mark stays');
+});
+
+// Codex review #841 (P2): the mark is the account's, never the name's on this device: a sign-out takes it away, and a load
+// that finds no account under the name (deleted or archived, then taken again) too.
+test("a device's mark never passes to another account of the same name", async () => {
+  const s = loadCodeGs(withData()),
+    A = page(s, {v: Math.max(C.MARK_SHEET, LIGHT), SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
+  A.play('n0', 'Acropora', true);
+  await A.syncPush();
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok);
+  await A.syncPull();
+  const mark = () => JSON.parse(JSON.stringify(A.store.get('reefid-amark', null)));
+  assert.deepStrictEqual(mark(), {n: 'ana b.', on: true});
+  // Signing out leaves nothing of it.
+  if (!('CUSTOM' in A.ctx)) A.ctx.CUSTOM = {KEY: 'reefid-sync-coral-custom'}; // model.js, not loaded here
+  vm.runInContext('signOutClear(true)', A.ctx);
+  assert.strictEqual(mark(), null);
+  // Marked again, then the account deleted and the name taken again with another code on this device: the load finds
+  // no account (found: false), and the mark goes.
+  vm.runInContext('store.set(MARK_KEY, {n: "ana b.", on: true})', A.ctx);
+  assert.ok(s.post({userDelete: 'Ana B.', token: TOK}).ok);
+  vm.runInContext('markSeen({ok: true, found: false, v: 1}, "Ana B.")', A.ctx);
+  assert.strictEqual(mark(), null);
 });
