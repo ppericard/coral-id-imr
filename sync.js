@@ -727,6 +727,7 @@ function syncOnce(tries = 0, pulled = null) {
       if (!j.ok) return j;
       if (archivedOf(j, me)) return {ok: false, error: 'archived'}; // nothing pushed: the record is not re-created
       groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
+      markSeen(j, me.name); // the admin's mark (core.js MARK_SHEET)
       if (j.found) mergeSaved(j);
       sdSeen(me, j);
       if (!mine) repsSeen(j); // the player's reports (v57), after the merge: their thanks on another device came with it
@@ -990,6 +991,7 @@ function syncPull() {
       const rvNow = () => [SUBJECTS.find(x => x.replay), ...rpSubjects()].filter(Boolean).map(rvApplied),
         rv0 = rvNow();
       groupsSeen(j, me.name); // the beta groups first (v48), as syncOnce
+      markSeen(j, me.name);
       if (j.found) mergeSaved(j);
       sdSeen(me, j); // the copy merged, for the lighter saves (LIGHT_SHEET)
       repsSeen(j); // the player's reports (v57), as syncOnce
@@ -1421,6 +1423,19 @@ function groupsSeen(j, name, live = true) {
   // Home draws its subject row in viewHome (showSubj only updates existing buttons): redraw Home too (Codex review #540).
   if (!SUBJ_VISIT && ['lab', ''].includes(hashNow())) route();
 }
+// The admin's mark on the account line (Pierre, 2026-11-09, Q328 corrected: 🌱 after his name, added on its own): a load
+// reply of the script that knows the admin's account (core.js MARK_SHEET; Code.gs load_ admin: 1) says whether this
+// account is it, kept under the account's name (MARK_KEY) and shown after the name in ⚙ (bindSync), outside its text.
+// An older script says nothing and nothing shows (rule D4).
+const MARK_KEY = 'reefid-amark';
+function markSeen(j, name) {
+  if (!j || !j.ok || j.found !== true || !name || !(Number(j.v) >= MARK_SHEET)) return;
+  store.set(MARK_KEY, {n: String(name).trim().toLowerCase(), on: j.admin === 1});
+}
+const markMine = () => {
+  const m = store.get(MARK_KEY, null);
+  return !!(SYNC && SYNC.name && m && m.on && m.n === SYNC.name.trim().toLowerCase());
+};
 // The ids of this player's own reports (sheet v57: reps in a load reply), for "Your feedback helped" (progress.js
 // achReps, achHelped; Q66). Only from a script that has it (rule D4): an older one sends none, and the app still
 // thanks the reports it kept itself.
@@ -1548,6 +1563,7 @@ document.addEventListener('visibilitychange', () => {
 function signIn(name, pin, j) {
   SYNC = {name, pin, dirty: true, log: store.get(LOG0, []), ...(store.get(ANONID, '') ? {anon: store.get(ANONID, '')} : {})};
   groupsSeen(j, name, false); // the account's beta groups (v48), before the reload below opens the app with them
+  markSeen(j, name);
   // The pages summaries queued while signed out become the account's, as the answers do (core.js pagesOwn).
   if (SYNC.anon) store.set(EVQ, pagesOwn(store.get(EVQ, []), pagesOwner(null, SYNC.anon), pagesOwner(SYNC)));
   try {
@@ -1761,9 +1777,9 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : SYNC.err === 'reserved' ? 'Sign out, then sign in with another name.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
-        ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
+        ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}…</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`
-        : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${when ? ` · ${when}` : ''}</span>
+        : `<p class="sline"><span class="sdot"></span><span>Saved for IMR as <b>${esc(SYNC.name)}</b>${markMine() ? ' ' + markHtml() : ''}${when ? ` · ${when}` : ''}</span>
         <button class="linkish" type="button" id="snow">Send now</button><button class="linkish" type="button" id="soff">Sign out</button></p><span class="note" role="status"></span>`;
     box.querySelector('#snow').onclick = () => {
       msg('Sending…');

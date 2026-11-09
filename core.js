@@ -1980,9 +1980,10 @@
     '__lookupSetter__'
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
-  // The seedling 🌱 is the admin's own mark in his name (Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
-  // have"), given only by the admin page (Code.gs users_ userSeed, v123): a new account or an archive name holding it, or
-  // one of its look-alikes, anywhere is refused as reserved too. Seedling, herb, potted plant, shamrock, four-leaf clover,
+  // The seedling 🌱 is the admin's own mark after his name (Pierre, 2026-11-09, Q328 corrected: "an icon the others are not
+  // allowed to have", added on its own, the name unchanged): the app shows it after the admin's account name (Code.gs
+  // adminAcct_, vNEXT; adminMark below), and no player may show it: a new account or an archive name holding it, or one
+  // of its look-alikes, anywhere is refused as reserved. Seedling, herb, potted plant, shamrock, four-leaf clover,
   // leaf fluttering in wind (any variation selector after it changes nothing: the base character is enough).
   const SEED_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];
   const SEED_RE = new RegExp('[' + SEED_LOOKALIKES.join('') + ']', 'u');
@@ -1991,14 +1992,14 @@
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
-  // The admin's own name with the seedling or without it (Code.gs users_ userSeed): on, the name and ' 🌱' after it (once);
-  // off, the name without its trailing seedling. The same name back when there is nothing to change.
   const SEED = '\u{1F331}';
-  const seedName = (name, on) => {
-    const n = String(name == null ? '' : name).trim(),
-      bare = n.replace(new RegExp('\\s*' + SEED + '\\uFE0F?$', 'u'), '');
-    return on ? (bare === n ? n + ' ' + SEED : n) : bare;
-  };
+  // The admin's mark (vNEXT): from the script that knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its
+  // leaderboard rows, admin: 1 in its load reply), and only there (rule D4: an older script sends neither). markRow: a
+  // leaderboard row of a reply of version v. markHtml: the mark itself, plain text after the name's element, outside its
+  // text (the name stays the account's name).
+  const MARK_SHEET = 124;
+  const markRow = (row, v) => Number(v) >= MARK_SHEET && Array.isArray(row) && row[3] === 1;
+  const markHtml = () => `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`;
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -5386,7 +5387,9 @@
     SEED_LOOKALIKES,
     reservedName,
     SEED,
-    seedName,
+    MARK_SHEET,
+    markRow,
+    markHtml,
     sorryFelt,
     sorryOf,
     sorryDue,

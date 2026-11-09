@@ -6491,10 +6491,21 @@ html.touring .unlock {
   font-weight: 700;
   color: var(--muted);
 }
+/* The name and, on the admin's account, its 🌱 (core.js markHtml): the mark after the name, never cut by its ellipsis. */
+.bwho {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  min-width: 0;
+}
 .bname {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+}
+.amark {
+  flex: none;
 }
 .bpct {
   font-weight: 700;

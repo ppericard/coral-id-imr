@@ -176,6 +176,7 @@ function load_(name, row, q){
   // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
   try { out.groups = groupsOf_(name); } catch (err) {}
   try { out.notes = notes_(); } catch (err) {}  // v87: the Notes tab's card lines (notes_)
+  if (row[6] && row[6] === adminAcct_()) out.admin = 1;  // vNEXT: this is the admin's account (the app shows its 🌱)
   // v57: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
   try { const reps = repsOf_(name); if (reps.length) out.reps = reps; } catch (err) {}
   // v23: the player's opening hold from their answers (hold_). An app before v23 ignores it; a failure leaves it out
@@ -221,7 +222,7 @@ function doPost_(e){
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
     return json_(p.readLive ? live_() : p.readStats ? stats_(true) : answers_({name: p.aname, pin: p.apin}));
   }
-  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude || p.userSeed !== undefined) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude; v123 userSeed)
+  if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
   const lock = lock_();
@@ -751,7 +752,13 @@ function answers_(q){
   out.excluded = [...sxSet_()];  // v115: the ids left out of the statistics (sxSet_), for the Analyses report and the admin
   // me: the caller's own id, only with its name and right code (the admin page marks "you").
   const {name, pin} = clean_(q || {});
-  if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) { const r = find_(ra, name); if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) out.me = id(name); else if (r) failed_(name); }
+  if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) {
+    const r = find_(ra, name), h = hash_(name, pin), row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
+    if (row && row[6] === h) {
+      out.me = id(name);
+      if (!archived_(row)) try { adminSet_(h); } catch (e) {}  // vNEXT: the admin's account (adminAcct_)
+    } else if (r) failed_(name);
+  }
   const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
   // v98: a surprise card's answer (core.js winkRow) is served to no reader: the admin's pages and analyses never count it.
@@ -1270,7 +1277,7 @@ function readEvents_(token, pages){
 function pctOf_(P, list){ return CORE_.pctOf(P, list); }
 const ELO_MIN = 200;
 // Public leaderboard (v14; Pierre, 2026-11-01: "a small leaderboard to keep a little competition going"): GET ?board=1 →
-// {ok, rows: [[name, progress %, level]]}, every signed-in player with answers who did not opt out (Board 0), ranked by
+// {ok, rows: [[name, progress %, level]]} (vNEXT: a 4th field 1 on the admin's account, adminAcct_), every signed-in player with answers who did not opt out (Board 0), ranked by
 // progress then level, so players at 100% still rank by skill. Level (v63; Pierre, 2026-11-06, Q134: one player level
 // shown everywhere) = the app's own global level, the th of the '~level' record in the player's saved progress (core.js
 // LEVEL: the number the app shows in My progress), from ELO_MIN answers of that record (ok + ko); before v63 it was
@@ -1284,6 +1291,27 @@ const ELO_MIN = 200;
 const boardSubj_ = id => CORE_.SUBJECTS.find(S => S.board && S.id === String(id || '')) || CORE_.SUBJECTS.find(S => S.board);
 const boardCache_ = S => S === CORE_.SUBJECTS.find(x => x.board) ? 'board14' : 'board14:' + S.id;
 const BOARD_UNITS_ = 'BOARD_UNITS_';
+// vNEXT (Pierre, 2026-11-09, Q328 corrected: the seedling 🌱 after his name, added on its own, the name itself unchanged
+// and no step for him): the admin's account, one at most, is the player account the admin page is signed in to when it
+// reads the answer log with a valid admin token (answers_: its name and code sent as aname / apin, the code checked), kept
+// as that account's code hash in the script's properties (ADMIN_ACCT); another account signed in there replaces it. Its
+// rows on every leaderboard carry a 4th field 1 (board_) and its load reply admin: 1 (load_), which the app shows as
+// ' 🌱' after the name, outside the name's text. A delete, a merge (its from) and an archive of that account clear it
+// (adminDrop_, rule D7), so a new account under the name never shows it; and no player can type the seedling or a
+// look-alike in a new name (core.js reservedName).
+const ADMIN_ACCT_ = 'ADMIN_ACCT';
+const adminAcct_ = () => { try { return PropertiesService.getScriptProperties().getProperty(ADMIN_ACCT_) || ''; } catch (e) { return ''; } };
+function adminSet_(h){
+  if (!h || adminAcct_() === String(h)) return;
+  PropertiesService.getScriptProperties().setProperty(ADMIN_ACCT_, String(h));
+  CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));  // every board shows it at once
+}
+// The admin's account deleted, merged away or archived (h: its code hash): no account is the admin's any more.
+function adminDrop_(h){
+  if (!h || adminAcct_() !== String(h)) return;
+  PropertiesService.getScriptProperties().deleteProperty(ADMIN_ACCT_);
+  CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));
+}
 // The units a subject's leaderboard counts (v95), for a subject after the first (the first reads the "By genus" tab's
 // columns): its list as an app last sent it with a save (summary.boards {id: [units]}, sync.js syncSummary), kept in the
 // script's properties when it changed, so every player's % is computed over the same units, as the "By genus" columns
@@ -1359,13 +1387,13 @@ function board_(sid){
     const levelOf = P => { const L = P && P['~level']; return L && typeof L.th === 'number' && isFinite(L.th) && n_(L) >= ELO_MIN ? L.th : null; };
     // A player with answers is listed before the level shows, at 0% too (Codex review #639): any record of the saved
     // progress with answers.
-    const answered = P => !!P && Object.keys(P).some(k => n_(P[k]) > 0);
+    const answered = P => !!P && Object.keys(P).some(k => n_(P[k]) > 0), adm = adminAcct_();
     out.rows = boardRows_(ra)
       // Progress saved before v14 (blank): learned / total until the player's next sync writes it.
       // Level only from ELO_MIN answers (v15, Pierre: "even 50 is not enough to settle the score"): null before.
       .map(r => { const P = nowOf(r), lv = levelOf(P), own = !P ? null : !Array.isArray(list) ? (S.score ? CORE_.treeScore(P, list, S.score).pct : null) : list.length ? pctOf_(P, list) : null,
           pct = own != null || !first ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
-        return lv != null || pct || answered(P) ? [String(r[0]), pct, lv] : null; })
+        return lv != null || pct || answered(P) ? [String(r[0]), pct, lv].concat(adm && r[6] === adm ? [1] : []) : null; })
       .filter(Boolean)
       .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]))
       .slice(0, 200);
@@ -1637,6 +1665,7 @@ function sxMove_(from, into){ const had = sxPut_(aid_(from), false); if (had && 
 // lock (the caller holds it). Returns {ok, answers, reports}: how many rows were deleted or relabelled.
 function deleteAccount_(name, all){
   const del = '~deleted ' + aid_(name);
+  { const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0; if (r) adminDrop_(ra.getRange(r, 7).getValue()); }  // vNEXT
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
   if (!all && answers) devBlank_(del);  // v109: the answers kept lead back to no device (rule D7)
   const reports = all ? dropRows_('Reports', name, 2) : anonReports_(name, del);
@@ -1724,57 +1753,6 @@ function users_(p){
       ra.getRange(u.r, 10).setValue(b);
       CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));  // v95: every subject's board
       return {ok: true, board: b};
-    } finally { lock.releaseLock(); }
-  }
-  // v123 (Pierre, 2026-11-09, Q328: the seedling 🌱 in his own name, which no other player may have): {userSeed: true |
-  // false, aname, apin, token} renames the admin's own account (the page's signed-in name and code, checked as a save
-  // checks them) to its name with ' 🌱' after it, or back without it (core.js seedName). No player can make such a name
-  // (core.js reservedName refuses the seedling and its look-alikes in a new account or an archive name), so only this
-  // gives one, and a name it frees after a delete, a merge or an archive can never be taken again. The record moves
-  // whole, as an archive moves it but staying live: RAs row (name, and the code hash for the new name), saved progress,
-  // By genus, answers, reports, pages, beta groups, statistics exclusion, log mentions, Removed's Into, every subject's
-  // replay record (rule D7). The old name gets a Removed row pointing to the new one, so the account's other devices are
-  // told to sign in under it ('gone', into) and their answers follow it. Under the script lock. Answers {ok, name};
-  // errors: input (no name or code), user, pin, wait, archived, exists (the new name is taken), long (over 40 characters),
-  // same (nothing to change).
-  if (p.userSeed !== undefined) {
-    const {name, pin} = clean_({name: p.aname, pin: p.apin});
-    if (!name || !/^\d{4}$/.test(pin)) return {ok: false, error: 'input'};
-    const lock = lock_();
-    try {
-      const u = row_(name); if (!u) return {ok: false, error: 'user'};
-      if (blocked_(name)) return {ok: false, error: 'wait'};
-      if (u.v[6] !== hash_(name, pin)) { failed_(name); return {ok: false, error: 'pin'}; }
-      if (archived_(u.v)) return {ok: false, error: 'archived'};
-      const from = String(u.v[0]), into = CORE_.seedName(from, !!p.userSeed);
-      if (into === from || !into) return {ok: false, error: 'same'};
-      if (into.length > 40) return {ok: false, error: 'long'};
-      if (row_(into)) return {ok: false, error: 'exists'};
-      if (!p.userSeed && CORE_.reservedName(into)) return {ok: false, error: 'reserved'};
-      const h = hash_(into, pin);
-      ra.getRange(u.r, 1).setValue(safe_(into));
-      ra.getRange(u.r, 7).setValue(safe_(h));
-      relabel_(DATA_TAB, 1, from, into);
-      relabel_('By genus', 1, from, into);
-      relabel_('Answers', 1, from, into);
-      relabel_('Reports', 2, from, into);
-      pagesMove_(from, into);
-      relabel_(GROUPS.TAB, 2, from, into);
-      sxMove_(from, into);
-      relabel_('Removed', 3, from, into);  // names merged into it before point to the new name
-      redact_(from, into);
-      // Its replay records follow it, never dropped: a subject's record keeps the floor reference of its first replay (F),
-      // which a replay made again would no longer have (Codex review #835).
-      rplTabs_().forEach(t => relabel_(t, 1, from, into));
-      // The account's own earlier name rows (a seedling taken, then given back): its row is live again under that name.
-      const rm = ss.getSheetByName('Removed');
-      if (rm && rm.getLastRow() > 1) {
-        const v = rm.getRange(2, 1, rm.getLastRow() - 1, 2).getValues();
-        for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === lc_(into) && v[i][1] === h) rm.deleteRow(i + 2);
-      }
-      removed_(from, u.v[6], into);
-      rosterChanged_();
-      return {ok: true, name: into};
     } finally { lock.releaseLock(); }
   }
   // v48: {userGroup: name | [names], group, on: true|false, token} adds players to the group of a subject in beta, or
@@ -1873,6 +1851,7 @@ function users_(p){
         if (archived_(a.v)) return {ok: false, error: 'archived'};
         if (row_(into)) return {ok: false, error: 'exists'};
         const from = String(a.v[0]);
+        adminDrop_(a.v[6]);  // vNEXT: an archive is no longer the admin's account
         ra.getRange(a.r, 1).setValue(safe_(into));
         ra.getRange(a.r, 10).setValue(ARCHIVED);
         relabel_(DATA_TAB, 1, from, into);
@@ -1901,6 +1880,7 @@ function users_(p){
       if (archived_(a.v) || archived_(b.v)) return {ok: false, error: 'archived'};  // v58: an archive is never merged
       const from = String(a.v[0]), into = String(b.v[0]), cur = readData_(into, String(b.v[7] || ''));
       if (typeof m.at === 'number' && m.at !== cur.rev) return {ok: false, error: 'stale', rev: cur.rev};
+      adminDrop_(a.v[6]);  // vNEXT: the merged-away account is no longer the admin's (the kept one becomes it at the admin's next read)
       // The merged progress is no replay of both logs (core.js mergeUsers drops it too): no rules version, so the
       // account's devices ask for the replay of the whole merged history (replay_).
       delete m.data['reefid-sync-coral-rv'];
@@ -4339,9 +4319,10 @@ const CORE_ = (function () { const module = {exports: {}};
     '__lookupSetter__'
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
-  // The seedling 🌱 is the admin's own mark in his name (Pierre, 2026-11-09, Q328: "an icon the others are not allowed to
-  // have"), given only by the admin page (Code.gs users_ userSeed, v123): a new account or an archive name holding it, or
-  // one of its look-alikes, anywhere is refused as reserved too. Seedling, herb, potted plant, shamrock, four-leaf clover,
+  // The seedling 🌱 is the admin's own mark after his name (Pierre, 2026-11-09, Q328 corrected: "an icon the others are not
+  // allowed to have", added on its own, the name unchanged): the app shows it after the admin's account name (Code.gs
+  // adminAcct_, vNEXT; adminMark below), and no player may show it: a new account or an archive name holding it, or one
+  // of its look-alikes, anywhere is refused as reserved. Seedling, herb, potted plant, shamrock, four-leaf clover,
   // leaf fluttering in wind (any variation selector after it changes nothing: the base character is enough).
   const SEED_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];
   const SEED_RE = new RegExp('[' + SEED_LOOKALIKES.join('') + ']', 'u');
@@ -4350,14 +4331,14 @@ const CORE_ = (function () { const module = {exports: {}};
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
-  // The admin's own name with the seedling or without it (Code.gs users_ userSeed): on, the name and ' 🌱' after it (once);
-  // off, the name without its trailing seedling. The same name back when there is nothing to change.
   const SEED = '\u{1F331}';
-  const seedName = (name, on) => {
-    const n = String(name == null ? '' : name).trim(),
-      bare = n.replace(new RegExp('\\s*' + SEED + '\\uFE0F?$', 'u'), '');
-    return on ? (bare === n ? n + ' ' + SEED : n) : bare;
-  };
+  // The admin's mark (vNEXT): from the script that knows the admin's account (Code.gs adminAcct_: a 4th field 1 on its
+  // leaderboard rows, admin: 1 in its load reply), and only there (rule D4: an older script sends neither). markRow: a
+  // leaderboard row of a reply of version v. markHtml: the mark itself, plain text after the name's element, outside its
+  // text (the name stays the account's name).
+  const MARK_SHEET = 124;
+  const markRow = (row, v) => Number(v) >= MARK_SHEET && Array.isArray(row) && row[3] === 1;
+  const markHtml = () => `<span class="amark" role="img" title="Admin" aria-label="Admin">${SEED}</span>`;
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -7745,7 +7726,9 @@ const CORE_ = (function () { const module = {exports: {}};
     SEED_LOOKALIKES,
     reservedName,
     SEED,
-    seedName,
+    MARK_SHEET,
+    markRow,
+    markHtml,
     sorryFelt,
     sorryOf,
     sorryDue,
