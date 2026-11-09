@@ -3193,10 +3193,27 @@ in the run of 2026-11-06 (fq80a about 2,000 against 1,100; fq80b and fq95a past 
 | fpct50 Family reunion | > 2,500 / > 2,500 | 2,421 / > 2,500 |
 | fq80b, fq95a, flearn1-30, fpct60, fgen20, fgen60, fcoreadv, fc2, fc3adv, fmetall, flearncore | > 2,500 | > 2,500 |
 
-Longer runs to time the far ones did not finish: the page of the tool crashed ("Target crashed", the browser's renderer)
-in every run of 4,500 and 8,000 answers on this machine (and once at 2,500 with two runs side by side), so the far goals
-(Advanced on 15 families and on every IMR course family, the circles, the genera at Advanced, the exams, 50-60%) stay
-"> 2,500": far goals, as the Instructor ones were in the run of 2026-11-06.
+Longer runs to time the far ones did not finish then: the page of the tool crashed ("Target crashed") in every run of
+4,500 and 8,000 answers. Fixed on 2026-11-08 ("Learning-outcome simulation", "Long runs"); the same command over 8,000
+answers (2 seeds each, `main` of that day, which the table above predates; the answer at which each first enters the
+record, seed 1 / seed 2):
+
+| Achievement | beginner | lecture RA |
+|---|---|---|
+| fpct40 Down the wall | 1,092 / 1,011 | 1,066 / 947 |
+| fq80a Night diver | 1,230 / 1,083 | 978 / 1,111 |
+| fsci5 Latin lessons | 1,589 / 1,448 | 713 / 941 |
+| fq80b | 1,658 / 1,811 | 1,962 / 2,006 |
+| fq95a | 2,699 / 1,981 | 1,531 / 1,945 |
+| fpct50 Family reunion | 2,868 / 2,460 | 2,503 / 2,469 |
+| fcoreadv | 3,853 / 4,275 | 6,249 / 6,943 |
+| fgen20 Name dropper | 6,225 / 6,274 | 5,105 / 5,220 |
+| fpct60 Blue water | 7,420 / 7,541 | 7,453 / 7,032 |
+| flearn1-30, flearncore, fgen60, fmetall, fc2, fc3adv | > 8,000 | > 8,000 |
+
+No run passed a fish mastery exam (flearn1) in 8,000 answers. Over the 8,000 answers about half the questions are
+scientific genera once their offer is accepted (beginner 54%, from answer about 690; lecture RA 50%, from about 55),
+highest at answers 1,000-3,000 for the beginner (57-71%), then falling to 41-46% by answer 8,000.
 
 - The first comes within a dozen answers for a lecture RA: fpct10 rides on the √ display (one or two of the most common
   families at Open Water read about 10%), together with fmet5 at about 20: the first within a few dozen answers, as rule
@@ -5075,6 +5092,22 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   d}}`), independent of the app's estimate; without it the learner takes the app's own `photoDiff`, so a change to the
   app's photo difficulty would change the learner's world too. `--out` writes every run and
   the summary as JSON. 30 seeds × 4 profiles × 300 questions: about 9 minutes on 4 cores (with the question planner running between answers, as in the app: Codex review #365).
+- **Long runs** (2026-11-08, ROADMAP "learnsim: long runs crash"): a run is one synchronous `page.evaluate`, so the
+  page's event loop never turns until it ends. Every `localStorage` write goes through the browser, and its traffic back
+  queued in the renderer until the run ended; the app writes its answer log twice an answer (`sync.js` `LOG0` and `ANONQ`,
+  up to 2,000 answers, about 290,000 characters each): the renderer grew by about 1.5 MB an answer, 3.6 MB once the logs
+  were full (one run alone: 1.4 GB at 1,000 answers, 4.2 GB at 2,000, 9.6 GB at 3,500, then "Target crashed"; its V8 heap
+  stayed at 13-18 MB, so the memory was outside JavaScript). The tool now keeps the page's `localStorage` in the page's
+  own memory (`tools/memstorage.js`, installed before anything writes: the same values, own properties and quota as the
+  browser's, 5,242,880 characters as measured on the tools' Chromium; checked by `tests/memstorage.test.js`): 0.4 GB at 1,000 answers, 0.55 at 2,000, 1.1 at
+  8,000, with 4 runs side by side. About 0.1 MB an answer is left (V8 heap 12 → 25 MB, the rest outside it), not
+  identified: not the app's pending timers, MutationObserver records or promise reactions (each taken away in a
+  diagnostic run, the same growth), nor the photos (aborted, the same); far from a crash at 8,000 answers (fish: 0.93-1.06
+  GB). 8,000 answers with 4 runs side by side took 10 minutes for the corals and 3 hours for the fish on a loaded
+  machine: the fish draw itself (`model.js` `photoSet`, `core.js` `faOf`, `calibOf`) costs about 0.3 s an answer there. The same seeds give the same runs as before (1,500 answers, corals and fish, beginner and
+  lecture RA: every measure identical; only 2 of 6,000 logged answer times differ by 0.1 s, the wall-clock time between
+  the tool setting the question clock and the app reading it, which a slower page added before). 8,000 answers peak at
+  about 2.24 million characters of storage (corals) and 2.76 million (fish), under the quota.
 - **Opening pace** (2026-11-04): `open/15`, the most genera opened on their own cards in any 15 consecutive questions so
   far; with `--breaks`, the genera opened in the first 15 answers after the comeback, the most in any 15 and in all the
   `--after` ones. Profile `strongBack` (not in the default list): a strong player who knows 80% of the genera well and
