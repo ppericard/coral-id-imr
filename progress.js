@@ -558,6 +558,13 @@ function achMerge(json) {
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
+  // Silent for now (model.js MXL.QUIET, Q332): the learned-based achievements are kept, as for a mark lost in play; a
+  // recheck still pending from before is dropped (Codex review of #840).
+  if (MXL.QUIET) {
+    delete M.ach;
+    store.set(MXL.KEY, M);
+    return [];
+  }
   // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy; as the
   // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved; Codex review #736).
   if (!noticesReady()) {
@@ -1224,8 +1231,8 @@ function recalcNotice() {
     onClose: how => how === 'route' && noticeAgain(recalcNotice, 300)
   });
 }
-// A learned mark taken away by a recalculation (model.js mxRecalc, MXL; Pierre, 2026-11-03: players know they test an
-// early beta): told once on this device by an announcement card, like recalcNotice (rule D6: never held, no
+// A learned mark taken away by a recalculation (model.js mxRecalc, MXL): silent for now (Pierre, 2026-11-09 ~15:40
+// Manila, Q332: mxRecalc no longer calls mxLost); when it told it: once on this device by an announcement card, like recalcNotice (rule D6: never held, no
 // visit floor or prompt spacing): at start-up once the progress is in (app.js SETUP 2) and right after a pull or an
 // answer that drops a mark (mxLost), on whatever page is open. Another card or the tour on screen: it waits for it
 // (tried again every 2 s). Names the genera, and the achievements taken back with them (achRecheck). Seen only by OK (or
@@ -1261,8 +1268,13 @@ let mxLostT = 0;
 const mxTok = (n, mx) => `mx:${n}@${mx}`;
 function mxLostNotice() {
   noticeStop(mxLostT);
-  if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   let M = store.get(MXL.KEY, {}) || {};
+  // Silent for now (model.js MXL.QUIET, Q332): a card still due from before goes to told unseen (Codex review of #840).
+  if (MXL.QUIET) {
+    if (Object.keys(M.due || {}).length) store.set(MXL.KEY, {...M, told: {...(M.told || {}), ...M.due}, due: {}, gone: []});
+    return;
+  }
+  if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   const done = Object.keys(M.due || {}).filter(n => toldHas(mxTok(n, M.due[n])) || (P[n] && P[n].mx));
   if (done.length) {
     const left = {...M.due},
@@ -1345,6 +1357,22 @@ function rvNoticeAdd(from, to, pct, sid) {
     due = (M.due || []).filter(v => !told.includes(v)),
     pc = M.pct || {},
     k = x => rvId(sid, x.v);
+  // A version without a card (from rules version 10, Pierre 2026-11-09 ~14:45 Manila, Q330: a recalculation is not
+  // told): the cards of this subject still due here go too (Codex review of #840: a card queued before the upgrade
+  // showed after it).
+  const VS = sid ? rvsOf(sid) : RVS,
+    V = VS.find(x => x.v === to);
+  if (V && !V.msg) {
+    const ids = VS.map(x => rvId(sid, x.v)),
+      keep = v => !ids.includes(v);
+    store.set(RVN.KEY, {
+      due: due.filter(keep),
+      told,
+      pct: Object.fromEntries(Object.entries(pc).filter(([v]) => keep(isNaN(v) ? v : Number(v)))),
+      ...((M.std || []).filter(keep).length ? {std: M.std.filter(keep)} : {})
+    });
+    return;
+  }
   // An apology (core.js RV_SORRY down) only when the % went down by its min points or more; otherwise the jump's other
   // cards, the standard one included (rvMsgs skip).
   let L = rvMsgs(from, to, false, sid);

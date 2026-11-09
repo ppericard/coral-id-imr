@@ -556,9 +556,8 @@
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
-      // floor: the saved bars before its first replay are kept as a floor, by the sheet (Code.gs replay_, replayFloor;
-      // Pierre, 2026-11-08, Q310: "nobody goes back").
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, floor: true},
+      // No floor: the log is the only reference, a fish bar may go down (Pierre, 2026-11-09, Q330).
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -1980,9 +1979,9 @@
   // with today's rules (tools/memreplay.js) those genera stand at 78-83%, under the exam's entry. Their learned mark
   // (and any exam in course) is dropped at every call (load, pull, answer: a copy from another device that still has it
   // loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam passed since
-  // (s.pg kept beside s.mx) is left alone. Not silent (Pierre, 2026-11-03: players know they test an early beta): the
-  // app sees the mark go (model.js mxRecalc), tells the player once with a card (progress.js mxLostNotice) and takes back the
-  // learned-based achievements the progress no longer meets (achRevoke, progress.js achRecheck).
+  // (s.pg kept beside s.mx) is left alone. Silent (Pierre, 2026-11-09 ~15:40 Manila, Q332): the app sees the mark go
+  // (model.js mxRecalc) and tells nothing; until then a card told it once (progress.js mxLostNotice) and the
+  // learned-based achievements the progress no longer met were taken back (achRevoke, progress.js achRecheck).
   // Since the sheet's full replay (replayProgress, RVS; 2026-11-03) this is only the fallback for a device that never
   // reaches the sheet: a record adopted from the replay carries pm 1, so it is never corrected here.
   function memRecalc(s, mem) {
@@ -4294,6 +4293,13 @@
       // from the sheet's Notes tab, key card.rv8.ps (named when this was rules version 8, before PR #638 took that
       // number; the key is kept so the row Pierre adds stays as written: never in the repo; progress.js rvNotice).
       msg: RV_SORRY
+    },
+    {
+      v: 10,
+      at: '2026-11-09',
+      why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330): the progress is updated everywhere without telling the player.
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -4305,8 +4311,15 @@
     {
       v: 1,
       at: '2026-11-08',
-      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (nobody goes back)",
+      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (until fish rules version 2)",
       msg: RV_CARD
+    },
+    {
+      v: 2,
+      at: '2026-11-09',
+      why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a unit and its answer count win over the saved copy, also when the copy holds more answers there (counted twice, or played before the fish log began: in no log, so dropped), and no floor any more: a unit's bar may go down.",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
+      msg: null
     }
   ];
   // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
@@ -4343,8 +4356,8 @@
   // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
   const LOG_SHEET = 60;
   // The sync script version that replays the other subjects' progress under this app's rules (SUBJECTS replayed: fish,
-  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS,
-  // with today's bars as a floor, Code.gs replay_ and replayFloor) only once the script's replies say v >= REPLAYS_SHEET
+  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS)
+  // only once the script's replies say v >= REPLAYS_SHEET
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 112;
@@ -4360,6 +4373,10 @@
   // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
   // sid: the subject whose rules versions they are (rvsOf: the corals' RVS by default, fish FISH_RVS).
   const rvMsgs = (from, to, skip = false, sid) => {
+    // No card for a recalculation any more (Pierre, 2026-11-09 ~14:45 Manila, Q330): a jump to a version without a card
+    // shows none, not even the card of a version it skips.
+    const V = (sid ? rvsOf(sid) : RVS).find(x => x.v === to);
+    if (V && !V.msg) return [];
     const L = (sid ? rvsOf(sid) : RVS)
       .filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology'))
       .filter((x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg));
@@ -4754,14 +4771,19 @@
   //   a saved exam of 4 questions passed kept its 4); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
   //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
   //   (cor: the log does not say which view a photo was shown in);
-  // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or fewer answers on
-  //   than the saved copy (answers that never reached the log: a replay must never lose progress);
+  // - the log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): a genus the log has answers on takes the
+  //   replay's record and counts also when the saved copy holds more answers there (they were counted twice: a reply
+  //   lost then another device's save, PR #824), its counts and recent results only when none of them is replayable; a
+  //   genus the log has no answer on keeps the saved record only if it holds no answer either (its answers are in no
+  //   log: dropped);
   // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
-  //   cards met and the prompts, so it never goes back) with the answer times (rt) of the same side, the later at, rv
-  //   when given.
+  //   cards met and the prompts, so it never goes back; the log's count there waits for checkpoints that do not hang on
+  //   it: a follow-up, branch claude/level-count-from-log) with the answer times (rt) of the same side, the later at,
+  //   rv when given; no ability when the log has no answer at all (rule D9; Codex review of #840).
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
+  const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
   const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
@@ -4781,35 +4803,30 @@
       const s = isObj(S[g]) ? S[g] : null,
         r = isObj(R[g]) ? R[g] : null;
       if (g === LEVEL) {
+        // One rule for the level (rule D9; Codex reviews of #840): every field that feeds progress (the ability th, vr,
+        // lt, the typed opportunities tyk, the answer times rt) is the log's, absent when the log has none; only the
+        // plain answer count (ok, ko: the clock the checkpoints hang on) keeps the larger of the two until
+        // claude/level-count-from-log.
         const o = s ? dup(s) : {};
+        LEVEL_LOG.forEach(f => (r && r[f] !== undefined ? (o[f] = dup(r[f])) : delete o[f]));
         if (r) {
-          if (typeof r.th === 'number') o.th = r.th;
-          if (typeof r.vr === 'number') o.vr = r.vr;
-          // The answer times (rt) go with the count: the replay's when it has every answer the device has.
-          if (!s || n(r) >= n(s)) {
-            [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
-            if (isObj(r.tyk)) o.tyk = dup(r.tyk);
-            else delete o.tyk;
-            if (isObj(r.rt)) o.rt = dup(r.rt);
-            else delete o.rt;
-          }
+          if (!s || n(r) >= n(s)) [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
         }
         out[g] = o;
         return;
       }
-      if (!r || !r.u || (s && n(s) > n(r))) {
-        if (s) out[g] = kept(s);
-        else if (r) {
-          // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
-          out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
-          if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
-          else if (typeof r.pg === 'number') out[g].pg = r.pg;
-          // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
-          ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
-          if (r.ty) out[g].ty = r.ty;
-        }
+      if (!r || !r.u) {
+        // No answer of the log on it: the saved record only when it counts no answer either (rule D9).
+        if (!r) return void (s && !n(s) && (out[g] = kept(s)));
+        // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
+        out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+        if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
+        else if (typeof r.pg === 'number') out[g].pg = r.pg;
+        // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
+        ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
+        if (r.ty) out[g].ty = r.ty;
         return;
       }
       const o = {};
@@ -4846,9 +4863,10 @@
   // - adopted from the replay (M[g].rv is rv): the replayed record as the app holds it without this device's copy
   //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
   //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
-  // - kept from this device's copy (the log has fewer answers on it): B's record, as before;
+  // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
   // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
-  //   keeps the larger count).
+  //   keeps the larger count); when the sheet sent no level (no answer in the log), B's level, never the adopted one,
+  //   which holds this device's unsent answers (Codex review of #840).
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -4859,15 +4877,15 @@
       const b = isObj(B0[g]) ? B0[g] : null,
         r = R[g];
       if (g === LEVEL) {
-        if (!r) return b && (out[g] = dup(b));
-        const o = dup(r);
-        if (b && n(b) > n(r)) {
-          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
-          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
-          else delete o.tyk;
-          if (isObj(b.rt)) o.rt = dup(b.rt);
-          else delete o.rt;
+        if (!r) {
+          // No level in the log: the shared clock (ok, ko) only, none of the log's fields (LEVEL_LOG), as replayedOf.
+          if (!b) return;
+          const o = dup(b);
+          LEVEL_LOG.forEach(f => delete o[f]);
+          return void (out[g] = o);
         }
+        const o = dup(r);
+        if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0]; // the clock only (replayedOf, LEVEL_LOG)
         out[g] = o;
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
@@ -4877,92 +4895,21 @@
           if (Array.isArray(y)) o.ps[f] = [Math.max(x[0], Number(y[0]) || 0), Math.max(x[1], Number(y[1]) || 0)];
         });
         out[g] = o;
+      } else if (!r && b && n(b) > 0) {
+        // A unit the log has no answer on whose shared copy counts answers: discarded by the adoption (rule D9), so no
+        // baseline either; this device's unsent answers on it stay the difference and go on top (Codex review of #840).
       } else if (b) out[g] = dup(b);
     });
     return out;
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
-  // The floor of a subject's first replay (SUBJECTS replayed floor; Pierre, 2026-11-08, Q310: "today's bar as a floor,
-  // nobody goes back"; measured on the fish players first, LEARNING.md "Fish: the progress replayed from the answer log";
-  // the integrator, 2026-11-08: per unit, once). Applied by the sheet to the replayed record (Code.gs replay_), against
-  // the account's saved copy, so every device adopts the same record and keeps it as their shared baseline (sync.js
-  // replayAdoptS, replayBase; Codex review #779). M: the replayed record; P: the reference, the saved units that came
-  // from no replay yet (no rv). A unit of P the replay has no record of keeps P's. A unit whose bar (barOf) in M reads
-  // below its bar in P keeps the replay's record, its answers the log's (so no answer is counted twice in a merge), with
-  // its domain score (ds) lifted so that its bar reads P's: a right answer never lowers ds (domStep), a miss moves it
-  // the posterior's way, as for any bar. The lift allows for the false alarms the replay counts on the unit (faOf: the
-  // other records' conf and off; Codex review #779); should a domain score of 1 not be enough, the other records count,
-  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), the level its typed
-  // opportunities on that rank (P's when more; P's level is read as context, never floored), and the lift is made again. A
-  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's but
-  // for those typed opportunities; a learned mark or an exam in course comes from the device
-  // (replayedOf). Returns a copy of M floored.
-  // only: the units to floor (default every unit of P that came from no replay), their bars read in P whole.
-  function replayFloor(M, P, only) {
-    const out = {...(M || {})},
-      S = isObj(P) ? P : {},
-      dup = x => JSON.parse(JSON.stringify(x)),
-      L = (only || Object.keys(S)).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
-    L.forEach(g => isObj(out[g]) || (out[g] = dup(S[g])));
-    const lift = (g, want) => (out[g] = {...dup(out[g]), ds: Math.min(1, Math.round((want + faOf(out, g)) * 1e4 + 0.5) / 1e4)});
-    // Passes until none changes: a record taken whole brings its own conf and off, which other units' bars read.
-    for (let k = 0, ch = true; ch && k <= L.length; k++) {
-      ch = false;
-      L.forEach(g => {
-        const want = barOf(S[g], S, g);
-        if (barOf(out[g], out, g) >= want - 1e-9) return;
-        ch = true;
-        if (!domOn(out[g])) return void (out[g] = dup(S[g]));
-        lift(g, want);
-        if (barOf(out[g], out, g) >= want - 1e-9) return;
-        // More false alarms on it than a domain score of 1 leaves room for: on it, the other records count the mix-ups
-        // and offers P counts (fewer mix-ups, more offers), then the lift again.
-        Object.keys(out).forEach(t => {
-          const x = out[t],
-            y = isObj(S[t]) ? S[t] : {},
-            on = r => (r.conf || {})[g] || (r.off || {})[g];
-          if (t === g || t === LEVEL || !isObj(x) || !(on(x) || on(y))) return;
-          const o = (out[t] = dup(x));
-          if (o.conf && o.conf[g]) o.conf[g] = Math.min(o.conf[g], (y.conf || {})[g] || 0);
-          const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
-          if (f) o.off = {...(o.off || {}), [g]: f};
-        });
-        // and the typed opportunities of its rank, which faOf counts too (the rank's typed answers less the unit's own):
-        // at least P's, net of each side's own (Codex review #779).
-        const rk = rankKey(g),
-          lv = isObj(out[LEVEL]) ? out[LEVEL] : {},
-          net = Math.max(0, (((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0) - (S[g].ty || 0)),
-          ty = net + ((out[g] && out[g].ty) || 0);
-        if (ty > ((lv.tyk || {})[rk] || 0)) out[LEVEL] = {...dup(lv), tyk: {...(lv.tyk || {}), [rk]: ty}};
-        lift(g, want);
-      });
-    }
-    return out;
-  }
-  // A floored replay's typed opportunities per rank (replayFloor may raise the level's, which a unit's false-alarm rate
-  // reads): L, a level record, takes X's level's where they are more (in place; sync.js replayAdoptS, replayAdopted).
-  function tykRaise(L, X) {
-    const tyk = X && X[LEVEL] && X[LEVEL].tyk;
-    if (!tyk || !L || typeof L !== 'object') return;
-    const o = {...(L.tyk || {})};
-    Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
-    L.tyk = o;
-  }
   // The progress a device holds once it adopts a replay (sync.js replayAdoptS), and so the one the leaderboard ranks a
   // player by once their saved copy is behind the rules (Code.gs board_; Pierre, 2026-11-09, rule D8). R: the replay (with
-  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version, floor: the subject is
-  // replayed with a floor (SUBJECTS replayed floor). replayedOf of R over P; with a floor, a unit kept from P (more
-  // answers there than in the log) beside the replayed records is floored at its bar in P (their mix-ups and offers on it
-  // may read it lower than it was), and the level's typed opportunities per rank are at least R's (tykRaise; Codex review
-  // #779), so the adoption does not undo the floor.
-  function replayAdopted(R, P, rv, floor) {
-    const S = isObj(P) ? P : {};
-    let M = replayedOf({P: R}, S, rv);
-    if (!floor) return M;
-    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && S[g] && !S[g].rv);
-    if (keptHere.length) M = replayFloor(M, S, keptHere);
-    tykRaise(M[LEVEL], R);
-    return M;
+  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version: replayedOf of R over
+  // P. No floor (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down; until then a subject could be
+  // replayed with the saved bars as a floor, and fish was).
+  function replayAdopted(R, P, rv) {
+    return replayedOf({P: R}, isObj(P) ? P : {}, rv);
   }
 
   // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
@@ -5557,8 +5504,6 @@
     startWt,
     START_CAP,
     replayedOf,
-    replayFloor,
-    tykRaise,
     replayAdopted,
     replayBase,
     logRow,

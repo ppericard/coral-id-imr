@@ -141,7 +141,7 @@ test('replayedOf: the replayed bars with the saved exams, not one passed under t
   const saved = {
     A: {pg: 0.9, mx: 1762000000000, ok: 1, ko: 0, h: '1'}, // learned since 2026-11-02: kept
     C: {L: 0.97, mx: 1, ok: 1, ko: 0, h: '1'}, // learned under BKT: dropped
-    D: {pg: 0.82, ex: {k: 2, v: ['wide'], at: 40}, ok: 9, ko: 0, h: '111111111'}, // no answer in the log: its own bar, its exam
+    D: {pg: 0.82, ex: {k: 2, v: ['wide'], at: 40}, ok: 9, ko: 0, h: '111111111'}, // no answer in the log: dropped (rule D9)
     '~level': {ok: 5, ko: 1, th: 0.3}
   };
   const G = C.replayedOf(rep, saved),
@@ -149,7 +149,7 @@ test('replayedOf: the replayed bars with the saved exams, not one passed under t
   assert.strictEqual(G.A.pg, rep.P.A.pg);
   assert.strictEqual(G.A.mx, saved.A.mx);
   assert.ok(!G.C.mx && G.C.pg === rep.P.C.pg, 'an exam passed under BKT is taken again');
-  assert.deepStrictEqual([G.D.pg, G.D.ex], [0.82, saved.D.ex]);
+  assert.ok(!G.D, 'its answers in no log: they go (rule D9, Q330)');
   assert.deepStrictEqual([G[C.LEVEL].ok, G[C.LEVEL].ko], [5, 1], 'the larger answer count of the two');
   assert.strictEqual(G[C.LEVEL].th, rep.P[C.LEVEL].th, 'the replayed global level');
   assert.strictEqual(C.learnedOf(G, L), 1);
@@ -198,39 +198,45 @@ test('RVS: one entry per rules version, RV the last; messages of the versions sk
   // The first version (the full replay itself): a card only for the players whose progress % it moved, with the two %
   // (Pierre, 2026-11-03).
   assert.strictEqual(C.RVS[0].msg, C.RV_CARD);
-  // A device that skips several versions with the standard card sees it once, at the last of them.
+  // A device that skips several versions with the standard card sees it once, at the last of them (the versions before
+  // rules version 9's apology).
+  const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v;
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV - 1),
-    C.RVS.slice(0, -1).filter((x, i) => x.msg && !C.RVS.slice(i + 1, -1).some(y => y.msg === x.msg))
+    C.rvMsgs(0, SV - 1),
+    C.RVS.slice(0, SV - 1).filter((x, i) => x.msg && !C.RVS.slice(i + 1, SV - 1).some(y => y.msg === x.msg))
   );
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV - 1).map(x => x.v),
-    [C.RV - 1],
-    'the versions before the last have the standard card: one card'
+    C.rvMsgs(0, SV - 1).map(x => x.v),
+    [SV - 1],
+    'the versions before the apology have the standard card: one card'
   );
   // The domain-score bar's apology (rules version 9, Pierre 2026-11-06; PR #611's card, Q109): every player whose %
   // moved by a point, its PS from the sheet's Notes tab; in a jump it replaces the standard card (it says more).
-  assert.strictEqual(C.RVS[C.RVS.length - 1].msg, C.RV_SORRY);
+  assert.strictEqual(SV, 9);
   assert.deepStrictEqual(
     [C.RV_SORRY.kind, C.RV_SORRY.only, C.RV_SORRY.min, C.RV_SORRY.ps, C.RV_SORRY.down],
     ['apology', 'changed', 1, 'card.rv8.ps', true]
   );
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV, true).map(x => x.v),
-    [C.RV - 1],
+    C.rvMsgs(0, SV, true).map(x => x.v),
+    [SV - 1],
     'the apology left out: the standard card back'
   );
   assert.match(C.RV_SORRY.pct, /\{from\}%.*\{to\}%/);
   assert.doesNotMatch(C.RV_SORRY.t + C.RV_SORRY.p, /\bbars?\b/i, 'never "bars": players say progress (Pierre)');
   assert.deepStrictEqual(
-    C.rvMsgs(0, C.RV).map(x => x.v),
-    [C.RV],
+    C.rvMsgs(0, SV).map(x => x.v),
+    [SV],
     'a jump through the apology: the apology alone'
   );
   assert.deepStrictEqual(
-    C.rvMsgs(C.RV - 1, C.RV).map(x => x.v),
-    [C.RV]
+    C.rvMsgs(SV - 1, SV).map(x => x.v),
+    [SV]
   );
+  // Rules version 10 (the log the only reference, Q322, Q330): no card, nor any card of the versions a jump to it skips.
+  assert.strictEqual(C.RVS[9].msg, null, 'no card (Pierre, 2026-11-09, Q330)');
+  assert.deepStrictEqual(C.rvMsgs(0, 10), [], 'nor a card of a version skipped');
+  assert.deepStrictEqual(C.rvMsgs(9, 10), []);
   assert.deepStrictEqual(C.rvMsgs(C.RV, C.RV), []);
 });
 
@@ -391,7 +397,7 @@ test('replayedOf: what the app takes from the replay and what it keeps from its 
   ).p;
   const saved = {
     A: {pg: 0.3, ok: 2, ko: 0, h: '11', th: 0.1, ps: {zz: [9, 9]}, dd: 2, dl: 20400, ro: ['o1'], cor: 1, mx: 5, at: 1, pm: 1},
-    C: {pg: 0.5, ok: 4, ko: 0, h: '1111', ex: {k: 1, v: ['wide'], at: 3}}, // more answers than the log: kept as it is
+    C: {pg: 0.5, ok: 4, ko: 0, h: '1111', ex: {k: 1, v: ['wide'], at: 3}}, // more answers than the log: the log's (rule D9)
     E: {L: 0.9, mx: 1, ok: 1, ko: 0, h: '1'}, // not in the log, learned under the former model: the mark goes
     '~level': {ok: 2, ko: 0, th: 0.2, at: 5}
   };
@@ -401,9 +407,8 @@ test('replayedOf: what the app takes from the replay and what it keeps from its 
   assert.deepStrictEqual([G.A.dd, G.A.dl, G.A.ro, G.A.cor, G.A.mx, G.A.pm, G.A.rv], [2, 20400, ['o1'], 1, 5, 1, 3]);
   assert.strictEqual(G.A.at, rep.P.A.at);
   assert.ok(!('u' in G.A) && !('L' in G.A));
-  assert.deepStrictEqual(G.C, saved.C, 'the log has fewer answers on it: the saved record');
-  assert.ok(G.C !== saved.C);
-  assert.deepStrictEqual(G.E, {L: 0.9, ok: 1, ko: 0, h: '1'});
+  assert.deepStrictEqual([G.C.ok, G.C.ko, G.C.pg, G.C.rv], [rep.P.C.ok, rep.P.C.ko, rep.P.C.pg, 3], "the log's record, fewer answers");
+  assert.ok(!G.E, 'not in the log: its answer goes');
   assert.deepStrictEqual(
     [G[C.LEVEL].ok, G[C.LEVEL].ko, G[C.LEVEL].th, G[C.LEVEL].at, G[C.LEVEL].rv],
     [3, 0, rep.P[C.LEVEL].th, rep.P[C.LEVEL].at, 3]
@@ -617,7 +622,7 @@ test('typed answers: the replay of the log rebuilds the progress the app scored 
 test("replayBase: the shared history only, never this device's unsent answers (Codex review #399)", () => {
   const rec = C.replayProgress([row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D')], {gen: GEN}).p.P,
     // This device: the two answers, a third not sent yet, a photo shown once more than the log says (a hint revealed),
-    // and a genus the log does not have.
+    // and a genus the log does not have (its answers go, rule D9: in neither the progress nor the baseline).
     before = {A: {ok: 3, ko: 0, h: '111', pg: 0.4, ps: {a0: [2, 1], a1: [1, 1], a9: [1, 1]}}, E: {ok: 4, ko: 0, h: '1111', pg: 0.5}},
     R = C.replayProgress(
       [row('p', 0, 'A', 'A', 'a0', 'A B C D'), row('p', 1, 'A', 'A', 'a1', 'A B C D'), row('p', 2, 'A', 'A', 'a9', 'A B C D')],
@@ -628,7 +633,7 @@ test("replayBase: the shared history only, never this device's unsent answers (C
     base = C.replayBase(rec, M, 1, B);
   assert.deepStrictEqual([M.A.ok, base.A.ok], [3, 2], 'the unsent answer is in the progress, not in the baseline');
   assert.deepStrictEqual(base.A.ps, {a0: [2, 1], a1: [1, 1]}, "per photo the larger of the replay's and the shared copy's");
-  assert.deepStrictEqual(base.E, B.E, 'a genus the log lacks: the shared copy');
+  assert.ok(!M.E && !base.E, 'a genus the log lacks: gone from both');
   assert.strictEqual(base.A.pg, rec.A.pg);
   assert.strictEqual(base[C.LEVEL].ok, 2);
 });

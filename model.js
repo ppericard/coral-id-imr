@@ -1226,9 +1226,10 @@ function domRecalcAll() {
   if (typeof ev === 'function') ev('recalc', {msg: `${SUBJ.id}: ${L.length} units rebuilt under the domain-score bar from their counts`});
   return true;
 }
-// A learned mark taken away by a recalculation (Pierre, 2026-11-03: "players know they test an early beta"): told once
-// with an announcement card (progress.js mxLostNotice: at once, never held), and the learned-based achievements the
-// progress no longer meets are taken back (progress.js achRecheck).
+// A learned mark taken away by a recalculation: silent for now (Pierre, 2026-11-09 ~15:40 Manila, Q332: every
+// recalculation silent, the learned-mark card too), as a mark lost in play (quiz.js mxKept): no card, and the
+// learned-based achievements kept, as in play (no achRecheck). Until then it was told once with a card (progress.js
+// mxLostNotice, mxLost, kept for when that comes back) and those achievements were taken back (progress.js achRecheck).
 // Generic: mxRecalc(fn) runs any recalculation of the progress (today core.js memRecalc, at load, after a pull and before
 // an answer; later perhaps a full replay of the sheet's answer log) and reports every genus whose s.mx it removed. A mark
 // lost by misses in play (quiz.js mxKept) never goes through it. Kept on this device only (MXL.KEY, outside the synced
@@ -1238,7 +1239,10 @@ function domRecalcAll() {
 // its devices; progress.js mxLostNotice);
 // ach, achievements still to recheck (progress.js comes after model.js on a first load); gone, the ids taken back, for
 // the card. Cleared at sign-out with the progress (sync.js signOff).
-const MXL = {KEY: 'reefid-mx-lost'};
+// QUIET (Pierre, 2026-11-09 ~15:40 Manila, Q332: every recalculation silent "for now"): mxRecalc tells nothing, and a
+// card or an achievement recheck still pending from before is dropped unseen (progress.js mxLostNotice, achRecheck;
+// Codex review of #840). false brings the card and the recheck back.
+const MXL = {KEY: 'reefid-mx-lost', QUIET: true};
 const mxMarks = () =>
   Object.fromEntries(
     Object.keys(P)
@@ -1252,7 +1256,8 @@ function mxRecalc(fn, why = 'bkt') {
   const m0 = mxMarks();
   fn();
   const lost = Object.keys(m0).filter(n => !(P[n] || {}).mx);
-  if (lost.length)
+  // Silent for now (MXL.QUIET, Q332): no mxLost, so no card and no achievement taken back.
+  if (lost.length && !MXL.QUIET)
     mxLost(Object.fromEntries(lost.map(n => [n, m0[n]])), Object.fromEntries(lost.map(n => [n, typeof why === 'function' ? why(n) : why])));
   return lost;
 }
