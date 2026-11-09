@@ -1,8 +1,10 @@
-// Typed fish names, the three plain fixes of the names study (Pierre, 2026-11-09; Q319 for a shared name): on the real
-// fish.json, through quiz.js's own typeBind, typeUnit and typeRead on stubs, as the game reads a typed answer.
+// Typed fish names, the names study (Pierre, 2026-11-09: the three plain fixes, Q319, Q320): on the real fish.json,
+// through quiz.js's own typeBind, typeUnit, typeRead and typeStep on stubs, as the game reads a typed answer.
 // - singular and plural are one name ("Grouper" is the Groupers, exactly: no "So close!" step);
-// - a name the game knows that is no family's (a species' name, a word of one: core.js fishKnownNames) is said so, never
-//   read as a slip of another family (anglerfish was the Angelfishes);
+// - a name below the family (a species' listed or scientific name, a genus's, a kind word its species carry: core.js
+//   fishNameIndex) is read as that family, what it is said after the answer; a word known to be no family's (one
+//   species' only) is said so; never a slip of another family (anglerfish was the Angelfishes);
+// - Pierre's exceptions (curation.json fish.names): off, on, often;
 // - a name several families share (Holocentridae) is right for each of them, and otherwise a wrong answer that counts
 //   against the photo's family only (no unit given, as "I don't know" is scored), never "which one? check the spelling";
 // - on a genus question, a species' word (razorfish, toby) gets the common-name nudge, not "check the spelling".
@@ -25,7 +27,7 @@ F.genera.forEach(G => {
   if (L.length && X.gen[G.family] && X.gen[G.family].circle === 1) X.gen[G.id] = {id: G.id, name: G.name, rank: 'genus', names: [G.name]};
 });
 const FISH = C.subjectOf('fish');
-const NAMES = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishKnownNames(F));
+const NAMES = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishNameIndex(F));
 const rankOf = g => (X.gen[g] || {}).rank || '';
 const first = x => String(x || '').split(/\s+/)[0];
 const OTHER = {
@@ -33,11 +35,11 @@ const OTHER = {
   common: [...F.genera.flatMap(g => [g.common, g.imr]), ...F.species.flatMap(x => [x.common, ...(x.cn || []).flat()])].filter(Boolean)
 };
 
-function page() {
+function page(names = NAMES) {
   const ctx = {
     SUBJ: FISH,
     DATA: {},
-    UNITS: {fish: {names: () => NAMES, norm: C.typeNormAll, typeOther: rk => (rk === 'genus' ? OTHER : null)}},
+    UNITS: {fish: {names: () => names, norm: C.typeNormAll, typeOther: rk => (rk === 'genus' ? OTHER : null)}},
     rankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
@@ -55,7 +57,8 @@ function page() {
     cut(quiz, 'let TYPEDQ = null,', '// S: the subject the form names and reads', {file: 'quiz.js'}) +
       cut(quiz, 'function typeBind(', '\n}\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, '// The unit a typed reading m gives', '// The spelling step', {file: 'quiz.js'}) +
-      '\nthis.M = {typeBind, typeUnit, typeRead, typeMatch};',
+      cut(quiz, 'const typeStep = ', '\n};\n', {file: 'quiz.js', through: 1}) +
+      '\nthis.M = {typeBind, typeUnit, typeRead, typeMatch, typeStep};',
     ctx
   );
   return ctx.M;
@@ -77,13 +80,19 @@ function form() {
   return el;
 }
 // A family question on t: what typing text gives (the unit answered, the message shown, the texts refused).
-function family(text, t) {
-  const M = page(),
+function family(text, t, names) {
+  const M = page(names),
     f = form();
   let got = null;
   M.typeBind(f.form, (m, x, s, rj) => (got = {m, rj, c: M.typeUnit(m, t)}), FISH, '', 'family', {t});
   const msg = f.type(text);
-  return {got, msg, retry: f.cls.has('retry'), read: got ? M.typeRead(got.m, text, null, t) : ''};
+  return {
+    got,
+    msg,
+    retry: f.cls.has('retry'),
+    read: got ? M.typeRead(got.m, text, null, t) : '',
+    step: got ? M.typeStep(got.m, text, null, t) : null
+  };
 }
 
 test('a singular is the family itself: answered at once, right, no spelling step', () => {
@@ -91,7 +100,6 @@ test('a singular is the family itself: answered at once, right, no spelling step
     ['seahorse', 'f:Seahorses'],
     ['moray', 'f:Morays'],
     ['grouper', 'f:Groupers'],
-    ['goby', 'f:Gobies'],
     ['pipefish', 'f:Pipefishes']
   ]) {
     const r = family(text, t);
@@ -99,17 +107,65 @@ test('a singular is the family itself: answered at once, right, no spelling step
   }
 });
 
-test('a species name or a word of one: said so, never read as another family', () => {
-  for (const text of ['anglerfish', 'tuskfish', 'firefish', 'goldie']) {
-    const r = family(text, 'f:Frogfishes');
+test('a name below the family: right as its family, said what it is; a word of one species only: said so', () => {
+  for (const [text, t, read] of [
+    ['anglerfish', 'f:Frogfishes', '“anglerfish” is a name of some Frogfishes.'],
+    ['firefish', 'f:Lionfishes', '“firefish” is a name of some Lionfishes.'],
+    ['toby', 'f:Puffers', '“toby” is a name of some Puffers.'],
+    ['spinefoot', 'f:Rabbitfishes', '“spinefoot” is a name of some Rabbitfishes.'],
+    ['Peacock razorfish', 'f:Wrasses', '“Peacock razorfish” is one of the Wrasses.'],
+    ['Iniistius pavo', 'f:Wrasses', '“Iniistius pavo” is one of the Wrasses.'],
+    ['Iniistius', 'f:Wrasses', '“Iniistius” is a genus of the Wrasses.']
+  ]) {
+    const r = family(text, t);
+    assert.deepStrictEqual([text, r.got && r.got.c, r.read, r.msg], [text, t, read, '']);
+  }
+  // on another family: that family, a wrong answer as any other name of it (rule L2), said what it is
+  const w = family('Peacock razorfish', 'f:Pipefishes');
+  assert.strictEqual(w.got.c, 'f:Wrasses');
+  assert.strictEqual(w.read, '“Peacock razorfish” is one of the Wrasses.');
+  for (const text of ['tuskfish', 'goldie']) {
+    const r = family(text, 'f:Wrasses');
     assert.strictEqual(r.got, null, text); // no answer yet
     assert.strictEqual(r.msg, `“${text}” is a name some fish species go by: this question needs the family.`);
   }
-  const r = family('Peacock razorfish', 'f:Wrasses');
-  assert.strictEqual(r.got, null);
-  assert.strictEqual(r.msg, "“Peacock razorfish” is a species' name: this question needs its family.");
-  // dart stays the Dartfishes' own short form
+  // dart stays the Dartfishes' own short form (a jack's "Smallspotted dart" is one species' name)
   assert.strictEqual(family('dart', 'f:Jacks').got.c, 'f:Dartfishes');
+});
+
+test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a pipefish wrong, no unit given (Q319)', () => {
+  const s = family('razorfish', 'f:Shrimpfishes');
+  assert.strictEqual(s.got.c, 'f:Shrimpfishes');
+  assert.strictEqual(s.read, '“razorfish” is a name of the Shrimpfishes. It is also used for some Wrasses.');
+  const w = family('Razorfish', 'f:Wrasses');
+  assert.strictEqual(w.got.c, 'f:Wrasses');
+  assert.strictEqual(w.read, '“Razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes.');
+  const p = family('razorfish', 'f:Pipefishes');
+  assert.strictEqual(p.got.c, '');
+  assert.strictEqual(p.read, '“razorfish” names the Shrimpfishes and some Wrasses.');
+  // goby: the Gobies' own name, and some dartfishes'
+  assert.strictEqual(family('goby', 'f:Gobies').read, '“goby” is also used for some Dartfishes.');
+  assert.strictEqual(family('goby', 'f:Dartfishes').read, '“goby” is a name of some Dartfishes. It is also used for the Gobies.');
+  assert.strictEqual(family('bream', 'f:Emperors').got.c, 'f:Emperors');
+});
+
+test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
+  const N = C.fishTypeNames(
+    X.gen,
+    FISH.typeDrop,
+    C.fishNameIndex(F, {
+      razorfish: {'f:Wrasses': 'off', 'f:Shrimpfishes': 'often'},
+      Tuskfish: {'f:Wrasses': 'on'},
+      'sea pig': {'f:Wrasses': 'on'}
+    })
+  );
+  const r = family('razorfish', 'f:Shrimpfishes', N);
+  assert.strictEqual(r.got.c, 'f:Shrimpfishes');
+  assert.strictEqual(JSON.stringify(r.step), JSON.stringify({oft: ['Shrimpfishes', 'razorfish']})); // "✓ Yes, it's Shrimpfishes (often called razorfish)"
+  assert.strictEqual(family('razorfish', 'f:Wrasses', N).got.c, 'f:Shrimpfishes'); // no longer the Wrasses'
+  assert.strictEqual(family('tuskfish', 'f:Wrasses', N).got.c, 'f:Wrasses'); // a known word given to a family
+  assert.strictEqual(family('sea pig', 'f:Wrasses', N).got.c, 'f:Wrasses'); // a name added
+  assert.strictEqual(family('sea pig', 'f:Wrasses', N).read, '“sea pig” is a name of the Wrasses.');
 });
 
 test('a name several families share: right for each, explained; on another family, wrong with no unit given (Q319)', () => {
@@ -140,7 +196,8 @@ test('a genus question: a species word or name gets the common-name nudge, never
       {...OTHER, rank: g => rankOf(g) || FISH.rank, own: g => (X.gen[g] || {}).imrName},
       C.typeNormAll
     );
-  ['razorfish', 'toby', 'anglerfish', 'Peacock razorfish'].forEach(t => assert.strictEqual(kind(t), 'common', t));
+  ['razorfish', 'toby', 'anglerfish', 'Peacock razorfish', 'tuskfish', 'hogfish'].forEach(t => assert.strictEqual(kind(t), 'common', t));
   assert.strictEqual(kind('Holocentridae'), 'family');
-  assert.strictEqual(kind('goby'), 'family'); // the Gobies' singular
+  assert.strictEqual(kind('goby'), 'family'); // the Gobies' singular (and some dartfishes')
+  assert.strictEqual(kind('Iniistius pavo'), ''); // a scientific name: the spelling message as before
 });

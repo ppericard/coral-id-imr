@@ -259,19 +259,18 @@ test('typed fish names: "fish" optional (suffix, word, plural) when unambiguous,
 });
 
 // The three plain fixes of the names study (Pierre, 2026-11-09): a name and its other number are one name; a name typed
-// exactly is never read as a slip of another (the species' names the game knows, fishKnownNames); a name several
+// exactly is never read as a slip of another (the name index, fishNameIndex); a name several
 // families share (a family the book splits) is all of them, never "which one? check the spelling" (Q319).
 test('typed fish names: singular and plural are one name, a known name is never a slip of another, a shared one is all of them', () => {
   const S = C.subjectOf('fish'),
     X = C.fishGen(F, PH.photos),
-    N = C.fishTypeNames(X.gen, S.typeDrop, C.fishKnownNames(F)),
+    N = C.fishTypeNames(X.gen, S.typeDrop, C.fishNameIndex(F)),
     m = t => C.typeMatchIn(N, t, C.typeNormAll);
   // the singulars of the book's labels, read exactly as the family (no spelling step, no "which one?")
   [
     ['seahorse', 'f:Seahorses'],
     ['moray', 'f:Morays'],
     ['grouper', 'f:Groupers'],
-    ['goby', 'f:Gobies'],
     ['blenny', 'f:Blennies'],
     ['convict blenny', 'f:ConvictBlennies'],
     ['pipefish', 'f:Pipefishes'],
@@ -283,14 +282,21 @@ test('typed fish names: singular and plural are one name, a known name is never 
     ['snappers', 'f:Snappers']
   ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
   assert.strictEqual(m('grouper').alt, undefined); // the family's own name in the other number: no "read as" line
-  // a name the game knows that is no family's: known, never another family by the spelling tolerance (they were
-  // Angelfishes, Boxfishes, Filefishes, Soldierfishes)
-  ['anglerfish', 'tuskfish', 'firefish', 'goldie', 'Peacock razorfish', 'razorfish', 'batfish', 'hogfish'].forEach(t =>
-    assert.deepStrictEqual([t, !!m(t).known, m(t).g, C.typeVerdict(m(t), 'f:Angelfishes')], [t, true, undefined, 'none'])
-  );
-  assert.strictEqual(m('anglerfish').w, 1); // a word of a species' name
-  assert.strictEqual(m('Peacock razorfish').w, undefined); // a species' whole name
-  assert.strictEqual(m('anglerfsh').known, 1); // a slip of it too
+  // goby: the Gobies' singular, and a word two of the three dartfishes carry: both (Q319)
+  assert.deepStrictEqual([...m('goby').shared].sort(), ['f:Dartfishes', 'f:Gobies']);
+  assert.deepStrictEqual(m('goby').by['f:Dartfishes'], {vr: 'k', n: 2, of: 3});
+  // never another family by the spelling tolerance (anglerfish, tuskfish, firefish, goldie were the Angelfishes, the
+  // Boxfishes, the Filefishes, the Soldierfishes): a name of the family whose species carry it (the name index, Q320), or
+  // a word known to be no family's (one species' only: tuskfish, goldie)
+  [
+    ['anglerfish', 'f:Frogfishes'],
+    ['firefish', 'f:Lionfishes'],
+    ['batfish', 'f:Spadefishes'],
+    ['hogfish', 'f:Wrasses']
+  ].forEach(([t, g]) => assert.deepStrictEqual([t, m(t).g, m(t).exact, C.typeVerdict(m(t), g)], [t, g, true, 'exact']));
+  ['tuskfish', 'goldie'].forEach(t => assert.deepStrictEqual([t, !!m(t).known, C.typeVerdict(m(t), 'f:Wrasses')], [t, true, 'none']));
+  assert.strictEqual(m('anglerfsh').g, 'f:Frogfishes'); // a slip of it: the spelling step, as everywhere
+  assert.strictEqual(m('anglerfsh').exact, false);
   // "dart" is the Dartfishes' own short form: it stays theirs (a jack's "Smallspotted dart" is one species' name)
   assert.strictEqual(m('dart').g, 'f:Dartfishes');
   // the IMR entries' scientific families the book splits: typed exactly, all of their families (Q319), never one of
@@ -309,11 +315,20 @@ test('typed fish names: singular and plural are one name, a known name is never 
   // a slip between two names stays "which one?" (a spelling tie)
   assert.ok(m('pipefishes') && m('pipefishes').g === 'f:Pipefishes');
   assert.ok(m('pilefishes').near);
-  // the known names: the species' listed names, a word of each name shown, the genera's; never a scientific genus, never
-  // a word of a "False ..." name
-  const K = C.fishKnownNames(F).map(o => o.x.toLowerCase());
-  ['peacock razorfish', 'anglerfish', 'hogfishes', 'toby'].forEach(x => assert.ok(K.includes(x), x));
-  ['coris', 'chromis'].forEach(x => assert.ok(!K.includes(x), x));
+  // the name index: the species' listed names and scientific names, the genera's, the kind words (fish.json vn), each
+  // with the family it lifts to and its role; a word of a "False ..." name is none
+  const I = C.fishNameIndex(F),
+    has = (x, g, vr) => I.some(e => e.x.toLowerCase() === x && e.g === g && e.vr === vr);
+  assert.ok(has('peacock razorfish', 'f:Wrasses', 'sp'));
+  assert.ok(has('iniistius pavo', 'f:Wrasses', 'ss'));
+  assert.ok(has('iniistius', 'f:Wrasses', 'gs'));
+  assert.ok(has('hogfishes', 'f:Wrasses', 'gc'));
+  assert.ok(has('razorfish', 'f:Wrasses', 'k') && has('razorfish', 'f:Shrimpfishes', 'k'));
+  assert.ok(I.some(e => e.x === 'tuskfish' && !e.g && e.w));
+  assert.ok(
+    !I.some(e => /^(puffer|moorish ?idol|stonefish)$/i.test(e.x) && e.vr === 'k' && e.g !== 'f:Puffers'),
+    'no word of a False name'
+  );
   assert.deepStrictEqual(C.typeForms('Gobies'), ['Goby']);
   assert.deepStrictEqual(C.typeForms('Grouper'), ['Groupers']);
   assert.deepStrictEqual(C.typeForms('Pipefishes'), ['Pipefish']);

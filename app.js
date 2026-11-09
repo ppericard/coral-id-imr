@@ -740,7 +740,9 @@ function cnShow(s, asked) {
 // typeNormAll: [{k, g: the species id, old, alt}], each listed name and its recorded spellings (old: the spelling typed,
 // alt: 1), nothing else: no other name the references give, no short form without "fish" (fishTypeNames' drop is the
 // families'). A name two species list names both (typeMatchIn shared: right for each of them, Q319).
-function cnTypeNames(L) {
+// vn (fish.json vn, the name index's kind words: razorfish, toby): known names that are no species' own, read as such
+// ({known}: "a name some fish species go by", the nudge), never as a slip of a species' name (Pierre, 2026-11-09, Q319).
+function cnTypeNames(L, vn) {
   const out = [];
   (L || []).forEach(s =>
     ((s && s.cn) || []).forEach(n =>
@@ -750,6 +752,10 @@ function cnTypeNames(L) {
       })
     )
   );
+  (vn || []).forEach(([x]) => {
+    const k = typeNormAll(x);
+    if (k.length >= 3 && !out.some(o => o.k === k)) out.push({k, g: '', old: x, alt: 1, known: 1, w: 1});
+  });
   return out;
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
@@ -1756,9 +1762,15 @@ const UNITS = {
         }
       return null;
     },
-    // The typed names: the entries' (core.js fishTypeNames) and the names the game knows that are no entry's (fishKnownNames:
-    // the species' common names and their last words), read as such, never as a slip of an entry's name.
-    names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, FISHRAW && FISHRAW.f ? fishKnownNames(FISHRAW.f) : []),
+    // The typed names: the entries' (core.js fishTypeNames) and the name index (fishNameIndex: the names of their genera
+    // and species and the kind words, fish.json vn, with Pierre's exceptions, curation.json fish.names), each read as
+    // the family it lifts to (Q319, Q320), a known word as such, never as a slip of another name.
+    names: () =>
+      fishTypeNames(
+        FISH ? FISH.gen : {},
+        SUBJ.typeDrop,
+        FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []
+      ),
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the

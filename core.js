@@ -1051,8 +1051,9 @@
   // A name in common use (fishOften: oft) carries oft: [usual name, the name often used], its short forms too.
   // Every name is also read in the other number (typeForms: "Grouper" for Groupers, "Goby" for Gobies, "Pipefish" for
   // Pipefishes), as the name itself: exactly, never as a spelling to fix, whatever other name it is close to.
-  // known (fishKnownNames): names that are no entry's (the species' common names, their last words: Anglerfish), read
-  // exactly as such ({known}, typeMatchIn), so a name the game knows is never taken for a slip of another (Angelfishes).
+  // known (fishNameIndex): the names below the entries, each read as the entry it lifts to (Peacock razorfish, Iniistius,
+  // Anglerfish), and the words owned by none, read exactly as such ({known}, typeMatchIn), so a name the game knows is
+  // never taken for a slip of another (Angelfishes).
   function fishTypeNames(gen, drop = '', known = []) {
     const out = [],
       add = (k, g, x, i, oft) =>
@@ -1090,16 +1091,31 @@
     typeKnown(out, known);
     return out;
   }
-  // The known names (fishKnownNames) and their other number, each once and only when it is no unit's name: {k, g: '',
-  // known: 1}, w: 1 for a word of a name rather than a whole one.
+  // The name index (fishNameIndex) into the typed names: a name with an owner, read as that family ({k, g, old, alt: 1,
+  // vr: its role, n, of: how many of the family's species carry it; oft for a name Pierre marks "often"), in both numbers
+  // for a word; a name with none, known ({k, g: '', known: 1, w: 1 for a word}), only where it is no unit's name.
   function typeKnown(out, known) {
-    const have = new Set(out.map(o => o.k));
-    (known || []).forEach(({x, w}) =>
-      [x, ...typeForms(x)].forEach(y => {
-        const k = typeNormAll(y);
-        if (k.length >= 3 && !have.has(k)) (have.add(k), out.push({k, g: '', old: y, alt: 1, known: 1, ...(w ? {w: 1} : {})}));
-      })
-    );
+    const have = new Set(out.filter(o => !o.known).map(o => o.k)),
+      seen = new Set(out.map(o => o.k + '|' + o.g));
+    (known || [])
+      .filter(e => e.g)
+      .forEach(e =>
+        [e.x, ...(['ss', 'gs'].includes(e.vr) ? [] : typeForms(e.x))].forEach(y => {
+          const k = typeNormAll(y);
+          if (k.length < 3 || seen.has(k + '|' + e.g)) return;
+          seen.add(k + '|' + e.g);
+          have.add(k);
+          out.push({k, g: e.g, old: y, alt: 1, vr: e.vr, ...(e.n ? {n: e.n, of: e.of} : {}), ...(e.oft ? {oft: e.oft} : {})});
+        })
+      );
+    (known || [])
+      .filter(e => !e.g)
+      .forEach(({x, w}) =>
+        [x, ...typeForms(x)].forEach(y => {
+          const k = typeNormAll(y);
+          if (k.length >= 3 && !have.has(k)) (have.add(k), out.push({k, g: '', old: y, alt: 1, known: 1, ...(w ? {w: 1} : {})}));
+        })
+      );
   }
   // A name's last word in the other number, for typing (English: Groupers / Grouper, Gobies / Goby, Pipefishes /
   // Pipefish, Sweetlips / Sweetlip): [] for a scientific name (-idae, -inae) or a last word whose number is not plain
@@ -1127,33 +1143,47 @@
                       : w + 's';
     return f && f.length >= 3 ? [a + f] : [];
   }
-  // The names the game knows that are no fish entry's, for typed answers (fishTypeNames known): every listed common name
-  // of the species in the game (fish.json species cn, every spelling), the last word of the names shown (Warty anglerfish:
-  // Anglerfish; w: 1, a word, not a whole name; never of a "False ..." name, which says it is not one), and the genera's
-  // common names (Hogfishes); never a scientific genus (Coris is one).
-  function fishKnownNames(F) {
-    const sci = new Set(((F && F.genera) || []).map(g => typeNormAll(g.name))),
-      out = [],
-      seen = new Set(),
-      put = (x, w) => {
-        const k = typeNormAll(x);
-        if (k.length >= 4 && !sci.has(k) && !seen.has(k)) (seen.add(k), out.push(w ? {x, w: 1} : {x}));
+  // The fish name index (Pierre, 2026-11-09, Q319, Q320; docs/reviews/2026-11-09-shared-common-names.md), for typed
+  // answers (fishTypeNames known): each name below the family with the family it lifts to and its role (vr): 'sp' a
+  // listed common name of a game species (fish.json cn, every spelling), 'ss' a species' scientific name (its PDF name
+  // and WoRMS's), 'gs' a genus's scientific name, 'gc' a genus's common name, 'k' a kind word carried by at least 2 of
+  // the family's species or all of them (fish.json vn, tools/fish_names.py: razorfish, toby), with n and of; a kind word
+  // a family's species carry less than that ('w') is known, owned by none: never read as a slip of another family's
+  // name. cur (curation.json fish.names, Pierre's exceptions, written only by the admin): {name: {family id: 'off' (not
+  // that family's), 'on' (that family's, the name added or a known word given to it), 'often' (that family's, the
+  // feedback naming the family gently: Q164)}}. [{x, g: family id or '', vr, n, of, oft, w}].
+  function fishNameIndex(F, cur) {
+    const out = [],
+      fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
+      C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
+      off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
+      oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
+      put = (x, g, vr, n, of) => {
+        if (!x || !fam.has(g)) return;
+        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1});
+        const o = oft(x, g);
+        out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {})});
       };
-    ((F && F.species) || [])
-      .filter(s => s.circle && !s.out)
-      .forEach(s =>
-        (s.cn || []).forEach(L => {
-          L.forEach(x => put(x));
-          if (L[0] && !/^false\b/i.test(L[0]))
-            put(
-              String(L[0])
-                .split(/[\s-]+/)
-                .pop(),
-              1
-            );
-        })
-      );
-    ((F && F.genera) || []).forEach(g => [g.common].forEach(x => x && put(x)));
+    const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
+    game.forEach(s => {
+      (s.cn || []).forEach(L => L.forEach(x => put(x, s.family, 'sp')));
+      [s.name, s.now].forEach(x => put(x, s.family, 'ss'));
+    });
+    const inGame = new Set(game.map(s => s.genus));
+    ((F && F.genera) || []).filter(g => inGame.has(g.id)).forEach(g => (put(g.name, g.family, 'gs'), put(g.common, g.family, 'gc')));
+    ((F && F.vn) || []).forEach(([x, owners]) =>
+      (owners || []).forEach(([g, r, n, of]) => {
+        const c = (C[typeNormAll(x)] || {})[g];
+        if (r === 'k' || c === 'on' || c === 'often') put(x, g, 'k', n, of);
+        else out.push({x, g: '', vr: 'w', w: 1});
+      })
+    );
+    // Pierre's own names (on), the index's or not.
+    Object.entries(cur || {}).forEach(([x, v]) =>
+      Object.entries(v || {}).forEach(([g, c]) => {
+        if ((c === 'on' || c === 'often') && !out.some(e => e.g === g && typeNormAll(e.x) === typeNormAll(x))) put(x, g, 'cur');
+      })
+    );
     return out;
   }
 
@@ -3489,13 +3519,29 @@
       best = top.filter(x => !x.known);
     if (!best.length) return {known: 1, old: top[0].old, ...(top[0].w ? {w: 1} : {})};
     const gs = [...new Set(best.map(x => x.g))];
-    if (gs.length > 1) return best[0].d === 0 ? {shared: gs, old: best[0].old, exact: true} : {near: gs};
+    if (gs.length > 1)
+      return best[0].d === 0
+        ? {
+            shared: gs,
+            old: best[0].old,
+            exact: true,
+            // each unit's own reading of it: its role (vr), how many of its species carry it (n, of), its gentle name (oft)
+            by: Object.fromEntries(
+              gs.map(g => {
+                const x = best.find(y => y.g === g);
+                return [g, {...(x.vr ? {vr: x.vr} : {}), ...(x.n ? {n: x.n, of: x.of} : {}), ...(x.oft ? {oft: x.oft} : {})}];
+              })
+            )
+          }
+        : {near: gs};
     return {
       g: best[0].g,
       old: best[0].old,
       exact: best[0].d === 0,
       ...(best[0].alt ? {alt: 1} : {}),
-      ...(best[0].oft ? {oft: best[0].oft} : {})
+      ...(best[0].oft ? {oft: best[0].oft} : {}),
+      ...(best[0].vr ? {vr: best[0].vr} : {}),
+      ...(best[0].n ? {n: best[0].n, of: best[0].of} : {})
     };
   }
   // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
@@ -3532,7 +3578,13 @@
       norm
     );
     if (m && m.known) return 'common';
-    if (m && m.shared) return (x.rank ? x.rank(m.shared[0]) : '') || '';
+    // A name the index lifts from below (fishNameIndex): a scientific name (a species', a genus's) is no common name (the
+    // spelling message as before); a shared one is a common name unless it is a family's own (Holocentridae, Goby).
+    if (m && (m.vr === 'ss' || m.vr === 'gs')) return '';
+    if (m && m.shared)
+      return /i[dn]ae$/i.test(m.old || '') || Object.values(m.by || {}).some(r => !r.vr)
+        ? (x.rank ? x.rank(m.shared[0]) : '') || ''
+        : 'common';
     if (m && !m.near) {
       const imr = String((x.own && x.own(m.g)) || ''),
         own = !m.old || /i[dn]ae$/i.test(m.old) || [imr, ...imr.split(/\s*&\s*|\s+and\s+/)].some(n => n && norm(n) === norm(m.old));
@@ -5557,7 +5609,7 @@
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
-    fishKnownNames,
+    fishNameIndex,
     typeForms,
     renamedId,
     sheetIdOf,

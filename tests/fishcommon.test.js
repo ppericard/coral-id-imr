@@ -198,3 +198,16 @@ test('match reads as typeMatchIn on every name: exact, close, shared, other and 
   );
   assert.ok(texts.length > 100, String(texts.length));
 });
+
+// The species level's reading (Pierre, 2026-11-09, Q319): a name two species list is right for each of them; a kind word
+// of the name index (fish.json vn: razorfish, toby) is known, never a slip of a species' name.
+test('typed at species level: a shared listed name is right for each species, a kind word is known (fish.json vn)', () => {
+  const N = cnTypeNames(GAME, F.vn),
+    m = t => C.typeMatchIn(N, t, norm),
+    id = n => GAME.find(s => s.name === n).id;
+  const tw = m('Twospot wrasse');
+  assert.deepStrictEqual([...tw.shared].sort(), [id('Halichoeres biocellatus'), id('Oxycheilinus bimaculatus')].sort());
+  assert.strictEqual(C.typeVerdict(tw, id('Oxycheilinus bimaculatus')), 'exact');
+  ['razorfish', 'toby', 'spinefoot', 'tuskfish'].forEach(t => assert.strictEqual(m(t).known, 1, t));
+  assert.strictEqual(m('Peacock razorfish').g, id('Iniistius pavo'));
+});

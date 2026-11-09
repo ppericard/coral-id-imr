@@ -58,7 +58,8 @@ Each species: {id, name (PDF / source), now (WoRMS accepted, when it differs), c
 taxon of its PDF name, else of the WoRMS name), circle (in the game) or out (why not), r (rank order: the PDF
 cheatsheet's 24 most sighted first, then the source order, i.e. PDF order, then the slides, winks, Dauin species),
 cmi (commonness index, 0-1, within its teaching entry: tools/fish_commonness.py), present, src (slides, dauin, wink; PDF when absent), sec (PDF section), pdf (pages), cs (cheatsheet rank), sl (slide),
-check, cn (the curated common names, 1 to 3, from tools/fish_common.json: add_families)}. A teaching node's `species` (and its sub-entries') are in commonness order, the most commonly met around Dauin
+check, cn (the curated common names, 1 to 3, from tools/fish_common.json: add_families)}. fish.json vn: the name index's
+kind words (razorfish, toby: tools/fish_names.py, add_families). A teaching node's `species` (and its sub-entries') are in commonness order, the most commonly met around Dauin
 first (Pierre, 2026-11-04: "common beats easy" to start; fish_commonness.apply(), its inputs in
 tools/fish_commonness.json and tools/fish_commonness_inat.json; docs/FISH_PATH.md). Ids are stable and never names: they live in the source file (teaching nodes t01..., species s001...), never
 reuse or renumber one (`retired` lists the ids taken out).
@@ -88,6 +89,7 @@ import urllib.request
 from pathlib import Path
 
 import fish_commonness
+import fish_names
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_source.json"
@@ -709,6 +711,9 @@ def add_families(o, key, declared=()):
     if gnames:
         sys.exit(f"tools/fish_genus_names.json: not genera of fish.json: {', '.join(gnames)}")
     o["genera"] = go
+    # The name index's kind words (tools/fish_names.py; Pierre, 2026-11-09, Q319, Q320): the head words of the species'
+    # names shown and the families whose species carry them, fish.json vn.
+    fish_names.apply(o, {"keys": [key] if key else []})
     return o
 
 
@@ -1130,6 +1135,10 @@ def render(o):
             continue
         lines.append(f'"{k}":[')
         lines.append(",\n".join(dumps(x) for x in o[k]))
+        lines.append("],")
+    if "vn" in o:  # the name index's kind words (tools/fish_names.py), one word per line
+        lines.append('"vn":[')
+        lines.append(",\n".join(dumps(x) for x in o["vn"]))
         lines.append("],")
     lines.append('"ref":{')
     lines.append(",\n".join(f'"{aid}":{dumps(n)}' for aid, n in o["ref"].items()))
