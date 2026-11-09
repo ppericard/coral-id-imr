@@ -8223,7 +8223,9 @@ function unitsOf(S) {
         : null;
   return UNITM.by[S.id];
 }
-const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, ...domReplay()} : {dom: domReplay().dom});
+// The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
+// replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's (PR #808).
+const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD, ...domReplay()} : {dom: domReplay().dom});
 // One player's progress in a subject (S: the replayed one by default), replayed from their answers in it with today's
 // rules and their saved copy's mastery exams; saved: what the copy says (↻ saved when it differs).
 function progOf(u, full, S = replayS()) {
