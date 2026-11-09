@@ -274,3 +274,26 @@ test("the admin's own device keeps its mark through light saves that skip the lo
   );
   assert.deepStrictEqual(JSON.parse(JSON.stringify(A.store.get('reefid-amark', null))), {n: 'ana b.', on: true}, 'the mark stays');
 });
+
+// Codex review #841 (P2): the mark is the account's, never the name's on this device: a sign-out takes it away, and a load
+// that finds no account under the name (deleted or archived, then taken again) too.
+test("a device's mark never passes to another account of the same name", async () => {
+  const s = loadCodeGs(withData()),
+    A = page(s, {v: Math.max(C.MARK_SHEET, LIGHT), SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
+  A.play('n0', 'Acropora', true);
+  await A.syncPush();
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok);
+  await A.syncPull();
+  const mark = () => JSON.parse(JSON.stringify(A.store.get('reefid-amark', null)));
+  assert.deepStrictEqual(mark(), {n: 'ana b.', on: true});
+  // Signing out leaves nothing of it.
+  if (!('CUSTOM' in A.ctx)) A.ctx.CUSTOM = {KEY: 'reefid-sync-coral-custom'}; // model.js, not loaded here
+  vm.runInContext('signOutClear(true)', A.ctx);
+  assert.strictEqual(mark(), null);
+  // Marked again, then the account deleted and the name taken again with another code on this device: the load finds
+  // no account (found: false), and the mark goes.
+  vm.runInContext('store.set(MARK_KEY, {n: "ana b.", on: true})', A.ctx);
+  assert.ok(s.post({userDelete: 'Ana B.', token: TOK}).ok);
+  vm.runInContext('markSeen({ok: true, found: false, v: 1}, "Ana B.")', A.ctx);
+  assert.strictEqual(mark(), null);
+});

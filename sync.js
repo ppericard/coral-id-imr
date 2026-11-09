@@ -1428,8 +1428,12 @@ function groupsSeen(j, name, live = true) {
 // account is it, kept under the account's name (MARK_KEY) and shown after the name in ⚙ (bindSync), outside its text.
 // An older script says nothing and nothing shows (rule D4).
 const MARK_KEY = 'reefid-amark';
+// A load that finds no account under the name (a new account, or one deleted or archived and taken again) takes it away
+// too, from any script (Codex review #841).
 function markSeen(j, name) {
-  if (!j || !j.ok || j.found !== true || !name || !(Number(j.v) >= MARK_SHEET)) return;
+  if (!j || !j.ok || !name) return;
+  if (j.found === false) return store.set(MARK_KEY, null);
+  if (j.found !== true || !(Number(j.v) >= MARK_SHEET)) return;
   store.set(MARK_KEY, {n: String(name).trim().toLowerCase(), on: j.admin === 1});
 }
 const markMine = () => {
@@ -1729,6 +1733,7 @@ function signOutClear(all) {
   [
     'reefid-account',
     GROUPS_KEY, // the beta groups are this account's (app.js subjOpen)
+    MARK_KEY, // the admin's mark is this account's (markSeen; Codex review #841: never left to the next account of the name)
     // Every subject's progress, settings, cards, opening hold and comeback (model.js COMEBACK.KEY: the visit floor and
     // the comeback belong to this player, Codex review #374).
     ...SUBJECTS.flatMap(S => [
