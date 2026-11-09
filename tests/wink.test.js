@@ -51,17 +51,13 @@ function play(M, a, b) {
   return out;
 }
 
-test('surprise thresholds: one named constant, 200 then 400 (Pierre, 2026-11-08)', () => {
-  const M = page();
-  assert.deepStrictEqual([...M.WINK.AT], [200, 400]);
-});
-
+// The thresholds, 200 then 400 (Pierre, 2026-11-08), played out.
 test('none before 200 fish answers, the whale shark just after, the thresher at 400, then never again', () => {
   const M = page();
   assert.deepStrictEqual(play(M, 0, 200), [], 'none before 200');
   assert.deepStrictEqual(play(M, 200, 350), [[200, WALE]], 'the whale shark at 200, once');
-  assert.deepStrictEqual(play(M, 350, M.WINK.AT[1]), [], 'none again before the second threshold');
-  assert.deepStrictEqual(play(M, M.WINK.AT[1], 5000), [[M.WINK.AT[1], THRESH]], 'the thresher once, then nothing more');
+  assert.deepStrictEqual(play(M, 350, 400), [], 'none again before 400');
+  assert.deepStrictEqual(play(M, 400, 5000), [[400, THRESH]], 'the thresher at 400, once, then nothing more');
 });
 
 test('a player already past both thresholds meets them apart, never back to back', () => {

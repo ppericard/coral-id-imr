@@ -9,6 +9,7 @@ const fs = require('fs'),
   vm = require('vm');
 const cut = require('./block.js');
 const C = require('../core.js');
+const {near} = require('./typenear.js');
 const {loadCodeGs} = require('./gas.js');
 
 const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
@@ -64,7 +65,28 @@ function form() {
   el.type = t => ((el.inp.value = t), el.form.onsubmit({preventDefault() {}}), el.msg.textContent);
   return el;
 }
-function page(subj = 'fish') {
+// typeElse read on the names near the text only (tests/typenear.js), for the sweep of the nudge over every name (35 s
+// with an edit distance to each of the 1,900 names and common names, at each text): the same answer, as both its
+// typeMatchIn reads take lists filtered from these, and the scientific names come normalised once (typeNormAll of a
+// normalised name is itself). For typeKind's lists only: other a filter of NAMES, x the fish lists OTHER. The test after
+// the sweep checks the two agree.
+const NSET = new Set(NAMES),
+  nearNames = near(NAMES),
+  nearCommon = near(OTHER.common, C.typeNormAll),
+  sciNorm = [...new Set(OTHER.sci.map(C.typeNormAll))];
+function nearElse(text, other, x, norm) {
+  assert.ok(norm === C.typeNormAll && x.common === OTHER.common && x.sci === OTHER.sci && other.every(o => NSET.has(o)), 'typeKind lists');
+  const t = norm(text),
+    mine = new Set(other);
+  return C.typeElse(
+    text,
+    nearNames(t).filter(o => mine.has(o)),
+    {...x, sci: sciNorm, common: nearCommon(t)},
+    norm
+  );
+}
+// typeElse: core.js's, or nearElse for a sweep.
+function page(subj = 'fish', typeElse = C.typeElse) {
   const S = C.subjectOf(subj);
   const ctx = {
     SUBJ: S,
@@ -76,7 +98,7 @@ function page(subj = 'fish') {
     rankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
-    typeElse: C.typeElse,
+    typeElse,
     typeVerdict: C.typeVerdict,
     unameT: n => (X.gen[n] || {}).name || n,
     esc: s => String(s),
@@ -116,7 +138,7 @@ test('typeElse: a family name, a common name, or nothing (the spelling message a
 });
 
 test('the nudge: the kind of name and what the question needs, never a scientific name', () => {
-  const M = page();
+  const M = page('fish', nearElse);
   assert.strictEqual(
     M.typeKindMsg('Anemonefish', 'common', 'genus'),
     "“Anemonefish” is a common name: this question needs a genus's scientific name."
@@ -142,6 +164,31 @@ test('the nudge: the kind of name and what the question needs, never a scientifi
     assert.deepStrictEqual(hit, [], `${t}: ${rest}`);
   }
   assert.ok(n > 50, `${n} names checked`);
+});
+
+test('the nudge read on the near names only is the nudge: every kind of name, slips and no names alike', () => {
+  const M = page(),
+    N = page('fish', nearElse),
+    fam = NAMES.filter(o => rankOf(o.g) !== 'genus').map(o => o.old || X.gen[o.g].name),
+    base = [...fam.filter((x, i) => i % 20 === 0), ...OTHER.common.filter((x, i) => i % 120 === 0), ...SCI.filter((x, i) => i % 120 === 0)],
+    texts = [
+      ...base,
+      ...base.map(x => x.slice(0, 2) + x[3] + x[2] + x.slice(4)),
+      ...base.map(x => x + 'e'),
+      'Anemonefish',
+      'Damselfishes',
+      'xyzfish',
+      'ab',
+      ''
+    ];
+  const kinds = new Set();
+  texts.forEach(t => {
+    const k = M.typeKind(t, 'genus');
+    assert.strictEqual(N.typeKind(t, 'genus'), k, t);
+    kinds.add(k);
+  });
+  assert.deepStrictEqual([...kinds].sort(), ['', 'common', 'family'], 'every kind compared');
+  assert.ok(texts.length > 60, String(texts.length) + ' texts');
 });
 
 test('typeBind: the same nudge whatever the genus asked; the refused texts handed with the answer, in order', () => {

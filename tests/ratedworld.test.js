@@ -7,7 +7,11 @@ const RW = require('../tools/ratedworld.js'),
   L = require('../tools/learncmp.js');
 const X = RW.fishUnits(),
   mean = v => v.reduce((a, x) => a + x, 0) / v.length,
-  sd = v => Math.sqrt(v.reduce((a, x) => a + (x - mean(v)) ** 2, 0) / (v.length - 1));
+  sd = v => {
+    // the mean once, not at each value (it was quadratic: 7 s on the world's 5,000 photos)
+    const m = mean(v);
+    return Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1));
+  };
 
 test('the fish units as the app builds them: three circles of families, the scientific genera with their family', () => {
   assert.ok(X.c1.length > 20 && X.sci.length > 50, `${X.c1.length} ${X.sci.length}`);
@@ -32,8 +36,10 @@ test('the world of a seed: the distributions LEARNING.md states, the same world 
     t3 = Object.values(RW.world(X, 1, 't3').eps);
   assert.ok(Math.abs(mean(T) - 0.15 * 1.5) < 0.04, String(mean(T)));
   assert.ok(Math.abs(sd(t3) - RW.RATED.EPS) < 0.08, String(sd(t3)));
-  // The players' offsets.
-  const pi = Array.from({length: 60}, (_, s) => RW.world(X, s + 1).pi);
+  // The players' offsets (piOf: the world's pi, without building 60 worlds).
+  assert.strictEqual(W.pi, RW.piOf(1));
+  assert.strictEqual(RW.world(X, 7).pi, RW.piOf(7));
+  const pi = Array.from({length: 60}, (_, s) => RW.piOf(s + 1));
   assert.ok(Math.abs(sd(pi) - RW.RATED.PI) < 0.15, String(sd(pi)));
 });
 
