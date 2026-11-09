@@ -182,8 +182,9 @@ so the pass gives each such photo the **fish's box**, and `tools/fish_game.py` c
   the same reading.
 - **No machine method**: there is no fish detector in the repository, and a saliency or edge heuristic is unreliable on
   reef backgrounds (the Matrix study of 2026-11-09), so the judge's eye is the source, as for every other tag. The
-  judging passes box the photos already judged as they go: the first box pass (2026-11-09) boxed 3 photos per circle-1 entry; the rest wait for the
-  next rounds, entry by entry, the starter core first.
+  judging passes box the photos already judged as they go: the first two box passes (2026-11-09) boxed 172 photos, about
+  7 per circle-1 entry (168 tiles kept, 4 too small in the original), so 21 of the 27 circle-1 families have 6
+  observations with a tile; the rest wait for the next rounds, entry by entry, the starter core first.
 
 **The tile** (`tools/fish_game.py` `tile_crop`, `tile_write`; Q321 D4): the box's longer side plus 10% of it on each
 side (less, down to none, where the photo's short side is shorter), squared, centred on the fish, kept inside Pierre's
