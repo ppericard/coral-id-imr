@@ -1586,7 +1586,7 @@
   // quiz or quiz|…, duels slipped into the quiz included), in its last 50, and in the Duel tab (quiz-duel…). Other
   // games are in neither. rows: readAnswers rows [id, t, shown, answered, ok, mode, …].
   function playSplit(rows) {
-    const out = {};
+    const out = Object.create(null); // by player, no prototype (trustOf)
     (rows || [])
       .slice()
       .sort((a, b) => a[1] - b[1])
@@ -1607,9 +1607,11 @@
     const {R} = eloReplay(rows || []);
     return Object.fromEntries(Object.entries(R).map(([k, r]) => [k, r[2] > 0 ? 1.96 / Math.sqrt(r[2]) : Infinity]));
   }
+  // Keyed by player (names lower-cased in the sheet, anonymous ids in the admin), with no prototype: a player named
+  // constructor or __proto__ is an entry like any other, never Object's member (reserved names, Pierre 2026-11-09).
   function trustOf(rows) {
-    const T = {},
-      out = {};
+    const T = Object.create(null),
+      out = Object.create(null);
     rows.forEach(r => {
       if (!r[0]) return;
       const t = (T[r[0]] = T[r[0]] || [0, 0, 0, 0, 0]),
@@ -1683,7 +1685,7 @@
     const P = {},
       PG = {},
       G = {},
-      R = {},
+      R = Object.create(null), // by player, no prototype (trustOf)
       H = {},
       trust = trustOf(rows),
       mem = MEM.PRIOR.slice(),
@@ -1926,6 +1928,34 @@
     return w ? w[0].toUpperCase() + w.slice(1) : '';
   };
   const sorryHi = name => (firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!');
+  // Account names refused for a new account or an archive name (Pierre, 2026-11-09): a name holding, as one of its words,
+  // a member name of Object.prototype or a word like it (prototype). Such a name, as a key of a plain object (the sheet's
+  // maps by player: stats, replays, board, groups), reads the inherited member instead of an entry; the code no longer
+  // relies on it (maps with no prototype), and the front door refuses them too. Words split as Code.gs PROTO_RE splits a
+  // value (spaces, | : ,), any capitalisation (the sheet matches names case-blind, and keys them in lower case). An
+  // account that already has such a name keeps working: only a sign-up (the app's form, Code.gs doPost_ with no row
+  // yet) and an archive name (users_ userArchive) are refused, with error 'reserved'. The list is the one Pierre saw;
+  // whatever else this engine's Object.prototype has is refused as well.
+  const RESERVED_NAMES = [
+    '__proto__',
+    'constructor',
+    'prototype',
+    'toString',
+    'toLocaleString',
+    'valueOf',
+    'hasOwnProperty',
+    'isPrototypeOf',
+    'propertyIsEnumerable',
+    '__defineGetter__',
+    '__defineSetter__',
+    '__lookupGetter__',
+    '__lookupSetter__'
+  ];
+  const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
+  const reservedName = name =>
+    String(name == null ? '' : name)
+      .split(/[\s|:,]+/)
+      .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -3122,7 +3152,7 @@
   function exposureOf(rows, pool) {
     const P = pool || {},
       col = new Map(),
-      by = {};
+      by = Object.create(null); // by player, no prototype (trustOf)
     Object.entries(P).forEach(([u, L]) => L.forEach((c, i) => c.forEach(f => col.set(u + '|' + f, i))));
     (rows || [])
       .map((r, i) => [r, i])
@@ -5285,6 +5315,8 @@
     LEVEL,
     SORRY,
     firstName,
+    RESERVED_NAMES,
+    reservedName,
     sorryFelt,
     sorryOf,
     sorryDue,

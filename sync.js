@@ -841,9 +841,10 @@ function syncOnce(tries = 0, pulled = null) {
         store.set('reefid-account', me);
         if (adopted && tries < 3) return syncOnce(tries + 1);
       } else if (j && SYNC === me) {
-        // A refused code, a removed account, the wrong-code wait: red at once, no retry mends them. Anything else the sheet
+        // A refused code, a removed account, the wrong-code wait, a new account under a reserved name (vNEXT: an app from
+        // before the form refused it signed in under one): red at once, no retry mends them. Anything else the sheet
         // answered (busy, stale again, lock or server from v50, a failed write) is a passing failure, tried again.
-        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived') {
+        if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived' || j.error === 'reserved') {
           me.err = j.error;
           if (j.error === 'gone') me.into = j.into || '';
           delete me.fail;
@@ -1735,7 +1736,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
       when = SYNC.last ? new Date(SYNC.last).toLocaleString([], {dateStyle: 'short', timeStyle: 'short'}) : '';
     box.classList.add(bad ? 'warn' : 'on');
     box.innerHTML = bad
-      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
+      ? `<p><b>${bad}</b></p><p class="note">${SYNC.err === 'archived' ? '' : SYNC.err === 'gone' ? (SYNC.into ? `Your trainer merged this name into <b>${esc(SYNC.into)}</b> (the same person). Your answers now count there: sign out, then sign in as ${esc(SYNC.into)} with that name's code.` : 'Your trainer removed this account. Sign out, then sign in again to start a new one.') : SYNC.err === 'pin' ? 'The code was refused for this name. Sign out and sign in again with the right code.' : SYNC.err === 'wait' ? 'Someone typed wrong codes for this name several times, so saving waits 10 minutes. Your answers are kept on this device.' : SYNC.err === 'reserved' ? 'Sign out, then sign in with another name.' : 'Your answers are kept on this device and sent as soon as possible.'}${when ? `${SYNC.err === 'archived' ? '' : ' '}Last saved ${when}.` : ''}</p>
         <button class="chip go" type="button" id="snow">Try again</button> <button class="reset" type="button" id="soff">Sign out</button> <span class="note" role="status"></span>`
       : SYNC.dirty || (SYNC.log || []).length // answers not confirmed yet, no error so far: say so, quietly
         ? `<p class="sline"><span class="sdot wait"></span><span>Saving for IMR as <b>${esc(SYNC.name)}</b>…</span>
@@ -1821,6 +1822,12 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
                     : 'Check the name and the 4-digit code.'
             );
           if (j.found) return isYou(name, pin, j);
+          // A new account under a reserved name (core.js reservedName; Pierre, 2026-11-09) is never made: said here, before
+          // the first save would send it (the sheet refuses it too, from vNEXT). An account that has one signs in as before.
+          if (reservedName(name)) {
+            msg('This name is reserved, please choose another.');
+            return f.n.focus({preventScroll: true});
+          }
           enter(name, pin, j);
         })
         .catch(e =>

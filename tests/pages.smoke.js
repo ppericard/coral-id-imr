@@ -1569,6 +1569,18 @@ async function signin(base) {
       const pin = await p.textContent('.signnudge [role=status]');
       if (!/Someone already uses the name Anna\. If it isn't you, add your surname's initial \(Anna B\.\)/.test(pin))
         fails.push(`sign-in: name taken with another code says "${pin}"`);
+      // A new account under a reserved name (core.js reservedName; Pierre, 2026-11-09): said on the form, nothing signed in
+      // or saved.
+      for (const nm of ['Constructor', '__proto__']) {
+        await submit(p, nm, '1234');
+        await p
+          .waitForFunction(() => /reserved/.test(document.querySelector('.signnudge [role=status]').textContent), null, {timeout: 5000})
+          .catch(() => {});
+        const said = await p.textContent('.signnudge [role=status]'),
+          st = await state(p);
+        if (said !== 'This name is reserved, please choose another.') fails.push(`sign-in: the reserved name ${nm} says "${said}"`);
+        if (st.sync || st.posts.length) fails.push(`sign-in: the reserved name ${nm} signed in or sent something`);
+      }
       // The right code: "Is it you?" with the account's numbers, nothing merged yet.
       await submit(p, 'Anna', '1234');
       await p.waitForSelector('.signnudge .sconfirm', {timeout: 5000}).catch(() => {});

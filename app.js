@@ -1929,6 +1929,7 @@ function syncTrouble() {
     return SYNC.into ? `Not saved: this account was merged into ${SYNC.into}` : 'Not saved: this account was removed';
   // Too many wrong codes for this name (anyone can cause it): say so rather than "could not reach the sheet" (code re-review L3).
   if (SYNC.err === 'wait') return 'Not saved yet: too many wrong codes for this name, try again in 10 minutes';
+  if (SYNC.err === 'reserved') return 'Not saved: this name is reserved, please choose another'; // sheet vNEXT (core.js reservedName)
   const n = (SYNC.log || []).filter(a => !winkEntry(a)).length; // a surprise card's answer is no answer to the player (core.js)
   if (SYNC.err)
     return n

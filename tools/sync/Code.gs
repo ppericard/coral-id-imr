@@ -197,6 +197,7 @@ function load_(name, row, q){
 //   answers: [{id, t, g, a, ok, m, ph, e, th, nw, ch, rt, zm, tz}], at: revision merged against (optional)} → {ok, log: true, rev}.
 // log tells the app its answers are saved; they are logged first, so they are kept even if the progress write fails.
 // at ≠ the saved revision → {ok: false, error: 'stale', log: true}: another device wrote meanwhile; the app pulls, merges, resends.
+// vNEXT: no account yet and a reserved name (core.js reservedName) → {ok: false, error: 'reserved'}, nothing logged or written.
 // POST {reports: [...], rname, rpin} → {ok, rep: true}: players' reports (logReports_, v7). The reporter goes in rname/rpin,
 // never name/pin, so an older script answers 'input' and never mistakes a report for an empty progress write.
 function doPost_(e){
@@ -243,6 +244,9 @@ function doPost_(e){
       let d = {}; try { d = JSON.parse(readData_(String(sh.getRange(r, 1).getValue()), String(sh.getRange(r, 8).getValue() || '')).json || '{}') || {}; } catch (e) {}
       if (d._acct && d._acct !== p.acct) return json_({ok: false, error: 'archived'});
     }
+    // vNEXT (Pierre, 2026-11-09): no new account under a reserved name (core.js reservedName: a word such as constructor,
+    // __proto__ or toString), refused before anything is logged or written; an account that has one already saves as before.
+    if (!r && CORE_.reservedName(name)) return json_({ok: false, error: 'reserved'});
     const saved = r ? readData_(name, String(sh.getRange(r, 8).getValue() || '')) : {json: '{}', rev: 0}, rev = saved.rev;
     // v116: a light save against another revision than the saved one (another device wrote since) is answered 'stale'
     // before anything is counted or logged, with the load of the copy there (load_), read once the lock is released, as a
@@ -743,12 +747,12 @@ const anonFlag_ = (w, arch) => (String(w).indexOf('~anon ') === 0 ? 1 : String(w
 function answers_(q){
   // v55: the roster read before the answers (Codex review #600): a removal while they are read leaves the report stale.
   const ss = SpreadsheetApp.getActiveSpreadsheet(), out = {ok: true, rows: [], players: {}, roster: rosterAt_()}, sh = ss.getSheetByName('Answers'), ra = ss.getSheetByName('RAs');
-  const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();
+  const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // vNEXT: by name, no prototype (a player named constructor)
   out.excluded = [...sxSet_()];  // v115: the ids left out of the statistics (sxSet_), for the Analyses report and the admin
   // me: the caller's own id, only with its name and right code (the admin page marks "you").
   const {name, pin} = clean_(q || {});
   if (name && /^\d{4}$/.test(pin) && ra && !blocked_(name)) { const r = find_(ra, name); if (r && ra.getRange(r, 7).getValue() === hash_(name, pin)) out.me = id(name); else if (r) failed_(name); }
-  const big = {}; const dt = ss.getSheetByName(DATA_TAB);
+  const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[String(r[0]).toLowerCase()] = r.slice(2).map(String).join(''); });
   // v98: a surprise card's answer (core.js winkRow) is served to no reader: the admin's pages and analyses never count it.
   if (sh && sh.getLastRow() > 1) out.rows = logRows_(sh, LOG.length).filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
@@ -779,7 +783,7 @@ const LIVE_N = 50;
 function live_(){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName('Answers'), out = {ok: true, rows: [], last: {}, n: 0, k: 0, roster: rosterAt_()};
   if (!sh || sh.getLastRow() < 2) return out;
-  const salt = anonSalt_(), ids = {}, id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();
+  const salt = anonSalt_(), ids = Object.create(null), id = n => ids[n] = ids[n] || aid_(n, salt), arch = archivedSet_();  // vNEXT: by name, no prototype (a player named constructor)
   const n = out.n = sh.getLastRow() - 1, k = out.k = Math.min(n, LIVE_N), w = sh.getMaxColumns ? Math.min(LOG.length, sh.getMaxColumns()) : LOG.length;
   out.rows = sh.getRange(n - k + 2, 1, k, w).getValues().map(r => w < LOG.length ? r.concat(new Array(LOG.length - w).fill('')) : r)
     .filter(r => r[0] && !CORE_.winkRow(r)).map(r => answerOut_(r, id, arch));
@@ -1486,7 +1490,7 @@ function boardWarm_(){
 function achs_(){
   const cache = CacheService.getScriptCache(), hit = cache.get('achs15');
   if (hit) return JSON.parse(hit);
-  const out = {ok: true, n: 0, counts: {}};
+  const out = {ok: true, n: 0, counts: Object.create(null)};  // vNEXT: by achievement id as a device saved it, no prototype
   liveRows_().forEach(r => {  // v58: an archive holds no share
     let A = null;
     try { A = JSON.parse(dataKey_(JSON.parse(readData_(String(r[0]), String(r[7] || '')).json || '{}'), 'ach') || 'null'); } catch (e) {}
@@ -1504,7 +1508,8 @@ function achs_(){
 //     modes: {mode: [answers, right]}, recent: [answers, right] (last 50), mix: [[shown, answered, times]] (top 5),
 //     reports, size}], removed: [{name, into, time}]}
 //   {userArchive: {from, into}, token} → {ok, answers, reports}: the record moves to an archive name, Board -2, out of
-//     normal operation (v58, was userRename v20); 'exists' when the new name is taken, 'archived' for an archive.
+//     normal operation (v58, was userRename v20); 'exists' when the new name is taken, 'archived' for an archive,
+//     'reserved' (vNEXT) for a reserved archive name (core.js reservedName).
 //   {userBoard: name, hide, token} → {ok, board}: hidden from the leaderboard by an admin (-1) or shown again (1) (v20).
 //   {userData: name, token} → {ok, rev, data}: that player's saved progress (the admin merges two players in the browser,
 //     with core.js mergeUsers, then sends the result back with userMerge).
@@ -1576,9 +1581,10 @@ function groupRows_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(GROUPS.TAB);
   return sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues() : [];
 }
-// name (lower case) -> the groups of a subject still in beta it is in, each once.
+// name (lower case) -> the groups of a subject still in beta it is in, each once. vNEXT: no prototype, so a player named
+// constructor or __proto__ is in their own groups, never Object's member (reserved names, Pierre 2026-11-09).
 function groupMap_(){
-  const ok = groupIds_(), m = {};
+  const ok = groupIds_(), m = Object.create(null);
   groupRows_().forEach(r => { const g = String(r[0]), k = lc_(r[1]); if (k && ok.indexOf(g) >= 0 && (m[k] = m[k] || []).indexOf(g) < 0) m[k].push(g); });
   return m;
 }
@@ -1588,12 +1594,12 @@ function groupSet_(ra, names, g, on){
   const sh = sheet_(GROUPS.TAB, GROUPS.HEAD), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
   let n = 0;
   if (on) {
-    const add = [], seen = {};  // v58: live players only, never an archive
+    const add = [], seen = Object.create(null);  // v58: live players only, never an archive
     names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date()]); });
     if (add.length) sh.getRange(sh.getLastRow() + 1, 1, add.length, GROUPS.HEAD.length).setValues(add);
     return add.length;
   }
-  const out = {}; names.forEach(x => (out[lc_(x)] = 1));
+  const out = Object.create(null); names.forEach(x => (out[lc_(x)] = 1));
   for (let i = rows.length - 1; i >= 0; i--) if (String(rows[i][0]) === g && out[lc_(rows[i][1])]) { sh.deleteRow(i + 2); n++; }
   return n;
 }
@@ -1812,6 +1818,7 @@ function users_(p){
       if (p.userArchive) {
         const m = p.userArchive || {}, a = row_(String(m.from || '')), into = String(m.into || '').trim().slice(0, 40);
         if (!a || !into) return {ok: false, error: 'user'};
+        if (CORE_.reservedName(into)) return {ok: false, error: 'reserved'};  // vNEXT: no archive under a reserved name either
         if (archived_(a.v)) return {ok: false, error: 'archived'};
         if (row_(into)) return {ok: false, error: 'exists'};
         const from = String(a.v[0]);
@@ -1870,7 +1877,8 @@ function users_(p){
   // The list, with each player's numbers from the Answers and Reports tabs.
   // id (v13): the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
   // v58: archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
-  const out = {ok: true, users: [], removed: [], archived: []}, by = {}, dcol = {}, salt = anonSalt_(), arch = {};
+  // vNEXT: every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
+  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null);
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {
     const u = {name: String(r[0]), id: aid_(String(r[0]), salt), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
@@ -1878,7 +1886,7 @@ function users_(p){
     out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
   });
   // v60: the replayed subject's answers (the corals'), as before fish answers were logged: its mix-ups name its genera.
-  const an = ss.getSheetByName('Answers'), days = {}, mixes = {}, last50 = {}, all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
+  const an = ss.getSheetByName('Answers'), days = Object.create(null), mixes = Object.create(null), last50 = Object.create(null), all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
   all.filter(replayed_).forEach(r => {
     const u = by[lc_(r[0])]; if (!u) { const a = arch[lc_(r[0])]; if (a) a.answers++; return; }
     const t = new Date(r[1]).getTime() || 0, ok = Number(r[4]) ? 1 : 0, mode = String(r[5]).split('|')[0] || '?', k = lc_(u.name);
@@ -2046,7 +2054,7 @@ function photoAlert_(name, rows){
 function replayedAll_(users, dcol){
   const gen = gen_(), list = slate_();
   if (!gen || !list || !users.length) return;
-  const ss = SpreadsheetApp.getActiveSpreadsheet(), st = stats_(), big = {}, mine = {}, cached = {};
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), st = stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // vNEXT: by player, no prototype
   const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[lc_(r[0])] = r.slice(2).map(String).join(''); });
   answerRows_().forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); });
@@ -2068,7 +2076,9 @@ function replayedAll_(users, dcol){
       try { rec = JSON.parse(c.r.slice(5).map(String).join('') || '{}'); } catch (e) { rec = null; }
     }
     if (!rec) {
-      const rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}})[k];
+      // vNEXT: the player's own entry only (a player named constructor never takes the map's inherited member).
+      const R = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[k]: start} : {}}),
+        rep = Object.prototype.hasOwnProperty.call(R, k) ? R[k] : null;
       rec = rep ? rep.P : {};
       const json = JSON.stringify(rec), parts = [];
       for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
@@ -2186,7 +2196,7 @@ const ONCE_ = {
       const v = rp.getRange(2, 1, rp.getLastRow() - 1, 1).getValues();
       for (let i = v.length - 1; i >= 0; i--) { const w = lc_(v[i][0]); if (w.indexOf('~anon ') === 0 && !names.has(w)) { rp.deleteRow(i + 2); a++; } }
     }
-    const rm = ss.getSheetByName('Removed'), gone = {};
+    const rm = ss.getSheetByName('Removed'), gone = Object.create(null);
     if (rm && rm.getLastRow() > 1) rm.getRange(2, 1, rm.getLastRow() - 1, REMOVED.length).getValues()
       .forEach(r => { const k = lc_(r[0]); if (k && !String(r[2] || '')) gone[k] = Math.max(gone[k] || 0, new Date(r[3]).getTime() || 0); });
     const re = ss.getSheetByName('Reports');
@@ -3884,7 +3894,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // quiz or quiz|…, duels slipped into the quiz included), in its last 50, and in the Duel tab (quiz-duel…). Other
   // games are in neither. rows: readAnswers rows [id, t, shown, answered, ok, mode, …].
   function playSplit(rows) {
-    const out = {};
+    const out = Object.create(null); // by player, no prototype (trustOf)
     (rows || [])
       .slice()
       .sort((a, b) => a[1] - b[1])
@@ -3905,9 +3915,11 @@ const CORE_ = (function () { const module = {exports: {}};
     const {R} = eloReplay(rows || []);
     return Object.fromEntries(Object.entries(R).map(([k, r]) => [k, r[2] > 0 ? 1.96 / Math.sqrt(r[2]) : Infinity]));
   }
+  // Keyed by player (names lower-cased in the sheet, anonymous ids in the admin), with no prototype: a player named
+  // constructor or __proto__ is an entry like any other, never Object's member (reserved names, Pierre 2026-11-09).
   function trustOf(rows) {
-    const T = {},
-      out = {};
+    const T = Object.create(null),
+      out = Object.create(null);
     rows.forEach(r => {
       if (!r[0]) return;
       const t = (T[r[0]] = T[r[0]] || [0, 0, 0, 0, 0]),
@@ -3981,7 +3993,7 @@ const CORE_ = (function () { const module = {exports: {}};
     const P = {},
       PG = {},
       G = {},
-      R = {},
+      R = Object.create(null), // by player, no prototype (trustOf)
       H = {},
       trust = trustOf(rows),
       mem = MEM.PRIOR.slice(),
@@ -4224,6 +4236,34 @@ const CORE_ = (function () { const module = {exports: {}};
     return w ? w[0].toUpperCase() + w.slice(1) : '';
   };
   const sorryHi = name => (firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!');
+  // Account names refused for a new account or an archive name (Pierre, 2026-11-09): a name holding, as one of its words,
+  // a member name of Object.prototype or a word like it (prototype). Such a name, as a key of a plain object (the sheet's
+  // maps by player: stats, replays, board, groups), reads the inherited member instead of an entry; the code no longer
+  // relies on it (maps with no prototype), and the front door refuses them too. Words split as Code.gs PROTO_RE splits a
+  // value (spaces, | : ,), any capitalisation (the sheet matches names case-blind, and keys them in lower case). An
+  // account that already has such a name keeps working: only a sign-up (the app's form, Code.gs doPost_ with no row
+  // yet) and an archive name (users_ userArchive) are refused, with error 'reserved'. The list is the one Pierre saw;
+  // whatever else this engine's Object.prototype has is refused as well.
+  const RESERVED_NAMES = [
+    '__proto__',
+    'constructor',
+    'prototype',
+    'toString',
+    'toLocaleString',
+    'valueOf',
+    'hasOwnProperty',
+    'isPrototypeOf',
+    'propertyIsEnumerable',
+    '__defineGetter__',
+    '__defineSetter__',
+    '__lookupGetter__',
+    '__lookupSetter__'
+  ];
+  const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
+  const reservedName = name =>
+    String(name == null ? '' : name)
+      .split(/[\s|:,]+/)
+      .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -5420,7 +5460,7 @@ const CORE_ = (function () { const module = {exports: {}};
   function exposureOf(rows, pool) {
     const P = pool || {},
       col = new Map(),
-      by = {};
+      by = Object.create(null); // by player, no prototype (trustOf)
     Object.entries(P).forEach(([u, L]) => L.forEach((c, i) => c.forEach(f => col.set(u + '|' + f, i))));
     (rows || [])
       .map((r, i) => [r, i])
@@ -7583,6 +7623,8 @@ const CORE_ = (function () { const module = {exports: {}};
     LEVEL,
     SORRY,
     firstName,
+    RESERVED_NAMES,
+    reservedName,
     sorryFelt,
     sorryOf,
     sorryDue,

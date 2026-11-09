@@ -8618,6 +8618,8 @@ function bindUsers() {
         const name = b.dataset.uarch,
           into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
         if (!into || into === name) return;
+        // A reserved name (core.js reservedName; Pierre, 2026-11-09) is refused here as the sheet refuses it (vNEXT).
+        if (reservedName(into)) return toast(`"${into}" is a reserved name: please choose another.`);
         if (
           !confirm(
             `Archive "${name}" as "${into}"?\n\nTheir answers, reports and progress are kept apart under "${into}", out of the leaderboard, the players, the beta groups and every count; their answers still rate the photos. Their devices are told the record was archived and asked to sign out.\n"${name}" is free again: its owner can sign in under it and start fresh.`
@@ -8628,9 +8630,11 @@ function bindUsers() {
           .then(j =>
             j && j.error === 'exists'
               ? toast(`"${into}" is already a player.`)
-              : j && j.error === 'input'
-                ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
-                : done(`"${name}" archived as "${into}".`, j)
+              : j && j.error === 'reserved'
+                ? toast(`"${into}" is a reserved name: please choose another.`)
+                : j && j.error === 'input'
+                  ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
+                  : done(`"${name}" archived as "${into}".`, j)
           )
           .catch(() => done('', null));
       })
