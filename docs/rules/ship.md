@@ -379,8 +379,9 @@ checked before it launches or relaunches an agent:
   round. Findings that keep coming on the same part point to a structural problem: that part restarts from a short
   design note (the need, the model that removes the whole class of cases, e.g. one writer instead of locks around many),
   not from a fix of the latest case. Spotting the structural problem and choosing the model is the agents' and the
-  integrator's job, not Pierre's (Pierre, 2026-11-09: "c'est pas à moi de trouver les solutions"); he hears of it only
-  when the choice changes what he or the players see.
+  integrator's job, not Pierre's (Pierre, 2026-11-09: "c'est pas à moi de trouver les solutions"; "ça reste vous, les
+  designers"). When the choice changes what he or the players see, he gets the options, each with its benefits and
+  risks, and the one recommended.
 - **A simulation reads only what is declared**: answers capped at the largest count a guardrail or the primary reads,
   and an unclear cell's second look on that cell alone. A check longer than 30 minutes is a tooling bug to fix.
 - **One train at a time** (`tools/train.py` through a queue, never two in parallel).
