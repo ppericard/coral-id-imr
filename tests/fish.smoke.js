@@ -1281,7 +1281,14 @@ async function freshPlayers(b, base, errs) {
           !!d.querySelector('.fb > p.vs:not(.tyread)')
         ];
       };
-      return {sol: at('Holocentridae', 'f:Soldierfishes'), wr: at('Holocentridae', 'f:Wrasses')};
+      return {
+        sol: at('Holocentridae', 'f:Soldierfishes'),
+        wr: at('Holocentridae', 'f:Wrasses'),
+        shr: at('razorfish', 'f:Shrimpfishes'),
+        ini: at('razorfish', 'f:Wrasses'),
+        pipe: at('razorfish', 'f:Pipefishes'),
+        sp: at('Peacock razorfish', 'f:Wrasses')
+      };
     });
     if (
       shared.sol[0] !== 'f:Soldierfishes' ||
@@ -1290,7 +1297,15 @@ async function freshPlayers(b, base, errs) {
       shared.wr[0] !== '' ||
       !/^✗ No, it's Wrasses/.test(shared.wr[1]) ||
       shared.wr[2] !== '“Holocentridae” names the Soldierfishes and the Squirrelfishes.' ||
-      shared.wr[3]
+      shared.wr[3] ||
+      // the name index (Q320): razorfish, the Shrimpfishes' and some wrasses'; a species' name, its family's
+      shared.shr[2] !== '“razorfish” is a name of the Shrimpfishes. It is also used for some Wrasses.' ||
+      shared.ini[0] !== 'f:Wrasses' ||
+      shared.ini[2] !== '“razorfish” is a name of some Wrasses. It is also used for the Shrimpfishes.' ||
+      shared.pipe[0] !== '' ||
+      shared.pipe[2] !== '“razorfish” names the Shrimpfishes and some Wrasses.' ||
+      !/^✓ Yes, it's Wrasses/.test(shared.sp[1]) ||
+      shared.sp[2] !== '“Peacock razorfish” is one of the Wrasses.'
     )
       ui.push(`${width}px a shared name typed: ${JSON.stringify(shared)}`);
     await wide('the answer');
