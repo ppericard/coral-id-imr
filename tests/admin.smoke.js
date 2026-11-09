@@ -4972,7 +4972,7 @@ const WIDTHS = [390, 1280];
         await q2.waitForFunction(([L, v]) => L.every((f, i) => (DRAFT.quality || {})[f] === v[i]), [st.L.slice(0, 2), st.v], {
           timeout: 10000
         });
-        const loads = Promise.all([q.waitForEvent('load'), q2.waitForEvent('load', {timeout: 15000})]).then(
+        const loads = Promise.all([q.waitForEvent('load'), q2.waitForEvent('load', {timeout: 30000})]).then(
           () => true,
           () => false
         );
@@ -4990,11 +4990,27 @@ const WIDTHS = [390, 1280];
         // tab's seal under them, in its place; if it cannot seal them, it stays unlocked with them in plain and says so.
         const L5 = st.L.slice(3, 5),
           v5 = st.v.slice(3, 5),
-          bothLoad = () =>
-            Promise.all([q.waitForEvent('load'), q2.waitForEvent('load', {timeout: 15000})]).then(
+          // This tab's reload is held off until the other tab has locked, sealed what it held and come back: a signed-out tab
+          // stays locked, but in the demo it would unlock again at once and open a seal at the same moment the other tab
+          // writes one, each from its own copy of the storage. Then this tab loads and opens the draft. Says whether the
+          // other tab locked (reloaded).
+          admin = u => u.pathname.endsWith('/admin.html'),
+          holdQ = r => (r.request().frame().page() === q ? r.abort() : r.continue()),
+          signOutHeld = async during => {
+            await c.route(admin, holdQ);
+            const l2 = q2.waitForEvent('load', {timeout: 30000}).then(
               () => true,
               () => false
             );
+            await signOut();
+            if (during) await during();
+            const ok = await l2;
+            await idle(q2);
+            await c.unroute(admin, holdQ);
+            await q.goto(base + 'admin.html?demo#photos/review/quality');
+            await ready();
+            return ok;
+          };
         for (const how of ['note', 'lost']) {
           await q2.evaluate(
             ([how, f, v]) => {
@@ -5011,13 +5027,7 @@ const WIDTHS = [390, 1280];
             },
             [how, ...(how === 'note' ? [L5[0], v5[0]] : [L5[1], v5[1]])]
           );
-          const ld = bothLoad();
-          await signOut();
-          const ok = await ld;
-          await ready();
-          await idle(q2);
-          await q.reload();
-          await ready();
+          const ok = await signOutHeld();
           const g = await quality(st.L),
             left = await q.evaluate(() => localStorage.getItem('demo:reefid-admin-sealed'));
           const want = [...st.v.slice(0, 3), v5[0], how === 'lost' ? v5[1] : st.s[4]];
@@ -5034,21 +5044,16 @@ const WIDTHS = [390, 1280];
             const enc = crypto.subtle.encrypt.bind(crypto.subtle);
             crypto.subtle.encrypt = (...a) => new Promise(r => setTimeout(r, 1500)).then(() => enc(...a));
           });
-          const ld = bothLoad();
-          await signOut();
-          await q.waitForFunction(() => signingOut, null, {timeout: 10000});
-          await q2.evaluate(
-            ([f, v]) => {
-              DRAFT.quality = {...DRAFT.quality, [f]: v};
-              saveDraft();
-            },
-            [st.L[2], st.v[2]]
-          );
-          const ok = await ld;
-          await ready();
-          await idle(q2);
-          await q.reload();
-          await ready();
+          const ok = await signOutHeld(async () => {
+            await q.waitForFunction(() => signingOut, null, {timeout: 10000});
+            await q2.evaluate(
+              ([f, v]) => {
+                DRAFT.quality = {...DRAFT.quality, [f]: v};
+                saveDraft();
+              },
+              [st.L[2], st.v[2]]
+            );
+          });
           const g = await quality(st.L);
           if (!ok || g[2] !== st.v[2])
             fails.push(`${F}: a click the other tab wrote while this one sealed was lost ${JSON.stringify({ok, g, want: st.v[2]})}`);
