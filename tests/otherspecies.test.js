@@ -127,11 +127,16 @@ print(json.dumps([G.record(s, p, cur['fish'], sug, o, None, r) for s, p, o, r in
     rec(7, 'p1g0smo', 'cand')
   ];
   assert.deepStrictEqual(
-    recs.filter(p => C.fishIn(CUR.fish, p, gone)).map(p => p.f),
+    recs.filter(p => C.fishIn(CUR.fish, p, gone, CUR.fish.tags[p.f])).map(p => p.f),
     [f(2), f(4), f(6), f(7)]
   );
   // An older list still holding his legacy m (before the build sorted it): out until the build runs (conservative).
   assert.ok(!C.fishIn(CUR.fish, rec(2, 'p1g0smm'), gone));
+  // The players' copy has no tags (tools/curplay.py): the record's count alone decides, the same result on the built list.
+  assert.deepStrictEqual(
+    recs.filter(p => C.fishIn({...CUR.fish, tags: undefined}, p, gone)).map(p => p.f),
+    [f(2), f(4), f(6), f(7)]
+  );
   // A stopgap photo with k never joins; with o it does.
   const P = C.fishPhotos(
     {

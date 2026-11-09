@@ -963,9 +963,9 @@
   // fish_in is its copy).
   // An automatic add of the auto-sort he undid counts as decided against too (its log code '-a...', autosort.js fishUndo:
   // "the photo waits for his decision"; Codex review #674). Never a photo whose count in force (fishCount: Pierre's tag,
-  // his legacy m refined by the record's) is other species one could take for its subject (fishOther, Q323): in the admin,
-  // which reads his whole curation, his tag applies at once; the players' curation leaves the tags out (tools/curplay.py),
-  // so the app reads the record's jt, which tools/fish_game.py writes from his tag.
+  // his legacy m refined by the record's) is other species one could take for its subject (fishOther, Q323): the admin,
+  // which reads his whole curation, passes his tag (mine), so it applies at once there; the players' curation leaves the
+  // tags out (tools/curplay.py), so the app reads the record's jt, which tools/fish_game.py writes from his tag.
   const fishGone = (cur, F = (cur && cur.fish) || {}) =>
     new Set(
       [
@@ -974,8 +974,8 @@
         ...Object.keys((cur && cur.exclude) || {})
       ].map(f => fishPid(f))
     );
-  const fishIn = (F, p, gone) =>
-    !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f)))) && !fishOther(((F && F.tags) || {})[p.f], p.jt);
+  // mine: Pierre's tag on the photo (curation.json fish tags), passed by the admin only (autosort.js fishGameIn).
+  const fishIn = (F, p, gone, mine) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f)))) && !fishOther(mine, p.jt);
   // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
   // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
   // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),

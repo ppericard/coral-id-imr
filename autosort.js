@@ -323,7 +323,7 @@
   function fishGameIn(game, cur) {
     const F = (cur && cur.fish) || {},
       gone = fishGone(cur || {}, F);
-    return (game || []).filter(p => p && p.f && p.sp && fishIn(F, p, gone)).map(p => ({...p, sid: p.sp}));
+    return (game || []).filter(p => p && p.f && p.sp && fishIn(F, p, gone, (F.tags || {})[p.f])).map(p => ({...p, sid: p.sp}));
   }
   // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
   // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
