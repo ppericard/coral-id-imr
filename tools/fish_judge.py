@@ -36,7 +36,11 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_judge.json"
 REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/fish_refs.py)
 PHOTOS = ROOT / "fish-photos.json"
-CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smx])([jca]*)([1-5])$")
+# The count (7th letter): 1, s, o (other species, no risk of confusion), k (other species one could take for the subject),
+# x; m, the code for other species before Pierre's split (2026-11-09, Q323), stays readable as "not sorted yet" (core.js
+# FISH_COUNT), never typed in a new judgement (NEW_COUNT, tools/judging_fish.py --check).
+CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jca]*)([1-5])$")
+NEW_COUNT = "1sokx"
 EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
@@ -148,8 +152,8 @@ def ref_level(p):
     look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school; no j, c or a); in both
     cases one kind of fish (count 1 or s)."""
     e, jt = p.get("e") or 0, p.get("jt") or ""
-    # Never a photo with other kinds of fish (count m) or an unclear subject (x), whatever its source (rule P3: one
-    # species per game photo; Codex review #660).
+    # Never a photo with other species in view (count o, k, the legacy m) or an unclear subject (x), whatever its source
+    # (rule P3: one species per reference photo; Codex review #660; o is in play, not a reference: Q323).
     if len(jt) < 7 or jt[6] not in "1s":
         return False
     return (e >= EARLY and bool(p.get("rep"))) or (e == 5 and bool(LOOK.match(jt[:7])) and not set(jt[7:]) & set("jca"))

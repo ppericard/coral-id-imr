@@ -45,7 +45,7 @@
    "keep": "best"
   },
   "fish-s036-cand-427617345": {
-   "code": "p1g2ssm1",
+   "code": "p1g2sso1",
    "keep": "best"
   },
   "fish-s036-cand-427617352": {
@@ -61,7 +61,7 @@
    "keep": "dup"
   },
   "fish-s036-cand-495094435": {
-   "code": "p1g2ssm1",
+   "code": "p1g2sso1",
    "keep": "best"
   },
   "fish-s036-cand-114907690": {
@@ -110,7 +110,7 @@
    "keep": "best"
   },
   "fish-s036-cand-617070146": {
-   "code": "p1g1mmm2",
+   "code": "p1g1mmo2",
    "keep": "best"
   },
   "fish-s036-cand-649884615": {
@@ -130,11 +130,11 @@
    "keep": "best"
   },
   "fish-s036-cand-617070147": {
-   "code": "p1g2smm2",
+   "code": "p1g2smo2",
    "keep": "best"
   },
   "fish-s036-cand-333786776": {
-   "code": "o1g3blm1",
+   "code": "o1g3blo1",
    "keep": "best"
   },
   "fish-s036-cand-37066879": {
@@ -149,7 +149,7 @@
    "note": "A sliver of a yellow fish in the top-left corner; the crop leaves it out."
   },
   "fish-s036-cand-267112745": {
-   "code": "o1d1slm2",
+   "code": "o1d1slo2",
    "keep": "best"
   },
   "fish-s036-cand-588712557": {
@@ -157,7 +157,7 @@
    "keep": "best"
   },
   "fish-s036-cand-465505381": {
-   "code": "p1d2smm2",
+   "code": "p1d2smo2",
    "keep": "best"
   }
  }

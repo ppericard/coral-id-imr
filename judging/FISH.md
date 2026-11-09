@@ -41,7 +41,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | 4 | **colour loss** | how much of the fish's colours the water took (Pierre, 2026-11-04: not a "cast", whose blue or green only follows the water and the light): `0` none; `1` slight (reds and yellows still visible); `2` strong (the warm colours mostly gone); `3` monochrome (only blue or green: deep water, low light) |
 | 5 | **clarity** | `s` sharp; `m` soft (some blur, haze, noise, the fish still clear); `b` blurred or murky (backscatter, milky water, motion blur that hides the pattern) |
 | 6 | **size** | `l` large (the fish spans a third of the frame width or more); `m` medium (a sixth to a third); `s` small (under a sixth) |
-| 7 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `m` other kinds of fish too, the subject obvious; `x` the subject is not obvious (which fish is asked about?) |
+| 7 | **count** | `1` one fish (others, if any, tiny and far); `s` several of the same kind, the subject obvious (a pair, a school); `o` other species in view, no risk of taking one for the subject (below, "Other species: the split"); `k` other species in view, one of which could be taken for the subject (confusion possible); `x` the subject is not obvious (which fish is asked about?). `m` ("other kinds of fish too", before 2026-11-09) is read as not sorted yet, never typed again |
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **out of water** (a fish on a net, in a hand, dead) |
@@ -146,7 +146,7 @@ already in play** (another photo of it is a game photo) is judged against that o
 
 **Reference level** (`core.js` `refLevel`): a photo with `rep` judged very easy (4-5), or any photo judged 5 whose tags
 read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`, `c` or `a`), whoever took it; in both cases
-one kind of fish only (count `1` or `s`: never other kinds of fish nor an unclear subject, rule P3). A
+one kind of fish only (count `1` or `s`: never other species in view, `o` or `k`, nor an unclear subject, rule P3). A
 reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
 
@@ -249,8 +249,9 @@ or Pierre's own), taken as given: no field says whether a photo shows the right 
 
 **What a sure judgement does** (no `unsure`; `autosort.js` `fishSure`): `best` or `alt` → **in play at once**, with its
 tags, ease, phase and crop, whatever its ease (hard photos stand in for SVS video frames; the judged ease is the photo's
-prior difficulty, the players' answers refine it); `dup`, an unclear subject (count `x`), other kinds of fish (count `m`:
-rule P3, as for the reference photos) or a fish out of the water (flag `a`) → stays out. Pierre, 2026-11-06 15:16 and
+prior difficulty, the players' answers refine it), and other species with no risk of confusion (count `o`) as one
+fish; `dup`, an unclear subject (count `x`), other species one could take for the subject (count `k`: rule P3, as for the
+reference photos) or a fish out of the water (flag `a`) → stays out; the legacy `m` (not sorted) stays out and waits. Pierre, 2026-11-06 15:16 and
 16:20 (Q180, Q199): a judged candidate enters the game by itself, treated exactly like a photo he adds in the admin and
 hosted on R2 like it (`tools/fish_game.py` `in_play`, the Candidate photos workflow), each judged batch as soon as it
 is ready, without waiting for his swipe; his curation only removes or corrects (a photo he rejects, excludes or moves
@@ -258,6 +259,35 @@ with Not this leaves the game at once, `core.js` `fishIn`). The admin's auto-sor
 into his draft (admin plan PR 4), and about 1 candidate in 20 goes to him as a Check, his answers measuring the
 agreement. So add `unsure` at the least doubt: an unsure candidate stays out of the game until a fresh look settles it,
 while a wrong sure decision costs the players.
+
+## Other species: the split (2026-11-09)
+
+Pierre, 2026-11-09 (Q323): of the photos with other kinds of fish he had accepted, some show them with no risk of
+confusing them with the main fish, others where the confusion is real. The one code `m` became two, and both automatic
+routes follow the same rule (`autosort.js` `fishSure`, `tools/fish_game.py` `judged_sure`, through `core.js`
+`FISH_COUNT`; `tests/otherspecies.test.js`):
+
+- `o` **no confusion risk** (in play): the other fish could not be taken for the main one at the level the game asks
+  (its family, or its genus for a circle-1 species, whose genus is a unit too): it is clearly not the subject (much
+  smaller, far, blurred, cut by the frame, half hidden), or it belongs to the same family and, for a circle-1 species, the
+  same genus (the same answer).
+- `k` **confusion possible** (never in play, rule P3): another fish of a different family (or genus, at the genus level)
+  is about as large, sharp and central as the main one, so a player could name it instead: two species side by side, a
+  cleaner wrasse on a large client, a remora on its host, a mixed school.
+- When in doubt, `k` with `unsure` and a note: the photo stays out until Pierre decides (the cost of a wrong `o` falls on
+  the players). `m`, the code before the split, reads as not sorted yet, so as `k` (out, never decided by the auto-sort);
+  a new judgement never types it (`tools/judging_fish.py --check`).
+
+The pass of 2026-11-09 sorted every photo that carried `m` and was in play or waiting, on contact sheets of 12 (the
+main species and its family named on each tile): Pierre's adds (the auto-sort's: 166), the candidates still waiting
+(760), the stopgap game photos (87) and the reference photos (34), 1,047 in all (and one stale code). Pierre's adds keep
+his tags in `curation.json` (rule A1): their sorted count is the pass's, in `judging/fish/<species>.json`, which
+`python3 tools/judging_fish.py codes` copies into `suggest.json` (codes, `unsure` and notes of the photos already judged,
+without a whole species' `--check`), and `tools/fish_game.py` reads it over his legacy `m` (`count_of`); the stopgap and
+reference codes are `tools/fish_judge.json`'s. Result: no risk 615 (Pierre's adds 100, candidates 422, stopgap 63,
+reference 30), confusion possible 405 (52, 331, 20, 2), doubtful 27 (14, 7, 4, 2), kept out as `k` and listed for Pierre
+in admin Points ("Other species in view: confusion possible or not?"). His adds held out show on their family page
+under "Other species, out of play", where Keep in play sets `o` in one tap.
 
 ## Agreement with other sources
 

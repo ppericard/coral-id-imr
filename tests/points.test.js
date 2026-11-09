@@ -43,7 +43,9 @@ test('points.json: a photo in points.json names a photo id or an https copy, wit
     .forEach(x => {
       if (x.none) return;
       assert.ok(x.a, 'credit');
-      if (x.src) assert.match(x.src, /^https:\/\/inaturalist-open-data\.s3\.amazonaws\.com\//); // admin.html CSP img-src
+      // admin.html CSP img-src: iNaturalist's photo hosts, and FishBase's for a fish reference or stopgap photo
+      if (x.src)
+        assert.match(x.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.(de|se))\//);
     });
 });
 

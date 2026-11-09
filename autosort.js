@@ -81,13 +81,16 @@
   // criteria only: the species is the iNaturalist experts' identification, never judged here.
   // - any field in `u` (unsure): Pierre's;
   // - a near-duplicate: rejected;
-  // - the subject not obvious (count x: which fish is asked about?) or out of the water (flag a): rejected, as several
-  //   corals are for corals;
+  // - the subject not obvious (count x: which fish is asked about?), other species one could take for the subject at the
+  //   game's rank (count k: rule P3) or out of the water (flag a): rejected, as several corals are for corals;
+  // - other species in view, not sorted yet (count m, the code before Pierre's split, 2026-11-09, Q323): his, never
+  //   added (as k until sorted); other species in view with no risk of confusion (count o): added like one fish.
+  //   The counts it may add are core.js FISH_COUNT.play, the same as tools/fish_game.py judged_sure (tests/autosort.test.js).
   // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames; the ease
   //   says how hard, it is never a reason to set one aside).
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
   // The flags after the seven tags: j c a typed by the judge, p (phase) and r (a reference photo, its `rep`) added by the tool.
-  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/;
+  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/;
   // The doubts that weigh on the photo itself: every unsure field but the fish's box (bb), whose doubt only withholds the
   // photo's tile (tools/fish_game.py unsure, box_of; Codex review #826).
   const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
@@ -96,7 +99,9 @@
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
     if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};
+    if (j.jt[6] === 'k') return {keep: 'reject', why: 'other species'};
     if (j.jt.slice(7).includes('a')) return {keep: 'reject', why: 'out of water'};
+    if (!FISH_COUNT.play.includes(j.jt[6])) return null;
     if (j.k === 'best' || j.k === 'alt') return {keep: 'add', tags: j.jt, ease: j.e, phase: j.ph || null, crop: j.c || null};
     return null;
   }
@@ -169,7 +174,7 @@
   // licence or Pierre's own before CC BY-NC (core.js rightsRank, a tie-break only: Pierre, 2026-11-08, Q270), then a fixed
   // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
   // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid} =
+  const {refScore, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid, FISH_COUNT, fishOther} =
     typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
@@ -197,9 +202,11 @@
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && (obsOf[p.f] = p.o || p.f)));
     const room = {};
     // In play as the swiper counts it (fishOn): a photo Pierre moved with Not this and added to its new species counts
-    // there (Codex review #602: fishMine reads its first species, where it is a reject).
+    // there (Codex review #602: fishMine reads its first species, where it is a reject). An add with other species one
+    // could take for its subject (core.js fishOther: his tag, his legacy m refined by the pass's; Q323) is out of play,
+    // so it holds no room.
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (!fishOn(F, f, sid)) return;
+      if (!fishOn(F, f, sid) || fishOther((F.tags || {})[f], ((sug || {})[f] || {}).jt)) return;
       (room[sid] = room[sid] || new Set()).add(obsOf[f] || f);
     });
     const N = {...F, add: {...(F.add || {})}, seen: {...(F.seen || {})}},
@@ -297,14 +304,17 @@
   // ---- Fish Candidates (admin plan PR 5a and 5b; Pierre, 2026-11-04) ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
   // one observation).
-  // game: fishGameIn's records (the photos the game plays whatever their route), counted beside the adds.
-  function fishPlay(cands, F, game) {
+  // game: fishGameIn's records (the photos the game plays whatever their route), counted beside the adds. sug: the pass's
+  // judgments (suggest.json "fish"): an add held out for other species one could take for its subject (core.js fishOther:
+  // his tag, his legacy m refined by the pass's o or k; Q323) is not in play, so it counts nowhere (as fishRun's room).
+  function fishPlay(cands, F, game, sug) {
     F = F || {};
     const obsOf = {},
       out = {};
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && p.f && (obsOf[p.f] = p.o || p.f)));
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (fishOn(F, f, sid)) (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
+      if (fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((sug || {})[f] || {}).jt))
+        (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
     });
     (game || []).forEach(p => p && p.sp && (out[p.sp] = out[p.sp] || new Set()).add(p.o || p.f));
     return out;
@@ -316,7 +326,7 @@
   function fishGameIn(game, cur) {
     const F = (cur && cur.fish) || {},
       gone = fishGone(cur || {}, F);
-    return (game || []).filter(p => p && p.f && p.sp && fishIn(F, p, gone)).map(p => ({...p, sid: p.sp}));
+    return (game || []).filter(p => p && p.f && p.sp && fishIn(F, p, gone, (F.tags || {})[p.f])).map(p => ({...p, sid: p.sp}));
   }
   // The pass's tags and phase as Add and the auto-sort copy them beside an add (j: the judgment, or the auto-sort's sure
   // values {jt, ph}), with the source's phase (p.st) when the pass gives none: the j flag for a juvenile, else the phase
@@ -357,14 +367,14 @@
     F = F || {};
     sug = sug || {};
     const I = fishIdx(F),
-      play = fishPlay(cands, F, game),
+      play = fishPlay(cands, F, game, sug),
       byF = {},
       out = [];
     Object.entries(cands || {}).forEach(([sid, L]) => (L || []).forEach(p => p && p.f && (byF[p.f] = p)));
-    // The phases each species' photos in play show.
+    // The phases each species' photos in play show (an add held out for other species shows none: fishOther, Q323).
     const shows = {};
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (!fishOn(F, f, sid)) return;
+      if (!fishOn(F, f, sid) || fishOther((F.tags || {})[f], (sug[f] || {}).jt)) return;
       const ph = fishPhase(byF[f] || {f}, sug[f], F);
       if (ph) (shows[sid] = shows[sid] || new Set()).add(ph);
     });
@@ -435,7 +445,7 @@
   // (p phase entry, r reference photo) kept as they were, in the rubric's order.
   const FFLAGORD = 'jcapr';
   function fishTag(code, pos, v) {
-    const c = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/.test(code || '') ? code : 'p1g0sm1';
+    const c = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/.test(code || '') ? code : 'p1g0sm1';
     if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
     const fl = new Set(c.slice(7));
     if (fl.has(pos)) fl.delete(pos);

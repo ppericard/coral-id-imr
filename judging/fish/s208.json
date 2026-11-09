@@ -9,8 +9,12 @@
    "keep": "dup"
   },
   "fish-s208-cand-396367777": {
-   "code": "o1g2slm2",
-   "keep": "best"
+   "code": "o1g2slk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s208-cand-730779403": {
    "code": "p1g2sm12",

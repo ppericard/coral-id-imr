@@ -17,8 +17,12 @@
    "keep": "dup"
   },
   "fish-s508-cand-596070783": {
-   "code": "p1g1smm2",
-   "keep": "best"
+   "code": "p1g1smk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Other species in view, confusion at the game rank doubtful: out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s508-cand-688441398": {
    "code": "o1g1sm13",
@@ -85,7 +89,7 @@
    "keep": "dup"
   },
   "fish-s508-cand-419191466": {
-   "code": "o1g1smm2",
+   "code": "o1g1smk2",
    "keep": "best"
   },
   "fish-s508-cand-341487688": {
@@ -129,7 +133,7 @@
    "keep": "best"
   },
   "fish-s508-cand-459839170": {
-   "code": "o1g0ssm1",
+   "code": "o1g0sso1",
    "keep": "best"
   },
   "fish-s508-cand-526515192": {
@@ -141,7 +145,7 @@
    "keep": "best"
   },
   "fish-s508-cand-435664602": {
-   "code": "p1g1ssm1",
+   "code": "p1g1sso1",
    "keep": "best"
   },
   "fish-s508-cand-435664631": {

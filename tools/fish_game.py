@@ -6,6 +6,8 @@ list (fish-photos.json, tools/fish_photos.py) wherever an entry has enough of th
 In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish photo in play hosted on R2; in_play):
   - Pierre's adds (the admin's rule, core.js fishOn, ported here as fish_on): curation.json fish.add names the photo's
     species, the photo is neither rejected (seen) nor excluded, and its Not this (out), if set, names that same species;
+    never one whose count in force is other species one could take for its subject (k), nor his legacy m the pass has
+    not sorted into o or k (count_of, other_out: Pierre, 2026-11-09, Q323; rule P3);
   - the candidates judged sure (suggest.json "fish", cand_sure: autosort.js fishSure's add, one kind of fish) he has not
     decided on, listed with auto: "cand", the pass's proposed crop applied as the auto-sort would write it;
   - the units' reference photos (tools/fish_refs.json) judged sure on the same rubric as a candidate, whatever their
@@ -26,7 +28,8 @@ For each photo in play, from its fish-cand.json record (the original: iNaturalis
   - listed under its teaching entry (fish.json teach: the level-1 entry whose species list holds the species) as
     {f, o (its observation, or the FishBase photo page; an iNaturalist observation by its id alone), src (the original;
     on iNaturalist, its extension alone when the photo is the record's own: tools/fish_short.py, core.js fishGameRow), a, lic, t, sp (the species it is in play for), loc, own,
-    ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, else the pass's jt), ph (its phase, as the
+    ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, his legacy m refined by the pass's o or k,
+    else the pass's jt), ph (its phase, as the
     admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
 The tile (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix): a photo in play whose tags pass the
@@ -238,12 +241,40 @@ def entries(fish):
     return of, order
 
 
+# core.js FISH_COUNT (judging/FISH.md "Tags", count): the counts an automatic route may put in play (one fish, several of its
+# kind, other species in view with no risk of confusion) and the counts never in play, whatever the route (other species
+# one could take for the subject at the game's rank, rule P3; m, the code before the split, not sorted yet: as k until
+# sorted). Pierre, 2026-11-09, Q323.
+PLAY_COUNT, OTHER_COUNT = '1so', 'km'
+
+
+def count_of(mine, passed):
+    """core.js fishCount: the count in force, Pierre's tag (mine) first, his legacy m refined by the pass's o or k
+    (passed: the judging pass's jt, suggest.json "fish"); '' with no tag."""
+    c, q = (mine or '')[6:7], (passed or '')[6:7]
+    return q if c == 'm' and q in ('o', 'k') else c or q
+
+
+def other_out(mine, passed):
+    """core.js fishOther: other species one could take for the subject, or not sorted yet (k, m): never in play."""
+    c = count_of(mine, passed)
+    return bool(c) and c in OTHER_COUNT
+
+
+def refined(mine, passed):
+    """Pierre's tags with his legacy m replaced by the pass's o or k (the count in force, count_of), else as they are."""
+    if mine and len(mine) >= 7 and mine[6] == 'm' and count_of(mine, passed) != 'm':
+        return mine[:6] + count_of(mine, passed) + mine[7:]
+    return mine
+
+
 def judged_sure(jt, e):
     """The rubric's part of a sure judgement, the same for a candidate and a reference photo: valid tags and ease (any
     ease 1-5: the judged ease is the photo's prior difficulty), never an unclear subject (count x) nor a fish out of the
-    water (flag a; autosort.js fishSure), and one kind of fish (count 1 or s, never m: rule P3)."""
+    water (flag a; autosort.js fishSure), and a count an automatic route may put in play (PLAY_COUNT: one fish, several
+    of its kind, other species with no risk of confusion; never k nor the unsorted m: rule P3, Q323)."""
     jt = jt or ''
-    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in '1s' and 'a' not in jt[7:]
+    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
 
 
 def unsure(j):
@@ -261,7 +292,7 @@ def cand_sure(j):
     return judged_sure(j.get('jt'), j.get('e'))
 
 
-TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$')  # autosort.js FISH_TAGS
+TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$')  # autosort.js FISH_TAGS
 
 
 def ref_play(fish, refs, codes):
@@ -313,6 +344,8 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
     for f, sid in sorted((F.get('add') or {}).items()):
         if not fish_on(F, f, sid) or f in top or pid(f) in {pid(x) for x in top} or f not in rec or not rec[f][0].get('src'):
             continue
+        if other_out((F.get('tags') or {}).get(f), ((sug or {}).get(f) or {}).get('jt')):
+            continue  # other species one could take for its subject, or not sorted yet: out (rule P3, Q323)
         put(sid, *rec[f], None)
     decided = {f for k in ('add', 'seen', 'exclude', 'out') for f in (F.get(k) or {})}
     for s, L in ((cand or {}).get('cand') or {}).items():
@@ -357,7 +390,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None):
     if p.get('own'):
         r['own'] = True
     e = (F.get('ease') or {}).get(f, j.get('e'))
-    jt = (F.get('tags') or {}).get(f, j.get('jt'))
+    jt = refined((F.get('tags') or {}).get(f), j.get('jt')) if f in (F.get('tags') or {}) else j.get('jt')
     if e:
         r['e'] = int(e)
     if jt:

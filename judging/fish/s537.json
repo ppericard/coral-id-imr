@@ -21,7 +21,7 @@
    "keep": "dup"
   },
   "fish-s537-cand-425063715": {
-   "code": "p1g1smm2",
+   "code": "p1g1smk2",
    "keep": "best"
   },
   "fish-s537-cand-728816574": {
@@ -77,7 +77,7 @@
    "keep": "best"
   },
   "fish-s537-cand-378124658": {
-   "code": "o1g1smm2",
+   "code": "o1g1smo2",
    "keep": "best"
   },
   "fish-s537-cand-435748613": {
@@ -101,8 +101,12 @@
    "keep": "best"
   },
   "fish-s537-cand-349632216": {
-   "code": "p1g1slm3",
-   "keep": "best"
+   "code": "p1g1slk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Other species in view, leaning no confusion; doubtful: kept out until Pierre decides (Q323, Point other-species-doubtful)"
   },
   "fish-s537-cand-556142747": {
    "code": "p1g0sl15",
