@@ -4317,23 +4317,23 @@ const CORE_ = (function () { const module = {exports: {}};
     // still names some (add, feat, quality, crop, seen: rule A1, never rewritten): those ids match no photo, so every step
     // below drops them (tests/nobook.test.js).
     // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
+    // So do the coral skeleton photos (data.json skel: 1, rule P6, Pierre, 2026-11-09: never shown, the features cannot
+    // be seen properly; tools/apply_skeletons.py from judging/skeletons.json; tests/skeletons.test.js).
     const X = (c && c.exclude) || {},
-      keep = L => (L || []).filter(p => !X[p.f]);
-    if (Object.keys(X).length) {
-      Object.values(d.gen).forEach(g =>
-        ['views', 'more'].forEach(s =>
-          Object.keys(g[s] || {}).forEach(v => {
-            g[s][v] = keep(g[s][v]);
-          })
-        )
-      );
-      ['course', 'cand'].forEach(s =>
-        Object.keys(d[s] || {}).forEach(n => {
-          d[s][n] = keep(d[s][n]);
+      keep = L => (L || []).filter(p => !X[p.f] && !p.skel);
+    Object.values(d.gen).forEach(g =>
+      ['views', 'more'].forEach(s =>
+        Object.keys(g[s] || {}).forEach(v => {
+          g[s][v] = keep(g[s][v]);
         })
-      );
-      if (d.cmp) d.cmp = keep(d.cmp);
-    }
+      )
+    );
+    ['course', 'cand'].forEach(s =>
+      Object.keys(d[s] || {}).forEach(n => {
+        d[s][n] = keep(d[s][n]);
+      })
+    );
+    if (d.cmp) d.cmp = keep(d.cmp);
     // "Several corals" photos Pierre marked as one coral (single: {f: 1}) are normal photos again (games and sheet).
     const ONE = (c && c.single) || {};
     if (Object.keys(ONE).length)
