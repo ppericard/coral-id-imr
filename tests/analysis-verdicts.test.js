@@ -414,6 +414,54 @@ test('mix-up map: planted families of mix-ups come back as blocks; no family fro
   assert.ok(flat && flat.fam.length === 0, JSON.stringify(flat && flat.fam));
 });
 
+test('mix-up map stability: planted families are found again in every draw of the players; weak ones less', () => {
+  const strong = A.confusions(A.prep(mixLog(6, 3)), 30, 1).map,
+    weak = A.confusions(A.prep(mixLog(1.5, 3)), 30, 1).map;
+  assert.strictEqual(strong.draws, 30);
+  assert.deepStrictEqual(strong.stab, [1, 1, 1]);
+  assert.ok(weak.fam.length && weak.stab.every(v => v < 0.75), JSON.stringify(weak.stab));
+  // without draws (the demo, B 0): unknown, never "not stable"
+  const none = A.confusions(A.prep(mixLog(6, 3)), 0, 1).map;
+  assert.ok(none.draws === 0 && none.stab.every(v => v === null));
+  // the mean of the best Jaccard over the draws; a draw without the family (or with no family) counts 0
+  const m = A.mixStab({g: ['a', 'b', 'c', 'd'], fam: [[0, 1, 2]]}, [[['a', 'b', 'c']], [['a', 'b']], [], [['d', 'c']]]);
+  assert.deepStrictEqual(m.stab, [Number(((1 + 2 / 3 + 0 + 1 / 4) / 4).toFixed(3))]);
+});
+
+test('effects hard to tell apart over the bootstrap draws: from 200 draws, the correlation of the draws', () => {
+  // made-up draws: b moves against a (r = -0.894), c independent
+  const R = A.rng(3),
+    nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
+    draws = Array.from({length: 400}, () => {
+      const z1 = nrm(),
+        z2 = nrm();
+      return {a: z1, b: -z1 + 0.5 * z2, c: nrm()};
+    }),
+    bi = Object.defineProperty({}, 'draws', {value: draws}),
+    X = Array.from({length: 50}, (_, i) => [1, i % 2, (i >> 1) % 2, (i >> 2) % 2]),
+    V = [
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, 1]
+    ],
+    E = A.entOf(V, X, [null, 'a', 'b', 'c'], [], bi);
+  assert.strictEqual(E.nb, 400);
+  assert.ok(Math.abs(E.rb[1][0] + 0.894) < 0.05 && Math.abs(E.rb[2][0]) < 0.12 && Math.abs(E.rb[2][1]) < 0.12, JSON.stringify(E.rb));
+  assert.deepStrictEqual(E.r[1], [0]);
+  // boot keeps each draw's values from 200 draws (none under), out of the intervals' keys
+  const D = Array.from({length: 400}, (_, i) => ({p: 'p' + (i % 8), y: i % 3 ? 1 : 0})),
+    st = S => ({m: S.reduce((t, x) => t + x.y, 0) / S.length}),
+    b2 = A.boot(D, st, 200, 1);
+  assert.ok(b2.draws.length === 200 && Object.keys(b2).join() === 'm', Object.keys(b2).join());
+  assert.strictEqual(A.boot(D, st, 199, 1).draws, undefined);
+  // under 200 draws: the model's alone
+  assert.strictEqual(
+    A.entOf(V, X, [null, 'a', 'b', 'c'], [], Object.defineProperty({}, 'draws', {value: draws.slice(0, 150)})).rb,
+    undefined
+  );
+});
+
 test('synthetic log: each analysis reports its entangled effects on its own keys; the report carries them', () => {
   const fs = require('fs'),
     data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json'))),

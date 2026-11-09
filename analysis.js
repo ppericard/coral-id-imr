@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 12; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 13; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
@@ -24,6 +24,7 @@
   // (gcurve), the player profiles' learning slope
   // 12: model checks (chk): each binary model's predictions of a player left out, calibration, quantile residuals, the
   // paired log-loss against the app's expectation; Answer time's residuals
+  // 13: the correlations of the estimates over the bootstrap draws (ent rb), the mix-up families' stability (map stab)
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
@@ -638,7 +639,8 @@
     const P = [...by.keys()];
     if (P.length < BOOT_MIN || !B) return null;
     const R = rng(seed),
-      acc = {};
+      acc = {},
+      keep = []; // each draw's values, for the correlations of the estimates over the draws (entOf, from ENT_B draws)
     for (let k = 0; k < B; k++) {
       const S = [];
       P.forEach((_, j) => {
@@ -654,6 +656,7 @@
       }
       FAST = false;
       if (v) Object.entries(v).forEach(([key, x]) => isFinite(x) && (acc[key] = acc[key] || []).push(x));
+      if (v && B >= ENT_B) keep.push(v);
     }
     let c = null;
     if (BSE) {
@@ -675,6 +678,7 @@
         hi0 = L.reduce((x, v) => Math.max(x, v), c[key]);
       out[key] = [Math.max(lo0, c[key] - Z * sd), Math.min(hi0, c[key] + Z * sd)];
     });
+    if (keep.length) Object.defineProperty(out, 'draws', {value: keep});
     return out;
   }
   // The answers needed for an interval of half-width h, from the current n and half-width (h scales as 1/sqrt(n)).
@@ -810,7 +814,7 @@
       genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
       player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
-      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])]),
+      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])], [], bi),
       chk: checkLmm(
         M,
         D.map(a => Math.log(a.s)),
@@ -882,7 +886,7 @@
       ],
       player: livePl(D, Object.values(by)).sort((a, b) => b.z / b.n - a.z / a.n),
       views: Object.values(views),
-      ent: entOf(M.V, M.X, [null, 'rel', 'hab']),
+      ent: entOf(M.V, M.X, [null, 'rel', 'hab'], [], bi),
       ix: ixOf([zoomIx(D, B, seed + 31)]),
       chk: checkOf(D, zoomFit, a => a.g0, seed, true)
     };
@@ -1025,7 +1029,8 @@
         M.V,
         D.map(a => a.X),
         [null, ...PH_X.map(x => x[0]), null],
-        [1, ...PH_X.map(() => -1), 1]
+        [1, ...PH_X.map(() => -1), 1],
+        bi
       )
     };
   }
@@ -1103,7 +1108,12 @@
   // over every condition of the model (VIF: 1 = independent of the others; above 5 to 10, entangled). keys[c]: the
   // effect key of column c (null for the intercept or a column the analysis does not report); sg[c] = -1 for an effect
   // reported with the opposite sign (a difficulty). Columns that never vary are left out. Lower triangles, 3 decimals.
-  function entOf(V, X, keys, sg = []) {
+  // bi: the analysis's bootstrap (boot); from ENT_B draws (the latest milestone's 999), rb: the correlation of the
+  // effects' values over the draws (the study's later item for view 1: over players, so it carries what the model's V,
+  // conditional on its random effects, leaves out), on the draws where every reported effect has a value; nb: their count.
+  // The draws hold the effects as reported (a difficulty with its sign turned already), so no sign is applied to them.
+  const ENT_B = 200;
+  function entOf(V, X, keys, sg = [], bi = null) {
     if (!V || !X || !X.length) return null;
     const vary = c => X.some(x => x[c] !== X[0][c]),
       all = keys.map((_, c) => c).filter(c => c > 0 && vary(c)),
@@ -1114,8 +1124,19 @@
       inv = inverse(Rf.map((r, i) => r.map((v, j) => v + (i === j ? 1e-9 : 0)))),
       at = c => all.indexOf(c),
       s = c => sg[c] || 1;
+    const ks = rep.map(c => keys[c]),
+      dr = bi && bi.draws ? bi.draws.filter(v => ks.every(k => v[k] != null && isFinite(v[k]))).map(v => ks.map(k => v[k])) : [],
+      Cb = dr.length >= ENT_B ? covOf(dr) : null;
     return {
-      k: rep.map(c => keys[c]),
+      k: ks,
+      ...(Cb
+        ? {
+            rb: ks.map((_, a) =>
+              ks.slice(0, a).map((__, d) => (Cb[a][a] > 0 && Cb[d][d] > 0 ? r3(Cb[a][d] / Math.sqrt(Cb[a][a] * Cb[d][d])) : null))
+            ),
+            nb: dr.length
+          }
+        : {}),
       r: rep.map((c, a) => rep.slice(0, a).map(d => r3((s(c) * s(d) * V[c][d]) / Math.sqrt(Math.max(1e-300, V[c][c] * V[d][d]))))),
       x: rep.map((c, a) => rep.slice(0, a).map(d => r3(R[Math.max(at(c), at(d))][Math.min(at(c), at(d))]))),
       vif: rep.map(c => r3(Math.min(999, Math.max(1, inv[at(c)][at(c)]))))
@@ -1745,12 +1766,14 @@
     if (E.length < 300 || mixed < 20) return thin(E.length, 300, {mixed});
     const {M, F, X} = confFit(E),
       n = E.length,
+      fams = [], // each draw's families of mix-ups (the mix-up map's stability, mixStab)
       bi = boot(
         E,
         S => {
           const r = confFit(S),
             o = {sd_pair: Math.sqrt(r.F[0].tau2), sd_player: Math.sqrt(r.F[1].tau2)};
           CF_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
+          if (S !== E) fams.push(mixFams(S, r.M, r.F));
           return o;
         },
         B,
@@ -1815,8 +1838,8 @@
       effects,
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
-      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null]),
-      map: mixMap(E, M, F),
+      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null], [], bi),
+      map: mixStab(mixMap(E, M, F), fams),
       ix: ixOf([confIx(A, B, seed + 31)]),
       chk: checkOf(
         E,
@@ -1839,6 +1862,40 @@
   // between two families (or genera outside any), at least 2 mix-ups and above the typical rate: look at their photos.
   const MIX_CUT = 0.8,
     MIX_K = 20;
+  // The families of a fit, as lists of genera (a bootstrap draw's, for mixStab); none when the map has none.
+  function mixFams(E, M, F) {
+    try {
+      const m = mixMap(E, M, F);
+      return m ? m.fam.map(L => L.map(i => m.g[i])) : [];
+    } catch (e) {
+      return null;
+    }
+  }
+  // The mix-up map's stability (the study's later item: bootstrap over players, a family named only where it holds;
+  // Hennig 2007, as the player profiles' groups): for each family of the map, its best Jaccard with a family of each
+  // bootstrap draw (0 when the draw has none that shares a genus), averaged over the draws; stable from PROF_STAB (0.75).
+  // stab: one mean per family (null without draws), draws: how many.
+  function mixStab(map, fams) {
+    if (!map) return map;
+    const D = (fams || []).filter(Array.isArray);
+    map.draws = D.length;
+    map.stab = map.fam.map(L => {
+      if (!D.length) return null;
+      const A = new Set(L.map(i => map.g[i]));
+      return r3(
+        mean(
+          D.map(fs =>
+            fs.reduce((m, f) => {
+              const inter = f.filter(x => A.has(x)).length;
+              return Math.max(m, inter / (A.size + f.length - inter));
+            }, 0)
+          )
+        )
+      );
+    });
+    map.at = PROF_STAB;
+    return map;
+  }
   function mixMap(E, M, F) {
     const P = F[0],
       pj = new Map(P.L.map((k, j) => [k, j])),
@@ -2256,7 +2313,7 @@
       curve,
       b0: M.b[0],
       b1: M.b[1],
-      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])]),
+      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])], [], bi),
       wright: wrightOf(D, M, F, lc),
       res: resOf(D, M, F, seed),
       gcurve: gcurveOf(D, M, F, lc),
@@ -2712,7 +2769,9 @@
       ent: entOf(
         M.V,
         rows.map(r => r.X),
-        [null, ...SS_X.map(x => x[0])]
+        [null, ...SS_X.map(x => x[0])],
+        [],
+        bi
       )
     };
   }
@@ -3325,7 +3384,7 @@
         d: r3(x.d)
       })),
       genus: gen.map(x => ({k: x.k, n: x.n, t: r3(x.t), d: r3(x.d)})),
-      ent: entOf(M.V, M.X, [null, 'slow', 'enl'])
+      ent: entOf(M.V, M.X, [null, 'slow', 'enl'], [], bi)
     };
   }
 
@@ -4332,6 +4391,8 @@
     hclust,
     cutTree,
     mixMap,
+    mixStab,
+    mixFams,
     MIX_CUT,
     PROF_F,
     PROF_N,
