@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, '..'),
   json = f => JSON.parse(src(f));
 const F = json('fish.json'),
   PH = json('fish-photos.json'),
-  GM = json('fish-game.json'),
+  GM = C.fishGameRead(json('fish-game.json')),
   CUR = json('curation.json');
 const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
 vm.createContext(ctx);

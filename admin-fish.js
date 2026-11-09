@@ -33,7 +33,7 @@ const FTAGS = [
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
   {m: 'soft', b: 'blurred'},
   {l: 'large', m: 'medium', s: 'small'},
-  {s: 'several of its kind', m: 'other fish too', x: 'subject not obvious'}
+  {s: 'several of its kind', m: 'other species in view', x: 'subject not obvious'}
 ];
 const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', p: 'phase entry', r: 'reference photo'};
 const fishTagText = jt =>
@@ -102,10 +102,11 @@ const FROWS = [
     6,
     'Count',
     [
-      ['1', 'One'],
-      ['s', 'Several'],
-      ['m', 'Others'],
-      ['x', 'Unclear']
+      // Pierre, 2026-11-09: "Others" did not say the problem is several species on one photo; the codes stay (judging/FISH.md).
+      ['1', 'One fish', 'One fish (others, if any, tiny and far)'],
+      ['s', 'Same species', 'Several fish of the same species, the subject obvious (a pair, a school)'],
+      ['m', 'Other species in view', 'Other species in view too: several species on one photo (on a photo in play: out of play, rule P3)'],
+      ['x', 'Unclear', 'Unclear: which fish is asked about is not obvious (on a photo in play: out of play)']
     ]
   ]
 ];
@@ -121,10 +122,14 @@ const FPHASE_ROW = [
   ['female', 'Female'],
   ['male', 'Male']
 ];
-// One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's.
+// One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's. An option may carry
+// its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
   `<span class="adm-qseg adm-ftag${auto ? ' auto' : ''}" role="group" aria-label="${esc(name)}" title="${esc(name)}">${opts
-    .map(([k, t]) => `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}">${esc(t)}</button>`)
+    .map(
+      ([k, t, tip]) =>
+        `<button type="button" ${at}="${esc(k)}" aria-pressed="${v === k}"${tip ? ` title="${esc(tip)}"` : ''}>${esc(t)}</button>`
+    )
     .join('')}</span>`;
 // Pierre's values on a photo (the draft's fish part) and the pass's (j), for the rows: {mine, pass} per field.
 const fVals = (F, f, j) => ({
@@ -132,8 +137,9 @@ const fVals = (F, f, j) => ({
   ease: {mine: (F.ease || {})[f], pass: j && j.e},
   phase: {mine: f in (F.phase || {}) ? F.phase[f] : undefined, pass: (j && j.ph) || ''}
 });
-// The rows of a card. blind (a Check): only Pierre's own values pressed, nothing of the pass shown.
-function fishRows(F, p, j, blind, entry) {
+// The rows of a card. blind (a Check): only Pierre's own values pressed, nothing of the pass shown. open: the seven tag
+// rows and the flags shown too (the card's Tags; a photo tile's own, admin.js fishTile).
+function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
   const V = fVals(F, p.f, blind ? null : j),
     code = V.tags.mine || V.tags.pass || '',
     tAuto = !V.tags.mine,
@@ -150,7 +156,7 @@ function fishRows(F, p, j, blind, entry) {
   // Sweetlips, Anthias): elsewhere a phase tag has nothing to say.
   if (entry && ((entry.phase || []).length || entry.dimorph))
     h += fRow('Phase', 'data-fph', FPHASE_ROW, ph === undefined ? null : ph, V.phase.mine === undefined);
-  if (FTAGS_OPEN)
+  if (open)
     h +=
       `<div class="adm-ftags">` +
       FROWS.map(([i, name, opts]) => fRow(name, `data-ft="${i}" data-fv`, opts, code ? code[i] : null, tAuto)).join('') +
@@ -168,6 +174,29 @@ function fishNotThisSel(sid, from) {
     rest = [...FISHC.game].filter(id => id !== sid && !same.includes(id)).sort((a, b) => (nm(a) < nm(b) ? -1 : 1));
   return `<select data-fnot aria-label="Not this species"><option value="">Not this</option>${from ? `<option value="${esc(from)}">Back to ${esc(nm(from))}</option>` : ''}<option value="x">No game species</option>${same.length ? `<optgroup label="${esc(E.name)}">${same.map(id => `<option value="${esc(id)}">${esc(nm(id))}</option>`).join('')}</optgroup>` : ''}<optgroup label="Another species">${rest.map(id => `<option value="${esc(id)}">${esc(nm(id))}</option>`).join('')}</optgroup></select>`;
 }
+// The rows' clicks in scope S on photo f (the card's, a photo tile's): each one Pierre's value through edit(fn, what), one
+// Undo step (autosort.js fishSet, fishTag: through fishOwn); base(): the code a tag changes (his, else the pass's). what:
+// {pos, v} of a tag row (pos 0-6), so a tile can act on the count it sets (admin.js bindFishTiles).
+function bindFishRows(S, f, base, edit) {
+  S.querySelectorAll('[data-fe]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'ease', +b.dataset.fe))));
+  S.querySelectorAll('[data-fph]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'phase', b.dataset.fph))));
+  S.querySelectorAll('[data-ft]').forEach(
+    b =>
+      (b.onclick = () =>
+        edit(G => fishSet(G, f, 'tags', fishTag(base(), +b.dataset.ft, b.dataset.fv)), {pos: +b.dataset.ft, v: b.dataset.fv}))
+  );
+  S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => edit(G => fishSet(G, f, 'tags', fishTag(base(), b.dataset.ff2)))));
+}
+// The crop editor of the corals (admin.js cropEditor) on a fish photo: Pierre's crop, else start (the pass's suggestion, or
+// a photo's published crop); Full photo over a suggested crop (sug) is kept as an explicit no-crop. His rotation (fish
+// rot) with it, one Undo step for both, through edit(fn).
+const fishCrop = (p, start, sug, edit) =>
+  cropEditor(p, {
+    start: ((DRAFT.fish || {}).crop || {})[p.f] || start || null,
+    rot: fishRot(p.f),
+    save: (v, full, ro) =>
+      edit(G => fishSet(fishSet(G, p.f, 'crop', full ? (sug ? [0, 0, 1, 1] : null) : v), p.f, 'rot', rotNorm(ro) || null))
+  });
 const FKEEP = {best: 'best photo of its observation', alt: 'another angle of its observation', dup: 'near-duplicate'};
 // The pass's judgment above the card (never on a Check: blind), its ease as a chip (the prior the game starts from).
 const fishJudged = j =>
@@ -427,30 +456,14 @@ function renderFishCand() {
       FPIN = f;
       fishEdit(fn);
     };
-    const base = () => (DRAFT.fish.tags || {})[f] || (!chk && j && j.jt) || '';
-    S.querySelectorAll('[data-fe]').forEach(b => (b.onclick = () => fishPin(G => fishSet(G, f, 'ease', +b.dataset.fe))));
-    S.querySelectorAll('[data-fph]').forEach(b => (b.onclick = () => fishPin(G => fishSet(G, f, 'phase', b.dataset.fph))));
-    S.querySelectorAll('[data-ft]').forEach(
-      b => (b.onclick = () => fishPin(G => fishSet(G, f, 'tags', fishTag(base(), +b.dataset.ft, b.dataset.fv))))
-    );
-    S.querySelectorAll('[data-ff2]').forEach(b => (b.onclick = () => fishPin(G => fishSet(G, f, 'tags', fishTag(base(), b.dataset.ff2)))));
+    bindFishRows(S, f, () => (DRAFT.fish.tags || {})[f] || (!chk && j && j.jt) || '', fishPin);
     S.querySelector('[data-ftags]').onclick = () => {
       FTAGS_OPEN = !FTAGS_OPEN;
       store.set('reefid-admin-ftags', FTAGS_OPEN);
       render();
     };
-    // The crop editor of the corals (admin.js cropEditor), on the fish part: Pierre's crop, else the pass's (never on a
-    // Check); Full photo over a suggested crop is kept as an explicit no-crop. His rotation (fish rot) with it, one Undo
-    // step for both.
-    S.querySelector('[data-fcrop]').onclick = () =>
-      cropEditor(pb, {
-        start: (DRAFT.fish.crop || {})[f] || (!chk && j && j.c) || null,
-        rot: fishRot(f),
-        save: (v, full, ro) =>
-          fishPin(G =>
-            fishSet(fishSet(G, f, 'crop', full ? (((SUG.fish || {})[f] || {}).c ? [0, 0, 1, 1] : null) : v), f, 'rot', rotNorm(ro) || null)
-          )
-      });
+    // The crop (fishCrop): Pierre's, else the pass's (never on a Check).
+    S.querySelector('[data-fcrop]').onclick = () => fishCrop(pb, !chk && j && j.c, ((SUG.fish || {})[f] || {}).c, fishPin);
     S.querySelector('[data-fnot]').onchange = e => {
       const to = e.target.value;
       if (!to) return;
