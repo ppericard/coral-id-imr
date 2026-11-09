@@ -83,7 +83,9 @@
   }
   // Sets b, each factor's tau2 and u from the warm state (null when there is none or it does not apply).
   function warmGet(kind, p, F) {
-    const W = FAST ? WARM[sigOf(kind, p, F)] : null;
+    // never while a player is left out (HOLD, checkOf): a coefficient only their answers move would keep the full fit's
+    // value, learnt from those answers (Codex review #831); the fit starts from 0 instead
+    const W = FAST && HOLD == null ? WARM[sigOf(kind, p, F)] : null;
     if (!W) return null;
     F.forEach((f, k) => {
       f.tau2 = W.f[k].tau2;
@@ -1233,12 +1235,27 @@
   // Descriptive, outside the multiple-testing correction (as the Wright map and the second skill).
   // The predictions of player id's rows by a fit in which their rows weigh nothing (fast: the bootstrap's looser fit,
   // warm-started from the full one). NaN elsewhere.
+  // A new player's own effects are unknown: their chance is averaged over the players the fit has (each one's fitted level,
+  // and in Learning their slope at the row's practice), not read at the average player (Codex review #831: with a player
+  // SD of 2, 81.8% at the average player against 71.5% averaged over players). Over the fitted players rather than over
+  // N(0, tau2): with this fit (PQL-like: its spreads shrunk, its intercept towards the average over players, ROADMAP
+  // "what the correction leaves open" (e)), the normal integral over-predicted the generator's own mix-ups by 2-6 points in
+  // every band, while the fitted players' own effects average to what they answered.
   function predictOut(R, fit, g, id, fast = true, P = new Float64Array(R.length).fill(NaN)) {
     HOLD = id;
     FAST = fast;
     try {
-      const M = fit(R);
-      R.forEach((r, i) => r.p === id && (P[i] = clamp(g(r) + (1 - g(r)) * sig(M.eta[i]), 1e-6, 1 - 1e-6)));
+      const M = fit(R),
+        fp = M.F.find(f => f.name === 'player'),
+        fs = M.F.find(f => f.name === 'player slope'),
+        sl = fs ? new Map(fs.L.map((k, j) => [baseOf(k), fs.u[j]])) : null,
+        U = fp ? fp.L.map((k, j) => [baseOf(k), fp.u[j]]).filter(([k]) => k !== id) : [];
+      R.forEach((r, i) => {
+        if (r.p !== id) return;
+        const w = fs ? fs.w[fs.start[i]] : 0,
+          q0 = U.length ? mean(U.map(([k, u]) => sig(M.eta[i] + u + (sl ? (sl.get(k) || 0) * w : 0)))) : sig(M.eta[i]);
+        P[i] = clamp(g(r) + (1 - g(r)) * q0, 1e-6, 1 - 1e-6);
+      });
     } catch (e) {
       void e;
     } finally {

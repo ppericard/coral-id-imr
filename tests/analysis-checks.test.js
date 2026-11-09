@@ -95,3 +95,42 @@ test('signFlip: exact over the sign patterns; the t interval over players', () =
   const p = A.signFlip(Array.from({length: 20}, (_, i) => 0.5 + (i % 3)));
   assert.ok(p > 0 && p < 0.001, String(p));
 });
+
+test('a player left out: a coefficient only their answers move is not learnt from them (the fast path)', () => {
+  // Codex review #831: five players, an indicator only the left-out player has; their success rate 90% or 10%
+  const R = A.rng(2),
+    rows = rate =>
+      Array.from({length: 5}, (_, p) =>
+        Array.from({length: 200}, () => ({p: 'P' + p, x: p === 4 ? 1 : 0, y: R() < (p === 4 ? rate : 0.5) ? 1 : 0}))
+      ).flat(),
+    fit = S =>
+      A.glmm(
+        S.map(r => r.y),
+        S.map(r => [1, r.x]),
+        [
+          A.factor(
+            'player',
+            S.map(r => r.p)
+          )
+        ]
+      ),
+    out = D => {
+      fit(D); // the full fit first, as an analysis does: its warm state is there
+      return [...A.predictOut(D, fit, () => 0, 'P4')].filter(isFinite);
+    },
+    hi = out(rows(0.9)),
+    lo = out(rows(0.1));
+  assert.ok(Math.abs(hi[0] - lo[0]) < 0.05, `${hi[0]} ${lo[0]}`);
+});
+
+test('a player left out: their chance is averaged over the fitted players, not read at the average player', () => {
+  // Codex review #831: guess rate 0, the fixed part 1.5, two fitted players at -2 and +2 (the one left out at 0): the mean
+  // of their chances, 67.4%, not 81.8% at the average player
+  const P = A.predictOut(
+    [{p: 'X'}],
+    () => ({eta: [1.5], F: [{name: 'player', L: ['A', 'B', 'X'], u: [-2, 2, 0]}]}),
+    () => 0,
+    'X'
+  );
+  assert.ok(Math.abs(P[0] - (1 / (1 + Math.exp(0.5)) + 1 / (1 + Math.exp(-3.5))) / 2) < 1e-9, String(P[0]));
+});
