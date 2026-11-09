@@ -841,7 +841,7 @@ function syncOnce(tries = 0, pulled = null) {
         store.set('reefid-account', me);
         if (adopted && tries < 3) return syncOnce(tries + 1);
       } else if (j && SYNC === me) {
-        // A refused code, a removed account, the wrong-code wait, a new account under a reserved name (vNEXT: an app from
+        // A refused code, a removed account, the wrong-code wait, a new account under a reserved name (v119: an app from
         // before the form refused it signed in under one): red at once, no retry mends them. Anything else the sheet
         // answered (busy, stale again, lock or server from v50, a failed write) is a passing failure, tried again.
         if (j.error === 'pin' || j.error === 'wait' || j.error === 'gone' || j.error === 'archived' || j.error === 'reserved') {
@@ -1823,7 +1823,7 @@ function bindSync(box = document.querySelector('.tsync') || document.getElementB
             );
           if (j.found) return isYou(name, pin, j);
           // A new account under a reserved name (core.js reservedName; Pierre, 2026-11-09) is never made: said here, before
-          // the first save would send it (the sheet refuses it too, from vNEXT). An account that has one signs in as before.
+          // the first save would send it (the sheet refuses it too, from v119). An account that has one signs in as before.
           if (reservedName(name)) {
             msg('This name is reserved, please choose another.');
             return f.n.focus({preventScroll: true});

@@ -8618,7 +8618,7 @@ function bindUsers() {
         const name = b.dataset.uarch,
           into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
         if (!into || into === name) return;
-        // A reserved name (core.js reservedName; Pierre, 2026-11-09) is refused here as the sheet refuses it (vNEXT).
+        // A reserved name (core.js reservedName; Pierre, 2026-11-09) is refused here as the sheet refuses it (v119).
         if (reservedName(into)) return toast(`"${into}" is a reserved name: please choose another.`);
         if (
           !confirm(
