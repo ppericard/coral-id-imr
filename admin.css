@@ -645,6 +645,23 @@ body.adm-dragging * {
 .adm-toast[hidden] {
   display: none;
 }
+/* Sign out sealing the draft: the page is read-only under it (admin.js sealing) */
+.adm-sealing {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+.adm-sealing span {
+  padding: 10px 16px;
+  border-radius: var(--r);
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--shadow-hover);
+  font-size: 0.9rem;
+}
 .lb-cap code {
   font-size: 0.75rem;
   opacity: 0.8;

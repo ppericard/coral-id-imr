@@ -6928,8 +6928,10 @@ async function sealDraft(over) {
       {iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0},
       ...(Array.isArray(L) ? L : []).filter(x => !over || x.ct !== over)
     ].slice(0, 3);
-  // A click here, or a draft another tab wrote meanwhile (read from storage now: its storage event may not have come yet),
-  // goes round again. SEAL_REV: the draft revision sealed, for the other tabs to tell whether their last write is in it.
+  // A click here, a note typed here (flushed now, not 0.8 s later), or a draft another tab wrote meanwhile (read from
+  // storage now: its storage event may not have come yet) goes round again. SEAL_REV: the draft revision sealed, for the
+  // other tabs to tell whether their last write is in it.
+  ptFlush();
   takeOther();
   if (snap !== at) return sealDraft(over);
   SEAL_REV = SEEN;
@@ -6977,6 +6979,25 @@ const tokMark = tok =>
   Promise.resolve(tok)
     .then(t => crypto.subtle.digest('SHA-256', new TextEncoder().encode('reefid-admin-signout|' + t)))
     .then(h => b64(h).slice(0, 22));
+// While a draft is sealed the page is read-only (Codex review #798: a note typed then was lost): every editor is out of
+// reach (inert) under a "Sealing…" layer, the field being typed in left first, so what it holds reaches the draft.
+function sealing(on) {
+  let o = document.querySelector('.adm-sealing');
+  if (on) {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    [...document.body.children].forEach(x => x !== o && (x.inert = true));
+    if (!o) {
+      o = document.createElement('div');
+      o.className = 'adm-sealing';
+      o.setAttribute('role', 'status');
+      o.innerHTML = '<span>Sealing…</span>';
+      document.body.append(o);
+    }
+  } else {
+    [...document.body.children].forEach(x => (x.inert = false));
+    if (o) o.remove();
+  }
+}
 function lockNow() {
   sess.set(null);
   try {
@@ -6992,13 +7013,14 @@ async function signOut() {
   const btn = $('signout'),
     mark = tokMark(TOKEN).catch(() => null);
   if (btn) ((btn.disabled = true), (btn.textContent = 'Sealing…'));
-  toast('Sealing…');
   let ok = false;
   try {
+    sealing(true);
     ptFlush(); // a note being typed reaches the draft first
     ok = await sealDraft();
   } catch (e) {}
   if (!ok && Date.now() - soWarned > 15000) {
+    sealing(false);
     if (btn) ((btn.disabled = false), (btn.textContent = 'Sign out'));
     signingOut = false;
     toast(
@@ -7023,7 +7045,14 @@ addEventListener('storage', e => {
   } catch (x) {}
   if (k)
     tokMark(TOKEN)
-      .then(m => m === k && TOKEN && !signingOut && lockOther(rev))
+      .then(m => {
+        if (!TOKEN || signingOut) return;
+        if (m === k) return lockOther(rev);
+        // Another admin's token signed out and took the shared plain draft off with it: this tab, still unlocked, writes
+        // its own draft and base back at once, so nothing it saved goes with the other admin's seal (Codex review #798).
+        putDraft();
+        BASE_GONE = !store.set('reefid-curation-base', SAVED);
+      })
       .catch(() => {});
 });
 // Another tab of this token signed out, with its seal of the shared draft. What this tab holds that never reached that
@@ -7033,6 +7062,7 @@ addEventListener('storage', e => {
 // write is not in that seal when it is another one (written as the other tab sealed, or not seen by it yet).
 async function lockOther(rev) {
   signingOut = true;
+  sealing(true);
   const at = snap,
     lost = draftLost,
     unseen = !!SEEN && SEEN.startsWith(TAB + '.') && SEEN !== rev;
@@ -7048,6 +7078,7 @@ async function lockOther(rev) {
       ok = await sealDraft(S && S.ct);
     } catch (e) {}
   if (ok) return lockNow();
+  sealing(false);
   signingOut = false;
   toast('Signed out in another tab, but the last changes of this one could not be sealed: Publish them, or Sign out here.', 15000);
 }

@@ -5558,6 +5558,54 @@ const WIDTHS = [390, 1280];
           );
         }, st.L[2]);
         if (kb[0] < 1e6 || kb[1] < 1e6) fails.push(`${F}: a click after another tab's sign out wrote the draft without its base ${kb}`);
+        // Codex review #798: a tab of another token keeps what it saved when this one signs out. It writes its draft and base
+        // back at once (it is still unlocked and they are its own), and finds them after a reload with no new click.
+        {
+          const f5 = st.L[5],
+            v5b = st.v[5];
+          await q2.evaluate(
+            ([f, v]) => {
+              TOKEN = 'another-token';
+              DRAFT.quality = {...DRAFT.quality, [f]: v};
+              saveDraft();
+              window.smokeSO = localStorage.getItem('demo:reefid-admin-signout');
+            },
+            [f5, v5b]
+          );
+          await c.route(admin, holdQ);
+          await signOut();
+          await q2
+            .waitForFunction(() => localStorage.getItem('demo:reefid-admin-signout') !== smokeSO, null, {timeout: 20000})
+            .catch(() => {});
+          const back = await q2
+            .waitForFunction(
+              f => {
+                try {
+                  const d = JSON.parse(localStorage.getItem('demo:reefid-curation-draft') || '{}'),
+                    v = (d.quality || {})[f];
+                  return v !== undefined && !!localStorage.getItem('demo:reefid-curation-base') && v;
+                } catch (e) {
+                  return false;
+                }
+              },
+              f5,
+              {timeout: 10000}
+            )
+            .then(
+              h => h.jsonValue(),
+              () => null
+            );
+          await q2.reload();
+          await idle(q2);
+          const after = await q2.evaluate(f => (DRAFT.quality || {})[f], f5);
+          await c.unroute(admin, holdQ);
+          await q.goto(base + 'admin.html?demo#photos/review/quality');
+          await ready();
+          if (back !== v5b || after !== v5b)
+            fails.push(
+              `${F}: a tab of another token lost what it saved at this tab's sign out ${JSON.stringify({back, after, want: v5b})}`
+            );
+        }
         // Codex review #798: a seal restored here is dropped from the list as it is then, never from the one read before:
         // another token's window may have sealed its draft meanwhile.
         await q.evaluate(async () => {
@@ -5576,6 +5624,40 @@ const WIDTHS = [390, 1280];
         });
         if (!dl.had || dl.left !== JSON.stringify([X]))
           fails.push(`${F}: restoring a seal dropped a seal added meanwhile by another window ${JSON.stringify(dl)}`);
+        // Codex review #798: while it seals the page is read-only (a "Sealing…" layer, every editor inert), so a note typed
+        // then cannot be lost: what the note field shows when the page leaves is what the next unlock opens. The keys are
+        // typed late in a held encryption, past the note's 0.8 s wait before it is written.
+        await q2.close();
+        await q.goto(base + 'admin.html?demo#inbox/todo/points/astrea-reefcloud');
+        await ready();
+        await q.waitForSelector('[data-ptn]', {timeout: 20000});
+        await q.evaluate(() => {
+          const enc = crypto.subtle.encrypt.bind(crypto.subtle);
+          crypto.subtle.encrypt = (...a) => new Promise(r => setTimeout(r, 3000)).then(() => enc(...a));
+          addEventListener('beforeunload', () =>
+            sessionStorage.setItem('smoke-note', (document.querySelector('[data-ptn]') || {}).value || '')
+          );
+        });
+        const n0 = 'Sealed note ' + Date.now(),
+          loadedN = q.waitForEvent('load', {timeout: 30000});
+        await q.fill('[data-ptn]', n0);
+        await signOut();
+        await q.waitForFunction(() => signingOut, null, {timeout: 10000});
+        await q.waitForTimeout(2200); // late in the held 3 s encryption, on purpose
+        const during = await q.evaluate(() => {
+          const t = document.querySelector('[data-ptn]');
+          t.focus();
+          return {layer: !!document.querySelector('.adm-sealing'), focus: document.activeElement === t};
+        });
+        await q.keyboard.type(' and more');
+        await loadedN;
+        await ready();
+        const nt = await q.evaluate(() => ({
+          shown: sessionStorage.getItem('smoke-note'),
+          kept: ((DRAFT.points || {})['astrea-reefcloud'] || {}).n || ''
+        }));
+        if (!during.layer || during.focus || nt.shown !== nt.kept || nt.kept !== n0)
+          fails.push(`${F}: a note typed while it sealed was lost, or the page took input then ${JSON.stringify({during, ...nt, n0})}`);
         await c.close();
         continue;
       }
