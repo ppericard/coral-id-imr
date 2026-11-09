@@ -4785,6 +4785,31 @@ and k 1.5.
 - Verdict: **round 2 not passed as declared either**. The primary is not clear. The "nothing breaks" bound is breached
   with views. Two rated cells (one guardrail) and two app cells are breached. Rule L11 sends this to Pierre (#808).
 
+**Round 3: the knowledge-gap term in the simulated times** (Pierre, 2026-11-09, Q324 (b); #808, declared in the PR
+before any run): round 2's protocol unchanged (seeds 121-140, k 0 against k 1.5, the same primary and guardrails), the
+seconds given −0.22 log per logit of the learner's true ability − difficulty (`--gap -0.22`, the real log's −0.22 ±
+0.04 of "Response time: genus and photo", stated before the run).
+
+| Times, photos | Rating error | Correlation with the truth | k recovered, median (log-loss / truth) | Log-loss at k 1.5 − k 0 (× 10⁻³) |
+| --- | --- | --- | --- | --- |
+| **rho25, normal: the primary** | +0.0105 [+0.0210], p 0.10: **not clear (the wrong way)** | +0.049, p < 0.001 | 1 / 0 | −0.70 |
+| rho0, normal | **+0.0145 [+0.0257], breaches +0.01** | +0.028, p 0.008 | 1.5 / 0 | −0.64 |
+| views, normal | **+0.0129 [+0.0267], breaches +0.01** | +0.020, p 0.052 | 1 / 0 | −0.71 |
+| fast, normal | +0.0023 [+0.0177]: unclear | +0.069, p < 0.001 | 2 / 0 | −0.77 |
+| rho25, heavy tails | +0.0077 [+0.0235] | +0.034, p 0.001 | 2 / 0.5 | −1.10 |
+| rho0, heavy tails | +0.0089 [+0.0233]: unclear | +0.021, p 0.034 | 1.5 / 0 | −1.03 |
+
+- No guardrail of the rated world is breached (the unclear cells: the score at 1,000, units met at 300, the plateaus).
+- In the app world (correlation with the truth 0.319 → 0.360), the beginner's first Open Water comes later: 40 → 100
+  answers (seeds 17-63 → 16-200, breached); E and true knowledge are held.
+- With the gap term the planted world reproduces the real log's signature. The weight's log-loss gain is −0.64 to
+  −1.10 × 10⁻³ at k 1.5 in every case (the real log's −1.03), and the photos are ranked better in every case, since time
+  now carries difficulty through θ − d.
+- But the ratings' error against the truth rises (the truth's own k is 0 in most seeds): the weight spreads them more
+  than it informs them.
+- So option (1) failed its declared primary in three rounds (−0.0018, −0.0031, +0.0105), with the beginner's first Open
+  Water later in each app-world check. Rule L11 sends it to Pierre (#808).
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis*.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
