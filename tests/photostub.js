@@ -26,7 +26,7 @@ module.exports = ROOT => {
   };
   ['data.json', 'cand.json', 'fish-photos.json', 'fish-game.json'].forEach(f => {
     const p = path.join(ROOT, f);
-    if (fs.existsSync(p)) walk(JSON.parse(fs.readFileSync(p, 'utf8')));
+    if (fs.existsSync(p)) walk(require(path.join(ROOT, 'core.js')).fishGameRead(JSON.parse(fs.readFileSync(p, 'utf8')))); // its records whole
   });
   const here = fs.existsSync(IMG) ? fs.readdirSync(IMG).sort() : [];
   const SUF = ['-t', '-s', '-m'];

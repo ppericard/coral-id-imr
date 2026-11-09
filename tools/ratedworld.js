@@ -75,7 +75,7 @@ function fishUnits() {
   const J = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
     F = J('fish.json'),
     ph = J('fish-photos.json'),
-    gm = J('fish-game.json'),
+    gm = C.fishGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),

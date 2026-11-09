@@ -857,7 +857,8 @@ const fishLoad = () =>
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
       // curated photos are not required: without them every family plays on the stopgap's.
       if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      FISHRAW = {f, ph, gm: gm && gm.photos ? gm : {photos: {}}};
+      // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
+      FISHRAW = {f, ph, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}};
       // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
       // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
       // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.
