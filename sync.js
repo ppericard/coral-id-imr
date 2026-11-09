@@ -727,7 +727,7 @@ function syncOnce(tries = 0, pulled = null) {
       if (!j.ok) return j;
       if (archivedOf(j, me)) return {ok: false, error: 'archived'}; // nothing pushed: the record is not re-created
       groupsSeen(j, me.name); // the beta groups first (v48): they never depend on the merge
-      markSeen(j, me.name); // the admin's mark (core.js MARK_SHEET)
+      if (!mine) markSeen(j, me.name); // the admin's mark (core.js MARK_SHEET), from a real load reply only (Codex review #841)
       if (j.found) mergeSaved(j);
       sdSeen(me, j);
       if (!mine) repsSeen(j); // the player's reports (v57), after the merge: their thanks on another device came with it

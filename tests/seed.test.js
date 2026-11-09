@@ -12,6 +12,7 @@ const test = require('node:test'),
   vm = require('vm');
 const C = require('../core.js');
 const {loadCodeGs, madeBefore} = require('./gas.js');
+const {page, LIGHT, withData} = require('./syncpage.js');
 const block = require('./block.js');
 
 const ROOT = path.join(__dirname, '..'),
@@ -209,4 +210,67 @@ test('the account line: the mark from a load reply of a script that knows the ad
   assert.strictEqual(markMine(), false, "no longer the admin's");
   ctx.SYNC = null;
   assert.strictEqual(markMine(), false);
+});
+
+// Codex review #841 (P1): the admin page's log read takes the admin's account under the script lock, re-reading its row
+// there, so a delete, a merge or an archive (each under the lock) that comes while the read runs is never undone by it.
+test("a log read in progress never brings the admin's mark back after an archive, a delete or a merge", () => {
+  const races = [
+    ['an archive', s => s.post({userArchive: {from: 'Ana B.', into: 'Ana-old'}, token: TOK})],
+    ['a delete', s => s.post({userDelete: 'Ana B.', token: TOK})],
+    ['a merge', s => s.post({userMerge: {from: 'Ana B.', into: 'Cy D.', data: data()}, token: TOK})]
+  ];
+  races.forEach(([what, drop]) => {
+    const s = loadCodeGs();
+    assert.ok(play(s, 'Ana B.', '1230').ok);
+    assert.ok(play(s, 'Cy D.', '1231').ok);
+    // The other request runs once the read has checked the code and is about to keep the account: when it asks for the
+    // lock, or (without one) when it writes.
+    s.ctx.__drop = () => assert.ok(drop(s).ok, what);
+    vm.runInContext(
+      `(() => {
+        let armed = true;
+        const fire = () => { if (armed) { armed = false; __drop(); } };
+        const L = LockService.getScriptLock;
+        LockService.getScriptLock = () => { const l = L(); const t = l.tryLock; l.tryLock = ms => (fire(), t(ms)); return l; };
+        const S = adminSet_;
+        adminSet_ = h => (fire(), S(h));
+      })()`,
+      s.ctx
+    );
+    assert.ok(adminRead(s, 'Ana B.', '1230').ok, what);
+    assert.strictEqual(s.props.ADMIN_ACCT, undefined, what + ': no mark kept');
+    BOARDS.forEach(S => assert.deepStrictEqual(marked(s, S), [], what + ' ' + S.id));
+  });
+  // The lock held by another request: nothing written; the next read keeps the account.
+  const s = loadCodeGs();
+  assert.ok(play(s, 'Ana B.', '1230').ok);
+  s.lock.busy = true;
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok, 'the read is served all the same');
+  assert.strictEqual(s.props.ADMIN_ACCT, undefined);
+  s.lock.busy = false;
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok);
+  assert.deepStrictEqual(marked(s, BOARDS[0]), [['Ana B.', 1]]);
+});
+
+// Codex review #841 (P2): a light save that skips the load (sync.js skipPull) builds its own reply from the copy it holds,
+// which says nothing of the admin: it must not take the mark away.
+test("the admin's own device keeps its mark through light saves that skip the load", async () => {
+  const s = loadCodeGs(withData()),
+    A = page(s, {v: Math.max(C.MARK_SHEET, LIGHT), SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}}});
+  A.play('m0', 'Acropora', true);
+  await A.syncPush(); // a new account: a load (not found), then a save
+  assert.ok(adminRead(s, 'Ana B.', '1230').ok);
+  await A.syncPull(); // a load: the account is the admin's
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(A.store.get('reefid-amark', null))), {n: 'ana b.', on: true});
+  const from = A.reqs.length;
+  for (let i = 1; i < 4; i++) {
+    A.play('m' + i, 'Porites', i % 2 === 0);
+    await A.syncPush();
+  }
+  assert.ok(
+    A.reqs.slice(from).every(r => r.kind === 'post'),
+    'light saves, no load'
+  );
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(A.store.get('reefid-amark', null))), {n: 'ana b.', on: true}, 'the mark stays');
 });

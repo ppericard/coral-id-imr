@@ -756,7 +756,7 @@ function answers_(q){
     const r = find_(ra, name), h = hash_(name, pin), row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
     if (row && row[6] === h) {
       out.me = id(name);
-      if (!archived_(row)) try { adminSet_(h); } catch (e) {}  // v125: the admin's account (adminAcct_)
+      if (!archived_(row) && adminAcct_() !== h) try { adminClaim_(name, h); } catch (e) {}  // v125: the admin's account (adminAcct_)
     } else if (r) failed_(name);
   }
   const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
@@ -1308,6 +1308,21 @@ function adminSet_(h){
   if (!h || adminAcct_() === String(h)) return;
   PropertiesService.getScriptProperties().setProperty(ADMIN_ACCT_, String(h));
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => CacheService.getScriptCache().remove(boardCache_(S)));  // every board shows it at once
+}
+// The account the admin page is signed in to becomes the admin's (answers_), under the script lock, as a delete, a merge
+// or an archive clears it under that lock: its row is read again there and must still be live with that code hash, so a
+// log read that began before one of them can never bring the mark back (Codex review #841). Lock busy: nothing written
+// (the admin page's next read tries again).
+function adminClaim_(name, h){
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return false;
+  try {
+    const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0,
+      row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
+    if (!row || row[6] !== h || archived_(row)) return false;
+    adminSet_(h);
+    return true;
+  } finally { lock.releaseLock(); }
 }
 // The admin's account deleted, merged away or archived (h: its code hash): no account is the admin's any more.
 function adminDrop_(h){
