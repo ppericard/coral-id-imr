@@ -1407,7 +1407,9 @@ const anIxSays = t => {
       ? W.yes
       : t.v === 'margin'
         ? W.no
-        : `Not enough data yet${t.need ? `: it would need about ${anInt(t.need)} answers` : ''}.`
+        : t.need
+          ? `It would need about ${anInt(t.need)} answers to tell.`
+          : 'Too early to tell.'
   )}</p>`;
 };
 function anIx(a, k) {
