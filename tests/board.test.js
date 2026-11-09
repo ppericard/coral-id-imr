@@ -245,7 +245,8 @@ test('the board reads the record kept, cached 5 minutes; a record of another rul
   s.ctx.autoUpdate();
   const S = C.subjectOf(C.replaySubject()),
     T = s.sheets.Replayed,
-    mark = {Acropora: {ok: 30, ko: 0, mx: 1}};
+    // The record kept, a learned Acropora in it (its level kept: a replay with answers always has one).
+    mark = {...JSON.parse(T.rows[1].slice(5).join('')), Acropora: {ok: 30, ko: 0, mx: 1}};
   T.rows[1][5] = JSON.stringify(mark);
   assert.deepStrictEqual(
     board(s, S),
@@ -253,7 +254,7 @@ test('the board reads the record kept, cached 5 minutes; a record of another rul
     'cached: as before'
   );
   clearBoards(s);
-  const M = C.replayAdopted(mark, FIX.coral.saved, C.RV, false);
+  const M = C.replayAdopted(mark, FIX.coral.saved, C.RV);
   assert.deepStrictEqual(board(s, S)[0][1], C.pctOf(M, CLIST), 'the record kept, as the app adopts it');
   // Another row count (an answer logged since without a replay adopted): not read, the saved copy until the next run.
   T.rows[1][2] = 99;

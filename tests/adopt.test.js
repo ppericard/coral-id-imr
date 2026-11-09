@@ -888,7 +888,7 @@ test('a jump to a rules version without a card drops the cards of that subject s
 });
 
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
-function ach(A) {
+function ach(A, quiet = false) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     block = cut(src, 'const ACHK = ', 'const achList');
   const saved = {},
@@ -896,7 +896,7 @@ function ach(A) {
       ...C,
       SYNC: {name: 'Ana'},
       synced: 0,
-      MXL: {KEY: 'reefid-mx-lost'},
+      MXL: {KEY: 'reefid-mx-lost', QUIET: quiet}, // model.js MXL (QUIET true there since Q332)
       ACHNEW: 'reefid-ach-new',
       achUnseen: () => [],
       achDot: () => {},
@@ -931,6 +931,35 @@ test('achievements taken back: the removals are kept and synced even when this r
   const b = ach({_v: 2, met10: 10, learn1: 20});
   assert.deepStrictEqual(b.achRecheck(), ['learn1']);
   assert.strictEqual(b.rec().learn1, undefined);
+});
+
+// Silent for now (model.js MXL.QUIET; Pierre, 2026-11-09 ~15:40 Manila, Q332): a recheck still pending from before the
+// upgrade takes nothing back, and its flag goes (Codex review of #840).
+test('the learned mark silent: a recheck pending from before takes no achievement back', () => {
+  const a = ach({_v: 2, met10: 10, learn1: 20}, true);
+  assert.strictEqual(a.achRecheck().length, 0);
+  assert.strictEqual(a.rec().learn1, 20, 'kept');
+  assert.ok(!a.ctx.store.get('reefid-mx-lost', {}).ach, 'the pending recheck dropped');
+});
+
+test('the learned mark silent: a card due from before goes to told unseen', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    block = cut(src, 'function mxLostNotice() {', '// The announcement card of a rules version'),
+    saved = {'reefid-mx-lost': JSON.stringify({due: {Acropora: 123}, told: {Porites: 7}, why: {Acropora: 'bkt'}})},
+    shown = [],
+    ctx = {
+      MXL: {KEY: 'reefid-mx-lost', QUIET: true},
+      noticeStop: () => {},
+      noticeLater: () => false,
+      cardShow: o => shown.push(o),
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  vm.createContext(ctx);
+  vm.runInContext('let mxLostT = 0;\n' + block + '\nthis.go = mxLostNotice;', ctx);
+  ctx.go();
+  assert.deepStrictEqual(shown, [], 'no card');
+  const M = ctx.store.get('reefid-mx-lost', {});
+  assert.deepStrictEqual([M.due, M.told], [{}, {Porites: 7, Acropora: 123}]);
 });
 
 // progress.js achMigrate and achPending (ACH_V 3, Pierre 2026-11-08: "recalculer ... leur succès actuel"), on the real

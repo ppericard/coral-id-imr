@@ -558,6 +558,13 @@ function achMerge(json) {
 function achRecheck() {
   const M = store.get(MXL.KEY, null);
   if (!M || !M.ach) return [];
+  // Silent for now (model.js MXL.QUIET, Q332): the learned-based achievements are kept, as for a mark lost in play; a
+  // recheck still pending from before is dropped (Codex review of #840).
+  if (MXL.QUIET) {
+    delete M.ach;
+    store.set(MXL.KEY, M);
+    return [];
+  }
   // Signed in: on the merged progress, after the visit's first sync (sync.js noticeLater), never on an old copy; as the
   // subject it was asked for (a pull merges each subject as if on screen: sync.js mergeSaved; Codex review #736).
   if (!noticesReady()) {
@@ -1261,8 +1268,13 @@ let mxLostT = 0;
 const mxTok = (n, mx) => `mx:${n}@${mx}`;
 function mxLostNotice() {
   noticeStop(mxLostT);
-  if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   let M = store.get(MXL.KEY, {}) || {};
+  // Silent for now (model.js MXL.QUIET, Q332): a card still due from before goes to told unseen (Codex review of #840).
+  if (MXL.QUIET) {
+    if (Object.keys(M.due || {}).length) store.set(MXL.KEY, {...M, told: {...(M.told || {}), ...M.due}, due: {}, gone: []});
+    return;
+  }
+  if (noticeLater('mxlost', mxLostNotice)) return; // signed in: after the visit's first sync (sync.js noticeLater)
   const done = Object.keys(M.due || {}).filter(n => toldHas(mxTok(n, M.due[n])) || (P[n] && P[n].mx));
   if (done.length) {
     const left = {...M.due},

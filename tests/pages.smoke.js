@@ -229,10 +229,9 @@ async function overlays(b, base) {
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
       ['account', () => signinNudge(false, false)],
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
-      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), the
-      // apology of rules version 9 (core.js RV_SORRY), and the learned mark taken away (progress.js mxLostNotice), through
-      // their real callers.
-      // (rules version 8's standard card: from rules version 10 a recalculation has no card, Q330)
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD: rules
+      // version 8's; from rules version 10 a recalculation has no card, Q330) and the apology of rules version 9 (core.js
+      // RV_SORRY), through their real caller (the learned mark's card is silent for now: model.js MXL.QUIET, Q332).
       ['update', () => (store.set('reefid-rv-msg', {due: [8], told: [], pct: {8: [50, 42]}}), rvNotice())],
       [
         'apology',
@@ -245,7 +244,6 @@ async function overlays(b, base) {
           rvNotice()
         )
       ],
-      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
       ['feedback', () => pulseAsk()]
     ];
     for (let i = 0; i < CASES.length; i++) {
@@ -2295,8 +2293,7 @@ async function noticesAfterSync(base) {
     if (await p.evaluate(() => window.CARDS_SAID)) fails.push('notices: start-up said its cards were settled before the sync');
     await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => fails.push('notices: the new update note never showed'));
     await p.click('.unlock.recalc .next').catch(() => {});
-    await p.waitForSelector('.unlock.mxlost', {timeout: 8000}).catch(() => fails.push("notices: the learned mark's card never showed"));
-    await p.click('.unlock.mxlost .next').catch(() => {});
+    // The learned mark's card due from before: dropped unseen (model.js MXL.QUIET; Pierre, 2026-11-09 ~15:40 Manila, Q332).
     await p.waitForSelector('.achpop', {timeout: 8000}).catch(() => fails.push("notices: the run's achievement never popped up"));
     await p
       .waitForFunction(
@@ -2310,10 +2307,9 @@ async function noticesAfterSync(base) {
         .filter(x => x.post && x.told)
         .pop()
     );
-    if (!sent || !sent.told.includes('recalc:' + last) || !sent.told.includes('mx:Acropora@111'))
-      fails.push(`notices: the save did not tell the account: ${JSON.stringify(sent)}`);
+    if (!sent || !sent.told.includes('recalc:' + last)) fails.push(`notices: the save did not tell the account: ${JSON.stringify(sent)}`);
     const s = await shown(p);
-    if (s.filter(x => x === 'recalc').length !== 1 || s.filter(x => x === 'mxlost').length !== 1)
+    if (s.filter(x => x === 'recalc').length !== 1 || s.includes('mxlost'))
       fails.push(`notices: not shown once each: ${JSON.stringify(s)}`);
     // The next load: the sheet's copy (as this device saved it) has them all told.
     await p.evaluate(() => {

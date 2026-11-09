@@ -366,6 +366,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     if (rows.some(r => r[1] < last)) return false;
     // A mark the replay took away: the former model's (a record learned with neither s.pg nor the domain-score bar,
     // core.js afterBkt), or a rule of the new version.
+    const n0 = answersSoFar();
     mxRecalc(
       () => {
         Object.keys(P).forEach(g => delete P[g]);
@@ -373,6 +374,9 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       },
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
+    // The log's answer count under a device's doubled one (rule D9): the checkpoints kept at a count follow it down
+    // (model.js countShift; Codex review of #840).
+    if (typeof countShift === 'function') countShift(n0 - answersSoFar());
     store.set(rvKey(S), rp.rv);
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
     // device's answers the sheet has not counted yet, which stay this device's own (P minus the base) and go on top at
@@ -570,8 +574,12 @@ function mergeSubject(j, d, S, mine) {
       // reply carries it, else at the next), which decides it with this device's own card (told once per account: core.js TOLD, progress.js mxLostNotice).
       if (RO && rvSaved > rvApplied(S))
         Object.keys(M).forEach(g => g !== LEVEL && P[g] && P[g].mx && M[g] && !M[g].mx && (M[g].mx = P[g].mx));
+      const n0 = answersSoFar();
       Object.keys(P).forEach(g => delete P[g]);
       Object.assign(P, M);
+      // A copy whose answer count is lower than this device's baseline (another device adopted the log's count, rule D9):
+      // the checkpoints kept at a count follow it down (model.js countShift).
+      if (typeof countShift === 'function') countShift(n0 - answersSoFar());
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
     } else store.set(RK, rvSaved);

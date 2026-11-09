@@ -100,7 +100,7 @@ this) and no rules-version card (rule D5). Until then a recalculation of everyon
 pop-up (Pierre, 2026-11-02).
 - **A learned mark taken away by a recalculation is silent too** (Pierre, 2026-11-09 ~15:40 Manila, Q332): run the
   recalculation through `model.js` `mxRecalc`, which tells nothing and keeps the learned-based achievements, as a mark
-  lost in play does.
+  lost in play does; a card or an achievement recheck still pending from before is dropped unseen (`MXL.QUIET`).
 - **Announcement cards are never held**: a card that announces a rule change, a learned mark taken away or a big new app
   version shows as soon as the player opens or reconnects to the app (once the first page is drawn and the progress is
   in, and right after a pull that brings the change), on whatever page they land on, once per account, marked seen by its
