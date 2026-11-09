@@ -103,3 +103,36 @@ test('fish.json missing: Home refuses the fish (start-up falls back on the coral
   await tick();
   assert.strictEqual(A.asked.filter(u => /^fish\.json/.test(u)).length, 2);
 });
+
+// Codex review #820: model.js runs domRecalcAll when it loads, which can be while the fish units are on the stopgap's
+// photos only; an old record (s.pg) rebuilt then would keep a bar read from those photos. While dataPartial() holds it
+// does nothing; once the whole data is in, it rebuilds the record.
+test('domRecalcAll leaves an old record alone while the data is partial, and rebuilds it once whole', () => {
+  const msrc = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8');
+  let partial = true,
+    saved = 0;
+  const ctx = {
+    SUBJ: {},
+    domRules: () => true,
+    DATA: {gen: {}},
+    dataPartial: () => partial,
+    P: {'f:A': {pg: 0.4, ok: 6, ko: 2}},
+    LEVEL: '_level',
+    GDIFF: {},
+    domOn: () => false,
+    GX: () => ({}),
+    domFromCounts: () => ({dp: 0.7, ds: 0.38}),
+    genusDiff: () => 0,
+    PICKD: {SINGLE: 0.5},
+    save: () => saved++
+  };
+  vm.createContext(ctx);
+  vm.runInContext(block(msrc, 'function domRecalcAll() {', '\n}\n', {through: 1, file: 'model.js'}) + '\nthis.run = domRecalcAll;', ctx);
+  assert.strictEqual(ctx.run(), false);
+  assert.deepStrictEqual(ctx.P['f:A'], {pg: 0.4, ok: 6, ko: 2}, 'untouched while partial');
+  assert.strictEqual(saved, 0);
+  partial = false;
+  ctx.run();
+  assert.deepStrictEqual(ctx.P['f:A'], {ok: 6, ko: 2, dp: 0.7, ds: 0.38}, 'rebuilt once the data is whole');
+  assert.strictEqual(saved, 1);
+});
