@@ -75,7 +75,8 @@ Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
   the unit shown: <id> (n of m answers)"), never a name. **Nothing is fetched under the script lock**: on write, and in
   a replay (whose photo stats are computed under the lock), only the pools already cached are used. The public stats
   (`?stats=1`, asked by every app), `readStats` and the admin's player list hold no lock, and they read every subject's
-  pool from GitHub when it is not cached. The pools are cached 6 hours in parts (the fish pool, about 390 KB, is over
+  pool from GitHub when it is not cached. Stats made under the lock while a pool was not cached are kept apart as
+  unchecked (`chk: 0`): the public stats and `readStats` never serve them, they read the pools and make them again. The pools are cached 6 hours in parts (the fish pool, about 390 KB, is over
   the script cache's 100 KB a value).
 - **Ids named like JavaScript's built-ins**: a unit, answer, mode, photo or choice holding a word that `Object.prototype`
   has (`constructor`, `__proto__`, `toString`…) is refused when logged, like any malformed value (`word_`). Such a row

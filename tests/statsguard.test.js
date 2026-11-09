@@ -368,3 +368,32 @@ test('a replay under the script lock fetches no photo pool when cold; the public
   assert.match(String(s.cache.pool2fish), /^#\d+$/, 'the public stats cached the pools');
   assert.ok(n['fish-photos.json'] === 1 && n['curation.json'] >= 1);
 });
+
+// Codex review #801 (ae9f74a): stats made under the lock with no pool cached are unchecked; the public stats, which may
+// read the pools, never take them from the cache as they are: they read the pools and check the ratings.
+test('unchecked stats made under the lock are never served as checked by the public stats', () => {
+  const fish = C.SUBJECTS.find(S => S.id === 'fish'),
+    FP = C.unitPool(
+      fish,
+      fish.pool.files.map(f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')))
+    ),
+    bfly = FP['f:Butterflyfishes'][0][0],
+    n = {},
+    s = loadCodeGs({fetch: site(n), cacheMax: 100 * 1024});
+  s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a', {ph: 'imrl-p8_g36'})});
+  // A fish photo under a coral genus, then a replay under the lock: its stats are made with no pool, and cached.
+  s.post({name: 'Bot', pin: '3333', data: {}, summary: {}, answers: run('b', {ph: bfly}), rv: 0});
+  assert.ok(!s.cache.pool2fish, 'nothing fetched under the lock');
+  assert.strictEqual(JSON.parse(s.cache.stats17).chk, 0, 'cached as unchecked');
+  assert.strictEqual(rated(JSON.parse(s.cache.stats17), bfly), 12);
+  // The public stats: the pools read, the ratings checked, cached as checked.
+  const pub = s.get({stats: '1'});
+  assert.strictEqual(rated(pub, bfly), 0, 'the fish photo under a coral genus rates nothing');
+  assert.match(String(s.cache.pool2fish), /^#\d+$/);
+  assert.strictEqual(JSON.parse(s.cache.stats17).chk, 1);
+  assert.strictEqual(rated(s.post({readStats: 1, token: TOK}), bfly), 0);
+  // A replay under the lock now takes the checked stats from the cache.
+  const before = JSON.stringify(n);
+  s.get({name: 'Bot', pin: '3333', rv: '0'});
+  assert.strictEqual(JSON.stringify(n), before);
+});

@@ -776,9 +776,12 @@ function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
 // read (v115): true where no script lock is held (the public stats, readStats): the game pools are read from GitHub
 // when not cached (pools_); otherwise (a replay under the lock) only the cached pools are used, so nothing is fetched
 // under the lock (the pools are warmed by the public stats every app asks for, and by the admin's player list).
+// The stats are cached with chk: 1 once their photos were checked against every subject's pool (a read, or every pool
+// cached); stats made under the lock with a pool not cached yet are cached with chk: 0, which a read never takes: it
+// reads the pools and makes them again (Codex review #801), and a replay under the lock takes them as they are.
 function stats_(read){
   const cache = CacheService.getScriptCache(), hit = cache.get('stats17');
-  if (hit) return JSON.parse(hit);
+  if (hit) { const v = JSON.parse(hit); if (!read || v.chk) return v; }
   // v115 (review of #801): every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
   // such as constructor or __proto__ logged before word_ refused them is an entry like any other, never an inherited one.
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: Object.create(null), ras: {}, conf: Object.create(null), mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: Object.create(null), fmt: {}};
@@ -793,6 +796,7 @@ function stats_(read){
   Object.keys(trust).forEach(w => { if (trust[w] && isEx(w)) trust[w] = false; });
   // v115: an answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
   const idx = (() => { try { return photoIdx_(read ? undefined : true); } catch (e) { return null; } })();  // every subject's; fetched only when read
+  out.chk = read || (idx && idx.n >= CORE_.SUBJECTS.filter(S => S.pool).length) ? 1 : 0;  // a pool missing under the lock: 0
   out.skip = {excluded: 0, photos: 0};
   rows.forEach(r => {
     const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
@@ -1769,11 +1773,12 @@ function unitUp_(F){
 }
 // v115 (Pierre, 2026-11-08, ROADMAP "Security follow-ups": check server-side that an answer's photos belong to the unit
 // shown): every subject's game photos (pools_, the compact list the games draw from) as {at: {photo: ['subject|unit', …]},
-// up: {subject id: its parent units, unitUp_}}; null when no pool could be read (then no answer is checked).
+// up: {subject id: its parent units, unitUp_}, n: how many subjects' pools it holds}; null when no pool could be read
+// (then no answer is checked).
 function photoIdx_(only){
   const up = Object.create(null), pools = pools_(only, up), at = Object.create(null);
   Object.keys(pools).forEach(sid => Object.keys(pools[sid]).forEach(u => pools[sid][u].forEach(c => c.forEach(f => (at[f] = at[f] || []).push(sid + '|' + u)))));
-  return Object.keys(at).length ? {at, up} : null;
+  return Object.keys(at).length ? {at, up, n: Object.keys(pools).length} : null;
 }
 // An answer's photos against the unit it shows: 'ok' when one of them is a game photo of that unit in that subject, or is
 // named after it (a coral photo's file starts with its genus: an older app, a photo given to another genus since), or the
