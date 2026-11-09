@@ -184,6 +184,16 @@ function visitKpis(P) {
     phone: P.rows.filter(v => v.cls === 'phone').length
   };
 }
+// The subject a visitor's Journey opens on (Codex review #836): the one filtered; on All, the subject they spent the most
+// time on in their visits (L, each counted whole: v.on), the first in order on a tie. Their link names it (data-own), so
+// the switch's side never picks the Journey of a subject they did not visit.
+function visitorSubj(L, sel, order) {
+  if (sel && sel !== 'all') return sel;
+  const T = Object.create(null);
+  L.forEach(v => Object.entries(v.on || {}).forEach(([id, u]) => (T[id] = (T[id] || 0) + u.s)));
+  const ids = Object.keys(T).sort((a, b) => T[b] - T[a] || (order.indexOf(a) + 1 || 1e9) - (order.indexOf(b) + 1 || 1e9));
+  return ids[0] || order[0];
+}
 // visits: end
 
 /* ---------- The page ---------- */
@@ -566,12 +576,23 @@ function renderVisits() {
     });
     VL.sort((a, b) => b.last - a.last);
   }
-  const whoLink = v =>
-      v.signed
-        ? `<a href="#players/list/journey/${encodeURIComponent(v.name)}">${pname(v.name)}</a>`
+  // A visitor's Journey, on the subject of their visits (visitorSubj), named by its link (data-own).
+  const whoLink = (v, L) => {
+      const h = esc(
+        subjectOf(
+          visitorSubj(
+            L,
+            VF.subj,
+            SUBJECTS.map(S => S.id)
+          )
+        ).hash
+      );
+      return v.signed
+        ? `<a href="#${h}players/list/journey/${encodeURIComponent(v.name)}" data-own>${pname(v.name)}</a>`
         : v.id
-          ? `<a href="#players/list/anon/${encodeURIComponent(v.id)}" title="Not signed in"><code>${esc(v.id)}</code></a>`
-          : `<code title="A wrong code: the device">${esc(v.dev)}</code>`,
+          ? `<a href="#${h}players/list/anon/${encodeURIComponent(v.id)}" data-own title="Not signed in"><code>${esc(v.id)}</code></a>`
+          : `<code title="A wrong code: the device">${esc(v.dev)}</code>`;
+    },
     shown = vAll ? VL : VL.slice(0, VISITS.TOP),
     vRows = shown
       .map(o => {
@@ -597,7 +618,7 @@ function renderVisits() {
                   : ''
               }</tbody></table></td></tr>`
             : '';
-        return `<tr class="adm-urow${open ? ' open' : ''}" data-vopen="${esc(o.w)}" tabindex="0" aria-expanded="${open}"><td>${whoLink(o.v)}</td><td><span class="adm-vwho">${
+        return `<tr class="adm-urow${open ? ' open' : ''}" data-vopen="${esc(o.w)}" tabindex="0" aria-expanded="${open}"><td>${whoLink(o.v, o.L)}</td><td><span class="adm-vwho">${
           o.v.signed && o.v.kind === 'never' ? 'Signed in, never answered' : VKIND[o.v.kind]
         }</span></td><td>${vMarks(o)}</td><td>${vWhen(o.last)}</td><td class="n">${o.L.length}</td><td class="n">${o.days}</td><td class="n">${vHours(o.s)}</td><td>${o.top
           .map(([p, s]) => `${vLab(p)} <small>${vMins(s)}</small>`)
@@ -654,6 +675,6 @@ function bindVisits() {
 }
 HELP.visits = `<p>Who opens the app and what for, games or not, signed in or not, from what the app already sends: the summary of each visit (the pages opened, how many times and for how long each was on screen, sheet v30, the Pages tab) and its once-a-visit load row (the Events tab). <b>One visit</b> = the summaries with the same visit id (the app sends one each time it is left). Its time is that of its first summary; its length is the time its pages were on screen. One page for every subject, as the list of players: the switch does nothing here. Each visit is marked with the subjects whose pages it opened (a page drawn with Fish on screen is logged as fish.&lt;page&gt;): Corals, Fish or both, counted once.</p>
   <p><b>Subject</b>: <b>All</b> (the default): every visit, each page of each subject its own row, marked with its subject's icon (the Coral ID Key and the Fish ID Key apart). One subject: the visits that opened one of its pages, each counted with that subject's pages only (its length, its pages, a game or not), still marked with every subject it opened. <b>Period</b>: the last 7 or 30 days, or everything read (the last 10,000 summaries). <b>Visits</b>: <b>Without a game</b> (the default) or <b>All visits</b>. A game = a Practice page (the quiz, the custom quiz, duels, Memory) of any subject on All, of the subject filtered otherwise; a visit to the Lab (Tools) counts as without a game. <b>Who</b>: <b>Signed in</b> (with answers), <b>Not signed in</b> (an anonymous device with answers), <b>Never answered</b> (no answer in any subject, signed in or not). <b>Device</b>: see below.</p>
-  <p><b>The numbers</b>: the visits (and, without a game, of how many in all), the visitors, those who never answered, the median visit, the share of visits on a phone. <b>Visits over time</b>: per day or week (from Monday), the visits and the visitors; on All visits the visits with a game in the paler colour above those without; then the visits by hour of the day (this browser's time). <b>Pages opened</b>: per page, the visits that opened it and their share, the visitors, the median time on the page in a visit that opened it, the total time. <b>ID Key</b> (the Coral ID Key, the Fish ID Key, a card each on All): its visits, visitors, median time and the visits that started on it, by who; the steps inside the Key are not counted yet (a sheet change). <b>Genus sheets</b> (the corals'; not on Fish alone): the ${VISITS.SHEETS} most opened, by how many visitors, the time on them, and how they were reached most often (quiz feedback, Learn, My progress, other). <b>First page</b> and <b>installed app</b> come from the visit's load row (same device, sent within the visit's first minutes): "Not known" when the Events read (its last 3000 rows) no longer has it. <b>Visitors</b>: one row each, newest first, marked with the subjects of their visits; a tap unfolds their last ${VISITS.OPEN} visits, each marked with its subjects; the name or id opens their Journey.</p>
+  <p><b>The numbers</b>: the visits (and, without a game, of how many in all), the visitors, those who never answered, the median visit, the share of visits on a phone. <b>Visits over time</b>: per day or week (from Monday), the visits and the visitors; on All visits the visits with a game in the paler colour above those without; then the visits by hour of the day (this browser's time). <b>Pages opened</b>: per page, the visits that opened it and their share, the visitors, the median time on the page in a visit that opened it, the total time. <b>ID Key</b> (the Coral ID Key, the Fish ID Key, a card each on All): its visits, visitors, median time and the visits that started on it, by who; the steps inside the Key are not counted yet (a sheet change). <b>Genus sheets</b> (the corals'; not on Fish alone): the ${VISITS.SHEETS} most opened, by how many visitors, the time on them, and how they were reached most often (quiz feedback, Learn, My progress, other). <b>First page</b> and <b>installed app</b> come from the visit's load row (same device, sent within the visit's first minutes): "Not known" when the Events read (its last 3000 rows) no longer has it. <b>Visitors</b>: one row each, newest first, marked with the subjects of their visits; a tap unfolds their last ${VISITS.OPEN} visits, each marked with its subjects; the name or id opens their Journey, on the subject filtered (on All, the subject they spent most time on).</p>
   <p><b>Device</b> (approximate): a <b>phone</b> is a browser that says it is a mobile one; a <b>tablet</b> is estimated from the window width of the device's load rows (their median): a mobile browser ${VISITS.PHONE} px wide or more, or a computer's browser from ${VISITS.PHONE} to ${VISITS.DESK - 1} px (an iPad's Safari presents itself as a Mac). Only devices with a load row in the Events read get a width (recent devices); the others are a phone or a computer by their browser. A phone held sideways or a narrow computer window can be misread.</p>
   <p>What is not seen: a first visit left within seconds, a page the phone closed without the app being left (its summary is lost), local copies and automated browsers. Anonymous ids only; a name only for those who signed in.</p>`;

@@ -3795,7 +3795,7 @@ const WIDTHS = [390, 1280];
           felt.forEach(x => (x.style.display = ''));
           const plain = [],
             tw = document.createTreeWalker(v, NodeFilter.SHOW_TEXT);
-          for (let n; (n = tw.nextNode()); )
+          for (let n; (n = tw.nextNode());)
             if (/recognised by \d+%/i.test(n.textContent) && !n.parentElement.closest('.adm-rec'))
               plain.push(n.textContent.trim().slice(0, 80));
           return {
@@ -4333,6 +4333,12 @@ const WIDTHS = [390, 1280];
         const vfa = await click('vis', 'all');
         if (!/^5Visits \| 3Visitors/.test(vfa.kpis) || !vfa.marks.includes('Corals+Fish'))
           fails.push(`${w}px Visits, Fish, All visits: ${vfa.kpis} ${JSON.stringify(vfa.marks)}`);
+        // Every visitor's Journey link names the subject filtered (Codex review #836), whatever side the switch is on.
+        const fl = await p.$$eval('[data-visits="visitors"] a[href*="players/list/"]', L =>
+          L.map(a => [a.getAttribute('href'), a.hasAttribute('data-own')])
+        );
+        if (!fl.length || fl.some(([h, o]) => !h.startsWith('#fish/players/list/') || !o))
+          fails.push(`${w}px Visits, Fish: Journey links ${JSON.stringify(fl)}`);
         const vc = await click('subj', 'coral');
         if (
           !/^71Visits \| 21Visitors/.test(vc.kpis) ||

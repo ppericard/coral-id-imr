@@ -12,7 +12,7 @@ const src = fs.readFileSync(path.join(__dirname, '..', 'admin-visits.js'), 'utf8
   ctx = {};
 vm.runInNewContext(
   block(src, '// visits: begin', '// visits: end', {file: 'admin-visits.js'}) +
-    '\n;Object.assign(this, {VISITS, devClass, visitsOf, visitSubj, visitsPick, visitPeriods, visitKpis, visitGame});',
+    '\n;Object.assign(this, {VISITS, devClass, visitsOf, visitSubj, visitorSubj, visitsPick, visitPeriods, visitKpis, visitGame});',
   ctx
 );
 const J = x => JSON.parse(JSON.stringify(x)),
@@ -269,4 +269,17 @@ test("visitsOf: a load row sent after a visit's first summary is the next visit'
       ['aidq|w1', 'home', 0]
     ]
   );
+});
+
+// Codex review #836: a visitor's Journey link names its subject: the one filtered, else the one of most of their time.
+test("visitorSubj: the visitor's Journey on the subject filtered, else the subject they spent most time on", () => {
+  const {visitorSubj} = ctx;
+  assert.strictEqual(visitorSubj([by.v7], 'all', ORDER), 'fish', 'a fish-only visitor: their fish Journey');
+  assert.strictEqual(visitorSubj([by.v8], 'all', ORDER), 'fish', 'in both: 200 s of fish, 10 s of corals');
+  assert.strictEqual(visitorSubj([by.v1, by.v2], 'all', ORDER), 'coral');
+  assert.strictEqual(visitorSubj([by.v8], 'coral', ORDER), 'coral', 'the subject filtered wins');
+  assert.strictEqual(visitorSubj([by.v1], 'fish', ORDER), 'fish');
+  const tie = ctx.visitsOf([row(at(9), 'devt', 'aidt', 't1', {'fish.home': [1, 5], home: [1, 5]})], {split, order: ORDER});
+  assert.strictEqual(visitorSubj(tie, 'all', ORDER), 'coral', 'a tie: the first subject');
+  assert.strictEqual(visitorSubj([], 'all', ORDER), 'coral', 'no visit: the first subject');
 });
