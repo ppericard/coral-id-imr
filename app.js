@@ -2478,6 +2478,7 @@ function cardRing(pct, was) {
 // the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
 // those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
 const FROMHOME_SHEET = 123;
+const fromHomeOn = () => typeof sheetV === 'function' && sheetV() >= FROMHOME_SHEET;
 let HOME_AT = 0,
   homeLeft = false,
   toured = false;
@@ -2485,7 +2486,7 @@ function fromHome(h, nt) {
   if (document.getElementById('tour')) return void (toured = true);
   if (homeLeft || !HOME_AT || (routeFrom !== '' && routeFrom !== 'home') || !h || h === 'home') return;
   homeLeft = true;
-  if (typeof sheetV !== 'function' || sheetV() < FROMHOME_SHEET) return;
+  if (!fromHomeOn()) return;
   ev('fromhome', {
     to: pageName(h, SUBJ.pv),
     s: Math.round((performance.now() - HOME_AT) / 100) / 10,
