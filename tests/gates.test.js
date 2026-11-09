@@ -72,6 +72,9 @@ const GATES = {
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
+  // The seedling in the admin's own name (admin.js seedOn, Code.gs users_ userSeed): Add / Remove on the admin's own row
+  // from the script that renames; before, the button is disabled with what it needs.
+  SEED_SHEET: (v, N) => fn('admin.js', 'const seedOn = ', '\n', 'seedOn', {USERS: v === undefined ? {} : {v}, SEED_SHEET: N})(),
   EXCL_SHEET: (v, N) => fn('admin.js', 'const exclOn = ', '\n', 'exclOn', {USERS: v === undefined ? {} : {v}, EXCL_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
