@@ -815,6 +815,7 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // picks per entry under Pierre's curation (CUR), so FISH is made again whenever the curation is (build, fishBuild).
 let FISH = null,
   FISHP = null,
+  FISHH = null,
   FISHRAW = null;
 const fishBuild = () => {
   const {f, ph, gm} = FISHRAW;
@@ -849,16 +850,44 @@ function fishCurate(X, cur) {
   });
   return X;
 }
-const fishLoad = () =>
-  FISHP ||
-  (FISHP = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6'), json('fish-game.json?v=1')])
-    .then(([f, ph, gm]) => {
+// In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): fishHome,
+// fish.json and fish-photos.json (the families and the stopgap's photos), enough for Home, which start-up waits for; then
+// fishLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
+// 2: need). Until it is in, the units play on the stopgap's photos only, as when it cannot come; then they are built
+// again with it. A launch that finds it in the service worker's cache waits for it at start-up, as before (fishCached).
+const fishHome = () =>
+  FISHH ||
+  (FISHH = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6')])
+    .then(([f, ph]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
       // curated photos are not required: without them every family plays on the stopgap's.
       if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
+      if (!FISHRAW) FISHRAW = {f, ph, gm: {photos: {}}};
+      return FISHRAW;
+    })
+    .catch(e => {
+      FISHH = null;
+      throw e;
+    }));
+// The subject's data still partial (the fish units on the stopgap's photos only, until fish-game.json is in): what reads
+// the units' photos once for good waits (model.js domRecalcAll, the one-time rebuild of an old record's bar).
+const dataPartial = () => !!(UNITS[SUBJ.id].partial && UNITS[SUBJ.id].partial());
+// Whether this device's service worker already holds fish-game.json (a launch after the first, the same version): then
+// start-up waits for it, as before, so Home shows the curated photos.
+const fishCached = () =>
+  window.caches && caches.match
+    ? caches.match('fish-game.json?v=1').then(
+        r => !!r,
+        () => false
+      )
+    : Promise.resolve(false);
+const fishLoad = () =>
+  FISHP ||
+  (FISHP = Promise.all([fishHome(), json('fish-game.json?v=1')])
+    .then(([raw, gm]) => {
       // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
-      FISHRAW = {f, ph, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}};
+      FISHRAW = {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true};
       // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
       // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
       // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.
@@ -1708,6 +1737,10 @@ const UNITS = {
     // square tiles cut them); the corals keep their square-ish close-ups.
     land: true,
     load: () => fishLoad(),
+    // What start-up waits for: the files of Home (fishHome), and the curated photos too when this device holds them.
+    home: () => fishHome().then(() => fishCached().then(c => c && fishLoad())),
+    // Between the two: the units on the stopgap's photos only (dataPartial).
+    partial: () => !!FISHRAW && !FISHRAW.full,
     pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
     // text or a function of "Tap" / "Click". Fish have one game for now (SUBJECTS pages) and their key is coming soon.
@@ -3090,7 +3123,13 @@ const SETUP = {
 function need(n) {
   if (n <= HAVE) return Promise.resolve();
   if (!TIERP[n])
-    TIERP[n] = Promise.all([n > 2 ? need(n - 1) : STARTED, window.loadTier ? loadTier(n) : null, n === 2 ? tier2json() : null])
+    TIERP[n] = Promise.all([
+      n > 2 ? need(n - 1) : STARTED,
+      window.loadTier ? loadTier(n) : null,
+      n === 2 ? tier2json() : null,
+      // The subject's whole data (fish: fish-game.json, after Home's files): the quiz and the Learn pages wait for it.
+      n === 2 ? UNITS[SUBJ.id].load().catch(() => null) : null
+    ])
       .then(a => SETUP[n] && SETUP[n](a[2]))
       .then(() => (HAVE = Math.max(HAVE, n)));
   return TIERP[n];
@@ -3112,7 +3151,7 @@ Promise.all([
   draftCand(),
   domReady,
   // The subject's own data (fish: fish.json): if it cannot come, the app opens on the first subject (corals).
-  UNITS[SUBJ.id].load().catch(() => subjectLoad(SUBJECTS[0]))
+  (UNITS[SUBJ.id].home || UNITS[SUBJ.id].load)().catch(() => subjectLoad(SUBJECTS[0]))
 ])
   .then(([d, c, dc]) => {
     Object.entries(dc).forEach(([g, L]) => {
