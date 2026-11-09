@@ -1253,8 +1253,10 @@
       put = (x, g, vr, n, of, sc) => {
         if (!x || !fam.has(g)) return;
         if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
-        const o = oft(x, g);
-        out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length ? {sc} : {})});
+        const o = oft(x, g),
+          // Pierre's on or often gives the name to the whole family, whatever part it named (Codex review #834)
+          whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
+        out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
       };
     const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
     game.forEach(s => {

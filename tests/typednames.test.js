@@ -281,6 +281,12 @@ test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
     chr = family('Chromis', 'f:Damselfishes', T);
   assert.strictEqual(JSON.stringify(tang.step), JSON.stringify({oft: ['Surgeonfishes', 'Tang']}));
   assert.strictEqual(JSON.stringify(chr.step), JSON.stringify({oft: ['Damselfishes', 'Chromis']}));
+  // Codex review #834: on or often gives the name to the whole family: Chromis on a Dascyllus is then right
+  const dasc = [F.species.find(x => x.name === 'Dascyllus aruanus').id];
+  assert.strictEqual(family('Chromis', 'f:Damselfishes', T, dasc).got.c, 'f:Damselfishes');
+  const On = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishNameIndex(F, {Chromis: {'f:Damselfishes': 'on'}}));
+  assert.strictEqual(family('Chromis', 'f:Damselfishes', On, dasc).got.c, 'f:Damselfishes');
+  assert.strictEqual(family('Chromis', 'f:Damselfishes', NAMES, dasc).got.c, ''); // without it, a mistake (Q333)
 });
 
 test('a name several families share: right for each, explained; on another family, wrong with no unit given (Q319)', () => {
