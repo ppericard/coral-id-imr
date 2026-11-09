@@ -777,7 +777,8 @@ const own = memo('own', n => {
   (DATA.course[n] || []).forEach(p =>
     L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v, ...(p.multi && one(p.f) ? {multi: false, wasMulti: true} : {})})
   );
-  for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f)) L.splice(i, 1);
+  // Excluded photos, and the coral skeleton photos (data.json skel, rule P6: never shown, as core.js applyCuration).
+  for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f) || L[i].skel) L.splice(i, 1);
   // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
   const add = entry(n).add || {};
   cands(n)
@@ -809,7 +810,7 @@ const sentTo = (k, list) => {
 const photos = memo('photos', n => [...own(n).filter(p => !outs(n)[p.f]), ...(sentTo('own', own)[n] || [])]);
 const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
-const rawCands = memo('raw', n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f)));
+const rawCands = memo('raw', n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f) && !p.skel));
 // A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
 const cands = memo('cands', n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...(sentTo('cand', rawCands)[n] || [])]);
 // Same order as the Show source chips (ORIGINS).
