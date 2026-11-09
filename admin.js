@@ -72,6 +72,15 @@ const store = {
     } catch (e) {
       return false;
     }
+  },
+  // A value already in JSON (putDraft: the draft's text, joined once).
+  put(k, text) {
+    try {
+      localStorage.setItem(SK(k), text);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 };
 // Colour-blind mode as set in the app's ⚙ (app.js, reefid-sync-cvd; the theme comes the same way, admin.html): the admin
@@ -383,13 +392,23 @@ function takeOther() {
   memoReset();
   return m;
 }
+// The draft's text with its _tab after its other keys, from the draft's own text s: JSON.stringify of
+// Object.assign({}, draft, {_tab}) for a draft with no _tab of its own.
+const draftJson = (s, tab) => (s === '{}' ? '{' : s.slice(0, -1) + ',') + '"_tab":' + JSON.stringify(tab) + '}';
 function putDraft() {
   if (takeOther()) setTimeout(() => toast('Clicks made in another admin tab are in.'), 0);
   const rev = `${TAB}.${++REV}`,
     keys = Object.keys(REVS);
   if (keys.length > 200) keys.slice(0, 50).forEach(k => delete REVS[k]);
-  REVS[rev] = clone(DRAFT);
-  const ok = store.set('reefid-curation-draft', Object.assign({}, DRAFT, {_tab: {rev, seen: SEEN}}));
+  // snap is the draft's JSON at every call (saveDraft, step, rebase, the start and takeOther set it with DRAFT), so the
+  // copy and the stored text come from it: the same as clone(DRAFT) and JSON.stringify of the draft with its _tab
+  // (draftJson; performance pass, 2026-11-09: two encodings of the whole draft less per click).
+  const fast = typeof snap === 'string' && !('_tab' in DRAFT);
+  REVS[rev] = fast ? JSON.parse(snap) : clone(DRAFT);
+  const tab = {_tab: {rev, seen: SEEN}},
+    ok = fast
+      ? store.put('reefid-curation-draft', draftJson(snap, tab._tab))
+      : store.set('reefid-curation-draft', Object.assign({}, DRAFT, tab));
   SEEN = rev;
   return ok;
 }
@@ -413,23 +432,32 @@ function step(from, to, msg) {
 // The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG).
 let ASIG = null,
   FSIG = null,
+  FSIG_F = null, // the fish part FSIG was read from (performance pass, 2026-11-09: below)
   ASIG_OF = null;
 // The fish answers the same way, in the fish part (autosort.js fishStamp; FSIG his keep per fish photo, as ASIG): a
 // Remove, × or Not this on a photo the fish auto-sort put in play (Photos › Families) is timed (Codex review #655).
+// A click that left the fish part as it was (the same object: the admin never writes into it, every change makes a new
+// one, tests/adminclick.test.js) has the same keeps, so fishStamp finds nothing to time and FSIG stays: both skipped
+// (performance pass, 2026-11-09: some 80 ms of every click on a desktop, the fish part being most of the curation).
 function autoWhen() {
   if (ASIG_OF !== snap) {
     const S = JSON.parse(snap);
     ASIG = autoSigs(S);
     FSIG = fishSigs((S || {}).fish);
+    FSIG_F = null;
     ASIG_OF = snap;
   }
   const t = Date.now() / 1000,
+    same = !!DRAFT.fish && DRAFT.fish === FSIG_F,
     A = autoStamp(DRAFT, ASIG, t),
-    FA = DRAFT.fish && fishStamp(DRAFT.fish, FSIG, t);
+    FA = DRAFT.fish && !same && fishStamp(DRAFT.fish, FSIG, t);
   if (A) DRAFT.auto = A;
   if (FA) DRAFT.fish = {...DRAFT.fish, auto: FA};
   ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
-  FSIG = fishSigs(DRAFT.fish);
+  if (!same) {
+    FSIG = fishSigs(DRAFT.fish);
+    FSIG_F = DRAFT.fish;
+  }
 }
 const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
 const undo = () => step(HIST, FUT, ['Nothing to undo.', 'Undone.']),
@@ -6724,9 +6752,14 @@ async function start() {
   // Only for an admin who can publish (read-only shows the published curation as it is).
   const ar = TOKEN && autoRun();
   if (ar && ar.add + ar.reject + ar.exclude + ar.check) setTimeout(() => toast(autoToast(ar)), keep ? 4000 : 0);
-  fishAutoRun().then(R => {
-    if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
-  });
+  // The fish auto-sort once the first page is drawn and the page is idle (performance pass, 2026-11-09): it reads
+  // fish-cand.json, 9 million characters, which shared the line and the main thread with the first page; its decisions
+  // are the same, one Undo step as before.
+  const fishLater = () =>
+    fishAutoRun().then(R => {
+      if (R && R.add + R.reject + R.check) setTimeout(() => toast(fishToast(R)), keep || ar ? 8000 : 0);
+    });
+  'requestIdleCallback' in window ? requestIdleCallback(fishLater, {timeout: 4000}) : setTimeout(fishLater, 1500);
   $('tools').hidden = false;
   $('save').onclick = save;
   $('download').onclick = download;
