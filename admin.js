@@ -1410,7 +1410,11 @@ const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('p
 // same tab or group (admRoute: a fish Photos › Families for the corals' Photos › Genera).
 const sameOn = (S, p) => {
   const v = ADM_PAGES.filter(x => under(p, x)).sort((a, b) => b.length - a.length)[0] || p;
-  return hasPage(S, v) && !shared(v) ? v : admRoute(v.split('/').slice(0, 2).join('/'), S);
+  if (hasPage(S, v) && !shared(v)) return v;
+  // the same tab on that side, else the same group (admRoute may name a tab whose views that side does not have)
+  const seg = v.split('/'),
+    ok = x => x && hasPage(S, x) && !shared(x) && ADM_PAGES.includes(x);
+  return [seg.slice(0, 2).join('/'), seg[0]].map(x => admRoute(x, S)).find(ok) || homeOf(S);
 };
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);

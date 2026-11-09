@@ -24,6 +24,7 @@ test('sameOn: the same view when the other side has it, else the view it opens f
     under: (p, x) => p === x || p.startsWith(x + '/'),
     shared: p => p === 'players/list',
     hasPage: (S, p) => !S.pages || S.pages.some(x => p === x || p.startsWith(x + '/')),
+    homeOf: () => 'players/activity',
     admRoute: (p, S) => (p === 'photos/genera' && S.id === 'fish' ? 'photos/families/live' : 'home:' + p)
   };
   vm.createContext(ctx);
