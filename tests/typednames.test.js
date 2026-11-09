@@ -200,6 +200,21 @@ test('a name of part of the family counts only on a photo it designates (Q333): 
   assert.strictEqual(family('Unicornfish', 'f:Surgeonfishes', NAMES, acan).got.c, '');
   assert.strictEqual(family('Unicornfish', 'f:Surgeonfishes', NAMES, naso).got.c, 'f:Surgeonfishes');
   assert.strictEqual(family('Tang', 'f:Surgeonfishes', NAMES, naso).got.c, 'f:Surgeonfishes'); // the family's aka
+  // Pierre's phone, 2026-11-09: "Platax" on a Humphead batfish (Platax batavianus) was not a family in the game; its
+  // genus and its species' name are right for its family
+  const bat = [sid('Platax batavianus')];
+  for (const text of ['Platax', 'Platax batavianus', 'Humphead batfish', 'batfish'])
+    assert.deepStrictEqual([text, family(text, 'f:Spadefishes', NAMES, bat).got.c], [text, 'f:Spadefishes']);
+  // every game species: its genus's name, its scientific names and its listed names, on a photo of it, right for its family
+  const G = new Map(F.genera.map(g => [g.id, g]));
+  const FAM = NAMES.filter(o => !rankOf(o.g)); // the names a family question reads
+  let n = 0;
+  for (const x of F.species.filter(y => y.circle && !y.out && y.family))
+    for (const t of [(G.get(x.genus) || {}).name, x.name, x.now, ...(x.cn || []).flat()].filter(Boolean)) {
+      n++;
+      assert.strictEqual(C.typeVerdict(C.typeMatchIn(FAM, t, C.typeNormAll), x.family, [x.id]), 'exact', `${t} on ${x.name}`);
+    }
+  assert.ok(n > 2000, String(n));
   // a name of another family stays that family's (rule L2), whatever the photo
   assert.strictEqual(family('Peacock razorfish', 'f:Pipefishes', NAMES, [sid('Dunckerocampus dactyliophorus')]).got.c, 'f:Wrasses');
 });
