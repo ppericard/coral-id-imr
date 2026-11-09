@@ -128,7 +128,7 @@ const syncGet = (a = SYNC, info = {}) => {
 // The first sync of each page still loads (repsPulled: the player's reports, the visit's first-sync notices). A device
 // holding answers logged from a refused save (lg) or sending its anonymous ones (anon), or with no account generation
 // (acct), loads first as before.
-const LIGHT_SHEET = 113;
+const LIGHT_SHEET = 116;
 const lightOn = () => sheetV() >= LIGHT_SHEET;
 const sdOf = me =>
   me && me.sd && typeof me.srv === 'number' && me.sd.rev === me.srv && me.sd.d && typeof me.sd.d === 'object' ? me.sd.d : null;
