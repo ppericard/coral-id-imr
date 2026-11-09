@@ -781,6 +781,7 @@
     // Ben played it last (his Journey opens on it from Players), Ana a little, Mara once.
     const frows = [],
       FS = SUBJECTS.find(x => !x.replay);
+    let fana = [];
     if (V >= 60 && FS) {
       const [fj, fp] = await Promise.all(['fish.json', 'fish-photos.json'].map(f => real(f, {cache: 'no-cache'}).then(r => r.json())));
       let fs = 11;
@@ -830,8 +831,25 @@
           ]);
         })
       );
+      // The fish side's Analyses report (one report per subject, sheet v113): the seven made-up analysis players
+      // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
+      // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
+      // made from them (anaReport): the answer log keeps the few fish answers above, so the fish pages stay as they were.
+      const FU = Object.keys(FG)
+          .filter(id => FG[id].views.wide.length >= 3)
+          .slice(0, 24),
+        k = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, x) => t + x[2], 0);
+      fana = ANALYSIS.synth({
+        players: ANALYSIS.DEMO_PLAYERS.map(x => [x[0], x[1], Math.ceil(x[2] * k), x[3]]),
+        photos: Object.fromEntries(FU.map(id => [id, FG[id].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])),
+        look: Object.fromEntries(FU.map(id => [id, FG[id].look || []])),
+        start: NOW - 30 * DAY,
+        end: NOW - 3 * DAY,
+        seed: 5,
+        subject: FS.id
+      });
     }
-    S = {rows, frows, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
+    S = {rows, frows, fana, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}, excluded: []};
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     if (V >= 81)
       await Promise.all(
@@ -960,6 +978,7 @@
       Object.keys(P).forEach(g => (th[g] = P[g].th));
       out.players[aid(u.name)] = [u.learned, u.seen, u.total, th];
     });
+    if (V >= EXCL_SHEET) out.excluded = S.excluded.slice(); // Code.gs sxSet_: the ids left out of the statistics
     return out;
   }
   // The admin's light read (Code.gs live_, from admin.js LIVE_SHEET; Pierre, 2026-11-08): the log's last 50 rows as
@@ -1110,7 +1129,13 @@
         );
         Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
       });
-    return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse(), ...(V >= 58 ? {archived} : {})};
+    return {
+      ok: true,
+      users: Object.values(by),
+      removed: S.removed.slice().reverse(),
+      ...(V >= 58 ? {archived} : {}),
+      ...(V >= EXCL_SHEET ? {excluded: S.excluded.slice()} : {})
+    };
   }
   function users(p) {
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
@@ -1143,6 +1168,13 @@
       S.rows.forEach(r => lc(r[0]) === lc(from) && ((r[0] = into), answers++));
       S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
       return {ok: true, answers, reports: 0};
+    }
+    // Sheet v115 (Code.gs statsExclude, sxPut_): an id left out of the statistics, or counted again.
+    if (p.statsExclude && V >= EXCL_SHEET) {
+      const id = String(p.statsExclude);
+      if (!/^[A-Za-z0-9+/]{8}$/.test(id)) return {ok: false, error: 'input'};
+      S.excluded = p.on ? [...new Set([...S.excluded, id])] : S.excluded.filter(x => x !== id);
+      return {ok: true, excluded: S.excluded.slice()};
     }
     // Sheet v20: hidden from the leaderboard by an admin (-1) or shown (1).
     if (p.userBoard) {
@@ -1228,27 +1260,35 @@
   }
   // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
   // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
-  let ANA_META = null,
-    ANA = null;
-  const anaReport = head => {
-    ANA =
-      ANA ||
+  let ANA_META = null;
+  const ANA = {};
+  // subject: the one asked (v113, ANALYSIS.AN_SUBJ_SHEET: one report per subject); an older script knows the corals' only
+  // and answers with it whatever the subject asked (?demo&v=112).
+  const anaReport = (head, subject) => {
+    const per = V >= ANALYSIS.AN_SUBJ_SHEET,
+      sj = per && subject && SUBJECTS.some(x => x.id === subject) ? subject : replaySubject(),
+      own = sj === replaySubject();
+    ANA[sj] =
+      ANA[sj] ||
       new Promise(done => {
         const w = new Worker(document.querySelector('script[src^="analysis.js"]').getAttribute('src'));
         w.onmessage = e => {
           if (e.data && e.data.prog) return;
           w.terminate();
-          done(e.data && e.data.res ? JSON.stringify(e.data.res) : null);
+          done(e.data && e.data.res ? JSON.stringify({...e.data.res, ...(V >= 105 ? {subject: sj} : {})}) : null);
         };
-        // the corals' answers only, as the Action reads them (tools/analyses.js: core.js subjRows)
-        w.postMessage({id: 1, rows: subjRows(answers().rows), meta: ANA_META, B: 0, seed: 1});
+        // one subject's answers, as the Action reads them (tools/analyses.js: core.js subjRows): the corals' with their
+        // photo features; the fish report's made-up answers (S.fana), no photo features (core.js SUBJECTS analyses)
+        const rows = own ? subjRows(answers().rows) : S.fana.map(r => [aid(r[0]), ...r.slice(1)]);
+        w.postMessage({id: 1, rows, meta: own ? ANA_META : {ph: {}}, B: 0, seed: 1});
       });
-    return ANA.then(text => {
+    return ANA[sj].then(text => {
       // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
       // answers was every row of every subject, the fish ones included (?demo&v=104: the admin counts from the log).
+      // The fish report's made-up answers count as fish answers too.
       const rows = answers().rows,
-        counts = subjCounts(rows),
-        sj = replaySubject(),
+        c0 = subjCounts(rows),
+        counts = {...c0, ...(S.fana.length ? {[S.fana[0][17]]: (c0[S.fana[0][17]] || 0) + S.fana.length} : {})},
         head0 = V >= 105 ? {ok: true, subject: sj, answers: counts[sj], counts} : {ok: true, answers: rows.length},
         r = text && JSON.parse(text);
       const stored = r
@@ -1282,7 +1322,7 @@
       // The light read (admin.js LIVE_SHEET): an older script takes it for a progress write without a name ('input').
       if (p.readLive) return ok(V >= LIVE_SHEET ? liveReply() : {ok: false, error: 'input'});
       // v35: the stored Analyses report. A script before v35 answers 'input' (?demo&v=30: the admin shows no report).
-      if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head));
+      if (p.analysesGet) return ok(V < 35 ? {ok: false, error: 'input'} : await anaReport(p.head, p.subject));
       if (
         p.users ||
         p.userData ||
@@ -1292,6 +1332,7 @@
         p.userBoard ||
         (p.userArchive && V >= 58) ||
         (p.userStart && V >= 99) ||
+        (p.statsExclude && V >= EXCL_SHEET) ||
         (p.userGroup && V >= 48)
       )
         return ok(users(p));

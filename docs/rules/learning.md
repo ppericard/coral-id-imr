@@ -14,12 +14,17 @@ bar's drift, which lets old answers fade, is taken per own answer on the genus, 
 - **The seconds taken to answer are another matter**: they are evidence about that answer and may weigh how much it
   moves the ability (a right answer given fast proves more than one given slowly: `core.js` `rtWeight`, LEARNING.md
   "Response time"); never a decay, never a penalty for being slow on its own.
-- **One exception, time to plan the comeback after a break**: the time since the last answers decides the questions
+- **First exception, time to plan the comeback after a break**: the time since the last answers decides the questions
   after a break (a new visit after 30 minutes without an answer opens no unit in its first 10 answers; the FSRS
   forgetting curve plans a comeback on units answered right; `model.js` "Comeback after a break", LEARNING.md).
+- **Second exception, photo memory**: the time since a photo was last shown may set how much a new answer on that same
+  photo is expected to be helped by memory of that exact photo (a photo seen a minute ago proves less than one seen a
+  month ago); it never decays progress, mastery or ability, and never delays or gates a question.
 
 *Why:* the app is for learning fast, in hours or days, not for bringing players back every day; time matters only to
-plan a comeback, and the seconds of an answer are evidence, not time between sessions. *Source:* Pierre, by 2026-11-01; comeback, 2026-11-02; seconds, 2026-11-04; subject-neutral wording, 2026-11-06.
+plan a comeback and to tell memory of one photo from knowledge of the unit, and the seconds of an answer are evidence,
+not time between sessions. *Source:* Pierre, by 2026-11-01; comeback, 2026-11-02; seconds, 2026-11-04; subject-neutral
+wording, 2026-11-06; photo memory, 2026-11-09 (Q317).
 
 ### L2
 

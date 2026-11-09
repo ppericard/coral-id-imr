@@ -208,6 +208,25 @@ test(
       p = G3.photos.t01.find(x => x.f === 'fish-s001-cand-102');
     assert.deepStrictEqual([p.cr, p.iv], [[0.1, 0.1, 0.9, 0.9], 1]);
     assert.ok(!G3.photos.t01.some(x => x.f === 'fish-s002-cand-201'));
+    // Pierre turns the cropped one a quarter right (fish.rot; Pierre, 2026-11-08): it comes again, cut then turned (the
+    // left half, 2:3, becomes 3:2), its crop kept, iv 1; back upright it comes once more, ro gone, iv 2.
+    const at = (k, f) => JSON.parse(fs.readFileSync(path.join(dir, 'fish-game.json'), 'utf8')).photos[k].find(x => x.f === f);
+    cur.fish.rot = {'fish-s001-cand-101': 90};
+    fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(cur));
+    const up4 = path.join(dir, 'up4'),
+      r4 = run(dir, up4),
+      p4 = at('t01', 'fish-s001-cand-101');
+    assert.deepStrictEqual([r4.done, r4.n], [1, 4]);
+    assert.deepStrictEqual([p4.cr, p4.ro, p4.ar, p4.iv], [[0, 0, 0.5, 1], 90, 1.5, 1]);
+    assert.strictEqual(
+      py(`from PIL import Image; print(Image.open(${JSON.stringify(path.join(up4, 'fish-s001-cand-101.webp'))}).size)`).trim(),
+      '(300, 200)'
+    );
+    delete cur.fish.rot;
+    fs.writeFileSync(path.join(dir, 'curation.json'), JSON.stringify(cur));
+    const r5 = run(dir, path.join(dir, 'up5')),
+      p5 = at('t01', 'fish-s001-cand-101');
+    assert.deepStrictEqual([r5.done, p5.ro, p5.ar, p5.iv], [1, undefined, 0.67, 2]);
     fs.rmSync(dir, {recursive: true, force: true});
   }
 );

@@ -3773,17 +3773,35 @@ array, so nothing changes for them), the prior (`core.js` `MEM.PRIOR`) for any o
 rates fish photos (ROADMAP admin plan PR 11). Checked by `tests/fishmemory.test.js` (a fish draw, expectation and
 recalculation run with a `PMEM` that throws on any read; the corals' read `PMEM` itself).
 
-- **Learning outcomes** (rule L11 level 1: one subject, the offsets of the few answers on a photo already seen;
-  `tools/learnsim.js --subject fish --stats` with the live `?stats=1` of 2026-11-08, 4 profiles × 5 seeds × 300
-  questions, before (#776, e62256e) and after on the same seeds; declared before running: primary true knowledge at
-  300, non-inferiority at −0.02; paired difference after − before, one-sided 90% bounds). Primary held: knowSlate
-  +0.0009 (bound −0.0004; 0.379 → 0.383 / 0.538 → 0.538 / 0.706 → 0.706 / 0.944 → 0.944, beginner / lecture RA /
-  strong RA / expert; sign-flip p 0.40). Guardrails held: prog − know −0.0015 (over-claim bound +0.0099, margin +0.03);
-  units met at 100 +0.05 (bound −0.02), at 300 identical (32); share under ease 4 before Open Water −0.001 (bound
-  +0.003). The effect is small because repeats are rare in the fish pools (about 2% of the first 300 questions show a
-  photo already seen). **The corals, identical**: the same run on `--subject coral`, same stats and seeds,
-  gives the same 300 answers in every run (genus, answer, photos, choices, expectation, scoring record; only the answer
-  id and the wall-clock time differ) and the same rows and summary (knowSlate 0.686 / 0.758 / 0.856 / 0.954, met 40).
+- **Learning outcomes** (rule L11 level 1: one subject, the offsets of the few answers on a photo already seen).
+  `tools/learnsim.js --subject fish --stats` with the live `?stats=1` of 2026-11-08, the five fish profiles × 5 seeds ×
+  300 questions, before (main 71b6b42) and after (3ca9f0c) on the same seeds, judged by `tools/learncmp.js`; declared
+  before running: primary `know@300:up` (none expected: a leak fix, its guardrail the non-inferiority check). Look 1
+  (25 pairs) left the answers to the first family at Open Water breached for the beginner (+39) and the casual diver
+  (+22), each from one seed (61 → 261 and 62 → 170 answers; the other 8 pairs equal or better), and the families at Open
+  Water unclear for three profiles, so, one step up, a second look declared before it ran: beginner, casual diver and
+  lecture RA on seeds 6-15 (55 pairs in all, `--looks 2`: 95% bounds, the primary at 0.025). Paired difference after −
+  before [bound on the side of harm], beginner / casual diver / lecture RA / strong RA / expert:
+
+  | Guardrail | Margin | Difference [bound] | Verdict |
+  | --- | --- | --- | --- |
+  | True knowledge @300 (primary: no clear difference, p 0.036) | −0.02 | +0.003 [0.000] / −0.001 [−0.002] / +0.001 [0.000] / 0 [−0.001] / 0 [0] | held |
+  | E = bar − D\* @300 | +0.03 | −0.024 [−0.005] / −0.001 [+0.016] / −0.001 [+0.004] / −0.001 [+0.002] / 0 [+0.001] | held |
+  | Answers to the first family at Open Water | +19.5 / +12 / +10 / +10 / +10 | +10.5 [+37.5] / +9.1 [+22.0] / 0 / 0 / 0 | unclear for the beginner and the casual diver, else held |
+  | Families at Open Water @300 | −2 | −0.6 [−1.8] / −0.2 [−1.1] / −0.1 [−0.8] / 0 [−0.7] / 0 | held |
+  | Longest plateau of the shown score | +10 / +10 / +9 / +10 / +9 | +11 [+17] / +2 [+8] / +1 [+2] / −3 [+2] / 0 | **breached for the beginner** (50 → 61 answers), else held |
+  | Share under ease 4 before Open Water @300 | +0.05 | −0.002 to +0.001, bounds ≤ +0.005 | held |
+  | Families met @100, @300 | −2 | +0.3 to 0; 32 at 300 in every run | held |
+
+  What it says: the beginner's bar runs a little lower (E −0.336 → −0.360), its longest flat stretch of the shown score
+  about 11 answers longer and its first Open Water later on average: the corals' +0.43 for a photo shown and missed made
+  a later right answer on it count as a hard question, the prior's −0.5 counts it as the easier question memory makes
+  it (in this learner's world memory adds +0.4 there, and on the real log below such photos were 92% right against 74%
+  expected with the corals' offset, 86% with the prior's). A cost the change brings, not declared before running, so
+  it goes to Pierre (rule L11). **The corals, identical**: the same runs on `--subject coral` (4 profiles × 5 seeds,
+  71b6b42 → 3ca9f0c; and before on e62256e) give the same 300 answers in every run (genus, answer, photos, choices,
+  expectation, scoring record; only the answer id and the wall-clock time differ) and the same rows and summary
+  (knowSlate 0.686 / 0.814 / 0.859 / 0.954, met 40).
 - **On the real log** (rule L12, read-only, the Answers tab read 2026-11-08 20:57 Manila: 1,536 scored fish answers of
   9 players, 45 of them on a photo already seen, bucket from the logged `f`; the expectation recomputed with the
   prior's offset in place of the logged one):
@@ -3799,6 +3817,15 @@ recalculation run with a `PMEM` that throws on any read; the corals' read `PMEM`
   two apart yet, and both under-predict remembered photos. The fix rests on its reason (no coral number on a fish
   answer), not on the log. The fish answers logged before it keep their coral `f` in their scoring record, which the
   sheet's fish replay (#776) reads as logged.
+
+**Decided by Pierre, 2026-11-09 (Q317)**, on #805's breached guardrail and a literature review
+([reference/lit-photo-memory.md](reference/lit-photo-memory.md): every validated memory model has a lag term, Pelánek
+2015's item effect about +1.5 logits a minute after a show and near 0 after a month): **keep #790's conservative prior
+for fish**. Later, a memory model with two parts: a lasting value per outcome (today's buckets) plus a boost that
+decays with the time since the photo was last shown, its decay shape fixed from the literature and one fitted weight.
+Rule L1 gained the matching exception the same day (rule L1, "Second exception, photo memory"). Validation (rules L11,
+L12) in the review's order, the read-only table first (lag band × bucket, observed against expected, players the unit);
+ROADMAP "Photo memory that fades with time".
 
 **In the app** (`quiz.js` `answer`, `model.js` `famOf`, `pgMemW`):
 
@@ -4312,6 +4339,18 @@ the spread, so beginner and strong RA were run again on 15 seeds: learned 1.5 ±
 The simulated world is built on the same genus offsets the v31 app is given, so it says the rule is safe, not how
 much it gains; the real-log replay above is the measure of that.
 
+**Next: one difficulty in components** (decided by Pierre, 2026-11-09, Q316; the coherence review's F8, C1), after a
+literature review ([reference/lit-componential-difficulty.md](reference/lit-componential-difficulty.md): the linear
+logistic test model with random items, nested item families, TrueSkill's split of one result among additive parts). An
+evolution of this Elo engine: one difficulty per question = a rank offset + the family, genus, species and photo
+components, each shrunk toward its parent while it has few answers; the online update splits the surprise among the
+components by their uncertainty (TrueSkill / the simplified Kalman rule); with only genus + photo it must reproduce
+today's v31 ratings within rounding; the genus and species parts count at family rank too. Order: the offline fit
+first (read-only), then the sheet, then the app; rule L11. **Q136** (photos rated against the genus ability) is
+reopened for rework on today's multi-level engine and folded into this work: check whether the per-genus player
+ability can be taken as centred on zero across players on our data (the literature's condition, review §6), with more
+literature if needed. ROADMAP "Engine coherence review".
+
 ### Response time: genus and photo (measured 2026-11-04, no change made)
 
 Pierre, 2026-11-04: "response time informs on several things at once: the player's knowledge of this genus, the
@@ -4493,6 +4532,16 @@ one surprise (Pelánek 2016), but the two must be tuned together, not stacked. V
 every photo's rating, so the draw), both worlds, the real-log replay as the primary. The view below measures it at
 every milestone: Analyses › Difficulty › Time.
 
+**Decided by Pierre, 2026-11-09 (Q315)**, after a literature review
+([reference/lit-response-time.md](reference/lit-response-time.md): time intensity as its own item parameter, the
+response times as collateral information on difficulty, van der Linden 2007; van der Linden, Klein Entink & Fox 2010):
+option (2), each photo's time intensity in the **prior** part of `photoDiff`, so it fades as the photo's own answers
+come in; option (1) only as the declared comparison, never stacked with (2); two variants of (2) tested, the time
+intensity from all answers or from right answers only (both with rapid-guess cut-offs), the one that predicts better
+kept, declared before the test; option (3), enlarging, waits for data; the seconds stay logged. Validation: rule L11
+level 2, the real-log replay the primary (players the unit; corals primary, fish exploratory). Next steps: ROADMAP
+"Time in the photo rating".
+
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 
 Pierre, 2026-11-04: multifactor reports of the answer log, refitted at every round thousand of answers (the first 1000, 2000, 3000, …: the milestones, Pierre 2026-11-05), in the admin (ARCHITECTURE.md "Analyses"; code `analysis.js`, tests `tests/analysis.test.js`). They measure; they change nothing in the app. Methods, shared by every analysis:
@@ -4535,7 +4584,9 @@ Two views show how effects and genera relate (the multifactor visualisation stud
 - **Coded tracks or tiers** (beginner / RA / expert modes, a fixed genus order, fixed difficulty per genus): ruled out by
   Pierre. Every threshold above is continuous or performance-driven.
 - **Time between sessions** for progress, mastery or ability (spaced-repetition days, decay, a "refresh"): ruled out
-  (rule L1). The one exception, time to plan the questions after a break, is the comeback above. The seconds
+  (rule L1). Two exceptions: time to plan the questions after a break (the comeback above), and photo memory (Pierre,
+  2026-11-09, Q317: the time since a photo was last shown may set how much a new answer on it is expected to owe to
+  memory of that photo, never a decay of progress, mastery or ability, never a delay or gate; "Photo memory"). The seconds
   taken to answer are not time between sessions (Pierre, 2026-11-04, rewording rule L1): they are evidence about that
   answer, and since rules version 4 they weigh how much a right answer moves the ability ("Response time"); never a
   decay, never a penalty for being slow on its own.
@@ -4577,7 +4628,7 @@ interval is [−0.0148, −0.0120] (a clear gain), with the players as the unit 
 Figures recorded in this file before 2026-11-05 as "paired log-loss difference per answer ± its standard error" (and
 "× 10⁻³ ± SE") are the per-answer figure: read their intervals as too narrow, and "n standard errors" as fewer.
 
-## Validating a learning change (rule L11; proposed 2026-11-08, waiting for Pierre's OK)
+## Validating a learning change (rule L11; validated by Pierre on 2026-11-08, #735)
 
 Pierre, 2026-11-08: the engines and the simulations moved a lot these last days, so the way a change is validated must
 still fit what was built, and follow his suggestion: a fully rated world where photos, players and every unit (coral
@@ -4741,7 +4792,7 @@ casual diver "new". Learning rate as before (0.12; the expert 0.05).
 - right %, the Elo error against D\*, units met, `open/15`.
 
 **Guardrails and margins** (Pierre's "smallest change that matters", in each measure's units; one-sided 90% bound of the
-paired difference on the side of harm; proposed, for his OK):
+paired difference on the side of harm; validated with #735):
 
 | Guardrail | Checkpoints | Margin | Why this margin |
 | --- | --- | --- | --- |
@@ -5439,6 +5490,10 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## References
 
+- Literature reviews with their own reference lists, each reference marked with how it was checked (2026-11-09):
+  [response time and difficulty](reference/lit-response-time.md) (Q315), [componential
+  difficulty](reference/lit-componential-difficulty.md) (Q316, Q136), [photo memory](reference/lit-photo-memory.md)
+  (Q317).
 - Pelánek, R. (2016). Applications of the Elo rating system in adaptive educational systems. *Computers & Education*
   98. <https://www.fi.muni.cz/~xpelanek/publications/CAE-elo.pdf>
 - Papoušek, J., Pelánek, R., Stanislav, V. (2014). Adaptive practice of facts in domains with varied prior knowledge.

@@ -475,6 +475,11 @@
       achs: () => ACH,
       achFeats: true,
       board: true,
+      // Its Analyses report (admin Analyses, tools/analyses.js; one report per subject, refitted every 1000 of its answers:
+      // Pierre, 2026-11-08). photos: its photos' features, read by What makes a photo hard (analysis.js photoMeta: view,
+      // quality, sharpness, source, from data.json, curation.json, quality.json and metrics.json). The admin's words for
+      // its units are its one and many.
+      analyses: {photos: true},
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
       progress: ['slate', 'photos', 'groups'],
@@ -562,6 +567,12 @@
       // Its own leaderboard (Pierre, 2026-11-04: separate per subject, no merged ranking): by its %, then its Elo (sheet
       // v95, Code.gs board_ &s=fish; progress.js loadBoard).
       board: true,
+      // Its Analyses report (Pierre, 2026-11-08: "fish when the fish analyses exist"; one report per subject, refitted every
+      // 1000 fish answers): its units are what the questions ask, families and scientific genera as the fish tree has
+      // them (one, many: the admin's words for them on its Analyses pages). photos false: no photo features of its own in
+      // the analyses yet (its judged ease, phase and framing are not read), so What makes a photo hard is not among its
+      // admin pages.
+      analyses: {photos: false, one: 'family or genus', many: 'families and genera'},
       // Its global score (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the square-root
       // display; docs/FISH_PATH.md "My progress (fish)"): core.js treeScore over its tree (app.js UNITS fish tree), shown
       // as its headline % (model.js headPct: the header, My progress, the leaderboard, the fish % achievements) with its
@@ -601,13 +612,30 @@
         pages: [
           'inbox/todo/reports',
           'inbox/todo/errors',
+          // Health (fish admin at parity, 2026-11-08): the fish photos everyone misses, with the tools of their family's
+          // page, and the fish units players are stuck on (admin.js statsHealth, healthBad, healthGenera)
+          'inbox/todo/health',
           'inbox/coverage/games',
           'players/list',
           'photos/families',
           'photos/candidates',
           'photos/review/ease',
           'photos/review/phase-framing',
-          'photos/look-alikes'
+          'photos/look-alikes',
+          // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report but
+          // What makes a photo hard (analyses photos false), and of the views drawn from the live answer log (admin.js
+          // LIVE_STATS) only Stops, from the fish answers (fish admin at parity, 2026-11-08: admin.js statsHealth,
+          // healthSheets), not Pairs or Answer log.
+          'analyses/overview',
+          'analyses/speed',
+          'analyses/difficulty/formats',
+          'analyses/difficulty/mix-ups',
+          'analyses/difficulty/time',
+          'analyses/learning/practice',
+          'analyses/learning/after-a-break',
+          'analyses/learning/sessions',
+          'analyses/learning/profiles',
+          'analyses/learning/stops'
         ],
         origins: [
           ['own', 'Pierre', 'Pierre'],

@@ -64,7 +64,13 @@ module.exports = ROOT => {
         f = byId.get(id),
         suf = {small: '-t', medium: '-s', large: '-m'}[sz] || '';
       if (log) log.push(u);
-      return r.fulfill({contentType: 'image/webp', body: fs.readFileSync((f && file(`${f}${suf}.webp`)) || stand['-s'])});
+      // With iNaturalist's CORS header (its open-data bucket sends Access-Control-Allow-Origin: *): app.js turnJob draws
+      // a turned photo's original in a canvas.
+      return r.fulfill({
+        contentType: 'image/webp',
+        headers: {'Access-Control-Allow-Origin': '*'},
+        body: fs.readFileSync((f && file(`${f}${suf}.webp`)) || stand['-s'])
+      });
     });
   return {r2, inat, file, online, stand};
 };

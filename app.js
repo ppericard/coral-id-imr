@@ -293,17 +293,129 @@ const cropSet = i => {
   if (c) (i.style.setProperty('object-view-box', c), (i.dataset.vb = 1));
   else if (i.dataset.vb) (i.style.removeProperty('object-view-box'), delete i.dataset.vb);
 };
+// A turned photo shown from its online original (Codex review #793): the site's files have Pierre's rotation baked in
+// (curation.json rot, data.json / fish-game.json ro, degrees clockwise, after the crop: tools/photos.py turn), the
+// original has not. Its crop and turn are made in a canvas (turnPlan: the crop cut from the original, then turned, as the
+// workflow does) and the element is given that picture (a blob: address) wherever it uses the original: an <img>'s src
+// (its srcset dropped: one size is enough here), its 480 px step (data-lo), and an inline style's url() (the game's
+// backdrop --qbg, the lightbox's placeholder). So every page shows it as its file would be, at its shape (the quiz's
+// fit, the lightbox's actual size and its labels, the sheet tiles), with no layout of its own. Until the picture is made
+// the element shows none of the original (src and data-lo out, url() none); a picture that cannot be made (a host
+// without CORS, FishBase; a failed download) ends as the "photo missing" tile and the quiz's usual way out, never a
+// photo the wrong way up. Only from the first fallback on, as the crops (cropWatch).
+const TURN_FAIL = 'data:image/gif;base64,'; // an image that never decodes: the page's usual "did not load"
+const TURN_URL = /url\((['"]?)([^'")]+)\1\)/g;
+const turnRec = u => {
+  const p =
+    typeof u === 'string' && u
+      ? photoIdx().src.get(u.replace(/#.*$/, '').replace(/\/(?:small|medium|large)\.(\w+)$/, '/original.$1'))
+      : null;
+  return p && !p.r && [90, 180, 270].includes(+p.ro) ? p : null;
+};
+// The canvas for a W x H original, crop c [l, t, r, b] (fractions of the original, none = whole) and r degrees
+// clockwise: the source rectangle (sx, sy, sw, sh) and the canvas size (w, h), the cut turned a quarter swapping them.
+const turnPlan = (W, H, c, r) => {
+  const k = Array.isArray(c) && c.length === 4 ? c : [0, 0, 1, 1],
+    sw = (k[2] - k[0]) * W,
+    sh = (k[3] - k[1]) * H,
+    q = r % 180 ? 1 : 0;
+  return {sx: k[0] * W, sy: k[1] * H, sw, sh, w: Math.max(1, Math.round(q ? sh : sw)), h: Math.max(1, Math.round(q ? sw : sh)), r};
+};
+// One picture per address for the visit ('' when it cannot be made: asked again by the next element).
+const TURNED = new Map();
+const turnJob = (u, p) => {
+  if (!TURNED.has(u))
+    TURNED.set(
+      u,
+      new Promise(ok => {
+        const im = new Image(),
+          no = () => (TURNED.delete(u), ok(''));
+        im.crossOrigin = 'anonymous';
+        im.onerror = no;
+        im.onload = () => {
+          try {
+            const k = turnPlan(im.naturalWidth, im.naturalHeight, p.cr, +p.ro),
+              cv = document.createElement('canvas');
+            cv.width = k.w;
+            cv.height = k.h;
+            const x = cv.getContext('2d');
+            x.translate(k.w / 2, k.h / 2);
+            x.rotate((k.r * Math.PI) / 180);
+            x.drawImage(im, k.sx, k.sy, k.sw, k.sh, -k.sw / 2, -k.sh / 2, k.sw, k.sh);
+            cv.toBlob(b => (b ? ok(URL.createObjectURL(b)) : no()), 'image/jpeg', 0.9);
+          } catch (e) {
+            no(); // a canvas the host's missing CORS header tainted
+          }
+        };
+        im.src = u;
+      })
+    );
+  return TURNED.get(u);
+};
+// The element's uses of a turned photo's original, swapped for its picture (job: turnJob; the tests give their own).
+function turnSet(el, job = turnJob) {
+  if (!el || !el.getAttribute) return null;
+  const src = el.getAttribute('src') || '',
+    lo = el.getAttribute('data-lo') || '',
+    st = el.getAttribute('style') || '',
+    U = new Map(),
+    want = u => {
+      const p = turnRec(u),
+        k = p && u.replace(/#.*$/, '');
+      if (p && !U.has(k)) U.set(k, job(k, p));
+      return k;
+    },
+    s = want(src),
+    l = want(lo),
+    ss = st.includes('url(') ? st.replace(TURN_URL, (m, q, u) => (want(u) ? 'none' : m)) : st;
+  if (!U.size) return null;
+  if (s) (el.removeAttribute('srcset'), el.removeAttribute('src'));
+  if (l) el.removeAttribute('data-lo');
+  if (ss !== st) el.setAttribute('style', ss);
+  const urls = [...U.keys()];
+  return Promise.all(urls.map(k => U.get(k))).then(B => {
+    const b = k => B[urls.indexOf(k)];
+    if (!el.isConnected && el.isConnected !== undefined) return;
+    if (l && b(l) && !el.hasAttribute('data-lo')) el.setAttribute('data-lo', b(l));
+    if (ss !== st && el.getAttribute('style') === ss)
+      el.setAttribute(
+        'style',
+        st.replace(TURN_URL, (m, q, u) => (turnRec(u) ? (b(u.replace(/#.*$/, '')) ? `url('${b(u.replace(/#.*$/, ''))}')` : 'none') : m))
+      );
+    if (s && !el.hasAttribute('src')) {
+      if (b(s)) el.setAttribute('src', b(s));
+      // Given up at once (no retry of a picture that cannot be made, no 480 px step): a game photo or a card's ends as the
+      // "photo missing" tile (the error listeners), any other photo is left out of sight (no broken-image icon).
+      else {
+        Object.assign(el.dataset, {retry: '2', low: '1'});
+        if (el.closest && !el.closest('.qstage, .unlock')) el.style.visibility = 'hidden';
+        el.setAttribute('src', TURN_FAIL);
+      }
+    }
+  });
+}
 function cropWatch() {
   if (CROPW || typeof MutationObserver === 'undefined') return;
+  // A turned photo first (it takes the original's src away: no crop drawn on it), then the crop. A style change only
+  // goes through turnSet (cropSet writes the style: it would call itself again).
+  const one = n => (turnSet(n), n instanceof HTMLImageElement && cropSet(n)),
+    under = n => [n, ...n.querySelectorAll('img, [style*="url("], [data-lo]')].forEach(one);
   CROPW = new MutationObserver(R =>
     R.forEach(r =>
       r.type === 'attributes'
-        ? r.target instanceof HTMLImageElement && cropSet(r.target)
-        : r.addedNodes.forEach(n => n.nodeType === 1 && (n instanceof HTMLImageElement ? [n] : n.querySelectorAll('img')).forEach(cropSet))
+        ? r.attributeName === 'style'
+          ? turnSet(r.target)
+          : one(r.target)
+        : r.addedNodes.forEach(n => n.nodeType === 1 && under(n))
     )
   );
-  CROPW.observe(document.documentElement, {subtree: true, childList: true, attributes: true, attributeFilter: ['src']});
-  document.querySelectorAll('img').forEach(cropSet);
+  CROPW.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['src', 'srcset', 'data-lo', 'style']
+  });
+  under(document.documentElement);
 }
 // A photo that never loaded (Pierre, 2026-11-05): a light "photo missing" tile instead of a plain one, an inline SVG
 // drawn with the theme's tokens (app.css .nophoto: light, dark, colour-blind), no request: a camera struck through, which

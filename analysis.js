@@ -20,6 +20,10 @@
   // 9: Time and difficulty (tdiff): others' answer time and enlarging on a photo, time intensity beside difficulty
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
+    // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
+    // analysesPut know one report, the corals', so another subject's is neither stored (tools/analyses.js) nor read (the
+    // admin's Analyses, admin-analyses.js anLoad) from an older script (rule D4).
+    AN_SUBJ_SHEET = 113,
     BOOT_MIN = 6, // players needed before the cluster bootstrap means anything
     Z = 1.96;
   const sig = x => 1 / (1 + Math.exp(-x)),
@@ -1205,7 +1209,11 @@
         B,
         seed
       );
-    const effects = CF_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}));
+    // A view never shown (a subject whose photos have no views: the fish, SUBJECTS analyses photos false) is no effect:
+    // nothing measured it, so it is left out rather than read "no clear effect" (and kept out of the multiple-testing count).
+    const effects = CF_X.map(([k, l], j) =>
+      M.nz[j + 1] ? eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}) : null
+    ).filter(Boolean);
     effects.push(sdEff('sd_player', 'SD player (each player vs pooled)', F[1].tau2, F[1].n, bi, 'logit', 0.25, n, mean([...F[1].cv])));
     effects.push(sdEff('sd_pair', 'SD pair', F[0].tau2, F[0].n, bi, 'logit', 0.25, n, mean([...F[0].cv])));
     const P = {};
@@ -2612,7 +2620,9 @@
     td: {link: 0, blind: 0}
   };
   // o: {players: [[id, ability, answers, enlarge rate]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
-  // start, end (ms), seed}. Returns readAnswers rows (Code.gs answers_ shape, id as given).
+  // start, end (ms), seed, subject}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
+  // carries it in the Subject column (index 17, core.js LOG_SUBJ), as the sheet serves another subject's answers (the
+  // fish: units f:Damselfishes, g:Chromis, photos of one view).
   function synth(o) {
     const R = rng(o.seed || 7),
       T = TRUTH,
@@ -2719,7 +2729,8 @@
           shuffle(ch, R).join(' '),
           0,
           Math.round(clamp(sec, 0.5, 600) * 10) / 10,
-          z
+          z,
+          ...(o.subject ? [null, null, null, o.subject] : [])
         ]);
         againQ = !right && f !== 'again' && f !== 'typed' && R() < 0.7 ? [g, ans] : null;
         if (f !== 'again') ((s.miss = !right), (s.again = 0));
@@ -3385,6 +3396,15 @@
   // B (999); the earlier ones are looks at a smaller log (history), so they take Bh (199) newest first, as long as their
   // answers add up to at most hcap (60,000: about 25 minutes in the Action), and none beyond (the model's own interval
   // only): a whole recompute (new AV, new photo features) stays inside the Action's 2 hours as the log grows.
+  // The answers the report reads: the log's rows without those of the players and devices the admin left out of the
+  // statistics (sheet v115, Players' Leave out: readAnswers excluded, the player list's excluded; their admin ids, the
+  // rows' first column). The same rule for the stored report (tools/analyses.js) and the admin's Recompute here
+  // (admin-analyses.js anRecompute; Codex review #801).
+  function leftOut(rows, excluded) {
+    const L = Array.isArray(rows) ? rows : [],
+      sx = new Set(Array.isArray(excluded) ? excluded : []);
+    return sx.size ? L.filter(r => !(r && sx.has(r[0]))) : L;
+  }
   // live (the admin's Recompute here only, never the stored report): all the answers as one more point after the
   // milestones, named in live, with B draws like the newest milestone (the one selected by default).
   function report(rows, meta, prev, o = {}) {
@@ -3471,6 +3491,7 @@
     AV,
     GAP,
     STEP,
+    AN_SUBJ_SHEET,
     BOOT_MIN,
     FORMATS,
     ANALYSES,
@@ -3509,6 +3530,7 @@
     bh,
     correct,
     photoMeta,
+    leftOut,
     fpOf,
     hashOf,
     report,

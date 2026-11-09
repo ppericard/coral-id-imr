@@ -91,6 +91,9 @@ function loadCodeGs(opts = {}) {
     fetched = [],
     lock = opts.lock || {busy: false};
   const ss = {getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = makeSheet(n))};
+  const cacheFits = v => {
+    if (opts.cacheMax && Buffer.byteLength(String(v), 'utf8') > opts.cacheMax) throw new Error('Argument too large: value');
+  };
   const ctx = {
     SpreadsheetApp: {getActiveSpreadsheet: () => ss},
     Utilities: {
@@ -108,11 +111,19 @@ function loadCodeGs(opts = {}) {
       },
       getUuid: () => crypto.randomUUID()
     },
+    // opts.cacheMax: the largest value in bytes (Apps Script: 100 KB), over which put and putAll throw as Apps Script
+    // does ("Argument too large"); none by default.
     CacheService: {
       getScriptCache: () => ({
         get: k => cache[k] ?? null,
+        getAll: keys => Object.fromEntries(keys.filter(k => k in cache).map(k => [k, cache[k]])),
         put: (k, v) => {
+          cacheFits(v);
           cache[k] = v;
+        },
+        putAll: o => {
+          Object.values(o).forEach(cacheFits);
+          Object.assign(cache, o);
         },
         remove: k => {
           delete cache[k];
