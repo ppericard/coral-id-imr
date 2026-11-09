@@ -1416,9 +1416,10 @@ const subjOfHash = h => {
 const under = (p, x) => p === x || p.startsWith(x + '/');
 // The Players pages are every subject's (Pierre, 2026-11-06: "the Players section needs rethinking now that we have two
 // game modes"; docs/reviews/2026-11-06-admin-players-two-subjects.md): Activity and a player's Journey follow the switch,
-// each under its subject's prefix; the list of players is one page for both (SHARED): no prefix, the same table on either
-// side (a group of columns per subject), the switch inert there, the subject on screen kept for the other pages.
-const SHARED = ['players/list'];
+// each under its subject's prefix; the list of players and Visits are one page for both (SHARED): no prefix, the same page
+// on either side (the list: a group of columns per subject; Visits: every subject's visits, each marked with its subjects,
+// a Subject filter; Pierre, 2026-11-09), the switch inert there, the subject on screen kept for the other pages.
+const SHARED = ['players/list', 'players/visits'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
 // Coverage › Rights (renderRights).
@@ -1645,7 +1646,7 @@ const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.lengt
 // The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
 // that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
 // A shared page (SHARED) keeps the subject on screen, whatever prefix it was reached with, and its address drops the
-// prefix (#fish/players/list becomes #players/list, the fish side kept); opened first (a reload, a bookmark), the subject
+// prefix (#fish/players/list becomes #players/list, #fish/players/visits #players/visits, the fish side kept); opened first (a reload, a bookmark), the subject
 // on screen last (reefid-admin-nav-subj).
 let subjRead = false;
 function readHash() {
@@ -1728,7 +1729,7 @@ function navs(tn, xn) {
       const to = playerPage(cur) ? cur : sameOn(S, cur);
       return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
-    // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the
+    // On a shared page (the list of players, Visits) the switch is inert: the page is the same on both sides; it still shows the
     // side the other pages are on.
     sw.classList.toggle('off', shared(cur));
     sw.hidden = false;
@@ -8482,6 +8483,16 @@ const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
 const EXCL_SHEET = 115;
 const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
+// The seedling 🌱 in the admin's own name (sheet v123, core.js seedName): only on the row of the account signed in on
+// this browser (its code proves it to the sheet), from the script that does it.
+const SEED_SHEET = 123;
+const seedOn = () => (USERS.v || 0) >= SEED_SHEET;
+const seedBtn = u => {
+  const sy = store.get('reefid-account', null) || {};
+  if (!sy.name || !sy.pin || String(sy.name).trim().toLowerCase() !== String(u.name).trim().toLowerCase()) return '';
+  const has = seedName(u.name, false) !== u.name.trim();
+  return `<span>${has ? `${SEED} in your name` : `No ${SEED} in your name`} <button type="button" class="adm-fchip" data-useed data-on="${has ? 0 : 1}"${seedOn() ? '' : ` disabled title="Needs the sheet script v${SEED_SHEET}"`}>${has ? 'Remove' : 'Add'}</button></span>`;
+};
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
   `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}"${exclOn() ? '' : ` disabled title="Needs the sheet script v${EXCL_SHEET}"`}>${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
@@ -8598,6 +8609,7 @@ function renderUsers() {
       <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
       ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
+      ${seedBtn(u)}
       ${u.id ? `<span>${isExcl(u.id) ? 'Out of the statistics' : 'In the statistics'} ${exclBtn(u.id)}</span>` : ''}
       ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
       ${SUBJECTS.filter(S => groupOn(S))
@@ -8741,6 +8753,23 @@ function bindUsers() {
   };
   // Leaderboard (sheet v20, Pierre 2026-11-02: a test account must not show there): hidden by an admin, which the
   // player's own syncs never undo; Show puts them back. Only the leaderboard changes: answers, progress, stats stay.
+  // The seedling in the admin's own name (sheet v123, Code.gs users_ userSeed; Pierre, 2026-11-09, Q328): the account
+  // signed in on this browser is renamed with ' 🌱' or back, its code sent to prove it is this account; the app here
+  // follows the new name, the account's other devices are told to sign in under it. One click each way (rule A2).
+  $v.querySelectorAll('[data-useed]').forEach(
+    b =>
+      (b.onclick = () => {
+        const sy = store.get('reefid-account', null) || {},
+          on = b.dataset.on === '1';
+        b.disabled = true;
+        userPost({userSeed: on, aname: sy.name, apin: sy.pin})
+          .then(j => {
+            if (j && j.ok && j.name) store.set('reefid-account', {...sy, name: j.name});
+            done(on ? `Your name is now "${j && j.name}".` : `Your name is "${j && j.name}" again.`, j);
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
+      })
+  );
   $v.querySelectorAll('[data-uboard]').forEach(
     b =>
       (b.onclick = () => {
