@@ -1592,7 +1592,7 @@
   // quiz or quiz|…, duels slipped into the quiz included), in its last 50, and in the Duel tab (quiz-duel…). Other
   // games are in neither. rows: readAnswers rows [id, t, shown, answered, ok, mode, …].
   function playSplit(rows) {
-    const out = {};
+    const out = Object.create(null); // by player, no prototype (trustOf)
     (rows || [])
       .slice()
       .sort((a, b) => a[1] - b[1])
@@ -1613,9 +1613,11 @@
     const {R} = eloReplay(rows || []);
     return Object.fromEntries(Object.entries(R).map(([k, r]) => [k, r[2] > 0 ? 1.96 / Math.sqrt(r[2]) : Infinity]));
   }
+  // Keyed by player (names lower-cased in the sheet, anonymous ids in the admin), with no prototype: a player named
+  // constructor or __proto__ is an entry like any other, never Object's member (reserved names, Pierre 2026-11-09).
   function trustOf(rows) {
-    const T = {},
-      out = {};
+    const T = Object.create(null),
+      out = Object.create(null);
     rows.forEach(r => {
       if (!r[0]) return;
       const t = (T[r[0]] = T[r[0]] || [0, 0, 0, 0, 0]),
@@ -1689,7 +1691,7 @@
     const P = {},
       PG = {},
       G = {},
-      R = {},
+      R = Object.create(null), // by player, no prototype (trustOf)
       H = {},
       trust = trustOf(rows),
       mem = MEM.PRIOR.slice(),
@@ -1932,6 +1934,34 @@
     return w ? w[0].toUpperCase() + w.slice(1) : '';
   };
   const sorryHi = name => (firstName(name) ? `Hi ${firstName(name)}!` : 'Hi!');
+  // Account names refused for a new account or an archive name (Pierre, 2026-11-09): a name holding, as one of its words,
+  // a member name of Object.prototype or a word like it (prototype). Such a name, as a key of a plain object (the sheet's
+  // maps by player: stats, replays, board, groups), reads the inherited member instead of an entry; the code no longer
+  // relies on it (maps with no prototype), and the front door refuses them too. Words split as Code.gs PROTO_RE splits a
+  // value (spaces, | : ,), any capitalisation (the sheet matches names case-blind, and keys them in lower case). An
+  // account that already has such a name keeps working: only a sign-up (the app's form, Code.gs doPost_ with no row
+  // yet) and an archive name (users_ userArchive) are refused, with error 'reserved'. The list is the one Pierre saw;
+  // whatever else this engine's Object.prototype has is refused as well.
+  const RESERVED_NAMES = [
+    '__proto__',
+    'constructor',
+    'prototype',
+    'toString',
+    'toLocaleString',
+    'valueOf',
+    'hasOwnProperty',
+    'isPrototypeOf',
+    'propertyIsEnumerable',
+    '__defineGetter__',
+    '__defineSetter__',
+    '__lookupGetter__',
+    '__lookupSetter__'
+  ];
+  const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
+  const reservedName = name =>
+    String(name == null ? '' : name)
+      .split(/[\s|:,]+/)
+      .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -3128,7 +3158,7 @@
   function exposureOf(rows, pool) {
     const P = pool || {},
       col = new Map(),
-      by = {};
+      by = Object.create(null); // by player, no prototype (trustOf)
     Object.entries(P).forEach(([u, L]) => L.forEach((c, i) => c.forEach(f => col.set(u + '|' + f, i))));
     (rows || [])
       .map((r, i) => [r, i])
@@ -3885,7 +3915,9 @@
   // {to} in p being the two %). Every version takes RV_CARD (Pierre, 2026-11-03, a standing rule: rule D5);
   // Pierre is asked only for a different text. The sync script, which embeds this file
   // (tools/sync_core.py), replays a player's log again when their stored replay is older than RV, and the app adopts a
-  // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay".
+  // replay newer than the one it applied (sync.js replayAdopt). docs/LEARNING.md "Full replay". The leaderboards follow
+  // on their own (rule D8): the script's 15-minute trigger replays every listed player behind the new version (Code.gs
+  // boardWarm_), and each board ranks them by what their app will adopt (board_, replayAdopted); nothing to add here.
   // The standard recalculation card (Pierre, 2026-11-03: "only to the players whose progress the replay moves a lot; if
   // it moves everyone a lot, everyone gets it"): shown to a player whose progress % the adoption moved by 5 points or
   // more, either way (progress.js rvNoticeAdd), with the two %.
@@ -4295,7 +4327,10 @@
         const x = (o.gd || {})[g];
         return Math.round((Array.isArray(x) ? Number(x[0]) || 0 : Number(x) || 0) * 1000) / 1000;
       },
-      out = o.start ? JSON.parse(JSON.stringify(o.start)) : {};
+      // Keyed by player id: no prototype, so a player named "constructor" or "__proto__" is a player like any other
+      // (a plain object read Object's own constructor for one, and replayed nothing). own: an id's entry of a map given.
+      out = Object.assign(Object.create(null), o.start ? JSON.parse(JSON.stringify(o.start)) : {}),
+      own = (m, k) => (Object.prototype.hasOwnProperty.call(m, k) ? m[k] : undefined);
     const prior = (t, n) => {
       const a = gen[t] || {},
         b = gen[n] || {};
@@ -4322,7 +4357,7 @@
       .sort((a, b) => a[1] - b[1])
       .forEach(r => {
         const id = r[0];
-        if (since[id] && !(r[1] > since[id])) return;
+        if (own(since, id) && !(r[1] > own(since, id))) return;
         const pl = (out[id] = out[id] || {P: {}, n: 0, used: 0, rep: 0}),
           rec = g => {
             // No former moving average on a new record: the domain-score bar from its first answer (scoreAnswer domIn);
@@ -4350,7 +4385,7 @@
         if (wrong) rec(c);
         pl.n++;
         if (hs.some(h => h && h[0])) pl.rep++;
-        const pr = startPriorAt(starts[id], r[1]), // the first-launch answer's prior at this answer (abilityOf)
+        const pr = startPriorAt(own(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
         // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
@@ -4621,6 +4656,31 @@
       });
     }
     return out;
+  }
+  // A floored replay's typed opportunities per rank (replayFloor may raise the level's, which a unit's false-alarm rate
+  // reads): L, a level record, takes X's level's where they are more (in place; sync.js replayAdoptS, replayAdopted).
+  function tykRaise(L, X) {
+    const tyk = X && X[LEVEL] && X[LEVEL].tyk;
+    if (!tyk || !L || typeof L !== 'object') return;
+    const o = {...(L.tyk || {})};
+    Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
+    L.tyk = o;
+  }
+  // The progress a device holds once it adopts a replay (sync.js replayAdoptS), and so the one the leaderboard ranks a
+  // player by once their saved copy is behind the rules (Code.gs board_; Pierre, 2026-11-09, rule D8). R: the replay (with
+  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version, floor: the subject is
+  // replayed with a floor (SUBJECTS replayed floor). replayedOf of R over P; with a floor, a unit kept from P (more
+  // answers there than in the log) beside the replayed records is floored at its bar in P (their mix-ups and offers on it
+  // may read it lower than it was), and the level's typed opportunities per rank are at least R's (tykRaise; Codex review
+  // #779), so the adoption does not undo the floor.
+  function replayAdopted(R, P, rv, floor) {
+    const S = isObj(P) ? P : {};
+    let M = replayedOf({P: R}, S, rv);
+    if (!floor) return M;
+    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && S[g] && !S[g].rv);
+    if (keptHere.length) M = replayFloor(M, S, keptHere);
+    tykRaise(M[LEVEL], R);
+    return M;
   }
 
   // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
@@ -5216,6 +5276,8 @@
     START_CAP,
     replayedOf,
     replayFloor,
+    tykRaise,
+    replayAdopted,
     replayBase,
     logRow,
     ELO,
@@ -5283,6 +5345,8 @@
     LEVEL,
     SORRY,
     firstName,
+    RESERVED_NAMES,
+    reservedName,
     sorryFelt,
     sorryOf,
     sorryDue,

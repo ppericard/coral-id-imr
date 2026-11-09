@@ -301,7 +301,7 @@ test('photo ratings and confusions count only players clearly above chance, sign
   // A device that never signed in counts under the same rule (v18): a real player yes, random clicks no.
   const anon = Array.from({length: 12}, (_, i) => R('Zed', 100 + i, i % 4 ? 1 : 0, 'x-1', 1)),
     anonBot = Array.from({length: 12}, (_, i) => R('Zbot', 300 + i, 0, 'x-2', 1));
-  assert.deepStrictEqual(trustOf([...good, ...anon, ...anonBot]), {Ana: true, Zed: true, Zbot: false});
+  assert.deepStrictEqual({...trustOf([...good, ...anon, ...anonBot])}, {Ana: true, Zed: true, Zbot: false});
   assert.ok(eloOf([...good, ...anon])['x-1'][1] > 0, 'a real anonymous player rates the photos');
   assert.strictEqual(eloOf([...good, ...anon])['x-1'][3], 12, 'plain count of the answers that rated it, beside the weighed one');
   assert.strictEqual(eloOf([...good, ...anonBot])['x-2'][1], 0, 'an anonymous player at chance does not');

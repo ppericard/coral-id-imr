@@ -289,13 +289,49 @@ let HIST = [],
   snap = null;
 // The Undo steps survive a reload of this tab (admin re-review, 2026-11-01): kept in sessionStorage (this tab only,
 // gone when it closes; the last 60 steps), with the draft they lead to, so another tab's draft never picks them up.
-const HKEY = SK('reefid-admin-undo');
-const keepHist = () => {
+// As many of the latest steps as the storage holds (HIST_ROOM characters, under the ~5 million a tab's sessionStorage
+// takes; performance pass, 2026-11-09): with a curation of 1.3 million characters, 60 steps came to 80 million, written
+// at every click (a quarter of a second on a desktop) and always refused, so no step survived a reload. Each step is
+// encoded once (stepJson) and the record is joined from them: the same JSON as JSON.stringify({snap, hist, fut}).
+const HKEY = SK('reefid-admin-undo'),
+  HIST_ROOM = 4.5e6;
+const histJson = (now, hist, fut, room = HIST_ROOM) => {
+  const s = JSON.stringify(now),
+    take = L => {
+      const out = [];
+      for (let i = L.length - 1; i >= 0 && out.length < 60; i--) {
+        const j = JSON.stringify(L[i]);
+        if (j.length + 1 > room) break;
+        room -= j.length + 1;
+        out.unshift(j);
+      }
+      return out;
+    };
+  room -= s.length + 30;
+  const h = take(hist),
+    f = take(fut);
+  return `{"snap":${s},"hist":[${h.join(',')}],"fut":[${f.join(',')}]}`;
+};
+// Written once the clicks pause (HIST_WAIT ms after the last one), and at once when the page is hidden or left (a reload
+// fires pagehide), so a run of quick clicks writes it once (a write of millions of characters takes a tenth of a second
+// on a desktop, more on a phone); the draft itself (putDraft) is still saved at every click.
+const HIST_WAIT = 1500;
+let histT = null;
+const histWrite = () => {
+  clearTimeout(histT);
+  histT = null;
   if (!TOKEN) return;
   try {
-    sessionStorage.setItem(HKEY, JSON.stringify({snap, hist: HIST.slice(-60), fut: FUT.slice(-60)}));
+    sessionStorage.setItem(HKEY, histJson(snap, HIST, FUT));
   } catch (e) {}
 };
+const keepHist = () => {
+  if (!TOKEN) return;
+  clearTimeout(histT);
+  histT = setTimeout(histWrite, HIST_WAIT);
+};
+addEventListener('pagehide', () => histT && histWrite());
+document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && histT && histWrite());
 // Read-only (no token): clicks stay in this tab only, nothing is kept as a draft (admin review, 2026-11-01).
 function saveDraft() {
   memoReset();
@@ -1371,17 +1407,14 @@ const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'play
 const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
-// A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine), its photos flagged on
-// the site (its flag) and its open reports (Q309: the reports follow the switch).
+// A subject's to-do count on the switch: what its To do lists. The corals' To do items (reports, flags, suggestions); for
+// a subject with its own part of curation.json, its photos flagged on the site (its flag) and its open reports (Q309: the
+// reports follow the switch). The auto-sort's Checks are not to-dos: they have their own count in Candidates › Checks
+// (Pierre, 2026-11-09: the fish switch showed ~1,100, mostly Checks, that To do never lists).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return (
-    Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length +
-    Object.keys(F.flag || {}).length +
-    repsOpen(S).length
-  );
+  return Object.keys(F.flag || {}).length + repsOpen(S).length;
 };
 // The To do count of the subject on screen (its tab, its views, the Inbox): the corals' tn; for a subject with its own part
 // of curation.json, its flags and its open reports (what its To do › Reports lists).
@@ -8618,6 +8651,8 @@ function bindUsers() {
         const name = b.dataset.uarch,
           into = (prompt(`Archive "${name}" under which name?`, `${name}-test`) || '').trim();
         if (!into || into === name) return;
+        // A reserved name (core.js reservedName; Pierre, 2026-11-09) is refused here as the sheet refuses it (v119).
+        if (reservedName(into)) return toast(`"${into}" is a reserved name: please choose another.`);
         if (
           !confirm(
             `Archive "${name}" as "${into}"?\n\nTheir answers, reports and progress are kept apart under "${into}", out of the leaderboard, the players, the beta groups and every count; their answers still rate the photos. Their devices are told the record was archived and asked to sign out.\n"${name}" is free again: its owner can sign in under it and start fresh.`
@@ -8628,9 +8663,11 @@ function bindUsers() {
           .then(j =>
             j && j.error === 'exists'
               ? toast(`"${into}" is already a player.`)
-              : j && j.error === 'input'
-                ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
-                : done(`"${name}" archived as "${into}".`, j)
+              : j && j.error === 'reserved'
+                ? toast(`"${into}" is a reserved name: please choose another.`)
+                : j && j.error === 'input'
+                  ? toast(`Not done: needs the sheet script v${ARCH_SHEET}.`)
+                  : done(`"${name}" archived as "${into}".`, j)
           )
           .catch(() => done('', null));
       })
