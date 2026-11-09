@@ -375,7 +375,10 @@ checked before it launches or relaunches an agent:
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
   until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
 - **Two Codex rounds at most per PR.** If Codex still finds something after the second round's fixes, the integrator
-  cuts the PR's scope (the part that keeps failing goes to ROADMAP "Parked") and tells Pierre, instead of a third round.
+  cuts the PR's scope (the part that keeps failing moves to a branch of its own) and tells Pierre, instead of a third
+  round. Findings that keep coming on the same part point to a structural problem: that part restarts from a short
+  design note (the need, the model that removes the whole class of cases, e.g. one writer instead of locks around many),
+  read by Pierre before any code, not from a fix of the latest case.
 - **A simulation reads only what is declared**: answers capped at the largest count a guardrail or the primary reads,
   and an unclear cell's second look on that cell alone. A check longer than 30 minutes is a tooling bug to fix.
 - **One train at a time** (`tools/train.py` through a queue, never two in parallel).
