@@ -4280,6 +4280,30 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-an-leg span.dash::before {
   border-top-style: dashed;
 }
+/* Small multiples (smallLines): one small chart a panel, its name above it */
+.adm-an-sm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 12px;
+}
+.adm-an-sm.c2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.adm-an-sm.c3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.adm-an-sm figure {
+  margin: 0;
+  min-width: 0;
+}
+.adm-an-sm figcaption {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--ink);
+}
+.adm-an-ix {
+  margin: 0 0 8px;
+}
 .adm-an-convs {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
