@@ -62,11 +62,17 @@ const GATES = {
     assert.strictEqual(JSON.stringify(f()), JSON.stringify(on ? {dev: 'abcdefghij'} : {}));
     return on;
   },
+  // The lighter saves (sync.js lightOn: a save without a load before it when the device holds the saved copy, its delta,
+  // gzip and the stale reply's load; Code.gs doPost_ light, load_ have): from the version that serves them; before, a
+  // load then the whole data, as ever (tests/lightsave.test.js runs both).
+  LIGHT_SHEET: (v, N) => fn('sync.js', 'const lightOn = ', '\n', 'lightOn', {sheetV: () => v, LIGHT_SHEET: N})(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
+  // Players' Leave out / Count again (sheet v115, statsExclude).
+  EXCL_SHEET: (v, N) => fn('admin.js', 'const exclOn = ', '\n', 'exclOn', {USERS: v === undefined ? {} : {v}, EXCL_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),
   // The first-launch answer's prior on a new genus's start (model.js startP): from v36, which replays it; before, 0. On

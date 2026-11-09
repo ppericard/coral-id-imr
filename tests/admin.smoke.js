@@ -1135,6 +1135,37 @@ const WIDTHS = [390, 1280];
     });
     if (!anre || !anre.shown || anre.left < 0 || anre.right > anre.vw)
       fails.push(`${w}px Analyses: Recompute here ${JSON.stringify(anre)}`);
+    // Recompute here leaves out the players and devices left out of the statistics, as the stored report does (analysis.js
+    // leftOut; Codex review #801): a left-out sender's rows never reach the worker. The worker is stubbed, then put back.
+    const anx = await p.evaluate(async () => {
+      const subj = subjRows(ANS.all, ASUBJ.id),
+        id = subj[0] && subj[0][0],
+        W0 = window.Worker,
+        E = USERS || ANS, // the player list's ids when loaded, else the log's (anRecompute reads them in that order)
+        U0 = E.excluded;
+      let got = null;
+      window.Worker = function () {
+        this.postMessage = m => (got = m.rows);
+        this.terminate = () => {};
+      };
+      E.excluded = [id];
+      anRecompute();
+      for (let i = 0; i < 50 && !got; i++) await new Promise(r => setTimeout(r, 100));
+      window.Worker = W0;
+      E.excluded = U0;
+      ANWORK = null;
+      ANLOCS[ASUBJ.id] = null;
+      ANLOC = null;
+      render();
+      return {
+        all: subj.length,
+        mine: subj.filter(r => r[0] === id).length,
+        sent: got && got.length,
+        left: got && got.filter(r => r[0] === id).length
+      };
+    });
+    if (!anx.mine || anx.left !== 0 || anx.sent !== anx.all - anx.mine)
+      fails.push(`${w}px Analyses: Recompute here with a sender left out ${JSON.stringify(anx)}`);
     for (const h of [
       'analyses/speed/answer-time',
       'analyses/speed/enlarging',
@@ -2299,6 +2330,63 @@ const WIDTHS = [390, 1280];
               timeout: 10000
             })
             .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
+          await q.close();
+        }
+        // Out of the statistics (sheet EXCL_SHEET, ROADMAP "Security follow-ups"): a player's bar and every device not signed in
+        // carry Leave out / Count again, one click each way; a player left out is marked "out" in the list. Before it the
+        // buttons are there, disabled, with the version they wait for.
+        {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px stats exclusion page error: ${e.message}`));
+          const calm = () =>
+            q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+                timeout: 20000
+              })
+              .then(() => q.waitForTimeout(300))
+              .catch(() => fails.push(`${w}px stats exclusion: never settled`));
+          const st = () =>
+            q.evaluate(() => {
+              const row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Ben Demo'),
+                bar = document.querySelector('.adm-ubar [data-ustat]'),
+                anon = [...document.querySelectorAll('.adm-uremoved [data-ustat]')];
+              return {
+                out: !!(row && row.querySelector('.adm-uex')),
+                bar: bar ? [bar.textContent, bar.disabled, bar.title] : null,
+                anon: anon.length,
+                anonOut: document.querySelectorAll('.adm-uremoved .adm-uex').length,
+                ex: (USERS.excluded || []).length
+              };
+            });
+          const X = await p.evaluate(() => EXCL_SHEET);
+          await q.goto(base + `admin.html?demo&v=${X - 1}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ben Demo"]');
+          let e = await st();
+          if (!e.bar || !e.bar[1] || !e.bar[2].endsWith('v' + X)) fails.push(`${w}px stats exclusion before v${X}: ${JSON.stringify(e)}`);
+          await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+          await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+          await calm();
+          await q.click('[data-uopen="Ben Demo"]');
+          e = await st();
+          if (!e.bar || e.bar[0] !== 'Leave out' || e.bar[1] || e.out || !e.anon)
+            fails.push(`${w}px stats exclusion: before ${JSON.stringify(e)}`);
+          await q.click('.adm-ubar [data-ustat]');
+          await calm();
+          if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Ben Demo"]');
+          e = await st();
+          if (!e.out || e.ex !== 1 || !e.bar || e.bar[0] !== 'Count again')
+            fails.push(`${w}px stats exclusion: Leave out ${JSON.stringify(e)}`);
+          await q.click('.adm-uremoved [data-ustat]');
+          await calm();
+          e = await st();
+          if (e.ex !== 2 || e.anonOut !== 1) fails.push(`${w}px stats exclusion: a device not signed in ${JSON.stringify(e)}`);
+          if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Ben Demo"]');
+          await q.click('.adm-ubar [data-ustat]');
+          await calm();
+          e = await st();
+          if (e.out || e.ex !== 1) fails.push(`${w}px stats exclusion: Count again ${JSON.stringify(e)}`);
           await q.close();
         }
         // Two subjects on the Players pages (Pierre, 2026-11-06): with every subject's answers logged (sheet v60; the demo's

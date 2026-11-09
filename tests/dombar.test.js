@@ -393,7 +393,7 @@ test("replayedOf keeps a genus's offers and mix-ups even when none of its rows m
 test('the typed format offset (dt) enters the domain score, is logged (sc t) and replayed (Codex review #646)', () => {
   // quiz.js answer passes it on every question.
   const quiz = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8');
-  assert.match(quiz, /dt: fmtOff\(PFMT, 'typed'\)/);
+  assert.match(quiz, /dt: fmtOff\(pfmt\(\), 'typed'\)/);
   const q0 = {t: 'A', c: 'A', ok: true, k: 4, chs: ['A', 'B', 'C', 'D'], ph: ['a1'], d0: 0, fam: 0, cf: 0, p: 0, timed: false, mu: 0};
   const P1 = {},
     P2 = {},

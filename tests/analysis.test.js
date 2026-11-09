@@ -361,6 +361,67 @@ test('tools/analyses.js on the real sheet script: fish answers never bring a cor
   assert.strictEqual(logs.pop(), 'Corals: 1500 answers, newest milestone 1000: the next one at 2000.');
 });
 
+// Codex review #801: with players left out of the statistics (sheet v115), the stored report counts the answers it read
+// (without theirs) while the sheet's head counts every row: the run is judged on the answers the report reads, so an
+// unchanged log is never stored again, every hour, once the left-out answers cross a round thousand.
+test('tools/analyses.js on the real sheet script: answers left out of the statistics never bring a refit loop', async () => {
+  const {sheetRun} = require('../tools/analyses.js'),
+    {loadCodeGs} = require('./gas.js'),
+    TOK = 'ghp_write000000000000000000',
+    s = loadCodeGs(),
+    t0 = Date.UTC(2026, 10, 1),
+    row = (i, who) => [
+      who,
+      new Date(t0 + i * 6e4),
+      'Acropora',
+      'Acropora',
+      1,
+      'quiz',
+      'acropora-1',
+      'x' + i,
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      'coral'
+    ];
+  const sh = require('vm').runInContext("sheet_('Answers', LOG)", s.ctx);
+  for (let i = 0; i < 1200; i++) sh.appendRow(row(i, 'Ana'));
+  for (let i = 0; i < 900; i++) sh.appendRow(row(1200 + i, 'Bot'));
+  assert.ok(s.post({statsExclude: s.ctx.aid_('Bot'), on: true, token: TOK}).ok);
+  const puts = [],
+    reads = [],
+    io = {
+      post: async b => (b.analysesPut ? puts.push(JSON.parse(b.report)) : b.readAnswers && reads.push(1), s.post(b)),
+      log: () => {}
+    };
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'stored');
+  assert.strictEqual(puts[0].answers, 1200, "the left-out player's answers are not in the report");
+  assert.deepStrictEqual(puts[0].M, [1000]);
+  // Unchanged log: the head (2100 rows) says read, the answers read (1200) say wait: nothing stored again.
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'wait');
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'wait');
+  assert.strictEqual(puts.length, 1);
+  // Everyone left out: the report is refitted once (the exclusion makes it stale), empty, then never again.
+  assert.ok(s.post({statsExclude: s.ctx.aid_('Ana'), on: true, token: TOK}).ok);
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'stored');
+  assert.strictEqual(puts[1].answers, 0);
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'wait');
+  assert.strictEqual(await sheetRun(io, TOK, {B: 0}), 'wait');
+  assert.strictEqual(puts.length, 2);
+  // The same rule as the admin's Recompute here (analysis.js leftOut).
+  assert.deepStrictEqual(A.leftOut([['a', 1], ['b', 2], null], ['b']), [['a', 1], null]);
+  const L = [['a', 1]];
+  assert.strictEqual(A.leftOut(L, []), L);
+  assert.strictEqual(A.leftOut(L), L);
+  assert.deepStrictEqual(A.leftOut(null, ['a']), []);
+});
+
 test("tools/analyses.js: the head of an older script (every subject's rows) is judged again on the subject's log", async () => {
   const {sheetRun, headCount} = require('../tools/analyses.js'),
     rows = Array.from({length: 3100}, (_, i) => {

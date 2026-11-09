@@ -849,7 +849,7 @@
         subject: FS.id
       });
     }
-    S = {rows, frows, fana, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}};
+    S = {rows, frows, fana, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}, excluded: []};
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     if (V >= 81)
       await Promise.all(
@@ -978,6 +978,7 @@
       Object.keys(P).forEach(g => (th[g] = P[g].th));
       out.players[aid(u.name)] = [u.learned, u.seen, u.total, th];
     });
+    if (V >= EXCL_SHEET) out.excluded = S.excluded.slice(); // Code.gs sxSet_: the ids left out of the statistics
     return out;
   }
   // The admin's light read (Code.gs live_, from admin.js LIVE_SHEET; Pierre, 2026-11-08): the log's last 50 rows as
@@ -1128,7 +1129,13 @@
         );
         Object.keys(E).forEach(k => by[k] && ((by[k].ex = by[k].ex || {})[X.id] = E[k]));
       });
-    return {ok: true, users: Object.values(by), removed: S.removed.slice().reverse(), ...(V >= 58 ? {archived} : {})};
+    return {
+      ok: true,
+      users: Object.values(by),
+      removed: S.removed.slice().reverse(),
+      ...(V >= 58 ? {archived} : {}),
+      ...(V >= EXCL_SHEET ? {excluded: S.excluded.slice()} : {})
+    };
   }
   function users(p) {
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
@@ -1161,6 +1168,13 @@
       S.rows.forEach(r => lc(r[0]) === lc(from) && ((r[0] = into), answers++));
       S.reports.forEach(r => lc(r[2] || '') === lc(from) && (r[2] = into));
       return {ok: true, answers, reports: 0};
+    }
+    // Sheet v115 (Code.gs statsExclude, sxPut_): an id left out of the statistics, or counted again.
+    if (p.statsExclude && V >= EXCL_SHEET) {
+      const id = String(p.statsExclude);
+      if (!/^[A-Za-z0-9+/]{8}$/.test(id)) return {ok: false, error: 'input'};
+      S.excluded = p.on ? [...new Set([...S.excluded, id])] : S.excluded.filter(x => x !== id);
+      return {ok: true, excluded: S.excluded.slice()};
     }
     // Sheet v20: hidden from the leaderboard by an admin (-1) or shown (1).
     if (p.userBoard) {
@@ -1318,6 +1332,7 @@
         p.userBoard ||
         (p.userArchive && V >= 58) ||
         (p.userStart && V >= 99) ||
+        (p.statsExclude && V >= EXCL_SHEET) ||
         (p.userGroup && V >= 48)
       )
         return ok(users(p));

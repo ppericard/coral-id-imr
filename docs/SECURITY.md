@@ -48,6 +48,45 @@ rule, not the name, is what tells a real player from a bot: random clicking, bot
 never count, signed in or not. A bot that reads the right answers from the app's data could still pull photos towards "easy" (repeats on a photo
 it got right twice weigh less, as remembered).
 
+## Left out of the statistics, and photos of another unit (v115)
+
+Pierre, 2026-11-08 (ROADMAP "Security follow-ups"):
+- **Leave out**: in admin Players (a player's bar under their row, or a device in Not signed in), **Leave out** puts the
+  id in the sheet's **Stats excluded** tab (`statsExclude`, admin token). Its answers then rate no photo, confusion,
+  photo memory or format offset (`stats_`), and the Analyses report leaves them out (`readAnswers` serves the ids as
+  `excluded`, `tools/analyses.js` drops their rows; the change makes the report stale, so it is refitted). The player's
+  own progress, level and leaderboard place stay as they are, and their answers stay in the log. **Count again** undoes
+  it. A delete, merge or archive moves or drops the row (rule D7): answers kept as "~deleted <id>" stay left out. A
+  device left out that signs in stays out: its row follows its answers to the name's admin id, so the whole account is
+  then left out (the integrator, 2026-11-09; the admin can count it again), and the Alerts tab says so by both admin ids
+  ("left out of the statistics: device <id> signed in as <id>, left out too"). The move is made only once the
+  account is saved: a sign-in refused as stale, or not saved, moves nothing, and the app sends the device id again with
+  its retry. This is
+  for a player or device that is clearly not playing for real but still passes the trust rule, which is a bot that reads
+  the right answers.
+- **Photos of another unit**: an answer whose photos are game photos of another unit or subject, and none of its own
+  (`photoCheck_` against every subject's game photos, `pools_`: a coral photo whose file starts with the genus counts as
+  that genus's, for an older app or a photo moved since; a photo in no pool is unsure), is **logged as every answer and
+  never refused**: an old app, a renamed unit or a photo moved since must not lose a real answer. A fish answer at the
+  genus or species level (`g:Chromis`, `s:Chromis ternatensis`) is checked against its family's photos (the fish pool's
+  units), an old fish entry id (`t01`) as the family it became. It rates no photo and no photo memory, and gives no photo
+  its genus offset (`stats_`; `readStats` `skip` counts them; nor does a left-out answer). On write, the first send of
+  each 6-hour window with such answers adds one line to the **Alerts** tab under the sender's admin id ("photos not of
+  the unit shown: <id> (n of m answers)"), never a name. **Nothing is fetched under the script lock**: on write, and in
+  a replay (whose photo stats are computed under the lock), only the pools already cached are used. The public stats
+  (`?stats=1`, asked by every app), `readStats` and the admin's player list hold no lock, and they read every subject's
+  pool from GitHub when it is not cached. Stats made under the lock while a pool was not cached are kept apart as
+  unchecked (`chk: 0`): the public stats and `readStats` never serve them, they read the pools and make them again. The pools are cached 6 hours in parts (the fish pool, about 390 KB, is over
+  the script cache's 100 KB a value).
+- **Ids named like JavaScript's built-ins**: a unit, answer, mode, photo or choice holding a word that `Object.prototype`
+  has (`constructor`, `__proto__`, `toString`…) is refused when logged, like any malformed value (`word_`). Such a row
+  logged before is left out of what the script computes from the log (`answerRows_`: the photo stats, the replays, the
+  hold; the photo exposure too), and the photo stats' maps have no prototype, so it can neither break them nor poison
+  them. `readAnswers` still serves such a row as it is.
+- Not covered: a coral photo the admin moved to another genus whose file is not named after its genus (`imrl-…`, an
+  IMR lecture photo): an answer given before the move, under its old genus, is taken as another unit's and stops rating
+  (it is kept; rare, and only loses ratings).
+
 ## Removed accounts (v55)
 
 Pierre, 2026-11-05 (rule D7): deleting, merging or archiving an account cleans up every trace tied to it.
@@ -60,18 +99,18 @@ player anywhere: `readAnswers` flags them 2 and the admin and the analyses keep 
 ## If it happens
 
 1. Look at the **Alerts** tab and admin **Players** (Activity, Users): a burst of `~anon` ids or new names.
-2. Delete the junk: admin Players > Users > Delete… > Delete everything for fake names (sheet v55: answers, reports,
+2. A player or device that is not junk enough to delete but should not rate the photos: Players, **Leave out**
+   (above). Answers with photos of another unit are already kept out of the photo ratings; the Alerts tab names their
+   sender's admin id.
+3. Delete the junk: admin Players > Users > Delete… > Delete everything for fake names (sheet v55: answers, reports,
    page summaries and log mentions go; only the Removed line stays); for answers without a name, tick
    their ids under Players > Not signed in, then "Delete the answers of the selected ids" (sheet v17 `anonDelete`, admin
    token, never a named player's answers). Photo ratings and confusions are recomputed from the
    Answers tab every time, so they recover on their own.
-3. Tighten a cap in `over_` calls (`tools/sync/Code.gs` with its changes file, the integrator assigning `VERSION` at merge: it deploys itself) or, in an emergency, stop
+4. Tighten a cap in `over_` calls (`tools/sync/Code.gs` with its changes file, the integrator assigning `VERSION` at merge: it deploys itself) or, in an emergency, stop
    anonymous answers by having `anon_` return `busy`.
 
 ## Not done yet (ROADMAP)
 
-- An admin switch to exclude a signed-in player from the statistics (v17 already leaves out anonymous ids and players
-  at chance).
-- Check server-side that the photos of an answer belong to the genus shown (needs a compact photo list in the script).
 - Archive old answers to a second tab or Sheet before the 10-million-cell limit.
 - Show the Alerts tab in the admin (To do).
