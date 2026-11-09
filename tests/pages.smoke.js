@@ -232,8 +232,18 @@ async function overlays(b, base) {
       // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), the
       // apology of rules version 9 (core.js RV_SORRY), and the learned mark taken away (progress.js mxLostNotice), through
       // their real callers.
-      ['update', () => (store.set('reefid-rv-msg', {due: [RV - 1], told: [], pct: {[RV - 1]: [50, 42]}}), rvNotice())],
-      ['apology', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      ['update', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
+      [
+        'apology',
+        () => (
+          store.set('reefid-rv-msg', {
+            due: [RVS.find(x => x.msg === RV_SORRY).v],
+            told: [],
+            pct: {[RVS.find(x => x.msg === RV_SORRY).v]: [50, 42]}
+          }),
+          rvNotice()
+        )
+      ],
       ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
       ['feedback', () => pulseAsk()]
     ];
@@ -2025,18 +2035,20 @@ async function replayAdoptCheck(base) {
         localStorage.removeItem('reefid-rv-msg');
         return d;
       }, v);
-    const due = await card(C.RV - 1);
+    // Rules version 9's, the apology (core.js RV_SORRY); every other version has the standard card (RV_CARD).
+    const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v;
+    const due = await card(SV - 1);
     // Every version before the apology has the standard card (RV_CARD): it is due once, for the last of them (core.js rvMsgs).
-    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV - 1) || !due[2][1].includes('went from 10% to 5%'))
+    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(SV - 1) || !due[2][1].includes('went from 10% to 5%'))
       fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
     // Rules version 9's apology (core.js RV_SORRY, min 1): due from a point, alone in the jump, with the two %.
     // Only on a drop (RV_SORRY down): 10% → 14% gets no card (a rise under the standard card's 5 points), 10% → 5% the
     // apology.
-    const sorry = await card(C.RV);
+    const sorry = await card(SV);
     if (
       sorry[0][0].length ||
       sorry[1][0].length ||
-      sorry[2][0].join() !== String(C.RV) ||
+      sorry[2][0].join() !== String(SV) ||
       !sorry[2][1].includes('Your progress: 10% → 5%') ||
       !sorry[2][1].startsWith("You've been learning so fast")
     )
@@ -2074,11 +2086,13 @@ async function replayAdoptCheck(base) {
     if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
       fails.push('replay: the adopted progress was not sent');
     if (s.pending) fails.push('replay: its own answer was not sent');
-    // The card of the last version (rules version 9's apology, core.js RV_SORRY) is due only when the replay moved the
-    // progress % by its min points or more, and says the two % (it may wait behind the learned-mark card).
-    const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
+    // The card of the jump from version 0 (rules version 9's apology, core.js RV_SORRY, alone in it: it says more) is due
+    // only when the replay moved the progress % down by its min points or more, and says the two % (it may wait behind
+    // the learned-mark card).
+    const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v,
+      [pf, pt] = (s.rvm.pct || {})[SV] || [];
     if (
-      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && pf - pt >= C.RVS[C.RVS.length - 1].msg.min) ||
+      (s.rvm.due || []).includes(SV) !== (pf !== undefined && pf - pt >= C.RV_SORRY.min) ||
       (s.card && !s.text.includes(`${pf}% → ${pt}%`))
     )
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
