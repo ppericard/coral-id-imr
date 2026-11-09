@@ -17,9 +17,11 @@ Main: sheet script **v126**. On 11-09 Pierre asked to close the open PRs one by 
 PRs from `main` only, no two open PRs on one sensitive file, two Codex rounds then cut the scope, simulations capped at
 what is read, one train at a time, ambiguous asks asked back, structural problems found and decided by the agents).
 
-- **#840** trust the log (its new rule; Q330, Q332): round 2 pushed, Codex's last round under W27; then `--assign` v127 and
-  train. After it is live: read Progress data rows 9 and 10 once each has synced (corals 85 / 197, fish 423); if not,
-  correct those two by hand (Q322 a). No card for anyone (Q330, Q332).
+- **#840** trust the log (its new rule; Q330, Q332): round 2 found 3 more on the checkpoint shift, so cut (W27): units,
+  bars and % follow the log; the level's "answers so far" keeps main's rule, its follow-up on `claude/level-count-from-log`
+  (tell Pierre: P8's total still reads 170 until then). Then `--assign` v127 and train; the leaderboard follows within
+  ~15 min of the sheet update (rule D8). After it is live: read Progress data rows 9 and 10 once each has synced (unit
+  counts as the log); if not, correct those two by hand (Q322 a). No card for anyone (Q330, Q332).
 - **#839** other-species split (Q323; P3 wording Q336 OK): green, Codex asked again; after #840, merge `main`,
   `sync_core --fix`, then `--assign`.
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (the sealing cut out of #798, Q334; its design note
@@ -29,7 +31,8 @@ what is read, one train at a time, ambiguous asks asked back, structural problem
 
 ## Next
 
-Tonight, within W27 (three agents at most): #840 then #839 through the queue. Then, one at a time:
+Pierre's quota is spent: no agent tonight or on 11-10; the next integrator (another account) starts 11-11 morning,
+first INTEGRATOR.md "Handover of 2026-11-09 evening", then #840 and #839 through the queue. Then, one at a time:
 
 1. **The opening burst** (Pierre ~16:40, several players, P11 on corals now): a mid player with few genera answers
    everything right, the engine opens many genera in a row and the success rate collapses for a while. Read-only on the
@@ -65,7 +68,6 @@ Last question number: Q336
 
 Actions only Pierre can do.
 
-- **Open the admin signed in to his player account once**: the 🌱 then shows after his name (#841, sheet v125+).
 - **Delete the branch `claude/q208-probe-declined`** (a one-line probe for #822's measurement; the classifier refused
   the delete).
 - **Drop the Coral Finder crops from R2** (Actions > "Drop the book crops from R2", dry run first); **delete his
@@ -92,4 +94,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 2026-11-09 ~17:10 Manila, integrator, end of day: the open PRs closed one by one (49 merged); Pierre stopped new topics,
 found the day's cost too high for the result (#798's six Codex rounds, a dozen agents, a three-hour simulation,
-misread asks built twice): rule W27. Mid-flight: #840 (Codex round 2), #839 (after #840).
+misread asks built twice): rule W27; his quota at 5%, a new integrator from 11-11. Mid-flight: #840 (the W27 cut, its
+last Codex check), #839 (after #840).
