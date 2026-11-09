@@ -1980,10 +1980,22 @@
     '__lookupSetter__'
   ];
   const RESERVED_LC = new Set(RESERVED_NAMES.concat(Object.getOwnPropertyNames(Object.prototype)).map(w => w.toLowerCase()));
+  // The admin's badge (a seedling drawn by the app beside the name on the leaderboards, never part of the name: progress.js
+  // BADGE_SVG; vNEXT) has look-alikes among the emoji: a new account or an archive name holding one anywhere is refused as
+  // reserved too, so nobody's name reads as the badge's. Seedling, herb, potted plant, shamrock, four-leaf clover, leaf
+  // fluttering in wind (any variation selector after it changes nothing: the base character is enough).
+  const BADGE_LOOKALIKES = ['\u{1F331}', '\u{1F33F}', '\u{1FAB4}', '\u2618', '\u{1F340}', '\u{1F343}'];
+  const BADGE_LOOK_RE = new RegExp('[' + BADGE_LOOKALIKES.join('') + ']', 'u');
   const reservedName = name =>
+    BADGE_LOOK_RE.test(String(name == null ? '' : name)) ||
     String(name == null ? '' : name)
       .split(/[\s|:,]+/)
       .some(w => w !== '' && RESERVED_LC.has(w.toLowerCase()));
+  // The admin's badge on a leaderboard row (Code.gs board_ vNEXT: a 4th field 1 on the rows of the accounts the admin
+  // marked from the admin page, users_ userBadge): shown only from a reply of a script that sends it (rule D4); an older
+  // script sends rows of three fields and the board looks as before. Nothing a player sends sets it.
+  const BADGE_SHEET = 121;
+  const boardBadge = (row, v) => Number(v) >= BADGE_SHEET && Array.isArray(row) && row[3] === 1;
   // When it happened, as the player's clock says it (tz: minutes behind UTC, Date's getTimezoneOffset): this evening,
   // yesterday evening (afternoon, morning), else the date.
   const sorryWhen = (now, tz = 0) => {
@@ -5368,7 +5380,10 @@
     SORRY,
     firstName,
     RESERVED_NAMES,
+    BADGE_LOOKALIKES,
     reservedName,
+    BADGE_SHEET,
+    boardBadge,
     sorryFelt,
     sorryOf,
     sorryDue,

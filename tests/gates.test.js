@@ -141,6 +141,14 @@ const GATES = {
     assert.strictEqual(ok(j, true), true, "the first subject's board from any script");
     return ok(j, false);
   },
+  // The admin's badge on a leaderboard row (core.js boardBadge, progress.js BADGE_SVG; Code.gs board_ marks the rows of
+  // the accounts users_ userBadge marked): from the script that sends it; before, no row shows it, a 4th field or not.
+  BADGE_SHEET: v => {
+    const {boardBadge} = require('../core.js');
+    assert.strictEqual(boardBadge(['Ana', 50, null], v), false, 'a row of three fields never has it');
+    assert.strictEqual(boardBadge(['Ana', 50, null, 0], v), false);
+    return boardBadge(['Ana', 50, null, 1], v);
+  },
   // The genus offsets of the hierarchical photo Elo (model.js gdOf, ?stats=1 gd): from v31; before, every prior is 0.
   // The per-format offsets (core.js fmtsOf, ?stats=1 fmt; Q138): from the version that serves them and replays with them;
   // before, every offset is 0 (the app's PFMT, the admin's SFMT, the device's replay on top of the sheet's).

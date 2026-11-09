@@ -1350,7 +1350,12 @@ const SHEET = () => {
     if (body) return body.name ? {ok: true, log: true, rev: 4} : {ok: false, error: 'input'};
     // test-sheet-board: the leaderboard rows the stub serves (GET ?board=1), for the one-level check below.
     if (q.get('board') && localStorage.getItem('test-sheet-board'))
-      return {ok: true, rows: JSON.parse(localStorage.getItem('test-sheet-board'))};
+      return {
+        ok: true,
+        rows: JSON.parse(localStorage.getItem('test-sheet-board')),
+        // 'badge': the version that sends the admin's badge (core.js BADGE_SHEET, read once the app is loaded).
+        ...(localStorage.getItem('test-sheet-board-v') === 'badge' ? {v: window.BADGE_SHEET} : {})
+      };
     if (!q.get('name')) return {ok: false};
     if (q.get('name').toLowerCase() !== 'anna') return {ok: true, found: false};
     if (q.get('pin') !== '1234') return {ok: false, error: 'pin'};
@@ -1814,13 +1819,15 @@ async function signin(base) {
           t: Date.now() - 60000
         })
       );
+      // The admin's badge (core.js boardBadge, sheet vNEXT): the first row marked, from a script that sends the mark.
       localStorage.setItem(
         'test-sheet-board',
         JSON.stringify([
-          ['Other P', 60, 1.5],
+          ['Other P', 60, 1.5, 1],
           ['Anna', 41, -0.9]
         ])
       );
+      localStorage.setItem('test-sheet-board-v', 'badge');
     },
     async p => {
       await p.evaluate(() => go('progress'));
@@ -1839,6 +1846,25 @@ async function signin(base) {
         [...document.querySelectorAll('#board .blist li')].map(li => li.querySelector('.belo').textContent)
       );
       if (rows.join('|') !== 'Elo 1300|Elo 1080') fails.push('one level: the board shows ' + rows.join(' | '));
+      // The badge: drawn after the marked row's name, outside its text, whole, on the row's line; no other row has one.
+      const bd = await p.evaluate(() =>
+        [...document.querySelectorAll('#board .blist li')].map(li => {
+          const n = li.querySelector('.bname'),
+            s = li.querySelector('svg.badm');
+          if (!s) return null;
+          const a = n.getBoundingClientRect(),
+            b = s.getBoundingClientRect(),
+            l = li.getBoundingClientRect();
+          return {
+            after: n.nextElementSibling === s && !n.contains(s),
+            text: n.textContent,
+            label: s.getAttribute('aria-label'),
+            fits: b.left >= a.right - 0.5 && b.right <= l.right && b.width >= 12 && b.top >= l.top && b.bottom <= l.bottom
+          };
+        })
+      );
+      if (JSON.stringify(bd) !== JSON.stringify([{after: true, text: 'Other P', label: 'Admin', fits: true}, null]))
+        fails.push('admin badge on the board: ' + JSON.stringify(bd));
     }
   );
   // The tour's sign-in step: the same question.

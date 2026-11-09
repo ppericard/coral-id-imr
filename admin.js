@@ -8441,6 +8441,8 @@ const archOn = () => (USERS.v || 0) >= ARCH_SHEET;
 // with the player list (USERS.excluded); one click each way (statsExclude), no confirmation (rule A2).
 const EXCL_SHEET = 115;
 const exclOn = () => (USERS.v || 0) >= EXCL_SHEET;
+// The admin's badge (sheet vNEXT, core.js BADGE_SHEET): Give / Remove on the row's bar from the script that keeps it.
+const badgeOn = () => (USERS.v || 0) >= BADGE_SHEET;
 const isExcl = id => !!id && (USERS.excluded || []).includes(id);
 const exclBtn = id =>
   `<button type="button" class="adm-fchip" data-ustat="${esc(id)}" data-on="${isExcl(id) ? 0 : 1}"${exclOn() ? '' : ` disabled title="Needs the sheet script v${EXCL_SHEET}"`}>${isExcl(id) ? 'Count again' : 'Leave out'}</button>`;
@@ -8557,6 +8559,7 @@ function renderUsers() {
       <a class="next" href="${esc(journeyHref(u))}" data-own>Journey →</a>
       ${u.pg ? `<span class="adm-uprog">${esc(SUBJECTS.find(S => S.replay).name)}: Progress ${withSaved(u.pg.pct + '%', u.pg.saved && u.pg.saved.pct + '%')} · Learned ${withSaved(`${u.pg.learned}`, u.pg.saved && `${u.pg.saved.learned}`)}${u.pg.err ? ` <small title="Their saved copy could not be read (${esc(u.pg.err)}): no mastery exam counted; ↻ to try again">?</small>` : ''}</span>` : ''}
       <span>${u.board === -1 ? 'Hidden from the leaderboard' : u.board === 0 ? 'Off the leaderboard (their choice)' : 'On the leaderboard'} <button type="button" class="adm-fchip" data-uboard="${esc(u.name)}" data-hide="${u.board === -1 ? 0 : 1}">${u.board === -1 ? 'Show' : 'Hide'}</button></span>
+      <span>${u.badge ? 'Admin badge' : 'No admin badge'} <button type="button" class="adm-fchip" data-ubadge="${esc(u.name)}" data-on="${u.badge ? 0 : 1}"${badgeOn() ? '' : ` disabled title="Needs the sheet script v${BADGE_SHEET}"`}>${u.badge ? 'Remove' : 'Give'}</button></span>
       ${u.id ? `<span>${isExcl(u.id) ? 'Out of the statistics' : 'In the statistics'} ${exclBtn(u.id)}</span>` : ''}
       ${u.reports ? `<span>${u.reports} report${u.reports === 1 ? '' : 's'}</span>` : ''}
       ${SUBJECTS.filter(S => groupOn(S))
@@ -8714,6 +8717,25 @@ function bindUsers() {
               : toast(`Not done (${(j && j.error) || 'offline'}${j && j.error === 'input' ? ': needs the sheet script v20' : ''}).`)
           )
           .catch(() => toast('Not done (offline).'));
+      })
+  );
+  // The admin's badge on the leaderboards (sheet vNEXT, Code.gs users_ userBadge; Pierre, 2026-11-09): one click each way,
+  // no confirmation (rule A2: Remove undoes Give). Only the badge changes; the boards show it within a minute.
+  $v.querySelectorAll('[data-ubadge]').forEach(
+    b =>
+      (b.onclick = () => {
+        const name = b.dataset.ubadge,
+          on = b.dataset.on === '1';
+        b.disabled = true;
+        userPost({userBadge: name, on})
+          .then(j => {
+            if (!(j && j.ok)) return (toast(`Not done (${(j && j.error) || 'offline'}).`), render());
+            const u = USERS.users.find(x => x.name === name);
+            if (u) u.badge = j.badge;
+            toast(on ? `"${name}" has the admin badge.` : `"${name}" no longer has the admin badge.`);
+            render();
+          })
+          .catch(() => (toast('Not done (offline).'), render()));
       })
   );
   $v.querySelectorAll('[data-ustat]').forEach(
