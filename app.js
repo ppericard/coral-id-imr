@@ -2477,7 +2477,7 @@ function cardRing(pct, was) {
 // page: its page name (core.js pageName), the seconds since Home was first drawn (s), whether its tier was not in yet, so
 // the player saw the loading bar (w), and whether the welcome tour ran this visit (tr: its steps open pages themselves;
 // those taken while it is on screen are not counted). Nothing is recorded before the script has it (rule D4).
-const FROMHOME_SHEET = 121;
+const FROMHOME_SHEET = 123;
 let HOME_AT = 0,
   homeLeft = false,
   toured = false;
