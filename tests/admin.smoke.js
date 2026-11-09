@@ -1328,6 +1328,23 @@ const WIDTHS = [390, 1280];
       if (!ix || !ix.says || ix.marks < 3 || ix.small || ix.wide > 0)
         fails.push(`${w}px Analyses #${h} interaction: ${JSON.stringify(ix)}`);
     }
+    // Each genus with practice (the study's §5 item 7): one small chart a genus with its name, the words, the table
+    {
+      await go('analyses/learning/practice');
+      const gc = await p.evaluate(() => {
+        const c = document.getElementById('anc-each-genus-with-practice');
+        return (
+          c && {
+            panels: c.querySelectorAll('.adm-an-sm figure svg').length,
+            rows: c.querySelectorAll('table tbody tr').length,
+            words: /80%/.test((c.querySelector('.adm-an-says-l') || {}).textContent || ''),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }
+        );
+      });
+      if (!gc || gc.panels < 20 || gc.rows !== gc.panels || !gc.words || gc.wide > 0)
+        fails.push(`${w}px Analyses each genus with practice: ${JSON.stringify(gc)}`);
+    }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
     {

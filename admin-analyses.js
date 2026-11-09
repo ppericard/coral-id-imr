@@ -1108,7 +1108,9 @@ const AN_PROF = {
   stop: ['Stops', v => (v == null ? '–' : anPts(v))],
   len: ['Session', v => (v == null ? '–' : `${anInt(v)} answers`)],
   wk: ['Weekly', v => (v == null ? '–' : `${v.toFixed(1)} a week`)],
-  eve: ['Evening', v => (v == null ? '–' : pc(v))]
+  eve: ['Evening', v => (v == null ? '–' : pc(v))],
+  // the gain from twice as many answers on a genus, for a typical question (75% right, a quarter by guessing)
+  slope: ['Slope', v => (v == null ? '–' : `${anPts(ANALYSIS.shiftP(0.75, 0.25, Math.LN2 * v) - 0.75)} a doubling`)]
 };
 const sum0 = L => L.reduce((t, x) => t + x, 0);
 const anWhoText = (id, i) => {
@@ -1269,8 +1271,10 @@ function anWright(a) {
     star = g => typeof starRefs === 'function' && typeof DATA !== 'undefined' && DATA && starRefs(DATA, g).length > 0,
     hi = Math.max(...W.th.map(x => x[1])),
     lo = Math.min(...W.th.map(x => x[1])),
-    beyond = W.g.filter(x => x[1] > hi).sort((p, q) => q[1] - p[1]),
-    easy = W.g.filter(x => x[1] < lo - W.m).sort((p, q) => p[1] - q[1]),
+    // every player: from each player's own prediction on the genus when the report has them (x[4], x[5]: the lowest and
+    // highest; Codex review #830), else from the places on the scale
+    beyond = W.g.filter(x => (x[5] != null ? x[5] < 0 : x[1] > hi)).sort((p, q) => q[1] - p[1]),
+    easy = W.g.filter(x => (x[4] != null ? x[4] > W.m : x[1] < lo - W.m)).sort((p, q) => p[1] - q[1]),
     it = L => L.map(x => `<i>${esc(x[0])}</i>`).join(' · '),
     // no signed number (#601): a player's place as the chance of recognising a typical genus beyond guessing, a genus's
     // difficulty as the chance the typical player recognises it beyond guessing, each with its likely range
@@ -1364,7 +1368,7 @@ function anSkill(a) {
 // under them all (two series at most, as lines()).
 function smallLines(panels, o = {}) {
   const W = anW(),
-    c = Math.max(1, Math.min(3, Math.floor((W + 12) / 300))),
+    c = Math.max(1, Math.min(o.max || 3, Math.floor((W + 12) / (o.min || 300)))),
     pw = Math.floor((W - 12 * (c - 1)) / c),
     L = panels[0] ? panels[0].series : [];
   return (
@@ -1513,6 +1517,47 @@ const AN_IX_DRAW = {
     );
   }
 };
+
+// Per-genus learning curves (analysis.js gcurveOf; the study's §5 item 7): one small chart a genus, right answers by the
+// answers already given on it against the model's own prediction, the genus furthest below the app's 80% first; flat
+// genera named (their own slope clearly under the smallest that matters, corrected over the genera). Folded on a phone.
+function anGcurve(a) {
+  const C = a.gcurve;
+  if (!C || !C.g || !C.g.length) return '';
+  const flat = C.g.filter(g => g.flat),
+    gain = v => anPts(ANALYSIS.shiftP(0.75, 0.25, Math.LN2 * v) - 0.75),
+    words = `<ul class="adm-an-says-l"><li>${
+      flat.length
+        ? `Not improving with practice: ${flat.map(g => `<i>${esc(g.k)}</i>`).join(' · ')}. Two forms to teach apart, or photos that mislead?`
+        : 'No genus is clearly flat yet: each one’s own slope is either rising or too early to tell.'
+    }</li><li>Furthest below the app’s 80% for a typical player today: ${C.g
+      .slice(0, 3)
+      .map(g => `<i>${esc(g.k)}</i> (${pc(g.at)})`)
+      .join(' · ')}.</li></ul>`,
+    panels = C.g.map(g => ({
+      label: `<i>${esc(g.k)}</i>${g.flat ? ' <span class="adm-src">flat</span>' : ''}`,
+      title: `${g.k}: recognised ${pc(g.at)} beyond guessing today; twice as many answers ${gain(g.sl[0])}`,
+      series: [
+        {label: 'Players', pts: g.b.map(b => [b[0], b[2] / b[1], b[1]]), dots: true},
+        {label: 'Fitted', pts: g.b.map(b => [b[0], b[3] / b[1]]), dash: true}
+      ]
+    }));
+  return anCard(
+    'Each genus with practice',
+    words +
+      smallLines(panels, {xlog: true, xticks: [0, 4, 32], xmin: 0, xmax: 33, h: 120, min: 170, max: 5, legs: ['Players', 'Fitted']}) +
+      anTable(
+        ['Genus', '#Answers', '#Players', '#Recognised today', '#Twice as many answers', '#Likely between'],
+        C.g.map(
+          g =>
+            `<tr><td><i>${esc(g.k)}</i>${g.flat ? ' <span class="adm-src">flat</span>' : ''}</td><td class="n">${anInt(g.n)}</td><td class="n">${g.players}</td><td class="n">${pc(g.at)}</td><td class="n">${gain(g.sl[0])}</td><td class="n">${gain(g.sl[1])} – ${gain(g.sl[2])}</td></tr>`
+        ),
+        'tall'
+      ),
+    'wide',
+    anWide() ? undefined : false
+  );
+}
 
 /* ---------- Views ---------- */
 // The Overview (Pierre, 2026-11-04: "very visual"): every result as a bar, one chart per outcome (a right answer, the time
@@ -1886,6 +1931,7 @@ const ANV = {
       'wide'
     ),
     anIx(a, 'fmtpractice'),
+    anGcurve(a),
     anCard(
       'Answers needed to reach 80% beyond guessing, by genus',
       forest(
@@ -2349,11 +2395,11 @@ Object.assign(HELP, {
   'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p>${AN_HELP_COMMON}`,
   'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects, beyond guessing (the format's own guess rate set aside); and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
   'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p><p><b>Mix-up map.</b> Which genera form families of mix-ups. Two genera are close when their pair is clearly mixed up more often than a typical pair, per offer (the lower end of its likely range, so chance alone makes no family); genera are grouped by average distance and a family is a group whose pairs are, on average, at least a fifth as close as the closest pair. Rows: the genus shown; columns: the genus answered instead, both in the tree's order, so families sit as blocks on the diagonal (dashed). Colour: the rate per offer, pulled towards the pair's own rate when offers are few, against a typical pair's (blank: never offered together). Outlined: look-alikes named on a genus sheet; a family with no outline is one the sheets do not name. <b>Mixed up across families</b>: the cells most mixed up between two families, worth a look at their photos. On a phone the tree is a list: tap a family's band for its block and its numbers. Only genera mixed up at least once are on the map.</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does the view change where misses go, pair by pair?</b> Among the questions missed with choices, the chance that the miss goes to the other genus of a pair when it is offered, by view shown, for the 6 pairs most offered on a colony photo and on another view (20 offers each on missed questions), against a typical pair's (dashed). Asked on missed questions only, since whether a question is missed is the photo's own effect (What makes a photo hard). Not on the fish side while its photos have one view.</p>${AN_HELP_COMMON}`,
-  'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does practice help every format alike?</b> The chance of recognising the genus beyond guessing by the answers already given on it, for 4 choices, 2 choices (Again, duels) and typed answers (formats with 100 answers or more), each against 4 choices (dashed).</p>${AN_HELP_COMMON}`,
+  'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus, each genus at its own pace. Each player and each genus has its own learning slope around the common one (how much the next answers on a genus gain); <b>how much genera (players) differ in how fast practice helps</b>: the gain from twice as many answers, for a typical genus (player) either side of the common one. <b>Each genus with practice</b>: right answers by the answers already given on the genus (dots) against the model's own prediction of the same answers (dashed), the genus furthest below the app's 80% today first (a typical player at their current practice); <b>flat</b>: its own slope clearly under the smallest that matters (0.1 on the log-odds per unit of log practice: about a point per doubling of the answers), after a correction over the genera (a lead: two forms to teach apart, or photos that mislead?); <b>twice as many answers</b>: the points a typical question gains from twice as many answers on that genus, with its likely range. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does practice help every format alike?</b> The chance of recognising the genus beyond guessing by the answers already given on it, for 4 choices, 2 choices (Again, duels) and typed answers (formats with 100 answers or more), each against 4 choices (dashed).</p>${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
   'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,
-  'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. The learning slope joins once the Learning model fits one per player. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
+  'an-who': `<p><b>Player profiles</b> (Pierre, 2026-11-05): how each player plays, as a picture of these players, not types (named types only from about 30 players, when groups can be checked). Each profile uses the player's last 300 answers (all of them when fewer); under 100 answers the row is greyed and left out of the tree, the map and the groups. Each behaviour is net of what the app decided (it picks the genus, the photo, the format and the difficulty from the level): <b>Time</b>, the player's own effect on answer time once right or wrong, format, difficulty, genus and photo are held equal; <b>Zoom</b>, photos enlarged against what everyone's rates for the views shown predict; <b>Right+</b>, right answers against the app's expected chance; <b>Stops</b>, the extra chance to end a session after 2 or more misses in a row, against after other answers; <b>Session</b>, the typical answers a session; <b>Weekly</b>, sessions a week; <b>Evening</b>, the share of answers from 17:00 to midnight, Manila time. <b>Slope</b>, the player's own learning slope (the Learning model's, fitted on these answers): the extra right answers twice as many answers on a genus bring, for a typical question. <b>The heatmap</b>: each cell is how far the player is from the players' average, in standard deviations (above in colour, below in ink); rows ordered by Ward's tree (left), columns by how the behaviours go together; tap a name for the player's journey. <b>Groups</b>: the tree cut where the groups are most distinct (the silhouette); <b>stable</b> when each group is found again with a Jaccard of 0.75 or more in every run with one player left out, and on average when the players are drawn again with replacement (the bootstrap, Hennig 2007); stable is not the same as real. <b>Map of players</b>: a PCA of the behaviours: players as points, behaviours as arrows; players close together play alike; an arrow points to the players high in that behaviour; the % is the share of the spread each axis shows (with few players it overstates the structure). Shown only in the admin; names come from Players, the stored report has anonymous ids.</p>`
 });
 // Opened straight on an Analyses address: admin.js drew a placeholder before this file was in.
 if (typeof DATA !== 'undefined' && DATA && anPage(cur)) render();
