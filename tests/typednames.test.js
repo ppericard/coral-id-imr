@@ -57,6 +57,7 @@ function page(names = NAMES) {
     cut(quiz, 'let TYPEDQ = null,', '// S: the subject the form names and reads', {file: 'quiz.js'}) +
       cut(quiz, 'function typeBind(', '\n}\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, '// The unit a typed reading m gives', '// The spelling step', {file: 'quiz.js'}) +
+      cut(quiz, 'const typeSpell = ', '\n};\n', {file: 'quiz.js', through: 1}) +
       cut(quiz, 'const typeStep = ', '\n};\n', {file: 'quiz.js', through: 1}) +
       '\nthis.M = {typeBind, typeUnit, typeRead, typeMatch, typeStep};',
     ctx
@@ -150,6 +151,10 @@ test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a p
   // a slip of a shared name: the spelling step, as any name's (on another family, a wrong answer)
   const g = family('gobis', 'f:Dartfishes');
   assert.deepStrictEqual([g.got, g.retry], [null, true]);
+  // Codex review #834: the correction names the shared name typed (Gobies), never the photo's family
+  const gm = C.typeMatchIn(NAMES, 'gobis', C.typeNormAll),
+    st = page().typeStep(gm, 'gobis', {r: 0, text: 'gobis'}, 'f:Dartfishes');
+  assert.strictEqual(st.spelled.replace(/<[^>]+>/g, ''), 'Gobies');
   assert.strictEqual(C.typeVerdict(C.typeMatchIn(NAMES, 'gobis', C.typeNormAll), 'f:Wrasses'), 'other');
 });
 
@@ -170,6 +175,17 @@ test("Pierre's exceptions (curation.json fish.names): off, on, often", () => {
   assert.strictEqual(family('tuskfish', 'f:Wrasses', N).got.c, 'f:Wrasses'); // a known word given to a family
   assert.strictEqual(family('sea pig', 'f:Wrasses', N).got.c, 'f:Wrasses'); // a name added
   assert.strictEqual(family('sea pig', 'f:Wrasses', N).read, '“sea pig” is a name of the Wrasses.');
+  // Codex review #834: off holds whatever else brings the name, in both numbers (Hogfishes, the genus's common name;
+  // Chromis, one of the Damselfishes' own names)
+  const O = C.fishTypeNames(X.gen, FISH.typeDrop, C.fishNameIndex(F, {Hogfish: {'f:Wrasses': 'off'}, Chromis: {'f:Damselfishes': 'off'}})),
+    o = t =>
+      C.typeMatchIn(
+        O.filter(x => !rankOf(x.g)),
+        t,
+        C.typeNormAll
+      ); // at a family question
+  ['Hogfish', 'hogfishes', 'Chromis'].forEach(t => assert.deepStrictEqual([t, !!(o(t) && o(t).known)], [t, true]));
+  assert.strictEqual(o('Dascyllus').g, 'f:Damselfishes'); // the family's other names stay
 });
 
 test('a name several families share: right for each, explained; on another family, wrong with no unit given (Q319)', () => {

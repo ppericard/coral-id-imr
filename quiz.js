@@ -221,7 +221,7 @@ const typeStep = (m, text, sp, t) => {
   if (!m) return null;
   const oft = m.shared ? ((m.by || {})[t] || {}).oft : m.oft;
   if (!sp || m.exact || sp.r) return oft ? {oft} : null;
-  const name = m.old || unameT(m.g || t),
+  const name = (m.shared && m.name) || m.old || unameT(m.g || t),
     s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
   const u = GX(m.g || t);
   return {spelled: !m.old && u && u.name && !u.rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};

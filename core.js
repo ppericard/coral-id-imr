@@ -1057,7 +1057,7 @@
   function fishTypeNames(gen, drop = '', known = []) {
     const out = [],
       add = (k, g, x, i, oft) =>
-        k && !out.some(o => o.k === k && o.g === g) && out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, ...(oft ? {oft} : {})}),
+        k && !out.some(o => o.k === k && o.g === g) && out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {})}),
       oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
       (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x))))
@@ -1089,7 +1089,20 @@
       (g.names || [g.name]).forEach((x, i) => typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x)))))
     );
     typeKnown(out, known);
+    typeOff(out, known);
     return out;
+  }
+  // Pierre's 'off' (curation.json fish.names, fishNameIndex: {x, off: family id}), applied once every name is in: no name
+  // of that family, in either number, reads x any more, whatever brought it (a genus's common name, the family's own,
+  // Chromis); the name is known (another unit's names, at any rank, still read before it: typeMatchIn).
+  function typeOff(out, known) {
+    (known || [])
+      .filter(e => e.off)
+      .forEach(e => {
+        const ks = new Set([e.x, ...typeForms(e.x)].map(typeNormAll));
+        for (let i = out.length - 1; i >= 0; i--) if (out[i].g === e.off && ks.has(out[i].k)) out.splice(i, 1);
+        ks.forEach(k => !out.some(o => o.k === k && o.known) && out.push({k, g: '', old: e.x, alt: 1, known: 1, w: 1}));
+      });
   }
   // The name index (fishNameIndex) into the typed names: a name with an owner, read as that family ({k, g, old, alt: 1,
   // vr: its role, n, of: how many of the family's species carry it; oft for a name Pierre marks "often"), in both numbers
@@ -1160,7 +1173,7 @@
       oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
       put = (x, g, vr, n, of) => {
         if (!x || !fam.has(g)) return;
-        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1});
+        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
         const o = oft(x, g);
         out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {})});
       };
@@ -3526,6 +3539,8 @@
         ? {
             shared: gs,
             old: best[0].old,
+            // the name as written that the text reads as (Gobies), for the spelling step's correction
+            name: best[0].nm || best[0].old,
             exact: best[0].d === 0,
             // each unit's own reading of it: its role (vr), how many of its species carry it (n, of), its gentle name (oft)
             by: Object.fromEntries(
