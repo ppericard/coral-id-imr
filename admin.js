@@ -1416,9 +1416,10 @@ const subjOfHash = h => {
 const under = (p, x) => p === x || p.startsWith(x + '/');
 // The Players pages are every subject's (Pierre, 2026-11-06: "the Players section needs rethinking now that we have two
 // game modes"; docs/reviews/2026-11-06-admin-players-two-subjects.md): Activity and a player's Journey follow the switch,
-// each under its subject's prefix; the list of players is one page for both (SHARED): no prefix, the same table on either
-// side (a group of columns per subject), the switch inert there, the subject on screen kept for the other pages.
-const SHARED = ['players/list'];
+// each under its subject's prefix; the list of players and Visits are one page for both (SHARED): no prefix, the same page
+// on either side (the list: a group of columns per subject; Visits: every subject's visits, each marked with its subjects,
+// a Subject filter; Pierre, 2026-11-09), the switch inert there, the subject on screen kept for the other pages.
+const SHARED = ['players/list', 'players/visits'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
 // Coverage › Rights (renderRights).
@@ -1645,7 +1646,7 @@ const pageOf = () => ADM_PAGES.filter(x => under(cur, x)).sort((a, b) => b.lengt
 // The address on screen into ASUBJ and cur (the address after the subject's prefix, without the filter). An address
 // that shows another page (a group, a tab, an old or unknown address: admRoute) is replaced by that page's, in place.
 // A shared page (SHARED) keeps the subject on screen, whatever prefix it was reached with, and its address drops the
-// prefix (#fish/players/list becomes #players/list, the fish side kept); opened first (a reload, a bookmark), the subject
+// prefix (#fish/players/list becomes #players/list, #fish/players/visits #players/visits, the fish side kept); opened first (a reload, a bookmark), the subject
 // on screen last (reefid-admin-nav-subj).
 let subjRead = false;
 function readHash() {
@@ -1728,7 +1729,7 @@ function navs(tn, xn) {
       const to = playerPage(cur) ? cur : sameOn(S, cur);
       return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
-    // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the
+    // On a shared page (the list of players, Visits) the switch is inert: the page is the same on both sides; it still shows the
     // side the other pages are on.
     sw.classList.toggle('off', shared(cur));
     sw.hidden = false;

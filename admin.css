@@ -750,8 +750,8 @@ body.adm-dragging * {
 .adm-subj a[aria-pressed='true'] .sji {
   color: var(--accent);
 }
-/* Inert on a shared page (admin.js SHARED: the list of players, the same on both sides): it shows the side the other
-   pages are on, and takes no click. */
+/* Inert on a shared page (admin.js SHARED: the list of players and Visits, the same on both sides): it shows the side
+   the other pages are on, and takes no click. */
 .adm-subj.off {
   opacity: 0.45;
 }
@@ -4728,6 +4728,25 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+/* A subject's mark (its icon, as on the switch): a page's subject on All, the subjects of a visit (Pierre, 2026-11-09:
+   Visits shared by every subject). */
+.adm-vsj {
+  display: inline-flex;
+  vertical-align: -3px;
+  margin-right: 4px;
+  color: var(--accent);
+}
+.adm-vsjs {
+  display: inline-flex;
+  white-space: nowrap;
+}
+.adm-vsjs .adm-vsj {
+  margin-right: 2px;
+}
+.adm-vfilt .adm-sseg button .sji {
+  vertical-align: -3px;
+  margin-right: 4px;
 }
 .adm-vwho {
   color: var(--muted);

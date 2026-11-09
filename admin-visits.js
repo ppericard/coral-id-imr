@@ -3,10 +3,11 @@
 // bump): the pages-opened summaries of the sheet's Pages tab (sheet v30, admin.js loadPages, one or more rows a visit)
 // and the once-a-visit `load` rows of its Events tab (admin.js loadEvents: the first page, the window width, installed
 // or not), joined to the answer log (who ever answered) and the player list (names). One scrolling page under the
-// filters Period, Visits (Q303: "Without a game" by default), Who and Device. Follows the Corals | Fish switch (rule A4):
-// a subject's pages only, a fish page being logged as fish.<page> (core.js pageName, pageSubj). Loaded after admin.js,
-// whose helpers it uses (esc, pct, sbar, kpis, dateText, clock, pname, store, sheetAgain, the loads); its words are in
-// the page help (HELP.visits, rule A2).
+// filters Subject (all by default), Period, Visits (Q303: "Without a game" by default), Who and Device. One page for every
+// subject (Pierre, 2026-11-09: as the list of players, admin.js SHARED, the switch inert there): one list of visits, each
+// marked with the subjects whose pages it opened, a page of each subject its own row (a fish page is logged as
+// fish.<page>: core.js pageName, pageSubj). Loaded after admin.js, whose helpers it uses (esc, pct, sbar, kpis, dateText,
+// clock, pname, store, sheetAgain, the loads, subjSvg); its words are in the page help (HELP.visits, rule A2).
 
 // visits: begin (the pure part, tests/visits.test.js)
 const VISITS = {
@@ -34,16 +35,19 @@ function devClass(ua, W) {
   if (mob) return w >= VISITS.PHONE ? 'tablet' : 'phone';
   return w >= VISITS.PHONE && w < VISITS.DESK ? 'tablet' : 'computer';
 }
-// The visits of one subject, newest first. rows: the Pages rows ({t, dev, id, vi, r, g, ua}: admin.js pagesRows), one or
-// more a visit (one each time the app was left, each with its own counts). o: own(page name) → the page in the subject's
-// words, null for another subject's page; answered: the ids with answers (any subject); named: Map id → name (signed in);
-// loads: the load rows {t, dev, w, st, p0}; sheets: the genus sheets (g) are this subject's. A visit is
-// {k, who, id, dev, t (its first summary), last, P {page: [times, seconds]}, G {genus: [times, seconds, {from: times}]} (how each summary reached it, Codex review #777), s (seconds),
-// game, kind (in: signed in, anon: not signed in, both with answers; never: no answer), signed, name, cls (phone, tablet,
-// computer), inst (1 installed, 0 a browser tab, null not known), p0 (the first page's name, null not known)}. A visit
-// with none of the subject's pages is the other subject's.
+// The visits, every subject's, newest first. rows: the Pages rows ({t, dev, id, vi, r, g, ua}: admin.js pagesRows), one
+// or more a visit (one each time the app was left, each with its own counts). o: split(page name) → [subject id, page]
+// (core.js pageSubj: a page drawn with Fish on screen is fish.<page>), null to leave a name out; order: the subject ids
+// in their order; answered: the ids with answers (any subject); named: Map id → name (signed in); loads: the load rows
+// {t, dev, w, st, p0}; sheets: the subject whose genus sheets (g) these are (data.json's genera), none if falsy. A visit is
+// {k, who, id, dev, t (its first summary), last, P {page name: [times, seconds]}, G {genus: [times, seconds, {from:
+// times}]} (how each summary reached it, Codex review #777), s (seconds), game, subj (the subjects whose pages it opened,
+// in order), on {subject: {P, G, s, game}} (the visit as one subject sees it: its pages, its genus sheets, its time, a game
+// of its), kind (in: signed in, anon: not signed in, both with answers; never: no answer), signed, name, cls (phone,
+// tablet, computer), inst (1 installed, 0 a browser tab, null not known), p0 (the first page's name, null not known)}.
 function visitsOf(rows, o) {
-  const own = o.own || (p => p),
+  const split = o.split || (n => ['', n]),
+    order = o.order || [],
     answered = o.answered || new Set(),
     named = o.named || new Map(),
     LD = Object.create(null),
@@ -67,17 +71,24 @@ function visitsOf(rows, o) {
           s1: 0,
           P: Object.create(null),
           G: Object.create(null),
-          s: 0
+          s: 0,
+          on: Object.create(null)
         });
       v.last = x.t;
       Object.entries(x.r || {}).forEach(([n, [c, s]]) => {
         if (v.t === x.t) v.s1 += s;
-        const p = own(n);
-        if (p == null) return;
-        const a = (v.P[p] = v.P[p] || [0, 0]);
+        const sp = split(n);
+        if (!sp) return;
+        const a = (v.P[n] = v.P[n] || [0, 0]),
+          u = (v.on[sp[0]] = v.on[sp[0]] || {P: Object.create(null), G: Object.create(null), s: 0, game: false}),
+          b = (u.P[n] = u.P[n] || [0, 0]);
         a[0] += c;
         a[1] += s;
+        b[0] += c;
+        b[1] += s;
         v.s += s;
+        u.s += s;
+        if (visitGame(sp[1])) u.game = true;
       });
       if (o.sheets)
         Object.entries(x.g || {}).forEach(([g, [c, s, from]]) => {
@@ -111,7 +122,10 @@ function visitsOf(rows, o) {
     v.cls = cls[v.dev];
     v.inst = near ? (near.st ? 1 : 0) : all.length ? (st * 2 >= all.length ? 1 : 0) : null;
     v.p0 = near && near.p0 ? near.p0 : null;
-    v.game = Object.keys(v.P).some(visitGame);
+    v.subj = Object.keys(v.on).sort((a, b) => (order.indexOf(a) + 1 || 1e9) - (order.indexOf(b) + 1 || 1e9) || a.localeCompare(b));
+    v.game = v.subj.some(x => v.on[x].game);
+    // The genus sheets are their subject's: on its side only.
+    if (v.on[o.sheets]) v.on[o.sheets].G = v.G;
     v.signed = named.has(v.id);
     v.name = v.signed ? named.get(v.id) : '';
     v.kind = !answered.has(v.id) ? 'never' : v.signed ? 'in' : 'anon';
@@ -119,12 +133,18 @@ function visitsOf(rows, o) {
   });
   return L.reverse();
 }
-// The visits a filter keeps. f: {per: '7' | '30' | 'all' (days), vis: 'nogame' | 'all', who: 'all' | 'in' | 'anon' |
-// 'never', dev: 'all' | 'phone' | 'tablet' | 'computer'}. all: every visit of the period, who and device (games or not);
-// rows: those the Visits filter keeps; since: the start of the period (the first visit for All).
+// The visits a filter keeps. f: {subj: 'all' (the default) | a subject id, per: '7' | '30' | 'all' (days), vis: 'nogame' |
+// 'all', who: 'all' | 'in' | 'anon' | 'never', dev: 'all' | 'phone' | 'tablet' | 'computer'}. One subject: the visits that
+// opened one of its pages, each as that subject sees it (its pages, genus sheets, time, a game of its: v.on), marked with
+// every subject it opened (subj). all: every visit of the subject, period, who and device (games or not); rows: those the
+// Visits filter keeps; since: the start of the period (the first visit for All).
+function visitSubj(V, sid) {
+  return !sid || sid === 'all' ? V : V.filter(v => v.on[sid]).map(v => Object.assign({}, v, v.on[sid]));
+}
 function visitsPick(V, f, now) {
-  const since = f.per === 'all' ? Math.min(now, ...V.map(v => v.t)) : now - Number(f.per) * 864e5,
-    all = V.filter(v => v.t >= since && (f.who === 'all' || v.kind === f.who) && (f.dev === 'all' || v.cls === f.dev));
+  const S = visitSubj(V, f.subj),
+    since = f.per === 'all' ? Math.min(now, ...S.map(v => v.t)) : now - Number(f.per) * 864e5,
+    all = S.filter(v => v.t >= since && (f.who === 'all' || v.kind === f.who) && (f.dev === 'all' || v.cls === f.dev));
   return {since, all, rows: f.vis === 'all' ? all : all.filter(v => !v.game)};
 }
 // Visits per day or ISO week (from Monday), local time, from since to now, gaps filled, the last VISITS.MAX: {k, ng
@@ -167,14 +187,15 @@ function visitKpis(P) {
 // visits: end
 
 /* ---------- The page ---------- */
-const VF = Object.assign({per: '30', vis: 'nogame', who: 'all', dev: 'all', by: 'day'}, store.get('reefid-admin-visits', {}));
+const VF = Object.assign({subj: 'all', per: '30', vis: 'nogame', who: 'all', dev: 'all', by: 'day'}, store.get('reefid-admin-visits', {}));
+if (!SUBJECTS.some(S => S.id === VF.subj)) VF.subj = 'all'; // a subject no longer listed: every subject
 const VOPEN = new Set(); // the visitors unfolded
 let vAll = false; // every visitor listed, not only the most recent
 const VKIND = {in: 'Signed in', anon: 'Not signed in', never: 'Never answered'},
   VDEV = {phone: 'Phone', tablet: 'Tablet', computer: 'Computer'},
   VFROM = ['quiz', 'learn', 'progress', 'other'];
-// A page of the subject on screen, in its words (S: SUBJECTS; core.js pageName names a page in the corals' words).
-function vPage(p, S = ASUBJ) {
+// A page of subject S, in its words (S: SUBJECTS; core.js pageName names a page in the corals' words).
+function vPage(p, S) {
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1),
     L = {
       home: 'Home',
@@ -237,11 +258,18 @@ const vMins = s => (s < 60 ? '<1 min' : s < 3600 ? Math.round(s / 60) + ' min' :
     `<span class="adm-qseg adm-sseg" role="group" aria-label="${label}">${L.map(
       ([v, w]) => `<button type="button" data-vf="${k}" data-v="${v}" aria-pressed="${VF[k] === v}">${w}</button>`
     ).join('')}</span>`;
-// A page name of any subject, read on the subject on screen's side: its own words, another subject's named after it.
-function vAny(n) {
+// A subject's mark: its icon (the switch's, admin.js subjSvg), its name as its label.
+const vMark = S => `<span class="adm-vsj" role="img" aria-label="${esc(S.name)}" title="${esc(S.name)}">${subjSvg(S)}</span>`,
+  // The subjects a visit opened, marked (Corals, Fish, both).
+  vMarks = v => `<span class="adm-vsjs">${v.subj.map(id => vMark(subjectOf(id))).join('')}</span>`,
+  // Every subject on screen (the Subject filter on All).
+  vMany = () => VF.subj === 'all' && SUBJECTS.length > 1;
+// A page name (as logged: fish.<page> for a fish page) in its subject's words, marked with its subject when every subject
+// is on screen or the page is another subject's than the one filtered (a visit's first page).
+function vLab(n) {
   const [sid, p] = pageSubj(n),
     S = subjectOf(sid);
-  return S === ASUBJ ? vPage(p) : `${vPage(p, S)} (${S.name})`;
+  return (vMany() || sid !== VF.subj ? vMark(S) : '') + esc(vPage(p, S));
 }
 // The rows the page reads: the Pages rows, the load rows, who answered and who signed in.
 function vLoads() {
@@ -255,25 +283,23 @@ function vLoads() {
       return {t: r[1], dev: r[2], w: Number(d.w) || 0, st: d.st ? 1 : 0, p0: typeof d.p0 === 'string' ? d.p0 : ''};
     });
 }
-// Computed once per read of the four and subject, not at each filter click.
+// Computed once per read of the four, not at each filter click.
 let VMEMO = {};
 function vData() {
-  if (VMEMO.p === PGS && VMEMO.e === EVS && VMEMO.a === ANS && VMEMO.u === USERS && VMEMO.s === ASUBJ) return VMEMO.v;
+  if (VMEMO.p === PGS && VMEMO.e === EVS && VMEMO.a === ANS && VMEMO.u === USERS) return VMEMO.v;
   const named = new Map();
   ((USERS && USERS.users) || []).forEach(u => u.id && named.set(u.id, u.name));
   const answered = new Set(((ANS && (ANS.all || ANS.rows)) || []).map(r => r[0]));
   const v = visitsOf(PGS.rows || [], {
-    own: n => {
-      const [sid, p] = pageSubj(n);
-      return sid === ASUBJ.id ? p : null;
-    },
+    split: pageSubj,
+    order: SUBJECTS.map(S => S.id),
     answered,
     named,
     loads: vLoads(),
     // The genus sheets of a summary are data.json's genera (sync.js pvGenus): the replayed subject's.
-    sheets: !!ASUBJ.replay
+    sheets: (SUBJECTS.find(S => S.replay) || {}).id
   });
-  VMEMO = {p: PGS, e: EVS, a: ANS, u: USERS, s: ASUBJ, v};
+  VMEMO = {p: PGS, e: EVS, a: ANS, u: USERS, v};
   return v;
 }
 function renderVisits() {
@@ -299,6 +325,7 @@ function renderVisits() {
     P = visitsPick(V, VF, now),
     rows = P.rows,
     filt = `<div class="adm-vfilt">${[
+      SUBJECTS.length > 1 && vSeg('subj', [['all', 'All'], ...SUBJECTS.map(S => [S.id, `${subjSvg(S)}${esc(S.name)}`])], 'Subject'),
       vSeg(
         'per',
         [
@@ -336,7 +363,9 @@ function renderVisits() {
         ],
         'Device'
       )
-    ].join('')}</div>`,
+    ]
+      .filter(Boolean)
+      .join('')}</div>`,
     // A read that failed says so: without the Events read, no first page, installed app or tablet is known (Codex review #777).
     warn = [
       USERS.err && 'Players: ' + USERS.err,
@@ -398,8 +427,8 @@ function renderVisits() {
       <div class="adm-acol"><h4>Hour of day</h4><div class="adm-cols">${hcols}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></div>
     </div></section>`;
 
-  // Pages opened: per page the visits that opened it, their share, the visitors, the median time in a visit that opened
-  // it and the total, in groups.
+  // Pages opened: per page (a page of each subject its own row, marked with it on All) the visits that opened it, their
+  // share, the visitors, the median time in a visit that opened it and the total, in groups.
   const PG = Object.create(null);
   rows.forEach(v =>
     Object.entries(v.P).forEach(([k, [, s]]) => {
@@ -410,36 +439,47 @@ function renderVisits() {
       o.tot += s;
     })
   );
-  const ord = k => (VORDER.includes(k) ? VORDER.indexOf(k) : VORDER.length),
+  const pg = k => pageSubj(k)[1],
+    sj = k => SUBJECTS.findIndex(S => S.id === pageSubj(k)[0]),
+    ord = k => (VORDER.includes(pg(k)) ? VORDER.indexOf(pg(k)) : VORDER.length),
     left = new Set(Object.keys(PG)),
     pageRows = VSECS.map(([sec, f]) => {
-      const R = [...left].filter(f).sort((a, b) => ord(a) - ord(b) || PG[b].vis - PG[a].vis || a.localeCompare(b));
+      const R = [...left]
+        .filter(k => f(pg(k)))
+        .sort((a, b) => ord(a) - ord(b) || pg(a).localeCompare(pg(b)) || sj(a) - sj(b) || PG[b].vis - PG[a].vis);
       R.forEach(k => left.delete(k));
       if (!R.length) return '';
       return (
-        (R.length > 1 || sec !== vPage(R[0]) ? `<tr class="adm-vsec"><td colspan="7">${sec}</td></tr>` : '') +
+        (R.length > 1 || sec !== vPage(pg(R[0]), subjectOf(pageSubj(R[0])[0]))
+          ? `<tr class="adm-vsec"><td colspan="7">${sec}</td></tr>`
+          : '') +
         R.map(
           k =>
-            `<tr><td>${esc(vPage(k))}</td><td class="n">${PG[k].vis}</td><td>${sbar(PG[k].vis, rows.length)}</td><td class="n">${pct(PG[k].vis, rows.length)}</td><td class="n">${PG[k].who.size}</td><td class="n">${vMins(visitMed(PG[k].s))}</td><td class="n">${vHours(PG[k].tot)}</td></tr>`
+            `<tr><td>${vLab(k)}</td><td class="n">${PG[k].vis}</td><td>${sbar(PG[k].vis, rows.length)}</td><td class="n">${pct(PG[k].vis, rows.length)}</td><td class="n">${PG[k].who.size}</td><td class="n">${vMins(visitMed(PG[k].s))}</td><td class="n">${vHours(PG[k].tot)}</td></tr>`
         ).join('')
       );
     }).join('');
   const pages = `<section class="adm-scard adm-hsec wide" data-visits="pages"><h3>Pages opened</h3><div class="adm-tscroll"><table class="adm-tbl adm-vpages"><thead><tr><th>Page</th><th class="n">Visits</th><th></th><th class="n" title="Share of the visits">Share</th><th class="n">Visitors</th><th class="n" title="Median time on the page in a visit that opened it">Median</th><th class="n">Total</th></tr></thead><tbody>${pageRows}</tbody></table></div></section>`;
 
-  // The subject's ID Key: its visits, visitors, median time, first page; by who.
-  const KY = rows.filter(v => v.P['identify.key']),
-    kSec = L => (L.length ? vMins(visitMed(L.map(v => v.P['identify.key'][1]))) : '–'),
-    kKind = ['in', 'anon', 'never']
-      .map(k => {
-        const L = KY.filter(v => v.kind === k);
-        return `<tr><td>${VKIND[k]}</td><td class="n">${L.length}</td><td class="n">${new Set(L.map(v => v.who)).size}</td><td class="n">${L.length ? kSec(L) : ''}</td></tr>`;
-      })
-      .join('');
-  const key = `<section class="adm-scard" data-visits="key"><h3>${esc(vPage('identify.key'))}</h3><div class="adm-vkeyk">
+  // Each subject's ID Key (every subject on All, the one filtered otherwise): its visits, visitors, median time, first
+  // page; by who.
+  const keyCard = S => {
+    const kn = S.pv + 'identify.key',
+      KY = rows.filter(v => v.P[kn]),
+      kSec = L => (L.length ? vMins(visitMed(L.map(v => v.P[kn][1]))) : '–'),
+      kKind = ['in', 'anon', 'never']
+        .map(k => {
+          const L = KY.filter(v => v.kind === k);
+          return `<tr><td>${VKIND[k]}</td><td class="n">${L.length}</td><td class="n">${new Set(L.map(v => v.who)).size}</td><td class="n">${L.length ? kSec(L) : ''}</td></tr>`;
+        })
+        .join('');
+    return `<section class="adm-scard" data-visits="key" data-vkey="${esc(S.id)}"><h3>${esc(vPage('identify.key', S))}</h3><div class="adm-vkeyk">
       <div><b>${KY.length}</b><span>Visits</span></div><div><b>${new Set(KY.map(v => v.who)).size}</b><span>Visitors</span></div>
-      <div><b>${kSec(KY)}</b><span>Median time</span></div><div><b>${rows.filter(v => v.p0 && pageSubj(v.p0)[0] === ASUBJ.id && pageSubj(v.p0)[1] === 'identify.key').length}</b><span>First page</span></div></div>
+      <div><b>${kSec(KY)}</b><span>Median time</span></div><div><b>${rows.filter(v => v.p0 === kn).length}</b><span>First page</span></div></div>
       <div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Who</th><th class="n">Visits</th><th class="n">Visitors</th><th class="n">Median</th></tr></thead><tbody>${kKind}</tbody></table></div>
       <p class="adm-vlater" title="Needs a sheet change (agreed for later)">Steps inside the Key: later</p></section>`;
+  };
+  const key = (vMany() ? SUBJECTS.filter(S => rows.some(v => v.on[S.id])) : [subjectOf(VF.subj)]).map(keyCard).join('');
 
   // Genus sheets (the replayed subject's): the most opened, by how many visitors, the time, how they were reached most.
   const GS = Object.create(null);
@@ -462,13 +502,15 @@ function renderVisits() {
           )}</td></tr>`
       )
       .join('');
-  const sheets = ASUBJ.replay
-    ? `<section class="adm-scard adm-hsec" data-visits="sheets"><h3>${esc(vPage('learn.genus'))} <small>${GL.length} ${esc(ASUBJ.many)}</small></h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>${esc(
-        ASUBJ.one.charAt(0).toUpperCase() + ASUBJ.one.slice(1)
-      )}</th><th class="n">Opened</th><th></th><th class="n">Visitors</th><th class="n">Time</th><th title="How the sheet was reached most often">From</th></tr></thead><tbody>${
-        gRows || '<tr><td colspan="6" class="note">None.</td></tr>'
-      }</tbody></table></div></section>`
-    : '';
+  const GS0 = SUBJECTS.find(S => S.replay);
+  const sheets =
+    GS0 && (VF.subj === 'all' || VF.subj === GS0.id)
+      ? `<section class="adm-scard adm-hsec" data-visits="sheets"><h3>${esc(vPage('learn.genus', GS0))} <small>${GL.length} ${esc(GS0.many)}</small></h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>${esc(
+          GS0.one.charAt(0).toUpperCase() + GS0.one.slice(1)
+        )}</th><th class="n">Opened</th><th></th><th class="n">Visitors</th><th class="n">Time</th><th title="How the sheet was reached most often">From</th></tr></thead><tbody>${
+          gRows || '<tr><td colspan="6" class="note">None.</td></tr>'
+        }</tbody></table></div></section>`
+      : '';
 
   // The first page of the visits (their load row), then the device.
   const FP = new Map();
@@ -480,7 +522,7 @@ function renderVisits() {
       .sort((a, b) => !a[0] - !b[0] || b[1] - a[1])
       .map(
         ([k, n]) =>
-          `<tr><td>${esc(k ? vAny(k) : 'Not known')}</td><td>${sbar(n, rows.length)}</td><td class="n">${n}</td><td class="n">${pct(n, rows.length)}</td></tr>`
+          `<tr><td>${k ? vLab(k) : 'Not known'}</td><td>${sbar(n, rows.length)}</td><td class="n">${n}</td><td class="n">${pct(n, rows.length)}</td></tr>`
       )
       .join(''),
     dRows = ['phone', 'tablet', 'computer']
@@ -507,7 +549,7 @@ function renderVisits() {
     rows.forEach(v => (by.get(v.who) || by.set(v.who, []).get(v.who)).push(v));
     by.forEach((L, w) => {
       const PS = Object.create(null);
-      L.forEach(v => Object.entries(v.P).forEach(([k, [, s]]) => k !== 'home' && (PS[k] = (PS[k] || 0) + s)));
+      L.forEach(v => Object.entries(v.P).forEach(([k, [, s]]) => pageSubj(k)[1] !== 'home' && (PS[k] = (PS[k] || 0) + s)));
       VL.push({
         w,
         v: L[0],
@@ -515,6 +557,8 @@ function renderVisits() {
         last: L[0].t,
         s: L.reduce((a, v) => a + v.s, 0),
         days: new Set(L.map(v => vDay(v.t))).size,
+        // The subjects of their visits, in order (the marks of the row).
+        subj: SUBJECTS.map(S => S.id).filter(id => L.some(v => v.subj.includes(id))),
         top: Object.entries(PS)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
@@ -533,12 +577,12 @@ function renderVisits() {
       .map(o => {
         const open = VOPEN.has(o.w),
           det = open
-            ? `<tr class="adm-udet adm-vdet"><td colspan="9"><table class="adm-vvis"><tbody>${o.L.slice(0, VISITS.OPEN)
+            ? `<tr class="adm-udet adm-vdet"><td colspan="10"><table class="adm-vvis"><tbody>${o.L.slice(0, VISITS.OPEN)
                 .map(
                   x =>
-                    `<tr><td>${vWhen(x.t)}</td><td>${vMins(x.s)}</td><td>${Object.entries(x.P)
+                    `<tr><td>${vWhen(x.t)}</td><td>${vMins(x.s)}</td><td>${vMarks(x)}</td><td>${Object.entries(x.P)
                       .sort((a, b) => b[1][1] - a[1][1])
-                      .map(([p, [n, s]]) => `${esc(vPage(p))} <small>${p === 'learn.genus' ? n + ' · ' : ''}${vMins(s)}</small>`)
+                      .map(([p, [n, s]]) => `${vLab(p)} <small>${pageSubj(p)[1] === 'learn.genus' ? n + ' · ' : ''}${vMins(s)}</small>`)
                       .join(' · ')}${
                       Object.keys(x.G).length
                         ? ` <span class="adm-vwho">(${Object.keys(x.G)
@@ -549,18 +593,18 @@ function renderVisits() {
                 )
                 .join('')}${
                 o.L.length > VISITS.OPEN
-                  ? `<tr><td></td><td colspan="2" class="adm-vwho">and ${o.L.length - VISITS.OPEN} earlier visits</td></tr>`
+                  ? `<tr><td></td><td colspan="3" class="adm-vwho">and ${o.L.length - VISITS.OPEN} earlier visits</td></tr>`
                   : ''
               }</tbody></table></td></tr>`
             : '';
         return `<tr class="adm-urow${open ? ' open' : ''}" data-vopen="${esc(o.w)}" tabindex="0" aria-expanded="${open}"><td>${whoLink(o.v)}</td><td><span class="adm-vwho">${
           o.v.signed && o.v.kind === 'never' ? 'Signed in, never answered' : VKIND[o.v.kind]
-        }</span></td><td>${vWhen(o.last)}</td><td class="n">${o.L.length}</td><td class="n">${o.days}</td><td class="n">${vHours(o.s)}</td><td>${o.top
-          .map(([p, s]) => `${esc(vPage(p))} <small>${vMins(s)}</small>`)
+        }</span></td><td>${vMarks(o)}</td><td>${vWhen(o.last)}</td><td class="n">${o.L.length}</td><td class="n">${o.days}</td><td class="n">${vHours(o.s)}</td><td>${o.top
+          .map(([p, s]) => `${vLab(p)} <small>${vMins(s)}</small>`)
           .join(' · ')}</td><td>${VDEV[o.v.cls]}${o.v.inst ? ' · app' : ''}</td><td>${open ? '▾' : '▸'}</td></tr>${det}`;
       })
       .join('');
-  const list = `<section class="adm-scard adm-recent wide" data-visits="visitors"><h3>Visitors <small>${VL.length}</small></h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Visitor</th><th>Who</th><th>Last visit</th><th class="n">Visits</th><th class="n">Days</th><th class="n">Time</th><th>Mostly</th><th>Device</th><th></th></tr></thead><tbody>${vRows}</tbody></table></div>${
+  const list = `<section class="adm-scard adm-recent wide" data-visits="visitors"><h3>Visitors <small>${VL.length}</small></h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Visitor</th><th>Who</th><th title="The subjects of their visits">Subjects</th><th>Last visit</th><th class="n">Visits</th><th class="n">Days</th><th class="n">Time</th><th>Mostly</th><th>Device</th><th></th></tr></thead><tbody>${vRows}</tbody></table></div>${
     VL.length > VISITS.TOP
       ? `<p class="adm-vmore"><button type="button" class="linkish" data-vall>${vAll ? `Show the ${VISITS.TOP} most recent` : `Show all ${VL.length}`}</button></p>`
       : ''
@@ -608,8 +652,8 @@ function bindVisits() {
       render();
     };
 }
-HELP.visits = `<p>Who opens the app and what for, games or not, signed in or not, from what the app already sends: the summary of each visit (the pages opened, how many times and for how long each was on screen, sheet v30, the Pages tab) and its once-a-visit load row (the Events tab). <b>One visit</b> = the summaries with the same visit id (the app sends one each time it is left). Its time is that of its first summary; its length is the time its pages were on screen. The switch: the subject on screen's pages only (a page drawn with Fish on screen is logged as fish.&lt;page&gt;); a visit with none of them is the other subject's, and a visit in both counts on each side with its own pages.</p>
-  <p><b>Period</b>: the last 7 or 30 days, or everything read (the last 10,000 summaries). <b>Visits</b>: <b>Without a game</b> (the default) or <b>All visits</b>. A game = a Practice page (the quiz, the custom quiz, duels, Memory); a visit to the Lab (Tools) counts as without a game. <b>Who</b>: <b>Signed in</b> (with answers), <b>Not signed in</b> (an anonymous device with answers), <b>Never answered</b> (no answer in any subject, signed in or not). <b>Device</b>: see below.</p>
-  <p><b>The numbers</b>: the visits (and, without a game, of how many in all), the visitors, those who never answered, the median visit, the share of visits on a phone. <b>Visits over time</b>: per day or week (from Monday), the visits and the visitors; on All visits the visits with a game in the paler colour above those without; then the visits by hour of the day (this browser's time). <b>Pages opened</b>: per page, the visits that opened it and their share, the visitors, the median time on the page in a visit that opened it, the total time. <b>ID Key</b> (the Coral ID Key, the Fish ID Key): its visits, visitors, median time and the visits that started on it, by who; the steps inside the Key are not counted yet (a sheet change). <b>Genus sheets</b>: the ${VISITS.SHEETS} most opened, by how many visitors, the time on them, and how they were reached most often (quiz feedback, Learn, My progress, other). <b>First page</b> and <b>installed app</b> come from the visit's load row (same device, sent within the visit's first minutes): "Not known" when the Events read (its last 3000 rows) no longer has it. <b>Visitors</b>: one row each, newest first; a tap unfolds their last ${VISITS.OPEN} visits; the name or id opens their Journey.</p>
+HELP.visits = `<p>Who opens the app and what for, games or not, signed in or not, from what the app already sends: the summary of each visit (the pages opened, how many times and for how long each was on screen, sheet v30, the Pages tab) and its once-a-visit load row (the Events tab). <b>One visit</b> = the summaries with the same visit id (the app sends one each time it is left). Its time is that of its first summary; its length is the time its pages were on screen. One page for every subject, as the list of players: the switch does nothing here. Each visit is marked with the subjects whose pages it opened (a page drawn with Fish on screen is logged as fish.&lt;page&gt;): Corals, Fish or both, counted once.</p>
+  <p><b>Subject</b>: <b>All</b> (the default): every visit, each page of each subject its own row, marked with its subject's icon (the Coral ID Key and the Fish ID Key apart). One subject: the visits that opened one of its pages, each counted with that subject's pages only (its length, its pages, a game or not), still marked with every subject it opened. <b>Period</b>: the last 7 or 30 days, or everything read (the last 10,000 summaries). <b>Visits</b>: <b>Without a game</b> (the default) or <b>All visits</b>. A game = a Practice page (the quiz, the custom quiz, duels, Memory) of any subject on All, of the subject filtered otherwise; a visit to the Lab (Tools) counts as without a game. <b>Who</b>: <b>Signed in</b> (with answers), <b>Not signed in</b> (an anonymous device with answers), <b>Never answered</b> (no answer in any subject, signed in or not). <b>Device</b>: see below.</p>
+  <p><b>The numbers</b>: the visits (and, without a game, of how many in all), the visitors, those who never answered, the median visit, the share of visits on a phone. <b>Visits over time</b>: per day or week (from Monday), the visits and the visitors; on All visits the visits with a game in the paler colour above those without; then the visits by hour of the day (this browser's time). <b>Pages opened</b>: per page, the visits that opened it and their share, the visitors, the median time on the page in a visit that opened it, the total time. <b>ID Key</b> (the Coral ID Key, the Fish ID Key, a card each on All): its visits, visitors, median time and the visits that started on it, by who; the steps inside the Key are not counted yet (a sheet change). <b>Genus sheets</b> (the corals'; not on Fish alone): the ${VISITS.SHEETS} most opened, by how many visitors, the time on them, and how they were reached most often (quiz feedback, Learn, My progress, other). <b>First page</b> and <b>installed app</b> come from the visit's load row (same device, sent within the visit's first minutes): "Not known" when the Events read (its last 3000 rows) no longer has it. <b>Visitors</b>: one row each, newest first, marked with the subjects of their visits; a tap unfolds their last ${VISITS.OPEN} visits, each marked with its subjects; the name or id opens their Journey.</p>
   <p><b>Device</b> (approximate): a <b>phone</b> is a browser that says it is a mobile one; a <b>tablet</b> is estimated from the window width of the device's load rows (their median): a mobile browser ${VISITS.PHONE} px wide or more, or a computer's browser from ${VISITS.PHONE} to ${VISITS.DESK - 1} px (an iPad's Safari presents itself as a Mac). Only devices with a load row in the Events read get a width (recent devices); the others are a phone or a computer by their browser. A phone held sideways or a narrow computer window can be misread.</p>
   <p>What is not seen: a first visit left within seconds, a page the phone closed without the app being left (its summary is lost), local copies and automated browsers. Anonymous ids only; a name only for those who signed in.</p>`;
