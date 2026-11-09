@@ -4877,7 +4877,13 @@
       const b = isObj(B0[g]) ? B0[g] : null,
         r = R[g];
       if (g === LEVEL) {
-        if (!r) return b && (out[g] = dup(b));
+        if (!r) {
+          // No level in the log: the shared clock (ok, ko) only, none of the log's fields (LEVEL_LOG), as replayedOf.
+          if (!b) return;
+          const o = dup(b);
+          LEVEL_LOG.forEach(f => delete o[f]);
+          return void (out[g] = o);
+        }
         const o = dup(r);
         if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0]; // the clock only (replayedOf, LEVEL_LOG)
         out[g] = o;

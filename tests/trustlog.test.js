@@ -175,6 +175,20 @@ test("the level over a doubled save: the log's ability, typed opportunities and 
   }
 });
 
+// Codex review of #840 (round 5): an empty log, the same rule: the baseline keeps the shared clock only, so two devices'
+// new typed answers both survive the next merge.
+test("an empty log: the baseline's level keeps the count only, no typed opportunities or times from the old save", () => {
+  const shared = {'~level': {ok: 20, ko: 0, th: 1, tyk: {f: 20}, rt: {n: 20, s: 60}}},
+    M = C.replayedOf({P: {}}, shared, 2),
+    B = C.replayBase({}, M, 2, shared);
+  assert.strictEqual(n(B[C.LEVEL]), 20);
+  assert.deepStrictEqual([B[C.LEVEL].tyk, B[C.LEVEL].rt, B[C.LEVEL].th], [undefined, undefined, undefined]);
+  const here = {...M, '~level': {...M[C.LEVEL], ok: 21, tyk: {f: 1}}},
+    there = {...M, '~level': {...M[C.LEVEL], ok: 21, tyk: {f: 1}}},
+    merged = C.mergeProgress(B, here, there);
+  assert.deepStrictEqual(merged[C.LEVEL].tyk, {f: 2}, "both devices' typed opportunities");
+});
+
 test('progress from before the coral log: dropped as any answer the log does not have', () => {
   const A = Array.from({length: 12}, (_, i) => ans('c' + i, G[i % 4], 1, CORAL + 5 * 60000 + i * 60000)),
     rep = replay(A, GEN),
