@@ -175,8 +175,9 @@ test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per obs
           p.f
         );
       assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`); // Pierre's own whatever their licence (rule S2)
+      // A species that leaves the game (e.g. circle 3 needs "confirmed near Dauin", 2026-11-03) leaves these photos too.
       const s = F.species.find(x => x.id === p.sp);
-      assert.ok(s && !s.out, `${p.f}: a species in the game`);
+      assert.ok(s && !s.out && s.circle, `${p.f}: ${p.t} (${p.sp}) is not in the game`);
     });
   });
   const X = C.fishGen(F, PH.photos);

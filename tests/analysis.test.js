@@ -26,7 +26,7 @@ test('guessOf is the same as core.js (Code.gs guess_)', () => {
     assert.strictEqual(A.guessOf(m, ch), C.guessOf(m, ch), m + ' ' + ch);
 });
 
-test('formats read from the mode and the choices', () => {
+test('formats read from the mode and the choices; core.js fmtOf (the per-format offsets of the sheet and the app) reads them as analysis.js', () => {
   assert.strictEqual(A.fmtOf('quiz', 4), 'k4');
   assert.strictEqual(A.fmtOf('quiz|k3', 4), 'k3');
   assert.strictEqual(A.fmtOf('quiz|k2', 4), 'k2');
@@ -36,9 +36,6 @@ test('formats read from the mode and the choices', () => {
   assert.strictEqual(A.fmtOf('quiz-duel|A|B', 2), 'duel');
   assert.strictEqual(A.fmtOf('quiz|x', 4), 'exam');
   assert.strictEqual(A.fmtOf('quiz|s|t', 0), 'typed');
-});
-
-test('core.js fmtOf (the per-format offsets of the sheet and the app) reads the formats as analysis.js', () => {
   const C = require('../core.js');
   for (const [m, n] of [
     ['quiz', 4],

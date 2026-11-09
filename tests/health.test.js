@@ -11,16 +11,20 @@ const test = require('node:test'),
 const ROOT = path.join(__dirname, '..'),
   read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const src = read('admin.js');
-const {HEALTH, photoAnswers, missedBy, manyMiss, everyoneMisses} = new Function(
-  block(src, '// everyone: begin', '// everyone: end', {file: 'admin.js'}) +
-    '\nreturn {HEALTH, photoAnswers, missedBy, manyMiss, everyoneMisses};'
+const {photoAnswers, missedBy, manyMiss, everyoneMisses} = new Function(
+  block(src, '// everyone: begin', '// everyone: end', {file: 'admin.js'}) + '\nreturn {photoAnswers, missedBy, manyMiss, everyoneMisses};'
 )();
 let t = 0;
 const row = (id, ok, ph = 'f1') => [id, t++, 'Favia', ok ? 'Favia' : 'Favites', ok ? 1 : 0, 'quiz', ph];
 const of = (R, f = 'f1') => photoAnswers(R)[f];
 
-test('the thresholds: 3 players, 2 of them and a majority under 50%, 5 answers, under 40% right overall', () => {
-  assert.deepStrictEqual([HEALTH.PL_MIN, HEALTH.PL_MISS, HEALTH.PL_LOW, HEALTH.PH_MIN, HEALTH.PH_LOW], [3, 2, 0.5, 5, 0.4]);
+// The thresholds (3 players, 2 of them and a majority under 50%, 5 answers, under 40% right overall) are checked at their
+// edges by the tests below; this one the 40%.
+test('under 40% right overall: 3 in 8 is listed, 2 in 5 (40%) is not', () => {
+  const o = of([row('a', 0), row('a', 0), row('a', 0), row('b', 0), row('b', 0), row('c', 1), row('c', 1), row('c', 1)]);
+  assert.deepStrictEqual(missedBy(o), {pl: 3, miss: 2});
+  assert.strictEqual(everyoneMisses(o), true, '3 right in 8');
+  assert.strictEqual(everyoneMisses(of([row('a', 0), row('a', 0), row('b', 0), row('c', 1), row('c', 1)])), false, '2 right in 5');
 });
 
 test('photoAnswers: each answer once for every photo it showed, per player', () => {
