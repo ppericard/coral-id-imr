@@ -240,6 +240,23 @@ test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a p
   const gm = C.typeMatchIn(NAMES, 'gobis', C.typeNormAll),
     st = page().typeStep(gm, 'gobis', {r: 0, text: 'gobis'}, 'f:Dartfishes');
   assert.strictEqual(st.spelled, '<span class="tysp">Gobi<b>e</b>s</span>'); // the letter left out marked
+  // Codex review #834: a slip of a shared name is spelled, never called an old name or another name of the unit
+  for (const [text, t, sp] of [
+    ['razorfsh', 'f:Wrasses', [sid('Iniistius pavo')]],
+    ['Holocentrida', 'f:Soldierfishes', []]
+  ]) {
+    const r = family(text, t, NAMES, sp);
+    assert.deepStrictEqual([text, r.got, r.retry], [text, null, true]); // the spelling step
+    const m = C.typeMatchIn(
+        NAMES.filter(o => !rankOf(o.g)),
+        text,
+        C.typeNormAll
+      ),
+      x = page().typeStep(m, text, {r: 0, text}, t);
+    assert.ok(m.shared && !m.exact, text);
+    assert.deepStrictEqual([x.plain, x.old, x.alt], [true, false, false], text);
+  }
+  assert.match(quiz, /it's spelled \$\{step\.plain \? `<b>\$\{step\.spelled\}<\/b>`/); // nothing after the name
   assert.strictEqual(C.typeVerdict(C.typeMatchIn(NAMES, 'gobis', C.typeNormAll), 'f:Wrasses'), 'other');
 });
 

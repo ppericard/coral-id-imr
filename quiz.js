@@ -235,6 +235,9 @@ const typeStep = (m, text, sp, t) => {
   if (!sp || m.exact || sp.r) return oft ? {oft} : null;
   const name = (m.shared && m.name) || m.old || unameT(m.g || t),
     s = `<span class="tysp">${typeSpell(sp.text || text, name)}</span>`;
+  // A name several units share (razorfish, Holocentridae): the name as it is spelled, nothing more: it is no old name
+  // nor another name of the unit (Codex review #834).
+  if (m.shared) return {spelled: s, plain: true, old: false, alt: false};
   const u = GX(m.g || t);
   return {spelled: !m.old && u && u.name && !u.rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
@@ -881,7 +884,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
         ? step.oft[0] === unameT(target) // a name Pierre marks "often" for the family itself (curation.json fish.names)
           ? `it's ${name} (often called ${esc(step.oft[1].toLowerCase())})`
           : `<b>${esc(step.oft[0])}</b> (often called ${esc(step.oft[1].toLowerCase())}): it's ${name}`
-        : `but not quite: it's spelled ${step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
+        : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
       ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
