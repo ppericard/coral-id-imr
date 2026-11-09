@@ -243,6 +243,9 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
     slateGenera: () => slate,
     UNITS: {[subject]: tree ? {core: () => U.core, slate: () => slate, tree: () => tree, gate, opens: []} : {slate: () => slate, opens: []}},
     bonusList: () => [...new Set([...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto])],
+    // app.js setLater (Q208 A): a fish scientific genus waits while a family in play is still to open (model.js openPick),
+    // unless it is an auto unit (an IMR player's IMR genus) or the set was turned on by hand early (Q.sciH, Q240).
+    setLater: n => subject === 'fish' && U.extra.includes(n) && !ctx.Q[U.setK + 'H'] && !setUnits().auto.includes(n),
     pool: () => [...slate, ...ctx.bonusList()].filter(has), // app.js pool: units with a photo to show
     openShut: n => U.c3.includes(n) && beyond !== 'yes' && !U.c3.some(u => u in ctx.introMap()),
     headScore,

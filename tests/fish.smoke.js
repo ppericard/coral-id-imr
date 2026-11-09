@@ -634,6 +634,18 @@ async function freshPlayers(b, base, errs) {
       'sci: on, the genera in play'
     );
     ok(progPct() === pc, 'sci: never counted in the families mean');
+    // Families met first (Pierre, 2026-11-09, Q208 A): on, a genus card waits while a family in play is not met (model.js
+    // openPick, app.js setLater); on by hand before it was due (Q.sciH, Q240), it does not.
+    {
+      const gx = pool().find(n => GX(n).rank && !sci.auto().includes(n));
+      ok(
+        gx && setLater(gx) && [...Array(40)].every(() => openPick(['f:Spadefishes', gx]) === 'f:Spadefishes'),
+        'sci: no genus card while a family is not met: ' + gx
+      );
+      Q.sciH = true;
+      ok(!setLater(gx), 'sci: on by hand early, nothing waits');
+      delete Q.sciH;
+    }
     // The global score (core.js treeScore, Q242) counts a genus: half its bar as its species' scientific credit.
     const hs = headScore(),
       gb = G.find(n => GX(n).parent === 'f:Butterflyfishes'),
