@@ -5306,7 +5306,7 @@ const WIDTHS = [390, 1280];
           ),
           L = Object.keys(PHOTOS)
             .filter(f => !cand.has(f) && !C.includes(JSON.stringify(f)))
-            .slice(0, 6),
+            .slice(0, 9),
           s = L.map(f => (SAVED.quality || {})[f] || 0),
           v = s.map(x => (x === 1 ? 3 : 1));
         DRAFT.quality = {...(DRAFT.quality || {}), [L[0]]: v[0], [L[1]]: v[1]};
@@ -5644,11 +5644,11 @@ const WIDTHS = [390, 1280];
         // then cannot be lost: what the note field shows when the page leaves is what the next unlock opens. The keys are
         // typed late in a held encryption, past the note's 0.8 s wait before it is written.
         // Codex review #798: two tabs of one token signing out at once leave one seal, holding what each had of its own. Each
-        // rated a photo the other has not seen; their encryptions are held (3 s and 1 s), so both start before either ends,
+        // rated a photo the other has not seen (two photos no step before rated); their encryptions are held (3 s and 1 s), so both start before either ends,
         // and the later one takes the earlier one in. Neither comes back unlocked meanwhile (the demo would, at once); a third
         // page counts their two sign-out broadcasts and reads the seals.
         {
-          const E = [st.L[3], st.L[4]],
+          const E = [st.L[7], st.L[8]],
             q3 = await c.newPage();
           await q2.goto(base + 'admin.html?demo#photos/review/quality');
           await idle(q2);
@@ -5697,6 +5697,101 @@ const WIDTHS = [390, 1280];
             fails.push(
               `${F}: two tabs of one token signing out at once did not leave one seal with both tabs' clicks ${JSON.stringify({both, n0, n1, got, n2})}`
             );
+        }
+        // The seal lock (Codex review #798): every section that reads or writes the seals or takes the plain draft off runs
+        // alone across the tabs, each reading the storage again inside it. Two races it closes:
+        {
+          const reopen = async pg => {
+              await pg.goto(base + 'no-such-page');
+              await pg.goto(base + 'admin.html?demo#photos/review/quality');
+              await idle(pg);
+            },
+            q3 = await c.newPage(),
+            marked = () =>
+              q3.evaluate(async () => {
+                const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('reefid-admin-signout|demo')),
+                  m = btoa(String.fromCharCode(...new Uint8Array(h))).slice(0, 22);
+                return JSON.parse(localStorage.getItem('demo:reefid-admin-sealed') || '[]').filter(x => x && x.m === m).length;
+              });
+          await q3.goto(base + 'no-such-page');
+          // (1) This tab seals a rating the other tab gave (its encryption held 3 s); meanwhile the other tab undoes
+          // everything and signs out with nothing to seal. The undo wins: no seal is left to bring the rating back.
+          // A photo no step before rated, so neither tab holds a rating of its own for it.
+          {
+            const f = st.L[6];
+            await reopen(q2);
+            await q2.evaluate(f => {
+              DRAFT.quality = {...DRAFT.quality, [f]: 3};
+              saveDraft();
+            }, f);
+            await q.evaluate(() => {
+              const enc = crypto.subtle.encrypt.bind(crypto.subtle);
+              crypto.subtle.encrypt = (...a) => new Promise(r => setTimeout(r, 3000)).then(() => enc(...a));
+            });
+            await q3.evaluate(() => {
+              window.smokeN = 0;
+              addEventListener('storage', e => e.key === 'demo:reefid-admin-signout' && e.newValue && smokeN++);
+            });
+            await c.route(admin, held);
+            await q.evaluate(() => void signOut());
+            await q.waitForFunction(() => signingOut, null, {timeout: 10000});
+            await q2.evaluate(() => {
+              DRAFT = clone(SAVED);
+              saveDraft();
+              void signOut();
+            });
+            const both = await q3
+              .waitForFunction(() => smokeN >= 2, null, {timeout: 45000})
+              .then(
+                () => true,
+                () => false
+              );
+            const n1 = await marked();
+            await c.unroute(admin, held);
+            await leaveQ();
+            await q.goto(base + 'admin.html?demo#photos/review/quality');
+            await ready();
+            const got = await quality([f]);
+            if (!both || n1 !== 0 || got[0] !== st.s[6])
+              fails.push(
+                `${F}: an undo signed out while the other tab sealed the choice came back ${JSON.stringify({both, n1, got, want: st.s[6]})}`
+              );
+          }
+          // (2) A tab opens this token's seal (its decryption held 3 s) while this tab seals again with a new rating: the
+          // new seal is not dropped with the one opened, and the next unlock has both ratings.
+          {
+            const [f1, f2] = [st.L[3], st.L[4]];
+            await q.evaluate(async f => {
+              DRAFT.quality = {...DRAFT.quality, [f]: 2};
+              saveDraft();
+              await sealDraft();
+            }, f1);
+            const q4 = await c.newPage();
+            await q4.addInitScript(() => {
+              const dec = crypto.subtle.decrypt.bind(crypto.subtle);
+              crypto.subtle.decrypt = (...a) => {
+                window.smokeDec = 1;
+                return new Promise(r => setTimeout(r, 3000)).then(() => dec(...a));
+              };
+            });
+            await q4.goto(base + 'admin.html?demo#photos/review/quality');
+            await q4.waitForFunction(() => window.smokeDec, null, {timeout: 30000});
+            await q.evaluate(async f => {
+              DRAFT.quality = {...DRAFT.quality, [f]: 2};
+              saveDraft();
+              await sealDraft();
+            }, f2);
+            await idle(q4);
+            await q4.close();
+            await reopen(q);
+            const got = await quality([f1, f2]),
+              n2 = await marked();
+            if (got.join() !== '2,2' || n2 !== 0)
+              fails.push(
+                `${F}: a seal written while another tab opened this token's seal was dropped with it ${JSON.stringify({got, n2})}`
+              );
+          }
+          await q3.close();
         }
         await q2.close();
         await q.goto(base + 'admin.html?demo#inbox/todo/points/astrea-reefcloud');

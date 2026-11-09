@@ -6616,66 +6616,70 @@ async function start() {
   // Unsaved edits from an earlier visit are kept, on top of what is saved.
   // The draft only carries the changes made since its base: everything published since then (from another
   // device, or by the candidate refill) comes in underneath. Drafts from before this rule only add, never remove.
-  const sealed = TOKEN ? await unsealDraft().catch(() => null) : null;
-  let old = store.get('reefid-curation-draft', null),
-    base = store.get('reefid-curation-base', null);
-  if (sealed && !(old && old.genera)) {
-    old = sealed.d; // this token's draft from before its sign out (signOut)
-    base = sealed.b;
-  }
-  if (old && old._tab) {
-    SEEN = old._tab.rev;
-    delete old._tab;
-    REVS[SEEN] = clone(old);
-  } // the draft another open tab started from
-  DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
-  // A plain draft was there too: written after the sign out (Sign out takes it off), by another tab or token that kept
-  // working, so it is the newer one and wins where both changed; what only the sealed one has comes in under it. Both are
-  // named in a note: a choice undone since in the plain draft comes back from the sealed one (review of #798). A plain
-  // draft with nothing of its own (what another admin's unlock wrote before the browser was closed without a sign out) is
-  // no newer work: the sealed draft is then the draft, with no note (second review of #798).
-  let sealNote = '',
-    sealS = null;
-  if (sealed && old !== sealed.d) {
-    sealS = sealed.b ? mergeCur(sealed.b, sealed.d, SAVED) : mergeOld(sealed.d, SAVED);
-    if (!sealDiff(DRAFT, SAVED).length) DRAFT = clone(sealS);
-    else {
-      const newer = [],
-        M = mergeCur(SAVED, DRAFT, sealS, newer),
-        back = sealDiff(DRAFT, M).map(x => x[0]),
-        some = L => L.slice(0, 3).map(confName).join(', ') + (L.length > 3 ? ` and ${L.length - 3} more` : '');
-      DRAFT = M;
-      if (back.length || newer.length)
-        sealNote =
-          ' The draft sealed at your last sign out came in under a newer one left in this browser' +
-          (back.length ? `; from the sealed one: ${some(back)}` : '') +
-          (newer.length ? `; the newer kept for ${some(newer)}` : '') +
-          '. Check them before you Publish.';
+  // The seal read, the draft rebuilt and written back, and the seal dropped, all under the seal lock (sealLock): no other tab
+  // seals, drops or takes the plain draft off in between.
+  let sealNote = '';
+  await (TOKEN ? sealLock : f => f())(async () => {
+    const sealed = TOKEN ? await unsealDraft().catch(() => null) : null;
+    let old = store.get('reefid-curation-draft', null),
+      base = store.get('reefid-curation-base', null);
+    if (sealed && !(old && old.genera)) {
+      old = sealed.d; // this token's draft from before its sign out (signOut)
+      base = sealed.b;
     }
-  }
-  DRAFT.genera = DRAFT.genera || {};
-  // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
-  const kept = (() => {
-    try {
-      return JSON.parse(sessionStorage.getItem(HKEY) || 'null');
-    } catch (e) {
-      return null;
+    if (old && old._tab) {
+      SEEN = old._tab.rev;
+      delete old._tab;
+      REVS[SEEN] = clone(old);
+    } // the draft another open tab started from
+    DRAFT = old && old.genera ? (base ? mergeCur(base, old, SAVED) : mergeOld(old, SAVED)) : clone(SAVED);
+    // A plain draft was there too: written after the sign out (Sign out takes it off), by another tab or token that kept
+    // working, so it is the newer one and wins where both changed; what only the sealed one has comes in under it. Both are
+    // named in a note: a choice undone since in the plain draft comes back from the sealed one (review of #798). A plain
+    // draft with nothing of its own (what another admin's unlock wrote before the browser was closed without a sign out) is
+    // no newer work: the sealed draft is then the draft, with no note (second review of #798).
+    let sealS = null;
+    if (sealed && old !== sealed.d) {
+      sealS = sealed.b ? mergeCur(sealed.b, sealed.d, SAVED) : mergeOld(sealed.d, SAVED);
+      if (!sealDiff(DRAFT, SAVED).length) DRAFT = clone(sealS);
+      else {
+        const newer = [],
+          M = mergeCur(SAVED, DRAFT, sealS, newer),
+          back = sealDiff(DRAFT, M).map(x => x[0]),
+          some = L => L.slice(0, 3).map(confName).join(', ') + (L.length > 3 ? ` and ${L.length - 3} more` : '');
+        DRAFT = M;
+        if (back.length || newer.length)
+          sealNote =
+            ' The draft sealed at your last sign out came in under a newer one left in this browser' +
+            (back.length ? `; from the sealed one: ${some(back)}` : '') +
+            (newer.length ? `; the newer kept for ${some(newer)}` : '') +
+            '. Check them before you Publish.';
+      }
     }
-  })();
-  if (TOKEN && kept && old && kept.snap === JSON.stringify(old) && Array.isArray(kept.hist) && Array.isArray(kept.fut)) {
-    const f = x => {
-      const d = base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED);
-      return JSON.stringify(sealS ? mergeCur(SAVED, d, sealS) : d); // the sealed draft under each step, as under the draft
-    };
-    HIST = kept.hist.map(f);
-    FUT = kept.fut.map(f);
-  }
-  snap = JSON.stringify(DRAFT);
-  if (TOKEN) {
-    if (putDraft() && sealed) sealed.drop();
-    store.set('reefid-curation-base', SAVED);
-    keepHist();
-  }
+    DRAFT.genera = DRAFT.genera || {};
+    // Undo steps kept by this tab before a reload come back, re-based like the draft, only if they lead to that same draft.
+    const kept = (() => {
+      try {
+        return JSON.parse(sessionStorage.getItem(HKEY) || 'null');
+      } catch (e) {
+        return null;
+      }
+    })();
+    if (TOKEN && kept && old && kept.snap === JSON.stringify(old) && Array.isArray(kept.hist) && Array.isArray(kept.fut)) {
+      const f = x => {
+        const d = base ? mergeCur(base, JSON.parse(x), SAVED) : mergeOld(JSON.parse(x), SAVED);
+        return JSON.stringify(sealS ? mergeCur(SAVED, d, sealS) : d); // the sealed draft under each step, as under the draft
+      };
+      HIST = kept.hist.map(f);
+      FUT = kept.fut.map(f);
+    }
+    snap = JSON.stringify(DRAFT);
+    if (TOKEN) {
+      if (putDraft() && sealed) sealed.drop();
+      store.set('reefid-curation-base', SAVED);
+      keepHist();
+    }
+  });
   // Pierre's clicks in the old Coral Finder letters (curation.json "form") stay as they are, shown as the hint.
   Object.assign(LEGACY, SAVED.form || {}, DRAFT.form || {});
   const nf = importFlags();
@@ -6867,6 +6871,12 @@ store.set(SESSION, null); // drop the plain copy older versions kept in localSto
 // 5 M-character storage: the seal holds the draft and only the changes that lead from it to its base (sealDiff), gzipped
 // before it is encrypted (where the browser has no CompressionStream, as they are), and the plain keys come off before it
 // is written, put back if it does not fit (review of #798). If it cannot be sealed, Sign out says so and stops.
+// One section at a time, across this browser's admin tabs, for everything that reads or writes the seals or takes the
+// plain draft off (Codex review #798: a seal, an unseal, a sign out with nothing to seal and a drop ran into each other
+// across tabs): an exclusive navigator.locks lock, and each section reads the storage again inside it. A browser without
+// navigator.locks runs them as they come (best effort: sealIn's checks for what changed meanwhile stay).
+const sealLock = fn =>
+  navigator.locks && navigator.locks.request ? navigator.locks.request(SK('reefid-admin-seal'), {mode: 'exclusive'}, fn) : fn();
 const SEALED = 'reefid-admin-sealed',
   PLAIN_KEYS = ['reefid-curation-draft', 'reefid-curation-base'];
 const sealKey = tok =>
@@ -6911,21 +6921,25 @@ const plainOff = () =>
   });
 // True once no plain draft is left (sealed, or nothing unpublished in it), false when it stays as it was. over: a seal
 // this one replaces (it holds that one's draft), taken out of the list in the same write.
-async function sealDraft(over) {
+// Under the seal lock (sealLock), from the first read of the plain draft to the last write.
+const sealDraft = over => sealLock(() => sealIn(over));
+async function sealIn(over) {
   if (!TOKEN || !DRAFT) return true;
   takeOther(); // the clicks of another admin tab come in first
-  if (!status0().parts.length) {
-    plainOff();
-    return true;
-  }
   // A token keeps one seal (Codex review #798: two tabs of one token signing out at once left two, and the older came back
   // later as unpublished work). Its earlier seals (a mark of the token beside each, not the token) are taken into this one
   // first, unless this tab already holds the draft they sealed (its revision known here), against the revision they had
   // seen, as two tabs' drafts are merged (takeTab): what was undone here since stays undone. over: one already taken in.
-  const mark = await tokMark(TOKEN),
-    key = await sealKey(TOKEN),
-    seen = new Set(over ? [over] : []);
-  for (const x of mineSealed(mark)) {
+  // A draft with nothing left to publish is no seal, but it still supersedes the token's earlier seals (Codex review #798:
+  // an Undo here, then a sign out, while another tab sealed the choice undone).
+  let mark = null,
+    key = null;
+  try {
+    mark = await tokMark(TOKEN);
+    key = await sealKey(TOKEN);
+  } catch (e) {} // no Web Crypto: no seal of it to take in either
+  const seen = new Set(over ? [over] : []);
+  for (const x of mark ? mineSealed(mark) : []) {
     if (seen.has(x.ct)) continue;
     seen.add(x.ct);
     const o = await openSeal(x, key).catch(() => null);
@@ -6934,6 +6948,14 @@ async function sealDraft(over) {
     DRAFT.genera = DRAFT.genera || {};
     snap = JSON.stringify(DRAFT);
   }
+  if (!status0().parts.length) {
+    plainOff();
+    const L = store.get(SEALED, []),
+      R = (Array.isArray(L) ? L : []).filter(x => x && !seen.has(x.ct));
+    if (seen.size) store.set(SEALED, R.length ? R : null);
+    return true;
+  }
+  if (!key) throw new Error('no Web Crypto');
   const at = snap,
     rev = `${TAB}.${++REV}`,
     z = typeof CompressionStream === 'function' && typeof DecompressionStream === 'function',
@@ -6946,7 +6968,8 @@ async function sealDraft(over) {
   // wrote meanwhile. SEAL_REV: the draft revision sealed, for the other tabs to tell whether their last write is in it.
   ptFlush();
   takeOther();
-  if (snap !== at || mineSealed(mark).some(x => !seen.has(x.ct))) return sealDraft(over);
+  // (A seal of this token written meanwhile can only come from a browser without navigator.locks: sealLock.)
+  if (snap !== at || mineSealed(mark).some(x => !seen.has(x.ct))) return sealIn(over);
   const L = store.get(SEALED, []),
     S = [
       {iv: b64(iv), ct: b64big(new Uint8Array(ct)), t: Date.now(), z: z ? 1 : 0, m: mark},
@@ -6970,8 +6993,9 @@ async function openSeal(x, key) {
   return {d: o.d, b: Array.isArray(o.x) ? sealPatch(o.d, o.x) : null, r: o.r || null, s: o.s || null};
 }
 // The draft this token sealed at its last sign out, if any: {d, b, ct, drop}, the newest of its seals. drop() removes it
-// once it is in the draft, with every other seal of this token (one seal per token), from the list as it is then:
-// another token's window may have added its own since (Codex review #798).
+// once it is in the draft, with the other seals of this token read with it (one seal per token), and nothing else: the
+// list is read again then, and a seal written since stays (Codex review #798). Called under the seal lock (start), so
+// nothing is written between the read and the drop where navigator.locks exists.
 async function unsealDraft() {
   const L = store.get(SEALED, null);
   if (!TOKEN || !Array.isArray(L) || !L.length) return null;
@@ -6979,14 +7003,15 @@ async function unsealDraft() {
     mark = await tokMark(TOKEN).catch(() => null);
   for (let i = 0; i < L.length; i++) {
     try {
-      const o = await openSeal(L[i], k);
+      const o = await openSeal(L[i], k),
+        used = new Set([L[i].ct, ...L.filter(x => x && mark && x.m === mark).map(x => x.ct)]);
       return {
         d: o.d,
         b: o.b,
         ct: L[i].ct,
         drop: () => {
           const C = store.get(SEALED, []),
-            R = Array.isArray(C) ? C.filter(x => x && x.ct !== L[i].ct && !(mark && x.m === mark)) : [];
+            R = Array.isArray(C) ? C.filter(x => x && !used.has(x.ct)) : [];
           return store.set(SEALED, R.length ? R : null);
         }
       };
@@ -7078,8 +7103,10 @@ addEventListener('storage', e => {
         if (m === k) return lockOther(rev);
         // Another admin's token signed out and took the shared plain draft off with it: this tab, still unlocked, writes
         // its own draft and base back at once, so nothing it saved goes with the other admin's seal (Codex review #798).
-        putDraft();
-        BASE_GONE = !store.set('reefid-curation-base', SAVED);
+        sealLock(() => {
+          putDraft();
+          BASE_GONE = !store.set('reefid-curation-base', SAVED);
+        });
       })
       .catch(() => {});
 });
