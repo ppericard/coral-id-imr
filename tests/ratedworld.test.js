@@ -202,7 +202,7 @@ test('the sheet mode: a population logs its answers with seconds, the ratings it
   const log = [['p1', 1, 'Acropora', 'Acropora', 1, 'quiz|k4', 'x', null, null, null, 'Acropora Porites', 0, 3, 0]],
     s = RW.sheetStats(log, 2);
   assert.ok(s.photos.x && 'Acropora' in s.gd);
-  assert.strictEqual(require('../core.js').RTIME.PK, 2, 'the photo k given back');
+  assert.strictEqual(require('../core.js').RTIME.PK, 1.5, 'the photo k given back');
   // learncmp reads the population measures, one value per seed.
   const F = (r, pk) => ({subject: 'coral', world: 'rated', seeds: 1, questions: 30, checkpoints: [30], pk, runs: r.runs, pop: [r.pop]}),
     R = L.compare(F(a, 0), F(c, 2), {primary: {at: L.parseAt('rateErr@30'), dir: 'down'}});

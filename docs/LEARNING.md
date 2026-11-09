@@ -4691,17 +4691,24 @@ nothing clear ((1) −0.28 [−1.08, +0.53]; 11% of the fish answers had another
 comes from the fast photos only (90.3% right where 81.4% was expected); on the slow ones it over-corrects. **Decided by
 Pierre, 2026-11-09 (Q315)**: option (1) kept as the candidate; (2) A and B kept for a re-test once there are more and
 more varied players, not discarded (ROADMAP "Time in the photo rating"). Built: in `Code.gs` `stats_` and `core.js`
-`eloReplay` together, through one function (`core.js` `photoTimeW`, `RTIME.PK` = 2), a right answer's step on its
-photos and on its genus offset is taken times clamp(1 − 2 z, 0.5, 1.5), z its log seconds against the median of the
-player's own earlier timed answers (from their 11th, as the player's rule `rtWeight`: every timed answer of theirs
-counts in the median, right or wrong, a typed one excepted); a miss, a typed answer, an answer with a photo enlarged and
-one without seconds weigh 1 (the cut-offs of the measurement: no rapid-guess cut, the 600 s cap). The weighed counts that
-damp later steps do not take the weight, nor do the memory offsets' steps. The photo ratings, genus offsets and memory
-offsets the sheet serves move, and with them every replayed progress: rules version 10, the standard card. The app
-changes nothing and needs no gate (rule D4): it reads the ratings the sheet serves. **It goes live only after the rule
-L11 level-2 simulation below is in and read.**
+`eloReplay` together, through one function (`core.js` `photoTimeW`, `RTIME.PK`), a right answer's step on its photos and
+on its genus offset is taken times clamp(1 − k z, 0.5, 1.5). Its first form (k 2, z against the median of every timed
+answer of the player) did not pass level 2 (below); **Pierre chose on 2026-11-09 (Q318, (a))** to measure it again with
+z net of the player's right-answer speed. The real log, replayed as declared (script outside the repo): z against the
+median of the player's own earlier right answers (from their 11th timed right answer) keeps a clear gain on the corals,
+−1.03 × 10⁻³ per answer [−1.71, −0.34], 10 of 14 players better, p 0.0015, k 1.5 the commonest choice (the curve flat
+from 1 to 3); the raw z of the first form was better by +0.94 [+0.23, +1.65], at most the part its step asymmetry took
+(a right answer's photo step against a miss's: 0.219 under today's rule, 0.231 with the raw z, 0.219 with the net z);
+z net of the mean instead of the median −1.29 (exploratory); fish nothing clear. **So the rule is now the net form:
+`RTIME.PK` 1.5, z against the median of the player's earlier right answers** (a typed answer or one with a photo
+enlarged never counts in it); a miss, a typed answer, an answer with a photo enlarged and one without seconds weigh 1;
+no rapid-guess cut, the 600 s cap. The weighed counts that damp later steps do not take the weight, nor do the memory
+offsets' steps. The photo ratings, genus offsets and memory offsets the sheet serves move, and with them every replayed
+progress: rules version 10, the standard card. The app changes nothing and needs no gate (rule D4): it reads the
+ratings the sheet serves. **It goes live only after the rule L11 level-2 simulation (round 2, below) is in and read.**
 
-**The level-2 simulation** (rule L11, 2026-11-09, #808; the protocol declared in the PR before any run). Rated world,
+**The level-2 simulation, round 1: the first form** (k 2, z against every answer's median; rule L11, 2026-11-09, #808;
+the protocol declared in the PR before any run). Rated world,
 corals, `--app sheet` ("Validating a learning change"): one player per coral profile, 3,000 answers each (12,000
 pooled), the ratings served every 100 answers; before `--pk 0` (the rule before), after `--pk 2`, both on the same code;
 seeds 101-110, then 111-120 as declared (two looks: one-sided bounds at 95%, the primary at 0.025). The app world (level 1
@@ -4745,7 +4752,8 @@ rating − true difficulty over the photos answered, at 3,000 answers per player
   score at 1,000 with rho0 and heavy tails); with 20 seeds they are within their bounds (unclear).
 - Verdict: **level 2 not passed as declared**. The primary is not clear. The declared "nothing breaks" bound is breached
   with views, where time runs against difficulty. Guardrails are breached in the rated world (one) and in the app world
-  (five cells). Rule L11 sends this to Pierre. The change stays on its branch (#808) until he decides.
+  (five cells). Rule L11 sends this to Pierre. The change stays on its branch (#808) until he decides. **He chose
+  (Q318, (a)) the real-log re-test with z net of the right answers' speed** (above), then a second level-2 round.
 
 ## Multifactor analyses (admin Analyses, 2026-11-04)
 

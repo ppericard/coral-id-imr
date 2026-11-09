@@ -141,12 +141,13 @@ test('hierarchical photo Elo: a photo nobody answered starts at its genus offset
   assert.ok(gd.Acropora[1] > 0 && gd.Acropora[1] < 40, JSON.stringify(gd));
 });
 
-// Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); rules version 10): a right answer's step on its photos
-// and on its genus offset, times clamp(1 - RTIME.PK z, 0.5, 1.5), z its log seconds against the player's own earlier
-// median (from the 11th timed answer); a miss, a typed answer, an enlarged photo or no seconds: 1.
+// Time in the photo rating (Pierre, 2026-11-09, Q315, option (1), Q318; rules version 10): a right answer's step on its
+// photos and on its genus offset, times clamp(1 - RTIME.PK z, 0.5, 1.5), z its log seconds against the median of the
+// player's own earlier right answers (from the 11th); a miss, a typed answer, an enlarged photo or no seconds: 1.
 test('photoTimeW: a fast right answer moves its photo and genus offset more, a slow one less', () => {
   const past = [];
-  // Ana, trusted: 30 timed answers on Porites at 5 s (her median), 4 in 5 right.
+  // Ana, trusted: 30 timed answers on Porites, 4 in 5 right: the right ones at 5 s (her right answers' median), the misses
+  // at 12 s (Q318: they never count in the median).
   for (let i = 0; i < 30; i++)
     past.push([
       'Ana',
@@ -161,7 +162,7 @@ test('photoTimeW: a fast right answer moves its photo and genus offset more, a s
       null,
       'Porites Acropora Favia Montipora',
       0,
-      5
+      i % 5 ? 5 : 12
     ]);
   const last = (ok, sec, big, mode = 'quiz|k4') => [
       ...past,
@@ -196,7 +197,8 @@ test('photoTimeW: a fast right answer moves its photo and genus offset more, a s
   assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 20, 0.25, 1, 0), RTIME.LO, '20 s against 5 s: the least');
   const w = photoTimeW({...T, rt: {...T.rt}}, 5.5, 0.25, 1, 0);
   assert.ok(Math.abs(w - (1 - RTIME.PK * Math.log(5.5 / 5))) < 1e-9, String(w));
-  assert.strictEqual(RTIME.PK, 2, 'the k chosen on the real log (Q315)');
+  assert.strictEqual(RTIME.PK, 1.5, 'the k chosen on the real log (Q318)');
+  assert.deepStrictEqual(T.rt, {50: 24}, "only the right answers' times are in the median");
   // Weight 1: a miss, an enlarged photo, a typed answer, no seconds, and the player's first RTIME.MIN timed answers.
   assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 2, 0.25, 0, 0), 1);
   assert.strictEqual(photoTimeW({...T, rt: {...T.rt}}, 2, 0.25, 1, 1), 1);
@@ -206,12 +208,15 @@ test('photoTimeW: a fast right answer moves its photo and genus offset more, a s
   assert.strictEqual(photo(last(1, 2, 1)), photo(none), 'enlarged: as without seconds');
   assert.strictEqual(photo(last(1, 2, 0, 'quiz|t')), photo(last(1, null, 0, 'quiz|t')), 'typed: as without seconds');
   assert.strictEqual(photo(last(0, 2, 0)), photo(last(0, null, 0)), 'a miss: as without seconds');
-  // The time is added after its own weight, and a typed answer's never: the median is of the earlier untyped answers.
+  // The time is added after its own weight, and only a right answer's (Q318): never a typed one's, a miss's or one with a
+  // photo enlarged.
   const U = {};
   photoTimeW(U, 3, 0, 1, 0);
-  assert.deepStrictEqual(U, {}, 'a typed answer adds no time');
   photoTimeW(U, 3, 0.5, 0, 0);
-  assert.deepStrictEqual(U.rt, {30: 1}, "a miss's time counts in the median");
+  photoTimeW(U, 3, 0.5, 1, 1);
+  assert.deepStrictEqual(U, {}, 'typed, missed or enlarged: no time');
+  photoTimeW(U, 3, 0.5, 1, 0);
+  assert.deepStrictEqual(U.rt, {30: 1}, "a right answer's time counts in the median");
 });
 
 test('eloOf gives the same photo ratings as Code.gs stats_', () => {

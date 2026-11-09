@@ -917,9 +917,9 @@ function stats_(read){
     const sg = String(r[2]), sa = String(r[3]);
     if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
     if (isEx(who)) out.skip.excluded++;
-    // vNEXT (Pierre, 2026-11-09, Q315): a right answer's photo and genus-offset steps weighed by its seconds against the
-    // player's own earlier median (core.js photoTimeW, RTIME.PK; every timed answer counts in the median, one without
-    // photos too; a typed or enlarged answer, a miss or no seconds: 1).
+    // vNEXT (Pierre, 2026-11-09, Q315, Q318): a right answer's photo and genus-offset steps weighed by its seconds against
+    // the median of the player's own earlier right answers (core.js photoTimeW, RTIME.PK; every timed right answer counts
+    // in it, one without photos too; a typed or enlarged answer, a miss or no seconds: 1).
     const g = guess_(mode, r[11]), tw = CORE_.photoTimeW(T[who] = T[who] || {}, numOrNull_(r[12]), g, ok, Number(r[13]) === 1);
     if (!fs.length) return;
     let pk = true;
@@ -4099,7 +4099,7 @@ const CORE_ = (function () { const module = {exports: {}};
         if (!r[0]) return;
         const ok = r[4] ? 1 : 0,
           g = guessOf(String(r[5] || ''), r[10]),
-          // Every timed answer counts in the player's median, one without photos too (Code.gs stats_ in step).
+          // Every timed right answer counts in the player's median, one without photos too (Code.gs stats_ in step).
           tw = photoTimeW((T[r[0]] = T[r[0]] || {}), r[12], g, ok, Number(r[13]) === 1);
         if (!fs.length) return;
         const ra = (R[r[0]] = R[r[0]] || [PLAYER0, 0]);
@@ -6067,11 +6067,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // The earlier times live in the global level's record (P[LEVEL].rt: how many timed answers took each number of tenths
   // of a second, {"45": 3, ...}; a few hundred keys at most), so the median is exact, the record compact, two devices'
   // records add up (mergeProgress) and the full replay rebuilds it from the log (replayProgress).
-  // PK (Pierre, 2026-11-09, Q315: option (1) kept as the candidate): the k of the same weight on the photo side, a right
-  // answer's steps on its photos and on its genus offset in the sheet's photo Elo (photoTimeW, eloReplay, Code.gs stats_):
-  // 2, chosen by leave one player out on the real log (the curve flat from 1 to 3; docs/LEARNING.md "Response time as
-  // information on difficulty"). The same z, LO, HI and MIN as the player's rule.
-  const RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10, PK: 2};
+  // PK (Pierre, 2026-11-09, Q315: option (1) kept as the candidate; Q318: its z net of the player's right-answer speed):
+  // the k of the same weight on the photo side, a right answer's steps on its photos and on its genus offset in the
+  // sheet's photo Elo (photoTimeW, eloReplay, Code.gs stats_): 1.5, the commonest choice of leave one player out on the
+  // real log (the curve flat from 1 to 3; docs/LEARNING.md "Response time as information on difficulty"). The same LO, HI
+  // and MIN as the player's rule.
+  const RTIME = {K: 1.5, LO: 0.5, HI: 1.5, MIN: 10, PK: 1.5};
   // The tenths of a second of a timed answer, or 0 when it does not count (no seconds, 0, a typed answer: k infinite).
   const rtTenths = (sec, k) => (typeof sec === 'number' && isFinite(sec) && isFinite(k) ? Math.round(Math.min(600, sec) * 10) : 0);
   // The median log(seconds) of the times in rt, null with fewer than RTIME.MIN (the mean of the two middle ones when even).
@@ -6116,19 +6117,23 @@ const CORE_ = (function () { const module = {exports: {}};
   // Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); rule L1: the seconds of an answer are evidence about
   // that answer): in the sheet's photo Elo (eloReplay, Code.gs stats_, which calls this one function), a right answer's
   // step on its photos and on its genus offset is taken times rtWeight with RTIME.PK, z its log seconds against the median
-  // of the player's own earlier timed answers (from their 11th; every answer of theirs with seconds counts in the median,
-  // a typed one excepted, enlarged or not, right or wrong, trusted or not). A fast right answer says "easier photo" as it
-  // says "known genus" on the player's side (one surprise moves both sides, Pelanek 2016). A miss, a typed answer, an
-  // answer with a photo enlarged (the seconds hold the time spent enlarged) and one without seconds: weight 1. T: the
-  // player's own times ({rt}, as P[LEVEL] keeps them), changed in place (this answer's time added after its weight);
-  // sec the seconds (null without), g the question's guess rate (guessOf: 0 for a typed one), ok 0 | 1, big 1 when a photo
-  // was enlarged. Measured on the real log (2026-11-09, 2,906 coral answers of 14 players, each answer predicted before it
-  // moved anything, players the unit): -1.97 x 10^-3 log-loss per answer [-3.14, -0.80], 10 of 14 players better (Holm
-  // 0.003); fish not clear (docs/LEARNING.md "Response time as information on difficulty").
+  // of the player's own earlier right answers (Q318: net of the player's right-answer speed; from their 11th timed right
+  // answer; a typed one or one with a photo enlarged never counts in it, trusted or not). A fast right answer says
+  // "easier photo" as it says "known genus" on the player's side (one surprise moves both sides, Pelanek 2016). Against
+  // the median of every answer (Q315's first form) right answers, faster than misses, weighed above 1 on average, so a
+  // right answer's step grew against a miss's whatever the photo (the rated world, PR #808; the right/wrong step ratio
+  // 0.219 -> 0.231 on the real log); against the right answers' own median it stays at the rule's (0.219). A miss, a
+  // typed answer, an answer with a photo enlarged (the seconds hold the time spent enlarged) and one without seconds:
+  // weight 1. T: the player's right-answer times ({rt}, as rtMedian reads them), changed in place (this answer's time
+  // added after its weight); sec the seconds (null without), g the question's guess rate (guessOf: 0 for a typed one), ok
+  // 0 | 1, big 1 when a photo was enlarged. Measured on the real log (2026-11-09, 2,906 coral answers of 14 players, each
+  // answer predicted before it moved anything, players the unit): -1.03 x 10^-3 log-loss per answer [-1.71, -0.34], 10 of
+  // 14 players better (p 0.0015); fish not clear (docs/LEARNING.md "Response time as information on difficulty").
   function photoTimeW(T, sec, g, ok, big) {
     const k = g > 0 ? 1 / g : Infinity,
-      w = ok && !big ? rtWeight(T, sec, k, true, RTIME.PK) : 1;
-    rtAdd(T, sec, k);
+      on = ok && !big,
+      w = on ? rtWeight(T, sec, k, true, RTIME.PK) : 1;
+    if (on) rtAdd(T, sec, k);
     return w;
   }
 
@@ -6452,7 +6457,7 @@ const CORE_ = (function () { const module = {exports: {}};
     {
       v: 10,
       at: '2026-11-09',
-      why: "Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); sheet vNEXT): in the sheet's photo Elo, a right answer's step on its photos and on its genus offset is taken times clamp(1 - 2 z, 0.5, 1.5), z its log seconds against the player's own earlier median (RTIME.PK, photoTimeW); the photo memory offsets and the genus offsets the replay uses change with it, as in rules version 3",
+      why: "Time in the photo rating (Pierre, 2026-11-09, Q315, option (1); Q318, z net of the player's right-answer speed; sheet vNEXT): in the sheet's photo Elo, a right answer's step on its photos and on its genus offset is taken times clamp(1 - 1.5 z, 0.5, 1.5), z its log seconds against the median of the player's own earlier right answers (RTIME.PK, photoTimeW); the photo memory offsets and the genus offsets the replay uses change with it, as in rules version 3",
       msg: RV_CARD
     }
   ];

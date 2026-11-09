@@ -535,7 +535,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
 // model.js photoDiff, genusDiff, famOf), as ?stats=1 serves them. So the photo ratings the draw reads are learned from
 // the players' own answers, and a change to the rating changes what every player meets.
 // Response times (RT, the one place their distribution is stated; LEARNING.md "Response time: genus and photo": the
-// player's medians 3.9 to 11.2 s, a photo sd 0.35 in log, a residual about 0.57, a right answer 0.67 times as long): an
+// player's medians 3.9 to 11.2 s, a photo sd 0.35 in log, a residual about 0.57, a right answer 0.67 times as long as a
+// miss, RIGHT = log 0.67, as on the real log): an
 // answer's log seconds = T0 + the mean over its photos of the photo's time intensity beta + (views only) VIEW per view
 // beyond the first - the player's speed tau + RIGHT if right + TYPED if typed + NOISE x N(0, 1), drawn from a generator
 // of its own per answer (the answers and the draws never depend on it unless the rating reads it). beta by case (TIMES):
