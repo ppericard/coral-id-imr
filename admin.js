@@ -777,7 +777,8 @@ const own = memo('own', n => {
   (DATA.course[n] || []).forEach(p =>
     L.push({...p, base: p.v === 'medium' && two ? 'macro' : p.v, ...(p.multi && one(p.f) ? {multi: false, wasMulti: true} : {})})
   );
-  for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f)) L.splice(i, 1);
+  // Excluded photos, and the coral skeleton photos (data.json skel, rule P6: never shown, as core.js applyCuration).
+  for (let i = L.length - 1; i >= 0; i--) if (excl(L[i].f) || L[i].skel) L.splice(i, 1);
   // Candidates Pierre approved (curation add: {f: view}) join their view as normal photos (app.js applyCuration).
   const add = entry(n).add || {};
   cands(n)
@@ -809,7 +810,7 @@ const sentTo = (k, list) => {
 const photos = memo('photos', n => [...own(n).filter(p => !outs(n)[p.f]), ...(sentTo('own', own)[n] || [])]);
 const outOf = n => [...own(n).filter(p => outs(n)[p.f]), ...rawCands(n).filter(p => outs(n)[p.f] && !(entry(n).add || {})[p.f])];
 // New candidate photos from data.json cand, not used by the site until approved here.
-const rawCands = memo('raw', n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f)));
+const rawCands = memo('raw', n => ((DATA.cand || {})[n] || []).filter(p => !excl(p.f) && !p.skel));
 // A candidate sent to another genus ("Not this") becomes a candidate there, tagged with where it came from.
 const cands = memo('cands', n => [...rawCands(n).filter(p => !outs(n)[p.f]), ...(sentTo('cand', rawCands)[n] || [])]);
 // Same order as the Show source chips (ORIGINS).
@@ -1405,19 +1406,27 @@ const hasPage = (S, p) =>
 const homeOf = S => (hasPage(S, 'players/activity') ? 'players/activity' : 'players/list');
 // A player's page (a journey, a device's): the switch keeps it, as the page's own subject toggle does (renderJourney).
 const playerPage = p => p.startsWith('players/list/journey/') || p.startsWith('players/list/anon/');
+// The page on screen as seen from subject S (the subject switch): its view (a thing a page is about, a genus, a family, a
+// point, belongs to one side, so the view it sits under), that view itself when S has it, else the view S opens for the
+// same tab or group (admRoute: a fish Photos › Families for the corals' Photos › Genera).
+const sameOn = (S, p) => {
+  const v = ADM_PAGES.filter(x => under(p, x)).sort((a, b) => b.length - a.length)[0] || p;
+  if (hasPage(S, v) && !shared(v)) return v;
+  // the same tab on that side, else the same group (admRoute may name a tab whose views that side does not have)
+  const seg = v.split('/'),
+    ok = x => x && hasPage(S, x) && !shared(x) && ADM_PAGES.includes(x);
+  return [seg.slice(0, 2).join('/'), seg[0]].map(x => admRoute(x, S)).find(ok) || homeOf(S);
+};
 // The per-subject memories (last tab, view and page): the corals' keys carry no subject.
 const subjK = (k, S = ASUBJ) => (S.hash ? `${k}-${S.id}` : k);
-// A subject's to-do count on the switch: the corals' To do items (reports, flags, suggestions); for a subject with its own
-// part of curation.json, the Checks its auto-sort left for Pierre (autosort.js fishIdx, fishMine), its photos flagged on
-// the site (its flag) and its open reports (Q309: the reports follow the switch).
+// A subject's to-do count on the switch: what its To do lists. The corals' To do items (reports, flags, suggestions); for
+// a subject with its own part of curation.json, its photos flagged on the site (its flag) and its open reports (Q309: the
+// reports follow the switch). The auto-sort's Checks are not to-dos: they have their own count in Candidates › Checks
+// (Pierre, 2026-11-09: the fish switch showed ~1,100, mostly Checks, that To do never lists).
 const subjTodo = (S, tn) => {
   if (!S.admin.cur) return tn;
   const F = DRAFT[S.admin.cur] || {};
-  return (
-    Object.entries(fishIdx(F)).filter(([f, x]) => x.d.check && !fishMine(F, f)).length +
-    Object.keys(F.flag || {}).length +
-    repsOpen(S).length
-  );
+  return Object.keys(F.flag || {}).length + repsOpen(S).length;
 };
 // The To do count of the subject on screen (its tab, its views, the Inbox): the corals' tn; for a subject with its own part
 // of curation.json, its flags and its open reports (what its To do › Reports lists).
@@ -1655,7 +1664,6 @@ function navs(tn, xn) {
     seen[T[0]] = page;
     store.set(subjK('reefid-admin-nav-tab'), seen);
   }
-  if (hasPage(ASUBJ, cur)) store.set(subjK('reefid-admin-nav-last'), cur);
   const hn = Object.values(DRAFT.genera || {}).reduce((s, k) => s + (k.hide || []).length, 0),
     href = h => (h === LIVE ? genusHash() : '#' + (shared(h) ? '' : ASUBJ.hash) + h),
     // The subject's pages only: a view it has, a tab with one, a group with one.
@@ -1687,14 +1695,9 @@ function navs(tn, xn) {
   if (sw && SUBJECTS.length > 1) {
     sw.innerHTML = SUBJECTS.map(S => {
       const n = subjTodo(S, tn);
-      // The subject's page used last (a remembered value is checked against today's addresses).
-      // A player's page stays that player's (their journey in the other subject).
-      const back = store.get(subjK('reefid-admin-nav-last', S), ''),
-        to = playerPage(cur)
-          ? cur
-          : typeof back === 'string' && back && admRoute(back, S) === back && hasPage(S, back) && !shared(back)
-            ? back
-            : homeOf(S);
+      // The same page on the other side (Pierre, 2026-11-09: the switch stays on the page on screen, never the side's
+      // page used last): sameOn. A player's page stays that player's (their journey in the other subject).
+      const to = playerPage(cur) ? cur : sameOn(S, cur);
       return `<a href="#${esc(S.hash + admAddr(to))}" data-subj="${esc(S.id)}" aria-pressed="${S === ASUBJ}" title="${esc(S.name)}${n ? `: ${n} to do` : ''}"${shared(cur) ? ' tabindex="-1" aria-disabled="true"' : ''}>${subjSvg(S)}<span class="adm-sjn">${esc(S.name)}</span>${n ? `<b class="adm-scnt">${n}</b>` : ''}</a>`;
     }).join('');
     // On a shared page (the list of players) the switch is inert: the page is the same on both sides; it still shows the

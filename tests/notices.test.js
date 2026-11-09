@@ -59,7 +59,7 @@ function app({SYNC = {name: 'Ana', pin: '1234', srv: 4, base: prog, log: []}, re
       visibilityState: 'visible'
     },
     window: {addEventListener: () => {}},
-    navigator: {onLine: true},
+    navigator: {onLine: true, userAgent: 'Mozilla/5.0 (node test)'},
     performance: {now: () => 0},
     setInterval: () => 0,
     setTimeout: (f, ms) => timers.push({f, ms}),

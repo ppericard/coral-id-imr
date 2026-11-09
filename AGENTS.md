@@ -156,6 +156,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **P3** No photo of several corals or fish species in games; no Coral Finder book photo anywhere.
 - **P4** All photos of one question come from one observation.
 - **P5** Credits in the lightbox and after the answer, never giving the answer away.
+- **P6** Corals: no photo of a coral skeleton anywhere.
 
 **Learning** ([docs/rules/learning.md](docs/rules/learning.md))
 - **L1** Time between sessions never decays progress, mastery or ability.

@@ -702,6 +702,8 @@ function fishGenera(X, F) {
   X.sci = sci;
   // The species' names by id (fish.json species, the PDF name), for the species shown that each answer logs (UNITS species).
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
+  // Their records by id, for the photo's species said under the verdict (UNITS taxon, fishTaxon).
+  X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
   X.tree = fishScoreTree(X, F); // core.js: the tree of the fish global score
   return X;
 }
@@ -764,6 +766,43 @@ const unitName = n => {
 // The species of the photos a question showed (UNITS species), each once, joined by ', ': '' when the subject's photos
 // name none (the corals' genus photos). Logged with each answer (sheet v60 Species shown).
 const speciesShown = L => [...new Set((L || []).map(p => UNITS[SUBJ.id].species(p)).filter(Boolean))].join(', ');
+// The photo's own taxon, said in one short line under the verdict after every answer, right or wrong (Pierre, 2026-11-07
+// and 2026-11-08 ~20:10, go on 2026-11-09): its common name and its scientific name,
+// so players meet the species names before the species level asks them. Nothing before the answer: only the feedback
+// (quiz.js fbBody) says it. UNITS taxon(p, n): the taxon photo p is identified to, finer than the unit n asked, as
+// {id, sci (scientific name), common ('' if none), now (the WoRMS accepted name when the name shown is another, rule S2),
+// rank}, or null when not known for sure (never a name that could be wrong). photoTaxon: the one taxon of the photos L
+// shown (one observation, rule P4), null when one of them gives none or two differ.
+const photoTaxon = (L, n) => {
+  const T = (L || []).map(p => UNITS[SUBJ.id].taxon(p, n));
+  return T.length && T.every(t => t && t.sci === T[0].sci) && T[0].id !== n ? T[0] : null;
+};
+// The line: "This photo: Zigzag wrasse · Halichoeres scapularis", the scientific name in italics (a family's upright), the
+// WoRMS name after it as the species sheet says it ("now X in WoRMS"); '' without a taxon.
+const taxonLine = t => {
+  if (!t || !t.sci) return '';
+  const it = x => (t.rank === 'family' ? esc(x) : `<i>${esc(x)}</i>`);
+  return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${it(t.sci)}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
+};
+// A fish photo's taxon: the species it is in play for (fish-game.json sp, Pierre's curation applied: core.js fishPhotos),
+// by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), its first curated
+// common name (cnList: the PDF's first, Q313). Every fish game photo is named to the species (Research Grade, or Pierre's
+// own named to the species: rule S2); a photo without one says nothing.
+const fishTaxon = (R, p) => {
+  const s = p && p.sp && R && R[p.sp];
+  return s && s.name
+    ? {id: p.sp, sci: s.name, common: cnList(s)[0] || '', now: s.now && s.now !== s.name ? s.now : '', rank: 'species'}
+    : null;
+};
+// A coral photo's taxon: its iNaturalist species (data.json, cand.json t), only when that species is in the genus asked n
+// (a photo Pierre moved to another genus keeps its old name: nothing then) and the identification is sure: Research Grade
+// (no gid) or Pierre's own (rule S2). A photo named to the genus only, or an IMR lecture photo (no t), says nothing more
+// than the verdict. The corals have no common names.
+const coralTaxon = (p, n) => {
+  const t = String((p && p.t) || '').trim(),
+    w = t.split(/\s+/);
+  return w.length === 2 && w[0] === n && (p.own || !p.gid) ? {id: t, sci: t, common: '', now: '', rank: 'species'} : null;
+};
 // Every unit of a rank in the subject's opt-in sets, opened or not: the wrong choices a question of that rank may name
 // (as a quiz's wrong choices may name any genus), so a family with a single genus in play still gets 4 choices.
 const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(n => rankOf(n) === rk);
@@ -1613,6 +1652,8 @@ const UNITS = {
     slate: () => slateOf(DATA),
     // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
     species: () => '',
+    // The photo's species, said under the verdict (photoTaxon): coralTaxon.
+    taxon: (p, n) => coralTaxon(p, n),
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (flag),
     // and what the flag records: its genus and view}, null when no genus shows it (the views, more, the lecture photos).
     photo: f => {
@@ -1743,6 +1784,8 @@ const UNITS = {
     ],
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
+    // The photo's species, said under the verdict (photoTaxon): fishTaxon.
+    taxon: p => fishTaxon(FISH && FISH.sps, p),
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
     // fishPid: one photo under its stopgap, candidate and reference names), and what the flag records: file (its name),
     // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
