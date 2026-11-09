@@ -10,7 +10,7 @@ const test = require('node:test'),
   path = require('path'),
   {execFileSync} = require('child_process');
 const C = require('../core.js'),
-  {fishSure} = require('../autosort.js');
+  {fishSure, fishPlay, fishQueue} = require('../autosort.js');
 const ROOT = path.join(__dirname, '..');
 const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 const py = code =>
@@ -179,4 +179,18 @@ print(json.dumps({r['f']: r.get('jt') for r in [r for r, _, _ in todo] + list(ke
       if (j && !done.has(p.f)) assert.notStrictEqual(j.jt[6], 'm', `${p.f}: waiting with the legacy m`);
     })
   );
+});
+
+test('the Candidates queue counts no add held out for other species (Codex review #839): it fills the target like fishRun', () => {
+  const cands = {s1: Array.from({length: 9}, (_, i) => ({f: 'fish-s1-cand-' + i, o: 'o' + i}))},
+    F = {
+      add: Object.fromEntries(cands.s1.slice(0, 8).map(p => [p.f, 's1'])),
+      tags: Object.fromEntries(cands.s1.slice(0, 8).map((p, i) => [p.f, i < 4 ? 'p1g0smk' : 'p1g0smm']))
+    },
+    // the pass sorts two of the legacy m: one o (in play), one k
+    sug = {'fish-s1-cand-4': {jt: 'p1g0smo', e: 4, k: 'best'}, 'fish-s1-cand-5': {jt: 'p1g0smk', e: 4, k: 'best'}};
+  assert.strictEqual(fishPlay(cands, F, null, sug).s1.size, 1, 'only the add sorted o is in play');
+  assert.ok(!fishPlay(cands, F).s1, 'with no pass, the legacy m stays out too: nothing in play');
+  const q = fishQueue(cands, sug, {s1: {}}, F).find(x => x.p.f === 'fish-s1-cand-8');
+  assert.ok(q && q.n === 1 && !q.full, `the waiting candidate is offered under the target: ${JSON.stringify(q && {n: q.n, full: q.full})}`);
 });

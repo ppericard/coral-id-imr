@@ -301,14 +301,17 @@
   // ---- Fish Candidates (admin plan PR 5a and 5b; Pierre, 2026-11-04) ----
   // The species' observations in play: {species id: Set of observations}, one observation counting once (a question shows
   // one observation).
-  // game: fishGameIn's records (the photos the game plays whatever their route), counted beside the adds.
-  function fishPlay(cands, F, game) {
+  // game: fishGameIn's records (the photos the game plays whatever their route), counted beside the adds. sug: the pass's
+  // judgments (suggest.json "fish"): an add held out for other species one could take for its subject (core.js fishOther:
+  // his tag, his legacy m refined by the pass's o or k; Q323) is not in play, so it counts nowhere (as fishRun's room).
+  function fishPlay(cands, F, game, sug) {
     F = F || {};
     const obsOf = {},
       out = {};
     Object.values(cands || {}).forEach(L => (L || []).forEach(p => p && p.f && (obsOf[p.f] = p.o || p.f)));
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (fishOn(F, f, sid)) (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
+      if (fishOn(F, f, sid) && !fishOther((F.tags || {})[f], ((sug || {})[f] || {}).jt))
+        (out[sid] = out[sid] || new Set()).add(obsOf[f] || f);
     });
     (game || []).forEach(p => p && p.sp && (out[p.sp] = out[p.sp] || new Set()).add(p.o || p.f));
     return out;
@@ -361,14 +364,14 @@
     F = F || {};
     sug = sug || {};
     const I = fishIdx(F),
-      play = fishPlay(cands, F, game),
+      play = fishPlay(cands, F, game, sug),
       byF = {},
       out = [];
     Object.entries(cands || {}).forEach(([sid, L]) => (L || []).forEach(p => p && p.f && (byF[p.f] = p)));
-    // The phases each species' photos in play show.
+    // The phases each species' photos in play show (an add held out for other species shows none: fishOther, Q323).
     const shows = {};
     Object.entries(F.add || {}).forEach(([f, sid]) => {
-      if (!fishOn(F, f, sid)) return;
+      if (!fishOn(F, f, sid) || fishOther((F.tags || {})[f], (sug[f] || {}).jt)) return;
       const ph = fishPhase(byF[f] || {f}, sug[f], F);
       if (ph) (shows[sid] = shows[sid] || new Set()).add(ph);
     });
