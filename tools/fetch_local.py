@@ -172,7 +172,7 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
     """{view: distinct colonies (observations)} of genus g's photos as the admin's gamePool counts them (Codex review
     #390: one rule, mirrored here): data.json views, moved (curation move) and the candidates Pierre added (curation
     add, whichever genus list holds them), with "Not this genus" (curation out) applied both ways; without hidden,
-    excluded, sheet-only (curation use 'ref'), extra or several-corals photos. Views as admin.js
+    excluded, sheet-only (curation use 'ref'), extra, several-corals or coral skeleton (skel, rule P6) photos. Views as admin.js
     viewOf: a genus switched to 2 levels by curation (lv) has its medium photos join wide, a genus with 2 levels in
     data.json keeps them apart. Colony leaves out a photo whose growth form is not visible ('x', curation gf, else
     the judging pass's or forms.json's guess, as admin.js fOf) unless the genus has a single growth form."""
@@ -207,7 +207,7 @@ def colonies(g, G, cand, cur, excl=lambda f: False):
     one_form = len({form(p['f']) for _, p in got if not p.get('multi') and p['f'] not in hide} - {'', 'x'}) == 1
     by = {}
     for v, p in got:
-        if p.get('multi') or p.get('extra') or p['f'] in hide or p['f'] in ref or excl(p['f']): continue
+        if p.get('multi') or p.get('extra') or p.get('skel') or p['f'] in hide or p['f'] in ref or excl(p['f']): continue
         if v == 'wide' and form(p['f']) == 'x' and not one_form: continue
         by.setdefault(v, set()).add(p.get('o') or p['f'])
     return {v: len(s) for v, s in by.items()}
@@ -272,7 +272,7 @@ def main():
     ADDED = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('add') or {})}
     GONE = {f for k in (CUR.get('genera') or {}).values() for f in (k.get('out') or {})} | {k[5:] for k in (CUR.get('seen') or {}) if k.startswith('cand:')}
     # Candidates still waiting for Pierre: the caps count only these, so each run refills what he has sorted.
-    waiting = lambda p: p['f'] not in ADDED and p['f'] not in GONE and not excluded(p['f']) and not set_aside(p['f'])
+    waiting = lambda p: p['f'] not in ADDED and p['f'] not in GONE and not excluded(p['f']) and not set_aside(p['f']) and not p.get('skel')
     def dauin_n(g):
         x = GEN[g]
         return sum(p.get('loc') == 'dauin' or p.get('own') for L in x['views'].values() for p in L) + sum(p.get('loc') == 'dauin' and p['f'] not in GONE and not excluded(p['f']) for p in cand.get(g, []))

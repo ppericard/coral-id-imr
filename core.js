@@ -961,6 +961,28 @@
       b = /-cand-fb-(.+)$/.exec(s) || /^fb(.+)$/.exec(s);
     return m ? 'i' + m[1] : b ? 'b' + b[1] : s;
   }
+  // fish-game.json's short form (Pierre, 2026-11-09: "observation id + extension instead of full URLs"; tools/fish_short.py
+  // writes it, this is its copy): a record's o, an iNaturalist observation, as its id alone, and its src, the original on
+  // iNaturalist's open-data bucket, as its extension alone when the photo is the record's own (the id in its name,
+  // fishPid). fishGameRow gives a record its addresses back, keys in their order (the record as it was written before);
+  // a record already whole (the file before the short form) is the same object. fishGameRead: the file, every record whole.
+  // Every reader of fish-game.json reads it through fishGameRead: the app (fishLoad), the admin, the sheet's photo pools
+  // (POOLS entries), the tools and the tests. A page of an older version that meets the short file keeps every photo (its
+  // src is still set) but its fallback to the original and its observation link are broken until it updates.
+  const FISH_OBS = 'https://www.inaturalist.org/observations/',
+    FISH_ORIG = 'https://inaturalist-open-data.s3.amazonaws.com/photos/';
+  const fishGameRow = p => {
+    if (!p || typeof p !== 'object') return p;
+    const id = (/^i(\d+)$/.exec(fishPid(p.f)) || [])[1],
+      o = typeof p.o === 'string' && /^\d+$/.test(p.o),
+      s = typeof p.src === 'string' && /^[a-z0-9]{2,5}$/.test(p.src) && !!id;
+    if (!o && !s) return p;
+    return {...p, ...(o ? {o: FISH_OBS + p.o} : {}), ...(s ? {src: FISH_ORIG + id + '/original.' + p.src} : {})};
+  };
+  const fishGameRead = G =>
+    G && G.photos && typeof G.photos === 'object'
+      ? {...G, photos: Object.fromEntries(Object.entries(G.photos).map(([t, L]) => [t, Array.isArray(L) ? L.map(fishGameRow) : L]))}
+      : G;
   // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
   // draw favours at the start, judging/FISH.md), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
   // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
@@ -2009,23 +2031,23 @@
     // still names some (add, feat, quality, crop, seen: rule A1, never rewritten): those ids match no photo, so every step
     // below drops them (tests/nobook.test.js).
     // Excluded photos (exclude: {f: reason}) leave every list first: genera, lecture photos, candidates, comparisons.
+    // So do the coral skeleton photos (data.json skel: 1, rule P6, Pierre, 2026-11-09: never shown, the features cannot
+    // be seen properly; tools/apply_skeletons.py from judging/skeletons.json; tests/skeletons.test.js).
     const X = (c && c.exclude) || {},
-      keep = L => (L || []).filter(p => !X[p.f]);
-    if (Object.keys(X).length) {
-      Object.values(d.gen).forEach(g =>
-        ['views', 'more'].forEach(s =>
-          Object.keys(g[s] || {}).forEach(v => {
-            g[s][v] = keep(g[s][v]);
-          })
-        )
-      );
-      ['course', 'cand'].forEach(s =>
-        Object.keys(d[s] || {}).forEach(n => {
-          d[s][n] = keep(d[s][n]);
+      keep = L => (L || []).filter(p => !X[p.f] && !p.skel);
+    Object.values(d.gen).forEach(g =>
+      ['views', 'more'].forEach(s =>
+        Object.keys(g[s] || {}).forEach(v => {
+          g[s][v] = keep(g[s][v]);
         })
-      );
-      if (d.cmp) d.cmp = keep(d.cmp);
-    }
+      )
+    );
+    ['course', 'cand'].forEach(s =>
+      Object.keys(d[s] || {}).forEach(n => {
+        d[s][n] = keep(d[s][n]);
+      })
+    );
+    if (d.cmp) d.cmp = keep(d.cmp);
     // "Several corals" photos Pierre marked as one coral (single: {f: 1}) are normal photos again (games and sheet).
     const ONE = (c && c.single) || {};
     if (Object.keys(ONE).length)
@@ -3121,7 +3143,7 @@
       return out;
     },
     entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (gm || {}).photos, cur, f), (ph || {}).sheet);
+      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur, f), (ph || {}).sheet);
       return Object.fromEntries(
         Object.values(F.gen)
           .filter(g => !g.wink)
@@ -5467,6 +5489,8 @@
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
+    fishGameRow,
+    fishGameRead,
     renamedId,
     sheetIdOf,
     fishTree,
