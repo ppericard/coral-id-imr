@@ -1043,6 +1043,45 @@ function rustNow(now = Date.now()) {
 }
 // No genus opens (card, open-all or bonus genera offer) during the floor of a visit or a comeback.
 const noOpen = () => CB.r > 0 || answersSoFar() < CB.f;
+// The answer count went down by d (rule D9; Pierre, 2026-11-09, Q330: the log's count replaces a device's doubled one;
+// sync.js replayAdoptS and mergeSubject): every checkpoint kept at an answer count moves down by d with it, so one already
+// passed stays passed and one ahead stays as far ahead (Codex review of #840: a count halved left the openings, the
+// exams and the comeback waiting for answers already given): the units met (INTRO, its gaps between openings), the
+// open-all record, each exam in course (s.ex.at), the comeback's floor, and on the subject on screen the prompt spacing
+// and the one-tap question; each opt-in's "Not now" count (Q[k + 'A']). The questions planned ahead are planned again.
+// The first-launch record's counts are its history (its checkpoints count its own window, startStep), left as they are.
+function countShift(d) {
+  if (!(d > 0)) return;
+  const m = introMap();
+  if (Object.keys(m).some(n => Array.isArray(m[n]) && typeof m[n][0] === 'number')) {
+    Object.keys(m).forEach(n => Array.isArray(m[n]) && typeof m[n][0] === 'number' && (m[n] = [m[n][0] - d, ...m[n].slice(1)]));
+    store.set(INTRO.KEY, m);
+  }
+  const o = store.get(INTRO.OFFER.KEY, null);
+  if (o && typeof o.at === 'number') store.set(INTRO.OFFER.KEY, {...o, at: o.at - d});
+  Object.keys(P).forEach(n => {
+    const x = P[n];
+    if (n !== LEVEL && x && x.ex && typeof x.ex.at === 'number') x.ex = {...x.ex, at: x.ex.at - d};
+  });
+  const cb = cbLoad();
+  if (cb.f) {
+    cb.f -= d;
+    store.set(COMEBACK.KEY, cb);
+  }
+  const here = typeof SUBJ_VISIT === 'undefined' || !SUBJ_VISIT;
+  if (here) {
+    CB = cb;
+    if (typeof PROMPT === 'object') (a => typeof a === 'number' && store.set(PROMPT.KEY, a - d))(store.get(PROMPT.KEY, null));
+    if (typeof PULSEK === 'string')
+      (st => st && typeof st.at === 'number' && store.set(PULSEK, {...st, at: st.at - d}))(store.get(PULSEK, null));
+  }
+  const ks = [...(SUBJ.optin || []), ...(typeof opensNow === 'function' ? opensNow().map(x => x.k) : [])];
+  if (ks.some(k => typeof Q[k + 'A'] === 'number')) {
+    ks.forEach(k => typeof Q[k + 'A'] === 'number' && (Q[k + 'A'] -= d));
+    if (typeof saveQ === 'function') saveQ();
+  }
+  if (typeof dropPlans === 'function') dropPlans();
+}
 // The genera a comeback question is drawn from, or null when no comeback runs: genera answered right, the surest half
 // until one is right in this comeback, then the most rusted half. Fewer than 2: no comeback.
 function comebackOf(met) {
