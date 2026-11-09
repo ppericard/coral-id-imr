@@ -72,11 +72,24 @@ const WIDTHS = [390, 1280];
     // 390 and 1280; the actions and data checks (sorting, replays, rename, merge, delete, journeys, events, Candidates,
     // the auto-sort, Publish…) run once, at 1280. SMOKE_W=390 runs the layout checks alone.
     const once = w === 1280;
-    const ctx = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+    const ctx = await b.newContext({
+      viewport: {width: w, height: 800},
+      serviceWorkers: 'block',
+      ...(process.env.SHOTS ? {deviceScaleFactor: 2} : {})
+    });
     await ctx.route(
       u => !u.href.startsWith(base),
       r => {
-        if (/script\.google|api\.github/.test(r.request().url())) out.push(r.request().url());
+        const url = r.request().url();
+        if (/script\.google|api\.github/.test(url)) out.push(url);
+        // SHOTS: the fish photos (iNaturalist) are shown in the screenshots, fetched once by curl (the proxy's settings)
+        if (process.env.SHOTS && /^https:\/\/inaturalist-open-data\.s3\.amazonaws\.com\/photos\//.test(url))
+          try {
+            return r.fulfill({
+              contentType: 'image/jpeg',
+              body: require('child_process').execFileSync('curl', ['-sfL', '--max-time', '20', url])
+            });
+          } catch (e) {}
         r.abort();
       }
     );
@@ -183,6 +196,16 @@ const WIDTHS = [390, 1280];
     // Waits for the page's state, not a fixed time (test-suite review, 2026-11-04: 300 + 200 ms at each of ~90 steps per
     // width): no demo call in flight (admin-demo.js DEMO_PENDING), no "Loading…" note, both for three frames in a row
     // (the hash change and the render a reply starts land within a frame).
+    // SHOTS=<dir>: screenshots of a few states for the PR (2x, the page's own size), else nothing.
+    const shot = async (name, sel) => {
+      if (!process.env.SHOTS) return;
+      const path = require('path').join(process.env.SHOTS, name + '.png'),
+        el = sel && (await p.$(sel));
+      if (el) {
+        await el.scrollIntoViewIfNeeded();
+        await el.screenshot({path});
+      } else await p.screenshot({path});
+    };
     const settle = async () => {
       await p.evaluate(() => (window.__calm = 0));
       await p
@@ -3015,6 +3038,172 @@ const WIDTHS = [390, 1280];
         const sx = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
         if (sx > 1) fails.push(`${w}px To do › Reports (${side || 'corals'}): ${sx}px of horizontal scroll`);
       }
+      // A "Several fish species" report (Pierre, 2026-11-09, Q309): its reason in the fish's words, never "Several corals"; its
+      // photo in play carries every tool of its family's page (the same buttons, the same tag rows once Tags is open), and
+      // its count set to Others from the report writes the draft exactly as from the family page: the tag, and the photo out
+      // of play (rule P3) in the same Undo step. A coral report reads "Several corals".
+      await go('fish/inbox/todo/reports');
+      await fishMulti(id => `#view .adm-rep[data-rep="${id}"]`);
+      await go('inbox/todo/reports');
+      const cw = await p.evaluate(() => (document.querySelector('.adm-repspr') || {}).textContent || '');
+      if (!/Carla Demo Several corals/.test(cw)) fails.push(`${w}px To do › Reports, corals: a several-corals report's reason ${cw}`);
+      if (w === 390) await shot('report-coral-390', '#view .adm-rep[data-rep="demorep0"]');
+      // Health's photos everyone misses: the genus page's tile, one a row on a phone, never wider than the page.
+      await go('inbox/todo/health');
+      const hw = await p
+        .waitForFunction(
+          () => {
+            const t = document.querySelector('[data-health="photos"] .adm-tile [data-act="hide"]');
+            return t ? String(document.documentElement.scrollWidth - innerWidth) : false;
+          },
+          null,
+          {timeout: 30000}
+        )
+        .then(async h => +(await h.jsonValue()))
+        .catch(() => null);
+      if (hw === null || hw > 1)
+        fails.push(`${w}px Health: photos everyone misses without their genus page's tools, or ${hw}px of sideways scroll`);
+      if (w === 390) await shot('health-coral-390', '[data-health="photos"] .adm-tile');
+    }
+    // A fish photo's tools from a report and from its family's page (Q309): one tile, one draft. At both widths.
+    async function fishMulti(card) {
+      const why = await p.evaluate(c => (document.querySelector(c + ' .adm-repwhy') || {}).textContent, card('demorep11'));
+      if (why !== 'Several fish species') fails.push(`${w}px To do › Reports, fish: the reason reads "${why}"`);
+      const tools = sel =>
+        p.evaluate(sel => {
+          const t = document.querySelector(sel);
+          return (
+            t && {
+              f: t.dataset.f,
+              play: t.hasAttribute('data-play'),
+              fu: [...t.querySelectorAll('[data-fu]')]
+                .map(x => x.dataset.fu)
+                .sort()
+                .join(),
+              rows: [...t.querySelectorAll('.adm-ftrows [role="group"]')].map(g => g.getAttribute('aria-label')).join(),
+              wide: t.scrollWidth > t.clientWidth + 1 || t.getBoundingClientRect().right > innerWidth + 1
+            }
+          );
+        }, sel);
+      const fishOf = () => p.evaluate(() => JSON.stringify({...(DRAFT.fish || {}), auto: null}));
+      const rsel = card('demorep11') + ' .adm-ftile';
+      await p.waitForFunction(s => document.querySelector(s + '[data-play]'), rsel, {timeout: 15000}).catch(() => {});
+      let a = await tools(rsel);
+      const want = 'cover,crop,exclude,feat,not,remove,tags,zoom';
+      if (!a || !a.play || a.fu !== want) return fails.push(`${w}px To do › Reports, a fish photo in play: its tools ${JSON.stringify(a)}`);
+      if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
+      await settle();
+      a = await tools(rsel);
+      if (!/^Ease,.*View,Whole,Light,Colour loss,Clarity,Size,Count,Flags$/.test(a.rows) || a.wide)
+        fails.push(`${w}px To do › Reports, a fish photo's tag rows: ${JSON.stringify(a)}`);
+      // The Count row in plain words, each with its meaning on hover (Pierre, 2026-11-09: "Others" did not say several
+      // species); the stored codes unchanged.
+      const cnt = await p.evaluate(
+        s =>
+          [...document.querySelectorAll(s + ' .adm-ftrows [role="group"][aria-label="Count"] button')].map(b => [
+            b.dataset.fv,
+            b.textContent,
+            !!b.title
+          ]),
+        rsel
+      );
+      if (
+        JSON.stringify(cnt) !==
+        JSON.stringify([
+          ['1', 'One fish', true],
+          ['s', 'Same species', true],
+          ['m', 'Other species in view', true],
+          ['x', 'Unclear', true]
+        ])
+      )
+        fails.push(`${w}px To do › Reports, a fish photo's Count row: ${JSON.stringify(cnt)}`);
+      if (w === 390) await shot('report-fish-tags-390', card('demorep11'));
+      const d0 = await fishOf();
+      await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+      await settle();
+      const rep = await p.evaluate(
+        ([f, sel]) => ({
+          tag: ((DRAFT.fish.tags || {})[f] || '')[6],
+          seen: (DRAFT.fish.seen || {})[f],
+          add: (DRAFT.fish.add || {})[f],
+          out: ((document.querySelector(sel) || {}).querySelector?.('.adm-acts .adm-src') || {}).textContent || ''
+        }),
+        [a.f, rsel]
+      );
+      const after = await fishOf();
+      if (rep.tag !== 'm' || rep.seen !== 1 || rep.add || rep.out !== 'removed')
+        fails.push(`${w}px To do › Reports, Count Others on a fish photo in play: ${JSON.stringify(rep)}`);
+      await p.click('#undo');
+      await settle();
+      if ((await fishOf()) !== d0) fails.push(`${w}px To do › Reports, Count Others: one Undo did not take it all back`);
+      // The same photo on its family's page: the same tools, the same rows, the same draft from the same click.
+      await go('fish/photos/families/' + encodeURIComponent('f:Wrasses'));
+      const fsel = `.adm-fgen .adm-tile[data-f="${a.f}"]`;
+      await p.waitForFunction(s => document.querySelector(s), fsel, {timeout: 30000}).catch(() => {});
+      if (!(await p.$(fsel + ' .adm-ftrows'))) await p.click(fsel + ' [data-fu="tags"]');
+      await settle();
+      const b = await tools(fsel);
+      if (w === 390) await shot('family-fish-tags-390', fsel);
+      if (!b || b.fu !== a.fu || b.rows !== a.rows || b.wide)
+        fails.push(`${w}px Families: a photo's tools differ from its report's ${JSON.stringify({a, b})}`);
+      else {
+        await p.click(fsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+        await settle();
+        if ((await fishOf()) !== after) fails.push(`${w}px Families: Count Others does not write what the report's tile writes`);
+        await p.click('#undo');
+        await settle();
+      }
+      await p.evaluate(f => FT_OPEN.delete(f), a.f);
+      await go('fish/inbox/todo/reports');
+      // Moved with Not this, then added under its corrected species: in play there, with every tool (Codex review #823).
+      const d1 = await fishOf();
+      const to = await p.evaluate(f => {
+        const s = FISHC.byF[f].sid,
+          u = FISHC.units.find(x => x.id === 'f:Wrasses'),
+          to = u.species.find(x => x !== s && FISHC.species[x] && !FISHC.species[x].out);
+        DRAFT.fish = fishAdd(fishNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
+        saveDraft();
+        render();
+        return to;
+      }, a.f);
+      await settle();
+      const mv = await tools(rsel);
+      if (!mv || !mv.play || mv.fu !== want)
+        fails.push(`${w}px To do › Reports, a fish photo added under its corrected species ${to}: ${JSON.stringify(mv)}`);
+      await p.click('#undo');
+      await settle();
+      if ((await fishOf()) !== d1) fails.push(`${w}px To do › Reports: Undo after a corrected species`);
+      // The same into a species of another family: the tile follows that family (its rows, Feature, Cover), and Count
+      // Others still takes the photo out of play (Codex review #823).
+      const x = await p.evaluate(f => {
+        const s = FISHC.byF[f].sid,
+          u = FISHC.units.find(y => y.id === 'f:Damselfishes'),
+          to = u.species.find(y => FISHC.species[y] && !FISHC.species[y].out);
+        DRAFT.fish = fishAdd(fishNotThis(DRAFT.fish || {}, f, to, s), f, to, null, FISHC.byF[f]);
+        saveDraft();
+        render();
+        return to;
+      }, a.f);
+      await settle();
+      const xf = await tools(rsel),
+        xfam = await p.evaluate(s => (document.querySelector(s) || {}).dataset?.fam, rsel);
+      if (!xf || !xf.play || xf.fu !== want || xfam !== 'f:Damselfishes')
+        fails.push(`${w}px To do › Reports, a fish photo added under ${x} in another family: ${JSON.stringify({xf, xfam})}`);
+      else {
+        if (!(await p.$(rsel + ' .adm-ftrows'))) await p.click(rsel + ' [data-fu="tags"]');
+        await settle();
+        await p.click(rsel + ' .adm-ftrows [data-ft="6"][data-fv="m"]');
+        await settle();
+        const xo = await p.evaluate(f => ({seen: (DRAFT.fish.seen || {})[f], on: fishOn(DRAFT.fish, f, DRAFT.fish.add[f])}), a.f);
+        if (xo.seen !== 1 || xo.on) fails.push(`${w}px To do › Reports, Count Others on a photo in another family: ${JSON.stringify(xo)}`);
+        await p.click('#undo');
+        await settle();
+      }
+      await p.click('#undo');
+      await settle();
+      await p.evaluate(f => FT_OPEN.delete(f), a.f);
+      if ((await fishOf()) !== d1) fails.push(`${w}px To do › Reports: Undo after a species of another family`);
+      if (w === 390) await shot('report-fish-390', card('demorep11'));
     }
     // The reports' action bar (Q309), once: status, the tools each report can use, the list following the subject switch.
     async function reportsBar() {
@@ -3167,7 +3356,7 @@ const WIDTHS = [390, 1280];
       // The fish side: its reports and the feedback about no subject; the fish photo tools, the fish units' links.
       await go('fish/inbox/todo/reports');
       await p
-        .waitForFunction(() => typeof FISHC !== 'undefined' && FISHC && document.querySelector('.adm-frep [data-fr="not"]'), null, {
+        .waitForFunction(() => typeof FISHC !== 'undefined' && FISHC && document.querySelector('.adm-ftile [data-fu="not"]'), null, {
           timeout: 15000
         })
         .catch(() => {});
@@ -3177,14 +3366,14 @@ const WIDTHS = [390, 1280];
       const ft = id =>
         p.evaluate(
           ([sel, fam]) => {
-            const t = document.querySelector(sel + ' .adm-frep');
+            const t = document.querySelector(sel + ' .adm-ftile');
             return (
               t && {
-                f: t.dataset.ff,
-                x: !!t.querySelector('[data-fr="exclude"]'),
-                rm: !!t.querySelector('[data-fr="remove"]'),
-                not: !!t.querySelector('[data-fr="not"]'),
-                open: (t.querySelector('[data-fr-open]') || {}).getAttribute?.('href') === fam,
+                f: t.dataset.f,
+                x: !!t.querySelector('[data-fu="exclude"]'),
+                rm: !!t.querySelector('[data-fu="remove"]'),
+                not: !!t.querySelector('[data-fu="not"]'),
+                open: (t.querySelector('[data-fu-open]') || {}).getAttribute?.('href') === fam,
                 out: (t.querySelector('.adm-acts .adm-src') || {}).textContent || ''
               }
             );
@@ -3194,14 +3383,14 @@ const WIDTHS = [390, 1280];
       let fr = await ft('demorep5');
       if (!fr || !fr.x || !fr.rm || fr.not || !fr.open) fails.push(`To do › Reports, a fish photo's tools: ${JSON.stringify(fr)}`);
       else {
-        await p.click(card('demorep5') + ' [data-fr="remove"]');
+        await p.click(card('demorep5') + ' [data-fu="remove"]');
         await settle();
         const rm = await p.evaluate(f => ((DRAFT.fish || {}).seen || {})[f], fr.f);
         const fr2 = await ft('demorep5');
         if (rm !== 1 || fr2.out !== 'removed' || fr2.rm) fails.push(`To do › Reports, a fish photo's Remove: ${JSON.stringify({rm, fr2})}`);
         await p.click('#undo');
         await settle();
-        await p.click(card('demorep5') + ' [data-fr="exclude"]');
+        await p.click(card('demorep5') + ' [data-fu="exclude"]');
         await settle();
         if (!(await p.evaluate(f => !!((DRAFT.fish || {}).exclude || {})[f], fr.f)))
           fails.push(`To do › Reports, a fish photo's ×: not excluded`);
@@ -3214,8 +3403,8 @@ const WIDTHS = [390, 1280];
       fr = await ft('demorep10');
       if (!fr || !fr.not) fails.push(`To do › Reports, a fish candidate photo: no Not this ${JSON.stringify(fr)}`);
       else {
-        await p.click(card('demorep10') + ' [data-fr="not"]');
-        await p.selectOption(card('demorep10') + ' [data-frnot]', 'x');
+        await p.click(card('demorep10') + ' [data-fu="not"]');
+        await p.selectOption(card('demorep10') + ' [data-funot]', 'x');
         await settle();
         if ((await p.evaluate(f => ((DRAFT.fish || {}).out || {})[f], fr.f)) !== 'x')
           fails.push(`To do › Reports, a fish photo's Not this: not sent`);
@@ -3977,28 +4166,28 @@ const WIDTHS = [390, 1280];
         if (pre.was || !pre.f || !pre.r0) fe.push(`not a fresh session with a candidate photo: ${JSON.stringify(pre)}`);
         else
           await fq
-            .waitForFunction(f => document.querySelector(`[data-health="photos"] [data-ff="${CSS.escape(f)}"] [data-fr="not"]`), pre.f, {
+            .waitForFunction(f => document.querySelector(`[data-health="photos"] [data-f="${CSS.escape(f)}"] [data-fu="not"]`), pre.f, {
               timeout: 60000
             })
             .catch(async () =>
               fe.push(
                 `no Not this on ${pre.f}: ${JSON.stringify(
-                  await fq.evaluate(f => ({fishc: !!FISHC, tile: !!document.querySelector(`[data-ff="${CSS.escape(f)}"]`)}), pre.f)
+                  await fq.evaluate(f => ({fishc: !!FISHC, tile: !!document.querySelector(`[data-f="${CSS.escape(f)}"]`)}), pre.f)
                 )}`
               )
             );
         if (!fe.length) {
-          const shown = () => fq.evaluate(() => [...document.querySelectorAll('[data-health="photos"] .adm-frep')].map(e => e.dataset.ff)),
+          const shown = () => fq.evaluate(() => [...document.querySelectorAll('[data-health="photos"] .adm-ftile')].map(e => e.dataset.f)),
             S0 = await shown(),
             gone = S0.find(x => x !== pre.f);
           if (S0.length !== 24 || !/\+1 more/.test(await fq.textContent('[data-health="photos"]')))
             fe.push(`25 photos everyone misses: ${S0.length} shown`);
           else {
-            await fq.click(`[data-health="photos"] [data-ff="${gone}"] [data-fr="remove"]`);
+            await fq.click(`[data-health="photos"] [data-f="${gone}"] [data-fu="remove"]`);
             await fq
               .waitForFunction(
                 ([g, L]) => {
-                  const F = [...document.querySelectorAll('[data-health="photos"] .adm-frep')].map(e => e.dataset.ff);
+                  const F = [...document.querySelectorAll('[data-health="photos"] .adm-ftile')].map(e => e.dataset.f);
                   return F.length === 24 && !F.includes(g) && F.some(x => !L.includes(x));
                 },
                 [gone, S0],
@@ -4179,11 +4368,37 @@ const WIDTHS = [390, 1280];
           return '';
         }, f);
       await go('inbox/todo/health');
-      if (await p.$('[data-health="photos"] [data-zf]')) {
-        await p.click('[data-health="photos"] [data-zf]');
+      // Health's photos everyone misses carry every tool of their genus page (Q309): the same buttons as the photo's tile there.
+      const hz = '[data-health="photos"] .adm-tile [data-act="zoom"]';
+      if (!(await p.$(hz))) fails.push(`${w}px Health: no photo everyone misses with its genus page's tile`);
+      else {
+        const ht = await p.evaluate(() => {
+          const t = document.querySelector('[data-health="photos"] .adm-tile[data-g]'),
+            acts = el =>
+              [...el.querySelectorAll('[data-act], .adm-qseg [data-q], .adm-fseg [data-fm]')]
+                .map(x => x.dataset.act || 'q')
+                .sort()
+                .join();
+          return t && {f: t.dataset.f, g: t.dataset.g, acts: acts(t), n: !!t.querySelector('.adm-hnum')};
+        });
+        await go('photos/genera/live/' + encodeURIComponent(ht.g));
+        const gt = await p.evaluate(f => {
+          const t = document.querySelector(`.adm-tile[data-f="${CSS.escape(f)}"]`);
+          return (
+            t &&
+            [...t.querySelectorAll('[data-act], .adm-qseg [data-q], .adm-fseg [data-fm]')]
+              .map(x => x.dataset.act || 'q')
+              .sort()
+              .join()
+          );
+        }, ht.f);
+        if (!ht.n || !gt || gt !== ht.acts)
+          fails.push(`${w}px Health: a photo's tools differ from its genus page ${JSON.stringify({ht, gt})}`);
+        await go('inbox/todo/health');
+        await p.click(hz);
         if (await p.evaluate(() => document.getElementById('lightbox').hidden)) fails.push(`${w}px Health: a photo click opened nothing`);
         else {
-          const e = await lbSrc(await p.$eval('[data-health="photos"] [data-zf]', b => b.dataset.zf));
+          const e = await lbSrc(await p.$eval(hz, b => b.closest('[data-f]').dataset.f));
           if (e) fails.push(`${w}px Health lightbox: ${e}`);
         }
         await p.keyboard.press('Escape');

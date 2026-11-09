@@ -886,7 +886,8 @@ const fishLoad = () =>
   FISHP ||
   (FISHP = Promise.all([fishHome(), json('fish-game.json?v=1')])
     .then(([raw, gm]) => {
-      FISHRAW = {...raw, gm: gm && gm.photos ? gm : {photos: {}}, full: true};
+      // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
+      FISHRAW = {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true};
       // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
       // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
       // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.

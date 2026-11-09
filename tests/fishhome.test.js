@@ -19,7 +19,8 @@ function app({cached = false} = {}) {
     json: u => (asked.push(u), new Promise(ok => (waits[u.replace(/\?.*/, '')] = ok))),
     window: {caches: {}},
     caches: {match: u => Promise.resolve(cached && /fish-game\.json/.test(u) ? {} : undefined)},
-    domRecalcAll: () => builds.push('recalc')
+    domRecalcAll: () => builds.push('recalc'),
+    fishGameRead: require('../core.js').fishGameRead // the file's records whole (its short form)
   };
   vm.createContext(ctx);
   vm.runInContext(
