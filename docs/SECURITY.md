@@ -95,6 +95,10 @@ gets `gone` (its answers go to Into after a merge, nowhere after a delete) and i
 no name, never under the removed name (`logReports_`), so they can never be credited to someone who takes the name
 later with another code. The answers a deleted account leaves (`~deleted <id>`, "keep answers anonymously") are no
 player anywhere: `readAnswers` flags them 2 and the admin and the analyses keep them out of every per-player view.
+The admin's account (v125, the 🌱 after its name) is kept by its code hash in the script's properties (`ADMIN_ACCT`), set
+only by a read with the admin's token from the admin page signed in to that account (its code checked), never from what a
+player sends; a delete, a merge (its from) and an archive clear it, and no player can type the seedling or a look-alike
+in a new name (`core.js` `reservedName`).
 
 ## If it happens
 

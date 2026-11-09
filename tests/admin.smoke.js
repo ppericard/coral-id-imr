@@ -975,6 +975,16 @@ const WIDTHS = [390, 1280];
       at = await seg();
       if (at.hash !== '#players/list' || !at.subj.some(([id, on]) => id === other.id && on === 'true'))
         fails.push(`${w}px Subjects: #${other.hash}players/list ${JSON.stringify(at)}`);
+      // Visits too (Pierre, 2026-11-09): one page for both subjects, #fish/players/visits taken to #players/visits, the
+      // switch inert, the fish side kept for the other pages.
+      await go(other.hash + 'players/visits');
+      at = await seg();
+      if (
+        at.hash !== '#players/visits' ||
+        !at.subj.some(([id, on]) => id === other.id && on === 'true') ||
+        !(await p.evaluate(() => document.getElementById('subj').classList.contains('off')))
+      )
+        fails.push(`${w}px Subjects: #${other.hash}players/visits ${JSON.stringify(at)}`);
       // An explicit coral address keeps its subject, and Back from a fish page to it stays coral, history not rewritten
       // (Codex review #492): #players/activity, then #fish/inbox/todo/reports, then Back.
       await go('players/activity');
@@ -1317,6 +1327,39 @@ const WIDTHS = [390, 1280];
       }, id);
       if (!ix || !ix.says || ix.marks < 3 || ix.small || ix.wide > 0)
         fails.push(`${w}px Analyses #${h} interaction: ${JSON.stringify(ix)}`);
+    }
+    // Each genus with practice (the study's §5 item 7): one small chart a genus with its name, the words, the table
+    {
+      await go('analyses/learning/practice');
+      const gc = await p.evaluate(() => {
+        const c = document.getElementById('anc-each-genus-with-practice');
+        return (
+          c && {
+            panels: c.querySelectorAll('.adm-an-sm figure svg').length,
+            rows: c.querySelectorAll('table tbody tr').length,
+            words: /80%/.test((c.querySelector('.adm-an-says-l') || {}).textContent || ''),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }
+        );
+      });
+      if (!gc || gc.panels < 20 || gc.rows !== gc.panels || !gc.words || gc.wide > 0)
+        fails.push(`${w}px Analyses each genus with practice: ${JSON.stringify(gc)}`);
+    }
+    // Can we trust this model? (the study's §5 item 8): under each binary analysis its words (calibration, residuals) and
+    // charts; under Answer time, its residuals' line and chart
+    for (const h of [
+      'analyses/speed/answer-time',
+      'analyses/speed/enlarging',
+      'analyses/learning/practice',
+      'analyses/learning/sessions'
+    ]) {
+      await go(h);
+      const ck = await p.evaluate(() => {
+        const c = document.getElementById('anc-can-we-trust-this-model');
+        return c && {words: c.querySelectorAll('.adm-an-says-l li').length, charts: c.querySelectorAll('.adm-an-sm figure svg').length};
+      });
+      if (!ck || ck.words < (/answer-time/.test(h) ? 1 : 2) || ck.charts < 1)
+        fails.push(`${w}px Analyses #${h} model check: ${JSON.stringify(ck)}`);
     }
     // The mix-up map (Pierre's Q74): the whole matrix from tablet width up (cells, the tree, families outlined); on a phone
     // the tree as a list whose family bands open their block on a tap; 12 px text at least, no sideways scroll
@@ -4240,12 +4283,26 @@ const WIDTHS = [390, 1280];
         fails.push(`${w}px Activity: cards ${JSON.stringify(ac)}`);
     }
     // Players › Visits (Pierre, 2026-11-08, Q301-Q304; admin-visits.js, the demo's visits in admin-demo.js): every card,
-    // no sideways scroll, the demo's numbers under the default filters (30 days, Without a game, Everyone, every device),
-    // at both widths; once, the filters, a visitor unfolded, Show all and the Fish side.
+    // no sideways scroll, the demo's numbers under the default filters (every subject, 30 days, Without a game, Everyone,
+    // every device), at both widths; one page for both subjects (Pierre, 2026-11-09: admin.js SHARED, as the list of
+    // players): the switch inert, both subjects' visits each marked with its subjects, a page of each subject its own row,
+    // #fish/players/visits landing on #players/visits; once, the filters (Subject among them), a visitor unfolded, Show
+    // all and the help.
     {
       const vis = () =>
         p.evaluate(() => ({
-          cards: [...document.querySelectorAll('#view [data-visits]')].map(x => x.dataset.visits).join(' '),
+          cards: [...document.querySelectorAll('#view [data-visits]')]
+            .map(x => x.dataset.visits + (x.dataset.vkey ? ':' + x.dataset.vkey : ''))
+            .join(' '),
+          hash: location.hash,
+          off: document.getElementById('subj').classList.contains('off'),
+          // The subjects marked on the visitors' rows, and the pages marked with the fish's icon.
+          marks: [...document.querySelectorAll('[data-vopen] .adm-vsjs')].map(m =>
+            [...m.querySelectorAll('.adm-vsj')].map(x => x.title).join('+')
+          ),
+          fishPages: [...document.querySelectorAll('[data-visits="pages"] tbody tr')]
+            .filter(r => r.querySelector('.adm-vsj[title="Fish"]'))
+            .map(r => r.cells[0].textContent.trim()),
           // textContent: the tiles' labels are upper case by CSS only
           kpis: [...document.querySelectorAll('.adm-vis .adm-kpis > div')].map(d => d.textContent.replace(/\s+/g, ' ').trim()).join(' | '),
           rows: document.querySelectorAll('[data-vopen]').length,
@@ -4256,14 +4313,22 @@ const WIDTHS = [390, 1280];
           dev: [...document.querySelectorAll('[data-visits="device"] tbody tr')].map(r => r.textContent.replace(/\s+/g, ' ').trim()),
           wide: document.documentElement.scrollWidth - innerWidth
         }));
-      await go('players/visits');
+      // Reached from the fish side by its old address: the shared page, no prefix, the switch inert, the fish side kept.
+      await go('fish/players/visits');
       const v0 = await vis();
-      if (v0.cards !== 'time pages key sheets first device visitors') fails.push(`${w}px Visits: cards ${v0.cards}`);
+      if (v0.hash !== '#players/visits' || !v0.off) fails.push(`${w}px Visits: #fish/players/visits at ${v0.hash}, switch inert ${v0.off}`);
+      if (v0.cards !== 'time pages key:coral key:fish sheets first device visitors') fails.push(`${w}px Visits: cards ${v0.cards}`);
+      // Both subjects' visits, some only the corals', some only the fish's (Ana's in both, with a game: below); the fish's
+      // pages their own rows.
+      if (!v0.marks.includes('Corals') || !v0.marks.includes('Fish'))
+        fails.push(`${w}px Visits: the visitors' subjects ${JSON.stringify(v0.marks)}`);
+      if (!v0.fishPages.includes('Fish ID Key') || !v0.fishPages.includes('Families') || !/Coral ID Key/.test(v0.pages))
+        fails.push(`${w}px Visits: the pages of each subject ${JSON.stringify(v0.fishPages)}`);
       if (v0.wide > 0) fails.push(`${w}px Visits: page ${v0.wide} px wider than the window`);
       // The players' part's actions at 1280, when it ran before this (a whole run; not SMOKE_PART=main), leave one more
       // visitor of the demo without an answer (a merge, the answers of devices deleted).
-      const never = once && run.has('players') ? 12 : 11;
-      if (v0.kpis !== `42of 71Visits without a game | 15Visitors | ${never}Never answered | 8 minMedian visit | 55%On a phone`)
+      const never = once && run.has('players') ? 14 : 13;
+      if (v0.kpis !== `46of 75Visits without a game | 17Visitors | ${never}Never answered | 8 minMedian visit | 54%On a phone`)
         fails.push(`${w}px Visits: numbers ${v0.kpis}`);
       if (v0.rows !== 12 || v0.open || v0.legend || v0.stack) fails.push(`${w}px Visits: ${JSON.stringify({...v0, pages: ''})}`);
       if (!/Coral ID Key/.test(v0.pages) || !/Tools › anatomy/.test(v0.pages) || /Quiz|Duels/.test(v0.pages))
@@ -4284,7 +4349,7 @@ const WIDTHS = [390, 1280];
           return vis();
         };
         const va = await click('vis', 'all');
-        if (!/^71Visits \| 21Visitors/.test(va.kpis) || !va.legend || !va.stack || !/Quiz/.test(va.pages))
+        if (!/^75Visits \| 23Visitors/.test(va.kpis) || !va.legend || !va.stack || !/Quiz/.test(va.pages))
           fails.push(`${w}px Visits, All visits: ${va.kpis} legend ${va.legend} stacked ${va.stack}`);
         const vn = await click('who', 'never');
         // Only those who never answered: every visitor is one.
@@ -4304,24 +4369,46 @@ const WIDTHS = [390, 1280];
         await p.click('[data-vall]');
         await settle();
         const vs = await vis();
-        if (vs.rows !== 15) fails.push(`${w}px Visits: Show all lists ${vs.rows} visitors, not 15`);
+        if (vs.rows !== 17) fails.push(`${w}px Visits: Show all lists ${vs.rows} visitors, not 17`);
         // A visitor's name opens their Journey.
         const jl = await p.$eval('[data-visits="visitors"] a[href^="#players/list/"]', a => a.getAttribute('href')).catch(() => '');
         if (!jl) fails.push(`${w}px Visits: no Journey link`);
-        // The Fish side (rule A4): its own pages in its words, no genus sheets.
-        await go('fish/players/visits');
-        const vf = await vis();
+        // Subject: Fish alone, its visits with its own pages in its words, its Key, no genus sheets, no page marked (one
+        // subject); on All visits Ana's visit in both, marked with both; the corals alone as the page was per subject.
+        const vf = await click('subj', 'fish');
         if (
           !/^\d+of \d+Visits without a game \| 2Visitors \| 2Never answered/.test(vf.kpis) ||
-          /sheets/.test(vf.cards) ||
-          !/Families/.test(vf.pages)
+          vf.cards !== 'time pages key:fish first device visitors' ||
+          !/Families/.test(vf.pages) ||
+          vf.fishPages.length ||
+          vf.hash !== '#players/visits' ||
+          !vf.off
         )
-          fails.push(`${w}px Visits, Fish: ${vf.kpis} ${vf.cards} ${vf.pages}`);
+          fails.push(`${w}px Visits, Fish: ${vf.kpis} ${vf.cards} ${vf.pages} ${vf.hash}`);
+        const vfa = await click('vis', 'all');
+        if (!/^5Visits \| 3Visitors/.test(vfa.kpis) || !vfa.marks.includes('Corals+Fish'))
+          fails.push(`${w}px Visits, Fish, All visits: ${vfa.kpis} ${JSON.stringify(vfa.marks)}`);
+        // Every visitor's Journey link names the subject filtered (Codex review #836), whatever side the switch is on.
+        const fl = await p.$$eval('[data-visits="visitors"] a[href*="players/list/"]', L =>
+          L.map(a => [a.getAttribute('href'), a.hasAttribute('data-own')])
+        );
+        if (!fl.length || fl.some(([h, o]) => !h.startsWith('#fish/players/list/') || !o))
+          fails.push(`${w}px Visits, Fish: Journey links ${JSON.stringify(fl)}`);
+        const vc = await click('subj', 'coral');
+        if (
+          !/^71Visits \| 21Visitors/.test(vc.kpis) ||
+          vc.cards !== 'time pages key:coral sheets first device visitors' ||
+          /Families/.test(vc.pages)
+        )
+          fails.push(`${w}px Visits, Corals: ${vc.kpis} ${vc.cards}`);
+        await click('subj', 'all');
+        await click('vis', 'nogame');
         // Its help behind "?" (rule A2).
         await p.click('#help');
         if (await p.$('#admhelp [data-ht="page"]')) await p.click('#admhelp [data-ht="page"]');
         const ht = await p.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
-        if (!/tablet/i.test(ht) || !/a game = a Practice page/i.test(ht)) fails.push(`${w}px Visits: help ${ht.slice(0, 80)}`);
+        if (!/tablet/i.test(ht) || !/a game = a Practice page/i.test(ht) || !/Subject/.test(ht))
+          fails.push(`${w}px Visits: help ${ht.slice(0, 80)}`);
         await p.click('#help');
         await go('players/visits');
       }

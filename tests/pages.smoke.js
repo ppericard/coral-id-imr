@@ -1171,7 +1171,7 @@ async function overlays(b, base) {
       [acct, rec]
     );
     await c.route(
-      u => u.pathname.endsWith('/curation.json'),
+      u => u.pathname.endsWith('/curation-play.json'), // the app's copy (tools/curplay.py)
       async r => {
         const res = await r.fetch(),
           j = await res.json();

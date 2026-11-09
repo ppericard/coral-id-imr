@@ -88,8 +88,11 @@
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
   // The flags after the seven tags: j c a typed by the judge, p (phase) and r (a reference photo, its `rep`) added by the tool.
   const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smx][jcapr]*$/;
+  // The doubts that weigh on the photo itself: every unsure field but the fish's box (bb), whose doubt only withholds the
+  // photo's tile (tools/fish_game.py unsure, box_of; Codex review #826).
+  const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
   function fishSure(j) {
-    if (!j || (j.u && j.u.length)) return null;
+    if (!j || fishUnsure(j).length) return null;
     if (j.k === 'dup') return {keep: 'reject', why: 'dup'};
     if (!FISH_TAGS.test(j.jt || '') || !(j.e >= 1 && j.e <= 5)) return null;
     if (j.jt[6] === 'x') return {keep: 'reject', why: 'unclear'};

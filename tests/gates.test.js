@@ -65,6 +65,9 @@ const GATES = {
   // The lighter saves (sync.js lightOn: a save without a load before it when the device holds the saved copy, its delta,
   // gzip and the stale reply's load; Code.gs doPost_ light, load_ have): from the version that serves them; before, a
   // load then the whole data, as ever (tests/lightsave.test.js runs both).
+  // The first page opened from Home, one 'fromhome' event a visit (app.js fromHome): from the version that keeps the kind.
+  FROMHOME_SHEET: (v, N) =>
+    fn('app.js', 'const fromHomeOn = ', '\n', 'fromHomeOn', {sheetV: () => (v === undefined ? 0 : v), FROMHOME_SHEET: N})(),
   LIGHT_SHEET: (v, N) => fn('sync.js', 'const lightOn = ', '\n', 'lightOn', {sheetV: () => v, LIGHT_SHEET: N})(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
@@ -72,6 +75,14 @@ const GATES = {
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
+  // The admin's mark after the admin's account name (core.js markRow, Code.gs board_): from the script that sends it;
+  // before, no row shows it, a 4th field or not. The account line follows the same gate (sync.js markSeen).
+  MARK_SHEET: v => {
+    const {markRow} = require('../core.js');
+    assert.strictEqual(markRow(['Ana', 50, null], v), false, 'a row of three fields never has it');
+    assert.strictEqual(markRow(['Ana', 50, null, 0], v), false);
+    return markRow(['Ana', 50, null, 1], v);
+  },
   EXCL_SHEET: (v, N) => fn('admin.js', 'const exclOn = ', '\n', 'exclOn', {USERS: v === undefined ? {} : {v}, EXCL_SHEET: N})(),
   // A right answer's progress step weighs its answer time (model.js rtOn): from v32.
   RT_SHEET: (v, N) => fn('model.js', 'const rtOn = ', '\n', 'rtOn', {sheetV: () => v, RT_SHEET: N})(),

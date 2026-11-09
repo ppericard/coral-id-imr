@@ -640,6 +640,35 @@ test('v21 load events: load times, the line and the CDN server, nothing else kep
   assert.strictEqual(d.t0, 3600);
 });
 
+test('v124 fromhome events: the first page opened from Home, its seconds on Home, the tier wait and the tour, nothing else', () => {
+  const s = loadCodeGs();
+  s.post({
+    dev: 'dev0000003',
+    events: [
+      {
+        id: 'h1',
+        t: '2026-11-09T00:00:00Z',
+        k: 'fromhome',
+        pg: 'learn/genera',
+        av: '170',
+        ua: 'Chrome 140 mobile',
+        to: 'genera',
+        s: 12.34,
+        w: 1,
+        tr: 0,
+        extra: 'x'
+      },
+      {id: 'h2', k: 'fromhome', to: '=cmd()', s: 1e9, w: 'yes', tr: 1}
+    ]
+  });
+  const E = s.sheets.Events;
+  assert.strictEqual(E.getRange(2, 3).getValue(), 'fromhome');
+  assert.strictEqual(E.getRange(2, 4).getValue(), 'genera', 'the page in the message column');
+  assert.deepStrictEqual(JSON.parse(E.getRange(2, 7).getValue()), {s: 12.34, w: 1, tr: 0});
+  assert.strictEqual(E.getRange(3, 4).getValue(), '', 'a page name that is not one is dropped');
+  assert.deepStrictEqual(JSON.parse(E.getRange(3, 7).getValue()), {s: 86400, w: 1, tr: 1});
+});
+
 test("v30 pages events: cleaned, in their own tab, under the admin's id of the player (never the name)", () => {
   const s = loadCodeGs(),
     T = 'ghp_write000000000000000000',

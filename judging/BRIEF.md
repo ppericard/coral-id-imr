@@ -289,7 +289,9 @@ within a quality).
 ## Fish candidates
 
 The fish candidates (`fish-cand.json`) are judged on the fish rubric, visual criteria only:
-[`judging/FISH.md`](FISH.md) "Candidates" (`tools/judging_fish.py`, `judging/fish/<species id>.json`).
+[`judging/FISH.md`](FISH.md) "Candidates" (`tools/judging_fish.py`, `judging/fish/<species id>.json`). Since 2026-11-09 (rubric 7) a photo whose
+code passes the tile rule also gets the fish's box (`bb`, [`judging/FISH.md`](FISH.md) "The fish's box"), and the
+photos already judged get theirs from a box pass (`python3 tools/fish_judge.py --boxes`).
 
 ## Workflow
 
