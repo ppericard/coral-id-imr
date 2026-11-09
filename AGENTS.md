@@ -209,9 +209,10 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **D3** A `Code.gs` or `core.js` change carries one changes file; the integrator assigns `VERSION` at merge.
 - **D4** The app never gets ahead of the sheet script.
 - **D5** Every progress-rule change appends a rules version.
-- **D6** A recalculation of everyone's progress is announced.
+- **D6** A recalculation of progress is silent, a learned mark taken away included.
 - **D7** A deleted account leaves nothing in normal operation.
 - **D8** Every leaderboard follows a progress recalculation, for every player, at once.
+- **D9** The answer log is the reference for progress: trust it rather than the device.
 
 **Working with Pierre** ([docs/rules/ship.md](docs/rules/ship.md))
 - **W1** Everything produced is in English; only the chat with Pierre is in French.
@@ -227,6 +228,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W11** Say what you checked; a guess is labelled.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Several ready PRs merge through one green merge train (`tools/train.py`).
+- **W27** Bounded cost: at most three agents, PRs from `main` only, two Codex rounds then cut the scope.
 
 ## Read on demand
 
@@ -239,7 +241,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 | The admin, `curation.json`, Analyses | [admin](docs/rules/admin.md); ARCHITECTURE "Admin back-office", "Analyses" |
 | Fish, `SUBJECTS`, `UNITS` | [subjects](docs/rules/subjects.md); ARCHITECTURE "Subjects", "Fish content"; [FISH_PATH.md](docs/FISH_PATH.md) |
 | `Code.gs`, sync, the progress engine | [sheet](docs/rules/sheet.md); ARCHITECTURE "Progress sync"; [SECURITY.md](docs/SECURITY.md) |
-| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W26 |
+| Tests, versions, `data.json`, PRs, the merge train | [ship](docs/rules/ship.md) W12-W27 |
 
 ## Ship checklist
 

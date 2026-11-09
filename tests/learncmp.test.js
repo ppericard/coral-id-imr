@@ -272,6 +272,31 @@ test('the levels, the score, the plateau and the photo exposure read from a run'
   assert.strictEqual(L.hardAnswers({preOW: [[1, 0]]}, 1), null);
   close(L.perPhoto(run, 4), 5 / 4);
   close(L.perPhoto(run, 2), 1);
+  // The share on the scientific genera (Q208): answers 1..cp on kind genus, a fish run only (its slate is families).
+  close(L.genShare(run, 4), 2 / 4);
+  close(L.MEASURES.genShare.get(run, 2), 0);
+  assert.strictEqual(L.genShare({kinds: {A: 'genus', X: 'bonus'}, expo: [['A', 'o', 'p']]}, 1), null, 'the corals: not measured');
   // Every guardrail of LEARNING.md's table has a measure now.
   L.GUARDRAILS.forEach(g => assert.ok(L.MEASURES[g.m].get, g.m));
+});
+
+// The population measures (the rated world's sheet mode, Q315): one value per seed, an exact sign-flip over the seeds.
+test('population measures: the primary over the seeds, the rating error', () => {
+  const pop = (s, err) => ({
+      seed: s,
+      at: [{q: 300, err, errW: err, corr: 0.5, gdErr: 0.2}],
+      rho: 0.25
+    }),
+    base = {subject: 'coral', world: 'rated', seeds: 6, questions: 300, checkpoints: [300], runs: []},
+    B = {...base, pop: [1, 2, 3, 4, 5, 6].map(s => pop(s, 0.6))},
+    A = {...base, pop: [1, 2, 3, 4, 5, 6].map(s => pop(s, 0.6 - 0.01 * s))},
+    R = L.compare(B, A, {primary: {at: L.parseAt('rateErr@300'), dir: 'down'}});
+  assert.ok(R.primary.pop && R.primary.n === 6 && R.primary.way === 6);
+  close(R.primary.p, 2 / 64);
+  assert.strictEqual(R.primary.clear, true);
+  close(R.pops.rateErr[0].d, -0.035);
+  assert.strictEqual(R.pops.rateCorr[0].d, 0);
+  const up = L.compare(B, A, {primary: {at: L.parseAt('rateErr@300'), dir: 'up'}});
+  assert.strictEqual(up.primary.clear, false, 'against the declared direction: no claim');
+  assert.match(L.report(R), /one value per seed/);
 });

@@ -5,6 +5,36 @@ then [STATUS.md](STATUS.md) for where things stand, then this page for how the w
 2026-11-07 by the integrator of 2026-11-02..07, before a quota pause. Keep it current: it is the working knowledge that is
 not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives in STATUS.md).
 
+## Handover of 2026-11-09 evening (read first)
+
+Pierre's quota ran out on 11-09 (more than half a week's quota spent in one day on a handful of PRs); the next
+integrator starts on another account from 11-11 morning. What the day taught, now rules or habits:
+
+- **Rule W27** (docs/rules/ship.md): at most three agents; every branch from `origin/main` (no stacked PRs, never ask
+  Pierre to change a base); no two open PRs on one sensitive file (`Code.gs`, `core.js`, `sync.js`, `model.js`): one
+  after the other, the next merges `main` and runs `sync_core --fix` after the first lands; two Codex rounds, then cut
+  the scope to a branch of its own with a short design note (findings that keep coming are a structural problem: we find
+  and decide the model; Pierre gets options with benefits, risks and a recommendation only when he would see the
+  difference); simulations capped at what is read (Q208's look 2 took 37 s, a full tier-2 run 3 h); one train at a time.
+- **Rule 0 read right**: from 16:30 open nothing new; questions that close a topic under way are fine until 17:30.
+- **Ask back a short or ambiguous request** before any work (the 🌱 was built twice: a drawn badge, then a rename,
+  before "the name unchanged, 🌱 added on its own"; a "razorfish" sentence was misread as a rename request).
+- **Names**: real names only in the chat, pseudonyms (P1…) in every committed file and PR (rule D2; a slip in this
+  STATUS was caught by Codex on #845).
+- **CI outage is not a red check**: a CodeQL bundle download 504 (GitHub) failed #834 once; say so on the PR, never
+  re-run; a merge of `main` (a real new head) re-runs everything.
+- **The integrator's helpers lived in the session scratchpad** (gone with it): a PR state line (head, checks, Codex
+  receipt on head, open threads via `pulls/N/ccr/review_threads`, "Choices I made" None), a wait for the Codex receipt
+  "Reviewed commit: `<head>`" or a Codex review on the head, a train queue that never starts `tools/train.py` while one
+  runs and waits for the "Candidate photos" workflow, and the sheet VERSION step (`tools/sheet_version.py --assign` in a
+  sparse worktree with `main` merged, commit "Sheet script vN assigned at merge", `@codex review`). Rebuild them as
+  small scripts first thing; a docs-only PR has 5 checks, not 17.
+- **In flight**: STATUS "Now". Kept on branches without a PR, each with its note: `claude/admin-signout-seal` (the
+  seal cut out of #798; `docs/reviews/2026-11-09-admin-signout-seal.md`: one IndexedDB store, every draft write in one
+  transaction), `claude/level-count-from-log` (cut out of #840: the "answers so far" count following the log needs
+  checkpoints that are not absolute counts), `claude/analyses-fsrs`, `claude/load-order-b`; uncommitted: Find the X
+  (`/home/user/find-the-x`), load order (d).
+
 ## Working with Pierre
 
 - **Language**: he writes in French (often dictated: expect speech-to-text slips, e.g. "Yammer" / "AMR" = IMR, players'
@@ -118,7 +148,8 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   diff after `--write` and revert unrelated hunks.
 - **Stacked PRs**: merging a PR whose base is another PR's branch merges into that branch, not main (it happened with
   #667 into #663; harmless, but check `base.ref` before merging).
-- **Never put stacked PRs in a train** (2026-11-08 night, the fish judging stack #760-#766): after the first one is
+- **No stacked PRs at all** (rule W27, Pierre, 2026-11-09: "on fait des PR sur main"; never ask him to change a base
+  by hand). Older note: **never put stacked PRs in a train** (2026-11-08 night, the fish judging stack #760-#766): after the first one is
   squashed, the next one conflicts with the squash commit. Land a stack as its top PR (one squash holding every
   commit) and close the others with a pointer to it ("landed in #N").
 - **CI waits**: poll a PR with a small loop (head sha → check-runs → Codex state), not with chained sleeps; the
@@ -135,7 +166,7 @@ not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives 
   grid column never wider than the screen, the row wraps. #709's safety net (an invisible card closes itself after
   2.5 s, now also checking left/right) and its events (`empty card closed`, `left with a card open`) stay: read the
   Events tab now and then for any other card that hides. Lesson: test every new card at 390 px with a long list.
-- **Open PRs**: STATUS "Now" (on 2026-11-09 night, 11 green PRs waiting for Codex's usage limit, #769 a draft). #664
+- **Open PRs**: STATUS "Now". #664
   (engine coherence review) merged as a reference doc; its re-check is done (ROADMAP row): C1 decided by Pierre on 2026-11-09 (Q316: componential difficulty model; Q136 reopened with it). #637 (photos rated against the genus ability, Q136) was
   closed unmerged; its branch stays (ROADMAP "Photos rated against the genus ability"). The old worktree
   `photo-genus-ability` (2 commits not on the remote head) is in a pre-rewrite clone: patches only, never a push.

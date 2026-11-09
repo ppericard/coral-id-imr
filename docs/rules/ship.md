@@ -1,6 +1,6 @@
 # Workflow and shipping rules
 
-How agents work with Pierre (W1-W11) and how a change ships and merges (W12-W26). Who merges, and when: only AGENTS.md "Working
+How agents work with Pierre (W1-W11) and how a change ships and merges (W12-W27). Who merges, and when: only AGENTS.md "Working
 mode" (the merge contract). The index of every rule is in [AGENTS.md](../../AGENTS.md#the-rules).
 
 ## Working with Pierre
@@ -291,7 +291,7 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 ### W22
 
 **Several agents at once: a worktree each, one smoke at a time.** The integrator launches decided work at once (AGENTS.md
-"Working mode"); the shared machine is protected by `tests/slot.js`, not by holding agents back. Each agent works in a
+"Working mode"), within rule W27's cap of three agents at a time; the shared machine is protected by `tests/slot.js`. Each agent works in a
 **worktree of its own** (`.claude/worktrees/<name>`), sparse when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
@@ -300,7 +300,7 @@ runs. At most two open PRs per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
 Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
-*Source:* 2026-11-04; launch at once instead of a cap on agents, Pierre, 2026-11-05.
+*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped at three agents by rule W27, Pierre, 2026-11-09.
 
 ### W23
 
@@ -364,3 +364,31 @@ Codex as always. A train branch gets no PR (rule W6 skips it); `tools/train.py` 
 never force-pushes.
 *Why:* each merge left the other ready PRs behind, and each catch-up cost a CI run and a Codex wait, about 4 min per PR
 in a burst. *Source:* Pierre, 2026-11-08 (Q305).
+
+### W27
+
+**Bounded cost, no conflicts: few agents, small PRs, two Codex rounds, then cut.** The integrator holds to these, each
+checked before it launches or relaunches an agent:
+- **At most three agents at a time**, each on one PR with one subject. A finished agent is stopped, not kept waiting.
+- **Every branch starts from `origin/main`**, never from another PR's branch: no stacked PRs. A PR that would contain
+  another is the same PR.
+- **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
+  until the first is merged, then starts from `main`. Before launching, the integrator checks the files of the open PRs.
+- **Two Codex rounds at most per PR.** If Codex still finds something after the second round's fixes, the integrator
+  cuts the PR's scope (the part that keeps failing moves to a branch of its own) and tells Pierre, instead of a third
+  round. Findings that keep coming on the same part point to a structural problem: that part restarts from a short
+  design note (the need, the model that removes the whole class of cases, e.g. one writer instead of locks around many),
+  not from a fix of the latest case. Spotting the structural problem and choosing the model is the agents' and the
+  integrator's job, not Pierre's (Pierre, 2026-11-09: "c'est pas à moi de trouver les solutions"; "ça reste vous, les
+  designers"). When the choice changes what he or the players see, he gets the options, each with its benefits and
+  risks, and the one recommended.
+- **A simulation reads only what is declared**: answers capped at the largest count a guardrail or the primary reads,
+  and an unclear cell's second look on that cell alone. A check longer than 30 minutes is a tooling bug to fix.
+- **One train at a time** (`tools/train.py` through a queue, never two in parallel).
+- **A short or ambiguous request from Pierre is asked back before any work starts** (one question in the chat).
+- **Agents' scratch files carry the PR or topic in their name** (`pr-<N>-<topic>.md`): the scratchpad is shared.
+
+*Why:* on 2026-11-09 about a dozen agents ran at once with very large contexts, stacked PRs and parallel trains caused
+conflicts and red trains, one PR (#798) went through six Codex rounds in a day, a three-hour simulation read 10,000
+answers where the guardrails read 3,000, and misread requests were built twice; more than half of a week's quota went
+on a handful of PRs. *Source:* Pierre, 2026-11-09 ("si tu ne les écris pas quelque part, ça sera jamais fait").

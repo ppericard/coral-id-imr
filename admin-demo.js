@@ -885,7 +885,14 @@
       A = answers().rows,
       // The domain-score bar from the script version that replays it (core.js DOM_SHEET), as the real admin.
       opt = {gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, dom: V >= DOM_SHEET};
-    const rep = replayProgress(A, opt);
+    // Each player's first-launch answer, as the admin's replay takes it (admin.js progOf starts; PR #808: without it one of
+    // Ana's genera read stale by a rounding).
+    const starts = Object.fromEntries(
+        Object.values(users)
+          .map(u => [aid(u.name), JSON.parse(u.data['reefid-sync-coral-start'] || 'null')])
+          .filter(x => x[1])
+      ),
+      rep = replayProgress(A, {...opt, starts});
     const savedOf = (u, R) => {
       const old = JSON.parse(u.data['reefid-sync-coral-progress']),
         P = {};

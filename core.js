@@ -556,9 +556,8 @@
       // corals': the subject the sheet rates photos, counts confusions and holds the opening from. gen: the units the
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
-      // floor: the saved bars before its first replay are kept as a floor, by the sheet (Code.gs replay_, replayFloor;
-      // Pierre, 2026-11-08, Q310: "nobody goes back").
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, floor: true},
+      // No floor: the log is the only reference, a fish bar may go down (Pierre, 2026-11-09, Q330).
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -879,6 +878,14 @@
         ...(start.has(t.id) ? {first: 1} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
+        // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
+        // plural or singular (fishTypeNames; Codex review #834: "Amphiprions").
+        // The names among them that designate part of it only (Pierre, 2026-11-09 ~15:45 Manila, Q333): an IMR genus or
+        // sub-entry (Chromis, Anemonefish, Clownfish, Unicornfish), each with the species it designates (fishTypeNames sc).
+        scopes: fishScopes(imrGen, [...(teachOf.get(t.id) || [])]),
+        sciNames: [...new Set([...(t.sci || []), ...imrGen.map(g => g.name), ...[...(teachOf.get(t.id) || [])].map(x => x.fam)])].filter(
+          Boolean
+        ),
         ...([...(teachOf.get(t.id) || [])].flatMap(fishOften).length ? {oft: [...(teachOf.get(t.id) || [])].flatMap(fishOften)} : {})
       };
     });
@@ -1056,7 +1063,9 @@
   // double one ("Surgeonfish & Unicornfish"), its scientific names, the names IMR uses inside it with their genera
   // (Chromis, Anemonefish, Amphiprion: a finer name, still right), and the other common names curated for the IMR entries
   // teaching its species or their sub-entries (T: aka, tools/fish_source.json, Tang; often: a name in common use that the
-  // answer's feedback corrects gently, Clownfish for Anemonefish, fishOften). The first is the name shown.
+  // answer's feedback corrects gently, Clownfish for Anemonefish, fishOften), and the scientific families of those IMR
+  // entries (fam: Holocentridae, Syngnathidae): one the book splits names each of its families, so typed it reads as all
+  // of them (typeMatchIn shared), never as a slip of one of them (Holocentrinae). The first is the name shown.
   function fishNames(t, imrGen, T) {
     const parts = String(t.imr || '')
       .split(/\s*&\s*|\s+and\s+/)
@@ -1069,12 +1078,22 @@
         ...(t.sci || []),
         ...(imrGen || []).flatMap(g => [g.imr, g.name]),
         ...(T || []).flatMap(x => [
+          x.fam,
           ...(x.aka || []),
           ...(x.often || []),
           ...(x.sub || []).flatMap(u => [...(u.aka || []), ...(u.often || [])])
         ])
       ])
     ].filter(Boolean);
+  }
+  // The names of part of a family (fishGen scopes): {name: [species ids]}, its IMR genera (their tag and scientific name:
+  // the genus's species) and its IMR entries' sub-entries (their name and other names: the sub-entry's species).
+  function fishScopes(imrGen, T) {
+    const S = {},
+      put = (x, L) => x && (L || []).length && (S[x] = [...new Set([...(S[x] || []), ...L])]);
+    (imrGen || []).forEach(g => [g.imr, g.name].forEach(x => put(x, g.species)));
+    (T || []).forEach(e => (e.sub || []).forEach(u => [u.name, ...(u.aka || []), ...(u.often || [])].forEach(x => put(x, u.species))));
+    return S;
   }
   // The names in common use that a typed answer may give, accepted as right but corrected gently (Pierre, 2026-11-06,
   // Q164: "✓ Yes, Anemonefish (often called clownfish)"): [[the usual name, the name often used]], from the node's and
@@ -1088,19 +1107,31 @@
       .replace(/[^a-z]/g, '');
   // Every name a player may type for the fish entries gen (fishGen): [{k, g, old, alt}], old = the name typed when it is
   // not the entry's own (read as the entry), alt marks those as other names, not old ones. A name two entries share (a
-  // family IMR splits: Holocentridae = Soldierfish and Squirrelfish) names both, so it is "which one?" (typeMatchIn near).
+  // family the book splits: Holocentridae = Soldierfishes and Squirrelfishes) names both (typeMatchIn shared).
   // drop (SUBJECTS typeDrop: 'fish'): a word a name may be typed without (Pierre, 2026-11-06: "trigger", "clown",
   // "damsel"), as its suffix, a separate word or a plural ("Triggerfish", "Trigger fish", "Triggerfishes" -> "Trigger"),
   // its own short form accepted as another name of the entry, unless it is ambiguous in the game: within the spelling
   // tolerance of a name or short form of another entry (then it is left out: typing it is no answer, as before).
   // A name in common use (fishOften: oft) carries oft: [usual name, the name often used], its short forms too.
-  function fishTypeNames(gen, drop = '') {
+  // Every name is also read in the other number (typeForms: "Grouper" for Groupers, "Goby" for Gobies, "Pipefish" for
+  // Pipefishes), as the name itself: exactly, never as a spelling to fix, whatever other name it is close to.
+  // known (fishNameIndex): the names below the entries, each read as the entry it lifts to (Peacock razorfish, Iniistius,
+  // Anglerfish), and the words owned by none, read exactly as such ({known}, typeMatchIn), so a name the game knows is
+  // never taken for a slip of another (Angelfishes).
+  function fishTypeNames(gen, drop = '', known = []) {
     const out = [],
-      add = (k, g, x, i, oft) =>
-        k && !out.some(o => o.k === k && o.g === g) && out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, ...(oft ? {oft} : {})}),
+      // sc: the species a name designates when it names part of the unit only (Q333); one key of a unit read by two
+      // names takes the wider (no sc: the whole unit; "Surgeonfish", the label's singular, over the sub-entry)
+      add = (k, g, x, i, oft, sc) => {
+        if (!k) return;
+        const o = out.find(y => y.k === k && y.g === g);
+        if (o) return typeWiden(o, sc);
+        out.push({k, g, old: i ? x : '', alt: i ? 1 : 0, nm: x, ...(oft ? {oft} : {}), ...(sc ? {sc} : {})});
+      },
+      scOf = (g, x) => (g.scopes || {})[x],
       oftOf = (g, k) => (g.oft || []).find(([, o]) => typeNormAll(o) === k);
     Object.values(gen || {}).forEach(g =>
-      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x))))
+      (g.names || [g.name]).forEach((x, i) => add(typeNormAll(x), g.id, x, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
     );
     const d = typeNormAll(drop);
     if (!d) return out;
@@ -1115,15 +1146,166 @@
           const one = o.k.endsWith(d + 'es') ? [o.k.slice(0, -2), x.replace(/es$/i, '')] : o.k.endsWith(d) ? [o.k + 'es', x + 'es'] : null;
           return m && k.length >= 3 && k !== o.k
             ? [
-                {k, g: o.g, x: m[1].trim(), oft: o.oft},
-                {k: k + 's', g: o.g, x: m[1].trim() + 's', oft: o.oft},
-                ...(one ? [{k: one[0], g: o.g, x: one[1].trim(), own: !o.old, oft: o.oft}] : [])
+                {k, g: o.g, x: m[1].trim(), oft: o.oft, sc: o.sc},
+                {k: k + 's', g: o.g, x: m[1].trim() + 's', oft: o.oft, sc: o.sc},
+                ...(one ? [{k: one[0], g: o.g, x: one[1].trim(), own: !o.old, oft: o.oft, sc: o.sc}] : [])
               ]
             : [];
         })
         .flat(),
       near = (a, b) => typeDist(a, b) <= TYPE.tol(Math.min(a.length, b.length));
-    short.filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k))).forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft));
+    short
+      .filter(s => ![...out, ...short].some(o => o.g !== s.g && near(s.k, o.k)))
+      .forEach(s => add(s.k, s.g, s.x, s.own ? 0 : 1, s.oft, s.sc));
+    // The other number of every common name, as the name it comes from (its own name's: the unit's own, alt 0); never a
+    // scientific name's (a unit of a scientific rank, a family's sciNames: Codex review #834, "Zebrasomas", "Halichoere"
+    // were read exactly), which keeps its spelling step.
+    Object.values(gen || {})
+      .filter(g => !g.rank)
+      .forEach(g =>
+        (g.names || [g.name]).forEach(
+          (x, i) =>
+            !(g.sciNames || []).includes(x) &&
+            typeForms(x).forEach(y => add(typeNormAll(y), g.id, y, i, oftOf(g, typeNormAll(x)), scOf(g, x)))
+        )
+      );
+    typeKnown(out, known);
+    typeOff(out, known);
+    return out;
+  }
+  // One key of a unit read by two names: the wider of the two (no sc: the whole unit; else the species of both).
+  function typeWiden(o, sc) {
+    if (!o.sc) return;
+    if (!sc) delete o.sc;
+    else o.sc = [...new Set([...o.sc, ...sc])];
+  }
+  // Pierre's 'off' (curation.json fish.names, fishNameIndex: {x, off: family id}), applied once every name is in: no name
+  // of that family, in either number, reads x any more, whatever brought it (a genus's common name, the family's own,
+  // Chromis); the name is known (another unit's names, at any rank, still read before it: typeMatchIn).
+  function typeOff(out, known) {
+    (known || [])
+      .filter(e => e.off)
+      .forEach(e => {
+        const ks = new Set([e.x, ...typeForms(e.x)].map(typeNormAll));
+        for (let i = out.length - 1; i >= 0; i--) if (out[i].g === e.off && ks.has(out[i].k)) out.splice(i, 1);
+        ks.forEach(k => !out.some(o => o.k === k && o.known) && out.push({k, g: '', old: e.x, alt: 1, known: 1, w: 1}));
+      });
+  }
+  // The name index (fishNameIndex) into the typed names: a name with an owner, read as that family ({k, g, old, alt: 1,
+  // vr: its role, n, of: how many of the family's species carry it; oft for a name Pierre marks "often"), in both numbers
+  // for a word; a name with none, known ({k, g: '', known: 1, w: 1 for a word}), only where it is no unit's name.
+  function typeKnown(out, known) {
+    const have = new Set(out.filter(o => !o.known).map(o => o.k)),
+      seen = new Set(out.map(o => o.k + '|' + o.g));
+    (known || [])
+      .filter(e => e.g)
+      .forEach(e =>
+        [e.x, ...(['ss', 'gs'].includes(e.vr) ? [] : typeForms(e.x))].forEach(y => {
+          const k = typeNormAll(y);
+          if (k.length < 3) return;
+          if (seen.has(k + '|' + e.g)) {
+            // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it (Codex review #834), and
+            // the wider reading holds
+            const o = out.find(x => x.k === k && x.g === e.g && !x.known);
+            if (o && e.oft && !o.oft) o.oft = e.oft;
+            if (o) typeWiden(o, e.sc);
+            return;
+          }
+          seen.add(k + '|' + e.g);
+          have.add(k);
+          out.push({
+            k,
+            g: e.g,
+            old: y,
+            alt: 1,
+            vr: e.vr,
+            ...(e.n ? {n: e.n, of: e.of} : {}),
+            ...(e.oft ? {oft: e.oft} : {}),
+            ...(e.sc ? {sc: e.sc} : {})
+          });
+        })
+      );
+    (known || [])
+      .filter(e => !e.g)
+      .forEach(({x, w}) =>
+        [x, ...typeForms(x)].forEach(y => {
+          const k = typeNormAll(y);
+          if (k.length >= 3 && !have.has(k)) (have.add(k), out.push({k, g: '', old: y, alt: 1, known: 1, ...(w ? {w: 1} : {})}));
+        })
+      );
+  }
+  // A name's last word in the other number, for typing (English: Groupers / Grouper, Gobies / Goby, Pipefishes /
+  // Pipefish, Sweetlips / Sweetlip): [] for a scientific name (-idae, -inae) or a last word whose number is not plain
+  // (Anthias, Chromis, Dascyllus: -as, -is, -us).
+  function typeForms(x) {
+    const m = String(x || '').match(/^(.*?)([A-Za-z]+)$/);
+    if (!m || /i[dn]ae$/i.test(m[2])) return [];
+    const [, a, w] = m,
+      f = w.match(/fishes$/i)
+        ? w.slice(0, -2)
+        : w.match(/fish$/i)
+          ? w + 'es'
+          : w.match(/ies$/i)
+            ? w.slice(0, -3) + 'y'
+            : w.match(/(ch|sh|x|ss)es$/i)
+              ? w.slice(0, -2)
+              : w.match(/[^aeiou]y$/i)
+                ? w.slice(0, -1) + 'ies'
+                : w.match(/(ss|us|is|as)$/i)
+                  ? ''
+                  : w.match(/s$/i)
+                    ? w.slice(0, -1)
+                    : w.match(/(ch|sh|x)$/i)
+                      ? w + 'es'
+                      : w + 's';
+    return f && f.length >= 3 ? [a + f] : [];
+  }
+  // The fish name index (Pierre, 2026-11-09, Q319, Q320; docs/reviews/2026-11-09-shared-common-names.md), for typed
+  // answers (fishTypeNames known): each name below the family with the family it lifts to and its role (vr): 'sp' a
+  // listed common name of a game species (fish.json cn, every spelling), 'ss' a species' scientific name (its PDF name
+  // and WoRMS's), 'gs' a genus's scientific name, 'gc' a genus's common name, 'k' a kind word carried by at least 2 of
+  // the family's species or all of them (fish.json vn, tools/fish_names.py: razorfish, toby), with n and of; a kind word
+  // a family's species carry less than that ('w') is known, owned by none: never read as a slip of another family's
+  // name. cur (curation.json fish.names, Pierre's exceptions, written only by the admin): {name: {family id: 'off' (not
+  // that family's), 'on' (that family's, the name added or a known word given to it), 'often' (that family's, the
+  // feedback naming the family gently: Q164)}}. [{x, g: family id or '', vr, n, of, oft, w}].
+  function fishNameIndex(F, cur) {
+    const out = [],
+      fam = new Map(((F && F.families) || []).map(f => [f.id, f])),
+      C = Object.fromEntries(Object.entries(cur || {}).map(([x, v]) => [typeNormAll(x), v || {}])),
+      off = (x, g) => (C[typeNormAll(x)] || {})[g] === 'off',
+      oft = (x, g) => ((C[typeNormAll(x)] || {})[g] === 'often' && fam.get(g) ? [fam.get(g).name, x] : null),
+      put = (x, g, vr, n, of, sc) => {
+        if (!x || !fam.has(g)) return;
+        if (off(x, g)) return out.push({x, g: '', vr: 'w', w: 1, off: g});
+        const o = oft(x, g),
+          // Pierre's on or often gives the name to the whole family, whatever part it named (Codex review #834)
+          whole = ['on', 'often'].includes((C[typeNormAll(x)] || {})[g]);
+        out.push({x, g, vr, ...(n ? {n, of} : {}), ...(o ? {oft: o} : {}), ...(sc && sc.length && !whole ? {sc} : {})});
+      };
+    const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
+    game.forEach(s => {
+      (s.cn || []).forEach(L => L.forEach(x => put(x, s.family, 'sp', 0, 0, [s.id])));
+      [s.name, s.now].forEach(x => put(x, s.family, 'ss', 0, 0, [s.id]));
+    });
+    const inGame = new Set(game.map(s => s.genus));
+    ((F && F.genera) || [])
+      .filter(g => inGame.has(g.id))
+      .forEach(g => (put(g.name, g.family, 'gs', 0, 0, g.species), put(g.common, g.family, 'gc', 0, 0, g.species)));
+    // A kind word designates the species that carry it (Q333: "razorfish" on a cleaner wrasse is a mistake); Pierre's
+    // on or often gives it to the whole family.
+    ((F && F.vn) || []).forEach(([x, owners]) =>
+      (owners || []).forEach(([g, r, n, of, sp]) => {
+        const c = (C[typeNormAll(x)] || {})[g];
+        put(x, g, 'k', n, of, c === 'on' || c === 'often' ? null : sp);
+      })
+    );
+    // Pierre's own names (on), the index's or not.
+    Object.entries(cur || {}).forEach(([x, v]) =>
+      Object.entries(v || {}).forEach(([g, c]) => {
+        if ((c === 'on' || c === 'often') && !out.some(e => e.g === g && typeNormAll(e.x) === typeNormAll(x))) put(x, g, 'cur');
+      })
+    );
     return out;
   }
 
@@ -1823,9 +2005,9 @@
   // with today's rules (tools/memreplay.js) those genera stand at 78-83%, under the exam's entry. Their learned mark
   // (and any exam in course) is dropped at every call (load, pull, answer: a copy from another device that still has it
   // loses it too); the genus keeps its bar from its record (pgOf, s.h) and takes the exam again. An exam passed since
-  // (s.pg kept beside s.mx) is left alone. Not silent (Pierre, 2026-11-03: players know they test an early beta): the
-  // app sees the mark go (model.js mxRecalc), tells the player once with a card (progress.js mxLostNotice) and takes back the
-  // learned-based achievements the progress no longer meets (achRevoke, progress.js achRecheck).
+  // (s.pg kept beside s.mx) is left alone. Silent (Pierre, 2026-11-09 ~15:40 Manila, Q332): the app sees the mark go
+  // (model.js mxRecalc) and tells nothing; until then a card told it once (progress.js mxLostNotice) and the
+  // learned-based achievements the progress no longer met were taken back (achRevoke, progress.js achRecheck).
   // Since the sheet's full replay (replayProgress, RVS; 2026-11-03) this is only the fallback for a device that never
   // reaches the sheet: a record adopted from the replay carries pm 1, so it is never corrected here.
   function memRecalc(s, mem) {
@@ -3453,7 +3635,9 @@
     return out;
   }
   // What the typed text names among names (typeNamesOf): {g, old, exact} for one genus within the tolerance, {near:
-  // [genera]} when two are as close (the player is asked to check the spelling), null when nothing is close.
+  // [genera]} when two are as close by spelling (the player is asked to check the spelling), {shared: [units], exact}
+  // for a name several units share typed exactly, {known} for a name that is no unit's (fishTypeNames known), null when
+  // nothing is close. The closest names decide: a name typed exactly is never read as a slip of another.
   // norm: how the text is read (typeNorm, the first word, for genera; typeNormAll, the whole text, for fish entries).
   function typeMatchIn(names, text, norm = typeNorm) {
     const t = norm(text);
@@ -3466,15 +3650,49 @@
       .filter(x => x.d <= TYPE.tol(x.k.length))
       .sort((a, b) => a.d - b.d);
     if (!all.length) return null;
-    const best = all.filter(x => x.d === all[0].d),
-      gs = [...new Set(best.map(x => x.g))];
-    if (gs.length > 1) return {near: gs};
+    // The closest names decide. A name the game knows that is no unit's (known: fishTypeNames) closest: {known}, no
+    // unit; else the units' names among them. Typed exactly, a name several units share is all of them ({shared}: the
+    // answer is right for each, quiz.js typeUnit); two units as close by spelling only is {near} ("which one?").
+    const top = all.filter(x => x.d === all[0].d),
+      best = top.filter(x => !x.known);
+    if (!best.length) return {known: 1, old: top[0].old, ...(top[0].w ? {w: 1} : {})};
+    const gs = [...new Set(best.map(x => x.g))];
+    // One name several units share, typed exactly or with a slip (every closest name the same key): shared, the slip
+    // taking the spelling step as any name's; two names as close: near.
+    if (gs.length > 1)
+      return best[0].d === 0 || best.every(x => x.k === best[0].k)
+        ? {
+            shared: gs,
+            old: best[0].old,
+            // the name as written that the text reads as (Gobies), for the spelling step's correction
+            name: best[0].nm || best[0].old,
+            exact: best[0].d === 0,
+            // each unit's own reading of it: its role (vr), how many of its species carry it (n, of), its gentle name (oft)
+            by: Object.fromEntries(
+              gs.map(g => {
+                const x = best.find(y => y.g === g);
+                return [
+                  g,
+                  {
+                    ...(x.vr ? {vr: x.vr} : {}),
+                    ...(x.n ? {n: x.n, of: x.of} : {}),
+                    ...(x.oft ? {oft: x.oft} : {}),
+                    ...(x.sc ? {sc: x.sc} : {})
+                  }
+                ];
+              })
+            )
+          }
+        : {near: gs};
     return {
       g: best[0].g,
       old: best[0].old,
       exact: best[0].d === 0,
       ...(best[0].alt ? {alt: 1} : {}),
-      ...(best[0].oft ? {oft: best[0].oft} : {})
+      ...(best[0].oft ? {oft: best[0].oft} : {}),
+      ...(best[0].vr ? {vr: best[0].vr} : {}),
+      ...(best[0].n ? {n: best[0].n, of: best[0].of} : {}),
+      ...(best[0].sc ? {sc: best[0].sc} : {})
     };
   }
   // What a typed text that is no unit of the rank asked names instead (Pierre, 2026-11-08, Q237: on a genus question a
@@ -3510,6 +3728,14 @@
       text,
       norm
     );
+    if (m && m.known) return 'common';
+    // A name the index lifts from below (fishNameIndex): a scientific name (a species', a genus's) is no common name (the
+    // spelling message as before); a shared one is a common name unless it is a family's own (Holocentridae, Goby).
+    if (m && (m.vr === 'ss' || m.vr === 'gs')) return '';
+    if (m && m.shared)
+      return /i[dn]ae$/i.test(m.old || '') || Object.values(m.by || {}).some(r => !r.vr)
+        ? (x.rank ? x.rank(m.shared[0]) : '') || ''
+        : 'common';
     if (m && !m.near) {
       const imr = String((x.own && x.own(m.g)) || ''),
         own = !m.old || /i[dn]ae$/i.test(m.old) || [imr, ...imr.split(/\s*&\s*|\s+and\s+/)].some(n => n && norm(n) === norm(m.old));
@@ -3527,10 +3753,27 @@
   // 'close': one of its names within the spelling tolerance: still a right answer (the genus was recognised; grading
   // unchanged), but the player retypes it once (quiz.js typeBind); 'other': another unit's name, close or exact (a wrong
   // answer, as before); 'none': nothing close, or two names as close (no answer: the player is asked to check the spelling).
-  function typeVerdict(m, t) {
-    if (!m || m.near) return 'none';
+  // A name several units share ({shared}): as one of t's names when t is one of them, else 'other'; a known name that is
+  // no unit's ({known}): 'none'.
+  // sp: the species of the photo (its own taxon, quiz.js): a name of part of t only reads as t when it designates them
+  // (typeFits; Q333), else 'other'.
+  function typeVerdict(m, t, sp) {
+    if (!m || m.near || m.known) return 'none';
+    if (!typeFits(m, t, sp)) return 'other';
+    if (m.shared) return m.exact ? 'exact' : 'close';
     if (m.g !== t) return 'other';
     return m.exact ? 'exact' : 'close';
+  }
+  // Does the reading m name unit t as the photo shows it (Pierre, 2026-11-09 ~15:45 Manila, Q333: "if someone types
+  // Razorfish on a photo of a wrasse that really is a razorfish, then yes, it counts for the family; but you cannot type
+  // Razorfish for a wrasse that is not a razorfish"; and "we won't penalise someone who knows the genus's name, or even
+  // the species'; but the mistakes must be penalised")? A name of t as a whole, or of part of t (sc: its species) when the
+  // photo's species sp are among them; sp unknown ([]): read as before, nothing proves a mistake.
+  function typeFits(m, t, sp) {
+    if (!m || m.near || m.known) return false;
+    const r = m.shared ? (m.shared.includes(t) ? (m.by || {})[t] || {} : null) : m.g === t ? m : null;
+    if (!r) return false;
+    return !r.sc || !(sp || []).length || r.sc.some(x => sp.includes(x));
   }
   // The letters of name to show in bold once a retyped spelling is still wrong (quiz.js typeSpell): those the typed text
   // got wrong, left out or swapped, along typeDist's alignment; a letter typed in excess marks the letter of name where it
@@ -4076,6 +4319,13 @@
       // from the sheet's Notes tab, key card.rv8.ps (named when this was rules version 8, before PR #638 took that
       // number; the key is kept so the row Pierre adds stays as written: never in the repo; progress.js rvNotice).
       msg: RV_SORRY
+    },
+    {
+      v: 10,
+      at: '2026-11-09',
+      why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a genus and its answer count win over the saved copy, also when the copy holds more answers there (they were counted twice: a save whose reply was lost, then another device's save, PR #824), and a genus the log has no answer on loses the answers the copy counts on it.",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330): the progress is updated everywhere without telling the player.
+      msg: null
     }
   ];
   const RV = RVS[RVS.length - 1].v;
@@ -4087,8 +4337,15 @@
     {
       v: 1,
       at: '2026-11-08',
-      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (nobody goes back)",
+      why: "The fish progress replayed from the answer log (Pierre, 2026-11-08: recalculate every player's progress from their answers; Q298, Q310): a fish player's progress is replayed by the sheet from their fish answers (logged since sheet v60) with the corals' engine, each unit's bar before its first replay kept as a floor (until fish rules version 2)",
       msg: RV_CARD
+    },
+    {
+      v: 2,
+      at: '2026-11-09',
+      why: "The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): the replay's record of a unit and its answer count win over the saved copy, also when the copy holds more answers there (counted twice, or played before the fish log began: in no log, so dropped), and no floor any more: a unit's bar may go down.",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
+      msg: null
     }
   ];
   // A subject's rules versions (the corals' RVS, another subject's SUBJECTS replayed rvs) and the last of them (0: none).
@@ -4125,8 +4382,8 @@
   // replay only once the script's replies say v >= LOG_SHEET (sync.js logOk), and keeps them queued until then (rule D4).
   const LOG_SHEET = 60;
   // The sync script version that replays the other subjects' progress under this app's rules (SUBJECTS replayed: fish,
-  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS,
-  // with today's bars as a floor, Code.gs replay_ and replayFloor) only once the script's replies say v >= REPLAYS_SHEET
+  // its own rules versions FISH_RVS; Code.gs replays_): the app asks for that replay and adopts it (sync.js replayAdoptS)
+  // only once the script's replies say v >= REPLAYS_SHEET
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 112;
@@ -4142,6 +4399,10 @@
   // skip: leave the apologies out (a player whose % did not go down: progress.js rvNoticeAdd), the standard card back.
   // sid: the subject whose rules versions they are (rvsOf: the corals' RVS by default, fish FISH_RVS).
   const rvMsgs = (from, to, skip = false, sid) => {
+    // No card for a recalculation any more (Pierre, 2026-11-09 ~14:45 Manila, Q330): a jump to a version without a card
+    // shows none, not even the card of a version it skips.
+    const V = (sid ? rvsOf(sid) : RVS).find(x => x.v === to);
+    if (V && !V.msg) return [];
     const L = (sid ? rvsOf(sid) : RVS)
       .filter(x => x.v > (from || 0) && x.v <= to && x.msg && !(skip && x.msg.kind === 'apology'))
       .filter((x, i, A) => !A.slice(i + 1).some(y => y.msg === x.msg));
@@ -4536,14 +4797,19 @@
   //   a saved exam of 4 questions passed kept its 4); the days answered right (dd, dl: the device's calendar days, for the comeback after a break); the
   //   last observations shown (ro: the log keeps photo files, not observations); right with the corallites in view
   //   (cor: the log does not say which view a photo was shown in);
-  // - the saved record as it is (the same mx rule) for a genus the log has no replayable answer on, or fewer answers on
-  //   than the saved copy (answers that never reached the log: a replay must never lose progress);
+  // - the log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330): a genus the log has answers on takes the
+  //   replay's record and counts also when the saved copy holds more answers there (they were counted twice: a reply
+  //   lost then another device's save, PR #824), its counts and recent results only when none of them is replayable; a
+  //   genus the log has no answer on keeps the saved record only if it holds no answer either (its answers are in no
+  //   log: dropped);
   // - LEVEL: the replayed ability (th, vr), the larger answer count of the two (answersSoFar keys the exam's gaps, the
-  //   cards met and the prompts, so it never goes back) with the answer times (rt) of the same side, the later at, rv
-  //   when given.
+  //   cards met and the prompts, so it never goes back; the log's count there waits for checkpoints that do not hang on
+  //   it: a follow-up, branch claude/level-count-from-log) with the answer times (rt) of the same side, the later at,
+  //   rv when given; no ability when the log has no answer at all (rule D9; Codex review of #840).
   // The opening hold is not here: the sheet already replays it from the same log (Code.gs hold_, reply's hold).
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
+  const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
   const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
@@ -4563,35 +4829,30 @@
       const s = isObj(S[g]) ? S[g] : null,
         r = isObj(R[g]) ? R[g] : null;
       if (g === LEVEL) {
+        // One rule for the level (rule D9; Codex reviews of #840): every field that feeds progress (the ability th, vr,
+        // lt, the typed opportunities tyk, the answer times rt) is the log's, absent when the log has none; only the
+        // plain answer count (ok, ko: the clock the checkpoints hang on) keeps the larger of the two until
+        // claude/level-count-from-log.
         const o = s ? dup(s) : {};
+        LEVEL_LOG.forEach(f => (r && r[f] !== undefined ? (o[f] = dup(r[f])) : delete o[f]));
         if (r) {
-          if (typeof r.th === 'number') o.th = r.th;
-          if (typeof r.vr === 'number') o.vr = r.vr;
-          // The answer times (rt) go with the count: the replay's when it has every answer the device has.
-          if (!s || n(r) >= n(s)) {
-            [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
-            if (isObj(r.tyk)) o.tyk = dup(r.tyk);
-            else delete o.tyk;
-            if (isObj(r.rt)) o.rt = dup(r.rt);
-            else delete o.rt;
-          }
+          if (!s || n(r) >= n(s)) [o.ok, o.ko] = [r.ok || 0, r.ko || 0];
           if (r.at) o.at = Math.max(r.at, Number(o.at) || 0);
           if (rv) o.rv = rv;
         }
         out[g] = o;
         return;
       }
-      if (!r || !r.u || (s && n(s) > n(r))) {
-        if (s) out[g] = kept(s);
-        else if (r) {
-          // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
-          out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
-          if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
-          else if (typeof r.pg === 'number') out[g].pg = r.pg;
-          // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
-          ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
-          if (r.ty) out[g].ty = r.ty;
-        }
+      if (!r || !r.u) {
+        // No answer of the log on it: the saved record only when it counts no answer either (rule D9).
+        if (!r) return void (s && !n(s) && (out[g] = kept(s)));
+        // No answer that moved the bar: the counts and recent results only (a former moving average if it has one).
+        out[g] = {ok: r.ok || 0, ko: r.ko || 0, h: r.h || '', ...(rv ? {rv} : {})};
+        if (domOn(r)) [out[g].dp, out[g].ds] = [dup(r.dp), r.ds];
+        else if (typeof r.pg === 'number') out[g].pg = r.pg;
+        // Its offers and mix-ups stay: the other genera's false-alarm rates read them (faOf; Codex review #646).
+        ['conf', 'off'].forEach(f => isObj(r[f]) && Object.keys(r[f]).length && (out[g][f] = dup(r[f])));
+        if (r.ty) out[g].ty = r.ty;
         return;
       }
       const o = {};
@@ -4628,9 +4889,10 @@
   // - adopted from the replay (M[g].rv is rv): the replayed record as the app holds it without this device's copy
   //   (replayedOf of rec alone), its photos shown per photo the larger of the replay's and B's (exposure the log leaves
   //   out, a corallites hint revealed after the answer, that a device already synced: shared too);
-  // - kept from this device's copy (the log has fewer answers on it): B's record, as before;
+  // - kept from this device's copy (a unit the log has no answer on and the copy counts none on either): B's record;
   // - the global level: the replay's, with B's answer count and answer times (rt) when its count is larger (replayedOf
-  //   keeps the larger count).
+  //   keeps the larger count); when the sheet sent no level (no answer in the log), B's level, never the adopted one,
+  //   which holds this device's unsent answers (Codex review of #840).
   function replayBase(rec, M, rv, B) {
     const R = replayedOf({P: rec}, {}, rv),
       B0 = isObj(B) ? B : {},
@@ -4641,15 +4903,15 @@
       const b = isObj(B0[g]) ? B0[g] : null,
         r = R[g];
       if (g === LEVEL) {
-        if (!r) return b && (out[g] = dup(b));
-        const o = dup(r);
-        if (b && n(b) > n(r)) {
-          [o.ok, o.ko] = [b.ok || 0, b.ko || 0];
-          if (isObj(b.tyk)) o.tyk = dup(b.tyk);
-          else delete o.tyk;
-          if (isObj(b.rt)) o.rt = dup(b.rt);
-          else delete o.rt;
+        if (!r) {
+          // No level in the log: the shared clock (ok, ko) only, none of the log's fields (LEVEL_LOG), as replayedOf.
+          if (!b) return;
+          const o = dup(b);
+          LEVEL_LOG.forEach(f => delete o[f]);
+          return void (out[g] = o);
         }
+        const o = dup(r);
+        if (b && n(b) > n(r)) [o.ok, o.ko] = [b.ok || 0, b.ko || 0]; // the clock only (replayedOf, LEVEL_LOG)
         out[g] = o;
       } else if (r && M[g] && M[g].rv === rv) {
         const o = dup(r);
@@ -4659,92 +4921,21 @@
           if (Array.isArray(y)) o.ps[f] = [Math.max(x[0], Number(y[0]) || 0), Math.max(x[1], Number(y[1]) || 0)];
         });
         out[g] = o;
+      } else if (!r && b && n(b) > 0) {
+        // A unit the log has no answer on whose shared copy counts answers: discarded by the adoption (rule D9), so no
+        // baseline either; this device's unsent answers on it stay the difference and go on top (Codex review of #840).
       } else if (b) out[g] = dup(b);
     });
     return out;
   }
   const learnedOf = (P, list) => list.filter(n => (P || {})[n] && P[n].mx).length;
-  // The floor of a subject's first replay (SUBJECTS replayed floor; Pierre, 2026-11-08, Q310: "today's bar as a floor,
-  // nobody goes back"; measured on the fish players first, LEARNING.md "Fish: the progress replayed from the answer log";
-  // the integrator, 2026-11-08: per unit, once). Applied by the sheet to the replayed record (Code.gs replay_), against
-  // the account's saved copy, so every device adopts the same record and keeps it as their shared baseline (sync.js
-  // replayAdoptS, replayBase; Codex review #779). M: the replayed record; P: the reference, the saved units that came
-  // from no replay yet (no rv). A unit of P the replay has no record of keeps P's. A unit whose bar (barOf) in M reads
-  // below its bar in P keeps the replay's record, its answers the log's (so no answer is counted twice in a merge), with
-  // its domain score (ds) lifted so that its bar reads P's: a right answer never lowers ds (domStep), a miss moves it
-  // the posterior's way, as for any bar. The lift allows for the false alarms the replay counts on the unit (faOf: the
-  // other records' conf and off; Codex review #779); should a domain score of 1 not be enough, the other records count,
-  // on that unit, the mix-ups and offers P counts (no more mix-ups, no fewer offers), the level its typed
-  // opportunities on that rank (P's when more; P's level is read as context, never floored), and the lift is made again. A
-  // replayed record without the domain-score bar (no dp) takes P's record whole. The global level (LEVEL) stays M's but
-  // for those typed opportunities; a learned mark or an exam in course comes from the device
-  // (replayedOf). Returns a copy of M floored.
-  // only: the units to floor (default every unit of P that came from no replay), their bars read in P whole.
-  function replayFloor(M, P, only) {
-    const out = {...(M || {})},
-      S = isObj(P) ? P : {},
-      dup = x => JSON.parse(JSON.stringify(x)),
-      L = (only || Object.keys(S)).filter(g => g !== LEVEL && isObj(S[g]) && !S[g].rv);
-    L.forEach(g => isObj(out[g]) || (out[g] = dup(S[g])));
-    const lift = (g, want) => (out[g] = {...dup(out[g]), ds: Math.min(1, Math.round((want + faOf(out, g)) * 1e4 + 0.5) / 1e4)});
-    // Passes until none changes: a record taken whole brings its own conf and off, which other units' bars read.
-    for (let k = 0, ch = true; ch && k <= L.length; k++) {
-      ch = false;
-      L.forEach(g => {
-        const want = barOf(S[g], S, g);
-        if (barOf(out[g], out, g) >= want - 1e-9) return;
-        ch = true;
-        if (!domOn(out[g])) return void (out[g] = dup(S[g]));
-        lift(g, want);
-        if (barOf(out[g], out, g) >= want - 1e-9) return;
-        // More false alarms on it than a domain score of 1 leaves room for: on it, the other records count the mix-ups
-        // and offers P counts (fewer mix-ups, more offers), then the lift again.
-        Object.keys(out).forEach(t => {
-          const x = out[t],
-            y = isObj(S[t]) ? S[t] : {},
-            on = r => (r.conf || {})[g] || (r.off || {})[g];
-          if (t === g || t === LEVEL || !isObj(x) || !(on(x) || on(y))) return;
-          const o = (out[t] = dup(x));
-          if (o.conf && o.conf[g]) o.conf[g] = Math.min(o.conf[g], (y.conf || {})[g] || 0);
-          const f = Math.max((o.off || {})[g] || 0, (y.off || {})[g] || 0);
-          if (f) o.off = {...(o.off || {}), [g]: f};
-        });
-        // and the typed opportunities of its rank, which faOf counts too (the rank's typed answers less the unit's own):
-        // at least P's, net of each side's own (Codex review #779).
-        const rk = rankKey(g),
-          lv = isObj(out[LEVEL]) ? out[LEVEL] : {},
-          net = Math.max(0, (((isObj(S[LEVEL]) && S[LEVEL].tyk) || {})[rk] || 0) - (S[g].ty || 0)),
-          ty = net + ((out[g] && out[g].ty) || 0);
-        if (ty > ((lv.tyk || {})[rk] || 0)) out[LEVEL] = {...dup(lv), tyk: {...(lv.tyk || {}), [rk]: ty}};
-        lift(g, want);
-      });
-    }
-    return out;
-  }
-  // A floored replay's typed opportunities per rank (replayFloor may raise the level's, which a unit's false-alarm rate
-  // reads): L, a level record, takes X's level's where they are more (in place; sync.js replayAdoptS, replayAdopted).
-  function tykRaise(L, X) {
-    const tyk = X && X[LEVEL] && X[LEVEL].tyk;
-    if (!tyk || !L || typeof L !== 'object') return;
-    const o = {...(L.tyk || {})};
-    Object.keys(tyk).forEach(k => typeof tyk[k] === 'number' && tyk[k] > (o[k] || 0) && (o[k] = tyk[k]));
-    L.tyk = o;
-  }
   // The progress a device holds once it adopts a replay (sync.js replayAdoptS), and so the one the leaderboard ranks a
   // player by once their saved copy is behind the rules (Code.gs board_; Pierre, 2026-11-09, rule D8). R: the replay (with
-  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version, floor: the subject is
-  // replayed with a floor (SUBJECTS replayed floor). replayedOf of R over P; with a floor, a unit kept from P (more
-  // answers there than in the log) beside the replayed records is floored at its bar in P (their mix-ups and offers on it
-  // may read it lower than it was), and the level's typed opportunities per rank are at least R's (tykRaise; Codex review
-  // #779), so the adoption does not undo the floor.
-  function replayAdopted(R, P, rv, floor) {
-    const S = isObj(P) ? P : {};
-    let M = replayedOf({P: R}, S, rv);
-    if (!floor) return M;
-    const keptHere = Object.keys(M).filter(g => g !== LEVEL && M[g] && typeof M[g] === 'object' && !M[g].rv && S[g] && !S[g].rv);
-    if (keptHere.length) M = replayFloor(M, S, keptHere);
-    tykRaise(M[LEVEL], R);
-    return M;
+  // the device's own answers on top, if any), P: the device's copy, rv: the replay's rules version: replayedOf of R over
+  // P. No floor (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down; until then a subject could be
+  // replayed with the saved bars as a floor, and fish was).
+  function replayAdopted(R, P, rv) {
+    return replayedOf({P: R}, isObj(P) ? P : {}, rv);
   }
 
   // Pages opened in a visit (sheet v30 event 'pages'; Pierre, 2026-11-03: "most players only play the quiz and never
@@ -5339,8 +5530,6 @@
     startWt,
     START_CAP,
     replayedOf,
-    replayFloor,
-    tykRaise,
     replayAdopted,
     replayBase,
     logRow,
@@ -5539,6 +5728,9 @@
     keepSubjectKeys,
     fishNames,
     fishTypeNames,
+    fishNameIndex,
+    typeFits,
+    typeForms,
     fishGameRow,
     fishGameRead,
     renamedId,

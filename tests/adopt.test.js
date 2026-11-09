@@ -819,7 +819,8 @@ test('the recalculation card is due only when the progress % moved by 5 points o
   vm.createContext(ctx);
   vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
   // The standard card, on the versions before the apology (rules version 9 has its own, below).
-  const due = (pct, to = C.RV - 1) => {
+  const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v; // rules version 9, the apology's
+  const due = (pct, to = SV - 1) => {
     delete saved['reefid-rv-msg'];
     ctx.add(0, to, pct);
     return ctx.store.get('reefid-rv-msg', {}).due.includes(to);
@@ -844,28 +845,50 @@ test('the recalculation card is due only when the progress % moved by 5 points o
       [60, 61],
       [60, 59],
       [83, 33]
-    ].map(p => due(p, C.RV)),
+    ].map(p => due(p, SV)),
     [false, false, true, true],
     'the apology from 1 point down, never on a rise'
   );
   delete saved['reefid-rv-msg'];
-  ctx.add(0, C.RV, [60, 50]);
-  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [C.RV]);
+  ctx.add(0, SV, [60, 50]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [SV]);
   // A rise of 5 points or more: the standard card of the last version that has it, not the apology.
   delete saved['reefid-rv-msg'];
-  ctx.add(0, C.RV, [50, 60]);
-  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [C.RV - 1]);
+  ctx.add(0, SV, [50, 60]);
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [SV - 1]);
   // From the version just before (no standard card in the jump): the standard card under the apology's version.
   delete saved['reefid-rv-msg'];
-  ctx.add(C.RV - 1, C.RV, [50, 60]);
-  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[C.RV], [C.RV]]);
+  ctx.add(SV - 1, SV, [50, 60]);
+  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[SV], [SV]]);
   delete saved['reefid-rv-msg'];
-  ctx.add(C.RV - 1, C.RV, [60, 50]);
-  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[C.RV], undefined]);
+  ctx.add(SV - 1, SV, [60, 50]);
+  assert.deepStrictEqual([ctx.store.get('reefid-rv-msg', {}).due, ctx.store.get('reefid-rv-msg', {}).std], [[SV], undefined]);
+});
+
+// No card for a recalculation from rules version 10 (Pierre, 2026-11-09 ~14:45 Manila, Q330): a card queued before the
+// upgrade (here rules version 9's apology, not seen yet) goes too, for the subject that jumps (Codex review of #840).
+test('a jump to a rules version without a card drops the cards of that subject still due', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    block = cut(src, 'const RVN = ', 'let rvT = 0;'),
+    saved = {},
+    ctx = {
+      ...C,
+      window: {},
+      toldHas: () => false,
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  vm.createContext(ctx);
+  vm.runInContext(block + '\nthis.add = rvNoticeAdd;', ctx);
+  ctx.store.set('reefid-rv-msg', {due: [9, 'fish:1'], told: [], pct: {9: [50, 40], 'fish:1': [10, 20]}});
+  ctx.add(9, 10, [40, 30]);
+  const M = ctx.store.get('reefid-rv-msg', {});
+  assert.deepStrictEqual([M.due, M.pct], [['fish:1'], {'fish:1': [10, 20]}], "the corals' card gone, the fish one kept");
+  ctx.add(1, 2, [20, 20], 'fish');
+  assert.deepStrictEqual(ctx.store.get('reefid-rv-msg', {}).due, [], 'then the fish one, at its own version without a card');
 });
 
 // progress.js achRecheck on stubs: the learned mark taken away (MXL.ach), the snapshot of a player with none learned.
-function ach(A) {
+function ach(A, quiet = false) {
   const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
     block = cut(src, 'const ACHK = ', 'const achList');
   const saved = {},
@@ -873,7 +896,7 @@ function ach(A) {
       ...C,
       SYNC: {name: 'Ana'},
       synced: 0,
-      MXL: {KEY: 'reefid-mx-lost'},
+      MXL: {KEY: 'reefid-mx-lost', QUIET: quiet}, // model.js MXL (QUIET true there since Q332)
       ACHNEW: 'reefid-ach-new',
       achUnseen: () => [],
       achDot: () => {},
@@ -908,6 +931,35 @@ test('achievements taken back: the removals are kept and synced even when this r
   const b = ach({_v: 2, met10: 10, learn1: 20});
   assert.deepStrictEqual(b.achRecheck(), ['learn1']);
   assert.strictEqual(b.rec().learn1, undefined);
+});
+
+// Silent for now (model.js MXL.QUIET; Pierre, 2026-11-09 ~15:40 Manila, Q332): a recheck still pending from before the
+// upgrade takes nothing back, and its flag goes (Codex review of #840).
+test('the learned mark silent: a recheck pending from before takes no achievement back', () => {
+  const a = ach({_v: 2, met10: 10, learn1: 20}, true);
+  assert.strictEqual(a.achRecheck().length, 0);
+  assert.strictEqual(a.rec().learn1, 20, 'kept');
+  assert.ok(!a.ctx.store.get('reefid-mx-lost', {}).ach, 'the pending recheck dropped');
+});
+
+test('the learned mark silent: a card due from before goes to told unseen', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'progress.js'), 'utf8'),
+    block = cut(src, 'function mxLostNotice() {', '// The announcement card of a rules version'),
+    saved = {'reefid-mx-lost': JSON.stringify({due: {Acropora: 123}, told: {Porites: 7}, why: {Acropora: 'bkt'}})},
+    shown = [],
+    ctx = {
+      MXL: {KEY: 'reefid-mx-lost', QUIET: true},
+      noticeStop: () => {},
+      noticeLater: () => false,
+      cardShow: o => shown.push(o),
+      store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))}
+    };
+  vm.createContext(ctx);
+  vm.runInContext('let mxLostT = 0;\n' + block + '\nthis.go = mxLostNotice;', ctx);
+  ctx.go();
+  assert.deepStrictEqual(shown, [], 'no card');
+  const M = ctx.store.get('reefid-mx-lost', {});
+  assert.deepStrictEqual([M.due, M.told], [{}, {Porites: 7, Acropora: 123}]);
 });
 
 // progress.js achMigrate and achPending (ACH_V 3, Pierre 2026-11-08: "recalculer ... leur succès actuel"), on the real

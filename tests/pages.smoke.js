@@ -229,12 +229,21 @@ async function overlays(b, base) {
       ['feature', () => (store.set(RECALC.KEY, RECALC.L[RECALC.L.length - 2].id), recalcNotice())],
       ['account', () => signinNudge(false, false)],
       ['apology', () => cardShow({kind: 'apology', kick: 'Sorry', title: 'Smoke', body: '<p>t</p>', primary: {text: 'Thanks'}, esc: 1})],
-      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD), the
-      // apology of rules version 9 (core.js RV_SORRY), and the learned mark taken away (progress.js mxLostNotice), through
-      // their real callers.
-      ['update', () => (store.set('reefid-rv-msg', {due: [RV - 1], told: [], pct: {[RV - 1]: [50, 42]}}), rvNotice())],
-      ['apology', () => (store.set('reefid-rv-msg', {due: [RV], told: [], pct: {[RV]: [50, 42]}}), rvNotice())],
-      ['update', () => (store.set(MXL.KEY, {due: {Acropora: 1}}), mxLostNotice())],
+      // The recalculation card of a rules version, with its % before and after (progress.js rvNotice, core.js RV_CARD: rules
+      // version 8's; from rules version 10 a recalculation has no card, Q330) and the apology of rules version 9 (core.js
+      // RV_SORRY), through their real caller (the learned mark's card is silent for now: model.js MXL.QUIET, Q332).
+      ['update', () => (store.set('reefid-rv-msg', {due: [8], told: [], pct: {8: [50, 42]}}), rvNotice())],
+      [
+        'apology',
+        () => (
+          store.set('reefid-rv-msg', {
+            due: [RVS.find(x => x.msg === RV_SORRY).v],
+            told: [],
+            pct: {[RVS.find(x => x.msg === RV_SORRY).v]: [50, 42]}
+          }),
+          rvNotice()
+        )
+      ],
       ['feedback', () => pulseAsk()]
     ];
     for (let i = 0; i < CASES.length; i++) {
@@ -2025,18 +2034,20 @@ async function replayAdoptCheck(base) {
         localStorage.removeItem('reefid-rv-msg');
         return d;
       }, v);
-    const due = await card(C.RV - 1);
+    // Rules version 9's, the apology (core.js RV_SORRY); every other version has the standard card (RV_CARD).
+    const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v;
+    const due = await card(SV - 1);
     // Every version before the apology has the standard card (RV_CARD): it is due once, for the last of them (core.js rvMsgs).
-    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(C.RV - 1) || !due[2][1].includes('went from 10% to 5%'))
+    if (due[0][0].length || due[1][0].length || due[2][0].join() !== String(SV - 1) || !due[2][1].includes('went from 10% to 5%'))
       fails.push(`replay: the card's 5-point rule: ${JSON.stringify(due)}`);
     // Rules version 9's apology (core.js RV_SORRY, min 1): due from a point, alone in the jump, with the two %.
     // Only on a drop (RV_SORRY down): 10% → 14% gets no card (a rise under the standard card's 5 points), 10% → 5% the
     // apology.
-    const sorry = await card(C.RV);
+    const sorry = await card(SV);
     if (
       sorry[0][0].length ||
       sorry[1][0].length ||
-      sorry[2][0].join() !== String(C.RV) ||
+      sorry[2][0].join() !== String(SV) ||
       !sorry[2][1].includes('Your progress: 10% → 5%') ||
       !sorry[2][1].startsWith("You've been learning so fast")
     )
@@ -2074,11 +2085,13 @@ async function replayAdoptCheck(base) {
     if (!last || Math.abs(JSON.parse(last.data).Acropora.pg - all.Acropora.pg) > 1e-9)
       fails.push('replay: the adopted progress was not sent');
     if (s.pending) fails.push('replay: its own answer was not sent');
-    // The card of the last version (rules version 9's apology, core.js RV_SORRY) is due only when the replay moved the
-    // progress % by its min points or more, and says the two % (it may wait behind the learned-mark card).
-    const [pf, pt] = (s.rvm.pct || {})[C.RV] || [];
+    // The card of the jump from version 0 (rules version 9's apology, core.js RV_SORRY, alone in it: it says more) is due
+    // only when the replay moved the progress % down by its min points or more, and says the two % (it may wait behind
+    // the learned-mark card).
+    const SV = C.RVS.find(x => x.msg === C.RV_SORRY).v,
+      [pf, pt] = (s.rvm.pct || {})[SV] || [];
     if (
-      (s.rvm.due || []).includes(C.RV) !== (pf !== undefined && pf - pt >= C.RVS[C.RVS.length - 1].msg.min) ||
+      (s.rvm.due || []).includes(SV) !== (pf !== undefined && pf - pt >= C.RV_SORRY.min) ||
       (s.card && !s.text.includes(`${pf}% → ${pt}%`))
     )
       fails.push(`replay: the recalculation card: ${JSON.stringify({card: s.card, text: s.text, rvm: s.rvm})}`);
@@ -2280,8 +2293,7 @@ async function noticesAfterSync(base) {
     if (await p.evaluate(() => window.CARDS_SAID)) fails.push('notices: start-up said its cards were settled before the sync');
     await p.waitForSelector('.unlock.recalc', {timeout: 15000}).catch(() => fails.push('notices: the new update note never showed'));
     await p.click('.unlock.recalc .next').catch(() => {});
-    await p.waitForSelector('.unlock.mxlost', {timeout: 8000}).catch(() => fails.push("notices: the learned mark's card never showed"));
-    await p.click('.unlock.mxlost .next').catch(() => {});
+    // The learned mark's card due from before: dropped unseen (model.js MXL.QUIET; Pierre, 2026-11-09 ~15:40 Manila, Q332).
     await p.waitForSelector('.achpop', {timeout: 8000}).catch(() => fails.push("notices: the run's achievement never popped up"));
     await p
       .waitForFunction(
@@ -2295,10 +2307,9 @@ async function noticesAfterSync(base) {
         .filter(x => x.post && x.told)
         .pop()
     );
-    if (!sent || !sent.told.includes('recalc:' + last) || !sent.told.includes('mx:Acropora@111'))
-      fails.push(`notices: the save did not tell the account: ${JSON.stringify(sent)}`);
+    if (!sent || !sent.told.includes('recalc:' + last)) fails.push(`notices: the save did not tell the account: ${JSON.stringify(sent)}`);
     const s = await shown(p);
-    if (s.filter(x => x === 'recalc').length !== 1 || s.filter(x => x === 'mxlost').length !== 1)
+    if (s.filter(x => x === 'recalc').length !== 1 || s.includes('mxlost'))
       fails.push(`notices: not shown once each: ${JSON.stringify(s)}`);
     // The next load: the sheet's copy (as this device saved it) has them all told.
     await p.evaluate(() => {

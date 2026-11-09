@@ -741,8 +741,10 @@ function cnShow(s, asked) {
 // The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
 // typeNormAll: [{k, g: the species id, old, alt}], each listed name and its recorded spellings (old: the spelling typed,
 // alt: 1), nothing else: no other name the references give, no short form without "fish" (fishTypeNames' drop is the
-// families'). A name two species list names both (typeMatchIn near: "which one?").
-function cnTypeNames(L) {
+// families'). A name two species list names both (typeMatchIn shared: right for each of them, Q319).
+// vn (fish.json vn, the name index's kind words: razorfish, toby): known names that are no species' own, read as such
+// ({known}: "a name some fish species go by", the nudge), never as a slip of a species' name (Pierre, 2026-11-09, Q319).
+function cnTypeNames(L, vn) {
   const out = [];
   (L || []).forEach(s =>
     ((s && s.cn) || []).forEach(n =>
@@ -752,6 +754,10 @@ function cnTypeNames(L) {
       })
     )
   );
+  (vn || []).forEach(([x]) => {
+    const k = typeNormAll(x);
+    if (k.length >= 3 && !out.some(o => o.k === k)) out.push({k, g: '', old: x, alt: 1, known: 1, w: 1});
+  });
   return out;
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
@@ -1837,7 +1843,15 @@ const UNITS = {
         }
       return null;
     },
-    names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop),
+    // The typed names: the entries' (core.js fishTypeNames) and the name index (fishNameIndex: the names of their genera
+    // and species and the kind words, fish.json vn, with Pierre's exceptions, curation.json fish.names), each read as
+    // the family it lifts to (Q319, Q320), a known word as such, never as a slip of another name.
+    names: () =>
+      fishTypeNames(
+        FISH ? FISH.gen : {},
+        SUBJ.typeDrop,
+        FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []
+      ),
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
@@ -1890,6 +1904,9 @@ const UNITS = {
         units: () =>
           FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid(), !!Q.sciH).units : [],
         auto: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, imrSaid()).auto : []),
+        // Families met first (Pierre, 2026-11-09, Q208 A): no genus card while a family in play is still not met (setLater,
+        // model.js openPick); its auto units, the set turned on by hand early (Q240) and Open all are exempt.
+        after: 1,
         due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
         // rv: the rules a choice is made under (Q.sciV, synced with the choice): 1 since the offer moved back to Advanced
         // (2026-11-08). A player who turned them on before (Q.sci true, no sciV) gets the back card once (quiz.js
@@ -1934,6 +1951,14 @@ if (Q.bon === undefined && Q.bu > 1) {
 // The units of the opt-in sets the player has on, and those a set brings without asking (its auto: an IMR player's IMR
 // genera), each once.
 const bonusList = () => [...new Set(SETS().flatMap(S => [...(Q[S.k] ? S.units() : []), ...(S.auto ? S.auto() : [])]))];
+// A unit of a set that opens after the slate (its after; Pierre, 2026-11-09, Q208 A: the fish scientific genera once the
+// offer is accepted), so it waits while a slate unit in play is still to open (model.js openPick), unless its set brings it
+// by itself (auto: an IMR player's IMR genera, Q219) or the player turned the set on by hand before it was due (Q[k + 'H'],
+// Q240). Open all is model.js's (openedAll).
+const setLater = n => {
+  const S = setOf(n);
+  return !!(S && S.after) && !Q[S.k + 'H'] && !(S.auto && S.auto().includes(n));
+};
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 opened by itself, 2026-11-06 to 2026-11-07, keep it: Pierre,
 // 2026-11-07). A unit of a part that is off never opens (model.js mayOpen); one already open stays open.
