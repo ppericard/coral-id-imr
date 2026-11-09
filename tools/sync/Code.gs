@@ -3510,7 +3510,13 @@ const CORE_ = (function () { const module = {exports: {}};
       .forEach(e =>
         [e.x, ...(['ss', 'gs'].includes(e.vr) ? [] : typeForms(e.x))].forEach(y => {
           const k = typeNormAll(y);
-          if (k.length < 3 || seen.has(k + '|' + e.g)) return;
+          if (k.length < 3) return;
+          if (seen.has(k + '|' + e.g)) {
+            // already a name of that unit (Tang, Chromis): Pierre's "often" still applies to it (Codex review #834)
+            const o = e.oft && out.find(x => x.k === k && x.g === e.g);
+            if (o && !o.oft) o.oft = e.oft;
+            return;
+          }
           seen.add(k + '|' + e.g);
           have.add(k);
           out.push({k, g: e.g, old: y, alt: 1, vr: e.vr, ...(e.n ? {n: e.n, of: e.of} : {}), ...(e.oft ? {oft: e.oft} : {})});
