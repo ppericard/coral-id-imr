@@ -17,13 +17,11 @@ Main: sheet script **v126**. On 11-09 Pierre asked to close the open PRs one by 
 PRs from `main` only, no two open PRs on one sensitive file, two Codex rounds then cut the scope, simulations capped at
 what is read, one train at a time, ambiguous asks asked back, structural problems found and decided by the agents).
 
-- **#840** trust the log (its new rule; Q330, Q332): round 2 found 3 more on the checkpoint shift, so cut (W27): units,
-  bars and % follow the log; the level's "answers so far" keeps main's rule, its follow-up on `claude/level-count-from-log`
-  (tell Pierre: P8's total still reads 170 until then). Then `--assign` v127 and train; the leaderboard follows within
-  ~15 min of the sheet update (rule D8). After it is live: read Progress data rows 9 and 10 once each has synced (unit
-  counts as the log); if not, correct those two by hand (Q322 a). No card for anyone (Q330, Q332).
-- **#839** other-species split (Q323; P3 wording Q336 OK): green, Codex asked again; after #840, merge `main`,
-  `sync_core --fix`, then `--assign`.
+- **#840** trust the log (v127) and **#839** other-species split (v128, P3 Q336) merged on 11-09 evening: **no PR open**.
+  #840 was cut by W27 (the level's "answers so far" keeps main's rule, follow-up `claude/level-count-from-log`; P8's
+  total still reads 170 until then) and its level made one rule (every progress field from the log, only the count the
+  larger). To check: Progress data rows 9 and 10 once each has synced (unit counts as the log; else correct by hand, Q322
+  a); the leaderboard recalculated (rule D8).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (the sealing cut out of #798, Q334; its design note
   `docs/reviews/2026-11-09-admin-signout-seal.md` recommends one IndexedDB store with every draft write in one
   transaction, invisible to Pierre); `/home/user/find-the-x` (Find the X, uncommitted, paused); `claude/load-order-b`
@@ -32,7 +30,7 @@ what is read, one train at a time, ambiguous asks asked back, structural problem
 ## Next
 
 Pierre's quota is spent: no agent tonight or on 11-10; the next integrator (another account) starts 11-11 morning,
-first INTEGRATOR.md "Handover of 2026-11-09 evening", then #840 and #839 through the queue. Then, one at a time:
+first INTEGRATOR.md "Handover of 2026-11-09 evening" (no PR open). Then, one at a time:
 
 1. **The opening burst** (Pierre ~16:40, several players, P11 on corals now): a mid player with few genera answers
    everything right, the engine opens many genera in a row and the success rate collapses for a while. Read-only on the
@@ -94,5 +92,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 2026-11-09 ~17:10 Manila, integrator, end of day: the open PRs closed one by one (49 merged); Pierre stopped new topics,
 found the day's cost too high for the result (#798's six Codex rounds, a dozen agents, a three-hour simulation,
-misread asks built twice): rule W27; his quota at 5%, a new integrator from 11-11. Mid-flight: #840 (the W27 cut, its
-last Codex check), #839 (after #840).
+misread asks built twice): rule W27; his quota at 5%, a new integrator from 11-11. Then #840 and #839 merged: no
+PR open.
