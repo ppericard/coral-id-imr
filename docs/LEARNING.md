@@ -3545,7 +3545,7 @@ adopts it from `REPLAYS_SHEET` only, with the floor, its own rules version, no c
 and the refused-save flag). Not adopted yet by a device that never signed in (the sheet can serve it, `sreset`,
 `sstart`; ROADMAP).
 
-### The log, the only reference for progress (2026-11-09, Q322, Q330; rules version 10, fish rules version 2, sheet vNEXT)
+### The log, the only reference for progress (2026-11-09, Q322, Q330; rules version 10, fish rules version 2, sheet v127)
 
 Pierre, 2026-11-09 (Q322, Q330; rule D9): the answer log is the reference for progress, trust it rather than the device.
 Found with the lost-reply double count (#824): a device could hold some answers twice, and the replay kept the device's
@@ -4161,7 +4161,7 @@ ROADMAP "Photo memory that fades with time".
     sheet v62): one surprise counted once ("One surprise, counted once"). v8 (2026-11-06, sheet v77): per-format
     offsets ("Per-format offsets"). v9 (2026-11-06, sheet v87): the domain-score bar ("The domain-score bar"), the genus
     offsets `gd` of `stats_` given to the replay for the rows logged without them; its card is the apology (the
-    Notes key `card.rv8.ps`, named before the renumbering). v10 (2026-11-09, sheet vNEXT; fish rules version 2): the
+    Notes key `card.rv8.ps`, named before the renumbering). v10 (2026-11-09, sheet v127; fish rules version 2): the
     log the only reference, no floor, no card ("The log, the only reference for progress" below). A device that skips several versions sees the standard card once, at the
     last of them, with its progress before and after the whole jump (`core.js` `rvMsgs`).
   - **The sheet replays, by itself** (`Code.gs` `replay_`, sheet v28): `core.js` is embedded in `Code.gs` (between

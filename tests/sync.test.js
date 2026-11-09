@@ -2253,7 +2253,7 @@ test('sheet replays per subject: the fish replay is the log alone, not floored a
   assert.deepStrictEqual(r.replays.fish.rec, raw, "the log's replay, the saved bars not in it");
   const T = s.sheets['Replayed Fish'];
   assert.deepStrictEqual(JSON.parse(T.rows[1].slice(5).join('')), raw, 'kept as the record alone');
-  // A record kept as {P, F} (a floored one, before vNEXT) for today's rules, rows and reset: read as its P.
+  // A record kept as {P, F} (a floored one, before v127) for today's rules, rows and reset: read as its P.
   T.rows[1].splice(5, T.rows[1].length - 5, JSON.stringify({P: raw, F: high}));
   const r2 = s.post({name: 'Ana', pin: '1234', data, summary: {}, answers: [], rvs: {fish: 0}});
   assert.deepStrictEqual(r2.replays.fish.rec, raw);
