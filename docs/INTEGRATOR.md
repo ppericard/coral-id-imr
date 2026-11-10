@@ -136,8 +136,9 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   PR at its tested head, then compares `main`'s tree with the train's. Red: nothing merged; read the failing job, leave
   out the PR it points to (or fix it), build a new train; never re-run (rule W23). It stops before a merge if `main`
   moved (a Publish, Candidate photos): the PRs left go in a new train. Exit 2 = `main`'s tree differs from the train's:
-  dispatch Checks and Smokes on `main` and fix forward. Train branches stay on GitHub (agents cannot delete branches);
-  `tools/brief.py` does not list them. One PR alone: merge it as before, a train of one saves nothing. The merges land
+  dispatch Checks and Smokes on `main` and fix forward. Train branches stay on GitHub until the weekly "Clean branches and
+  Actions" run deletes them after two days (agents cannot delete branches; docs/HANDOVER.md); `tools/brief.py` does not
+  list them. One PR alone: merge it as before, a train of one saves nothing. The merges land
   seconds apart: Deploy Pages cancels all but the last run (its concurrency group), so check that last one; a Code.gs
   PR in the train goes live on the sheet at the next self-update, as after any merge (rule D4).
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
@@ -186,8 +187,9 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   7. the new bar's **live confirmation** (seeds 61-90) and its **τ baseline**, held until after the fish rush;
   8. #641's confusion-group questions a-j and #651's 5 choices for Pierre (not numbered yet).
 - **Pierre's hands** (STATUS): covers for the 11 fish families with no reference-level photo, the 8 unsure candidates
-  left in the admin, the expert analyses' photos to check, the rewrite's follow-ups (the R2 crops, deleting his backup
-  when he says so; no GitHub Support purge, his choice), the old branches to delete.
+  left in the admin, the expert analyses' photos to check, the rewrite's follow-up (deleting his backup when he says so;
+  no GitHub Support purge, his choice). The R2 crops are gone (2026-11-09); old branches go through the "Clean branches
+  and Actions" workflow (docs/HANDOVER.md).
 - **Local clutter**: the ~70 worktrees of the old clone (`/home/user/coral-id-imr-OLD-HISTORY` and its
   `.claude/worktrees/`, `/home/user/coral-*`, `wt-*`) are all from before the rewrite: never push from them. Almost all
   are of merged PRs; `judge`, `learnsim-field` and `progcov` hold only untracked tmp sim scripts.

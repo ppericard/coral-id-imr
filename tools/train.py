@@ -16,7 +16,8 @@ In order (GitHub through `gh api`, GET and PUT only; git pushes one new branch, 
    of tools/sheet_version.py: no code from a PR's head runs on the integrator's machine.
 3. --dry-run stops here and says what it would do.
 4. Pushes the train as a new branch train/<UTC time> and waits for the Checks and Smokes workflows on it (their
-   `push: train/*` trigger). Red: nothing is merged; it names the failing jobs (never re-run them, rule W23).
+   `push: train/*` trigger). Red: nothing is merged; it names the failing jobs (never re-run them, rule W23). The
+   branch stays; the weekly "Clean branches and Actions" workflow (.github/workflows/clean.yml) deletes it after two days.
 5. Green: squash-merges each PR through the API in order, at the head the train tested, titled "<title> (#N)". Before
    each merge main must be where the train left it (its base, then the previous merge): if a Publish, an Action or
    another merge landed meanwhile, it stops, and the PRs not merged yet go in a new train.
