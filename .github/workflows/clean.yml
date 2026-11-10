@@ -15,7 +15,8 @@ name: Clean branches and Actions
 # is kept.
 #
 # Actions. A workflow whose file is no longer on main (a debug workflow pushed from a branch, a one-off since removed)
-# stays in the Actions list as long as it has runs: its runs are deleted, and it leaves the list. Workflows GitHub runs
+# stays in the Actions list as long as it has runs: its finished runs are deleted, and it leaves the list. A run from a
+# branch with an open pull request is kept (a pull request adding a workflow keeps its checks). Workflows GitHub runs
 # itself (Pages, Dependabot, CodeQL, Copilot) are never touched.
 on:
   schedule:
@@ -108,12 +109,18 @@ jobs:
           default=$(gh api "repos/$REPO" -q .default_branch)
           # The files on main, not this checkout: a run by hand may come from another branch.
           gh api "repos/$REPO/contents/.github/workflows?ref=$default" -q '.[].path' > onmain.txt
+          # prs.tsv: written by the step above (same workspace). A branch with an open pull request keeps its runs. The awk
+          # below tells the files apart by name, not NR==FNR: with no pull request open, openprs.txt is empty.
+          awk -F'\t' '$2=="open" {print $1}' prs.tsv > openprs.txt
           gh api "repos/$REPO/actions/workflows?per_page=100" --paginate -q '.workflows[] | [(.id|tostring), .path, .name] | @tsv' > wf.tsv
           gone=0; deleted=0; failed=0
           while IFS=$'\t' read -r id path name; do
             case "$path" in .github/workflows/*) ;; *) continue ;; esac  # dynamic/...: GitHub's own
             grep -qxF "$path" onmain.txt && continue
-            runs=$(gh api "repos/$REPO/actions/workflows/$id/runs?per_page=100" --paginate -q '.workflow_runs[].id')
+            # Finished runs only (a running one cannot be deleted), and none from a branch with an open pull request.
+            runs=$(gh api "repos/$REPO/actions/workflows/$id/runs?status=completed&per_page=100" --paginate \
+              -q '.workflow_runs[] | [(.id|tostring), .head_branch] | @tsv' \
+              | awk -F'\t' 'FILENAME=="openprs.txt" {open[$1]=1; next} !($2 in open) {print $1}' openprs.txt -)
             n=$(printf '%s' "$runs" | grep -c . || true)
             [ "$n" -eq 0 ] && continue
             gone=$((gone+1))

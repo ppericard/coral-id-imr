@@ -360,7 +360,8 @@ equal the train's, and the train stops if a Publish, an Action or another merge 
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
 `Code.gs` rides a train only once its `VERSION` is assigned on its branch (rule D3), one such PR per train (two would
 conflict on the header line). Any other new head (a fix, a catch-up merge of `main`, the `VERSION` assign) waits for
-Codex as always. A train branch gets no PR (rule W6 skips it); `tools/train.py` sends only GET and PUT to GitHub and
+Codex as always. A train branch gets no PR (rule W6 skips it; the weekly "Clean branches and Actions" workflow deletes it after two
+days, docs/HANDOVER.md); `tools/train.py` sends only GET and PUT to GitHub and
 never force-pushes.
 *Why:* each merge left the other ready PRs behind, and each catch-up cost a CI run and a Codex wait, about 4 min per PR
 in a burst. *Source:* Pierre, 2026-11-08 (Q305).
