@@ -51,7 +51,7 @@ mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes in
 
 - **Q230** out-of-zone taxon-page photos: waits for real arguments.
 - **Not numbered, from before**: **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124**; apply the **152 curated
-  tag and ease proposals** (`judging/fish-light-q308.json`)? The **R2 crop workflow**: done? **Eel-tailed catfishes**
+  tag and ease proposals** (`judging/fish-light-q308.json`)? **Eel-tailed catfishes**
   (parked below): what he wants from it. `PFMT` (per-format offsets) also leaks the corals' values to fish (#805).
 - Answered 11-09: Q314 Codex limit lifted; Q315-Q317, Q136 (LEARNING.md); Q318 net z (#808); Q319, Q320, Q331, Q333
   strict typed names (#834: a name counts only if it designates the photo's own taxon; a right genus or species name
@@ -66,10 +66,7 @@ Last question number: Q336
 
 Actions only Pierre can do.
 
-- **Delete the branch `claude/q208-probe-declined`** (a one-line probe for #822's measurement; the classifier refused
-  the delete).
-- **Drop the Coral Finder crops from R2** (Actions > "Drop the book crops from R2", dry run first); **delete his
-  rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
+- **Delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
 - From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
   morning report scheduled task from claude.ai; the 8 unsure fish candidates and the expert analyses' photos (11-06);
   genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for

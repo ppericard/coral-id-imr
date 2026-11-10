@@ -1,0 +1,128 @@
+name: Clean branches and Actions
+# Pierre, 2026-11-11: leftover branches and finished workflows crowd the repository. Agents cannot delete a branch or
+# a workflow run from their sessions (the GitHub proxy refuses), so this workflow does it with the repository's token.
+# Weekly on its own, and by hand (Actions > Clean branches and Actions > Run workflow; "dry_run" ticked by default).
+#
+# Branches. Deleted:
+#   - a branch whose pull request was MERGED and that still points at that pull request's last commit (nothing pushed
+#     after the merge); a deleted one can be restored from its pull request page ("Restore branch");
+#   - a merge-train branch (train/*, tools/train.py, rule W26) whose last commit is more than two days old: its pull
+#     requests were squash-merged, and a train never has a pull request of its own, so GitHub's "Automatically delete
+#     head branches" never removes it;
+#   - by hand only, the branches named in "also_delete" (Pierre's go for each, AGENTS.md: destructive is asked first).
+# Always kept: main, a branch with an open pull request, the KEEP list below, and everything else (listed in the run's
+# log for a human). A deletion is a `git push --force-with-lease` on the SHA checked, so a branch that moved meanwhile
+# is kept.
+#
+# Actions. A workflow whose file is no longer on main (a debug workflow pushed from a branch, a one-off since removed)
+# stays in the Actions list as long as it has runs: its runs are deleted, and it leaves the list. Workflows GitHub runs
+# itself (Pages, Dependabot, CodeQL, Copilot) are never touched.
+on:
+  schedule:
+    - cron: '37 18 * * 0'  # Sundays 18:37 UTC, Monday 02:37 Manila
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only list what would be deleted'
+        type: boolean
+        default: true
+      also_delete:
+        description: 'More branches to delete, separated by spaces (only those Pierre agreed to)'
+        type: string
+        default: ''
+permissions:
+  contents: write
+  pull-requests: read
+  actions: write
+concurrency:
+  group: clean
+  cancel-in-progress: false
+jobs:
+  clean:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - name: Delete leftover branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          # The schedule deletes; a run by hand only lists unless "dry_run" is unticked.
+          DRY: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          ALSO: ${{ inputs.also_delete }}
+          # Work kept on purpose (Pierre, 2026-11-11). Remove a name here once its work is merged or dropped.
+          KEEP: claude/admin-signout-seal claude/level-count-from-log claude/fish-todo-wip claude/photo-genus-ability claude/time-weighted-steps
+        run: |
+          set -euo pipefail
+          gh api "repos/$REPO/pulls?state=all&per_page=100" --paginate \
+            -q '.[] | [.head.ref, .state, (.merged_at // ""), .head.sha, (.number|tostring)] | @tsv' > prs.tsv
+          gh api "repos/$REPO/branches?per_page=100" --paginate -q '.[] | [.name, .commit.sha] | @tsv' > heads.tsv
+          default=$(gh api "repos/$REPO" -q .default_branch)
+          also=" $(printf '%s' "$ALSO" | tr ',\n\t' '   ') "
+          keep=" $KEEP "
+          cutoff=$(date -u -d '2 days ago' +%s)
+          deleted=0; kept=0; failed=0
+          while IFS=$'\t' read -r name sha; do
+            [ "$name" = "$default" ] && continue
+            open=$(awk -F'\t' -v b="$name" '$1==b && $2=="open"' prs.tsv | wc -l)
+            merged_here=$(awk -F'\t' -v b="$name" -v s="$sha" '$1==b && $3!="" && $4==s' prs.tsv | wc -l)
+            why=''; reason=''
+            if [[ "$keep" == *" $name "* ]]; then why='keep list'
+            elif [ "$open" -gt 0 ]; then why='open pull request'
+            elif [ "$merged_here" -gt 0 ]; then reason='merged'
+            elif [[ "$also" == *" $name "* ]]; then reason='asked'
+            elif [[ "$name" == train/* ]]; then
+              when=$(gh api "repos/$REPO/commits/$sha" -q .commit.committer.date)
+              if [ "$(date -u -d "$when" +%s)" -lt "$cutoff" ]; then reason='merge train'; else why='merge train of the last two days'; fi
+            else
+              any=$(awk -F'\t' -v b="$name" '$1==b' prs.tsv | wc -l)
+              if [ "$any" -eq 0 ]; then why='NO pull request'; else why='commits after the merge, or closed unmerged'; fi
+            fi
+            if [ -z "$reason" ]; then echo "kept ($why): $name"; kept=$((kept+1)); continue; fi
+            if [ "$DRY" = "true" ]; then echo "would delete ($reason): $name"; deleted=$((deleted+1)); continue; fi
+            # Atomic: the push deletes the branch only if it still points at the SHA listed above (Codex review #435).
+            if out=$(git push --porcelain --force-with-lease="refs/heads/$name:$sha" origin ":refs/heads/$name" 2>&1); then
+              echo "deleted ($reason): $name"; deleted=$((deleted+1))
+            elif printf '%s' "$out" | grep -q 'stale info'; then
+              echo "kept (moved since the listing): $name"; kept=$((kept+1))
+            else
+              echo "::error::not deleted: $name: $(printf '%s' "$out" | grep -m1 -iE 'rejected|error|remote:' || printf '%s' "$out" | tail -1)"; failed=$((failed+1))
+            fi
+          done < heads.tsv
+          # A name in also_delete that is not a branch (a typo, already gone) is said, never silently skipped.
+          for n in $also; do
+            awk -F'\t' -v b="$n" '$1==b {f=1} END {exit !f}' heads.tsv || echo "::warning::also_delete: no branch named $n"
+          done
+          echo "::notice::branches: $([ "$DRY" = "true" ] && echo 'would delete' || echo 'deleted') $deleted, kept $kept, failed $failed"
+          # A refused deletion (protected branch, permissions) fails the run, so it is never reported as done.
+          [ "$failed" -eq 0 ]
+      - name: Delete the runs of workflows no longer on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DRY: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          default=$(gh api "repos/$REPO" -q .default_branch)
+          # The files on main, not this checkout: a run by hand may come from another branch.
+          gh api "repos/$REPO/contents/.github/workflows?ref=$default" -q '.[].path' > onmain.txt
+          gh api "repos/$REPO/actions/workflows?per_page=100" --paginate -q '.workflows[] | [(.id|tostring), .path, .name] | @tsv' > wf.tsv
+          gone=0; deleted=0; failed=0
+          while IFS=$'\t' read -r id path name; do
+            case "$path" in .github/workflows/*) ;; *) continue ;; esac  # dynamic/...: GitHub's own
+            grep -qxF "$path" onmain.txt && continue
+            runs=$(gh api "repos/$REPO/actions/workflows/$id/runs?per_page=100" --paginate -q '.workflow_runs[].id')
+            n=$(printf '%s' "$runs" | grep -c . || true)
+            [ "$n" -eq 0 ] && continue
+            gone=$((gone+1))
+            if [ "$DRY" = "true" ]; then echo "would delete $n run(s) of \"$name\" ($path, no longer on $default)"; continue; fi
+            for r in $runs; do
+              if gh api -X DELETE "repos/$REPO/actions/runs/$r" > /dev/null; then deleted=$((deleted+1))
+              else echo "::error::run $r of \"$name\" not deleted"; failed=$((failed+1)); fi
+            done
+            echo "deleted $n run(s) of \"$name\" ($path)"
+          done < wf.tsv
+          echo "::notice::workflows no longer on $default: $gone; runs deleted $deleted, failed $failed"
+          [ "$failed" -eq 0 ]
