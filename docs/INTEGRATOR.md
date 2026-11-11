@@ -21,6 +21,10 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   before "the name unchanged, 🌱 added on its own"; a "razorfish" sentence was misread as a rename request).
 - **Names**: real names only in the chat, pseudonyms (P1…) in every committed file and PR (rule D2; a slip in this
   STATUS was caught by Codex on #845).
+- **Never push a ref to a pre-rewrite commit** (2026-11-11): a SHA from before 2026-11-08 ~16:20 (no common ancestor
+  with `main`; `tools/brief.py` says so) carries the photos and the 2216 Coral Finder crops the rewrite stripped, so a
+  branch or tag on it brings them back into every clone. Two Lab archives were pushed that way and deleted at once
+  (Clean branches and Actions, `also_delete`). Check `git merge-base main <sha>` before pushing any old SHA.
 - **CI outage is not a red check**: a CodeQL bundle download 504 (GitHub) failed #834 once; say so on the PR, never
   re-run; a merge of `main` (a real new head) re-runs everything.
 - **The integrator's helpers lived in the session scratchpad** (gone with it): a PR state line (head, checks, Codex
@@ -32,8 +36,8 @@ integrator starts on another account from 11-11 morning. What the day taught, no
 - **In flight**: STATUS "Now". Kept on branches without a PR, each with its note: `claude/admin-signout-seal` (the
   seal cut out of #798; `docs/reviews/2026-11-09-admin-signout-seal.md`: one IndexedDB store, every draft write in one
   transaction), `claude/level-count-from-log` (cut out of #840: the "answers so far" count following the log needs
-  checkpoints that are not absolute counts), `claude/analyses-fsrs`, `claude/load-order-b`; uncommitted: Find the X
-  (`/home/user/find-the-x`), load order (d).
+  checkpoints that are not absolute counts), and the three others in STATUS "Now". Lost with the 11-09 session's
+  machine (never pushed): `claude/analyses-fsrs`, `claude/load-order-b`, Find the X's format, load order (d).
 
 ## Working with Pierre
 
@@ -190,6 +194,5 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   left in the admin, the expert analyses' photos to check, the rewrite's follow-up (deleting his backup when he says so;
   no GitHub Support purge, his choice). The R2 crops are gone (2026-11-09); old branches go through the "Clean branches
   and Actions" workflow (docs/HANDOVER.md).
-- **Local clutter**: the ~70 worktrees of the old clone (`/home/user/coral-id-imr-OLD-HISTORY` and its
-  `.claude/worktrees/`, `/home/user/coral-*`, `wt-*`) are all from before the rewrite: never push from them. Almost all
-  are of merged PRs; `judge`, `learnsim-field` and `progcov` hold only untracked tmp sim scripts.
+- **Local clutter**: gone. On 11-11 the old clone's worktrees and branches were deleted and local `main` realigned
+  on GitHub's (Pierre); a clone made before the rewrite still never pushes.
