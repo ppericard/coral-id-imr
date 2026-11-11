@@ -5,44 +5,51 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-09, about 17:10 Manila, by the integrator (Rule 0: the end-of-day protocol). **A new integrator starts
-here, then reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
+Written 2026-11-11, about 10:40 Manila, by the integrator (a new session and account since the morning). **A new
+integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
-Last checked: reports and events: 2026-11-08 ~07:20 Manila (not read on 11-09: first thing tomorrow)
+Last checked: reports and events: 2026-11-11 ~06:50 Manila
 
 ## Now
 
-Main: sheet script **v126**. On 11-09 Pierre asked to close the open PRs one by one before any new topic; 49 PRs merged
-(#769, #793-#844 but #808 and #833, `git log`), and the day's lessons became **rule W27** (#843: at most three agents,
-PRs from `main` only, no two open PRs on one sensitive file, two Codex rounds then cut the scope, simulations capped at
-what is read, one train at a time, ambiguous asks asked back, structural problems found and decided by the agents).
+Main: sheet script **v128** (#840 trust the log v127, #839 other-species split v128, merged 11-09 evening). No PR open
+but this STATUS refresh. In a line: no player report from 11-08 to 11-10; two cards left open (To check).
 
-- **#840** trust the log (v127) and **#839** other-species split (v128, P3 Q336) merged on 11-09 evening: **no PR open**.
-  #840 was cut by W27 (the level's "answers so far" keeps main's rule, follow-up `claude/level-count-from-log`; P8's
-  total still reads 170 until then) and its level made one rule (every progress field from the log, only the count the
-  larger). To check: Progress data rows 9 and 10 once each has synced (unit counts as the log; else correct by hand, Q322
-  a); the leaderboard recalculated (rule D8).
+- **11-11 morning**: local `main` realigned on GitHub's (the pre-rewrite clone dropped, never pushed); GitHub cleaned by
+  the new **Clean branches and Actions** workflow (#847: 103 leftover branches and the ghost workflows' runs deleted;
+  weekly from now on, docs/HANDOVER.md). The two Lab designs STATUS asked to keep as tags (`f46f11c` cards,
+  `dd491b0` fish My progress) are **pre-rewrite commits**: a branch or tag on them puts the 2216 Coral Finder crops back
+  in every clone. Pushed as branches by mistake on 11-11, deleted 15 min later; they stay reachable only by commit URL,
+  as before. Keeping them for good means their Lab files re-committed on today's `main` (Pierre's call).
+- **To check**: Progress data rows 9 and 10 once each has synced (unit counts as the log; else correct by hand, Q322 a);
+  the leaderboard recalculated (rule D8). From the Events tab: an "account" card drawn **empty** (no title, no text) on
+  a new device, build 624, 11-09 11:33 (a possible bug); an "Install the app" card on a device still on build 634 while
+  668 is out (its update path).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (the sealing cut out of #798, Q334; its design note
-  `docs/reviews/2026-11-09-admin-signout-seal.md` recommends one IndexedDB store with every draft write in one
-  transaction, invisible to Pierre); `/home/user/find-the-x` (Find the X, uncommitted, paused); `claude/load-order-b`
-  and the uncommitted load-order (d) (worktrees under `.claude/worktrees/`); `claude/analyses-fsrs` (AV 14, local).
+  `docs/reviews/2026-11-09-admin-signout-seal.md`: one IndexedDB store, every draft write in one transaction);
+  `claude/level-count-from-log` (cut out of #840: P8's total still reads 170 until then); `claude/fish-todo-wip`;
+  `claude/photo-genus-ability` (#637); `claude/time-weighted-steps` (#808's work, closed unmerged, Q335).
+- **Lost with the previous session's machine** (never pushed): `claude/analyses-fsrs` (AV 14), `claude/load-order-b`
+  and load order (d) (ROADMAP "Load order, further steps"), the first build of Find the X's format. Rebuilt from their
+  ROADMAP rows when the backlog reaches them.
 
 ## Next
 
-Pierre's quota is spent: no agent tonight or on 11-10; the next integrator (another account) starts 11-11 morning,
-first INTEGRATOR.md "Handover of 2026-11-09 evening" (no PR open). Then, one at a time:
+One at a time (rule W27):
 
-1. **The opening burst** (Pierre ~16:40, several players, P11 on corals now): a mid player with few genera answers
+1. **The opening burst** (Pierre 11-09 ~16:40, several players, P11 on corals): a mid player with few genera answers
    everything right, the engine opens many genera in a row and the success rate collapses for a while. Read-only on the
    real log first (who, how often, how deep, how long), then 2-3 ways to soften it without slowing experts, each with
-   its benefits and risks, checked in short simulations. To Pierre in the morning report.
-2. **Faster learning checks** (W27): tier 2 as a parallel matrix (profile × arm) and answers capped at what is read;
+   its benefits and risks, checked in short simulations.
+2. **The empty "account" card** (Now, To check), then rows 9-10 and the leaderboard.
+3. **Faster learning checks** (W27): tier 2 as a parallel matrix (profile × arm) and answers capped at what is read;
    target under 30 min (Q208's look 2 took 37 s; its full heavy-tail run 3 h).
-3. Docs: #822's heavy-tail table and look 2 into LEARNING.md; INTEGRATOR: Rule 0's reading (16:30-17:30 opens nothing
+4. Docs: #822's heavy-tail table and look 2 into LEARNING.md; INTEGRATOR: Rule 0's reading (16:30-17:30 opens nothing
    new, questions that close a topic under way are fine).
-4. Then ROADMAP "Backlog in priority order": the Matrix plan (#826 tiles done, Find the X paused, then Matrix), Q208 C
-   if the data justify it (#822's measure: accepting the scientific names delays every family at Advanced by 2,300-3,300
-   answers), the load-order (b) and (d) PRs, the seal rebuild.
+5. Then ROADMAP "Backlog in priority order": the Matrix plan (#826 tiles done; Find the X's format, then Matrix), Q208
+   C if the data justify it (#822: accepting the scientific names delays every family at Advanced by 2,300-3,300
+   answers), load order (b) and (d) rebuilt, the seal rebuild. Deadline: the domain and repository rename before
+   December 2026 (ROADMAP).
 
 ## Questions for Pierre
 
@@ -72,8 +79,7 @@ Actions only Pierre can do.
   genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for
   the 11 fish entries with no reference-level photo.
 - **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know (links: `git show 4c8251a:docs/STATUS.md`).
-- **Protect `main`**, **clean merged branches** (HANDOVER); archive tags `f46f11c`, `dd491b0`, then delete
-  `claude/admiring-ramanujan-nw3mxr-cards`, `…-fishprog`, `…-calib-study`.
+- **Protect `main`**. Never a tag on `f46f11c` or `dd491b0` (pre-rewrite: the crops would come back; Now).
 - Renew the admin GitHub token before late January 2027; say his Lab Keep / Trim votes; look for the IMR benthic deck.
 
 ## Parked after hours
@@ -87,7 +93,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-09 ~17:10 Manila, integrator, end of day: the open PRs closed one by one (49 merged); Pierre stopped new topics,
-found the day's cost too high for the result (#798's six Codex rounds, a dozen agents, a three-hour simulation,
-misread asks built twice): rule W27; his quota at 5%, a new integrator from 11-11. Then #840 and #839 merged: no
-PR open.
+2026-11-09 ~17:10 Manila, integrator, end of day: the open PRs closed one by one (49 merged), rule W27, then #840 and
+#839 merged. 11-11 morning (new integrator): the catch-up, GitHub's branches and Actions cleaned (#847), this refresh.
