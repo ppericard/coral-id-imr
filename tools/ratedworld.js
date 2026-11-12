@@ -34,7 +34,8 @@
 // photos alone, with no choices.
 //
 // Each run writes what learnsim's runs hold for tools/learncmp.js: rows at the checkpoints (dStar, knowSlate, met,
-// right, prog, f {gs, ds}, kinds, score, plateau), owAt, advAt, kinds, c3, expo, preOW, knows; the file says world 'rated'.
+// right, prog, f {gs, ds}, kinds, score, plateau, level: the global level P['~level'].th), owAt, advAt, kinds, c3, expo,
+// preOW, knows, and lv, the global level every LV_EVERY answers; the file says world 'rated'.
 const fs = require('fs'),
   path = require('path'),
   vm = require('vm');
@@ -58,6 +59,8 @@ const RATED = {
   // against the genus ability (0.370 with today's rating against the level: the sensitivity variant, --coralsd 0.37).
   CORAL_GD: 0.286
 };
+// The global level's trace (lv): one value every LV_EVERY answers.
+const LV_EVERY = 25;
 
 // Seeded generators: mulberry32 and Box-Muller.
 const gen = a => () => {
@@ -365,7 +368,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     owAt = {},
     advAt = {},
     c3 = {offer: null, met: null},
-    plat = {best: 0, since: 0, max: 0};
+    plat = {best: 0, since: 0, max: 0},
+    lv = [];
   let rights = 0,
     blk = {n: 0, ok: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
@@ -474,6 +478,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     const sp = shown();
     if (sp > plat.best) ((plat.best = sp), (plat.since = 0));
     else plat.max = Math.max(plat.max, ++plat.since);
+    // The global level (P['~level'].th) every LV_EVERY answers (2026-11-12, Q338: a rule keyed on the level).
+    if ((i + 1) % LV_EVERY === 0) lv.push(Math.round((((P()['~level'] || {}).th || 0) * 1e3)) / 1e3);
     if (cps.includes(i + 1)) {
       const metU = slate.filter(M.introduced),
         ds = Object.fromEntries(metU.map(n => [n, dStar(n)])),
@@ -507,7 +513,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
           })
         ),
         score: h ? {...comp(h), by: Object.fromEntries(Object.entries(h.by || {}).map(([cc, o]) => [cc, comp(o)]))} : {pct: shown()},
-        plateau: plat.max
+        plateau: plat.max,
+        level: r4((P()['~level'] || {}).th || 0)
       });
       blk = {n: 0, ok: 0};
     }
@@ -526,6 +533,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     preOW,
     knows: [...knows],
     right: rights / Math.max(1, N),
+    lv,
     ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
   });
   return {step, result, ctx, M, G, trueD};

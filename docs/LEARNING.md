@@ -2005,6 +2005,61 @@ declining: beginner 61.3 against 77.7 (−16.3), lecture RA 73.0 against 84.0 (�
 beginner runs and 3 of 10 lecture RA runs. The same dip the real log showed (4 of 9 who took it, −13.5 points), for
 no gain in knowledge: removing the card costs those players nothing measured.
 
+#### Above a level (Q338 (b), 2026-11-12)
+
+Pierre, 2026-11-12, Q338: "option b, B10 au-dessus d'un niveau Elo", and "le niveau Elo n'est pas stable avant un
+paquet de réponses". The rule: a unit still shaky after `OPEN.STUCK` = 10 of its own answers takes no place in
+`openChance` only while the player's global level `P['~level'].th` is at least `OPEN.LEVEL` (L) and rests on at least
+`OPEN.SETTLED` answers; below L, or before that many answers, the opening is as today.
+
+**The floor, not calibrated**: `OPEN.SETTLED` = 200, the game's own `ELO_MIN` (`progress.js`: the Elo is shown, and the
+Elo achievements count, only from 200 answers; Pierre, 2026-11-01, "even 50 is not enough to settle the score"). The
+global level's step is then 0.8 / (1 + 200 / 15) ≈ 0.06 logit an answer, a fourteenth of its first ("Ability per genus
+(Elo) and the global level"). Before it the rule is off, the simplest choice: no second level read on an unsettled
+Elo. Both real stretches are past 200 answers (P1 from answer 384, P2 from 265).
+
+**Plan, declared before the runs** (rule L11; committed before any output):
+
+- **Level 2** (the opening), choosing a value level 3: the arms against the base with Holm for the primary and
+  `--looks 2` for the bounds (10 seeds, 20 on an unclear cell), as #852; the value picked confirmed on fresh seeds.
+- **Known when this was written**: the global levels of #852's app-world runs (seeds 201-210, base): the beginner
+  0.6-1.4 from answer 200 (item learner 0.67-1.35 at 200, 0.76-1.15 at 300; field learner 0.58-0.73, 0.57-0.90), the
+  lecture RA 0.9-1.7; the two real stretches replayed, P1 0.64-0.87, P2 0.74-0.95. So in the app world no L of the
+  grid is expected to keep the rule off for the simulated beginner past answer 200; the rated world, where #852's cost
+  showed, has kept no level so far (`tools/ratedworld.js` now writes it: `level` at each checkpoint, `lv` every 25
+  answers).
+- **Arms**: base = `main` at 02e5e010; N 10, floor 200, L ∈ {0.25, 0.5, 0.75} (the grid; L 1.0 would be over both real
+  stretches); two references, N 10 ungated (#852's rule: floor 0, L −∞) and N 10 with the floor alone (L −∞), so the
+  floor's share of any effect is seen apart from L's. N 8 and N 12 are not run: N 12 already opens P1 only at answer 28
+  ungated, and a gate can only delay it; N 8 costs at least as much as N 10 wherever the gate is on.
+- **Checked first**: L = ∞ gives the base's rows seed for seed (2 seeds, both worlds).
+- **Order**: the real log, then the rated world, then the app world for the arms still in (an arm out at one step is
+  not run at the next).
+- **The real log** (rule L12): the shaky study's replay of P1 and P2, each answer with the replayed global level and the
+  answers before it; for each arm, the median answer of the first opening and the chance of none in the stretch. In:
+  the median within `OPEN.WIN` (15) in both stretches.
+- **The rated world**: corals, the four profiles, seeds 301-310, the count learner, normal photos, 1,000 answers;
+  `tools/learncmp.js` base against each arm, `--looks 2`, every guardrail at every checkpoint, every profile (#852's
+  breach was the beginner's score at 1,000 and its longest plateau). An unclear cell: 10 more seeds (311-320) for that
+  arm; still unclear: out. A breach: out.
+- **The app world**: `tools/learnsim.js`, corals, the four profiles, seeds 301-310, 300 questions, `--stats` the shaky
+  study's genus offsets (as #852), the item learner and `--learner field`. **Primary**: the answers to meet 36 of the
+  40 slate genera (301 when not by 300), lecture RA and strong RA, both learners pooled, down; stratified sign-flip,
+  Holm over the arms run (expected near zero: the pick does not read it). **Guardrails**: `tools/learncmp.js`
+  `--looks 2`, every profile, both learners; the beginner's right % over answers 1-100, the bound of the paired
+  difference above −3 points; `tests/profiles.smoke.js` passes on the pick.
+- **Descriptive** (decides nothing): per profile, the base's global level over the answers (rated world every 100,
+  app world at its checkpoints), and for each L the share of answers past the floor with the level at L or more; the
+  runs identical to the base, per arm.
+- **The pick**: the largest L of the grid whose arm is in at every step (both stretches, every guardrail in both worlds
+  and both learners). None: nothing ships and Q338 goes back to Pierre with these tables.
+- **Confirmation** (level 3): the pick against the base on fresh seeds 321-330 in the rated world, normal and tail
+  photos (`--dist tail`), the four profiles: every guardrail held (an unclear cell taken to 20 seeds, 331-340). A breach,
+  or a cell still unclear: nothing ships.
+- **Fish** (the rule is the engine's, so it reaches the fish, whose level scale differs: L is calibrated on corals): the
+  rated world, fish, its profiles, seeds 301-310, 1,000 answers, the pick against the base, `--looks 2`; a breach goes to
+  Pierre with the PR.
+
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
 Two players' runs collapsed on the evening of 2026-11-03, after #408 (one opening rule, merged 11:34 UTC) and #413 (no

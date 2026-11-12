@@ -405,7 +405,11 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15};
+// STUCK, LEVEL, SETTLED (Pierre, 2026-11-12, Q338 (b): "B10 au-dessus d'un niveau Elo"): a unit still shaky after STUCK
+// of its own answers stops taking a place in openChance, for a player whose global level (P[LEVEL].th) is LEVEL or more
+// once it rests on SETTLED answers (progress.js ELO_MIN, from which the game shows the Elo: before, it moves too much to
+// mean anything, and the rule stays off). Calibrated (docs/LEARNING.md "A unit stuck shaky").
+const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, LEVEL: Infinity, SETTLED: 200};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them every genus offset is 0 (until 2026-11-06 the declared look-alikes, until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
@@ -452,8 +456,16 @@ const shaky = n => {
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
-// good (Codex P1 on #408).
-const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
+// good (Codex P1 on #408). Nor does a unit stuck shaky (OPEN.STUCK of its own answers, still shaky) once the player's
+// level is settled and at least OPEN.LEVEL (stuckFree; Pierre, 2026-11-12, Q338): on the real log, two players past 200
+// answers were held 63 and 117 answers with no new genus by 8 or more genera that stayed shaky; it stays shaky (Review, the
+// draw), it only stops holding the others back. Below that level, or before the level is settled, as before.
+const stuckFree = () => answersSoFar() >= OPEN.SETTLED && typeof (P[LEVEL] || {}).th === 'number' && P[LEVEL].th >= OPEN.LEVEL;
+const openChance = list => {
+  const free = stuckFree(),
+    own = n => ((P[n] || {}).ok || 0) + ((P[n] || {}).ko || 0);
+  return Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n) && !(free && own(n) >= OPEN.STUCK)).length / OPEN.K);
+};
 // The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
 // and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
 // of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
