@@ -2103,9 +2103,11 @@ arm). `tools/learncmp.js` `--looks 2`: before → after, the difference [its one
 | L 0.5 | 44.6, −1.6 [−3.6] breached | 82 | 141.2 | 20.8, unclear | 0.460 / 0.909 |
 
 Every other cell held, but E (bar − D\*) at 300, unclear in every arm on both looks (up by about 0.02, towards
-over-claiming: inside its margin of 0.03, its bound past it). L 0.75 breached on the first look and was not run again; L 0.25, L 0.5 and the floor alone
-were unclear and breached on 20 seeds. True knowledge is not lower anywhere (D\* +0.004 to +0.005 at 1,000, +0.014 to +0.016 at
-300, every bound above 0 on 20 seeds); the shown score is (−1 to −2 points at 1,000 on these seeds, −3 to −5 on #852's).
+over-claiming: inside its margin of 0.03, its bound past it). L 0.75 breached on the first look and was not run again; L
+0.25, L 0.5 and the floor alone were unclear and breached on 20 seeds. True knowledge is not lower anywhere (D\* +0.004
+to +0.005 at 1,000, +0.014 to +0.016 at 300, every bound above 0 on 20 seeds); the shown score is lower (at 1,000
+answers, the gated arms −1.1 to −1.9 points on seeds 301-320; N 10 ungated −1.2 on 301-310, against −3.1 on #852's
+201-210 and −4.7 on 201-220).
 
 The global level of the base's runs (rated world, seeds 301-310; min / mean / max over the seeds):
 
@@ -2123,7 +2125,8 @@ seeds 321-340 and the fish (no arm left in). What the tables show:
 
 - **No level separates them.** The simulated beginner's global level passes 0.5 by about answer 200 and 1.0 by about
   answer 500, while P1 and P2 were at 0.64-0.95 past answers 265-384: at the same number of answers the two real
-  players held by stuck genera were at or under the simulated beginner's level. A threshold low enough to free them is
+  players held by stuck genera were inside the simulated beginner's range (P1 under its mean, P2 about at it). A
+  threshold low enough to free them is
   on for nearly all of the beginner's answers past 200; the arms differ from the floor alone on 2-12% of them, so their
   differences are noise, not an order.
 - **The rule reaches only the beginner here**: the three other profiles never hold 8 shaky genera long enough, with or
