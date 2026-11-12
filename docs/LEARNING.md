@@ -1854,6 +1854,46 @@ rule is the same as before.
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
 
+### A unit stuck shaky stops holding the opening (2026-11-12, Q338)
+
+Pierre, 2026-11-12, Q338 (a): "Ok pour essayer B10, calibré avant la pull request": a unit still shaky after
+`OPEN.STUCK` of its own answers (its `ok` + `ko`) stops taking a place among the `OPEN.K` places of `openChance`; N
+calibrated among 8 / 10 / 12 / 15 before the PR. Why: two mid-level coral players (75-83% right, never experts) were
+held 63-147 answers with no new genus by 8 or more genera that stayed shaky for good (the shaky study of 2026-11-12,
+read-only, on the real log).
+
+**Plan, declared before the runs** (rule L11; committed before any output):
+
+- **Level 2** (the opening, for everyone), 10 seeds; choosing a value is level 3 in L11's table, so the four N against
+  the base are read with Holm for the primary and `--looks 2` for the bounds (10 seeds, then 20 on an unclear cell only).
+- **Arms**: base = `main` at a68f8abe; N 8, 10, 12, 15 = this branch with `OPEN.STUCK` set to N (one scratch copy,
+  patched in turn). Checked first: the branch with N = Infinity gives the base's answers, seed for seed (2 seeds), so
+  the offer's removal and the learnsim change are no-ops in the simulation (it declines the offer by default).
+- **The app world**: `tools/learnsim.js`, corals, the four profiles, seeds 201-210 (`--seed0 200`; the studies used
+  1-5), 300 questions, `--stats` the shaky study's genus offsets (`gd` as last logged), the item learner and
+  `--learner field`.
+- **Primary** (app world): the answers to meet 36 of the 40 slate genera (90%; 301 when not by question 300), lecture
+  RA and strong RA, pooled over both learners (40 pairs per N), down; the stratified sign-flip of `tools/learncmp.js`,
+  Holm over the four N. Expected near zero (the study's simulated RAs rarely had 8 shaky genera); the pick below does
+  not depend on it.
+- **Guardrails** (each N against the base, each learner): beginner genera met by question 100, the mean over the seeds
+  at most 17 (the CI limit, `tests/profiles.smoke.js`, which must also pass on the N chosen); beginner right % over
+  answers 1-100, the one-sided bound of the paired difference above −3 points; `tools/learncmp.js`'s guardrails at
+  the checkpoints the run reaches (true knowledge, E, genera met, plateau), every profile. Cost accepted: the beginner
+  may meet more genera by question 100, up to the limit.
+- **The rated world**: `--world rated`, corals, the four profiles, seeds 201-210, the count learner, 1,000 answers
+  (the largest checkpoint its guardrails read once the opening is over), `tools/learncmp.js` base against each N.
+- **The real log** (rule L12): the shaky study's replay of the two real stretches (P1, P2), for each N: the chance of no
+  opening in the stretch and the median answer of the first opening. A replay cannot judge the questions a different
+  draw would ask; it says when the first card could have come.
+- **The pick**: among the N whose every guardrail holds in both worlds and both learners (and the CI profile test), the
+  largest (the least change from today) whose first opening comes, as the median, within `OPEN.WIN` (15) answers in
+  both real stretches. The study's replay numbers were known when this rule was written (B8 1 / 3, B10 7 / 4, B12 7 /
+  28, B15 38 / 34); `OPEN.WIN` is the existing window of the opening pace, not tuned to them. The new evidence is the
+  simulations on fresh seeds. No N left: no value ships, the question goes back to Pierre.
+- **The offer's removal** (Q337, exploratory): `main` with the offer accepted (`--openall offer`) against `main`
+  declining it, the same seeds, the item learner: what a player who would have accepted it gets now.
+
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
 Two players' runs collapsed on the evening of 2026-11-03, after #408 (one opening rule, merged 11:34 UTC) and #413 (no
