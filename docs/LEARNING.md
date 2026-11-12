@@ -1900,6 +1900,9 @@ read-only, on the real log).
   simulations on fresh seeds. No N left: no value ships, the question goes back to Pierre.
 - **The offer's removal** (Q337, exploratory): `main` with the offer accepted (`--openall offer`) against `main`
   declining it, the same seeds, the item learner: what a player who would have accepted it gets now.
+- **Added after the first look** (rated world, before running it): every N breached a rated-world beginner guardrail
+  (the shown score at 1,000 answers), so no N passes and the breach stands; N 10 against the base on 10 more seeds
+  (211-220), the beginner only, sizes that cost for Pierre and decides nothing.
 
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
