@@ -1687,12 +1687,15 @@ const fishGate = n => {
 // nothing. The card says so once, with what comes next, for one reason of three, read from the state (UNITS fish done):
 //   c3      circle 3 not reached (its offer waits for FISH_C3): what it takes, in plain words (no screen shows the
 //           circle-1 Entries component, so "about Open Water on average", its plain-mean equivalent);
-//   beyond  circle 3 declined ("Not now", openOf row): My progress opens it any time;
+//   beyond  circle 3 declined ("Not now", openOf row): My progress opens it any time; only once its offer will not come
+//           back (Pierre, 2026-11-12, #851: no card right after a first "Not now", whose card comes again OPEN_AGAIN
+//           answers later and says "Also in My progress, any time" itself): none until then (null);
 //   all     nothing held back: the families still without a game photo, the scientific genus names' state, else the
 //           exams that are left.
-// o: {c3 (circle-3 families with a photo not met), c3due (fishC3), c3row (offered in My progress: off, due), wait (families
-// with no game photo yet), sci (Scientific names on), sciDue (its offer's moment reached), sciLeft (a genus with a photo
-// not met yet)}. Pure on its inputs: tests call it. Returns {k, kick, title, lines}.
+// o: {c3 (circle-3 families with a photo not met), c3due (fishC3), c3row (offered in My progress: off, due), c3back (its
+// offer comes back once more: core.js openState, a first "Not now"), wait (families with no game photo yet), sci
+// (Scientific names on), sciDue (its offer's moment reached), sciLeft (a genus with a photo not met yet)}. Pure on its
+// inputs: tests call it. Returns {k, kick, title, lines}, or null: no card now.
 const fishNextOf = o => {
   const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`,
     L = [];
@@ -1703,6 +1706,7 @@ const fishNextOf = o => {
       `Next: ${pl(o.c3, 'family', 'families')} beyond the IMR course. They come once you know the course’s families well, about Open Water on average: keep practising them!`
     );
   } else if (o.c3 && o.c3row) {
+    if (o.c3back) return null;
     k = 'beyond';
     L.push(
       o.c3 > 1
@@ -1885,6 +1889,8 @@ const UNITS = {
         c3: S ? S.units().filter(left).length : 0,
         c3due: !!S && S.due(),
         c3row: !!S && openOf(S, 1).row,
+        // The offer's own rule (core.js openState ask): declined once, it comes back OPEN_AGAIN answers later.
+        c3back: !!S && Q[S.k] === false && (Q[S.k + 'N'] || 1) < 2,
         wait: slateGenera().filter(n => !photoAny(n)).length,
         sci: !!G && Q[G.k] === true,
         sciDue: !!G && G.due(),

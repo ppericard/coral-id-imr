@@ -1126,7 +1126,7 @@ function breakArm(nb, show) {
 // 'allmet:<subject>-<k>'). The condition reads the opening's own candidates (planPhoto: the units in play, pool, not met,
 // that may open, model.js mayOpen): none left (allMetNone), and every unit met already asked (one met on a card and not
 // asked yet is still opening, and app.js fishGate's circle 2 waits for it). Never while another card says what is next
-// (the open-all offer, back to one at a time, a part opened by choice, an opt-in set and its back card), in a visit's
+// (back to one at a time, a part opened by choice, an opt-in set and its back card), in a visit's
 // first answers (noOpen), before the visit's first sync (sync.js noticesReady), closer than PROMPT.GAP to another prompt
 // (promptOk), over a mastery toast due, or when the next question brings a card; the photo quiz only (the path). Its
 // button takes no tap for its first moments, as a tip's. Leaving the page closes it unseen: it comes back.
@@ -1138,7 +1138,7 @@ const allMetSeen = k => !!store.get(subjDev(SUBJ.id, ALLMET.KEY + k), null) || t
 function allMetDue() {
   const U = UNITS[SUBJ.id];
   if (!U.done || noOpen() || !noticesReady() || !allMetNone(pool(), introduced, asked, mayOpen)) return null;
-  if (introOffer() || backDue() || openOfferDue() || bonusOfferDue() || bonusBackDue()) return null;
+  if (backDue() || openOfferDue() || bonusOfferDue() || bonusBackDue()) return null;
   const r = U.done();
   return r && !allMetSeen(r.k) ? r : null;
 }

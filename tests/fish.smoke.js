@@ -630,21 +630,12 @@ async function freshPlayers(b, base, errs) {
     if (c3card) c3card.querySelector('[data-notnow]').click();
     closeCards();
     ok(Q.beyond === false && Q.beyondN === 1 && !FISH.c3.some(mayOpen), 'Not now keeps circle 3 closed');
-    {
-      // The Scientific names offer due (a family at Advanced): it says what is next, the card waits for it.
-      const sq = Q.sci;
-      ok(!bonusOfferDue() || !allMetDue(), 'all met: never while the Scientific names offer is due');
-      Q.sci = false; // the offer answered
-      const rb = allMetDue();
-      ok(
-        rb &&
-          rb.k === 'beyond' &&
-          rb.lines.length === 2 &&
-          /The \d+ families beyond the IMR course wait for you: open them in My progress, any time/.test(rb.lines[1]),
-        'all met: circle 3 declined points to My progress ' + JSON.stringify(rb)
-      );
-      sq === undefined ? delete Q.sci : (Q.sci = sq);
-    }
+    // The Scientific names offer due (a family at Advanced): it says what is next, the card waits for it. Answered, still
+    // no card right after a first "Not now" on circle 3: its offer comes back (Pierre, 2026-11-12, #851).
+    const sq = Q.sci;
+    ok(!bonusOfferDue() || !allMetDue(), 'all met: never while the Scientific names offer is due');
+    Q.sci = false; // the offer answered
+    ok(!allMetDue(), 'all met: no card after a first Not now on circle 3 ' + JSON.stringify(allMetDue()));
     ok(!picks().some(n => FISH.c3.includes(n)), 'the opening never draws circle 3 after Not now');
     ok(!openOfferDue(), 'not asked again at once');
     Q.beyondA = answersSoFar() - OPEN_AGAIN;
@@ -652,6 +643,18 @@ async function freshPlayers(b, base, errs) {
     openNo('beyond');
     Q.beyondA = answersSoFar() - 10 * OPEN_AGAIN;
     ok(Q.beyondN === 2 && !openOfferDue(), 'then never');
+    {
+      // Its offer will not come back: the card points to My progress.
+      const rb = allMetDue();
+      ok(
+        rb &&
+          rb.k === 'beyond' &&
+          rb.lines.length === 2 &&
+          /The \d+ families beyond the IMR course wait for you: open them in My progress, any time/.test(rb.lines[1]),
+        'all met: circle 3 declined for good points to My progress ' + JSON.stringify(rb)
+      );
+    }
+    sq === undefined ? delete Q.sci : (Q.sci = sq);
     // My progress: the button opens it, as "Open them".
     quizBoard();
     const ob = document.querySelector('#view [data-opens="beyond"]');

@@ -50,7 +50,8 @@ test('fishNextOf: circle 3 not reached says what it takes', () => {
   assert.match(r.lines[0], /Every fish family open to you is in your game/);
 });
 
-test('fishNextOf: circle 3 declined points to My progress', () => {
+test('fishNextOf: circle 3 declined points to My progress, once its offer will not come back', () => {
+  assert.strictEqual(next({...base, c3: 33, c3row: true, c3back: true}), null, 'after a first Not now its offer comes back: no card');
   const r = next({...base, c3: 33, c3row: true});
   assert.strictEqual(r.k, 'beyond');
   assert.match(r.lines[1], /The 33 families beyond the IMR course wait for you: open them in My progress, any time\./);
