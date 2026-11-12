@@ -114,7 +114,9 @@ integrator starts on another account from 11-11 morning. What the day taught, no
 
 - **GitHub**: GraphQL is blocked; use REST (`gh api repos/ppericard/coral-id-imr/...`). Review threads, ready-for-review,
   auto-merge go through the CCR routes: `GET …/pulls/N/ccr/review_threads`, `POST …/pulls/N/ccr/comments/ID/resolve`,
-  `POST …/pulls/N/ccr/ready_for_review`. Subagents are refused thread resolution: the integrator resolves.
+  `POST …/pulls/N/ccr/ready_for_review`. Subagents are refused thread resolution: the integrator resolves. In auto
+  mode the permission classifier refused the resolve to the integrator too (2026-11-12), so `.claude/settings.json`
+  allows exactly `gh api -X POST repos/ppericard/coral-id-imr/pulls/*/ccr/comments/*/resolve` (Pierre, 2026-11-12).
 - **Merge**: `gh api -X PUT …/pulls/N/merge -f merge_method=squash -f sha=<head>` once the branch is up to date with
   origin/main (above) or through a green train (below), every check is green on that head (their number grows: CodeQL and other security checks run
   too), the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings

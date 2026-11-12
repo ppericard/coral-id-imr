@@ -750,6 +750,8 @@ async function freshPlayers(b, base, errs) {
       const gp = pool().filter(n => GX(n).rank);
       ok(gp.length === 1 && gp[0] === 'g:Heniochus' && Q.sci === undefined, "sci: I'm at IMR, Heniochus without the offer: " + gp);
       ok(!bonusOfferDue(), 'sci: no offer for it');
+      // EventMeasure is named to an IMR player only (Pierre, 2026-11-12): the others read what the names are.
+      ok(/EventMeasure/.test(sci.body), 'sci: the offer names EventMeasure for an IMR player');
       pgAt('f:Surgeonfishes', 0.6);
       ok(
         pool().includes('g:Naso') && !pool().some(n => /^g:(Acanthurus|Ctenochaetus|Zebrasoma)$/.test(n)),
@@ -770,6 +772,10 @@ async function freshPlayers(b, base, errs) {
       'sci: the genera of the family at Advanced only'
     );
     ok(bonusOfferDue() && bonusOfferDue().k === 'sci', 'sci: offered once a family is at Advanced');
+    ok(
+      !/EventMeasure/.test(sci.body) && /Latin names scientists/.test(sci.body),
+      'sci: the offer for a player not at IMR says what the names are, without EventMeasure'
+    );
     const pc = progPct();
     bonusSet(true, 'sci');
     ok(
