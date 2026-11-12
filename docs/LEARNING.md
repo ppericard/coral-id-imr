@@ -1923,8 +1923,9 @@ threshold on the global level spares the simulated beginner, whose level is past
   reads against `ELO_MIN` (200, `progress.js`) before it shows the Elo and counts its achievements ("What each number
   measures"). A progress reset clears it, so the rule is off again for the next 200 answers.
 - **Every subject**: the engine is shared, so the fish units are covered too, each subject on its own record's count
-  (the fish answers for the fish, the coral answers for the corals). Calibrated on the corals only: the fish rated world
-  was never run (no arm was left in at that step of "Above a level").
+  (the fish answers for the fish, the coral answers for the corals). Calibrated on the corals; the fish rated world,
+  which "Above a level" never reached (no arm was left in), was run in the PR that adopted it (below): every guardrail
+  held.
 - **The cost Pierre accepted**: the rule is "Above a level"'s arm "N 10, floor alone". In the rated world the simulated
   beginner's shown score at 1,000 answers is lower, −0.8 points on seeds 301-310 and −1.9 (bound −3.6) on 301-320, with
   0.8 to 2.3 fewer units at Open Water by then (N 10 with no floor: −1.2 to −4.7 points on the seeds of both
@@ -1943,6 +1944,15 @@ threshold on the global level spares the simulated beginner, whose level is past
   log, the two stretches replayed through `model.js`'s own `openChance` and `OPEN` (stubs for the shaky units and their
   answers): first opening at answer 4 (P1) and 7 (P2), the median, as the calibration's "floor alone" row; the same
   rows with the answers counted under 200 give the base's (P1 none, P2 42).
+- **The rated world** (the same PR; 1,000 answers, seeds 301-310, the count learner, normal photos, `tools/learncmp.js`
+  `--looks 2`): the corals gave "Above a level"'s "N 10, floor alone" rows seed for seed (every profile), so the cost
+  above is the rule as shipped. The fish, the five profiles against the rule off: every guardrail held but the
+  beginner's E at 300, unclear on the first look (+0.002, bound +0.031); on 20 seeds (311-320 added, the beginner) held
+  (+0.007, bound +0.025), and every other beginner cell held too: shown score at 1,000 34.3 → 34.1 (bound −0.6), units at
+  Open Water at 1,000 24.1 → 24.6, longest plateau 99 → 96, true knowledge 0.464 → 0.466. The casual diver and the
+  lecture RA held every cell (shown score within 0.2 points, units at Open Water within 0.3; the lecture RA's longest
+  plateau 144 → 152, inside its margin of 29); the strong RA and the expert gave the base's rows to the decimal. The
+  fish beginner pays none of the coral beginner's cost here.
 
 The two calibrations that led there, kept as they were run:
 
