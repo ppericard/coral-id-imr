@@ -277,6 +277,10 @@ async function overlays(b, base) {
         await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => x.ulClose()));
         continue;
       }
+      // The event log names every card (cardShow's dataset.info, read by "left with a card open"): a card without a title
+      // (the sign-in card) by its label, so its row never looks like an empty card (2026-11-09).
+      const info = await p.evaluate(() => document.querySelector('.unlock')?.dataset.info || '');
+      if (!(info.split(' | ')[2] || '').trim()) fails.push(`card ${i} (${kind}): no name in the event log's info: "${info}"`);
       // The card moves the focus into itself on a timer (cardShow): wait for it, not for a fixed time (a busy page ran the
       // timer after the 150 ms this waited, and the focus was still outside: pages smoke, 2026-11-03).
       await p
