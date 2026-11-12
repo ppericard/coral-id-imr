@@ -1,4 +1,9 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(gh api -X POST repos/ppericard/coral-id-imr/pulls/*/ccr/comments/*/resolve)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

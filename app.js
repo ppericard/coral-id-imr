@@ -1923,7 +1923,13 @@ const UNITS = {
         page: false, // not on the families page
         kick: 'Scientific names',
         title: () => 'Scientific genus names?',
-        body: 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.',
+        // EventMeasure means something only to an IMR player (Pierre, 2026-11-12): the others read what the names are. A
+        // getter, read where the card and My progress show it (quiz.js bonusOfferShow, progress.js).
+        get body() {
+          return typeof imrSaid === 'function' && imrSaid()
+            ? 'For the families you know well: a photo and four scientific genus names, as EventMeasure names them. A family’s genera come as you reach Advanced on it.'
+            : 'For the families you know well: a photo and four scientific genus names, the Latin names scientists and survey teams use. A family’s genera come as you reach Advanced on it.';
+        },
         note: '⚙ Settings, Scientific names, any time. They count in your fish %.',
         tag: 'Scientific genus',
         name: 'Scientific names',
