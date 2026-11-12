@@ -5,7 +5,24 @@ then [STATUS.md](STATUS.md) for where things stand, then this page for how the w
 2026-11-07 by the integrator of 2026-11-02..07, before a quota pause. Keep it current: it is the working knowledge that is
 not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives in STATUS.md).
 
-## Handover of 2026-11-09 evening (read first)
+## Handover of 2026-11-12 evening (read first)
+
+This session runs in **auto mode** (Pierre, 2026-11-12: kept): a permission classifier judges each command; repo allow
+rules pass before it (`.claude/settings.json`: resolving review threads). What the two days added:
+
+- **Pierre wants work run in parallel** (11-12: "pourquoi tu me demandes mon avis pour un ordre alors que tu peux tout
+  lancer en parallèle ?"): independent read-only studies and PRs on different files go out together, within W27's
+  three agents; ask him only what is his to decide (wording, game rules), never the order of work.
+- **Don't send him GitHub chores** (11-12: "c'est quoi ce micromanagement forcé ?"): resolving fixed threads, labels,
+  branch updates are the integrator's. A refusal by the classifier: find the narrow allow rule, propose it once.
+- **A success rate is never a level** (LEARNING "What each number measures", rule L12): two studies read 75-83% right
+  as "mid-level"; the level is the global Elo (settled only after many answers) and progress.
+- **Each merge moves `main`**: the next open PR needs `origin/main` merged in (a merge commit), CI again, and
+  `@codex review` on the new head before it merges; plan merges in a row, or a train.
+- The Codex summary comment can say "running" long after its receipt "Reviewed commit: `<head>`" landed: the receipt
+  on the head is what counts.
+
+## Handover of 2026-11-09 evening
 
 Pierre's quota ran out on 11-09 (more than half a week's quota spent in one day on a handful of PRs); the next
 integrator starts on another account from 11-11 morning. What the day taught, now rules or habits:
