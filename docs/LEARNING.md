@@ -1120,7 +1120,7 @@ time, each on its card, but never as the answer of the question right after its 
   the burst study of 2026-11-12, read-only). Open all stays, instant and unchanged, on the first cards and in My
   progress; the back card below stays for an Open all chosen there; records with `via` 'offer' (and a declined offer,
   `open` 0) are still read (the admin's player journey). Simulated, what a player who would have taken it now gets:
-  "A unit stuck shaky stops holding the opening" below.
+  "A unit stuck shaky: calibrated, not adopted" below.
 - **Back to one at a time** (Pierre, 2026-11-03; `backDue`, `introBack`, quiz.js `backShow`). A player had 46 right in
   51 (90%) on 13 genera opened one at a time, accepted the offer around answer 52, and on the ~27 genera that came at
   once fell to 21 right in 34 (62%), with a run of 1 right in 8 on look-alikes, where the game expected 0.70-0.88; the player
@@ -1861,7 +1861,7 @@ rule is the same as before.
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
 
-### A unit stuck shaky stops holding the opening (2026-11-12, Q338)
+### A unit stuck shaky: calibrated, not adopted (2026-11-12, Q337, Q338)
 
 Pierre, 2026-11-12, Q338 (a): "Ok pour essayer B10, calibré avant la pull request": a unit still shaky after
 `OPEN.STUCK` of its own answers (its `ok` + `ko`) stops taking a place among the `OPEN.K` places of `openChance`; N
@@ -1903,6 +1903,70 @@ read-only, on the real log).
 - **Added after the first look** (rated world, before running it): every N breached a rated-world beginner guardrail
   (the shown score at 1,000 answers), so no N passes and the breach stands; N 10 against the base on 10 more seeds
   (211-220), the beginner only, sizes that cost for Pierre and decides nothing.
+
+**Results** (2026-11-12; the branch with N = Infinity gave the base's rows seed for seed in both worlds, so only N
+differs).
+
+The app world, means over seeds 201-210 (lecture RA and expert: the same to the decimal for every N, both learners;
+item learner: every profile within 0.4 genus and 0.001 of knowledge of the base):
+
+| Arm | to90 RA, pooled (Δ, p) | item beginner: to90 / met 100 | field beginner: met 100 / met 300 / know 300 / right % 1-100 | field strong RA: to90 |
+| --- | --- | --- | --- | --- |
+| base | | 228.6 / 18.3 | 15.9 / 30.6 / 0.591 / 68.9 | 212.0 |
+| N 8 | −1.7, p 0.47 | 239.3 / 18.2 | 16.3 / 32.9 / 0.618 / 67.9 | 205.2 |
+| N 10 | −1.0, p 0.50 | 225.0 / 18.3 | 16.0 / 32.4 / 0.606 / 68.9 | 208.0 |
+| N 12 | −0.8, p 0.50 | 228.6 / 18.3 | 15.9 / 29.8 / 0.585 / 68.9 | 208.7 |
+| N 15 | −0.2, p 1.00 | 228.6 / 18.3 | 15.9 / 30.6 / 0.589 / 68.9 | 211.4 |
+
+The primary is not shown for any N (Holm; 1 to 7 of the 40 pairs differ at all: the simulated RAs rarely hold 8 shaky
+genera). `tools/learncmp.js`, `--looks 2`: every guardrail cell held for every N and both learners, except the field
+learner's beginner with N 8 (the first unit at Open Water and the longest plateau unclear; not looked at again, it
+cannot change the pick). The beginner limit as declared (a mean of 17 genera by question 100) cannot judge here: the
+base itself is at 18.3 with the item learner on these seeds and these genus offsets (the CI test's own setting has no
+`--stats`), and no N moves it by more than 0.4.
+
+The rated world, 1,000 answers, the beginner (the other profiles: held, but for three unclear cells within a point:
+N 8 lecture RA's score, N 15 strong RA's score and N 15 beginner's knowledge at 300):
+
+| Arm | score at 1,000 | longest plateau | first unit at Open Water | units at Open Water 1,000 | D* 1,000 |
+| --- | --- | --- | --- | --- | --- |
+| base | 46.2 | 66 | 134.9 | 21.4 | 0.895 |
+| N 8 | 42.1, breached | 97, breached | 152.0, unclear | 18.4, breached | 0.911 |
+| N 10 | 43.1, breached | 95, breached | 142.4, unclear | 19.6, unclear | 0.903 |
+| N 12 | 43.4, breached | 74, unclear | 162.1, breached | 20.0, unclear | 0.902 |
+| N 15 | 45.1, breached | 68 | 134.7 | 21.4, unclear | 0.901 |
+| N 10, 20 seeds | 43.2 → 38.5 (−4.7, bound −6.7) | 78 → 119 | 150.9 → 197.2 | 20.1 → 17.0 | 0.859 → 0.882 |
+
+A beginner whose genera stay shaky is opened more genera: it knows as much or a little more (D\*), but its answers
+spread over more of them, so fewer reach Open Water by 1,000 answers, the shown score is 3-5 points lower and its
+longest stretch without a new point is a third to a half longer. A cost the plan did not declare.
+
+The real log, the two stretches (P1: 63 answers, 46 with every other gate open; P2: 117 answers, 78): the median
+answer of the first opening, and the chance of none in the stretch:
+
+| Arm | P1 | P2 |
+| --- | --- | --- |
+| base | none (1.0) | 42 (0.15) |
+| N 8 | 3 | 1 |
+| N 10 | 4 | 7 |
+| N 12 | 28 | 7 |
+| N 15 | 34 | 38 |
+
+A third player's stretch (101 answers after many genera met at once) had 19-24 shaky genera, most with fewer than 8
+answers of their own: no N opens anything there.
+
+**The pick: none.** N 12 and N 15 do not open both stretches within `OPEN.WIN`; N 8 and N 10 do, but breach the
+rated-world beginner's guardrails. So no value ships (the plan's last line) and Q338 goes back to Pierre with these
+tables: N 10 frees both real stretches within 4-7 answers and costs nothing measurable in the app world, but in the
+rated world a beginner sees a lower score and longer plateaus (knowledge not lower). The patch for N 10 is kept off
+the repository, ready if he accepts that cost.
+
+**The offer's removal** (Q337; seeds 201-210, item learner; `main` taking the offer against declining it, which is now
+every player): the offer came at answer 50-53 in all 40 runs. Over the 30 answers after it, right % taking it against
+declining: beginner 61.3 against 77.7 (−16.3), lecture RA 73.0 against 84.0 (−11.0), strong RA 75.3 against 87.7
+(−12.3), expert 94.0 against 95.0; true knowledge at 300 within 0.006 either way; the back card came in 7 of 10
+beginner runs and 3 of 10 lecture RA runs. The same dip the real log showed (4 of 9 who took it, −13.5 points), for
+no gain in knowledge: removing the card costs those players nothing measured.
 
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
@@ -5623,6 +5687,12 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-12, Pierre (Q337 (a)): the card that offered to open all genera goes, for every subject; Open all stays on the
+  first cards and in My progress, the back card stays ("First meeting with a genus"). Q338 (a), "a unit still shaky
+  after N of its own answers stops holding the opening": calibrated among 8 / 10 / 12 / 15, none passed the plan
+  declared before the runs (N 8 and N 10 free the real stretches but lower a rated-world beginner's score and lengthen
+  its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky: calibrated,
+  not adopted").
 - 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
   with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
   species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation

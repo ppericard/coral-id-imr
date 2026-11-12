@@ -405,9 +405,7 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-// STUCK (Pierre, 2026-11-12, Q338): a unit still shaky after STUCK of its own answers stops taking a place (openChance).
-// Calibrated among 8, 10, 12 and 15 (docs/LEARNING.md "A unit stuck shaky stops holding the opening").
-const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10};
+const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them every genus offset is 0 (until 2026-11-06 the declared look-alikes, until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
@@ -454,14 +452,8 @@ const shaky = n => {
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
-// good (Codex P1 on #408). Nor does a genus still shaky after OPEN.STUCK of its own answers (Pierre, 2026-11-12, Q338):
-// on the real log, two mid-level players (75-83% right) were held 63-147 answers with no new genus by 8 or more genera
-// that stayed shaky whatever they answered; it stays shaky (Review, the draw), it only stops holding the others back.
-const openChance = list =>
-  Math.max(
-    0,
-    1 - list.filter(n => introduced(n) && shaky(n) && ((P[n] || {}).ok || 0) + ((P[n] || {}).ko || 0) < OPEN.STUCK).length / OPEN.K
-  );
+// good (Codex P1 on #408).
+const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
 // The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
 // and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
 // of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
