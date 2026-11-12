@@ -2956,6 +2956,184 @@ async function tipsCheck(b, base) {
   }
   return fails;
 }
+// The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftNote, leftArm, leftShow; Pierre,
+// 2026-11-12), on a phone and a desktop, in the tips part. A player with 6 genera met and picked, the device's count set
+// 2 answers under LEFTN.AT. Checks: the answer that brings the count to LEFTN.AT - 1 gets no card; the next one gets it
+// at Next, never with the answer itself; one card on screen, its kind, words (the units that may still open, counted as
+// the photo quiz's opening reads them) and buttons, faded at first, nothing wider than the screen; marked shown and
+// logged (item tip:customleft); Keep drilling (phone) goes on to the next custom question and the card never comes
+// again; Go to the Quiz (desktop) opens the photo quiz. Then a player with every genus met (nothing left to open) and
+// the count past LEFTN.AT gets none; nor does one while the opening hold is on, who gets it once the hold is off.
+// Returns the failures.
+async function customLeftCheck(b, base) {
+  const fails = [],
+    MET = ['Pocillopora', 'Stylophora', 'Favites', 'Dipsastraea', 'Acropora', 'Porites'];
+  const open = async (w, h, intro) => {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro});
+    await c.route(
+      x => !x.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(
+      ([M, intro]) => {
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-coral-start', '{"c":"new","t":1}');
+        localStorage.setItem('reefid-nudge', '1');
+        // Not a "Did you know?" tip's player (3 photos enlarged): only this card may take a break.
+        localStorage.getItem('reefid-tips') || localStorage.setItem('reefid-tips', JSON.stringify({u: {q: 0, z: 3}, s: {}, v: {}}));
+        if (intro) {
+          localStorage.getItem('reefid-sync-coral-intro') ||
+            localStorage.setItem('reefid-sync-coral-intro', JSON.stringify(Object.fromEntries(M.map(n => [n, [0, 1, 1, 's']]))));
+          localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
+        }
+        localStorage.getItem('reefid-sync-coral-custom') || localStorage.setItem('reefid-sync-coral-custom', JSON.stringify({g: M, t: 1}));
+      },
+      [MET, intro]
+    );
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(String(e)));
+    await p.goto(base + '#practice/custom/play');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    return [c, p, errs];
+  };
+  // One custom-quiz question answered (a choice, or the typed name), cards and toasts closed as a player would, then
+  // Next. Returns whether the card was up after the answer and after Next, and whether its buttons were faded then. A
+  // reminder still up from the last Next (one that should not have come) is closed with Keep drilling first, so the
+  // failure is reported rather than stopping the smoke.
+  const play = async p => {
+    if (await p.$('.leftcard')) await p.click('.leftcard [data-b="2"]');
+    await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform', {timeout: 10000});
+    const at = await p.evaluate(() => {
+      document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+      const t = SHOWNQ[1],
+        bs = [...document.querySelectorAll('#view .q:not(.done) [data-c]')];
+      if (bs.length) bs.find(x => x.dataset.c === t).click();
+      else {
+        const f = document.querySelector('#view .tyform');
+        f.querySelector('input').value = t;
+        f.requestSubmit();
+      }
+      return !!document.querySelector('.leftcard');
+    });
+    await p.waitForSelector('#next', {timeout: 10000});
+    const dis = await p.evaluate(() => {
+      document.querySelectorAll('.achpop').forEach(x => x.remove());
+      achQ.length = 0;
+      achBusy = false;
+      document.getElementById('next').click();
+      const B = [...document.querySelectorAll('.leftcard [data-b]')];
+      return B.length > 0 && B.every(x => x.disabled);
+    });
+    await p
+      .waitForFunction(() => document.querySelector('.leftcard') || document.querySelector('#view .q:not(.done)'), null, {timeout: 10000})
+      .catch(() => {});
+    return {at, dis, next: !!(await p.$('.leftcard'))};
+  };
+  const evs = p =>
+    p.evaluate(() =>
+      JSON.parse(localStorage.getItem('reefid-evq') || '[]')
+        .filter(x => x.src === 'tip:customleft')
+        .map(x => x.r)
+    );
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const W = `${w}px custom quiz reminder:`;
+    const [c, p, errs] = await open(w, h, true);
+    const k = await p.evaluate(() => {
+      // No achievement toast (a first right answer earns some): one up at the answer rightly holds every prompt, checked
+      // for the tips in tipsCheck; here the threshold is checked to the answer.
+      achPop = () => {};
+      store.set(sDev(LEFTN.KEY), {n: LEFTN.AT - 2});
+      return pool().filter(n => !introduced(n) && mayOpen(n)).length;
+    });
+    const r1 = await play(p);
+    if (r1.at || r1.next) fails.push(`${W} shown under LEFTN.AT: ${JSON.stringify(r1)}`);
+    const r2 = await play(p);
+    if (r2.at || !r2.next || !r2.dis) fails.push(`${W} at LEFTN.AT: ${JSON.stringify(r2)}`);
+    if (r2.next) {
+      const r = await p.evaluate(() => {
+        const d = document.querySelector('.leftcard'),
+          card = d.querySelector('.ulcard').getBoundingClientRect();
+        return {
+          n: document.querySelectorAll('.unlock').length,
+          kind: d.querySelector('.ulcard').dataset.k,
+          kick: d.querySelector('.ulkick').textContent,
+          title: d.querySelector('h3').textContent,
+          btns: [...d.querySelectorAll('[data-b]')].map(x => x.textContent),
+          shown: !!store.get(sDev(LEFTN.KEY), {}).shown,
+          wide: document.documentElement.scrollWidth > innerWidth || card.left < 0 || card.right > innerWidth || card.bottom > innerHeight
+        };
+      });
+      if (
+        r.n !== 1 ||
+        r.kind !== 'tip' ||
+        r.kick !== 'New genera' ||
+        r.title !== `${k} new genera are waiting in the Quiz` ||
+        r.btns.join() !== 'Go to the Quiz,Keep drilling' ||
+        !r.shown ||
+        r.wide ||
+        k < 2
+      )
+        fails.push(`${W} the card: ${JSON.stringify({...r, k})}`);
+      if (w === 390) {
+        await p.click('.leftcard [data-b="2"]'); // waits for the button to take taps (TIP.WAIT)
+        await p.waitForSelector('#view .q:not(.done)', {timeout: 10000}).catch(() => {});
+        const h1 = await p.evaluate(() => location.hash);
+        if (h1 !== '#practice/custom/play' || (await p.$('.leftcard'))) fails.push(`${W} Keep drilling went to ${h1}`);
+        let again = 0;
+        for (let i = 0; i < 4; i++) if ((await play(p)).next) again++;
+        if (again) fails.push(`${W} shown again (${again} times)`);
+        const e = await evs(p);
+        if (e.join() !== 'shown,keep') fails.push(`${W} events ${JSON.stringify(e)}`);
+      } else {
+        await p.click('.leftcard [data-b="1"]');
+        await p.waitForFunction(() => location.hash === '#practice/quiz', null, {timeout: 5000}).catch(() => {});
+        const e = await evs(p),
+          h1 = await p.evaluate(() => location.hash);
+        if (h1 !== '#practice/quiz' || e.join() !== 'shown,quiz') fails.push(`${W} Go to the Quiz: ${h1}, events ${JSON.stringify(e)}`);
+      }
+    }
+    if (errs.length) fails.push(`${W} page errors: ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // Nothing left to open (every genus met): no card, however long the custom quiz goes on.
+  {
+    const [c, p, errs] = await open(390, 844, false);
+    await p.evaluate(() => store.set(sDev(LEFTN.KEY), {n: LEFTN.AT + 5}));
+    let n = 0;
+    for (let i = 0; i < 3; i++) if ((await play(p)).next) n++;
+    // Still counted (3 more answers), never shown.
+    const st = await p.evaluate(() => ({
+      left: pool().filter(x => !introduced(x) && mayOpen(x)).length,
+      s: store.get(sDev(LEFTN.KEY), {}),
+      want: LEFTN.AT + 8
+    }));
+    if (n || st.left || st.s.shown || st.s.n !== st.want)
+      fails.push(`390px custom quiz reminder, nothing to open: ${JSON.stringify({n, ...st})}`);
+    if (errs.length) fails.push(`390px custom quiz reminder, nothing to open: page errors ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // The opening hold on (model.js introHold; Pierre, 2026-11-12, on #850): no card while it is on, past LEFTN.AT; it comes
+  // at the first break once the hold is off.
+  {
+    const W = '390px custom quiz reminder, opening hold:';
+    const [c, p, errs] = await open(390, 844, true);
+    await p.evaluate(() => ((achPop = () => {}), store.set(sDev(LEFTN.KEY), {n: LEFTN.AT + 5}), (HOLDS = 9)));
+    let n = 0;
+    for (let i = 0; i < 3; i++) if ((await play(p)).next) n++;
+    const on = await p.evaluate(() => ({hold: introHold(), s: store.get(sDev(LEFTN.KEY), {})}));
+    if (n || !on.hold || on.s.shown) fails.push(`${W} shown while the hold is on: ${JSON.stringify({n, ...on})}`);
+    await p.evaluate(() => (HOLDS = 0));
+    const r = await play(p);
+    if (!r.next) fails.push(`${W} not shown once the hold is off: ${JSON.stringify(r)}`);
+    if (errs.length) fails.push(`${W} page errors ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
 // The Duel tab's relief card (quiz.js reliefNote / reliefArm / reliefShow; Pierre, 2026-11-04), at 390, 1024 and 1280 px,
 // on "Drill this pair" (#quiz-duel|Pocillopora|Stylophora). The hold's sum is set just under INTRO.HOLD, as a run of misses
 // would leave it. Checks: the miss that takes it across shows the card at Next, never with the answer itself; one card
@@ -4687,7 +4865,7 @@ async function installCheck(b, base) {
 // SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (inside main's 390 pass when both run, else on
-// their own); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question and its fallback cards
+// their own); tips: the "Did you know?" tips (tipsCheck) and the custom quiz's reminder (customLeftCheck); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question and its fallback cards
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).
@@ -5485,6 +5663,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('visit')) for (const f of await pagesVisit(b, base)) fails.push(f);
   if (run.has('basics')) for (const f of await basicsTeach(b, base)) fails.push(f);
   if (run.has('tips')) for (const f of await tipsCheck(b, base)) fails.push(f);
+  if (run.has('tips')) for (const f of await customLeftCheck(b, base)) fails.push(f);
   if (run.has('relief')) for (const f of await duelReliefCheck(b, base)) fails.push(f);
   if (run.has('start')) for (const f of await startSmoke(b, base)) fails.push(f);
   if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
