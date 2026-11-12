@@ -4214,13 +4214,15 @@ function pulseResp(L) {
 // "Did you know?" tips (quiz.js tipShow; tips.js TIPS): per tip, the devices it showed on, its showings and how each one
 // ended: Show me, Got it (or Escape), or the page left with it up; a tip left open when the app closed counts in none.
 // The Duel tab's relief card (quiz.js reliefShow, item duelhold) is logged the same way, its choices Compare them,
-// Mix in other genera and Keep drilling (or Escape), and back: the player came back to the duel from the comparison; a
-// column each, shown when some row has one.
+// Mix in other genera and Keep drilling (or Escape), and back: the player came back to the duel from the comparison; and
+// the custom quiz's reminder of the units waiting in the Quiz (quiz.js leftShow, item customleft), its choices Go to the
+// Quiz and Keep drilling (or Escape); a column each, shown when some row has one.
 const TIPC = [
   ['show', 'Show me'],
   ['ok', 'Got it'],
   ['cmp', 'Compare'],
   ['mix', 'Mix in'],
+  ['quiz', 'To the Quiz'],
   ['keep', 'Keep drilling'],
   ['back', 'Back to the duel']
 ];
