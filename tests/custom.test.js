@@ -268,3 +268,106 @@ test('lookEdges: the declared look-alikes (both ways) for a player with no mix-u
   assert.deepStrictEqual(C.map(c => c.g.slice().sort().join('')).sort(), ['ABC', 'EF']);
   assert.ok(C.every(c => c.g.every(n => PLAY.includes(n))));
 });
+
+// The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftStep, leftDue, leftCount, leftWords,
+// leftNote; Pierre, 2026-11-12): quiz.js's own code on stubs (the store, the units in play, the cards met, the gates).
+function left({met = [], shut = [], told = false, synced = true, S = core.subjectOf('coral')} = {}) {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
+    saved = {};
+  const ctx = {
+    SUBJ: S,
+    CUSTOM_H: 'quiz-custom|play',
+    store: {get: (k, d) => (k in saved ? JSON.parse(saved[k]) : d), set: (k, v) => (saved[k] = JSON.stringify(v))},
+    sDev: name => core.subjDev(S.id, name),
+    pool: () => PLAY,
+    introduced: n => met.includes(n),
+    mayOpen: n => !shut.includes(n),
+    toldHas: t => told && t === 'left:' + S.id,
+    noticesReady: () => synced, // sync.js: the visit's first sync merged (or not signed in)
+    saved
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(src, 'const LEFTN = ', '// After a custom-quiz answer: arms Next', {file: 'quiz.js'}) +
+      'this.L = {LEFTN, leftTok, leftSt, leftStep, leftDue, leftCount, leftTold, leftWords, leftNote};',
+    ctx
+  );
+  return ctx;
+}
+
+test('the custom quiz reminder: counts custom-quiz answers since the last photo-quiz answer, the Duel tab neither way', () => {
+  const c = left(),
+    {leftStep, leftNote, leftSt, LEFTN} = c.L,
+    C = c.CUSTOM_H;
+  assert.deepStrictEqual({...leftStep({}, C)}, {n: 1});
+  assert.deepStrictEqual({...leftStep({n: 41, shown: 0}, C)}, {n: 42, shown: 0});
+  assert.deepStrictEqual({...leftStep({n: 41}, 'quiz')}, {n: 0}, 'a photo-quiz answer starts it over');
+  assert.deepStrictEqual({...leftStep({n: 41}, 'quiz-duel|A|B')}, {n: 41}, 'a duel neither adds nor resets');
+  for (let i = 0; i < 5; i++) leftNote(C);
+  assert.strictEqual(leftSt().n, 5);
+  leftNote('quiz-duel');
+  assert.strictEqual(leftSt().n, 5);
+  leftNote('quiz');
+  assert.strictEqual(leftSt().n, 0);
+  // This device's key, per subject (core.js subjDev): reefid-custom-left for the corals, the fish's own.
+  assert.deepStrictEqual(Object.keys(c.saved), ['reefid-custom-left']);
+  assert.strictEqual(left({S: core.subjectOf('fish')}).sDev(LEFTN.KEY), 'reefid-fish-custom-left');
+  assert.ok(LEFTN.AT >= 50 && LEFTN.AT <= 200, String(LEFTN.AT));
+});
+
+test('the custom quiz reminder: due once at LEFTN.AT answers, never before, never again, never with nothing to open or during the hold', () => {
+  const {leftDue, leftCount, leftTold, LEFTN} = left().L,
+    AT = LEFTN.AT;
+  assert.strictEqual(leftDue({n: AT - 1}, 13, false), false, 'before the threshold');
+  assert.strictEqual(leftDue({n: AT}, 13, false), true, 'at the threshold');
+  assert.strictEqual(leftDue({n: AT + 300}, 1, false), true, 'past it, while it has not shown');
+  assert.strictEqual(leftDue({n: AT, shown: 1}, 13, false), false, 'shown on this device: never again');
+  assert.strictEqual(leftDue({n: AT}, 13, true), false, 'told on another device of the account: never again');
+  assert.strictEqual(leftDue({n: AT}, 0, false), false, 'nothing left to open');
+  // The opening hold on (model.js introHold): the Quiz opens nothing new for a while, so it waits for the hold to end
+  // (Pierre, 2026-11-12, on #850), and comes then, once.
+  assert.strictEqual(leftDue({n: AT + 40}, 13, false, true), false, 'during the opening hold');
+  assert.strictEqual(leftDue({n: AT + 40}, 13, false, false), true, 'once the hold is off');
+  assert.strictEqual(leftTold(), false);
+  assert.strictEqual(left({told: true}).L.leftTold(), true);
+  // Signed in, before the visit's first sync has merged the account's notices: it waits (Codex review #850).
+  assert.strictEqual(left({synced: false}).L.leftTold(), true);
+  // The units that may open: in play, not met, allowed by the gates (model.js mayOpen); none once every one is met.
+  assert.strictEqual(leftCount(), PLAY.length);
+  assert.strictEqual(left({met: ['A', 'B', 'C']}).L.leftCount(), PLAY.length - 3);
+  assert.strictEqual(left({met: ['A', 'B', 'C'], shut: ['K', 'L']}).L.leftCount(), PLAY.length - 5);
+  assert.strictEqual(left({met: PLAY}).L.leftCount(), 0);
+});
+
+test('the custom quiz reminder: its words follow the subject and the count', () => {
+  const coral = left().L.leftWords,
+    fish = left({S: core.subjectOf('fish')}).L.leftWords,
+    C = core.subjectOf('coral'),
+    F = core.subjectOf('fish');
+  assert.strictEqual(coral(13, C).title, '13 new genera are waiting in the Quiz');
+  assert.strictEqual(coral(1, C).title, '1 new genus is waiting in the Quiz');
+  assert.strictEqual(coral(13, C).kick, 'New genera');
+  assert.strictEqual(fish(7, F).title, '7 new families are waiting in the Quiz');
+  assert.strictEqual(fish(1, F).title, '1 new family is waiting in the Quiz');
+  assert.ok(fish(7, F).body.includes('families') && !fish(7, F).body.includes('genera'));
+});
+
+// Codex review #850 (P1, rule D7): the reminder's device record is the player's: signing out (and deleting one's own
+// account, which clears the device the same way) removes it for every subject, so the next player of a shared device
+// starts their own count and may get their own card.
+test('the custom quiz reminder: sign-out and account deletion clear its record, for every subject', () => {
+  const {page, withData, loadCodeGs} = require('./syncpage.js'),
+    KEY = left().L.LEFTN.KEY,
+    keys = core.SUBJECTS.map(S => core.subjDev(S.id, KEY));
+  assert.deepStrictEqual(keys.slice(0, 2), ['reefid-custom-left', 'reefid-fish-custom-left']);
+  for (const all of [false, true]) {
+    const A = page(loadCodeGs(withData()), {
+      SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}},
+      ls: Object.fromEntries(keys.map(k => [k, JSON.stringify({n: 140, shown: 1})]))
+    });
+    if (!('CUSTOM' in A.ctx)) A.ctx.CUSTOM = {KEY: 'reefid-sync-coral-custom'}; // model.js, not loaded here
+    keys.forEach(k => assert.ok(A.store.get(k, null), k + ' set before'));
+    vm.runInContext(`signOutClear(${all})`, A.ctx);
+    keys.forEach(k => assert.strictEqual(A.store.get(k, null), null, `${k} left after signOutClear(${all})`));
+  }
+});
