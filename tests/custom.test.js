@@ -271,7 +271,7 @@ test('lookEdges: the declared look-alikes (both ways) for a player with no mix-u
 
 // The custom quiz's reminder of the units waiting in the Quiz (quiz.js LEFTN, leftStep, leftDue, leftCount, leftWords,
 // leftNote; Pierre, 2026-11-12): quiz.js's own code on stubs (the store, the units in play, the cards met, the gates).
-function left({met = [], shut = [], told = false, S = core.subjectOf('coral')} = {}) {
+function left({met = [], shut = [], told = false, synced = true, S = core.subjectOf('coral')} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'quiz.js'), 'utf8'),
     saved = {};
   const ctx = {
@@ -283,6 +283,7 @@ function left({met = [], shut = [], told = false, S = core.subjectOf('coral')} =
     introduced: n => met.includes(n),
     mayOpen: n => !shut.includes(n),
     toldHas: t => told && t === 'left:' + S.id,
+    noticesReady: () => synced, // sync.js: the visit's first sync merged (or not signed in)
     saved
   };
   vm.createContext(ctx);
@@ -325,6 +326,8 @@ test('the custom quiz reminder: due once at LEFTN.AT answers, never before, neve
   assert.strictEqual(leftDue({n: AT}, 0, false), false, 'nothing left to open');
   assert.strictEqual(leftTold(), false);
   assert.strictEqual(left({told: true}).L.leftTold(), true);
+  // Signed in, before the visit's first sync has merged the account's notices: it waits (Codex review #850).
+  assert.strictEqual(left({synced: false}).L.leftTold(), true);
   // The units that may open: in play, not met, allowed by the gates (model.js mayOpen); none once every one is met.
   assert.strictEqual(leftCount(), PLAY.length);
   assert.strictEqual(left({met: ['A', 'B', 'C']}).L.leftCount(), PLAY.length - 3);

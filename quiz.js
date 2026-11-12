@@ -2223,7 +2223,9 @@ const leftSt = () => (o => (o && typeof o === 'object' && !Array.isArray(o) ? o 
 const leftStep = (st, cur) => (cur === CUSTOM_H ? {...st, n: (Number(st.n) || 0) + 1} : cur === 'quiz' ? {...st, n: 0} : st);
 const leftDue = (st, left, told) => !st.shown && !told && (Number(st.n) || 0) >= LEFTN.AT && left > 0;
 const leftCount = () => pool().filter(n => !introduced(n) && mayOpen(n)).length;
-const leftTold = () => typeof toldHas === 'function' && toldHas(leftTok());
+// Told on another device of the account, or perhaps: signed in, before the visit's first sync has merged the account's
+// notices (sync.js noticesReady; Codex review #850), it waits, as the other one-time notices do (noticeLater).
+const leftTold = () => (typeof noticesReady === 'function' && !noticesReady()) || (typeof toldHas === 'function' && toldHas(leftTok()));
 // Its words, for k units waiting (S: the SUBJECTS record on screen, its words for its units).
 const leftWords = (k, S) => ({
   kick: `New ${S.many}`,
