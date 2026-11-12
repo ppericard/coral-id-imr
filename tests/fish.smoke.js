@@ -498,6 +498,109 @@ async function freshPlayers(b, base, errs) {
     const p2 = picks();
     ok(p2.length && p2.every(n => FISH.c2.includes(n)), 'the opening draws circle 2 next');
     ok(!openOfferDue(), 'no circle-3 card under FISH_C3');
+    // Every family in play met and none may open now (Pierre, 2026-11-12: "on lui dit qu'il a tout vu et ce qui vient
+    // ensuite"; quiz.js allMetDue, app.js fishNextOf): a card at the break at Next says so and what comes next, once per
+    // reason; never while a family may still open or another card says what is next. Outside a visit's floor and the
+    // prompt spacing (restored below).
+    const cb0 = {...CB},
+      pa0 = store.get(PROMPT.KEY, null),
+      am = [],
+      amAsk = L => L.forEach(n => asked(n) || (am.push([n, P[n] && {...P[n]}]), (st(n).ok = 1))),
+      amKey = k => subjDev(SUBJ.id, ALLMET.KEY + k);
+    CB.r = 0;
+    CB.f = 0;
+    store.set(PROMPT.KEY, null);
+    ok(!allMetDue(), 'all met: not while circle 2 may open');
+    amAsk(FISH.c2);
+    const r3 = allMetDue();
+    ok(
+      r3 && r3.k === 'c3' && r3.lines.length === 2 && /beyond the IMR course.*about Open Water on average/.test(r3.lines[1]),
+      'all met: circle 3 not reached says what it takes ' + JSON.stringify(r3)
+    );
+    {
+      // Through the game itself (quiz.js answer): an answer, then Next brings the card; Got it goes on to the next
+      // question. The answer's record put back after.
+      const Pj = JSON.stringify(P),
+        cb = () => ((CB.r = 0), (CB.f = 0));
+      closeCards();
+      quizPhoto();
+      closeCards();
+      cb();
+      // The achievements the walk above earned, given silently, their toasts gone: they would hold the card back.
+      achCheck(true);
+      document.querySelectorAll('.achpop').forEach(x => x.remove());
+      achQ.length = 0;
+      achBusy = false;
+      const t = SHOWNQ && SHOWNQ[1],
+        c = [...document.querySelectorAll('#view .q:not(.done) [data-c]')].find(x => x.dataset.c === t);
+      if (c) c.click();
+      else if (document.querySelector('#view .tyform')) {
+        const f = document.querySelector('#view .tyform');
+        f.querySelector('input').value = GX(t).name;
+        f.requestSubmit();
+      }
+      cb();
+      const nx = document.getElementById('next');
+      ok(
+        nx && nx.onclick !== route,
+        'all met: the answer arms Next ' +
+          JSON.stringify([
+            t,
+            !!c,
+            promptOk(),
+            !!allMetDue(),
+            [...document.querySelectorAll('#tour, .unlock, .achpop')].map(x => x.className + ':' + x.textContent.slice(0, 60)),
+            typeof achBusy !== 'undefined' && achBusy,
+            store.get(PROMPT.KEY, null),
+            answersSoFar()
+          ])
+      );
+      if (nx) nx.click();
+      const d = document.querySelectorAll('.unlock.allmet');
+      ok(d.length === 1 && document.querySelectorAll('.unlock').length === 1, 'all met: Next brings the card, alone');
+      if (d[0]) {
+        const g = d[0].querySelector('[data-b]');
+        g.disabled = false;
+        g.click();
+      }
+      ok(
+        !document.querySelector('.unlock') && document.querySelector('#view .q:not(.done)') && localStorage.getItem(amKey('c3')),
+        'all met: Got it goes on to the next question, marked seen'
+      );
+      localStorage.removeItem(amKey('c3'));
+      Object.keys(P).forEach(n => delete P[n]);
+      Object.assign(P, JSON.parse(Pj));
+      store.set(PROMPT.KEY, null);
+      cb();
+    }
+    {
+      closeCards();
+      const nb = document.createElement('button');
+      nb.onclick = route;
+      ok(allMetArm(nb, 'quiz', false) && nb.onclick !== route, 'all met: the card takes the break at Next');
+      ok(!allMetArm(nb, 'quiz-duel', false), 'all met: the photo quiz only');
+      nb.onclick();
+      const d = document.querySelectorAll('.unlock');
+      ok(
+        d.length === 1 &&
+          d[0].classList.contains('allmet') &&
+          /seen them all, for now/.test(d[0].textContent) &&
+          d[0].textContent.includes(r3.lines[1]) &&
+          d[0].querySelectorAll('[data-b]').length === 1,
+        'all met: one card, its title, the next line, one button'
+      );
+      ok(!localStorage.getItem(amKey('c3')), 'all met: not marked before it is closed');
+      if (d[0]) d[0].ulClose(); // left unseen (route): it comes back
+      ok(allMetDue() && allMetDue().k === 'c3', 'all met: left unseen, it comes back');
+      allMetShow(r3).querySelector('[data-b]').click(); // disabled for its first moments: no click
+      ok(document.querySelector('.unlock.allmet'), 'all met: a reflex tap does not close it');
+      closeCards();
+      allMetShow(r3);
+      document.querySelector('.unlock.allmet').dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+      ok(!document.querySelector('.unlock.allmet') && localStorage.getItem(amKey('c3')), 'all met: closed, marked seen');
+      ok(!allMetDue() && !allMetArm(nb, 'quiz', false), 'all met: once per reason');
+      closeCards();
+    }
     FISH.c1.forEach(n => pgAt(n, 0.7));
     // Circle 3 an option (Pierre, 2026-11-07 08:50): at FISH_C3 a card asks instead of opening; "Not now" keeps it closed
     // and the card comes back once, OPEN_AGAIN answers later, then never; My progress opens it any time; open, its
@@ -507,6 +610,7 @@ async function freshPlayers(b, base, errs) {
     ok(headScore().by[1].entries >= FISH_C3.entries && fishC3(), 'FISH_C3: the circle-1 Entries component');
     ok(fishC3() && !FISH.c3.some(mayOpen), 'circle 3 waits for the choice at FISH_C3');
     ok(openOfferDue() && openOfferDue().k === 'beyond' && !Q.beyond, 'the circle-3 card is due at FISH_C3');
+    ok(!allMetDue(), 'all met: never while the circle-3 card is due');
     // A player whose circle 3 already opened by itself (before the choice existed) keeps it, and gets no card.
     const im = introMap(),
       c3a = FISH.c3[0];
@@ -526,6 +630,12 @@ async function freshPlayers(b, base, errs) {
     if (c3card) c3card.querySelector('[data-notnow]').click();
     closeCards();
     ok(Q.beyond === false && Q.beyondN === 1 && !FISH.c3.some(mayOpen), 'Not now keeps circle 3 closed');
+    // The Scientific names offer due (a family at Advanced): it says what is next, the card waits for it. Answered, still
+    // no card right after a first "Not now" on circle 3: its offer comes back (Pierre, 2026-11-12, #851).
+    const sq = Q.sci;
+    ok(!bonusOfferDue() || !allMetDue(), 'all met: never while the Scientific names offer is due');
+    Q.sci = false; // the offer answered
+    ok(!allMetDue(), 'all met: no card after a first Not now on circle 3 ' + JSON.stringify(allMetDue()));
     ok(!picks().some(n => FISH.c3.includes(n)), 'the opening never draws circle 3 after Not now');
     ok(!openOfferDue(), 'not asked again at once');
     Q.beyondA = answersSoFar() - OPEN_AGAIN;
@@ -533,6 +643,18 @@ async function freshPlayers(b, base, errs) {
     openNo('beyond');
     Q.beyondA = answersSoFar() - 10 * OPEN_AGAIN;
     ok(Q.beyondN === 2 && !openOfferDue(), 'then never');
+    {
+      // Its offer will not come back: the card points to My progress.
+      const rb = allMetDue();
+      ok(
+        rb &&
+          rb.k === 'beyond' &&
+          rb.lines.length === 2 &&
+          /The \d+ families beyond the IMR course wait for you: open them in My progress, any time/.test(rb.lines[1]),
+        'all met: circle 3 declined for good points to My progress ' + JSON.stringify(rb)
+      );
+    }
+    sq === undefined ? delete Q.sci : (Q.sci = sq);
     // My progress: the button opens it, as "Open them".
     quizBoard();
     const ob = document.querySelector('#view [data-opens="beyond"]');
@@ -548,6 +670,27 @@ async function freshPlayers(b, base, errs) {
       'the opening draws circle 3 then'
     );
     ok(!openOfferDue() && (!bonusOfferDue() || bonusOfferDue().k === 'sci'), 'no circle card once open');
+    ok(!allMetDue(), 'all met: not while circle 3 may open');
+    amAsk(FISH.c3);
+    {
+      const sq = Q.sci,
+        sci = SETS().find(S => S.k === 'sci');
+      Q.sci = false; // the Scientific names offer answered "Not now"
+      const ra = allMetDue();
+      ok(
+        ra &&
+          ra.k === 'all' &&
+          ra.lines.includes((sci.due() ? fishNextOf({sciDue: true}) : fishNextOf({})).lines[1]) &&
+          !ra.lines.some(l => /beyond/.test(l)),
+        'all met: every family met, the next step ' + JSON.stringify(ra)
+      );
+      sq === undefined ? delete Q.sci : (Q.sci = sq);
+    }
+    // Back as it was: the answers, the floor, the prompt spacing, the cards seen.
+    am.forEach(([n, s]) => (s ? (P[n] = s) : delete P[n]));
+    Object.assign(CB, cb0);
+    store.set(PROMPT.KEY, pa0);
+    ['c3', 'beyond', 'all'].forEach(k => localStorage.removeItem(amKey(k)));
     route();
     // Every circle in the progress: a circle-3 family learned moves the %, over all the families.
     const c3n = FISH.c3[0],
