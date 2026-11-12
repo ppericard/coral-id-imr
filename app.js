@@ -1644,6 +1644,8 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //            units count in the progress all the same, whether open or not. Offered by a card (quiz.js openOfferShow) when
 //            due(), again once OPEN_AGAIN answers after a "Not now" (core.js openState), then never; My progress opens them any time
 //            once due (progress.js). k, units(), due(), the card's words (kick, title, body, yes, note), row (My progress)
+//   done()   once every unit in play is met and none may open now (quiz.js allMetDue): {k, kick, title, lines}, the card that
+//            says so and what comes next, once per reason k; absent (the corals): no card
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
 // easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
 // tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
@@ -1679,6 +1681,52 @@ const fishGate = n => {
   if (c < 2) return true;
   const c1 = FISH ? FISH.c1 : [];
   return c < 3 ? c1.every(x => asked(x) && introduced(x)) : !!FISH && fishC3();
+};
+// Every family in play met and none may open now (quiz.js allMetDue; Pierre, 2026-11-12: "on lui dit qu'il a tout vu et ce
+// qui vient ensuite"): a fish player who had met every family in play went 100+ answers without a new one, and the app said
+// nothing. The card says so once, with what comes next, for one reason of three, read from the state (UNITS fish done):
+//   c3      circle 3 not reached (its offer waits for FISH_C3): what it takes, in plain words (no screen shows the
+//           circle-1 Entries component, so "about Open Water on average", its plain-mean equivalent);
+//   beyond  circle 3 declined ("Not now", openOf row): My progress opens it any time;
+//   all     nothing held back: the families still without a game photo, the scientific genus names' state, else the
+//           exams that are left.
+// o: {c3 (circle-3 families with a photo not met), c3due (fishC3), c3row (offered in My progress: off, due), wait (families
+// with no game photo yet), sci (Scientific names on), sciDue (its offer's moment reached), sciLeft (a genus with a photo
+// not met yet)}. Pure on its inputs: tests call it. Returns {k, kick, title, lines}.
+const fishNextOf = o => {
+  const pl = (n, one, many) => `${n} ${n > 1 ? many : one}`,
+    L = [];
+  let k = 'all';
+  if (o.c3 && !o.c3due) {
+    k = 'c3';
+    L.push(
+      `Next: ${pl(o.c3, 'family', 'families')} beyond the IMR course. They come once you know the course’s families well, about Open Water on average: keep practising them!`
+    );
+  } else if (o.c3 && o.c3row) {
+    k = 'beyond';
+    L.push(
+      o.c3 > 1
+        ? `The ${o.c3} families beyond the IMR course wait for you: open them in My progress, any time.`
+        : 'The family beyond the IMR course waits for you: open it in My progress, any time.'
+    );
+  } else {
+    if (o.wait)
+      L.push(`${pl(o.wait, 'more family joins', 'more families join')} the game as soon as ${o.wait > 1 ? 'their' : 'its'} photos are in.`);
+    if (!o.sci)
+      L.push(
+        o.sciDue
+          ? 'Next step: scientific genus names. Turn them on in My progress or ⚙ Settings, any time.'
+          : 'Next step: once a family is at Advanced, its scientific genus names are offered to you.'
+      );
+    else if (o.sciLeft) L.push('The scientific genus names of each family come as you reach Advanced on it.');
+    if (!L.length) L.push('What’s left: take each family to Instructor, through its mastery exam.');
+  }
+  return {
+    k,
+    kick: 'Every family met',
+    title: 'You’ve seen them all, for now',
+    lines: ['Every fish family open to you is in your game: no new one comes for a while.', ...L]
+  };
 };
 const UNITS = {
   coral: {
@@ -1826,6 +1874,23 @@ const UNITS = {
         row: n => `Open the families beyond IMR (${n} ${n > 1 ? 'families' : 'family'})`
       }
     ],
+    // Every family in play met and none may open now (quiz.js allMetDue; Pierre, 2026-11-12): the card's reason and words
+    // (fishNextOf), from circle 3's state (opens beyond), the families with no game photo yet and Scientific names (sets sci).
+    done: () => {
+      if (!FISH) return null;
+      const S = opensNow().find(x => x.k === 'beyond'),
+        G = SETS().find(x => x.k === 'sci'),
+        left = n => photoAny(n) && !introduced(n);
+      return fishNextOf({
+        c3: S ? S.units().filter(left).length : 0,
+        c3due: !!S && S.due(),
+        c3row: !!S && openOf(S, 1).row,
+        wait: slateGenera().filter(n => !photoAny(n)).length,
+        sci: !!G && Q[G.k] === true,
+        sciDue: !!G && G.due(),
+        sciLeft: !!G && G.all().some(left)
+      });
+    },
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
     // The photo's species, said under the verdict (photoTaxon): fishTaxon.

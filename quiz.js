@@ -849,6 +849,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
   }
+  // Every unit in play met and none may open now: its card takes the break at Next before a tip (allMetArm).
+  allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
   tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
   // "Your feedback helped" (progress.js helpedArm): a break nobody took, never over a question.
@@ -1116,6 +1118,64 @@ function breakArm(nb, show) {
     if (!show()) route();
   };
   return true;
+}
+// Every unit in play met and none may open now (Pierre, 2026-11-12: "on lui dit qu'il a tout vu et ce qui vient
+// ensuite"; a fish player went 100+ answers with no new family and nothing said): a calm card at the break at Next says
+// so and what comes next (app.js UNITS done: its reason k and words; a subject without it, the corals, has no card), once
+// per reason, on this device (ALLMET.KEY) and, signed in, on the account's other devices (core.js TOLD
+// 'allmet:<subject>-<k>'). The condition reads the opening's own candidates (planPhoto: the units in play, pool, not met,
+// that may open, model.js mayOpen): none left (allMetNone), and every unit met already asked (one met on a card and not
+// asked yet is still opening, and app.js fishGate's circle 2 waits for it). Never while another card says what is next
+// (the open-all offer, back to one at a time, a part opened by choice, an opt-in set and its back card), in a visit's
+// first answers (noOpen), before the visit's first sync (sync.js noticesReady), closer than PROMPT.GAP to another prompt
+// (promptOk), over a mastery toast due, or when the next question brings a card; the photo quiz only (the path). Its
+// button takes no tap for its first moments, as a tip's. Leaving the page closes it unseen: it comes back.
+const ALLMET = {KEY: 'allmet-'};
+// Pure on its inputs (tests call it): L the units in play; met, asked, may (mayOpen) on a unit.
+const allMetNone = (L, met, asked, may) => L.length > 0 && L.every(n => (met(n) ? asked(n) : !may(n)));
+const allMetTok = k => `allmet:${SUBJ.id}-${k}`;
+const allMetSeen = k => !!store.get(subjDev(SUBJ.id, ALLMET.KEY + k), null) || toldHas(allMetTok(k));
+function allMetDue() {
+  const U = UNITS[SUBJ.id];
+  if (!U.done || noOpen() || !noticesReady() || !allMetNone(pool(), introduced, asked, mayOpen)) return null;
+  if (introOffer() || backDue() || openOfferDue() || bonusOfferDue() || bonusBackDue()) return null;
+  const r = U.done();
+  return r && !allMetSeen(r.k) ? r : null;
+}
+function allMetArm(nb, cur, hold) {
+  if (cur !== 'quiz' || hold || !UNITS[SUBJ.id].done || !promptOk() || !allMetDue()) return false;
+  return breakArm(nb, () => {
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const r = allMetDue(),
+      nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
+    if (!r || !promptOk() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    allMetShow(r, true);
+    return true;
+  });
+}
+// r: {k, kick, title, lines} (app.js UNITS done); brk: shown at the break, so its close goes on to the next question.
+function allMetShow(r, brk) {
+  const d = cardShow({
+    kind: SUBJ.card,
+    cls: 'allmet',
+    kick: esc(r.kick),
+    title: esc(r.title),
+    body: r.lines.map(l => `<p>${esc(l)}</p>`).join(''),
+    primary: {text: 'Got it', attr: 'disabled'},
+    esc: 1,
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      if (how === 'route') return; // left unseen: it comes back
+      store.set(subjDev(SUBJ.id, ALLMET.KEY + r.k), Date.now());
+      toldAdd(allMetTok(r.k));
+      if (brk) route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+  return d;
 }
 // "Did you know?" tips (tips.js; the owner, 2026-11-04): this device's counters (reefid-tips), the break at Next, the card.
 // The device's answers seed the counters once (tips.js tipsInit): the log of a signed-in player, else LOG0.

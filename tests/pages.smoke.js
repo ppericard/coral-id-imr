@@ -244,7 +244,10 @@ async function overlays(b, base) {
           rvNotice()
         )
       ],
-      ['feedback', () => pulseAsk()]
+      ['feedback', () => pulseAsk()],
+      // Every unit in play met (quiz.js allMetShow, app.js fishNextOf: the fish's words, its longest reason), in the
+      // subject's card kind (SUBJECTS card: the corals' here).
+      ['genus', () => allMetShow(fishNextOf({c3: 33}))]
     ];
     for (let i = 0; i < CASES.length; i++) {
       const [kind] = CASES[i];

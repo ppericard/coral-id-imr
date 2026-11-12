@@ -6022,16 +6022,19 @@ html.touring .unlock {
   box-shadow: 0 0 0 3px var(--k);
 }
 .tipcard h3:focus,
-.reliefcard h3:focus {
+.reliefcard h3:focus,
+.allmet h3:focus {
   outline: none;
 }
 .tipcard [data-b],
 .reliefcard [data-b],
+.allmet [data-b],
 .reliefcard .reliefx {
   transition: opacity 0.25s ease-out;
 }
 .tipcard [data-b]:disabled,
 .reliefcard [data-b]:disabled,
+.allmet [data-b]:disabled,
 .reliefcard .reliefx:disabled {
   opacity: 0.35;
   cursor: default;
@@ -6039,6 +6042,7 @@ html.touring .unlock {
 @media (prefers-reduced-motion: reduce) {
   .tipcard [data-b],
   .reliefcard [data-b],
+  .allmet [data-b],
   .reliefcard .reliefx {
     transition: none;
   }
