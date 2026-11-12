@@ -405,7 +405,9 @@ const weight = n => {
 // not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15};
+// STUCK (Pierre, 2026-11-12, Q338): a unit still shaky after STUCK of its own answers stops taking a place (openChance).
+// Calibrated among 8, 10, 12 and 15 (docs/LEARNING.md "A unit stuck shaky stops holding the opening").
+const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them every genus offset is 0 (until 2026-11-06 the declared look-alikes, until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
@@ -452,8 +454,14 @@ const shaky = n => {
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
-// good (Codex P1 on #408).
-const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
+// good (Codex P1 on #408). Nor does a genus still shaky after OPEN.STUCK of its own answers (Pierre, 2026-11-12, Q338):
+// on the real log, two mid-level players (75-83% right) were held 63-147 answers with no new genus by 8 or more genera
+// that stayed shaky whatever they answered; it stays shaky (Review, the draw), it only stops holding the others back.
+const openChance = list =>
+  Math.max(
+    0,
+    1 - list.filter(n => introduced(n) && shaky(n) && ((P[n] || {}).ok || 0) + ((P[n] || {}).ko || 0) < OPEN.STUCK).length / OPEN.K
+  );
 // The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
 // and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
 // of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
@@ -545,9 +553,9 @@ function openPick(fresh, list = fresh, met = introduced) {
 // and asks about a genus already met. Kept on the device (reefid-sync-coral-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) counts as met. Bonus genera
 // (once on, app.js Q.bon) open the same way, on their own card. docs/LEARNING.md.
-// OFFER: after a few dozen answers, a player whose overall level (Elo, P[LEVEL].th) is already high knows their corals
-// (an RA after the lecture): a card offers to open all the genera at once (introOffer). Synced with the progress (the
-// sheet keeps every reefid-sync* key; sync.js introMerge).
+// OFFER: the record of Open all (introAll) and of the back card (introBack), its name from the card that offered Open all
+// until 2026-11-12 (Pierre, Q337: the card went, Open all stays on the first cards and in My progress). Synced with the
+// progress (the sheet keeps every reefid-sync* key; sync.js introMerge).
 const INTRO = {
   get KEY() {
     return sKey('intro'); // reefid-sync-<subject>-intro (app.js SUBJ)
@@ -560,12 +568,7 @@ const INTRO = {
   OFFER: {
     get KEY() {
       return sKey('intro-offer');
-    },
-    // AT: the default player's (core.js CHOICE 'new'); each answer to the first-launch question sets its own (startV).
-    AT: startVars('new').at,
-    UNTIL: 150,
-    MET: CHOICE.MET,
-    TH: 0.5
+    }
   }
 };
 let INTROS = null;
@@ -616,8 +619,8 @@ const mayOpen = n => !(typeof openShut === 'function' && openShut(n)) && (!units
 // after their reference, core.js starWaits). Every other game draws from these only and opens none, so the ★ rule holds
 // there by construction.
 const unlocked = (list = pool()) => list.filter(introReady);
-// via: where the player opened them ('card' the first cards, 'progress' My progress, 'offer' the offer card), kept
-// with the offer (which is then never made) for the admin's player journey.
+// via: where the player opened them ('card' the first cards, 'progress' My progress; 'offer' in a record from before
+// 2026-11-12, the offer card), kept for the admin's player journey.
 // n: how many opened at once; h: the drop since then (holdStep, below); a choice already made on the back card (bk, bat,
 // bn, bt) is kept, so the card is never made again.
 const introAll = via => {
@@ -665,26 +668,8 @@ const introBack = keep => {
   syncSoon();
   return L;
 };
-// The offer to open all genera (Pierre, 2026-11-02: 10 answers on 4 genera are too few to decide; after about 50
-// questions and some 10 genera met, a card says the player seems to know their corals and offers to open them all).
-// Due once, between the choice's at (startV: OFFER.AT, 50, for the default player; core.js CHOICE) and OFFER.UNTIL
-// answers, with OFFER.MET slate genera met and a level of OFFER.TH or more:
-// simulated at 50 answers, a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2
-// (docs/LEARNING.md). A card, not an automatic opening: "Not now" keeps one at a time; My progress still offers it.
-const introOffer = () => {
-  const a = answersSoFar(),
-    O = INTRO.OFFER;
-  return (
-    a >= startV().at &&
-    a <= O.UNTIL &&
-    !store.get(O.KEY, null) &&
-    introLeft().length > 0 &&
-    slateGenera().filter(introduced).length >= O.MET &&
-    ((P[LEVEL] || {}).th || 0) >= O.TH
-  );
-};
-// Another device's cards (synced): a genus met there is met here too, and ready (its card was seen); the offer, once
-// answered on one device, is not made again on another. Progress reset: the cards start over with it.
+// Another device's cards (synced): a genus met there is met here too, and ready (its card was seen); Open all and the
+// back card's choice, made on one device, hold on another. Progress reset: the cards start over with it.
 function introMerge(m, o) {
   try {
     m = renameUnits(SUBJ, JSON.parse(m || 'null')); // the old unit ids another device may still save (core.js SUBJECTS renamed)
@@ -739,8 +724,9 @@ const introReset = at => {
 // the "lower" card ([c, answers, time], startEase), n and s the fallback window (answers counted since
 // the choice, up to the last of CHOICE.AT, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
 // time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
-// the model uses them: the level a genus never answered starts from (ability, core.js playerStart) and when the offer
-// to open all genera can come (introOffer). Nothing else is coded per choice.
+// the model uses them: the level a genus never answered starts from (ability, core.js playerStart). Nothing else is coded
+// per choice: the variable at (core.js CHOICE), the answer from which the open-all offer could come, is no longer read
+// since that card went (Pierre, 2026-11-12, Q337).
 const startS = () => SUBJ || SUBJECTS[0]; // the subject on screen
 const startK = () => startKey(startS().id); // its record (core.js startKey)
 const startOf = () => {
@@ -754,7 +740,7 @@ const startOn = () => !!startS().start;
 const startEff = o => (o && Array.isArray(o.ease) && startOpt(o.ease[0]) ? o.ease[0] : o && o.c);
 const startV = () => startVars(startOn() ? startEff(startOf()) : null);
 // The gentle "lower" card's Coral basics (quiz.js startFbShow): the start variables move silently one band down from
-// those in force (know -> IMR course values, IMR course -> new: the prior and the open-all offer's at); the answer stays.
+// those in force (know -> IMR course values, IMR course -> new: the prior); the answer stays.
 function startEase() {
   const o = startOf(),
     d = o && startNext(startEff(o), 'lo')[0];

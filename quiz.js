@@ -244,7 +244,7 @@ const typeStep = (m, text, sp, t) => {
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
 // steps, core.js rtWeight, the enlarged mark is logged only): the clock starts when the question's first photo is in
-// (its load event, or at once if it already was), starts again when a card or the offer over the question closes (quiz.js introShow, introOfferShow: reading a card is
+// (its load event, or at once if it already was), starts again when a card over the question closes (quiz.js introShow, the prompts' cards: reading a card is
 // not looking at the photo), and stops while the app is hidden; zm is 1 once a photo of the question is enlarged.
 const QCLOCK = {n: 0, t0: null, off: 0, hid: null, zm: 0};
 const qclockStart = () => {
@@ -1051,9 +1051,9 @@ function winkShow({n}) {
 }
 // Out-of-game prompts ("fewer, better pop-ups", Pierre 2026-11-02, after a new-player walkthrough counted an
 // interruption every ~2 answers): the sign-in card (from NUDGE_AT answers, sync.js), the one-tap question (from
-// PULSE.FIRST) and the offer to open all genera (from INTRO.OFFER.AT, model.js) are at least PROMPT.GAP answers apart and
-// never shown with a card, the tour or an achievement toast on screen or waiting: one that falls too close waits until
-// the gap is met. Counted in answers, never time. One value for all three: the answers count when the last one showed
+// PULSE.FIRST) and the cards about which units are in play (back to one at a time, bonus genera, below) are at least
+// PROMPT.GAP answers apart and never shown with a card, the tour or an achievement toast on screen or waiting: one that
+// falls too close waits until the gap is met. Counted in answers, never time. One value for all: the answers count when the last one showed
 // (this device; a count that went back, a progress reset, starts the spacing over).
 const PROMPT = {KEY: 'reefid-prompt-at', GAP: 10};
 // The tour, a card or an achievement toast on screen or waiting (cards wait under the tour, toasts under a card).
@@ -1563,12 +1563,11 @@ function quizPhoto(cur = 'quiz') {
   // 2026-11-04; My progress keeps the button for them).
   if (q.intro)
     q.custom ? introShow(q.intro, true, 'c', false) : introShow(q.intro, q.start, undefined, q.start && (startOf() || {}).c !== 'new');
-  // The offers about which genera are in play (open all, back to one at a time, bonus genera) belong to the photo quiz.
+  // The offers about which genera are in play (back to one at a time, bonus genera) belong to the photo quiz. The offer to
+  // open all genera went (Pierre, 2026-11-12, Q337): Open all stays on the first cards and in My progress.
   else if (cur !== 'quiz') {
   } else if (!noOpen() && promptOk() && startDue())
     (promptMark(), startFbShow(startDue())); // the first answers do not fit the first-launch answer (model.js startDue)
-  else if (!noOpen() && promptOk() && introOffer())
-    (promptMark(), introOfferShow()); // never over another card: next question
   else if (!noOpen() && promptOk() && backDue()) (promptMark(), backShow());
   else if (!noOpen() && promptOk() && openOfferDue()) (promptMark(), openOfferShow());
   else if (!noOpen() && promptOk() && bonusOfferDue()) (promptMark(), bonusOfferShow());
@@ -1681,36 +1680,6 @@ function startFbShow(dir) {
   );
   d.dataset.dir = dir;
 }
-// The offer to open all genera (model.js introOffer), over the question, once. A big step, and shown as one (Pierre,
-// 2026-11-04: a beginner who misclicked their level must see it is risky, an expert can confirm calmly): the "step"
-// kind (the warm --warn hue), what changes in three short lines, "Not now" the safe default on top (Escape and Enter),
-// "Open all genera" under it, outlined in the warn hue; no number. Leaving the page closes it unanswered (route): the offer can
-// come back.
-function introOfferShow() {
-  const a = answersSoFar(),
-    pick = open => {
-      store.set(INTRO.OFFER.KEY, {at: a, open: 0, t: Date.now()});
-      if (open) {
-        introAll('offer');
-        NEXTQ = null;
-      }
-      save();
-    };
-  // No number on this card (Pierre, 2026-11-04): counts go stale or miscount what the player already has open.
-  cardShow({
-    kind: 'step',
-    cls: 'intro',
-    kick: 'A big step',
-    title: `Open all the ${SUBJ.many} at once?`,
-    body: `<p>You are doing well. Opening them all is the hard way:</p><ul class="ulchg"><li>All the remaining ${SUBJ.many} in the questions at once, without a card for each</li><li>Harder questions sooner: look-alikes side by side</li><li>More mix-ups at first, before it settles</li></ul>`,
-    primary: {text: 'Not now, one at a time', attr: 'data-notnow', on: () => pick(false)},
-    secondary: {text: `Open all ${SUBJ.many}`, attr: 'data-open', on: () => pick(true)},
-    esc: 1,
-    enter: 1,
-    note: 'Also in My progress, any time. If it gets too hard, the game offers to go back.',
-    onClose: topUp
-  });
-}
 // Back to one at a time (model.js backDue, introBack), over the question, once: after Open all genera, when the answers
 // since have fallen clearly below what the game expected. "One at a time" closes the genera opened at once; the question
 // on screen is chosen again (it may be about one of them, or offer one as a choice). Escape: Keep them all. Leaving the
@@ -1798,7 +1767,8 @@ function bonusBackShow(S = bonusBackDue()) {
   });
 }
 // A part of the slate opened by choice (app.js UNITS opens: fish circle 3; Pierre, 2026-11-07 08:50), over the question,
-// when due (app.js openOfferDue). The open-all offer's card ("step": "Not now" the safe default on top, Escape and Enter):
+// when due (app.js openOfferDue). A "step" card (as the open-all offer was until 2026-11-12: "Not now" the safe default
+// on top, Escape and Enter):
 // "Open them" turns it on, its units then open one at a time at the usual pace; "Not now" keeps them closed, and the
 // card comes back once, OPEN_AGAIN answers later (core.js openState). My progress opens them any time. Leaving the page closes it
 // unanswered (route): the offer comes back.
