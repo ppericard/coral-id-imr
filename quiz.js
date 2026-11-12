@@ -844,8 +844,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   setTimeout(() => hashNow() === cur && planNext(cur), 50);
   // The out-of-game prompts take turns (promptOk), never with a card or an achievement toast, nor with the mastery toast
   // due in a moment.
-  // In the Duel tab, the relief card after the hold has just set in comes first (reliefArm); the others wait.
-  if (!reliefArm(nb, cur, chs) && !(exq && s.mx) && promptOk()) {
+  // In the Duel tab, the relief card after the hold has just set in comes first (reliefArm); the others wait. In the
+  // custom quiz, its once-ever reminder of the units waiting in the Quiz likewise (leftNote counts, leftArm).
+  leftNote(cur);
+  if (!reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
   }
@@ -2235,6 +2237,79 @@ const customSel = () => customOf(customSaved(), unlocked());
 // A comeback runs in this game: always in the photo quiz while there is rust (CB.r); in the custom quiz only when at
 // least 2 of its genera were answered right (model.js comebackOf), else it plays as usual and leaves the comeback alone.
 const cbIn = cur => CB.r > 0 && (cur !== CUSTOM_H || (customSel() || []).filter(n => introReady(n) && (P[n] || {}).ok > 0).length >= 2);
+// The custom quiz's reminder of the path (Pierre, 2026-11-12: a player spent 417 answers over two days in the custom quiz,
+// on purpose, to drill some genera, with 13 genera still not open; "un petit rappel du genre '13 genres t'attendent dans
+// le quiz' [...] qu'on fait qu'une fois, et quand quelqu'un passe beaucoup de temps dans le custom quiz"). The custom quiz
+// opens no unit (rule L4: only the photo quiz does). Once the player has given LEFTN.AT custom-quiz answers since their
+// last photo-quiz answer (leftStep: a Duel-tab answer neither adds nor resets, it opens none either) while units of the
+// path may still open (leftCount: the units in play not met yet that the gates allow, as the photo quiz's opening reads
+// them: model.js introduced, mayOpen), the next break at Next shows a card (leftArm, leftShow): "13 new genera are
+// waiting in the Quiz", Go to the Quiz or Keep drilling. Once ever per subject: this device's mark (reefid-<dev>custom-left
+// {n: the count, shown: when}) and, signed in, the account's (core.js TOLD 'left:<subject>', sync.js toldHas / toldAdd),
+// so another device of the account never shows it again. Counted in answers, on this device.
+const LEFTN = {KEY: 'custom-left', AT: 100};
+const leftTok = () => 'left:' + SUBJ.id;
+const leftSt = () => (o => (o && typeof o === 'object' && !Array.isArray(o) ? o : {}))(store.get(sDev(LEFTN.KEY), null));
+const leftStep = (st, cur) => (cur === CUSTOM_H ? {...st, n: (Number(st.n) || 0) + 1} : cur === 'quiz' ? {...st, n: 0} : st);
+const leftDue = (st, left, told) => !st.shown && !told && (Number(st.n) || 0) >= LEFTN.AT && left > 0;
+const leftCount = () => pool().filter(n => !introduced(n) && mayOpen(n)).length;
+const leftTold = () => typeof toldHas === 'function' && toldHas(leftTok());
+// Its words, for k units waiting (S: the SUBJECTS record on screen, its words for its units).
+const leftWords = (k, S) => ({
+  kick: `New ${S.many}`,
+  title: `${k} new ${k === 1 ? `${S.one} is` : `${S.many} are`} waiting in the Quiz`,
+  body: `The custom quiz drills the ${S.many} you have met: new ones open only in the Quiz. Your picks stay here for later.`
+});
+// After each answer (answer()): the count of this subject; a photo-quiz answer starts it over.
+function leftNote(cur) {
+  const s0 = leftSt(),
+    s1 = leftStep(s0, cur);
+  if ((Number(s1.n) || 0) !== (Number(s0.n) || 0)) store.set(sDev(LEFTN.KEY), s1);
+}
+// After a custom-quiz answer: arms Next when the card is due (breakArm), as the Duel tab's relief card does: checked again
+// at the tap (the prompt spacing, nothing on screen, the next question planned brings no card); true when it armed.
+function leftArm(nb, cur) {
+  if (cur !== CUSTOM_H || !leftDue(leftSt(), leftCount(), leftTold()) || !promptOk()) return false;
+  return breakArm(nb, () => {
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args,
+      k = leftCount();
+    if (hashNow() !== cur || !leftDue(leftSt(), k, leftTold()) || !promptOk() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    leftShow(cur, k);
+    return true;
+  });
+}
+// The card (cardShow kind 'tip', 💡): leftWords, Go to the Quiz (the main button, #practice/quiz) and Keep drilling (the
+// next question; Escape too). Marked when shown. Anti-reflex as the tips: its buttons take no tap for TIP.WAIT ms, the
+// focus is on the title (Enter presses nothing), a tap outside does nothing. Logged with the tips (ev 'pulse', src
+// "tip:customleft", r shown, then quiz, keep, or none when the page is left with it up): at most 2 events, once ever.
+function leftShow(cur, k) {
+  store.set(sDev(LEFTN.KEY), {...leftSt(), shown: Date.now()});
+  if (typeof toldAdd === 'function') toldAdd(leftTok());
+  const w = leftWords(k, SUBJ),
+    at = {m: cur.split('|')[0], n: session.n},
+    log = r => ev('pulse', {r, src: 'tip:customleft', ...at});
+  log('shown');
+  const d = cardShow({
+    kind: 'tip',
+    cls: 'leftcard',
+    kick: esc(w.kick),
+    title: esc(w.title),
+    body: `<p>${esc(w.body)}</p>`,
+    primary: {text: 'Go to the Quiz', attr: 'disabled'},
+    secondary: {text: 'Keep drilling', attr: 'disabled'},
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      log(how === 1 ? 'quiz' : how === 'route' ? 'none' : 'keep');
+      if (how === 1) location.hash = hr('quiz');
+      else if (how !== 'route') route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+}
 function quizCustom(h) {
   if (h === CUSTOM_H) return customSel() ? quizPhoto(CUSTOM_H) : location.replace(hr('quiz-custom'));
   viewCustom();

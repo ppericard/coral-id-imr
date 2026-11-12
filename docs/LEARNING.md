@@ -938,6 +938,14 @@ player has unlocked only: `model.js` `unlocked`; it opens none). Code: `model.js
   `c`, ready at once, the card's photo not reused: as the Duel tab does for a genus named on its buttons); the card is
   shown once, and the genus then counts as met in the photo quiz too. The offers about which genera are in play (open
   all, back to one at a time, bonus genera) are not made in the custom quiz.
+- **A reminder of the path, once** (Pierre, 2026-11-12: a player drilled 417 answers over two days there, on purpose,
+  with 13 genera still not open: "un petit rappel [...] qu'on fait qu'une fois, et quand quelqu'un passe beaucoup de
+  temps dans le custom quiz"). After `LEFTN.AT` = 100 custom-quiz answers since the last photo-quiz answer, while units
+  of the path may still open, a card at Next says how many are waiting in the Quiz, with Go to the Quiz and Keep
+  drilling; once ever per subject, nothing changes in the draw (ARCHITECTURE.md "The custom quiz's reminder of the units
+  waiting in the Quiz"). The threshold: in the answer log (read 2026-11-12, answers to 2026-11-09), one player used the
+  custom quiz, in runs of 229, 148 and 40 answers before going back to the Quiz, at about 5 answers a minute; 100 is
+  about 20 minutes of drilling.
 - **The wrong choices** (`customChoices`): `distractors()` run on the selection, so its rules work inside it: traps by
   level among the pairs most confused, else easy genera of other growth forms, genera met first. A selection of
   look-alikes therefore drills itself (with nothing easier picked, its own look-alikes are the choices even at 0 traps,
