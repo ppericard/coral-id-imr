@@ -6014,18 +6014,21 @@ html.touring .unlock {
 }
 .tipcard h3:focus,
 .reliefcard h3:focus,
-.allmet h3:focus {
+.allmet h3:focus,
+.leftcard h3:focus {
   outline: none;
 }
 .tipcard [data-b],
 .reliefcard [data-b],
 .allmet [data-b],
+.leftcard [data-b],
 .reliefcard .reliefx {
   transition: opacity 0.25s ease-out;
 }
 .tipcard [data-b]:disabled,
 .reliefcard [data-b]:disabled,
 .allmet [data-b]:disabled,
+.leftcard [data-b]:disabled,
 .reliefcard .reliefx:disabled {
   opacity: 0.35;
   cursor: default;
@@ -6034,6 +6037,7 @@ html.touring .unlock {
   .tipcard [data-b],
   .reliefcard [data-b],
   .allmet [data-b],
+  .leftcard [data-b],
   .reliefcard .reliefx {
     transition: none;
   }
