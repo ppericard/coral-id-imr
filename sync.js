@@ -1739,7 +1739,8 @@ function signOutClear(all) {
       // and the surprise cards it has met (quiz.js WINKK; Codex review #652: the next player would inherit them)
       // rv: the rules version its progress was replayed with (replayAdoptS; the corals' is RVK)
       ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'start', 'wink'].map(k => subjKey(S.id, k)),
-      ...['hold', 'comeback'].map(k => subjDev(S.id, k))
+      // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; Codex review #850, rule D7)
+      ...['hold', 'comeback', 'custom-left'].map(k => subjDev(S.id, k))
     ]),
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
     ACHK,

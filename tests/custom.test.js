@@ -347,3 +347,23 @@ test('the custom quiz reminder: its words follow the subject and the count', () 
   assert.strictEqual(fish(1, F).title, '1 new family is waiting in the Quiz');
   assert.ok(fish(7, F).body.includes('families') && !fish(7, F).body.includes('genera'));
 });
+
+// Codex review #850 (P1, rule D7): the reminder's device record is the player's: signing out (and deleting one's own
+// account, which clears the device the same way) removes it for every subject, so the next player of a shared device
+// starts their own count and may get their own card.
+test('the custom quiz reminder: sign-out and account deletion clear its record, for every subject', () => {
+  const {page, withData, loadCodeGs} = require('./syncpage.js'),
+    KEY = left().L.LEFTN.KEY,
+    keys = core.SUBJECTS.map(S => core.subjDev(S.id, KEY));
+  assert.deepStrictEqual(keys.slice(0, 2), ['reefid-custom-left', 'reefid-fish-custom-left']);
+  for (const all of [false, true]) {
+    const A = page(loadCodeGs(withData()), {
+      SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}},
+      ls: Object.fromEntries(keys.map(k => [k, JSON.stringify({n: 140, shown: 1})]))
+    });
+    if (!('CUSTOM' in A.ctx)) A.ctx.CUSTOM = {KEY: 'reefid-sync-coral-custom'}; // model.js, not loaded here
+    keys.forEach(k => assert.ok(A.store.get(k, null), k + ' set before'));
+    vm.runInContext(`signOutClear(${all})`, A.ctx);
+    keys.forEach(k => assert.strictEqual(A.store.get(k, null), null, `${k} left after signOutClear(${all})`));
+  }
+});
