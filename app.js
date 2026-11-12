@@ -2410,7 +2410,10 @@ function cardShow(o) {
     id = 'ulh' + ++cardN;
   d.className = ('unlock ' + (o.cls || '')).trim();
   d.dataset.t = String(Date.now());
-  d.dataset.info = [o.kind || '', o.kick || '', o.title ? String(o.title).slice(0, 60) : ''].join(' | '); // the event log's name for it
+  // The event log's name for it. A card without a title of its own (the sign-in card draws its heading in its body)
+  // is named by its label, so its row never reads as an empty card (account |  | , 2026-11-09).
+  const name = o.title || o.label;
+  d.dataset.info = [o.kind || '', o.kick || '', name ? String(name).slice(0, 60) : ''].join(' | ');
   d.setAttribute('role', 'dialog');
   d.setAttribute('aria-modal', 'true');
   let shut = false;
@@ -2507,8 +2510,7 @@ function cardShow(o) {
     // A hidden page runs no fade-in, and the tour hides cards on purpose until it closes: check again later.
     if (document.visibilityState !== 'visible' || document.documentElement.classList.contains('touring')) return setTimeout(check, 2500);
     if (cardSeen(d)) return;
-    if (typeof ev === 'function')
-      ev('err', {msg: 'empty card closed: ' + [o.kind || '', o.kick || '', o.title ? String(o.title).slice(0, 60) : ''].join(' | ')});
+    if (typeof ev === 'function') ev('err', {msg: 'empty card closed: ' + d.dataset.info});
     close('empty');
   };
   setTimeout(check, 2500);
