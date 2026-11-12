@@ -23,6 +23,7 @@ function journeyCards(name, T = ASUBJ) {
   const S = savedFor(name, T);
   return !S ? null : S.err ? {err: S.err} : {map: S.intro, offer: S.offer, start: S.start};
 }
+// offer, and a declined offer (open 0): records from before 2026-11-12, when a card offered Open all (Pierre, Q337).
 const JVIA = {card: 'on the first cards', progress: 'from My progress', offer: 'from the offer card'};
 // How the first-launch answer was given (model.js startSet via), and the fallback cards (core.js CHOICE).
 // admin: Pierre's change on Players (core.js startAdminSet, sheet v99).

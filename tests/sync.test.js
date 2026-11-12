@@ -1266,9 +1266,7 @@ function modelHold(saved = {}) {
   const ctx = {
     store: {get: (k, d) => (k in saved ? saved[k] : d), set: (k, v) => (saved[k] = v)},
     sKey: n => 'reefid-sync-coral-' + n,
-    sDev: n => 'reefid-' + n,
-    startVars: require('../core.js').startVars, // INTRO.OFFER.AT (core.js CHOICE)
-    CHOICE: require('../core.js').CHOICE // INTRO.OFFER.MET (CHOICE.MET)
+    sDev: n => 'reefid-' + n
   };
   require('vm').createContext(ctx);
   require('vm').runInContext(intro + hold + '\nthis.step = holdStep; this.sync = holdSync; this.now = () => HOLDS;', ctx);

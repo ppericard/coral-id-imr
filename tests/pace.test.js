@@ -97,7 +97,7 @@ test('opening pace: the first cards count, Open all and a genus closed again do 
   assert.strictEqual(M.openPace(), false);
   // Open all ('a') and the genera "One at a time" closes ('b') take no place.
   M.ctx.n = 40;
-  M.introAll('offer');
+  M.introAll('progress');
   assert.strictEqual(M.openRecent().length, 0);
   assert.strictEqual(M.openPace(), true);
   M.introBack(false);

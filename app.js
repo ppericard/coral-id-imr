@@ -2442,7 +2442,7 @@ addEventListener('hashchange', () => {
 // d.set(changes) redraws it.
 const CARD_KINDS = {
   apology: '🙏',
-  step: '🧗', // a big step the player chooses (the open-all offer): the warm --warn hue, "Not now" on top
+  step: '🧗', // a big step the player chooses (fish circle 3, quiz.js openOfferShow): the warm --warn hue, "Not now" on top
   update: '🔄',
   feature: '✨',
   genus: '🪸',
@@ -2698,7 +2698,7 @@ function route() {
     generaY = a ? [a.getAttribute('href'), a.getBoundingClientRect().top] : null;
   }
   const fromSheet = routeFrom.startsWith('g-');
-  // A card (.unlock: new genus, bonus genus, the offer to open all, sign-in) belongs to the page it opened on: leaving that
+  // A card (.unlock: new genus, bonus genus, back to one at a time, sign-in) belongs to the page it opened on: leaving that
   // page (Back, a tab, a link) closes it and its keys (new-player walkthrough 2026-11-02: phone Back from the quiz left the
   // card over Home). A redraw of the same page keeps it. First-meeting cards are met when shown: the rest come next time.
   const left = h !== routeFrom;
