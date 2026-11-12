@@ -5841,17 +5841,8 @@ html.touring .unlock {
 [data-k='step'] {
   --k: var(--warn);
 }
-/* A big step (the open-all offer, quiz.js introOfferShow): what changes as a short list, the step itself the outlined
-   button in the warn hue under the safe "Not now". */
-.ulchg {
-  margin: 8px 0 0;
-  padding-left: 20px;
-  text-align: left;
-  font-size: var(--fs-s);
-}
-.ulchg li + li {
-  margin-top: 4px;
-}
+/* A big step (quiz.js openOfferShow; the open-all offer until 2026-11-12): the step itself the outlined button in the warn
+   hue under the safe "Not now". */
 .ulcard[data-k='step'] .next.sec {
   color: var(--kink);
   box-shadow: inset 0 0 0 1.5px var(--k);

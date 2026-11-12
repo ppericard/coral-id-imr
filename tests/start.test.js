@@ -37,7 +37,7 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} 
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {INTRO, introAdd, introOffer, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startEase, startRestart, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
+      '\nthis.M = {INTRO, introAdd, introReset, holdStep, setHold: h => (HOLDS = h), startOf, startV, startSet, startEase, startRestart, startStep, startDue, startShown, startMerge, startResume: typeof startResume === "function" ? startResume : () => {}};',
     ctx
   );
   const M = ctx.M;
@@ -150,7 +150,7 @@ test('inferred for an existing player: the answer whose starting level is neares
   assert.strictEqual(at(START.W * startVars('know').p + 1), 'know');
 });
 
-test('stored and its variables set: the answer, when, how; the offer to open all comes from its own answer', () => {
+test('stored and its variables set: the answer, when, how', () => {
   const slate = Array.from({length: 12}, (_, i) => 'G' + i),
     M = model({slate});
   assert.strictEqual(M.startOf(), null);
@@ -168,15 +168,13 @@ test('stored and its variables set: the answer, when, how; the offer to open all
   );
   assert.ok(M.ctx.drops > 0, 'the questions planned with the old level are dropped');
   assert.deepStrictEqual(M.startV(), startVars('know'));
-  // The offer: 10 genera met, a level of 0.5; at the choice's own answer count, never before.
+  // The offer to open all genera went (Pierre, 2026-11-12, Q337): nothing offers it, whatever the answer and the level.
   M.introAdd(slate.slice(0, 10), true, 's');
   M.ctx.P[LEVEL] = {ok: 15, ko: 4, th: 1};
-  M.ctx.n = startVars('know').at - 1;
-  assert.strictEqual(M.introOffer(), false);
-  M.ctx.n = startVars('know').at;
-  assert.strictEqual(M.introOffer(), true, 'know: the offer from its at');
+  M.ctx.n = 60;
+  assert.strictEqual(vm.runInContext('typeof introAdd + typeof introOffer', M.ctx), 'functionundefined');
+  assert.deepStrictEqual(Object.keys(M.INTRO.OFFER), ['KEY'], 'the record of Open all only');
   M.startSet('new', 'fallback');
-  assert.strictEqual(M.introOffer(), false, 'new: not before 50 answers, as before');
   assert.deepStrictEqual(
     M.startOf().h.map(x => [x[0], x[3]]),
     [

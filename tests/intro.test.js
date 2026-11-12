@@ -58,16 +58,45 @@ function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
   };
   return M;
 }
-// A player who met A and B on the first cards and C on a card of its own, then opened all at answer 50.
+// A player who met A and B on the first cards and C on a card of its own, then opened all at answer 50 (My progress).
 function opened() {
   const P = {A: {ok: 9, ko: 1}, B: {ok: 8, ko: 2}, C: {ok: 3, ko: 1}};
   const M = model({P});
   M.introAdd(['A', 'B'], true);
   M.introAdd(['C'], false);
   M.ctx.n = 50;
-  M.introAll('offer');
+  M.introAll('progress');
   return M;
 }
+
+// The card that offered Open all went (Pierre, 2026-11-12, Q337); Open all itself stays, the same on the first cards and
+// in My progress: every genus left opens at once, ready (no card each), recorded with where it came from.
+test('Open all from the first cards and from My progress: every genus left at once, ready, its record', () => {
+  for (const via of ['card', 'progress']) {
+    const M = model();
+    M.introAdd(['A', 'B', 'C', 'D'], true); // the first cards
+    M.ctx.n = via === 'card' ? 0 : 30;
+    M.introAll(via);
+    assert.deepStrictEqual(M.introLeft(), [], via);
+    assert.ok(
+      ['E', 'F'].every(n => M.introduced(n) && M.introReady(n) && M.introMap()[n][3] === 'a'),
+      via
+    );
+    assert.deepStrictEqual((({at, open, via: v, n, h}) => ({at, open, via: v, n, h}))(M.offer()), {at: M.ctx.n, open: 1, via, n: 2, h: 0});
+    assert.strictEqual(M.backDue(), false);
+  }
+});
+
+test('a record from the offer card of before (via offer) is read as any Open all: the back card still comes', () => {
+  const M = model({P: {A: {ok: 9, ko: 1}}});
+  M.introAdd(['A'], true);
+  M.introMerge(JSON.stringify({B: [50, 1, 1, 'a'], C: [50, 1, 1, 'a']}), JSON.stringify({at: 50, open: 1, via: 'offer', t: 1, n: 2, h: 0}));
+  assert.strictEqual(M.offer().via, 'offer');
+  assert.ok(M.introduced('B') && M.introReady('C'));
+  M.play(5, 0.8, false);
+  assert.strictEqual(M.backDue(), true);
+  assert.deepStrictEqual([...M.introBack(false)].sort(), ['B', 'C']);
+});
 
 test('back card: due once the drop since Open all reaches 2 x INTRO.HOLD, never before Open all', () => {
   const M = opened();
@@ -130,7 +159,7 @@ test('One at a time: every genus opened at once closes, answered or not; the oth
   for (const n of ['A', 'B', 'C']) assert.ok(M.introduced(n) && M.introReady(n), n);
   assert.deepStrictEqual([...M.introLeft()].sort(), ['D', 'E', 'F']); // back in the queue; My progress offers Open all again
   const o = M.offer();
-  assert.ok(o.open && o.bk === 'one' && o.bn === 3 && o.via === 'offer');
+  assert.ok(o.open && o.bk === 'one' && o.bn === 3 && o.via === 'progress');
   assert.strictEqual(M.backDue(), false);
   // Its card opens a genus again (quiz.js introShow -> introAdd), with the progress it had.
   M.ctx.n++;
