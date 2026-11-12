@@ -941,7 +941,8 @@ player has unlocked only: `model.js` `unlocked`; it opens none). Code: `model.js
 - **A reminder of the path, once** (Pierre, 2026-11-12: a player drilled 417 answers over two days there, on purpose,
   with 13 genera still not open: "un petit rappel [...] qu'on fait qu'une fois, et quand quelqu'un passe beaucoup de
   temps dans le custom quiz"). After `LEFTN.AT` = 100 custom-quiz answers since the last photo-quiz answer, while units
-  of the path may still open, a card at Next says how many are waiting in the Quiz, with Go to the Quiz and Keep
+  of the path may still open and the opening hold is off (during the hold the Quiz opens nothing new, so the card
+  waits for it to end: Pierre, 2026-11-12), a card at Next says how many are waiting in the Quiz, with Go to the Quiz and Keep
   drilling; once ever per subject, nothing changes in the draw (ARCHITECTURE.md "The custom quiz's reminder of the units
   waiting in the Quiz"). The threshold: in the answer log (read 2026-11-12, answers to 2026-11-09), one player used the
   custom quiz, in runs of 229, 148 and 40 answers before going back to the Quiz, at about 5 answers a minute; 100 is

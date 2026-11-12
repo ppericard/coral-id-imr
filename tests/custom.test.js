@@ -315,7 +315,7 @@ test('the custom quiz reminder: counts custom-quiz answers since the last photo-
   assert.ok(LEFTN.AT >= 50 && LEFTN.AT <= 200, String(LEFTN.AT));
 });
 
-test('the custom quiz reminder: due once at LEFTN.AT answers, never before, never again, never with nothing to open', () => {
+test('the custom quiz reminder: due once at LEFTN.AT answers, never before, never again, never with nothing to open or during the hold', () => {
   const {leftDue, leftCount, leftTold, LEFTN} = left().L,
     AT = LEFTN.AT;
   assert.strictEqual(leftDue({n: AT - 1}, 13, false), false, 'before the threshold');
@@ -324,6 +324,10 @@ test('the custom quiz reminder: due once at LEFTN.AT answers, never before, neve
   assert.strictEqual(leftDue({n: AT, shown: 1}, 13, false), false, 'shown on this device: never again');
   assert.strictEqual(leftDue({n: AT}, 13, true), false, 'told on another device of the account: never again');
   assert.strictEqual(leftDue({n: AT}, 0, false), false, 'nothing left to open');
+  // The opening hold on (model.js introHold): the Quiz opens nothing new for a while, so it waits for the hold to end
+  // (Pierre, 2026-11-12, on #850), and comes then, once.
+  assert.strictEqual(leftDue({n: AT + 40}, 13, false, true), false, 'during the opening hold');
+  assert.strictEqual(leftDue({n: AT + 40}, 13, false, false), true, 'once the hold is off');
   assert.strictEqual(leftTold(), false);
   assert.strictEqual(left({told: true}).L.leftTold(), true);
   // Signed in, before the visit's first sync has merged the account's notices: it waits (Codex review #850).

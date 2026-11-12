@@ -2213,7 +2213,7 @@ const cbIn = cur => CB.r > 0 && (cur !== CUSTOM_H || (customSel() || []).filter(
 // opens no unit (rule L4: only the photo quiz does). Once the player has given LEFTN.AT custom-quiz answers since their
 // last photo-quiz answer (leftStep: a Duel-tab answer neither adds nor resets, it opens none either) while units of the
 // path may still open (leftCount: the units in play not met yet that the gates allow, as the photo quiz's opening reads
-// them: model.js introduced, mayOpen), the next break at Next shows a card (leftArm, leftShow): "13 new genera are
+// them: model.js introduced, mayOpen) and the opening hold is off (leftDue), the next break at Next shows a card (leftArm, leftShow): "13 new genera are
 // waiting in the Quiz", Go to the Quiz or Keep drilling. Once ever per subject: this device's mark (reefid-<dev>custom-left
 // {n: the count, shown: when}) and, signed in, the account's (core.js TOLD 'left:<subject>', sync.js toldHas / toldAdd),
 // so another device of the account never shows it again. Counted in answers, on this device.
@@ -2221,7 +2221,9 @@ const LEFTN = {KEY: 'custom-left', AT: 100};
 const leftTok = () => 'left:' + SUBJ.id;
 const leftSt = () => (o => (o && typeof o === 'object' && !Array.isArray(o) ? o : {}))(store.get(sDev(LEFTN.KEY), null));
 const leftStep = (st, cur) => (cur === CUSTOM_H ? {...st, n: (Number(st.n) || 0) + 1} : cur === 'quiz' ? {...st, n: 0} : st);
-const leftDue = (st, left, told) => !st.shown && !told && (Number(st.n) || 0) >= LEFTN.AT && left > 0;
+// hold: the opening hold is on (model.js introHold): the Quiz opens nothing new for a while, so the card waits for it to
+// end (Pierre, 2026-11-12, on #850: "peut-être pas quand même" during the hold); still once ever.
+const leftDue = (st, left, told, hold) => !st.shown && !told && !hold && (Number(st.n) || 0) >= LEFTN.AT && left > 0;
 const leftCount = () => pool().filter(n => !introduced(n) && mayOpen(n)).length;
 // Told on another device of the account, or perhaps: signed in, before the visit's first sync has merged the account's
 // notices (sync.js noticesReady; Codex review #850), it waits, as the other one-time notices do (noticeLater).
@@ -2241,12 +2243,13 @@ function leftNote(cur) {
 // After a custom-quiz answer: arms Next when the card is due (breakArm), as the Duel tab's relief card does: checked again
 // at the tap (the prompt spacing, nothing on screen, the next question planned brings no card); true when it armed.
 function leftArm(nb, cur) {
-  if (cur !== CUSTOM_H || !leftDue(leftSt(), leftCount(), leftTold()) || !promptOk()) return false;
+  if (cur !== CUSTOM_H || !leftDue(leftSt(), leftCount(), leftTold(), introHold()) || !promptOk()) return false;
   return breakArm(nb, () => {
     if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
     const nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args,
       k = leftCount();
-    if (hashNow() !== cur || !leftDue(leftSt(), k, leftTold()) || !promptOk() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    if (hashNow() !== cur || !leftDue(leftSt(), k, leftTold(), introHold()) || !promptOk() || !lb.hidden || (nx && nextCards(cur, nx)))
+      return false;
     promptMark();
     leftShow(cur, k);
     return true;

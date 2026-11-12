@@ -2963,7 +2963,8 @@ async function tipsCheck(b, base) {
 // the photo quiz's opening reads them) and buttons, faded at first, nothing wider than the screen; marked shown and
 // logged (item tip:customleft); Keep drilling (phone) goes on to the next custom question and the card never comes
 // again; Go to the Quiz (desktop) opens the photo quiz. Then a player with every genus met (nothing left to open) and
-// the count past LEFTN.AT gets none. Returns the failures.
+// the count past LEFTN.AT gets none; nor does one while the opening hold is on, who gets it once the hold is off.
+// Returns the failures.
 async function customLeftCheck(b, base) {
   const fails = [],
     MET = ['Pocillopora', 'Stylophora', 'Favites', 'Dipsastraea', 'Acropora', 'Porites'];
@@ -3113,6 +3114,22 @@ async function customLeftCheck(b, base) {
     if (n || st.left || st.s.shown || st.s.n !== st.want)
       fails.push(`390px custom quiz reminder, nothing to open: ${JSON.stringify({n, ...st})}`);
     if (errs.length) fails.push(`390px custom quiz reminder, nothing to open: page errors ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  // The opening hold on (model.js introHold; Pierre, 2026-11-12, on #850): no card while it is on, past LEFTN.AT; it comes
+  // at the first break once the hold is off.
+  {
+    const W = '390px custom quiz reminder, opening hold:';
+    const [c, p, errs] = await open(390, 844, true);
+    await p.evaluate(() => ((achPop = () => {}), store.set(sDev(LEFTN.KEY), {n: LEFTN.AT + 5}), (HOLDS = 9)));
+    let n = 0;
+    for (let i = 0; i < 3; i++) if ((await play(p)).next) n++;
+    const on = await p.evaluate(() => ({hold: introHold(), s: store.get(sDev(LEFTN.KEY), {})}));
+    if (n || !on.hold || on.s.shown) fails.push(`${W} shown while the hold is on: ${JSON.stringify({n, ...on})}`);
+    await p.evaluate(() => (HOLDS = 0));
+    const r = await play(p);
+    if (!r.next) fails.push(`${W} not shown once the hold is off: ${JSON.stringify(r)}`);
+    if (errs.length) fails.push(`${W} page errors ${errs.slice(0, 3).join(' | ')}`);
     await c.close();
   }
   return fails;
