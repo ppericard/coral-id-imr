@@ -44,7 +44,9 @@ the answer log says, and what it never says. Any analysis of players (rule L12) 
   the mix-ups term and the format's offset (Q138). The success of one player on a photo says little about its
   difficulty alone: it depends on that player's level.
 - **Shaky** (a unit holding new openings): its expected success on a typical photo of it is under `OPEN.P` (0.6),
-  moved with the aim ("One opening rule"). It reads the ability and the genus offset, not the success rate.
+  moved with the aim ("One opening rule"). It reads the ability and the genus offset, not the success rate. From 200
+  answers (`OPEN.STUCK_FROM`), a unit still shaky after 10 of its own answers (`OPEN.STUCK`) stays shaky but holds no
+  new opening ("A unit stuck shaky").
 
 ## The players we design for
 
@@ -1166,7 +1168,7 @@ time, each on its card, but never as the answer of the question right after its 
   the burst study of 2026-11-12, read-only). Open all stays, instant and unchanged, on the first cards and in My
   progress; the back card below stays for an Open all chosen there; records with `via` 'offer' (and a declined offer,
   `open` 0) are still read (the admin's player journey). Simulated, what a player who would have taken it now gets:
-  "A unit stuck shaky: calibrated, not adopted" below.
+  "A unit stuck shaky" below.
 - **Back to one at a time** (Pierre, 2026-11-03; `backDue`, `introBack`, quiz.js `backShow`). A player had 46 right in
   51 (90%) on 13 genera opened one at a time, accepted the offer around answer 52, and on the ~27 genera that came at
   once fell to 21 right in 34 (62%), with a run of 1 right in 8 on look-alikes, where the game expected 0.70-0.88; the player
@@ -1874,7 +1876,8 @@ yet (`OPEN.READY` 35% down to `OPEN.TRICKLE` 3% at `OPEN.K` 10 shaky genera, the
 (`noOpen`) joined them. The last three are rules about *when* a card may come; the share was a second way of saying
 *how often*. Now one: when a card may come, the question opens a genus with the chance `openChance` = 1 − shaky /
 `OPEN.K` (`model.js`), the genus drawn among those not met yet by `openPick` (easiest first as far as the data are
-trusted, most common first: unchanged). The genus draw (`weighted`) only weighs the genera met. `READY`, `TRICKLE` and
+trusted, most common first: unchanged); since 2026-11-12, from 200 answers, a genus still shaky after 10 of its own
+answers takes no place ("A unit stuck shaky"). The genus draw (`weighted`) only weighs the genera met. `READY`, `TRICKLE` and
 the share arithmetic went; K was recalibrated, as the review expected (the chance to open with nothing shaky is now 1,
 was 0.35).
 
@@ -1907,7 +1910,53 @@ rule is the same as before.
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
 
-### A unit stuck shaky: calibrated, not adopted (2026-11-12, Q337, Q338)
+### A unit stuck shaky (2026-11-12, Q337, Q338)
+
+**Adopted** (Pierre, 2026-11-12, Q338, after the two calibrations below: "option a, B10 après 200 réponses"): a unit
+still shaky after `OPEN.STUCK` = 10 of its own answers (its `ok` + `ko`) takes no place among the `OPEN.K` places of
+`openChance`, once the player's answers so far are `OPEN.STUCK_FROM` = 200 or more (`model.js`). Before 200 answers the
+rule is off and every shaky unit takes its place, as before; no level condition ("Above a level" showed that no
+threshold on the global level spares the simulated beginner, whose level is past every L of the grid from about answer
+200). The unit stays shaky (Review, the draw, its bar): it only stops holding the others back.
+
+- **The count**: `answersSoFar()`, the subject's global level record `P['~level']` `ok` + `ko`, the count the game
+  reads against `ELO_MIN` (200, `progress.js`) before it shows the Elo and counts its achievements ("What each number
+  measures"). A progress reset clears it, so the rule is off again for the next 200 answers.
+- **Every subject**: the engine is shared, so the fish units are covered too, each subject on its own record's count
+  (the fish answers for the fish, the coral answers for the corals). Calibrated on the corals; the fish rated world,
+  which "Above a level" never reached (no arm was left in), was run in the PR that adopted it (below): every guardrail
+  held.
+- **The cost Pierre accepted**: the rule is "Above a level"'s arm "N 10, floor alone". In the rated world the simulated
+  beginner's shown score at 1,000 answers is lower, −0.8 points on seeds 301-310 and −1.9 (bound −3.6) on 301-320, with
+  0.8 to 2.3 fewer units at Open Water by then (N 10 with no floor: −1.2 to −4.7 points on the seeds of both
+  calibrations). True knowledge is not lower (D\* +0.005 at 1,000 answers, +0.015 at 300, seeds 301-320). The two real
+  players held by stuck genera get their first new genus 4 and 7 answers into their stretches (the median), where the
+  opening as it was gave none in the first stretch and the median at 42 answers in the second.
+- **Checked in the PR that adopted it** (rule L11 level 2 as a regression check, the value decided; no new calibration):
+  unit tests (`tests/pace.test.js`: before 200 answers unchanged; from 200, a unit shaky after 10 of its own answers
+  takes no place, one with 9 keeps it); `tools/learnsim.js`, 5 seeds × 300 questions, the four coral profiles and the
+  five fish profiles, against the same code with the rule off (`OPEN.STUCK_FROM` ∞), `tools/learncmp.js`: every
+  guardrail held for every profile of both subjects. The coral lecture RA, strong RA and expert gave the base's rows to
+  the decimal, the fish profiles too but one figure (the casual diver's openings held in expectation, 18.9 → 19.0): the
+  rule is live only from answer 200 here. The coral beginner: units at Open Water at 300 2.4 → 2.2, one run of 5 with
+  its first unit at Open Water after answer 300 (before, about 275), true knowledge 0.681 → 0.682, the longest plateau
+  59 → 60: the cost above, small in 100 answers. `tests/profiles.smoke.js` and `tests/draw.smoke.js` pass. The real
+  log, the two stretches replayed through `model.js`'s own `openChance` and `OPEN` (stubs for the shaky units and their
+  answers): first opening at answer 4 (P1) and 7 (P2), the median, as the calibration's "floor alone" row; the same
+  rows with the answers counted under 200 give the base's (P1 none, P2 42).
+- **The rated world** (the same PR; 1,000 answers, seeds 301-310, the count learner, normal photos, `tools/learncmp.js`
+  `--looks 2`): the corals gave "Above a level"'s "N 10, floor alone" rows seed for seed (every profile), so the cost
+  above is the rule as shipped. The fish, the five profiles against the rule off: every guardrail held but the
+  beginner's E at 300, unclear on the first look (+0.002, bound +0.031); on 20 seeds (311-320 added, the beginner) held
+  (+0.007, bound +0.025), and every other beginner cell held too: shown score at 1,000 34.3 → 34.1 (bound −0.6), units at
+  Open Water at 1,000 24.1 → 24.6, longest plateau 99 → 96, true knowledge 0.464 → 0.466. The casual diver and the
+  lecture RA held every cell (shown score within 0.2 points, units at Open Water within 0.3; the lecture RA's longest
+  plateau 144 → 152, inside its margin of 29); the strong RA and the expert gave the base's rows to the decimal. The
+  fish beginner pays none of the coral beginner's cost here.
+
+The two calibrations that led there, kept as they were run:
+
+#### Calibrated, not adopted (Q338 (a), 2026-11-12)
 
 Pierre, 2026-11-12, Q338 (a): "Ok pour essayer B10, calibré avant la pull request": a unit still shaky after
 `OPEN.STUCK` of its own answers (its `ok` + `ko`) stops taking a place among the `OPEN.K` places of `openChance`; N
@@ -5863,10 +5912,11 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
   first cards and in My progress, the back card stays ("First meeting with a genus"). Q338 (a), "a unit still shaky
   after N of its own answers stops holding the opening": calibrated among 8 / 10 / 12 / 15, none passed the plan
   declared before the runs (N 8 and N 10 free the real stretches but lower a rated-world beginner's score and lengthen
-  its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky: calibrated,
-  not adopted"). Q338 (b), N 10 only above a global level L (0.25, 0.5 or 0.75) once it rests on 200 answers: calibrated,
-  none passed (the simulated beginner's level is past every L from about answer 200, so it pays the same cost), nothing
-  changed; back to Pierre ("Above a level").
+  its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky",
+  "Calibrated, not adopted"). Q338 (b), N 10 only above a global level L (0.25, 0.5 or 0.75) once it rests on 200
+  answers: calibrated, none passed (the simulated beginner's level is past every L from about answer 200, so it pays the same cost), nothing
+  changed; back to Pierre ("Above a level"). Q338, decided: "option a, B10 après 200 réponses": N 10 from 200 answers,
+  no level (the arm "N 10, floor alone"), the beginner's shown-score cost accepted; adopted ("A unit stuck shaky").
 - 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
   with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
   species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation
