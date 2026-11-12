@@ -75,3 +75,24 @@ test('fishNextOf: every family met: the families on their way, then the scientif
   // Circle 3 on but still due and left with photos (its families may open: allMetNone keeps the card away): read as all.
   assert.strictEqual(next({...base, c3: 3}).k, 'all');
 });
+
+// Codex review #851 (P1, rule D7): the card's device marks are the player's: signing out (and deleting one's own account,
+// which clears the device the same way) removes them for every subject and reason, so the next player of a shared device
+// gets their own card. The reasons are fishNextOf's k (c3, beyond, all); the key is quiz.js ALLMET.KEY + k.
+test('all met: sign-out and account deletion clear its marks, for every subject and reason', () => {
+  const core = require('../core.js'),
+    {page, withData, loadCodeGs} = require('./syncpage.js'),
+    keys = core.SUBJECTS.flatMap(S => ['c3', 'beyond', 'all'].map(k => core.subjDev(S.id, 'allmet-' + k)));
+  assert.ok(quiz.includes("const ALLMET = {KEY: 'allmet-'}"), 'the key prefix sync.js clears');
+  ['c3', 'beyond', 'all'].forEach(k => assert.ok(app.includes(`k = '${k}'`), `fishNextOf has the reason ${k}`));
+  for (const all of [false, true]) {
+    const A = page(loadCodeGs(withData()), {
+      SYNC: {name: 'Ana B.', pin: '1230', log: [], base: {}},
+      ls: Object.fromEntries(keys.map(k => [k, '1']))
+    });
+    if (!('CUSTOM' in A.ctx)) A.ctx.CUSTOM = {KEY: 'reefid-sync-coral-custom'}; // model.js, not loaded here
+    keys.forEach(k => assert.ok(A.store.get(k, null), k + ' set before'));
+    vm.runInContext(`signOutClear(${all})`, A.ctx);
+    keys.forEach(k => assert.strictEqual(A.store.get(k, null), null, `${k} left after signOutClear(${all})`));
+  }
+});
