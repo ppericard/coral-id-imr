@@ -851,7 +851,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
   }
-  // Every unit in play met and none may open now: its card takes the break at Next before a tip (allMetArm).
+  // Every unit in play met and none may open now: its card takes the break at Next before a tip (allMetArm); the photo
+  // quiz only, so never on the custom quiz's answer that its reminder (leftArm) arms, and the first card armed wins anyway.
   allMetArm(nb, cur, exq && s.mx);
   // A "Did you know?" tip may take the break at Next when no prompt above took it (tipAfter; tips.js).
   tipAfter(nb, cur, !good, tm.zm, exq && s.mx);
