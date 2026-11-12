@@ -294,12 +294,11 @@ the fish UX study: the fish get a welcome question that **works exactly like the
   1. *I'm new to reef fish*;
   2. *I'm at IMR (Research Assistant programme)*;
   3. *I know reef fish well*.
-- **The answer only sets starting values**, as for corals: the starting level, the answer from which the open-all offer may come, and
-  whether Fish basics is offered first (for "new"). It never opens an entry, a species or a scientific name by itself.
-- **Opening everything comes later**, with the same "danger zone" open-all card as the corals ("A big step: open all … at once?", Not now
-  on top; `model.js` `introOffer`, `INTRO.OFFER`), after a number of answers that depends on the answer. Corals: from answer **50 / 30 /
-  20** (new / IMR course / know well: `core.js` `CHOICE.opts` `at`), until answer 150, once 10 slate genera are met and the overall level
-  is 0.5 or more. The fish values start from the corals' and are set with the learnsim fish profiles ("Checks before release").
+- **The answer only sets starting values**, as for corals: the starting level and whether Fish basics is offered first (for "new").
+  It never opens an entry, a species or a scientific name by itself.
+- **Opening everything**: Open all on the first cards and in My progress, as the corals. The card that offered it after some 50
+  answers ("A big step: open all … at once?") went for every subject on 2026-11-12 (Pierre, Q337: of the players who accepted it,
+  several fell clearly in the answers after; docs/LEARNING.md "First meeting with a genus").
 - Everything else of the coral question comes too: the card before the quiz for a player who skipped it, the silent inference for an
   existing fish player past 50 fish answers, the 40 / 60 checkpoints (a "lower" verdict offers **Fish basics**; the level-change cards
   **off for the fish since 2026-11-08**, Pierre: "on ne fasse pas les propositions de changement de niveau sur les poissons tant
@@ -314,7 +313,7 @@ the fish UX study: the fish get a welcome question that **works exactly like the
      **"Super Hyper Mega Danger Zone"**, all the species at once.
   Until species exist the first step opens the entries, as today.
 - **Not now**: the calmer path above (entries, then species at Advanced, scientific names later because they are hard).
-- The answer and the open-all choice are synced with the player's fish progress (the offer as the corals' does: `reefid-sync-fish-intro-offer`), shown in the admin player journey; Open all can still be taken later from My progress.
+- The answer and Open all are synced with the player's fish progress (as the corals': `reefid-sync-fish-intro-offer`), shown in the admin player journey; Open all can be taken any time from My progress.
 - **No struggling once everything is open.** The dynamic difficulty must hold an IMR player near the usual target:
   - photo difficulty, traps and the display schedule start from the player's level (`playerStart`), not from the hardest setting;
   - the draw keeps the `OPEN` share for units never asked (new species come in as results allow, not as a wall of 300 never-asked

@@ -1114,12 +1114,18 @@ time, each on its card, but never as the answer of the question right after its 
   more, a card says "You seem to know your corals already" and offers Open all genera or Not now (`introOffer`), once.
   Simulated at 50 answers: a beginner -0.9, an RA who knows 60% of the genera -0.2, 80% +0.8, an expert +1.2. The
   correct-answer rate does not tell them apart (the game keeps everyone near 80%: 68%, 76%, 86%, 88%). A card, not an
-  automatic opening, so a wrong guess costs a tap.
+  automatic opening, so a wrong guess costs a tap. **Removed on 2026-11-12** (Pierre, Q337 (a): "Q337, moi je pense qu'on
+  va la supprimer. Donc option A."), for every subject: on the real log the card came about answer 50, after the 10
+  easiest genera, and 4 of the 9 players who accepted it fell clearly over the next 30 answers (right % −13.5 points;
+  the burst study of 2026-11-12, read-only). Open all stays, instant and unchanged, on the first cards and in My
+  progress; the back card below stays for an Open all chosen there; records with `via` 'offer' (and a declined offer,
+  `open` 0) are still read (the admin's player journey). Simulated, what a player who would have taken it now gets:
+  "A unit stuck shaky: calibrated, not adopted" below.
 - **Back to one at a time** (Pierre, 2026-11-03; `backDue`, `introBack`, quiz.js `backShow`). A player had 46 right in
   51 (90%) on 13 genera opened one at a time, accepted the offer around answer 52, and on the ~27 genera that came at
   once fell to 21 right in 34 (62%), with a run of 1 right in 8 on look-alikes, where the game expected 0.70-0.88; the player
   then stopped. Pierre: "if the player then says no, I keep all genera, fine; but offer at least once the option to go
-  back if we detect it really became too hard". So once after Open all (from the first cards, My progress or the offer),
+  back if we detect it really became too hard". So once after Open all (from the first cards or My progress; until 2026-11-12 also the offer),
   a card "Lots of new genera at once: Keep them all, or go back to one at a time?" offers One at a time (the main
   button) or Keep them all (also Escape). **When**: the record of Open all keeps `h`, the opening hold's own CUSUM
   (`holdNext`: each answer's expected success `e`, allowance `INTRO.SLACK`) over the answers since Open all, from 0;
@@ -1143,13 +1149,13 @@ time, each on its card, but never as the answer of the question right after its 
   lecture-level RA in 2 of 5 (26 and 66), a strong RA and an expert never.
 - Synced with the progress: the cards (`reefid-sync-coral-intro`: genus -> [answers when shown, 1 when ready at once (first cards, Open all,
   a duel's), time shown, kind: s first cards / c a card of its own / a Open all / b closed again by One at a time]) and the offer
-  (`reefid-sync-coral-intro-offer`: {at, open, via: card / progress / offer, t, n genera opened at once, h the drop since; the
+  (`reefid-sync-coral-intro-offer`: {at, open, via: card / progress (offer before 2026-11-12), t, n genera opened at once, h the drop since; the
   back card's choice bk keep / one, after answer bat, bn genera closed, time bt}, also written by Open
   all genera, for the admin's player journey) are `reefid-sync*` keys, which the sheet keeps; on a pull, the cards seen on another
   device join this one's (`introMerge`; between a closed mark and an opening of the same genus the later one wins, so a
   genus closed on one device is closed on the other, and one reopened since by its card is open on both), the offer record
   goes by its latest decision (`t` or `bt`; `h` counts each device's own answers), and a progress reset starts them over (`introReset`). A genus already asked
-  counts as met; the bonus genera, once on, get a first-meeting card like the others. Checked in CI (`tests/draw.smoke.js`, first meetings, offer,
+  counts as met; the bonus genera, once on, get a first-meeting card like the others. Checked in CI (`tests/draw.smoke.js`, first meetings, no offer card,
   sync; `tests/pages.smoke.js`, the 4 cards and My progress).
 
 My progress no longer shows "Review" (weak) for a genus with fewer than 5 answers (`REVIEW_MIN`, `shownLevel` in
@@ -1201,7 +1207,7 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
 
 **The variables, all of the existing model** (`CHOICE.opts[i][1]`):
 
-| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer | Coral basics first |
+| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337) | Coral basics first |
 | --- | --- | --- | --- |
 | I'm new to corals | 0 (as before: a new player is a beginner) | 50 (as before, `INTRO.OFFER.AT`) | yes (tour's last button, the card's follow-up) |
 | I had the IMR coral course | 0.5 | 30 | no |
@@ -1217,7 +1223,8 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
   p 0 is 0.08 (beginner), 0.52 (lecture RA), 0.78 (strong RA), 2.0 (expert) (`tools/learnsim.js`, below); "I know
   corals well" covers both a strong RA and an expert, so 1.25 (start 1.0), between them, and a wrong answer must stay
   cheap. 0.3 / 0.8 and 0.8 / 1.875 were tried (table).
-- **`at`**: the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
+- **`at`** (not read since the offer card went, 2026-11-12, Q337; it stays in `core.js` `CHOICE` until the next change
+  to that file, ROADMAP): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
   offered it sooner. The offer still needs 10 slate genera met and a global level of 0.5 (`introOffer`), so the answers
   decide; `at` only lets it come earlier. Simulated with the offer accepted (`--openall offer`): opened at answer 30-56
   (lecture RA) and 30-36 (strong RA, expert) instead of 50-58 and 50-51; true knowledge at 300 unchanged (0.76, 0.84-0.85,
@@ -1355,8 +1362,8 @@ them apart is in the traces of the first 80 answers (`tools/learnsim.js` records
   95% confidence (level + 1.96 × its standard error < floor), or below the floor at all while the opening hold has
   fired in the window and the global level is not clearly above the floor (global level < floor + 1.96 × its standard
   error). From 20 answers: a weak player shows quickly.
-- **Higher** (the higher answers): only from 40 answers and `CHOICE.MET` = `INTRO.OFFER.MET` = 10 slate genera met (the
-  same evidence as the open-all offer), the global level above the band's ceiling with 95% confidence and the
+- **Higher** (the higher answers): only from 40 answers and `CHOICE.MET` = 10 slate genera met (the same evidence as the
+  open-all offer asked, until it went on 2026-11-12), the global level above the band's ceiling with 95% confidence and the
   first-answer level above the ceiling too: a player who does well only on the genera they have learned does not count.
 - 1.96: the admin's 95% level margin (`levelMargin`). No new constant (`CHOICE.LO` and `CHOICE.HI` are gone); unchanged
   as they were: once per answer and direction, never with a card or the tour, never for an inferred answer, "Keep my
@@ -1512,7 +1519,7 @@ words, never a number of genera); two buttons of equal weight
 player answered or that their level is low. "No thanks" changes nothing (the answer, the variables and the progress
 stay) and the card never comes back in that direction for that answer. **Coral basics** opens Coral basics and, silently,
 moves the start variables one band down (`model.js` `startEase`: know well → the IMR course's, IMR course → new's: the
-prior p and the open-all offer's `at`), kept apart from the answer given (an ease event in the record's history, `reefid-sync-coral-start` h, applied from its time to that
+prior p, and until 2026-11-12 the open-all offer's `at`), kept apart from the answer given (an ease event in the record's history, `reefid-sync-coral-start` h, applied from its time to that
 answer only; the answer is never relabelled; the admin's journey shows "Eased"; the full replay applies it
 from its time, `startPriorAt`; the live game applies the prior, eased or not, only once the sheet runs v36, `START_SHEET`, so a replay never takes it back). Coral basics already done: no "lower" card (it is the Coral basics offer).
 
@@ -1521,7 +1528,7 @@ W (m t + N p) / (m + N), W 0.8, N 10, m the answers in the global level). The pr
 answers and 0.14 at 60, so the first question of each genus opened afterwards starts lower by W × weight × Δp: know →
 IMR course (Δp 0.75) 0.12 logit at 40, 0.09 at 60; IMR course → new (Δp 0.5) 0.08 at 40, 0.06 at 60: about 1-2 points
 of expected success on a 4-choice question, on new genera only (genera already answered and the global level do not
-move). The open-all offer: know → IMR course moves its earliest answer from 20 to 30, already passed at 40; IMR course →
+move). The open-all offer (until 2026-11-12): know → IMR course moved its earliest answer from 20 to 30, already passed at 40; IMR course →
 new from 30 to 50: an offer not made yet by answer 40 waits up to 10 more answers; none at 60. Small by design: the
 substance of the card is Coral basics itself, which learnsim does not model.
 
@@ -1580,7 +1587,7 @@ for "new", or "You know more than you said" with the higher answers; "Keep my an
 once per answer and direction (`fb['know-lo']`), marked when shown; a player who moved one answer down and still
 struggles is told once more, never twice about the same answer. Never with a card, the tour or an achievement
 (`promptOk`), never in the floor of a visit (`noOpen`), never for an inferred answer. Picking an answer re-initialises
-the variables (startSet: the next genera start from the new level, the open-all offer from its `at`); answers,
+the variables (startSet: the next genera start from the new level; until 2026-11-12 the open-all offer from its `at`); answers,
 abilities and progress are kept.
 
 With the card taken (`--fallback accept`: the first answer it offers, the nearest; the final code, same seeds): the
@@ -1853,6 +1860,113 @@ rule is the same as before.
 
 **Real answers** (`node tools/realcheck.js answers.json`, the sheet's Answers tab read 2026-11-03: 1,270 answers of 10 players, 1,190 with the app's expectation logged; aggregates only): the log holds no record of when a card could have opened, so the opening cannot be replayed; the shaky signal it
 counts is checked with item 8 ("One draw weight", below).
+
+### A unit stuck shaky: calibrated, not adopted (2026-11-12, Q337, Q338)
+
+Pierre, 2026-11-12, Q338 (a): "Ok pour essayer B10, calibré avant la pull request": a unit still shaky after
+`OPEN.STUCK` of its own answers (its `ok` + `ko`) stops taking a place among the `OPEN.K` places of `openChance`; N
+calibrated among 8 / 10 / 12 / 15 before the PR. Why: two mid-level coral players (75-83% right, never experts) were
+held 63-147 answers with no new genus by 8 or more genera that stayed shaky for good (the shaky study of 2026-11-12,
+read-only, on the real log).
+
+**Plan, declared before the runs** (rule L11; committed before any output):
+
+- **Level 2** (the opening, for everyone), 10 seeds; choosing a value is level 3 in L11's table, so the four N against
+  the base are read with Holm for the primary and `--looks 2` for the bounds (10 seeds, then 20 on an unclear cell only).
+- **Arms**: base = `main` at a68f8abe; N 8, 10, 12, 15 = this branch with `OPEN.STUCK` set to N (one scratch copy,
+  patched in turn). Checked first: the branch with N = Infinity gives the base's answers, seed for seed (2 seeds), so
+  the offer's removal and the learnsim change are no-ops in the simulation (it declines the offer by default).
+- **The app world**: `tools/learnsim.js`, corals, the four profiles, seeds 201-210 (`--seed0 200`; the studies used
+  1-5), 300 questions, `--stats` the shaky study's genus offsets (`gd` as last logged), the item learner and
+  `--learner field`.
+- **Primary** (app world): the answers to meet 36 of the 40 slate genera (90%; 301 when not by question 300), lecture
+  RA and strong RA, pooled over both learners (40 pairs per N), down; the stratified sign-flip of `tools/learncmp.js`,
+  Holm over the four N. Expected near zero (the study's simulated RAs rarely had 8 shaky genera); the pick below does
+  not depend on it.
+- **Guardrails** (each N against the base, each learner): beginner genera met by question 100, the mean over the seeds
+  at most 17 (the CI limit, `tests/profiles.smoke.js`, which must also pass on the N chosen); beginner right % over
+  answers 1-100, the one-sided bound of the paired difference above −3 points; `tools/learncmp.js`'s guardrails at
+  the checkpoints the run reaches (true knowledge, E, genera met, plateau), every profile. Cost accepted: the beginner
+  may meet more genera by question 100, up to the limit.
+- **The rated world**: `--world rated`, corals, the four profiles, seeds 201-210, the count learner, 1,000 answers
+  (the largest checkpoint its guardrails read once the opening is over), `tools/learncmp.js` base against each N.
+- **The real log** (rule L12): the shaky study's replay of the two real stretches (P1, P2), for each N: the chance of no
+  opening in the stretch and the median answer of the first opening. A replay cannot judge the questions a different
+  draw would ask; it says when the first card could have come.
+- **The pick**: among the N whose every guardrail holds in both worlds and both learners (and the CI profile test), the
+  largest (the least change from today) whose first opening comes, as the median, within `OPEN.WIN` (15) answers in
+  both real stretches. The study's replay numbers were known when this rule was written (B8 1 / 3, B10 7 / 4, B12 7 /
+  28, B15 38 / 34); `OPEN.WIN` is the existing window of the opening pace, not tuned to them. The new evidence is the
+  simulations on fresh seeds. No N left: no value ships, the question goes back to Pierre.
+- **The offer's removal** (Q337, exploratory): `main` with the offer accepted (`--openall offer`) against `main`
+  declining it, the same seeds, the item learner: what a player who would have accepted it gets now.
+- **Added after the first look** (rated world, before running it): every N breached a rated-world beginner guardrail
+  (the shown score at 1,000 answers), so no N passes and the breach stands; N 10 against the base on 10 more seeds
+  (211-220), the beginner only, sizes that cost for Pierre and decides nothing.
+
+**Results** (2026-11-12; the branch with N = Infinity gave the base's rows seed for seed in both worlds, so only N
+differs).
+
+The app world, means over seeds 201-210 (lecture RA and expert: the same to the decimal for every N, both learners;
+item learner: every profile within 0.4 genus and 0.001 of knowledge of the base):
+
+| Arm | to90 RA, pooled (Δ, p) | item beginner: to90 / met 100 | field beginner: met 100 / met 300 / know 300 / right % 1-100 | field strong RA: to90 |
+| --- | --- | --- | --- | --- |
+| base | | 228.6 / 18.3 | 15.9 / 30.6 / 0.591 / 68.9 | 212.0 |
+| N 8 | −1.7, p 0.47 | 239.3 / 18.2 | 16.3 / 32.9 / 0.618 / 67.9 | 205.2 |
+| N 10 | −1.0, p 0.50 | 225.0 / 18.3 | 16.0 / 32.4 / 0.606 / 68.9 | 208.0 |
+| N 12 | −0.8, p 0.50 | 228.6 / 18.3 | 15.9 / 29.8 / 0.585 / 68.9 | 208.7 |
+| N 15 | −0.2, p 1.00 | 228.6 / 18.3 | 15.9 / 30.6 / 0.589 / 68.9 | 211.4 |
+
+The primary is not shown for any N (Holm; 1 to 7 of the 40 pairs differ at all: the simulated RAs rarely hold 8 shaky
+genera). `tools/learncmp.js`, `--looks 2`: every guardrail cell held for every N and both learners, except the field
+learner's beginner with N 8 (the first unit at Open Water and the longest plateau unclear; not looked at again, it
+cannot change the pick). The beginner limit as declared (a mean of 17 genera by question 100) cannot judge here: the
+base itself is at 18.3 with the item learner on these seeds and these genus offsets (the CI test's own setting has no
+`--stats`), and no N moves it by more than 0.4.
+
+The rated world, 1,000 answers, the beginner (the other profiles: held, but for three unclear cells within a point:
+N 8 lecture RA's score, N 15 strong RA's score and N 15 beginner's knowledge at 300):
+
+| Arm | score at 1,000 | longest plateau | first unit at Open Water | units at Open Water 1,000 | D* 1,000 |
+| --- | --- | --- | --- | --- | --- |
+| base | 46.2 | 66 | 134.9 | 21.4 | 0.895 |
+| N 8 | 42.1, breached | 97, breached | 152.0, unclear | 18.4, breached | 0.911 |
+| N 10 | 43.1, breached | 95, breached | 142.4, unclear | 19.6, unclear | 0.903 |
+| N 12 | 43.4, breached | 74, unclear | 162.1, breached | 20.0, unclear | 0.902 |
+| N 15 | 45.1, breached | 68 | 134.7 | 21.4, unclear | 0.901 |
+| N 10, 20 seeds | 43.2 → 38.5 (−4.7, bound −6.7) | 78 → 119 | 150.9 → 197.2 | 20.1 → 17.0 | 0.859 → 0.882 |
+
+A beginner whose genera stay shaky is opened more genera: it knows as much or a little more (D\*), but its answers
+spread over more of them, so fewer reach Open Water by 1,000 answers, the shown score is 3-5 points lower and its
+longest stretch without a new point is a third to a half longer. A cost the plan did not declare.
+
+The real log, the two stretches (P1: 63 answers, 46 with every other gate open; P2: 117 answers, 78): the median
+answer of the first opening, and the chance of none in the stretch:
+
+| Arm | P1 | P2 |
+| --- | --- | --- |
+| base | none (1.0) | 42 (0.15) |
+| N 8 | 3 | 1 |
+| N 10 | 4 | 7 |
+| N 12 | 28 | 7 |
+| N 15 | 34 | 38 |
+
+A third player's stretch (101 answers after many genera met at once) had 19-24 shaky genera, most with fewer than 8
+answers of their own: no N opens anything there.
+
+**The pick: none.** N 12 and N 15 do not open both stretches within `OPEN.WIN`; N 8 and N 10 do, but breach the
+rated-world beginner's guardrails. So no value ships (the plan's last line) and Q338 goes back to Pierre with these
+tables: N 10 frees both real stretches within 4-7 answers and costs nothing measurable in the app world, but in the
+rated world a beginner sees a lower score and longer plateaus (knowledge not lower). The patch for N 10 is kept off
+the repository, ready if he accepts that cost.
+
+**The offer's removal** (Q337; seeds 201-210, item learner; `main` taking the offer against declining it, which is now
+every player): the offer came at answer 50-53 in all 40 runs. Over the 30 answers after it, right % taking it against
+declining: beginner 61.3 against 77.7 (−16.3), lecture RA 73.0 against 84.0 (−11.0), strong RA 75.3 against 87.7
+(−12.3), expert 94.0 against 95.0; true knowledge at 300 within 0.006 either way; the back card came in 7 of 10
+beginner runs and 3 of 10 lecture RA runs. The same dip the real log showed (4 of 9 who took it, −13.5 points), for
+no gain in knowledge: removing the card costs those players nothing measured.
 
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
@@ -5294,7 +5408,7 @@ docs/reviews/2026-11-05-stats-methods-study.md.
 
 - **Run**: `node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
   [--workers 4] [--out file.json] [--stats stats.json] [--met Acropora,Porites,...] [--mem 0,0.4,1.5,2]
-  [--openall offer|N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
+  [--openall N] [--back keep|one] [--rt off] [--rtapp off] [--rtlog log.json] [--choice new|imr|know|auto] [--fallback keep|accept] [--vars JSON]
   [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]` (the learner and the Custom-N scenario: "Field learner and
   the Custom-8 scenario" below; the
   first-launch answer, its fallback card and, for calibration only, other values of its variables: "The first-launch
@@ -5340,8 +5454,8 @@ docs/reviews/2026-11-05-stats-methods-study.md.
   `opens`, `afterMiss` and `blocked` are in `--out`.
 - **Profiles**: beginner (knows every genus at 2%, learns 0.12 of the gap per exposure), lecture-level RA (the profiles
   test's RA: 55% on 2 genera in 5, 10% on the others, 0.12), strong RA (85% on 3 genera in 5, 10% on the others, 0.12),
-  expert (93%, 0.05). The open-all offer is declined (the path is what is measured), unless `--openall`: `offer`
-  accepts the offer card, N opens all at question N if the offer has not come by then; the back card is then answered
+  expert (93%, 0.05). The player never opens all (the path is what is measured), unless `--openall N`: all open at
+  question N, as My progress's button (`offer`, which accepted the offer card, went with it on 2026-11-12); the back card is then answered
   `--back` (default `keep`); the tool prints, after Open all, the app's expected success against the learner's true
   chance (below).
 - **Learner**: `know[g]` = chance to recognise genus g on an average photo with all its views; on a question it
@@ -5573,6 +5687,12 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-12, Pierre (Q337 (a)): the card that offered to open all genera goes, for every subject; Open all stays on the
+  first cards and in My progress, the back card stays ("First meeting with a genus"). Q338 (a), "a unit still shaky
+  after N of its own answers stops holding the opening": calibrated among 8 / 10 / 12 / 15, none passed the plan
+  declared before the runs (N 8 and N 10 free the real stretches but lower a rated-world beginner's score and lengthen
+  its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky: calibrated,
+  not adopted").
 - 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
   with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
   species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation

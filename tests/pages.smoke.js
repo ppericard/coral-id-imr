@@ -222,7 +222,20 @@ async function overlays(b, base) {
     await p.waitForSelector('#view [data-c]');
     const CASES = [
       ['genus', () => introShow([slateGenera()[1]], false)],
-      ['step', () => introOfferShow()],
+      // A big step (quiz.js openOfferShow, the fish circle 3's card; the coral open-all offer went, Q337), on a made-up set.
+      [
+        'step',
+        () =>
+          openOfferShow({
+            k: 'smoke',
+            kick: 'Smoke',
+            title: n => `${n} more?`,
+            body: 'A part of the slate opened by choice.',
+            yes: 'Open them',
+            note: 'Also in My progress.',
+            units: () => slateGenera().slice(-3)
+          })
+      ],
       ['tip', () => backShow()],
       ['tip', () => reliefShow('quiz-duel', ['Pocillopora', 'Stylophora'])],
       ['bonus', () => bonusOfferShow()],
@@ -2516,16 +2529,16 @@ async function startSmoke(b, base) {
     const again = await p.evaluate(() => (quizPhoto(), [startDue(), !!document.querySelector('.unlock.startfb'), startOf().c]));
     if (again[0] || again[1]) fails.push(`fallback card shown twice: ${JSON.stringify(again)}`);
     if (again[2] !== 'know') fails.push(`"No thanks" changed the answer: ${again[2]}`);
-    // The open-all offer (a big step) and the "higher" card: no number either (they go stale, or miscount what is open).
+    // The "higher" card: no number either (it goes stale, or miscounts what is open).
     const nums = await p.evaluate(() =>
-      [() => introOfferShow(), () => startFbShow('hi')].map(f => {
+      [() => startFbShow('hi')].map(f => {
         document.querySelectorAll('.unlock').forEach(x => x.ulClose());
         f();
         const d = document.querySelector('.unlock');
         return d ? d.textContent.match(/\d+/g) : 'no card';
       })
     );
-    if (nums.some(Boolean)) fails.push(`numbers on the open-all or "higher" card: ${JSON.stringify(nums)}`);
+    if (nums.some(Boolean)) fails.push(`numbers on the "higher" card: ${JSON.stringify(nums)}`);
     await p.evaluate(() => document.querySelectorAll('.unlock').forEach(x => x.ulClose()));
     await c.close();
   }
@@ -2870,8 +2883,6 @@ async function tipsCheck(b, base) {
         // The one-tap question's session: 7 answers over 6 minutes, PULSE.SESS_N (15) at this page's 8th answer.
         localStorage.setItem('reefid-pulse', JSON.stringify({v: {t0: t - 6 * 60000, t, n: 7}}));
         localStorage.setItem('reefid-sync-coral-progress', JSON.stringify({'~level': {ok: 40, ko: 10, th: 0, at: t}}));
-        // The Open all offer (from 50 answers, a prompt too) answered long ago: it would take the prompt spacing.
-        localStorage.setItem('reefid-sync-coral-intro-offer', JSON.stringify({at: 1, open: false, t: t - 864e5}));
       });
       await p.reload();
       await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
@@ -4676,7 +4687,7 @@ async function installCheck(b, base) {
 // SMOKE_W=390 one width of the main loop (tests/slot.js; default: everything).
 // main: the routes at both widths, the genus sheet, Coral basics reports, glossary, Coral ID Key, the new player at 390 and
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (inside main's 390 pass when both run, else on
-// their own); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question, its fallback cards and the open-all offer
+// their own); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question and its fallback cards
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
 // the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).

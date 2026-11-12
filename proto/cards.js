@@ -48,16 +48,17 @@
         tap: 'tap',
         bind: d => d.querySelector('[data-all]') && (d.querySelector('[data-all]').onclick = () => d.close('all'))
       }),
+    // The back card (quiz.js backShow); the open-all offer it once shared this kind with went (Pierre, 2026-11-12, Q337).
     tip: () =>
       cardShow({
         kind: 'tip',
-        kick: '25 answers in',
-        title: 'You seem to know your corals already',
-        body: `<p>Open all ${slateGenera().length} genera at once, instead of one at a time? ${slateGenera().length - 6} are still to come.</p>`,
-        primary: {text: 'Open all genera'},
-        secondary: {text: 'Not now'},
+        kick: 'Lots of new genera at once',
+        title: 'Keep them all, or go back to one at a time?',
+        body: `<p>Since you opened all genera, the questions have been harder for you. With one at a time, the ${slateGenera().length - 6} genera opened at once go back in the queue and come back one by one, each on its card. Your answers are kept.</p>`,
+        primary: {text: 'One at a time'},
+        secondary: {text: 'Keep them all'},
         esc: 2,
-        note: 'Also in My progress, any time.'
+        note: 'My progress can open them all again, any time.'
       }),
     bonus: () => {
       const L = BONUS.filter(x => GX(x));
@@ -81,7 +82,7 @@
     ['update', CARD_KINDS.update, 'Progress recalculated', 'progress.js RECALC, replay branch rvNotice'],
     ['feature', CARD_KINDS.feature, 'New feature', 'progress.js RECALC kind feature'],
     ['genus', CARD_KINDS.genus, 'First meeting with a genus', 'quiz.js introShow'],
-    ['tip', CARD_KINDS.tip, 'Tip: open all genera, back to one at a time', 'quiz.js introOfferShow, backShow'],
+    ['tip', CARD_KINDS.tip, 'Tip: back to one at a time', 'quiz.js backShow'],
     ['bonus', CARD_KINDS.bonus, 'Bonus genera offer', 'quiz.js bonusOfferShow'],
     ['account', CARD_KINDS.account, 'Sign in', 'sync.js signinNudge (the real card)'],
     ['ach', CARD_KINDS.ach, 'Achievement toast', 'progress.js achPop (the real toast)'],

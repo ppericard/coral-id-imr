@@ -719,8 +719,8 @@ const server = http.createServer((req, res) => {
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
-      // Mostly right (an RA after the lecture): the offer comes between OFFER.AT and OFFER.UNTIL answers, and Open all
-      // genera opens every genus left.
+      // Mostly right (an RA after the lecture): no card offers to open all genera any more (Pierre, 2026-11-12, Q337),
+      // however well the player does; Open all from My progress opens every genus left.
       P = {};
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
@@ -728,7 +728,7 @@ const server = http.createServer((req, res) => {
       rematch = []; // no "Again" left over from the section before
       store.set(INTRO.OFFER.KEY, null);
       let shownAt = 0;
-      for (let i = 0; i <= INTRO.OFFER.UNTIL && !shownAt; i++) {
+      for (let i = 0; i < 100; i++) {
         NEXTQ = null;
         document.querySelectorAll('.unlock').forEach(x => x.remove()); // closed by the player before Next
         // Achievement toasts gone by then (a player reads the feedback longer than this loop): prompts wait for them.
@@ -737,16 +737,13 @@ const server = http.createServer((req, res) => {
         achBusy = false;
         quizPhoto();
         for (let b; (b = document.querySelector('.unlock.intro .ulbtns .next:not([data-open]):not([data-notnow]):not(.sec)'));) b.click();
-        const o = document.querySelector('.unlock.intro [data-open]');
-        if (o) {
-          shownAt = answersSoFar();
-          o.click();
-        }
+        if (!shownAt && document.querySelector('.unlock.intro [data-open]')) shownAt = answersSoFar();
         document.querySelectorAll('.unlock.intro').forEach(x => x.remove());
         say(tg);
       }
-      if (!shownAt || shownAt < INTRO.OFFER.AT || introLeft().length)
-        fails.push(`all right: offer at ${shownAt} answers, ${introLeft().length} genera left after Open all`);
+      if (shownAt) fails.push(`all right: a card offered to open all genera at ${shownAt} answers`);
+      introAll('progress');
+      if (introLeft().length) fails.push(`${introLeft().length} genera left after Open all`);
       // Back to one at a time (model.js backDue, introBack; Pierre 2026-11-03): from that Open all, a player who keeps up
       // never gets the card; one who then drops gets it once the drop since Open all reaches 2 x INTRO.HOLD. "One at a
       // time" closes every genus opened at once (answered or not), the others stay open, and they come back through
@@ -972,7 +969,7 @@ const server = http.createServer((req, res) => {
         rematch = [];
         HOLDS = 0;
         CB = {r: 0, t: 0, ok: 0, f: 0};
-        store.set(INTRO.OFFER.KEY, {at: 0, open: 0}); // the open-all offer declined
+        store.set(INTRO.OFFER.KEY, null); // no Open all
         const S = pool().filter(n => !isBonus(n)),
           old = S.slice(0, 12),
           m = {};
@@ -1029,7 +1026,7 @@ const server = http.createServer((req, res) => {
           reset();
           HOLDS = 0;
           CB = {r: 0, t: 0, ok: 0, f: 0};
-          store.set(INTRO.OFFER.KEY, {at: 0, open: 0});
+          store.set(INTRO.OFFER.KEY, null);
           const m = {};
           Object.keys(P).forEach(n => n !== LEVEL && delete P[n]);
           pool()
@@ -1154,8 +1151,8 @@ const server = http.createServer((req, res) => {
         document.body.append(d);
         if (ok(null)) fails.push('a prompt allowed over a card');
         d.remove();
-        if (PULSE.FIRST !== 35 || NUDGE_AT !== 20 || INTRO.OFFER.AT !== 50 || PROMPT.GAP !== 10)
-          fails.push(`prompt thresholds: ${[NUDGE_AT, PULSE.FIRST, INTRO.OFFER.AT, PROMPT.GAP].join()}`);
+        if (PULSE.FIRST !== 35 || NUDGE_AT !== 20 || PROMPT.GAP !== 10)
+          fails.push(`prompt thresholds: ${[NUDGE_AT, PULSE.FIRST, PROMPT.GAP].join()}`);
         store.set(PROMPT.KEY, keep);
       }
       // "I've had the IMR lecture": every slate genus opens at once, and no card comes after.

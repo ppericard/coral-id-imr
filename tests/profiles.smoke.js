@@ -84,7 +84,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
+      store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
       const know = mk(),
         early = new Set(),
         typedOk = new Set(),
@@ -173,7 +173,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
+      store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
       const keep = PSTAT,
         keepGd = PGD,
         fake = {},
@@ -235,7 +235,7 @@ const server = http.createServer((req, res) => {
       INTROS = {};
       HOLDS = 0; // a fresh player: no opening hold, no comeback
       CB = {r: 0, t: 0, ok: 0, f: 0};
-      store.set(INTRO.OFFER.KEY, {open: 0}); // the offer to open all is declined: the path is what is measured
+      store.set(INTRO.OFFER.KEY, null); // no Open all: the path is what is measured
       const keep = PSTAT,
         g = G.find(n => VIEWS.flatMap(([v]) => gamePics(n, v)).length >= 8),
         L = [...new Set(VIEWS.flatMap(([v]) => gamePics(g, v)))],

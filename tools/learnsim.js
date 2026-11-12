@@ -6,7 +6,7 @@
 //
 //   node tools/learnsim.js [--seeds 5] [--questions 300] [--profiles beginner,lectureRA,strongRA,expert]
 //                          [--workers 4] [--out results.json] [--stats stats.json|live] [--truth truth.json] [--met Acropora,Porites,...]
-//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall offer|N] [--back keep|one]
+//                          [--breaks 10m,30m,1h,3h,8h,3d,1w,1mo] [--after 20] [--openall N] [--back keep|one]
 //                          [--rt off] [--rtapp off] [--rtlog answers.json]
 //                          [--choice new|imr|know|auto] [--fallback keep|accept] [--vars '{"imr":{"p":0.8}}']
 //                          [--learner item|field] [--tau 0.5] [--custom 8] [--drill 200]
@@ -40,10 +40,10 @@
 // option it offers). Per run: the first 20 answers' mean surprise (right - the app's expected success), right %, the
 // global level then,
 // and the fallback card (answer, direction lo / hi). --vars (calibration only): other values for a choice's variables
-// (core.js CHOICE opts), e.g. '{"know":{"p":1.5,"at":20}}'.
-// --openall (optional; without it the open-all offer is declined, as before): 'offer' accepts the offer card when it shows
-// (model.js introOffer: 50-150 answers, 10 genera met, level 0.5); N opens all at question N if the offer has not come
-// by then (introAll, as the offer's button). The back card that may follow (model.js backDue) is answered --back: 'keep'
+// (core.js CHOICE opts), e.g. '{"know":{"p":1.5}}'.
+// --openall N (optional; without it the player never opens all): opens all genera at question N (introAll, as My
+// progress's button). 'offer', which accepted the card that offered it, went with that card (Pierre, 2026-11-12, Q337);
+// a file run with it before is read the same. The back card that may follow (model.js backDue) is answered --back: 'keep'
 // (default: Keep them all, so its timing is measured and nothing changes) or 'one' (One at a time). Per run: the answer
 // at which all were opened, the answer since then at which the back card showed, and after Open all the app's expected
 // success (each answer's e) against the learner's true chance and its answers: on the genera opened at once, at their
@@ -297,6 +297,7 @@ const SEEDS = Number(arg('seeds', 5)),
   // difficulty on the question (the real log: -0.22, LEARNING.md "Response time: genus and photo"); 0 by default.
   GAPX = Number(arg('gap', 0));
 if (!['app', 'rated'].includes(WORLD)) throw new Error('--world app or rated');
+if (OPENALL && !/^\d+$/.test(OPENALL)) throw new Error('--openall N: the question at which all genera open (the offer card went, Q337)');
 if (!['normal', 'tail', 't3'].includes(DIST)) throw new Error('--dist normal, tail or t3');
 if (!['truth', 'own', ...(WORLD === 'rated' ? ['sheet'] : [])].includes(APPK)) throw new Error('--app truth or own (sheet: the rated world)');
 if (!(EVERY >= 1 && isFinite(GAPX))) throw new Error('--every 1 or more, --gap a number');
@@ -614,8 +615,7 @@ function play(cfg) {
   const lookAcc = () => mean(PAIRS.map(([a, b]) => (pCh(a, [a, b], 0, false) + pCh(b, [a, b], 0, false)) / 2));
   const inExam = g => (typeof examOn === 'function' && examOn(g)) || !!(P[g] || {}).ex;
 
-  // A fresh player (the context's storage is empty): no hold, no gentle restart, the open-all offer declined (the path
-  // is what is measured, as in profiles.smoke.js), unless --openall.
+  // A fresh player (the context's storage is empty): no hold, no gentle restart, no Open all unless --openall.
   P = {};
   INTROS = {};
   HOLDS = 0;
@@ -632,7 +632,7 @@ function play(cfg) {
   rematch = Array.isArray(rematch) ? [] : null; // the Again queue (a list since 2026-11-04; one slot before)
   twoAt = -Infinity;
   twoPair = '';
-  store.set(INTRO.OFFER.KEY, openall ? null : {open: 0});
+  store.set(INTRO.OFFER.KEY, null);
   // --openall: the app's expectation of each answer (the e the opening hold gets).
   let lastE = null;
   const hs0 = holdStep;
@@ -684,21 +684,15 @@ function play(cfg) {
     document.querySelectorAll('.unlock:not(.intro)').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
     // Through the real planner (Codex review #365): the questions planned ahead stay after a right answer, as in the app.
     // Its own top-ups are timers, which never fire inside this synchronous loop, so they are called here instead.
-    if (openall && openall !== 'offer' && oa.at === null && i + 1 >= Number(openall)) {
+    if (openall && oa.at === null && i + 1 >= Number(openall)) {
       oa.set = introLeft();
-      introAll('offer');
+      introAll('progress');
       oa.at = answersSoFar();
       dropPlans();
       NEXTQ = null;
     }
     quizPhoto(cur);
     if (openall) {
-      const o = document.querySelector('.unlock.intro [data-open]');
-      if (o && oa.at === null) {
-        oa.set = introLeft();
-        o.click();
-        oa.at = answersSoFar();
-      }
       if (document.querySelector('.unlock.intro [data-back]')) {
         oa.back = answersSoFar() - oa.at;
         oa.h = (store.get(INTRO.OFFER.KEY, {}) || {}).h;
