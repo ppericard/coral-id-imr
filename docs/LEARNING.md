@@ -1911,9 +1911,9 @@ counts is checked with item 8 ("One draw weight", below).
 
 Pierre, 2026-11-12, Q338 (a): "Ok pour essayer B10, calibré avant la pull request": a unit still shaky after
 `OPEN.STUCK` of its own answers (its `ok` + `ko`) stops taking a place among the `OPEN.K` places of `openChance`; N
-calibrated among 8 / 10 / 12 / 15 before the PR. Why: two mid-level coral players (75-83% right, never experts) were
-held 63-147 answers with no new genus by 8 or more genera that stayed shaky for good (the shaky study of 2026-11-12,
-read-only, on the real log).
+calibrated among 8 / 10 / 12 / 15 before the PR. Why: two coral players past 200 answers (their global level
+0.64-0.95 then; their 75-83% right says nothing of a level: "What each number measures") were held 63-147 answers with
+no new genus by 8 or more genera that stayed shaky for good (the shaky study of 2026-11-12, read-only, on the real log).
 
 **Plan, declared before the runs** (rule L11; committed before any output):
 
@@ -2068,6 +2068,74 @@ Elo. Both real stretches are past 200 answers (P1 from answer 384, P2 from 265).
 - **Fish** (the rule is the engine's, so it reaches the fish, whose level scale differs: L is calibrated on corals): the
   rated world, fish, its profiles, seeds 301-310, 1,000 answers, the pick against the base, `--looks 2`; a breach goes to
   Pierre with the PR.
+
+**Results** (2026-11-12). Checked first: the arm with L = ∞ gave the base's runs seed for seed in the rated world (8
+of 8 runs, seeds 301-302).
+
+The real log, the median answer of the first opening in each stretch (the chance of none):
+
+| Arm | P1 (63 answers, 46 with every other gate open) | P2 (117 answers, 78) |
+| --- | --- | --- |
+| base | none (1.0) | 42 (0.15) |
+| N 10 ungated | 4 | 7 |
+| N 10, floor alone | 4 | 7 |
+| L 0.25 | 4 | 7 |
+| L 0.5 | 4 | 7 |
+| L 0.75 | 4 | 7 |
+
+Every arm is in: both players were past 200 answers, and their level was 0.25 or more on every answer of the
+stretches (P1 under 0.75 on 28% of its answers with the other gates open, which did not move its median).
+
+The rated world, the beginner (the lecture RA, the strong RA and the expert: the base's rows in 10 of 10 runs, every
+arm). `tools/learncmp.js` `--looks 2`: before → after, the difference [its one-sided 95% bound]:
+
+| Arm | score at 1,000 | longest plateau | first unit at Open Water | units at Open Water 1,000 | D* 300 / 1,000 |
+| --- | --- | --- | --- | --- | --- |
+| base, seeds 301-310 | 48.2 | 81 | 122.1 | 22.9 | 0.462 / 0.918 |
+| N 10 ungated | 47.0, −1.2 [−3.4] breached | 94, unclear | 137.0, unclear | 20.9, unclear | 0.482 / 0.921 |
+| N 10, floor alone | 47.4, −0.8 [−2.6] unclear | 89, unclear | 122.1 | 22.1, unclear | 0.483 / 0.921 |
+| L 0.25 | 48.0, −0.2 [−2.7] unclear | 89, unclear | 122.1 | 22.1, unclear | 0.483 / 0.919 |
+| L 0.5 | 47.6, −0.6 [−3.6] unclear | 89, unclear | 122.1 | 23.2 | 0.480 / 0.921 |
+| L 0.75 | 46.7, −1.5 [−4.1] breached | 78 | 122.1 | 21.6, unclear | 0.474 / 0.919 |
+| base, seeds 301-320 | 46.2 | 77 | 141.2 | 22.2 | 0.446 / 0.903 |
+| N 10, floor alone | 44.4, −1.9 [−3.6] breached | 81 | 142.9 | 19.9, −2.3 [−3.6] breached | 0.461 / 0.908 |
+| L 0.25 | 45.1, −1.1 [−2.9] breached | 82 | 142.7 | 20.0, −2.2 [−3.6] breached | 0.462 / 0.908 |
+| L 0.5 | 44.6, −1.6 [−3.6] breached | 82 | 141.2 | 20.8, unclear | 0.460 / 0.909 |
+
+Every other cell held, but E (bar − D\*) at 300, unclear in every arm on both looks (up by about 0.02, towards
+over-claiming: inside its margin of 0.03, its bound past it). L 0.75 breached on the first look and was not run again; L 0.25, L 0.5 and the floor alone
+were unclear and breached on 20 seeds. True knowledge is not lower anywhere (D\* +0.004 to +0.005 at 1,000, +0.014 to +0.016 at
+300, every bound above 0 on 20 seeds); the shown score is (−1 to −2 points at 1,000 on these seeds, −3 to −5 on #852's).
+
+The global level of the base's runs (rated world, seeds 301-310; min / mean / max over the seeds):
+
+| Answers | 100 | 200 | 300 | 400 | 500 | 700 | 1,000 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| beginner | −0.24 / 0.27 / 0.80 | 0.02 / 0.56 / 0.99 | 0.54 / 0.74 / 0.92 | 0.73 / 0.89 / 1.08 | 0.90 / 1.09 / 1.35 | 0.82 / 1.21 / 1.50 | 1.40 / 1.71 / 1.96 |
+| lecture RA | 1.01 / 1.61 / 2.27 | 1.07 / 1.35 / 1.88 | 0.86 / 1.21 / 1.42 | 1.05 / 1.40 / 1.83 | 1.26 / 1.67 / 2.05 | 1.69 / 2.04 / 2.31 | 2.17 / 2.42 / 2.63 |
+
+The beginner's answers past 200 with its level at L or more: 98% (L 0.25), 96% (L 0.5), 88% (L 0.75); every answer of
+the three other profiles.
+
+**The pick: none.** No arm holds the rated-world beginner's guardrails, so no value ships (the plan's line) and Q338
+goes back to Pierre. Not run, as the plan's order says: the app world (and its L = ∞ check), the confirmation on
+seeds 321-340 and the fish (no arm left in). What the tables show:
+
+- **No level separates them.** The simulated beginner's global level passes 0.5 by about answer 200 and 1.0 by about
+  answer 500, while P1 and P2 were at 0.64-0.95 past answers 265-384: at the same number of answers the two real
+  players held by stuck genera were at or under the simulated beginner's level. A threshold low enough to free them is
+  on for nearly all of the beginner's answers past 200; the arms differ from the floor alone on 2-12% of them, so their
+  differences are noise, not an order.
+- **The rule reaches only the beginner here**: the three other profiles never hold 8 shaky genera long enough, with or
+  without it.
+- **The cost is the shown score, not the knowledge**: a beginner opened more genera spreads its answers over more of
+  them, knows a little more of the slate, and has fewer at Open Water by 1,000 answers.
+- **An observation, not checked**: the simulated worlds' level scale has not been compared with the real players'
+  (the rated beginner is at 0.27 after 100 answers); read the two real players' levels against it with that in mind.
+
+The patch (`OPEN.STUCK` 10, `OPEN.LEVEL`, `OPEN.SETTLED` 200, `stuckFree`, with its unit tests) is kept off the
+repository. `tools/ratedworld.js` keeps the global level since this calibration (`level` in the rows, `lv` every 25
+answers).
 
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
@@ -5793,7 +5861,9 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
   after N of its own answers stops holding the opening": calibrated among 8 / 10 / 12 / 15, none passed the plan
   declared before the runs (N 8 and N 10 free the real stretches but lower a rated-world beginner's score and lengthen
   its plateaus; N 12 and N 15 do not free them), so nothing changed; back to Pierre ("A unit stuck shaky: calibrated,
-  not adopted").
+  not adopted"). Q338 (b), N 10 only above a global level L (0.25, 0.5 or 0.75) once it rests on 200 answers: calibrated,
+  none passed (the simulated beginner's level is past every L from about answer 200, so it pays the same cost), nothing
+  changed; back to Pierre ("Above a level").
 - 2026-11-08, Pierre (Q242, Q247; "Fish: the global score, built"): the fish global score is the formula of 2026-11-04
   with each species weighted 1/√ of its rank by observers near Dauin (ties sharing their mean rank) and each family by its
   species' weights, shown as 100 √raw (anchors 50 / 74 / 89 / 92 / 95 / 100%), not the circle weights; one computation
