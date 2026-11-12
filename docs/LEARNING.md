@@ -9,6 +9,43 @@ Code: `model.js` (the player's own model, in the browser; `app.js` before 2026-1
 sheet script `tools/sync/Code.gs` (statistics pooled over every player, `stats_`). ARCHITECTURE.md describes the code;
 this file explains why it works that way.
 
+## What each number measures (read this first)
+
+Pierre, 2026-11-12, after two agents read a player's success rate as their level: what each figure of the game and of
+the answer log says, and what it never says. Any analysis of players (rule L12) starts from here.
+
+- **Success rate** (right %, over any window): **not a level.** The engine holds it near its aim on purpose: each
+  question's format and photo are chosen so its expected success hits the aim (the difficulty controller, "One
+  difficulty controller" below), and the aim follows the global level, 85% up to a level of 0.5, 75% from 1.5
+  (`core.js` `AIM`, `aimOf`; `TARGET_P` 0.8 the reference; "Beginners and experts"). A beginner and an expert both sit
+  around 75-85%, the expert slightly **lower** by design. A success rate far from the aim says the questions are not
+  as hard as the model thinks for this player right now (new units, a break, a look-alike family), never who is weak
+  or strong.
+- **Expected success** (`e` per answer, the answer log's Expected): the model's chance that this answer is right,
+  from the genus ability, the photo's difficulty, the format and the mix-ups. **Right − expected** (the surprise,
+  overall or over a window) is the figure that compares players and moments: below 0, the model is too optimistic.
+- **The player's level**: the **global level** `P['~level'].th` (an Elo on the photo-difficulty scale, 0 = an average
+  photo; shown as 1000 + 200 × th once `ELO_MIN` = 200 answers are in: "Ability per genus (Elo) and the global level").
+  Simulated at 50 answers: a beginner about −0.9, an RA who knows 60% of the genera −0.2, 80% +0.8, an expert +1.2
+  ("The first-launch question"). The sheet keeps its own chain `R` (the admin's level, the photo ratings' player term).
+  Read a player's level from the global level **at that moment** (the log's answers replayed, as `tools/learnsim.js`
+  and the full replay do), and from their **progress**, never from their success rate. **The Elo is not settled before
+  many answers** (Pierre, 2026-11-12; "even 50 is not enough to settle the score", 2026-11-01): the game shows it only
+  from `ELO_MIN` = 200 answers, and a level read earlier (or on a player back from a break, or right after many new
+  units) is a rough guess: say how many answers it rests on, and lean on progress there. A rule keyed on the level
+  (a threshold) must say what it does before the level is settled.
+- **Ability per unit** (`P[genus].th`): the same Elo, per genus or family; a unit never answered starts from the
+  global level (`playerStart`).
+- **Progress**: per unit, the domain-score bar (the share of all its photos the player would name, one photo alone,
+  from their own answers on it: "The domain-score bar"); the subject's % and score from the bars; units met and
+  opened. With the global level, the only measure of how far a player has come.
+- **Difficulty of a photo**: its rating in the sheet's photo Elo (`stats_`, pooled over every player), around its
+  genus offset `gd` (**one genus difficulty**: "One genus difficulty"); a question's difficulty adds the photo memory,
+  the mix-ups term and the format's offset (Q138). The success of one player on a photo says little about its
+  difficulty alone: it depends on that player's level.
+- **Shaky** (a unit holding new openings): its expected success on a typical photo of it is under `OPEN.P` (0.6),
+  moved with the aim ("One opening rule"). It reads the ability and the genus offset, not the success rate.
+
 ## The players we design for
 
 Pierre, 2026-11-02: three typical paths, handled by one dynamic algorithm, **never by coded tracks, tiers or

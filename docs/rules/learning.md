@@ -206,9 +206,12 @@ estimates away from what players really do, and should bring them closer (next-a
 Expected against actual, overall and by level band and question format). Where a replay cannot judge a change (a
 different draw asks other questions), say what was measured instead. The PR shows both tables; LEARNING.md keeps them.
 Any agent reads the real log through the Google Sheets connector ("Data access" in AGENTS.md; no GitHub Action needed),
-for every change to the estimates and **routinely** while the app moves fast and players play every day.
-*Why:* the real log caught many problems in these last days. *Source:* Pierre, 2026-11-03; connector and routine,
-2026-11-05.
+for every change to the estimates and **routinely** while the app moves fast and players play every day. **A player's
+level is their global level (Elo) and their progress, never their success rate**, which the engine holds near its aim
+for every player (docs/LEARNING.md "What each number measures"); the Elo settles only after many answers (shown from
+200), so say what a level rests on. Compare players with right − expected.
+*Why:* the real log caught many problems in these last days; two agents read a 75-83% success rate as "mid-level
+players" (2026-11-12). *Source:* Pierre, 2026-11-03; connector and routine, 2026-11-05; the level, 2026-11-12.
 
 ### L13
 
