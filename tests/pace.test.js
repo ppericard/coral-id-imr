@@ -42,7 +42,7 @@ function model({P = {}} = {}) {
   vm.createContext(ctx);
   vm.runInContext(
     block +
-      '\nthis.M = {OPEN, INTRO, openRecent, openPace, introAdd, introMap, introAll, introBack, holdStep, introHold, holdEase, setHold: h => (HOLDS = h)};',
+      '\nthis.M = {OPEN, INTRO, openRecent, openPace, openChance, shaky, introAdd, introMap, introAll, introBack, holdStep, introHold, holdEase, setHold: h => (HOLDS = h)};',
     ctx
   );
   return Object.assign(ctx.M, {ctx});
@@ -102,6 +102,53 @@ test('opening pace: the first cards count, Open all and a genus closed again do 
   assert.strictEqual(M.openPace(), true);
   M.introBack(false);
   assert.strictEqual(M.openRecent().length, 0);
+});
+
+// A unit stuck shaky (Pierre, 2026-11-12, Q338: "option a, B10 après 200 réponses"; docs/LEARNING.md "A unit stuck
+// shaky"): from OPEN.STUCK_FROM answers so far (answersSoFar, the stub's n), a genus still shaky after OPEN.STUCK of its
+// own answers takes no place of OPEN.K in openChance; before, every shaky genus takes its place, as before. Every genus
+// at difficulty 0, its ability set by the stub (shaky: under OPEN.P on 4 choices).
+function stuckModel() {
+  const P = {},
+    names = 'ABCDEFGHIJ'.split('');
+  names.forEach(n => (P[n] = {ok: 1, ko: 2}));
+  ['A', 'B', 'C', 'D'].forEach(n => (P[n] = {ok: 6, ko: 4})); // 10 own answers each
+  const M = model({P}),
+    th = {};
+  Object.assign(M.ctx, {ability: n => th[n] ?? -2, sig: x => 1 / (1 + Math.exp(-x)), aimP: () => 0.8, PICKD: {P: 0.8}});
+  vm.runInContext('GDIFF = new Proxy({}, {has: () => true, get: () => 0})', M.ctx); // genusDiff 0 for every genus
+  M.introAdd(names, true);
+  return {M, P, th, L: [...names, 'K', 'L']}; // K, L never met: no place
+}
+test('openChance: before OPEN.STUCK_FROM answers, every shaky genus takes its place, stuck or not', () => {
+  const {M, L} = stuckModel(),
+    O = M.OPEN;
+  assert.ok(O.STUCK === 10 && O.STUCK_FROM === 200, 'the values Pierre decided (Q338)');
+  assert.strictEqual(M.shaky('A'), true, 'A: 10 own answers, still shaky');
+  for (const n of [0, 50, O.STUCK_FROM - 1]) {
+    M.ctx.n = n;
+    assert.strictEqual(M.openChance(L), 0, `${n} answers: 10 shaky genera, every place taken`);
+  }
+});
+test('openChance: from OPEN.STUCK_FROM answers, a genus shaky after OPEN.STUCK of its own answers takes no place', () => {
+  const {M, P, th, L} = stuckModel(),
+    O = M.OPEN;
+  M.ctx.n = O.STUCK_FROM;
+  // A, B, C, D past OPEN.STUCK answers, still shaky: the other 6 take a place, 2 of 8 free.
+  assert.strictEqual(M.shaky('A'), true, 'still shaky');
+  assert.strictEqual(M.openChance(L), 1 - 6 / O.K);
+  // One answer short of OPEN.STUCK: it still takes its place; at OPEN.STUCK, not.
+  P.E = {ok: O.STUCK - 5, ko: 4};
+  assert.strictEqual(M.openChance(L), 1 - 6 / O.K);
+  P.E.ok++;
+  assert.strictEqual(M.openChance(L), 1 - 5 / O.K);
+  // A genus that holds (not shaky) takes no place, whatever its answers.
+  th.F = 3;
+  assert.strictEqual(M.shaky('F'), false);
+  assert.strictEqual(M.openChance(L), 1 - 4 / O.K);
+  // Later on, the same.
+  M.ctx.n = O.STUCK_FROM + 500;
+  assert.strictEqual(M.openChance(L), 1 - 4 / O.K);
 });
 
 test('easier questions while the opening hold is on: smooth from INTRO.HOLD, one logit an answer beyond it', () => {

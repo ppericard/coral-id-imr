@@ -399,13 +399,18 @@ const weight = n => {
 // answers since the last card, no opening hold, not in the floor of a visit or a comeback), and then does with the
 // chance openChance: the free share of OPEN.K places for genera met and still shaky (below), 1 - shaky / K. A slope,
 // not a switch (Pierre, 2026-11-02: one genus more or less shaky never flips the pace), and a work-in-progress limit:
-// with K shaky genera none opens until one holds. The genus opened is drawn among those not met yet (openPick): the
-// easiest (genusDiff) first, softly (OPEN.T), and the most common near Dauin (Pierre, 2026-11-03: "easy and common
-// first": core.js commonFactor of each genus's data.json cm, tools/commonness.py, relative to the median of the genera
-// not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
+// with K shaky genera none opens until one holds (from OPEN.STUCK_FROM answers, the genera stuck shaky aside: below).
+// The genus opened is drawn among those not met yet (openPick): the easiest (genusDiff) first, softly (OPEN.T), and the
+// most common near Dauin (Pierre, 2026-11-03: "easy and common first": core.js commonFactor of each genus's data.json
+// cm, tools/commonness.py, relative to the median of the genera not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
 // down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
-const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15};
+// STUCK, STUCK_FROM (Pierre, 2026-11-12, Q338: "option a, B10 après 200 réponses"; docs/LEARNING.md "A unit stuck
+// shaky"): a unit still shaky after STUCK of its own answers (its ok + ko) stops taking a place among the K, once the
+// player's answers so far (answersSoFar: the subject's global level record P[LEVEL] ok + ko, the count progress.js
+// ELO_MIN reads before it shows the Elo) are STUCK_FROM or more; before that the rule is off and every shaky genus
+// takes its place. The engine's, so it holds for every subject (the fish units too, on the fish record's count).
+const OPEN = {K: 8, P: 0.6, T: 3, DATA: 300, MAX: 3, WIN: 15, STUCK: 10, STUCK_FROM: 200};
 // How much the easy-first order is trusted: the players' answers behind the photo ratings (weighed, sheet v17) over
 // OPEN.DATA, up to 1. Without them every genus offset is 0 (until 2026-11-06 the declared look-alikes, until 2026-11-03 the photo
 // sets too, which put Acropora and Galaxea among the hardest and Alveopora first, where Pierre expects the first two
@@ -452,8 +457,15 @@ const shaky = n => {
 // The chance that a question the path allows to open a genus opens one: the free share of OPEN.K places for shaky genera.
 // Only the genera open now take a place (introduced): a genus closed again by "One at a time" (introBack) keeps its
 // answers and its ability but is never asked until its card reopens it, so counted it would hold the opening at 0 for
-// good (Codex P1 on #408).
-const openChance = list => Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n)).length / OPEN.K);
+// good (Codex P1 on #408). Nor does a genus still shaky after OPEN.STUCK of its own answers, once the player has
+// OPEN.STUCK_FROM answers (Pierre, 2026-11-12, Q338): on the real log, two players past 200 answers were held 63 and 117
+// answers with no new genus by 8 or more genera that stayed shaky. It stays shaky (Review, the draw); it only stops
+// holding the others back. Before OPEN.STUCK_FROM answers, as before.
+const openChance = list => {
+  const late = answersSoFar() >= OPEN.STUCK_FROM,
+    stuck = n => late && ((P[n] || {}).ok || 0) + ((P[n] || {}).ko || 0) >= OPEN.STUCK;
+  return Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n) && !stuck(n)).length / OPEN.K);
+};
 // The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
 // and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
 // of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
