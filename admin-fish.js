@@ -248,7 +248,8 @@ const fishInPlay = (F, sid) => {
   return L;
 };
 // One photo enlarged: species, observer, the iNaturalist observation; a photo in play has "Out of play" (Pierre's ✕
-// Reject on it: off the species, a correction when the auto-sort had proposed it).
+// Reject on it: off the species, a correction when the auto-sort had proposed it). A photo leaving play here or on the card
+// (Reject, ×, Not this) leaves the covers and featured photos it was too (autosort.js fishDrop), as on Families.
 function fishZoom(p, sid, inPlay, blind) {
   const lb = $('lightbox'),
     n = fishName(sid),
@@ -267,7 +268,7 @@ function fishZoom(p, sid, inPlay, blind) {
   if (o)
     o.onclick = () => {
       close();
-      fishEdit(F => fishReject(F, p.f));
+      fishEdit(F => fishReject(fishDrop(F, fishFamOf(sid), p.f), p.f));
       toast(`Out of play: ${n.sci}. Undo (Ctrl+Z) brings it back.`);
     };
   lbFull(lb);
@@ -449,13 +450,13 @@ function renderFishCand() {
     S.querySelector('[data-rej]').onclick = () => {
       FSKIP.delete(f);
       FPIN = null;
-      fishEdit(G => fishReject(G, f));
+      fishEdit(G => fishReject(fishDrop(G, fishFamOf(sid), f), f));
       told();
     };
     S.querySelector('[data-x]').onclick = () => {
       FSKIP.delete(f);
       FPIN = null;
-      fishEdit(G => fishExclude(G, f));
+      fishEdit(G => fishExclude(fishDrop(G, fishFamOf(sid), f), f));
       if (!chk) toast('Excluded. Undo (Ctrl+Z) brings it back.');
       told();
     };
@@ -483,7 +484,7 @@ function renderFishCand() {
       if (!to) return;
       FSKIP.delete(f);
       FPIN = null;
-      fishEdit(G => fishNotThis(G, f, to, from || sid));
+      fishEdit(G => fishNotThis(fishDrop(G, fishFamOf(sid), f), f, to, from || sid));
       toast(
         to === 'x'
           ? 'Not this: no game species. Undo (Ctrl+Z) brings it back.'

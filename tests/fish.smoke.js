@@ -833,10 +833,15 @@ async function freshPlayers(b, base, errs) {
         const w = GX(n).views.wide;
         // the first of its reference-level photos when it has any (core.js refFirst), else its easiest; an open licence
         // breaking ties among equals (core.js easyCover, Q270), so the cover may be another of the order's equal leaders
+        // never a juvenile while it has another photo (app.js juvP, adultFirst; Pierre, 2026-11-13)
         if (!w.length) return true;
-        const top = w.filter(p => refFirst(p) === refFirst(w[0])),
+        const A = w.filter(p => !juvP(p)),
+          W = A.length ? A : w,
+          top = W.filter(p => refFirst(p) === refFirst(W[0])),
           c = w.find(p => p.f === GX(n).cover);
-        return !!c && c.f === easyCover(w).f && refFirst(c) === refFirst(w[0]) && top.every(p => photoDiff(n, p) >= photoDiff(n, c));
+        return (
+          !!c && c.f === adultFirst(easyRank(w)).f && refFirst(c) === refFirst(W[0]) && top.every(p => photoDiff(n, p) >= photoDiff(n, c))
+        );
       }),
       "sci: a genus card's photo is its easiest (reference level first)"
     );
