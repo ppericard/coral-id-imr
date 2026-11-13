@@ -5393,6 +5393,28 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
+/* A genus's and a species' cover in its heading (Pierre, 2026-11-13); his pick ringed in the cover mark's colour. */
+.adm-hthumb {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 8px 0 0;
+}
+.adm-hthumb.mine {
+  outline: 2px solid #e0a526;
+  outline-offset: 1px;
+}
+/* The genus a family's page is narrowed to. */
+.adm-fgsel {
+  min-height: 34px;
+  max-width: 100%;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+}
 /* Fish Coverage (admin plan PR 8): To do chips, the table scrolls sideways inside its box on phones. */
 .adm-ftodo {
   flex-wrap: wrap;

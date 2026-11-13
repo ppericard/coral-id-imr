@@ -36,7 +36,8 @@ function app(photoDiff) {
       block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
       block(src, 'const fishBuild = () => {', 'const fishLoad = () =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
-      '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); }; this.cover = cover;',
+      '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); }; this.cover = cover;' +
+      '\nthis.juvP = juvP; this.adultFirst = adultFirst;',
     ctx
   );
   return ctx;
@@ -173,7 +174,8 @@ test("real data: a curated cover below the automatic choice is still the family'
 // else the mosaic's own pick (the first of the game's order that suits the tile, else the first); square tiles: cover().
 test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick (Q291)', () => {
   const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
-    ctx = {cover: g => g.coverP || g.views.wide[0]};
+    X = app(),
+    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst};
   vm.createContext(ctx);
   vm.runInContext(block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) + '\nthis.tile = tilePhoto;', ctx);
   const sq = {f: 'sq', ar: 1, jt: 'p1g0sl1'},
@@ -188,6 +190,12 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
   for (const c of [sq, cut, wide, noar]) assert.strictEqual(ctx.tile(g(c), true).f, 'land', `a cover that does not suit the tile (${c.f})`);
   assert.strictEqual(ctx.tile({views: {wide: [sq]}, coverP: wide}, true).f, 'sq', 'nothing suits: the first, as before');
   assert.strictEqual(ctx.tile(g(sq), false).f, 'sq', 'square tiles: the card photo');
+  // Never a juvenile (Pierre, 2026-11-13): a juvenile that suits the tile is passed over, as a juvenile first photo.
+  const jl = {f: 'jl', ar: 1.5, jt: 'p1g0sl1j'},
+    jp = {f: 'jp', ar: 1.5, jt: 'p1g0sl1', ph: 'juvenile'};
+  assert.strictEqual(ctx.tile({views: {wide: [jl, jp, land]}}, true).f, 'land');
+  assert.strictEqual(ctx.tile({views: {wide: [jl, sq]}}, true).f, 'sq', 'nothing suits: the first that is not a juvenile');
+  assert.strictEqual(ctx.tile({views: {wide: [jl, jp]}}, true).f, 'jl', 'juveniles only: the first');
 });
 
 // A wink's surprise card (quiz.js winkPhoto; Pierre, 2026-11-08, Q290, of the Thresher sharks: "we can use my cover for
@@ -210,4 +218,219 @@ test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q29
   FISH.winks
     .filter(n => FISH.gen[n].coverP)
     .forEach(n => assert.strictEqual(C.fishPid(ctx.wp(FISH.gen[n]).f), C.fishPid(cu.fish.genera[n].cover), n));
+});
+
+// ---- A genus's and a species' ★ Cover (Pierre, 2026-11-13: "choisir les couvertures des genres et les couvertures des
+// espèces"): curation.json fish genera under the genus's 'g:' id or the species' id, {cover}. A genus unit (circle 1) takes
+// it as its coverP, as a family; a genus with no unit and a species get it in FISH.covers while it is in play as a photo of
+// that genus or species; learn.js reads them: the species' first photo (spPhoto), the genus row and cards (genCover). ----
+// Two families: f:A (circle 1, its genus g:Xus a unit), f:B (circle 3, its genus g:Yus no unit).
+const F2 = {
+  families: [
+    {id: 'f:A', name: 'As', sci: ['Aidae'], species: ['s1', 's2'], genera: ['g:Xus'], circle: 1},
+    {id: 'f:B', name: 'Bs', sci: ['Bidae'], species: ['s3'], genera: ['g:Yus'], circle: 3}
+  ],
+  genera: [
+    {id: 'g:Xus', name: 'Xus', family: 'f:A', species: ['s1', 's2']},
+    {id: 'g:Yus', name: 'Yus', family: 'f:B', species: ['s3']}
+  ],
+  species: [
+    {id: 's1', name: 'Xus unus', circle: 1, genus: 'g:Xus', family: 'f:A'},
+    {id: 's2', name: 'Xus duo', circle: 1, genus: 'g:Xus', family: 'f:A'},
+    {id: 's3', name: 'Yus tres', circle: 3, genus: 'g:Yus', family: 'f:B'}
+  ]
+};
+const raw2 = () => {
+  const r = ph();
+  r.photos.t1.push({f: 'fi6', sp: 's2', src: 'https://x/6/original.jpg', e: 2});
+  r.photos.t2 = [
+    {f: 'fi4', sp: 's3', src: 'https://x/4/original.jpg', e: 5},
+    {f: 'fi5', sp: 's3', src: 'https://x/5/original.jpg', e: 2}
+  ];
+  return {f: F2, ph: r, gm: {photos: {}}};
+};
+const cur2 = (G, more = {}) => ({fish: {genera: G, ...more}});
+
+test("genus and species covers: a 'g:' key is the genus's card, a species key its own; never another unit's", () => {
+  const X = app();
+  let B = X.run(raw2(), cur2({}));
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi1', 'no pick: the first of the game order');
+  assert.deepStrictEqual(Object.keys(B.covers), []);
+  B = X.run(raw2(), cur2({'g:Xus': {cover: 'fi3'}, s1: {cover: 'fi2'}, 'g:Yus': {cover: 'fi5'}, s3: {cover: 'fi5'}}));
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi3', "the genus unit's card");
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi1', "the family's card unchanged");
+  assert.strictEqual(B.gen['g:Xus'].views.wide[0].f, 'fi1', "the games' order unchanged");
+  assert.strictEqual(B.covers.s1.f, 'fi2');
+  assert.strictEqual(B.covers['g:Yus'].f, 'fi5', 'a genus with no unit');
+  assert.strictEqual(B.covers.s3.f, 'fi5');
+  assert.ok(!B.gen.s1 && !B.gen['g:Yus'], 'no unit made for them');
+  // A photo of another species or genus is no cover of this one; a candidate name finds its stopgap copy.
+  B = X.run(raw2(), cur2({s1: {cover: 'fi3'}, 'g:Yus': {cover: 'fi1'}, s2: {cover: 'fish-s1-cand-2'}}));
+  assert.deepStrictEqual(Object.keys(B.covers), []);
+  assert.strictEqual(X.run(raw2(), cur2({s1: {cover: 'fish-s1-cand-2'}})).covers.s1.f, 'fi2');
+  // Out of play (rejected since): no cover; the genus falls back as before.
+  B = X.run(raw2(), cur2({'g:Xus': {cover: 'fi3'}, s1: {cover: 'fi2'}}, {seen: {fi2: 1, fi3: 1}}));
+  assert.strictEqual(B.covers.s1, undefined);
+  assert.strictEqual(B.gen['g:Xus'].coverP, undefined);
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi1');
+});
+
+// learn.js: the species' photos with his species cover first, then his featured, then the game's order; the genus row on
+// the family sheet led by his genus cover, then the first photo of its other species; the sibling genus cards (genCover).
+function sheets(B) {
+  const ls = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8'),
+    X = app(),
+    ctx = {
+      FISH: B,
+      juvP: X.juvP,
+      adultFirst: X.adultFirst,
+      easyRank: C.easyRank,
+      GX: n => B.gen[n],
+      hr: k => k,
+      esc: s => String(s),
+      thumb: p => `data-f="${p.f}"`,
+      noFish: () => '<nofish>',
+      spOpen: () => true,
+      genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id))
+    };
+  vm.createContext(ctx);
+  vm.runInContext(
+    'let FSPH = null, FSPH_OF = null;\n' +
+      block(ls, 'const fishSpPhotos = () => {', '// The one "No photo yet" drawing', {file: 'learn.js'}) +
+      block(ls, 'function fishGenusRow(g, flat) {', '\n}\n', {through: 1, file: 'learn.js'}) +
+      '\nthis.spPhoto = spPhoto; this.genCover = genCover; this.sp = fishSpPhotos; this.row = fishGenusRow;',
+    ctx
+  );
+  return ctx;
+}
+test('sheets: the species cover leads its photos, the genus cover its row and cards', () => {
+  const X = app(),
+    gx = F2.genera[0],
+    imgs = h => [...h.matchAll(/data-f="([^"]+)"/g)].map(m => m[1]);
+  let L = sheets(X.run(raw2(), cur2({'f:A': {feat: {s1: ['fi2']}}})));
+  assert.deepStrictEqual([...L.sp().s1.map(p => p.f)], ['fi2', 'fi1'], 'featured first');
+  assert.strictEqual(L.genCover(gx), null);
+  assert.deepStrictEqual(imgs(L.row(gx, [])), ['fi2', 'fi3'], 'no genus cover: each species its first photo');
+  L = sheets(X.run(raw2(), cur2({'f:A': {feat: {s2: ['fi6']}}, s2: {cover: 'fi3'}, 'g:Xus': {cover: 'fi6'}})));
+  assert.deepStrictEqual([...L.sp().s2.map(p => p.f)], ['fi3', 'fi6'], 'his species cover before his featured photo');
+  assert.strictEqual(L.spPhoto({id: 's2'}).f, 'fi3');
+  assert.strictEqual(L.genCover(gx).f, 'fi6');
+  assert.deepStrictEqual(imgs(L.row(gx, [])), ['fi6', 'fi1'], 'the genus cover, then the other species');
+  // A genus with no unit: its cover from FISH.covers.
+  L = sheets(X.run(raw2(), cur2({'g:Yus': {cover: 'fi5'}})));
+  assert.strictEqual(L.genCover(F2.genera[1]).f, 'fi5');
+});
+
+// A juvenile photo is never a cover, at any rank, picked or not (Pierre, 2026-11-13: "Un juvénile ne devrait probablement
+// jamais finir en couverture"): juvenile = its phase word (the record's ph) or its tags' juvenile flag (app.js juvP).
+// His pick on one is ignored (fishCurate: no coverP, no FISH.covers); every default skips them while the unit has another
+// photo (the card's cover, rankPhotos, a species' one photo, the family hero), and a unit of juveniles only keeps one.
+test('a juvenile is never a cover: his pick ignored, the defaults skip it, a unit of juveniles keeps one', () => {
+  const X = app(),
+    R = () => {
+      const r = raw2();
+      Object.assign(r.ph.photos.t1[0], {ph: 'juvenile'}); // fi1 (s1, the easiest): juvenile by its phase
+      Object.assign(r.ph.photos.t1[2], {jt: 'p1g0sl1j'}); // fi3 (s2): juvenile by its tags
+      r.ph.photos.t2.forEach(p => (p.ph = 'juvenile')); // s3: juveniles only
+      return r;
+    };
+  assert.ok(X.juvP({ph: 'juvenile'}) && X.juvP({jt: 'p1g0sl1j'}) && !X.juvP({jt: 'p1g0sl1', ph: 'male'}) && !X.juvP(null));
+  let B = X.run(R(), cur2({'f:A': {cover: 'fi1'}, 'g:Xus': {cover: 'fi3'}, s2: {cover: 'fi3'}, s1: {cover: 'fi2'}}));
+  assert.strictEqual(B.gen['f:A'].coverP, undefined, 'a juvenile family pick is ignored');
+  assert.strictEqual(B.gen['g:Xus'].coverP, undefined, 'a juvenile genus pick too');
+  assert.strictEqual(B.covers.s2, undefined, 'a juvenile species pick too');
+  assert.strictEqual(B.covers.s1.f, 'fi2', 'an adult pick stands');
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2', 'the default skips the juvenile first photo');
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi2');
+  assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1', "the games' order is unchanged");
+  assert.strictEqual(X.cover(B.gen['f:B']).f, 'fi4', 'juveniles only: it keeps one');
+  // rankPhotos (the players' ratings) skips them too.
+  const Y = app((n, p) => ({fi1: -9, fi3: -8})[p.f] || 0);
+  B = Y.run(R(), cur2({}));
+  assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1');
+  assert.strictEqual(Y.cover(B.gen['f:A']).f, 'fi2');
+  // The sheets: a species' one photo, the family's, the species sheet's first photo.
+  const L = sheets(X.run(R(), cur2({'f:A': {feat: {s2: ['fi3']}}})));
+  assert.strictEqual(L.spPhoto({id: 's1'}).f, 'fi2', 'its easiest photo is a juvenile: the next');
+  assert.strictEqual(L.spPhoto({id: 's2'}).f, 'fi6', 'a featured juvenile is not its one photo either');
+  assert.strictEqual(L.spPhoto({id: 's3'}).f, 'fi4', 'juveniles only: it keeps one');
+});
+
+// The species sheet's photos (learn.js spSheetPhotos): three adult photos, the first its cover (fishSpPhotos' order),
+// then up to two juveniles apart; a juvenile is never its first photo while it has an adult one (Pierre, 2026-11-13;
+// Codex review #858's "juvenile cover first" reverted with it).
+test('species sheet: the adults first, then the juveniles apart', () => {
+  const ls = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8'),
+    X = app(),
+    a = k => ({f: 'a' + k, jt: 'p1g0sl1'}),
+    j = k => ({f: 'j' + k, jt: 'p1g0sl1j'}),
+    ctx = {juvP: X.juvP};
+  vm.createContext(ctx);
+  vm.runInContext(block(ls, 'function spSheetPhotos(P) {', '\n}\n', {through: 1, file: 'learn.js'}) + '\nthis.sp = spSheetPhotos;', ctx);
+  const run = P => {
+    const r = ctx.sp(P);
+    return [r.shown.map(p => p.f).join(), r.more.map(p => p.f).join()];
+  };
+  assert.deepStrictEqual(run([j(1), a(1), a(2), j(2), a(3), a(4), {f: 'p', ph: 'juvenile'}]), ['a1,a2,a3,j1,j2', 'a4']);
+  assert.deepStrictEqual(run([j(1), j(2), j(3)]), ['j1,j2', '']);
+});
+
+// The admin's ★ Cover at the genus or species level (autosort.js fishCover under that id) and the app agree on the real
+// files: a photo in play of a circle-1 genus and of one of its species, picked in memory (curation.json is never written:
+// rule A1), is the genus's card and the species' first photo; once it leaves play (Remove: fishDrop, fishReject) no key
+// points at it; Publish merges these keys like a family's (core.js merge3).
+test('real data: a genus and a species cover picked in the admin are the app’s, and leave with the photo', () => {
+  const f = read('fish.json'),
+    P = read('fish-photos.json'),
+    gm = C.fishGameRead(read('fish-game.json')),
+    cu = read('curation.json'),
+    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    X = app();
+  const B0 = X.run({f, ph: P, gm}, cu),
+    gid = Object.keys(B0.gen).find(id => B0.gen[id].rank && B0.gen[id].views.wide.length > 3 && !(cu.fish.genera || {})[id]),
+    G = f.genera.find(g => g.id === gid),
+    inG = play.filter(p => G.species.includes(p.sp)),
+    // a photo the automatic choice would not take, so the pick shows
+    pg = inG.find(p => C.fishPid(p.f) !== C.fishPid(X.cover(B0.gen[gid]).f));
+  assert.ok(pg, `a photo in play of ${gid}`);
+  const sid = pg.sp,
+    ps = inG.find(p => p.sp === sid && p.f !== pg.f) || pg;
+  let F = A.fishCover(A.fishCover(cu.fish, gid, pg.f), sid, ps.f);
+  assert.strictEqual(A.fishCoverOf(inG, F, gid).f, pg.f, "the admin's genus heading");
+  let B = X.run({f, ph: P, gm}, {...cu, fish: F});
+  assert.strictEqual(C.fishPid(X.cover(B.gen[gid]).f), C.fishPid(pg.f), `${gid}: the app's genus card`);
+  assert.strictEqual(C.fishPid(B.covers[sid].f), C.fishPid(ps.f), `${sid}: the species cover`);
+  const M = C.merge3(cu, {...cu, fish: F}, cu);
+  assert.deepStrictEqual([M.fish.genera[gid].cover, M.fish.genera[sid].cover], [pg.f, ps.f]);
+  // Remove on its family page: fishDrop then fishReject, one step.
+  F = A.fishReject(A.fishDrop(F, f.species.find(s => s.id === sid).family, ps.f), ps.f);
+  assert.ok(!Object.values(F.genera).some(k => k.cover === ps.f), 'no cover key left on the photo');
+  B = X.run({f, ph: P, gm}, {...cu, fish: F});
+  assert.ok(!B.covers[sid] || C.fishPid(B.covers[sid].f) !== C.fishPid(ps.f));
+});
+
+// The ranks ★ Cover can set are the subject's own (Pierre, 2026-11-13: "il faut que tes propositions marchent aussi pour
+// les coraux, ou les nudibranches ou les plantes"): read from SUBJECTS sheets, broadest first, else the unit's rank alone
+// (no switch); a key's rank from its sheet prefix, else the narrowest rank (admin.js fuRanks, fuRankOf; rule S1).
+test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alone', () => {
+  const ad = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
+    ctx = {ASUBJ: null};
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(ad, 'const fuRanks = (S = ASUBJ) =>', "// The rubric's tags in words", {file: 'admin.js'}) +
+      '\nthis.ranks = fuRanks; this.rankOf = fuRankOf;',
+    ctx
+  );
+  const [coral, fish] = [C.SUBJECTS.find(s => !s.sheets), C.SUBJECTS.find(s => s.sheets)];
+  assert.deepStrictEqual([...ctx.ranks(fish)], ['family', 'genus', 'species']);
+  assert.deepStrictEqual([...ctx.ranks(coral)], [coral.rank], 'one rank: no switch');
+  assert.deepStrictEqual(
+    ['f:Damselfishes', 'g:Chromis', 's091'].map(id => ctx.rankOf(fish, id)),
+    ['family', 'genus', 'species']
+  );
+  // A subject of other ranks, made up (a plant key): its own words, in its own order.
+  const plants = {rank: 'order', sheets: {order: 'o:', family: 'f:', genus: 'g:'}};
+  assert.deepStrictEqual([...ctx.ranks(plants)], ['order', 'family', 'genus']);
+  assert.strictEqual(ctx.rankOf(plants, 'f:Rosaceae'), 'family');
+  assert.strictEqual(ctx.rankOf(coral, 'Acropora'), coral.rank);
 });

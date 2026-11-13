@@ -578,7 +578,9 @@
   // Pierre, 2026-11-06: the game's units are the families, genera and species of the book) ----
   // A family's own choices live in curation.json fish genera {family id: {cover: f, feat: {species id: [f]}, ok: true}}:
   // the coral key names (genera, cover, feat, ok), species in place of views, keyed by family id (f:Damselfishes; the
-  // plan §4). FISHFEAT photos featured per species at most, as the corals' 3 per view.
+  // plan §4). FISHFEAT photos featured per species at most, as the corals' 3 per view. A genus's and a species' covers
+  // sit in the same map under their fish.json ids, {cover: f} only ('g:Chromis', 's091'; Pierre, 2026-11-13: "choisir
+  // les couvertures des genres et les couvertures des espèces"): fishPick and fishCover take any unit id.
   const FISHFEAT = 3;
   // A family's choices changed by fn (on a copy); an emptied feat list, feat map or family is left out.
   function fishPick(F, tid, fn) {
@@ -620,12 +622,20 @@
       if (k.ok) delete k.ok;
       else k.ok = true;
     });
-  // A photo leaving play (Remove, ×, Not this) leaves the family's featured photos and cover too: one Undo step for all.
-  const fishDrop = (F, tid, f) =>
-    fishPick(F, tid, k => {
+  // A photo leaving play (Remove, ×, Not this) leaves the family's featured photos and cover too, and any other unit's
+  // cover it was: a genus ('g:<Genus>') or a species (its fish.json id), whose covers Pierre picks on the same page
+  // (Pierre, 2026-11-13): one Undo step for all.
+  const fishDrop = (F, tid, f) => {
+    const out = k => {
       if (k.cover === f) delete k.cover;
       Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
+    };
+    let N = fishPick(F, tid, out);
+    Object.entries(N.genera || {}).forEach(([id, k]) => {
+      if (id !== tid && k && (k.cover === f || Object.values(k.feat || {}).some(L => (L || []).includes(f)))) N = fishPick(N, id, out);
     });
+    return N;
+  };
   // The photos of one species in play, in the page's order (L: the photo objects, j(f): the pass's judgment): the featured
   // ones first, in his order; then the game's order (core.js easyRank, #635, #660): reference-level photos first (his
   // ease and tags, else the pass's; a reference source, rep or the flag r), the easiest, the most reference-like
@@ -657,9 +667,23 @@
   // A family's cover: his pick while it is in play (L: the family's photos in play), else its first photo in the game's
   // order across all its species (fishOrder, core.js easyRank, as the game's card cover: reference-level first, whatever
   // the species; Codex review #655), else null.
+  // A juvenile photo is never a cover, at any rank, picked or not (Pierre, 2026-11-13: "Un juvénile ne devrait probablement
+  // jamais finir en couverture"): his pick on one is ignored, the order's first photo that is not one is taken, and a unit
+  // whose photos are all juveniles keeps its first. Juvenile: its phase word (fishPhase, FPHASES: his phase and tags,
+  // else the pass's, else the source's life stage; a game record's ph, which tools/fish_game.py writes the same way).
+  const FJUV = FPHASES[0];
+  function fishJuv(p, j, F) {
+    if (!p) return false;
+    const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
+    return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
+  }
   function fishCoverOf(L, F, tid, j = () => null) {
-    const k = (((F || {}).genera || {})[tid] || {}).cover;
-    return (k && L.find(p => p.f === k)) || fishOrder(L, F, tid, '', j).rest[0] || null;
+    const k = (((F || {}).genera || {})[tid] || {}).cover,
+      juv = p => fishJuv(p, j(p.f), F),
+      c = k && L.find(p => p.f === k);
+    if (c && !juv(c)) return c;
+    const R = fishOrder(L, F, tid, '', j).rest;
+    return R.find(p => !juv(p)) || R[0] || null;
   }
   // The IMR phases of a family (fish.json families phase: the phase lines of the IMR entries that cover it; dimorph: its
   // sexes differ), as the phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
@@ -1190,6 +1214,7 @@
     fishDrop,
     fishOrder,
     fishCoverOf,
+    fishJuv,
     fishUnitPhases,
     FISHEASY,
     fishNeeds,

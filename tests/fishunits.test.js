@@ -65,6 +65,20 @@ test('fishFeat, fishCover, fishOk: one click each, in fish genera; empties left 
   assert.deepStrictEqual(F.genera, {}, 'a second click on the cover takes his pick off');
 });
 
+// A genus's and a species' cover (Pierre, 2026-11-13): the same map under the genus's 'g:' id or the species' id; a photo
+// leaving play from its family's page leaves them too, in the same step; another photo's covers stay.
+test('fishCover on a genus or a species; fishDrop takes the photo out of every cover', () => {
+  let F = {add: {a: 's1', b: 's1', c: 's2'}};
+  F = A.fishCover(A.fishCover(A.fishCover(F, 'f:A', 'a'), 'g:Xus', 'a'), 's1', 'a');
+  F = A.fishCover(A.fishCover(F, 's2', 'c'), 'g:Yus', 'b');
+  assert.deepStrictEqual(F.genera, {'f:A': {cover: 'a'}, 'g:Xus': {cover: 'a'}, s1: {cover: 'a'}, s2: {cover: 'c'}, 'g:Yus': {cover: 'b'}});
+  const D = A.fishDrop(F, 'f:A', 'a');
+  assert.deepStrictEqual(D.genera, {s2: {cover: 'c'}, 'g:Yus': {cover: 'b'}});
+  assert.ok(F.genera['g:Xus'], 'its input untouched');
+  assert.deepStrictEqual(A.fishCover(F, 's1', 'a').genera.s1, undefined, 'a second click takes his pick off');
+  assert.deepStrictEqual(A.fishDrop(F, 'f:A', 'zz').genera, F.genera, 'a photo no cover names changes nothing');
+});
+
 test('Remove, ×, Not this on a photo in play (the fish Candidates’ convention)', () => {
   const F = {add: {a: 's1', b: 's1', c: 's1'}, seen: {}};
   assert.ok(fishOn(F, 'a', 's1'));
@@ -209,6 +223,28 @@ test('fishCoverOf: his pick in play, else the family’s first photo in the game
   assert.strictEqual(A.fishCoverOf(L, {...F, genera: {'f:A': {cover: 'a1'}}}, 'f:A').f, 'a1', 'his pick wins');
   assert.strictEqual(A.fishCoverOf(L, {...F, genera: {'f:A': {cover: 'gone'}}}, 'f:A').f, 'b1', 'a pick out of play: the order');
   assert.strictEqual(A.fishCoverOf([], F, 'f:A'), null);
+});
+
+// A juvenile is never a cover (Pierre, 2026-11-13): fishJuv reads its phase word (his phase and tags, else the pass's,
+// else a game record's ph or the source's life stage); his pick on one is ignored, the default skips them, a unit of
+// juveniles only keeps its first.
+test('fishJuv and fishCoverOf: a juvenile is never a cover, picked or not', () => {
+  const L = [
+      {f: 'j1', sid: 's1', rep: 1},
+      {f: 'a1', sid: 's1'},
+      {f: 'j2', sid: 's2', ph: 'juvenile'},
+      {f: 'j3', sid: 's2', st: 'juvenile'}
+    ],
+    F = {ease: {j1: 5, a1: 3}, tags: {j1: 'p1g0sl1j', a1: 'p1g0sm1'}};
+  assert.deepStrictEqual(
+    L.map(p => A.fishJuv(p, null, F)),
+    [true, false, true, true]
+  );
+  assert.strictEqual(A.fishJuv(L[2], null, {tags: {j2: 'p1g0sm1'}}), false, 'his tags without the flag: not a juvenile');
+  assert.strictEqual(A.fishCoverOf(L, F, 'f:A').f, 'a1', 'the order’s first is a juvenile: the next');
+  assert.strictEqual(A.fishCoverOf(L, {...F, genera: {'g:X': {cover: 'j1'}}}, 'g:X').f, 'a1', 'his pick on a juvenile is ignored');
+  assert.strictEqual(A.fishCoverOf(L, {...F, genera: {s1: {cover: 'a1'}}}, 's1').f, 'a1');
+  assert.strictEqual(A.fishCoverOf([L[2], L[3]], {}, 's2').f.charAt(0), 'j', 'juveniles only: it keeps one');
 });
 
 test('fishCov and fishLook: per family, genus and species, the photos in play, targets, easy, reference, phases, waiting', () => {
