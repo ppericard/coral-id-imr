@@ -667,9 +667,23 @@
   // A family's cover: his pick while it is in play (L: the family's photos in play), else its first photo in the game's
   // order across all its species (fishOrder, core.js easyRank, as the game's card cover: reference-level first, whatever
   // the species; Codex review #655), else null.
+  // A juvenile photo is never a cover, at any rank, picked or not (Pierre, 2026-11-13: "Un juvénile ne devrait probablement
+  // jamais finir en couverture"): his pick on one is ignored, the order's first photo that is not one is taken, and a unit
+  // whose photos are all juveniles keeps its first. Juvenile: its phase word (fishPhase, FPHASES: his phase and tags,
+  // else the pass's, else the source's life stage; a game record's ph, which tools/fish_game.py writes the same way).
+  const FJUV = FPHASES[0];
+  function fishJuv(p, j, F) {
+    if (!p) return false;
+    const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
+    return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
+  }
   function fishCoverOf(L, F, tid, j = () => null) {
-    const k = (((F || {}).genera || {})[tid] || {}).cover;
-    return (k && L.find(p => p.f === k)) || fishOrder(L, F, tid, '', j).rest[0] || null;
+    const k = (((F || {}).genera || {})[tid] || {}).cover,
+      juv = p => fishJuv(p, j(p.f), F),
+      c = k && L.find(p => p.f === k);
+    if (c && !juv(c)) return c;
+    const R = fishOrder(L, F, tid, '', j).rest;
+    return R.find(p => !juv(p)) || R[0] || null;
   }
   // The IMR phases of a family (fish.json families phase: the phase lines of the IMR entries that cover it; dimorph: its
   // sexes differ), as the phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
@@ -1200,6 +1214,7 @@
     fishDrop,
     fishOrder,
     fishCoverOf,
+    fishJuv,
     fishUnitPhases,
     FISHEASY,
     fishNeeds,

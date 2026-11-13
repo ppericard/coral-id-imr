@@ -798,7 +798,9 @@ const fishSpPhotos = () => {
   });
   return ((FSPH = by), (FSPH_OF = FISH), by);
 };
-const spPhoto = s => (fishSpPhotos()[s.id] || [])[0] || null;
+// A species' one photo (its tile, its row): the first of its photos that is not a juvenile (app.js adultFirst), else its
+// first: his species cover, else his featured, else the game's order.
+const spPhoto = s => adultFirst(fishSpPhotos()[s.id]);
 // A genus's ★ Cover (Pierre, 2026-11-13): a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a
 // genus with no unit (FISH.covers); null when he picked none in play.
 const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
@@ -1034,14 +1036,15 @@ function fishFamily(f) {
     G = (f.genera || []).map(id => T.gen[id]).filter(g => g && genSpecies(g).length),
     flat = [],
     all = easyRank(A.flatMap(s => fishSpPhotos()[s.id] || [])),
-    // Pierre's ★ Cover while in play (app.js fishCurate), else the easiest, most reference-like of its species' photos.
-    hero = (GX(f.id) || {}).coverP || all[0],
-    juv = all.filter(p => /j/.test(String(p.jt || '').slice(7))).slice(0, 4),
+    // Pierre's ★ Cover while in play (app.js fishCurate), else the easiest, most reference-like of its species' photos
+    // that is not a juvenile (app.js adultFirst; Pierre, 2026-11-13).
+    hero = (GX(f.id) || {}).coverP || adultFirst(all),
+    juv = all.filter(juvP).slice(0, 4),
     u = GX(f.id) ? f.id : '';
   if (hero) flat.push(hero);
   const cover = id => {
     const L = famSpecies(T.fam[id]);
-    return (GX(id) || {}).coverP || easyRank(L.flatMap(s => fishSpPhotos()[s.id] || []))[0];
+    return (GX(id) || {}).coverP || adultFirst(easyRank(L.flatMap(s => fishSpPhotos()[s.id] || [])));
   };
   // F5: IMR's look-alike lines (fish.json look, lsrc), our lines for the pairs IMR gives no words for (apart, from the
   // family's sources: tools/fish_sheets.json), then the families players mix it up with (model.js dataLooks), said as
@@ -1136,7 +1139,7 @@ function fishGenus(g) {
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
     sib = (f.genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length),
     // A sibling genus's card: his genus cover, else its easiest, most reference-like photo.
-    cover = x => genCover(x) || easyRank(genSpecies(x).flatMap(s => fishSpPhotos()[s.id] || []))[0];
+    cover = x => genCover(x) || adultFirst(easyRank(genSpecies(x).flatMap(s => fishSpPhotos()[s.id] || [])));
   const card = x => {
     const p = cover(x);
     return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}</small><b class="cmpgo">Open →</b></span></a>`;
@@ -1161,25 +1164,20 @@ function fishGenus(g) {
 // (fish.json cmi); its photos, the easiest, most reference-like first whoever took them (Q3), the juvenile-tagged ones
 // apart; the other species of its genus; the links to iNaturalist, WoRMS and FishBase. No key marks, size or depth yet:
 // they come with the writing and the facts tool (Q6, Q7), never invented. No photo: the one drawing and the links (Q9).
-// Its photos on the sheet (P: fishSpPhotos' order): his ★ Cover of the species first, a juvenile one included (app.js
-// fishCurate covers; Codex review #858), then the adults (three photos shown in all), then up to two juveniles apart;
-// more: the other adults, folded.
-const isJuv = p => /j/.test(String(p.jt || '').slice(7));
-function spSheetPhotos(sid, P) {
-  const cv = ((FISH && FISH.covers) || {})[sid],
-    c0 = (cv && P.find(p => p.f === cv.f)) || null,
-    R = P.filter(p => p !== c0),
-    main = R.filter(p => !isJuv(p)),
-    n = c0 ? 2 : 3;
-  return {shown: [...(c0 ? [c0] : []), ...main.slice(0, n), ...R.filter(isJuv).slice(0, 2)], more: main.slice(n)};
+// Its photos on the sheet (P: fishSpPhotos' order, his species cover first, never a juvenile: app.js juvP): three adult
+// photos, the first its cover, then up to two juveniles apart (app.js juvP: the juvenile phase or flag); more: the other
+// adults, folded. A juvenile is never the sheet's first photo while the species has an adult one (Pierre, 2026-11-13).
+function spSheetPhotos(P) {
+  const main = P.filter(p => !juvP(p));
+  return {shown: [...main.slice(0, 3), ...P.filter(juvP).slice(0, 2)], more: main.slice(3)};
 }
 function fishSpecies(s) {
   const T = ftree(),
     f = T.fam[s.family],
     g = T.gen[s.genus],
     P = fishSpPhotos()[s.id] || [],
-    isJ = isJuv,
-    {shown, more} = spSheetPhotos(s.id, P),
+    isJ = juvP,
+    {shown, more} = spSheetPhotos(P),
     flat = [...shown, ...more],
     F = famSpecies(f),
     rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,

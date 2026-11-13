@@ -931,6 +931,45 @@ const WIDTHS = [390, 1280];
             await p.selectOption('[data-fugen]', '');
             await settle();
           } else fails.push(`${w}px Families: no genus select on a family of several genera`);
+          // A juvenile is never a cover (Pierre, 2026-11-13): a photo tagged juvenile has ★ Cover off at every rank; a pick
+          // already on one is ignored (the species heading shows another photo) and flagged, on the tile and in the bar.
+          const jf = gc.t[3] || gc.t[0];
+          await p.evaluate(f => {
+            DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', fishTag(fuJt(DRAFT.fish, f) || 'p1g0sl1', 'j'));
+            saveDraft();
+            render();
+          }, jf);
+          await settle();
+          const jv = () =>
+            p.evaluate(
+              ([sec, f]) =>
+                [0, 1, 2].map(i => {
+                  document.querySelector(`[data-fucv="${i}"]`).click();
+                  const b = document.querySelector(`${sec} [data-f="${f}"] [data-fu="cover"]`);
+                  return {
+                    dis: !!(b && b.disabled),
+                    flag: !!document.querySelector(`${sec} [data-f="${f}"] .adm-fjcv`),
+                    bar: !!document.querySelector('.adm-fjign'),
+                    head: ((document.querySelector(`${sec} > h3 .adm-hthumb`) || {}).dataset || {}).f
+                  };
+                }),
+              [sec, jf]
+            );
+          d = await jv();
+          if (!d.every(x => x.dis && !x.flag && !x.bar)) fails.push(`${w}px Families: ★ Cover on a juvenile ${JSON.stringify(d)}`);
+          await p.evaluate(
+            ([f, sid]) => {
+              DRAFT.fish = fishCover(DRAFT.fish, sid, f);
+              saveDraft();
+              render();
+            },
+            [jf, order.sid]
+          );
+          await settle();
+          d = await jv();
+          if (!d[2] || d[2].dis || !d[2].flag || !d[2].bar || d[2].head === jf || d[0].dis !== true)
+            fails.push(`${w}px Families: a species cover on a juvenile ignored and flagged ${JSON.stringify(d)}`);
+          await p.click('[data-fucv="0"]');
           // Other species in view (Q323): an add whose count is k (confusion possible) or the legacy m with no pass to sort
           // it is out of play, listed apart with Keep in play (count o) and Remove; Keep in play puts it back, one Undo step.
           const ko = await p.evaluate(sid => {

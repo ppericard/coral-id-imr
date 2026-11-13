@@ -576,6 +576,13 @@ const cover = g =>
   allPhotos(g).find(p => p.f === g.cover) ||
   (g.views.medium || [])[0] ||
   allPhotos(g)[0];
+// A juvenile photo is never a cover, at any rank, picked or not (Pierre, 2026-11-13: "Un juvénile ne devrait probablement
+// jamais finir en couverture"): a photo whose phase is the juvenile one (its record's ph, the judged phase word that
+// tools/fish_game.py writes as autosort.js fishPhase reads it) or whose tags carry the juvenile flag (judging/FISH.md).
+// adultFirst(L): the first of L that is not one, else L's first (a unit with juvenile photos only keeps one).
+const JUV_PH = 'juvenile';
+const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7)));
+const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
 // applyCuration(d, c) and applySlots(d, c, {picks, autoq}) live in core.js (tested in tests/photos.test.js).
 let CUR_NEW = null,
   curAt = Date.now(); // curation read again later (curRefresh)
@@ -855,7 +862,7 @@ function fishCurate(X, cur, F) {
       pool = pool || Object.values(X.gen).flatMap(u => (u.rank ? [] : u.views.wide));
       const L = pool.filter(p => S.has(p.sp)),
         cv = L.find(p => p.f === k.cover) || L.find(p => fishPid(p.f) === fishPid(k.cover));
-      if (cv) X.covers[id] = cv;
+      if (cv && !juvP(cv)) X.covers[id] = cv; // never a juvenile (juvP)
       return;
     }
     if (!g || !k) return;
@@ -865,11 +872,16 @@ function fishCurate(X, cur, F) {
       fe = Object.entries(k.feat || {})
         .map(([sid, F]) => [sid, [...new Set((F || []).map(at).filter(p => p && p.sp === sid))]])
         .filter(([, F]) => F.length);
-    if (cv) {
+    if (cv && !juvP(cv)) {
       g.coverP = cv;
       g.cover = cv.f;
     }
     if (fe.length) g.featP = Object.fromEntries(fe);
+  });
+  // Every unit's card photo without his pick: the first of the game's order that is not a juvenile (juvP, adultFirst).
+  Object.values(X.gen).forEach(g => {
+    const L = g.views.wide;
+    if (!g.coverP && L.length && juvP(L.find(p => p.f === g.cover))) g.cover = adultFirst(easyRank(L)).f;
   });
   return X;
 }
@@ -938,7 +950,8 @@ function rankPhotos() {
   Object.entries(FISH.gen).forEach(([n, g]) => {
     // The list the draw reads keeps no licence; the card photo breaks ties on it (core.js easyCover, Q270).
     g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p), false);
-    if (g.views.wide.length) g.cover = (g.coverP || easyCover(g.views.wide, p => photoDiff(n, p))).f;
+    // The card photo: his pick, else the first of the rated order that is not a juvenile (adultFirst; licences break ties).
+    if (g.views.wide.length) g.cover = (g.coverP || adultFirst(easyRank(g.views.wide, p => photoDiff(n, p)))).f;
   });
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
