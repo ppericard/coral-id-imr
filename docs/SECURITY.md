@@ -13,10 +13,29 @@ or a protection changes.
 | Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (10 million cells per spreadsheet, script run quotas) and sync slows or stops for real players. | See below. |
 | Leaderboard (`GET ?board=1`, v14) | Anyone | Shows each signed-in player's chosen name, progress % and Elo unless they opted out (⚙ Leaderboard: Off, a `reefid-sync` setting so it holds on every device; privacy.html says so). The progress % is computed by the script from the saved progress (v16), like the Elo from the answers; a tampered app could still save inflated progress, as it could fake answers. | Cached 5 minutes; nothing else about a player is returned. Per-player numbers (the anonymous answer log, each id's ability) are admin-only from v14 (POST with the token), so a public leaderboard row can't be matched to an anonymous id and its answer history. |
 | Names, reports, user management | Only with the admin GitHub token (checked by the script with GitHub) | — | `isAdmin_`. |
-| Self-update of the script | Whoever can push to `main` | Arbitrary script code. | Same trust as the site itself: only Pierre and his agents push to `main`. |
+| Self-update of the script | Whoever can push to `main` | Arbitrary script code. | Same trust as the site itself: only Pierre, his agents and the Candidate photos workflow's bot push to `main` (its credentials: below). |
 
 No personal data beyond a chosen name is collected (no e-mail, no password; the 4-digit code is stored hashed), so a
 leak of the Sheet would expose little.
+
+## The Candidate photos workflow's push to `main`
+
+`.github/workflows/approved-photos.yml` downloads and decodes files from the internet (photos and JSON from iNaturalist
+and FishBase, decoded by Pillow installed from PyPI) and pushes its results to `main`, which the sync script updates
+itself from. Since the security check of 2026-11-13:
+- the workflow's token is read-only by default; only the two jobs that push (`photos`, `fish`) get `contents: write`,
+  the `r2` job reads only (R2 has its own keys);
+- every checkout has `persist-credentials: false`: no token is written to `.git/config`, and the git reads after it
+  (the blobs fetched on demand, `git pull --rebase`) go without one, the repository being public;
+- the write token is given only to the `Commit` steps, in their own environment, and handed to `git push` alone as an
+  HTTP header for that one process (`GIT_CONFIG_*`), its base64 form masked in the log.
+
+So a file-read bug or a leak in a download or decode step finds no write credential on disk or in its environment.
+**Not covered**: code that takes over a step of a job that pushes (a decoder exploit, a compromised package) runs in the
+same job as the `Commit` step and could still reach the token (a git hook, `$GITHUB_ENV`, the runner's memory). Closing
+that needs the work split in two jobs: one without write access makes the commit, a second one, running no downloaded
+code, checks it touches only its own files and pushes it. Pillow is pinned by version, not by hash (`pip install
+--require-hashes`): both are follow-ups.
 
 ## Protections in the sync script (v12)
 

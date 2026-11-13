@@ -14,14 +14,22 @@ on:
     # (tools/fish_judge.json boxes, suggest.json bb) makes its tile, {f}-x.webp, uploaded the same way (Q321 D4).
     paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py]
   workflow_dispatch:
+# Read only by default (security check, 2026-11-13): a job that pushes gets contents: write for itself, and only its
+# Commit step holds the token (see the photos job). Every checkout has persist-credentials: false: no token on disk
+# (.git/config) or in the environment while photos and JSON from iNaturalist and FishBase are downloaded and decoded
+# (Pillow, from PyPI). The git reads after the checkout (the blobs the blob:none clone fetches on demand, git pull
+# --rebase) need no credential: the repository is public. Not covered: code that takes over a step of a job that pushes
+# could still reach the token (docs/SECURITY.md).
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: candidate-photos
   cancel-in-progress: false
 jobs:
   photos:
     runs-on: ubuntu-26.04
+    permissions:
+      contents: write
     steps:
       # The latest main, not the commit that started the run: a run queued behind another (two Publishes in a row, the
       # concurrency group above) must start from that run's commit, or its own commit conflicts with it on data.json
@@ -33,6 +41,7 @@ jobs:
           ref: main
           fetch-depth: 0
           filter: blob:none
+          persist-credentials: false
       # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule W9),
       # the same in every workflow. Pillow pinned in tools/requirements.txt.
       - uses: actions/setup-python@v7
@@ -69,7 +78,12 @@ jobs:
       # those curation.json uses, cand.json the others). fetch_local.py ends with the same step; this one also covers
       # whatever ran after it (tests/coralcand.test.js, tests/photos.test.js).
       - run: python tools/fetch_local.py --tidy
+      # The only step that holds the write token: in its own environment, handed to git push alone as an HTTP header for
+      # that one process (GIT_CONFIG_*, the header actions/checkout would have written to .git/config), never written to
+      # disk. Its base64 form is masked: the runner masks the token, not its encodings.
       - name: Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -77,7 +91,10 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main
-          git push origin HEAD:main
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+            GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth" git push origin HEAD:main
   # The fish candidates (Pierre, 2026-11-06, Q171: "no more candidates is no more candidates"): the short species only
   # (under their cap of Q36 net of what Pierre rejected, excluded or sent elsewhere, or short of easy photos), at most 40
   # a run, the shortest first, with tools/fetch_fish.py's rules (Research Grade, the licences, the Philippines first,
@@ -91,17 +108,23 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-26.04
     timeout-minutes: 90
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
           ref: main
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
       # shell: bash sets pipefail, so a failed refill fails the step despite the tee.
       - run: python tools/fetch_fish.py --refill --circle 1 --circle 2 --circle 3 | tee -a "$GITHUB_STEP_SUMMARY"
         shell: bash
+      # The write token in this step only, as in the photos job's Commit.
       - name: Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -109,13 +132,19 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: refill the short fish species"
           git pull --rebase origin main
-          git push origin HEAD:main
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+            GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth" git push origin HEAD:main
   # img/ copied to R2 and the bucket checked (every photo that lives on R2 only has its four files there), in its own
   # job under the same concurrency group as photos-r2.yml (Codex review #380), from today's main (the commit above, if
   # any, is on it). Its push starts no other workflow (GITHUB_TOKEN), hence this job.
   r2:
     needs: photos
     runs-on: ubuntu-26.04
+    # Reads only: R2 has its own keys.
+    permissions:
+      contents: read
     concurrency:
       group: photos-r2
       cancel-in-progress: false
@@ -123,6 +152,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: main
+          persist-credentials: false
       # r2_sync.sh runs python3 tools/photos.py --r2-list.
       - uses: actions/setup-python@v7
         with:
