@@ -881,9 +881,9 @@ const WIDTHS = [390, 1280];
             const S = document.querySelector(sec);
             return {gid: S.closest('.adm-fgen').dataset.gen, t: [...S.querySelectorAll('.adm-tile[data-play]')].map(x => x.dataset.f)};
           }, sec);
-          await p.click('[data-fucv="gen"]');
+          await p.click('[data-fucv="1"]');
           await p.click(`${sec} [data-f="${gc.t[1]}"] [data-fu="cover"]`);
-          await p.click('[data-fucv="sp"]');
+          await p.click('[data-fucv="2"]');
           await p.click(`${sec} [data-f="${gc.t[2]}"] [data-fu="cover"]`);
           await settle();
           const cvs = () =>
@@ -921,7 +921,7 @@ const WIDTHS = [390, 1280];
           await settle();
           d = await cvs();
           if (d.s || d.g !== gc.t[1] || d.sh) fails.push(`${w}px Families: Undo of the species cover ${JSON.stringify(d)}`);
-          await p.click('[data-fucv="fam"]');
+          await p.click('[data-fucv="0"]');
           const gn = await p.evaluate(() => document.querySelectorAll('[data-fugen] option').length);
           if (gn > 2) {
             await p.selectOption('[data-fugen]', gc.gid);

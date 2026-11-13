@@ -1826,12 +1826,23 @@ const fuJ = f => {
   return g && j ? {...g, ...j} : j || g || null;
 };
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
-// What ★ Cover sets on a family's page (Pierre, 2026-11-13: "choisir les couvertures des genres et les couvertures des
-// espèces"): 'fam' the family's cover, 'gen' the photo's genus's, 'sp' its species' (curation.json fish genera under the
-// genus's or species' fish.json id: autosort.js fishCover); this tab, the family's by default. FU_GEN: the page narrowed
-// to one genus of one family ({fam, g}; "je peux même pas filtrer"), this tab.
-let FU_CV = 'fam',
+// What ★ Cover sets on a unit's page (Pierre, 2026-11-13: "choisir les couvertures des genres et les couvertures des
+// espèces"; "il faut que tes propositions marchent aussi pour les coraux, ou les nudibranches ou les plantes"): the cover
+// of one rank of the subject's tree, read from the subject (SUBJECTS sheets: its ranks, broadest first; one rank, its
+// unit's, for a subject without them), never a list of our own: the rank's index along the photo's path on the page (the
+// page's unit, then each level of its tree: for fish the family, the genus, the species), its key the id of that node
+// (curation.json <subject> genera under the node's id: autosort.js fishCover); this tab, the page's unit by default.
+// FU_GEN: the page narrowed to one node of its second rank ({fam, g}; "je peux même pas filtrer"), this tab.
+let FU_CV = 0,
   FU_GEN = {fam: '', g: ''};
+// A subject's ranks, broadest first (SUBJECTS sheets), else its unit's alone (SUBJECTS rank).
+const fuRanks = (S = ASUBJ) => (Object.keys(S.sheets || {}).length ? Object.keys(S.sheets) : [S.rank || S.one]);
+// The rank of a node id of subject S: the rank whose sheet prefix it carries (f:, g:), else its narrowest rank (an id of
+// its own spelling: a fish species, s091).
+const fuRankOf = (S, id) => {
+  const R = fuRanks(S);
+  return R.find(r => (S.sheets || {})[r] && String(id).startsWith(S.sheets[r])) || R[R.length - 1];
+};
 // The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
 const FU_TAGS = [
   {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
@@ -1985,16 +1996,20 @@ function fishTile(p, o) {
     jt = fuJt(F, f),
     num = (o.st || {}).num,
     isCover = !!(o.cover && o.cover.f === f),
-    // Families page only (o.lv): ★ Cover sets the cover of the level its bar's switch names (renderFishUnits FU_CV): the
-    // family's, the photo's genus's or its species'; elsewhere the family's. His genus and species picks are marked.
-    lv = o.lv || 'fam',
-    gid = o.gen || ((FISHC && FISHC.species[sid]) || {}).genus || '',
-    pick = k => (((F.genera || {})[k] || {}).cover === f ? 1 : 0),
-    gPick = o.play && gid ? pick(gid) : 0,
-    sPick = o.play && sid ? pick(sid) : 0,
-    cvOn = lv === 'gen' ? gPick : lv === 'sp' ? sPick : isCover && o.picked,
+    // On a unit's page only (o.path: the photo's node ids by rank, broadest first: renderFishUnits): ★ Cover sets the cover
+    // of the rank its bar's switch names (FU_CV, an index into fuRanks); elsewhere the unit's. His picks at the narrower
+    // ranks are marked, each by its rank's word.
+    RK = fuRanks(),
+    path = o.path || [o.fam],
+    lv = o.path ? Math.min(FU_CV, path.length - 1) : 0,
+    pick = k => (k && ((F.genera || {})[k] || {}).cover === f ? 1 : 0),
+    picks = o.play ? path.map((k, i) => (i ? pick(k) : 0)) : [],
+    more = picks.some(Boolean),
+    cvOn = lv ? picks[lv] : isCover && o.picked,
     cvMark =
-      o.lv || gPick || sPick ? `${[isCover && 'Family', gPick && 'Genus', sPick && 'Species'].filter(Boolean).join(' · ')} cover` : 'Cover',
+      o.path || more
+        ? `${[isCover && cap1(RK[0]), ...picks.map((x, i) => x && cap1(RK[i] || ''))].filter(Boolean).join(' · ')} cover`
+        : 'Cover',
     rows = !out && (o.play || cand) && FT_OPEN.has(f),
     btn = (a, t, more = '') => `<button type="button" data-fu="${a}"${more} title="${t}">${t}</button>`,
     crop = !!((F.crop || {})[f] || fishRot(f));
@@ -2002,23 +2017,25 @@ function fishTile(p, o) {
   const acts = out
     ? `<span class="adm-src view">${out}</span>`
     : (o.play
-        ? `${btn('feat', 'Feature', ` aria-pressed="${!!num}"`)}<button type="button" data-fu="cover" aria-pressed="${!!cvOn}" title="${{fam: 'Family cover', gen: 'Genus cover', sp: 'Species cover'}[lv] || 'Cover'}">★ Cover</button>`
+        ? `${btn('feat', 'Feature', ` aria-pressed="${!!num}"`)}<button type="button" data-fu="cover" aria-pressed="${!!cvOn}" title="${o.path ? `${cap1(RK[lv] || '')} cover` : 'Cover'}">★ Cover</button>`
         : '') +
       btn('remove', 'Remove') +
       (cand ? '<button type="button" data-fu="not" title="Not this species">Not this</button>' : '') +
       (o.play || cand
         ? `<button type="button" data-fu="crop" class="${crop ? 'on' : ''}" aria-pressed="${crop}" title="Crop">Crop</button><button type="button" data-fu="tags" aria-pressed="${rows}" title="Tags">Tags</button>`
         : '');
-  return `<figure class="adm-tile adm-ftile${num ? ' is-feat' : ''}${isCover || gPick || sPick ? ' is-cover' : ''}${rows ? ' is-tags' : ''}" data-f="${esc(f)}" data-sid="${esc(sid || '')}" data-fam="${esc(o.fam || '')}"${o.lv ? ` data-cv="${esc(lv)}" data-gen="${esc(gid)}"` : ''}${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}${o.play ? ' data-play' : ''}>
+  return `<figure class="adm-tile adm-ftile${num ? ' is-feat' : ''}${isCover || more ? ' is-cover' : ''}${rows ? ' is-tags' : ''}" data-f="${esc(f)}" data-sid="${esc(sid || '')}" data-fam="${esc(o.fam || '')}"${o.path ? ` data-cvk="${esc(path[lv] || '')}"` : ''}${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}${o.play ? ' data-play' : ''}>
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
-    ${isCover || gPick || sPick ? `<span class="adm-covermark">${cvMark}</span>` : ''}
+    ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
     <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Families</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // The family page's tile (renderFishUnits): st {num} for a featured photo; cover: the cover shown, picked: his pick; gen:
-// its genus block's id; ★ Cover at the level of the bar's switch (FU_CV).
-const fuTile = (sid, p, st, cover, picked, F, XI, fam, gen) => fishTile(p, {sid, fam, gen, lv: FU_CV, play: true, st, cover, picked, XI});
+// its genus block's id: the photo's path [family, genus, species], as deep as the subject's ranks, for ★ Cover at the
+// rank of the bar's switch (FU_CV).
+const fuTile = (sid, p, st, cover, picked, F, XI, fam, gen) =>
+  fishTile(p, {sid, fam, path: [fam, gen, sid].slice(0, fuRanks().length), play: true, st, cover, picked, XI});
 // The clicks of every fish tile in scope: each one click and one Undo step. zoom(f, tile): the enlarged photo (default:
 // that photo alone, its family's name and species in the caption).
 function bindFishTiles(scope, o = {}) {
@@ -2055,10 +2072,9 @@ function bindFishTiles(scope, o = {}) {
         if (r.full) return toast(`Already ${FISHFEAT} featured: remove one first.`);
         return fx(() => r.F);
       }
-      // The cover of the level the Families page's switch names (the tile's data-cv: that page only), else the family's.
+      // The cover of the node the unit page's switch names (the tile's data-cvk: that page only), else the unit's.
       if (a === 'cover') {
-        const lv = tl.dataset.cv,
-          k = lv === 'gen' ? tl.dataset.gen : lv === 'sp' ? sid : fam;
+        const k = tl.dataset.cvk || fam;
         return k && fx(F => fishCover(F, k, f));
       }
       if (a === 'remove') return fx(F => fishReject(fishDrop(F, fam, f), f), 'Removed from play. Undo (Ctrl+Z) brings it back.', true);
@@ -2176,6 +2192,7 @@ function renderFishUnits(id) {
   const cnt = o => e.all.filter(p => origin(p) === o).length,
     cv = e.cover,
     sp = FISHC.species,
+    RK = fuRanks(),
     // The genera with species in play here, and the one the page is narrowed to (FU_GEN), if still one of them.
     GS = u.genera.filter(g => g.species.some(s => e.rows[s])),
     gOn = FU_GEN.fam === u.id && GS.length > 1 && GS.some(g => g.id === FU_GEN.g) ? FU_GEN.g : '',
@@ -2199,7 +2216,7 @@ function renderFishUnits(id) {
           g.id,
           fuJ
         );
-      return `<section class="adm-fgen" data-gen="${esc(g.id)}"><h3 class="adm-fgenh">${hThumb(gc, gk && gc && gc.f === gk, 'Genus cover')}<i>${esc(g.name)}</i> ${fuImr(g)} <small>${S.length} species</small></h3>${S.map(
+      return `<section class="adm-fgen" data-gen="${esc(g.id)}"><h3 class="adm-fgenh">${hThumb(gc, gk && gc && gc.f === gk, `${cap1(RK[1] || '')} cover`)}<i>${esc(g.name)}</i> ${fuImr(g)} <small>${S.length} species</small></h3>${S.map(
         sid => {
           const {feat, rest} = e.rows[sid],
             s = sp[sid],
@@ -2212,7 +2229,7 @@ function renderFishUnits(id) {
             // its first photo on the sheets (learn.js fishSpPhotos).
             sk = ((F.genera || {})[sid] || {}).cover,
             sc = (sk && [...feat, ...rest].find(p => p.f === sk)) || feat[0] || rest[0];
-          return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(sc && {...sc, sid}, sk && sc && sc.f === sk, 'Species cover')}${esc(s.common || s.name)} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${n} photo${n === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
+          return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(sc && {...sc, sid}, sk && sc && sc.f === sk, `${cap1(RK[2] || '')} cover`)}${esc(s.common || s.name)} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${n} photo${n === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
       <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, e.k.cover, F, XI, u.id, g.id) : '')).join('')}${rest
         .filter(shown)
         .map(p => fuTile(sid, p, {}, cv, e.k.cover, F, XI, u.id, g.id))
@@ -2255,14 +2272,14 @@ function renderFishUnits(id) {
   ]
     .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
     .join('')}</span>`;
-  // What ★ Cover sets (FU_CV): the family's cover, the photo's genus's or its species'.
-  const cvSeg = `<span class="adm-qseg adm-lvseg adm-fcv" role="group" aria-label="★ Cover sets" title="★ Cover sets">${[
-    ['fam', 'Family'],
-    ['gen', 'Genus'],
-    ['sp', 'Species']
-  ]
-    .map(([k, t]) => `<button type="button" data-fucv="${k}" aria-pressed="${FU_CV === k}">★ ${t}</button>`)
-    .join('')}</span>`;
+  // What ★ Cover sets (FU_CV): the cover of one rank of the subject's tree (fuRanks: for fish the family, the photo's
+  // genus, its species); no switch for a subject of one rank.
+  const cvSeg =
+    RK.length > 1
+      ? `<span class="adm-qseg adm-lvseg adm-fcv" role="group" aria-label="★ Cover sets" title="★ Cover sets">${RK.map(
+          (r, i) => `<button type="button" data-fucv="${i}" data-rank="${esc(r)}" aria-pressed="${FU_CV === i}">★ ${esc(cap1(r))}</button>`
+        ).join('')}</span>`
+      : '';
   // The page narrowed to one genus (FU_GEN), for a family of several.
   const genSel =
     GS.length > 1
@@ -2293,7 +2310,7 @@ function renderFishUnits(id) {
   $v.querySelectorAll('[data-fucv]').forEach(
     b =>
       (b.onclick = () => {
-        FU_CV = b.dataset.fucv;
+        FU_CV = +b.dataset.fucv;
         render();
       })
   );
@@ -6652,13 +6669,15 @@ function pubSummary() {
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
     // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera), and the
     // genus and species covers picked on the same page (the same map, under the genus's 'g:' id or the species' id).
-    ...[
-      [/^f:/, 'fish family', 'fish families'],
-      [/^g:/, 'fish genus cover'],
-      [/^(?![fg]:)/, 'fish species cover']
-    ].map(([re, t, ts]) => {
-      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([k]) => re.test(k)));
-      return [nDiff(pick((DRAFT.fish || {}).genera), pick((SAVED.fish || {}).genera)), t, ts];
+    // Each rank of the subject's tree apart (fuRanks, fuRankOf: from SUBJECTS sheets): its unit's own choices, then the
+    // covers of the narrower ranks ("fish family", "fish genus cover", "fish species cover").
+    ...(FISHS ? fuRanks(FISHS) : []).map((r, i) => {
+      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([k]) => fuRankOf(FISHS, k) === r));
+      return [
+        nDiff(pick((DRAFT.fish || {}).genera), pick((SAVED.fish || {}).genera)),
+        i ? `fish ${r} cover` : `fish ${r}`,
+        i ? '' : `fish ${r.replace(/y$/, 'ie')}s`
+      ];
     }),
     [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
     [nDiff((DRAFT.fish || {}).rot, (SAVED.fish || {}).rot), 'fish photo rotation'],

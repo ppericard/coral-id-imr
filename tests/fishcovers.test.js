@@ -343,3 +343,29 @@ test('real data: a genus and a species cover picked in the admin are the app’s
   B = X.run({f, ph: P, gm}, {...cu, fish: F});
   assert.ok(!B.covers[sid] || C.fishPid(B.covers[sid].f) !== C.fishPid(ps.f));
 });
+
+// The ranks ★ Cover can set are the subject's own (Pierre, 2026-11-13: "il faut que tes propositions marchent aussi pour
+// les coraux, ou les nudibranches ou les plantes"): read from SUBJECTS sheets, broadest first, else the unit's rank alone
+// (no switch); a key's rank from its sheet prefix, else the narrowest rank (admin.js fuRanks, fuRankOf; rule S1).
+test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alone', () => {
+  const ad = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'),
+    ctx = {ASUBJ: null};
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(ad, 'const fuRanks = (S = ASUBJ) =>', "// The rubric's tags in words", {file: 'admin.js'}) +
+      '\nthis.ranks = fuRanks; this.rankOf = fuRankOf;',
+    ctx
+  );
+  const [coral, fish] = [C.SUBJECTS.find(s => !s.sheets), C.SUBJECTS.find(s => s.sheets)];
+  assert.deepStrictEqual([...ctx.ranks(fish)], ['family', 'genus', 'species']);
+  assert.deepStrictEqual([...ctx.ranks(coral)], [coral.rank], 'one rank: no switch');
+  assert.deepStrictEqual(
+    ['f:Damselfishes', 'g:Chromis', 's091'].map(id => ctx.rankOf(fish, id)),
+    ['family', 'genus', 'species']
+  );
+  // A subject of other ranks, made up (a plant key): its own words, in its own order.
+  const plants = {rank: 'order', sheets: {order: 'o:', family: 'f:', genus: 'g:'}};
+  assert.deepStrictEqual([...ctx.ranks(plants)], ['order', 'family', 'genus']);
+  assert.strictEqual(ctx.rankOf(plants, 'f:Rosaceae'), 'family');
+  assert.strictEqual(ctx.rankOf(coral, 'Acropora'), coral.rank);
+});
