@@ -15,9 +15,6 @@ rules pass before it (`.claude/settings.json`: resolving review threads). What t
   three agents; ask him only what is his to decide (wording, game rules), never the order of work.
 - **Don't send him GitHub chores** (11-12: "c'est quoi ce micromanagement forcé ?"): resolving fixed threads, labels,
   branch updates are the integrator's. A refusal by the classifier: find the narrow allow rule, propose it once.
-- **Rule 0 read right, again** (11-13): it limits Pierre's time, **never the agents'** (they keep working after 17:30
-  and on any day), and Pierre has **no weekends** ("every day"): never write "until Monday". After 17:30 he may still
-  name one task as a conscious exception: then work with him on that task.
 - **A success rate is never a level** (LEARNING "What each number measures", rule L12): two studies read 75-83% right
   as "mid-level"; the level is the global Elo (settled only after many answers) and progress.
 - **Each merge moves `main`**: the next open PR needs `origin/main` merged in (a merge commit), CI again, and
