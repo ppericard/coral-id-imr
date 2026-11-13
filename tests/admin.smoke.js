@@ -430,9 +430,10 @@ const WIDTHS = [390, 1280];
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
-      // The fish units page (admin plan PR 6 on the book's families): Photos › Families, the fish side's first Photos tab (Candidates the other)
-      // (never on the corals' side), the book's families by key group with the IMR tag on those in the IMR course, a
-      // family's page with one block per genus and one section per species, deep links by family id.
+      // The fish units page (admin plan PR 6 on the book's families; Photos › Tree since Pierre, 2026-11-13, Q340): the fish
+      // side's first Photos tab (Candidates the other) (never on the corals' side), the key's tree at the left (key groups,
+      // the book's families with the IMR tag on those in the IMR course, their genera and species), a family's page with
+      // one block per genus and one section per species, deep links by node id (#fish/photos/tree/key/<node id>).
       {
         const fu = () =>
           p.evaluate(() => ({
@@ -440,12 +441,14 @@ const WIDTHS = [390, 1280];
             tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent),
             name: (document.querySelector('.adm-sname') || {}).textContent || '',
             sel: (document.querySelector('.adm-gsel2') || {}).value || '',
-            fams: document.querySelectorAll('.adm-side .adm-g').length,
-            imr: document.querySelectorAll('.adm-side .adm-g .adm-imrt').length,
+            fams: document.querySelectorAll('.adm-tree [role=treeitem] > .adm-g').length,
+            imr: document.querySelectorAll('.adm-tree [role=treeitem] > .adm-g .adm-imrt').length,
             gens: [...document.querySelectorAll('.adm-fgen')].map(g => g.dataset.gen),
             rows: document.querySelectorAll('.adm-fgen .adm-row[data-sid]').length,
             imrGen: document.querySelectorAll('.adm-fgenh .adm-imrt').length,
-            grp: document.querySelectorAll('.adm-side .adm-fgrp').length,
+            grp: document.querySelectorAll('.adm-tree [role=treeitem][aria-level="1"]').length,
+            cur: (document.querySelector('.adm-tree [aria-selected="true"]') || {dataset: {}}).dataset.tt || '',
+            tabbable: document.querySelectorAll('.adm-tree [tabindex="0"]').length,
             want: FISHC && FISHC.units.length,
             wantImr: FISHC && FISHC.units.filter(u => u.imr || u.imrWith).length,
             note: (document.querySelector('#view > .note') || {}).textContent || '',
@@ -453,12 +456,36 @@ const WIDTHS = [390, 1280];
           }));
         await go(other.hash + 'photos');
         let u = await fu();
-        if (u.hash !== '#' + other.hash + 'photos/families' || u.tabs[0] !== 'Families' || u.tabs.includes('Genera') || u.note)
-          fails.push(`${w}px Families: #${other.hash}photos ${JSON.stringify(u)}`);
-        if (w === 1280 && (u.fams !== u.want || u.fams < 28 || u.imr !== u.wantImr || u.imr < 28 || u.grp < 5))
-          fails.push(`${w}px Families: the list ${JSON.stringify(u)}`);
-        if (u.wide > 0) fails.push(`${w}px Families: page ${u.wide} px wider than the window`);
+        if (u.hash !== '#' + other.hash + 'photos/tree/key' || u.tabs[0] !== 'Tree' || u.tabs.includes('Genera') || u.note)
+          fails.push(`${w}px Tree: #${other.hash}photos ${JSON.stringify(u)}`);
+        if (w === 1280 && (u.fams !== u.want || u.fams < 28 || u.imr !== u.wantImr || u.imr < 28 || u.grp < 5 || u.tabbable !== 1))
+          fails.push(`${w}px Tree: the list ${JSON.stringify(u)}`);
+        // The tree is whole: built without a problem, every family and every genus and species of the families' pages in it,
+        // each under its own (the key group, the family, the genus), at its depth.
+        const ti = await p.evaluate(() => {
+          const T = fuTreeOf(FISHC.units),
+            bad = [];
+          FISHC.units.forEach(u => {
+            if (ttPath(T, u.id).length !== 2) bad.push(u.id);
+            u.genera.forEach(g =>
+              g.species
+                .filter(s => FISHC.species[s] && !FISHC.species[s].out)
+                .forEach(s => {
+                  const P = ttPath(T, s);
+                  if (P.length !== 4 || P[1] !== u.id || P[2] !== g.id) bad.push(s);
+                })
+            );
+          });
+          return {problems: T.problems, bad: bad.slice(0, 5), leaves: T.roots.flatMap(r => ttLeaves(T, r)).length};
+        });
+        if (ti.problems.length || ti.bad.length || ti.leaves < 600) fails.push(`${w}px Tree: the tree ${JSON.stringify(ti)}`);
+        // The old address is not kept (rule A4, no alias): it opens the tab's first family, not the family it named.
         await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+        u = await fu();
+        if (u.hash !== '#' + other.hash + 'photos/tree/key' || u.sel !== (await p.evaluate(() => FISHC.units[0].id)))
+          fails.push(`${w}px Tree: the old Families address ${JSON.stringify({hash: u.hash, sel: u.sel})}`);
+        if (u.wide > 0) fails.push(`${w}px Families: page ${u.wide} px wider than the window`);
+        await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
         u = await fu();
         if (
           u.sel !== 'f:Damselfishes' ||
@@ -468,19 +495,69 @@ const WIDTHS = [390, 1280];
           u.imrGen < 4 ||
           u.wide > 0
         )
-          fails.push(`${w}px Families: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
+          fails.push(`${w}px Tree: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
+        if (w === 1280 && u.cur !== 'f:Damselfishes') fails.push(`${w}px Tree: Damselfishes not the row selected (${u.cur})`);
+        // A genus and a species open their family's page there (node pages come later): the family in the select, the
+        // node selected in the tree (unfolded to it), its section in view under the sticky bar.
+        for (const id of ['g:Chromis', 's091']) {
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(id));
+          u = await fu();
+          const at = await p.evaluate(id => {
+            const t = document.querySelector(`.adm-main .adm-fgen[data-gen="${id}"], .adm-main .adm-row[data-sid="${id}"]`),
+              r = t && t.getBoundingClientRect();
+            return r ? Math.round(r.top) : null;
+          }, id);
+          if (u.sel !== 'f:Damselfishes' || at === null || at < 0 || at > (w === 1280 ? 400 : 600) || (w === 1280 && u.cur !== id))
+            fails.push(`${w}px Tree: ${id} ${JSON.stringify({sel: u.sel, cur: u.cur, at})}`);
+        }
+        // The keys (the WAI-ARIA tree pattern), at 1280 where the tree shows: → unfolds the family, ↓ its first genus, Enter
+        // opens that genus (the focus stays on it), ← back to the family.
+        if (w === 1280) {
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
+          await p.evaluate(() => {
+            const o = ttOpen(fuTreeOf(FISHC.units));
+            o.delete('f:Damselfishes');
+            render();
+          });
+          await p.focus('.adm-tree [aria-selected="true"]');
+          const act = () =>
+            p.evaluate(() => ({
+              id: document.activeElement.dataset.tt,
+              ex: document.activeElement.getAttribute('aria-expanded'),
+              hash: location.hash
+            }));
+          await p.keyboard.press('ArrowRight');
+          const k1 = await act();
+          await p.keyboard.press('ArrowDown');
+          const k2 = await act();
+          await p.keyboard.press('Enter');
+          await settle();
+          const k3 = await act();
+          await p.keyboard.press('ArrowLeft');
+          const k4 = await act(),
+            g0 = await p.evaluate(() => FISHC.units.find(x => x.id === 'f:Damselfishes').genera[0].id);
+          if (
+            k1.id !== 'f:Damselfishes' ||
+            k1.ex !== 'true' ||
+            k2.id !== g0 ||
+            k3.id !== g0 ||
+            k3.hash !== '#' + other.hash + 'photos/tree/key/' + encodeURIComponent(g0) ||
+            k4.id !== 'f:Damselfishes'
+          )
+            fails.push(`${w}px Tree: the keys ${JSON.stringify([k1, k2, k3, k4, g0])}`);
+        }
         // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers), with the Grammistidae soapfishes
         // since 2026-11-08 (Q248: one family, as in the book); an unknown family shows the first.
-        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Soapfishes'));
+        await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Soapfishes'));
         u = await fu();
         if (u.sel !== 'f:Soapfishes' || !u.gens.includes('g:Diploprion') || !u.gens.includes('g:Grammistes') || !/IMR/.test(u.name))
-          fails.push(`${w}px Families: Soapfishes ${JSON.stringify(u)}`);
-        await go(other.hash + 'photos/families/f%3ANone');
+          fails.push(`${w}px Tree: Soapfishes ${JSON.stringify(u)}`);
+        await go(other.hash + 'photos/tree/key/f%3ANone');
         u = await fu();
-        if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Families: an unknown family ${JSON.stringify(u)}`);
+        if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: an unknown node ${JSON.stringify(u)}`);
         // What the game plays is what the admin counts (fish-game.json, whatever the route: the sure candidates and the
         // reference photos too, not curation.json's adds alone): each species' obs/target is at least the game's observations.
-        await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+        await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
         const gp = await p.evaluate(() => {
           const rows = [...document.querySelectorAll('.adm-fgen .adm-row[data-sid]')].map(r => {
             const sid = r.dataset.sid,
@@ -583,7 +660,7 @@ const WIDTHS = [390, 1280];
         // Games' summary line, and every photo tile of a genus or family page with its rights badge.
         for (const s of [
           {hash: '', lv0: 'gen', tile: () => goGenus('Acropora')},
-          {hash: other.hash, lv0: 'fam', tile: () => go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'))}
+          {hash: other.hash, lv0: 'fam', tile: () => go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'))}
         ]) {
           await go(s.hash + 'inbox/coverage/games');
           const line = await p.evaluate(() => (document.querySelector('.adm-rline') || {}).textContent || '');
@@ -785,17 +862,17 @@ const WIDTHS = [390, 1280];
         await go('inbox/coverage/games');
         c = await cv();
         if (!c.coral || c.rows) fails.push(`${w}px Coverage on the corals' side: ${JSON.stringify(c)}`);
-        // The corals have no Families tab, and its address says so.
-        await go('photos/families');
+        // The corals have no Tree tab yet (they join it in a later step), and its address says so.
+        await go('photos/tree/key');
         u = await fu();
-        if (!/Not for corals yet/.test(u.note) || u.tabs.includes('Families'))
-          fails.push(`${w}px Families on the corals' side ${JSON.stringify(u)}`);
+        if (!/Not for corals yet/.test(u.note) || u.tabs.includes('Tree'))
+          fails.push(`${w}px Tree on the corals' side ${JSON.stringify(u)}`);
         if (once) {
           // All | IMR: the IMR course's families only, then all again (one click each, remembered).
-          await go(other.hash + 'photos/families/' + encodeURIComponent('f:Damselfishes'));
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
           await p.click('[data-fuimr="imr"]');
           u = await fu();
-          if (u.fams !== u.imr || u.fams !== u.wantImr) fails.push(`${w}px Families: the IMR filter ${JSON.stringify(u)}`);
+          if (u.fams !== u.imr || u.fams !== u.wantImr) fails.push(`${w}px Tree: the IMR filter ${JSON.stringify(u)}`);
           await p.click('[data-fuimr="all"]');
           // The actions on a family with photos in play: the order (the easiest, then the most reference-like: core.js
           // easyRank; nobody's photos moved up),
@@ -815,7 +892,7 @@ const WIDTHS = [390, 1280];
             saveDraft();
             return u.id;
           });
-          await go(other.hash + 'photos/families/' + encodeURIComponent(fam));
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(fam));
           const order = await p.evaluate(() => {
             const sec = [...document.querySelectorAll('.adm-fgen .adm-row[data-sid]')].find(
                 r => r.querySelectorAll('.adm-tile').length >= 4
@@ -3258,7 +3335,7 @@ const WIDTHS = [390, 1280];
       await settle();
       if ((await fishOf()) !== d0) fails.push(`${w}px To do › Reports, Count Others: one Undo did not take it all back`);
       // The same photo on its family's page: the same tools, the same rows, the same draft from the same click.
-      await go('fish/photos/families/' + encodeURIComponent('f:Wrasses'));
+      await go('fish/photos/tree/key/' + encodeURIComponent('f:Wrasses'));
       const fsel = `.adm-fgen .adm-tile[data-f="${a.f}"]`;
       await p.waitForFunction(s => document.querySelector(s), fsel, {timeout: 30000}).catch(() => {});
       if (!(await p.$(fsel + ' .adm-ftrows'))) await p.click(fsel + ' [data-fu="tags"]');
@@ -3483,7 +3560,7 @@ const WIDTHS = [390, 1280];
         .catch(() => {});
       const t1 = await text();
       if (!/a timer in the quiz/.test(t1) || /two colonies/.test(t1)) fails.push(`To do › Reports, fish: not its subject's reports only`);
-      const fam = '#fish/photos/families/' + encodeURIComponent('f:Damselfishes');
+      const fam = '#fish/photos/tree/key/' + encodeURIComponent('f:Damselfishes');
       const ft = id =>
         p.evaluate(
           ([sel, fam]) => {
