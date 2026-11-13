@@ -2224,13 +2224,13 @@ function ttMount(box, T, shown, sel, row) {
     if (!rows.some(r => r.id === TT_FOC)) TT_FOC = rows.some(r => r.id === sel) ? sel : (rows[0] || {}).id;
     box.innerHTML = rows.map(r => ttRow(T, r, sel, TT_FOC, row)).join('');
   };
-  const focus = id => {
+  const focus = (id, keep) => {
     const el = box.querySelector(`[data-tt="${CSS.escape(id)}"]`);
     if (!el) return;
     TT_FOC = id;
     box.querySelectorAll('[tabindex="0"]').forEach(x => x.setAttribute('tabindex', '-1'));
     el.setAttribute('tabindex', '0');
-    el.focus();
+    el.focus({preventScroll: !!keep});
   };
   const set = (ids, on) => {
     ids.forEach(x => (on ? open.add(x) : open.delete(x)));
@@ -2328,7 +2328,7 @@ function fuTreeMount(T, sel, u, E, D, imrOn, hadF, top) {
         if (d > 0) window.scrollBy(0, -d);
       });
   }
-  if (hadF) M.focus(TT_FOC);
+  if (hadF) M.focus(TT_FOC, !fresh); // a redraw keeps the tree where it was
 }
 function renderFishUnits(id) {
   if (!FISHC || !FISHC.plays) {
