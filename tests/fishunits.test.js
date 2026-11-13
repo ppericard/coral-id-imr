@@ -65,6 +65,20 @@ test('fishFeat, fishCover, fishOk: one click each, in fish genera; empties left 
   assert.deepStrictEqual(F.genera, {}, 'a second click on the cover takes his pick off');
 });
 
+// A genus's and a species' cover (Pierre, 2026-11-13): the same map under the genus's 'g:' id or the species' id; a photo
+// leaving play from its family's page leaves them too, in the same step; another photo's covers stay.
+test('fishCover on a genus or a species; fishDrop takes the photo out of every cover', () => {
+  let F = {add: {a: 's1', b: 's1', c: 's2'}};
+  F = A.fishCover(A.fishCover(A.fishCover(F, 'f:A', 'a'), 'g:Xus', 'a'), 's1', 'a');
+  F = A.fishCover(A.fishCover(F, 's2', 'c'), 'g:Yus', 'b');
+  assert.deepStrictEqual(F.genera, {'f:A': {cover: 'a'}, 'g:Xus': {cover: 'a'}, s1: {cover: 'a'}, s2: {cover: 'c'}, 'g:Yus': {cover: 'b'}});
+  const D = A.fishDrop(F, 'f:A', 'a');
+  assert.deepStrictEqual(D.genera, {s2: {cover: 'c'}, 'g:Yus': {cover: 'b'}});
+  assert.ok(F.genera['g:Xus'], 'its input untouched');
+  assert.deepStrictEqual(A.fishCover(F, 's1', 'a').genera.s1, undefined, 'a second click takes his pick off');
+  assert.deepStrictEqual(A.fishDrop(F, 'f:A', 'zz').genera, F.genera, 'a photo no cover names changes nothing');
+});
+
 test('Remove, ×, Not this on a photo in play (the fish Candidates’ convention)', () => {
   const F = {add: {a: 's1', b: 's1', c: 's1'}, seen: {}};
   assert.ok(fishOn(F, 'a', 's1'));

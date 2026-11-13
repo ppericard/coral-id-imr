@@ -1826,6 +1826,12 @@ const fuJ = f => {
   return g && j ? {...g, ...j} : j || g || null;
 };
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
+// What ★ Cover sets on a family's page (Pierre, 2026-11-13: "choisir les couvertures des genres et les couvertures des
+// espèces"): 'fam' the family's cover, 'gen' the photo's genus's, 'sp' its species' (curation.json fish genera under the
+// genus's or species' fish.json id: autosort.js fishCover); this tab, the family's by default. FU_GEN: the page narrowed
+// to one genus of one family ({fam, g}; "je peux même pas filtrer"), this tab.
+let FU_CV = 'fam',
+  FU_GEN = {fam: '', g: ''};
 // The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
 const FU_TAGS = [
   {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
@@ -1979,6 +1985,16 @@ function fishTile(p, o) {
     jt = fuJt(F, f),
     num = (o.st || {}).num,
     isCover = !!(o.cover && o.cover.f === f),
+    // Families page only (o.lv): ★ Cover sets the cover of the level its bar's switch names (renderFishUnits FU_CV): the
+    // family's, the photo's genus's or its species'; elsewhere the family's. His genus and species picks are marked.
+    lv = o.lv || 'fam',
+    gid = o.gen || ((FISHC && FISHC.species[sid]) || {}).genus || '',
+    pick = k => (((F.genera || {})[k] || {}).cover === f ? 1 : 0),
+    gPick = o.play && gid ? pick(gid) : 0,
+    sPick = o.play && sid ? pick(sid) : 0,
+    cvOn = lv === 'gen' ? gPick : lv === 'sp' ? sPick : isCover && o.picked,
+    cvMark =
+      o.lv || gPick || sPick ? `${[isCover && 'Family', gPick && 'Genus', sPick && 'Species'].filter(Boolean).join(' · ')} cover` : 'Cover',
     rows = !out && (o.play || cand) && FT_OPEN.has(f),
     btn = (a, t, more = '') => `<button type="button" data-fu="${a}"${more} title="${t}">${t}</button>`,
     crop = !!((F.crop || {})[f] || fishRot(f));
@@ -1986,22 +2002,23 @@ function fishTile(p, o) {
   const acts = out
     ? `<span class="adm-src view">${out}</span>`
     : (o.play
-        ? `${btn('feat', 'Feature', ` aria-pressed="${!!num}"`)}<button type="button" data-fu="cover" aria-pressed="${!!(isCover && o.picked)}" title="Cover">★ Cover</button>`
+        ? `${btn('feat', 'Feature', ` aria-pressed="${!!num}"`)}<button type="button" data-fu="cover" aria-pressed="${!!cvOn}" title="${{fam: 'Family cover', gen: 'Genus cover', sp: 'Species cover'}[lv] || 'Cover'}">★ Cover</button>`
         : '') +
       btn('remove', 'Remove') +
       (cand ? '<button type="button" data-fu="not" title="Not this species">Not this</button>' : '') +
       (o.play || cand
         ? `<button type="button" data-fu="crop" class="${crop ? 'on' : ''}" aria-pressed="${crop}" title="Crop">Crop</button><button type="button" data-fu="tags" aria-pressed="${rows}" title="Tags">Tags</button>`
         : '');
-  return `<figure class="adm-tile adm-ftile${num ? ' is-feat' : ''}${isCover ? ' is-cover' : ''}${rows ? ' is-tags' : ''}" data-f="${esc(f)}" data-sid="${esc(sid || '')}" data-fam="${esc(o.fam || '')}"${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}${o.play ? ' data-play' : ''}>
+  return `<figure class="adm-tile adm-ftile${num ? ' is-feat' : ''}${isCover || gPick || sPick ? ' is-cover' : ''}${rows ? ' is-tags' : ''}" data-f="${esc(f)}" data-sid="${esc(sid || '')}" data-fam="${esc(o.fam || '')}"${o.lv ? ` data-cv="${esc(lv)}" data-gen="${esc(gid)}"` : ''}${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}${o.play ? ' data-play' : ''}>
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
-    ${isCover ? '<span class="adm-covermark">Cover</span>' : ''}
+    ${isCover || gPick || sPick ? `<span class="adm-covermark">${cvMark}</span>` : ''}
     <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Families</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
-// The family page's tile (renderFishUnits): st {num} for a featured photo; cover: the cover shown, picked: his pick.
-const fuTile = (sid, p, st, cover, picked, F, XI, fam) => fishTile(p, {sid, fam, play: true, st, cover, picked, XI});
+// The family page's tile (renderFishUnits): st {num} for a featured photo; cover: the cover shown, picked: his pick; gen:
+// its genus block's id; ★ Cover at the level of the bar's switch (FU_CV).
+const fuTile = (sid, p, st, cover, picked, F, XI, fam, gen) => fishTile(p, {sid, fam, gen, lv: FU_CV, play: true, st, cover, picked, XI});
 // The clicks of every fish tile in scope: each one click and one Undo step. zoom(f, tile): the enlarged photo (default:
 // that photo alone, its family's name and species in the caption).
 function bindFishTiles(scope, o = {}) {
@@ -2038,7 +2055,12 @@ function bindFishTiles(scope, o = {}) {
         if (r.full) return toast(`Already ${FISHFEAT} featured: remove one first.`);
         return fx(() => r.F);
       }
-      if (a === 'cover') return fx(F => fishCover(F, fam, f));
+      // The cover of the level the Families page's switch names (the tile's data-cv: that page only), else the family's.
+      if (a === 'cover') {
+        const lv = tl.dataset.cv,
+          k = lv === 'gen' ? tl.dataset.gen : lv === 'sp' ? sid : fam;
+        return k && fx(F => fishCover(F, k, f));
+      }
       if (a === 'remove') return fx(F => fishReject(fishDrop(F, fam, f), f), 'Removed from play. Undo (Ctrl+Z) brings it back.', true);
       if (a === 'exclude') return fx(F => fishExclude(fishDrop(F, fam, f), f), 'Excluded. Undo (Ctrl+Z) brings it back.', true);
       if (a === 'back') return fx(F => fishNotThis(F, f, sid, sid));
@@ -2138,7 +2160,10 @@ function renderFishUnits(id) {
   let lastG;
   const side = L.map(x => {
     const c = E[x.id].cover,
-      dirty = !same((F.genera || {})[x.id], (S0.genera || {})[x.id]) || x.species.some(s => D.dirty.has(s)),
+      // its own choices, its genera's and species' covers, or its photos changed since the published file
+      dirty =
+        [x.id, ...x.genera.map(g => g.id), ...x.species].some(k => !same((F.genera || {})[k], (S0.genera || {})[k])) ||
+        x.species.some(s => D.dirty.has(s)),
       nd = E[x.id].needs,
       gh =
         x.group !== lastG
@@ -2150,13 +2175,31 @@ function renderFishUnits(id) {
   }).join('');
   const cnt = o => e.all.filter(p => origin(p) === o).length,
     cv = e.cover,
-    sp = FISHC.species;
-  // One block per genus, one section per species inside it.
-  const body = u.genera
+    sp = FISHC.species,
+    // The genera with species in play here, and the one the page is narrowed to (FU_GEN), if still one of them.
+    GS = u.genera.filter(g => g.species.some(s => e.rows[s])),
+    gOn = FU_GEN.fam === u.id && GS.length > 1 && GS.some(g => g.id === FU_GEN.g) ? FU_GEN.g : '',
+    // A heading's cover: the one in force (his pick while in play, else the automatic one), small, enlarged on a tap;
+    // marked when it is his pick.
+    hThumb = (p, picked, t) =>
+      p && p.src
+        ? `<button type="button" class="adm-sthumb adm-hthumb${picked ? ' mine' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid || p.sp || '')}" data-fu="zoom" title="${t}${picked ? ' ★' : ''}"><img ${crSrc(fuP(p), 1)} alt="" loading="lazy"></button>`
+        : '';
+  // One block per genus, one section per species inside it; its heading and each species' show their cover.
+  const body = (gOn ? GS.filter(g => g.id === gOn) : u.genera)
     .map(g => {
       const S = g.species.filter(s => e.rows[s]);
       if (!S.length) return '';
-      return `<section class="adm-fgen" data-gen="${esc(g.id)}"><h3 class="adm-fgenh"><i>${esc(g.name)}</i> ${fuImr(g)} <small>${S.length} species</small></h3>${S.map(
+      // The genus's cover: his pick while in play, else the first in the game's order of its species' photos (as the
+      // family's: autosort.js fishCoverOf; the app's genus card: app.js fishCurate, rankPhotos).
+      const gk = ((F.genera || {})[g.id] || {}).cover,
+        gc = fishCoverOf(
+          S.flatMap(s => [...e.rows[s].feat, ...e.rows[s].rest]),
+          F,
+          g.id,
+          fuJ
+        );
+      return `<section class="adm-fgen" data-gen="${esc(g.id)}"><h3 class="adm-fgenh">${hThumb(gc, gk && gc && gc.f === gk, 'Genus cover')}<i>${esc(g.name)}</i> ${fuImr(g)} <small>${S.length} species</small></h3>${S.map(
         sid => {
           const {feat, rest} = e.rows[sid],
             s = sp[sid],
@@ -2164,11 +2207,15 @@ function renderFishUnits(id) {
             obs = new Set([...feat, ...rest].map(p => p.o || p.f)).size,
             tg = fishTarget(s),
             out = [...feat, ...rest].filter(p => !shown(p)).length,
-            nc = (FISHC.cand[sid] || []).length;
-          return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${esc(s.common || s.name)} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${n} photo${n === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
-      <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, e.k.cover, F, XI, u.id) : '')).join('')}${rest
+            nc = (FISHC.cand[sid] || []).length,
+            // The species' cover: his pick while in play, else its first photo here (featured, then the game's order), as
+            // its first photo on the sheets (learn.js fishSpPhotos).
+            sk = ((F.genera || {})[sid] || {}).cover,
+            sc = (sk && [...feat, ...rest].find(p => p.f === sk)) || feat[0] || rest[0];
+          return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(sc && {...sc, sid}, sk && sc && sc.f === sk, 'Species cover')}${esc(s.common || s.name)} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${n} photo${n === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}</small></h3>
+      <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, e.k.cover, F, XI, u.id, g.id) : '')).join('')}${rest
         .filter(shown)
-        .map(p => fuTile(sid, p, {}, cv, e.k.cover, F, XI, u.id))
+        .map(p => fuTile(sid, p, {}, cv, e.k.cover, F, XI, u.id, g.id))
         .join(
           ''
         )}</div>${n ? '' : `<p class="note">No photo in play${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}.</p>`}</section>`;
@@ -2208,7 +2255,23 @@ function renderFishUnits(id) {
   ]
     .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
     .join('')}</span>`;
-  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
+  // What ★ Cover sets (FU_CV): the family's cover, the photo's genus's or its species'.
+  const cvSeg = `<span class="adm-qseg adm-lvseg adm-fcv" role="group" aria-label="★ Cover sets" title="★ Cover sets">${[
+    ['fam', 'Family'],
+    ['gen', 'Genus'],
+    ['sp', 'Species']
+  ]
+    .map(([k, t]) => `<button type="button" data-fucv="${k}" aria-pressed="${FU_CV === k}">★ ${t}</button>`)
+    .join('')}</span>`;
+  // The page narrowed to one genus (FU_GEN), for a family of several.
+  const genSel =
+    GS.length > 1
+      ? `<select class="adm-fgsel" data-fugen aria-label="Genus"><option value="">All genera · ${GS.length}</option>${GS.map(
+          g =>
+            `<option value="${esc(g.id)}"${g.id === gOn ? ' selected' : ''}>${esc(g.name)} · ${g.species.filter(s => e.rows[s]).length} sp.</option>`
+        ).join('')}</select>`
+      : '';
+  const filter = `<div class="adm-filter adm-sticky">${cv && cv.src ? `<button type="button" class="adm-sthumb" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid)}" data-fu="zoom" title="Cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(u.name)} cover"></button>` : ''}<b class="adm-sname">${esc(u.name)} ${fuImr(u)}<small><i>${esc(u.sci.join(', '))}</i></small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}${genSel}${cvSeg}<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}${FB.origins({cnt})}</div>`;
   $v.innerHTML = `<div class="adm">
     <nav class="adm-side" aria-label="${cap1(ASUBJ.many)}"><select id="gsel" aria-label="${cap1(ASUBJ.one)}">${opts}</select><div class="adm-list">${side}</div></nav>
     <section class="adm-main">${filter}${u.wink ? fuWink(u, cv) : ''}${body}${outRow}${otherRow}</section></div>`;
@@ -2227,6 +2290,20 @@ function renderFishUnits(id) {
         render();
       })
   );
+  $v.querySelectorAll('[data-fucv]').forEach(
+    b =>
+      (b.onclick = () => {
+        FU_CV = b.dataset.fucv;
+        render();
+      })
+  );
+  const gs = $v.querySelector('[data-fugen]');
+  if (gs)
+    gs.onchange = () => {
+      FU_GEN = {fam: u.id, g: gs.value};
+      render();
+      window.scrollTo(0, 0);
+    };
   const okb = $v.querySelector('[data-ok]');
   if (okb)
     okb.onclick = () => {
@@ -3538,7 +3615,7 @@ const HELP = {
   fishcov: `<p><b>Rights</b> (the first line): the photos in play commercial-ready (yours, CC0 or CC BY) out of all, and each rights class; the link opens Coverage › Rights.</p><p>Fish coverage, per family, genus or species (the switch): <b>At target</b> = species with their observations in play at the target (8, 12 for the PDF's most sighted) out of the species; for a species, its observations in play / its target. <b>Photos</b> in play, <b>Easy</b> (ease 4-5; a family needs ${FISHEASY}), <b>Ref.</b> reference photos, <b>Phases</b> shown (an IMR phase not shown yet ends with ?), <b>+</b> candidates waiting in Candidates, <b>Missing</b>: what stands before ✓ Validated. <b>All / IMR</b>: every family or the IMR course's only (as on Families). <b>Thinnest</b> first, or the book's order. <b>To do</b>: what to act on; a click shows those rows, thinnest first. <b>Where to look</b>: the species most worth a candidate search, under target with too few candidates waiting to fill the gap (the IMR course's first, then the PDF's most sighted, then the largest gap); All shows every one. A name opens its family's page.</p>`,
   fishrev: `<p>Fish photo review, one family's photos in play at a time (the select; the origin chips as everywhere). <b>Ease</b>: each photo in the row of its ease now, 5 very easy to 1 very hard; a click sets yours. <b>Phase &amp; framing</b>: each photo in the row of its phase (juvenile, intermediate, male, female, none); <b>Juvenile</b>, the phase (No phase, Subadult, Intermediate, Terminal, Female, Male) and the view (Profile, Oblique, Head-on, Tail, Above) are yours in one click. A dashed value is the judging pass's with none in your draft yet (a photo put in play takes the pass's values as its own); <b>Guesses first</b> puts those first in each row. The line at the top: the values in your draft against the pass's over every photo in play, how often they are the same (for ease, also within one point): what differs is your correction. The phase row shows only for a family whose phases differ (its IMR phase lines). Every click is one Undo step; Publish sends them (curation.json fish ease, phase, tags), as the fish Candidates' rows do.</p>`,
   fishmont: `<p>The pairs of families the IMR course compares (its lines, from fish.json), one row each. The phase (Adult, Juvenile, All) keeps the two photos phase-matched: adult is every photo not of a juvenile. Rows you haven't touched show the automatic pick: the first photo of each family in the Families page's order (most common species first, then the easiest, most reference-like). Click a photo on each side to pick yours (Manual); <b>Auto</b> drops your picks for that pair. <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples. Publish sends them (curation.json fish mont).</p>`,
-  units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the family's), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
+  units: `<p>The book's families (Allen et al. 2015, the key in force), by key group: English name first, the scientific names below; <b>IMR</b> tags the families and genera in the IMR course (its IMR name in the tooltip); <b>All / IMR</b> shows every family or the IMR course's only; <b>All genera</b> narrows a family of several genera to one. A family's page: one block per genus, one section per species, most common first, each with its observations in play against its target (8, 12 for the PDF's most sighted) and its photos in play: featured first (your order), then the game's order: the easiest, then the most reference-like, whoever took them (your own photos are not moved up). <b>Feature</b> (up to ${FISHFEAT} per species), <b>★ Cover</b> (the cover of the level the bar's <b>★ Family / ★ Genus / ★ Species</b> switch names: the family's, the photo's genus's or its species'; each genus and species heading shows its cover in force, ★ when it is yours; the family's card and sheet, the genus's card, row and sheet cards, the species' first photo on the sheets), <b>Remove</b> (set aside), <b>Not this</b> (another species of the family, or no game species: yours only), <b>Crop</b> (with the rotation), <b>Tags</b> (its ease, phase and tag rows, as on a Candidates card; Count <i>Other species, confusable</i> or <i>Unclear</i> also takes the photo out of play, <i>Other species, no risk</i> keeps it in play) and <b>×</b> (excluded for good): one click each, Undo steps back. A photo shown elsewhere (a report, a flag, Health) has these same tools. <b>✓ Validated</b> once nothing is missing: every species at its target, ${FISHEASY} easy photos (ease 4-5), every phase the IMR course names. <b>Other species, out of play</b> (under the species): the photos you added whose tags read other species one could take for the subject (count Other species, confusable; or other species not sorted yet, the code before the split): never in play (rule P3). <b>Keep in play</b> sets the count to Other species, no risk (in play); <b>Remove</b> sets the photo aside. Candidates are added in Candidates. Publish sends it all (curation.json fish).</p>`,
   mont: `<p>The classic look-alikes (pairs the IMR lecture or the Coral Finder text compare), one side-by-side pair each on the site's Look-alikes page. Pick the view, then click a photo on each side. Rows you haven't touched show the automatic pick (same view, same growth form, IMR then your photos first). <b>All</b> mixes the zoom levels, to pair two nearby zooms. <b>Auto / Manual</b> says whether the pair shows the automatic pick or yours (clicking a view or a photo makes it Manual; Auto drops your picks for that pair). <b>Shown / Hidden</b>: Hidden keeps a pair off the site until there are good examples.</p>`,
   cand: `<p>Every new candidate, one at a time, genera taking turns, the genus × view with the fewest game colonies far more often. The genera of the games (the IMR slate, Millepora, the bonus genera) come first: the other genera of the Coral Finder book (Key-only: in the Coral ID Key only) only once a source has no game candidate left, and only for Colony and Close-up (no corallite photos). Set quality and growth form, then add it to a view (keys 1 2 3), Reject (←), Skip (→) or Not this. Rejected photos stay candidates on their genus page. × excludes for good. Undo steps back.</p><p><b>Full cells</b>: a genus x view with ${CELL_MAX} colonies in the games is full (${CAP.sheet} for a Key-only genus, as many as its sheet and the Coral ID Key show). Its candidates wait outside the queue (the count under the sources; Show them brings them in) and come back when it drops below its cap. Adding a photo to a full view asks which colony it replaces: that colony's photos of the view stay on the genus sheet and leave the games (sheet only); or Add anyway.</p><p><b>Auto</b>: at each load, what the candidate pass is sure of is done for you in the draft (Publish sends it): the best photo of its observation in its view, Fair or Good, is added with its view, quality, growth form and crop (up to the cap); near-duplicates, several corals and Poor photos are rejected, unusable ones excluded. Photos it added carry an "auto" tag; the <b>Auto</b> chip after the toggles opens its line ("off" on the chip when a field is off); Details lists every auto decision with Undo (the photo comes back here for good). About 1 in 20 sure photos comes up as a <b>Check</b> instead, blind: your answer is compared with the agent's (shown after). Removing an auto-added photo on its genus page counts as rejecting it. Agreement per field (keep, view, quality, growth form) over the last ${AUTO.win} checks and corrections, in the order you made them: a field under its threshold (keep ${Math.round(100 * AUTO.min.keep)}%, view ${Math.round(100 * AUTO.min.view)}%, quality ${Math.round(100 * AUTO.min.quality)}%, form ${Math.round(100 * AUTO.min.form)}%, after ${AUTO.n0}) is off until it recovers. Details shows the disagreements with the agent's note and the photo metrics. Once every ${AUTO.retest} photos, a <b>Retest</b>: a photo you rated, blind, to measure your own consistency (your first rating stays).</p>`,
   health: `<p>How the app is working for players, from the answers already logged (most players never send feedback). Anonymous ids only, counts, no names. Every account counts, yours too.</p>
@@ -6573,8 +6650,16 @@ function pubSummary() {
       'fish photo set aside'
     ],
     [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
-    // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera).
-    [nDiff((DRAFT.fish || {}).genera, (SAVED.fish || {}).genera), 'fish family'],
+    // A fish family's own choices (Photos › Families: cover, featured, Validated; curation.json fish genera), and the
+    // genus and species covers picked on the same page (the same map, under the genus's 'g:' id or the species' id).
+    ...[
+      [/^f:/, 'fish family', 'fish families'],
+      [/^g:/, 'fish genus cover'],
+      [/^(?![fg]:)/, 'fish species cover']
+    ].map(([re, t, ts]) => {
+      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([k]) => re.test(k)));
+      return [nDiff(pick((DRAFT.fish || {}).genera), pick((SAVED.fish || {}).genera)), t, ts];
+    }),
     [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
     [nDiff((DRAFT.fish || {}).rot, (SAVED.fish || {}).rot), 'fish photo rotation'],
     // A fish look-alike pair's picks (Photos › Look-alikes: phase, photos, hidden; curation.json fish mont).

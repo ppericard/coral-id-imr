@@ -825,7 +825,7 @@ let FISH = null,
   FISHRAW = null;
 const fishBuild = () => {
   const {f, ph, gm} = FISHRAW;
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f), CUR);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
@@ -837,10 +837,27 @@ const fishBuild = () => {
 // Feature (up to autosort.js FISHFEAT per species, his order): featP {species id: [photo]}, those still in play, the
 // species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
 // Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
-function fishCurate(X, cur) {
-  const G = (cur && cur.fish && cur.fish.genera) || {};
+// A genus's or a species' cover (the same map, under its fish.json id: 'g:Chromis', 's091'; Pierre, 2026-11-13): a genus
+// unit (fishGenera) takes it as its coverP like a family; a genus with no unit (not in circle 1) and a species, which
+// have no record in X.gen, get it in X.covers {id: photo} while it is in play as a photo of that genus or species (the
+// family's views.wide, every photo of its species in play): the genus rows and cards and the species' first photo on
+// the sheets (learn.js genCover, fishSpPhotos). F: fish.json.
+function fishCurate(X, cur, F) {
+  const G = (cur && cur.fish && cur.fish.genera) || {},
+    sps = new Map(((F && F.species) || []).map(s => [s.id, [s.id]])),
+    gens = new Map(((F && F.genera) || []).map(g => [g.id, g.species || []]));
+  let pool = null; // every photo in play, once: the families' (fishGen: every species of a family)
+  X.covers = {};
   Object.entries(G).forEach(([id, k]) => {
     const g = X.gen[id];
+    if (!g && k && k.cover && (sps.has(id) || gens.has(id))) {
+      const S = new Set(sps.get(id) || gens.get(id));
+      pool = pool || Object.values(X.gen).flatMap(u => (u.rank ? [] : u.views.wide));
+      const L = pool.filter(p => S.has(p.sp)),
+        cv = L.find(p => p.f === k.cover) || L.find(p => fishPid(p.f) === fishPid(k.cover));
+      if (cv) X.covers[id] = cv;
+      return;
+    }
     if (!g || !k) return;
     const L = g.views.wide,
       at = f => L.find(p => p.f === f) || L.find(p => fishPid(p.f) === fishPid(f)),

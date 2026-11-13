@@ -802,7 +802,11 @@ const WIDTHS = [390, 1280];
           // Feature, Cover, Remove and Undo, Not this → no game species → Put back, ×, Validated refused while something
           // is missing; the coral part of the draft untouched; everything undone after.
           // Four candidates of a species nobody decided put in play (one draft step, undone with the rest).
-          const st = await p.evaluate(() => ({coral: JSON.stringify({...DRAFT, fish: null}), h: HIST.length}));
+          const st = await p.evaluate(() => ({
+            coral: JSON.stringify({...DRAFT, fish: null}),
+            h: HIST.length,
+            gen: JSON.stringify((DRAFT.fish || {}).genera || {})
+          }));
           const fam = await p.evaluate(() => {
             const F = DRAFT.fish || {},
               mine = f => [F.add, F.seen, F.exclude, F.out].some(m => m && f in m),
@@ -870,6 +874,63 @@ const WIDTHS = [390, 1280];
           await settle();
           d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1]}), f1);
           if (d.out) fails.push(`${w}px Families: Put back ${JSON.stringify(d)}`);
+          // The genus's and the species' covers (Pierre, 2026-11-13): the bar's ★ Family | ★ Genus | ★ Species switch sets
+          // what ★ Cover sets; each a key of fish genera (the genus's 'g:' id, the species' id), its heading's thumb marked,
+          // one Undo step each; the genus select narrows the page to that genus; Publish names them.
+          const gc = await p.evaluate(sec => {
+            const S = document.querySelector(sec);
+            return {gid: S.closest('.adm-fgen').dataset.gen, t: [...S.querySelectorAll('.adm-tile[data-play]')].map(x => x.dataset.f)};
+          }, sec);
+          await p.click('[data-fucv="gen"]');
+          await p.click(`${sec} [data-f="${gc.t[1]}"] [data-fu="cover"]`);
+          await p.click('[data-fucv="sp"]');
+          await p.click(`${sec} [data-f="${gc.t[2]}"] [data-fu="cover"]`);
+          await settle();
+          const cvs = () =>
+            p.evaluate(
+              ([sec, gid, sid, a, b]) => ({
+                g: ((DRAFT.fish.genera || {})[gid] || {}).cover,
+                s: ((DRAFT.fish.genera || {})[sid] || {}).cover,
+                gh: !!document.querySelector(`.adm-fgen[data-gen="${gid}"] > .adm-fgenh .adm-hthumb.mine[data-f="${a}"]`),
+                sh: !!document.querySelector(`${sec} > h3 .adm-hthumb.mine[data-f="${b}"]`),
+                ma: (document.querySelector(`${sec} [data-f="${a}"] .adm-covermark`) || {}).textContent || '',
+                mb: (document.querySelector(`${sec} [data-f="${b}"] .adm-covermark`) || {}).textContent || '',
+                on: (document.querySelector(`${sec} [data-f="${b}"] [data-fu="cover"]`) || {getAttribute: () => ''}).getAttribute(
+                  'aria-pressed'
+                ),
+                fam: ((DRAFT.fish.genera || {})[FISHC.species[sid].family] || {}).cover,
+                sum: pubSummary()
+              }),
+              [sec, gc.gid, order.sid, gc.t[1], gc.t[2]]
+            );
+          d = await cvs();
+          if (
+            d.g !== gc.t[1] ||
+            d.s !== gc.t[2] ||
+            !d.gh ||
+            !d.sh ||
+            !/Genus/.test(d.ma) ||
+            !/Species/.test(d.mb) ||
+            d.on !== 'true' ||
+            d.fam !== f0 ||
+            !/1 fish genus cover/.test(d.sum) ||
+            !/1 fish species cover/.test(d.sum)
+          )
+            fails.push(`${w}px Families: genus and species covers ${JSON.stringify(d)}`);
+          await p.evaluate(() => undo());
+          await settle();
+          d = await cvs();
+          if (d.s || d.g !== gc.t[1] || d.sh) fails.push(`${w}px Families: Undo of the species cover ${JSON.stringify(d)}`);
+          await p.click('[data-fucv="fam"]');
+          const gn = await p.evaluate(() => document.querySelectorAll('[data-fugen] option').length);
+          if (gn > 2) {
+            await p.selectOption('[data-fugen]', gc.gid);
+            await settle();
+            d = await p.evaluate(() => [...document.querySelectorAll('.adm-fgen')].map(x => x.dataset.gen));
+            if (d.join() !== gc.gid) fails.push(`${w}px Families: narrowed to ${gc.gid}: ${JSON.stringify(d)}`);
+            await p.selectOption('[data-fugen]', '');
+            await settle();
+          } else fails.push(`${w}px Families: no genus select on a family of several genera`);
           // Other species in view (Q323): an add whose count is k (confusion possible) or the legacy m with no pass to sort
           // it is out of play, listed apart with Keep in play (count o) and Remove; Keep in play puts it back, one Undo step.
           const ko = await p.evaluate(sid => {
@@ -929,6 +990,8 @@ const WIDTHS = [390, 1280];
           }, st.h);
           await settle();
           if (await p.evaluate(fam => (DRAFT.fish.genera || {})[fam], fam)) fails.push(`${w}px Families: Undo left the family's choices`);
+          if ((await p.evaluate(() => JSON.stringify((DRAFT.fish || {}).genera || {}))) !== st.gen)
+            fails.push(`${w}px Families: Undo left a genus or species cover`);
         }
       }
       await go(other.hash + 'photos/review/quality');

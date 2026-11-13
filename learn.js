@@ -790,9 +790,18 @@ const fishSpPhotos = () => {
       if (by[sid]) by[sid] = [...F.map(p => by[sid].find(x => x.f === p.f)).filter(Boolean), ...by[sid].filter(x => !fs.has(x.f))];
     })
   );
+  // And before them his ★ Cover of the species (app.js fishCurate covers; Pierre, 2026-11-13): its first photo wherever
+  // the species shows one (its tile, its sheet's first photo, its row on the family sheet).
+  Object.entries((FISH && FISH.covers) || {}).forEach(([sid, p]) => {
+    const c = by[sid] && by[sid].find(x => x.f === p.f);
+    if (c) by[sid] = [c, ...by[sid].filter(x => x !== c)];
+  });
   return ((FSPH = by), (FSPH_OF = FISH), by);
 };
 const spPhoto = s => (fishSpPhotos()[s.id] || [])[0] || null;
+// A genus's ★ Cover (Pierre, 2026-11-13): a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a
+// genus with no unit (FISH.covers); null when he picked none in play.
+const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
 // The one "No photo yet" drawing for every species (Pierre, Q9): a plain child-like fish, never a body shape that could
 // read as ID information; the "Photo missing" tile's style (DESIGN.md).
 const NOFISH =
@@ -963,7 +972,16 @@ function fishGenusRow(g, flat) {
       p = spPhoto(s);
     return `<a class="frow" href="${esc(hr('g-s:' + s.name))}"><span class="fstack one">${p ? `<img ${thumb(p, '120px')} alt="" loading="lazy">` : noFish()}</span><span class="ftxt"><i>${esc(s.name)}</i>${s.common ? `<span>${esc(s.common)}</span>` : ''}<small><i>${esc(g.name)}</i>: its only species here${g.imr ? ` · IMR entry: ${esc(g.imr)}` : ''}</small></span><span class="fgo" aria-hidden="true">›</span></a>`;
   }
-  const P = L.slice(0, 4).map(spPhoto);
+  // His genus cover leads the stack, then the first photo of its other species.
+  const gc = genCover(g),
+    P = gc
+      ? [
+          gc,
+          ...L.filter(s => s.id !== gc.sp)
+            .slice(0, 3)
+            .map(spPhoto)
+        ]
+      : L.slice(0, 4).map(spPhoto);
   return `<a class="frow" href="${esc(hr('g-' + g.id))}"><span class="fstack">${P.map(p => (p ? `<img ${thumb(p, '60px')} alt="" loading="lazy">` : noFish())).join('')}</span><span class="ftxt"><i>${esc(g.name)}</i>${g.common ? `<span>${esc(g.common)}</span>` : ''}<span>${L.length} species · ${L.filter(spOpen).length} opened for me</span>${g.imr ? `<small>IMR entry: ${esc(g.imr)}</small>` : ''}</span><span class="fgo" aria-hidden="true">›</span></a>`;
 }
 // The family ID marks and the behaviour, habitat and size lines (study F4b, F9; Pierre, Q11), written in our words from
@@ -1117,7 +1135,8 @@ function fishGenus(g) {
     now = L.filter(s => s.now && s.now.split(/\s+/)[0] !== g.name),
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
     sib = (f.genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length),
-    cover = x => easyRank(genSpecies(x).flatMap(s => fishSpPhotos()[s.id] || []))[0];
+    // A sibling genus's card: his genus cover, else its easiest, most reference-like photo.
+    cover = x => genCover(x) || easyRank(genSpecies(x).flatMap(s => fishSpPhotos()[s.id] || []))[0];
   const card = x => {
     const p = cover(x);
     return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}</small><b class="cmpgo">Open →</b></span></a>`;
