@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-12, about 17:25 Manila, by the integrator (Rule 0: the end-of-day protocol). **A new integrator
+Written 2026-11-13, about 17:45 Manila, by the integrator (Pierre worked past 16:30 by his own choice). **A new integrator
 starts here, then reads [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, what bites, the open work).
 
 Last checked: reports and events: 2026-11-12 ~09:45 Manila
@@ -22,9 +22,11 @@ still on build 634 (its update path, when it comes back); newest build 670 befor
   #854 (the Scientific names offer names EventMeasure to IMR players only; ⚙ tip fixed; `.claude/settings.json` allows
   resolving review threads, refused in auto mode), #851 (fish: a card once every family in play is met, with what
   comes next), #855 (Q338 calibrations recorded).
-- **In flight**: Q338 (a) (Pierre ~17:19: "B10 après 200 réponses"): a unit still shaky after 10 of its own answers
-  stops holding openings, from 200 answers; an agent builds the PR (`claude/stuck-shaky-200`), the integrator merges it
-  under the contract once green.
+- **Merged 11-12 evening**: #857 (Q338 (a): a unit still shaky after 10 of its own answers stops holding openings,
+  from 200 answers; players play differently from then: tell Pierre in a line, done 11-13).
+- **In flight**: the genus and species covers in the fish admin (`claude/fish-genus-species-covers`, an agent; the first
+  step of ROADMAP "The Tree tab"), subject-neutral by ids and ranks (Pierre: "coraux, nudibranches ou plantes").
+- **Decided 11-13** (ROADMAP rows "The Tree tab" and "Roles, instances and cohorts"): Q339-Q349, below.
 - **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync on a current app; no
   hand correction (the board is already right, D8).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (the sealing cut out of #798, Q334;
@@ -58,10 +60,13 @@ mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes in
 - **Not numbered, from before**: **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124**; apply the **152 curated
   tag and ease proposals** (`judging/fish-light-q308.json`)? **Eel-tailed catfishes**
   (parked below): what he wants from it. `PFMT` (per-format offsets) also leaks the corals' values to fish (#805).
-- Answered 11-12: Q337 (a) the open-all offer card goes (#852); Q338 (a) B10 from 200 answers (in flight); the custom
-  quiz reminder and the "every family met" card's wording (#850, #851); EventMeasure for IMR players only (#854).
+- Answered 11-13: Q339 (b) default cover = the leaf most seen around the instance's centre (distinct observers),
+  the centre made generic; Q340 the Tree tab, any depth, views Key | WoRMS, groups as tags; Q341 (a) sheet overlay in
+  curation.json; Q342-Q349 the roles model, the editors' relay, pilot sign-in kept then a real account manager, cohorts
+  joined by the player (an admin may force), trainer sees answers not devices, shared sheet now, A1 reworded, IMR rules
+  as the IMR instance's policy. Answered 11-12: Q337, Q338 (#852, #857).
 
-Last question number: Q338
+Last question number: Q349
 
 ## Pierre's hands
 
@@ -87,6 +92,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-12 ~17:25 Manila, integrator, end of day: three read-only studies (the empty card, the opening burst, the shaky
-limit) turned into Q337 and Q338; seven PRs merged (#849-#855); Q338 (a) in flight. 11-11: the catch-up, GitHub's
-branches and Actions cleaned (#847), the STATUS refresh (#848).
+2026-11-13 ~17:45 Manila, integrator: three read-only studies (the fish admin, the generic taxonomy tree, roles and
+cohorts) answered by Pierre (Q339-Q349, ROADMAP); the genus and species covers PR in flight. 11-12: #849-#857.
