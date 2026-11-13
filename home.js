@@ -9,14 +9,15 @@
   const LAND_AR = [1.3, 1.8];
   // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
   // judged tag, judging/FISH.md).
-  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1';
+  // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover).
+  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && !juvP(p);
   // A unit's photo on a Home tile. Landscape tiles (UNITS land): Pierre's ★ Cover (coverP, app.js fishCurate) when it
   // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
   // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it,
-  // else its first. Other tiles: the unit's card photo (cover()).
+  // else its first that is not a juvenile (app.js adultFirst). Other tiles: the unit's card photo (cover()).
   const tilePhoto = (g, land) => {
     const L = g.views.wide;
-    return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || L[0]) : cover(g);
+    return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || adultFirst(L)) : cover(g);
   };
   const ph = (n, v) => {
     const g = DATA.gen[n];
