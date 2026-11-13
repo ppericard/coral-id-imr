@@ -310,6 +310,26 @@ test('sheets: the species cover leads its photos, the genus cover its row and ca
   assert.strictEqual(L.genCover(F2.genera[1]).f, 'fi5');
 });
 
+// The species sheet's first photo is his species cover, a juvenile one included (Codex review #858: the sheet put the
+// adults first, so a juvenile cover showed after them); then the adults, three photos in all, then the juveniles apart.
+test('species sheet: his cover first, even a juvenile; then the adults, then the juveniles', () => {
+  const ls = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8'),
+    a = k => ({f: 'a' + k, jt: 'p1g0sl1'}),
+    j = k => ({f: 'j' + k, jt: 'p1g0sl1j'}),
+    P = [a(1), a(2), j(1), a(3), a(4), j(2), j(3)],
+    run = covers => {
+      const ctx = {FISH: {covers}};
+      vm.createContext(ctx);
+      vm.runInContext(block(ls, 'const isJuv = p =>', 'function fishSpecies(s) {', {file: 'learn.js'}) + '\nthis.sp = spSheetPhotos;', ctx);
+      const r = ctx.sp('s1', P);
+      return [r.shown.map(p => p.f).join(), r.more.map(p => p.f).join()];
+    };
+  assert.deepStrictEqual(run({}), ['a1,a2,a3,j1,j2', 'a4']);
+  assert.deepStrictEqual(run({s1: {f: 'j2'}}), ['j2,a1,a2,j1,j3', 'a3,a4']);
+  assert.deepStrictEqual(run({s1: {f: 'a3'}}), ['a3,a1,a2,j1,j2', 'a4']);
+  assert.deepStrictEqual(run({s1: {f: 'gone'}}), ['a1,a2,a3,j1,j2', 'a4'], 'a cover not among its photos: as before');
+});
+
 // The admin's ★ Cover at the genus or species level (autosort.js fishCover under that id) and the app agree on the real
 // files: a photo in play of a circle-1 genus and of one of its species, picked in memory (curation.json is never written:
 // rule A1), is the genus's card and the species' first photo; once it leaves play (Remove: fishDrop, fishReject) no key

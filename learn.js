@@ -1161,16 +1161,25 @@ function fishGenus(g) {
 // (fish.json cmi); its photos, the easiest, most reference-like first whoever took them (Q3), the juvenile-tagged ones
 // apart; the other species of its genus; the links to iNaturalist, WoRMS and FishBase. No key marks, size or depth yet:
 // they come with the writing and the facts tool (Q6, Q7), never invented. No photo: the one drawing and the links (Q9).
+// Its photos on the sheet (P: fishSpPhotos' order): his ★ Cover of the species first, a juvenile one included (app.js
+// fishCurate covers; Codex review #858), then the adults (three photos shown in all), then up to two juveniles apart;
+// more: the other adults, folded.
+const isJuv = p => /j/.test(String(p.jt || '').slice(7));
+function spSheetPhotos(sid, P) {
+  const cv = ((FISH && FISH.covers) || {})[sid],
+    c0 = (cv && P.find(p => p.f === cv.f)) || null,
+    R = P.filter(p => p !== c0),
+    main = R.filter(p => !isJuv(p)),
+    n = c0 ? 2 : 3;
+  return {shown: [...(c0 ? [c0] : []), ...main.slice(0, n), ...R.filter(isJuv).slice(0, 2)], more: main.slice(n)};
+}
 function fishSpecies(s) {
   const T = ftree(),
     f = T.fam[s.family],
     g = T.gen[s.genus],
     P = fishSpPhotos()[s.id] || [],
-    isJ = p => /j/.test(String(p.jt || '').slice(7)),
-    main = P.filter(p => !isJ(p)),
-    juv = P.filter(isJ).slice(0, 2),
-    shown = [...main.slice(0, 3), ...juv],
-    more = main.slice(3),
+    isJ = isJuv,
+    {shown, more} = spSheetPhotos(s.id, P),
     flat = [...shown, ...more],
     F = famSpecies(f),
     rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,
