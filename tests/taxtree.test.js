@@ -65,6 +65,7 @@ test('taxtree: problems are reported, never fixed silently', () => {
     {id: 'o', name: 'Orphan', up: 'gone'},
     {id: 'c1', up: 'c2'},
     {id: 'c2', up: 'c1'},
+    {id: 'c3', up: 'c1'},
     {name: 'no id'}
   ]);
   const why = Object.fromEntries(T.problems.map(p => [p.id, p.why]));
@@ -72,11 +73,15 @@ test('taxtree: problems are reported, never fixed silently', () => {
   assert.strictEqual(T.node.get('r').name, 'R');
   assert.strictEqual(why.o, 'parent not found: gone');
   assert.ok(T.roots.includes('o'));
-  assert.ok(why.c1 === 'cycle' || why.c2 === 'cycle');
+  // the cycle is cut once, where it is met; the rest stays in place, and a node hanging off it is not in it
+  assert.strictEqual(why.c1, 'cycle');
+  assert.strictEqual(why.c2, undefined);
+  assert.deepStrictEqual(T.kids.get('c1'), ['c2', 'c3']);
+  assert.strictEqual(why.c3, undefined);
   assert.ok(T.problems.some(p => p.why === 'no id'));
   // every node still reachable from a root: no node lost
   const all = new Set(T.roots.flatMap(x => ttUnder(T, x)));
-  assert.deepStrictEqual([...all].sort(), ['c1', 'c2', 'o', 'r']);
+  assert.deepStrictEqual([...all].sort(), ['c1', 'c2', 'c3', 'o', 'r']);
 });
 
 test('taxtree: a filter shows what it accepts, with what leads to it and what is under it', () => {

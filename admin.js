@@ -2226,12 +2226,13 @@ function ttMount(box, T, shown, sel, row) {
 }
 // The Key tree on a family's page (renderFishUnits): sel the node the address names, u the family shown, E each family's
 // fuFam, D fuData, imrOn the All | IMR filter (the IMR course's families and genera, with what leads to them and what is
-// under them; the node on screen always), hadF: the tree had the keyboard's focus before the page was drawn again. Each
+// under them; the node on screen always), hadF: the tree had the keyboard's focus before the page was drawn again, top:
+// the tree's scroll then (kept: a click on a photo draws the page again, the tree stays where it was). Each
 // row with its counts as the list had them: a family its cover, names, circle, species, what it needs, Validated and the
 // draft's dot; a genus or a key group its species and photos in play; a species its scientific name, photos in play and
 // the draft's dot. A new address unfolds its ancestors, and its genus or species section scrolls into view once (never
 // at a click on a photo, which draws the page again).
-function fuTreeMount(T, sel, u, E, D, imrOn, hadF) {
+function fuTreeMount(T, sel, u, E, D, imrOn, hadF, top) {
   const box = $v.querySelector('.adm-tree');
   if (!box) return;
   const F = D.F,
@@ -2263,8 +2264,10 @@ function fuTreeMount(T, sel, u, E, D, imrOn, hadF) {
     TT_SEL = TT_FOC = sel;
   }
   const M = ttMount(box, T, vis, sel, row),
-    c = box.querySelector('.adm-tt.cur');
-  if (c) c.scrollIntoView({block: 'nearest'});
+    c = box.querySelector('.adm-tt.cur'),
+    list = box.closest('.adm-list');
+  if (fresh || top == null) c && c.scrollIntoView({block: 'nearest'});
+  else if (list) list.scrollTop = top;
   if (fresh && sel !== u.id) {
     const t = $v.querySelector(`.adm-main .adm-fgen[data-gen="${CSS.escape(sel)}"], .adm-main .adm-row[data-sid="${CSS.escape(sel)}"]`);
     // after the address change's own scroll to the top (onhashchange), before the page is painted
@@ -2297,7 +2300,8 @@ function renderFishUnits(id) {
   const T = fuTreeOf(U),
     sel = T.node.has(id) ? id : U[0].id,
     u = U.find(x => x.id === ttPage(T, sel)) || U[0],
-    hadF = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.adm-tree'));
+    hadF = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.adm-tree')),
+    top = (o => (o ? o.scrollTop : null))($v.querySelector('.adm-tree') && $v.querySelector('.adm-list'));
   const D = fuData(),
     E = Object.fromEntries(U.map(x => [x.id, fuFam(x, D)])),
     e = E[u.id],
@@ -2401,7 +2405,7 @@ function renderFishUnits(id) {
       zoomSet(Z, Math.max(0, i), p => lbCap(fuName(p.sid || p.sp), p, (sp[p.sid || p.sp] || {}).common || ''));
     }
   });
-  fuTreeMount(T, sel, u, E, D, imrOn, hadF);
+  fuTreeMount(T, sel, u, E, D, imrOn, hadF, top);
 }
 // ---- Fish Coverage (admin plan PR 8; docs/ROADMAP.md "Admin for every subject" row 8) ----
 // Inbox › Coverage › Games on the fish side (#fish/inbox/coverage/games): per family, genus or species (the level switch),

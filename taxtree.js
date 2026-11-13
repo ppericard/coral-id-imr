@@ -21,11 +21,14 @@
       node.set(n.id, n);
       kids.set(n.id, []);
     });
-    // A parent chain that comes back to the node: a cycle.
+    // A parent chain that comes back to the node itself: a cycle (a node that only hangs off a cycle is not in it: it
+    // stays under its parent, the cycle being cut where it is).
     const loops = id => {
-      const seen = new Set([id]);
-      for (let p = node.get(id).up; p != null && node.has(p); p = node.get(p).up) {
-        if (seen.has(p)) return true;
+      const seen = new Set();
+      // a node already placed goes by the parent it was given (a cycle already cut stays cut)
+      const next = p => (up.has(p) ? up.get(p) : node.get(p).up);
+      for (let p = node.get(id).up; p != null && node.has(p) && !seen.has(p); p = next(p)) {
+        if (p === id) return true;
         seen.add(p);
       }
       return false;

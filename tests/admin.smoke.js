@@ -308,11 +308,10 @@ const WIDTHS = [390, 1280];
                     .replace(/&/g, '')
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-|-$/g, '');
-              return (
-                seg.length !== (t[2].length > 1 ? 3 : 2) ||
-                !/^[a-z0-9-]+(\/[a-z0-9-]+)+$/.test(h) ||
-                (t[2].length > 1 && seg[2] !== word(v))
-              );
+              // a tab of one view has no view segment, unless that view is named for the views to come (Tree › Key, WoRMS
+              // later: its address keeps its view's word)
+              const named = t[2].length > 1 || seg.length === 3;
+              return seg.length !== (named ? 3 : 2) || !/^[a-z0-9-]+(\/[a-z0-9-]+)+$/.test(h) || (named && seg[2] !== word(v));
             })
             .map(([h]) => h)
         )
@@ -545,6 +544,21 @@ const WIDTHS = [390, 1280];
             k4.id !== 'f:Damselfishes'
           )
             fails.push(`${w}px Tree: the keys ${JSON.stringify([k1, k2, k3, k4, g0])}`);
+          // The tree keeps its scroll when the page is drawn again (a click on a photo), never jumping back to the row.
+          const sc = await p.evaluate(() => {
+            const L = document.querySelector('.adm-list');
+            L.scrollTop = L.scrollHeight;
+            const want = L.scrollTop;
+            render();
+            return [want, document.querySelector('.adm-list').scrollTop];
+          });
+          if (!sc[0] || sc[0] !== sc[1]) fails.push(`${w}px Tree: the tree's scroll after a redraw ${JSON.stringify(sc)}`);
+          // A key group opens its first family, the group the row selected.
+          const kg = await p.evaluate(() => 'k:' + FISHC.units.find(x => x.group === 3).group);
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(kg));
+          u = await fu();
+          const f3 = await p.evaluate(() => FISHC.units.find(x => x.group === 3).id);
+          if (u.sel !== f3 || u.cur !== kg) fails.push(`${w}px Tree: a key group ${JSON.stringify({sel: u.sel, cur: u.cur, f3})}`);
         }
         // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers), with the Grammistidae soapfishes
         // since 2026-11-08 (Q248: one family, as in the book); an unknown family shows the first.
