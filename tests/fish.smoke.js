@@ -1269,7 +1269,8 @@ async function freshPlayers(b, base, errs) {
         draw = () =>
           tiles().forEach(u => {
             const F = famsOf(u);
-            if (F.length === 1) seen.set(F[0], new Set([...(seen.get(F[0]) || []), u]));
+            // by photo, not by address: one photo may show under its R2 address, then its online original (above)
+            if (F.length === 1) seen.set(F[0], new Set([...(seen.get(F[0]) || []), PO.get(F[0]).find(p => shows(u, p))]));
           });
       const T = tiles(),
         bad = [...T.filter(u => !famsOf(u).length), ...art.filter(u => !W.some(p => shows(u, p)))];
