@@ -28,7 +28,7 @@ up and how, at least cost first, staying simple."
    US$10-12 a year (third-party figures; Cloudflare sells at cost and shows its own price only at checkout).
    Everything else fits free tiers at 4-8 RAs a month, with wide margins:
    - GitHub Actions is free on a public repository;
-   - Cloudflare gives R2, Workers, D1, DNS, and Access for up to 50 people for free;
+   - Cloudflare gives R2, Workers, D1, DNS, and Access for a team "under 50 users" for free;
    - Apps Script is free, within its quotas.
 2. **The domain is the one structural step, and the rename is the moment for it.** Every change of host without our
    own domain is a new origin. On a new origin players lose their local progress, settings and offline caches.
@@ -53,7 +53,7 @@ up and how, at least cost first, staying simple."
 5. **Staging, previews and a new host are not needed yet.** Pierre, 2026-11-05: previews are "not needed in alpha /
    early beta". When they are, Cloudflare is the free path, sharing the account that already holds R2 and later D1:
    - Workers static assets with a preview URL per branch;
-   - previews closed to the team with Access, free for up to 50 users.
+   - previews closed to the team with Access, free for "teams under 50 users".
 
    `tests/gas.js`, the in-memory sheet, stays the script's staging.
 6. **Mobile: IMR Reef ID stays a web app (PWA), with no store fee.**
@@ -92,10 +92,10 @@ Monitoring today is first-party, and nothing pages anyone:
 |---|---|---|---|---|---|---|
 | 1 | Photos on `r2.dev` | Cloudflare's development address is rate-limited, uncached, "intended for non-production traffic" | **Now**; worse with more players | Cloudflare's R2 docs (Sources) | A custom domain on the bucket. It needs a domain whose zone is in the same Cloudflare account | Domain only |
 | 2 | The photo stats cache | One value over Apps Script's 100 KB cache limit | **Around December** | The storage study (ROADMAP "Fish confusion at several ranks") | Q123 j, pooled stats built incrementally (in the queue) | $0 |
-| 3 | The rename | A new origin: local progress, settings and caches do not follow | **Before December** (decided) | ROADMAP "Domain and repository rename" | Section 3.1 and step 6 of the path | Domain only |
-| 4 | **Trigger quota, 90 min a day** (consumer account) | The 15-minute trigger (`autoUpdate`) runs the leaderboard's replays (`boardWarm_`) each time: 96 runs a day | **Not dated; watch it** | **Measured** (4 rows, 2026-11-14): the board-warm runs that were logged took 5.1, 5.3, 5.5 and 13.0 s. Only runs of 5 s or more, or 1 in 16, are logged (`TIM`), so most runs are shorter. **Computed**: 96 runs at 5-13 s would be 8-21 min a day, an upper estimate for today. One run may last up to `BOARD_WARM_MS` = 150 s, so a rules change that leaves many players behind could ask for up to 240 min a day: over the quota | `tools/timings.js` on the `Timings` tab, weekly. Fixes: fewer replays a run, or the script under a Google Workspace account (6 h a day; question c) | $0 |
+| 3 | The rename | A new origin: local progress, settings and caches do not follow | **Before December** (decided) | ROADMAP "Domain and repository rename" | Section 3.1 and step 7 of the path | Domain only |
+| 4 | **Trigger quota, 90 min a day** (consumer account) | The 15-minute trigger (`autoUpdate`) runs the leaderboard's replays (`boardWarm_`) each time: 96 runs a day | **Not dated; watch it** | **Measured** (2026-11-14, 17:49-19:19, about seven trigger firings): four board-warm runs were logged, at 5.1, 5.3, 5.5 and 13.0 s. Only runs of 5 s or more, or 1 in 16, are logged (`TIM`), so the other firings were probably under 5 s. The sample is too small for a projection. **Computed**: if every firing took 5-13 s of board warm, that is 8-21 min a day, before the rest of each trigger run. One run may last up to `BOARD_WARM_MS` = 150 s, so a rules change that leaves many players behind could ask for up to 240 min a day: over the quota | `tools/timings.js` on the `Timings` tab, weekly. Fixes: fewer replays a run, or the script under a Google Workspace account (6 h a day; question c) | $0 |
 | 5 | Every save reads the whole `Answers` tab | Slow somewhere between 20k and 100k rows | Mid-2027 at today's pace, early 2027 with full cohorts (the storage study) | **Measured**: one sampled read of 5,668 rows × 18 columns took 805 ms (2026-11-14) | D1 behind a Worker at the measured threshold (Q352, decided) | $0 (D1 free tier) |
-| 6 | Sheet size | 20 million cells a spreadsheet (Google's page, read 2026-11-14) | Years | **Computed**: about 0.6 million cells allocated today. docs/SECURITY.md still says 10 million: the integrator corrects that line in its own PR | Archive or D1 (Q352) | $0 |
+| 6 | Sheet size | 20 million cells a spreadsheet (Google's page, read 2026-11-14) | Years | **Computed**: about 0.6 million cells allocated today. docs/SECURITY.md says 10 million, an older figure | Archive or D1 (Q352) | $0 |
 | 7 | R2 storage | 10 GB-month free | Months to years (fish caps) | ROADMAP "Hosting capacity (watch)" | Pay beyond: $0.015 per GB-month, so about $0.15 a month for 10 GB more (computed) | Cents; needs IMR (Q353) |
 | 8 | Admin token | 90-day expiry | Every 90 days | docs/HANDOVER.md | A credentials calendar (section 5) | $0 |
 | 9 | Pierre's accounts | A lost, locked or compromised account | Any day; not a matter of scale | Section 5 | Recovery, a second person, a backup outside Google | $0 |
@@ -115,7 +115,7 @@ Each table lists the options cheapest first. "Fit" says how each sits with:
 |---|---|---|---|---|
 | **A. GitHub Pages as today, no domain** | $0. 1 GB site, 100 GB a month soft, 10-minute deploys | The rename moves to another `github.io` path: a new origin again at the next move | GitHub's terms exclude "your online business" or SaaS: a licensed product would have to leave | None |
 | **B. GitHub Pages + our own domain** | $0 hosting + the domain. HTTPS enforcement available; GitHub recommends verifying the domain against takeover | **The last address change**: later host moves are DNS only | Same terms limit as A. One domain can carry instance subdomains later | A shared domain could carry the ReefRecall API later (`api.<domain>`) |
-| **C. Cloudflare Workers static assets (or Pages) + our own domain** | $0. Static asset requests "free and unlimited"; 20,000 files and 25 MiB a file per version; Workers 100,000 requests a day (only for code, not static files). Cloudflare's Pages docs say "Start new projects with Workers" | Same as B, plus real HTTP headers (CSP with `frame-ancestors`, HSTS), which a `<meta>` CSP cannot set | One account for the site, photos, D1, Access and per-instance subdomains | A Worker API can serve a Flutter app as well as the web app |
+| **C. Cloudflare Workers static assets (or Pages) + our own domain** | $0. Static asset requests "free and unlimited"; 20,000 files and 25 MiB a file per version; Workers 100,000 requests a day (only for code, not static files). Cloudflare's Pages docs say "Start new projects with Workers" | Same as B, plus our own HTTP headers. A `<meta>` CSP ignores `frame-ancestors` (the CSP specification, from memory, not read for this study), and HSTS is a header only | One account for the site, photos, D1, Access and per-instance subdomains | A Worker API can serve a Flutter app as well as the web app |
 | D. Netlify, Vercel | Netlify Free: 300 credits, 20 credits a GB. Vercel Hobby: 100 GB a month | As C | No gain over C; a new vendor | None |
 | E. Firebase Hosting | Spark: 10 GB stored, 360 MB a day transfer | As C | Tight with photos | Pulls towards Google's stack, away from Supabase |
 
@@ -161,7 +161,7 @@ a preview never writes to the real sheet (rule D1) (Pierre, 2026-11-05). This se
 
 | Option | Price (read 2026-11-14) | Fit |
 |---|---|---|
-| **Web: GitHub Actions as today** | $0 on a public repository. A private repository on GitHub Free: $12 of compute a month (about 2,000 Linux minutes), 500 MB of artifacts, 10 GB of cache | Deploys to Cloudflare later with `wrangler deploy` from the same workflow, keeping the stamp step (rule W15), with a token scoped to that one Worker |
+| **Web: GitHub Actions as today** | $0 on a public repository. A private repository on GitHub Free: $12 of compute a month (about 2,000 Linux minutes), 500 MB of artifacts, 10 GB of cache | Deploys to Cloudflare later with `wrangler deploy` from the same workflow, keeping the stamp step (rule W15), with a Cloudflare API token limited to what the deploy needs (how narrow a token can be was not read for this study) |
 | Web: Cloudflare Workers Builds | $0: 3,000 build minutes a month, 1 build at a time, 20 minutes each | Would move the stamp step out of Actions; no gain |
 | **Mobile, Android (ReefRecall)** | GitHub Actions Linux: free on a public repository; within the $12 a month on a private one | Flutter builds on Linux |
 | **Mobile, iOS (ReefRecall)** | Codemagic: 500 free macOS M2 minutes a month (individuals), then $0.095 a minute. GitHub Actions macOS on a private repository: $0.062 a minute | Codemagic's free tier first |
@@ -214,7 +214,7 @@ step of the roles row.
 | **B. Own OAuth in the Worker** (Google and Meta as OpenID providers, redirect flow, sessions in D1) | $0 | No third-party script on our pages (rule U5: Google's sign-in button script is a third-party script; the redirect flow needs none). Google: an OAuth consent screen and brand verification; whether an app using only `openid email profile` is exempt is not stated on the page read. Meta: `public_profile` and `email` need no app review; a data deletion callback is required | Lives next to D1; one account across instances |
 | C. Supabase Auth | $0: 50,000 MAU, Google, Facebook and Apple included; pauses after a week of inactivity (3.4) | Pro $25 a month to avoid the pause | Natural if ReefRecall shares the backend |
 | D. Firebase Auth | $0: 50,000 MAU | A Google stack | Away from ReefRecall's Supabase |
-| E. Cloudflare Access | $0 up to 50 users, then $7 a user a month | For staff (admin, editors, trainers), not players: a second lock in front of the trainer and editor pages | Fits the roles plan's server-side checks as an extra layer |
+| E. Cloudflare Access | $0 for "teams under 50 users", then $7 a user a month | For staff (admin, editors, trainers), not players: a second lock in front of the trainer and editor pages | Fits the roles plan's server-side checks as an extra layer |
 
 Two rules to know before choosing:
 - **Apple's guideline 4.8**: a native iOS app that offers Google or Meta sign-in for the primary account must also offer
@@ -238,32 +238,49 @@ D1). C if, by then, ReefRecall shares the backend and Supabase Pro is paid.
 **Recommendation**: the weekly backup, with one restore drill written down (question f: it sends player data to a
 second provider).
 
+**Fit.**
+- **Rename**: nothing to change; the bucket is not on the players' address.
+- **Roles and instances**: one sheet per organisation (Q343) means one backup per sheet; each organisation's data stays
+  in its own folder of the bucket.
+- **ReefRecall**: a Supabase backend needs its own dump (above). A shared backend would back up both apps in one go.
+
 ### 3.7 Monitoring
 
 | Option | Price | Fit with our rules |
 |---|---|---|
-| **A. A scheduled health-check workflow, hourly** | $0 (public repository) | First-party. It checks: the site answers with the deployed build; one photo answers from R2; the sync script answers (`?answers=1` returns `{ok: false, error: 'token'}` before any sheet read, so it costs no quota beyond one request); the live script version equals `main`'s 30 min after a merge; the trigger minutes a day from the `Timings` tab against 90; the credentials' expiry dates. `tools/brief.py` shows the last result, and the agents fix a failure (Rule 0: production broken for players is ours to fix) |
+| **A. A scheduled health-check workflow, hourly** | $0 (public repository) | First-party. It checks: the site answers with the deployed build; one photo answers from R2; the sync script answers, and its version: `?answers=1` returns `{ok: false, error: 'token'}` before any sheet read, and every reply carries the script's `v` (`Code.gs` `json_`), so one request costs no sheet read; that `v` equals `main`'s `VERSION` 30 min after a merge; the trigger minutes a day from the `Timings` tab against 90; the credentials' expiry dates. `tools/brief.py` shows the last result, and the agents fix a failure (Rule 0: production broken for players is ours to fix) |
 | B. UptimeRobot | $0: 50 monitors every 5 minutes, commercial use allowed | An outside view that still works if GitHub is down. Alerts go by email; Rule 0 decides whether Pierre gets them in the evening |
 | Not recommended: Sentry, Cloudflare Web Analytics | Sentry free: 1 user, 5,000 errors. Web Analytics: free | Both run a third-party script in the page (rule U5) and send data to a third party, against privacy.html's "no third-party analytics or tracking scripts". `Events` and `Pages` already cover errors and use, first-party |
 
 **Recommendation**: A now. B optional.
 
+**Fit.**
+- **Rename**: the checks name the addresses in one place, so the move changes one list.
+- **Roles and instances**: one sheet per organisation (Q343) means one sync check per instance.
+- **ReefRecall**: its backend gets its own checks, in its own repository.
+
 ## 4. The recommended path
 
-Each step is one PR or one setup action, with its cost. The order is the order of risk; steps 1-4 need no money.
+Each step is one PR or one setup action, with its cost. A step made of several PRs points to the ROADMAP row that
+splits it. The order is the order of risk; steps 1-4 need no money.
 
 | Step | What | Kind | Cost |
 |---|---|---|---|
 | 1 | **Credentials and recovery table** in docs/HANDOVER.md, without any value: each account (GitHub, Google, Cloudflare, later the domain), its owner, two-factor method, recovery codes kept offline (where, not what), the tokens and their expiry dates, how to rotate each | Docs PR | Free |
 | 2 | **Two-factor authentication with a passkey or security key, and printed recovery codes**, on the GitHub, Google and Cloudflare accounts; expiry dates in a calendar | Setup, Pierre, about 15 min | Free |
 | 3 | **The health-check workflow** (3.7 A) and its line in `tools/brief.py` | PR | Free |
-| 4 | **The weekly backup** to a private R2 bucket, and one restore drill (3.6), after question f | PR + a scoped R2 token (Pierre, about 5 min) | Free |
+| 4a | **A private R2 bucket for backups** and a token limited to it, as a repository secret, after question f | Setup, Pierre, about 5 min | Free |
+| 4b | **The weekly backup workflow** into that bucket, and one restore drill written down (3.6) | PR | Free |
 | 5 | **The domain**, after question a: registered at Cloudflare Registrar, auto-renew on, the zone on Cloudflare's free plan; domain verification on GitHub against takeover | Setup, Pierre | **About US$10-12 a year** (needs IMR or Pierre, Q353) |
-| 6 | **Photos on `photos.<domain>`**: the R2 custom domain (cached, no `r2.dev` rate limit); `PHOTO_BASE`, the CSP and the service worker's photo host. It can ship before the app moves | Setup + PR | Free |
-| 7 | **The rename** as ROADMAP "Domain and repository rename" plans it: the hand-over release on the old origin first, then the app on the domain (3.1 B), `REPO` in `admin.js` and `Code.gs`, the self-update checked; a move of the repository to an organisation (question b) in the same window | PR series + setup | Free |
-| 8 | **When previews are wanted**: the app on Cloudflare Workers static assets (3.1 C), a preview URL per branch, previews behind Access, the previews' sync on a demo backend | PR + setup | Free |
-| 9 | **At the measured threshold (Q352)**: the answer log on D1 behind a Worker; Time Travel and the weekly export to R2 | PR series | Free (D1 free tier) |
-| 10 | **The better sign-in step** of the roles row: B or C of 3.5 | PR series | Free (B), or $25 a month (C on Supabase Pro, needs IMR) |
+| 6a | **The R2 custom domain `photos.<domain>`** on the bucket (cached, no `r2.dev` rate limit) | Setup, Pierre | Free |
+| 6b | **The app reads the photos there**: `PHOTO_BASE`, the CSP and the service worker's photo host. It can ship before the app moves | PR | Free |
+| 7a | **The hand-over release on the old origin**: the players not signed in carry their progress over (ROADMAP "Domain and repository rename", which splits the PRs) | PR | Free |
+| 7b | **The GitHub organisation**, after question b, and the repository moved into it | Setup, Pierre | Free |
+| 7c | **The app on the domain** (3.1 B): the Pages custom domain, `REPO` in `admin.js` and `Code.gs`, the self-update checked (the rest of that row's PRs) | Setup + PR series (ROADMAP "Domain and repository rename") | Free |
+| 8a | **When previews are wanted**: a Cloudflare API token for deploys, as a repository secret, and Access on the previews | Setup, Pierre | Free |
+| 8b | **The app deployed to Cloudflare Workers static assets** (3.1 C), a preview URL per branch, the previews' sync on a demo backend; the domain's DNS then points there | PR | Free |
+| 9 | **At the measured threshold (Q352)**: the answer log on D1 behind a Worker; Time Travel and the weekly export to R2 | PR series (ROADMAP "Fish confusion at several ranks", its storage paragraph) | Free (D1 free tier) |
+| 10 | **The better sign-in step**: B or C of 3.5 | PR series (ROADMAP "Roles, instances and cohorts", its last step) | Free (B), or $25 a month (C on Supabase Pro, needs IMR) |
 | 11 | **ReefRecall's CI**: GitHub Actions for Android, Codemagic for iOS | Its own repository | Free CI; store fees its own |
 
 Nothing in the path needs Workers Paid ($5 a month), Supabase Pro ($25 a month) or any other subscription at 4-8 RAs a
@@ -271,7 +288,7 @@ month. The triggers that would change that:
 - D1's free daily row limits reached: the health check reports it, and on the free plan the queries stop rather than
   being billed;
 - a shared backend with ReefRecall on Supabase without the pause;
-- more than 50 staff behind Access.
+- 50 staff or more behind Access.
 
 ## 5. The questions he does not think of
 
@@ -283,7 +300,7 @@ month. The triggers that would change that:
   - The `main` ruleset and push protection are in place (docs/HANDOVER.md).
   - The photo workflow's push job is the one known gap (docs/SECURITY.md).
 - **The shared origin.** Every Pages site of the account shares `ppericard.github.io`'s storage, the admin token's
-  encrypted vault included. The own domain (step 7) isolates it for free.
+  encrypted vault included. The own domain (step 7c) isolates it for free.
 - **The domain becomes a new asset to protect.** A domain that lapses can be registered by anyone, who would then serve
   their own page at the players' address. The protection is auto-renew, a card that does not expire unnoticed, and
   registration for several years once the name is settled.
