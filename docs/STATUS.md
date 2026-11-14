@@ -57,16 +57,16 @@ Numbered for good (never reset) only when the answer commits the future and will
 mode", Pierre 2026-11-08); the others are asked plainly. An answered one goes into its PR and off this list.
 
 - **Q230** out-of-zone taxon-page photos: waits for real arguments.
-- **Not numbered, from before**: **#641 a-j** (F7 = j) and #651's 5 choices; **Q123, Q124**; apply the **152 curated
-  tag and ease proposals** (`judging/fish-light-q308.json`)? **Eel-tailed catfishes**
-  (parked below): what he wants from it. `PFMT` (per-format offsets) also leaks the corals' values to fish (#805).
+- Answered 11-14: Q230 (b) out-of-zone photos for species with none in zone, sourced, marked; Q350 (#641) yes, declared
+  pairs always forced; Q351 (#651) yes; Q123 yes with a log-storage study; Q124 the recommendations; the 152 proposals
+  (a) an admin view; Eel-tailed catfishes (a) already in place; PFMT already fixed (#809), fish offsets with Q123 j.
 - Answered 11-13: Q339 (b) default cover = the leaf most seen around the instance's centre (distinct observers),
   the centre made generic; Q340 the Tree tab, any depth, views Key | WoRMS, groups as tags; Q341 (a) sheet overlay in
   curation.json; Q342-Q349 the roles model, the editors' relay, pilot sign-in kept then a real account manager, cohorts
   joined by the player (an admin may force), trainer sees answers not devices, shared sheet now, A1 reworded, IMR rules
   as the IMR instance's policy. Answered 11-12: Q337, Q338 (#852, #857).
 
-Last question number: Q349
+Last question number: Q351
 
 ## Pierre's hands
 
@@ -78,17 +78,14 @@ Actions only Pierre can do.
   genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for
   the 11 fish entries with no reference-level photo.
 - **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know (links: `git show 4c8251a:docs/STATUS.md`).
-- **Protect `main`**. Never a tag on `f46f11c` or `dd491b0` (pre-rewrite: the crops would come back; Now).
+- **Protect `main`**.
 - Renew the admin GitHub token before late January 2027; say his Lab Keep / Trim votes; look for the IMR benthic deck.
 
 ## Parked after hours
 
 Ideas Pierre dictated after 17:30, untouched until the morning, then turned into work or a ROADMAP row (Rule 0).
 
-- (integrator, from Pierre's session) the limit of 8 shaky genera fills with the hardest look-alike families: it held an
-  expert's openings for 138 answers. Revisit with the opening burst (Next 1).
-- (Pierre 11-08 ~20:20) "Eel-tailed Catfish is really a family with its own thumbnail in the book's index" (circle 3,
-  *Plotosus lineatus*). Ask what he wants from it (a circle, a cover, more species?).
+- None.
 
 ## Last stop
 

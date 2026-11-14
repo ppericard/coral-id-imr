@@ -12,7 +12,7 @@ rules pass before it (`.claude/settings.json`: resolving review threads). What t
 
 - **Pierre wants work run in parallel** (11-12: "pourquoi tu me demandes mon avis pour un ordre alors que tu peux tout
   lancer en parallèle ?"): independent read-only studies and PRs on different files go out together, within W27's
-  three agents; ask him only what is his to decide (wording, game rules), never the order of work.
+  four agents; ask him only what is his to decide (wording, game rules), never the order of work.
 - **Don't send him GitHub chores** (11-12: "c'est quoi ce micromanagement forcé ?"): resolving fixed threads, labels,
   branch updates are the integrator's. A refusal by the classifier: find the narrow allow rule, propose it once.
 - **A success rate is never a level** (LEARNING "What each number measures", rule L12): two studies read 75-83% right
@@ -27,7 +27,7 @@ rules pass before it (`.claude/settings.json`: resolving review threads). What t
 Pierre's quota ran out on 11-09 (more than half a week's quota spent in one day on a handful of PRs); the next
 integrator starts on another account from 11-11 morning. What the day taught, now rules or habits:
 
-- **Rule W27** (docs/rules/ship.md): at most three agents; every branch from `origin/main` (no stacked PRs, never ask
+- **Rule W27** (docs/rules/ship.md): at most four agents, balanced by weight (since 11-14); every branch from `origin/main` (no stacked PRs, never ask
   Pierre to change a base); no two open PRs on one sensitive file (`Code.gs`, `core.js`, `sync.js`, `model.js`): one
   after the other, the next merges `main` and runs `sync_core --fix` after the first lands; two Codex rounds, then cut
   the scope to a branch of its own with a short design note (findings that keep coming are a structural problem: we find
