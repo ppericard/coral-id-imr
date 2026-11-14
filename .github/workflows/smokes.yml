@@ -96,11 +96,15 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ms-playwright-${{ runner.os }}-1.64.1
+      # Chromium only, without --with-deps (CI speed study, 2026-11-08): on ubuntu-26.04 its apt step installed nine font
+      # packages and no library (the image has Chromium's libraries), about 10 s a job. The pages draw their text in
+      # their own fonts (fonts/, app.css @font-face). If Chromium one day fails to start for a missing library, put
+      # --with-deps back.
       - name: Install Playwright (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
           npm install --no-save --no-audit --no-fund playwright@1.64.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: ${{ matrix.what }}
         env:
           SMOKE_PART: ${{ matrix.part }}
