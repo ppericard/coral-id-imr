@@ -17,16 +17,17 @@ groups right after it.
 2. **The fungiid pull-down was a first meeting of a pair, not forgetting.** On 11-06, Ctenactis and Herpolitha were
    each asked twice and answered right every time, but never offered together. The first question that offered both
    (a 4-choice with Lobactis, Fungia, Ctenactis and Herpolitha, expectation 0.59) came 12 answers after the return.
-   She gave Herpolitha, then gave it again on the two "Again: A or B?" questions that followed. A longer comeback would
-   not have asked this pair: both genera sat in the surest half by recall.
+   She gave Herpolitha, then gave it again on the two "Again: A or B?" questions that followed. Her misses there show a
+   pair she had never had to tell apart, not one she had forgotten.
 3. **Her questions got harder right after the comeback.** Full 4-choice questions (every choice plausible, traps
    included) went from 2 of her 20 answers before the break to 9 of the 20 after the comeback. Her global level, resting
    on 54 answers, rose +0.26 on the 4 comeback answers (0.40 to 0.66) and fell to 0.10 by the 14th answer after them.
    That is the same size as her swings on her first day (up to 0.67 within 15 answers). LEARNING.md "What each number
    measures" applies: at 50-70 answers the Elo is not settled.
-4. **Across every player, comebacks after a day or more were about as long as the model intends for the player's
-   state**, from 1 to 19 questions, plus one 40-question comeback that never ended (below). The length follows the
-   number of units at stake and how hard the questions are more than the length of the break.
+4. **After 2-9 days, real comebacks fell within the simulation's ranges for a player in the same state**: 1-19
+   questions. **Around one day (0.95-1.06 days) they ran longer than simulated.** The 8 eligible returns ran 0, 1, 4,
+   6, 7, 10, 17 and 40 questions (median 6.5), against a simulated median of 3 for every profile. The length follows
+   the number of units at stake and how hard the questions are more than the length of the break.
 5. **Rusty comeback questions were answered better than the model expected.** On the 50 comeback answers with a logged
    recall under 0.97, players were right 42 times at a mean expectation of 0.67: a surprise of +0.17, against +0.06 on
    their ordinary answers. 7 of the 8 players with such answers did better than their own usual surprise. FSRS's
@@ -54,8 +55,9 @@ groups right after it.
   per subject: its last answer (`P['~level'].at`) and its comeback state are the subject's own. A visit is the run of
   answers with no gap of 30 minutes (`SESSION.GAP`). Four returns at 0.95-0.99 days are listed beside them.
 - **Comeback questions:** the answers logged with `|c` in Mode (`quiz.js`, "a comeback question after a break"). Their
-  scoring record holds the recall `r` the app planned for the unit shown. Its length is the number of `|c` answers from
-  the return on, which may run into the next visit.
+  scoring record holds the recall `r` the app planned for the unit shown. The comeback's length is the number of `|c`
+  answers in the return's visit. One comeback went on into the next visit: P5's of 11-06, 40 in the visit and 2 more
+  five hours later. Her "20 after" window starts with those 2.
 - **Accuracy and surprise:** right % and right − expected (column Expected), during the comeback, in the 20 answers
   before the break and in the 20 after the comeback's last question. Rule L12: the player is the unit, never the answer.
 - **Look-alike misses:** a wrong answer whose given unit is a declared look-alike of the unit shown, either way round
@@ -141,10 +143,13 @@ The simulation on today's `main` (comeback questions, median over 5 seeds):
     3 days with 300 questions first;
   - players with 6-50 answers: P2 2, P9 1, P14 2; simulated 2;
   - P11, 50 answers with every genus opened: 4; simulated with Open all, 3-15.
+- **Around one day they ran longer.** The 8 eligible returns at 0.95-1.06 days ran 0, 1, 4, 6, 7, 10, 17 and 40
+  questions (median 6.5); the simulation's median after 1 day is 3 for every profile with 300 questions first.
 - Against LEARNING.md's table of 2026-11-03 (10 seeds, an older engine), today's simulated comebacks are shorter after
   3 days: beginner 11 against 13.5, lecture RA 7 against 12.5, strong RA 6 against 10, expert 5 against 9. After a week
   they are mixed: beginner 39 against 14, lecture RA 17 against 19.5, strong RA 22 against 15.5, expert 8 against 9.5.
-  The engine has changed since (rules versions 4-10), so that table is out of date.
+  The engine has changed since (rules versions 4-10), and the runs differ (5 seeds here against 10 there, other
+  seeds), so the differences are indicative only.
 
 ## How it chooses units
 
@@ -152,8 +157,10 @@ As intended (`model.js` `comebackOf`): units answered right; the surest half by 
 the comeback, then the most rusted half. Its questions use the player's usual choices (`trapsFor`), no card, duel or
 exam, and photos aimed at ability + ln R.
 
-- **The order is as designed.** P11's first comeback question was the unit with the highest logged recall (Mycedium,
-  0.94). The rest came from lower ones (Hydnophora 0.89, Cyphastrea 0.92, Lithophyllon 0.90).
+- **The order is mostly as designed.** In 7 comebacks of 2 or more questions where every question logged its recall
+  and some rust showed, the questions up to the first right answer had a higher mean recall than the later ones in 6.
+  P14 is the exception: 0.88 against 0.89. P11's first comeback question had the highest logged recall of her four
+  (Mycedium, 0.94); the later ones were Hydnophora 0.89, Cyphastrea 0.92 and Lithophyllon 0.90.
 - **A comeback reviews a minority of the units at stake:**
 
   | Player, return | Distinct units asked | Units at stake |
@@ -167,8 +174,9 @@ exam, and photos aimed at ability + ln R.
   paid it back, not when each unit has been seen. After the comeback, a unit not reviewed is asked and scored at full
   recall: only comeback questions carry `r` in their scoring record.
 - **Look-alike groups get no special treatment.** A comeback question has the usual traps for the player's level, and
-  its units are chosen by recall alone. P11's fungiid pair (Ctenactis 0.92 and Herpolitha 0.91 by the replay) was in
-  the surest half: after her first right answer, the comeback no longer drew from it.
+  its units are chosen by recall alone. Which half P11's Ctenactis and Herpolitha fell in cannot be read from the log:
+  the app's recall is logged only for the units it asked. A comeback question on either genus could have offered the
+  pair, as any question with traps can.
 
 ## Accuracy and expectation during and after
 
@@ -293,7 +301,7 @@ after the answer.
 | Days to a week: about 9-20 questions, depending on the player | 2-4 d: 1-10; 4-10 d: 2-19. Shorter, with fewer units at stake than the simulation's 300-question players |
 | It ends by the answers: better than expected melts it fast | Yes: P11 4/4 at 0.62 ended it in 4; P5 at 68% against 0.75 kept it on for 40 |
 | Photos a little easier, by ln R | Comeback questions at mean e 0.67 when rusty; players beat it by +0.17 |
-| No genus opens during it and the floor | Holds; P5's 40-question comeback held openings the whole visit |
+| No genus opens during it and the floor | Not checkable: first-meeting cards are not in the log. By the code, P5's 40-question comeback held openings for the whole visit |
 | A miss the rust explains costs less | Only inside the comeback. A unit not reviewed is scored at full recall after it |
 
 ## Limits: what this cannot conclude
@@ -309,10 +317,15 @@ after the answer.
 - **Rust:** the app's own rust at a return is not logged and cannot be rebuilt reliably from the log. The comeback
   state is per device, and the Device column is filled only from 11-08 evening.
 - **P5's 40-question comeback** (11-06): its sum grew by about 3. Five hours later, 2 more comeback questions ended
-  it, which the logged answers cannot explain. Another device is the likeliest reason, but it cannot be checked:
-  the Device column is empty for her.
+  it, which the logged answers cannot explain. By the code, the comeback state is kept per device and cleared only by
+  a progress reset (here or on another device) or a sign-out. Adopting a new rules version, as several shipped that
+  afternoon, does not clear it. The candidates are another device, a sign-out, or cleared browser storage. None can be
+  checked: the Device column is empty for her.
+- **The simulation with Open all** opened every genus at question 20. P11 opened them before her first answer.
 - **Recall:** 50 rusty comeback answers. The sign over players (7 of 8) is the only test worth reading. A per-answer fit
-  of the stabilities leans towards less forgetting, but is dominated by P3 and ignores who answered.
+  of the stabilities leans towards less forgetting, but is dominated by P3 and ignores who answered. Rusty units are
+  also, by construction, the least established. If the model underrates the ability on them, the surprise has the same
+  sign as recall that is too pessimistic. The fresh-unit control cannot tell the two apart.
 - **Cards:** first-meeting cards and the opening are not in the answer log (ROADMAP "Analyses: next views"). Whether
   P11 saw Platygyra's card before the break is unknown.
 - **Simulation:** the simulated learner forgets by its own rule (`tools/learnsim.js`, "Forgetting learner"), not by the
@@ -327,9 +340,9 @@ answers after it matched it, and the fungiid misses came from a pair met togethe
 *Recommendation:* keep. No change to the comeback's length from this case.
 
 **(b) Should the comeback ask look-alike groups on purpose** (units answered right whose look-alike is also in play)?
-*Recommendation:* no. P11's pair had never been offered together, so a comeback question would have tested recall of
-each genus, not the contrast. Telling a pair apart for the first time is the opening's and the contrast queue's work.
-The confusion-group opening study (2026-11-06) is where to take it up.
+*Recommendation:* no. P11's pair had never been offered together before her 12th answer after the return. What failed
+was telling the two apart for the first time, not remembering either one. That is the work of the opening and the
+contrast queue. The confusion-group opening study (2026-11-06) is where to take it up.
 
 **(c) Recalibrate FSRS's stabilities now?** The players answered rusty comeback questions better than the recall
 discount predicts: 7 of 8 players, +0.17 against +0.06.
@@ -340,8 +353,9 @@ answers. Then fit one stability multiplier with players as the unit (rule L12), 
 **(d) Give the comeback's sum the opening hold's allowance (`INTRO.SLACK`, 0.1 an answer)?** Without it, P5 was 0.075
 an answer below expectation and stayed in a comeback for a whole 40-answer visit, with no genus opening. The hold
 added that allowance for the same reason: without it, the simulated expert was held for good.
-*Recommendation:* yes, as a measured change: a learnsim run first (rule L11), then its own PR. It would not change
-P11's case.
+*Recommendation:* yes, as a measured change: a learnsim run first (rule L11), then its own PR. Around one day, real
+comebacks already run longer than simulated (median 6.5 against 3), so the allowance would bring them closer. It would
+not change P11's case.
 
 **(e) Log the comeback's rust at its start** (a field in the scoring record of its first question), so that the
 recalibration this row waits for can read the app's own rust, not rebuild it?
