@@ -50,6 +50,8 @@ function loadSheet() {
   const rows = raw
     .filter(r => {
       const s = r[18];
+      // A surprise card's answer counts in no history (core.js subjRows, winkRow; Codex review #883).
+      if (String(r[6] || '') === C.WINK_MODE) return false;
       return SUBJ === 'coral' ? s === '' || s === 'coral' : s === SUBJ;
     })
     .map(r => ({
@@ -80,7 +82,7 @@ function loadSim() {
   d.runs.forEach(run => {
     if (!run.alog) return;
     const id = `${run.profile}:${run.seed}`;
-    by[id] = run.alog.map(([a, pT], i) => ({
+    by[id] = run.alog.filter(([a]) => !C.winkEntry(a)).map(([a, pT], i) => ({
       p: id,
       at: Date.parse(a.t),
       i,
@@ -157,11 +159,9 @@ function base(list) {
       out.push(null);
       return;
     }
-    const th = C.abilityOf(P, a.t, a.pr),
-      rw = C.rtWeight(P[LEVEL], isFinite(a.sec) ? a.sec : null, a.k, a.ok),
-      x = a.S * (th - a.dm + a.df),
-      p = a.g + (1 - a.g) * a.R * sig(x);
-    C.scoreAnswer(P, {
+    // The ability and time weight are the scorer's own (its th0 and rw: the unit's count already holds this answer,
+    // which changes levelMove's shrinkage; quiz.js logs that th0; Codex review #883).
+    const res = C.scoreAnswer(P, {
       t: a.t,
       c: a.c,
       ok: a.ok,
@@ -182,6 +182,10 @@ function base(list) {
       look: false,
       dom: true
     });
+    const th = res.th0,
+      rw = res.rw,
+      x = a.S * (th - a.dm + a.df),
+      p = a.g + (1 - a.g) * a.R * sig(x);
     out.push({th, x, p, rw});
   });
   return {out, P};
