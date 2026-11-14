@@ -11,7 +11,8 @@ const test = require('node:test'),
   vm = require('vm'),
   block = require('./block.js');
 const C = require('../core.js'),
-  A = require('../autosort.js');
+  A = require('../autosort.js'),
+  {nodeCover} = require('../admin-covers.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
   src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
@@ -115,7 +116,9 @@ test('fish Feature: his featured photos of a species, in his order, those in pla
 });
 
 // On the real files: every curated cover the game plays is the family's card photo, as the admin's page shows it
-// (autosort.js fishCoverOf over the photos in play, fishGameIn).
+// (autosort.js fishCoverOf over the photos in play, fishGameIn), and the admin's Tree bar gives the app's reason (his ★, a
+// juvenile ignored, out of play: admin-covers.js nodeCover), the photo matched by its id under either name (core.js
+// fishPid: his pick on a reference photo whose candidate copy the game plays, 2026-11-14, f:Damselfishes).
 test("real data: every curated fish cover in play is the card's photo, the admin's and the app's alike", () => {
   const f = read('fish.json'),
     P = read('fish-photos.json'),
@@ -124,9 +127,27 @@ test("real data: every curated fish cover in play is the card's photo, the admin
     X = app(),
     FISH = X.run({f, ph: P, gm: gm.photos ? gm : {photos: {}}}, cu),
     G = (cu.fish || {}).genera || {},
-    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
-    units = A.fishUnits(f);
+    all = Object.values(gm.photos || {}).flat(),
+    play = A.fishGameIn(all, cu),
+    gj = new Map(all.map(p => [p.f, {e: p.e, jt: p.jt}])), // the admin's fuJ falls back on the game record's judgment
+    units = A.fishUnits(f),
+    pid = C.fishPid;
   let n = 0;
+  Object.entries(G).forEach(([id, k]) => {
+    const g = FISH.gen[id],
+      u = units.find(x => x.id === id);
+    if (!k.cover || !g || !u) return;
+    const rec = g.views.wide.find(p => pid(p.f) === pid(k.cover)),
+      why = !rec ? 'gone' : X.juvP(rec) ? 'juv' : 'mine',
+      c = nodeCover(
+        id,
+        play.filter(p => u.species.includes(p.sp)),
+        cu.fish,
+        x => gj.get(x) || null
+      );
+    assert.strictEqual(c.gone ? 'gone' : c.juv ? 'juv' : c.by, why, `${id}: the admin's reason is the app's`);
+    if (why === 'mine') assert.strictEqual(pid(c.p.f), pid(X.cover(g).f), `${id}: the admin's cover is the app's`);
+  });
   Object.entries(G).forEach(([id, k]) => {
     const g = FISH.gen[id];
     if (!k.cover || !g) return;
@@ -149,7 +170,8 @@ test("real data: every curated fish cover in play is the card's photo, the admin
           cu.fish,
           id
         );
-    if (adm && adm.f === k.cover) assert.strictEqual(X.cover(g).f, k.cover, `${id}: the admin shows it, the app must too`);
+    if (adm && pid(adm.f) === pid(k.cover))
+      assert.strictEqual(pid(X.cover(g).f), pid(k.cover), `${id}: the admin shows it, the app must too`);
   });
   if (Object.values(G).some(k => k.cover)) assert.ok(n, 'at least one curated cover is in play');
 });

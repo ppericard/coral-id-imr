@@ -12,7 +12,7 @@
 // sends it all. The view is in the switch only while a proposal is open (admin.js TABS: its `live` option, hasPage).
 //
 // The pure part (coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy; nodeCover and nodeCoverWhy, the
-// Tree's node pages' cover and its why) runs in Node too: tests/fishcoverprop.test.js.
+// Tree's node pages' cover and its why; juvCovers, the bar's warning of his covers now judged juveniles) runs in Node too: tests/fishcoverprop.test.js.
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     A = node ? require('./autosort.js') : root,
@@ -29,7 +29,7 @@
     const k = ((F.genera || {})[id] || {}).cover;
     if (!k || !(L || []).length) return null;
     const his = A.fishCoverOf(L, F, id, j, seen);
-    if (!his || his.f !== k) return null;
+    if (!his || fishPid(his.f) !== fishPid(k)) return null; // his pick, under either of its names (autosort.js fishAt)
     const r = A.fishCoverRule(L, F, id, j, seen);
     if (!r || fishPid(r.p.f) === fishPid(his.f)) return null;
     const leaf = p => (F.add || {})[p.f] || p.sp || p.sid;
@@ -66,21 +66,24 @@
   // A node page's cover (Photos › Tree, admin.js renderFishUnits): the photo in force on node id among its photos in play
   // L, in its page's order, and how it was chosen. by: 'mine' (his ★ pick, in play, not a juvenile), 'rule' (a node with
   // leaves under it: the default cover rule, fishCoverRule, its result in rule) or 'first' (a leaf: its first adult photo,
-  // fishLeafCover); juv: his pick is a juvenile (ignored), gone: his pick is not among L (out of play). leaf: id is a leaf
-  // of its tree. seen(leaf id) as fishCoverRule's.
+  // fishLeafCover); juv: his pick is a juvenile (ignored), gone: his pick is not among L (out of play). His pick is found
+  // under either of its names (autosort.js fishAt: a reference photo and its candidate copy are one photo, as the app finds
+  // it), so a pick made on one copy and judged again on the other says why it is ignored. leaf: id is a leaf of its tree.
+  // seen(leaf id) as fishCoverRule's.
   function nodeCover(id, L, F, j = () => null, leaf = false, seen) {
     F = F || {};
     L = L || [];
     const k = ((F.genera || {})[id] || {}).cover,
-      q = k && L.find(p => p.f === k),
+      q = A.fishAt(L, k),
       juv = !!q && A.fishJuv(q, j(q.f), F),
       gone = !!k && !q,
       p = leaf ? A.fishLeafCover(L, F, id, j) : A.fishCoverOf(L, F, id, j, seen),
-      by = !p ? '' : q && p.f === k && !juv ? 'mine' : leaf ? 'first' : 'rule';
+      by = !p ? '' : q && p === q && !juv ? 'mine' : leaf ? 'first' : 'rule';
     return {p: p || null, by, rule: by === 'rule' ? A.fishCoverRule(L, F, id, j, seen) : null, juv, gone};
   }
   // Why that photo, in a line (the page's bar): his ★, else the default and its reason (coverWhy for the rule's, with the
-  // centre's name), with his pick ignored or out of play said.
+  // centre's name), with his pick ignored or out of play said. A pick on a juvenile can only be one judged a juvenile after
+  // he made it (★ Cover is off on a juvenile): JUV_WHY says so and what he can do.
   function nodeCoverWhy(c, centre) {
     if (!c || !c.p) return 'No photo in play';
     const why =
@@ -89,9 +92,27 @@
         : c.by === 'rule'
           ? `Default: ${coverWhy(c.rule || {}, centre)}`
           : 'Default: its first photo (featured, then the easiest)';
-    return [why, c.juv ? 'your ★ is a juvenile: ignored' : '', c.gone ? 'your ★ is out of play' : ''].filter(Boolean).join(' · ');
+    return [why, c.juv ? JUV_WHY : '', c.gone ? 'your ★ is out of play' : ''].filter(Boolean).join(' · ');
   }
-  const API = {COVER_KEPT, coverKey, coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy, nodeCover, nodeCoverWhy};
+  const JUV_WHY = 'your ★ cover is now judged a juvenile: pick another or retag';
+  // The nodes whose ★ cover is ignored as a juvenile (the Tree's sticky bar warns of them on every page): nodeCover on
+  // each node's own photos in play, P(node id) (admin.js fuNodePhotos, the node pages' own), so the warning and the
+  // node's page agree. ids: the node ids with a cover of his, in the Tree's order; leaf(id): id is a leaf.
+  const juvCovers = (ids, P, F, j, leaf = () => false) => (ids || []).filter(id => nodeCover(id, P(id), F, j, leaf(id)).juv);
+  const API = {
+    COVER_KEPT,
+    JUV_WHY,
+    coverKey,
+    coverProposal,
+    coverOpen,
+    coverAccept,
+    coverKeep,
+    coverKeptN,
+    coverWhy,
+    nodeCover,
+    nodeCoverWhy,
+    juvCovers
+  };
   if (node) module.exports = API;
   else Object.assign(root, API);
 })(this);
