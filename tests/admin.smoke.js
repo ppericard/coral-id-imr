@@ -779,6 +779,7 @@ const WIDTHS = [390, 1280];
               ord: ([...W.node.values()].find(x => x.rank === 'order' && W.kids.get(x.id).length > 1) || {}).id,
               gen: ([...W.node.values()].find(x => x.rank === 'genus' && W.kids.get(x.id).length > 1) || {}).id,
               fam0: ttFirst(W, W.roots[0], x => x.rank === 'family'),
+              root: W.roots[0],
               keys: Object.keys((DRAFT.fish || {}).genera || {}).length
             };
           });
@@ -818,8 +819,9 @@ const WIDTHS = [390, 1280];
           await go(other.hash + 'photos/tree/key/' + encodeURIComponent(wt.ord));
           u = await fu();
           if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: a WoRMS id in the Key ${JSON.stringify(u)}`);
-          // A WoRMS order and genus: read-only, their default cover by the rule, their children's cards.
-          for (const id of [wt.ord, wt.gen]) {
+          // A WoRMS class (the root: the rule over every photo under it), order and genus: read-only, their default cover by
+          // the rule, their children's cards.
+          for (const id of [wt.root, wt.ord, wt.gen]) {
             await go(wh(id));
             const x = await wp();
             if (
@@ -828,7 +830,7 @@ const WIDTHS = [390, 1280];
               x.cards.length < 2 ||
               !/^Default: /.test(x.why) ||
               x.keys !== wt.keys ||
-              x.crumbs < 1 ||
+              x.crumbs < (id === wt.root ? 0 : 1) ||
               x.wide > 0 ||
               (w === 1280 && x.sel !== id) ||
               x.views.map(v => v[0]).join() !== 'Key,WoRMS'
