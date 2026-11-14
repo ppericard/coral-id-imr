@@ -514,18 +514,160 @@ const WIDTHS = [390, 1280];
           };
         });
         if (!cs.skip && !cs.ok) fails.push(`${w}px Tree: the Chromis heading is not its most seen species ${JSON.stringify(cs)}`);
-        // A genus and a species open their family's page there (node pages come later): the family in the select, the
-        // node selected in the tree (unfolded to it), its section in view under the sticky bar.
-        for (const id of ['g:Chromis', 's091']) {
-          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(id));
-          u = await fu();
-          const at = await p.evaluate(id => {
-            const t = document.querySelector(`.adm-main .adm-fgen[data-gen="${id}"], .adm-main .adm-row[data-sid="${id}"]`),
-              r = t && t.getBoundingClientRect();
-            return r ? Math.round(r.top) : null;
-          }, id);
-          if (u.sel !== 'f:Damselfishes' || at === null || at < 0 || at > (w === 1280 ? 400 : 600) || (w === 1280 && u.cur !== id))
-            fails.push(`${w}px Tree: ${id} ${JSON.stringify({sel: u.sel, cur: u.cur, at})}`);
+        // Node pages (docs/ROADMAP.md "The Tree tab"): a genus and a species each open a page of their own, at both widths:
+        // the path from the root in the bar (each ancestor a link), its family in the units' select, only its own species'
+        // sections, its cover in force with why, the drill-down select of its children (the phone's way down); a key group
+        // a light page of its families' cards. The ★ rank switch and the genus select are gone (the pages replace them).
+        const np = () =>
+          p.evaluate(() => ({
+            hash: location.hash,
+            crumbs: [...document.querySelectorAll('.adm-crumbs a')].map(a => a.getAttribute('href')),
+            last: (document.querySelector('.adm-crumbs b') || {}).textContent || '',
+            sel: (document.querySelector('.adm-gsel2') || {}).value,
+            rows: [...document.querySelectorAll('.adm-main .adm-row[data-sid]')].map(r => r.dataset.sid),
+            gens: document.querySelectorAll('.adm-main .adm-fgen').length,
+            kids: [...document.querySelectorAll('[data-ttkid] option')].map(o => o.value).filter(Boolean),
+            cards: [...document.querySelectorAll('.adm-tcard')].map(a => a.dataset.ttc),
+            why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+            ok: !!document.querySelector('[data-ok]'),
+            old: document.querySelectorAll('[data-fucv], [data-fugen]').length,
+            cur: (document.querySelector('.adm-tree [aria-selected="true"]') || {dataset: {}}).dataset.tt || '',
+            top: scrollY,
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        const want = await p.evaluate(() => {
+          const T = fuTreeOf(FISHC.units);
+          return {
+            chromis: ttLeaves(T, 'g:Chromis'),
+            path: ttPath(T, 's091'),
+            k3: 'k:' + FISHC.units.find(x => x.group === 3).group,
+            fams3: FISHC.units.filter(x => x.group === 3).map(x => x.id)
+          };
+        });
+        const href = id => '#' + other.hash + 'photos/tree/key/' + encodeURIComponent(id);
+        await go(other.hash + 'photos/tree/key/' + encodeURIComponent('g:Chromis'));
+        u = await np();
+        if (
+          u.sel !== 'f:Damselfishes' ||
+          u.last !== 'Chromis' ||
+          u.crumbs.join() !== want.path.slice(0, 2).map(href).join() ||
+          u.rows.join() !== want.chromis.join() ||
+          u.gens ||
+          u.kids.join() !== want.chromis.join() ||
+          !/^(Your ★ cover|Default: )/.test(u.why) ||
+          u.ok ||
+          u.old ||
+          u.top > 0 ||
+          u.wide > 0 ||
+          (w === 1280 && u.cur !== 'g:Chromis')
+        )
+          fails.push(`${w}px Tree: the genus page ${JSON.stringify({...u, rows: u.rows.length, kids: u.kids.length})}`);
+        if (w === 390) await shot('tree-genus-390');
+        // the drill-down: a species of the genus, its own page
+        await p.selectOption('[data-ttkid]', 's091');
+        await settle();
+        u = await np();
+        if (
+          u.hash !== href('s091') ||
+          u.sel !== 'f:Damselfishes' ||
+          u.crumbs.join() !== want.path.slice(0, 3).map(href).join() ||
+          u.rows.join() !== 's091' ||
+          u.kids.length ||
+          !/^(Your ★ cover|Default: )/.test(u.why) ||
+          u.ok ||
+          u.wide > 0 ||
+          (w === 1280 && u.cur !== 's091')
+        )
+          fails.push(`${w}px Tree: the species page ${JSON.stringify(u)}`);
+        // a key group: its families' cards, no unit chosen in the select
+        await go(other.hash + 'photos/tree/key/' + encodeURIComponent(want.k3));
+        u = await np();
+        if (
+          u.sel !== '' ||
+          u.cards.join() !== want.fams3.join() ||
+          u.rows.length ||
+          u.why ||
+          u.wide > 0 ||
+          (w === 1280 && u.cur !== want.k3)
+        )
+          fails.push(`${w}px Tree: a key group ${JSON.stringify(u)}`);
+        if (w === 390) await shot('tree-group-390');
+        await p.click(`.adm-tcard[data-ttc="${want.fams3[0]}"]`);
+        await settle();
+        u = await np();
+        if (u.hash !== href(want.fams3[0]) || u.sel !== want.fams3[0] || !u.ok || !u.gens)
+          fails.push(`${w}px Tree: a group's card ${JSON.stringify({...u, rows: u.rows.length})}`);
+        // A cover picked on a genus's page and on a species' page, each undone and picked again, then Publish, at both widths
+        // (a phone has no tree: the drill-down reaches them), in a context of its own so the published file stays the
+        // demo's for the rest of the pass: the draft holds each pick under its node's id, the bar says it is his, Undo
+        // takes it back, Publish's summary counts them and the published fish part carries them (demo: kept in memory).
+        {
+          const nc = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+          await nc.route(
+            u => !u.href.startsWith(base),
+            r => r.abort()
+          );
+          const q = await nc.newPage(),
+            ne = [],
+            dlg = [];
+          q.on('pageerror', e => ne.push(e.message));
+          q.on('dialog', d => (dlg.push(d.message()), d.accept()));
+          await q.goto(base + 'admin.html?demo#' + other.hash + 'photos/tree/key/' + encodeURIComponent('k:3'));
+          await q
+            .waitForFunction(() => document.querySelector('.adm-tcard'), null, {timeout: 90000})
+            .catch(() => ne.push('the group page never drew'));
+          const nsettle = () => q.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+          const pick = async id => {
+            const f = await q.evaluate(() => {
+              const t = [...document.querySelectorAll('.adm-main .adm-tile[data-play]')].find(
+                x =>
+                  !x.querySelector('[data-fu="cover"]').disabled &&
+                  x.querySelector('[data-fu="cover"]').getAttribute('aria-pressed') !== 'true'
+              );
+              return t && t.dataset.f;
+            });
+            if (!f) return (ne.push(`${id}: no photo to pick`), null);
+            await q.click(`.adm-main .adm-tile[data-f="${f}"] [data-fu="cover"]`);
+            await nsettle();
+            const st = await q.evaluate(
+              ([id, f]) => ({
+                cover: (((DRAFT.fish || {}).genera || {})[id] || {}).cover,
+                why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+                on: document.querySelector(`.adm-main .adm-tile[data-f="${f}"] [data-fu="cover"]`).getAttribute('aria-pressed')
+              }),
+              [id, f]
+            );
+            if (st.cover !== f || !/^Your ★ cover/.test(st.why) || st.on !== 'true') ne.push(`${id}: the pick ${JSON.stringify(st)}`);
+            await q.evaluate(() => undo());
+            await nsettle();
+            const un = await q.evaluate(id => (((DRAFT.fish || {}).genera || {})[id] || {}).cover, id);
+            if (un === f) ne.push(`${id}: Undo left the pick`);
+            await q.click(`.adm-main .adm-tile[data-f="${f}"] [data-fu="cover"]`);
+            await nsettle();
+            return f;
+          };
+          // the group's card, then the drill-down to a genus of several species, then one of its species
+          await q.click(`.adm-tcard[data-ttc="f:Damselfishes"]`);
+          await nsettle();
+          await q.selectOption('[data-ttkid]', 'g:Chromis');
+          await nsettle();
+          const gf = await pick('g:Chromis');
+          await q.selectOption('[data-ttkid]', 's091');
+          await nsettle();
+          const sf = await pick('s091');
+          if (w === 390 && process.env.SHOTS)
+            await q.screenshot({path: require('path').join(process.env.SHOTS, 'tree-species-pick-390.png')});
+          const sum = await q.evaluate(() => pubSummary());
+          if (!/1 fish genus cover/.test(sum) || !/1 fish species cover/.test(sum)) ne.push(`Publish summary ${JSON.stringify(sum)}`);
+          await q.click('#save');
+          await q
+            .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+            .catch(() => ne.push('Publish: no "Published" toast'));
+          const pub = await q.evaluate(() => (SAVED.fish || {}).genera || {});
+          if ((pub['g:Chromis'] || {}).cover !== gf || (pub.s091 || {}).cover !== sf)
+            ne.push(`published ${JSON.stringify({g: pub['g:Chromis'], s: pub.s091, gf, sf})}`);
+          if (ne.length) fails.push(`${w}px Tree: a node's cover picked and published: ${ne.slice(0, 4).join(' | ')}`);
+          await nc.close();
         }
         // The keys (the WAI-ARIA tree pattern), at 1280 where the tree shows: → unfolds the family, ↓ its first genus, Enter
         // opens that genus (the focus stays on it), ← back to the family.
@@ -571,12 +713,6 @@ const WIDTHS = [390, 1280];
             return [want, document.querySelector('.adm-list').scrollTop];
           });
           if (!sc[0] || sc[0] !== sc[1]) fails.push(`${w}px Tree: the tree's scroll after a redraw ${JSON.stringify(sc)}`);
-          // A key group opens its first family, the group the row selected.
-          const kg = await p.evaluate(() => 'k:' + FISHC.units.find(x => x.group === 3).group);
-          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(kg));
-          u = await fu();
-          const f3 = await p.evaluate(() => FISHC.units.find(x => x.group === 3).id);
-          if (u.sel !== f3 || u.cur !== kg) fails.push(`${w}px Tree: a key group ${JSON.stringify({sel: u.sel, cur: u.cur, f3})}`);
           // The tree's small words are readable: 12 px or more (rule U3, the type scale's --fs-xs; Codex review #861).
           const fs = await p.evaluate(() =>
             [...document.querySelectorAll('.adm-tree .adm-ttr, .adm-tree small')].reduce(
@@ -585,17 +721,14 @@ const WIDTHS = [390, 1280];
             )
           );
           if (fs < 12) fails.push(`${w}px Tree: a word of the tree in ${fs} px`);
-          // A genus opened, another page, then Back: the genus is in view again, not the top of its family (Codex review #861).
+          // A genus opened, another page, then Back: the genus's own page again.
           await go(other.hash + 'photos/tree/key/' + encodeURIComponent('g:Chromis'));
           await go(other.hash + 'photos/candidates');
           await p.evaluate(() => history.back());
           await settle();
-          const back = await p.evaluate(() => {
-            const t = document.querySelector('.adm-main .adm-fgen[data-gen="g:Chromis"]');
-            return {hash: location.hash, at: t ? Math.round(t.getBoundingClientRect().top) : null};
-          });
-          if (!/g%3AChromis$/.test(back.hash) || back.at === null || back.at < 0 || back.at > 400)
-            fails.push(`${w}px Tree: Back to a genus ${JSON.stringify(back)}`);
+          const back = await np();
+          if (!/g%3AChromis$/.test(back.hash) || back.last !== 'Chromis' || !back.rows.length)
+            fails.push(`${w}px Tree: Back to a genus ${JSON.stringify({...back, rows: back.rows.length})}`);
         }
         // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers), with the Grammistidae soapfishes
         // since 2026-11-08 (Q248: one family, as in the book); an unknown family shows the first.
@@ -1021,18 +1154,36 @@ const WIDTHS = [390, 1280];
           await settle();
           d = await p.evaluate(f1 => ({out: (DRAFT.fish.out || {})[f1]}), f1);
           if (d.out) fails.push(`${w}px Families: Put back ${JSON.stringify(d)}`);
-          // The genus's and the species' covers (Pierre, 2026-11-13): the bar's ★ Family | ★ Genus | ★ Species switch sets
-          // what ★ Cover sets; each a key of fish genera (the genus's 'g:' id, the species' id), its heading's thumb marked,
-          // one Undo step each; the genus select narrows the page to that genus; Publish names them.
+          // The genus's and the species' covers (Pierre, 2026-11-13), on their node pages (docs/ROADMAP.md "The Tree tab"):
+          // ★ Cover on a genus's page sets the genus's cover, on a species' page the species' (each a key of fish genera: the
+          // genus's 'g:' id, the species' id), one Undo step each; the bar says it is his, and the family's page marks each
+          // photo with the rank it covers and rings each heading's; the drill-down opens the genus; Publish names them.
           const gc = await p.evaluate(sec => {
             const S = document.querySelector(sec);
             return {gid: S.closest('.adm-fgen').dataset.gen, t: [...S.querySelectorAll('.adm-tile[data-play]')].map(x => x.dataset.f)};
           }, sec);
-          await p.click('[data-fucv="1"]');
+          const famHash = other.hash + 'photos/tree/key/' + encodeURIComponent(fam);
+          await p.selectOption('[data-ttkid]', gc.gid);
+          await settle();
+          if ((await p.evaluate(() => location.hash)) !== '#' + other.hash + 'photos/tree/key/' + encodeURIComponent(gc.gid))
+            fails.push(`${w}px Families: the drill-down did not open ${gc.gid}`);
           await p.click(`${sec} [data-f="${gc.t[1]}"] [data-fu="cover"]`);
-          await p.click('[data-fucv="2"]');
+          await settle();
+          const gw = await p.evaluate(() => (document.querySelector('.adm-cvwhy') || {}).textContent || '');
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(order.sid));
           await p.click(`${sec} [data-f="${gc.t[2]}"] [data-fu="cover"]`);
           await settle();
+          const sw = await p.evaluate(
+            b => ({
+              why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+              bar: ((document.querySelector('.adm-filter > .adm-sthumb.mine') || {}).dataset || {}).f,
+              on: (document.querySelector(`[data-f="${b}"] [data-fu="cover"]`) || {getAttribute: () => ''}).getAttribute('aria-pressed')
+            }),
+            gc.t[2]
+          );
+          if (!/^Your ★ cover/.test(gw) || !/^Your ★ cover/.test(sw.why) || sw.bar !== gc.t[2] || sw.on !== 'true')
+            fails.push(`${w}px Families: the genus's and the species' pages ${JSON.stringify({gw, sw})}`);
+          await go(famHash);
           const cvs = () =>
             p.evaluate(
               ([sec, gid, sid, a, b]) => ({
@@ -1042,9 +1193,6 @@ const WIDTHS = [390, 1280];
                 sh: !!document.querySelector(`${sec} > h3 .adm-hthumb.mine[data-f="${b}"]`),
                 ma: (document.querySelector(`${sec} [data-f="${a}"] .adm-covermark`) || {}).textContent || '',
                 mb: (document.querySelector(`${sec} [data-f="${b}"] .adm-covermark`) || {}).textContent || '',
-                on: (document.querySelector(`${sec} [data-f="${b}"] [data-fu="cover"]`) || {getAttribute: () => ''}).getAttribute(
-                  'aria-pressed'
-                ),
                 fam: ((DRAFT.fish.genera || {})[FISHC.species[sid].family] || {}).cover,
                 sum: pubSummary()
               }),
@@ -1058,7 +1206,6 @@ const WIDTHS = [390, 1280];
             !d.sh ||
             !/Genus/.test(d.ma) ||
             !/Species/.test(d.mb) ||
-            d.on !== 'true' ||
             d.fam !== f0 ||
             !/1 fish genus cover/.test(d.sum) ||
             !/1 fish species cover/.test(d.sum)
@@ -1068,18 +1215,8 @@ const WIDTHS = [390, 1280];
           await settle();
           d = await cvs();
           if (d.s || d.g !== gc.t[1] || d.sh) fails.push(`${w}px Families: Undo of the species cover ${JSON.stringify(d)}`);
-          await p.click('[data-fucv="0"]');
-          const gn = await p.evaluate(() => document.querySelectorAll('[data-fugen] option').length);
-          if (gn > 2) {
-            await p.selectOption('[data-fugen]', gc.gid);
-            await settle();
-            d = await p.evaluate(() => [...document.querySelectorAll('.adm-fgen')].map(x => x.dataset.gen));
-            if (d.join() !== gc.gid) fails.push(`${w}px Families: narrowed to ${gc.gid}: ${JSON.stringify(d)}`);
-            await p.selectOption('[data-fugen]', '');
-            await settle();
-          } else fails.push(`${w}px Families: no genus select on a family of several genera`);
-          // A juvenile is never a cover (Pierre, 2026-11-13): a photo tagged juvenile has ★ Cover off at every rank; a pick
-          // already on one is ignored (the species heading shows another photo) and flagged, on the tile and in the bar.
+          // A juvenile is never a cover (Pierre, 2026-11-13): a photo tagged juvenile has ★ Cover off on every node's page;
+          // a pick already on one is ignored (the species heading shows another photo) and flagged, on the tile and in the bar.
           const jf = gc.t[3] || gc.t[0];
           await p.evaluate(f => {
             DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', fishTag(fuJt(DRAFT.fish, f) || 'p1g0sl1', 'j'));
@@ -1087,21 +1224,27 @@ const WIDTHS = [390, 1280];
             render();
           }, jf);
           await settle();
-          const jv = () =>
-            p.evaluate(
-              ([sec, f]) =>
-                [0, 1, 2].map(i => {
-                  document.querySelector(`[data-fucv="${i}"]`).click();
-                  const b = document.querySelector(`${sec} [data-f="${f}"] [data-fu="cover"]`);
-                  return {
-                    dis: !!(b && b.disabled),
-                    flag: !!document.querySelector(`${sec} [data-f="${f}"] .adm-fjcv`),
-                    bar: !!document.querySelector('.adm-fjign'),
-                    head: ((document.querySelector(`${sec} > h3 .adm-hthumb`) || {}).dataset || {}).f
-                  };
-                }),
-              [sec, jf]
-            );
+          const jv = async () => {
+            const out = [];
+            for (const id of [fam, gc.gid, order.sid]) {
+              await go(other.hash + 'photos/tree/key/' + encodeURIComponent(id));
+              out.push(
+                await p.evaluate(
+                  ([sec, f]) => {
+                    const b = document.querySelector(`${sec} [data-f="${f}"] [data-fu="cover"]`);
+                    return {
+                      dis: !!(b && b.disabled),
+                      flag: !!document.querySelector(`${sec} [data-f="${f}"] .adm-fjcv`),
+                      bar: !!document.querySelector('.adm-fjign'),
+                      head: ((document.querySelector(`${sec} > h3 .adm-hthumb`) || {}).dataset || {}).f
+                    };
+                  },
+                  [sec, jf]
+                )
+              );
+            }
+            return out;
+          };
           d = await jv();
           if (!d.every(x => x.dis && !x.flag && !x.bar)) fails.push(`${w}px Families: ★ Cover on a juvenile ${JSON.stringify(d)}`);
           await p.evaluate(
@@ -1116,7 +1259,7 @@ const WIDTHS = [390, 1280];
           d = await jv();
           if (!d[2] || d[2].dis || !d[2].flag || !d[2].bar || d[2].head === jf || d[0].dis !== true)
             fails.push(`${w}px Families: a species cover on a juvenile ignored and flagged ${JSON.stringify(d)}`);
-          await p.click('[data-fucv="0"]');
+          await go(famHash);
           // Other species in view (Q323): an add whose count is k (confusion possible) or the legacy m with no pass to sort
           // it is out of play, listed apart with Keep in play (count o) and Remove; Keep in play puts it back, one Undo step.
           const ko = await p.evaluate(sid => {
