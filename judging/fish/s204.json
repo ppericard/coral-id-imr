@@ -364,6 +364,25 @@
    "code": "o1g1smk2",
    "keep": "dup",
    "phase": "terminal"
+  },
+  "fish-s204-cand-280596816": {
+   "code": "p1g1sl14",
+   "keep": "dup"
+  },
+  "fish-s204-cand-469143906": {
+   "code": "o1g2sl12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s204-cand-469143909": {
+   "code": "o1g2sl12",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s204-cand-479537130": {
+   "code": "p1g2slk1",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }

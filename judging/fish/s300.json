@@ -159,6 +159,10 @@
   "fish-s300-cand-327610704": {
    "code": "p1g0sl14",
    "keep": "dup"
+  },
+  "fish-s300-cand-338946917": {
+   "code": "p1g0sl15",
+   "keep": "best"
   }
  }
 }
