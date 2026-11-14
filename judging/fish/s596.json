@@ -314,8 +314,12 @@
    "keep": "best"
   },
   "fish-s596-cand-597809727": {
-   "code": "o1g0ssoj2",
-   "keep": "best"
+   "code": "o1g0sskj2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a dark fish of about the same size lies in the hollow below the juvenile: confusion possible"
   },
   "fish-s596-cand-621666075": {
    "code": "p1g0sl14",

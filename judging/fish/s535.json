@@ -321,12 +321,20 @@
    "keep": "best"
   },
   "fish-s535-cand-458656450": {
-   "code": "o1g1smo3",
-   "keep": "best"
+   "code": "o1g1smk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a pale damselfish of another genus, half its size, sharp beside the anemone: confusion possible"
   },
   "fish-s535-cand-458656463": {
-   "code": "o1g1smo3",
-   "keep": "dup"
+   "code": "o1g1smk2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "the same pale damselfish of another genus as the observation's best: confusion possible"
   },
   "fish-s535-cand-691192858": {
    "code": "p1g0sms3",

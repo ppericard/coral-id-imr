@@ -72894,8 +72894,8 @@
    "k": "dup"
   },
   "fish-s229-cand-716644": {
-   "jt": "p1d0smoj",
-   "e": 2,
+   "jt": "p1d0smkj",
+   "e": 1,
    "k": "best"
   },
   "fish-s229-cand-82290439": {
@@ -91180,9 +91180,13 @@
    "k": "best"
   },
   "fish-s314-cand-79995172": {
-   "jt": "p1g0slo",
+   "jt": "p1g0slk",
    "e": 3,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "a grouper about a third of its length sits sharp on the lizardfish's back: confusion possible"
   },
   "fish-s315-cand-254552688": {
    "jt": "p1g2sl1c",
@@ -138858,14 +138862,22 @@
    "k": "best"
   },
   "fish-s535-cand-458656450": {
-   "jt": "o1g1smo",
-   "e": 3,
-   "k": "best"
+   "jt": "o1g1smk",
+   "e": 2,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "a pale damselfish of another genus, half its size, sharp beside the anemone: confusion possible"
   },
   "fish-s535-cand-458656463": {
-   "jt": "o1g1smo",
-   "e": 3,
-   "k": "dup"
+   "jt": "o1g1smk",
+   "e": 2,
+   "k": "dup",
+   "u": [
+    "code"
+   ],
+   "n": "the same pale damselfish of another genus as the observation's best: confusion possible"
   },
   "fish-s535-cand-51003579": {
    "jt": "h1g0sm1",
@@ -139583,9 +139595,13 @@
    "k": "best"
   },
   "fish-s536-cand-81385287": {
-   "jt": "o1g1mmo",
+   "jt": "o1g1mmk",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "a yellow goby sits on the bottle, half the damselfish's size and sharp: confusion possible"
   },
   "fish-s536-cand-904118": {
    "jt": "p1g0sms",
@@ -154729,9 +154745,13 @@
    "k": "dup"
   },
   "fish-s596-cand-597809727": {
-   "jt": "o1g0ssoj",
+   "jt": "o1g0sskj",
    "e": 2,
-   "k": "best"
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "a dark fish of about the same size lies in the hollow below the juvenile: confusion possible"
   },
   "fish-s596-cand-599137594": {
    "jt": "p1g1smx",
