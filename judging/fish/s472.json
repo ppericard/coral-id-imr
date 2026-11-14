@@ -167,6 +167,18 @@
   "fish-s472-cand-176546286": {
    "code": "p1g3mms2",
    "keep": "best"
+  },
+  "fish-s472-cand-176546293": {
+   "code": "p1g3mms2",
+   "keep": "dup"
+  },
+  "fish-s472-cand-176546301": {
+   "code": "p1g3bms1",
+   "keep": "dup"
+  },
+  "fish-s472-cand-451093186": {
+   "code": "p1g0slsa2",
+   "keep": "best"
   }
  }
 }
