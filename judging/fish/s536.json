@@ -259,6 +259,14 @@
   "fish-s536-cand-270546207": {
    "code": "p1g1sl14",
    "keep": "dup"
+  },
+  "fish-s536-cand-356996510": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s536-cand-724480053": {
+   "code": "p1g2bs11",
+   "keep": "best"
   }
  }
 }

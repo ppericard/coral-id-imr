@@ -95,6 +95,58 @@
   "fish-s014-cand-fb-Chcit_u0": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s014-cand-332212987": {
+   "code": "o1g1mss2",
+   "keep": "best"
+  },
+  "fish-s014-cand-701369711": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s014-cand-728007504": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s014-cand-619606267": {
+   "code": "p1g1smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a large dark fish just behind it, about its size, its shape hard to read: confusion possible"
+  },
+  "fish-s014-cand-625749676": {
+   "code": "p1g1sms4",
+   "keep": "best"
+  },
+  "fish-s014-cand-730140998": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s014-cand-731277095": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s014-cand-427594031": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s014-cand-621611070": {
+   "code": "p1g1smk3",
+   "keep": "best"
+  },
+  "fish-s014-cand-637578874": {
+   "code": "p1g1ms12",
+   "keep": "best"
+  },
+  "fish-s014-cand-728007560": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s014-cand-617603463": {
+   "code": "o1g1ms1j1",
+   "keep": "best"
   }
  }
 }
