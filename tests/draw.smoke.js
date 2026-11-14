@@ -700,15 +700,29 @@ const server = http.createServer((req, res) => {
         const early = star.filter(n => seen.has(n));
         if (early.length) fails.push(`opening draw: ★ ${early.join(', ')} drawn before their references`);
         if (!refs.some(r => seen.has(r))) fails.push('opening draw: no reference drawn');
+        // Once nothing holds them back, every ★ genus opens: drawn one after the other (each marked met, as a card does),
+        // until none is left; which comes first follows the confusion groups (model.js openPick tiers), so one draw
+        // from a fixed state need not reach every one of them.
+        const openAllOf = (L, why) => {
+          const was = {...INTROS};
+          for (let k = 0; k < 20; k++) {
+            for (let left = star.length; left-- > 0 && L.some(n => !introduced(n));) {
+              const n = openFrom(L);
+              if (!star.includes(n)) fails.push(`opening draw (${why}): ${n} drawn, not a ★ genus`);
+              INTROS[n] = [0, 1, 0, 'c'];
+            }
+            const never = star.filter(n => L.includes(n) && !introduced(n));
+            if (never.length) fails.push(`opening draw (${why}): ★ ${never.join(', ')} never drawn`);
+            INTROS = {...was};
+          }
+        };
         refs.forEach(r => (INTROS[r] = [0, 1, 0, 's']));
-        seen.clear();
-        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool()));
-        if (!star.every(n => seen.has(n)))
-          fails.push(`opening draw: references met, ★ ${star.filter(n => !seen.has(n)).join(', ')} never drawn`);
+        openAllOf(pool(), 'references met');
         refs.forEach(r => delete INTROS[r]);
-        seen.clear();
-        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool().filter(n => !refs.includes(n))));
-        if (!star.every(n => seen.has(n))) fails.push('opening draw: ★ genera held back by references out of the list');
+        openAllOf(
+          pool().filter(n => !refs.includes(n)),
+          'references out of the list'
+        );
         P = {};
         INTROS = {};
       }
