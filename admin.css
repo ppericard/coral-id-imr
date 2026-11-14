@@ -5291,12 +5291,92 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   background: var(--good-bg);
   font-weight: 600;
 }
-/* The fish units page (admin plan PR 6 on the book's families): the key group headings of the family list, the IMR tag,
+/* Photos › Tree (Pierre, 2026-11-13, Q340): the tree at the left, one row per node, indented by its level (--lv), the
+   ▸ / ▾ to unfold; a family's row as the list had it (.adm-g, its cover); the rank a small grey word. Then the IMR tag,
    the All | IMR filter, one block per genus with its species inside. */
-.adm-fgrp {
-  margin: 10px 4px 2px;
-  font-size: 0.75rem;
+@media (min-width: 821px) {
+  .adm.adm-treep {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+.adm-tree {
+  display: grid;
+  gap: 1px;
+}
+.adm-tt {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  padding-left: calc(var(--lv, 0) * 12px);
+  border-radius: var(--r-sm);
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+.adm-tt:hover {
+  background: var(--surface-2);
+}
+.adm-tt.cur {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--accent);
+}
+.adm-tt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.adm-ttw {
+  flex: 0 0 18px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.adm-tt > .adm-g {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px 4px 0;
+}
+.adm-tt > .adm-g small {
+  font-size: var(--fs-xs);
+}
+.adm-tt > .adm-g:hover {
+  background: none;
+}
+.adm-ttn {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px 3px 0;
+}
+.adm-ttn small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.adm-ttk {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.adm-ttr {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+}
+.adm-tt > .dots {
+  padding-right: 8px;
+}
+.adm-tt .dot {
+  color: var(--bad);
+  font-size: 0.8rem;
+}
+/* A genus or species the tree opens scrolls to just under the header and the page's sticky bar. */
+.adm-main .adm-fgen,
+.adm-main .adm-row[data-sid] {
+  scroll-margin-top: calc(var(--hdr-h, 64px) + 64px);
 }
 .adm-src.adm-imrt {
   border-color: var(--accent);
