@@ -163,6 +163,18 @@
     "code"
    ],
    "note": "other squirrelfishes and soldierfishes of other genera beside it, as large and sharp: confusion possible"
+  },
+  "fish-s278-cand-685382329": {
+   "code": "o0g0sl12",
+   "keep": "alt"
+  },
+  "fish-s278-cand-685382452": {
+   "code": "o0g0sl12",
+   "keep": "dup"
+  },
+  "fish-s278-cand-658926518": {
+   "code": "p1g0sl14",
+   "keep": "alt"
   }
  }
 }

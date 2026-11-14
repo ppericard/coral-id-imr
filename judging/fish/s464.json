@@ -207,6 +207,90 @@
   "fish-s464-cand-688400275": {
    "code": "o1g3msx1",
    "keep": "dup"
+  },
+  "fish-s464-cand-358682053": {
+   "code": "p1g2ml12",
+   "keep": "alt"
+  },
+  "fish-s464-cand-358992851": {
+   "code": "p1g2sm1j2",
+   "keep": "dup"
+  },
+  "fish-s464-cand-358992855": {
+   "code": "h1g2smsj2",
+   "keep": "dup"
+  },
+  "fish-s464-cand-358992856": {
+   "code": "p1g2sl1j2",
+   "keep": "dup"
+  },
+  "fish-s464-cand-358992868": {
+   "code": "p1g1sl1j2",
+   "keep": "dup"
+  },
+  "fish-s464-cand-735206128": {
+   "code": "h0g1sls2",
+   "keep": "dup"
+  },
+  "fish-s464-cand-697721574": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s464-cand-692507341": {
+   "code": "p0g2ml12",
+   "keep": "best"
+  },
+  "fish-s464-cand-756219164": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s464-cand-fb-Trobe_u1": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s464-cand-fb-Trobe_u4": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s464-cand-553617033": {
+   "code": "h1g2sl12",
+   "keep": "dup"
+  },
+  "fish-s464-cand-553616155": {
+   "code": "o1g2sl12",
+   "keep": "alt"
+  },
+  "fish-s464-cand-553616215": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s464-cand-33539538": {
+   "code": "o1d1ml12",
+   "keep": "best"
+  },
+  "fish-s464-cand-107498121": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s464-cand-434383418": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s464-cand-28939295": {
+   "code": "p1g1ssk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a dark fish about a third of the shark's size beside its head, as sharp: confusion possible, not certain"
+  },
+  "fish-s464-cand-28939303": {
+   "code": "p0g1sso2",
+   "keep": "dup"
+  },
+  "fish-s464-cand-100218284": {
+   "code": "p0g1sl13",
+   "keep": "best"
   }
  }
 }
