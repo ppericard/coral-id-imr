@@ -2231,6 +2231,16 @@ while they are juxtaposed: the study's §2).
   the change closes), and how many units entered the exam with a group partner not met (where the exam gate would
   have bitten).
 
+**Added after the first look** (declared before running; exploratory, uncorrected): the corals' app world breached
+guardrails at the start of the path (the beginner's first unit at Open Water about 45 answers later, the right % of
+answers 1-50 of the beginner and the lecture RA 3-8 points lower). To show Pierre where the cost comes from, three
+arms on one scratch copy of this branch patched in turn, the same world and seeds (501-510, 300 questions, both
+learners), the beginner, the lecture RA and the strong RA, each against the base: **S** the study's rule before f
+changed (groups by average linkage alone, no declared pair forced, no pull of a pair the cap split); **F** this branch
+with the first cards (`INTRO.START`) drawn as on `main` (the groups from the first card after them); **N** this branch
+without the pull of a declared pair the cap split (tier 2). F and N together only if neither alone holds. Read: the
+partners' gap, the look-alike accuracy at 300 and `tools/learncmp.js`'s guardrails, as above. No constant moves.
+
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
 Two players' runs collapsed on the evening of 2026-11-03, after #408 (one opening rule, merged 11:34 UTC) and #413 (no
