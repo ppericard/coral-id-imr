@@ -368,20 +368,10 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
 KEEP = ('f', 'o', 'src', 'a', 'lic', 't')
 
 
-def named(r, sid, orig, species):
-    """Names record r after species sid (fish.json species: the WoRMS accepted name, else the PDF's) when its source's name
-    is not the species': a photo Pierre moved with Not this (orig, its fish-cand.json species, is not sid), never the
-    identification he corrected (Codex review #614); a photo of a species whose photos come from another iNaturalist taxon
-    (photoTaxon: Pierre, 2026-11-14, Q354 b, "the IMR names stay on screen"), never that taxon's name."""
-    s = (species or {}).get(sid) or {}
-    if ((orig and orig != sid) or s.get('photoTaxon')) and (s.get('now') or s.get('name')):
-        r['t'] = s.get('now') or s.get('name')
-    return r
-
-
 def record(sid, p, F, sug, orig=None, species=None, route=None):
-    """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them), named by named (a
-    photo Pierre moved with Not this, a species with a photo taxon). route (in_play):
+    """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
+    with Not this (orig, its fish-cand.json species, is not sid) is named after its new species (fish.json species: the
+    WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614). route (in_play):
     "cand" or "ref" for a photo that entered automatically, recorded as auto (core.js fishIn); a reference photo keeps its
     judged e and jt, and from (cover, taxon, fishbase)."""
     if route == 'ref':
@@ -390,9 +380,12 @@ def record(sid, p, F, sug, orig=None, species=None, route=None):
         for k in ('via', 'rep', 'from', 'own'):
             if p.get(k):
                 r[k] = p[k]
-        return named(r, sid, None, species)
+        return r
     f, j = p['f'], (sug or {}).get(p['f']) or {}
-    r = named({k: p[k] for k in KEEP if k in p}, sid, orig, species)
+    r = {k: p[k] for k in KEEP if k in p}
+    s = (species or {}).get(sid) or {}
+    if orig and orig != sid and (s.get('now') or s.get('name')):
+        r['t'] = s.get('now') or s.get('name')
     r.update(sp=sid, loc=p.get('loc') or 'world')
     if p.get('own'):
         r['own'] = True
