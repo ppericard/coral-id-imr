@@ -974,12 +974,13 @@ comparison of look-alikes, the other way round from the photo quiz (Kang & Pashl
   `photoAlert_`). The sheet stores the mode as it comes (no column change, no gate: rule D4). The replay scores a `|f` row
   exactly as the same row without it (`tests/findx.test.js`).
 
-**Checked** (rule L11, level 1: one kind of unit, the fish families with a tile, in a rare situation, about 2-3% of the
-questions; the app world, the fish profiles, 300 questions, `node tools/learnsim.js --subject fish`, `main` against the
-branch on the same seeds, `node tools/learncmp.js`; guardrails only, no primary: the format is not meant to move a
-measure in 300 questions; two looks declared after the first: 5 seeds, then 20). The rated world has no contrast question
-(no Again, no duel), so it cannot see this change; the real log holds no answer of this format yet (rule L12: nothing to
-replay; the scoring of every existing answer is unchanged). At 20 seeds, one-sided 95% bound of the paired difference:
+**Checked** (rule L11, level 2, as the integrator raised it: a change to the draw; about 2-3% of the fish questions, on
+the families with a tile). The app world: the fish profiles, 300 questions, `node tools/learnsim.js --subject fish`,
+`main` against the branch on the same seeds, `node tools/learncmp.js`; guardrails only, no primary (the format is not
+meant to move a measure in 300 questions); looks: 5 seeds, then 20, then 40 for the one cell left unclear (level 3).
+The rated world is not run: its planner has no contrast question (no Again, no duel), so it cannot see this change. The
+real log holds no answer of this format yet (rule L12: nothing to replay; the scoring of every existing answer is
+unchanged). At 20 seeds, one-sided 95% bound of the paired difference:
 
 | Guardrail (margin) | Beginner | Casual diver | Lecture RA | Strong RA | Expert |
 | --- | --- | --- | --- | --- | --- |
@@ -994,10 +995,26 @@ replay; the scoring of every existing answer is unchanged). At 20 seeds, one-sid
 | Duels by 300 (before → after) | 12.4 → 11.6 | 14.1 → 11.8 | 14.3 → 16.9 | 19.8 → 19.5 | 20.4 → 19.6 |
 | Right % (before → after) | 86.7 → 85.4 | 85.5 → 85.4 | 90.0 → 90.5 | 95.5 → 94.5 | 96.2 → 97.0 |
 
-Every guardrail held but one cell: the casual diver's wait for the first family at Open Water, the same mean before and
-after (73.2 answers) and its bound 0.4 answers past its margin, a noisy measure (the paired differences' SD 39 answers). At the
-first look (5 seeds) the lecture RA's longest plateau read +10 [+18] against +8 (breached) and three over-claim cells
-were unclear; with 20 seeds both hold (+2 [+7]; the over-claim at most +0.029). A different question changes every later
+At 20 seeds every guardrail held but one cell: the casual diver's wait for the first family at Open Water, the same
+mean before and after (73.2 answers) and its bound 0.4 answers past its margin, a noisy measure (the paired differences'
+SD 39 answers). At the first look (5 seeds) the lecture RA's longest plateau read +10 [+18] against +8 (breached) and
+three over-claim cells were unclear; with 20 seeds both hold (+2 [+7]; the over-claim at most +0.029).
+
+**Level 3 for that cell** (declared before running: the casual diver alone, seeds 1-40, `main` 338eebf1 against the
+branch, the third look at this comparison, so one-sided bounds at 1 − 0.10/3 = 96.7%, every guardrail of the profile
+re-read; a breach would go to Pierre). Every one holds:
+
+| Casual diver, 40 seeds (margin) | before → after | difference [96.7% bound] |
+| --- | --- | --- |
+| True knowledge at 300 (−0.02) | 0.397 → 0.397 | −0.000 [−0.002] |
+| E = bar − D\* at 300 (+0.03) | −0.343 → −0.342 | +0.001 [+0.018] |
+| Answers to the first family at Open Water (+14.7) | 73.3 → 73.5 | +0.2 [+12.5] |
+| Families at Open Water at 300 (−2) | 7.1 → 7.3 | +0.2 [−0.6] |
+| Longest plateau (+11) | 56 → 52 | −4 [+3] |
+| Share under ease 4 before Open Water (+0.05) | 0.092 → 0.088 | −0.004 [+0.003] |
+| Families met at 100 / 300 (−2) | 17.9 → 18.1 / 32 → 32 | +0.2 [−0.3] / 0 |
+
+(5.3 Find the X by question 300; duels 13.0 → 12.9; right 86.0% → 86.4%.) A different question changes every later
 draw of the run, so the pairs differ by more than the format alone: the spreads above are the draw's.
 
 ### Custom quiz: the photo quiz on the genera the player picks (2026-11-03)
