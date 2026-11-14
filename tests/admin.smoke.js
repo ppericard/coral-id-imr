@@ -666,6 +666,20 @@ const WIDTHS = [390, 1280];
           const pub = await q.evaluate(() => (SAVED.fish || {}).genera || {});
           if ((pub['g:Chromis'] || {}).cover !== gf || (pub.s091 || {}).cover !== sf)
             ne.push(`published ${JSON.stringify({g: pub['g:Chromis'], s: pub.s091, gf, sf})}`);
+          // A node he covered whose rule picks another photo, still open: its page links to Cover proposals, which shows it.
+          const pn = await q.evaluate(() => (coverOpen(coverList(), DRAFT.fish)[0] || {}).id || null);
+          if (pn) {
+            await q.evaluate(h => (location.hash = h), '#' + other.hash + 'photos/tree/key/' + encodeURIComponent(pn));
+            await nsettle();
+            const ln = await q.$('.adm-cvwhy a');
+            if (!ln) ne.push(`${pn}: no link to its cover proposal`);
+            else {
+              await ln.click();
+              await q
+                .waitForFunction(n => document.querySelector(`.adm-cprop[data-n="${n}"]`), pn, {timeout: 30000})
+                .catch(() => ne.push(`${pn}: its cover proposal not shown`));
+            }
+          }
           if (ne.length) fails.push(`${w}px Tree: a node's cover picked and published: ${ne.slice(0, 4).join(' | ')}`);
           await nc.close();
         }
@@ -1194,6 +1208,9 @@ const WIDTHS = [390, 1280];
                 ma: (document.querySelector(`${sec} [data-f="${a}"] .adm-covermark`) || {}).textContent || '',
                 mb: (document.querySelector(`${sec} [data-f="${b}"] .adm-covermark`) || {}).textContent || '',
                 fam: ((DRAFT.fish.genera || {})[FISHC.species[sid].family] || {}).cover,
+                // the draft's dot on the genus's and the species' rows of the tree (unfolded on the way to their pages)
+                gdot: !!document.querySelector(`.adm-tree [data-tt="${gid}"] .dot`),
+                sdot: !!document.querySelector(`.adm-tree [data-tt="${sid}"] .dot`),
                 sum: pubSummary()
               }),
               [sec, gc.gid, order.sid, gc.t[1], gc.t[2]]
@@ -1207,6 +1224,8 @@ const WIDTHS = [390, 1280];
             !/Genus/.test(d.ma) ||
             !/Species/.test(d.mb) ||
             d.fam !== f0 ||
+            !d.gdot ||
+            !d.sdot ||
             !/1 fish genus cover/.test(d.sum) ||
             !/1 fish species cover/.test(d.sum)
           )
