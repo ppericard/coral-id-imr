@@ -976,8 +976,9 @@ const WIDTHS = [390, 1280];
           x = await tf();
           if (x.on || set(x.fams) !== set(want.all)) fails.push(`${w}px Tree tags: no tag ${JSON.stringify({...x, fams: x.fams.length})}`);
           // Draft finds every edit Publish would send (Codex review #898): a photo's crop, rotation, ease, phase or tags alone
-          // put its species under Draft (and its row's dot), each tried alone on a species with nothing else unpublished,
-          // the draft as it was after.
+          // put its species under Draft (and its row's dot), and so does Remove or × on a game photo the records do not hold
+          // (it leaves play: its species read from the game's list), each tried alone on a species with nothing else
+          // unpublished, the draft as it was after.
           const dr = await p.evaluate(() => {
             const T = fuTreeOf(FISHC.units),
               F0 = JSON.stringify(DRAFT.fish || {}),
@@ -987,10 +988,12 @@ const WIDTHS = [390, 1280];
                 return {pass: ttPass(T, [fuFilters(T, FISHC.units, E, D).find(x => x.k === 'draft').on]), D};
               },
               before = on(),
-              sid = Object.keys(before.D.play).find(s => T.node.has(s) && !before.pass.has(s) && before.D.play[s].length),
-              f = sid && before.D.play[sid][0].f,
+              // a game photo in play that the records (FISHC.byF) do not hold
+              gameOnly = s => (before.D.play[s] || []).find(p => !FISHC.byF[p.f]),
+              sid = Object.keys(before.D.play).find(s => T.node.has(s) && !before.pass.has(s) && gameOnly(s)),
+              f = sid && gameOnly(sid).f,
               miss = [];
-            if (!f) return {miss: ['no species free of draft changes']};
+            if (!f) return {miss: ['no species free of draft changes with a game-only photo']};
             [
               ['crop', [0.1, 0.1, 0.9, 0.9]],
               ['rot', 90],
@@ -1000,6 +1003,13 @@ const WIDTHS = [390, 1280];
             ].forEach(([k, v]) => {
               DRAFT.fish = JSON.parse(F0);
               DRAFT.fish[k] = {...(DRAFT.fish[k] || {}), [f]: v};
+              if (!on().pass.has(sid)) miss.push(k);
+            });
+            [
+              ['remove', fishReject],
+              ['exclude', fishExclude]
+            ].forEach(([k, fn]) => {
+              DRAFT.fish = fn(JSON.parse(F0), f);
               if (!on().pass.has(sid)) miss.push(k);
             });
             DRAFT.fish = JSON.parse(F0);
