@@ -317,6 +317,20 @@
   "fish-s510-cand-631709926": {
    "code": "p1g1smk1",
    "keep": "best"
+  },
+  "fish-s510-cand-601226": {
+   "code": "p1g0slo4",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s510-cand-760897172": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s510-cand-256521644": {
+   "code": "p1g0sls4",
+   "keep": "best",
+   "phase": "female"
   }
  }
 }

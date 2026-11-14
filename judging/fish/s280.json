@@ -191,6 +191,26 @@
   "fish-s280-cand-347086819": {
    "code": "o1g0sl14",
    "keep": "best"
+  },
+  "fish-s280-cand-323410623": {
+   "code": "p1d2sss1",
+   "keep": "dup"
+  },
+  "fish-s280-cand-323410645": {
+   "code": "p1d2sss1",
+   "keep": "dup"
+  },
+  "fish-s280-cand-696468728": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s280-cand-761569236": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s280-cand-761569221": {
+   "code": "p1g0sm1a2",
+   "keep": "dup"
   }
  }
 }
