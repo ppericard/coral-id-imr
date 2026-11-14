@@ -155,6 +155,22 @@
   "fish-s428-cand-484433399": {
    "code": "d1g0sm1c1",
    "keep": "best"
+  },
+  "fish-s428-cand-752901338": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s428-cand-754049945": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s428-cand-474784714": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s428-cand-474784709": {
+   "code": "o1g1ss11",
+   "keep": "dup"
   }
  }
 }
