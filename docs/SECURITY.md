@@ -122,7 +122,8 @@ The pooled stats' snapshot (sheet vNEXT, the `Stats` tab, ARCHITECTURE.md "Progr
 id and never by name, each player's trust counts, ability, photo memory and the last day's answers (unit, answer, mode,
 photos, choices, expectation), never served. A delete, a merge or an archive (`rosterChanged_`), a change to who is left
 out of the statistics and `anonDelete` blank it at once and drop the reply served (`statsDirty_`), and the next run of
-the trigger builds it again from the Answers tab as it is then; meanwhile `?stats=1` makes the stats from the whole log
+the trigger builds it again from the Answers tab as it is then (a run writes under the script lock, which a delete
+holds, and writes nothing when one came since it began); meanwhile `?stats=1` makes the stats from the whole log
 as before. The reply it serves holds what `?stats=1` always sent (photo ratings, confusions, offsets), no player.
 
 ## If it happens

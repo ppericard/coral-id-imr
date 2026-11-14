@@ -1059,7 +1059,7 @@ function stats_(read){
 // reads it, and a new format rebuilds it. Rule D7: any delete, merge or archive (rosterChanged_) blanks it at once
 // (statsDirty_), before the next run builds it again without the account. The cursor is mirrored in the Script Property
 // STATS.PROP; the two disagreeing (a run cut between its writes) rebuild too.
-const STATS = {TAB: 'Stats', HEAD: ['Part', 'Version', 'Updated', 'Rows', 'Roster', 'Note', 'Data'], FMT: 1, LAG: 864e5, ROWS: 2000, RUN_ROWS: 30000, BUDGET: 60000, UNTIL: 240000, AGE: 36e5, TTL: 1200, PROP: 'STATS_FOLD', DIRTY: 'STATS_DIRTY', ON: true};
+const STATS = {TAB: 'Stats', HEAD: ['Part', 'Version', 'Updated', 'Rows', 'Roster', 'Note', 'Data'], FMT: 1, LAG: 864e5, ROWS: 2000, RUN_ROWS: 30000, BUDGET: 60000, UNTIL: 240000, AGE: 36e5, TTL: 1200, LOCK_MS: 10000, PROP: 'STATS_FOLD', DIRTY: 'STATS_DIRTY', ON: true};
 const STATS_DATA = STATS.HEAD.length - 1;  // the first chunk's index (column G)
 const statsCacheKey_ = () => 'statsS' + VERSION;
 // Writes one part (row 2 served, row 3 the fold): its cells, then the JSON in CHUNK-character cells, each with a
@@ -1212,15 +1212,22 @@ function statsFold_(o){
   if (caught) S.why = '';
   const json = statsJson_(S);
   if (caught) { S.pend.forEach(m => statsStep_(S, m, tr(m[2]), sx.has(m[2]), idx)); served = JSON.stringify(statsOut_(S)); }
-  // A rewrite of the log while this run read it: what it folded is stale, so nothing is written (the next run rebuilds).
-  if (dirty() !== mark) return {why: why, read: read, settled: settled, pending: S.pend.length, caught: false, ms: Date.now() - t0, stale: true};
-  const note = 'built from ' + new Date(S.built).toISOString() + ' (' + S.cause + '), ' + S.runs + ' run' + (S.runs === 1 ? '' : 's') + (caught ? '' : ', going on');
-  statsPut_(tab, 3, ['state', VERSION, new Date(), S.c, S.roster, note], json);
-  props.setProperty(STATS.PROP, JSON.stringify({c: S.c, at: S.at, v: VERSION}));
-  if (served !== null) {
-    statsPut_(tab, 2, ['served', VERSION, new Date(), S.c, S.roster, ''], served);
-    if (rosterAt_() <= S.roster) try { cacheBigPut_(CacheService.getScriptCache(), statsCacheKey_(), served, STATS.TTL); } catch (e) {}
-  }
+  // Written under the script lock (Codex review #882), which every rewrite of the log and every delete, merge or archive
+  // holds: one of them while this run read the log, or now, and nothing is written (what this run folded is stale; the
+  // next run rebuilds), so a fold never puts back what a delete just blanked (rule D7). The lock busy: the next run.
+  const stale = {why: why, read: read, settled: settled, pending: S.pend.length, caught: false, ms: Date.now() - t0, stale: true};
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(STATS.LOCK_MS)) return stale;
+  try {
+    if (dirty() !== mark || rosterAt_() > S.roster) return stale;
+    const note = 'built from ' + new Date(S.built).toISOString() + ' (' + S.cause + '), ' + S.runs + ' run' + (S.runs === 1 ? '' : 's') + (caught ? '' : ', going on');
+    statsPut_(tab, 3, ['state', VERSION, new Date(), S.c, S.roster, note], json);
+    props.setProperty(STATS.PROP, JSON.stringify({c: S.c, at: S.at, v: VERSION}));
+    if (served !== null) {
+      statsPut_(tab, 2, ['served', VERSION, new Date(), S.c, S.roster, ''], served);
+      try { cacheBigPut_(CacheService.getScriptCache(), statsCacheKey_(), served, STATS.TTL); } catch (e) {}
+    }
+  } finally { lock.releaseLock(); }
   tim_('stats fold', t0, read, LOG.length);
   return {why: why, built: built, read: read, settled: settled, pending: S.pend.length, caught: caught, rows: S.c, ms: Date.now() - t0, runs: S.runs};
 }

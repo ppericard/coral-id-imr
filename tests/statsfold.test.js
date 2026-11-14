@@ -331,3 +331,41 @@ test('a tab as narrow as a new one gets the columns a longer snapshot needs', ()
   assert.ok(tab.maxCols > 6);
   same(s, 'after the grid grew');
 });
+
+// Codex review #882: a delete between the fold's last check and its writes must not be undone by them. The writes are
+// made under the script lock, which a delete holds: here the delete takes place just before the fold gets the lock.
+test('a delete just before the fold writes: nothing written, the account stays gone', () => {
+  const s = load(),
+    now = BASE + 9 * 24 * H;
+  fixture(23).forEach(p => post(s, p));
+  fold(s, now);
+  post(s, {w: WHO[3], answers: session(rng(3), WHO[3], now - H, 4)});
+  const aid = s.ctx.aid_('Dee'),
+    real = s.ctx.LockService.getScriptLock;
+  let once = true;
+  s.ctx.LockService.getScriptLock = () => {
+    const l = real();
+    return Object.assign({}, l, {
+      tryLock: ms => {
+        if (once && new Error().stack.includes('statsFold_')) {
+          once = false;
+          assert.ok(s.post({userDelete: 'Dee', token: TOK}).ok);
+        }
+        return l.tryLock(ms);
+      }
+    });
+  };
+  const r = fold(s, now);
+  assert.ok(!once, 'the delete ran inside the fold');
+  assert.strictEqual(r.stale, true);
+  assert.ok(!JSON.stringify(s.sheets.Stats.rows).includes(aid), 'nothing of the deleted account written back');
+  s.ctx.LockService.getScriptLock = real;
+  fold(s, now);
+  assert.ok(!JSON.stringify(s.sheets.Stats.rows).includes(aid));
+  same(s, 'rebuilt after the delete');
+  // The lock held by a request: the run writes nothing and the next one goes on.
+  s.lock.busy = true;
+  assert.strictEqual(fold(s, now).stale, true);
+  s.lock.busy = false;
+  assert.ok(!fold(s, now).stale);
+});
