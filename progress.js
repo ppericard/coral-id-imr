@@ -91,11 +91,7 @@ function quizBoard() {
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
   const tile = n => {
-    if (myst(n))
-      return mystA(
-        `pw${isBonus(n) ? ' bonus' : ''}`,
-        `${isBonus(n) ? `<b class="pbtag">${GX(n).name ? esc(setOf(n).tag) : 'Bonus'}</b>` : ''}<span class="pwq" aria-hidden="true">?</span>`
-      );
+    if (myst(n)) return mystA('pw', '<span class="pwq" aria-hidden="true">?</span>');
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
