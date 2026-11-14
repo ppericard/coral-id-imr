@@ -134,19 +134,84 @@ function writeData_(name, json, rev){
 // error: 'server', msg} (a short message, long ids cut): a ContentService reply, which the browser lets the app read.
 // The app keeps what it sent and tries again (sync.js); an app before v50 reads them as any refused request (its
 // answers, events and reports stay queued and go again).
-function doGet(e){ try { return doGet_(e); } catch (err) { return fail_(err); } }
-function doPost(e){ try { return doPost_(e); } catch (err) { return fail_(err); } }
+function doGet(e){ timStart_(TIM.EVERY); try { return doGet_(e); } catch (err) { return fail_(err); } finally { timEnd_(); } }
+function doPost(e){ timStart_(TIM.EVERY); try { return doPost_(e); } catch (err) { return fail_(err); } finally { timEnd_(); } }
 const fail_ = err => json_(err && err.lockBusy ? {ok: false, error: 'lock'} : {ok: false, error: 'server', msg: errText_(err)});
 const errText_ = err => String((err && err.message) || err || '').replace(/[A-Za-z0-9_-]{25,}/g, '…').replace(/[\u0000-\u001f]+/g, ' ').slice(0, 100);
 // The script lock, waited for at most ms (LOCK_MS by default; it was waitLock(10000), whose timeout threw); thrown as
 // {lockBusy} when another request holds it longer, which doGet / doPost answer as error 'lock'.
 const LOCK_MS = 20000;
 function lock_(ms){ const l = LockService.getScriptLock(); if (!l.tryLock(ms || LOCK_MS)) throw {lockBusy: true}; return l; }
+
+// vNEXT: the Timings tab (the storage study of 2026-11-14, step 1: "log ms and rows for each full read and for each save,
+// sampled, in a small tab with no player data"; Pierre, 2026-11-14, Q352: the answer log moves to Cloudflare D1 only when
+// a measured threshold is crossed). One row per measured operation: Time, Op (a fixed name, never built from a request),
+// Ms (elapsed), Rows and Cols (what a whole-tab read read; for a request, the Answers tab's rows it saw), Version (the
+// script's), Weight (how many calls the row stands for). Never a name, code, device, answer id or answer content (rules
+// D2, D7: nothing to clean when an account goes). Measured: the whole-tab reads of Answers (logRows_: answerRows_, the
+// admin's readAnswers) and of its Id column (freshAnswers_, logAnswers_), the photo stats' build (stats_, a cache miss),
+// every player's saved data (datas_), the leaderboard's replays (boardWarm_), and as a whole a completed save, an
+// anonymous send that logged, a load, a public stats request, the admin's readAnswers and each run of the 15-minute
+// trigger (autoUpdate). Sampled per request (timStart_): 1 request in TIM.EVERY (1 trigger run in TIM.EVERY_TRIGGER)
+// keeps every row it measures, at that weight; any other keeps only an operation slower than TIM.SLOW (a trigger run
+// TIM.SLOW_TRIGGER), at weight 1. The rows wait in memory (TIM_) and are written at the very end of the request (timEnd_,
+// from doGet / doPost's finally and autoUpdate's), after every script lock is released, one appendRow each (atomic: two
+// requests ending together never write over each other), inside try/catch: a failure loses the rows, never the reply.
+// Bounded by the trigger (timTrim_): past TIM.MAX rows the oldest half is thinned to one row in two, each kept row's
+// weight doubled, so the tab keeps months of trend at a fixed size; past twice that (a trigger that stopped), nothing more
+// is written. Read by tools/timings.js (per operation: count, median, p90, max ms; rows over time; the quota limits).
+const TIM = {TAB: 'Timings', HEAD: ['Time', 'Op', 'Ms', 'Rows', 'Cols', 'Version', 'Weight'], EVERY: 50, EVERY_TRIGGER: 16, SLOW: 5000, SLOW_TRIGGER: 60000, MAX: 4000, ROWS: 8, ON: true};
+let TIM_ = {on: false, every: 1, t0: 0, op: '', n: '', rows: []};
+// A request (or trigger run) starts: sampled or not, at 1 in every.
+function timStart_(every){
+  TIM_ = {on: false, every: 1, t0: Date.now(), op: '', n: '', rows: []};
+  try { TIM_.every = every; TIM_.on = TIM.ON && every > 0 && Math.random() * every < 1; } catch (e) {}
+}
+// One operation that started at t0 (Date.now()) ends: kept when the request is sampled or the operation slow. top: the
+// request's own row, which the per-request cap (TIM.ROWS) never drops. Never throws.
+function tim_(op, t0, rows, cols, top){
+  try {
+    if (!TIM.ON) return;
+    const ms = Date.now() - t0, slow = ms >= (op === 'trigger' ? TIM.SLOW_TRIGGER : TIM.SLOW);
+    if (!slow && !TIM_.on) return;
+    if (!top && TIM_.rows.length >= TIM.ROWS - 1) return;
+    const n = x => (typeof x === 'number' && isFinite(x) ? x : '');
+    TIM_.rows.push([new Date(), String(op), ms, n(rows), n(cols), VERSION, slow ? 1 : TIM_.every]);
+  } catch (e) {}
+}
+// The request ends: its own row (TIM_.op, set where the request is known to be one of those measured), then the rows
+// written. Never throws.
+function timEnd_(){
+  try {
+    if (TIM_.op) tim_(TIM_.op, TIM_.t0, TIM_.n, '', true);
+    const L = TIM_.rows;
+    TIM_.rows = [];
+    if (!L.length) return;
+    const sh = sheet_(TIM.TAB, TIM.HEAD);
+    if (sh.getLastRow() > 2 * TIM.MAX) return;
+    L.forEach(r => sh.appendRow(r));
+  } catch (e) {}
+}
+// From the 15-minute trigger only (one writer): past TIM.MAX rows, the oldest half thinned to every other row, each kept
+// row's weight doubled; rows appended meanwhile land below and are not touched. Returns the rows removed. Never throws.
+function timTrim_(){
+  try {
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TIM.TAB);
+    if (!sh) return 0;
+    const n = sh.getLastRow() - 1, w = TIM.HEAD.length, wc = TIM.HEAD.indexOf('Weight');
+    if (n <= TIM.MAX) return 0;
+    const h = Math.floor(n / 2), keep = sh.getRange(2, 1, h, w).getValues().filter((r, i) => i % 2 === 1)
+      .map(r => { const x = r.slice(); x[wc] = (Number(x[wc]) || 1) * 2; return x; });
+    if (keep.length) sh.getRange(2, 1, keep.length, w).setValues(keep);
+    sh.deleteRows(2 + keep.length, h - keep.length);
+    return h - keep.length;
+  } catch (e) { return 0; }
+}
 function doGet_(e){
   ROWS_ = null;
   if (e.parameter.stats && !e.parameter.av) oldApp_('photo stats');
   if (e.parameter.stats) behind_(e.parameter);  // v50: a device on a replaced app version
-  if (e.parameter.stats) { const st = stats_(true); return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
+  if (e.parameter.stats) { TIM_.op = 'stats'; const st = stats_(true); return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
   if (e.parameter.achs) return json_(achs_());
@@ -162,6 +227,7 @@ function doGet_(e){
   const rvs = {};
   CORE_.replayedSubjects().forEach(id => { if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]); });
   const have = e.parameter.have !== undefined && e.parameter.have !== '' ? Number(e.parameter.have) : NaN;
+  TIM_.op = 'load';  // vNEXT: timed (timEnd_)
   return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, have: have, light: !!e.parameter.light}));
 }
 // The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and from v116
@@ -220,6 +286,7 @@ function doPost_(e){
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
+    if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // vNEXT: timed (timEnd_)
     return json_(p.readLive ? live_() : p.readStats ? stats_(true) : answers_({name: p.aname, pin: p.apin}));
   }
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude)
@@ -324,6 +391,7 @@ function doPost_(e){
         .setBackgrounds([['#ffffff', '#ffffff'].concat(genera.map(n => COLORS[s.genera[n]] || '#ffffff'))]);
     }
     try { boardUnitsSave_(s.boards); } catch (err) {}  // v95: the units of each other subject's leaderboard
+    TIM_.op = 'save';  // vNEXT: a completed save is timed as a whole, to its reply (timEnd_)
     out = {ok: true, log: true, rev: rev + 1, acct: kept._acct};  // v58: the generation, known to the creating device at once (Codex review #603)
     // v116: the checksum of the copy now saved, under the new key names (core.js dataSum), so a light app knows it holds
     // that very copy (sync.js sdSaved) and sends only what changes next time.
@@ -365,8 +433,9 @@ function unzip_(z){ return Utilities.ungzip(Utilities.newBlob(Utilities.base64De
 // The answers of a send the Answers tab does not have yet (by id): what the flood caps count (v24, Codex review #372: a
 // device sending again what it already sent must not use up its quota). The ids read once are handed to logAnswers_.
 function freshAnswers_(answers){
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), n = sh ? sh.getLastRow() - 1 : 0;
+  const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), n = sh ? sh.getLastRow() - 1 : 0;
   const seen = new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
+  if (n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // vNEXT: the Timings tab
   return {seen: seen, fresh: (Array.isArray(answers) ? answers : []).filter(a => a && a.id && !seen.has(String(a.id)))};
 }
 // dev (v109): the sending device's anonymous id (dev_), in every row of the send; blank when the app sent none.
@@ -380,8 +449,9 @@ function logAnswers_(name, answers, seen0, dev){
   const act = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Activity');
   if (!act) sheet_('Activity').getRange(1, 1).setFormula(ACTIVITY);
   else if (answers.some(CORE_.winkEntry) && act.getRange(1, 1).getFormula() === ACTIVITY_V1) act.getRange(1, 1).setFormula(ACTIVITY);  // v98
-  const n = sh.getLastRow() - 1;
+  const n = sh.getLastRow() - 1, t0 = Date.now();
   const seen = seen0 || new Set(n > 0 ? sh.getRange(2, 8, n, 1).getValues().map(r => String(r[0])) : []);
+  if (!seen0 && n > 0) { TIM_.n = n; tim_('read Answer ids', t0, n, 1); }  // vNEXT: the Timings tab
   // v60: a unit may be a fish entry (t01) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a duel's
   // mode; still a letter first, so nothing can start a formula.
   const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z0-9: ]*$/;
@@ -499,9 +569,10 @@ function subjRows_(sid){
 // The Answers tab's rows (from row 2), its first k columns. A tab made before the columns of v60 has fewer until the next
 // answer is logged (logAnswers_ adds them): what it lacks reads blank, so a reader never asks past the sheet's grid.
 function logRows_(sh, k){
-  const n = sh.getLastRow() - 1;
+  const n = sh.getLastRow() - 1, t0 = Date.now();
   if (n < 1) return [];
   const w = sh.getMaxColumns ? Math.min(k, sh.getMaxColumns()) : k, v = sh.getRange(2, 1, n, w).getValues();
+  TIM_.n = n; tim_('read Answers', t0, n, w);  // vNEXT: the Timings tab
   return w < k ? v.map(r => r.concat(new Array(k - w).fill(''))) : v;
 }
 
@@ -864,6 +935,7 @@ function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
 function stats_(read){
   const cache = CacheService.getScriptCache(), hit = cache.get('stats17');
   if (hit) { const v = JSON.parse(hit); if (!read || v.chk) return v; }
+  const t0 = Date.now();  // vNEXT: a build is timed (the Timings tab), its read of the Answers tab apart
   // v115 (review of #801): every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
   // such as constructor or __proto__ logged before word_ refused them is an entry like any other, never an inherited one.
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: Object.create(null), ras: {}, conf: Object.create(null), mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: Object.create(null), fmt: {}};
@@ -926,6 +998,7 @@ function stats_(read){
   // the full replay below takes it for the rows logged without one, rules version 8).
   out.fmt = CORE_.fmtOffsetsOf(rows.filter(r => !isEx(lc_(r[0]))).map(r => rowOf_(lc_(r[0]), r)));  // v115: without the excluded
   try { cache.put('stats17', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
+  tim_('stats build', t0, rows.length, LOG.length);
   return out;
 }
 
@@ -1397,9 +1470,10 @@ const boardRows_ = ra => ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).get
 // name, from one read of each tab: {name: JSON text}, with no prototype (a player named constructor or __proto__ is an
 // entry like any other; Codex review #810).
 function datas_(ra){
-  const out = Object.create(null), dt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DATA_TAB);
+  const t0 = Date.now(), out = Object.create(null), dt = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in out)) out[k] = r.slice(2).map(String).join('') || '{}'; });
   if (ra && ra.getLastRow() > 1) ra.getRange(2, 1, ra.getLastRow() - 1, HEAD.length).getValues().forEach(r => { const k = String(r[0]).toLowerCase(), h = String(r[7] || ''); if (r[0] !== '' && !(k in out)) out[k] = h && h !== '@' + DATA_TAB ? h : '{}'; });
+  if (dt && dt.getLastRow() > 1) tim_('read Progress data', t0, dt.getLastRow() - 1, dt.getLastColumn());  // vNEXT: the Timings tab
   return out;
 }
 // The leaderboard's replays (v118; Pierre, 2026-11-09, rule D8: "whenever progress is recalculated, the leaderboard
@@ -2133,7 +2207,13 @@ function installAutoUpdate(){
   Logger.log(msg);
   return msg;
 }
+// vNEXT: each run is timed (the Timings tab: timStart_, timEnd_), and trims that tab (timTrim_) whatever it did.
 function autoUpdate(){
+  timStart_(TIM.EVERY_TRIGGER);
+  TIM_.op = 'trigger';
+  try { return autoUpdate_(); } finally { timTrim_(); timEnd_(); }
+}
+function autoUpdate_(){
   const log = m => sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), String(m).slice(0, 500)]);
   try {
     const get = f => UrlFetchApp.fetch(SELF_RAW + f + '?t=' + Date.now(), {muteHttpExceptions: true});
@@ -2269,7 +2349,8 @@ const ONCE_ = {
 // The leaderboard's replays (boardWarm_, rule D8) at each run of the trigger that finds the script up to date (so by the
 // code installed), after the one-shot migrations, even when one fails (it is tried again at the next run); the Deploy log says how many were made, only when some were, and a failure.
 function boardWarmRun_(log){
-  try { const n = boardWarm_(); if (n) log('leaderboard: ' + n + ' replay' + (n === 1 ? '' : 's') + ' made for players behind the rules (v' + VERSION + ')'); }
+  const t0 = Date.now();
+  try { const n = boardWarm_(); tim_('board warm', t0, '', ''); if (n) log('leaderboard: ' + n + ' replay' + (n === 1 ? '' : 's') + ' made for players behind the rules (v' + VERSION + ')'); }
   catch (e) { log('leaderboard replays failed: ' + e.message); }
 }
 function once_(log){
@@ -2300,6 +2381,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     // v28: a device that never signed in gets its full replay too, under its anonymous id (replay_), when its app
     // applied an older rules version.
     const out = {ok: true, log: true};
+    TIM_.op = 'anon save';  // vNEXT: timed as a whole, to its reply (timEnd_)
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
     try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null); if (rp) out.replay = rp; } catch (err) {}
     // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
