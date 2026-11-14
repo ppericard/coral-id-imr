@@ -83,24 +83,34 @@ def fit(mask, x):
     return th[-1]
 
 
+# The arms' log-odds in each delete-one-player replicate (replay.js jkX: the grid choice redone without that player;
+# Codex review #883). BASE has no grid, so its replicate keeps X['BASE'].
+JKX = {a: {q: np.array([np.nan if v is None else v for v in xs], float) for q, xs in D['jkX'][a].items()} for a in ARMS}
+
+
+def xrep(a, q):
+    return X[a] if q is None or a == 'BASE' else JKX[a][q]
+
+
 def jk(mask, fn):
-    """Delete-one-player jackknife of fn(mask) over the players present in the mask: (full, se, n players)."""
+    """Delete-one-player jackknife over the players present in the mask: fn(mask, q) with q deleted (None for the
+    full data), each replicate with the arms' grid choice redone without q. Returns (full, se, n players)."""
     ps = [q for q in players if (mask & (pl == q)).any()]
-    full = fn(mask)
-    vals = np.array([fn(mask & (pl != q)) for q in ps])
+    full = fn(mask, None)
+    vals = np.array([fn(mask & (pl != q), q) for q in ps])
     n = len(ps)
     se = np.sqrt((n - 1) / n * np.sum((vals - vals.mean()) ** 2))
     return full, se, n
 
 
 def slope_diff(mask, a):
-    full, se, n = jk(mask, lambda mk: fit(mk, X[a]) - fit(mk, X['BASE']))
+    full, se, n = jk(mask, lambda mk, q: fit(mk, xrep(a, q)) - fit(mk, X['BASE']))
     t = full / se if se > 0 else np.inf
     return full, se, n, 2 * stats.t.sf(abs(t), n - 1)
 
 
 def slope_ci(mask, a):
-    full, se, n = jk(mask, lambda mk: fit(mk, X[a]))
+    full, se, n = jk(mask, lambda mk, q: fit(mk, xrep(a, q)))
     q = stats.t.ppf(0.975, n - 1)
     return full, se, n, full - q * se, full + q * se
 

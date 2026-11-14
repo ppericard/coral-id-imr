@@ -227,6 +227,11 @@ function kal(list, b, prm, mode) {
       L.m += (L.v / vt) * dth;
       u.m += (u.v / vt) * dth;
       if (mode === 'gkd') u.m += eta;
+      // The bounds on the state itself, as today's eloStep clamps each record (Codex review #883): the level within
+      // [lo, hi], then the unit's deviation so that level + deviation stays within them. No excess builds up behind
+      // the prediction's clamp.
+      L.m = clamp(L.m, E.lo, E.hi);
+      u.m = clamp(L.m + u.m, E.lo, E.hi) - L.m;
     }
     L.v -= (L.v * L.v * I) / den;
     u.v -= (u.v * u.v * I) / den;
@@ -323,7 +328,27 @@ function lopo(G, mode) {
   });
   let bi = 0;
   all.forEach((v, j) => v < all[bi] && (bi = j));
-  return {chosen, preds, bestAll: G[bi]};
+  // The jackknife's replicates (Codex review #883): with player q deleted, each other player's grid point is chosen
+  // on the players other than itself and q, so a replicate is the whole estimator without q. jk[q]: per remaining
+  // player, its log-odds per answer under that choice.
+  const cache = {},
+    jk = {};
+  incl.forEach(q => {
+    jk[q] = {};
+    incl.forEach(id => {
+      if (id === q) return;
+      let best = -1,
+        bv = Infinity;
+      all.forEach((v, j) => {
+        const w = v - tot[j][id] - tot[j][q];
+        if (w < bv) (bv = w), (best = j);
+      });
+      const key = id + '|' + best;
+      if (!cache[key]) cache[key] = kal(PRE[id], B[id], G[best], mode).map(z => (z ? z.x : null));
+      jk[q][id] = cache[key];
+    });
+  });
+  return {chosen, preds, bestAll: G[bi], jk};
 }
 const arms = {DAMP: lopo(grid, 'damp'), GK: lopo(grid, 'gk'), GKD: lopo(gridD, 'gkd')};
 
@@ -352,6 +377,19 @@ fs.writeFileSync(
     check: chk, logged: lg,
     chosen: Object.fromEntries(Object.entries(arms).map(([k, v]) => [k, v.chosen])),
     bestAll: Object.fromEntries(Object.entries(arms).map(([k, v]) => [k, v.bestAll])),
+    // jkX[arm][q]: the arm's log-odds for every output row with player q deleted (null on q's own rows), the grid
+    // choice redone without q (above).
+    jkX: Object.fromEntries(
+      Object.entries(arms).map(([k, v]) => [
+        k,
+        Object.fromEntries(
+          incl.map(q => [
+            q,
+            incl.flatMap(id => (id === q ? PRE[id].map((a, i) => (B[id].out[i] ? null : undefined)).filter(x => x !== undefined) : v.jk[q][id].filter((x, i) => B[id].out[i])))
+          ])
+        )
+      ])
+    ),
     rows: rowsOut
   })
 );
