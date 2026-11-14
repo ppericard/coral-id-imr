@@ -14,8 +14,9 @@ updates:
       actions:
         patterns: ['*']
     open-pull-requests-limit: 2
-  # tools/requirements.txt (pillow==, what the CI photo jobs install). A Pillow bump also bumps tools/stack.json's pillow
-  # item (the Checks job fails until it does); check that tools/photos.py still writes byte-identical WebP.
+  # tools/requirements.txt (pillow==, with every file's hash: what the CI photo jobs install, pip --require-hashes). A
+  # Pillow bump replaces the hashes too, and bumps tools/stack.json's pillow item (the Checks job fails until it does);
+  # check that tools/photos.py still writes byte-identical WebP.
   - package-ecosystem: pip
     directory: /tools
     schedule:
