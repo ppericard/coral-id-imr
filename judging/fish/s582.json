@@ -191,6 +191,22 @@
   "fish-s582-cand-573089233": {
    "code": "p1g0sm1a2",
    "keep": "best"
+  },
+  "fish-s582-cand-573089123": {
+   "code": "d1g0sm1a2",
+   "keep": "dup"
+  },
+  "fish-s582-cand-471148678": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s582-cand-578003323": {
+   "code": "p1g1mss2",
+   "keep": "best"
+  },
+  "fish-s582-cand-365178188": {
+   "code": "p0g1sss2",
+   "keep": "best"
   }
  }
 }

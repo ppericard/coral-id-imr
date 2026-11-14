@@ -199,6 +199,66 @@
   "fish-s536-cand-313815696": {
    "code": "p1g1sms3",
    "keep": "dup"
+  },
+  "fish-s536-cand-625222959": {
+   "code": "p1g0smoj2",
+   "keep": "best"
+  },
+  "fish-s536-cand-254463015": {
+   "code": "p1g1sssj1",
+   "keep": "best"
+  },
+  "fish-s536-cand-320154578": {
+   "code": "h0g0sm1j1",
+   "keep": "best"
+  },
+  "fish-s536-cand-349146032": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s536-cand-642672046": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s536-cand-724479961": {
+   "code": "o1g0smo3",
+   "keep": "best"
+  },
+  "fish-s536-cand-435807269": {
+   "code": "p1g1msx1",
+   "keep": "best"
+  },
+  "fish-s536-cand-322417990": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s536-cand-322418004": {
+   "code": "p1g0ss12",
+   "keep": "dup"
+  },
+  "fish-s536-cand-81385287": {
+   "code": "o1g1mmk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a yellow goby sits on the bottle, half the damselfish's size and sharp: confusion possible"
+  },
+  "fish-s536-cand-667300647": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s536-cand-904118": {
+   "code": "p1g0sms3",
+   "keep": "best"
+  },
+  "fish-s536-cand-270546157": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s536-cand-270546207": {
+   "code": "p1g1sl14",
+   "keep": "dup"
   }
  }
 }
