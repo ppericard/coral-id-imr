@@ -354,6 +354,20 @@
    "code": "d1g1sm12",
    "keep": "best",
    "phase": "terminal"
+  },
+  "fish-s193-cand-747833998": {
+   "code": "p1g0slo4",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-530573678": {
+   "code": "o1g1ml13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-756138992": {
+   "code": "o1g2ml12",
+   "keep": "best"
   }
  }
 }

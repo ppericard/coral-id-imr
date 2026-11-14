@@ -111,6 +111,66 @@
   "fish-s285-cand-fb-Apcom_u0": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s285-cand-458140364": {
+   "code": "p1g0smsj2",
+   "keep": "best"
+  },
+  "fish-s285-cand-458140360": {
+   "code": "p1g0sssj1",
+   "keep": "dup"
+  },
+  "fish-s285-cand-65637259": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s285-cand-65637245": {
+   "code": "p1g0smsj2",
+   "keep": "dup"
+  },
+  "fish-s285-cand-182551205": {
+   "code": "p1g1ml1j2",
+   "keep": "best"
+  },
+  "fish-s285-cand-291250964": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s285-cand-395569372": {
+   "code": "o0g0sms2",
+   "keep": "dup"
+  },
+  "fish-s285-cand-395569375": {
+   "code": "o0g0sms2",
+   "keep": "best"
+  },
+  "fish-s285-cand-395569358": {
+   "code": "o0g0sms1",
+   "keep": "dup"
+  },
+  "fish-s285-cand-395569362": {
+   "code": "o0g0sms1",
+   "keep": "dup"
+  },
+  "fish-s285-cand-689970281": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s285-cand-661094174": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s285-cand-332695929": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s285-cand-341926345": {
+   "code": "o1g0ml12",
+   "keep": "best"
+  },
+  "fish-s285-cand-689826465": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }
