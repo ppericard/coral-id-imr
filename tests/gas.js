@@ -30,6 +30,12 @@ function makeSheet(name) {
         })
       ),
     getMaxRows: () => Math.max(1000, rows.length),
+    // The grid's width: unbounded unless a test sets maxCols (a new Sheets tab has 26); writing past it throws as in Sheets.
+    maxCols: Infinity,
+    getMaxColumns: () => sheet.maxCols,
+    insertColumnsAfter(c, n) {
+      sheet.maxCols += n;
+    },
     appendRow(vals) {
       rows[sheet.getLastRow()] = vals.slice();
     },
@@ -61,6 +67,7 @@ function makeSheet(name) {
         },
         setValue: v => range.setValues([[v]]),
         setValues(vals) {
+          if (c - 1 + nc > sheet.maxCols) throw new Error('Range not found');
           if (vals.length !== nr || vals.some(x => x.length !== nc))
             throw new Error('The number of columns in the data does not match the range.');
           vals.forEach((row, i) =>

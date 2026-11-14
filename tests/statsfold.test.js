@@ -132,6 +132,8 @@ test('the fold serves what the whole log gives, after every run, at any number o
       settled = 0,
       pending = 0,
       checks = 0;
+    // One run leaves a player out of the statistics from the start (sxSet_).
+    if (rows === 90) assert.ok(s.post({statsExclude: s.ctx.aid_('Eve'), on: true, token: TOK}).ok);
     posts.forEach((p, i) => {
       post(s, p);
       now = Math.max(now, p.at);
@@ -190,7 +192,7 @@ test('a run is bounded: it stops after its rows and the next run goes on; nothin
 test('every rebuild cause starts the fold again and it serves the whole log again', () => {
   const s = load(),
     posts = fixture(11),
-    now = BASE + 9 * 24 * H,
+    now = Math.max(...posts.map(p => p.at)) + 20 * H, // the last day's answers still pending
     id = n => s.ctx.aid_(n);
   posts.forEach(p => post(s, p));
   const again = (why, act) => {
@@ -238,6 +240,21 @@ test('every rebuild cause starts the fold again and it serves the whole log agai
   again('cursor', () => delete s.props.STATS_FOLD);
   again('rows moved', () => s.sheets.Answers.rows.splice(5, 1));
   again('missing', () => s.post({userDelete: 'Cal', answers: true, token: TOK}));
+  // A mode no app sends (quiz|k0: an infinite guess rate) is read back as written: no rebuild at every run.
+  const k0 = {anon: 'device0009', p: () => 1};
+  post(s, {
+    w: k0,
+    answers: [{id: 'k0', t: new Date(now - H).toISOString(), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz|k0', ph: 'acropora-1', ch: ''}]
+  });
+  post(s, {w: k0, answers: session(rng(4), k0, now - H, 4)});
+  assert.strictEqual(fold(s, now).why, '');
+  same(s, 'an infinite guess rate, pending');
+  const r2 = fold(s, now + 2 * 24 * H);
+  assert.ok(r2.settled > 0 && r2.why === '', JSON.stringify(r2));
+  // Its settled counters read back as written: more answers do not flip its trust.
+  post(s, {w: k0, answers: session(rng(6), k0, now + 2 * 24 * H - H, 4)});
+  assert.strictEqual(fold(s, now + 2 * 24 * H).why, '');
+  same(s, 'an infinite guess rate, settled');
   // An answer logged older than what is settled: a device two days late.
   again('late answer', () => post(s, {w: WHO[0], answers: session(rng(9), WHO[0], now - 3 * 24 * H, 4)}));
 });
@@ -302,4 +319,15 @@ test('an old snapshot, another version or the switch off: ?stats=1 makes the who
   run(s, 'STATS.ON = false');
   assert.strictEqual(snap(s), null);
   assert.deepStrictEqual(pub(s.get({stats: 1})), full(s));
+});
+
+test('a tab as narrow as a new one gets the columns a longer snapshot needs', () => {
+  const s = load();
+  fixture(19).forEach(p => post(s, p));
+  const tab = s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Stats');
+  tab.maxCols = 6; // the parts' first cells only: every chunk needs a column added
+  const r = fold(s, BASE + 9 * 24 * H);
+  assert.ok(r.caught, JSON.stringify(r));
+  assert.ok(tab.maxCols > 6);
+  same(s, 'after the grid grew');
 });

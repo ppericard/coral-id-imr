@@ -1073,8 +1073,15 @@ function statsPut_(sh, row, meta, json){
   }
   const old = sh.getLastColumn();
   while (out.length < old) out.push('');
+  // A new tab has 26 columns: the cells a longer JSON needs are added first (getRange can't reach past the grid).
+  if (sh.getMaxColumns && sh.getMaxColumns() < out.length) sh.insertColumnsAfter(sh.getMaxColumns(), out.length - sh.getMaxColumns());
   sh.getRange(row, 1, 1, out.length).setValues([out]);
 }
+// The fold as JSON and back: a number JSON cannot hold (an infinite guess rate from a mode such as quiz|k0, which only a
+// tampered app sends) is kept as '~Infinity', '~-Infinity' or '~NaN' (no unit, mode or photo holds a ~), so a run
+// reads back exactly what the last one wrote.
+const statsJson_ = S => JSON.stringify(S, (k, v) => (typeof v === 'number' && !isFinite(v) ? '~' + v : v));
+const STATS_NUM = {'~Infinity': Infinity, '~-Infinity': -Infinity, '~NaN': NaN};
 // One part read: {meta: its first cells, json}; null when the row is empty.
 function statsGet_(sh, row){
   if (!sh || sh.getLastRow() < row) return null;
@@ -1088,7 +1095,7 @@ function statsLoad_(sh){
   try {
     const g = statsGet_(sh, 3);
     if (!g || String(g.meta[0]) !== 'state') return null;
-    const S = JSON.parse(g.json);
+    const S = JSON.parse(g.json, (k, v) => (typeof v === 'string' && Object.prototype.hasOwnProperty.call(STATS_NUM, v) ? STATS_NUM[v] : v));
     if (!S || typeof S !== 'object' || !Array.isArray(S.pend) || typeof S.c !== 'number') return null;
     const re = o => { const x = nul_(); Object.keys(o || {}).forEach(k => { x[k] = o[k]; }); return x; };
     ['T', 'U', 'P', 'PG', 'G', 'R', 'H', 'conf', 'L'].forEach(k => { S[k] = re(S[k]); });
@@ -1203,7 +1210,7 @@ function statsFold_(o){
   S.pf = statsPoolFp_(S, idx);
   const built = S.why;
   if (caught) S.why = '';
-  const json = JSON.stringify(S);
+  const json = statsJson_(S);
   if (caught) { S.pend.forEach(m => statsStep_(S, m, tr(m[2]), sx.has(m[2]), idx)); served = JSON.stringify(statsOut_(S)); }
   // A rewrite of the log while this run read it: what it folded is stale, so nothing is written (the next run rebuilds).
   if (dirty() !== mark) return {why: why, read: read, settled: settled, pending: S.pend.length, caught: false, ms: Date.now() - t0, stale: true};
