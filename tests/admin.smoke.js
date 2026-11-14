@@ -559,6 +559,25 @@ const WIDTHS = [390, 1280];
           u = await fu();
           const f3 = await p.evaluate(() => FISHC.units.find(x => x.group === 3).id);
           if (u.sel !== f3 || u.cur !== kg) fails.push(`${w}px Tree: a key group ${JSON.stringify({sel: u.sel, cur: u.cur, f3})}`);
+          // The tree's small words are readable: 12 px or more (rule U3, the type scale's --fs-xs; Codex review #861).
+          const fs = await p.evaluate(() =>
+            [...document.querySelectorAll('.adm-tree .adm-ttr, .adm-tree small')].reduce(
+              (m, x) => Math.min(m, parseFloat(getComputedStyle(x).fontSize)),
+              99
+            )
+          );
+          if (fs < 12) fails.push(`${w}px Tree: a word of the tree in ${fs} px`);
+          // A genus opened, another page, then Back: the genus is in view again, not the top of its family (Codex review #861).
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent('g:Chromis'));
+          await go(other.hash + 'photos/candidates');
+          await p.evaluate(() => history.back());
+          await settle();
+          const back = await p.evaluate(() => {
+            const t = document.querySelector('.adm-main .adm-fgen[data-gen="g:Chromis"]');
+            return {hash: location.hash, at: t ? Math.round(t.getBoundingClientRect().top) : null};
+          });
+          if (!/g%3AChromis$/.test(back.hash) || back.at === null || back.at < 0 || back.at > 400)
+            fails.push(`${w}px Tree: Back to a genus ${JSON.stringify(back)}`);
         }
         // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers), with the Grammistidae soapfishes
         // since 2026-11-08 (Q248: one family, as in the book); an unknown family shows the first.

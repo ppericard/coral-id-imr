@@ -3063,6 +3063,9 @@ function render() {
   ptFlush(); // a note being typed on a point's page reaches the draft before the page is drawn again
   ptFlush = () => {};
   memoFresh();
+  // Away from Tree, its node is forgotten: coming back (Back, a link) is a new address that shows its genus or species
+  // again (Codex review #861).
+  if (!under(cur, TREE)) TT_SEL = null;
   document.body.classList.toggle('adm-cmode', cur === 'photos/candidates');
   // A page the subject on screen does not have yet (admin plan: its fish version comes in a later PR).
   if (!hasPage(ASUBJ, cur)) {

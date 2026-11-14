@@ -5340,6 +5340,9 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   min-width: 0;
   padding: 4px 6px 4px 0;
 }
+.adm-tt > .adm-g small {
+  font-size: var(--fs-xs);
+}
 .adm-tt > .adm-g:hover {
   background: none;
 }
@@ -5350,7 +5353,7 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 }
 .adm-ttn small {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 .adm-ttk {
@@ -5359,7 +5362,7 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   color: var(--muted);
 }
 .adm-ttr {
-  font-size: 0.68rem;
+  font-size: var(--fs-xs);
   font-weight: 400;
   color: var(--muted);
 }
