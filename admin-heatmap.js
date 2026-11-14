@@ -14,7 +14,8 @@
 (function (root) {
   const K = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   // The colour of a cell by its shrunk rate: under BINS[0] the lightest, from BINS[3] (a declared look-alike's start) the
-  // darkest; BINS[2] is the quiz's trap (CONF.TRAP). Typed mix-ups by their count: 1, 2, 3-4, 5 or more.
+  // darkest; BINS[2] is the quiz's trap bound (CONF.TRAP), which the quiz reads on the pair's two-way score, never on one
+  // direction's cell as here. Typed mix-ups by their count: 1, 2, 3-4, 5 or more.
   const HEAT = {BINS: [0.05, 0.1, K.CONF.TRAP, K.CONF.LOOK], TYPED: [1, 2, 3, 5]};
   const heatBin = (x, B = HEAT.BINS) => B.filter(b => x >= b).length;
   // The units of each block (an array of names) in an order where the pairs mixed up most sit side by side: from the unit
@@ -189,7 +190,7 @@ function statsHeat() {
     leg = typedOn
       ? `<p class="adm-an-leg adm-hm-leg">${sw('hm-q1', '1')}${sw('hm-q2', '2')}${sw('hm-q3', '3-4')}${sw('hm-q4', '5+')}</p>`
       : `<p class="adm-an-leg adm-hm-leg">${
-          // each strength by its interval (heatBin: from a bound, under the next); the third bound is the quiz's threshold for a pair as a trap
+          // each strength by its interval (heatBin: from a bound, under the next); the third bound is the quiz's trap bound (on the two-way score)
           HEAT.BINS.map((x, k) => sw('hm-q' + k, k ? `${pc(HEAT.BINS[k - 1], 1)}-${pc(x, 1)}` : `Under ${pc(x, 1)}`)).join('') +
           sw('hm-q' + HEAT.BINS.length, `${pc(HEAT.BINS[HEAT.BINS.length - 1], 1)}+`)
         }${sw('hm-q2 hm-lo', `Under ${CONF.N} offers`)}${sw('hm-lk', 'Look-alike')}${sw('hm-dl', 'From the data')}</p>`;

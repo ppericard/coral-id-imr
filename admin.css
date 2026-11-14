@@ -3826,6 +3826,12 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-jcards li {
   margin: 2px 0;
 }
+/* A unit's link inside a line of text (the journey's Cards and steps, Not met yet): the line's size, no gap before a comma. */
+.adm-jcards .adm-gen,
+.adm-jnot .adm-gen {
+  font-size: inherit;
+  margin-right: 0;
+}
 
 /* A genus learned (mastery exam passed): a small green tag beside its name in the journey's list. */
 .adm-jlearn {
@@ -5859,6 +5865,10 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 }
 .adm-hmt .hm-d {
   background: var(--line);
+}
+/* Dark: --line is close to the lightest cells (a typed 1, a rate of 5-10%), so the diagonal goes darker than any cell. */
+:root[data-theme='dark'] .adm-hmt .hm-d {
+  background: var(--bg);
 }
 .adm-hmt .hm-fr {
   border-top: 1.5px solid var(--muted);

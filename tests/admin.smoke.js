@@ -5116,6 +5116,150 @@ const WIDTHS = [390, 1280];
         if (fe.length) fails.push(`${vw}px Fish Answer log and Pairs: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
+      // Fish admin at parity, Journey details: a fish Journey names its units as the Answer log does (a family by name, a
+      // genus in italics, an IMR sub-entry with its IMR name), titles and the chart's tooltips included; its Cards and
+      // steps say the subject's words (Open all families), the genus cards (admin-demo.js: Ben's fish saved copy) and the
+      // steps of the path (admin-journey.js jSteps: circles 2 and 3, the first genus question), also as marks on the
+      // chart; Games counts the fish formats and the questions on each rank, without the Custom quiz or the Duel tab the
+      // fish do not have; its sheets opened in the fish words. Ben's log gets, after his demo answers, a family of each
+      // later circle, genus questions and typed answers. Then a fish session of the Journey unfolds, its names too. No raw
+      // unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px; SHOTS: the page in light and dark (2x).
+      for (const vw of [1280, 390]) {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          fc = await b.newContext({
+            viewport: {width: vw, height: 900},
+            serviceWorkers: 'block',
+            ...(process.env.SHOTS ? {deviceScaleFactor: 2} : {})
+          });
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/players/list/journey/Ben%20Demo`);
+        await fq
+          .waitForFunction(
+            () =>
+              cur === 'players/list/journey/Ben Demo' &&
+              FISHA &&
+              ANS &&
+              /Cards/.test((document.querySelector('.adm-journey') || {}).textContent),
+            null,
+            {timeout: 90000}
+          )
+          .catch(() => fe.push('Journey not drawn'));
+        const ok = await fq.evaluate(() => {
+          const id = (USERS.users.find(u => u.name === 'Ben Demo') || {}).id,
+            R = rowsOf()
+              .filter(r => r[0] === id)
+              .sort((a, b) => a[1] - b[1]),
+            last = R[R.length - 1],
+            ph = Object.keys(FISHA.ph),
+            fam = c => (Object.values(FISHA.gen).find(g => g.circle === c) || {}).id,
+            add = [];
+          if (!last || !fam(2) || !fam(3)) return false;
+          let t = last[1];
+          const mk = (shown, ans, right, mode, ch) =>
+            Object.assign([...last], {1: (t += 30e3), 2: shown, 3: ans, 4: right, 5: mode, 6: ph[add.length % ph.length], 10: ch});
+          add.push(mk(fam(2), fam(2), 1, 'quiz', [fam(2), 'f:Wrasses', 'f:Snappers', 'f:Angelfishes'].join(' ')));
+          add.push(mk(fam(3), 'f:Wrasses', 0, 'quiz', [fam(3), 'f:Wrasses', 'f:Snappers', 'f:Angelfishes'].join(' ')));
+          for (let i = 0; i < 6; i++)
+            add.push(
+              mk('g:Amphiprion', i % 2 ? 'g:Amphiprion' : 'g:Chromis', i % 2, 'quiz', 'g:Amphiprion g:Chromis g:Dascyllus g:Pomacentrus')
+            );
+          for (let i = 0; i < 4; i++) add.push(mk('g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+          ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+          render();
+          return true;
+        });
+        if (!ok) fe.push("no fish answers of Ben's in the demo");
+        // The steps (the log) and the cards (Ben's saved copy, read on its own: Cards: loading… until then) both drawn.
+        await fq
+          .waitForFunction(
+            () =>
+              (t => /Genus questions/.test(t) && /Open all families/.test(t))((document.querySelector('.adm-journey') || {}).textContent),
+            null,
+            {timeout: 30000}
+          )
+          .catch(() => fe.push('the steps or the cards never drawn'));
+        // What the page says, with every attribute but the links' (a title, an SVG tooltip may hold a unit too).
+        const seen = () =>
+          fq.evaluate(() => {
+            const V = document.getElementById('view'),
+              html = V.innerHTML.replace(/ href="[^"]*"/g, ''),
+              rows = sel => [...V.querySelectorAll(sel)].map(e => e.textContent.replace(/\s+/g, ' ').trim());
+            return {
+              cards: rows('.adm-jcards li').slice(0, 12),
+              marks: [...V.querySelectorAll('svg text.o')].map(e => e.textContent),
+              games: rows('.adm-journey .adm-scard')
+                .filter(t => /^Games/.test(t))
+                .join(''),
+              h3: rows('.adm-jwide h3'),
+              th: (V.querySelector('.adm-jtbl th') || {}).textContent || '',
+              imr: rows('.adm-jtbl td small').includes(ORG.short + ' ' + FISHA.imr['g:Amphiprion']),
+              sheets: (V.querySelector('[data-jsheets] h3') || {}).textContent || '',
+              ids: (html.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              coral: Object.keys(DATA.gen)
+                .filter(g => new RegExp(`\\b${g}\\b`).test(html))
+                .slice(0, 3),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+        const jo = await seen(),
+          has = (L, re) => L.some(x => re.test(x));
+        if (
+          !has(jo.cards, /^Start I’m at IMR/) ||
+          !has(jo.cards, /^Genus cards 2: Amphiprion/) ||
+          !has(jo.cards, /^Circle 2 from answer 49 /) ||
+          !has(jo.cards, /^Circle 3 from answer 50 /) ||
+          !has(jo.cards, /^Genus questions from answer 51 · Amphiprion/) ||
+          !has(jo.cards, /^Open all families not used/) ||
+          has(jo.cards, /genera/) ||
+          ['Circle 2', 'Circle 3', 'Genus'].some(m => !jo.marks.includes(m)) ||
+          !/Family questions/.test(jo.games) ||
+          !/Genus questions/.test(jo.games) ||
+          !/Typed/.test(jo.games) ||
+          /Custom quiz|Duels|duels \(tab\)/.test(jo.games) ||
+          !jo.h3.some(h => /^Families and genera \d+/.test(h)) ||
+          jo.th !== 'Family or genus' ||
+          !jo.imr ||
+          jo.sheets !== 'Family, genus and species sheets opened' ||
+          jo.ids.length ||
+          jo.coral.length ||
+          jo.wide > 0
+        )
+          fe.push(`Journey ${JSON.stringify(jo)}`);
+        if (process.env.SHOTS)
+          for (const sc of ['light', 'dark']) {
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
+            await fq.waitForTimeout(300);
+            await fq.screenshot({path: path.join(process.env.SHOTS, `fish-journey-${vw}-${sc}.png`), fullPage: true});
+          }
+        // Its last session unfolds (admin-journey.js sessionSummary): the units it met by name too.
+        await fq.click('.adm-journey [data-recent] [data-sopen]');
+        await fq.waitForSelector('.adm-journey [data-sdet] .adm-sess', {timeout: 10000}).catch(() => fe.push('a session does not unfold'));
+        const ss = await fq.evaluate(() => {
+          const S = document.querySelector('.adm-journey [data-sdet]'),
+            html = S ? S.innerHTML.replace(/ href="[^"]*"/g, '') : '';
+          return {
+            ids: (html.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+            genus: /Amphiprion/.test(html),
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+        if (ss.ids.length || !ss.genus || ss.wide > 0) fe.push(`the session unfolded ${JSON.stringify(ss)}`);
+        if (process.env.SHOTS)
+          for (const sc of ['light', 'dark']) {
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
+            await fq.waitForTimeout(300);
+            const el = await fq.$('.adm-journey [data-sdet]');
+            if (el) await el.screenshot({path: path.join(process.env.SHOTS, `fish-journey-session-${vw}-${sc}.png`)});
+          }
+        if (fe.length) fails.push(`${vw}px Fish Journey: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
       // this, the family pages' data (fishLoad, FISHC) read for it as Reports does. The fish auto-sort, which would read them
       // at load, is kept out (suggest.json without its fish part), so nothing else has read them before Health. With 25

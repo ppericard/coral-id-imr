@@ -335,3 +335,39 @@ test("the tile's address: its square and its rewrite count, so a corrected tile 
   // That photo shown whole in its square, never centre-cropped (app.css).
   assert.match(read('app.css'), /\.fxt img:not\(\[src\*='-x\.webp'\]\) \{\n {2}object-fit: contain;/);
 });
+
+test("the preload: a Find the X fetches its four tiles, never its question's photo at 480 px or full size", () => {
+  const ctx = {
+    AWAY: false,
+    SUBJ: {remote: false},
+    ownPhoto: () => true,
+    cover: () => null,
+    GX: () => ({}),
+    img: (p, s) => `img:${p.f}:${s}`,
+    qsrc: (p, n) => `full:${p.f}:${n}`,
+    photoUrl: u => 'R2/' + u
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    [
+      cut(app, 'const tileSrc = p =>', ';\n', {through: 1, file: 'app.js'}),
+      cut(quiz, 'const pfUrls = q => {', '\n};\n', {through: 1, file: 'quiz.js'}),
+      'this.pfUrls = pfUrls;'
+    ].join('\n'),
+    ctx
+  );
+  const q = planner({P: 1, seed: 5}).plan('A'),
+    set = q[4],
+    urls = ctx.pfUrls(q),
+    own = set.shown[0].f;
+  // The four tiles, in the order of the choices, and nothing else.
+  assert.strictEqual(JSON.stringify(urls), JSON.stringify(set.find.map(x => `R2/img/${x.p.f}-x.webp?x=${x.p.xc.join('_')}`)));
+  assert.ok(!urls.some(u => u.startsWith(`img:${own}:`) || u.startsWith(`full:${own}:`)), `no 480 px or full-size photo: ${urls}`);
+  // R2 failed (or a tile not made yet): still the four photos, their 480 px files (tileSrc's fallback).
+  ctx.AWAY = true;
+  assert.strictEqual(JSON.stringify(ctx.pfUrls(q)), JSON.stringify(set.find.map(x => `img:${x.p.f}:s`)));
+  ctx.AWAY = false;
+  // Any other question as before: its photos at 480 px then full size, then the views shown after the answer.
+  const plainQ = ['quiz', 'B', ['B', 'C', 'D'], 'Which B?', {shown: [{f: 'b1'}], reveal: [{f: 'b2'}]}];
+  assert.strictEqual(JSON.stringify(ctx.pfUrls(plainQ)), JSON.stringify(['img:b1:s', 'full:b1:1', 'img:b2:s', 'full:b2:2']));
+});

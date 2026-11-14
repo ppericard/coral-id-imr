@@ -114,7 +114,7 @@ def load_keep():
     return json.loads(SRC.read_text(encoding="utf-8")).get("keep") or {}
 
 
-def add_refs(photos, J, added=(), fish=None, dup=frozenset()):
+def add_refs(photos, J, added=(), fish=None, dup=frozenset(), level=None):
     """The reference photos (tools/fish_refs.json) into their entries' game photos, in place. A photo already in the game
     takes the rep tag only (rtag marks a tag set here), and stays whatever its level (Codex review #660: a game photo is
     never removed for being a reference photo). A new one joins at the end once judged (J; apply then keeps it only at the
@@ -122,7 +122,9 @@ def add_refs(photos, J, added=(), fish=None, dup=frozenset()):
     game photo stays). core.js easyRank orders the list. A rerun gives the same file: a joined photo tools/fish_refs.json
     no longer lists leaves, a tag it no longer lists goes. dup: the reference photos judged duplicates of their
     observation's photos (load_keep): never joined, and one that joined leaves (Codex review #715); a game photo of its own
-    stays."""
+    stays. level(tid, p): whether reference photo p reaches the reference level once judged (apply passes it). Of two
+    reference photos of one observation, the one at the reference level holds the observation's place, whichever comes
+    first in tools/fish_refs.json: one below it would hold the place, then leave in apply, and keep the other out."""
     R = load_refs(fish)
     want = {r["f"]: r for L in R.values() for r in L}
     for tid in list(photos):
@@ -140,8 +142,13 @@ def add_refs(photos, J, added=(), fish=None, dup=frozenset()):
                     have.update({k: v for k, v in r.items() if k != "for"})
                 elif r.get("rep") and have.get("rep") != r["rep"]:
                     have.update(rep=r["rep"], rtag=1)
-            elif r["f"] in J and r["f"] not in dup and not any(p["o"] == r["o"] for p in L):
-                L.append({k: v for k, v in r.items() if k != "for"})
+            elif r["f"] in J and r["f"] not in dup:
+                other = next((p for p in L if p["o"] == r["o"]), None)
+                if other is None:
+                    L.append({k: v for k, v in r.items() if k != "for"})
+                elif level and other.get("from") and not level(tid, other) and level(tid, r):
+                    # another reference photo of this observation, below the reference level: this one takes its place
+                    L[L.index(other)] = {k: v for k, v in r.items() if k != "for"}
 
 
 LOOK = re.compile(r"^p1g0s[lm][1s]$")
@@ -170,7 +177,15 @@ def apply(photos, fish=None):
         L = photos.setdefault(tid, [])
         have = {p["o"] for p in L}
         L.extend(dict(p) for p in extra if p["o"] not in have)
-    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish, {f for f, k in load_keep().items() if k == "dup"})
+
+    def level(tid, p):  # the reference level p reaches once judged: ref_level after the caps, as below
+        if p["f"] not in J:
+            return False
+        e, jt = cap(J[p["f"]], tid in dim, juv_early(juv.get(tid), sp.get(p.get("sp"), ())), p.get("rep"))
+        return ref_level({**p, "e": e, "jt": jt})
+
+    dup = {f for f, k in load_keep().items() if k == "dup"}
+    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish, dup, level)
     k = 0
     for tid, L in photos.items():
         for p in L:
