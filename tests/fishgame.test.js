@@ -855,3 +855,31 @@ print(json.dumps({'top': top[0], 'tiles': sorted(f for f in __import__('os').lis
   assert.strictEqual(r.tiles.length, 4);
   fs.rmSync(dir, {recursive: true, force: true});
 });
+
+// A species whose photos come from another iNaturalist taxon (fish.json photoTaxon; Pierre, 2026-11-14, Q354 b: "the IMR
+// names stay on screen"): its photos in play are credited under the species' name (WoRMS's, else the PDF's), never the
+// photo taxon's, whatever the route; any other species keeps its source's name.
+test('fish_game.py record: a photo-taxon species is credited under its own name, every route', () => {
+  const out = JSON.parse(
+    py(`import fish_game as G
+species = {'s1': {'id': 's1', 'name': 'Chromis agilis', 'now': 'Pycnochromis agilis', 'photoTaxon': {'inat': 1313512, 'name': 'Pycnochromis pacifica'}},
+           's2': {'id': 's2', 'name': 'Halichoeres marginatus', 'photoTaxon': {'inat': 1474879, 'name': 'Halichoeres annularis'}},
+           's3': {'id': 's3', 'name': 'Fishus fishii'}}
+p = lambda f, t: {'f': f, 'o': 'https://www.inaturalist.org/observations/1', 'src': 'x', 'a': 'u', 'lic': 'cc-by', 't': t, 'loc': 'world'}
+ref = lambda f, t: {**p(f, t), 'e': 5, 'jt': 'p1g0sl1'}
+print(json.dumps([G.record('s1', p('fish-s1-cand-1', 'Pycnochromis pacifica'), {}, {}, 's1', species)['t'],
+                  G.record('s1', p('fish-s1-cand-2', 'Pycnochromis pacifica'), {}, {}, 's1', species, 'cand')['t'],
+                  G.record('s1', ref('fish-s1-ref-3', 'Pycnochromis pacifica'), {}, {}, 's1', species, 'ref')['t'],
+                  G.record('s2', p('fish-s2-cand-4', 'Halichoeres annularis'), {}, {}, 's2', species)['t'],
+                  G.record('s3', p('fish-s3-cand-5', 'Fishus fishii'), {}, {}, 's3', species)['t'],
+                  G.record('s3', ref('fish-s3-ref-6', 'Fishus fishii'), {}, {}, 's3', species, 'ref')['t']]))`)
+  );
+  assert.deepStrictEqual(out, [
+    'Pycnochromis agilis',
+    'Pycnochromis agilis',
+    'Pycnochromis agilis',
+    'Halichoeres marginatus',
+    'Fishus fishii',
+    'Fishus fishii'
+  ]);
+});
