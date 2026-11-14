@@ -29,6 +29,7 @@ const http = require('http'),
   path = require('path');
 const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
+const qa = require('./answer.js'); // waits for and answers the question on screen, whatever its format
 const ROOT = path.join(__dirname, '..');
 // The game species of Chromis in fish.json: the genus page shows a tile each, a Chromis sheet the others (the count moves
 // with the data: 13 until 2026-11-08, when the near-Dauin species of the game families came in).
@@ -122,6 +123,7 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .q'), null, {
       timeout: 30000
     });
+    await qa.install(q);
     const r = await q.evaluate(N => {
       const fails = [],
         ok = (c, m) => c || fails.push(m);
@@ -183,13 +185,7 @@ async function freshPlayers(b, base, errs) {
           gated++;
           under += (p.e || 3) < 4 ? 1 : 0;
         });
-        const ans = document.querySelectorAll('#view [data-c]');
-        if (ans.length) [...ans].find(b => b.dataset.c === t).click();
-        else {
-          const f = document.querySelector('#view .tyform');
-          f.querySelector('input').value = GX(t).name;
-          f.requestSubmit();
-        }
+        smokeAnswer();
         route();
       }
       ok(gated >= N / 2, `only ${gated} photos checked before Open Water`);
@@ -270,6 +266,7 @@ async function freshPlayers(b, base, errs) {
   p.on('pageerror', e => errs.push(e.message));
   await p.goto(base + '#practice/quiz');
   await p.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH, null, {timeout: 30000});
+  await qa.install(p);
   const out = await p.evaluate(() => {
     const fails = [],
       ok = (c, m) => c || fails.push(m);
@@ -342,23 +339,18 @@ async function freshPlayers(b, base, errs) {
       const q = SHOWNQ;
       if (document.querySelector('#view .q.wink')) {
         ok(false, `a wink at ${answersSoFar()} answers`);
-        document.querySelector('#view [data-w]').click();
+        smokeAnswer();
         route();
         continue;
       }
       ok(q && FISH.c1.includes(q[1]), 'question on a circle-1 family (circles 2 and 3 wait)');
-      const ans = document.querySelectorAll('#view [data-c]');
-      if (ans.length) {
-        ok(
-          [...ans].every(b => GX(b.dataset.c) && GX(b.dataset.c).name),
-          'every choice is a fish entry'
-        );
-        ans[i % 3 === 0 ? (ans[0].dataset.c === q[1] ? 1 : 0) : [...ans].findIndex(b => b.dataset.c === q[1])].click();
-      } else {
-        const f = document.querySelector('#view .tyform');
-        f.querySelector('input').value = GX(q[1]).name;
-        f.requestSubmit();
-      }
+      // answer.js: the choices read
+      const ans = [...document.querySelectorAll('#view [data-c]')];
+      ok(
+        ans.every(b => GX(b.dataset.c) && GX(b.dataset.c).name),
+        'every choice is a fish entry'
+      );
+      smokeAnswer(i % 3 !== 0);
       asked++;
       route();
     }
@@ -447,7 +439,9 @@ async function freshPlayers(b, base, errs) {
         `wink: one of its chosen photos (${src})`
       );
       const q0 = JSON.parse(localStorage.getItem('reefid-log0') || '[]').length;
-      wk.querySelector(`[data-w="${w.choices[0][0]}"]`).click();
+      // Through the smokes' answerer (tests/answer.js), which finds the unit a surprise shows.
+      const sa = smokeAnswer(w.choices[0][0]);
+      ok(sa.fmt === 'wink' && sa.t === n && sa.n === 4, 'wink: smokeAnswer reads it: ' + JSON.stringify(sa));
       ok(document.querySelector('#after').textContent.includes(w.wrong), 'wink: the wrong line');
       ok(JSON.stringify(P) === P0, 'wink: not counted');
       // Its answer logged like any other (Pierre, 2026-11-08), once, marked by its mode (core.js WINK_MODE): queued for
@@ -550,14 +544,7 @@ async function freshPlayers(b, base, errs) {
       document.querySelectorAll('.achpop').forEach(x => x.remove());
       achQ.length = 0;
       achBusy = false;
-      const t = SHOWNQ && SHOWNQ[1],
-        c = [...document.querySelectorAll('#view .q:not(.done) [data-c]')].find(x => x.dataset.c === t);
-      if (c) c.click();
-      else if (document.querySelector('#view .tyform')) {
-        const f = document.querySelector('#view .tyform');
-        f.querySelector('input').value = GX(t).name;
-        f.requestSubmit();
-      }
+      const {t, fmt} = smokeAnswer();
       cb();
       const nx = document.getElementById('next');
       ok(
@@ -565,7 +552,7 @@ async function freshPlayers(b, base, errs) {
         'all met: the answer arms Next ' +
           JSON.stringify([
             t,
-            !!c,
+            fmt,
             promptOk(),
             !!allMetDue(),
             [...document.querySelectorAll('#tour, .unlock, .achpop')].map(x => x.className + ':' + x.textContent.slice(0, 60)),
@@ -907,13 +894,7 @@ async function freshPlayers(b, base, errs) {
     // "t01", and the dialog spoke of genera and corals): the fish names, in the fish words.
     closeCards();
     quizPhoto();
-    const rq = document.querySelector('#view [data-c]');
-    if (rq) rq.click();
-    else {
-      const f = document.querySelector('#view .tyform');
-      f.querySelector('input').value = GX(SHOWNQ[1]).name;
-      f.requestSubmit();
-    }
+    smokeAnswer(false);
     const rb = document.querySelector('#view [data-rep]');
     ok(rb, 'report: a Report button after the answer');
     if (rb) {
@@ -1401,6 +1382,7 @@ async function freshPlayers(b, base, errs) {
     // The first-meeting cards over the first question: closed one by one with their own button.
     for (let i = 0; i < 8 && (await q.$('.unlock')); i++) await q.click('.unlock .next:not(.sec)');
     const qs = await q.evaluate(() => {
+      // answer.js: a new fish player's first question: choices
       const B = [...document.querySelectorAll('#view .ans [data-c]')];
       return {n: B.length, plain: B.every(x => x.classList.contains('plain')), fish: B.every(x => GX(x.dataset.c) && GX(x.dataset.c).name)};
     });
@@ -1446,7 +1428,8 @@ async function freshPlayers(b, base, errs) {
     const spBefore = await q.evaluate(sci => document.body.textContent.includes(sci), spq.sci);
     if (!spq.sci || spq.line || spBefore)
       ui.push(`${width}px the photo's species before the answer: ${JSON.stringify({...spq, spBefore})}`);
-    await q.click('#view .ans [data-c]');
+    await qa.ready(q);
+    await q.evaluate(() => smokeAnswer(false));
     const spa = await q.evaluate(() => {
       const l = document.querySelector('#after .fb h3 + .fbsp'),
         nb = document.getElementById('next').getBoundingClientRect();
@@ -2241,8 +2224,9 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => SUBJ.id === 'fish' && typeof FISH === 'object' && FISH, null, {timeout: 30000}).catch(() => {});
     await q.evaluate(() => go('quiz'));
     await q.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000}).catch(() => {});
-    // Three fish answers, as pages.smoke.js answers them (the right choice, or its name typed); cards closed on the way.
-    const n = await q.evaluate(async () => {
+    // Three fish answers (tests/answer.js: the right choice, or its name typed); cards closed on the way.
+    await qa.install(q);
+    const n = await q.evaluate(async SEL => {
       const until = async f => {
         for (let k = 0; k < 300 && !f(); k++) await new Promise(ok => setTimeout(ok, 10));
         return f();
@@ -2250,24 +2234,14 @@ async function freshPlayers(b, base, errs) {
       for (let i = 0; i < 12 && answersSoFar() < 3; i++) {
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
         if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-        if (!(await until(() => document.querySelector('#view .q:not(.done) :is([data-c], .tyform, [data-w])')))) break;
-        if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
-        else {
-          const t = SHOWNQ[1],
-            c = [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c === t);
-          if (c) c.click();
-          else {
-            const f = document.querySelector('#view .tyform');
-            f.querySelector('input').value = GX(t).name;
-            f.requestSubmit();
-          }
-        }
+        if (!(await until(() => document.querySelector(SEL)))) break;
+        smokeAnswer();
         await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
         route();
       }
       return answersSoFar();
-    });
+    }, qa.SEL);
     const fishP = () => q.evaluate(() => Object.keys(store.get(subjKey('fish', 'progress'), {}) || {}).sort());
     const p0 = await fishP();
     if (n < 3 || !p0.length) all.push(`signed out, the fish quiz: ${n} answers, fish progress ${JSON.stringify(p0)}`);
@@ -2469,15 +2443,16 @@ async function freshPlayers(b, base, errs) {
     // (8) Tools › Type the genus with Fish chosen: the corals' genera (the Tools are the corals'; Codex review #442: it
     // drew fish teaching ids, "It was t01").
     await q.evaluate(() => (location.hash = '#tools/type'));
-    await q.waitForSelector('#view .tyform', {timeout: 15000});
+    await q.waitForSelector('#view .tyform', {timeout: 15000}); // answer.js: the Tools game, not a quiz question
     // The update notes due to this returning player come once the sync is over, over any page, and a page change closes
     // them unseen for 300 ms (progress.js recalcNotice): out of the way first, or one covers the click (a race CI won).
     const st = await settle(q);
     if (st) rv.push(`Type the genus with Fish chosen: ${st}`);
-    await q.click('#view .tyform [data-idk]');
+    await q.click('#view .tyform [data-idk]'); // answer.js: the Tools game, not a quiz question
     const ty = await q.evaluate(() => ({
       subj: SUBJ.id,
       res: (document.querySelector('#tyres') || {}).textContent || '',
+      // answer.js: the Tools game, not a quiz question
       label: document.querySelector('#view .tyform label').textContent
     }));
     if (ty.subj !== 'fish' || !/It was [A-Z][a-z]+/.test(ty.res) || /\bt\d\d\b/.test(ty.res) || ty.label !== 'Genus')
