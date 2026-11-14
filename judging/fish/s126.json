@@ -159,6 +159,22 @@
   "fish-s126-cand-358987371": {
    "code": "o1d2mss2",
    "keep": "best"
+  },
+  "fish-s126-cand-358987422": {
+   "code": "o1g1mss2",
+   "keep": "dup"
+  },
+  "fish-s126-cand-358987440": {
+   "code": "o0g1sls2",
+   "keep": "alt"
+  },
+  "fish-s126-cand-358987455": {
+   "code": "o1d1mss1",
+   "keep": "dup"
+  },
+  "fish-s126-cand-358987464": {
+   "code": "o1g1mss2",
+   "keep": "dup"
   }
  }
 }

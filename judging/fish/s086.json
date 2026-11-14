@@ -211,6 +211,22 @@
   "fish-s086-cand-727288230": {
    "code": "o1g0sl14",
    "keep": "best"
+  },
+  "fish-s086-cand-306599550": {
+   "code": "o1g1mlo3",
+   "keep": "best"
+  },
+  "fish-s086-cand-748305203": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s086-cand-646208278": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s086-cand-646208245": {
+   "code": "h1g1sm13",
+   "keep": "alt"
   }
  }
 }
