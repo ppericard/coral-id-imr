@@ -4914,6 +4914,112 @@ const WIDTHS = [390, 1280];
         if (le.length) fails.push(`Light proposals: ${le.slice(0, 4).join(' | ')}`);
         await lc.close();
       }
+      // Photo review › Cover proposals (admin-covers.js; Pierre, 2026-11-14 after Q339 (b), #864): in a context of its own.
+      // Pierre's published fish part first with no node cover: no proposal, the view not in the switch. Then three family
+      // covers of his, each an adult photo in play the rule does not pick (found in the page, so the check follows the data):
+      // three cards, Accept one and Undo, Keep mine, Accept all (the view leaves the switch), Undo, then Publish: its summary
+      // counts the Keep mine, the published fish part carries the covers and the answer.
+      {
+        const noCov = {...CUR, fish: {...(CUR.fish || {}), genera: {}}};
+        let curBody = JSON.stringify(noCov);
+        const cc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await cc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        await cc.route(
+          u => u.href.startsWith(base) && u.pathname === '/curation.json',
+          r => r.fulfill({contentType: 'application/json', body: curBody})
+        );
+        const cq = await cc.newPage(),
+          ce = [],
+          dlg = [];
+        cq.on('pageerror', e => ce.push(e.message));
+        cq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const cst = () =>
+          cq.evaluate(() => ({
+            tiles: [...document.querySelectorAll('#view .adm-cprop')].map(t => t.dataset.n),
+            why: [...document.querySelectorAll('#view .adm-cprop .adm-cwhy')].map(l => l.textContent),
+            names: [...document.querySelectorAll('#view .adm-cprop .adm-cside .adm-t i')].map(l => l.textContent),
+            views: [...document.querySelectorAll('#subnav .adm-views a')].map(a => a.textContent),
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            all: (document.querySelector('[data-cpall]') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        const cwait = fn =>
+          cq.waitForFunction(fn, null, {timeout: 90000}).catch(async () => ce.push(`timed out: ${JSON.stringify(await cst())}`));
+        await cq.goto(base + 'admin.html?demo#fish/photos/review/cover-proposals');
+        await cwait(() => /No cover proposal left/.test(document.getElementById('view').textContent));
+        let s = await cst();
+        if (s.views.includes('Cover proposals') || s.tiles.length) ce.push(`no cover of his: ${JSON.stringify(s)}`);
+        // Three families with a default, each given as his cover an adult photo in play that is not the rule's.
+        const picks = await cq.evaluate(() => {
+          const out = {};
+          for (const u of FISHC.units) {
+            const e = fuFamM(u),
+              r = fishCoverRule(e.all, DRAFT.fish, u.id, fuJ),
+              p = r && e.all.find(q => q.src && fishPid(q.f) !== fishPid(r.p.f) && !fishJuv(q, fuJ(q.f), DRAFT.fish));
+            if (p) out[u.id] = {cover: p.f};
+            if (Object.keys(out).length === 3) break;
+          }
+          return out;
+        });
+        const ids = Object.keys(picks);
+        if (ids.length !== 3) ce.push(`three families to cover: ${JSON.stringify(picks)}`);
+        curBody = JSON.stringify({...noCov, fish: {...noCov.fish, genera: picks}});
+        await cq.reload();
+        await cwait(() => document.querySelectorAll('#view .adm-cprop').length === 3);
+        const cov = id => cq.evaluate(id => [(((DRAFT.fish || {}).genera || {})[id] || {}).cover, ((DRAFT.fish || {}).kept || {})[id]], id);
+        s = await cst();
+        if (
+          ids.some(id => !s.tiles.includes(id)) ||
+          !s.views.includes('Cover proposals') ||
+          s.all !== 'Accept all 3' ||
+          s.why.length !== 3 ||
+          !s.why.every(t => /^(Most seen near Dauin: \d+ observers?|None seen near Dauin)/.test(t)) ||
+          s.names.length !== 6 ||
+          s.names.some(t => !t) ||
+          s.wide > 0
+        )
+          ce.push(`the view ${JSON.stringify(s)}`);
+        const [n0, n1] = s.tiles;
+        const rule0 = await cq.evaluate(n => coverOpen(coverList(), DRAFT.fish).find(x => x.id === n).rule.f, n0);
+        await cq.click(`.adm-cprop[data-n="${n0}"] [data-cpa]`);
+        await cwait(() => document.querySelectorAll('#view .adm-cprop').length === 2);
+        if ((await cov(n0))[0] !== rule0) ce.push(`Accept: ${JSON.stringify(await cov(n0))} not ${rule0}`);
+        await cq.evaluate(() => undo());
+        await cwait(() => document.querySelectorAll('#view .adm-cprop').length === 3);
+        if ((await cov(n0))[0] !== picks[n0].cover) ce.push(`Undo of Accept: ${JSON.stringify(await cov(n0))}`);
+        await cq.click(`.adm-cprop[data-n="${n1}"] [data-cpk]`);
+        await cwait(() => document.querySelectorAll('#view .adm-cprop').length === 2);
+        const k1 = await cov(n1);
+        if (k1[0] !== picks[n1].cover || !/^cover:\S+>\S+$/.test(k1[1] || '')) ce.push(`Keep mine: ${JSON.stringify(k1)}`);
+        await cq.click('[data-cpall]');
+        await cwait(() => /No cover proposal left/.test(document.getElementById('view').textContent));
+        s = await cst();
+        if (!/Accept all 2 cover proposals/.test(dlg.join('|')) || s.views.includes('Cover proposals') || s.tiles.length)
+          ce.push(`Accept all ${JSON.stringify(s)}`);
+        await cq.evaluate(() => undo());
+        await cwait(() => document.querySelectorAll('#view .adm-cprop').length === 2);
+        if (!(await cst()).views.includes('Cover proposals')) ce.push('Undo of Accept all: the view not back in the switch');
+        await cq.click('[data-cpall]');
+        await cwait(() => /No cover proposal left/.test(document.getElementById('view').textContent));
+        const sum = await cq.evaluate(() => pubSummary());
+        if (!/^1 fish cover proposal kept as it was$/m.test(sum)) ce.push(`Publish summary ${JSON.stringify(sum)}`);
+        await cq.click('#save');
+        await cq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => ce.push('Publish: no "Published" toast'));
+        const pub = await cq.evaluate(() => SAVED.fish);
+        if (
+          (pub.kept || {})[n1] !== k1[1] ||
+          pub.genera[n1].cover !== picks[n1].cover ||
+          ids.filter(id => id !== n1).some(id => pub.genera[id].cover === picks[id].cover)
+        )
+          ce.push(`published ${JSON.stringify({kept: pub.kept, genera: pub.genera})}`);
+        if (ce.length) fails.push(`Cover proposals: ${ce.slice(0, 4).join(' | ')}`);
+        await cc.close();
+      }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
       // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
       // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.
