@@ -18,6 +18,10 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
   credit; he chose the other way (the credit keeps the iNaturalist name).
 - **An interruption to ask a question is not a stop**: answer, then carry on.
 - **Before 16:30 nothing winds down** (Rule 0): no "end-of-day update" talk before then.
+- **Every brief forbids sending anything to an outside service** (search engines, image search, APIs) without
+  Pierre's go (AGENTS.md "Always ask first"): on 11-15 an agent sent R2 photo addresses to Yandex image search.
+- **Every brief says: a refused command is reported, never worked around** (another tool, `subprocess`, another
+  shell form): on 11-15 an agent wrote files through Python after a redirect was refused (auto mode flagged it).
 
 ## Handover of 2026-11-12 evening
 
