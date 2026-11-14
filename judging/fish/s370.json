@@ -163,6 +163,30 @@
   "fish-s370-cand-183931096": {
    "code": "p1g0sm13",
    "keep": "best"
+  },
+  "fish-s370-cand-733627680": {
+   "code": "o1g0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s370-cand-733627707": {
+   "code": "h1g0sl1c2",
+   "keep": "alt"
+  },
+  "fish-s370-cand-686401385": {
+   "code": "o1g0sl13",
+   "keep": "alt"
+  },
+  "fish-s370-cand-686401388": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s370-cand-686401426": {
+   "code": "p1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s370-cand-686401382": {
+   "code": "o1g0sl13",
+   "keep": "dup"
   }
  }
 }
