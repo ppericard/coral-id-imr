@@ -596,6 +596,33 @@ print(json.dumps([p['f'] for p in photos['t1']]))`)
   assert.deepStrictEqual(out, ['x1', 'fd', 'fb']);
 });
 
+// Two reference photos of one observation (s624, #893): the first in tools/fish_refs.json held the observation's place
+// even below the reference level, then left in apply, and the second, at the reference level, never joined. Now the one
+// at the reference level holds the place, whichever comes first; a game photo of its own on the observation still stays.
+test('fish_judge.py add_refs: of two reference photos of one observation, the one at the reference level plays', () => {
+  const out = JSON.parse(
+    py(`import fish_judge as FJ
+R = lambda f, o: {'f': f, 'o': o, 'src': 'x', 'from': 'taxon', 'rep': 'inaturalist', 'sp': 's1', 'for': ['s1']}
+J = {'lo1': 'o0g1sls3', 'hi1': 'p1g1sms3', 'hi2': 'p1g0sl14', 'lo2': 'o0g1sls3', 'hi3': 'p1g0sl15', 'hi4': 'p1g0sl15'}
+def level(tid, p):
+    e, jt = FJ.cap(J[p['f']], False, False, p.get('rep'))
+    return FJ.ref_level({**p, 'e': e, 'jt': jt})
+refs = {'t1': [R('lo1', 'oa'), R('hi1', 'oa'), R('hi2', 'ob'), R('lo2', 'ob'), R('hi3', 'oc'), R('hi4', 'od')]}
+FJ.load_refs = lambda fish=None: refs
+photos = {'t1': [{'f': 'g1', 'o': 'oc'}]}
+FJ.add_refs(photos, J, (), fish={}, dup=set(), level=level)
+fixed = [p['f'] for p in photos['t1']]
+photos = {'t1': [{'f': 'g1', 'o': 'oc'}]}
+FJ.add_refs(photos, J, (), fish={}, dup=set())
+print(json.dumps([fixed, [p['f'] for p in photos['t1']]]))`)
+  );
+  // oa: hi1 (rep, 4 after the bonus) takes lo1's place (partial, capped at 3); ob: hi2 came first and stays; oc: the game
+  // photo g1 stays, hi3 stays out (rule P4); od: hi4 joins.
+  assert.deepStrictEqual(out[0], ['g1', 'hi1', 'hi2', 'hi4']);
+  // Without level (the old behaviour): the first photo of each observation holds its place.
+  assert.deepStrictEqual(out[1], ['g1', 'lo1', 'hi2', 'hi4']);
+});
+
 // The tiles (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix; judging/FISH.md "The fish's
 // box"): a photo in play whose tags pass the tile rule and that has the fish's box gets a 360 px square, {f}-x.webp, cut
 // around the fish; kept when the fish fills 70% of it and the box is 320 px wide in the original.
