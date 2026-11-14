@@ -221,6 +221,12 @@ const R2_PAUSE = 60e3;
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
+  // A page opened while a newer version waits for this worker is left to the browser (2026-11-14, the net smoke's admin
+  // page on a merge train): the navigation makes Chromium take the waiting version over and stop this worker with the
+  // navigation's fetch event in it, and a page whose reply the worker was to give then never loads, not even with a
+  // worker that only passes the request on. Not answered here, it loads from the network; only a page opened offline in
+  // the moment a new version waits (the old worker busy) misses the copy kept offline. docs/ARCHITECTURE.md "Service worker".
+  if (e.request.mode === 'navigate' && self.registration.waiting) return;
   if (u.origin === R2 ? u.pathname.startsWith('/img/') : u.origin === location.origin && u.pathname.includes('/img/'))
     e.respondWith(photo(e.request, u).catch(() => Response.error()));
   else if (u.origin !== location.origin) return;

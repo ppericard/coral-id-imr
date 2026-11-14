@@ -158,11 +158,18 @@ Registered by `app.js` once every tier is in (https only); it serves the app off
   next source (`app.js` `photoFail`), and R2 is not asked for `R2_PAUSE` (60 s). Versioned files and fonts: cache first,
   no network once cached. The other app files (the page, `curation.json`, the manifest): revalidated with the server; a
   cached copy is served after `SLOW` (2 s) on a slow line while the network refreshes it. The page's reply never waits
-  for its cache write (written in the event's lifetime, at most 30 s).
+  for its cache write (written in the event's lifetime, at most 30 s). **A page opened while a newer version waits**
+  (`registration.waiting`: the old worker still busy, or started again by a request in the instant Chromium stopped it
+  for the swap) is not answered: the browser loads it from the network. In Chromium that navigation takes the waiting
+  version over and stops the old worker with the navigation's fetch event in it, and a page the worker was answering
+  then never loaded (2026-11-14, `tests/net.smoke.js` check 9, which holds such a swap; a worker that only passed the
+  request on hung the same way). The cost: a page opened offline in that moment gets no offline copy.
 - **No time limit on Cache Storage**: every reply waits for it (the `soon` limit of #531 was removed on 2026-11-08). It
   was added for the net.smoke step-9 hang, read then as a stalled Cache Storage; that hang was traced on 2026-11-05 to a
   navigation that reached the old worker in the instant Chromium stopped it for a version swap (the test now opens the
-  admin on the version already installed, #615), and no Cache Storage stall has been seen.
+  admin on the version already installed, #615), and no Cache Storage stall has been seen. The same hang came back on
+  2026-11-14, when a slow swap left a version waiting as that admin page opened: sw.js now leaves such a page to the
+  network (Fetch, above).
 
 ## Subjects (the taxon model, 2026-11-03)
 

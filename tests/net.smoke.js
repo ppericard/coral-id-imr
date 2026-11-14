@@ -71,7 +71,8 @@ const server = http.createServer((req, res) => {
 // 4. The leaderboard shows the copy kept on the device at once while the sync script is slow.
 // 5. Leaving a page drops its photos still loading.
 // 6. The service worker installs even when each app file fails once (retried at install).
-// 9. A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet.
+// 9. A new version reloads the page by itself at the next page change; a local copy sends nothing to the sheet; a page
+//    opened while a new version waits loads.
 // 8. Start-up recovers when its scripts, stylesheet and data.json fail once (loader retries, getR).
 // 7. Photo sizes follow the box, the screen density and the Photo quality setting (Auto, Saver, Full); thumbnails 240 px.
 //    Auto is Saver on a line the app measures as slow, and Saver never moves a shown photo to a bigger file.
@@ -518,6 +519,12 @@ const server = http.createServer((req, res) => {
       for (const t = Date.now(); (s.n || Date.now() - s.at < 500) && Date.now() - t < 20000;) await pg.waitForTimeout(100);
     };
   };
+  // Waits until fn, run in the page, gives a truthy value, awaited when it is a Promise (page.waitForFunction is not:
+  // a Promise counts as truthy at once); false after ms.
+  const until = async (pg, fn, ms) => {
+    for (const t = Date.now(); Date.now() - t < ms; await pg.waitForTimeout(100)) if (await pg.evaluate(fn).catch(() => false)) return true;
+    return false;
+  };
   {
     // No Playwright route in this test (2026-11-04): the admin page of the last check now and then never reached
     // DOMContentLoaded on CI (about 1 run in 13), waiting on the worker's own fetch of admin.html, which never reached
@@ -637,12 +644,9 @@ const server = http.createServer((req, res) => {
     // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
     // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
     await qQuiet();
-    // No version waiting or installing: the last page opens on one worker, not in the middle of a swap (above).
-    await q
-      .waitForFunction(() => navigator.serviceWorker.getRegistration().then(g => !!g && !g.installing && !g.waiting), null, {
-        timeout: 30000
-      })
-      .catch(() => fails.push('Admin: a new version still waiting before the last page opens'));
+    // The last page may open while a version still waits (2026-11-14, train 20261114-165225: the check here that there
+    // was none passed a Promise to waitForFunction, which takes it as truthy, and so never waited; the page then opened in
+    // the middle of a swap and never loaded). Since sw.js leaves such a page to the network, it loads: checked below.
     HOLD = /cand\.json$/;
     // Printed if the new page never reaches DOMContentLoaded: every request of the context still pending (the worker's
     // included), and each worker version's state as Chromium reports it (running/stopping/stopped, installed/activated),
@@ -676,7 +680,7 @@ const server = http.createServer((req, res) => {
           ADMIN_HITS.filter(h => h.at >= q2At)
             .map(h => `${h.url} at +${h.at - q2At} ms, ${h.done ? `answered at +${h.done - q2At} ms` : 'never answered'}`)
             .join('; ') || 'none'
-        }. Worker versions: ${[...new Set(vers)].join('; ') || 'none'}.`
+        }. Worker versions: ${[...new Set(vers)].join('; ') || 'none'}. Failed before: ${fails.join(' | ') || 'nothing'}.`
       );
       throw e;
     });
@@ -685,6 +689,44 @@ const server = http.createServer((req, res) => {
       fails.push('Admin: not listening for a new version while it loads');
     HOLD = null;
     HELD.splice(0).forEach(x => x.destroy());
+    // A page opened while a new version waits loads (sw.js: a navigation is left to the browser then). The swap is held
+    // the way it was on the train: a request through the old worker in the instant Chromium stops it for the swap starts
+    // it again, and the new version then waits; the next page's navigation makes Chromium stop the old worker with the
+    // navigation in it. Answered by the old worker, that page never loaded (6 runs in 6 before the fix, 2026-11-14).
+    // Tried up to 3 times (a new deploy each): the request may come too late to restart the old worker.
+    for (let k = 0, held = false; !held && k < 3; k++) {
+      let old = null,
+        poked = false;
+      const c3 = await ctx.newCDPSession(q2);
+      c3.on('ServiceWorker.workerVersionUpdated', e =>
+        e.versions.forEach(v => {
+          if (old === null && v.status === 'activated') old = v.versionId;
+          if (!poked && v.versionId === old && v.runningStatus === 'stopping') {
+            poked = true;
+            q2.evaluate(() => fetch('manifest.webmanifest?n=' + Math.random()).catch(() => {})).catch(() => {});
+          }
+        })
+      );
+      await c3.send('ServiceWorker.enable');
+      SWV = 3 + k;
+      await q2.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
+      // Held: still waiting 2 s after its install, the old worker running again.
+      await until(q2, () => navigator.serviceWorker.getRegistration().then(g => !!g && !g.installing && !!g.waiting), 10000);
+      await q2.waitForTimeout(2000);
+      held = await q2.evaluate(() => navigator.serviceWorker.getRegistration().then(g => !!g && !!g.waiting));
+      await c3.detach();
+      if (!held && k < 2) continue;
+      // Said, not failed: what is missing then is the setup, not the behaviour checked.
+      if (!held) console.log('net.smoke: no swap held in 3 tries, a page opened during a swap not checked');
+      const q3 = await ctx.newPage();
+      if (
+        !(await q3.goto(base + 'admin.html?demo', {waitUntil: 'domcontentloaded', timeout: 15000}).then(
+          () => true,
+          () => false
+        ))
+      )
+        fails.push('Admin: a page opened while a new version waits never loaded');
+    }
     await b9.close();
   }
   // 13. A new version without a service worker (ROADMAP "New versions for pages no service worker controls"; a chat
