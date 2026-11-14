@@ -47,6 +47,9 @@ read-only token and no write credential anywhere; the most it can do is hand ove
 the push job commits as it would the real result (that is the trust the workflow needs: it writes those files).
 **Not covered**: the `photos` job still holds the R2 keys for its upload of the new photos (`tools/r2_sync.sh
 r2-upload`, before the commit marks them downloaded): such code could write to the photo bucket (never to `main`).
+Like any job, a read-only one also holds the runner's own token for artifacts and the Actions cache: such code could
+save a cache entry under `main` that a later run restores (the Smokes' Playwright Chromium cache, when `main` has none
+of that key yet); those runs hold read-only tokens too.
 
 ## Protections in the sync script (v12)
 
