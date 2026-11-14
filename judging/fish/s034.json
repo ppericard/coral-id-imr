@@ -227,6 +227,14 @@
   "fish-s034-cand-696138120": {
    "code": "p1g1sss2",
    "keep": "dup"
+  },
+  "fish-s034-cand-696137758": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s034-cand-696137753": {
+   "code": "o1g1smo3",
+   "keep": "alt"
   }
  }
 }

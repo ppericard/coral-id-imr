@@ -183,6 +183,26 @@
   "fish-s268-cand-626329391": {
    "code": "p1g1ssk1",
    "keep": "best"
+  },
+  "fish-s268-cand-610152693": {
+   "code": "p1g1ms13",
+   "keep": "best"
+  },
+  "fish-s268-cand-610152700": {
+   "code": "o1g1mm12",
+   "keep": "alt"
+  },
+  "fish-s268-cand-610152697": {
+   "code": "p1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s268-cand-655247462": {
+   "code": "p1g0smk2",
+   "keep": "best"
+  },
+  "fish-s268-cand-476249852": {
+   "code": "o1g0smo3",
+   "keep": "best"
   }
  }
 }
