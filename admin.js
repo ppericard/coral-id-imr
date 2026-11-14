@@ -3831,8 +3831,10 @@ const HELP = {
     <p><b>Tap a session</b> to unfold its summary under it; tap again to fold it. A sentence first, then start → end, length, answers, right (beside it, small, the share the game expected: the mean of each answer's logged chance) and the progress % before → after the session (the player's answers replayed with today's rules up to the session's first answer, then through it). The chart: right answers over the session's last ${SESS.WIN} (from its 5th answer) against the expected, its scale from ${SESS.PAD} points under the session's lowest point (rounded down to 10) to 100%, a dot under each genus met for the first time, ★ at a genus learned; a session under 5 answers shows its answers as dots. <b>New genera</b>: first asked in this session (<i>card</i>: its card showed, not asked yet). <b>Most improved</b>: the genera whose bar rose most (${Math.round(SESS.GAIN * 100)} points or more, at most ${SESS.TOP}). <b>Difficulties</b>: genera missed ${SESS.MISS} times or more, mix-ups (shown → answered), the photos of the questions missed, hardest first by their difficulty for everyone (the photo Elo), each with <b>recognised by N%</b>: the share of starting players (Elo 1000) who recognise it without guessing, 1 / (1 + e<sup>d</sup>) of its photo Elo d, whatever the question's format; <b>hard for everyone</b>: a photo everyone misses, as on Health (counted on players: ${HEALTH.PL_MIN}+ players answered it, most of them miss it, ${HEALTH.PH_MIN}+ answers). <b>Achievements</b>: earned within ${SESS.EDGE / 6e4} minutes of the session's answers (from the player's saved progress). <b>Events</b>: which session it is and the time since the last one, Open all, the first-launch question, genera learned (the right exam question that passed it), mastery exam questions, typed answers, ${SESS.RUN} right or more in a row, ending on ${SESS.END} misses or more in a row. <b>Journey →</b> opens the player's full journey.</p>`;
   },
   statslog: `<p>The whole class, from every quiz and duel answer synced to the sheet (each player, by name, is on the Players page). Calibration (sheet v5): each answer's expected chance of success from the player's level on the genus and the photos' difficulty, against the actual result; the games aim at about 80%. New photo = answers showing at least one photo the player had never seen. Genera, Elo = the median player's Elo on the genus (1000 + 200 × their level on it).</p>
-    <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>`,
-  statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Before v10: mix-ups logged without their choices.</p>`,
+    <p>Learning curve: right answers by rank of the answer (each player's 1st to 10th answer, 11th to 20th…), all players pooled. Genera: how often the genus shown was named; Given ✗ = times it was answered wrongly for another genus. Mix-ups open the comparison on the site.</p>
+    <p>The Fish side reads the fish answers: Families and genera (a genus the IMR course names otherwise shows its IMR name), the questions on each rank and, once players type, typed against picked; no Elo column (the sheet sends the corals' levels only) and no comparison page: a name opens its family in Tree.</p>`,
+  statsconf: `<p>Which genera players mix up. <b>Pairs</b>: Offered = times the two were among the choices together, Mixed = times one was answered for the other (A→B: the first taken for the second). Score = the mix-up rate, starting from Look-alike (IMR lecture or Coral Finder book), Family or Other and following the answers as they come; from ${CONF.TRAP} the quiz uses the pair as a trap. Not declared = traps no lecture names. <b>Look-alike from the data</b>: a pair no source declares, offered together ${CONF.N} times or more with a score of ${CONF.TRAP} or more: the duels, the Again after a mix-up and the genus sheets treat it as a declared look-alike (the app adds a shared growth form to the start, so its count may differ by a pair at the edge). <b>Photos, Colonies, Species</b>: how often a wrong answer was given when they were shown, and what for. ≥1 / ≥3 / ≥10 hides rows with fewer answers. Typed: mix-ups typed (no choices offered). Before v10: mix-ups logged without their choices.</p>
+    <p>The Fish side reads the fish answers: Look-alike = the families' declared look-alikes, or two genera of one family; the game also starts two families of one key group a little higher, which this page leaves out. A name opens its family in Tree; a photo enlarges; Observations are the iNaturalist observations.</p>`,
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected. <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
     <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from; <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
@@ -4776,7 +4778,11 @@ function fishAdmin() {
           fam['s:' + x.name] = x.family;
           if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
         });
-        FISHA = {gen: F.gen, ph: P, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg}; // the slate: the app's (app.js UNITS slate)
+        // The IMR sub-entries: each genus the IMR course names otherwise (its imr tag: Amphiprion, Anemonefish), its IMR
+        // name (Analyses › Learning › Answer log beside the genus).
+        const imr = Object.create(null);
+        (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
+        FISHA = {gen: F.gen, ph: P, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg, imr}; // the slate: the app's (app.js UNITS slate)
         if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       })
       .catch(() => {}));
@@ -9333,7 +9339,6 @@ const playerRows = () => (ANS.rows || []).filter(r => !goneRow(r));
 // Players pages read the subject on screen's (Activity, a Journey, a session's summary; the list of players, each
 // subject's in its own columns).
 const rowsOf = (S = ASUBJ) => (ANS ? ofAns('rows:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id).filter(r => !goneRow(r))) : []);
-const statRows = () => playerRows();
 // Recent sessions (Pierre, 2026-11-03: who played last, is anyone playing now): the last RECENT.N sessions of every
 // player (sessionsOf), newest first, by name when signed in (USERS ids), else by anonymous id as on Players. Playing
 // now = its last answer less than RECENT.NOW minutes old. Modes: quiz (look-alike duels slipped into it included, as on
@@ -9498,6 +9503,95 @@ function activityCard(R) {
     (n, h) => `<div title="${h}:00-${h + 1}:00: ${n} answers"><i style="height:${Math.round((100 * n) / hm)}%"></i></div>`
   ).join('')}</div><p class="adm-axis"><span>0 h</span><span>12 h</span><span>23 h</span></p></section>`;
 }
+// answerlog: begin
+// The Answer log's and the Pairs' readings for the subject on screen (fish admin at parity with the corals, Pierre
+// 2026-11-08), pure: tests/answerlog.test.js. Rows: the sheet's readAnswers rows [id, time ms, shown, answered, right, mode,
+// photos, expected, ability, new photos, choices, anonymous, ...].
+// The Answer log's Conditions: [name, answers, right] per condition that has answers. Every subject: the photo quiz and
+// the Duel tab. A subject with several views (SUBJECTS views): one view or all of a question's, and with or without its
+// last view (the corals' corallites: a photo file named -<view>-). A subject whose units sit at several ranks (SUBJECTS
+// sheets: the prefix of each rank's ids): the questions on each rank. Then, once a typed answer is logged (core.js fmtOf),
+// the typed answers and those picked from choices.
+function logConds(R, S) {
+  const V = S.views || [],
+    last = V.length > 1 ? V[V.length - 1] : null,
+    nv = r =>
+      String(r[6] || '')
+        .split(' ')
+        .filter(Boolean).length,
+    duel = r => String(r[5] || '').startsWith('quiz-duel'),
+    typed = r => fmtOf(r[5], 0) === 'typed',
+    on = last && new RegExp(`-${last[0]}-`),
+    lw = last && last[1].toLowerCase();
+  return [
+    ['Quiz', r => !duel(r)],
+    ['Duel', duel],
+    ...(last
+      ? [
+          ['Single view', r => nv(r) === 1],
+          ['All views', r => nv(r) > 1],
+          [`With ${lw}`, r => on.test(r[6])],
+          [`Without ${lw}`, r => !on.test(r[6])]
+        ]
+      : []),
+    ...Object.entries(S.sheets || {}).map(([k, p]) => [
+      `${k.charAt(0).toUpperCase() + k.slice(1)} questions`,
+      r => String(r[2] || '').startsWith(p)
+    ]),
+    ...(R.some(typed)
+      ? [
+          ['Typed', typed],
+          ['From choices', r => !typed(r)]
+        ]
+      : [])
+  ]
+    .map(([t, f]) => {
+      const L = R.filter(f);
+      return [t, L.length, L.filter(r => r[4]).length];
+    })
+    .filter(c => c[1]);
+}
+// A pair's start on Pairs (core.js CONF, as model.js pooledConf starts it): [its name, its prior rate] from the two units'
+// records {look, fam}: a declared look-alike, the same family, else neither.
+const pairPrior = (a, b, ra, rb) =>
+  (ra.look || []).includes(b) || (rb.look || []).includes(a)
+    ? ['Look-alike', CONF.LOOK]
+    : ra.fam && ra.fam === rb.fam
+      ? ['Family', CONF.FAM]
+      : ['Other', CONF.BASE];
+// A unit's record for pairPrior from another subject's data as fishAdmin reads them (FA: FISHA; gp: its genus prefix,
+// SUBJECTS sheets genus): a family its declared look-alikes (core.js fishGen look); a genus every other genus of its
+// family, as the game declares them (app.js fishGenera look), so two genera of one family start as look-alikes.
+function fishUnitRec(FA, n, gp) {
+  const g = FA && FA.gen[n];
+  if (g) return {look: g.look || [], fam: ''};
+  const f = FA && FA.fam[n];
+  if (!f || !gp || !String(n).startsWith(gp)) return {look: [], fam: ''};
+  return {look: Object.keys(FA.fam).filter(k => k !== n && k.startsWith(gp) && FA.fam[k] === f), fam: f};
+}
+// The mix-ups logged with no other unit among the choices, as core.js confusionOf counts them (a trusted player's wrong
+// answer, its old), split by format: typed answers (core.js fmtOf: a typed question offers no choice) and the others,
+// logged before sheet v10. {typed, old}, each {"shown|answered": count}.
+function noChoiceMixups(R) {
+  const tr = trustOf(R),
+    out = {typed: {}, old: {}};
+  R.forEach(r => {
+    const g = r[2],
+      a = r[3];
+    if (!g || !tr[r[0]] || r[4] || !a || a === g) return;
+    if (
+      String(r[10] || '')
+        .split(/\s+/)
+        .some(x => x && x !== g)
+    )
+      return;
+    const O = fmtOf(r[5], 0) === 'typed' ? out.typed : out.old,
+      k = g + '|' + a;
+    O[k] = (O[k] || 0) + 1;
+  });
+  return out;
+}
+// answerlog: end
 // Players › Activity (players/activity: who plays and how much) and Analyses › Learning › Answer log (analyses/learning/answer-log: what the answers
 // say, live; Pierre, 2026-11-04, one role per admin page): one reading of the answer log, each view its own cards.
 function statsPlayers() {
@@ -9510,10 +9604,11 @@ function statsPlayers() {
     bindStats();
     return;
   }
-  // Activity: the subject on screen's answers (every subject has its Activity); the Answer log: the replayed subject's.
-  // Another subject's units are named from its entries (fishAdmin, read once; Codex review #690).
-  if (!log && !ASUBJ.replay && !FISHA) fishAdmin().then(() => cur === 'players/activity' && FISHA && render());
-  const R = log ? statRows() : rowsOf(),
+  // Activity and the Answer log: the subject on screen's answers (every subject has both; the Corals | Fish switch, rule
+  // A4). Another subject's units are named from its entries (fishAdmin, read once; Codex review #690).
+  if (!ASUBJ.replay && !FISHA)
+    fishAdmin().then(() => (cur === 'players/activity' || cur === 'analyses/learning/answer-log') && FISHA && render());
+  const R = rowsOf(),
     P = {};
   R.forEach(r => {
     const p = (P[r[0]] = P[r[0]] || {id: r[0], L: [], d: new Set()});
@@ -9593,19 +9688,18 @@ function statsPlayers() {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 15),
     mm = ml.length ? ml[0][1] : 1;
-  const cond = [
-    ['Quiz', r => !r[5].startsWith('quiz-duel')],
-    ['Duel', r => r[5].startsWith('quiz-duel')],
-    ['Single view', r => r[6].split(' ').filter(Boolean).length === 1],
-    ['All views', r => r[6].split(' ').filter(Boolean).length > 1],
-    ['With corallites', r => /-macro-/.test(r[6])],
-    ['Without corallites', r => !/-macro-/.test(r[6])]
-  ]
-    .map(([t, f]) => {
-      const L = R.filter(f);
-      return [t, L.length, L.filter(r => r[4]).length];
-    })
-    .filter(c => c[1]);
+  const cond = logConds(R, ASUBJ);
+  // A unit's name: its page's link (repUnit); an IMR sub-entry (a genus the IMR course names otherwise: fishAdmin imr)
+  // with its IMR name. Its Elo column only for the subject whose players' levels the sheet sends (sheet v5: the replayed
+  // one, SUBJECTS replay: ANS.players holds its progress's levels).
+  const unit = n =>
+      repUnit(n, true) +
+      (FISHA && FISHA.imr[n]
+        ? ` <small title="Its name in the ${esc(ORG.short)} course">${esc(ORG.short)} ${esc(FISHA.imr[n])}</small>`
+        : ''),
+    elo = !!ASUBJ.replay && gl.some(g => GT[g.n]),
+    // a pair's compare page on the site, for a subject that has one (SUBJECTS pages cmp)
+    cmpOn = (ASUBJ.pages || []).includes('cmp');
   const total = DATA ? Object.keys(DATA.gen).length : 0;
   $v.innerHTML =
     head +
@@ -9636,15 +9730,15 @@ function statsPlayers() {
         : `<p class="note">Needs answers logged by sheet script v5${ANS.v >= 5 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`
     }</section>
     <section class="adm-scard"><h3>Conditions</h3><table class="adm-tbl">${cond.map(([t, n, r]) => `<tr><td>${t}</td><td>${pct(r, n)}</td><td>${sbar(r, n)}</td><td class="n">${n}</td></tr>`).join('')}</table></section>
-    <section class="adm-scard"><h3>Genera</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th><th title="Median player Elo on the genus (1000 + 200 × their level on it)">Elo</th></tr></thead><tbody>
-      ${gl.map(g => `<tr><td><a class="adm-gen" href="${esc(genusHref(g.n))}"><i>${esc(g.n)}</i></a></td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td><td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td></tr>`).join('')}</tbody></table></div></section>
+    <section class="adm-scard"><h3>${esc(manyWord(ASUBJ))}</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Shown</th><th>Right</th><th></th><th>n</th><th title="Given wrongly">Given ✗</th>${elo ? '<th title="Median player Elo on the genus (1000 + 200 × their level on it)">Elo</th>' : ''}</tr></thead><tbody>
+      ${gl.map(g => `<tr><td>${unit(g.n)}</td><td>${pct(g.ok, g.s)}</td><td>${sbar(g.ok, g.s, g.ok / g.s < 0.5 ? 'bad' : '')}</td><td class="n">${g.s}</td><td class="n">${g.w || ''}</td>${elo ? `<td class="n">${GT[g.n] ? eloText(med(GT[g.n]), null, {what: 'Median player Elo on the genus'}) : ''}</td>` : ''}</tr>`).join('')}</tbody></table></div></section>
     <section class="adm-scard"><h3>Mix-ups</h3>${
       ml.length
         ? `<table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th></th><th>n</th></tr></thead><tbody>
       ${ml
         .map(([k, n]) => {
           const [a, b] = k.split('|');
-          return `<tr><td><i>${esc(a)}</i></td><td><a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a></td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
+          return `<tr><td>${cmpOn ? `<i>${esc(a)}</i>` : repUnit(a, true)}</td><td>${cmpOn ? `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener"><i>${esc(b)}</i></a>` : repUnit(b, true)}</td><td>${sbar(n, mm, 'bad')}</td><td class="n">${n}</td></tr>`;
         })
         .join('')}</tbody></table>`
         : '<p class="note">None.</p>'
@@ -10163,10 +10257,18 @@ const ORIGIN_T = {imr: 'IMR', own: 'Own', dauin: 'iNat Dauin', ph: 'iNat Philipp
 // the answer log. A pair's rate = mixed up / offered together (needs the choices, logged since sheet v10); its score starts
 // from a prior (declared look-alike, same family, other: core.js CONF) and follows the answers; the quiz picks its traps
 // by the same score (app.js confOf, which also gives a shared growth form a slightly higher start). Answers from before
-// v10 only add to "Before v10" (mix-ups without the choices offered).
+// v10 only add to "Before v10" (mix-ups without the choices offered); typed answers, which offer none, to "Typed".
+// The subject on screen's (the Corals | Fish switch, rule A4; fish admin at parity, 2026-11-08): its answers, its units
+// (a coral genus's look-alikes and family from data.json, another subject's from its data as fishAdmin reads them:
+// fishUnitRec), its photos (the corals' with their view, another subject's as fishAdmin reads them, each under its unit)
+// and its pairs (the site's compare page for a subject that has one, SUBJECTS pages cmp; else each unit's page).
 function statsConf() {
-  const R = ANS.rows || [],
-    C = ofAns('conf', () => confusionOf(R));
+  const S = ASUBJ,
+    R = ofAns('rows-all:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id)),
+    C = ofAns('conf:' + S.id, () => confusionOf(R)),
+    NC = ofAns('nochoice:' + S.id, () => noChoiceMixups(R)),
+    many = !!S.sheets; // units at several ranks, named from the subject's data (fishAdmin)
+  if (many && !FISHA) fishAdmin().then(() => cur === 'analyses/difficulty/pairs' && FISHA && render());
   const head = `<div class="adm-shead">${segBtns('min', [
     [1, '≥1'],
     [3, '≥3'],
@@ -10177,12 +10279,18 @@ function statsConf() {
     bindStats();
     return;
   }
-  const gx = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || {look: []};
-  const look = (a, b) => (gx(a).look || []).includes(b) || (gx(b).look || []).includes(a);
-  const prior = (a, b) =>
-    look(a, b) ? ['Look-alike', CONF.LOOK] : gx(a).fam && gx(a).fam === gx(b).fam ? ['Family', CONF.FAM] : ['Other', CONF.BASE];
+  const gx = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || {look: []},
+    rec = n => (many ? fishUnitRec(FISHA, n, S.sheets.genus) : gx(n)),
+    prior = (a, b) => pairPrior(a, b, rec(a), rec(b)),
+    cmpOn = (S.pages || []).includes('cmp'),
+    // a unit's name: a coral genus in italics, another subject's unit by its name with its page's link (repUnit)
+    nm = n => (many ? repUnit(n, true) : `<i>${esc(n)}</i>`),
+    // a unit of the photos' rows by its name (a coral genus in italics)
+    gnm = g => (many ? (FISHA && FISHA.gen[g] ? esc(FISHA.gen[g].name) : '') : `<i>${esc(g)}</i>`);
   const cmp = (a, b) =>
-    `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`;
+    cmpOn
+      ? `<a class="adm-gen" href="./#${routeOut(`cmp-${a}|${b}`)}" target="_blank" rel="noopener" title="Compare on the site"><i>${esc(a)}</i> · <i>${esc(b)}</i></a>`
+      : `${nm(a)} · ${nm(b)}`;
   const PR = Object.entries(C.pair)
     .filter(([, c]) => c[0] >= SF.min)
     .map(([k, c]) => {
@@ -10202,26 +10310,33 @@ function statsConf() {
       };
     })
     .sort((x, y) => y.sc - x.sc || y.mix - x.mix);
-  const OLD = Object.entries(C.old)
-    .sort((x, y) => y[1] - x[1])
-    .slice(0, 15);
+  const top15 = O =>
+    Object.entries(O)
+      .sort((x, y) => y[1] - x[1])
+      .slice(0, 15);
+  const OLD = top15(NC.old),
+    TYP = top15(NC.typed);
   // Per photo, colony and species: answers where the photo was shown, the wrong ones, and what it was taken for most.
   // Millepora's and the bonus genera's photos (DATA.x.gen) are played too (Millepora a slate genus, the others once on).
+  // Another subject's photos: as fishAdmin reads them, each under its unit (its family).
   const META = {};
-  allPhotos().forEach(p => (META[p.f] = p));
-  Object.entries((DATA.x || {}).gen || {}).forEach(([n, g]) =>
-    Object.entries(g.views || {}).forEach(([v, L]) =>
-      (L || []).forEach(p => {
-        META[p.f] = META[p.f] || {...p, genus: n, view: v};
-      })
-    )
-  );
+  if (many) Object.values((FISHA && FISHA.ph) || {}).forEach(p => (META[p.f] = META[p.f] || {...p, genus: p.entry}));
+  else {
+    allPhotos().forEach(p => (META[p.f] = p));
+    Object.entries((DATA.x || {}).gen || {}).forEach(([n, g]) =>
+      Object.entries(g.views || {}).forEach(([v, L]) =>
+        (L || []).forEach(p => {
+          META[p.f] = META[p.f] || {...p, genus: n, view: v};
+        })
+      )
+    );
+  }
   // Each answer counts once per key: several views of one colony in a question are one answer for that colony.
   const grp = key => {
     const O = {};
     R.forEach(r => {
       const done = new Set();
-      r[6]
+      String(r[6] || '')
         .split(' ')
         .filter(Boolean)
         .forEach(f => {
@@ -10244,7 +10359,7 @@ function statsConf() {
   };
   const top = o => {
     const e = Object.entries(o.as).sort((a, b) => b[1] - a[1])[0];
-    return e ? `<i>${esc(e[0])}</i> ×${e[1]}` : '';
+    return e ? `${nm(e[0])} ×${e[1]}` : '';
   };
   const tbl = (L, first, cell) =>
     L.length
@@ -10255,6 +10370,22 @@ function statsConf() {
     SP = grp(p => (p.t && p.t !== p.genus ? p.t : ''));
   const withCh = R.filter(r => r[10]).length,
     surprise = PR.filter(p => p.pt !== 'Look-alike' && p.sc >= CONF.TRAP).length;
+  // A photo's cell: a coral photo by its genus and view (zoom: its genus's photos); another subject's by its unit and
+  // species (zoomOne: the photo alone).
+  const phCell = o =>
+      many
+        ? `<button type="button" class="adm-link" data-zo="${esc(o.f)}">${gnm(o.g)} <i>${esc(META[o.f].t || '')}</i></button>`
+        : `<button type="button" class="adm-link" data-zf="${esc(o.f)}" data-g="${esc(o.g)}"><i>${esc(o.g)}</i> ${esc(VIEW_T[META[o.f].view] || '')}</button>`,
+    // The mix-ups logged without choices (noChoiceMixups): typed answers, and the answers from before sheet v10.
+    noCh = (L, t, h) =>
+      L.length
+        ? `<section class="adm-scard"><h3>${t}</h3><table class="adm-tbl"><thead><tr><th>Shown</th><th>${h}</th><th>n</th></tr></thead><tbody>${L.map(
+            ([k, n]) => {
+              const [a, b] = k.split('|');
+              return `<tr><td>${nm(a)}</td><td>${nm(b)}</td><td class="n">${n}</td></tr>`;
+            }
+          ).join('')}</tbody></table></section>`
+        : '';
   $v.innerHTML =
     head +
     kpis([
@@ -10272,26 +10403,22 @@ function statsConf() {
       ${PR.slice(0, 60)
         .map(
           p =>
-            `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}${p.dl ? ' · <b title="Offered together ' + CONF.N + ' times or more, score ' + CONF.TRAP + ' or more: duels, Again and genus sheets treat it as a look-alike">look-alike from the data</b>' : ''}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`
+            `<tr><td>${cmp(p.a, p.b)}</td><td>${p.pt}${p.dl ? ' · <b title="Offered together ' + CONF.N + ' times or more, score ' + CONF.TRAP + ' or more: duels, Again and the sheets treat it as a look-alike">look-alike from the data</b>' : ''}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td>${pct(p.mix, p.off)}</td><td>${sbar(p.sc, 0.6, p.sc >= CONF.TRAP ? 'bad' : '')}</td><td class="n">${p.sc.toFixed(2)}</td><td class="n">${p.ab || ''}</td><td class="n">${p.ba || ''}</td></tr>`
         )
         .join('')}</tbody></table></div>`
         : `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`
     }</section>
-    <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', o => `<button type="button" class="adm-link" data-zf="${esc(o.f)}" data-g="${esc(o.g)}"><i>${esc(o.g)}</i> ${esc(VIEW_T[META[o.f].view] || '')}</button>`)}</section>
-    <section class="adm-scard"><h3>Colonies</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener"><i>${esc(o.g)}</i> ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>
+    <section class="adm-scard"><h3>Photos</h3>${tbl(PH, 'Photo', phCell)}</section>
+    <section class="adm-scard"><h3>${esc(S.admin.obs || 'Colonies')}</h3>${tbl(OB, 'Observation', o => `<a href="${esc(o.k)}" target="_blank" rel="noopener">${gnm(o.g)} ${esc(o.k.replace(/^.*\//, '#'))}</a>`)}</section>
     <section class="adm-scard"><h3>Species</h3>${tbl(SP, 'Species', o => `<i>${esc(o.k)}</i>`)}</section>
-    ${
-      OLD.length
-        ? `<section class="adm-scard"><h3>Before v10</h3><table class="adm-tbl"><thead><tr><th>Shown</th><th>Answered</th><th>n</th></tr></thead><tbody>${OLD.map(
-            ([k, n]) => {
-              const [a, b] = k.split('|');
-              return `<tr><td><i>${esc(a)}</i></td><td><i>${esc(b)}</i></td><td class="n">${n}</td></tr>`;
-            }
-          ).join('')}</tbody></table></section>`
-        : ''
-    }
+    ${noCh(TYP, 'Typed', 'Typed as')}${noCh(OLD, 'Before v10', 'Answered')}
     </div>`;
   bindStats();
+  // another subject's photos: enlarged alone, captioned with their unit's name
+  $v.querySelectorAll('[data-zo]').forEach(b => {
+    const p = META[b.dataset.zo];
+    b.onclick = () => p && zoomOne({...p, genus: FISHA && FISHA.gen[p.genus] ? FISHA.gen[p.genus].name : ''});
+  });
 }
 function statsPhotos() {
   const PS = photoStats(),
