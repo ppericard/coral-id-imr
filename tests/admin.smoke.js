@@ -49,11 +49,12 @@ const server = http.createServer((req, res) => {
 // Checks that nothing leaves the page (no call reaches the sync script or GitHub) and that the demo never writes the real
 // admin storage keys. Needs Playwright like pages.smoke.js. Locally: node tests/admin.smoke.js
 // SMOKE_W=390 or 1280: one width only (tests/slot.js; default: both); SMOKE_PART / SMOKE_ONLY: some parts (below).
-// The parts of this smoke (tests/slot.js parts): players, Players › List (a long name, merge and delete), the journeys,
-// To do's errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours
-// (once, at 1280); main, everything else. SMOKE_PART=main|more is the group CI runs on one runner at 1280 (more: players
-// and photos; the 390 px job runs them all); SMOKE_ONLY=players runs one part.
-const PARTS = ['main', 'players', 'photos'];
+// The parts of this smoke (tests/slot.js parts): actions, Analyses' Formats, sort and milestones, views remembered, To do,
+// Hidden, the view filter (once, at 1280); players, Players › List (a long name, merge and delete), the journeys, To do's
+// errors and reports; photos, Growth form, Candidates, the auto-sort, Publish and the difficulty bands' colours (once, at
+// 1280); main, everything else. SMOKE_PART=main|actions|more is the group CI runs on one runner at 1280 (more: players and
+// photos; the 390 px job runs them all); SMOKE_ONLY=players runs one part.
+const PARTS = ['main', 'actions', 'players', 'photos'];
 const WIDTHS = [390, 1280];
 // Dark theme as the app sets it: the ⚙ Theme (reefid-sync-theme) puts data-theme on <html> (admin.html's inline script).
 // The app and the admin never follow the system's prefers-color-scheme (rule U3), so Playwright's colorScheme: 'dark'
@@ -82,7 +83,7 @@ const darkCards = (p, sel) =>
     return C.length < 2 ? `no ${sel}` : light.map(([k, c]) => `${k} ${c}`).join(', ');
   }, sel);
 (async () => {
-  const run = slot.parts(PARTS, {main: ['main'], more: ['players', 'photos']}),
+  const run = slot.parts(PARTS, {main: ['main'], actions: ['actions'], more: ['players', 'photos']}),
     ws = slot.widths(WIDTHS);
   await slot('admin.smoke');
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
@@ -271,8 +272,10 @@ const darkCards = (p, sel) =>
       if (real.length) fails.push(`${w}px: demo wrote real admin keys: ${real.join(', ')}`);
       await ctx.close();
     };
-    // A run of the players' and photos' parts only (SMOKE_PART=more: tests/slot.js parts) skips the rest of the pass.
+    // A run without the main part (SMOKE_PART=more or actions: tests/slot.js parts) runs its parts alone, in the whole
+    // run's order, and skips the rest of the pass.
     if (!run.has('main')) {
+      if (once && run.has('actions')) await actionsPart();
       if (run.has('players')) await playersPart();
       if (once && run.has('photos')) await photosPart();
       await finish();
@@ -2433,7 +2436,9 @@ const darkCards = (p, sel) =>
       )
         fails.push(`${w}px Analyses heatmap: on the fish side already`);
     }
-    if (once) {
+    // The actions part (once, at 1280; its own CI job since the CI speed work of 2026-11-15, a third of the main part's time):
+    // run here in a whole run, first in a run without the main part.
+    async function actionsPart() {
       // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
       await go('analyses/difficulty/formats');
       const anf = await p.evaluate(async () => {
@@ -3058,6 +3063,7 @@ const darkCards = (p, sel) =>
         if (s.src.join() !== s.want.src.join()) fails.push(`${w}px Filter bar: Candidates sources ${JSON.stringify(s)}`);
       }
     }
+    if (once && run.has('actions')) await actionsPart();
     // To do › Points (Pierre, 2026-11-05: the points to handle live in the admin, never in a text list): the list from
     // points.json, the Astrea question first among the open ones; its page shows the question and its 7 photo slots
     // (numbered, blind) with an answer field each, notes and the status segment, with no sideways scroll at either width.

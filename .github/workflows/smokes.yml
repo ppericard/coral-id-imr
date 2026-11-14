@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       # The longest smokes run in groups, one runner each, so no job is the long pole (tests/slot.js: SMOKE_PART for
       # pages.smoke.js and fish.smoke.js, whose groups cover every part between them or the run fails, and
-      # tests/smokeparts.test.js, which reads this file, fails when a group is in no job here; admin.smoke.js runs whole at 390, in two groups at
+      # tests/smokeparts.test.js, which reads this file, fails when a group is in no job here; admin.smoke.js runs whole at 390, in three groups at
       # 1280, SMOKE_W one width each).
       matrix:
         include:
@@ -70,6 +70,11 @@ jobs:
             w: '1280'
             part: main
             what: Admin demo test at 1280 px, main (admin.html?demo, every page, Analyses, To do, Activity, Health; made-up data, nothing sent)
+          - name: admin 1280 actions
+            smoke: admin
+            w: '1280'
+            part: actions
+            what: Admin demo test at 1280 px, actions (Analyses' Formats, sort and milestones, views remembered, To do, Hidden, the view filter; made-up data, nothing sent)
           - name: admin 1280 more
             smoke: admin
             w: '1280'
@@ -96,11 +101,15 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ms-playwright-${{ runner.os }}-1.64.1
+      # Chromium only, without --with-deps (CI speed study, 2026-11-08): on ubuntu-26.04 its apt step installed nine font
+      # packages and no library (the image has Chromium's libraries), about 10 s a job. The pages draw their text in
+      # their own fonts (fonts/, app.css @font-face). If Chromium one day fails to start for a missing library, put
+      # --with-deps back.
       - name: Install Playwright (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
           npm install --no-save --no-audit --no-fund playwright@1.64.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: ${{ matrix.what }}
         env:
           SMOKE_PART: ${{ matrix.part }}
