@@ -233,7 +233,24 @@ for f in FMTS:
     if mk.sum() < 100:
         continue
     gt, gr = P['TODAY'][mk].mean() - y[mk].mean(), P['REFIT'][mk].mean() - y[mk].mean()
-    print(f'  format {f} ({mk.sum()} forecast): right {y[mk].mean():.3f}, BASE {P["BASE"][mk].mean() - y[mk].mean():+.3f}, TODAY {gt:+.3f}, REFIT {gr:+.3f} -> {"held" if abs(gr) <= abs(gt) + 0.02 else "BREACHED"}; DRIFT {P["DRIFT"][mk].mean() - y[mk].mean():+.3f}')
+
+    # The guardrail read with its interval (rule L11; Codex review #904): d = |REFIT's gap| - |TODAY's gap|, its
+    # delete-one-player jackknife (each replicate's arms as replayed without that player), held when the one-sided 90%
+    # upper bound is at most 0.02, breached when the lower bound is above it, unclear otherwise.
+    def gapd(k, q, mk=mk):
+        if q is None:
+            pr, pt = P['REFIT'], P['TODAY']
+        else:
+            pr = g + (1 - g) * Rr / (1 + np.exp(-JKT[q]['REFIT'][0]))
+            pt = g + (1 - g) * Rr / (1 + np.exp(-JKT[q]['TODAY'][0]))
+        return abs(pr[k].mean() - y[k].mean()) - abs(pt[k].mean() - y[k].mean())
+
+    full, se, n = jk(mk, gapd, playersF)
+    tq = stats.t.ppf(0.9, n - 1)
+    lo, hi = full - tq * se, full + tq * se
+    verdict = 'held' if hi <= 0.02 else 'breached' if lo > 0.02 else 'unclear'
+    print(f'  format {f} ({mk.sum()} forecast, {n} players): right {y[mk].mean():.3f}, BASE {P["BASE"][mk].mean() - y[mk].mean():+.3f}, TODAY {gt:+.3f}, REFIT {gr:+.3f}; '
+          f'|REFIT| - |TODAY| {full:+.3f}, one-sided 90% [{lo:+.3f}, {hi:+.3f}] -> {verdict}; DRIFT {P["DRIFT"][mk].mean() - y[mk].mean():+.3f}')
 
 # ---- The whole-log refit against today's values at the end of the log
 F = FITS['full']

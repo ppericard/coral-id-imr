@@ -20,12 +20,17 @@ estimates with the values drawn from. Checks the standard errors under the model
 """
 import json
 import sys
+import os
 import time
 
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import splu
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
+import slot  # noqa: E402
+
+slot.guard('tools/studies/q351/refit.py')  # one heavy run at a time on the machine (rule W24; Codex review #904)
 EX = json.load(open(sys.argv[1]))
 OUT = sys.argv[2]
 SIM = int(sys.argv[sys.argv.index('--simcheck') + 1]) if '--simcheck' in sys.argv else 0
