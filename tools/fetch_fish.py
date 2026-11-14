@@ -5,7 +5,8 @@
 The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions for fish photos (2026-11-03):
 - Unit: the species of fish.json (`species`, PDF / EventMeasure names), grouped under the teaching entries (`teach`).
   A photo belongs to the most precise taxon its observation names: the species (iNaturalist's taxon query includes
-  subspecies). Only species in the game (with a `circle`, never `out`), circle 1 by default (--circle).
+  subspecies). Its taxon is the species' own (`inat`), or its `photoTaxon` when it has one (photo_taxon; Pierre,
+  2026-11-14, Q354 b: the Pacific form iNaturalist splits off, the IMR name kept on screen). Only species in the game (with a `circle`, never `out`), circle 1 by default (--circle).
 - Identity: Research Grade at the species level; Pierre's own observations (iNaturalist user ppericard) identified to
   the species are usable as that species even when Needs ID (rule S2: he names a species only when nearly
   sure), nobody else's. That is photo use only: they no longer confirm presence on their own (rule C8; fish.json
@@ -357,6 +358,14 @@ def prefetch(net, taxa, kinds):
     return done
 
 
+def photo_taxon(s):
+    """The iNaturalist taxon a species' candidate photos come from: its fish.json photoTaxon when it has one (Pierre,
+    2026-11-14, Q354 b: the Pacific form iNaturalist splits off, Pycnochromis pacifica for Chromis agilis, Halichoeres
+    annularis for H. marginatus), else its own taxon (inat). Every search, the covers (--rep) and the top-up go through it;
+    the species' name, its inat (presence, commonness, links) and its cap stay its own."""
+    return ((s or {}).get("photoTaxon") or {}).get("inat") or (s or {}).get("inat")
+
+
 def queries(tid):
     """The searches of one species (iNaturalist taxon id), by source: Pierre's own (any grade but casual), then Research
     Grade near Dauin, in the region, in the Philippines; abroad (asked only when the Philippines are exhausted)."""
@@ -501,7 +510,7 @@ def topup(args):
                 s = want.get(o["id"])
                 # Still identified as that species (its taxon or an ancestor, as phase_obs): one re-identified since
                 # brings nothing (Codex review #715).
-                it = usable_obs(o, used, excl) if s and s.get("inat") in (o.get("tx") or []) else None
+                it = usable_obs(o, used, excl) if s and photo_taxon(s) in (o.get("tx") or []) else None
                 if not it:
                     continue
                 for p in it["P"]:
@@ -777,7 +786,7 @@ def species_list(fish, circle, only=()):
             continue
         for sid in t.get("species") or []:
             s = S.get(sid)
-            if not s or sid in seen or s.get("out") or not s.get("circle") or not s.get("inat"):
+            if not s or sid in seen or s.get("out") or not s.get("circle") or not photo_taxon(s):
                 continue
             if only and sid not in only and t["id"] not in only:
                 continue
@@ -858,11 +867,11 @@ def run(args):
         # Reference photos (Pierre, 2026-11-05): tag the candidates that are their taxon's iNaturalist cover, no refill.
         S = species_list(fish, set(args.circle), only)
         try:
-            cov = covers(net, [s["inat"] for s, _ in S])
+            cov = covers(net, [photo_taxon(s) for s, _ in S])
         finally:
             net.save()
         # Only the species whose cover is known: an unknown one keeps its tags (Codex review #562).
-        n = sum(tag_rep(have.get(s["id"], []), cov[s["inat"]]) for s, _ in S if s["inat"] in cov)
+        n = sum(tag_rep(have.get(s["id"], []), cov[photo_taxon(s)]) for s, _ in S if photo_taxon(s) in cov)
         if args.plan:
             print(json.dumps({"missing": net.missing, "covers": len(cov), "tagged": n}))
             return {"covers": len(cov), "tagged": n}
@@ -874,7 +883,7 @@ def run(args):
     try:
         S = species_list(fish, set(args.circle), only)
         # The general searches of the species with room, asked together where that saves requests (rule C7).
-        prefetch(net, [s["inat"] for s, t in S if species_room(s, t, have.get(s["id"], []), gone, sugf, game.get(s["id"], ()),
+        prefetch(net, [photo_taxon(s) for s, t in S if species_room(s, t, have.get(s["id"], []), gone, sugf, game.get(s["id"], ()),
                                                               (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap)["room"] > 0],
                  ["own", *TIERS])
         # 1. Per species: its cap, phases and room (species_room), and the general searches.
@@ -891,7 +900,7 @@ def run(args):
             # (usable_obs leaves out those taken), unless Pierre sent one of its photos to another species or out of the
             # fish (its identification is in doubt: as before, nothing more of it).
             known = {p["o"] for p in L if p["f"] in moved}
-            Q = queries(s["inat"])
+            Q = queries(photo_taxon(s))
             got, more, pools = {}, {}, {}
             # Pierre's own, asked for every species (Codex review #463): fish.json present.own is a count from the last
             # build, so a species he identified since would otherwise never get his photos.
@@ -965,20 +974,20 @@ def run(args):
             C = [c for c in ctx if c["R"]["rooms"].get(ph)]
             if not C:
                 continue
-            got, more = phase_obs(net, ph, [c["s"]["inat"] for c in C], "ph")
+            got, more = phase_obs(net, ph, [photo_taxon(c["s"]) for c in C], "ph")
             for c in C:
-                items(c, got[c["s"]["inat"]])
-                c["pmore"][ph] = more[c["s"]["inat"]]
+                items(c, got[photo_taxon(c["s"])])
+                c["pmore"][ph] = more[photo_taxon(c["s"])]
             # What the Philippines bring to the phase, counted as the room is (obs_cost; Codex review #715).
             have_ph = lambda c: sum(obs_cost(c["held"].get(obs_url(it["id"]), 0), len(it["P"])) for it in c["all"].values()
                                     if ph in item_phases(it) and it["tier"] != "world")
             W = [c for c in C if (c["s"].get("present") or {}).get("ph")
                  and (c["near"] or (not c["pmore"][ph] and have_ph(c) < c["R"]["rooms"][ph]))]
             if W:
-                got, wmore = phase_obs(net, ph, [c["s"]["inat"] for c in W], "world")
+                got, wmore = phase_obs(net, ph, [photo_taxon(c["s"]) for c in W], "world")
                 for c in W:
-                    c["pwmore"][ph] = wmore[c["s"]["inat"]]
-                    c["pw"][ph] = [it for it in items(c, got[c["s"]["inat"]], "world") if it["tier"] == "world"]
+                    c["pwmore"][ph] = wmore[photo_taxon(c["s"])]
+                    c["pw"][ph] = [it for it in items(c, got[photo_taxon(c["s"])], "world") if it["tier"] == "world"]
 
         # 3. Per species: each phase's room first, then the free room.
         for c in ctx:

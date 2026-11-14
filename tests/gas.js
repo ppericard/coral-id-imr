@@ -36,6 +36,10 @@ function makeSheet(name) {
     deleteRow(r) {
       rows.splice(r - 1, 1);
     },
+    deleteRows(r, n) {
+      if (n < 1) throw new Error('Those rows are out of bounds.');
+      rows.splice(r - 1, n);
+    },
     setFrozenRows() {},
     setFrozenColumns() {},
     hideColumns() {},
@@ -190,6 +194,9 @@ function loadCodeGs(opts = {}) {
       '\n;this.doGet = doGet; this.doPost = doPost; this.autoUpdate = autoUpdate;',
     ctx
   );
+  // The Timings tab (Code.gs TIM) stays off unless a test asks for it (opts.timings), so no other test meets a tab that
+  // sampling made at random; a test that turns it on sets TIM.EVERY, TIM.SLOW… itself.
+  if (!opts.timings) vm.runInContext('TIM.ON = false', ctx);
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, lock, get, post};

@@ -731,6 +731,90 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   fs.rmSync(dir, {recursive: true, force: true});
 });
 
+// A species whose photos come from another iNaturalist taxon (fish.json photoTaxon; Pierre, 2026-11-14, Q354 b: the Pacific
+// form iNaturalist splits off, the IMR name kept): every search, the covers (--rep) and the top-up ask that taxon, never
+// the species' own; the candidates stay the species' (its id in f).
+test('photo taxon (Q354 b): searches, covers and top-up use photoTaxon; the candidates stay the species', () => {
+  assert.deepStrictEqual(
+    J(
+      `print(json.dumps([photo_taxon({'inat': 601, 'photoTaxon': {'inat': 701, 'name': 'Fishus pacificus'}}), photo_taxon({'inat': 602}), photo_taxon({'inat': 3, 'photoTaxon': {}}), photo_taxon(None)]))`
+    ),
+    [701, 602, 3, null]
+  );
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fishptx-'));
+  const fish = {
+    species: [
+      {
+        id: 's1',
+        name: 'Fishus fishii',
+        inat: 601,
+        photoTaxon: {inat: 701, name: 'Fishus pacificus', note: 'Pacific form'},
+        circle: 1,
+        present: {ph: true, near: true}
+      },
+      {id: 's2', name: 'Fishus rarus', inat: 602, circle: 1, present: {ph: true, near: true}}
+    ],
+    teach: [{id: 't1', name: 'Fishes', circle: 1, species: ['s1', 's2']}]
+  };
+  fs.writeFileSync(path.join(dir, 'fish.json'), JSON.stringify(fish));
+  // Only the photo taxon's searches are cached (701, never 601): asking for 601 would stop the --offline run.
+  py(
+    `${OBS}
+d = sys.argv[1]
+c = {}
+def put(q, obs): c[API + q + '&fields=' + FIELDS] = {'total': len(obs), 'results': obs}
+pac = lambda i, **k: {**ob(i, **k), 't': 'Fishus pacificus'}
+for tid, obs in ((701, [pac(1), pac(2, ll=(-8.5, 115.2), inph=False)]), (602, [ob(3)])):
+    Q = queries(tid)
+    put(Q['own'], [])
+    for k in ('dauin', 'region', 'ph'):
+        put(Q[k], [o for o in obs if o['inph']])
+    put(Q['world'], [o for o in obs if not o['inph']])
+c[TAXA + '602,701?fields=id,default_photo.id&per_page=30'] = {'602': None, '701': 20}
+c[API + 'id=1&captive=false&per_page=200&fields=' + FIELDS + ',taxon.ancestor_ids'] = {'total': 1, 'results': [{**pac(1, n=6), 'tx': [701, 70]}]}
+json.dump(c, open(d + '/cache.json', 'w'))`,
+    dir
+  );
+  const argv = [
+    ['--fish', 'fish.json'],
+    ['--cand', 'fish-cand.json'],
+    ['--cur', 'cur.json'],
+    ['--suggest', 'none.json'],
+    ['--cache', 'cache.json']
+  ].flatMap(([f, x]) => [f, path.join(dir, x)]);
+  const run = (...a) => execFileSync('python3', ['tools/fetch_fish.py', ...argv, '--cap', '3', ...a], {cwd: ROOT, encoding: 'utf8'});
+  run('--offline');
+  const C = () => JSON.parse(fs.readFileSync(path.join(dir, 'fish-cand.json'), 'utf8')).cand;
+  assert.deepStrictEqual(
+    C().s1.map(p => [p.f, p.t, p.loc]),
+    [
+      ['fish-s1-cand-10', 'Fishus pacificus', 'dauin'],
+      ['fish-s1-cand-20', 'Fishus pacificus', 'world']
+    ]
+  );
+  assert.deepStrictEqual(
+    C().s2.map(p => p.f),
+    ['fish-s2-cand-30']
+  );
+  // The covers: the photo taxon's cover (photo 20) tags its candidate.
+  run('--rep', '--offline');
+  assert.deepStrictEqual(
+    C().s1.map(p => p.rep || ''),
+    ['', 'inaturalist']
+  );
+  // The top-up: an observation of the old limit of 4, still identified as the photo taxon (701), gets its other photos.
+  const four = [0, 1, 2, 3].map(k => ({...C().s1[0], f: `fish-s1-cand-${10 + k}`}));
+  fs.writeFileSync(path.join(dir, 'fish-cand.json'), JSON.stringify({v: 1, cand: {s1: four}}));
+  run('--topup', '--offline');
+  assert.deepStrictEqual(
+    C()
+      .s1.map(p => p.f)
+      .slice(4),
+    ['fish-s1-cand-14', 'fish-s1-cand-15']
+  );
+  fs.rmSync(dir, {recursive: true, force: true});
+});
+
 // The fish candidate cap (Pierre, 2026-11-05, Q36): 30 photos for a stable species, +10 per extra phase (juvenile,
 // intermediate phase, male or terminal phase, female) as the judging tags and the sources record them, at most 60; the
 // search fills each phase. tools/fetch_fish.py cap_of, species_phases, phase_room, species_room, phase_obs, fill.
