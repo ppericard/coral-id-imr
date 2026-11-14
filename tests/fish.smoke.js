@@ -1232,8 +1232,8 @@ async function freshPlayers(b, base, errs) {
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
     // mosaic's own pick (Pierre, 2026-11-08, Q291), the Identify door's art one of those. The band rotates (ROADMAP "Fish
     // Home mosaic: rotate the photos", home.js landPool): each tile one of its family's photos that suit it, the cover or
-    // a reference photo (refLevel), at most 6, or the pick above when it has none; over a few drawings of Home, some
-    // family shows two different photos.
+    // a reference photo (refLevel), never a remote one, at most 6, or the pick above when it has none; the same all day,
+    // another on some later day.
     // By photo, not by address (as the family sheet's hero below): every R2 photo fails in this smoke, so R2 goes off
     // mid-run (app.js photoFail, r2Out) and a photo shown under its R2 address may be read under its online original
     // (core.js photoAway), or the reverse, depending on when the failure lands (the train of #778 caught it on CI).
@@ -1243,7 +1243,7 @@ async function freshPlayers(b, base, errs) {
           !!u &&
           !!p &&
           (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
-        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
+        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p) && !(p.r && p.src),
         want = n => {
           const g = GX(n),
             L = g.views.wide;
@@ -1274,13 +1274,23 @@ async function freshPlayers(b, base, errs) {
           });
       const T = tiles(),
         bad = [...T.filter(u => !famsOf(u).length), ...art.filter(u => !W.some(p => shows(u, p)))];
+      // The day's pick (home.js dayPick): over 20 drawings of one day, each family shows one photo; with the clock moved a
+      // day at a time, some family shows another.
       draw();
-      for (let i = 0; i < 20 && ![...seen.values()].some(S => S.size > 1); i++) (viewHome(), draw());
+      for (let i = 0; i < 20; i++) (viewHome(), draw());
+      const sameDay = ![...seen.values()].some(S => S.size > 1),
+        now = Date.now;
+      try {
+        for (let k = 1; k <= 20 && ![...seen.values()].some(S => S.size > 1); k++)
+          ((Date.now = () => now() + k * 864e5), viewHome(), draw());
+      } finally {
+        Date.now = now;
+      }
       viewHome();
-      return {n: T.length, art: art.length, bad, rotates: [...seen.values()].some(S => S.size > 1)};
+      return {n: T.length, art: art.length, bad, sameDay, rotates: [...seen.values()].some(S => S.size > 1)};
     });
-    if (!ht.n || !ht.art || ht.bad.length || !ht.rotates)
-      ui.push(`${width}px Home, Fish on: the tiles are not the photos that fit, or never rotate ${JSON.stringify(ht)}`);
+    if (!ht.n || !ht.art || ht.bad.length || !ht.sameDay || !ht.rotates)
+      ui.push(`${width}px Home, Fish on: the tiles are not the photos that fit, change within a day or never rotate ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page but
     // Home, in its place, the header as on Home.
