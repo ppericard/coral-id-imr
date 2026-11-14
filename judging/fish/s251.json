@@ -199,6 +199,22 @@
   "fish-s251-cand-762364533": {
    "code": "p1g0sm1a3",
    "keep": "dup"
+  },
+  "fish-s251-cand-210014749": {
+   "code": "p1g1ss1jc1",
+   "keep": "best"
+  },
+  "fish-s251-cand-210014813": {
+   "code": "p1g1sskj1",
+   "keep": "dup"
+  },
+  "fish-s251-cand-595785512": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s251-cand-615544028": {
+   "code": "p1g0ssx1",
+   "keep": "best"
   }
  }
 }

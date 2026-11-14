@@ -235,6 +235,14 @@
   "fish-s255-cand-721741652": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s255-cand-753899252": {
+   "code": "p1g2smo3",
+   "keep": "dup"
+  },
+  "fish-s255-cand-318435558": {
+   "code": "p1g1sm13",
+   "keep": "alt"
   }
  }
 }
