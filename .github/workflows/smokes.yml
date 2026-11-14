@@ -30,7 +30,7 @@ jobs:
       fail-fast: false
       # The longest smokes run in groups, one runner each, so no job is the long pole (tests/slot.js: SMOKE_PART for
       # pages.smoke.js and fish.smoke.js, whose groups cover every part between them or the run fails, and
-      # tests/smokeparts.test.js, which reads this file, fails when a group is in no job here; admin.smoke.js runs whole at 390, in two groups at
+      # tests/smokeparts.test.js, which reads this file, fails when a group is in no job here; admin.smoke.js runs whole at 390, in three groups at
       # 1280, SMOKE_W one width each).
       matrix:
         include:
@@ -70,6 +70,11 @@ jobs:
             w: '1280'
             part: main
             what: Admin demo test at 1280 px, main (admin.html?demo, every page, Analyses, To do, Activity, Health; made-up data, nothing sent)
+          - name: admin 1280 actions
+            smoke: admin
+            w: '1280'
+            part: actions
+            what: Admin demo test at 1280 px, actions (Analyses' Formats, sort and milestones, views remembered, To do, Hidden, the view filter; made-up data, nothing sent)
           - name: admin 1280 more
             smoke: admin
             w: '1280'
