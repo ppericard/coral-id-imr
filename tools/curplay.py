@@ -11,7 +11,8 @@ Left out (none of them read by any script index.html loads, nor by the Lab):
 - auto: the coral auto-sort's log (autosort.js, the admin's agreement window);
 - fish.tags, fish.ease: the fish judging pass's tags and ease as Pierre corrected them (the admin's review pages; the
   game reads a photo's ease and tags from fish-game.json);
-- fish.kept: the re-judge proposals Pierre answered Keep mine (admin-light.js, the admin's Light proposals);
+- fish.kept: the proposals Pierre answered Keep mine (the re-judge's, by photo: admin-light.js, the admin's Light
+  proposals; the default cover rule's, by node: admin-covers.js, Cover proposals);
 - fish.auto, except its undone automatic adds (log code '-a…'), the one part the app reads (core.js fishGone).
 
   python3 tools/curplay.py [DIR]   reads DIR/curation.json, writes DIR/curation-play.json (DIR: the repository)

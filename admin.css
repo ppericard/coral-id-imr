@@ -5574,3 +5574,44 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-lprop .adm-acts .adm-qseg button {
   flex: 1 1 0;
 }
+/* Photo review › Cover proposals (admin-covers.js): one card per node, his cover and the rule's side by side, each with the
+   species it shows, the rule's why under it; Accept / Keep mine under both. */
+.adm-cgrid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+}
+.adm-cprop > figcaption {
+  font-size: var(--fs-s);
+  color: var(--ink);
+  padding-bottom: 6px;
+}
+.adm-cpair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 0 6px;
+}
+.adm-cside {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-cside .adm-ph {
+  border-radius: calc(var(--r) / 2);
+  overflow: hidden;
+}
+.adm-cwhy {
+  font-size: var(--fs-xs);
+}
+.adm-cprop .adm-acts .adm-qseg {
+  width: 100%;
+}
+.adm-cprop .adm-acts .adm-qseg button {
+  flex: 1 1 0;
+}
+.adm-cside .adm-t {
+  flex: none;
+  font-style: normal;
+}
