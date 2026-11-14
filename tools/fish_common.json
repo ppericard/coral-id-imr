@@ -279,7 +279,7 @@
   "s275": {"sp":"Myripristis murdjan","names":[{"name":"Blotcheye soldierfish","from":["pdf","fb8","inat"],"alt":["Blotcheye soldier"]},{"name":"Pinecone soldierfish","from":["fbMain","fb6","inat"]},{"name":"Crimson soldierfish","from":["fb3","inatMain"]}]},
   "s276": {"sp":"Myripristis amaena","names":[{"name":"Brick soldierfish","from":["pdf","fbMain","fb4","inatMain"]}]},
   "s277": {"sp":"Neoniphon sammara","names":[{"name":"Spotfin squirrelfish","from":["pdf","fb7","inatMain"]},{"name":"Sammara squirrelfish","from":["fbMain","fb5","inat"]}]},
-  "s278": {"sp":"Neoniphon argentus","names":[{"name":"Clearfin squirrelfish","from":["pdf","fbMain","fb3","inat"]},{"name":"Silver squirrelfish","from":["fb3","inatMain"]}],"check":"spelling as in the PDF; WoRMS has Neoniphon argenteus"},
+  "s278": {"sp":"Neoniphon argenteus","names":[{"name":"Clearfin squirrelfish","from":["pdf","fbMain","fb3","inat"]},{"name":"Silver squirrelfish","from":["fb3","inatMain"]}]},
   "s279": {"sp":"Sargocentron caudimaculatum","names":[{"name":"Tailspot squirrelfish","from":["pdf","fb7","inatMain"]},{"name":"Silverspot squirrelfish","from":["fbMain","fb5","inat"]}]},
   "s280": {"sp":"Sargocentron rubrum","names":[{"name":"Redcoat squirrelfish","from":["pdf","fb2","inat"]},{"name":"Redcoat","from":["fbMain","fb10","inat"]},{"name":"Red squirrelfish","from":["fb4","inatMain"],"alt":["Red squirrelfish redcoat"]}]},
   "s281": {"sp":"Priacanthus blochii","names":[{"name":"Bloch’s bigeye","from":["pdf","fb1","inatMain"]}],"left":["Paeony bulleye"]},

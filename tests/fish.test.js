@@ -285,7 +285,10 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     if (!s.src || s.src === 'slides') assert.ok(s.common, `${s.name}: no common name`);
   });
   // Every species of the IMR reference PDF stays in fish.json, in the game or not (the future Fish ID Key needs them all).
-  SRC.species.filter(s => !s.src).forEach(s => assert.ok(names.has(s.name), `PDF species ${s.name} missing`));
+  // Under its name as the PDF writes it, or as the source has it shown by Pierre's decision (`shown`).
+  SRC.species
+    .filter(s => !s.src)
+    .forEach(s => assert.strictEqual((SP.get(s.id) || {}).name, s.shown || s.name, `PDF species ${s.id} ${s.name} missing`));
   // Cheatsheet species come first, in cheatsheet order.
   const cs = F.species.filter(s => s.cs);
   assert.deepStrictEqual(
@@ -293,6 +296,87 @@ test('species: PDF name first, WoRMS accepted name beside it, presence, rank ord
     [...cs.map(s => s.cs)].sort((a, b) => a - b)
   );
   assert.ok(F.species.slice(0, cs.length).every(s => s.cs));
+});
+
+// A PDF spelling shown another way, only by Pierre's decision (tools/fish_source.json species `shown`, its reason and date
+// in `shownWhy`; tools/build_fish.py shown_name): s278, printed "Neoniphon argentus" in the PDF, is shown as Neoniphon
+// argenteus, the spelling of FishBase, WoRMS and iNaturalist, with no "now" note (Pierre, 2026-11-14). The PDF spelling
+// stays in the source's name; every lookup by id still finds the species' data (common names, facts, photos, presence),
+// and the PDF spelling typed still reads as the species (a slip within the tolerance).
+test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling point, its data intact', () => {
+  const shown = SRC.species.filter(s => s.shown);
+  assert.deepStrictEqual(
+    shown.map(s => s.id),
+    ['s278'],
+    'only the spellings Pierre decided'
+  );
+  shown.forEach(s => {
+    const o = SP.get(s.id);
+    assert.ok(s.shownWhy && /Pierre, \d{4}-\d{2}-\d{2}/.test(s.shownWhy), `${s.id}: shownWhy with Pierre's date`);
+    assert.notStrictEqual(s.shown, s.name, `${s.id}: shown repeats the PDF name`);
+    assert.strictEqual(o.name, s.shown, `${s.id}: fish.json name`);
+    assert.ok(!o.now, `${s.id}: a now note beside a name shown as WoRMS accepts it`);
+    assert.ok(!/spelling as in the PDF/.test(o.check || ''), `${s.id}: a PDF spelling point for a name no longer shown as the PDF's`);
+  });
+  const src = SRC.species.find(s => s.id === 's278'),
+    s = SP.get('s278');
+  assert.strictEqual(src.name, 'Neoniphon argentus', 'the transcription keeps the PDF spelling');
+  assert.strictEqual(s.name, 'Neoniphon argenteus');
+  assert.strictEqual(REF[s.ref].name, 'Neoniphon argenteus');
+  assert.strictEqual(s.now, undefined);
+  assert.strictEqual(s.check, undefined);
+  // Its data, all found by id: common names, size and depth, presence, iNaturalist taxon, family and genus.
+  assert.deepStrictEqual(s.cn, [['Clearfin squirrelfish'], ['Silver squirrelfish']]);
+  assert.strictEqual(s.common, 'Clearfin squirrelfish');
+  assert.deepStrictEqual([s.size.len, s.depth.m], [24, [1, 20]]);
+  assert.strictEqual(s.inat, 194741);
+  assert.deepStrictEqual([s.family, s.genus, s.circle, s.out], ['f:Squirrelfishes', 'g:Neoniphon', 1, undefined]);
+  assert.ok(s.present.ph && s.present.near, 'present near Dauin (the IMR list) and in the Philippines');
+  const common = read('tools/fish_common.json').species.s278;
+  assert.strictEqual(common.sp, 'Neoniphon argenteus');
+  assert.strictEqual(common.check, undefined);
+  // Its photos, by species id: the game's, the sheet's and the candidates'.
+  const game = Object.values(read('fish-game.json').photos)
+    .flat()
+    .filter(p => p.sp === 's278');
+  assert.ok(game.length >= 10, `game photos of s278: ${game.length}`);
+  assert.ok(game.every(p => p.t === 'Neoniphon argenteus'));
+  assert.ok(JSON.stringify(read('fish-photos.json').photos).includes('"sp":"s278"'), 'a fish-photos.json photo of s278');
+  // Typed: the name shown exactly, the PDF spelling as a slip of it; both read as the species.
+  const C = require('../core.js'),
+    X = C.fishGen(F, {}, {}),
+    N = C.fishTypeNames(X.gen, C.subjectOf('fish').typeDrop, C.fishNameIndex(F)),
+    m = t => C.typeMatchIn(N, t, C.typeNormAll);
+  assert.deepStrictEqual([m('Neoniphon argenteus').exact, m('Neoniphon argenteus').sc], [true, ['s278']]);
+  assert.deepStrictEqual([m('Neoniphon argentus').exact, m('Neoniphon argentus').sc], [false, ['s278']]);
+});
+
+test('build: shown_name and checks, a name shown another way looked up as shown, no spelling point', () => {
+  const code = `
+import json, sys
+sys.path.insert(0, ${JSON.stringify(path.join(__dirname, '..', 'tools'))})
+import build_fish as b
+row = {'id': 's1', 'name': 'Aa bx', 'shown': 'Aa bb', 'shownWhy': 'Pierre, 2026-11-14'}
+plain = {'id': 's2', 'name': 'Aa cc', 'check': 'common name as in the PDF'}
+out = [b.shown_name(row), b.shown_name(plain), b.checks(row, 'exact', 'Aa bb'), b.checks(plain, 'fuzzy', 'Aa cd'),
+       b.checks({'id': 's3', 'name': 'Aa d', 'as': 'Aa dd'}, 'exact', 'Aa dd')]
+try:
+    b.shown_name({'id': 's4', 'name': 'Aa e', 'shown': 'Aa ee'})
+    out.append('no exit')
+except SystemExit as e:
+    out.append(str(e))
+print(json.dumps(out))
+`;
+  const r = require('child_process').spawnSync('python3', ['-c', code], {encoding: 'utf8'});
+  assert.strictEqual(r.status, 0, r.stderr);
+  assert.deepStrictEqual(JSON.parse(r.stdout), [
+    'Aa bb',
+    'Aa cc',
+    [],
+    ['common name as in the PDF', 'spelling as in the PDF; WoRMS has Aa cd'],
+    ['spelling as in the PDF; WoRMS has Aa dd'],
+    'tools/fish_source.json s4: shown without shownWhy'
+  ]);
 });
 
 // Species order inside an entry: the commonness index (Pierre, 2026-11-04; docs/FISH_PATH.md "Species order: the commonness
