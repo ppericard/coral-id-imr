@@ -6,20 +6,24 @@
 #        meaning of its own (-ia, -ites, -a) has an empty gloss and no source
 #   fit  optional: one of the genus's own ID tips (gen[g].qt, verbatim) that the meaning points to
 #   src  the sources: [{t: label, u: https link}]
-# Shown on the genus sheet under the ID tips (app.js rootLine), apart from the IMR tips and mnemonic: an addition with
+# Shown on the genus sheet under the ID tips (learn.js rootLine), apart from the IMR tips and mnemonic: an addition with
 # its source, never a correction of the IMR course (rule C1).
 #
 # How a genus gets a line (rule C2: never an invented etymology):
 #   A. a dictionary names the genus itself and its parts: E. C. Jaeger, A Source-Book of Biological Names and Terms
-#      (1944, archive.org; read on the page scans, not only the OCR) gives Pocillo-pora, Seriato-pora, Por-ites, Fungia,
-#      Lob-actis, Turbin-aria, Mille-pora, Sandalo-litha as examples of their root; Merriam-Webster gives Acropora
-#      (acr- + -pora), Porites, Fungia, Millepora, Tubipora (tubi- + -pora);
-#   B. or the name is made of dictionary roots with nothing left over but a Latin ending or a linking -o-/-i-, and each
-#      root has one meaning in the dictionary (Jaeger's root entries, Merriam-Webster's combining forms).
+#      (1944, archive.org) gives Seriato-pora, Por-ites, Fungia, Lob-actis, Turbin-aria, Mille-pora, Sandalo-litha as
+#      examples of their root; Merriam-Webster gives Acropora (acr- + -pora), Porites, Fungia, Millepora, Tubipora
+#      (tubi- + -pora): 9 genera;
+#   B. or the name is made of dictionary roots with nothing left over but a Latin ending or a linking -o-/-i-, and the
+#      form of each root sits under one sense of the dictionary: Jaeger numbers the different words that share a
+#      spelling (gon- 1. gonia "angle", 2. gonos "seed"; Gonio- is under 1), and a Merriam-Webster combining form settles
+#      the rest (-pora "pore", where Jaeger's por- also has poros "soft stone", as in madrepore): 14 genera.
+#   Every entry used was read on the page scans, not only in the OCR text.
 # Every other slate genus is in SKIP with the reason it gets no line (main() checks that each slate genus is in one of
-# the two), so a later pass knows where to look: a root with two meanings in the dictionary, a split that is not clear,
-# a person honoured whose source we have not read, or an IMR mnemonic that plays on another meaning, where a dictionary
-# line beside it could read as a correction (rule C1).
+# the two), so a later pass knows where to look: a form under two senses of the dictionary, a split that is not clear,
+# a person honoured whose source we have not read, a root that points to another genus's IMR cue (the study's
+# misleading root: held back until the sheet can say so), or an IMR mnemonic that gives the name another meaning, so a
+# dictionary line beside it could read as a correction (rule C1: Platygyra). The skip reasons were read in the OCR text.
 #
 # Acropora's old unsourced "Other sources" etymology (gen.info) moves here, with its sources. Re-runnable:
 # python3 tools/apply_name_roots.py
@@ -47,7 +51,6 @@ ROOTS = {
     # The IMR slate, in slate order
     'Acropora': {'p': [['Acro', 'tip', 'Greek akros', [0, 1]], PORA + [[2]]], 'fit': 'Axial corallite at branch tips',
                  'src': [mw('Acropora'), mw('acr-'), mw('-pora')]},
-    'Pocillopora': {'p': [['Pocillo', 'small cup', 'Latin pocillum', [0]], PORA + [[1]]], 'src': [jaeger(180, 'pocul'), mw('-pora')]},
     'Seriatopora': {'p': [['Seriato', 'in rows', 'Latin seriatus', [0]], PORA + [[1]]], 'fit': 'Corallites in neat rows',
                     'src': [jaeger(211, 'seriat'), mw('-pora')]},
     'Porites': {'p': [['Por', 'pore', 'Latin porus', [0, 1]], ['ites', '', '', []]], 'src': [jaeger(182, 'por'), mw('Porites')]},
@@ -73,7 +76,7 @@ ROOTS = {
     'Diploastrea': {'p': [['Diplo', 'double', 'Greek diploos', [0]], ASTREA + [[1]]], 'src': [jaeger(73, 'dipl'), jaeger(25, 'aster')]},
     'Goniastrea': {'p': [['Goni', 'angle', 'Greek gōnia', [0, 1]], ASTREA + [[2]]], 'fit': 'Shared walls, sub-angular corallites',
                    'src': [jaeger(98, 'gon'), mw('goni-'), jaeger(25, 'aster')]},
-    'Favites': {'p': [['Fav', 'honeycomb', 'Latin favus', [0]], ['ites', '', '', []]], 'src': [jaeger(89, 'fav')]},
+    'Astrea': {'p': [['Astr', 'star', 'Greek astēr', [0]], ['ea', '', '', []]], 'src': [jaeger(25, 'aster')]},
     # The starred look-alikes
     'Alveopora': {'p': [['Alveo', 'hollow', 'Latin alveus', [0]], PORA + [[1]]], 'src': [jaeger(12, 'alveol'), mw('-pora')]},
     'Cyphastrea': {'p': [['Cyph', 'humped, curved', 'Greek kyphos', [0]], ASTREA + [[1]]], 'src': [jaeger(66, 'cyph'), jaeger(25, 'aster')]},
@@ -85,23 +88,23 @@ ROOTS = {
                  'src': [mw('tubi-'), mw('Tubipora'), mw('-pora')]},
 }
 PHORA = 'the ending -phora has two meanings in the dictionary (Greek phora "motion", phoros "bearing"; Jaeger p. 172)'
-ASTRAEA = 'the dictionary entry is Astraea, not this spelling (Jaeger p. 25)'
 SKIP = {
+    'Pocillopora': 'its root pocillum "small cup" (Jaeger p. 180) points to the cup that IMR teaches for Acropora ("A-cup-ora", "Cup-shaped radial corallites"): held back until the sheet can warn about it',
     'Stylophora': PHORA,
     'Anacropora': 'the split is not clear (an-, ana- or Acropora)',
-    'Astreopora': 'astreo- is not a dictionary form (Jaeger has aster-, astr-, astrae-)',
+    'Astreopora': 'astreo- is not a dictionary form (Jaeger p. 25 has aster-, astero-, astr-, astrae-)',
     'Galaxea': 'the dictionary gives galax- "milky" (Jaeger p. 94); that the name means the galaxy is not sourced',
     'Mycedium': 'myc- is "fungus" (Jaeger p. 141), but -edium is not a dictionary root',
-    'Pavona': 'the IMR mnemonic plays on another word ("a star in the pavement")',
+    'Pavona': 'pavon- is "peacock" (Jaeger p. 163), but the same entry warns that Pavonia honours a person (Pavon): not clear for this coral',
     'Pachyseris': 'the ending -seris has two meanings in the dictionary ("silk", "endive"; Jaeger p. 211)',
-    'Pectinia': 'the IMR mnemonic plays on another word ("popping his pecs out")',
+    'Pectinia': 'pectin- "comb" (Jaeger p. 163) is the meaning of Ctenactis\'s cten- too: a shared meaning, held back until the sheet can warn about it',
     'Platygyra': 'the IMR mnemonic says "gyre means disorder"; the dictionary gyros "round, a circle" beside it could read as a correction',
-    'Leptoria': 'the ending -oria is not a dictionary root',
+    'Leptoria': 'lept- is "thin" (Jaeger p. 122), but the dictionary has no root -oria',
     'Hydnophora': PHORA,
     'Danafungia': 'honours a person (Dana): no source read yet',
     'Heliofungia': 'helio- has two meanings in the dictionary (helios "sun", helos "marsh"; Jaeger p. 102)',
     'Dipsastraea': 'dips- has two meanings in the dictionary ("thirst", a serpent; Jaeger p. 73)',
-    'Astrea': ASTRAEA,
+    'Favites': 'its root favus "honeycomb" (Jaeger p. 89) is the IMR tip of Porites ("Honeycomb pattern"): held back until the sheet can warn about it',
     'Duncanopsammia': 'honours a person (Duncan): no source read yet',
     'Merulina': 'the only dictionary root, merula "blackbird" (Jaeger p. 135), is not sourced for this coral',
     'Halomitra': 'hal- has two meanings in the dictionary ("the sea", "to breathe"; Jaeger p. 101)',
