@@ -693,10 +693,16 @@
   // its candidate's (sid). The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
   function fishCoverOf(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
-      juv = p => fishJuv(p, j(p.f), F),
       c = k && L.find(p => p.f === k);
-    if (c && !juv(c)) return c;
-    const R = fishOrder(L, F, tid, '', j).rest,
+    if (c && !fishJuv(c, j(c.f), F)) return c;
+    return (fishCoverRule(L, F, tid, j, seen) || {}).p || null;
+  }
+  // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
+  // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
+  // whether the leaves competed on a reference photo, mine: p is his ★ cover of that leaf}; null for no photo.
+  function fishCoverRule(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
+    const juv = p => fishJuv(p, j(p.f), F),
+      R = fishOrder(L, F, tid, '', j).rest,
       A = R.filter(p => !juv(p)),
       Ref = A.filter(p => refLevel(fishRec(p, F, j))),
       leaf = p => ((F || {}).add || {})[p.f] || p.sp || p.sid;
@@ -705,9 +711,10 @@
       const s = seen(leaf(p)) || [0, 0];
       if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
     });
-    if (!best) return R[0] || null;
-    const sk = (((F || {}).genera || {})[leaf(best.p)] || {}).cover;
-    return (sk && A.find(p => p.f === sk)) || best.p;
+    if (!best) return R[0] ? {p: R[0], leaf: leaf(R[0]), seen: [0, 0], ref: false, mine: false} : null;
+    const sk = (((F || {}).genera || {})[leaf(best.p)] || {}).cover,
+      m = sk && A.find(p => p.f === sk);
+    return {p: m || best.p, leaf: leaf(best.p), seen: best.s, ref: Ref.length > 0, mine: !!m};
   }
   // A leaf's presence around the instance's centre (Q339: "Il faudra rendre générique la localisation centrale de
   // l'instance"; the centre: tools/instance.json, fish.json centre): [distinct Research Grade observers, observations]
@@ -1250,6 +1257,7 @@
     fishDrop,
     fishOrder,
     fishCoverOf,
+    fishCoverRule,
     fishNear,
     fishRec,
     fishSeenFrom,
