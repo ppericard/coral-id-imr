@@ -118,7 +118,7 @@ async function findTheX(b, base, errs) {
     timeout: 30000
   });
   await qa.install(q);
-  const r = await q.evaluate(() => {
+  const r = await q.evaluate(async () => {
     const fails = [],
       ok = (x, m) => x || fails.push(m),
       closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
@@ -191,6 +191,40 @@ async function findTheX(b, base, errs) {
       if (!wrong) wrong = pick;
     }
     ok(seen >= 3, `Find the X questions: ${seen}`);
+    // A tile that never loads (its retries and its 480 px step spent): its answers close at once, since the photos are the
+    // choices (Codex review #885), with the usual way out; another tile coming in later does not open them again.
+    let fx = null;
+    for (let i = 0; i < 80 && !fx; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) fx = SHOWNQ;
+      else smokeAnswer();
+    }
+    ok(fx, 'a Find the X for the failed tile');
+    if (fx) {
+      const ims = [...document.querySelectorAll('#view .fxt img')],
+        bad = ims[0],
+        // the other three in (a file of the site: the photos' host is out of reach in the smokes), so the stage has photos
+        come = im =>
+          new Promise(
+            res => (
+              im.addEventListener('load', res, {once: true}),
+              im.setAttribute('src', 'icon-192.png?' + ims.indexOf(im) + '-' + Date.now())
+            )
+          );
+      await Promise.all(ims.slice(1).map(come));
+      // as at the end of its way: R2 asked again (r2try), its 480 px step spent (low, no data-lo left), retried twice
+      Object.assign(bad.dataset, {retry: '2', low: '1', r2try: '1'});
+      bad.removeAttribute('data-lo');
+      bad.setAttribute('src', 'data:image/gif;base64,');
+      bad.dispatchEvent(new Event('error'));
+      // answer.js: the answers' state after a tile failed (none can be answered: nothing to smokeAnswer)
+      const shut = () => [...document.querySelectorAll('#view .fxt [data-c]')].every(b => b.disabled);
+      ok(shut() && document.querySelector('#view .q.qnone') && document.getElementById('qfail'), 'a missing tile closes the answers');
+      await come(ims[1]);
+      ok(shut(), 'another tile loading does not open them again');
+    }
     // Back to 0: none.
     FIND.P = 0;
     let none = 0;

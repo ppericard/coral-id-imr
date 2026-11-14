@@ -488,9 +488,10 @@ $v.addEventListener(
         };
       }
       // Another photo of the question may come later, one still trying or one added since (the hint, Codex review
-      // #490): the answers open again then (the load listener below).
+      // #490): the answers open again then (the load listener below). A Find the X's photos are its choices (quiz.js
+      // question): one missing is a choice the player cannot see, so its answers close at once (Codex review #885).
       const q = $v.querySelector('.q');
-      if (q && ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth)) {
+      if (q && (q.querySelector('.qstage.qfx') || ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth))) {
         q.classList.add('qnone');
         qAnswers(q, false);
       }
@@ -510,7 +511,8 @@ $v.addEventListener(
       e.target.naturalWidth &&
       e.target.closest('.q.qnone:not(.done) .qstage') &&
       e.target.closest('.q');
-    if (!q) return;
+    // A Find the X opens again only once none of its four photos is missing.
+    if (!q || q.querySelector('.qstage.qfx img.fail')) return;
     q.classList.remove('qnone');
     qAnswers(q, true);
   },
