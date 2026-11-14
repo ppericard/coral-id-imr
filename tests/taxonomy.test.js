@@ -247,6 +247,14 @@ test('names.json: the admin extract, in step with taxonomy.json; the admin reads
   assert.strictEqual(N.coral.gen.Symphyllia, 'Lobophyllia');
   assert.strictEqual(N.coral.gen.Phymastrea, 'Favites');
   ['Favia', 'Montastraea', 'Coscinaraea', 'Micromussa'].forEach(g => assert.ok(!(g in N.coral.gen), g));
+  // Each genus's WoRMS AphiaID and family (the admin's Photos › Tree WoRMS view, admin-coraltree.js ctWormsOf), WoRMS's own
+  // family, not the app's word: Pachyseris and Plerogyra sit elsewhere in the IMR lecture, Diploastrea's family is spelt
+  // Diploastraeidae.
+  assert.deepStrictEqual(Object.keys(N.coral.worms).sort(), Object.keys(C.gen).sort(), 'every genus');
+  for (const [g, r] of Object.entries(C.gen)) assert.deepStrictEqual(N.coral.worms[g], {id: r.worms.id, fam: r.worms.fam}, g);
+  assert.strictEqual(N.coral.worms.Pachyseris.fam, 'Pachyseridae');
+  assert.strictEqual(N.coral.worms.Plerogyra.fam, 'Plerogyridae');
+  assert.strictEqual(N.coral.worms.Diploastrea.fam, 'Diploastraeidae');
   assert.match(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'), /side\('names\.json', ADM0\.id\)/);
   const kb = fs.statSync(path.join(ROOT, 'names.json')).size / 1024;
   assert.ok(kb < 40, `names.json is ${Math.round(kb)} KB`);
@@ -255,7 +263,7 @@ test('names.json: the admin extract, in step with taxonomy.json; the admin reads
 test('names_extract / render_names: a made-up file, and --check fails when names.json lags', () => {
   const R = py(`import taxonomy as X, tempfile, os
 o = {"v": 1, "doc": "d", "refs": {}, "coral": {"refreshed": {"worms": "2026-11-05", "inat": "2026-12-01", "checklist": "2026-11-04"},
-  "gen": {}, "spp": {"Montastrea curta": {"now": "Astrea curta", "id": 11, "src": ["worms"]},
+  "gen": {"Astrea": {"worms": {"id": 7, "st": "accepted", "fam": "Merulinidae"}}, "Nowhere": {"worms": {}}}, "spp": {"Montastrea curta": {"now": "Astrea curta", "id": 11, "src": ["worms"]},
                      "Favites valenciennesi": {"now": "Favites valenciennesii", "id": None, "src": ["photo"], "iname": "Favites valenciennesi"},
                      "Euphyllia yaeyamaensis": {"now": "Fimbriaphyllia yaeyamaensis", "id": 3, "src": ["worms"], "inat": False}},
   "old": {"Phymastrea": {"worms": {"id": 3, "st": "junior subjective synonym", "now": "Favites", "mod": "x"}},
@@ -281,7 +289,9 @@ print(json.dumps({"e": e, "same": json.loads(txt) == e, "ok": ok, "late": late})
       'Favites valenciennesi': {now: 'Favites valenciennesii', iname: 'Favites valenciennesi'},
       'Euphyllia yaeyamaensis': {now: 'Fimbriaphyllia yaeyamaensis', inat: false}
     },
-    gen: {Phymastrea: 'Favites', Tubastrea: 'Tubastraea'}
+    gen: {Phymastrea: 'Favites', Tubastrea: 'Tubastraea'},
+    // a genus with no WoRMS record is left out (the Tree's WoRMS view reports it)
+    worms: {Astrea: {id: 7, fam: 'Merulinidae'}}
   });
   assert.deepStrictEqual(R.ok, []);
   assert.strictEqual(R.late.length, 1, 'a names.json out of step fails the check');

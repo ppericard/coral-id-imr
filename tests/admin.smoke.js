@@ -1343,11 +1343,129 @@ const WIDTHS = [390, 1280];
         await go('inbox/coverage/games');
         c = await cv();
         if (!c.coral || c.rows) fails.push(`${w}px Coverage on the corals' side: ${JSON.stringify(c)}`);
-        // The corals have no Tree tab yet (they join it in a later step), and its address says so.
-        await go('photos/tree/key');
-        u = await fu();
-        if (!/Not for corals yet/.test(u.note) || u.tabs.includes('Tree'))
-          fails.push(`${w}px Tree on the corals' side ${JSON.stringify(u)}`);
+        // The corals' Tree (admin-coraltree.js; docs/ROADMAP.md "The Tree tab", its last step): the tab after Genera; Key,
+        // the IMR lecture groups and their genera (never the Coral Finder key's growth forms, rule C4); WoRMS, WoRMS's
+        // families; a group's or a family's page its genera's cards; a genus's page its featured photos and the link to its
+        // genus page (its address unchanged); the view switch keeps a genus; the tags filter both views.
+        {
+          const ct = () =>
+            p.evaluate(() => ({
+              hash: location.hash,
+              tabs: [...document.querySelectorAll('#subnav .adm-subtabs a')].map(a => a.textContent),
+              note: (document.querySelector('#view > .note') || {}).textContent || '',
+              name: (document.querySelector('.adm-sname') || {}).textContent || '',
+              crumbs: [...document.querySelectorAll('.adm-crumbs a, .adm-crumbs b')].map(x => x.textContent),
+              roots: [...document.querySelectorAll('.adm-tree [role=treeitem][aria-level="1"]')].map(x => x.dataset.tt),
+              rows: document.querySelectorAll('.adm-tree [role=treeitem]').length,
+              cards: [...document.querySelectorAll('.adm-tcard')].map(x => x.dataset.ttc),
+              open: (document.querySelector('.adm-ctopen') || {}).getAttribute?.('href') || '',
+              views: [...document.querySelectorAll('[data-ctv]')].map(x => x.dataset.ctv),
+              feat: document.querySelectorAll('.adm-ctfeat a').length,
+              kids: [...document.querySelectorAll('[data-ttkid] option')].map(o => o.value).filter(Boolean),
+              tags: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean),
+              keyView: (document.querySelector('#subnav [data-view="photos/tree/key"]') || {}).getAttribute?.('href') || '',
+              wormsView: (document.querySelector('#subnav [data-view="photos/tree/worms"]') || {}).getAttribute?.('href') || '',
+              probs: (document.querySelector('.adm-ttprob') || {}).textContent || '',
+              wide: document.documentElement.scrollWidth - innerWidth
+            }));
+          await go('photos/tree/key');
+          let c = await ct();
+          const tabs = c.tabs.join();
+          if (
+            c.hash !== '#photos/tree/key' ||
+            c.note ||
+            !/^Genera,Tree,/.test(tabs) ||
+            c.cards.join() !== 'Acropora,Pocillopora,Stylophora,Anacropora'
+          )
+            fails.push(`${w}px Coral Tree: the first group ${JSON.stringify(c)}`);
+          if (w === 1280 && (c.roots.join() !== 'k:1,k:2,k:3,k:4,k:5,k:6,k:7,k:8,k:9,k:10,k:11,k:none' || c.rows < 60))
+            fails.push(`${w}px Coral Tree: the IMR lecture groups ${JSON.stringify(c.roots)} ${c.rows}`);
+          if (c.wide > 0) fails.push(`${w}px Coral Tree: sideways scroll ${c.wide}`);
+          // A ★ genus with its look-alikes' group, the drill-down's genera
+          await go('photos/tree/key/' + encodeURIComponent('k:4'));
+          c = await ct();
+          if (!c.cards.includes('Duncanopsammia') || !c.cards.includes('Cyphastrea') || c.kids.join() !== c.cards.join())
+            fails.push(`${w}px Coral Tree: group 4 ${JSON.stringify(c)}`);
+          // A genus: its path, its views' featured photos, its genus page linked (#photos/genera/live/<genus>, kept)
+          await go('photos/tree/key/Acropora');
+          c = await ct();
+          if (
+            c.crumbs.join(' › ') !== '1 · Small, raised, separate-walled corallites › Acropora' ||
+            c.open !== '#photos/genera/live/Acropora' ||
+            c.views.join() !== 'wide,medium,macro' ||
+            !c.feat ||
+            c.wide > 0
+          )
+            fails.push(`${w}px Coral Tree: a genus's page ${JSON.stringify(c)}`);
+          // The view switch keeps the genus; in WoRMS, its family (WoRMS's, not the lecture's word)
+          if (c.wormsView !== '#photos/tree/worms/Acropora') fails.push(`${w}px Coral Tree: the switch to WoRMS ${c.wormsView}`);
+          await go('photos/tree/worms/Pachyseris');
+          c = await ct();
+          if (c.crumbs.join(' › ') !== 'Pachyseridae › Pachyseris' || c.keyView !== '#photos/tree/key/Pachyseris' || c.probs)
+            fails.push(`${w}px Coral Tree: WoRMS ${JSON.stringify(c)}`);
+          await go('photos/tree/worms');
+          c = await ct();
+          if (c.hash !== '#photos/tree/worms' || !c.cards.length || (w === 1280 && !c.roots.every(r => r.startsWith('wf:'))))
+            fails.push(`${w}px Coral Tree: WoRMS's first family ${JSON.stringify(c)}`);
+          // A genus card opens its Tree page, and the link there its genus page
+          await go('photos/tree/key/' + encodeURIComponent('k:1'));
+          await p.click('.adm-tcard[data-ttc="Stylophora"]');
+          await settle();
+          if ((await p.evaluate(() => location.hash)) !== '#photos/tree/key/Stylophora') fails.push(`${w}px Coral Tree: a card's link`);
+          await p.click('.adm-ctopen');
+          await settle();
+          if ((await p.evaluate(() => location.hash)) !== '#photos/genera/live/Stylophora' || !(await p.$('[data-lv]')))
+            fails.push(`${w}px Coral Tree: Genus page`);
+          if (once) {
+            // Opened cold at a coral Tree address (a bookmark, a reload): the page draws, with no error.
+            const nc = await b.newContext({viewport: {width: w, height: 800}, serviceWorkers: 'block'});
+            await nc.route(
+              u => !u.href.startsWith(base),
+              r => r.abort()
+            );
+            const q = await nc.newPage(),
+              ne = [];
+            q.on('pageerror', e => ne.push(e.message));
+            await q.goto(base + 'admin.html?demo#photos/tree/worms/Pachyseris');
+            await q
+              .waitForFunction(() => document.querySelector('.adm-ctopen'), null, {timeout: 90000})
+              .catch(() => ne.push('the genus page never drew'));
+            const cold = await q.evaluate(() =>
+              [...document.querySelectorAll('.adm-crumbs a, .adm-crumbs b')].map(x => x.textContent).join(' › ')
+            );
+            if (ne.length || cold !== 'Pachyseridae › Pachyseris')
+              fails.push(`${w}px Coral Tree: opened cold ${JSON.stringify({cold, ne})}`);
+            await nc.close();
+            // Tags: ★ Starred shows the five ★ genera in both views, with All | IMR; Tag… again everything
+            await go('photos/tree/key/' + encodeURIComponent('k:4'));
+            c = await ct();
+            if (!['star', 'look', 'work', 'cand', 'draft'].every(k => c.tags.includes(k)))
+              fails.push(`${w}px Coral Tree: the tags ${JSON.stringify(c.tags)}`);
+            await p.selectOption('[data-tttag]', 'star');
+            await settle();
+            c = await ct();
+            if (c.cards.join() !== 'Duncanopsammia,Cyphastrea') fails.push(`${w}px Coral Tree: ★ in group 4 ${JSON.stringify(c.cards)}`);
+            await p.click('[data-fuimr="imr"]');
+            await settle();
+            const leaves = await p.evaluate(() => [...document.querySelectorAll('.adm-tree [role=treeitem]')].map(x => x.dataset.tt));
+            if (
+              w === 1280 &&
+              leaves
+                .filter(x => !/^k:/.test(x))
+                .sort()
+                .join() !== 'Alveopora,Cyphastrea,Duncanopsammia,Halomitra,Merulina'
+            )
+              fails.push(`${w}px Coral Tree: ★ with IMR ${JSON.stringify(leaves)}`);
+            await go('photos/tree/worms/' + encodeURIComponent('wf:Merulinidae'));
+            c = await ct();
+            if (c.cards.sort().join() !== 'Cyphastrea,Merulina') fails.push(`${w}px Coral Tree: ★ in WoRMS ${JSON.stringify(c.cards)}`);
+            await p.click('[data-fuimr="all"]');
+            await p.selectOption('[data-tttag]', '');
+            await settle();
+            c = await ct();
+            if (c.cards.length < 10) fails.push(`${w}px Coral Tree: no tag ${JSON.stringify(c.cards)}`);
+          }
+        }
         if (once) {
           // All | IMR: the IMR course's families only, then all again (one click each, remembered).
           await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
