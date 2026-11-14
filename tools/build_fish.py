@@ -36,7 +36,10 @@ Names (Pierre, 2026-11-03): the name shown and expected is the PDF's, i.e. Event
 WoRMS). The WoRMS accepted name goes beside it in `now` ("now X in WoRMS"); both are accepted when typed, and the WoRMS
 synonyms too. Each name is checked against WoRMS: an exact match on the name as written (or its hand fix `as`), else
 WoRMS's fuzzy match (TAXAMATCH). A spelling WoRMS does not know at all is a likely slip in the PDF: kept as written and
-flagged in `check` for Pierre to check against EventMeasure (common-name slips too, from the source's `check`). Two PDF
+flagged in `check` for Pierre to check against EventMeasure (common-name slips too, from the source's `check`). Only by
+Pierre's decision is a PDF spelling shown another way: the source row's `shown` (its reason and date in `shownWhy`; s278
+Neoniphon argentus shown as Neoniphon argenteus, 2026-11-14) is the name shown, expected and looked up, the PDF's kept in
+the source's `name` (shown_name). Two PDF
 species that WoRMS treats as one stay two entries. The build prints all of these, the WoRMS / iNaturalist mismatches
 and a cross-check of the PDF sections against the teaching nodes.
 
@@ -54,7 +57,7 @@ longer confirmed (the rest of the build and its counts unchanged). A species not
 in the Philippines leaves the game but stays in fish.json with `out` (a future Fish ID Key for EventMeasure must hold
 every PDF species, unfiltered), as does a PDF species whose family is in no circle.
 
-Each species: {id, name (PDF / source), now (WoRMS accepted, when it differs), common, ref (AphiaID), inat (iNaturalist
+Each species: {id, name (PDF / source, or the source's shown), now (WoRMS accepted, when it differs), common, ref (AphiaID), inat (iNaturalist
 taxon of its PDF name, else of the WoRMS name), circle (in the game) or out (why not), r (rank order: the PDF
 cheatsheet's 24 most sighted first, then the source order, i.e. PDF order, then the slides, winks, Dauin species),
 cmi (commonness index, 0-1, within its teaching entry: tools/fish_commonness.py), present, src (slides, dauin, wink; PDF when absent), sec (PDF section), pdf (pages), cs (cheatsheet rank), sl (slide),
@@ -864,7 +867,7 @@ def main():
             print(f"wrote {OUT.relative_to(ROOT)}")
         return
     src = json.loads(SRC.read_text(encoding="utf-8"))
-    report = {"waiting": [], "refnames": [], "renamed": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
+    report = {"waiting": [], "refnames": [], "renamed": [], "shown": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
     try:
         out = build(src, report)
     finally:
@@ -935,7 +938,8 @@ def build(src, report):
 
     species, seen = [], {}
     for i, s in enumerate(src["species"]):
-        written = s.get("as") or s["name"]
+        name = shown_name(s)
+        written = s.get("as") or name
         rec, how = worms_name(written)
         if not rec:
             report["typo"].append(f"{s['id']} {s['name']}: NOT IN WoRMS ({how})")
@@ -943,20 +947,21 @@ def build(src, report):
             continue
         acc = accepted(rec)
         now = acc["scientificname"]
-        check = [s["check"]] if s.get("check") else []
+        check = checks(s, how, now)
         if how == "fuzzy" or s.get("as"):  # a spelling WoRMS does not know: likely a slip, to check against EventMeasure
-            check.append(f"spelling as in the PDF; WoRMS has {now}")
             report["typo"].append(f"{s['id']} {s['name']}: WoRMS has {now} (fuzzy match {rec['scientificname']})")
-        elif now != s["name"]:
+        elif now != name:
             why = f"{rec['status']}{', ' + rec['unacceptreason'] if rec.get('unacceptreason') else ''}"
-            report["renamed"].append(f"{s['id']} {s['name']}: now {now} in WoRMS ({why})")
+            report["renamed"].append(f"{s['id']} {name}: now {now} in WoRMS ({why})")
+        if name != s["name"]:
+            report["shown"].append(f"{s['id']} {s['name']}: shown as {name} ({s['shownWhy']})")
         if s.get("check"):
             report["typo"].append(f"{s['id']} {s['name']}: {s['check']}")
         aid = acc["AphiaID"]
         if aid in seen:  # two PDF species, one WoRMS species: both kept, each under its PDF name (Pierre, 2026-11-03)
             report["lumped"].append(f"{s['id']} {s['name']} and {seen[aid]['s']['id']} {seen[aid]['s']['name']}: one WoRMS species, {now}")
         anc = add_chain(aid)
-        gc = pdf_genus(s["name"].split()[0], tree[anc[1]]["name"] if tree[anc[1]]["rank"] == "Genus" else None)
+        gc = pdf_genus(name.split()[0], tree[anc[1]]["name"] if tree[anc[1]]["rank"] == "Genus" else None)
         place_anc = [aid, *gc] if gc else anc
         t = place(place_anc, nodes)
         if not t and s.get("src") in ("dauin", "wink"):  # picked for a teaching node that does not hold it in WoRMS
@@ -965,7 +970,7 @@ def build(src, report):
         sub = place(place_anc, t.get("sub", [])) if t else None
         if t and s.get("sec") and s["sec"] not in t.get("pdf", []):
             report["pdf"].append(f"{s['id']} {s['name']}: PDF section {s['sec']} but teaching node {t['id']} {t['name']}")
-        x = {"i": i, "s": s, "aid": aid, "now": now, "t": t, "sub": sub, "check": check, "out": []}
+        x = {"i": i, "s": s, "name": name, "aid": aid, "now": now, "t": t, "sub": sub, "check": check, "out": []}
         if not t:  # a PDF species whose family is in no circle: kept for the Fish ID Key, out of the game
             x["out"].append("family in no circle")
         seen.setdefault(aid, x)
@@ -987,16 +992,16 @@ def build(src, report):
                 report["mismatch"].append(f"{n['name']} ({n['rank']}): iNaturalist {iname}")
     for x in species:
         s, node = x["s"], tree[x["aid"]]
-        tid, iname = inat_taxon(s["name"], "Species") if s["name"] != node["name"] else (None, None)
+        tid, iname = inat_taxon(x["name"], "Species") if x["name"] != node["name"] else (None, None)
         if tid is None:
             tid, iname = node["inat"], node.get("iname") or node["name"]
             if tid and iname != node["name"]:
                 node["iname"] = iname
-        if tid and iname not in (s["name"], node["name"]):
-            report["mismatch"].append(f"{s['name']} (WoRMS {node['name']}): iNaturalist {iname}")
+        if tid and iname not in (x["name"], node["name"]):
+            report["mismatch"].append(f"{x['name']} (WoRMS {node['name']}): iNaturalist {iname}")
         x["inat"] = tid
         if tid:
-            x["_pres"] = (tid, bool(s.get("pdf")), [s["name"], x["now"], tree[x["aid"]]["name"], iname, *syn.get(x["aid"], [])])
+            x["_pres"] = (tid, bool(s.get("pdf")), [*dict.fromkeys([s["name"], x["name"]]), x["now"], tree[x["aid"]]["name"], iname, *syn.get(x["aid"], [])])
     presence_prefetch([x["_pres"] for x in species if x["inat"]])  # every species' counts together (rule C7)
     for x in species:
         s = x["s"]
@@ -1026,8 +1031,8 @@ def build(src, report):
     out_sp = []
     for r, x in enumerate(species, 1):
         s = x["s"]
-        o = {"id": s["id"], "name": s["name"]}
-        if x["now"] != s["name"]:
+        o = {"id": s["id"], "name": x["name"]}
+        if x["now"] != x["name"]:
             o["now"] = x["now"]
         o.update({"common": s.get("common", ""), "ref": x["aid"], "inat": x["inat"]})
         if not x["out"]:
@@ -1122,6 +1127,25 @@ def build(src, report):
     return {"v": V, "start": start, "key": key_out(key), "teach": out_t, "species": out_sp, "ref": ref}
 
 
+def shown_name(s):
+    """The scientific name a species shows and expects: its source row's `shown` when Pierre had a PDF spelling shown
+    another way (s278 Neoniphon argentus shown as Neoniphon argenteus, the spelling of FishBase, WoRMS and iNaturalist:
+    Pierre, 2026-11-14), the PDF's own kept in `name` with the reason in `shownWhy`; else the name as written in the PDF."""
+    if s.get("shown") and not s.get("shownWhy"):
+        sys.exit(f"tools/fish_source.json {s['id']}: shown without shownWhy")
+    return s.get("shown") or s["name"]
+
+
+def checks(s, how, now):
+    """A species' points to check against EventMeasure (fish.json `check`): the source's own, then a spelling WoRMS does
+    not know as written (how: WoRMS's match of the name looked up, fuzzy; or a hand fix `as`). A name shown another way
+    (`shown`) is looked up as shown: an exact match, so no spelling point."""
+    out = [s["check"]] if s.get("check") else []
+    if how == "fuzzy" or s.get("as"):
+        out.append(f"spelling as in the PDF; WoRMS has {now}")
+    return out
+
+
 def write(o):
     OUT.write_text(render(o), encoding="utf-8")
 
@@ -1164,6 +1188,7 @@ def show(o, rep):
     for k, title in (("waiting", "teaching nodes in the game waiting for an identification group (keyGroup null)"),
                      ("refnames", "teaching refs resolved to another accepted name"),
                      ("renamed", "PDF names WoRMS has since changed (PDF name kept, WoRMS name in `now`)"),
+                     ("shown", "PDF spellings shown another way by Pierre's decision (source shown; the PDF's kept in name)"),
                      ("typo", "likely slips in the PDF, to check against EventMeasure (PDF text kept)"),
                      ("lumped", "PDF species WoRMS treats as one (both kept)"),
                      ("pdf", "PDF section vs teaching node"), ("unplaced", "Dauin species in no teaching node"),
