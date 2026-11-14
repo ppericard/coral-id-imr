@@ -24,7 +24,7 @@ Main: sheet script **v129** (live after #861's deploy); v130 is assigned on #867
   the rule's pick).
 - **In flight**: #867 (the sheet's `Timings` tab: sampled ms and rows of each full read and save, no player data; the
   measure behind Q352), #869 (Q354: s088 and s244 photos fetched from their Pacific taxa, IMR names kept, the credit
-  keeps the iNaturalist name; three C5 points); agents: Q350 confusion groups (`model.js`), Q124 (b) bold differing
+  keeps the iNaturalist name; three C5 points); #871 (Q350 confusion groups: waits for Q355); agents: Q124 (b) bold differing
   letters, the comeback study (read-only), fish photo judging (the 81 Q354 candidates first, then the backlog).
 - **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync on a current app; no
   hand correction (the board is already right, D8).
@@ -51,13 +51,17 @@ lancer"); what is easy to correct afterwards ships (AGENTS.md "Working mode"):
 Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
 mode"); the others are asked plainly. An answered one goes into its PR and off this list.
 
-- None open.
+- **Q355 (#871, Q350 confusion groups), for the morning**: built and green, but the coral simulations breach the
+  early guardrails (the 59 declared coral pairs link all 40 slate genera, so the first cards become a look-alike group:
+  beginner's first Open Water 62 → 112 answers, early right % −3 to −5 points); fish hold every guardrail. Options: A as
+  built, B first cards as on main and no pull of a pair the cap split (the agent's recommendation), C the study's
+  original f (data may split declared pairs). Details in #871's "Choices I made".
 - Answered 11-14: Q352 (D1 behind a Worker when a measured threshold is crossed), Q353 (no paid tier; a monthly cost is
   settled with IMR), Q354 a (s164 kept, a C5 point) and b (Pacific photo taxa for s088 and s244, C5 points; the credit
   keeps the iNaturalist name, "ok pour (a)"); Q230: nothing to build (the list would be empty); N. argenteus corrected;
   the #861 and #864 choices; the 152 proposals and cover proposals as admin views. Q339-Q351 earlier (ROADMAP rows).
 
-Last question number: Q354
+Last question number: Q355
 
 ## Pierre's hands
 
