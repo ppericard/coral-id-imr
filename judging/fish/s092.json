@@ -159,6 +159,26 @@
   "fish-s092-cand-660327428": {
    "code": "o1g1mss2",
    "keep": "best"
+  },
+  "fish-s092-cand-750768819": {
+   "code": "p1g0slsj2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "two fish that seem to be in a tank or container, not on the reef"
+  },
+  "fish-s092-cand-598682189": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: green and yellow, dark-edged tail"
+  },
+  "fish-s092-cand-627756095": {
+   "code": "p1g1mms3",
+   "keep": "best"
   }
  }
 }
