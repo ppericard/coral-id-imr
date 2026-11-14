@@ -668,6 +668,7 @@ function play(cfg) {
     opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
     nEx = 0,
     nDuel = 0,
+    nFind = 0, // Find the X questions (quiz.js FIND: fish only)
     nAgain = 0,
     nCards = 0,
     afterMiss = 0, // genera opened on their own cards on the question right after a miss
@@ -983,6 +984,7 @@ function play(cfg) {
     }
     if (set.exam) nEx++;
     if (q.auto) nDuel++;
+    if (q.findx) nFind++;
     if (q.again) nAgain++;
     if ((q.intro || []).length && !q.start) {
       opens.push(i + 1);
@@ -1048,6 +1050,7 @@ function play(cfg) {
         refLearned: mean(le.map(e => e.ref)),
         examQs: nEx,
         duels: nDuel,
+        finds: nFind,
         agains: nAgain,
         cards: nCards,
         f: fieldRow(),
@@ -1395,7 +1398,7 @@ function summary(runs) {
     const R = runs.filter(r => r.profile === name);
     out[name] = CPS.map((q, i) => {
       const row = {q};
-      for (const [k] of KEYS.concat([['examQs'], ['duels'], ['agains'], ['cards']])) {
+      for (const [k] of KEYS.concat([['examQs'], ['duels'], ['finds'], ['agains'], ['cards']])) {
         const v = R.map(r => r.rows[i] && r.rows[i][k]).filter(x => typeof x === 'number' && !isNaN(x)),
           m = v.length ? v.reduce((a, x) => a + x, 0) / v.length : null,
           sd = v.length > 1 ? Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1)) : 0;

@@ -463,6 +463,8 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
 4. Typed Latin species name (the schedule's last step and the exam).
 5. **"Find the X"** (one name, 4 photos), **fish only**, slipped into the quiz like duels (a small share, spaced, never on a unit not met),
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
+   **Built** (2026-11-14, Q321 D1) on the families, with the square tiles: 5% of the questions that could be one (`quiz.js` `FIND`,
+   `planFind`), logged `quiz|f` (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
 both show the square fish tiles (`judging/FISH.md` "The fish's box"). Later, not agreed yet: photo-to-trait (needs per-photo
