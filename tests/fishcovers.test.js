@@ -510,6 +510,16 @@ test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's se
       want
     );
   });
+  // A photo's species in the admin: the one his curation adds it to (a candidate of s1 sent to s2 with Not this and added
+  // there still carries sid s1), else its game record's, else its candidate's; a record with neither reads as unseen.
+  const sp2 = {s2: {present: {dauinU: 9}}},
+    M = [
+      {f: 'fi1', sid: 's1'},
+      {f: 'fi3', sid: 's1'}
+    ];
+  assert.strictEqual(A.fishCoverOf(M, {}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi1');
+  assert.strictEqual(A.fishCoverOf(M, {add: {fi3: 's2'}}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi3', 'its species is the add');
+  assert.strictEqual(A.fishCoverOf([{f: 'fi1'}, {f: 'fi3', sp: 's2'}], {}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi3');
   // His pick wins; with no species registered (fishSeenFrom not called) every default keeps the game's order.
   const sp = {s2: {present: {dauinU: 9}}},
     L = [
@@ -527,7 +537,8 @@ test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's se
 });
 
 // On the real files: every fish unit Pierre has not picked a cover for shows a photo of its species most seen around the
-// centre among those with an adult photo in play, and the admin's heading shows a photo of that same species.
+// centre among those with an adult photo in play, in the app and in the admin, each over its own pool (the admin's: the
+// game photos; the app's adds the stopgap's, and the two read juveniles each their way, so they may differ).
 test('real data: the default covers are of the most seen species, in the app and the admin alike (Q339 (b))', () => {
   const f = read('fish.json'),
     gm = C.fishGameRead(read('fish-game.json')),
@@ -556,7 +567,9 @@ test('real data: the default covers are of the most seen species, in the app and
       () => null,
       sid => A.fishNear(sp[sid])
     );
-    if (adm) assert.strictEqual(key(adm.sp), key(c.sp), `${id}: the admin shows ${sp[adm.sp].name}, the app ${sp[c.sp].name}`);
+    // the admin over its own pool (the game photos, juveniles read as it reads them): its most seen species too
+    const ad = play.filter(p => nodes[id].has(p.sp) && !A.fishJuv(p, null, cu.fish));
+    if (adm && ad.length) assert.strictEqual(key(adm.sp), Math.max(...ad.map(p => key(p.sp))), `${id}: the admin shows ${sp[adm.sp].name}`);
   });
   assert.ok(n > 50, `${n} units checked`);
 });

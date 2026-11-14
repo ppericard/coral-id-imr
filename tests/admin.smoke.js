@@ -469,6 +469,22 @@ const WIDTHS = [390, 1280];
           u.wide > 0
         )
           fails.push(`${w}px Families: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
+        // The Chromis heading's default thumb (no genus cover of his): its species most seen around the instance's centre
+        // (autosort.js fishCoverOf, the species records admin-fish.js registers; Pierre, 2026-11-13, Q339 (b)).
+        const cs = await p.evaluate(() => {
+          const t = document.querySelector('.adm-fgen[data-gen="g:Chromis"] > .adm-fgenh .adm-hthumb'),
+            k = sid => fishNear(FISHC.species[sid])[0] * 1e6 + fishNear(FISHC.species[sid])[1],
+            sids = [...document.querySelectorAll('.adm-fgen[data-gen="g:Chromis"] .adm-row[data-sid]')]
+              .map(r => r.dataset.sid)
+              .filter(sid => FISHC.plays.some(q => q.sp === sid && !fishJuv(q, fuJ(q.f), DRAFT.fish)));
+          if (((DRAFT.fish || {}).genera || {})['g:Chromis'] || !sids.length) return {skip: 1};
+          return {
+            sid: t && t.dataset.sid,
+            ok: !!t && k(t.dataset.sid) === Math.max(...sids.map(k)),
+            best: sids.sort((a, b) => k(b) - k(a))[0]
+          };
+        });
+        if (!cs.skip && !cs.ok) fails.push(`${w}px Families: the Chromis heading is not its most seen species ${JSON.stringify(cs)}`);
         // Diploprion is in the Soapfishes (the book), tagged IMR (taught with the Groupers), with the Grammistidae soapfishes
         // since 2026-11-08 (Q248: one family, as in the book); an unknown family shows the first.
         await go(other.hash + 'photos/families/' + encodeURIComponent('f:Soapfishes'));

@@ -681,7 +681,9 @@
   // around the instance's centre by distinct observers (ties: observations, then the game's order), then that leaf's
   // first photo in the game's order that is not a juvenile; a node with no presence keeps the order's first, as before.
   // seen(leaf id): [observers, observations] around the centre (fishNear); by default from the species records the admin
-  // registers (fishSeenFrom, admin-fish.js). The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
+  // registers (fishSeenFrom, admin-fish.js). A photo's leaf: the species his curation adds it to (F.add: a photo sent
+  // elsewhere with Not this and added there keeps its candidate's first species in sid), else its game record's (sp), else
+  // its candidate's (sid). The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
   function fishCoverOf(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
       juv = p => fishJuv(p, j(p.f), F),
@@ -690,7 +692,7 @@
     const R = fishOrder(L, F, tid, '', j).rest;
     let best = null;
     R.filter(p => !juv(p)).forEach(p => {
-      const s = seen(p.sid || p.sp) || [0, 0];
+      const s = seen(((F || {}).add || {})[p.f] || p.sp || p.sid) || [0, 0];
       if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
     });
     return best ? best.p : R[0] || null;
