@@ -2189,6 +2189,48 @@ The patch (`OPEN.STUCK` 10, `OPEN.LEVEL`, `OPEN.SETTLED` 200, `stuckFree`, with 
 repository. `tools/ratedworld.js` keeps the global level since this calibration (`level` in the rows, `lv` every 25
 answers).
 
+### Confusion groups (2026-11-14, Q350)
+
+Decided by Pierre on 2026-11-14 (Q350, "oui à tout" to the [study](reviews/2026-11-06-confusion-group-opening-study.md)'s
+questions a-j, f changed: "je pense qu'il faut quand même forcer les paires déclarées. Si elles sont déclarées par des
+enseignants, c'est qu'il y a un intérêt à les voir ensemble, même s'ils sont faciles à distinguer"). Look-alike units
+open close together, so they are in play at the same time (interleaving pays most for similar categories, and only
+while they are juxtaposed: the study's §2).
+
+**Plan, declared before the runs** (rule L11; committed before any output):
+
+- **Level 2** (the opening, for every player; a regression check of decided values: G_MAX 3 and the trap level are the
+  study's and Pierre's, the declared-pairs change needs no new constant, so no calibration).
+- **Arms**: base = `main` at e0e019a5; this branch. The `INTRO.EVERY` removal alone was checked first: `main` and the
+  branch without the groups gave the same questions, seed for seed (seeds 401-402, the four coral profiles, 300
+  questions, the field learner and the rated world).
+- **The app world**: `tools/learnsim.js`, corals (the four profiles) and fish (the five), seeds 501-510 (`--seed0 500`;
+  the study used 1-30), 300 questions, the item learner and `--learner field`, `--stats` the sheet's `?stats=1` of
+  2026-11-14 (v128: 904 coral pairs pooled, no fish pair yet).
+- **Primary** (app world, corals): **partners closer**, per run the median over a fixed set of pairs of the answers
+  between the first meetings of the two units (a unit not met counts 301), down; the set: the 59 declared coral pairs
+  and the 4 pairs from the data alone at `CONF.TRAP` or more on those stats (63 pairs, the same in both arms, not the
+  new groups' own); pooled over the profiles and both learners (80 pairs of runs), the stratified sign-flip of
+  `tools/learncmp.js`. **Second, in a Holm family of two**: look-alike accuracy at question 300 (`look`, the learner's
+  true 2-choice accuracy on the declared pairs), up; expected small (+0.006 in the study on 120 pairs), so also read
+  as "no worse": the one-sided 90% bound of the paired difference above −0.02.
+- **Guardrails**: `tools/learncmp.js`'s at 100 and 300 (true knowledge, E, units met, units at Open Water, first unit
+  at Open Water, longest plateau), every profile of both subjects, each learner; the beginner's units met by question
+  100 at most 17 (the CI limit, `tests/profiles.smoke.js`, which must pass); the beginner's right % over answers 1-100,
+  the one-sided bound of the paired difference above −3 points.
+- **Costs expected** (declared): the first openings are less "easy and common first" (the free draw picks only the
+  first unit; the rest follows the groups and the declared pairs: the order check below), and a look-alike arrives as a
+  trap sooner, so the right % of the first 100 answers may drop up to the bound above (the study: −0.4 to −0.9
+  points), and the first unit at Open Water may come later, within its margin.
+- **The rated world**: `--world rated`, corals (four profiles) and fish (five), seeds 501-510, the count learner, 1,000
+  answers, `tools/learncmp.js` base against the branch, every guardrail. Its units have no pooled confusions and its
+  learner no pair skill, so it checks the guardrails on groups built from the priors alone (the declared pairs), not
+  the gain.
+- **The real log** (rule L12): a replay cannot judge the opening (a different draw asks other questions). Measured
+  instead, read-only: how far apart the real players met the partners of the new groups under today's rule (the gap
+  the change closes), and how many units entered the exam with a group partner not met (where the exam gate would
+  have bitten).
+
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
 Two players' runs collapsed on the evening of 2026-11-03, after #408 (one opening rule, merged 11:34 UTC) and #413 (no
