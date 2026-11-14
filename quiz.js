@@ -1996,8 +1996,8 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     }
   }
   // The genus asked is one already met (INTRO): ready, or one of the cards shown with this question when they are the
-  // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at most one card every
-  // INTRO.EVERY answers) shows its card instead, and the question is about another genus.
+  // first ones. A draw that falls on a genus not met yet (the progressive path opening one, at the opening's pace:
+  // model.js openPace) shows its card instead, and the question is about another genus.
   // After a break (model.js, "Comeback after a break"): the time since the last answer may start a new visit (no genus
   // opens in its first answers) or a comeback (questions on genera answered right, the surest first, then the most
   // rusted, the usual choices, photos at the rusty level: no card, no duel, no exam), which the answers end.
@@ -2029,7 +2029,6 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
       !warm &&
       met.length &&
       !noOpen() &&
-      introSince() >= INTRO.EVERY &&
       !introHold() &&
       openPace(at, soon) &&
       openRight(at)

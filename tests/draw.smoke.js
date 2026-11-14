@@ -598,7 +598,7 @@ const server = http.createServer((req, res) => {
     }
     // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
     // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
-    // INTRO.EVERY answers between two cards; with enough genera met, the choices are all genera met.
+    // INTRO.GAP answers between two cards (the pace waits for each card's question, INTRO.GAP answers on at the soonest); with enough genera met, the choices are all genera met.
     {
       P = {};
       INTROS = {};
@@ -713,7 +713,7 @@ const server = http.createServer((req, res) => {
         INTROS = {};
       }
       cardsAt.forEach(([a, k], i) => {
-        if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
+        if (i && a - cardsAt[i - 1][0] < INTRO.GAP) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
@@ -1184,7 +1184,7 @@ const server = http.createServer((req, res) => {
       }
       if (boffers !== 1 || Q.bon !== false || pool().some(isBonus))
         fails.push(`bonus offer after every slate genus met: shown ${boffers} time(s), Q.bon ${Q.bon}`);
-      // On (⚙): they join the genera not met yet and open one card at a time, at least INTRO.EVERY answers apart, each
+      // On (⚙): they join the genera not met yet and open one card at a time, at least INTRO.GAP answers apart, each
       // asked only after its card; their answers never move the progress; Off takes them out again, progress kept.
       bonusSet(true);
       {
@@ -1206,7 +1206,7 @@ const server = http.createServer((req, res) => {
         }
         cards.forEach(([a, L], i) => {
           if (L.length !== 1 || !isBonus(L[0])) fails.push(`bonus cards: ${L.join(', ')} at ${a} answers`);
-          if (i && a - cards[i - 1][0] < INTRO.EVERY) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
+          if (i && a - cards[i - 1][0] < INTRO.GAP) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
         });
         if (cards.length < 2) fails.push(`only ${cards.length} bonus genus card(s) in 150 questions`);
         // Their own progress grows, the slate's % does not count it.

@@ -395,15 +395,16 @@ const weight = n => {
 };
 // Progressive path (Pierre, 2026-11-02: "rather than spamming a beginner with 40 genera, start with the easiest ones,
 // opening new ones as they go, with nothing set by hand"). One opening rule (independent review of 2026-11-02, item 6;
-// 2026-11-03): a question may open a genus (its card) when the path allows one (quiz.js planPhoto: at least INTRO.EVERY
-// answers since the last card, no opening hold, not in the floor of a visit or a comeback), and then does with the
+// 2026-11-03): a question may open a genus (its card) when the path allows one (quiz.js planPhoto: no opening hold, not in the
+// floor of a visit or a comeback, the pace (openPace) and the right-answer rule (openRight)), and then does with the
 // chance openChance: the free share of OPEN.K places for genera met and still shaky (below), 1 - shaky / K. A slope,
 // not a switch (Pierre, 2026-11-02: one genus more or less shaky never flips the pace), and a work-in-progress limit:
 // with K shaky genera none opens until one holds (from OPEN.STUCK_FROM answers, the genera stuck shaky aside: below).
 // The genus opened is drawn among those not met yet (openPick): the easiest (genusDiff) first, softly (OPEN.T), and the
 // most common near Dauin (Pierre, 2026-11-03: "easy and common first": core.js commonFactor of each genus's data.json
 // cm, tools/commonness.py, relative to the median of the genera not met yet). It replaced a share of the genus draw given to the genera not met yet (OPEN.READY 35% with no shaky genus
-// down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY. K 8: simulated, a
+// down to OPEN.TRICKLE 3% at K, K 10), a second throttle on top of INTRO.EVERY (2 answers between
+// cards, which never bound once openPace came: removed, Pierre, 2026-11-14, Q350 j). K 8: simulated, a
 // beginner meets genera at the pace they did, the RAs and an expert faster, learning as much (docs/LEARNING.md).
 // STUCK, STUCK_FROM (Pierre, 2026-11-12, Q338: "option a, B10 après 200 réponses"; docs/LEARNING.md "A unit stuck
 // shaky"): a unit still shaky after STUCK of its own answers (its ok + ko) stops taking a place among the K, once the
@@ -551,8 +552,10 @@ function openPick(fresh, list = fresh, met = introduced) {
 // First meeting with a genus (Pierre, 2026-11-02, after the beginner RA review): a player starting from zero first meets
 // INTRO.START genera on cards (name, cover photo, ID tips) and is asked about those; new genera then come one at a time,
 // each on its card, and never as the answer of the question right after its card ("too easy"): a genus met on a single
-// card can be asked from INTRO.GAP answers on, and a new card waits INTRO.EVERY answers after the last one (and while
-// introHold, below). Which genus
+// card can be asked from INTRO.GAP answers on, and a new card waits while one is still to be asked (openPace) and while
+// introHold (below). INTRO.EVERY (a new card at least 2 answers after the last one) went on 2026-11-14 (Pierre, Q350 j:
+// the opening's pace already waits for each recent card's question, which comes INTRO.GAP answers on at the soonest; the
+// confusion-group study's 120 runs were identical without it). Which genus
 // opens and when stays the progressive path's (weighted, OPEN): a draw that falls on a genus not met yet shows its card
 // and asks about a genus already met. Kept on the device (reefid-sync-coral-intro: genus -> [answers when shown, 1 if one of the
 // first cards]); a genus already asked (another device, progress from before the cards) counts as met. Bonus genera
@@ -566,7 +569,6 @@ const INTRO = {
   },
   START: 4,
   GAP: 2,
-  EVERY: 2,
   HOLD: 1.5,
   SLACK: 0.1,
   OFFER: {
@@ -920,7 +922,6 @@ function holdSync(h, log, ids) {
     store.set(HOLDK(), HOLDS);
   }
 }
-const introSince = () => answersSoFar() - Math.max(-Infinity, ...Object.values(introMap()).map(e => e[0]));
 // Comeback after a break (Pierre, 2026-11-02; replaces the fixed gentle restart, 10 easy questions at each visit). Time
 // is used here and only here (rule L1): to plan the questions after a break. Progress (s.pg), mastery (s.mx)
 // and the Elo ability (s.th) never decay with time; only answers move them. docs/LEARNING.md, "Comeback after a break".

@@ -14,7 +14,7 @@ const read = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 // opening hold (holdStep, introHold, holdEase), on stubs.
 function model({P = {}} = {}) {
   const src = read('model.js'),
-    block = cut(src, '// Progressive path (Pierre', 'const introSince');
+    block = cut(src, '// Progressive path (Pierre', '// Comeback after a break (Pierre');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject

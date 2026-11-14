@@ -156,7 +156,7 @@ test('userStart: an archived record is read-only', () => {
 // card must still be offered"), counted on the answers given after the change only.
 test('the fallback window restarts at the change, and the level card still comes from the answers after it', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    block = cut(src, '// First meeting with a genus (Pierre', 'const introSince'),
+    block = cut(src, '// First meeting with a genus (Pierre', '// Comeback after a break (Pierre'),
     saved = {},
     ctx = {
       ...require('./subj.stub.js')(),
