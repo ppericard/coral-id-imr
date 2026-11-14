@@ -1950,10 +1950,16 @@ function fuData() {
     const p = FISHC.byF[f];
     if (p && to !== p.sid) gone.push({...p, to});
   });
+  // A species is dirty when any of its photos' choices differs from the published file: in or out of play, and the crop,
+  // rotation, ease, phase and tags Publish sends too (the rows' dot and the Tree's Draft tag; Codex review #898).
   const dirty = new Set();
-  ['add', 'seen', 'exclude', 'out'].forEach(k =>
+  // a photo's species: its record's, else the species it plays for (a game photo the records do not hold)
+  const inPlay = {};
+  Object.entries(play).forEach(([sid, L]) => L.forEach(p => (inPlay[p.f] = sid)));
+  const sidOf = f => (FISHC.byF[f] ? FISHC.byF[f].sid : inPlay[f]);
+  ['add', 'seen', 'exclude', 'out', 'crop', 'rot', 'ease', 'phase', 'tags'].forEach(k =>
     [...new Set([...Object.keys(F[k] || {}), ...Object.keys(S0[k] || {})])].forEach(
-      f => !same((F[k] || {})[f], (S0[k] || {})[f]) && FISHC.byF[f] && dirty.add(FISHC.byF[f].sid)
+      f => !same((F[k] || {})[f], (S0[k] || {})[f]) && sidOf(f) && dirty.add(sidOf(f))
     )
   );
   return {F, play, other, gone, dirty};

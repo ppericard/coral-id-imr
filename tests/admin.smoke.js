@@ -975,6 +975,37 @@ const WIDTHS = [390, 1280];
           await pick('');
           x = await tf();
           if (x.on || set(x.fams) !== set(want.all)) fails.push(`${w}px Tree tags: no tag ${JSON.stringify({...x, fams: x.fams.length})}`);
+          // Draft finds every edit Publish would send (Codex review #898): a photo's crop, rotation, ease, phase or tags alone
+          // put its species under Draft (and its row's dot), each tried alone on a species with nothing else unpublished,
+          // the draft as it was after.
+          const dr = await p.evaluate(() => {
+            const T = fuTreeOf(FISHC.units),
+              F0 = JSON.stringify(DRAFT.fish || {}),
+              on = () => {
+                const D = fuData(),
+                  E = Object.fromEntries(FISHC.units.map(x => [x.id, fuFam(x, D)]));
+                return {pass: ttPass(T, [fuFilters(T, FISHC.units, E, D).find(x => x.k === 'draft').on]), D};
+              },
+              before = on(),
+              sid = Object.keys(before.D.play).find(s => T.node.has(s) && !before.pass.has(s) && before.D.play[s].length),
+              f = sid && before.D.play[sid][0].f,
+              miss = [];
+            if (!f) return {miss: ['no species free of draft changes']};
+            [
+              ['crop', [0.1, 0.1, 0.9, 0.9]],
+              ['rot', 90],
+              ['ease', 2],
+              ['phase', 'juvenile'],
+              ['tags', 'o1g1sso']
+            ].forEach(([k, v]) => {
+              DRAFT.fish = JSON.parse(F0);
+              DRAFT.fish[k] = {...(DRAFT.fish[k] || {}), [f]: v};
+              if (!on().pass.has(sid)) miss.push(k);
+            });
+            DRAFT.fish = JSON.parse(F0);
+            return {sid, f, miss};
+          });
+          if (dr.miss.length) fails.push(`${w}px Tree tags: Draft misses a photo edit ${JSON.stringify(dr)}`);
         }
         // What the game plays is what the admin counts (fish-game.json, whatever the route: the sure candidates and the
         // reference photos too, not curation.json's adds alone): each species' obs/target is at least the game's observations.
