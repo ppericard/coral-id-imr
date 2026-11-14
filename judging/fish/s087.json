@@ -115,6 +115,46 @@
   "fish-s087-cand-fb-Dimel_u0": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s087-cand-435881427": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s087-cand-557550345": {
+   "code": "p1g1bm12",
+   "keep": "best"
+  },
+  "fish-s087-cand-582457328": {
+   "code": "p1g1smo3",
+   "keep": "best"
+  },
+  "fish-s087-cand-601068149": {
+   "code": "d1g1ss11",
+   "keep": "best"
+  },
+  "fish-s087-cand-643347904": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s087-cand-643347913": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s087-cand-637582934": {
+   "code": "p1g1bmo2",
+   "keep": "best"
+  },
+  "fish-s087-cand-631370401": {
+   "code": "p1g1ss11",
+   "keep": "best"
+  },
+  "fish-s087-cand-631370543": {
+   "code": "p1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s087-cand-631370548": {
+   "code": "p1g1ss11",
+   "keep": "dup"
   }
  }
 }
