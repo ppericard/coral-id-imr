@@ -1230,7 +1230,10 @@ async function freshPlayers(b, base, errs) {
     await q.click('#view .hsubj [data-subj="fish"]');
     await q.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .hsubj'), null, {timeout: 30000});
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
-    // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
+    // mosaic's own pick (Pierre, 2026-11-08, Q291), the Identify door's art one of those. The band rotates (ROADMAP "Fish
+    // Home mosaic: rotate the photos", home.js landPool): each tile one of its family's photos that suit it, the cover or
+    // a reference photo (refLevel), at most 6, or the pick above when it has none; over a few drawings of Home, some
+    // family shows two different photos.
     // By photo, not by address (as the family sheet's hero below): every R2 photo fails in this smoke, so R2 goes off
     // mid-run (app.js photoFail, r2Out) and a photo shown under its R2 address may be read under its online original
     // (core.js photoAway), or the reverse, depending on when the failure lands (the train of #778 caught it on CI).
@@ -1240,32 +1243,44 @@ async function freshPlayers(b, base, errs) {
           !!u &&
           !!p &&
           (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
-        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1',
+        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
         want = n => {
           const g = GX(n),
             L = g.views.wide;
-          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || L[0];
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || adultFirst(L);
         },
-        W = slateGenera()
-          .filter(n => GX(n).views.wide.length)
-          .map(n => want(n)),
-        Cn = slateGenera().filter(n => suits(GX(n).coverP)),
-        C = Cn.map(n => GX(n).coverP),
-        T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img, #view .hdoor.identify .hdart img')].map(i =>
-          i.getAttribute('src')
-        );
-      return {
-        n: T.length,
-        covers: T.filter(x => C.some(p => shows(x, p))).length,
-        // the tiles of a family whose cover fits: Home draws 12 families at random, so none may come (#785's CI run),
-        // and each that comes must show its cover
-        ofC: T.filter(x => Cn.some(n => shows(x, GX(n).coverP) || GX(n).views.wide.some(p => shows(x, p)))).length,
-        fits: C.length,
-        bad: T.filter(x => !W.some(p => shows(x, p)))
-      };
+        // the photos a tile may draw: the cover that suits it, then the reference photos that do, at most 6
+        pool = n => {
+          const g = GX(n),
+            P = [...(suits(g.coverP) ? [g.coverP] : []), ...g.views.wide.filter(p => p !== g.coverP && suits(p) && refLevel(p))].slice(
+              0,
+              6
+            );
+          return P.length ? P : [want(n)];
+        },
+        N = slateGenera().filter(n => GX(n).views.wide.length),
+        W = N.map(want),
+        tiles = () => [...document.querySelectorAll('#view .hdoor.learn .hdtiles img')].map(i => i.getAttribute('src')),
+        art = [...document.querySelectorAll('#view .hdoor.identify .hdart img')].map(i => i.getAttribute('src')),
+        PO = new Map(N.map(n => [n, pool(n)])),
+        famsOf = u => N.filter(n => PO.get(n).some(p => shows(u, p))),
+        seen = new Map(),
+        // a photo of one family only (a genus unit's photos are its family's too) tells which family drew it
+        draw = () =>
+          tiles().forEach(u => {
+            const F = famsOf(u);
+            // by photo, not by address: one photo may show under its R2 address, then its online original (above)
+            if (F.length === 1) seen.set(F[0], new Set([...(seen.get(F[0]) || []), PO.get(F[0]).find(p => shows(u, p))]));
+          });
+      const T = tiles(),
+        bad = [...T.filter(u => !famsOf(u).length), ...art.filter(u => !W.some(p => shows(u, p)))];
+      draw();
+      for (let i = 0; i < 20 && ![...seen.values()].some(S => S.size > 1); i++) (viewHome(), draw());
+      viewHome();
+      return {n: T.length, art: art.length, bad, rotates: [...seen.values()].some(S => S.size > 1)};
     });
-    if (!ht.n || ht.bad.length || ht.covers !== ht.ofC)
-      ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
+    if (!ht.n || !ht.art || ht.bad.length || !ht.rotates)
+      ui.push(`${width}px Home, Fish on: the tiles are not the photos that fit, or never rotate ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page but
     // Home, in its place, the header as on Home.
