@@ -210,6 +210,15 @@ body.admin .hdr-tools[hidden] {
   font-weight: 400;
   margin-left: 6px;
 }
+/* A species whose photos come from another iNaturalist taxon (admin.js fishPtx, Q354 b): its own line. */
+.adm-row h3 .adm-ptx {
+  display: block;
+  margin: 2px 0 0;
+}
+.adm-ptx i {
+  font: inherit;
+  font-style: italic;
+}
 .adm-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));

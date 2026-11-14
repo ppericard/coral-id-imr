@@ -36,7 +36,10 @@
   "  as: the name to look up when the written one does not resolve (hand fix of a typo or wrapped name).",
   "  common: common name as in the PDF (never corrected). src: pdf (default), slides, dauin, wink.",
   "  sec: PDF section (family token of its heading). pdf: PDF pages. cs: rank on the PDF cheatsheet (24 most sighted).",
-  "  sl: slide where the presentation names it. check: a point for Pierre to check against EventMeasure (e.g. a likely slip)."
+  "  sl: slide where the presentation names it. check: a point for Pierre to check against EventMeasure (e.g. a likely slip).",
+  "  photoTaxon: {inat, name, note, src, why}: the candidate photos come from this other iNaturalist taxon (tools/fetch_fish.py",
+  "  photo_taxon), e.g. the Pacific form iNaturalist splits off; name, inat (presence, commonness, links) and the IMR name on",
+  "  screen stay the species' own (Pierre, 2026-11-14, Q354 b). The admin says where its photos come from."
 ],
 "sources": {
  "pierre": "Pierre's list of families divers want to recognise, 2026-11-03",
@@ -235,7 +238,7 @@
   {"id": "s085", "name": "Dascyllus aruanus", "common": "Humbug dascyllus", "sec": "POMACENTRIDAE", "pdf": "19", "cs": 12},
   {"id": "s086", "name": "Dascyllus reticulatus", "common": "Reticulated dascyllus", "sec": "POMACENTRIDAE", "pdf": "19", "cs": 5},
   {"id": "s087", "name": "Dischistodus melanotus", "common": "Blackvent damsel", "sec": "POMACENTRIDAE", "pdf": "19"},
-  {"id": "s088", "name": "Chromis agilis", "common": "Reef chromis", "sec": "POMACENTRIDAE", "pdf": "19"},
+  {"id": "s088", "name": "Chromis agilis", "common": "Reef chromis", "sec": "POMACENTRIDAE", "pdf": "19", "photoTaxon": {"inat": 1313512, "name": "Pycnochromis pacifica", "note": "Pacific form", "src": [{"t": "Allen & Erdmann 2020, Journal of the Ocean Science Foundation 35", "u": "https://zenodo.org/records/3988552/files/josf35m.pdf"}], "why": "Pierre, 2026-11-14, Q354 b"}},
   {"id": "s089", "name": "Chromis scotochiloptera", "common": "Philippines chromis", "sec": "POMACENTRIDAE", "pdf": "19"},
   {"id": "s090", "name": "Chromis amboinensis", "common": "Ambon chromis", "sec": "POMACENTRIDAE", "pdf": "19"},
   {"id": "s091", "name": "Chromis ternatensis", "common": "Ternate chromis", "sec": "POMACENTRIDAE", "pdf": "19", "cs": 1, "sl": 9},
@@ -391,7 +394,7 @@
   {"id": "s241", "name": "Halichoeres podostigma", "common": "Axilspot wrasse", "sec": "LABRIDAE", "pdf": "50"},
   {"id": "s242", "name": "Halichoeres prosopeion", "common": "Twotone wrasse", "sec": "LABRIDAE", "pdf": "50"},
   {"id": "s243", "name": "Halichoeres nebulosus", "common": "Nebulous wrasse", "sec": "LABRIDAE", "pdf": "50"},
-  {"id": "s244", "name": "Halichoeres marginatus", "common": "Dusky wrasse", "sec": "LABRIDAE", "pdf": "50"},
+  {"id": "s244", "name": "Halichoeres marginatus", "common": "Dusky wrasse", "sec": "LABRIDAE", "pdf": "50", "photoTaxon": {"inat": 1474879, "name": "Halichoeres annularis", "note": "Pacific form", "src": [{"t": "Fishes of Australia, Halichoeres marginatus (citing Kuiter 2010; Barber & Bellwood 2005)", "u": "https://fishesofaustralia.net.au/home/species/2291"}], "why": "Pierre, 2026-11-14, Q354 b"}},
   {"id": "s245", "name": "Halichoeres hortulanus", "common": "Checkerboard wrasse", "sec": "LABRIDAE", "pdf": "50-51"},
   {"id": "s246", "name": "Halichoeres binotopsis", "common": "Wisata wrasse", "sec": "LABRIDAE", "pdf": "51"},
   {"id": "s247", "name": "Halichoeres biocellatus", "common": "Twospot wrasse", "sec": "LABRIDAE", "pdf": "51"},

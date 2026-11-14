@@ -639,6 +639,25 @@ const WIDTHS = [390, 1280];
         if (!rf || rf.not || !rf.remove) fails.push(`${w}px Families: a game-only photo's buttons ${JSON.stringify(rf)}`);
         if (!gp.loaded || !gp.rows || gp.bad.length || !gp.auto || !gp.over8)
           fails.push(`${w}px Families: the game's photos are not counted ${JSON.stringify(gp)}`);
+        // A species whose photos come from another iNaturalist taxon (fish.json photoTaxon, Q354 b) says so under its IMR
+        // name, on one line of its own; no other species does.
+        const ptx = await p.evaluate(() => {
+          const r = document.querySelector('.adm-row[data-sid="s088"]'),
+            x = r && r.querySelector('h3 .adm-ptx');
+          return {
+            name: r ? (r.querySelector('h3 small i') || {}).textContent : null,
+            line: x ? x.textContent : null,
+            block: x ? getComputedStyle(x).display : null,
+            others: [...document.querySelectorAll('.adm-row[data-sid] .adm-ptx')].length
+          };
+        });
+        if (
+          ptx.name !== 'Chromis agilis' ||
+          ptx.line !== 'Photos from Pycnochromis pacifica (iNat), Pacific form; IMR name kept' ||
+          ptx.block !== 'block' ||
+          ptx.others !== 1
+        )
+          fails.push(`${w}px Families: the photo taxon line ${JSON.stringify(ptx)}`);
         // Fish Coverage (admin plan PR 8): Inbox › Coverage › Games on the fish side, per family, genus or species, To do
         // and Where to look; the corals keep their grid.
         await go(other.hash + 'inbox/coverage/games');

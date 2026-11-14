@@ -882,3 +882,34 @@ test('fish.json vn: the kind words of the species names, as tools/fish_names.py 
     )
   );
 });
+
+// Photos from another iNaturalist taxon (fish_source.json photoTaxon; Pierre, 2026-11-14, Q354 b): the build copies the
+// field as written and keeps the species' IMR name and its own taxon (inat: presence, commonness, links); the candidates
+// come from the photo taxon (tools/fetch_fish.py photo_taxon, tests/fishphotos.test.js).
+test('photoTaxon: copied from the source as written; the IMR name and its own inat kept', () => {
+  const src = SRC.species.filter(s => s.photoTaxon),
+    built = F.species.filter(s => s.photoTaxon);
+  assert.deepStrictEqual(built.map(s => s.id).sort(), src.map(s => s.id).sort());
+  for (const s of src) {
+    const o = SP.get(s.id),
+      x = s.photoTaxon;
+    assert.deepStrictEqual(o.photoTaxon, x, s.id);
+    assert.strictEqual(o.name, s.name, `${s.id}: the IMR name stays`);
+    assert.ok(Number.isInteger(x.inat) && x.inat !== o.inat, `${s.id}: another taxon than its own`);
+    assert.ok(
+      x.name && x.note && x.why && x.src.length && x.src.every(r => r.t && /^https:\/\//.test(r.u)),
+      `${s.id}: name, note, why, sources`
+    );
+    assert.ok(
+      !F.species.some(y => y.id !== s.id && (y.inat === x.inat || (y.photoTaxon || {}).inat === x.inat)),
+      `${s.id}: one species per taxon`
+    );
+  }
+  // Q354 b: the two Pacific forms.
+  assert.deepStrictEqual(built.map(s => [s.id, s.name, s.inat, s.photoTaxon.inat, s.photoTaxon.name]).sort(), [
+    ['s088', 'Chromis agilis', 1316764, 1313512, 'Pycnochromis pacifica'],
+    ['s244', 'Halichoeres marginatus', 102056, 1474879, 'Halichoeres annularis']
+  ]);
+  // The build writes it (tools/build_fish.py, the species record).
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'tools', 'build_fish.py'), 'utf8'), /o\["photoTaxon"\] = s\["photoTaxon"\]/);
+});
