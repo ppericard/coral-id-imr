@@ -1634,14 +1634,16 @@ let PF = [],
 const pfUrls = q => {
   const set = q[4],
     later = [...(set.hint ? [set.hint] : []), ...(set.reveal || [])],
-    n = (set.shown || []).length;
+    // Find the X shows its four tiles only, never its question's own photo (shown) at 480 px or full size.
+    shown = set.find ? [] : set.shown || [],
+    n = shown.length;
   return [
     ...new Set([
       ...(q.intro || [])
         .map(g => cover(GX(g)))
         .filter(Boolean)
         .map(p => img(p, 's')),
-      ...(set.shown || []).flatMap(p => [img(p, 's'), qsrc(p, n)]),
+      ...shown.flatMap(p => [img(p, 's'), qsrc(p, n)]),
       ...later.map(p => img(p, 's')),
       ...later.map(p => qsrc(p, n + later.length)),
       // Find the X: its four tiles (app.js tileSrc), in the order shown.
