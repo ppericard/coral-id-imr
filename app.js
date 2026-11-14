@@ -2169,10 +2169,12 @@ const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // A unit's name as shown: a genus (its key is its name) in italics, a fish entry (its key is a stable id, fish.json) by
 // its IMR name. unameT: the plain text (tooltips, aria labels).
 const unameT = n => (GX(n) || {}).name || n;
-const uname = n => {
+// unameIn: unit n's name already written as h (escaped HTML: quiz.js namesLine marks letters in it), set as uname sets it.
+const unameIn = (n, h) => {
   const g = GX(n) || {};
-  return g.name && !g.rank ? esc(g.name) : `<i>${esc(g.name || n)}</i>`; // a fish scientific genus in italics, as a coral genus
+  return g.name && !g.rank ? h : `<i>${h}</i>`; // a fish scientific genus in italics, as a coral genus
 };
+const uname = n => unameIn(n, esc(unameT(n)));
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.

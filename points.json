@@ -282,13 +282,48 @@
     },
     {
       "id": "fish-chromis-agilis",
-      "kind": "names",
+      "kind": "trainer",
       "subj": "fish",
       "at": "2026-11-05",
       "title": "Chromis agilis or Pycnochromis pacifica",
-      "q": "The Pacific populations of Chromis agilis were split as Pycnochromis pacifica (Allen & Erdmann 2020). Which name does IMR use for the Dauin fish?",
-      "ctx": ["Fish (2026-11-05): Chromis agilis: its Pacific populations were split as Pycnochromis pacifica (Allen & Erdmann 2020); the Dauin fish is probably P. pacifica. The IMR name stays in the app (rule S2)."],
-      "src": [{"t": "ROADMAP › Questions for an IMR trainer (2026-11-05)"}]
+      "q": "Allen & Erdmann (2020) and iNaturalist treat the Pacific populations of Chromis agilis as a separate species, Pycnochromis pacifica. Which name should RAs use for this fish at Dauin?",
+      "ctx": [
+        "IMR reference list: Chromis agilis (Reef chromis), PDF page 19; WoRMS: Pycnochromis agilis. The IMR name stays in the app (rules C1, S2).",
+        "Allen & Erdmann (2020) describe the Pacific form as Pycnochromis pacifica; iNaturalist follows them (P. pacifica, taxon 1313512, about 345 observations; P. agilis, taxon 1316764).",
+        "The sourced check of 2026-11-14 found no photo of it in play and no Research Grade observation of iNaturalist's P. agilis in the Indo-West Pacific area the app takes photos from.",
+        "Since 2026-11-14 (Pierre, Q354 b) its candidate photos come from iNaturalist's P. pacifica; the admin says so beside its photos. The name players see is unchanged."
+      ],
+      "src": [{"t": "Allen & Erdmann 2020, Journal of the Ocean Science Foundation 35", "u": "https://zenodo.org/records/3988552/files/josf35m.pdf"}, {"t": "iNaturalist, Pycnochromis pacifica", "u": "https://www.inaturalist.org/taxa/1313512"}, {"t": "iNaturalist, Pycnochromis agilis", "u": "https://www.inaturalist.org/taxa/1316764"}, {"t": "Sourced check of the IMR fish species, 2026-11-14 (Q354)"}]
+    },
+    {
+      "id": "fish-halichoeres-marginatus",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-14",
+      "title": "Halichoeres marginatus or H. annularis",
+      "q": "iNaturalist treats the Pacific populations of Halichoeres marginatus as a separate species, H. annularis; WoRMS keeps them as one species. Which name should RAs use for this wrasse at Dauin?",
+      "ctx": [
+        "IMR reference list: Halichoeres marginatus (Dusky wrasse), PDF page 50. The IMR name stays in the app (rules C1, S2).",
+        "iNaturalist: H. marginatus (taxon 102056) and the Pacific H. annularis (taxon 1474879), with 23 Research Grade observations in the Philippines at the check. WoRMS: one species, H. marginatus.",
+        "Fishes of Australia (H. marginatus) cites Kuiter (2010), who treats the Pacific form as a separate species, H. annularis, and Barber & Bellwood (2005), who found an Indian Ocean clade and a Pacific Ocean clade.",
+        "The sourced check of 2026-11-14 found no photo of it in play. Since 2026-11-14 (Pierre, Q354 b) its candidate photos come from iNaturalist's H. annularis; the admin says so beside its photos. The name players see is unchanged."
+      ],
+      "src": [{"t": "Fishes of Australia, Halichoeres marginatus", "u": "https://fishesofaustralia.net.au/home/species/2291"}, {"t": "iNaturalist, Halichoeres annularis", "u": "https://www.inaturalist.org/taxa/1474879"}, {"t": "iNaturalist, Halichoeres marginatus", "u": "https://www.inaturalist.org/taxa/102056"}, {"t": "Sourced check of the IMR fish species, 2026-11-14 (Q354)"}]
+    },
+    {
+      "id": "fish-lyretail-anthias",
+      "kind": "trainer",
+      "subj": "fish",
+      "at": "2026-11-14",
+      "title": "Two lyretail anthias: Pseudanthias squamipinnis and P. cheirospilos",
+      "q": "The app has both Pseudanthias squamipinnis (IMR reference list) and P. cheirospilos (seen near Dauin). WoRMS and iNaturalist now restrict P. squamipinnis to the Indian Ocean. Should the list keep both lyretail anthias?",
+      "ctx": [
+        "IMR reference list: Pseudanthias squamipinnis (Scalefin anthias), PDF page 32. The IMR name stays in the app (rules C1, S2).",
+        "P. cheirospilos (Pacific lyretail anthias; WoRMS 1909723, iNaturalist 1579632) is a separate species in the app, from Research Grade observations near Dauin, with 37 photos in play at the check.",
+        "The sourced check of 2026-11-14 reads WoRMS and iNaturalist as restricting P. squamipinnis (iNaturalist 127530) to the Indian Ocean: 10 of its 12 photos in play are from the eastern Indian Ocean (Andaman Sea, northern Sumatra), which iNaturalist still files under that taxon.",
+        "Pierre (2026-11-14, Q354 a): P. squamipinnis stays as it is for now, pending this question."
+      ],
+      "src": [{"t": "WoRMS, Pseudanthias cheirospilos", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1909723"}, {"t": "iNaturalist, Pseudanthias squamipinnis", "u": "https://www.inaturalist.org/taxa/127530"}, {"t": "iNaturalist, Pseudanthias cheirospilos", "u": "https://www.inaturalist.org/taxa/1579632"}, {"t": "Sourced check of the IMR fish species, 2026-11-14 (Q354)"}]
     },
     {
       "id": "fish-siganus-margaritiferus",
