@@ -41,7 +41,7 @@ function storage() {
 }
 
 // A worker of sw.js whose shell cache is named V: its handlers, and the requests it sent to the network.
-// opts.fetch replaces the network (e.g. offline: it fails).
+// opts.fetch replaces the network (e.g. offline: it fails); opts.waiting: a newer version waits (registration.waiting).
 function worker(V, store, net, opts = {}) {
   const on = {};
   const res = url => ({
@@ -56,7 +56,8 @@ function worker(V, store, net, opts = {}) {
     self: {
       addEventListener: (t, f) => (on[t] = f),
       skipWaiting: async () => {},
-      clients: {claim: async () => {}, matchAll: async () => []}
+      clients: {claim: async () => {}, matchAll: async () => []},
+      registration: {waiting: opts.waiting ? {state: 'installed'} : null}
     },
     caches: store.api,
     fetch: opts.fetch || (async r => (net.push(String(r.url || r)), res(String(r.url || r)))),
@@ -77,11 +78,11 @@ function worker(V, store, net, opts = {}) {
   };
   return {
     // One fetch event as the browser sends it: its reply (respondWith) and its lifetime (waitUntil), apart.
-    dispatch: url => {
+    dispatch: (url, mode = 'navigate') => {
       const L = {};
       on.fetch({
         type: 'fetch',
-        request: {url, method: 'GET', mode: 'navigate'},
+        request: {url, method: 'GET', mode},
         waitUntil: p => (L.lifetime = p),
         respondWith: p => (L.reply = p)
       });
@@ -222,4 +223,20 @@ test('activation deletes the Coral Finder book crops from the photo cache, and n
   for (const u of [...keep, ...gone]) await ph.put(u, {body: u});
   await worker('reefid-shell-v2', store, net).activate();
   assert.deepStrictEqual([...store.all.get('imr-photos-v1').keys()].sort(), keep.sort());
+});
+
+// A page opened while a newer version waits (2026-11-14, net.smoke check 9 on a merge train): in Chromium that navigation
+// takes the waiting version over and stops this worker with the navigation in it, and a page the worker was answering
+// never loaded. Such a navigation is left to the browser (no respondWith); the page's other requests are answered as
+// always, and a navigation with no version waiting too.
+test('a navigation while a newer version waits is left to the browser; other requests and other times are answered', async () => {
+  const net = [];
+  const waiting = worker('reefid-shell-v1', storage(), net, {waiting: true});
+  for (const page of ['admin.html?demo', 'index.html', ''])
+    assert.deepStrictEqual(waiting.dispatch(SITE + page), {}, `${page || 'the root'}: not answered, nothing kept alive`);
+  assert.deepStrictEqual(net, [], 'the worker fetched nothing for them');
+  assert.ok(waiting.dispatch(SITE + 'curation-play.json', 'cors').reply, 'a request of the page is still answered');
+  assert.ok(waiting.dispatch(SITE + 'app.js?v=1', 'no-cors').reply, 'a versioned file too');
+  const calm = worker('reefid-shell-v1', storage(), []);
+  assert.ok(calm.dispatch(SITE + 'admin.html?demo').reply, 'no version waiting: the page is answered by the worker');
 });
