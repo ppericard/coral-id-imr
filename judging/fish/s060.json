@@ -211,6 +211,10 @@
   "fish-s060-cand-731912395": {
    "code": "p1g1mm13",
    "keep": "best"
+  },
+  "fish-s060-cand-731912762": {
+   "code": "p1g2bm11",
+   "keep": "alt"
   }
  }
 }

@@ -300,6 +300,16 @@
    "code": "p1g0sm14",
    "keep": "best",
    "phase": "male"
+  },
+  "fish-s163-cand-592538472": {
+   "code": "p1d1smk2",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s163-cand-592538461": {
+   "code": "p1d1smk2",
+   "keep": "dup",
+   "phase": "male"
   }
  }
 }
