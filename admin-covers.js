@@ -11,8 +11,8 @@
 // with no cover of his, or one out of play or on a juvenile (the default already applies there), has none. His Publish
 // sends it all. The view is in the switch only while a proposal is open (admin.js TABS: its `live` option, hasPage).
 //
-// The pure part (coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy) runs in Node too:
-// tests/fishcoverprop.test.js.
+// The pure part (coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy; nodeCover and nodeCoverWhy, the
+// Tree's node pages' cover and its why) runs in Node too: tests/fishcoverprop.test.js.
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     A = node ? require('./autosort.js') : root,
@@ -63,7 +63,35 @@
       .filter(Boolean)
       .join(' · ');
   }
-  const API = {COVER_KEPT, coverKey, coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy};
+  // A node page's cover (Photos › Tree, admin.js renderFishUnits): the photo in force on node id among its photos in play
+  // L, in its page's order, and how it was chosen. by: 'mine' (his ★ pick, in play, not a juvenile), 'rule' (a node with
+  // leaves under it: the default cover rule, fishCoverRule, its result in rule) or 'first' (a leaf: its first adult photo,
+  // fishLeafCover); juv: his pick is a juvenile (ignored), gone: his pick is not among L (out of play). leaf: id is a leaf
+  // of its tree. seen(leaf id) as fishCoverRule's.
+  function nodeCover(id, L, F, j = () => null, leaf = false, seen) {
+    F = F || {};
+    L = L || [];
+    const k = ((F.genera || {})[id] || {}).cover,
+      q = k && L.find(p => p.f === k),
+      juv = !!q && A.fishJuv(q, j(q.f), F),
+      gone = !!k && !q,
+      p = leaf ? A.fishLeafCover(L, F, id, j) : A.fishCoverOf(L, F, id, j, seen),
+      by = !p ? '' : q && p.f === k && !juv ? 'mine' : leaf ? 'first' : 'rule';
+    return {p: p || null, by, rule: by === 'rule' ? A.fishCoverRule(L, F, id, j, seen) : null, juv, gone};
+  }
+  // Why that photo, in a line (the page's bar): his ★, else the default and its reason (coverWhy for the rule's, with the
+  // centre's name), with his pick ignored or out of play said.
+  function nodeCoverWhy(c, centre) {
+    if (!c || !c.p) return 'No photo in play';
+    const why =
+      c.by === 'mine'
+        ? 'Your ★ cover'
+        : c.by === 'rule'
+          ? `Default: ${coverWhy(c.rule || {}, centre)}`
+          : 'Default: its first photo (featured, then the easiest)';
+    return [why, c.juv ? 'your ★ is a juvenile: ignored' : '', c.gone ? 'your ★ is out of play' : ''].filter(Boolean).join(' · ');
+  }
+  const API = {COVER_KEPT, coverKey, coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy, nodeCover, nodeCoverWhy};
   if (node) module.exports = API;
   else Object.assign(root, API);
 })(this);
@@ -71,13 +99,14 @@
 // ---- The admin view (browser only: admin.js state and helpers) ----
 const COVER_PAGE = 'photos/review/cover-proposals';
 let COVER_P = null;
-// Every proposal of the draft, family then genus nodes in the Tree page's order (FISHC.units), each on the photos the Tree
-// page's headings choose from (fuFamM: a family's species in play; a genus's, its species in play there); once per draft
+// Every proposal of the draft, family then genus nodes in the Tree page's order (FISHC.units), each on the photos its node
+// page chooses from (admin.js fuNodePhotos: a family's species in play; a genus's, its species in play there); once per draft
 // (cached on fuDataM's record, which a click on the draft, Publish or the game list renews).
 function coverList() {
   const M = fuDataM();
   if (M.cov) return M.cov;
   const out = [],
+    T = fuTreeOf(FISHC.units),
     G = M.D.F.genera || {},
     mine = id => !!(G[id] || {}).cover;
   FISHC.units.forEach(u => {
@@ -86,18 +115,7 @@ function coverList() {
     const e = fuFamM(u),
       add = (x, name, rank) => x && out.push({...x, name, rank});
     add(coverProposal(u.id, e.all, M.D.F, fuJ), u.name, 0);
-    u.genera.forEach(g =>
-      add(
-        coverProposal(
-          g.id,
-          g.species.filter(s => e.rows[s]).flatMap(s => [...e.rows[s].feat, ...e.rows[s].rest]),
-          M.D.F,
-          fuJ
-        ),
-        g.name,
-        1
-      )
-    );
+    u.genera.forEach(g => add(coverProposal(g.id, fuNodePhotos(T, u, e, g.id), M.D.F, fuJ), g.name, 1));
   });
   return (M.cov = out);
 }

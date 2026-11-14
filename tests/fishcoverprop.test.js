@@ -7,9 +7,19 @@ const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path'),
-  {coverKey, coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy} = require('../admin-covers.js'),
+  {
+    coverKey,
+    coverProposal,
+    coverOpen,
+    coverAccept,
+    coverKeep,
+    coverKeptN,
+    coverWhy,
+    nodeCover,
+    nodeCoverWhy
+  } = require('../admin-covers.js'),
   {lightOpen, lightKeep} = require('../admin-light.js'),
-  {fishCover, fishCoverOf} = require('../autosort.js'),
+  {fishCover, fishCoverOf, fishLeafCover, fishWaiting} = require('../autosort.js'),
   {merge3} = require('../core.js');
 
 // Family f:A, genus g:B (species s1, s2); s2 seen by more observers around the centre. Every photo an adult reference
@@ -156,6 +166,51 @@ test('done detection: answered, his cover changed since, the rule agrees; Undo b
     after = coverAccept(JSON.parse(snap), x);
   assert.deepStrictEqual(open(after), []);
   assert.deepStrictEqual(open(JSON.parse(snap)), ['f:A fi1>fi4']);
+});
+
+test('a node page’s cover and why (Photos › Tree): his ★, else the rule on a node with leaves, else a leaf’s first adult', () => {
+  const F = draft();
+  // a family: his ★ in force
+  let c = nodeCover('f:A', L, F, j, false, seen());
+  assert.deepStrictEqual([c.p.f, c.by, c.rule, c.juv, c.gone], ['fi1', 'mine', null, false, false]);
+  assert.strictEqual(nodeCoverWhy(c, 'Dauin'), 'Your ★ cover');
+  // no pick: the rule, with its why
+  c = nodeCover('f:A', L, {}, j, false, seen());
+  assert.deepStrictEqual([c.p.f, c.by, c.rule.leaf], ['fi4', 'rule', 's2']);
+  assert.strictEqual(nodeCoverWhy(c, 'Dauin'), 'Default: Most seen near Dauin: 9 observers');
+  // his pick on a juvenile, or out of play: the rule, and the bar says why his is not shown
+  c = nodeCover('f:A', L, {genera: {'f:A': {cover: 'fi9'}}}, j, false, seen());
+  assert.deepStrictEqual([c.p.f, c.by, c.juv, c.gone], ['fi4', 'rule', true, false]);
+  assert.strictEqual(nodeCoverWhy(c, 'Dauin'), 'Default: Most seen near Dauin: 9 observers · your ★ is a juvenile: ignored');
+  c = nodeCover('g:B', L, {genera: {'g:B': {cover: 'gone'}}}, j, false, seen());
+  assert.deepStrictEqual([c.by, c.gone], ['rule', true]);
+  assert.match(nodeCoverWhy(c, 'Dauin'), /your ★ is out of play$/);
+  // a leaf (a species): his ★ while in play and adult, else its first adult photo in the page's order (featured first);
+  // never the rule (it picks among a node's leaves)
+  const S1 = [L[4], L[1], L[0]];
+  assert.strictEqual(fishLeafCover(S1, {}, 's1', j).f, 'fi2');
+  assert.strictEqual(fishLeafCover(S1, {genera: {s1: {cover: 'fi1'}}}, 's1', j).f, 'fi1');
+  assert.strictEqual(fishLeafCover(S1, {genera: {s1: {cover: 'fi9'}}}, 's1', j).f, 'fi2');
+  assert.strictEqual(fishLeafCover([L[4]], {}, 's1', j).f, 'fi9', 'juveniles only: the first one');
+  assert.strictEqual(fishLeafCover([], {}, 's1', j), null);
+  c = nodeCover('s1', S1, {genera: {s1: {cover: 'fi1'}}}, j, true);
+  assert.deepStrictEqual([c.p.f, c.by, c.rule], ['fi1', 'mine', null]);
+  c = nodeCover('s1', S1, {genera: {s1: {cover: 'fi9'}}}, j, true);
+  assert.deepStrictEqual([c.p.f, c.by, c.juv], ['fi2', 'first', true]);
+  assert.strictEqual(nodeCoverWhy(c), 'Default: its first photo (featured, then the easiest) · your ★ is a juvenile: ignored');
+  // no photo at all
+  c = nodeCover('s9', [], {}, j, true);
+  assert.deepStrictEqual([c.p, c.by], [null, '']);
+  assert.strictEqual(nodeCoverWhy(c), 'No photo in play');
+});
+
+test('a node page’s candidates waiting: by the species they wait in now, never one in play, rejected or gone', () => {
+  const cand = {s1: [{f: 'c1'}, {f: 'c2'}, {f: 'c3'}, {f: 'c4'}, {f: 'c5'}], s2: [{f: 'c6'}]},
+    F = {add: {c1: 's1'}, seen: {c2: 1}, exclude: {c3: 1}, out: {c4: 's2', c6: 'x'}},
+    W = fishWaiting(cand, F);
+  assert.deepStrictEqual(Object.fromEntries(Object.entries(W).map(([k, L]) => [k, L.map(p => p.f)])), {s1: ['c5'], s2: ['c4']});
+  assert.deepStrictEqual(Object.keys(fishWaiting(cand, undefined)), ['s1', 's2']);
+  assert.deepStrictEqual(fishWaiting(undefined, F), {});
 });
 
 test('the players’ copy leaves the answers out; the view is wired in the admin', () => {
