@@ -3,7 +3,21 @@
 // several shapes (never assuming a level count or rank names).
 const test = require('node:test'),
   assert = require('node:assert');
-const {ttBuild, ttFromRef, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey} = require('../taxtree.js');
+const {
+  ttBuild,
+  ttFromRef,
+  ttPath,
+  ttUnder,
+  ttLeaves,
+  ttRoll,
+  ttFirst,
+  ttNearest,
+  ttPass,
+  ttReach,
+  ttShown,
+  ttRows,
+  ttKey
+} = require('../taxtree.js');
 
 // A chain of 9 levels with ranks of any word, one missing (absent) and one empty, and a side branch.
 const deep = () => {
@@ -112,6 +126,106 @@ test('taxtree: a filter shows what it accepts, with what leads to it and what is
   assert.ok(!s.has('x'));
   assert.ok(ttShown(T, () => false, ['x']).has('n4'));
   assert.strictEqual(ttShown(T, () => false).size, 0);
+});
+
+// Two classifications of the same leaves: a key (groups, families carrying a circle and a pair tag, genera, leaves
+// carrying a need) and a reference tree whose families cut across the key's.
+const keyTree = () =>
+  ttBuild([
+    {id: 'k1', name: 'Group 1'},
+    {id: 'fa', up: 'k1', circle: 1, pair: true, imr: true},
+    {id: 'ga', up: 'fa'},
+    {id: 'a1', up: 'ga', need: true},
+    {id: 'a2', up: 'ga'},
+    {id: 'fb', up: 'k1', circle: 3},
+    {id: 'b1', up: 'fb', need: true},
+    {id: 'k2', name: 'Group 2'},
+    {id: 'fc', up: 'k2', circle: 1, pair: true},
+    {id: 'c1', up: 'fc'},
+    {id: 'gd', up: 'k2', imr: true},
+    {id: 'd1', up: 'gd', need: true}
+  ]);
+
+test('taxtree: tags at any rank pass leaves; the filters combine through the leaves', () => {
+  const T = keyTree(),
+    sorted = s => [...s].sort();
+  // no filter: every leaf
+  assert.deepStrictEqual(sorted(ttPass(T)), ['a1', 'a2', 'b1', 'c1', 'd1']);
+  assert.deepStrictEqual(sorted(ttPass(T, [])), ['a1', 'a2', 'b1', 'c1', 'd1']);
+  // a tag on a family passes every leaf under it; a tag on a leaf, that leaf
+  assert.deepStrictEqual(sorted(ttPass(T, [n => n.circle === 1])), ['a1', 'a2', 'c1']);
+  assert.deepStrictEqual(sorted(ttPass(T, [n => n.need])), ['a1', 'b1', 'd1']);
+  // two tags at different ranks: a leaf passes both (family circle 1 and a need of its own)
+  assert.deepStrictEqual(sorted(ttPass(T, [n => n.circle === 1, n => n.need])), ['a1']);
+  // IMR (a family, or a genus in another branch) and a pair: only what lies under both
+  assert.deepStrictEqual(sorted(ttPass(T, [n => n.imr, n => n.pair])), ['a1', 'a2']);
+  // nothing matched
+  assert.strictEqual(ttPass(T, [n => n.circle === 1, n => n.circle === 3]).size, 0);
+});
+
+test('taxtree: one filter alone shows exactly what ttShown shows, at every rank', () => {
+  const T = keyTree();
+  for (const f of [n => n.circle === 1, n => n.need, n => n.imr, n => n.id === 'k2', n => n.id === 'b1', () => false]) {
+    const old = new Set();
+    // ttShown's definition: what it accepts, its ancestors and everything under it
+    T.node.forEach((n, id) => f(n) && [...ttPath(T, id), ...ttUnder(T, id)].forEach(x => old.add(x)));
+    assert.deepStrictEqual([...ttShown(T, f)].sort(), [...old].sort());
+    assert.deepStrictEqual([...ttReach(T, ttPass(T, [f]))].sort(), [...old].sort());
+  }
+});
+
+test('taxtree: combined filters never show a node with nothing under it', () => {
+  const T = keyTree();
+  // circle 1 matches in group 1 (fa) and group 2 (fc); a need in group 1 (a1, b1) and group 2 (d1): together, a1 only,
+  // so group 2 (an ancestor of a match of each filter, but of no leaf passing both) is not shown
+  const s = ttReach(T, ttPass(T, [n => n.circle === 1, n => n.need]));
+  assert.deepStrictEqual([...s].sort(), ['a1', 'fa', 'ga', 'k1']);
+  // the intersection of the two filters' ttShown would have kept k2 (and fc, gd) with no leaf
+  const both = [...ttShown(T, n => n.circle === 1)].filter(x => ttShown(T, n => n.need).has(x));
+  assert.ok(both.includes('k2'));
+  // keep: the node on screen with its ancestors, whatever the filters
+  const k = ttReach(T, ttPass(T, [n => n.circle === 1, n => n.need]), ['c1']);
+  assert.deepStrictEqual([...k].sort(), ['a1', 'c1', 'fa', 'fc', 'ga', 'k1', 'k2']);
+  // nothing matched: only what keep names
+  assert.deepStrictEqual([...ttReach(T, new Set(), ['b1'])].sort(), ['b1', 'fb', 'k1']);
+  assert.strictEqual(ttReach(T, new Set()).size, 0);
+});
+
+test('taxtree: the leaves a filter passes in one classification are shown in another of the same leaves', () => {
+  const K = keyTree(),
+    // a reference tree over the same leaves, its families cutting across the key's (a1 with b1, a2 with c1), d1 not in it
+    REF = {
+      1: {name: 'Class', rank: 'Class'},
+      2: {name: 'Fam X', rank: 'Family', parent: 1},
+      3: {name: 'Fam Y', rank: 'Family', parent: 1},
+      4: {name: 'Sp 4', parent: 2},
+      5: {name: 'Sp 5', parent: 2},
+      6: {name: 'Sp 6', parent: 3},
+      7: {name: 'Sp 7', parent: 3}
+    },
+    W = ttBuild(
+      ttFromRef(
+        [
+          {id: 'a1', ref: 4},
+          {id: 'b1', ref: 5},
+          {id: 'a2', ref: 6},
+          {id: 'c1', ref: 7}
+        ],
+        REF,
+        {id: k => 'w:' + k}
+      ).nodes
+    );
+  // circle 1 in the key: a1, a2, c1; in the reference tree, both families (each holds one), never b1
+  const L = ttPass(K, [n => n.circle === 1]);
+  const s = ttReach(W, L);
+  assert.deepStrictEqual([...s].sort(), ['a1', 'a2', 'c1', 'w:1', 'w:2', 'w:3']);
+  // a need: a1, b1 and d1 in the key; d1 is not in the reference tree, so it adds nothing there
+  const n = ttReach(W, ttPass(K, [x => x.need]));
+  assert.deepStrictEqual([...n].sort(), ['a1', 'b1', 'w:1', 'w:2']);
+  // combined with IMR (fa, gd): a1 only; Fam Y not shown
+  assert.deepStrictEqual([...ttReach(W, ttPass(K, [x => x.need, x => x.imr]), [])].sort(), ['a1', 'w:1', 'w:2']);
+  // the node on screen kept in that tree
+  assert.ok(ttReach(W, new Set(), ['w:3']).has('w:1'));
 });
 
 test('taxtree: the rows on screen (aria-level, posinset, setsize, expanded) follow what is open and shown', () => {

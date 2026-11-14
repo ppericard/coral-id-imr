@@ -4,7 +4,7 @@
 // admin.html; a subject's own adapter turns its references into nodes. A node: {id, name, rank (any word, or none), up
 // (its parent's id in this classification, absent for a root), ...anything else the adapter keeps}. One classification =
 // one parent per node; another classification (the key, WoRMS) is another tree built from its own nodes. Groups (the IMR
-// entries, circles, look-alikes) are never extra parents: they are tags, read as filters (ttShown).
+// entries, circles, look-alikes) are never extra parents: they are tags, read as filters (ttPass, ttReach).
 (function (root) {
   // The tree, built once: node and kids by id (siblings in the order given), the roots, and what was wrong with the nodes
   // (reported, never fixed silently): a second node with the same id (left out), a parent not among the nodes or a cycle
@@ -137,18 +137,38 @@
     ttPath(T, id)
       .reverse()
       .find(x => pred(T.node.get(x))) ?? null;
-  // The nodes a filter shows: those pred accepts (a tag: IMR, a circle), their ancestors (to reach them) and everything
-  // under them; keep: ids always shown with their ancestors (the node on screen). A Set of ids.
-  function ttShown(T, pred, keep = []) {
-    const out = new Set();
+  // The leaves a set of filters lets through (the Tree's tags, combined: All | IMR and a circle, a look-alike pair, what
+  // needs work…): each filter a test on a node (a tag, carried at any rank: a family, a genus, a leaf); a leaf passes one
+  // when it or a node above it passes the test, and the set when it passes every filter (none: every leaf). A tag is read
+  // through the leaves, so two tags at different ranks combine (a circle on the families, a need on the leaves), and the
+  // leaves' ids carry the result to another classification of the same leaves (ttReach). A Set of leaf ids.
+  function ttPass(T, preds = []) {
+    const out = new Set(),
+      ok = new Map(preds.map(f => [f, new Map()])),
+      on = (f, x) => {
+        const m = ok.get(f);
+        if (!m.has(x)) m.set(x, !!f(T.node.get(x)));
+        return m.get(x);
+      };
     T.node.forEach((n, id) => {
-      if (!pred(n)) return;
-      ttPath(T, id).forEach(x => out.add(x));
-      ttUnder(T, id).forEach(x => out.add(x));
+      if (T.kids.get(id).length) return;
+      const path = ttPath(T, id);
+      if (preds.every(f => path.some(x => on(f, x)))) out.add(id);
     });
+    return out;
+  }
+  // The nodes shown for a set of leaves (ttPass's, from this tree or another classification of the same leaves): each
+  // leaf of this tree in it, and the nodes that lead to it; a node with none of them under it is not shown, even when a
+  // filter accepted it in another branch. keep: ids always shown with their ancestors (the node on screen). A Set of ids.
+  function ttReach(T, leaves, keep = []) {
+    const out = new Set();
+    leaves.forEach(id => ttPath(T, id).forEach(x => out.add(x)));
     keep.forEach(id => ttPath(T, id).forEach(x => out.add(x)));
     return out;
   }
+  // The nodes one filter shows: those pred accepts (a tag: IMR, a circle), their ancestors (to reach them) and everything
+  // under them (every node resolves to its leaves: ttPass and ttReach with that filter alone); keep as ttReach's.
+  const ttShown = (T, pred, keep = []) => ttReach(T, ttPass(T, [pred]), keep);
   // The rows on screen: the nodes shown (all when shown is null) whose ancestors are all open, depth first, each with its
   // level (1 = a root), whether it has children shown, whether open, and its place among its siblings shown (the WAI-ARIA
   // tree's aria-level, aria-expanded, aria-posinset, aria-setsize).
@@ -200,7 +220,7 @@
         return null;
     }
   }
-  const API = {ttBuild, ttFromRef, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey};
+  const API = {ttBuild, ttFromRef, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttPass, ttReach, ttShown, ttRows, ttKey};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

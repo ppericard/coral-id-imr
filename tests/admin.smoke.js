@@ -773,7 +773,10 @@ const WIDTHS = [390, 1280];
               same: JSON.stringify(leaves(W)) === JSON.stringify(leaves(K)),
               both: JSON.stringify(both) === JSON.stringify(leaves(K)),
               ns: [...W.node.keys()].filter(x => !W.node.get(x).sid && !/^w:\d+$/.test(x)).slice(0, 3),
-              imr: JSON.stringify(imr(W, x => !!x.imr)) === JSON.stringify(imr(K, x => !!x.tag)),
+              // the IMR tag read in the Key through its leaves (ttPass), shown in WoRMS (ttReach): the same leaves
+              imr:
+                JSON.stringify([...ttReach(W, ttPass(K, [x => !!x.tag]))].filter(x => !W.kids.get(x).length).sort()) ===
+                JSON.stringify(imr(K, x => !!x.tag)),
               ranks: [...new Set([...W.node.values()].map(x => x.rank))],
               depth,
               ord: ([...W.node.values()].find(x => x.rank === 'order' && W.kids.get(x.id).length > 1) || {}).id,
@@ -851,6 +854,126 @@ const WIDTHS = [390, 1280];
           x = await wp();
           if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
             fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
+        }
+        // The tags as filters (docs/ROADMAP.md "The Tree tab", Q340: circles, look-alikes, what needs work, as tags and
+        // filters), combined with All | IMR, in both views, read through the Key's leaves; on a phone (the tree hidden) the
+        // families' select, the drill-down and the cards follow it; remembered per subject in this browser (another tab
+        // opens with it); no tag again: everything.
+        {
+          const tf = () =>
+            p.evaluate(() => {
+              // every key group unfolded, to read its families (each click draws the rows again)
+              for (
+                let t, n = 0;
+                (t = document.querySelector('.adm-tree [aria-level="1"][aria-expanded="false"] [data-tt-tog]')) && n < 50;
+                n++
+              )
+                t.click();
+              return {
+                tag: (document.querySelector('[data-tttag]') || {}).value,
+                on: !!document.querySelector('[data-tttag].on'),
+                opts: [...document.querySelectorAll('[data-tttag] option')].map(o => o.value).filter(Boolean),
+                fams: [...document.querySelectorAll('.adm-gsel2 option')].map(o => o.value).filter(Boolean),
+                tfams: [...document.querySelectorAll('.adm-tree [role=treeitem]')].map(a => a.dataset.tt).filter(x => /^f:/.test(x)),
+                cards: [...document.querySelectorAll('.adm-tcard')].map(a => a.dataset.ttc),
+                kids: [...document.querySelectorAll('[data-ttkid] option')].map(o => o.value).filter(Boolean),
+                wide: document.documentElement.scrollWidth - innerWidth
+              };
+            });
+          // What each filter should show, from the units' own fields (not through the page's code).
+          const want = await p.evaluate(() => {
+            const U = FISHC.units,
+              imr = u => !!(u.imr || u.imrWith || u.genera.some(g => g.imr)),
+              c3 = U.filter(u => u.circle === 3),
+              P = fishPairs(U)[0];
+            return {
+              all: U.map(u => u.id),
+              c3: c3.map(u => u.id),
+              c3imr: c3.filter(imr).map(u => u.id),
+              pair: P && {k: 'look:' + P.k, ids: [P.A, P.B], grp: 'k:' + U.find(u => u.id === P.A).group}
+            };
+          });
+          const set = a => JSON.stringify([...new Set(a)].sort()),
+            pick = async v => {
+              await p.selectOption('[data-tttag]', v);
+              await settle();
+            };
+          const sel = want.c3imr[0] || want.c3[0];
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(sel));
+          let x = await tf();
+          if (
+            x.on ||
+            x.tag !== '' ||
+            !x.opts.includes('c1') ||
+            !x.opts.includes('c3') ||
+            !x.opts.includes('photos') ||
+            !x.opts.includes('draft')
+          )
+            fails.push(`${w}px Tree tags: the select ${JSON.stringify({...x, fams: x.fams.length, tfams: x.tfams.length})}`);
+          // Circle 3: its families only, in the families' select and (at 1280, the tree open on the groups) the tree.
+          await pick('c3');
+          x = await tf();
+          if (!x.on || x.tag !== 'c3' || set(x.fams) !== set(want.c3) || (w === 1280 && set(x.tfams) !== set(want.c3)) || x.wide > 0)
+            fails.push(`${w}px Tree tags: circle 3 ${JSON.stringify({...x, want: want.c3.length})}`);
+          // With IMR: the circle-3 families the IMR course tags (itself or one of its genera), the page's node kept.
+          await p.click('[data-fuimr="imr"]');
+          await settle();
+          x = await tf();
+          if (set(x.fams) !== set([...want.c3imr, sel])) fails.push(`${w}px Tree tags: circle 3 and IMR ${JSON.stringify({x, want})}`);
+          await p.click('[data-fuimr="all"]');
+          await settle();
+          // Remembered: another tab opens with it.
+          {
+            const q = await ctx.newPage();
+            await q.goto(base + 'admin.html?demo#' + other.hash + 'photos/tree/key/' + encodeURIComponent(sel));
+            const v = await q
+              .waitForFunction(() => document.querySelector('[data-tttag]') && document.querySelector('[data-tttag]').value, null, {
+                timeout: 90000
+              })
+              .then(h => h.jsonValue())
+              .catch(() => '');
+            await q.close();
+            if (v !== 'c3') fails.push(`${w}px Tree tags: not remembered (${v})`);
+          }
+          // A look-alike pair: on its key group's page, its families' cards (and the drill-down when the page has one),
+          // nothing else; in WoRMS, the families holding their species, every one of them.
+          if (want.pair) {
+            await go(other.hash + 'photos/tree/key/' + encodeURIComponent(want.pair.grp));
+            await pick(want.pair.k);
+            x = await tf();
+            if (
+              !x.on ||
+              !x.cards.length ||
+              x.cards.some(c => !want.pair.ids.includes(c)) ||
+              (x.kids.length && set(x.kids) !== set(x.cards)) ||
+              set(x.fams) !== set(want.pair.ids) ||
+              x.wide > 0
+            )
+              fails.push(`${w}px Tree tags: a look-alike pair ${JSON.stringify({x, want: want.pair})}`);
+            await go(other.hash + 'photos/tree/worms');
+            const wv = await p.evaluate(ids => {
+              const K = fuTreeOf(FISHC.units),
+                W = fuWormsOf(FISHC.units),
+                L = new Set(ids.flatMap(id => ttLeaves(K, id))),
+                fam = [...W.node.values()].filter(n => n.rank === 'family' && ttLeaves(W, n.id).some(s => L.has(s))).map(n => n.id),
+                opts = [...document.querySelectorAll('.adm-gsel2 option')].map(o => o.value).filter(Boolean),
+                sel = (document.querySelector('.adm-tree [aria-selected="true"]') || {dataset: {}}).dataset.tt || '';
+              // the families' select: every WoRMS family holding the pair's species, and the one on screen
+              return {
+                fam,
+                opts,
+                sel,
+                ok:
+                  JSON.stringify([...new Set([...fam, ...(fam.includes(sel) ? [] : [sel])])].sort()) === JSON.stringify(opts.slice().sort())
+              };
+            }, want.pair.ids);
+            if (!wv.fam.length || (w === 1280 && !wv.ok)) fails.push(`${w}px Tree tags: a look-alike pair in WoRMS ${JSON.stringify(wv)}`);
+          }
+          // No tag: every family again.
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(sel));
+          await pick('');
+          x = await tf();
+          if (x.on || set(x.fams) !== set(want.all)) fails.push(`${w}px Tree tags: no tag ${JSON.stringify({...x, fams: x.fams.length})}`);
         }
         // What the game plays is what the admin counts (fish-game.json, whatever the route: the sure candidates and the
         // reference photos too, not curation.json's adds alone): each species' obs/target is at least the game's observations.

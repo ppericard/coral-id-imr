@@ -5428,6 +5428,19 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font: inherit;
   font-size: 0.85rem;
 }
+/* The Tree's tag filter (beside All | IMR): pressed like the segment while a tag is chosen. */
+.adm-ttag.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-ttag.on option,
+.adm-ttag.on optgroup {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 400;
+}
 /* A node's page (Photos › Tree): the path from the root above the bar (each ancestor a link), the cover's why on a line
    of its own; a heading's name opens its node's page; a group's page, its children's cards (each as its tree row). */
 .adm-crumbs {
