@@ -986,7 +986,9 @@
           .map(u => lc(u.name))
       ); // v58: archives, flag 2
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
-    // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged.
+    // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged. 14 (sheet v44): the device's UTC offset,
+    // minutes east: Manila's, Carla's Paris (winter time), so her Journey's Cards show her own local time.
+    const tz = r => (V >= 44 ? (r[0] === 'Carla Demo' ? 60 : 480) : null);
     out.rows = [...S.rows, ...S.after].map(r => [
       aid(r[0]),
       r[1],
@@ -1001,13 +1003,14 @@
       r[11],
       /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // v55/v58: a deleted account's or an archive's
       r[12] ?? null,
-      r[13] ?? null
+      r[13] ?? null,
+      tz(r)
     ]);
     // v60: the other subject's answers, the subject at index 17 (core.js LOG_SUBJ). The answers given while the page is
     // open (DEMO_ANSWER, S.after) are the tab's last rows: moved after them.
     const after = out.rows.splice(S.rows.length);
     S.frows.forEach(r =>
-      out.rows.push([aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], 0, r[12], r[13], null, null, null, r[18]])
+      out.rows.push([aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], 0, r[12], r[13], tz(r), null, null, r[18]])
     );
     out.rows.push(...after);
     Object.values(S.users).forEach(u => {
