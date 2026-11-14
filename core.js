@@ -1765,25 +1765,34 @@
   const FMT = {N: 20, SD: 1};
   function fmtOffsetsOf(rows) {
     const trust = trustOf(rows),
-      by = {},
-      sg = x => 1 / (1 + Math.exp(-x));
+      by = {};
     rows.forEach(r => {
-      const m = String(r[5] || ''),
-        e = r[7];
-      if (!trust[r[0]] || m.indexOf('quiz') !== 0 || !r[2] || typeof e !== 'number' || !isFinite(e)) return;
-      const g = guessOf(m, r[10]),
-        q = Math.min(0.99, Math.max(0.01, g < 1 ? (e - g) / (1 - g) : 0.5)),
-        f = fmtOf(
-          m,
-          String(r[10] || '')
-            .split(/\s+/)
-            .filter(Boolean).length
-        );
-      (by[f] = by[f] || []).push([Math.log(q / (1 - q)), g, r[4] ? 1 : 0]);
+      const p = trust[r[0]] && r[2] ? fmtPoint(r[5], r[7], r[10], r[4]) : null;
+      if (p) (by[p[0]] = by[p[0]] || []).push(p.slice(1));
     });
-    const out = {};
+    return fmtFit(by);
+  }
+  // One answer's point for the fit (fmtOffsetsOf), its player trusted and its unit shown: [format, e, g, right 0|1], null
+  // when it is no quiz question or has no logged expectation e. m: its mode, ch: its choices (space-separated). Code.gs
+  // collects the same points as it folds the answer log a few rows at a time (statsStep_) and fits them with fmtFit.
+  function fmtPoint(m, e, ch, ok) {
+    m = String(m || '');
+    if (m.indexOf('quiz') !== 0 || typeof e !== 'number' || !isFinite(e)) return null;
+    const n = String(ch || '')
+      .split(/\s+/)
+      .filter(Boolean).length;
+    return [fmtOf(m, n), e, guessOf(m, ch), ok ? 1 : 0];
+  }
+  // The fit itself over {format: [[e, g, right], ...]}, the points in log order: {format: [offset, answers]} for each
+  // format with FMT.N points or more.
+  function fmtFit(by) {
+    const out = {},
+      sg = x => 1 / (1 + Math.exp(-x));
     Object.keys(by).forEach(f => {
-      const L = by[f];
+      const L = by[f].map(([e, g, y]) => {
+        const q = Math.min(0.99, Math.max(0.01, g < 1 ? (e - g) / (1 - g) : 0.5));
+        return [Math.log(q / (1 - q)), g, y];
+      });
       if (L.length < FMT.N) return;
       let d = 0;
       for (let it = 0; it < 50; it++) {
@@ -5647,6 +5656,8 @@
     fmtOf,
     FMT,
     fmtOffsetsOf,
+    fmtPoint,
+    fmtFit,
     fmtOff,
     FMT_SHEET,
     fmtsOf,
