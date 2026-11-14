@@ -4692,6 +4692,100 @@ const WIDTHS = [390, 1280];
     // opens (above).
     async function photosPart() {
       // Once: Growth form, game genera, Candidates, the cap, judgments, the pre-sort, the auto-sort, retests, the fish auto-sort, Publish.
+      // Photo review › Light proposals (admin-light.js; Pierre, 2026-11-14): in a context of its own, three proposals of
+      // judging/fish-light-q308.json, Pierre's published fish part holding their earlier tags and ease. The view lists
+      // them (in the switch), Accept one and Undo, Keep mine, Accept all (the view leaves the switch, the page says so),
+      // Undo brings them back, then Publish: its summary counts them, and the published fish part carries them.
+      {
+        const LP = rd('judging/fish-light-q308.json').curation.slice(0, 3),
+          fishFix = {
+            add: Object.fromEntries(LP.map(x => [x.photo, /^fish-(s\d+)-/.exec(x.photo)[1]])),
+            tags: Object.fromEntries(LP.map(x => [x.photo, x.curated[0]])),
+            ease: Object.fromEntries(LP.map(x => [x.photo, x.curated[1]]))
+          };
+        const lc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await lc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        await lc.route(
+          u => u.href.startsWith(base) && u.pathname === '/judging/fish-light-q308.json',
+          r => r.fulfill({contentType: 'application/json', body: JSON.stringify({curation: LP})})
+        );
+        await lc.route(
+          u => u.href.startsWith(base) && u.pathname === '/curation.json',
+          r => r.fulfill({contentType: 'application/json', body: JSON.stringify({...CUR, fish: fishFix})})
+        );
+        const lq = await lc.newPage(),
+          le = [],
+          dlg = [];
+        lq.on('pageerror', e => le.push(e.message));
+        lq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const lst = () =>
+          lq.evaluate(() => ({
+            tiles: [...document.querySelectorAll('#view .adm-lprop')].map(t => t.dataset.f),
+            words: [...document.querySelectorAll('#view .adm-lprop .adm-ldiff li')].map(l => l.textContent),
+            views: [...document.querySelectorAll('#subnav .adm-views a')].map(a => a.textContent),
+            note: (document.querySelector('#view > .note') || {}).textContent || '',
+            all: (document.querySelector('[data-lpall]') || {}).textContent || '',
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        const lwait = fn =>
+          lq.waitForFunction(fn, null, {timeout: 60000}).catch(async () => le.push(`timed out: ${JSON.stringify(await lst())}`));
+        await lq.goto(base + 'admin.html?demo#fish/photos/review/light-proposals');
+        await lwait(() => document.querySelectorAll('#view .adm-lprop').length === 3);
+        const tg = f => lq.evaluate(f => [(DRAFT.fish.tags || {})[f], (DRAFT.fish.ease || {})[f], (DRAFT.fish.kept || {})[f]], f);
+        let s = await lst();
+        if (s.tiles.length !== 3 || !LP.every(x => s.tiles.includes(x.photo))) le.push(`not the 3 proposals ${JSON.stringify(s)}`);
+        if (
+          !s.views.includes('Light proposals') ||
+          s.all !== 'Accept all 3' ||
+          !s.words.some(t => /^Light n night livery|^Light d dim/.test(t)) ||
+          s.wide > 0
+        )
+          le.push(`the view ${JSON.stringify(s)}`);
+        const [f0, f1] = s.tiles;
+        const x0 = LP.find(x => x.photo === f0),
+          x1 = LP.find(x => x.photo === f1);
+        await lq.click(`.adm-lprop[data-f="${f0}"] [data-lpa]`);
+        await lwait(() => document.querySelectorAll('#view .adm-lprop').length === 2);
+        if (JSON.stringify(await tg(f0)) !== JSON.stringify([...x0.rejudged, undefined]))
+          le.push(`Accept: ${JSON.stringify(await tg(f0))}`);
+        await lq.evaluate(() => undo());
+        await lwait(() => document.querySelectorAll('#view .adm-lprop').length === 3);
+        if (JSON.stringify(await tg(f0)) !== JSON.stringify([...x0.curated, undefined]))
+          le.push(`Undo of Accept: ${JSON.stringify(await tg(f0))}`);
+        await lq.click(`.adm-lprop[data-f="${f1}"] [data-lpk]`);
+        await lwait(() => document.querySelectorAll('#view .adm-lprop').length === 2);
+        if (JSON.stringify(await tg(f1)) !== JSON.stringify([...x1.curated, 'q308'])) le.push(`Keep mine: ${JSON.stringify(await tg(f1))}`);
+        await lq.click('[data-lpall]');
+        await lwait(() => /No light proposal left/.test(document.getElementById('view').textContent));
+        s = await lst();
+        if (!/Accept all 2/.test(dlg.join('|')) || s.views.includes('Light proposals') || s.tiles.length)
+          le.push(`Accept all ${JSON.stringify(s)}`);
+        await lq.evaluate(() => undo());
+        await lwait(() => document.querySelectorAll('#view .adm-lprop').length === 2);
+        if (!(await lst()).views.includes('Light proposals')) le.push('Undo of Accept all: the view not back in the switch');
+        await lq.click('[data-lpall]');
+        await lwait(() => /No light proposal left/.test(document.getElementById('view').textContent));
+        const sum = await lq.evaluate(() => pubSummary());
+        if (!/^2 fish light proposals accepted$/m.test(sum) || !/^1 fish light proposal kept as it was$/m.test(sum))
+          le.push(`Publish summary ${JSON.stringify(sum)}`);
+        await lq.click('#save');
+        await lq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => le.push('Publish: no "Published" toast'));
+        if (!dlg.some(m => /2 fish light proposals accepted/.test(m))) le.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        const pub = await lq.evaluate(() => SAVED.fish);
+        if (
+          (pub.kept || {})[f1] !== 'q308' ||
+          LP.filter(x => x !== x1).some(x => pub.tags[x.photo] !== x.rejudged[0] || pub.ease[x.photo] !== x.rejudged[1]) ||
+          pub.tags[f1] !== x1.curated[0]
+        )
+          le.push(`published ${JSON.stringify({kept: pub.kept, tags: LP.map(x => pub.tags[x.photo])})}`);
+        if (le.length) fails.push(`Light proposals: ${le.slice(0, 4).join(' | ')}`);
+        await lc.close();
+      }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
       // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
       // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.

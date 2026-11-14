@@ -5474,3 +5474,23 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font-weight: 600;
   margin-right: 4px;
 }
+/* Photo review › Light proposals (admin-light.js): what a proposal changes, his value struck through, the re-judged one
+   in bold, one line each; Accept / Keep mine under it. */
+.adm-ldiff {
+  margin: 4px 8px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-xs);
+}
+.adm-ldiff span {
+  color: var(--muted);
+}
+.adm-ldiff s {
+  color: var(--muted);
+}
+.adm-lprop .adm-acts .adm-qseg {
+  width: 100%;
+}
+.adm-lprop .adm-acts .adm-qseg button {
+  flex: 1 1 0;
+}
