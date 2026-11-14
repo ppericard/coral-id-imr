@@ -275,6 +275,28 @@ function packGroups(grid) {
 }
 addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 
+// The roots of a genus name, as a memory aid (Pierre, 2026-11-14, Q124 d): data.json `root` (tools/apply_name_roots.py),
+// each part's meaning with its Latin or Greek word and the dictionary it comes from, under the ID tips and apart from
+// them (an addition, never an IMR line: rule C1). An ending that 3 or more slate genera share (-pora) says it does not
+// tell them apart, counted here (rule U8). '' for a genus without a sourced root.
+const rootLine = (g, slate) => {
+  const r = g && g.root;
+  if (!r) return '';
+  const end = r.p[r.p.length - 1],
+    tail = end[1] ? end[0].toLowerCase() : '',
+    shared = tail ? slate.filter(n => n.toLowerCase().endsWith(tail)).length : 0;
+  return (
+    `<p class="nameroot"><b>Name roots:</b> <i>${r.p.map(x => esc(x[0])).join('·')}</i>: ` +
+    r.p
+      .filter(x => x[1])
+      .map(x => `“${esc(x[1])}” (${esc(x[2])})`)
+      .join(' + ') +
+    `.${r.fit ? ` It fits the ID tip “${esc(r.fit)}”.` : ''}` +
+    `${shared >= 3 ? ` ${shared} genera on the slate end in -${esc(tail)}: the ending alone does not tell them apart.` : ''}` +
+    ` <span class="rsrc">${r.src.map(srcA).join(' · ')}</span></p>`
+  );
+};
+
 function viewGenus(name) {
   const g = GX(name);
   if (!g) return viewGenera();
@@ -333,6 +355,7 @@ function viewGenus(name) {
         ${plainLine(g)}
         ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
         ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
+        ${rootLine(g, slateOf(DATA))}
         ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}</div>` : ''}
         ${imr.length ? '' : cfList}
         <details class="more sheetmore"><summary>More details</summary>

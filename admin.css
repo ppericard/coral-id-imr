@@ -5684,3 +5684,218 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   flex: none;
   font-style: normal;
 }
+/* Analyses › Difficulty › Heatmap (admin-heatmap.js statsHeat): every unit against every unit in its own scroll box, the
+   header row and the name columns sticky, so a phone scrolls the matrix inside the box, never the page. Cells in the
+   accent at five strengths (the mix-up rate, or the typed count), hatched under CONF.N offers, a declared look-alike
+   outlined, one from the data dashed; a line between two families. Larger cells on a touch screen (rule U4: by media). */
+.adm-hm {
+  --hm-cs: 22px;
+  --hm-fw: 20px;
+  --hm-lw: 112px;
+  overflow: auto;
+  max-height: min(78vh, 1180px);
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  overscroll-behavior: contain;
+}
+@media (min-width: 1024px) {
+  .adm-hm {
+    --hm-cs: 25px;
+  }
+}
+@media (pointer: coarse) {
+  .adm-hm {
+    --hm-cs: 28px;
+    --hm-lw: 100px;
+  }
+}
+.adm-hmt {
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+}
+.adm-hmt td,
+.adm-hmt th {
+  padding: 0;
+  border: 0;
+}
+.adm-hmt td {
+  width: var(--hm-cs);
+  min-width: var(--hm-cs);
+  height: var(--hm-cs);
+  text-align: center;
+  border-right: 1px solid var(--surface);
+  border-bottom: 1px solid var(--surface);
+}
+.adm-hmt td > a,
+.adm-hmt td > span {
+  display: block;
+  height: calc(var(--hm-cs) - 1px);
+  line-height: calc(var(--hm-cs) - 1px);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+.adm-hmt td > a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.adm-hmt th {
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.adm-hmt thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 104px;
+  vertical-align: bottom;
+}
+.adm-hmt .hm-col {
+  width: var(--hm-cs);
+  min-width: var(--hm-cs);
+  max-width: var(--hm-cs);
+}
+.adm-hmt .hm-col span {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 98px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 0;
+  color: var(--ink);
+}
+.adm-hmt .hm-corner {
+  left: 0;
+  width: calc(var(--hm-fw) + var(--hm-lw));
+  z-index: 4;
+  text-align: left;
+  vertical-align: bottom;
+  padding: 0 6px 4px 4px;
+  font-size: var(--fs-xs);
+}
+.adm-hmt .hm-corner span {
+  display: block;
+}
+.adm-hmt .hm-corner span + span {
+  text-align: right;
+}
+.adm-hmt .hm-fam,
+.adm-hmt .hm-row {
+  position: sticky;
+  z-index: 1;
+}
+.adm-hmt .hm-fam {
+  left: 0;
+  width: var(--hm-fw);
+  min-width: var(--hm-fw);
+  max-width: var(--hm-fw);
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+.adm-hmt .hm-fam span {
+  display: inline-block;
+  position: sticky;
+  top: 108px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  padding: 4px 0;
+}
+.adm-hmt .hm-row {
+  left: var(--hm-fw);
+  width: var(--hm-lw);
+  min-width: var(--hm-lw);
+  max-width: var(--hm-lw);
+  padding: 0 6px 0 4px;
+  text-align: right;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-hmt.nofam .hm-row {
+  left: 0;
+}
+.adm-hmt.nofam .hm-corner {
+  width: var(--hm-lw);
+}
+.adm-hmt .hm-it {
+  font-style: italic;
+}
+.adm-hmt .hm-d {
+  background: var(--line);
+}
+.adm-hmt .hm-fr {
+  border-top: 1.5px solid var(--muted);
+}
+.adm-hmt .hm-fc {
+  border-left: 1.5px solid var(--muted);
+}
+.adm-hm .hm-q0,
+.adm-hm-leg .hm-q0 {
+  background: var(--surface-2);
+}
+.adm-hm .hm-q1,
+.adm-hm-leg .hm-q1 {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+.adm-hm .hm-q2,
+.adm-hm-leg .hm-q2 {
+  background: color-mix(in srgb, var(--accent) 45%, var(--surface));
+}
+.adm-hm .hm-q3,
+.adm-hm-leg .hm-q3 {
+  background: color-mix(in srgb, var(--accent) 72%, var(--surface));
+  color: var(--surface);
+}
+.adm-hm .hm-q4,
+.adm-hm-leg .hm-q4 {
+  background: var(--accent);
+  color: var(--surface);
+}
+.adm-hm .hm-lo,
+.adm-hm-leg .hm-lo {
+  background-image: repeating-linear-gradient(45deg, transparent 0 4px, color-mix(in srgb, var(--surface) 45%, transparent) 4px 5px);
+}
+.adm-hm .hm-lk,
+.adm-hm-leg .hm-lk {
+  outline: 1.5px solid var(--ink);
+  outline-offset: -2px;
+}
+.adm-hm .hm-dl,
+.adm-hm-leg .hm-dl {
+  outline: 1.5px dashed var(--ink);
+  outline-offset: -2px;
+}
+.adm-hm-leg {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  margin: 0 0 8px;
+}
+.adm-hm-leg span::before {
+  display: none;
+}
+.adm-hm-leg .hm-sw {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-xs);
+  margin-right: 5px;
+  vertical-align: -3px;
+}
+.adm-hm-leg .hm-sw.hm-lk,
+.adm-hm-leg .hm-sw.hm-dl {
+  background: var(--surface-2);
+  outline-offset: -1.5px;
+}
