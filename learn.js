@@ -805,12 +805,13 @@ const spPhoto = s => adultFirst(fishSpPhotos()[s.id]);
 // genus with no unit (FISH.covers); null when he picked none in play.
 const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
 // A node's default cover from its species S when he picked none (Pierre, 2026-11-13, Q339 (b); app.js seenCover): the
-// species most seen around the instance's centre, then its easiest photo that is not a juvenile, among the photos in play
+// species with a reference photo most seen around the instance's centre, then his ★ cover of it, else its easiest
+// reference photo that is not a juvenile (no reference photo: the most seen species' easiest), among the photos in play
 // (the sheet-only reference photos, use 'ref', only when none is in play).
 const nodeCover = S => {
   const P = S.flatMap(s => fishSpPhotos()[s.id] || []),
     on = P.filter(p => p.use !== 'ref');
-  return seenCover(on.length ? on : P, fishSeen);
+  return seenCover(on.length ? on : P, fishSeen, undefined, fishSpPick);
 };
 // The one "No photo yet" drawing for every species (Pierre, Q9): a plain child-like fish, never a body shape that could
 // read as ID information; the "Photo missing" tile's style (DESIGN.md).

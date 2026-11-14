@@ -143,15 +143,16 @@ async function freshPlayers(b, base, errs) {
       // seenCover; Pierre, 2026-11-13, Q339 (b)): a photo of its species most seen around the instance's centre (observers,
       // then observations), the first of that species' adult photos by reference level (core.js refFirst), never a juvenile.
       const seenK = p => fishSeen(p.sp)[0] * 1e6 + fishSeen(p.sp)[1],
+        // among the species with a reference-level adult photo (else with an adult photo), the most seen; his ★ cover of it
+        // when he picked one (Pierre, 2026-11-14 on #864), else its reference photo
         mostSeen = (L, c) => {
-          const A = L.filter(p => !juvP(p));
+          const A = L.filter(p => !juvP(p)),
+            R = A.filter(refLevel);
           if (!A.length) return !!c;
-          return (
-            !!c &&
-            !juvP(c) &&
-            seenK(c) === Math.max(...A.map(seenK)) &&
-            refFirst(c) === Math.min(...A.filter(p => p.sp === c.sp).map(refFirst))
-          );
+          if (!c || juvP(c) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
+          const pk = fishSpPick(c.sp);
+          if (pk && A.some(p => p.f === pk.f)) return c.f === pk.f;
+          return R.length ? refLevel(c) : refFirst(c) === Math.min(...A.filter(p => p.sp === c.sp).map(refFirst));
         };
       ok(
         starters.every(n => {
@@ -845,18 +846,23 @@ async function freshPlayers(b, base, errs) {
         const A = w.filter(p => !juvP(p)),
           c = w.find(p => p.f === GX(n).cover);
         if (!A.length) return !!c;
+        // (Pierre, 2026-11-14 on #864: among the species with a reference photo; his ★ cover of that species when he has one)
         const k = p => fishSeen(p.sp)[0] * 1e6 + fishSeen(p.sp)[1],
-          W = A.filter(p => c && p.sp === c.sp),
+          R = A.filter(refLevel),
+          S = R.length ? R : A,
+          pk = c && fishSpPick(c.sp),
+          W = S.filter(p => c && p.sp === c.sp),
           top = W.filter(p => refFirst(p) === refFirst(W[0]));
         return (
           !!c &&
-          c.f === seenCover(w, fishSeen).f &&
-          k(c) === Math.max(...A.map(k)) &&
-          refFirst(c) === refFirst(W[0]) &&
-          top.every(p => photoDiff(n, p) >= photoDiff(n, c))
+          c.f === seenCover(w, fishSeen, undefined, fishSpPick).f &&
+          k(c) === Math.max(...S.map(k)) &&
+          (pk && A.some(p => p.f === pk.f)
+            ? c.f === pk.f
+            : refFirst(c) === refFirst(W[0]) && top.every(p => photoDiff(n, p) >= photoDiff(n, c)))
         );
       }),
-      "sci: a genus card's photo is its most seen species' easiest (reference level first)"
+      "sci: a genus card's photo is its most seen species' (with a reference photo) his ★ pick or easiest"
     );
     ok(!isCore({own: true, e: 5}), "fish: Pierre's own photo gets no draw bonus");
     // The back card (Pierre, 2026-11-08): once, to a player who turned them on before the change (no sciV); "Close them
