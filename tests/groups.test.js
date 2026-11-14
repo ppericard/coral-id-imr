@@ -131,6 +131,27 @@ test('from zero: the first cards are drawn unit by unit; from the next card, a g
   assert.ok(together < 20, `first cards with the first unit's partner: ${together} of 40`);
 });
 
+test("a starter core keeps the group order among its first cards (B')", () => {
+  const U = RW.unitsOf('fish'),
+    e = RW.engine(U, RW.world(U, 1), {seed: 4}),
+    pair = ['f:Angelfishes', 'f:Butterflyfishes'];
+  for (let s = 0; s < 30; s++) {
+    let fresh = e.ctx.slateGenera().slice();
+    const met = [];
+    while (met.length < e.M.INTRO.START) {
+      const n = e.M.openPick(fresh.slice(), fresh.slice(), x => met.includes(x), {first: true});
+      met.push(n);
+      fresh = fresh.filter(x => x !== n);
+    }
+    assert.ok(
+      met.every(n => e.G[n].first),
+      'the starter core first: ' + met
+    );
+    // Butterflyfishes and Angelfishes (one group) come one right after the other.
+    assert.strictEqual(Math.abs(met.indexOf(pair[0]) - met.indexOf(pair[1])), 1, 'the group in a row: ' + met);
+  }
+});
+
 test('the exam waits for the group partners that can open; one under way goes on', () => {
   const e = coral(),
     G = groups(e),

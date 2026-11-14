@@ -617,7 +617,9 @@ const matesLeft = n => groupMates(n).filter(m => !introduced(m) && mayOpen(m));
 // mean cm), then the member that opens first by the same weight. The first cards (introStart, first: true) are drawn
 // unit by unit as before the groups, with no group partner first (Q355: a beginner's first cards were a look-alike
 // group, and the first unit at Open Water came about 45 answers later); the groups take over from the first card after
-// them. The weight: the easiest first, softly (OPEN.T, as far as the data are trusted: easyTrust), and the most common
+// them. A subject's starter core (fish.json start) keeps the group order among its first cards (B': drawn unit by unit,
+// the fish rated world's lecture RA met its first unit at Open Water later and the expert fewer units at Open Water at
+// 1,000, on two seed sets; the starter core is the first cards either way). The weight: the easiest first, softly (OPEN.T, as far as the data are trusted: easyTrust), and the most common
 // near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in the list and not met (Pierre,
 // 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back, and a reference never waits
 // itself), group partners included (they then give way to the draw); should every genus left wait (not possible with
@@ -651,7 +653,10 @@ function openPick(fresh, list = fresh, met = introduced, {first: firstCards = fa
   // `first` (fish.json start: the Butterflyfishes, Angelfishes, Damselfishes, Surgeonfishes) open before any other,
   // as long as one is left; then the rule below. Data, not code: the corals have none.
   const first = fresh.filter(n => (GX(n) || {}).first);
-  if (first.length) fresh = first;
+  if (first.length) {
+    fresh = first;
+    firstCards = false; // the starter core: its first cards in the group order (B')
+  }
   // "I'm at IMR" (the first-launch answer imr): the units the IMR course teaches, their IMR tag (imrName: fish.json imr on
   // families and genera), open before the others (Pierre, 2026-11-06 13:38). Data, not code: the corals have none.
   // Anyone who ever answered it (imrSaid; Pierre, 2026-11-08, Q238).
