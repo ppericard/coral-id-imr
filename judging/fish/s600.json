@@ -182,14 +182,8 @@
    "keep": "dup"
   },
   "fish-s600-cand-599103869": {
-   "code": "p1g1sl14",
-   "keep": "best",
-   "bb": [
-    0.0,
-    0.15,
-    0.65,
-    0.65
-   ]
+   "code": "p0g1sl13",
+   "keep": "best"
   },
   "fish-s600-cand-599103893": {
    "code": "h1g1sm13",

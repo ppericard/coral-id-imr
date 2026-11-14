@@ -181,13 +181,7 @@
   "fish-s566-cand-545406193": {
    "code": "o1g1sl13",
    "keep": "best",
-   "phase": "terminal",
-   "bb": [
-    0.3,
-    0.0,
-    0.6,
-    0.85
-   ]
+   "phase": "terminal"
   },
   "fish-s566-cand-744734717": {
    "code": "p1g2ss11",

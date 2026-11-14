@@ -48,13 +48,7 @@
   },
   "fish-s608-cand-634602961": {
    "code": "p1g1sl14",
-   "keep": "best",
-   "bb": [
-    0.25,
-    0.0,
-    0.75,
-    0.4
-   ]
+   "keep": "best"
   },
   "fish-s608-cand-592371802": {
    "code": "o1g2mm12",
