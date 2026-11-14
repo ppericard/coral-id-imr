@@ -2577,6 +2577,11 @@ kbd {
   font-size: var(--fs-s);
   color: var(--muted);
 }
+/* Similar names after a mix-up (quiz.js namesLine, the name study's question b, Q124): the letters that differ in bold, in
+   the text colour so they stand out of the muted line; bold rather than capitals keeps the spelling. */
+.fb .ndiff b {
+  color: var(--ink);
+}
 #next {
   align-self: stretch;
   text-align: center;
