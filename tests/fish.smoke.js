@@ -2394,9 +2394,17 @@ async function freshPlayers(b, base, errs) {
       return o;
     });
     if (other) grp.push("another account: in the first one's group");
-    // Taken out of the group: the next load's reply closes Fish, the app reloads on the corals.
-    await q.evaluate(() => localStorage.setItem('fish-groups', '[]'));
-    await Promise.all([q.waitForNavigation({timeout: 15000}).catch(() => {}), q.evaluate(() => syncPull())]);
+    // Taken out of the group: the next load's reply closes Fish, the app reloads on the corals. One evaluate that awaits
+    // nothing: the reload is waitForNavigation's to wait for (an evaluate still awaiting syncPull when the page goes loses
+    // its context), and the switch to Fish above left a save planned 3 s on (syncSoon), which, landing between a group
+    // change and a pull sent apart, would start the reload on its own under the next evaluate.
+    await Promise.all([
+      q.waitForNavigation({timeout: 15000}).catch(() => {}),
+      q.evaluate(() => {
+        localStorage.setItem('fish-groups', '[]');
+        void syncPull();
+      })
+    ]);
     await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const t2 = await q.evaluate(() => ({
       subj: SUBJ.id,
