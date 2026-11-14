@@ -10,34 +10,37 @@
   // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover).
-  // Served from R2 (not remote): a photo still remote (r: 1 with its online original: fish-photos.json, the stopgap's)
-  // comes from iNaturalist or FishBase at ~500 px, without the R2 sizes, the srcset or Saver (app.js thumb).
-  const landOk = p =>
-    !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && !juvP(p) && !(p.r && p.src);
+  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && !juvP(p);
+  // A photo served from R2 (onR2), not one still remote (r: 1 with its online original: fish-photos.json, the stopgap's),
+  // which app.js thumb takes from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver.
+  const onR2 = p => !(p.r && p.src),
+    landR2 = p => landOk(p) && onR2(p);
   // A unit's photo on a Home tile. Landscape tiles (UNITS land): Pierre's ★ Cover (coverP, app.js fishCurate) when it
   // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
-  // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it,
+  // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it, one
+  // on R2 first (before fish-game.json is in, app.js fishHome, every photo is remote: then one that suits it all the same),
   // else its first that is not a juvenile (app.js adultFirst). Other tiles: the unit's card photo (cover()).
   const tilePhoto = (g, land) => {
-    const L = g.views.wide;
-    return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || adultFirst(L)) : cover(g);
+    const L = g.views.wide.slice(0, 10);
+    return land ? (landOk(g.coverP) ? g.coverP : L.find(landR2) || L.find(landOk) || adultFirst(g.views.wide)) : cover(g);
   };
   // The Learn band rotates (ROADMAP "Fish Home mosaic: rotate the photos"; Pierre, 2026-11-08: for variety, instead of
-  // always the same photo per family): a landscape tile shows, each day, one of its unit's photos that suit it (landOk),
-  // picked from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js refLevel) in the game's easy
-  // order, at most LAND_ROT in all. A unit with none keeps tilePhoto's photo, as before.
+  // always the same photo per family): a landscape tile shows, each day, one of its unit's photos on R2 that suit it
+  // (landR2), picked from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js refLevel) in the
+  // game's easy order, at most LAND_ROT in all. A unit with none keeps tilePhoto's photo, as before.
   const LAND_ROT = 6;
   const landPool = g => {
-    const out = landOk(g.coverP) ? [g.coverP] : [];
+    const out = landR2(g.coverP) ? [g.coverP] : [];
     for (const p of g.views.wide) {
       if (out.length >= LAND_ROT) break;
-      if (p !== g.coverP && landOk(p) && refLevel(p)) out.push(p);
+      if (p !== g.coverP && landR2(p) && refLevel(p)) out.push(p);
     }
     return out;
   };
   // The pick is the day's (dayPick: unit n and the local date, hashed), the same at every drawing of that day: the service
-  // worker keeps photos cache-first (sw.js), so Home's band comes from the phone's cache after the day's first visit; a
-  // new pick at every drawing asked R2 for some 7 new photos at each visit, a slow Home on a slow line.
+  // worker keeps photos cache-first (sw.js), so a family drawn again that day comes from the phone's cache. Home still
+  // draws 12 of its families at random, so new ones are asked for until most families were drawn that day; a new pick at
+  // every drawing (#909) kept asking R2 for some 7 new photos at each visit.
   const dayPick = (L, n, now = Date.now()) => {
     if (!L.length) return null;
     const d = new Date(now),

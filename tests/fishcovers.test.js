@@ -298,10 +298,11 @@ test('Home band: a landscape tile rotates among his cover and the reference phot
   assert.ok(rot > units.length / 2, `${rot} of ${units.length} circle-1 units rotate`);
 });
 
-// Home's tiles never show a photo still remote (r: 1 with its online original: fish-photos.json, the stopgap's): app.js
-// thumb serves one from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver. A unit with one R2 photo
-// that suits the tile shows it every day, as before #909.
-test('Home band: never a remote photo, in the pool or on the tile', () => {
+// Home's band rotates only among photos on R2, never one still remote (r: 1 with its online original: fish-photos.json,
+// the stopgap's), which app.js thumb serves from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver;
+// a unit with one R2 photo that suits the tile shows it every day, as before #909. A tile's own pick takes one on R2
+// first; before fish-game.json is in (app.js fishHome) every photo is remote, and it still takes one that suits the tile.
+test('Home band: rotates only among R2 photos; a tile prefers one on R2', () => {
   const {X, ctx} = homeBand();
   const ref = (f, o = {}) => ({f, ar: 1.5, jt: 'p1g0sl1', e: 5, ...o}),
     rem = (f, o) => ref(f, {r: 1, src: `https://inaturalist-open-data.s3.amazonaws.com/photos/${f.slice(2)}/original.jpg`, ...o}),
@@ -317,6 +318,10 @@ test('Home band: never a remote photo, in the pool or on the tile', () => {
   for (let k = 0; k < 30; k++) assert.strictEqual(ctx.band(one, true, 'f:A', NOON + k * DAY).f, 'r1', 'one R2 photo: every day');
   // A unit with no pool: the tile's own pick (and the Identify door's art), the first R2 photo that suits it.
   assert.strictEqual(ctx.tile({views: {wide: [rem('fi9003', {e: 4}), ref('e1', {e: 4})]}}, true).f, 'e1');
+  // Remote photos only (the stopgap's, before fish-game.json): the first that suits the tile, never one of another shape.
+  const stop = {views: {wide: [rem('fi9004', {ar: 1}), rem('fi9005', {e: 4})]}};
+  assert.strictEqual(ctx.pool(stop).length, 0);
+  assert.strictEqual(ctx.band(stop, true, 'f:A', NOON).f, 'fi9005', 'all remote: the one that suits the tile');
   // On the real files, with and without his curation: no remote photo in any unit's pool, nor on the tile of one with none.
   const raw = {f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))};
   for (const cur of [read('curation.json'), null]) {

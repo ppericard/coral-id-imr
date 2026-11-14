@@ -1243,16 +1243,18 @@ async function freshPlayers(b, base, errs) {
           !!u &&
           !!p &&
           (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
-        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p) && !(p.r && p.src),
+        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
+        // on R2: not a photo still remote (r: 1), which comes from iNaturalist
+        suitsR2 = p => suits(p) && !(p.r && p.src),
         want = n => {
           const g = GX(n),
             L = g.views.wide;
-          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || adultFirst(L);
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suitsR2) || L.slice(0, 10).find(suits) || adultFirst(L);
         },
-        // the photos a tile may draw: the cover that suits it, then the reference photos that do, at most 6
+        // the photos a tile may draw: the cover that suits it, then the reference photos that do, on R2, at most 6
         pool = n => {
           const g = GX(n),
-            P = [...(suits(g.coverP) ? [g.coverP] : []), ...g.views.wide.filter(p => p !== g.coverP && suits(p) && refLevel(p))].slice(
+            P = [...(suitsR2(g.coverP) ? [g.coverP] : []), ...g.views.wide.filter(p => p !== g.coverP && suitsR2(p) && refLevel(p))].slice(
               0,
               6
             );
