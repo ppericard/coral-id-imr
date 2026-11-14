@@ -157,9 +157,9 @@ function lock_(ms){ const l = LockService.getScriptLock(); if (!l.tryLock(ms || 
 // TIM.SLOW_TRIGGER), at weight 1. The rows wait in memory (TIM_) and are written at the very end of the request (timEnd_,
 // from doGet / doPost's finally and autoUpdate's), after every script lock is released, one appendRow each (atomic: two
 // requests ending together never write over each other), inside try/catch: a failure loses the rows, never the reply.
-// Bounded by the trigger (timTrim_): past TIM.MAX rows the oldest half is thinned to one row in two, each kept row's
-// weight doubled, so the tab keeps months of trend at a fixed size; past twice that (a trigger that stopped), nothing more
-// is written. Read by tools/timings.js (per operation: count, median, p90, max ms; rows over time; the quota limits).
+// Bounded by the trigger (timTrim_): past TIM.MAX rows the oldest half is thinned to one row in two within each
+// operation, each kept row carrying the weight of the row it replaces too, so the tab keeps months of trend at a fixed
+// size; past twice that (a trigger that stopped), nothing more is written. Read by tools/timings.js (per operation: count, median, p90, max ms; rows over time; the quota limits).
 const TIM = {TAB: 'Timings', HEAD: ['Time', 'Op', 'Ms', 'Rows', 'Cols', 'Version', 'Weight'], EVERY: 50, EVERY_TRIGGER: 16, SLOW: 5000, SLOW_TRIGGER: 60000, MAX: 4000, ROWS: 8, ON: true};
 let TIM_ = {on: false, every: 1, t0: 0, op: '', n: '', rows: []};
 // A request (or trigger run) starts: sampled or not, at 1 in every.
@@ -192,16 +192,27 @@ function timEnd_(){
     L.forEach(r => sh.appendRow(r));
   } catch (e) {}
 }
-// From the 15-minute trigger only (one writer): past TIM.MAX rows, the oldest half thinned to every other row, each kept
-// row's weight doubled; rows appended meanwhile land below and are not touched. Returns the rows removed. Never throws.
+// From the 15-minute trigger only (one writer): past TIM.MAX rows, the oldest half thinned within each operation (Op)
+// apart, so no operation loses all its rows whatever order a request logs them in (Codex review #867): its rows taken
+// in pairs in time order, the first of each pair kept with the pair's weights added (an odd last row kept as it is), so
+// each operation's weighted count is unchanged. Rows appended meanwhile land below and are not touched. Returns the rows
+// removed. Never throws.
+function timThin_(rows){
+  const wc = TIM.HEAD.indexOf('Weight'), oc = TIM.HEAD.indexOf('Op'), open = Object.create(null), out = [];
+  rows.forEach(r => {
+    const op = String(r[oc]), wt = Number(r[wc]) || 1;
+    if (open[op]) { open[op][wc] = (Number(open[op][wc]) || 1) + wt; delete open[op]; return; }
+    const x = r.slice(); x[wc] = wt; open[op] = x; out.push(x);
+  });
+  return out;
+}
 function timTrim_(){
   try {
     const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TIM.TAB);
     if (!sh) return 0;
-    const n = sh.getLastRow() - 1, w = TIM.HEAD.length, wc = TIM.HEAD.indexOf('Weight');
+    const n = sh.getLastRow() - 1, w = TIM.HEAD.length;
     if (n <= TIM.MAX) return 0;
-    const h = Math.floor(n / 2), keep = sh.getRange(2, 1, h, w).getValues().filter((r, i) => i % 2 === 1)
-      .map(r => { const x = r.slice(); x[wc] = (Number(x[wc]) || 1) * 2; return x; });
+    const h = Math.floor(n / 2), keep = timThin_(sh.getRange(2, 1, h, w).getValues());
     if (keep.length) sh.getRange(2, 1, keep.length, w).setValues(keep);
     sh.deleteRows(2 + keep.length, h - keep.length);
     return h - keep.length;

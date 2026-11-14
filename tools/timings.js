@@ -8,8 +8,8 @@
 //   node tools/timings.js timings.csv --json      the same as JSON
 //
 // Each row stands for Weight calls (1 in Code.gs TIM.EVERY requests is kept whole at that weight, every slow operation
-// at weight 1; the trigger's trimming doubles the weight of the old rows it keeps), so counts are sums of weights and the
-// median and p90 are weighted. The quota lines: Apps Script's 6 minutes per execution (the slowest call), its 90 minutes
+// at weight 1; the trigger's trimming adds the weight of each old row it drops to the row of the same Op it keeps), so
+// counts are sums of weights and the median and p90 are weighted. The quota lines: Apps Script's 6 minutes per execution (the slowest call), its 90 minutes
 // of triggers a day (the weighted trigger time per day). The 20,000 URL fetches a day are not measured here.
 const fs = require('fs');
 
