@@ -111,8 +111,29 @@ function coverLoad() {
       if (cur === COVER_PAGE) render();
     }));
 }
-// The view's `live` option (admin.js TABS): in the switch while a proposal is open; false until the data is read.
-const coverLive = () => (coverLoad(), !!(DRAFT && FISHC && FISHC.plays) && coverOpen(coverList(), DRAFT.fish).length > 0);
+// The view's `live` option (admin.js TABS): in the switch while a proposal is open; false until the data is read. Kept
+// per draft (COVER_N): on another page it is worked out once the click is drawn (some 100 ms on the real data), then the
+// switch drawn again if it changed; on the view itself, at once (renderCovers).
+let COVER_N = {key: null, on: false, t: 0};
+const coverKeyNow = () => [DRAFT.fish, SAVED, FISHC.plays];
+function coverNow() {
+  const O = coverOpen(coverList(), DRAFT.fish);
+  COVER_N = {key: coverKeyNow(), on: O.length > 0, t: 0};
+  return O;
+}
+const coverLive = () => {
+  coverLoad();
+  if (!(DRAFT && FISHC && FISHC.plays)) return false;
+  const k = coverKeyNow();
+  if (!(COVER_N.key && k.every((x, i) => x === COVER_N.key[i])) && !COVER_N.t)
+    COVER_N.t = setTimeout(() => {
+      const was = COVER_N.on;
+      COVER_N.t = 0;
+      coverNow();
+      if (COVER_N.on !== was) status();
+    }, 0);
+  return COVER_N.on;
+};
 // Publish's summary line (admin.js pubSummary): the covers accepted are counted with the covers, rank by rank.
 const coverSummary = () => [
   [coverKeptN(DRAFT.fish, SAVED.fish), 'fish cover proposal kept as it was', 'fish cover proposals kept as they were']
@@ -124,11 +145,12 @@ function renderCovers() {
     coverLoad();
     return;
   }
-  status();
-  const O = coverOpen(coverList(), DRAFT.fish),
+  clearTimeout(COVER_N.t);
+  const O = coverNow(),
     sp = FISHC.species,
     RK = fuRanks(),
     centre = (FISHC.centre || {}).name;
+  status();
   if (!O.length) {
     $v.innerHTML = '<p class="note">No cover proposal left.</p>';
     return;
