@@ -362,6 +362,24 @@
    "code": "p1g1sl14",
    "keep": "best",
    "phase": "terminal"
+  },
+  "fish-s197-cand-658750397": {
+   "code": "p1g0sm14",
+   "keep": "alt",
+   "phase": "female"
+  },
+  "fish-s197-cand-655750151": {
+   "code": "o1g1mm1j2",
+   "keep": "best"
+  },
+  "fish-s197-cand-671486066": {
+   "code": "p1g1sm14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s197-cand-637390148": {
+   "code": "o1g1mm1j2",
+   "keep": "best"
   }
  }
 }

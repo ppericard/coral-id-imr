@@ -115,6 +115,54 @@
   "fish-s278-cand-378050736": {
    "code": "p1g1sl14",
    "keep": "best"
+  },
+  "fish-s278-cand-753119816": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s278-cand-633906997": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s278-cand-214776291": {
+   "code": "p1g2ss12",
+   "keep": "best"
+  },
+  "fish-s278-cand-214776272": {
+   "code": "p1g2ss12",
+   "keep": "dup"
+  },
+  "fish-s278-cand-349268310": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s278-cand-652412785": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s278-cand-242147715": {
+   "code": "o1g0sm14",
+   "keep": "best"
+  },
+  "fish-s278-cand-350080488": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s278-cand-273008258": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s278-cand-685382231": {
+   "code": "p1d1mm13",
+   "keep": "best"
+  },
+  "fish-s278-cand-658926512": {
+   "code": "p1g0slk4",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "other squirrelfishes and soldierfishes of other genera beside it, as large and sharp: confusion possible"
   }
  }
 }

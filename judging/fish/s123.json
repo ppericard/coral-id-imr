@@ -147,6 +147,14 @@
   "fish-s123-cand-345173371": {
    "code": "p1g2sss2",
    "keep": "best"
+  },
+  "fish-s123-cand-345174107": {
+   "code": "p1g0smk4",
+   "keep": "alt",
+   "unsure": [
+    "code"
+   ],
+   "note": "a dark fish with a white band, about the snappers' size and sharp, at lower left: confusion possible, not certain"
   }
  }
 }

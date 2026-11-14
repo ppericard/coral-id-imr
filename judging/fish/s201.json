@@ -424,6 +424,26 @@
   "fish-s201-cand-714292119": {
    "code": "o1g1ss12",
    "keep": "best"
+  },
+  "fish-s201-cand-714292114": {
+   "code": "o1g1mso2",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s201-cand-714292097": {
+   "code": "o1g1mmk2",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s201-cand-714292104": {
+   "code": "p1g1mso2",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s201-cand-736845520": {
+   "code": "o1g1mm13",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }
