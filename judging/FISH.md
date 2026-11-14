@@ -135,7 +135,8 @@ taxon's most faved, `obs_of`; a photo whose observation is outside the box is li
 Pierre's Q230 is open), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
 `tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
 --todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
-(`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out), the iNaturalist ones and
+(`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out;
+of two reference photos of one observation, the one at the reference level joins, whichever is listed first), the iNaturalist ones and
 FishBase's main picture with `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
 candidates"): every reference photo judged sure on the candidates' rubric (one kind of fish, count `1` or `s`; in the
 water, no `a`) is in play by itself, whatever its level (`tools/fish_game.py` `ref_play`, `judged_sure`); the stopgap list
