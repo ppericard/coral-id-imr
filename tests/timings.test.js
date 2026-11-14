@@ -218,55 +218,30 @@ test('Code.gs Timings: past twice TIM.MAX rows (a trigger that stopped trimming)
   assert.strictEqual(tab(s).rows.length, n);
 });
 
-test('Code.gs Timings: the trigger thins the oldest half within each operation, weights kept, the new rows untouched', () => {
-  const s = load({EVERY: 0, EVERY_TRIGGER: 0, SLOW: 1e9, SLOW_TRIGGER: 1e9, MAX: 11}, {fetch});
+test('Code.gs Timings: past TIM.MAX rows the trigger deletes the oldest, back to TIM.KEEP of it, the rest as logged', () => {
+  const s = load({EVERY: 0, EVERY_TRIGGER: 0, SLOW: 1e9, SLOW_TRIGGER: 1e9, MAX: 12, KEEP: 0.75}, {fetch});
   run(s, "sheet_('Timings', TIM.HEAD)");
-  // Requests log their operations in a fixed order (read Answers, then admin answers): interleaved rows, so keeping one
-  // row in two by position would keep only one of the two operations (Codex review #867).
-  const op = i => (i < 7 ? (i % 2 ? 'admin answers' : 'read Answers') : 'new' + i);
+  const op = i => (i % 2 ? 'admin answers' : 'read Answers');
   for (let i = 0; i < 14; i++) tab(s).appendRow([new Date(Date.UTC(2026, 10, 1 + i)), op(i), 100 + i, i, 1, 129, i === 0 ? 1 : 50]);
-  const old = body(s)
-      .slice(0, 7)
-      .map(r => r.slice()),
-    sum = (L, o) => L.filter(r => r[1] === o).reduce((t, r) => t + r[6], 0);
-  assert.match(s.ctx.autoUpdate(), /^up to date/);
-  const L = body(s);
-  // 14 rows over 11: the oldest 7 thinned per operation. read Answers (rows 0, 2, 4, 6): 0 and 4 kept, each with its
-  // pair's weight; admin answers (1, 3, 5): 1 kept with 3's weight, 5 alone kept as it is. The 7 newer rows untouched.
-  assert.deepStrictEqual(
-    L.map(r => [r[1], r[2], r[6]]),
-    [
-      ['read Answers', 100, 51],
-      ['admin answers', 101, 100],
-      ['read Answers', 104, 100],
-      ['admin answers', 105, 50]
-    ].concat([7, 8, 9, 10, 11, 12, 13].map(i => ['new' + i, 100 + i, 50]))
-  );
-  // Both operations keep rows, and each one's weighted count is what it was.
-  ['read Answers', 'admin answers'].forEach(o => assert.strictEqual(sum(L, o), sum(old, o), o));
-  // timThin_ alone: one operation's rows in a run, or each its own.
-  assert.deepStrictEqual(
-    JSON.parse(
-      run(
-        s,
-        "JSON.stringify(timThin_([[0, 'a', 1, '', '', 1, 2], [0, 'a', 2, '', '', 1, 3], [0, 'a', 3, '', '', 1, 4], [0, 'b', 4, '', '', 1, '']]))"
-      )
-    ),
-    [
-      [0, 'a', 1, '', '', 1, 5],
-      [0, 'a', 3, '', '', 1, 4],
-      [0, 'b', 4, '', '', 1, 1]
-    ]
-  );
   // At or under TIM.MAX: nothing trimmed.
+  run(s, 'TIM.MAX = 14');
   assert.strictEqual(run(s, 'timTrim_()'), 0);
-  assert.strictEqual(body(s).length, 11);
+  assert.strictEqual(body(s).length, 14);
+  // 14 rows over 12: the 5 oldest deleted, back to 9 (3/4 of 12); the kept rows as they were logged, weights unchanged.
+  run(s, 'TIM.MAX = 12');
+  assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.deepStrictEqual(
+    body(s).map(r => [r[1], r[2], r[6]]),
+    [5, 6, 7, 8, 9, 10, 11, 12, 13].map(i => [op(i), 100 + i, 50])
+  );
+  assert.strictEqual(tab(s).rows[0][1], 'Op', 'the header stays');
   // A trim that fails leaves the run's answer as it was.
-  tab(s).getRange = () => {
+  tab(s).deleteRows = () => {
     throw new Error('Service Spreadsheets failed');
   };
   for (let i = 0; i < 5; i++) tab(s).appendRow([new Date(), 'x', 1, '', '', 129, 1]);
   assert.match(s.ctx.autoUpdate(), /^up to date/);
+  assert.strictEqual(body(s).length, 14);
 });
 
 test('Code.gs Timings: a sampled trigger run is logged as trigger, at the trigger weight', () => {
