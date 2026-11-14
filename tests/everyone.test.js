@@ -1,6 +1,6 @@
 // Every account counts in the admin's stats (Pierre, 2026-11-04: his account is a real player's, the "Without me",
 // "Others / Me" and "This is also me" exceptions are gone; the leaderboard's "hidden" filters nothing either). The admin's
-// answer rows are the whole log (statRows), the photo ratings the sheet's (photoStats), and no code path drops answers by
+// answer rows are the whole log (playerRows; rowsOf, a subject's), the photo ratings the sheet's (photoStats), and no code path drops answers by
 // who sent them: a source check, since these are the pages' own lines.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, '..'),
 
 // The one exception (Pierre, 2026-11-05, Q86): the answers a deleted account left (sheet v55, anonymous flag 2) are no
 // player anywhere; they only rate the photos (photoStats, the sheet's).
-test('statRows is every answer and photoStats the sheet ratings, whoever answered (but a deleted account)', () => {
+test('playerRows is every answer and photoStats the sheet ratings, whoever answered (but a deleted account)', () => {
   const src = read('admin.js'),
     ctx = {
       ANS: {
@@ -33,8 +33,7 @@ test('statRows is every answer and photoStats the sheet ratings, whoever answere
       block(src, 'const photoStats = ', '\n', {file: 'admin.js', through: true}),
       block(src, 'const goneRow = ', '\n', {file: 'admin.js', through: true}),
       block(src, 'const playerRows = ', '\n', {file: 'admin.js', through: true}),
-      block(src, 'const statRows = ', '\n', {file: 'admin.js', through: true}),
-      'this.r = [statRows().length, photoStats() === STATS, isMe("me"), isMe("ana")];'
+      'this.r = [playerRows().length, photoStats() === STATS, isMe("me"), isMe("ana")];'
     ].join('\n'),
     ctx
   );

@@ -622,20 +622,25 @@
           'photos/review/phase-framing',
           'photos/look-alikes',
           // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report but
-          // What makes a photo hard (analyses photos false), and of the views drawn from the live answer log (admin.js
-          // LIVE_STATS) only Stops, from the fish answers (fish admin at parity, 2026-11-08: admin.js statsHealth,
-          // healthSheets), not Pairs or Answer log.
+          // What makes a photo hard (analyses photos false), and the views drawn from the live answer log (admin.js
+          // LIVE_STATS), from the fish answers (fish admin at parity, 2026-11-08): Stops (admin.js statsHealth,
+          // healthSheets), Pairs (statsConf) and Answer log (statsPlayers).
           'analyses/overview',
           'analyses/speed',
           'analyses/difficulty/formats',
           'analyses/difficulty/mix-ups',
           'analyses/difficulty/time',
+          'analyses/difficulty/pairs',
           'analyses/learning/practice',
           'analyses/learning/after-a-break',
           'analyses/learning/sessions',
           'analyses/learning/profiles',
+          'analyses/learning/answer-log',
           'analyses/learning/stops'
         ],
+        // obs: its word for the observations a question's photos come from (Analyses › Difficulty › Pairs: the corals'
+        // Colonies, a question showing one colony's views).
+        obs: 'Observations',
         origins: [
           ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
