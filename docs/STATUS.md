@@ -65,6 +65,10 @@ mode"); the others are asked plainly. An answered one goes into its PR and off t
   world's lecture RA reaches Open Water later (57 → 65 / 70 → 116 answers) and the expert has fewer units at Open Water
   at 1,000 (−1 to −3.8); the coral rated beginner's shown score at 1,000 −1.3 (margin −1). Recommendation: ship B',
   these costs accepted, or a third look. Tables in #871 and LEARNING "Confusion groups" (branch).
+- **For the morning: #882 (Q123 j, corals), privacy (D2, D7)**. Built, green, Codex clean. To give exactly what the
+  full read gives, the sheet's new `Stats` tab keeps per-player derived state (keyed by admin id, never a name or
+  device; never served; blanked at once by a delete, merge, archive or `anonDelete`). Accept it, or have the fold keep
+  only pooled sums (an approximation of today's stats). Not urgent: the 100 KB limit is around December.
 - Answered 11-14: Q352-Q355, Q230, N. argenteus, the #861/#864 choices (PR Decisions; ROADMAP rows). Q339-Q351
   earlier.
 
@@ -75,16 +79,13 @@ Last question number: Q355
 Actions only Pierre can do.
 
 - **In the admin, when he wants**: Photo review › Light proposals (152) and › Cover proposals (24), then Publish.
-- **For an IMR trainer**: the three Q354 points (two lyretail anthias s164 / s511; *Chromis agilis* and *Halichoeres
-  marginatus* split into Pacific taxa), in `points.json` (admin Points).
-- Check the type of the "Coral ID analyses" token and the R2 token's scope.
-- **Delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
+- **For an IMR trainer**: the three Q354 points in `points.json` (admin Points).
+- Check the "Coral ID analyses" token's type and the R2 token's scope; **delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
 - From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
   morning report scheduled task from claude.ai; the 8 unsure fish candidates and the expert analyses' photos (11-06);
   genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for
   the 11 fish entries with no reference-level photo.
-- **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know (links: `git show 4c8251a:docs/STATUS.md`).
-- **Protect `main`**; renew the admin GitHub token before late January 2027; look for the IMR benthic deck.
+- **Astrea and Anacropora** photo hunt (links: `git show 4c8251a:docs/STATUS.md`); **protect `main`**; renew the admin GitHub token before late January 2027; look for the IMR benthic deck.
 
 ## Parked after hours
 
