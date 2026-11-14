@@ -77,8 +77,12 @@ let COVER_P = null;
 function coverList() {
   const M = fuDataM();
   if (M.cov) return M.cov;
-  const out = [];
+  const out = [],
+    G = M.D.F.genera || {},
+    mine = id => !!(G[id] || {}).cover;
   FISHC.units.forEach(u => {
+    // only a node with a cover of his can have a proposal: the other families' pages are not built
+    if (!mine(u.id) && !u.genera.some(g => mine(g.id))) return;
     const e = fuFamM(u),
       add = (x, name, rank) => x && out.push({...x, name, rank});
     add(coverProposal(u.id, e.all, M.D.F, fuJ), u.name, 0);

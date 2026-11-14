@@ -4920,7 +4920,8 @@ const WIDTHS = [390, 1280];
       // three cards, Accept one and Undo, Keep mine, Accept all (the view leaves the switch), Undo, then Publish: its summary
       // counts the Keep mine, the published fish part carries the covers and the answer.
       {
-        const noCov = {...CUR, fish: {...(CUR.fish || {}), genera: {}}};
+        const noCov = {...CUR, fish: {...(CUR.fish || {}), genera: {}}},
+          centre = rd('fish.json').centre.name;
         let curBody = JSON.stringify(noCov);
         const cc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
         await cc.route(
@@ -4967,7 +4968,11 @@ const WIDTHS = [390, 1280];
         const ids = Object.keys(picks);
         if (ids.length !== 3) ce.push(`three families to cover: ${JSON.stringify(picks)}`);
         curBody = JSON.stringify({...noCov, fish: {...noCov.fish, genera: picks}});
+        // From a sibling page: the view comes into the switch by itself once the family pages' data is read, and opens.
+        await cq.goto(base + 'admin.html?demo#fish/photos/review/ease');
         await cq.reload();
+        await cwait(() => [...document.querySelectorAll('#subnav .adm-views a')].some(a => a.textContent === 'Cover proposals'));
+        await cq.click('#subnav .adm-views a:text-is("Cover proposals")');
         await cwait(() => document.querySelectorAll('#view .adm-cprop').length === 3);
         const cov = id => cq.evaluate(id => [(((DRAFT.fish || {}).genera || {})[id] || {}).cover, ((DRAFT.fish || {}).kept || {})[id]], id);
         s = await cst();
@@ -4976,7 +4981,7 @@ const WIDTHS = [390, 1280];
           !s.views.includes('Cover proposals') ||
           s.all !== 'Accept all 3' ||
           s.why.length !== 3 ||
-          !s.why.every(t => /^(Most seen near Dauin: \d+ observers?|None seen near Dauin)/.test(t)) ||
+          !s.why.every(t => t.startsWith(`Most seen near ${centre}: `) || t.startsWith(`None seen near ${centre}`)) ||
           s.names.length !== 6 ||
           s.names.some(t => !t) ||
           s.wide > 0

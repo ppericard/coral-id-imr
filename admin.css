@@ -5611,3 +5611,7 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-cprop .adm-acts .adm-qseg button {
   flex: 1 1 0;
 }
+.adm-cside .adm-t {
+  flex: none;
+  font-style: normal;
+}
