@@ -336,12 +336,18 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   assert.strictEqual(common.sp, 'Neoniphon argenteus');
   assert.strictEqual(common.check, undefined);
   // Its photos, by species id: the game's, the sheet's and the candidates'.
-  const game = Object.values(read('fish-game.json').photos)
-    .flat()
-    .filter(p => p.sp === 's278');
-  assert.ok(game.length >= 10, `game photos of s278: ${game.length}`);
-  assert.ok(game.every(p => p.t === 'Neoniphon argenteus'));
-  assert.ok(JSON.stringify(read('fish-photos.json').photos).includes('"sp":"s278"'), 'a fish-photos.json photo of s278');
+  // Not how many (curation moves that without a PR): at least one in each file, each under the teaching node that holds
+  // s278, and no photo of the species keyed to another id or to none.
+  const node = F.teach.find(t => t.species.includes('s278')).id;
+  ['fish-game.json', 'fish-photos.json'].forEach(f => {
+    const all = Object.entries(read(f).photos).flatMap(([k, L]) => L.map(p => [k, p])),
+      mine = all.filter(([, p]) => p.sp === 's278');
+    assert.ok(mine.length >= 1, `${f}: no photo of s278`);
+    mine.forEach(([k, p]) => assert.strictEqual(k, node, `${f} ${p.f}: s278 under ${k}, not ${node}`));
+    all
+      .filter(([, p]) => /^Neoniphon argent/.test(p.t || ''))
+      .forEach(([, p]) => assert.strictEqual(p.sp, 's278', `${f} ${p.f}: a photo of ${p.t} keyed to ${p.sp}`));
+  });
   // Typed: the name shown exactly, the PDF spelling as a slip of it; both read as the species.
   const C = require('../core.js'),
     X = C.fishGen(F, {}, {}),
