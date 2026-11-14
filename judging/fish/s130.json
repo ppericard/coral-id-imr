@@ -215,6 +215,54 @@
   "fish-s130-cand-742474937": {
    "code": "p1g2mmm2",
    "keep": "dup"
+  },
+  "fish-s130-cand-271644957": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s130-cand-739233565": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s130-cand-739233605": {
+   "code": "o1g1sl13",
+   "keep": "alt"
+  },
+  "fish-s130-cand-603478191": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s130-cand-739792358": {
+   "code": "p1g0sl1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a young fish in a tank, a ruler beside it, not on the reef"
+  },
+  "fish-s130-cand-696280799": {
+   "code": "o1g1bm11",
+   "keep": "best"
+  },
+  "fish-s130-cand-606118906": {
+   "code": "o1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s130-cand-606118914": {
+   "code": "p1g0sm1a3",
+   "keep": "alt"
+  },
+  "fish-s130-cand-686387190": {
+   "code": "d1g1sm1a2",
+   "keep": "best"
+  },
+  "fish-s130-cand-628761667": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s130-cand-628761689": {
+   "code": "d1g1sm12",
+   "keep": "dup"
   }
  }
 }

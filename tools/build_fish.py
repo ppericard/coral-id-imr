@@ -100,6 +100,7 @@ SRC = ROOT / "tools" / "fish_source.json"
 SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
 FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
 GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
+GROOTS = ROOT / "tools" / "fish_genus_roots.json"  # the genus name roots, from The ETYFish Project (add_families: genus_root)
 CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 OUT = ROOT / "fish.json"
@@ -532,7 +533,9 @@ def add_families(o, key, declared=()):
     does not name it. They seed the traps and the confusion groups until pooled fish answers exist (rule L7).
     o["genera"]: every genus of a game species (the PDF name's first word, rule S2), {id g:<Genus>, name, family,
     circle, imr (the tag: the IMR sub-entry naming it, Anemonefish for Amphiprion; Surgeonfish names three genera), sl,
-    cues (the sub-entry's), species}, in the families' order. Each game species gains family and genus (their ids).
+    cues (the sub-entry's), common and csrc (tools/fish_genus_names.json), root (its name roots from The ETYFish Project,
+    tools/fish_genus_roots.json: genus_root), species}, in the families' order. Each game species gains family and genus
+    (their ids).
 """
     wink_photos(o)
     labels = {}
@@ -698,6 +701,10 @@ def add_families(o, key, declared=()):
     # The genus common names (tools/fish_genus_names.json; Pierre, 2026-11-07: "some genera have common names. They
     # should be present somewhere"): common (the name) and csrc (its source, in words), checked against the data.
     gnames = dict(json.loads(GNAMES.read_text(encoding="utf-8")).get("genera", {})) if GNAMES.exists() else {}
+    # The genus name roots (tools/fish_genus_roots.json; Pierre, 2026-11-14, Q124 d): root, checked (genus_root); every
+    # circle-1 genus has one or a reason in skip.
+    groots = json.loads(GROOTS.read_text(encoding="utf-8")) if GROOTS.exists() else {}
+    rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
     go = []
     for g, x in gens.items():
         r = {"id": x["id"], "name": g, "family": x["family"], "circle": x["circle"]}
@@ -710,10 +717,20 @@ def add_families(o, key, declared=()):
         gn = gnames.pop(x["id"], None)
         if gn:
             r["common"], r["csrc"] = gn["common"], genus_csrc(x["id"], gn, r, u, [sp[i] for i in x["species"]], sp, fams[x["family"]])
+        rt = rts.pop(g, None)
+        if rt and g in rskip:
+            sys.exit(f"tools/fish_genus_roots.json: {g} both has a root and is in skip")
+        if rt:
+            r["root"] = genus_root(g, rt, r)
+        elif r["circle"] == 1 and g not in rskip:
+            sys.exit(f"tools/fish_genus_roots.json: circle-1 genus {g} has neither a root nor a reason in skip")
         r["species"] = x["species"]
         go.append(r)
     if gnames:
         sys.exit(f"tools/fish_genus_names.json: not genera of fish.json: {', '.join(gnames)}")
+    lost = [*rts, *(n for n in rskip if n not in gens)]
+    if lost:
+        sys.exit(f"tools/fish_genus_roots.json: not genera of fish.json: {', '.join(lost)}")
     o["genera"] = go
     # The name index's kind words (tools/fish_names.py; Pierre, 2026-11-09, Q319, Q320): the head words of the species'
     # names shown and the families whose species carry them, fish.json vn.
@@ -745,6 +762,41 @@ def genus_csrc(gid, gn, r, u, mine, sp, fam):
             sys.exit(f"tools/fish_genus_names.json {gid}: '{gn['word']}' is not its species' own ({bad or oth or 'one species'})")
         return f"Inferred from its species' common names (IMR reference list, FishBase): {'both' if len(mine) == 2 else f'all {len(mine)}'} here end in “{gn['word']}”"
     sys.exit(f"tools/fish_genus_names.json {gid}: from {gn['from']}?")
+
+
+def genus_root(name, x, r):
+    """A genus's name roots (tools/fish_genus_roots.json, read from its entry in The ETYFish Project) as fish.json root, the
+    shape of data.json's (tools/apply_name_roots.py, learn.js rootLine): p, the parts that spell the name, each [form,
+    meaning, word, [source indexes]] (an ending or a part ETYFish does not gloss: no meaning, no source), with a fifth item
+    "genus" (another genus the entry names) or "honours" (the person the entry says the name honours); fit, one of the
+    genus's own IMR cues the entry says the name refers to; src, its ETYFish page. The build stops on anything else (rule
+    C2: every meaning and word verbatim in the entry's text kept beside it, ety)."""
+    def bad(why):
+        sys.exit(f"tools/fish_genus_roots.json {name}: {why}")
+    if set(x) - {"page", "ety", "p", "fit"} or not x.get("page") or not x.get("ety"):
+        bad("keys page, ety, p and fit only, page and ety given")
+    if "".join(q[0] for q in x["p"]) != name:
+        bad("the parts do not spell the name")
+    p = []
+    for q in x["p"]:
+        if len(q) == 1:
+            p.append([q[0], "", "", []])
+            continue
+        form, gloss, word, *kind = q
+        if not gloss or kind not in ([], ["genus"], ["honours"]) or any(w and w not in x["ety"] for w in (gloss, word)):
+            bad(f"{form}: a meaning, its word and its kind, verbatim in ety")
+        if kind == ["genus"] and not gloss.lower().startswith(form.lower()):
+            bad(f"{form} does not spell the genus {gloss}")
+        p.append([form, gloss, word, [0], *kind])
+    if not any(q[1] for q in p):
+        bad("no part has a meaning")
+    root = {"p": p}
+    if x.get("fit"):
+        if x["fit"] not in (r.get("cues") or []):
+            bad("fit is not one of its IMR cues")
+        root["fit"] = x["fit"]
+    root["src"] = [{"t": f"The ETYFish Project ({name})", "u": f"https://etyfish.org/{x['page']}/"}]
+    return root
 
 
 def regroup(src_path, check):

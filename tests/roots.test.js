@@ -109,3 +109,100 @@ test('the genus sheet shows the root line under the ID tips, outside the IMR tip
   const i = sheet.indexOf('${rootLine(g, slateOf(DATA))}');
   assert.ok(i > sheet.indexOf('<b>Mnemonic:</b>') && i < sheet.indexOf('<div class="lnotes">'), 'rootLine sits after the tips box');
 });
+
+// Fish genera (Q124 d, the follow-up of #891): tools/fish_genus_roots.json, read from The ETYFish Project, built into
+// fish.json genera `root` by tools/build_fish.py add_families (genus_root) and shown by the same rootLine, on the one
+// sheet the genus opens (learn.js fishRoot).
+const FISH = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'));
+const FR = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'fish_genus_roots.json'), 'utf8'));
+const FG = Object.fromEntries(FISH.genera.map(g => [g.name, g]));
+const ETY = /^https:\/\/etyfish\.org\/[a-z]+\d*\/$/;
+const rootLineIn = () => {
+  const app = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
+    learn = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8'),
+    ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext(
+    [
+      block(app, 'const esc = ', '\n'),
+      block(app, 'const safeUrl = ', '\n};\n', {through: 1}),
+      block(learn, 'const srcA = ', '\n'),
+      block(learn, 'const rootLine = ', '\n};\n', {through: 1}),
+      'this.rootLine = rootLine;'
+    ].join('\n'),
+    ctx
+  );
+  return ctx.rootLine;
+};
+
+test('every fish genus root has its ETYFish source: each meaning and word verbatim in the entry kept beside it', () => {
+  const rooted = FISH.genera.filter(g => g.root).map(g => g.name);
+  assert.deepStrictEqual(
+    [...rooted].sort(),
+    Object.keys(FR.genera).sort(),
+    'fish.json roots are the tool file’s (build_fish.py --regroup)'
+  );
+  assert.ok(rooted.length >= 60, `${rooted.length} fish roots`);
+  for (const n of rooted) {
+    const r = FG[n].root,
+      x = FR.genera[n];
+    assert.strictEqual(r.src.length, 1, n);
+    assert.strictEqual(r.src[0].u, `https://etyfish.org/${x.page}/`, n);
+    assert.match(r.src[0].u, ETY, n);
+    assert.strictEqual(r.src[0].t, `The ETYFish Project (${n})`, n);
+    assert.strictEqual(r.p.map(q => q[0]).join(''), n, `${n}: the parts spell the name`);
+    assert.ok(
+      r.p.some(q => q[1]),
+      `${n}: no part has a meaning`
+    );
+    for (const [form, gloss, word, src, kind] of r.p) {
+      if (!gloss) {
+        assert.ok(!word && !src.length && !kind, `${n}: ${form} has a word, a source or a kind but no meaning`);
+        continue;
+      }
+      assert.deepStrictEqual(src, [0], `${n}: ${form} cites its ETYFish entry`);
+      assert.ok(x.ety.includes(gloss), `${n}: “${gloss}” is not in its ETYFish entry`);
+      if (word) assert.ok(x.ety.includes(word), `${n}: ${word} is not in its ETYFish entry`);
+      assert.ok([undefined, 'genus', 'honours'].includes(kind), `${n}: ${kind}`);
+      if (kind === 'genus') assert.ok(gloss.toLowerCase().startsWith(form.toLowerCase()), `${n}: ${form} does not spell ${gloss}`);
+    }
+    if (r.fit) assert.ok((FG[n].cues || []).includes(r.fit), `${n}: "${r.fit}" is not one of its IMR cues`);
+  }
+});
+
+test('every circle-1 fish genus has a root or a reason in skip, never both', () => {
+  for (const g of FISH.genera.filter(x => x.circle === 1))
+    assert.ok(g.name in FR.genera !== g.name in FR.skip, `${g.name}: a root or a reason`);
+  for (const n of Object.keys(FR.skip)) assert.ok(FG[n] && FR.skip[n].trim(), `skip ${n}`);
+});
+
+test('rootLine for fish: a word-less meaning, another genus, a person honoured, the shared ending among the fish', () => {
+  const rootLine = rootLineIn(),
+    names = FISH.genera.map(g => g.name),
+    line = n => rootLine(FG[n], names, 'among the fish');
+  assert.match(
+    line('Naso'),
+    /^<p class="nameroot"><b>Name roots:<\/b> <i>Naso<\/i>: “nose”\. <span class="rsrc"><a href="https:\/\/etyfish\.org\//
+  );
+  assert.match(line('Neopomacentrus'), /<i>Neo·pomacentrus<\/i>: “new” \(neo-\) \+ the genus <i>Pomacentrus<\/i>\./);
+  assert.ok(line('Neopomacentrus').includes(' 3 genera among the fish end in -pomacentrus: the ending alone does not tell them apart.'));
+  assert.match(line('Wetmorella'), /<i>Wetmor·ella<\/i>: honours Alexander Wetmore \+ “diminutive” \(–ella\)\./);
+  assert.match(
+    line('Acanthurus'),
+    /“thorn or spine” \(acanthus\) \+ “tail” \(oura\)\. It fits the ID tip “One scalpel on the tail base”\./
+  );
+  const odon = names.filter(n => /odon$/.test(n)).length;
+  assert.ok(line('Chaetodon').includes(` ${odon} genera among the fish end in -odon:`), line('Chaetodon'));
+  // The corals keep their wording.
+  assert.match(rootLine(G.Seriatopora, slateOf(DATA)), / genera on the slate end in -pora:/);
+});
+
+test('a fish genus root shows on the one sheet the genus opens: its page, its one species’ sheet, or its family’s', () => {
+  const learn = fs.readFileSync(path.join(ROOT, 'learn.js'), 'utf8');
+  assert.ok(block(learn, 'function fishGenus(g) {', '\n}\n').includes('${fishRoot(g, g.id)}'));
+  assert.ok(block(learn, 'function fishSpecies(s) {', '\n}\n').includes("${fishRoot(g, 's:' + s.name)}"));
+  assert.ok(block(learn, 'function fishFamily(f) {', '\n}\n').includes("${G.map(g => fishRoot(g, f.id)).join('')}"));
+  assert.ok(block(learn, 'const fishRoot = ', "\n    : '';\n").includes('fishGo(g.id) === at'));
+  const T = require('../core.js').fishTree(FISH);
+  for (const g of FISH.genera.filter(x => x.root)) assert.ok(T.go(g.id), `${g.name} opens no sheet`);
+});
