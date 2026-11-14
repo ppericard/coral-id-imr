@@ -383,7 +383,7 @@ function renderFishCand() {
     candFlags(
       `${
         nFull
-          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (8 observations, 12 for the cheatsheet's): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
+          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
           : ''
       }${
         nAside

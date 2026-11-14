@@ -35,7 +35,7 @@ const chk = (() => {
 const sure = (e = 4, k = 'best') => ({jt: 'p1g0sm1', e, k});
 
 test('fish targets: 8 observations per species, 12 for the PDF cheatsheet species, at most 20 (Pierre, 2026-11-04)', () => {
-  assert.deepStrictEqual(FISHT, {obs: 8, top: 12, cap: 20});
+  assert.deepStrictEqual(FISHT, {obs: 8, top: 12, cap: 20, wink: 5}); // wink: tests/winkadmin.test.js
   assert.strictEqual(fishTarget({id: 's1', cs: 3}), 12);
   assert.strictEqual(fishTarget({id: 's2'}), 8);
   assert.strictEqual(fishTarget(undefined), 8);
