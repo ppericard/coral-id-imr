@@ -532,7 +532,9 @@ const laterWaits = fresh => {
 //    first (groupConf), ties alphabetical, while the group stays at GROUP.MAX units or fewer; the data never split them;
 // 2. then average linkage on the pooled score (groupConf): the two groups whose pairs have the highest mean score merge,
 //    while that mean is CONF.TRAP or more and the group stays at GROUP.MAX or fewer (ties alphabetical).
-// A unit in no group is a lone unit. A declared pair the cap kept apart still pulls its partner (openPick). MAX 3 (Q350 b):
+// A unit in no group is a lone unit. A declared pair the cap kept apart pulls nothing (Pierre, 2026-11-14 16:48, Q355:
+// "ok pour B": the declared coral pairs join the whole slate, so the pull chained every opening; docs/LEARNING.md
+// "Confusion groups"). MAX 3 (Q350 b):
 // the size of the interleaving studies; 2 kept 39% of the coral confusion inside a group, 4-5 gave the same groups.
 const GROUP = {MAX: 3};
 // A unit's declared look-alikes: `decl` where its record lists them apart from `look` (app.js fishGenera: a fish scientific
@@ -586,7 +588,7 @@ function groupsOfRank(L) {
   cl.forEach((C, n) => C.length > 1 && (out[n] = C));
   return out;
 }
-// The groups of the units in play, every rank (of), and each unit's declared partners of its rank in play (decl). Built
+// The groups of the units in play, every rank (of). Built
 // again only when their inputs change (Codex review #871: the clustering takes tens of milliseconds): the units in play
 // (pool()) or the pooled stats (a new PCONF object). The units in play are read again only when something that moves
 // them may have changed (the subject, the answers count: a fish genus enters at its family's Advanced; the settings Q:
@@ -600,9 +602,7 @@ const groupsNow = () => {
   if (GROUPS && GROUPS.key === key && GROUPS.pc === PCONF) return Object.assign(GROUPS, {tick});
   const by = {};
   L.forEach(n => (by[rankOf(n)] = by[rankOf(n)] || []).push(n));
-  const decl = {};
-  Object.values(by).forEach(R => R.forEach(n => (decl[n] = R.filter(m => m !== n && declared(n, m)))));
-  GROUPS = {tick, key, pc: PCONF, of: Object.assign({}, ...Object.values(by).map(groupsOfRank)), decl};
+  GROUPS = {tick, key, pc: PCONF, of: Object.assign({}, ...Object.values(by).map(groupsOfRank))};
   return GROUPS;
 };
 const groupMap = () => groupsNow().of;
@@ -610,16 +610,18 @@ const groupMap = () => groupsNow().of;
 const groupMates = n => (groupMap()[n] || []).filter(m => m !== n);
 // The group partners of n still to meet that can open (mayOpen: a unit behind a gate holds nobody back).
 const matesLeft = n => groupMates(n).filter(m => !introduced(m) && mayOpen(m));
-// The genus to open among those not met yet (fresh), after the filters above (the starter core, "I'm at IMR"), in three
-// tiers (Pierre, 2026-11-14, Q350 c, f): 1. a group partner of a unit met: once a group has a member open, its other
+// The genus to open among those not met yet (fresh), after the filters above (the starter core, "I'm at IMR") (Pierre,
+// 2026-11-14, Q350 c; Q355, "ok pour B"): 1. a group partner of a unit met: once a group has a member open, its other
 // members are the next openings, one at a time (the shaky limit, the pace and the right-answer rule decide when, as for
-// any card); 2. a declared partner of a unit met that the cap kept out of its group; 3. otherwise a new group or lone
-// unit, drawn with the weight below on the group's means (mean genusDiff, mean cm), then the member that opens first by
-// the same weight. The weight: the easiest first, softly (OPEN.T, as far as the data are trusted: easyTrust), and the
-// most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in the list and not met
-// (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back, and a reference never
-// waits itself), in every tier; a tier whose units all wait gives way to the next; should every genus left wait (not
-// possible with today's data), they all open.
+// any card); 2. otherwise a new group or lone unit, drawn with the weight below on the group's means (mean genusDiff,
+// mean cm), then the member that opens first by the same weight. The first cards (introStart, first: true) are drawn
+// unit by unit as before the groups, with no group partner first (Q355: a beginner's first cards were a look-alike
+// group, and the first unit at Open Water came about 45 answers later); the groups take over from the first card after
+// them. The weight: the easiest first, softly (OPEN.T, as far as the data are trusted: easyTrust), and the most common
+// near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in the list and not met (Pierre,
+// 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back, and a reference never waits
+// itself), group partners included (they then give way to the draw); should every genus left wait (not possible with
+// today's data), they all open.
 // met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
 const easyWeights = (gd, cm) => {
   const lo = Math.min(...gd),
@@ -642,7 +644,7 @@ const meanCm = u => {
   const v = u.map(n => (GX(n) || {}).cm).filter(x => typeof x === 'number' && x >= 0);
   return v.length ? v.reduce((a, x) => a + x, 0) / v.length : undefined;
 };
-function openPick(fresh, list = fresh, met = introduced) {
+function openPick(fresh, list = fresh, met = introduced, {first: firstCards = false} = {}) {
   const wait = laterWaits(fresh);
   if (wait.length) fresh = fresh.filter(n => !wait.includes(n));
   // The starter core first (Pierre, 2026-11-04: the fish beta opened on the wrong families): units whose record says
@@ -658,15 +660,14 @@ function openPick(fresh, list = fresh, met = introduced) {
     if (tagged.length) fresh = tagged;
   }
   const free = n => !starWaits(DATA, n, list, met),
-    {of: G, decl} = groupsNow();
-  // 1. Group partners of a unit met; 2. declared partners (of its rank in play) of a unit met.
-  for (const T of [fresh.filter(n => groupMates(n).some(met)), fresh.filter(n => (decl[n] || []).some(met))]) {
-    const ok = T.filter(free);
-    if (ok.length) return easyDraw(ok);
-  }
-  const ok = fresh.filter(free);
+    ok = fresh.filter(free);
   if (ok.length) fresh = ok;
-  // 3. A new group or lone unit: each group as its members in fresh (a lone unit alone, so with no group the draw is the
+  if (firstCards) return easyDraw(fresh);
+  // 1. Group partners of a unit met.
+  const G = groupMap(),
+    mates = fresh.filter(n => groupMates(n).some(met));
+  if (ok.length && mates.length) return easyDraw(mates);
+  // 2. A new group or lone unit: each group as its members in fresh (a lone unit alone, so with no group the draw is the
   // one of before, unit by unit).
   const units = [],
     seen = new Set();

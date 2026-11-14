@@ -44,7 +44,7 @@ test('pairs from the data: joined at CONF.TRAP by average linkage, not under it'
   const e = coral(),
     G0 = groups(e),
     L = e.ctx.slateGenera(),
-    lone = L.filter(n => !G0[n] && !run(e, `groupsNow().decl[${JSON.stringify(n)}]`).some(m => !G0[m]));
+    lone = L.filter(n => !G0[n]);
   // Two lone units with no declared link between them.
   const [a, b] = pairs(e, lone).find(([x, y]) => !run(e, `declared(${JSON.stringify(x)}, ${JSON.stringify(y)})`));
   const k = a < b ? a + '|' + b : b + '|' + a;
@@ -71,11 +71,11 @@ test('fish: families from the declared groups; genera from their IMR sub-entry, 
   );
 });
 
-test('opening: a group partner of a unit met first, then a declared partner the cap split off, then a new group', () => {
+test('opening: a group partner of a unit met first; a declared pair the cap split pulls nothing; then a new group', () => {
   const e = coral(),
     G = groups(e),
-    D = run(e, 'groupsNow().decl'),
-    L = e.ctx.slateGenera();
+    L = e.ctx.slateGenera(),
+    decl = (a, b) => run(e, `declared(${JSON.stringify(a)}, ${JSON.stringify(b)})`);
   // 1. One member of a group of 3 met: its two partners are the only openings.
   const g = Object.values(G).find(x => x.length === 3),
     rest = L.filter(n => !g.includes(n));
@@ -88,35 +88,47 @@ test('opening: a group partner of a unit met first, then a declared partner the 
     one.every(n => g.includes(n)),
     'partners first: ' + [...new Set(one)]
   );
-  // 2. The whole group met: a declared partner of it that the cap kept out comes next, whatever else is left.
-  const out = [...new Set(g.flatMap(n => D[n] || []))].filter(n => !g.includes(n));
+  // 2. The whole group met: a declared partner of it that the cap kept out is not pulled (Pierre, Q355, "ok pour B"); the
+  // next opening is a new group or lone unit, drawn among everything left.
+  const out = rest.filter(n => g.some(m => decl(m, n)));
   assert.ok(out.length, 'a declared pair split by the cap');
-  const two = draws(e, rest, g);
+  const two = draws(e, rest, g, 300);
   assert.ok(
-    two.every(n => out.includes(n)),
-    'declared partners next: ' + [...new Set(two)]
+    two.some(n => !out.includes(n)),
+    'no pull: ' + [...new Set(two)]
   );
   // 3. Nothing met: a new group or lone unit, the first member drawn by the easy-first weight.
   const three = draws(e, L, [], 300);
   assert.ok(new Set(three).size > 10, 'many units can open first');
 });
 
-test("from zero: the first cards hold the first unit's group, one at a time", () => {
-  const e = coral(3);
-  for (let s = 0; s < 20; s++) {
+test('from zero: the first cards are drawn unit by unit; from the next card, a group partner of theirs first', () => {
+  const e = coral(3),
+    start = e.M.INTRO.START;
+  let together = 0;
+  for (let s = 0; s < 40; s++) {
     let fresh = e.ctx.slateGenera().slice();
-    const met = [];
-    while (met.length < 3) {
-      const n = e.M.openPick(fresh.slice(), fresh.slice(), x => met.includes(x));
-      met.push(n);
-      fresh = fresh.filter(x => x !== n);
-    }
-    // The first unit's partners that may open (a ★ genus waits for its reference, core.js starRefs) come right after it.
-    const g = groups(e)[met[0]] || [],
-      ok = g.filter(x => x !== met[0] && !e.ctx.starRefs(e.ctx.DATA, x).some(r => !met.includes(r)));
-    if (ok.length) assert.ok(ok.includes(met[1]), 'a partner second: ' + met);
-    if (ok.length === 2) assert.ok(ok.includes(met[2]), 'both partners next: ' + met);
+    const met = [],
+      pick = first => {
+        const n = e.M.openPick(fresh.slice(), fresh.slice(), x => met.includes(x), {first});
+        met.push(n);
+        fresh = fresh.filter(x => x !== n);
+        return n;
+      };
+    while (met.length < start) pick(true);
+    const G = groups(e);
+    if (met.slice(1).some(n => (G[met[0]] || []).includes(n))) together++;
+    // The next card: a partner, of a first card's group, that may open (a ★ genus waits for its reference), when one is left.
+    const ok = fresh.filter(
+      x =>
+        met.some(m => (G[m] || []).includes(x)) &&
+        !e.ctx.starRefs(e.ctx.DATA, x).some(r => !met.includes(r) && e.ctx.slateGenera().includes(r))
+    );
+    const n = pick(false);
+    if (ok.length) assert.ok(ok.includes(n), `after ${met.slice(0, start)}: ${n}, not a partner of theirs`);
   }
+  // Drawn unit by unit (Q355), the first cards are seldom a group: the first unit's partner among them in few runs.
+  assert.ok(together < 20, `first cards with the first unit's partner: ${together} of 40`);
 });
 
 test('the exam waits for the group partners that can open; one under way goes on', () => {

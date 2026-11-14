@@ -379,7 +379,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       L = [],
       met = n => M.introduced(n) || L.includes(n);
     for (let fresh = sl.filter(n => !M.introduced(n) && M.mayOpen(n)); L.length < want && fresh.length; fresh = fresh.filter(n => n !== L[L.length - 1]))
-      L.push(M.openPick(fresh, fresh, met));
+      L.push(M.openPick(fresh, fresh, met, {first: true}));
     return L;
   };
   const P = () => ctx.P,

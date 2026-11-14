@@ -1940,7 +1940,8 @@ function introCard(n, o = {}) {
 }
 // Cards due with the next question (INTRO): the first ones while fewer than INTRO.START slate genera are met (picked by
 // the progressive path's draw, easiest first), else none: planPhoto may add one when its draw falls on a genus not met.
-// The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js openPick).
+// The cards drawn before count as met: a ★ genus may follow its reference's card, shown before it (model.js openPick,
+// first: drawn unit by unit, the confusion groups taking over from the next card; Pierre, 2026-11-14, Q355).
 function introStart(list) {
   const slate = list.filter(n => !isBonus(n)),
     want = INTRO.START - slate.filter(introduced).length,
@@ -1951,7 +1952,7 @@ function introStart(list) {
     L.length < want && fresh.length;
     fresh = fresh.filter(n => n !== L[L.length - 1])
   )
-    L.push(openPick(fresh, fresh, met));
+    L.push(openPick(fresh, fresh, met, {first: true}));
   return L;
 }
 // cur: 'quiz', or the custom quiz (CUSTOM_H): its genus asked and its choices come from the player's selection (model.js
