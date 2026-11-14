@@ -161,6 +161,9 @@ Object.keys(BY).forEach(id => {
       h[0]++;
       h[1] += a.ok ? 1 : 0;
     });
+    // A corallites hint revealed after the answer (scoring record h) was shown, never recognised: shown once more,
+    // never right, as core.js scoreAnswer counts it (Codex review #904).
+    if (sc && sc.h) (H[sc.h] = H[sc.h] || [0, 0])[0]++;
     a.replayable = ph.length > 0 && k > 1 && (!!sc || (isFinite(e) && isFinite(th)));
     if (sc)
       Object.assign(a, {d0: sc.d, fam: sc.f || 0, cf: sc.c || 0, R: sc.r === undefined ? 1 : sc.r, df: sc.o || 0, S: sc.s || 1, src: 'sc'});

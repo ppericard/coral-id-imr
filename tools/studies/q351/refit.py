@@ -9,7 +9,7 @@ a, u, b, r normal random effects (zero mean), their variances estimated at the L
 (EM's: each variance the mean of the squared posterior means plus their posterior variances; reached by MacKay's
 update, refitted until no variance moves by 0.1%, at most 200 steps); the rest fixed effects with weak priors (formats
 N(0, 3^2), the others N(0, 10^2)). The mode by Fisher scoring; standard errors from the inverse of the
-information at the mode, given the variances. ez = 3 - the judged ease (fish), 0 for corals (kappa then left out).
+observed curvature at the mode (the Laplace precision), given the variances. ez = 3 - the judged ease (fish), 0 for corals (kappa then left out).
 Read-only: reads refit.js's export, writes the fits; prints a line per fit.
 
     python3 -I tools/studies/q351/refit.py export.json fits.json [--simcheck 20]
@@ -74,6 +74,7 @@ def design(rows):
 
 
 RE = ['a', 'u', 'b', 'r']
+OBS_FALLBACK = []
 FIXVAR = {'o': 9.0, 'mem': 9.0, 'fix': 100.0}
 
 
@@ -98,8 +99,28 @@ def fit(rows, warm=None, tol=1e-3, maxem=200, fixvar=False):
 
     JT = J.T.tocsr()
 
+    def observed(L):
+        """The observed penalised curvature (minus the Hessian of the log-posterior) at th: the Laplace precision
+        (Codex review #904: with a guess floor the expected information is not the observed one). Falls back to the
+        expected information if it is not positive definite (counted in OBS_FALLBACK)."""
+        eta = J @ th - c
+        s = 1 / (1 + np.exp(-eta))
+        p = np.clip(g + (1 - g) * R * s, 1e-9, 1 - 1e-9)
+        q = p * (1 - p)
+        d1 = (1 - g) * R * s * (1 - s)
+        d2 = d1 * (1 - 2 * s)
+        u = (y - p) / q
+        du = (-q - (y - p) * (1 - 2 * p)) / (q * q)
+        wo = -(du * d1 * d1 + u * d2)
+        # Symmetric mode (diagonal pivots), so the pivots are all positive exactly when the matrix is positive definite.
+        lu = splu((JT @ sparse.diags(wo) @ J + sparse.diags(L)).tocsc(), permc_spec='MMD_AT_PLUS_A', diag_pivot_thresh=0)
+        if np.all(lu.U.diagonal() > 0):
+            return lu
+        OBS_FALLBACK.append(1)
+        return splu((JT @ sparse.diags(d1 * d1 / q) @ J + sparse.diags(L)).tocsc())
+
     def mode(L, eps):
-        """Fisher scoring to the mode under the precisions L; returns the factorised information at it."""
+        """Fisher scoring to the mode under the precisions L; returns the factorised observed curvature at it."""
         for it in range(200):
             eta = J @ th - c
             s = 1 / (1 + np.exp(-eta))
@@ -116,7 +137,7 @@ def fit(rows, warm=None, tol=1e-3, maxem=200, fixvar=False):
             th[:] += step
             if mx < eps:
                 break
-        return splu((JT @ sparse.diags(w) @ J + sparse.diags(L)).tocsc())
+        return observed(L)
 
     def inv(lu):
         return lu.solve(np.eye(len(names)))
@@ -203,6 +224,7 @@ tr = set(EX['full']['trusted'])
 rows = [r for r in ROWS if r['p'] in tr]
 F = fit(rows)
 fits['full'] = F
+print(f'fits whose observed curvature was not positive definite (expected information used): {len(OBS_FALLBACK)}')
 print(f"full: {F['n']} answers, {F['players']} players, EM {F['em']}, var {json.dumps({k: round(v, 3) for k, v in F['var'].items()})}, "
       f"b1 {F['b1']:.3f} b2 {F['b2']:.3f} s {F['s']:.2f} kappa {F['kappa']:.2f}, mem {[round(x, 2) for x in F['mem']]}, o {json.dumps({k: round(v, 2) for k, v in F['o'].items()})}")
 json.dump({k: strip(v) for k, v in fits.items()}, open(OUT, 'w'))
