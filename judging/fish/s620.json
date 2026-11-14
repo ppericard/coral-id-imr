@@ -1,0 +1,167 @@
+{
+ "photos": {
+  "fish-s620-cand-519055610": {
+   "code": "p1g0sm13",
+   "keep": "best"
+  },
+  "fish-s620-cand-467090612": {
+   "code": "o1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s620-cand-459714842": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-23391765": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s620-cand-23391820": {
+   "code": "o1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s620-cand-605301671": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-605301665": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s620-cand-605301658": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s620-cand-634647631": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-259019457": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s620-cand-382537070": {
+   "code": "o1g0sms3",
+   "keep": "best"
+  },
+  "fish-s620-cand-258471388": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-568199571": {
+   "code": "o1g0sm14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-624333221": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s620-cand-597370601": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s620-cand-362862393": {
+   "code": "o1g2bs11",
+   "keep": "best"
+  },
+  "fish-s620-cand-281675782": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s620-cand-160014125": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-461942173": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-517006787": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-517006823": {
+   "code": "o1g0smk2",
+   "keep": "dup"
+  },
+  "fish-s620-cand-469602547": {
+   "code": "p1g1bm11",
+   "keep": "best"
+  },
+  "fish-s620-cand-606834730": {
+   "code": "o1g0sm14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-23335224": {
+   "code": "p1g0sm14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-23335234": {
+   "code": "o1g0sm13",
+   "keep": "dup"
+  },
+  "fish-s620-cand-23335235": {
+   "code": "p1g0sm14",
+   "keep": "dup"
+  },
+  "fish-s620-cand-23335236": {
+   "code": "o1g0sm13",
+   "keep": "dup"
+  },
+  "fish-s620-cand-23335237": {
+   "code": "o1g0sss3",
+   "keep": "dup"
+  },
+  "fish-s620-cand-23335239": {
+   "code": "o1g0sss3",
+   "keep": "dup"
+  },
+  "fish-s620-cand-258415025": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-257440454": {
+   "code": "o1g1sm1j2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A dark fish with a blue stripe, unlike the red and pink peacock wrasses: look again."
+  },
+  "fish-s620-cand-520007901": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s620-cand-459714816": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-519009576": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s620-cand-19776475": {
+   "code": "o1g0sm14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s620-cand-66358162": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "phase": "male"
+  }
+ }
+}

@@ -1,0 +1,311 @@
+{
+ "photos": {
+  "fish-s619-cand-570451856": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s619-cand-56995485": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s619-cand-268441934": {
+   "code": "o1g0ss1cj1",
+   "keep": "best"
+  },
+  "fish-s619-cand-356053903": {
+   "code": "o1g1bm1j1",
+   "keep": "best"
+  },
+  "fish-s619-cand-538364843": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s619-cand-427419382": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s619-cand-480894373": {
+   "code": "o1g1bs1j1",
+   "keep": "best"
+  },
+  "fish-s619-cand-480894353": {
+   "code": "p1g1bs1j1",
+   "keep": "dup"
+  },
+  "fish-s619-cand-480894385": {
+   "code": "o1g1bs1j1",
+   "keep": "dup"
+  },
+  "fish-s619-cand-56872436": {
+   "code": "p1g0sl1j3",
+   "keep": "best"
+  },
+  "fish-s619-cand-56872480": {
+   "code": "o1g0sm1j3",
+   "keep": "dup"
+  },
+  "fish-s619-cand-56872482": {
+   "code": "o1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s619-cand-56872484": {
+   "code": "p1g0sl1j3",
+   "keep": "alt"
+  },
+  "fish-s619-cand-537007175": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-537007203": {
+   "code": "o0g2bm11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-71153532": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-71153629": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-71153661": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-71153653": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-71153684": {
+   "code": "d1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-71153693": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-468203366": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-624121966": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-624855264": {
+   "code": "o1g1smk1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Two parrotfish-like fish with beaks, not clearly the bluespotted wrasse: look again."
+  },
+  "fish-s619-cand-280314346": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-395556421": {
+   "code": "p0g1bl11",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-76126008": {
+   "code": "p1g1bs11",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-76126047": {
+   "code": "p1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-76126145": {
+   "code": "o1g1bs11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-85283533": {
+   "code": "p1g1sl13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-85283735": {
+   "code": "p1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s619-cand-85283748": {
+   "code": "o0g1sm12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-85283767": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s619-cand-619784056": {
+   "code": "o1d1sm12",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-270162539": {
+   "code": "o1g1sl13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-44154571": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-174247288": {
+   "code": "p1g2bs11",
+   "keep": "best"
+  },
+  "fish-s619-cand-174247283": {
+   "code": "p1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-411723547": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-480754742": {
+   "code": "p1d1sm12",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-594783548": {
+   "code": "p1g2sm12",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-190286585": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s619-cand-411722589": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-411722585": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-411722598": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-298496071": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-298496534": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s619-cand-298496418": {
+   "code": "o1g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s619-cand-89084007": {
+   "code": "p1g1mm12",
+   "keep": "best"
+  },
+  "fish-s619-cand-89084025": {
+   "code": "p1g1ms11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-89084047": {
+   "code": "o1g1ms11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-403580281": {
+   "code": "o1g2mm12",
+   "keep": "best"
+  },
+  "fish-s619-cand-107565305": {
+   "code": "p1g1mm12",
+   "keep": "best"
+  },
+  "fish-s619-cand-107565307": {
+   "code": "p1g1ms11",
+   "keep": "dup"
+  },
+  "fish-s619-cand-33650710": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s619-cand-25741361": {
+   "code": "o1g1smk1",
+   "keep": "best"
+  },
+  "fish-s619-cand-222391873": {
+   "code": "o1g1sl13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s619-cand-468300051": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-653191864": {
+   "code": "p1g1sm14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-653191882": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s619-cand-445597594": {
+   "code": "p1g1sl13",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-483754110": {
+   "code": "o1g2bl11",
+   "keep": "best"
+  },
+  "fish-s619-cand-415193157": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s619-cand-333097931": {
+   "code": "o1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s619-cand-333097936": {
+   "code": "o1g1ssk1",
+   "keep": "dup"
+  },
+  "fish-s619-cand-254202819": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-254203681": {
+   "code": "o1g1sl14",
+   "keep": "alt",
+   "phase": "male"
+  },
+  "fish-s619-cand-372643972": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s619-cand-615621399": {
+   "code": "p1g1smo3",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s619-cand-615621398": {
+   "code": "p1g1smo3",
+   "keep": "dup"
+  }
+ }
+}
