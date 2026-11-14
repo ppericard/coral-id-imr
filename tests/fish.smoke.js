@@ -88,6 +88,175 @@ async function settle(q, keep = '') {
   }
   return 'start-up cards kept coming';
 }
+// (11) Find the X (quiz.js FIND, planFind; Pierre, 2026-11-03, Q321 D1): one name, four photos, slipped into the fish quiz.
+// Every circle-1 family met but three, FIND.P set to 1 for the run so it comes at once: never on a family not met, nor with
+// one; four square tiles (fish-game.json xc), the families' buttons, no name buttons; the right tile and the wrong one
+// marked once answered; logged quiz|f with the unit's own photo, the four units as choices and the unit of the photo
+// tapped; scored as a 4-choice answer (its expectation over 1 in 4). With FIND.P back at 0 none comes.
+async function findTheX(b, base, errs) {
+  const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-fx')) {
+        sessionStorage.setItem('fish-fx', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 4242;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`find the X: ${e.message}`));
+  await q.goto(base + '#practice/quiz');
+  await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .q'), null, {
+    timeout: 30000
+  });
+  await qa.install(q);
+  const r = await q.evaluate(async () => {
+    const fails = [],
+      ok = (x, m) => x || fails.push(m),
+      closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const tiled = FISH.c1.filter(n => UNITS.fish.tiles(n).length),
+      unmet = tiled.slice(-3);
+    ok(tiled.length >= 8, `families with a tile: ${tiled.length}`);
+    ok(!UNITS.coral.tiles('Acropora').length, 'no tiles for the corals');
+    FISH.c1
+      .filter(n => !unmet.includes(n))
+      .forEach(n => {
+        introAdd([n], false);
+        Object.assign(st(n), {ok: 4, ko: 0, h: '1111', th: 1});
+      });
+    closeCards();
+    FIND.P = 1;
+    let seen = 0,
+      wrong = null;
+    for (let i = 0; i < 80 && seen < 12; i++) {
+      // the families not met before this question (the path opens some as the other questions go)
+      const notMet = slateGenera().filter(n => !introReady(n));
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      const Q = SHOWNQ;
+      if (!Q || !Q.findx) {
+        smokeAnswer();
+        continue;
+      }
+      seen++;
+      const [, t, ch, prompt, set] = Q,
+        // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
+        tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
+      ok(prompt === `Find the ${unameT(t)}`, `the prompt: ${prompt}`);
+      ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four units: ${ch}`);
+      ok(
+        ch.every(n => introReady(n) && !notMet.includes(n) && !rankOf(n)),
+        `only families met: ${ch}`
+      );
+      ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+      ok(!document.querySelector('#view .ans'), 'no name buttons'); // answer.js: the format has none
+      ok(
+        set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
+        'each photo a tile of its own unit'
+      );
+      ok(
+        [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
+        'the tile files'
+      );
+      // Its clock waits for the four tiles (none has come here: the photos' host is out of reach).
+      ok(QCLOCK.t0 === null, 'the clock waits for the four tiles');
+      // A wrong tap the first time, right after.
+      const pick = wrong ? t : ch.find(n => n !== t),
+        before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
+      smokeAnswer(pick);
+      const log = SYNC ? SYNC.log : store.get(LOG0, []),
+        a = log[log.length - 1];
+      ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
+      if (a) {
+        ok(a.m === 'quiz|f', `mode ${a.m}`);
+        ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
+        ok(a.ph === set.shown[0].f && a.ph === set.find.find(x => x.n === t).p.f, `its photo: ${a.ph}`);
+        ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
+        ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
+        // timed from its gate (smokeAnswer counted the four tiles in, then tapped): a few tenths at most
+        ok(typeof a.rt === 'number' && a.rt < 5, `its seconds from the four tiles: ${a.rt}`);
+      }
+      // answer.js: the tiles marked once answered (a read, after smokeAnswer)
+      const ok1 = document.querySelector('#view .fxt.fok [data-c]'),
+        // answer.js: the same read, the tile tapped
+        ko1 = document.querySelector('#view .fxt.fko [data-c]');
+      ok(ok1 && ok1.dataset.c === t, 'the right tile marked');
+      ok(pick === t ? !ko1 : ko1 && ko1.dataset.c === pick, 'the tile tapped marked');
+      ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
+      if (!wrong) wrong = pick;
+    }
+    ok(seen >= 3, `Find the X questions: ${seen}`);
+    // Its photos are its choices (Codex review #885): no answer is taken while a tile is still loading; a distractor tile
+    // that never loads (its retries and its 480 px step spent) keeps the answers closed, with the usual way out, nothing
+    // scored or logged; another tile coming in later does not open them again.
+    let fx = null;
+    for (let i = 0; i < 80 && !fx; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) fx = SHOWNQ;
+      else smokeAnswer();
+    }
+    ok(fx, 'a Find the X for the failed tile');
+    if (fx) {
+      const ims = [...document.querySelectorAll('#view .fxt img')],
+        // a distractor's tile
+        bad = ims[fx[2].findIndex(n => n !== fx[1])],
+        good = ims.filter(im => im !== bad),
+        logN = () => (SYNC ? SYNC.log : store.get(LOG0, [])).length,
+        n0 = logN(),
+        // answer.js: a tap on the right tile, as a player's (whether it is taken is what this checks)
+        tapRight = () => document.querySelector(`#view .fxt [data-c="${CSS.escape(fx[1])}"]`).click(),
+        // the other three in (a file of the site: the photos' host is out of reach in the smokes), so the stage has photos
+        come = im =>
+          new Promise(
+            res => (
+              im.addEventListener('load', res, {once: true}),
+              im.setAttribute('src', 'icon-192.png?' + ims.indexOf(im) + '-' + Date.now())
+            )
+          );
+      await Promise.all(good.map(come));
+      ok(QCLOCK.t0 === null, 'three tiles in, one loading: the clock still waits');
+      tapRight();
+      ok(logN() === n0 && !document.querySelector('#view .q.done'), 'no answer taken while a tile is still loading');
+      // as at the end of its way: R2 asked again (r2try), its 480 px step spent (low, no data-lo left), retried twice
+      Object.assign(bad.dataset, {retry: '2', low: '1', r2try: '1'});
+      bad.removeAttribute('data-lo');
+      bad.setAttribute('src', 'data:image/gif;base64,');
+      bad.dispatchEvent(new Event('error'));
+      // answer.js: the answers' state after a tile failed (none can be answered: nothing to smokeAnswer)
+      const shut = () => [...document.querySelectorAll('#view .fxt [data-c]')].every(b => b.disabled);
+      ok(shut() && document.querySelector('#view .q.qnone') && document.getElementById('qfail'), 'a missing tile closes the answers');
+      await come(good[0]);
+      ok(shut(), 'another tile loading does not open them again');
+      tapRight();
+      ok(logN() === n0 && !document.querySelector('#view .q.done'), 'nothing scored or logged on a set with a tile missing');
+    }
+    // Back to 0: none.
+    FIND.P = 0;
+    let none = 0;
+    for (let i = 0; i < 30; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) none++;
+      smokeAnswer();
+    }
+    ok(!none, `${none} Find the X with FIND.P 0`);
+    return fails;
+  });
+  await c.close();
+  return r.map(m => `find the X: ${m}`);
+}
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
 async function freshPlayers(b, base, errs) {
@@ -1397,6 +1566,8 @@ async function freshPlayers(b, base, errs) {
     // already behind ? (fish beta QA, 2026-11-06: measured under it, before its observer ran, Q1 got the minimum height,
     // a small letterboxed photo): the stage takes the window below the header, measured at once.
     const fit1 = await q.evaluate(() => {
+      // A photo-to-name question from here on (its stage, its enlarged photo): no Find the X (quiz.js FIND; (11) checks it).
+      FIND.P = 0;
       quizPhoto();
       const Q = $v.querySelector('.q'),
         want = innerHeight - Q.getBoundingClientRect().top - window.scrollY - 16 - tabH();
@@ -2240,7 +2411,8 @@ async function freshPlayers(b, base, errs) {
       for (let i = 0; i < 12 && answersSoFar() < 3; i++) {
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
         if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-        if (!(await until(() => document.querySelector(SEL)))) break;
+        // a Find the X's tiles counted in first (tests/answer.js smokeTiles: the photos' host is out of reach here)
+        if (!(await until(() => (window.smokeTiles && smokeTiles(), document.querySelector(SEL))))) break;
         smokeAnswer();
         await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
@@ -2517,6 +2689,8 @@ async function freshPlayers(b, base, errs) {
   }
   // (9) A brand-new fish player: freshPlayers, above (its own CI shard).
   const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
+  // (11) Find the X: findTheX, above.
+  const fx = await findTheX(b, base, errs);
   // (10) The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -2830,7 +3004,7 @@ async function freshPlayers(b, base, errs) {
         );
     }
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));
