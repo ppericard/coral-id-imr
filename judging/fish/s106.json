@@ -103,6 +103,50 @@
   "fish-s106-cand-fb-Popav_u0": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s106-cand-458272058": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s106-cand-565333726": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s106-cand-463213017": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s106-cand-463213079": {
+   "code": "h1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s106-cand-461754262": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s106-cand-631823814": {
+   "code": "o1g1mls3",
+   "keep": "best"
+  },
+  "fish-s106-cand-669329095": {
+   "code": "o1g1ml12",
+   "keep": "best"
+  },
+  "fish-s106-cand-637992289": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s106-cand-637992310": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s106-cand-494615992": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s106-cand-494616195": {
+   "code": "o1g1sl13",
+   "keep": "dup"
   }
  }
 }

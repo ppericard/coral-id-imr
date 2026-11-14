@@ -144,6 +144,26 @@
   "fish-s095-cand-255242250": {
    "code": "p1g1sl14",
    "keep": "best"
+  },
+  "fish-s095-cand-519030031": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s095-cand-2442616": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s095-cand-554423965": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s095-cand-705529089": {
+   "code": "d1g2smo2",
+   "keep": "best"
+  },
+  "fish-s095-cand-303761101": {
+   "code": "p1g0sm14",
+   "keep": "best"
   }
  }
 }
