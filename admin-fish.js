@@ -409,7 +409,7 @@ function renderFishCand() {
     $v.innerHTML = `<section class="adm-sw adm-fsw${chk ? ' adm-blind' : ''}${FTAGS_OPEN ? ' adm-ftopen' : ''}" data-f="${esc(p.f)}" data-s="${esc(sid)}">${seg}
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${fishSrc(pb, 0, chk)} alt=""></button>
-        <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}</span>
+        <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}${fishPtx(FISHC.species[sid])}</span>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${fishSrcTag(p)}${!chk && ph ? `<span class="adm-src${nph ? ' adm-fnew' : ''}" title="${nph ? 'A phase none of its photos in play shows' : 'Its phase'}">${esc(ph)}${nph ? ' · new' : ''}</span>` : ''}${p.st ? `<span class="adm-src" title="iNaturalist / FishBase life stage or sex">${esc(p.st)}</span>` : ''}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : fishJudged(j)}
