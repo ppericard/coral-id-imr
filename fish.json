@@ -1,5 +1,6 @@
 {
 "v":1,
+"centre":{"name":"Dauin","lat":9.19,"lon":123.26,"radiusKm":40},
 "start":["t02","t03","t01","t06"],
 "key":{"id":"tropical-pacific-2015","region":{"name":"Indo-Pacific","area":"tropical Indo-West Pacific"},"cite":"Allen, G., Steene, R., Humann, P. & DeLoach, N. (2015). Reef Fish Identification – Tropical Pacific, 2nd ed. New World Publications. ISBN 978-1-878348-60-9","short":"Allen et al. 2015","groups":[
 {"n":1,"title":"Disk-shaped/Colorful","pages":[16,43]},

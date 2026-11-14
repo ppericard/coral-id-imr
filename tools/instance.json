@@ -1,0 +1,4 @@
+{
+ "_doc": "This instance's own settings (Pierre, 2026-11-13, Q339: the instance's central location made generic, should other organisations get instances of their own). centre: the place the instance is about, the centre of its \"near\" area: presence near it (tools/presence.py NEAR_AREA, rule C8) and the default covers (a node's leaf most seen around it: docs/ARCHITECTURE.md \"Fish content\"); lat and lon in degrees, radiusKm the area's radius. Written into fish.json centre by tools/build_fish.py (every mode). Another organisation's instance sets its own; the tools that still hard-wire Dauin's area: docs/ARCHITECTURE.md \"The instance's centre\".",
+ "centre": {"name": "Dauin", "lat": 9.19, "lon": 123.26, "radiusKm": 40}
+}

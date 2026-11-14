@@ -496,6 +496,24 @@ const WIDTHS = [390, 1280];
         )
           fails.push(`${w}px Tree: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
         if (w === 1280 && u.cur !== 'f:Damselfishes') fails.push(`${w}px Tree: Damselfishes not the row selected (${u.cur})`);
+        // The Chromis heading's default thumb (no genus cover of his): its species most seen around the instance's centre
+        // among the species with a reference-level adult photo in play, else with an adult photo (autosort.js fishCoverOf,
+        // the species records admin-fish.js registers; Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864).
+        const cs = await p.evaluate(() => {
+          const t = document.querySelector('.adm-fgen[data-gen="g:Chromis"] > .adm-fgenh .adm-hthumb'),
+            k = sid => fishNear(FISHC.species[sid])[0] * 1e6 + fishNear(FISHC.species[sid])[1],
+            rows = [...document.querySelectorAll('.adm-fgen[data-gen="g:Chromis"] .adm-row[data-sid]')].map(r => r.dataset.sid),
+            adult = q => !fishJuv(q, fuJ(q.f), DRAFT.fish),
+            withRef = rows.filter(sid => FISHC.plays.some(q => q.sp === sid && adult(q) && refLevel(fishRec(q, DRAFT.fish, fuJ)))),
+            sids = withRef.length ? withRef : rows.filter(sid => FISHC.plays.some(q => q.sp === sid && adult(q)));
+          if (((DRAFT.fish || {}).genera || {})['g:Chromis'] || !sids.length) return {skip: 1};
+          return {
+            sid: t && t.dataset.sid,
+            ok: !!t && k(t.dataset.sid) === Math.max(...sids.map(k)),
+            best: sids.sort((a, b) => k(b) - k(a))[0]
+          };
+        });
+        if (!cs.skip && !cs.ok) fails.push(`${w}px Tree: the Chromis heading is not its most seen species ${JSON.stringify(cs)}`);
         // A genus and a species open their family's page there (node pages come later): the family in the select, the
         // node selected in the tree (unfolded to it), its section in view under the sticky bar.
         for (const id of ['g:Chromis', 's091']) {

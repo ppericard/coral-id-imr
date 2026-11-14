@@ -14,7 +14,9 @@ mixes sources on purpose for variety.
 - **Fish: no source priority.** A fish photo is never forced or boosted for who took it, Pierre's own included: the
   first photos a player meets, the cards and the sheets lead with the easiest, most reference-like photos (the judged
   ease, then the players' ratings), whoever took them; his photos stay in the pool and come first only when they are
-  themselves the easiest (`core.js` `easyRank`). **One exception for his own photos:** every photo of his that is
+  themselves the easiest (`core.js` `easyRank`). **A default cover** (a family's or a genus's, any node with leaves,
+  when he has picked none) is a photo of its leaf **most seen around the instance's centre by distinct observers**, that
+  leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `fishCoverOf`). **One exception for his own photos:** every photo of his that is
   compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
   included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`).
 - **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
@@ -23,8 +25,8 @@ mixes sources on purpose for variety.
   the Candidate photos workflow); his curation only removes or corrects them.
 - **Fish reference photos first.** Every photo of reference quality, whoever took it, comes first: a reference
   source's own (iNaturalist's taxon cover and taxon-page photos, FishBase's main picture) judged very easy, or any photo
-  judged very easy with the reference look (whole fish, side profile, true colours, sharp). They are the covers and each
-  list's first photos and the draw favours them, never exclusively (`core.js` `refLevel`, `model.js` `photoSet`).
+  judged very easy with the reference look (whole fish, side profile, true colours, sharp). They are each list's first
+  photos and the covers (of the leaf a default cover shows: above) and the draw favours them, never exclusively (`core.js` `refLevel`, `model.js` `photoSet`).
   **FishBase photos enter the game automatically** when their licence allows (CC BY-NC as FishBase states it), with
   every other game photo rule; several good photos per species, from iNaturalist and FishBase, to complement the weaker
   ones (`tools/fish_refs.py`).
@@ -54,7 +56,8 @@ Pierre's own; among equals, an open licence grows the stock a later commercial v
 *Source:* Pierre, by 2026-11-01; caveat and fish, 2026-11-04; licences and `thamnasteroid`, 2026-11-05 (#568); no
 source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06; fish reference photos first and FishBase in automatically,
 2026-11-06; fish photos in play by themselves once judged, hosted on R2 whatever their route in, 2026-11-06 (Q180, Q199); reference photos in like candidates, whatever their
-level, 2026-11-08 (Q212); licence as the last tie-break, 2026-11-08 (Q270, Q283), the fish fetch's too, 2026-11-08 (Q284).
+level, 2026-11-08 (Q212); licence as the last tie-break, 2026-11-08 (Q270, Q283), the fish fetch's too, 2026-11-08 (Q284); a default cover from the
+leaf most seen around the instance's centre, 2026-11-13 (Q339).
 
 ### P2
 
