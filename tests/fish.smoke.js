@@ -1525,6 +1525,29 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => location.hash === '#fish/learn/species/Zanclus%20cornutus', null, {timeout: 15000}).catch(() => {});
     const zh = await q.evaluate(() => location.hash);
     if (zh !== '#fish/learn/species/Zanclus%20cornutus') ui.push(`${width}px a one-species genus: ${zh}`);
+    // The name roots (Q124 d, learn.js fishRoot, fish.json root from The ETYFish Project): a one-species genus's line on
+    // its species' sheet, the one sheet the genus opens; a genus page's below, on Amphiprion's.
+    const nameRoot = () =>
+      q.evaluate(() => {
+        const L = [...document.querySelectorAll('#view .fsheet .nameroot')];
+        return L.map(r => ({
+          t: r.textContent,
+          box: !!r.closest('.tipbox'),
+          vis: r.offsetHeight > 0,
+          links: [...r.querySelectorAll('a')].map(a => a.href)
+        }));
+      });
+    const rootOk = (L, re) =>
+      L.length === 1 &&
+      re.test(L[0].t) &&
+      !L[0].box &&
+      L[0].vis &&
+      L[0].links.length &&
+      L[0].links.every(u => /^https:\/\/etyfish\.org\//.test(u));
+    await q.waitForFunction(() => document.querySelector('#view .fbadges'), null, {timeout: 15000}).catch(() => {});
+    const zr = await nameRoot();
+    if (!rootOk(zr, /^Name roots: Zancl·us: “sickle” \(zanklon\)\. The ETYFish Project \(Zanclus\)$/))
+      ui.push(`${width}px Zanclus name roots: ${JSON.stringify(zr)}`);
     // A genus common name (fish.json genera common): under the genus page's scientific name, on its family sheet's row and
     // on its species' genus chip.
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Amphiprion'));
@@ -1537,6 +1560,9 @@ async function freshPlayers(b, base, errs) {
       sub: (document.querySelector('#view .fsheet .fn-s') || {}).textContent || '',
       src: (document.querySelector('#view .fsheet .sheetmore .refs') || {}).textContent || ''
     }));
+    const ar = await nameRoot();
+    if (!rootOk(ar, /^Name roots: Amphi·prion: “around” \(amphi-\) \+ “saw” \(prion\)\./))
+      ui.push(`${width}px Amphiprion name roots: ${JSON.stringify(ar)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
     await q
       .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})

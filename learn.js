@@ -278,10 +278,18 @@ addEventListener('resize', () => packGroups(document.getElementById('azgrid')));
 // The roots of a genus name, as a memory aid (Pierre, 2026-11-14, Q124 d): data.json `root` (tools/apply_name_roots.py),
 // each part's meaning with its Latin or Greek word and the dictionary it comes from, under the ID tips and apart from
 // them (an addition, never an IMR line: rule C1). An ending that 3 or more slate genera share (-pora) says it does not
-// tell them apart, counted here (rule U8). '' for a genus without a sourced root.
-const rootLine = (g, slate) => {
+// tell them apart, counted here (rule U8). '' for a genus without a sourced root. Fish genera (fish.json `root`, from
+// The ETYFish Project: tools/fish_genus_roots.json) pass their own genus names and words for where they are counted
+// (fishRoot); their parts may have no word, or be another genus the entry names ("genus") or the person it honours.
+const rootLine = (g, slate, where = 'on the slate') => {
   const r = g && g.root;
   if (!r) return '';
+  const rootPart = x =>
+    x[4] === 'genus'
+      ? `the genus <i>${esc(x[1])}</i>`
+      : x[4] === 'honours'
+        ? `honours ${esc(x[1])}`
+        : `“${esc(x[1])}”${x[2] ? ` (${esc(x[2])})` : ''}`;
   const end = r.p[r.p.length - 1],
     tail = end[1] ? end[0].toLowerCase() : '',
     shared = tail ? slate.filter(n => n.toLowerCase().endsWith(tail)).length : 0;
@@ -289,10 +297,10 @@ const rootLine = (g, slate) => {
     `<p class="nameroot"><b>Name roots:</b> <i>${r.p.map(x => esc(x[0])).join('·')}</i>: ` +
     r.p
       .filter(x => x[1])
-      .map(x => `“${esc(x[1])}” (${esc(x[2])})`)
+      .map(rootPart)
       .join(' + ') +
     `.${r.fit ? ` It fits the ID tip “${esc(r.fit)}”.` : ''}` +
-    `${shared >= 3 ? ` ${shared} genera on the slate end in -${esc(tail)}: the ending alone does not tell them apart.` : ''}` +
+    `${shared >= 3 ? ` ${shared} genera ${esc(where)} end in -${esc(tail)}: the ending alone does not tell them apart.` : ''}` +
     ` <span class="rsrc">${r.src.map(srcA).join(' · ')}</span></p>`
   );
 };
@@ -958,6 +966,17 @@ function viewFishSheet(id) {
   if (at !== id) return void location.replace(hrFull('g-' + at));
   sp ? fishSpecies(sp) : T.gen[at] ? fishGenus(T.gen[at]) : fishFamily(f);
 }
+// A fish genus's name roots (Q124 d: fish.json root, learn.js rootLine) on the one sheet the genus opens (fishTree go,
+// `at`): its own page, its one species' sheet, or its family's when it is the only genus with several species; the
+// shared ending counted over every fish genus (rule U8). '' anywhere else.
+const fishRoot = (g, at) =>
+  g && g.root && fishGo(g.id) === at
+    ? rootLine(
+        g,
+        Object.values(ftree().gen).map(x => x.name),
+        'among the fish'
+      )
+    : '';
 // The photos enlarge, the species filter redraws the page where it was.
 const fishBind = (flat, redraw) => {
   $v.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.z))));
@@ -1138,6 +1157,7 @@ function fishFamily(f) {
       <div class="idbox">
         ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
         ${fishMarks(f)}
+        ${G.map(g => fishRoot(g, f.id)).join('')}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
         <details class="more sheetmore"><summary>More details</summary>
         <p class="note refs"><b>References:</b> ${f.cues ? 'IMR fish presentation' + (f.sl ? ' (' + esc(slideLine(f.sl)) + ')' : '') + ' · ' : ''}${key ? esc(key.cite) + (gr && gr.pages ? `, pp. ${gr.pages.join('-')}` : '') + ' · ' : ''}${(
@@ -1181,6 +1201,7 @@ function fishGenus(g) {
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
     ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div></div>` : ''}
+    ${fishRoot(g, g.id)}
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
     <h3>Species <small>${L.length}</small></h3>${fishTiles(L, flat)}
     ${sib.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${sib.map(card).join('')}</div></section>` : ''}
@@ -1224,6 +1245,7 @@ function fishSpecies(s) {
     <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${s.common ? `<p class="fn-s">${esc(s.common)}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
+    ${fishRoot(g, 's:' + s.name)}
     ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
     ${
       shown.length
