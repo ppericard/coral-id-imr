@@ -2207,6 +2207,11 @@ body:has(.lk) main {
   height: 100%;
   object-fit: cover;
 }
+/* A tile fallen back on its photo (app.js tileSrc: R2 out, or its retries spent): the photo whole, never a centre crop
+   that cuts the fish (Codex review #885). */
+.fxt img:not([src*='-x.webp']) {
+  object-fit: contain;
+}
 .fxt kbd {
   position: absolute;
   left: 8px;

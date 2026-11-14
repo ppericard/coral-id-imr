@@ -318,7 +318,7 @@ const qclockRead = () =>
 // clock).
 function qclockArm() {
   const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
-    ims = [...$v.querySelectorAll('.qstage .qph img, .qstage .fxt img')];
+    ims = [...$v.querySelectorAll('.qstage .qph img')]; // a Find the X's tiles start it in its gate (question), all four in
   Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
   if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
   else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
@@ -354,13 +354,18 @@ function question(cur, target, choices, prompt, set, kq) {
   fitStage();
   qclockArm();
   // Find the X: its photos are its choices, so it is answered only once all four are in (a tile still loading is a choice
-  // the player cannot see; Codex review #885). One that fails for good keeps them closed: app.js's error listener then
+  // the player cannot see; Codex review #885), and its clock starts then. One that fails for good keeps them closed: app.js's error listener then
   // offers another question, and nothing is scored or logged.
   if (fx) {
     const q = $v.querySelector('.q'),
       tiles = [...q.querySelectorAll('.qstage .fxt img')],
       inn = new Set(tiles.filter(im => im.complete && im.naturalWidth)),
-      gate = () => qAnswers(q, inn.size === tiles.length && !q.classList.contains('qnone'));
+      gate = () => {
+        const all = inn.size === tiles.length && !q.classList.contains('qnone');
+        // its clock from the moment it can be answered: a tile's download is no time spent recognising (rtWeight)
+        if (all) qclockGo();
+        qAnswers(q, all);
+      };
     tiles.forEach(im => im.addEventListener('load', () => (inn.add(im), gate())));
     gate();
   }

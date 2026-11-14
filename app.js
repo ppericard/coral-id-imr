@@ -156,9 +156,10 @@ const loc = (p, s) => {
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
 // A fish photo's tile (Find the X; tools/fish_game.py, Pierre 2026-11-09, Q321 D4): {f}-x.webp on R2, a 360 px square cut
-// around the fish, its square (xc) in the address so a new box is a new file for the caches. A photo with none, or once R2
-// has failed (a tile has no online original), its 480 px file instead, the fish whole in its photo.
-const tileSrc = p => (p.xc && !p.r && !AWAY ? photoUrl(`img/${p.f}-x.webp?x=${p.xc.join('_')}`) : img(p, 's'));
+// around the fish, its square (xc) and its rewrite count (iv: a rotation corrected leaves xc as it was) in the address,
+// so a new tile is a new file for the caches (sw.js serves photos cache-first; Codex review #885). A photo with none, or
+// once R2 has failed (a tile has no online original), its 480 px file instead, the fish whole in its photo.
+const tileSrc = p => (p.xc && !p.r && !AWAY ? photoUrl(`img/${p.f}-x.webp?x=${p.xc.join('_')}${p.iv ? '.' + p.iv : ''}`) : img(p, 's'));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
 // Saver takes the 480 px file for game photos and stage photos whatever the box; Full always takes the 1600 px file. Auto is Saver when the browser reports

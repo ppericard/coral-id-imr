@@ -167,6 +167,8 @@ async function findTheX(b, base, errs) {
         [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
         'the tile files'
       );
+      // Its clock waits for the four tiles (none has come here: the photos' host is out of reach).
+      ok(QCLOCK.t0 === null, 'the clock waits for the four tiles');
       // A wrong tap the first time, right after.
       const pick = wrong ? t : ch.find(n => n !== t),
         before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
@@ -180,6 +182,8 @@ async function findTheX(b, base, errs) {
         ok(a.ph === set.shown[0].f && a.ph === set.find.find(x => x.n === t).p.f, `its photo: ${a.ph}`);
         ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
         ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
+        // timed from its gate (smokeAnswer counted the four tiles in, then tapped): a few tenths at most
+        ok(typeof a.rt === 'number' && a.rt < 5, `its seconds from the four tiles: ${a.rt}`);
       }
       // answer.js: the tiles marked once answered (a read, after smokeAnswer)
       const ok1 = document.querySelector('#view .fxt.fok [data-c]'),
@@ -221,6 +225,7 @@ async function findTheX(b, base, errs) {
             )
           );
       await Promise.all(good.map(come));
+      ok(QCLOCK.t0 === null, 'three tiles in, one loading: the clock still waits');
       tapRight();
       ok(logN() === n0 && !document.querySelector('#view .q.done'), 'no answer taken while a tile is still loading');
       // as at the end of its way: R2 asked again (r2try), its 480 px step spent (low, no data-lo left), retried twice
@@ -2406,7 +2411,8 @@ async function freshPlayers(b, base, errs) {
       for (let i = 0; i < 12 && answersSoFar() < 3; i++) {
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
         if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-        if (!(await until(() => document.querySelector(SEL)))) break;
+        // a Find the X's tiles counted in first (tests/answer.js smokeTiles: the photos' host is out of reach here)
+        if (!(await until(() => (window.smokeTiles && smokeTiles(), document.querySelector(SEL))))) break;
         smokeAnswer();
         await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));

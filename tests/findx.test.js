@@ -318,3 +318,20 @@ test('the tiles: the fish data holds families with tiles enough for the format t
   // Every tile's square: four numbers (fractions of the original; past its edge where the photo's blurred copy fills it).
   Object.values(gm.photos).forEach(L => L.filter(p => p.xc).forEach(p => assert.ok(p.xc.length === 4 && p.xc.every(Number.isFinite), p.f)));
 });
+
+test("the tile's address: its square and its rewrite count, so a corrected tile is a new file for the caches", () => {
+  const ctx = {AWAY: false, photoUrl: u => 'R2/' + u, img: (p, s) => `img:${p.f}:${s}`};
+  vm.createContext(ctx);
+  vm.runInContext(cut(app, 'const tileSrc = p =>', ';\n', {through: 1, file: 'app.js'}) + 'this.tileSrc = tileSrc;', ctx);
+  const p = {f: 'fa', xc: [0.1, 0.2, 0.9, 1.1]};
+  assert.strictEqual(ctx.tileSrc(p), 'R2/img/fa-x.webp?x=0.1_0.2_0.9_1.1');
+  assert.strictEqual(ctx.tileSrc({...p, iv: 2}), 'R2/img/fa-x.webp?x=0.1_0.2_0.9_1.1.2');
+  assert.notStrictEqual(ctx.tileSrc({...p, iv: 3}), ctx.tileSrc({...p, iv: 2}), 'a rotation corrected (iv bumped, xc the same)');
+  // No tile, a candidate not downloaded yet, or R2 failed: the 480 px photo.
+  assert.strictEqual(ctx.tileSrc({f: 'fb'}), 'img:fb:s');
+  assert.strictEqual(ctx.tileSrc({...p, r: 1}), 'img:fa:s');
+  ctx.AWAY = true;
+  assert.strictEqual(ctx.tileSrc(p), 'img:fa:s');
+  // That photo shown whole in its square, never centre-cropped (app.css).
+  assert.match(read('app.css'), /\.fxt img:not\(\[src\*='-x\.webp'\]\) \{\n {2}object-fit: contain;/);
+});
