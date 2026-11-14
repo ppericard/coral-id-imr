@@ -1521,7 +1521,8 @@ async function signin(base) {
         for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-          if (!(await until(() => document.querySelector(SEL)))) break;
+          // a Find the X's tiles counted in first (tests/answer.js smokeTiles: the photos' host is out of reach here)
+          if (!(await until(() => (window.smokeTiles && smokeTiles(), document.querySelector(SEL))))) break;
           const n0 = answersSoFar();
           smokeAnswer();
           // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).
@@ -5011,6 +5012,28 @@ const PARTS = [
     });
     if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
       fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
+    // The roots of the name (Q124 d, learn.js rootLine): on the same sheet, after the ID tips box and outside it, with
+    // its dictionary links.
+    const rt = await p.evaluate(() => {
+      const e = document.querySelector('#view .sheet .nameroot'),
+        tips = document.querySelector('#view .sheet .tipbox');
+      return {
+        text: e ? e.textContent : '',
+        afterTips: !!(e && tips && tips.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING),
+        inTips: !!(e && e.closest('.tipbox')),
+        links: e ? [...e.querySelectorAll('.rsrc a')].map(a => a.href) : [],
+        visible: !!(e && e.getBoundingClientRect().height > 0)
+      };
+    });
+    if (
+      !/^Name roots: Goni·astrea: “angle” \(Greek gōnia\) \+ “star” \(Greek astēr\)\. It fits the ID tip/.test(rt.text) ||
+      !rt.afterTips ||
+      rt.inTips ||
+      !rt.visible ||
+      !rt.links.length ||
+      !rt.links.every(u => /^https:\/\//.test(u))
+    )
+      fails.push(`${w}px genus sheet name roots: ${JSON.stringify(rt)}`);
     // The tool is the Coral ID Key (Pierre, 2026-11-04): "Coral Finder" on a page (help, folds and pop-ups included)
     // only names the book, cited by page (Coral Finder p. 63, Same Coral Finder box: …, p. 47-56), as the 2022 book,
     // "the Coral Finder book" or one of its terms (tests/idkey.test.js checks the code's strings).

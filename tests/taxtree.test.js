@@ -3,7 +3,7 @@
 // several shapes (never assuming a level count or rank names).
 const test = require('node:test'),
   assert = require('node:assert');
-const {ttBuild, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey} = require('../taxtree.js');
+const {ttBuild, ttFromRef, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey} = require('../taxtree.js');
 
 // A chain of 9 levels with ranks of any word, one missing (absent) and one empty, and a side branch.
 const deep = () => {
@@ -161,4 +161,102 @@ test('taxtree: the WAI-ARIA tree keys', () => {
   assert.strictEqual(ttKey(T, rows(), 'g1', 'a'), null);
   // a row no longer on screen: the focus goes to the first
   assert.deepStrictEqual(ttKey(T, rows(), 'gone', 'ArrowDown'), {focus: 'g1'});
+});
+
+// A classification read from a reference table (ttFromRef: WoRMS's AphiaIDs for the fish, admin.js fuWormsOf), on a
+// made-up table: its ranks as the table spells them, any depth, the leaves keeping their own ids.
+const REF = {
+  1: {name: 'Teleostei', rank: 'Class', parent: null},
+  2: {name: 'Perciformes', rank: 'Order', parent: 1},
+  3: {name: 'Percoidei', rank: 'Suborder', parent: 2},
+  4: {name: 'Serranidae', rank: 'Family', parent: 3},
+  5: {name: 'Anthiadinae', rank: 'Subfamily', parent: 4},
+  6: {name: 'Pseudanthias', rank: 'Genus', parent: 5},
+  7: {name: 'Pseudanthias squamipinnis', rank: 'Species', parent: 6},
+  8: {name: 'Pseudanthias tuka', rank: 'Species', parent: 6},
+  9: {name: 'Pomacentridae', rank: 'Family', parent: 1},
+  10: {name: 'Chromis', rank: 'Genus', parent: 9},
+  11: {name: 'Chromis viridis', rank: 'Species', parent: 10},
+  12: {name: 'Unplaced', parent: 1}
+};
+const W = o => ({id: k => 'w:' + k, rank: r => r.toLowerCase(), ...o});
+
+test('taxtree: a tree from a reference table, any depth, ranks as the table names them, leaves keep their ids', () => {
+  const leaves = [
+      {id: 's1', name: 'Sea goldie', ref: 7, rank: 'species'},
+      {id: 's2', name: 'Chromis', ref: 11, rank: 'species'},
+      // two leaves on one reference (a synonym the game keeps apart): both stay, under the same parent
+      {id: 's3', name: 'Sea goldie (old name)', ref: '7', rank: 'species'},
+      {id: 's4', name: 'Purple queen', ref: 8, rank: 'species', up: 'ignored'}
+    ],
+    {nodes, problems} = ttFromRef(leaves, REF, W());
+  assert.deepStrictEqual(problems, []);
+  const T = ttBuild(nodes);
+  assert.deepStrictEqual(T.problems, []);
+  assert.deepStrictEqual(T.roots, ['w:1']);
+  // depth: 7 levels down to Pseudanthias's species, 4 to Chromis's
+  assert.deepStrictEqual(ttPath(T, 's1'), ['w:1', 'w:2', 'w:3', 'w:4', 'w:5', 'w:6', 's1']);
+  assert.deepStrictEqual(ttPath(T, 's2'), ['w:1', 'w:9', 'w:10', 's2']);
+  // the ranks as the table spells them, through the adapter's map; a reference with no rank gets none
+  assert.deepStrictEqual(
+    ttPath(T, 's1').map(x => T.node.get(x).rank),
+    ['class', 'order', 'suborder', 'family', 'subfamily', 'genus', 'species']
+  );
+  // each ancestor once, with its name and its reference key; a reference only above no leaf is not made
+  assert.deepStrictEqual(T.node.get('w:6'), {id: 'w:6', name: 'Pseudanthias', ref: '6', rank: 'genus', up: 'w:5'});
+  assert.ok(!T.node.has('w:12') && !T.node.has('w:7'));
+  assert.strictEqual(nodes.filter(n => n.id === 'w:1').length, 1);
+  // the leaves keep their own ids and fields; the leaf's own up is never read; siblings in the order the leaves meet them
+  assert.deepStrictEqual(T.kids.get('w:6'), ['s1', 's3', 's4']);
+  assert.deepStrictEqual(T.kids.get('w:1'), ['w:2', 'w:9']);
+  assert.strictEqual(T.node.get('s3').name, 'Sea goldie (old name)');
+  assert.deepStrictEqual(ttLeaves(T, 'w:1'), ['s1', 's3', 's4', 's2']);
+  // the ids of the two namespaces never meet: only the leaves are ids of the subject's own
+  assert.deepStrictEqual(
+    [...T.node.keys()].filter(x => !x.startsWith('w:')),
+    ['s1', 's2', 's3', 's4']
+  );
+  // a rank-less reference: no rank
+  const T1 = ttBuild(ttFromRef([{id: 'z', ref: 11}], {...REF, 10: {name: 'Chromis', parent: 9}}, W()).nodes);
+  assert.ok(!('rank' in T1.node.get('w:10')));
+  // without a map, the reference keys are the ids and the ranks are kept as spelt
+  const T2 = ttBuild(ttFromRef([{id: 's2', ref: 11}], REF).nodes);
+  assert.deepStrictEqual(ttPath(T2, 's2'), ['1', '9', '10', 's2']);
+  assert.strictEqual(T2.node.get('9').rank, 'Family');
+});
+
+test('taxtree: a reference table with gaps: missing parents and references reported, never fixed silently', () => {
+  const ref = {
+      ...REF,
+      // a family whose parent the table does not have, and a genus under it
+      20: {name: 'Lost family', rank: 'Family', parent: 99},
+      21: {name: 'Lostgenus', rank: 'Genus', parent: 20},
+      22: {name: 'Lostgenus one', rank: 'Species', parent: 21},
+      // a species whose genus the table does not have
+      23: {name: 'Orphan two', rank: 'Species', parent: 98},
+      // a cycle in the table
+      30: {name: 'Loop A', rank: 'Order', parent: 31},
+      31: {name: 'Loop B', rank: 'Order', parent: 30},
+      32: {name: 'Loopy one', rank: 'Species', parent: 30}
+    },
+    leaves = [{id: 'a', ref: 22}, {id: 'b', ref: 23}, {id: 'c', ref: 404}, {id: 'd'}, {id: 'e', ref: 32}, {id: 'f', ref: 11}],
+    {nodes, problems} = ttFromRef(leaves, ref, W()),
+    why = Object.fromEntries(problems.map(p => [p.id, p.why]));
+  assert.strictEqual(why['w:20'], 'parent not found: 99');
+  assert.strictEqual(why.b, 'parent not found: 98');
+  assert.strictEqual(why.c, 'reference not found: 404');
+  assert.strictEqual(why.d, 'no reference');
+  assert.strictEqual(problems.length, 4);
+  const T = ttBuild(nodes);
+  // what lost its parent becomes a root, what is under it stays under it; every leaf is kept
+  assert.ok(['w:20', 'b', 'c', 'd'].every(x => T.roots.includes(x)));
+  assert.deepStrictEqual(ttPath(T, 'a'), ['w:20', 'w:21', 'a']);
+  assert.deepStrictEqual(ttPath(T, 'f'), ['w:1', 'w:9', 'w:10', 'f']);
+  // the cycle stops the walk (no hang); ttBuild reports it and cuts it, the leaf under it kept
+  assert.deepStrictEqual(
+    T.problems.map(p => p.why),
+    ['cycle']
+  );
+  assert.strictEqual(ttPath(T, 'e').pop(), 'e');
+  assert.ok(['a', 'b', 'c', 'd', 'e', 'f'].every(x => T.node.has(x)));
 });

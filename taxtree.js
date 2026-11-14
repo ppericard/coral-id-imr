@@ -48,6 +48,58 @@
     });
     return {node, kids, up, roots, problems};
   }
+  // The nodes of a classification read from a reference table (a parent-pointer table keyed by the reference's own ids:
+  // {key: {name, rank, parent (a key, none for a root)}}, WoRMS's AphiaIDs for a marine subject), hung above the leaves
+  // the subject plays: each leaf keeps its own id and fields (two leaves may share one reference: a synonym kept apart),
+  // under the parent of its reference; each ancestor becomes one node, once, {id: o.id(key), name, rank: o.rank(rank),
+  // up, ref: key}, so its id lives in the adapter's namespace and never meets a leaf's. Nodes come in the order the
+  // leaves meet them (a parent before its children). Reported, never fixed silently ({id, why}): a leaf with no
+  // reference, or one the table does not have, and a parent the table does not have (the node becomes a root); a cycle
+  // in the table stops the walk, and ttBuild reports and cuts it. Returns {nodes, problems} for ttBuild.
+  function ttFromRef(leaves, ref, o = {}) {
+    const idOf = o.id || (k => String(k)),
+      rankOf = o.rank || (r => r),
+      R = ref || {},
+      has = k => k != null && k !== '' && Object.prototype.hasOwnProperty.call(R, k),
+      nodes = [],
+      problems = [],
+      made = new Set();
+    // The ancestors from key k up, those not made yet, made root first; the id of k (null for none).
+    const up = (k, from) => {
+      if (k == null || k === '') return null;
+      if (!has(k)) {
+        problems.push({id: from, why: 'parent not found: ' + k});
+        return null;
+      }
+      const walk = [];
+      for (let x = k; has(x) && !made.has(String(x)); x = R[x].parent) {
+        made.add(String(x));
+        walk.push(x);
+      }
+      walk.reverse().forEach(x => {
+        const r = R[x],
+          p = r.parent,
+          n = {id: idOf(x), name: r.name, ref: String(x)};
+        if (r.rank != null && r.rank !== '') n.rank = rankOf(r.rank);
+        if (has(p)) n.up = idOf(p);
+        else if (p != null && p !== '') problems.push({id: n.id, why: 'parent not found: ' + p});
+        nodes.push(n);
+      });
+      return idOf(k);
+    };
+    (leaves || []).forEach(l => {
+      const n = {...l};
+      delete n.up;
+      if (l.ref == null || l.ref === '') problems.push({id: l.id, why: 'no reference'});
+      else if (!has(l.ref)) problems.push({id: l.id, why: 'reference not found: ' + l.ref});
+      else {
+        const p = up(R[l.ref].parent, l.id);
+        if (p !== null) n.up = p;
+      }
+      nodes.push(n);
+    });
+    return {nodes, problems};
+  }
   // Its ancestors and itself, the root first ([] for an id not in the tree).
   const ttPath = (T, id) => {
     const out = [];
@@ -148,7 +200,7 @@
         return null;
     }
   }
-  const API = {ttBuild, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey};
+  const API = {ttBuild, ttFromRef, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

@@ -1,6 +1,7 @@
 # Fish naming path: design spec
 
-Status: design agreed with Pierre on 2026-11-03; the species level not built. Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
+Status: design agreed with Pierre on 2026-11-03; the species level not built (its step 1, common names, waits on four
+questions: [docs/reviews/2026-11-14-species-step1.md](reviews/2026-11-14-species-step1.md)). Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
 "Subjects", docs/LEARNING.md "Fish on the same model"). This file says what comes next: species names, common then Latin, and the IMR
 shortcut (since 2026-11-04 the fish welcome question and the open-all card). It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
 track: every unlock is a performance threshold or a share that rises with progress (docs/LEARNING.md "Considered and not adopted").
@@ -463,6 +464,8 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
 4. Typed Latin species name (the schedule's last step and the exam).
 5. **"Find the X"** (one name, 4 photos), **fish only**, slipped into the quiz like duels (a small share, spaced, never on a unit not met),
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
+   **Built** (2026-11-14, Q321 D1) on the families, with the square tiles: 5% of the questions that could be one (`quiz.js` `FIND`,
+   `planFind`), logged `quiz|f` (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
 both show the square fish tiles (`judging/FISH.md` "The fish's box"). Later, not agreed yet: photo-to-trait (needs per-photo

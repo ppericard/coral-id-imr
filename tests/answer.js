@@ -41,6 +41,13 @@ const PAGE = () => {
     });
   };
   window.smokeWhere = where;
+  // A Find the X (quiz.js question) opens its answers once its four tiles are in; the smokes keep the photos' host out of
+  // reach, so a tile still waiting is counted in (its load event), as a player's would be once it came. Never one that
+  // failed for good (.fail): that question stays closed, as the app means it.
+  window.smokeTiles = () =>
+    document
+      .querySelectorAll('#view .q:not(.done):not(.qnone) .qstage.qfx .fxt img:not(.fail)')
+      .forEach(im => im.dataset.smokeIn || ((im.dataset.smokeIn = '1'), im.dispatchEvent(new Event('load'))));
   // The name a player types for unit n: a fish entry's name (fish.smoke.js), a genus its own.
   const typedName = n => (typeof GX === 'function' && GX(n) && GX(n).name) || n;
   window.smokeAnswer = (...a) => {
@@ -67,6 +74,7 @@ const PAGE = () => {
       out = {fmt: 'wink', t, given, n: ids.length};
     } else {
       const t = (typeof qNow === 'function' && qNow() && qNow().g) || (typeof SHOWNQ !== 'undefined' && SHOWNQ && SHOWNQ[1]);
+      smokeTiles();
       const bs = [...q.querySelectorAll('[data-c]')],
         f = q.querySelector('.tyform');
       if (bs.length) {
@@ -106,10 +114,12 @@ const install = p => p.evaluate(PAGE);
 // holding the draw, another page, a format SEL does not know), or returns false when optional.
 async function ready(p, {timeout = 30000, optional = false} = {}) {
   await install(p);
-  const ok = await p.waitForSelector(SEL, {timeout}).then(
-    () => true,
-    () => false
-  );
+  const ok = await p
+    .waitForFunction(sel => (window.smokeTiles && smokeTiles(), !!document.querySelector(sel)), SEL, {timeout})
+    .then(
+      () => true,
+      () => false
+    );
   if (ok || optional) return ok;
   const seen = await p.evaluate(() => (window.smokeWhere ? smokeWhere() : location.hash)).catch(e => String(e));
   throw new Error(`no answerable question in ${timeout} ms: ${seen}`);
