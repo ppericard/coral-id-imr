@@ -180,6 +180,18 @@
   "fish-s348-cand-332915331": {
    "code": "o1g2mss1",
    "keep": "alt"
+  },
+  "fish-s348-cand-726143602": {
+   "code": "p1d2ssx1",
+   "keep": "dup"
+  },
+  "fish-s348-cand-332915335": {
+   "code": "p1g2sss1",
+   "keep": "dup"
+  },
+  "fish-s348-cand-756921961": {
+   "code": "o1g2bm11",
+   "keep": "best"
   }
  }
 }

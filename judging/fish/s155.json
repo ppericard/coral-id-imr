@@ -199,6 +199,14 @@
   "fish-s155-cand-597403482": {
    "code": "p1g1mls3",
    "keep": "best"
+  },
+  "fish-s155-cand-625452303": {
+   "code": "p1g2sss1",
+   "keep": "dup"
+  },
+  "fish-s155-cand-625452304": {
+   "code": "p1g1sso2",
+   "keep": "alt"
   }
  }
 }
