@@ -2024,14 +2024,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // One opening rule (model.js OPEN, openChance): when the path allows a card, this question opens a genus with the
     // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
     fresh =
-      !sel &&
-      !start &&
-      !warm &&
-      met.length &&
-      !noOpen() &&
-      !introHold() &&
-      openPace(at, soon) &&
-      openRight(at)
+      !sel && !start && !warm && met.length && !noOpen() && !introHold() && openPace(at, soon) && openRight(at)
         ? list.filter(n => !introduced(n) && mayOpen(n))
         : [];
   if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];

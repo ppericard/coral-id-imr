@@ -678,6 +678,9 @@ function fishGenera(X, F) {
           ig: E.ig,
           forms: E.forms,
           look: ids.filter(o => o !== id),
+          // Its declared look-alikes for the confusion groups (model.js declaredOf; Pierre, 2026-11-14, Q350 g): the genera
+          // IMR teaches under the same sub-entry (the Surgeonfish: Acanthurus, Ctenochaetus, Zebrasoma), not every sibling.
+          decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
           lk: [],
           lsrc: {},
           qt: cues,

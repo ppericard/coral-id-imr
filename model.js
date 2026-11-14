@@ -523,6 +523,119 @@ const laterWaits = fresh => {
   const sl = new Set(slateGenera());
   return fresh.some(n => sl.has(n)) && !openedAll() ? fresh.filter(n => !sl.has(n) && setLater(n)) : [];
 };
+// Confusion groups (Pierre, 2026-11-14, Q350: "oui à tout" to the study's a-j, f changed; docs/LEARNING.md "Confusion
+// groups", docs/reviews/2026-11-06-confusion-group-opening-study.md): look-alike units open close together. The units of
+// one rank in play (pool(), app.js rankOf) are grouped, the same for every player, recomputed with the pooled stats:
+// 1. a declared pair (a teacher's look-alikes: the IMR lecture and the Coral Finder, Pierre's and IMR's fish groups,
+//    `look`; declaredOf) always stays grouped (Pierre, f: "si elles sont déclarées par des enseignants, c'est qu'il y a un
+//    intérêt à les voir ensemble, même s'ils sont faciles à distinguer"): declared pairs merge first, the most confused
+//    first (groupConf), ties alphabetical, while the group stays at GROUP.MAX units or fewer; the data never split them;
+// 2. then average linkage on the pooled score (groupConf): the two groups whose pairs have the highest mean score merge,
+//    while that mean is CONF.TRAP or more and the group stays at GROUP.MAX or fewer (ties alphabetical).
+// A unit in no group is a lone unit. A declared pair the cap kept apart still pulls its partner (openPick). MAX 3 (Q350 b):
+// the size of the interleaving studies; 2 kept 39% of the coral confusion inside a group, 4-5 gave the same groups.
+const GROUP = {MAX: 3};
+// A unit's declared look-alikes: `decl` where its record lists them apart from `look` (app.js fishGenera: a fish scientific
+// genus's `look` holds every sibling genus by construction, its `decl` the genera of its IMR sub-entry), else `look`.
+const declaredOf = n => (GX(n) || {}).decl || (GX(n) || {}).look || [];
+const declared = (t, n) => declaredOf(t).includes(n) || declaredOf(n).includes(t);
+// The pair's pooled score for grouping: pooledConf's, on the declared test (the same score for the corals and the fish
+// families, whose `look` is what a teacher declared; for the fish genera, siblings start at the family prior).
+const groupConf = (t, n) => confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, declared(t, n)));
+// The groups of the units L (one rank): {unit: its group, members in alphabetical order}; a lone unit has none.
+function groupsOfRank(L) {
+  L = [...L].sort();
+  const cl = new Map(L.map(n => [n, [n]])),
+    sc = {},
+    s = (a, b) => sc[a < b ? a + '|' + b : b + '|' + a],
+    merge = (A, B) => {
+      const C = [...A, ...B].sort();
+      C.forEach(n => cl.set(n, C));
+    },
+    edges = [];
+  L.forEach((a, i) =>
+    L.slice(i + 1).forEach(b => {
+      const v = (sc[a + '|' + b] = groupConf(a, b));
+      if (declared(a, b) || v >= CONF.TRAP) edges.push([a, b, v]);
+    })
+  );
+  // 1. Declared pairs, the most confused first.
+  edges
+    .filter(([a, b]) => declared(a, b))
+    .sort((x, y) => y[2] - x[2] || (x[0] + '|' + x[1] < y[0] + '|' + y[1] ? -1 : 1))
+    .forEach(([a, b]) => {
+      const A = cl.get(a),
+        B = cl.get(b);
+      if (A !== B && A.length + B.length <= GROUP.MAX) merge(A, B);
+    });
+  // 2. Average linkage: a mean of CONF.TRAP or more needs one pair at CONF.TRAP or more, so only groups an edge joins.
+  for (;;) {
+    let best = null;
+    edges.forEach(([a, b]) => {
+      const A = cl.get(a),
+        B = cl.get(b);
+      if (A === B || A.length + B.length > GROUP.MAX) return;
+      const m = A.reduce((t, x) => t + B.reduce((u, y) => u + s(x, y), 0), 0) / (A.length * B.length),
+        k = [A[0], B[0]].sort().join('|');
+      if (m >= CONF.TRAP && (!best || m > best[0] || (m === best[0] && k < best[1]))) best = [m, k, A, B];
+    });
+    if (!best) break;
+    merge(best[2], best[3]);
+  }
+  const out = {};
+  cl.forEach((C, n) => C.length > 1 && (out[n] = C));
+  return out;
+}
+// The groups of the units in play, every rank (of), and each unit's declared partners of its rank in play (decl), kept
+// until the answers count, the subject or the pooled stats change.
+let GROUPS = null;
+const groupsNow = () => {
+  const key = SUBJ.id + '|' + answersSoFar();
+  if (GROUPS && GROUPS.key === key && GROUPS.pc === PCONF) return GROUPS;
+  const by = {};
+  (typeof pool === 'function' ? pool() : slateGenera()).forEach(n => (by[rankOf(n)] = by[rankOf(n)] || []).push(n));
+  const decl = {};
+  Object.values(by).forEach(L => L.forEach(n => (decl[n] = L.filter(m => m !== n && declared(n, m)))));
+  GROUPS = {key, pc: PCONF, of: Object.assign({}, ...Object.values(by).map(groupsOfRank)), decl};
+  return GROUPS;
+};
+const groupMap = () => groupsNow().of;
+// The other members of n's group (none for a lone unit).
+const groupMates = n => (groupMap()[n] || []).filter(m => m !== n);
+// The group partners of n still to meet that can open (mayOpen: a unit behind a gate holds nobody back).
+const matesLeft = n => groupMates(n).filter(m => !introduced(m) && mayOpen(m));
+// The genus to open among those not met yet (fresh), after the filters above (the starter core, "I'm at IMR"), in three
+// tiers (Pierre, 2026-11-14, Q350 c, f): 1. a group partner of a unit met: once a group has a member open, its other
+// members are the next openings, one at a time (the shaky limit, the pace and the right-answer rule decide when, as for
+// any card); 2. a declared partner of a unit met that the cap kept out of its group; 3. otherwise a new group or lone
+// unit, drawn with the weight below on the group's means (mean genusDiff, mean cm), then the member that opens first by
+// the same weight. The weight: the easiest first, softly (OPEN.T, as far as the data are trusted: easyTrust), and the
+// most common near Dauin (commonFactor). A ★ genus waits while a genus its card compares it to is in the list and not met
+// (Pierre, 2026-11-03, #402; core.js starWaits: a reference not in the list never holds it back, and a reference never
+// waits itself), in every tier; a tier whose units all wait gives way to the next; should every genus left wait (not
+// possible with today's data), they all open.
+// met: the genera already met (introStart passes the cards drawn before it in the same batch as met too).
+const easyWeights = (gd, cm) => {
+  const lo = Math.min(...gd),
+    tr = easyTrust(),
+    cf = commonFactor(cm);
+  return gd.map((d, k) => Math.exp(-OPEN.T * tr * (d - lo)) * cf[k]);
+};
+const easyDraw = L => {
+  const w = easyWeights(
+    L.map(genusDiff),
+    L.map(n => (GX(n) || {}).cm)
+  );
+  return wpick(
+    L.map((n, k) => [n, w[k]]),
+    x => x[1]
+  )[0];
+};
+// A group's mean commonness, over the members that have one (none: commonFactor's neutral 1).
+const meanCm = u => {
+  const v = u.map(n => (GX(n) || {}).cm).filter(x => typeof x === 'number' && x >= 0);
+  return v.length ? v.reduce((a, x) => a + x, 0) / v.length : undefined;
+};
 function openPick(fresh, list = fresh, met = introduced) {
   const wait = laterWaits(fresh);
   if (wait.length) fresh = fresh.filter(n => !wait.includes(n));
@@ -538,16 +651,34 @@ function openPick(fresh, list = fresh, met = introduced) {
     const tagged = fresh.filter(n => (GX(n) || {}).imrName);
     if (tagged.length) fresh = tagged;
   }
-  const ok = fresh.filter(n => !starWaits(DATA, n, list, met));
+  const free = n => !starWaits(DATA, n, list, met),
+    {of: G, decl} = groupsNow();
+  // 1. Group partners of a unit met; 2. declared partners (of its rank in play) of a unit met.
+  for (const T of [fresh.filter(n => groupMates(n).some(met)), fresh.filter(n => (decl[n] || []).some(met))]) {
+    const ok = T.filter(free);
+    if (ok.length) return easyDraw(ok);
+  }
+  const ok = fresh.filter(free);
   if (ok.length) fresh = ok;
-  const gd = fresh.map(genusDiff),
-    lo = Math.min(...gd),
-    tr = easyTrust(),
-    cf = commonFactor(fresh.map(n => (GX(n) || {}).cm));
-  return wpick(
-    fresh.map((n, k) => [n, Math.exp(-OPEN.T * tr * (gd[k] - lo)) * cf[k]]),
-    x => x[1]
-  )[0];
+  // 3. A new group or lone unit: each group as its members in fresh (a lone unit alone, so with no group the draw is the
+  // one of before, unit by unit).
+  const units = [],
+    seen = new Set();
+  fresh.forEach(n => {
+    if (seen.has(n)) return;
+    const u = (G[n] || [n]).filter(m => fresh.includes(m));
+    u.forEach(m => seen.add(m));
+    units.push(u);
+  });
+  const w = easyWeights(
+      units.map(u => u.reduce((t, n) => t + genusDiff(n), 0) / u.length),
+      units.map(meanCm)
+    ),
+    u = wpick(
+      units.map((x, i) => [x, w[i]]),
+      x => x[1]
+    )[0];
+  return u.length > 1 ? easyDraw(u) : u[0];
 }
 // First meeting with a genus (Pierre, 2026-11-02, after the beginner RA review): a player starting from zero first meets
 // INTRO.START genera on cards (name, cover photo, ID tips) and is asked about those; new genera then come one at a time,
@@ -1362,9 +1493,11 @@ const examLooks = n => {
   return [...on].filter(x => x !== n && (own.includes(x) || ((GX(x) || {}).look || []).includes(n)));
 };
 const lookLeft = n => looksLeft(P, n, examLooks(n));
+// And its confusion group met (Pierre, 2026-11-14, Q350 d): the exam opens once the unit's group partners that can open
+// (matesLeft: in play, behind no gate) are met; an exam already under way (s.ex) goes on.
 const examOn = n => {
   const s = P[n] || {};
-  return !s.mx && examOpen(s, P, n) && !lookLeft(n).length;
+  return !s.mx && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
 };
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
@@ -1376,16 +1509,16 @@ function missing(n) {
   const s = P[n] || {},
     m = [];
   if (s.mx) return m;
-  const left = lookLeft(n);
+  const left = lookLeft(n),
+    mates = s.ex ? [] : matesLeft(n).filter(x => !left.includes(x)),
+    names = L => (typeof andList === 'function' ? andList : X => X.join(', '))(L.map(unameT));
   if (!examOpen(s, P, n))
     m.push(
       `more right answers, most of all on hard photos and typed ones (so far you would name about ${Math.round(100 * genScore(n))}% of its photos)`
     );
-  if (left.length)
-    m.push(
-      `being asked beside its look-alike${left.length > 1 ? 's' : ''} ${(typeof andList === 'function' ? andList : L => L.join(', '))(left.map(unameT))}`
-    );
-  if (examOpen(s, P, n) && !left.length)
+  if (left.length) m.push(`being asked beside its look-alike${left.length > 1 ? 's' : ''} ${names(left)}`);
+  if (mates.length) m.push(`meeting its look-alike${mates.length > 1 ? 's' : ''} ${names(mates)}`);
+  if (examOpen(s, P, n) && !left.length && !mates.length)
     m.push(
       `the mastery exam: ${EXAM.n} hard questions on it, slipped unannounced into the Quiz, all right, at least ${TYPED.exam} of them typed from memory`
     );
@@ -1484,15 +1617,11 @@ const isLook = (t, n) => GX(t).look.includes(n) || GX(n).look.includes(t);
 // A pair this player keeps mixing up becomes a trap and a duel for them, one they now tell apart fades back to the pool.
 // Performance only, never time.
 // The pair's score over every player (pooled answers on top of the declared prior), before this player's own record.
+// confPrior: the prior of a pair, look the declared test (isLook here; the confusion groups' own, declared, above).
+const confPrior = (t, n, look) =>
+  look ? CONF.LOOK : GX(n).fam === GX(t).fam ? CONF.FAM : imrFormsOf(n).some(f => imrFormsOf(t).includes(f)) ? CONF.FORM : CONF.BASE;
 function pooledConf(t, n) {
-  const prior = isLook(t, n)
-    ? CONF.LOOK
-    : GX(n).fam === GX(t).fam
-      ? CONF.FAM
-      : imrFormsOf(n).some(f => imrFormsOf(t).includes(f))
-        ? CONF.FORM
-        : CONF.BASE;
-  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], prior);
+  return confScore(PCONF[t < n ? t + '|' + n : n + '|' + t], confPrior(t, n, isLook(t, n)));
 }
 function confOf(t, n) {
   return confScore(pairConf(P, t, n), pooledConf(t, n));
