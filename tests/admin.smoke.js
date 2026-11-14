@@ -786,8 +786,7 @@ const darkCards = (p, sel) =>
         // behind "N more"; the heading still counts every photo; the chip opens them all, a redraw (as every tile click
         // makes) keeps them open, and it folds them again. Relations only: fish-game.json changes at each Publish.
         {
-          const wid = await p.evaluate(() => (FISHC.units.find(x => x.wink && x.species.length) || {}).id || '');
-          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(wid));
+          const wids = await p.evaluate(() => FISHC.units.filter(x => x.wink && x.species.length).map(x => x.id));
           const wk = () =>
             p.evaluate(() =>
               [...document.querySelectorAll('.adm-row[data-sid]')].map(s => {
@@ -806,12 +805,24 @@ const darkCards = (p, sel) =>
                 };
               })
             );
-          let W = await wk();
-          if (!wid || !W.length || W.some(s => s.tgt !== String(s.wink)))
-            fails.push(`${w}px Tree: a surprise-card species' target ${JSON.stringify({wid, W})}`);
-          const big = W.find(s => s.n > s.wink + 1);
-          if (!big) fails.push(`${w}px Tree: no surprise-card species with more photos than shown ${JSON.stringify(W)}`);
-          else {
+          if (!wids.length) fails.push(`${w}px Tree: no surprise-card family`);
+          // Every surprise-card family's page: its species at FISHT.wink; one with few photos (Pierre may bring the stock
+          // down at any Publish) has no fold, every photo shown; one with more than it shows has the chip.
+          let W = [];
+          for (const wid of wids) {
+            await go(other.hash + 'photos/tree/key/' + encodeURIComponent(wid));
+            const V = await wk();
+            if (!V.length || V.some(s => s.tgt !== String(s.wink)))
+              fails.push(`${w}px Tree: a surprise-card species' target ${JSON.stringify({wid, V})}`);
+            V.forEach(s => {
+              if (s.n <= s.wink ? s.more || s.tiles + s.out !== s.n : s.feat < s.wink && !s.more)
+                fails.push(`${w}px Tree: a surprise-card species' fold ${JSON.stringify({wid, s})}`);
+            });
+            if (!W.some(s => s.more > 0)) W = V.map(s => ({...s, wid}));
+          }
+          const big = W.find(s => s.more > 0);
+          if (big) {
+            await go(other.hash + 'photos/tree/key/' + encodeURIComponent(big.wid));
             if (
               !(big.more > 0) ||
               big.tiles + big.out + big.more !== big.n ||
