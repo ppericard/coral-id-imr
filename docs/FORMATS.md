@@ -100,7 +100,7 @@ grids of small photos work for corals only with colony views of distinctive gene
 ## 3. Reusable ideas already in our docs
 
 - **Mystery tiles** in My progress for units not met yet. They make the next discovery visible without opening it. For fish they apply to
-  every player; for corals only to beginners (ROADMAP).
+  every player; for corals only to beginners. Built on 2026-11-15 (FISH_PATH "My progress (fish)"); the species tiles follow with the species level.
 - **An achievement for species named in Latin**, folded into the existing achievement scheme rather than added as a new family of badges.
   It rewards learning, not time (rule L8) (ROADMAP). **Changed on 2026-11-04** (Pierre): about 14 general fish achievements, plus a
   separate set of harder, specific "hunt" achievements (a precise look-alike pair mastered, hard combinations, tongue-in-cheek ones),

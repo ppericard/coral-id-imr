@@ -1743,6 +1743,23 @@ async function freshPlayers(b, base, errs) {
     // The bar's note names the subject's unit (SUBJECTS one), never "genus" on fish (fish beta QA, 2026-11-06).
     const pnote = await q.evaluate(() => (document.querySelector('#view .plvlnote') || {}).textContent || '');
     if (!pnote.includes('each family is')) ui.push(`${width}px My progress note: ${JSON.stringify(pnote)}`);
+    // "Mystery" tiles for every fish player (Pierre, 2026-11-04; progress.js mysteryOf): each family never met is a "?"
+    // with no link, cover or name; each family met keeps its tile.
+    const my = await q.evaluate(() => {
+      const L = [...slateGenera(), ...bonusList()],
+        met = L.filter(n => asked(n) || n in introMap()),
+        M = [...document.querySelectorAll('#view .pwall .myst')];
+      return {
+        n: L.length,
+        met: met.length,
+        myst: M.length,
+        bad: M.filter(a => a.hasAttribute('href') || a.querySelector('img') || L.some(n => (a.title + a.textContent).includes(GX(n).name)))
+          .length,
+        shown: document.querySelectorAll('#view .pwall .pw[href]:not(.myst)').length
+      };
+    });
+    if (!my.met || !my.myst || my.met + my.myst !== my.n || my.shown !== my.met || my.bad)
+      ui.push(`${width}px My progress mystery tiles: ${JSON.stringify(my)}`);
     // The leaderboard's toast is never said on a subject without one (fish beta QA, 2026-11-06: it covered fish Home):
     // it stays due. Every subject has a leaderboard since sheet v95, so this one is made one without for the check. The
     // sync stubbed in memory only (sent14 set: no call to the sheet, rule D1).

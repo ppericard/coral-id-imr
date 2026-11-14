@@ -83,9 +83,15 @@ function quizBoard() {
     .join(',');
   // Step 0 counts the genera not asked yet, met on a card or not ("Not seen" would also count the ones met on a card).
   const STEPS = MASTERY.map(([t], k) => [k, k ? t : 'Not asked yet']);
+  // A unit never met, for a player who sees mystery tiles (mysteryOf, above): in every view, the same "?" in place of its
+  // name, no cover, no link to its page, no tooltip naming it (the slate keeps the tile's number, as on the IMR slate).
+  const myst = mysteryOf(),
+    mystT = `A ${SUBJ.one} you have not met yet`,
+    mystA = (cls, inner) => `<a class="${cls} s0 myst" title="${mystT}" aria-label="${mystT}">${inner}</a>`;
   // Photo wall: the cover in full colour (grey = not seen) with a name band coloured by the genus's step on the scale,
   // holding the mini ring + % like the Slate and Groups tiles; review = an amber dot (app.css, 2026-11-03).
   const tile = n => {
+    if (myst(n)) return mystA('pw', '<span class="pwq" aria-hidden="true">?</span>');
     const g = GX(n),
       p = cover(g),
       [cl] = lv[n];
@@ -135,12 +141,15 @@ function quizBoard() {
         R = num.filter(n => GX(n).n > 20),
         S = list.filter(n => !GX(n).n);
       const ps = n =>
-        `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
+        myst(n)
+          ? mystA('ps', `<b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i>?</i>`)
+          : `<a class="ps ${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${isBenthic(n) ? 'Fire coral, on the IMR benthic slate. ' : ''}${tip(n)}"${fill(n)}><b>${GX(n).n ? GX(n).n + '.' : isBenthic(n) ? 'F' : '★'}</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`;
       // Bonus genera: one strip across both columns under the slate, so the board still fits one screen.
       const rows = Math.max(L.length, R.length + (S.length ? S.length + 1 : 0));
-      const bx = BO.map(
-        n =>
-          `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
+      const bx = BO.map(n =>
+        myst(n)
+          ? mystA('ps bonus', '<b>+</b><i>?</i>')
+          : `<a class="ps ${lv[n][0]} s${st[n]} bonus" href="${esc(hr('g-' + n))}" title="Bonus genus, not on the IMR list. ${tip(n)}"><b>+</b><i${n.length >= 13 ? ' class="lg"' : ''}>${esc(n)}</i>${pct(n)}</a>`
       ).join('');
       // The left column padded to the row count, so 21 always starts the right column (Codex review #371: with
       // Millepora the right column outgrew the left and 21 slipped to the bottom of the left one).
@@ -157,13 +166,13 @@ function quizBoard() {
               ? ['F', 'IMR benthic slate, not a hard coral']
               : ['★', 'Not covered in the lecture'];
         return `<div class="pgr" style="--g:${gr ? groupHue(gr.n) : 200}"><span class="gn" title="${t}">${mk}</span><span class="pgt">${t}</span>
-        <span class="pseg">${L.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
+        <span class="pseg">${L.map(n => (myst(n) ? mystA('', '<i>?</i>') : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"${fill(n)}><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${L.filter(n => lv[n][0] === 'ok').length}/${L.length}</small></div>`;
       })
       .join('')}
       ${
         BO.length
           ? `<div class="pgr pgbonus"><span class="gn" title="Bonus genera, not on the IMR list">+</span><span class="pgt">Bonus: not on the IMR list</span>
-        <span class="pseg">${BO.map(n => `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
+        <span class="pseg">${BO.map(n => (myst(n) ? mystA('', '<i>?</i>') : `<a class="${lv[n][0]} s${st[n]}" href="${esc(hr('g-' + n))}" title="${tip(n)}"><i>${esc(n)}</i>${pct(n)}</a>`)).join('')}</span><small>${BO.filter(n => lv[n][0] === 'ok').length}/${BO.length}</small></div>`
           : ''
       }</div>`
   };
@@ -178,7 +187,7 @@ function quizBoard() {
       : `<p class="lede"><b>To learn a genus</b>, keep getting it right: its % is the share of all its photos, easy to hard, you would name alone and typed, as far as your answers on it have shown. Hard photos and typed answers prove the most; a right pick among 2 easy choices proves little. It fills up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} questions on it, as hard as the game gets (one photo alone, never seen before, look-alikes among the choices), slipped unannounced into the Quiz, several questions apart. At least ${TYPED.exam} of them ask you to type the genus from memory, with no choices to pick from. All ${EXAM.n} right and you are its Instructor (100%); a single miss, or giving it as the answer for another genus, and the exam starts again later. A mistake sets a genus back, for the genus you missed and for the one you answered.</p>
   <p class="lede"><b>Typed questions</b>: from ${Math.round(100 * TYPED.from)}% on a genus, some of its questions ask you to type its name instead of picking it, more and more as it nears learned (about ${Math.round(100 * TYPED.at[TYPED.at.length - 1][1])}% of them at the exam). Old names are accepted, and a small typo still counts as right, but you retype the name once to learn its spelling; <b>I don't know</b> shows the answer and counts as a miss for that genus only; typing another genus counts against both, as a wrong pick does. A typed right answer counts in full, as much as a pick against its look-alikes: there is nothing to guess from.</p>
   <p class="lede"><b>Fire coral</b> (<i>Millepora</i>, <b>F</b> on the Slate view) is not a hard coral and not on the IMR coral list, but it is on the IMR benthic slate and very common at Dauin: it counts like the other genera. <b>Bonus genera</b>: corals that are not on the IMR list but are common at Dauin. Once you have met every genus of the slate, a card offers to add them (or ⚙ Settings, Bonus genera, any time); they then come one at a time, like the others. They don't count in your progress; their ID tips come from the Coral Finder book. On this page they come after the slate.</p>
-  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen; the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
+  <p class="lede"><b>Levels</b>, the diver's ladder: <b>Snorkeler</b> under 50%, <b>Open Water</b> from 50%, <b>Advanced</b> from 80%, <b>Divemaster</b> from ${Math.round(100 * DOM.EX)}% once asked beside its look-alikes (its mastery exam is on), <b>Instructor</b> once the exam is passed: you could teach it. The colours follow them, from pale to dark; white with a dashed border = not seen (for a player new to corals, a <b>?</b> in place of a genus not met yet: it shows once it opens); the darkest, with a tick = Instructor. The mini ring on a tile shows exactly how far it has got. A red border and a red ! = to review (2 or more mistakes in its last 5 answers). <b>Photos</b>, <b>Slate</b> and <b>Groups</b> show the same progress in three layouts. Tap a genus to open its sheet: it shows what the genus still needs.</p>`
   }
   <p class="lede"><b>In detail</b>: each ${SUBJ.one} has its own photo difficulty, recomputed after every answer: it starts with the best photos, right answers bring harder ones, a mistake eases them off, and new photos keep coming in at every level. The % is how many of the ${SUBJ.one}'s photos you would name right, one photo alone with no choices, judged only from your own answers on that ${SUBJ.one}: a right answer on a hard photo, or typed, raises it most; one among 2 easy choices, a little; a mistake lowers it, less when the photo was harder than your level. Your older answers fade as you improve, so a ${SUBJ.one} learned late catches up. A ${SUBJ.one} you have not answered stays at 0, however well you do on the others. ${Math.round(100 * DOM.EX)}% (Divemaster), once it has been asked beside each of its look-alikes, opens its mastery exam; Instructor means the exam is passed too.</p>
   <div class="pgame pboard">${badge(ring, headPct(list), lvSummary(list))}<div class="pgwrap"></div>
@@ -315,6 +324,21 @@ const unlockText = (list = slateGenera(), html = false) => {
   const [k, n] = unlockN(list);
   return `${html ? `<b>${k}</b>` : k}/${n} ${SUBJ.many} unlocked`;
 };
+// "Mystery" tiles (Pierre, 2026-11-04; ROADMAP row built 2026-11-15): on My progress a unit the player has never met (no
+// card, no answer, not opened by Open all: never answered and never in the intro map, model.js asked, introMap) is a
+// masked tile, a "?" with no name, photo, link or tooltip that names it, so the discoveries still to come show without
+// being given away. Who sees them is the subject's (app.js UNITS mystery, from the player's first-launch answer, c of
+// model.js startOf, null before any): display only, the draw, the opening and the progress are untouched. A unit met
+// once stays shown, even closed again by "One at a time" (model.js closed), and a unit with answers is never masked.
+const mysteryOn = () => {
+  const f = UNITS[SUBJ.id].mystery,
+    o = typeof startOf === 'function' ? startOf() : null;
+  return typeof f === 'function' && !!f(o ? o.c : null);
+};
+const mysteryOf =
+  (on = mysteryOn()) =>
+  n =>
+    on && !asked(n) && !(n in introMap());
 // Header progress pill: always in view; the page itself is #progress.
 function showProg() {
   if (!DATA) return;
