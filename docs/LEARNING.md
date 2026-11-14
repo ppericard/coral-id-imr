@@ -2316,8 +2316,11 @@ picks the first unit only, so the first 10 units are a little less easy (mean `g
   beginner's units met at 100 17.1 → 14.3 (field); the rated world, the lecture RA's first unit at Open Water 57 → 71
   and units met at 100, the expert's units at Open Water at 1,000. For the fish, B differs from the first build only in
   the order of the four starter-core cards (the first cards are the starter core either way; no fish declared pair is
-  split by the cap), so these may be the noise of 10 seeds on run-level measures; a second look on seeds 511-520 would
-  say. **The rated world, corals under B**: the beginner's shown score at 1,000 41.2 → 39.9 (−1.3, margin −1),
+  split by the cap), so these may be the noise of 10 seeds on run-level measures. **Second look** (seeds 511-520, base
+  against B, the profiles of those cells, `--looks 2`): the app world's cells held or unclear (casual diver's first unit
+  at Open Water 87 → 68 item, 93 → 91 field; beginner's units met at 100 17.2 → 16.0 field, held); the rated world's
+  two breaches repeat: the lecture RA's first unit at Open Water 70 → 89 (+19, margin +14), the expert's units at Open
+  Water at 1,000 57.3 → 54.1 (−3.2, margin −2.9); the lecture RA's units met at 100 unclear (18.1 → 16.8). To Pierre. **The rated world, corals under B**: the beginner's shown score at 1,000 41.2 → 39.9 (−1.3, margin −1),
   breached as first built; the other cells held or unclear.
 - **The real log** (the Answers tab as read on 2026-11-12, 2,047 + 983 coral answers of 12 players with 50 or more;
   read-only, players pseudonymised): under today's rule, the 10 players on the path met the two genera of a pair of the
