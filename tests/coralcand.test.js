@@ -192,10 +192,11 @@ test('the photo lists follow curation.json: nothing Pierre excluded in data.json
 
 test('the Candidate photos workflow starts from the latest main and tidies the lists before its commit', () => {
   const y = fs.readFileSync(path.join(ROOT, '.github/workflows/approved-photos.yml'), 'utf8');
-  const job = y.slice(y.indexOf('  photos:'), y.indexOf('  r2:'));
+  // The photos job (read-only) makes the commit; photos-push (tests/photospush.test.js) pushes it.
+  const job = y.slice(y.indexOf('\n  photos:\n'), y.indexOf('\n  photos-push:\n'));
   assert.match(job, /actions\/checkout@v\d+\n\s+with:\n\s+ref: main\n/, 'a queued run must see the commit of the run before it');
   const tidy = job.indexOf('python tools/fetch_local.py --tidy'),
-    commit = job.indexOf('name: Commit');
+    commit = job.indexOf('name: Prepare the commit');
   assert.ok(tidy > 0 && tidy < commit, 'the tidy step runs before the commit');
   const files = job.indexOf('python tools/apply_excluded_archive.py --files'),
     sizes = job.indexOf('python tools/photos.py');
