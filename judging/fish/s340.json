@@ -263,6 +263,18 @@
   "fish-s340-cand-697896327": {
    "code": "p1g1mss2",
    "keep": "dup"
+  },
+  "fish-s340-cand-333237065": {
+   "code": "p1g0smsj2",
+   "keep": "best"
+  },
+  "fish-s340-cand-380310937": {
+   "code": "p1g0smsj2",
+   "keep": "best"
+  },
+  "fish-s340-cand-697051163": {
+   "code": "p1g2mssj1",
+   "keep": "best"
   }
  }
 }

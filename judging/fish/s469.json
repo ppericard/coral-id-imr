@@ -143,6 +143,18 @@
   "fish-s469-cand-621816421": {
    "code": "p1g1mlo3",
    "keep": "best"
+  },
+  "fish-s469-cand-477913607": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s469-cand-477914671": {
+   "code": "p1g1sl14",
+   "keep": "dup"
+  },
+  "fish-s469-cand-512280629": {
+   "code": "p1g2mls3",
+   "keep": "best"
   }
  }
 }

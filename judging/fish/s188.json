@@ -195,6 +195,106 @@
   "fish-s188-cand-506595525": {
    "code": "o1g1slo3",
    "keep": "best"
+  },
+  "fish-s188-cand-674447764": {
+   "code": "p1g1mm13",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-674447797": {
+   "code": "p1g1sm14",
+   "keep": "alt",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-506595443": {
+   "code": "p1g1slo3",
+   "keep": "alt",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-482175279": {
+   "code": "p1g1mm13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-482175305": {
+   "code": "p1g1msk2",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-519035376": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-504163150": {
+   "code": "o1g2sl13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-504163148": {
+   "code": "o1g2sm12",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-342879191": {
+   "code": "o1d1ms12",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s188-cand-342879198": {
+   "code": "p1d1mss2",
+   "keep": "alt",
+   "phase": "female"
+  },
+  "fish-s188-cand-483011715": {
+   "code": "p1g1mm13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-483011727": {
+   "code": "p1g1mm13",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-605301751": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s188-cand-605301744": {
+   "code": "d1g0sl13",
+   "keep": "dup",
+   "phase": "female"
+  },
+  "fish-s188-cand-605301740": {
+   "code": "p1g0slo4",
+   "keep": "alt",
+   "phase": "female"
+  },
+  "fish-s188-cand-354555595": {
+   "code": "o1g2mmk2",
+   "keep": "best"
+  },
+  "fish-s188-cand-354555601": {
+   "code": "p1g1msk2",
+   "keep": "dup"
+  },
+  "fish-s188-cand-480894357": {
+   "code": "p1g1bm11",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s188-cand-480894417": {
+   "code": "o1g1msk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "an angelfish above the parrotfish, about its size and as sharp: confusion possible, not certain"
+  },
+  "fish-s188-cand-448317912": {
+   "code": "p1g1sl14",
+   "keep": "best"
   }
  }
 }
