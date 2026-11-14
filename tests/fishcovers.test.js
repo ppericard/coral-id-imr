@@ -37,7 +37,7 @@ function app(photoDiff) {
       block(src, 'const fishBuild = () => {', 'const fishLoad = () =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
       '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); }; this.cover = cover;' +
-      '\nthis.juvP = juvP; this.adultFirst = adultFirst;',
+      '\nthis.juvP = juvP; this.adultFirst = adultFirst; this.seenCover = seenCover; this.nearSeen = nearSeen;',
     ctx
   );
   return ctx;
@@ -291,14 +291,16 @@ function sheets(B) {
       thumb: p => `data-f="${p.f}"`,
       noFish: () => '<nofish>',
       spOpen: () => true,
-      genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id))
+      genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id)),
+      seenCover: X.seenCover,
+      fishSeen: sid => X.nearSeen((B.sps || {})[sid])
     };
   vm.createContext(ctx);
   vm.runInContext(
     'let FSPH = null, FSPH_OF = null;\n' +
       block(ls, 'const fishSpPhotos = () => {', '// The one "No photo yet" drawing', {file: 'learn.js'}) +
       block(ls, 'function fishGenusRow(g, flat) {', '\n}\n', {through: 1, file: 'learn.js'}) +
-      '\nthis.spPhoto = spPhoto; this.genCover = genCover; this.sp = fishSpPhotos; this.row = fishGenusRow;',
+      '\nthis.spPhoto = spPhoto; this.genCover = genCover; this.sp = fishSpPhotos; this.row = fishGenusRow; this.nodeCover = nodeCover;',
     ctx
   );
   return ctx;
@@ -433,4 +435,128 @@ test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alon
   assert.deepStrictEqual([...ctx.ranks(plants)], ['order', 'family', 'genus']);
   assert.strictEqual(ctx.rankOf(plants, 'f:Rosaceae'), 'family');
   assert.strictEqual(ctx.rankOf(coral, 'Acropora'), coral.rank);
+});
+
+// ---- The default cover of a node with leaves (Pierre, 2026-11-13, Q339 (b): "ok" to distinct observers): when he has
+// picked none, the leaf most seen around the instance's centre by distinct observers (ties: observations, then the easy
+// order), then that leaf's easiest photo that is not a juvenile; a node with no presence keeps the easy order's first.
+// The app (app.js seenCover: fishCurate, rankPhotos; learn.js nodeCover) and the admin (autosort.js fishCoverOf) alike.
+// f:A and g:Xus hold s1 (fi1 e5, fi2 e3) and s2 (fi3 e4, fi6 e2): fi1 leads the easy order.
+const seenF = pres => ({...F2, species: F2.species.map(s => (pres[s.id] ? {...s, present: pres[s.id]} : s))});
+const seenRaw = (pres, juv = []) => {
+  const r = raw2();
+  r.f = seenF(pres);
+  Object.values(r.ph.photos)
+    .flat()
+    .forEach(p => juv.includes(p.f) && (p.ph = 'juvenile'));
+  return r;
+};
+const CASES = [
+  // [what, presence, juveniles, the default]
+  ['no presence: the easy order, as before', {}, [], 'fi1'],
+  ['the most observers wins over the easiest photo', {s1: {dauinU: 2, dauin: 5}, s2: {dauinU: 9, dauin: 9}}, [], 'fi3'],
+  ['tied observers: the most observations', {s1: {dauinU: 9, dauin: 12}, s2: {dauinU: 9, dauin: 9}}, [], 'fi1'],
+  ['tied observers and observations: the easy order', {s1: {dauinU: 9, dauin: 9}, s2: {dauinU: 9, dauin: 9}}, [], 'fi1'],
+  ['its easiest photo a juvenile: its next', {s2: {dauinU: 9, dauin: 9}}, ['fi3'], 'fi6'],
+  ['every photo of it juvenile: the next species', {s2: {dauinU: 9, dauin: 9}}, ['fi3', 'fi6'], 'fi1'],
+  ['juveniles only: the easy order keeps one', {s2: {dauinU: 9, dauin: 9}}, ['fi1', 'fi2', 'fi3', 'fi6'], 'fi1'],
+  ['the generic names first (nearU, nearN), the first names after', {s1: {dauinU: 2}, s2: {nearU: 1, dauinU: 9}}, [], 'fi1'],
+  ['nearN breaks the tie as dauin did', {s1: {nearU: 3, nearN: 3}, s2: {nearU: 3, nearN: 4, dauin: 1}}, [], 'fi3']
+];
+test('default cover (Q339 (b)): the most seen species around the centre, then its easiest photo; ties, juveniles', () => {
+  const X = app();
+  CASES.forEach(([what, pres, juv, want]) => {
+    const B = X.run(seenRaw(pres, juv), cur2({}));
+    assert.strictEqual(X.cover(B.gen['f:A']).f, want, `family: ${what}`);
+    assert.strictEqual(X.cover(B.gen['g:Xus']).f, want, `genus unit: ${what}`);
+    assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1', `the games' order is unchanged: ${what}`);
+  });
+  // His pick wins, at every rank, even over the most seen species.
+  const pres = {s2: {dauinU: 9, dauin: 9}};
+  let B = X.run(seenRaw(pres), cur2({'f:A': {cover: 'fi2'}, 'g:Xus': {cover: 'fi1'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2');
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi1');
+  // The players' ratings (rankPhotos) order the photos within the species; the species stays the most seen.
+  const Y = app((n, p) => ({fi1: -9, fi6: -8, fi3: -1})[p.f] || 0);
+  B = Y.run(seenRaw(pres), cur2({}));
+  assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1');
+  assert.strictEqual(Y.cover(B.gen['f:A']).f, 'fi6', 'the rated order within the most seen species');
+  // The sheets (learn.js nodeCover: the family hero, its look-alike cards, the sibling genus cards) read the same rule.
+  const L = sheets(X.run(seenRaw(pres, ['fi3']), cur2({})));
+  assert.strictEqual(L.nodeCover(F2.species.slice(0, 2)).f, 'fi6');
+  assert.strictEqual(sheets(X.run(seenRaw({}), cur2({}))).nodeCover(F2.species.slice(0, 2)).f, 'fi1', 'no presence: as before');
+});
+
+// The admin's copy (autosort.js fishCoverOf: the family's and the genus headings' default thumbs) picks as the app does.
+test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's seenCover", () => {
+  const X = app(),
+    E = {fi1: 5, fi2: 3, fi3: 4, fi6: 2},
+    j = f => ({e: E[f]});
+  CASES.forEach(([what, pres, juv, want]) => {
+    const r = seenRaw(pres, juv),
+      sp = Object.fromEntries(r.f.species.map(s => [s.id, s])),
+      L = r.ph.photos.t1.map(p => ({f: p.f, sp: p.sp, ...(p.ph ? {ph: p.ph} : {})}));
+    assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j, sid => A.fishNear(sp[sid])).f, want, `admin: ${what}`);
+    assert.strictEqual(X.seenCover(r.ph.photos.t1, sid => X.nearSeen(sp[sid])).f, want, `app: ${what}`);
+    // the admin's own records carry the species as sid
+    assert.strictEqual(
+      A.fishCoverOf(
+        L.map(({sp: s, ...p}) => ({...p, sid: s})),
+        {},
+        'f:A',
+        j,
+        sid => A.fishNear(sp[sid])
+      ).f,
+      want
+    );
+  });
+  // His pick wins; with no species registered (fishSeenFrom not called) every default keeps the game's order.
+  const sp = {s2: {present: {dauinU: 9}}},
+    L = [
+      {f: 'fi1', sp: 's1'},
+      {f: 'fi3', sp: 's2'}
+    ];
+  assert.strictEqual(A.fishCoverOf(L, {genera: {'f:A': {cover: 'fi1'}}}, 'f:A', j, sid => A.fishNear(sp[sid])).f, 'fi1');
+  assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j).f, 'fi1', 'nothing registered: as before');
+  A.fishSeenFrom(sid => sp[sid]);
+  try {
+    assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j).f, 'fi3', 'the registered records (admin-fish.js)');
+  } finally {
+    A.fishSeenFrom(null);
+  }
+});
+
+// On the real files: every fish unit Pierre has not picked a cover for shows a photo of its species most seen around the
+// centre among those with an adult photo in play, and the admin's heading shows a photo of that same species.
+test('real data: the default covers are of the most seen species, in the app and the admin alike (Q339 (b))', () => {
+  const f = read('fish.json'),
+    gm = C.fishGameRead(read('fish-game.json')),
+    cu = read('curation.json'),
+    X = app(),
+    B = X.run({f, ph: read('fish-photos.json'), gm}, cu),
+    sp = Object.fromEntries(f.species.map(s => [s.id, s])),
+    seen = sid => X.nearSeen(sp[sid]),
+    key = sid => seen(sid)[0] * 1e6 + seen(sid)[1],
+    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    nodes = Object.fromEntries([...f.families, ...f.genera].map(u => [u.id, new Set(u.species)]));
+  assert.ok(f.centre && f.centre.name && Number.isFinite(f.centre.lat) && f.centre.radiusKm > 0, 'fish.json centre');
+  let n = 0;
+  Object.entries(B.gen).forEach(([id, g]) => {
+    if (g.coverP || !g.views.wide.length || !nodes[id]) return;
+    const A0 = g.views.wide.filter(p => !X.juvP(p)),
+      c = g.views.wide.find(p => p.f === g.cover);
+    if (!A0.length) return;
+    n++;
+    assert.ok(!X.juvP(c), `${id}: never a juvenile`);
+    assert.strictEqual(key(c.sp), Math.max(...A0.map(p => key(p.sp))), `${id}: ${sp[c.sp].name} is not its most seen species`);
+    const adm = A.fishCoverOf(
+      play.filter(p => nodes[id].has(p.sp)),
+      cu.fish,
+      id,
+      () => null,
+      sid => A.fishNear(sp[sid])
+    );
+    if (adm) assert.strictEqual(key(adm.sp), key(c.sp), `${id}: the admin shows ${sp[adm.sp].name}, the app ${sp[c.sp].name}`);
+  });
+  assert.ok(n > 50, `${n} units checked`);
 });

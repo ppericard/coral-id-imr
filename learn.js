@@ -804,6 +804,14 @@ const spPhoto = s => adultFirst(fishSpPhotos()[s.id]);
 // A genus's ★ Cover (Pierre, 2026-11-13): a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a
 // genus with no unit (FISH.covers); null when he picked none in play.
 const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
+// A node's default cover from its species S when he picked none (Pierre, 2026-11-13, Q339 (b); app.js seenCover): the
+// species most seen around the instance's centre, then its easiest photo that is not a juvenile, among the photos in play
+// (the sheet-only reference photos, use 'ref', only when none is in play).
+const nodeCover = S => {
+  const P = S.flatMap(s => fishSpPhotos()[s.id] || []),
+    on = P.filter(p => p.use !== 'ref');
+  return seenCover(on.length ? on : P, fishSeen);
+};
 // The one "No photo yet" drawing for every species (Pierre, Q9): a plain child-like fish, never a body shape that could
 // read as ID information; the "Photo missing" tile's style (DESIGN.md).
 const NOFISH =
@@ -1036,15 +1044,15 @@ function fishFamily(f) {
     G = (f.genera || []).map(id => T.gen[id]).filter(g => g && genSpecies(g).length),
     flat = [],
     all = easyRank(A.flatMap(s => fishSpPhotos()[s.id] || [])),
-    // Pierre's ★ Cover while in play (app.js fishCurate), else the easiest, most reference-like of its species' photos
-    // that is not a juvenile (app.js adultFirst; Pierre, 2026-11-13).
-    hero = (GX(f.id) || {}).coverP || adultFirst(all),
+    // Pierre's ★ Cover while in play (app.js fishCurate), else the default (nodeCover, Q339 (b): its most seen species'
+    // easiest photo that is not a juvenile).
+    hero = (GX(f.id) || {}).coverP || nodeCover(A),
     juv = all.filter(juvP).slice(0, 4),
     u = GX(f.id) ? f.id : '';
   if (hero) flat.push(hero);
   const cover = id => {
     const L = famSpecies(T.fam[id]);
-    return (GX(id) || {}).coverP || adultFirst(easyRank(L.flatMap(s => fishSpPhotos()[s.id] || [])));
+    return (GX(id) || {}).coverP || nodeCover(L);
   };
   // F5: IMR's look-alike lines (fish.json look, lsrc), our lines for the pairs IMR gives no words for (apart, from the
   // family's sources: tools/fish_sheets.json), then the families players mix it up with (model.js dataLooks), said as
@@ -1138,8 +1146,8 @@ function fishGenus(g) {
     now = L.filter(s => s.now && s.now.split(/\s+/)[0] !== g.name),
     ng = [...new Set(now.map(s => s.now.split(/\s+/)[0]))],
     sib = (f.genera || []).map(id => T.gen[id]).filter(x => x && x.id !== g.id && (x.cues || []).length && genSpecies(x).length),
-    // A sibling genus's card: his genus cover, else its easiest, most reference-like photo.
-    cover = x => genCover(x) || adultFirst(easyRank(genSpecies(x).flatMap(s => fishSpPhotos()[s.id] || [])));
+    // A sibling genus's card: his genus cover, else the default (nodeCover, Q339 (b)).
+    cover = x => genCover(x) || nodeCover(genSpecies(x));
   const card = x => {
     const p = cover(x);
     return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}</small><b class="cmpgo">Open →</b></span></a>`;

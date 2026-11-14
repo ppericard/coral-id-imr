@@ -677,14 +677,36 @@
     const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
     return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
-  function fishCoverOf(L, F, tid, j = () => null) {
+  // Without his pick, the default cover of a node with leaves (Pierre, 2026-11-13, Q339 (b)): its leaf (species) most seen
+  // around the instance's centre by distinct observers (ties: observations, then the game's order), then that leaf's
+  // first photo in the game's order that is not a juvenile; a node with no presence keeps the order's first, as before.
+  // seen(leaf id): [observers, observations] around the centre (fishNear); by default from the species records the admin
+  // registers (fishSeenFrom, admin-fish.js). The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
+  function fishCoverOf(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
       juv = p => fishJuv(p, j(p.f), F),
       c = k && L.find(p => p.f === k);
     if (c && !juv(c)) return c;
     const R = fishOrder(L, F, tid, '', j).rest;
-    return R.find(p => !juv(p)) || R[0] || null;
+    let best = null;
+    R.filter(p => !juv(p)).forEach(p => {
+      const s = seen(p.sid || p.sp) || [0, 0];
+      if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
+    });
+    return best ? best.p : R[0] || null;
   }
+  // A leaf's presence around the instance's centre (Q339: "Il faudra rendre générique la localisation centrale de
+  // l'instance"; the centre: tools/instance.json, fish.json centre): [distinct Research Grade observers, observations]
+  // from its record's present, nearU and nearN, else their first names (dauinU, dauin: tools/build_fish.py); [0, 0] with
+  // none. The app's copy: app.js nearSeen.
+  const fishNear = r => {
+    const p = (r && r.present) || {};
+    return [p.nearU ?? p.dauinU ?? 0, p.nearN ?? p.dauin ?? 0];
+  };
+  // Where fishCoverOf finds a species' record by id (the admin's fish.json species, FISHC: admin-fish.js registers it);
+  // none until then, so every default keeps the game's order.
+  let fishSeenOf = () => null;
+  const fishSeenFrom = get => (fishSeenOf = typeof get === 'function' ? get : () => null);
   // The IMR phases of a family (fish.json families phase: the phase lines of the IMR entries that cover it; dimorph: its
   // sexes differ), as the phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
   // males and females.
@@ -1214,6 +1236,8 @@
     fishDrop,
     fishOrder,
     fishCoverOf,
+    fishNear,
+    fishSeenFrom,
     fishJuv,
     fishUnitPhases,
     FISHEASY,

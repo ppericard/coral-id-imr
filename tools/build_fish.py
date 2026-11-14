@@ -104,14 +104,14 @@ V = 1  # fish.json format version
 
 WORMS = "https://www.marinespecies.org/rest/"
 INAT = "https://api.inaturalist.org/v1/"
-DAUIN = "lat=9.19&lng=123.26&radius=40"
 PH = "place_id=6873"
 PIERRE = "ppericard"  # his observations: usable photos (rule S2); one observer like anyone for presence (2026-11-04)
 CHORDATA = 2  # iNaturalist
 INAT_RANKS = {"class", "subclass", "infraclass", "superorder", "order", "suborder", "infraorder", "superfamily", "family",
               "subfamily", "supertribe", "tribe", "subtribe", "genus", "subgenus", "species"}
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from presence import NEAR_OBSERVERS, PH_OBSERVERS, listed, near_dauin, ph_confirmed  # noqa: E402  (the rule, once)
+from presence import CENTRE, NEAR_AREA, NEAR_OBSERVERS, PH_OBSERVERS, listed, near_dauin, ph_confirmed  # noqa: E402  (the rule, once)
+DAUIN = NEAR_AREA  # the instance's centre and radius (tools/instance.json; "lat=9.19&lng=123.26&radius=40" for Dauin)
 import inat  # noqa: E402  (the one paced, retried client: WoRMS 0.3 s, iNaturalist 1 s between requests; rule C7)
 
 LOW = {"Subspecies", "Variety", "Forma", "Natio", "Mutatio"}  # synonyms below the species: not kept
@@ -1124,7 +1124,8 @@ def write(o):
 
 
 def render(o):
-    lines = ["{", f'"v":{o["v"]},', f'"start":{dumps(o.get("start", []))},']
+    # centre: the instance's (tools/instance.json, Q339), whatever the mode, so no writer drops it
+    lines = ["{", f'"v":{o["v"]},', f'"centre":{dumps(CENTRE)},', f'"start":{dumps(o.get("start", []))},']
     if o.get("key"):  # the key in force, one group per line
         k = o["key"]
         lines.append('"key":' + dumps({x: k[x] for x in k if x != "groups"})[:-1] + ',"groups":[')
