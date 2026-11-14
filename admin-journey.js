@@ -120,10 +120,11 @@ const jStepWords = ([, kind, w]) =>
 // The Journey's Games card (as on Players, Pierre 2026-11-02: "bring that page's numbers into the journey"): the player's
 // answers in the subject by format, [title, answers, right], the formats with no answer left out. The photo quiz split:
 // its own questions, the "Again: A or B?" rematch after a mix-up (2 choices, logged as the photo quiz), a look-alike duel
-// slipped into it (|d), typed (|t: model.js TYPED, its exam questions also under Mastery exam), the mastery exam (|x, from
-// 2026-11-02). The Custom quiz and the Duel tab only for a subject that has them (SUBJECTS pages; the Duel tab's row kept
-// at 0, as before); a subject whose units sit at several ranks (SUBJECTS sheets) adds the questions on each rank, as the
-// Answer log's Conditions count them (conds: admin.js logConds(R, S); fish admin at parity, Journey details).
+// slipped into it (|d), typed (|t: model.js TYPED, its exam questions also under Mastery exam), Find the X (|f), the
+// mastery exam (|x, from 2026-11-02). The Custom quiz and the Duel tab only for a subject that has them (SUBJECTS
+// pages; the Duel tab's row kept at 0, as before); a subject whose units sit at several ranks (SUBJECTS sheets) adds
+// the questions on each rank, as the Answer log's Conditions count them (conds: admin.js logConds(R, S); fish admin at
+// parity, Journey details).
 function jGames(R, S, conds = []) {
   const has = p => (S.pages || []).includes(p),
     nch = r =>
@@ -137,11 +138,13 @@ function jGames(R, S, conds = []) {
   };
   return [
     ...[
-      ['Quiz', r => /^quiz(\||$)/.test(r[5]) && !/\|[xdt](\||$)/.test(r[5]) && nch(r) !== 2],
+      ['Quiz', r => /^quiz(\||$)/.test(r[5]) && !/\|[xdtf](\||$)/.test(r[5]) && nch(r) !== 2],
       ['Again: A or B? (after a mix-up)', r => /^quiz(\||$)/.test(r[5]) && !/\|[dt](\||$)/.test(r[5]) && nch(r) === 2],
       // A duel slipped into the custom quiz is logged quiz|s|d|k2 (quiz.js answer).
       ['Look-alike duel in the quiz', r => /^quiz\|(s\|)?d(\||$)/.test(r[5])],
       ['Typed (recall)', r => /^quiz\|(.*\|)?t(\||$)/.test(r[5])],
+      // Find the X (|f, quiz.js FIND): one name, four photos (the subjects whose photos read as tiles: the fish).
+      ['Find the X', r => /^quiz\|(.*\|)?f(\||$)/.test(r[5])],
       ['Mastery exam', r => /\|x$/.test(r[5])],
       // The custom quiz (quiz|s…, 2026-11-03): photo-quiz answers on the units the player picked, also in the rows above.
       ...(has('quiz-custom') ? [[`Custom quiz (${S.many} picked)`, r => /^quiz\|s(\||$)/.test(r[5])]] : []),

@@ -91,14 +91,15 @@ test("jSteps: the subject's own rank and the first circle are no step; the coral
   assert.strictEqual(jSteps([jr('g:Chromis')], () => null, FISH).length, 1, 'a unit with no record still counts its rank');
 });
 
-test('jGames: the fish formats, the questions on each rank, no Custom quiz or Duel tab row', () => {
+test('jGames: the fish formats (Find the X too), the questions on each rank, no Custom quiz or Duel tab row', () => {
   const R = [
       jr('f:A'),
       jr('f:A', 0),
       jr('f:B', 1, 'quiz', 'f:B f:A'), // Again: A or B?
       jr('g:Chromis', 1, 'quiz|t', ''),
       jr('g:Chromis', 0, 'quiz|d|k2'),
-      jr('f:A', 1, 'quiz|x')
+      jr('f:A', 1, 'quiz|x'),
+      jr('f:B', 0, 'quiz|f', 'f:B f:A f:C f:D')
     ],
     G = jGames(R, FISH, logConds(R, FISH));
   assert.deepStrictEqual(G, [
@@ -106,8 +107,9 @@ test('jGames: the fish formats, the questions on each rank, no Custom quiz or Du
     ['Again: A or B? (after a mix-up)', 1, 1],
     ['Look-alike duel in the quiz', 1, 0],
     ['Typed (recall)', 1, 1],
+    ['Find the X', 1, 0],
     ['Mastery exam', 1, 1],
-    ['Family questions', 4, 3],
+    ['Family questions', 5, 3],
     ['Genus questions', 2, 1]
   ]);
 });
