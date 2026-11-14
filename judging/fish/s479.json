@@ -255,6 +255,18 @@
   "fish-s479-cand-605319145": {
    "code": "o1g0sm1j3",
    "keep": "best"
+  },
+  "fish-s479-cand-763005894": {
+   "code": "p1g1ss1j1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "in a tank or tub (plain green walls), not on the reef"
+  },
+  "fish-s479-cand-763005896": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
   }
  }
 }

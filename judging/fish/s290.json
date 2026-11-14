@@ -171,6 +171,10 @@
   "fish-s290-cand-905535": {
    "code": "p1g0sm14",
    "keep": "best"
+  },
+  "fish-s290-cand-521389006": {
+   "code": "p1g0sl15",
+   "keep": "dup"
   }
  }
 }
