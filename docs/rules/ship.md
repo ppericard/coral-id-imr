@@ -291,7 +291,7 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 ### W22
 
 **Several agents at once: a worktree each, one smoke at a time.** The integrator launches decided work at once (AGENTS.md
-"Working mode"), within rule W27's cap of three agents at a time; the shared machine is protected by `tests/slot.js`. Each agent works in a
+"Working mode"), within rule W27's cap of four agents at a time, balanced by weight; the shared machine is protected by `tests/slot.js`. Each agent works in a
 **worktree of its own** (`.claude/worktrees/<name>`), sparse when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
@@ -300,7 +300,7 @@ runs. At most two open PRs per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
 Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
-*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped at three agents by rule W27, Pierre, 2026-11-09.
+*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight).
 
 ### W23
 
@@ -370,7 +370,11 @@ in a burst. *Source:* Pierre, 2026-11-08 (Q305).
 
 **Bounded cost, no conflicts: few agents, small PRs, two Codex rounds, then cut.** The integrator holds to these, each
 checked before it launches or relaunches an agent:
-- **At most three agents at a time**, each on one PR with one subject. A finished agent is stopped, not kept waiting.
+- **At most four agents at a time, balanced by weight** (Pierre, 2026-11-14: "la limite est plus complexe que ça. Ya des
+  agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"): heavy agents (simulations,
+  smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than two or three of them run at
+  once; light ones (read-only studies, docs) fill the remaining places. Each agent is on one PR or one study with one
+  subject. A finished agent is stopped, not kept waiting.
 - **Every branch starts from `origin/main`**, never from another PR's branch: no stacked PRs. A PR that would contain
   another is the same PR.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits

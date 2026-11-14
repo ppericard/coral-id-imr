@@ -228,7 +228,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W11** Say what you checked; a guess is labelled.
 - **W25** Use the quota with care, never at the cost of the result.
 - **W26** Several ready PRs merge through one green merge train (`tools/train.py`).
-- **W27** Bounded cost: at most three agents, PRs from `main` only, two Codex rounds then cut the scope.
+- **W27** Bounded cost: at most four agents balanced by weight, PRs from `main` only, two Codex rounds then cut the scope.
 
 ## Read on demand
 
