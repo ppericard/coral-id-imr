@@ -4843,6 +4843,18 @@ a.psrc:focus-visible {
   margin: 10px 0 0;
   font-size: var(--fs-s);
 }
+/* The roots of the genus name (learn.js rootLine, Q124 d): under the ID tips box, outside it (not an IMR line), with its
+   dictionaries in muted small text. */
+.sheet .nameroot {
+  margin: 12px 0 0;
+  max-width: 70ch;
+  font-size: var(--fs-s);
+  line-height: 1.45;
+}
+.sheet .nameroot .rsrc {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
 /* Quiz feedback: the same highlighted ID tips box as the genus sheet, compact (design review 2026-11-01). */
 .fb .fbtips {
   padding: 8px 12px 10px;
