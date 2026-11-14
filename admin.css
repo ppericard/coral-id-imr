@@ -5406,17 +5406,17 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
-/* A genus's and a species' cover in its heading (Pierre, 2026-11-13); his pick ringed in the cover mark's colour. */
+/* A node's cover in its heading and in its page's bar (Pierre, 2026-11-13); his pick ringed in the cover mark's colour. */
 .adm-hthumb {
   display: inline-block;
   vertical-align: middle;
   margin: 0 8px 0 0;
 }
-.adm-hthumb.mine {
+.adm-sthumb.mine {
   outline: 2px solid #e0a526;
   outline-offset: 1px;
 }
-/* The genus a family's page is narrowed to. */
+/* A node page's drill-down: its children, each opening its page. */
 .adm-fgsel {
   min-height: 34px;
   max-width: 100%;
@@ -5427,6 +5427,65 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   color: var(--ink);
   font: inherit;
   font-size: 0.85rem;
+}
+/* A node's page (Photos › Tree): the path from the root above the bar (each ancestor a link), the cover's why on a line
+   of its own; a heading's name opens its node's page; a group's page, its children's cards (each as its tree row). */
+.adm-crumbs {
+  flex: 1 0 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.adm-crumbs a {
+  color: inherit;
+}
+.adm-crumbs b {
+  color: var(--ink);
+}
+.adm-cvwhy {
+  flex: 1 0 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.adm-nlink {
+  color: inherit;
+  text-decoration: none;
+}
+.adm-nlink:hover {
+  text-decoration: underline;
+}
+.adm-tcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+  margin: 8px 0 18px;
+}
+.adm-tcard {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+.adm-tcard:hover {
+  border-color: var(--accent);
+}
+.adm-tcard > .adm-g,
+.adm-tcard > .adm-ttn {
+  flex: 1;
+  min-width: 0;
+}
+.adm-tcard > .adm-ttn {
+  padding: 6px 8px;
+}
+.adm-tcard small {
+  font-size: var(--fs-xs);
+}
+.adm-tcard > .dots {
+  padding-right: 8px;
 }
 /* Fish Coverage (admin plan PR 8): To do chips, the table scrolls sideways inside its box on phones. */
 .adm-ftodo {
