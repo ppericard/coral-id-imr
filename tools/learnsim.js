@@ -668,6 +668,7 @@ function play(cfg) {
     opens = [], // the questions (1-based) that opened a genus on its own card (the path's pace; not the first cards)
     nEx = 0,
     nDuel = 0,
+    nFind = 0, // Find the X questions (quiz.js FIND: fish only)
     nAgain = 0,
     nCards = 0,
     afterMiss = 0, // genera opened on their own cards on the question right after a miss
@@ -811,7 +812,12 @@ function play(cfg) {
       const f = document.querySelector('#view .tyform');
       if (!pick) f.querySelector('[data-idk]').click();
       else ((f.querySelector('input').value = pick), f.requestSubmit());
-    } else document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
+    } else {
+      // A Find the X opens its answers once its four tiles are in (quiz.js question): the photos' host is out of reach
+      // here, so each tile is counted in (its load event), as a player's would be once it came.
+      document.querySelectorAll('#view .qstage.qfx .fxt img').forEach(im => im.dispatchEvent(new Event('load')));
+      document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
+    }
     planNext(cur); // answer()'s top-up after the feedback
     if (oa.at !== null && lastE !== null)
       oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});
@@ -983,6 +989,7 @@ function play(cfg) {
     }
     if (set.exam) nEx++;
     if (q.auto) nDuel++;
+    if (q.findx) nFind++;
     if (q.again) nAgain++;
     if ((q.intro || []).length && !q.start) {
       opens.push(i + 1);
@@ -1048,6 +1055,7 @@ function play(cfg) {
         refLearned: mean(le.map(e => e.ref)),
         examQs: nEx,
         duels: nDuel,
+        finds: nFind,
         agains: nAgain,
         cards: nCards,
         f: fieldRow(),
@@ -1395,7 +1403,7 @@ function summary(runs) {
     const R = runs.filter(r => r.profile === name);
     out[name] = CPS.map((q, i) => {
       const row = {q};
-      for (const [k] of KEYS.concat([['examQs'], ['duels'], ['agains'], ['cards']])) {
+      for (const [k] of KEYS.concat([['examQs'], ['duels'], ['finds'], ['agains'], ['cards']])) {
         const v = R.map(r => r.rows[i] && r.rows[i][k]).filter(x => typeof x === 'number' && !isNaN(x)),
           m = v.length ? v.reduce((a, x) => a + x, 0) / v.length : null,
           sd = v.length > 1 ? Math.sqrt(v.reduce((a, x) => a + (x - m) ** 2, 0) / (v.length - 1)) : 0;

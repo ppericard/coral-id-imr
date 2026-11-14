@@ -1521,7 +1521,8 @@ async function signin(base) {
         for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-          if (!(await until(() => document.querySelector(SEL)))) break;
+          // a Find the X's tiles counted in first (tests/answer.js smokeTiles: the photos' host is out of reach here)
+          if (!(await until(() => (window.smokeTiles && smokeTiles(), document.querySelector(SEL))))) break;
           const n0 = answersSoFar();
           smokeAnswer();
           // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).

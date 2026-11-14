@@ -945,6 +945,78 @@ apart in the player journey; a win counts for the Look-alike slayer achievement,
 after 100 questions with duels, 26 without, seed 3333); the profiles test now checks an expert's traps at 300
 questions (one or more a question) and more than a beginner's at 100, the mean of the two sitting at the threshold.
 
+### Find the X slipped into the fish quiz (2026-11-14, Q321 D1)
+
+The first format of the ReefRecall study Pierre agreed (2026-11-03; first of the new formats, Q321, 2026-11-09; ROADMAP
+"Game modes", docs/FORMATS.md row 3): one name, four photos, the player taps the one that shows it. Side-by-side
+comparison of look-alikes, the other way round from the photo quiz (Kang & Pashler 2012; Wahlheim, Dunlosky & Jacoby 2011).
+
+- **Fish only, on the tiles**: its photos are the square tiles cut around the fish (`tools/fish_game.py`, judging/FISH.md
+  "The fish's box", #826). A unit plays it only when it has a tile (`app.js` `UNITS` `tiles`; none for the corals, so the
+  corals never play it and their draws are untouched: nothing is drawn at random before a unit qualifies).
+- **Slipped into the quiz like the duels** (`quiz.js` `FIND`, `planFind`, called by `planPhoto` right after the duel's
+  chance): the unit the draw just chose becomes a Find the X with the chance `FIND.P` = 0.05 (half the duels'
+  `CONTRAST.P`), never with a card, in a comeback or with a mix-up queued, and it takes the contrast slot, so it is spaced
+  as the Again and the duels are (`CONTRAST.GAP`). Simulated, about 5-9 questions in 300 (below).
+- **Never on a unit not met**: the unit and the three others are met and ready (`introReady`), of the subject's rank
+  (the families: a scientific genus keeps its usual questions; the species once they are units), each with a tile.
+- **The other photos**: the look-alikes first (`model.js` `distractors` with every trap: the player's own mix-ups, the
+  pairs players confuse, the declared look-alikes), then the most confusable; each photo drawn as the quiz draws a unit's
+  (`photoSet`, its tiles only: the `keep` filter), aimed for a 4-choice question in format `find`.
+- **Scored as a quiz answer with 4 choices**: the guess rate 1 in 4 (`core.js` `kOf`, `guessOf`), the photo of another unit
+  tapped counted as that unit given (rule L2: a miss on the unit asked, a false alarm on the one tapped, the pair queued
+  for its Again). Its offset: the fish have none yet (`model.js` `pfmt`: every fish format at 0), so `core.js` `fmtOf`
+  reads it as `k4` for now; a key of its own (`find`) comes with the fish formats' offsets (ROADMAP). The exam never asks
+  it.
+- **Logged with its own mode** `quiz|f` (custom quiz `quiz|s|f`): the unit's own photo in Photos, the four units in
+  Choices in the order shown, the unit of the photo tapped in Answered. The other three photos are not logged: every
+  reader of the log takes the photos of a row as photos of the unit shown (the photo ratings, the memory, `Code.gs`
+  `photoAlert_`). The sheet stores the mode as it comes (no column change, no gate: rule D4). The replay scores a `|f` row
+  exactly as the same row without it (`tests/findx.test.js`).
+
+**Checked** (rule L11, level 2, as the integrator raised it: a change to the draw; about 2-3% of the fish questions, on
+the families with a tile). The app world: the fish profiles, 300 questions, `node tools/learnsim.js --subject fish`,
+`main` against the branch on the same seeds, `node tools/learncmp.js`; guardrails only, no primary (the format is not
+meant to move a measure in 300 questions); looks: 5 seeds, then 20, then 40 for the one cell left unclear (level 3).
+The rated world is not run: its planner has no contrast question (no Again, no duel), so it cannot see this change. The
+real log holds no answer of this format yet (rule L12: nothing to replay; the scoring of every existing answer is
+unchanged). At 20 seeds, one-sided 95% bound of the paired difference:
+
+| Guardrail (margin) | Beginner | Casual diver | Lecture RA | Strong RA | Expert |
+| --- | --- | --- | --- | --- | --- |
+| True knowledge at 300 (−0.02) | +0.001 [−0.001] | −0.000 [−0.003] | +0.002 [−0.001] | +0.001 [−0.001] | +0.000 [−0.000] |
+| E = bar − D\* at 300 (+0.03) | +0.011 [+0.029] | −0.005 [+0.017] | −0.005 [+0.010] | −0.009 [+0.003] | +0.009 [+0.019] |
+| Answers to the first family at Open Water | −5.0 [+16.5] (+19.1) | +0.0 [+15.0] (+14.6): unclear | −5.8 [+1.8] (+10) | +0.9 [+3.3] (+10) | +1.4 [+3.4] (+10) |
+| Families at Open Water at 300 (−2) | +0.0 [−1.0] | +0.3 [−0.9] | +0.3 [−1.0] | −0.1 [−1.1] | +1.7 [+0.7] |
+| Longest plateau of the shown score | −5 [+4] | −1 [+9] | +2 [+7] | +1 [+5] | −4 [−1] |
+| Share under ease 4 before Open Water (+0.05) | −0.000 [+0.010] | −0.006 [+0.004] | −0.008 [+0.004] | +0.006 [+0.016] | +0.000 [+0.014] |
+| Families met at 100 / 300 (−2) | +0.3 / 0 | +0.5 / 0 | +0.6 / 0 | +0.5 / 0 | +0.2 / 0 |
+| Find the X questions by 300 | 5.2 | 5.3 | 7.3 | 7.6 | 8.5 |
+| Duels by 300 (before → after) | 12.4 → 11.6 | 14.1 → 11.8 | 14.3 → 16.9 | 19.8 → 19.5 | 20.4 → 19.6 |
+| Right % (before → after) | 86.7 → 85.4 | 85.5 → 85.4 | 90.0 → 90.5 | 95.5 → 94.5 | 96.2 → 97.0 |
+
+At 20 seeds every guardrail held but one cell: the casual diver's wait for the first family at Open Water, the same
+mean before and after (73.2 answers) and its bound 0.4 answers past its margin, a noisy measure (the paired differences'
+SD 39 answers). At the first look (5 seeds) the lecture RA's longest plateau read +10 [+18] against +8 (breached) and
+three over-claim cells were unclear; with 20 seeds both hold (+2 [+7]; the over-claim at most +0.029).
+
+**Level 3 for that cell** (declared before running: the casual diver alone, seeds 1-40, `main` 338eebf1 against the
+branch, the third look at this comparison, so one-sided bounds at 1 − 0.10/3 = 96.7%, every guardrail of the profile
+re-read; a breach would go to Pierre). Every one holds:
+
+| Casual diver, 40 seeds (margin) | before → after | difference [96.7% bound] |
+| --- | --- | --- |
+| True knowledge at 300 (−0.02) | 0.397 → 0.397 | −0.000 [−0.002] |
+| E = bar − D\* at 300 (+0.03) | −0.343 → −0.342 | +0.001 [+0.018] |
+| Answers to the first family at Open Water (+14.7) | 73.3 → 73.5 | +0.2 [+12.5] |
+| Families at Open Water at 300 (−2) | 7.1 → 7.3 | +0.2 [−0.6] |
+| Longest plateau (+11) | 56 → 52 | −4 [+3] |
+| Share under ease 4 before Open Water (+0.05) | 0.092 → 0.088 | −0.004 [+0.003] |
+| Families met at 100 / 300 (−2) | 17.9 → 18.1 / 32 → 32 | +0.2 [−0.3] / 0 |
+
+(5.3 Find the X by question 300; duels 13.0 → 12.9; right 86.0% → 86.4%.) A different question changes every later
+draw of the run, so the pairs differ by more than the format alone: the spreads above are the draw's.
+
 ### Custom quiz: the photo quiz on the genera the player picks (2026-11-03)
 
 Pierre: a game mode next to the quiz where the player selects the genera to work on, and the quiz is exactly the photo

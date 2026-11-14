@@ -2169,6 +2169,123 @@ body:has(.lk) main {
   padding: 2px 9px;
   border-radius: var(--pill);
 }
+/* Find the X (quiz.js question, set.find; Q321 D1): four square tiles in the stage's grid, each the button of its unit.
+   fitStage sets --fx, the side of the largest square a cell holds. Once answered: each tile's name at the top (the right
+   one on --good with a tick, the one tapped on --bad with a cross: never colour alone), a ring of the same colour, the
+   enlarge mark and the source pill (tablet up, the observer's name in the enlarged view). */
+.qstage.qfx {
+  place-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.fxt {
+  position: relative;
+  margin: 0;
+  width: var(--fx, 100%);
+  height: var(--fx, auto);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--r);
+  background: var(--photo-bg);
+}
+.fxt > button[data-c] {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+}
+.fxt > button[data-c]:disabled {
+  cursor: default;
+}
+.fxt img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* A tile fallen back on its photo (app.js tileSrc: R2 out, or its retries spent): the photo whole, never a centre crop
+   that cuts the fish (Codex review #885). */
+.fxt img:not([src*='-x.webp']) {
+  object-fit: contain;
+}
+.fxt kbd {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+}
+.q.done .fxt kbd {
+  display: none;
+}
+@media (hover: hover) {
+  .fxt > button[data-c]:not([disabled]):hover img {
+    filter: brightness(1.08);
+  }
+}
+.fxt > button[data-c]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.fxt.fok::after,
+.fxt.fko::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 4px solid var(--good);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.fxt.fko::after {
+  border-color: var(--bad);
+}
+.fxt figcaption {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  z-index: 2;
+  transform: translateX(-50%);
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 9px;
+  border-radius: var(--pill);
+  background: var(--scrim);
+  color: var(--on-photo);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  pointer-events: none;
+}
+.fxt.fok figcaption {
+  background: var(--good);
+  color: var(--surface);
+}
+.fxt.fko figcaption {
+  background: var(--bad);
+  color: var(--surface);
+}
+.fxt .zoom {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.fxt .psrc .pa {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .fxt figcaption {
+    font-size: var(--fs-s);
+  }
+}
 .qside {
   display: flex;
   flex-direction: column;
@@ -2833,7 +2950,8 @@ td i {
   .q .qstage {
     display: flex !important;
   }
-  .q .qstage.qvs {
+  .q .qstage.qvs,
+  .q .qstage.qfx {
     display: grid !important;
   }
   .q .qstage.qvs {

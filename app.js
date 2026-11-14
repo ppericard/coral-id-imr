@@ -155,6 +155,11 @@ const loc = (p, s) => {
   return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
+// A fish photo's tile (Find the X; tools/fish_game.py, Pierre 2026-11-09, Q321 D4): {f}-x.webp on R2, a 360 px square cut
+// around the fish, its square (xc) and its rewrite count (iv: a rotation corrected leaves xc as it was) in the address,
+// so a new tile is a new file for the caches (sw.js serves photos cache-first; Codex review #885). A photo with none, or
+// once R2 has failed (a tile has no online original), its 480 px file instead, the fish whole in its photo.
+const tileSrc = p => (p.xc && !p.r && !AWAY ? photoUrl(`img/${p.f}-x.webp?x=${p.xc.join('_')}${p.iv ? '.' + p.iv : ''}`) : img(p, 's'));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
 // Saver takes the 480 px file for game photos and stage photos whatever the box; Full always takes the 1600 px file. Auto is Saver when the browser reports
@@ -424,12 +429,12 @@ function cropWatch() {
 const NOPHOTO =
   '<svg viewBox="0 0 64 48"><path class="np-t" d="M8 16a5 5 0 0 1 5-5h8l4-5h14l4 5h8a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z"/><circle cx="32" cy="27" r="9"/><path class="np-x" d="M10 4l44 42"/><path d="M10 4l44 42"/></svg>';
 const noPhoto = i => {
-  const box = i.closest('.qph, .ulphoto');
+  const box = i.closest('.qph, .ulphoto, .fxt');
   if (box && !box.querySelector('.nophoto'))
     box.insertAdjacentHTML('beforeend', `<span class="nophoto" aria-hidden="true">${NOPHOTO}</span>`);
 };
 const noPhotoGone = i => {
-  const n = i.closest('.qph, .ulphoto');
+  const n = i.closest('.qph, .ulphoto, .fxt');
   if (n) n.querySelectorAll('.nophoto').forEach(x => x.remove());
 };
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
@@ -484,9 +489,10 @@ $v.addEventListener(
         };
       }
       // Another photo of the question may come later, one still trying or one added since (the hint, Codex review
-      // #490): the answers open again then (the load listener below).
+      // #490): the answers open again then (the load listener below). A Find the X's photos are its choices (quiz.js
+      // question): one missing is a choice the player cannot see, so its answers close at once (Codex review #885).
       const q = $v.querySelector('.q');
-      if (q && ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth)) {
+      if (q && (q.querySelector('.qstage.qfx') || ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth))) {
         q.classList.add('qnone');
         qAnswers(q, false);
       }
@@ -506,7 +512,8 @@ $v.addEventListener(
       e.target.naturalWidth &&
       e.target.closest('.q.qnone:not(.done) .qstage') &&
       e.target.closest('.q');
-    if (!q) return;
+    // A Find the X opens again only once none of its four photos is missing.
+    if (!q || q.querySelector('.qstage.qfx img.fail')) return;
     q.classList.remove('qnone');
     qAnswers(q, true);
   },
@@ -1841,6 +1848,9 @@ const UNITS = {
         )
     ],
     winks: () => [],
+    // The tile photos of unit n (Find the X, quiz.js planPhoto): none, so the corals never play it (Pierre, 2026-11-03:
+    // fish only; coral photos do not read as small thumbnails).
+    tiles: () => [],
     // The Learn page (#learn/genera): the Genera page (learn.js), and a genus's sheet (#learn/genus/Acropora).
     list: () => viewGenera(),
     sheet: n => viewGenus(n),
@@ -2015,6 +2025,10 @@ const UNITS = {
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the
     // people working on the IMR course).
     winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
+    // The tile photos of unit n (Find the X, quiz.js planPhoto; Pierre, 2026-11-09, Q321 D4): its game photos that have
+    // the square tile cut around the fish (fish-game.json xc, tools/fish_game.py), so a family plays it only once judged
+    // photos with a fish's box are in play.
+    tiles: n => ((GX(n) || {views: {}}).views.wide || []).filter(p => p && p.xc),
     list: () => viewFishList(),
     // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
     // name line for each.

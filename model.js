@@ -151,8 +151,8 @@ const colonyMem = (obs, ps) =>
 // shift: added to the ability for this question (a comeback question after a break: ln R, comebackShift, below).
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
 // PICKD.P in that format (aimOff); f: its format (core.js fmtOf: 'k4', 'again', 'duel', 'typed'…), whose offset the aim
-// takes (fmtOff, the subject's pfmt).
-function photoSet(n, skip, shift = 0, k = 4, f = '') {
+// takes (fmtOff, the subject's pfmt). keep: the photos it may show, when not all of them (Find the X: the tiles).
+function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
@@ -168,7 +168,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '') {
     [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(ok(v))
       .filter(gameOk)
-      .filter(p => p.f !== skip);
+      .filter(p => p.f !== skip && (!keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,

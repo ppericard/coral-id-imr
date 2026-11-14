@@ -318,7 +318,7 @@ const qclockRead = () =>
 // clock).
 function qclockArm() {
   const qn = (QCLOCK.n = (QCLOCK.n || 0) + 1),
-    ims = [...$v.querySelectorAll('.qstage .qph img')];
+    ims = [...$v.querySelectorAll('.qstage .qph img')]; // a Find the X's tiles start it in its gate (question), all four in
   Object.assign(QCLOCK, {t0: null, off: 0, hid: null, zm: 0});
   if (ims.some(im => im.complete && im.naturalWidth)) qclockGo();
   else ims.forEach(im => im.addEventListener('load', () => QCLOCK.n === qn && qclockGo(), {once: true}));
@@ -334,20 +334,41 @@ function question(cur, target, choices, prompt, set, kq) {
   // iNaturalist's file names (app.js img()), which resized() leaves alone (the failed-photo report, tests).
   const fig = (p, k, n = ph.length) =>
     `<figure class="qph"${p.ar ? ` data-r="${p.ar}"` : ''} style="--qbg:url('${img(p, 's')}')"><button type="button" class="zoom" data-q="${k}" aria-label="Enlarge photo"><img src="${qsrc(p, n)}" data-lo="${img(p, 's')}"${p.f ? ` data-f="${esc(p.f)}"` : ''} alt="${SUBJ.what} to identify${p.view && lab[p.view] ? ', ' + lab[p.view].toLowerCase() + ' view' : ''}">${ZOOMI}</button>${p.view && lab[p.view] ? `<figcaption>${lab[p.view]}</figcaption>` : ''}</figure>`;
+  // Find the X (planPhoto, FIND): the four photos are the choices, square tiles in the stage (app.js tileSrc), each the
+  // button of its unit (data-c), in the order of the choices; no name buttons. Their names come with the answer (go).
+  const fx = set.find || null,
+    tile = (x, i) =>
+      `<figure class="fxt"><button type="button" data-c="${esc(x.n)}" aria-label="Photo ${i + 1}"><img src="${tileSrc(x.p)}" data-lo="${img(x.p, 's')}"${x.p.f ? ` data-f="${esc(x.p.f)}"` : ''} alt="${SUBJ.what} ${i + 1}"><kbd>${i + 1}</kbd></button></figure>`;
   // One screen, no scrolling: the photos fill the stage (sized to the window), choices and feedback sit beside them.
-  $v.innerHTML = `${gameHelp(cur)}<div class="q bleed">
-    <div class="qstage">${ph.map((p, k) => fig(p, k)).join('')}</div>
+  $v.innerHTML = `${gameHelp(cur)}<div class="q bleed${fx ? ' qfind' : ''}">
+    <div class="qstage${fx ? ' qfx' : ''}">${fx ? fx.map(tile).join('') : ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name && !GX(c).rank ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
+      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name && !GX(c).rank ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
   QOPEN = true; // a question waits for its answer: no reload for a new version until Next (app.js UPDATED)
-  const qrep = (QREP = {g: target, ph: ph.map(p => p.f).filter(Boolean), el: $v.querySelector('.q')});
+  const qrep = (QREP = {g: target, ph: (fx ? fx.map(x => x.p) : ph).map(p => p.f).filter(Boolean), el: $v.querySelector('.q')});
   bindQuizNav(cur);
   fitStage();
   qclockArm();
+  // Find the X: its photos are its choices, so it is answered only once all four are in (a tile still loading is a choice
+  // the player cannot see; Codex review #885), and its clock starts then. One that fails for good keeps them closed: app.js's error listener then
+  // offers another question, and nothing is scored or logged.
+  if (fx) {
+    const q = $v.querySelector('.q'),
+      tiles = [...q.querySelectorAll('.qstage .fxt img')],
+      inn = new Set(tiles.filter(im => im.complete && im.naturalWidth)),
+      gate = () => {
+        const all = inn.size === tiles.length && !q.classList.contains('qnone');
+        // its clock from the moment it can be answered: a tile's download is no time spent recognising (rtWeight)
+        if (all) qclockGo();
+        qAnswers(q, all);
+      };
+    tiles.forEach(im => im.addEventListener('load', () => (inn.add(im), gate())));
+    gate();
+  }
   const hb = document.getElementById('hintb');
   const showHint = () => {
     if (hintShown || !set.hint) return;
@@ -377,6 +398,15 @@ function question(cur, target, choices, prompt, set, kq) {
   };
   document.addEventListener('keydown', keys, {signal: viewKeys()});
   $v.querySelector('.q').addEventListener('click', e => {
+    // A Find the X once answered: each tile enlarges the four photos whole, named (go).
+    const zf = fx && e.target.closest('[data-fz]');
+    if (zf) {
+      tipZoomed();
+      return zoom(
+        fx.map(x => ({...x.p, genus: x.n})),
+        Number(zf.dataset.fz)
+      );
+    }
     const z = e.target.closest('[data-q]');
     if (!z) return;
     const list = hintShown ? [...ph, set.hint] : answered && set.reveal ? [...ph, ...set.reveal] : ph;
@@ -406,6 +436,18 @@ function question(cur, target, choices, prompt, set, kq) {
     answered = true;
     QOPEN = false;
     answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
+    // Find the X: each tile now says its unit (the right one ticked, the one tapped crossed: never colour alone), its
+    // source (rule P5) and opens the four photos whole.
+    if (fx)
+      $v.querySelectorAll('.qstage .fxt').forEach((f, i) => {
+        const x = fx[i],
+          k = x.n === target ? 'fok' : x.n === c ? 'fko' : '';
+        if (k) f.classList.add(k);
+        f.insertAdjacentHTML(
+          'beforeend',
+          `<figcaption>${k ? `<span aria-hidden="true">${k === 'fok' ? '✓' : '✗'}</span> ` : ''}${uname(x.n)}</figcaption><button type="button" class="zoom" data-fz="${i}" aria-label="Enlarge ${esc(unameT(x.n))}">${ZOOMI}</button>${photoSrc(x.p)}`
+        );
+      });
     const tr = $v.querySelector('.trail');
     if (tr) tr.outerHTML = trail();
   };
@@ -448,7 +490,8 @@ function fitStage() {
   pageHelp();
   const tab = tabH();
   q.style.setProperty('--qh', Math.max(260, innerHeight - q.getBoundingClientRect().top - window.scrollY - 16 - tab) + 'px');
-  const st = q.querySelector('.qstage');
+  const st = q.querySelector('.qstage'),
+    fxs = st.classList.contains('qfx'); // a Find the X: square tiles
   // Phones (one column): the photo takes all the height the question and answers leave, so no gap is left under it.
   // After an answer the feedback is a bottom sheet over the page: the photo shrinks to the space left above it, so it stays in view.
   if (isStacked()) {
@@ -458,6 +501,8 @@ function fitStage() {
       aft && getComputedStyle(aft).position === 'fixed'
         ? Math.max(120, aft.getBoundingClientRect().top - st.getBoundingClientRect().top - 8) + 'px'
         : Math.max(180, parseFloat(q.style.getPropertyValue('--qh')) - (side ? side.offsetHeight : 240) - 10) + 'px';
+    // Find the X: its 2 x 2 square tiles need no more height than the stage's width (no empty band under them).
+    if (fxs && !aft) st.style.height = Math.min(parseFloat(st.style.height), st.clientWidth + 8) + 'px';
   } else st.style.height = '';
   const n = st.children.length,
     W = st.clientWidth,
@@ -473,11 +518,22 @@ function fitStage() {
     const r = Math.ceil(n / c),
       cw = (W - 8 * (c - 1)) / c,
       ch = (H - 8 * (r - 1)) / r;
-    const score = isStacked() ? Math.min(cw, (ch * 4) / 3) : rs.reduce((a, x) => a + Math.min(cw, ch * x) ** 2 / x, 0);
+    const score = fxs
+      ? Math.min(cw, ch)
+      : isStacked()
+        ? Math.min(cw, (ch * 4) / 3)
+        : rs.reduce((a, x) => a + Math.min(cw, ch * x) ** 2 / x, 0);
     if (score > best[2] * 1.02) best = [c, r, score];
   }
   st.style.gridTemplateColumns = `repeat(${best[0]}, minmax(0, 1fr))`;
   st.style.gridTemplateRows = `repeat(${best[1]}, minmax(0, 1fr))`;
+  // Find the X: its square tiles take the largest square a cell holds (app.css .fxt), side by side in the middle.
+  if (fxs) {
+    const side = Math.max(0, Math.floor(Math.min((W - 8 * (best[0] - 1)) / best[0], (H - 8 * (best[1] - 1)) / best[1])));
+    st.style.setProperty('--fx', side + 'px');
+    st.style.gridTemplateColumns = `repeat(${best[0]}, ${side}px)`;
+    st.style.gridTemplateRows = `repeat(${best[1]}, ${side}px)`;
+  }
   // Phones and tablets: the stage takes all the height the question and answers leave (computed above, before any photo
   // loads, so nothing moves while they load). Each photo fills its box (object-fit: cover, class .cov on its figure) when that
   // crops at most ~23% of it; a photo of another shape is shown whole on its blurred background. A 4:3 cap tried after the
@@ -651,6 +707,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // A photo-quiz question with fewer than 4 choices ("Again: A or B?" after a mix-up) says so too: logged plain "quiz",
   // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
   // |d: a look-alike duel slipped into the photo quiz (CONTRAST), before |kN (the sheet reads |kN at the end).
+  // |f: a Find the X (FIND): one name, four photos; the question's own photo (ph) is the unit's, its choices (ch) the
+  // units of the four photos in the order shown, its answer (a) the unit of the photo tapped. The other three photos are
+  // not logged: every reader of the log takes its photos as photos of the unit shown (the photo ratings, the memory,
+  // Code.gs photoAlert_).
   // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
   // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
   // the app and the sheet's hold_; old rows only.)
@@ -659,6 +719,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   const mq =
     modeBase(cur) +
     (photoQuiz(cur) && AUTOD ? '|d' : '') +
+    // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
+    (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
     (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
     // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
@@ -827,7 +889,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     const order = ph.filter(p => p !== unseen).sort((x, y) => (y.view === 'macro') - (x.view === 'macro')),
       G = GX(c),
       V = Object.fromEntries(Object.entries(G.views).map(([v, L]) => [v, L.filter(p => gamePhotoOk(c, p))]));
-    const tp = order.find(p => (V[p.view] || []).length);
+    // Find the X keeps its four tiles: they say which photo is which once answered (question).
+    const tp = !(photoQuiz(cur) && FINDX) && order.find(p => (V[p.view] || []).length);
     if (tp) {
       const [, cp] = photoPair([tp], V[tp.view], tp),
         st0 = $v.querySelector('.qstage'),
@@ -1506,10 +1569,17 @@ const sheetTab = () => (!isStacked() && !matchMedia(MQ.touch).matches ? ' target
 // before). It replaced AUTO_DUEL {P, FROM 20, GAP 5, AGAIN 2, SAME 20}: no first 20 answers without duels (Pierre,
 // 2026-11-02: duels help learning early too), AGAIN and GAP became the one gap, SAME the previous pair.
 const CONTRAST = {P: 0.1, GAP: 2, Q: 3};
+// Find the X (ROADMAP "Game modes"; Pierre, 2026-11-03, the first of the new formats, Q321 D1, 2026-11-09): one name,
+// four photos, the player taps the one that shows it. Fish only (app.js UNITS tiles: the square tiles cut around the fish,
+// none for the corals), slipped into the photo quiz as the duels are, a small spaced share: P, the chance that a question
+// which could be one becomes one (planPhoto), half the duels' CONTRAST.P; it takes the contrast slot, so it is spaced
+// as they are (CONTRAST.GAP from the last contrast question, never with one queued).
+const FIND = {P: 0.05};
 let rematch = [], // the pairs queued by mix-ups, oldest first: {pair, at: answers so far when the missed question showed}
-  twoAt = -Infinity, // answers so far when the last contrast question (an Again or a duel) showed
+  twoAt = -Infinity, // answers so far when the last contrast question (an Again, a duel or a Find the X) showed
   twoPair = '', // and its pair
-  AUTOD = false; // the question on screen is a duel slipped in (set by quizPhoto, read by answer)
+  AUTOD = false, // the question on screen is a duel slipped in (set by quizPhoto, read by answer)
+  FINDX = false; // the question on screen is a Find the X (set by quizPhoto, read by answer)
 // "This pair comes back as a duel in a moment": said the first 3 times only (RA review 2026-11-02: it came on every
 // wrong answer, about 20 times in 30 questions); the pair still comes back every time.
 // Queues the pair of a mix-up (CONTRAST.Q at most, a pair already waiting not twice). True when it is in the queue.
@@ -1549,7 +1619,7 @@ function dropPlans() {
   if (NEXTQ) ({last, lastQs, rematch, twoAt, twoPair} = NEXTQ.snap);
   NEXTQ = null;
 }
-const plain = q => !q.intro && !q.auto && !q[4].exam && q[2].length > 2;
+const plain = q => !q.intro && !q.auto && !q.findx && !q[4].exam && q[2].length > 2;
 // The photos of the planned questions, fetched in the order they will be needed, two files at a time: question after
 // question (the cards of the genera met first, then the photos shown, small version then full size, then the hint and
 // the other views shown after the answer). All at once they shared a slow line, and the first photo came later than
@@ -1573,7 +1643,9 @@ const pfUrls = q => {
         .map(p => img(p, 's')),
       ...(set.shown || []).flatMap(p => [img(p, 's'), qsrc(p, n)]),
       ...later.map(p => img(p, 's')),
-      ...later.map(p => qsrc(p, n + later.length))
+      ...later.map(p => qsrc(p, n + later.length)),
+      // Find the X: its four tiles (app.js tileSrc), in the order shown.
+      ...(set.find || []).map(x => tileSrc(x.p))
     ])
   ].filter(u => ownPhoto(u) || SUBJ.remote || AWAY); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown; a subject on iNaturalist photos, core.js SUBJECTS remote, has them all fetched ahead; once R2 failed, the online originals that stand in for the site's files)
 };
@@ -1675,6 +1747,7 @@ function quizPhoto(cur = 'quiz') {
   }
   SHOWNQ = q;
   AUTOD = !!q.auto;
+  FINDX = !!q.findx;
   question(...q);
   // A custom-quiz card: the genus is asked with it (ready at once, a card of its own, no Open all offer on it).
   // The first cards' "Had the IMR lecture? Open all" box: not for a player who answered "I'm new to corals" (Pierre,
@@ -2009,6 +2082,28 @@ function introStart(list) {
     L.push(openPick(fresh, fresh, met));
   return L;
 }
+// Find the X (FIND): the question on unit t, drawn by planPhoto among the units of list, or null. It is one with the
+// chance FIND.P when t and three other units of its rank, met and ready, have a tile (UNITS tiles): never on a unit not
+// met, the other photos' units included. Only the units of the subject's own rank (the families: the row names families
+// and species; a scientific genus keeps its usual questions). The three other units: the look-alikes first (distractors
+// with every trap: the player's own mix-ups, the pairs players confuse, the declared look-alikes), then the most
+// confusable. Each photo drawn as the quiz draws a unit's (photoSet), among its tiles only; the question's photo is t's,
+// aimed for a 4-choice question in its own format (ease: the opening hold's, as every question). Answered, it is scored
+// as a quiz answer with 4 choices (guess 1 in 4; the photo of another unit tapped counts as that unit given, rule L2)
+// and logged |f (answer). Whether it could be one is read before any random draw, so a subject or a player with no
+// tile draws exactly as before (the corals' draws untouched).
+function planFind(cur, t, list, ease = 0, sel = null) {
+  const tiles = UNITS[SUBJ.id].tiles;
+  if (rankOf(t) || !introReady(t) || !tiles(t).length) return null;
+  const others = list.filter(n => n !== t && !rankOf(n) && introReady(n) && tiles(n).length);
+  if (others.length < 3 || !(Math.random() < FIND.P)) return null;
+  const ch = shuffle([t, ...distractors(t, others, 3, introReady)]),
+    tile = p => !!p.xc,
+    set = photoSet(t, null, ease - confTerm(t, ch, 4), 4, 'find', tile),
+    find = ch.map(n => ({n, p: n === t ? set.shown[0] : (photoSet(n, null, ease, 4, 'find', tile).shown || [])[0]}));
+  if (ch.length !== 4 || !find.every(x => x.p)) return null;
+  return Object.assign([cur, t, ch, `Find the ${uname(t)}`, {...set, reveal: [], find}], {findx: 1, ...(sel ? {custom: 1} : {})});
+}
 // cur: 'quiz', or the custom quiz (CUSTOM_H): its genus asked and its choices come from the player's selection (model.js
 // customOf, customDraw, customChoices), with no opening path; everything else is the photo quiz's.
 // at: the answers count at which the question will show (planNext plans up to AHEAD questions ahead).
@@ -2119,6 +2214,13 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
         {auto: twoPair, ...(sel ? {custom: 1} : {})}
       );
     }
+  }
+  // Find the X (FIND, planFind): like a duel, never with a card, in a comeback or with a mix-up queued, and spaced as
+  // the contrast questions are (gap); on the unit the draw just chose.
+  const findQ = !cards.length && !warm && !rematch.length && gap && planFind(cur, t, list, ease, sel);
+  if (findQ) {
+    twoAt = at;
+    return findQ;
   }
   // No mastery exam question in the custom quiz (rule L9, Codex review #411): its choices come from the selection,
   // which may hold none of the genus's look-alikes, so passing there would not prove it; the exam comes in the photo quiz.
