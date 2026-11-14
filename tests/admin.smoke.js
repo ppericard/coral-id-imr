@@ -4881,7 +4881,7 @@ const WIDTHS = [390, 1280];
           fe.push(`Journey ${JSON.stringify(jo)}`);
         if (process.env.SHOTS)
           for (const sc of ['light', 'dark']) {
-            await fq.emulateMedia({colorScheme: sc});
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
             await fq.waitForTimeout(300);
             await fq.screenshot({path: path.join(process.env.SHOTS, `fish-journey-${vw}-${sc}.png`), fullPage: true});
           }
@@ -4900,7 +4900,7 @@ const WIDTHS = [390, 1280];
         if (ss.ids.length || !ss.genus || ss.wide > 0) fe.push(`the session unfolded ${JSON.stringify(ss)}`);
         if (process.env.SHOTS)
           for (const sc of ['light', 'dark']) {
-            await fq.emulateMedia({colorScheme: sc});
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
             await fq.waitForTimeout(300);
             const el = await fq.$('.adm-journey [data-sdet]');
             if (el) await el.screenshot({path: path.join(process.env.SHOTS, `fish-journey-session-${vw}-${sc}.png`)});
