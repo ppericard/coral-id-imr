@@ -781,6 +781,61 @@ const darkCards = (p, sel) =>
         await go(other.hash + 'photos/tree/key/f%3ANone');
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: an unknown node ${JSON.stringify(u)}`);
+        // A species met only on the surprise cards (a wink family's; Pierre, 2026-11-08, ROADMAP "Surprise-only species"):
+        // its target is FISHT.wink and its section shows that many of its photos in play (or its featured ones), the rest
+        // behind "N more"; the heading still counts every photo; the chip opens them all, a redraw (as every tile click
+        // makes) keeps them open, and it folds them again. Relations only: fish-game.json changes at each Publish.
+        {
+          const wid = await p.evaluate(() => (FISHC.units.find(x => x.wink && x.species.length) || {}).id || '');
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(wid));
+          const wk = () =>
+            p.evaluate(() =>
+              [...document.querySelectorAll('.adm-row[data-sid]')].map(s => {
+                const t = s.querySelector('h3 small').textContent,
+                  c = s.querySelector('[data-fuwall]');
+                return {
+                  sid: s.dataset.sid,
+                  wink: FISHT.wink,
+                  tgt: (/\/(\d+)/.exec(t) || [])[1],
+                  n: +((/(\d+) photos?/.exec(t) || [])[1] || 0),
+                  feat: s.querySelectorAll('.adm-grid .adm-tile .adm-num, .adm-grid .adm-tile [data-num]').length,
+                  out: +((/(\d+) filtered out/.exec(t) || [])[1] || 0),
+                  tiles: s.querySelectorAll('.adm-grid .adm-tile').length,
+                  more: c ? +(/^(\d+) more$/.exec(c.textContent.trim()) || [])[1] : 0,
+                  pressed: c ? c.getAttribute('aria-pressed') : null
+                };
+              })
+            );
+          let W = await wk();
+          if (!wid || !W.length || W.some(s => s.tgt !== String(s.wink)))
+            fails.push(`${w}px Tree: a surprise-card species' target ${JSON.stringify({wid, W})}`);
+          const big = W.find(s => s.n > s.wink + 1);
+          if (!big) fails.push(`${w}px Tree: no surprise-card species with more photos than shown ${JSON.stringify(W)}`);
+          else {
+            if (
+              !(big.more > 0) ||
+              big.tiles + big.out + big.more !== big.n ||
+              big.tiles > Math.max(big.wink, big.feat) ||
+              big.pressed !== 'false'
+            )
+              fails.push(`${w}px Tree: a surprise-card species folded ${JSON.stringify(big)}`);
+            await p.click(`.adm-row[data-sid="${big.sid}"] [data-fuwall]`);
+            await settle();
+            await p.evaluate(() => render());
+            await settle();
+            const all = (await wk()).find(s => s.sid === big.sid);
+            if (!all || all.tiles + all.out !== all.n || all.pressed !== 'true' || all.more !== big.more)
+              fails.push(`${w}px Tree: a surprise-card species unfolded ${JSON.stringify(all)}`);
+            await p.click(`.adm-row[data-sid="${big.sid}"] [data-fuwall]`);
+            await settle();
+            const back = (await wk()).find(s => s.sid === big.sid);
+            if (!back || back.tiles !== big.tiles || back.pressed !== 'false')
+              fails.push(`${w}px Tree: a surprise-card species folded again ${JSON.stringify(back)}`);
+          }
+          // An ordinary family has no fold.
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
+          if (await p.$('[data-fuwall]')) fails.push(`${w}px Tree: a fold on an ordinary family`);
+        }
         // The WoRMS view (#fish/photos/tree/worms/<node id>; Pierre, 2026-11-13, Q340: views Key | WoRMS): the reference
         // taxonomy (fish.json ref) built without a problem above the same leaves as the Key's, at any depth and WoRMS's
         // ranks; the ids the two trees share are exactly the leaves (a species is one node in both views, every taxon above
