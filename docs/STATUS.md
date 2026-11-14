@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-15, about 04:10 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-15, about 06:20 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, its 11-14 handover first, what bites, the open work).
 
 Last checked: reports and events: 2026-11-12 ~09:45 Manila
@@ -19,19 +19,19 @@ Main: sheet script **v131** (#876). No player report read since 11-12. The night
   bold letters (#873) and (d) coral name roots (#891), Find the X (#885), the fish admin at parity (#876, #895), the
   coral heatmap (#889), studies (#874 comeback, #883 Q351 step 2, #886 Professionalise, #892 species step 1), fish
   judging, the Candidate photos push split (#884).
-- **Merged in the night** (21 PRs): #898 Tree tag filters; #906 the Tree tab for corals (Key = the IMR lecture groups,
+- **Merged in the night** (25 PRs): #898 Tree tag filters; #906 the Tree tab for corals (Key = the IMR lecture groups,
   WoRMS families); #901 fish genus name roots (76 circle-1 genera, ETYFish); #903 the sheet overlay design (questions);
   #904 the Q351 batch refit (questions); #908 Journey cards in the player's local time; #909 the fish Home rotates its
   photos; #911 "?" tiles for units not met in My progress (fish; corals for "new" players); #912 an admin dark-mode
   check (no styling gap: tonight's "dark" screenshots were light, a script error); #914 surprise-only species fold to 5
   photos in the admin Tree; #916 CI faster (Smokes ~215 s to ~153 s); #917 `sw.js`: a new version no longer waits
   minutes to take over and a page opened during the swap no longer stays blank (a Chromium hold; it was the `smoke (net)`
-  failure); fish judging #900 #902 #905 #907 #910 #913 #915 #919 #920.
-- **Fish judging, the whole day and night**: about 8,500 candidates judged, about 5,800 photos entering play; every
-  game species has photos; about 2,500 candidates left (refills keep adding top-ups). Each PR lists its "Possible
+  failure); fish judging #900 #902 #905 #907 #910 #913 #915 #919 #920 #923 #924; #922 a fish smoke race hardened; #925 the IMR
+  lecture photos traced (a record only).
+- **Fish judging, the whole day and night**: about 9,700 candidates judged, about 6,600 photos entering play; every
+  game species has photos; about 1,500 candidates left (the ease 4-5 share drifted from 14% to 38% across batches: batch 10 re-judges 40 blind to measure it) (refills keep adding top-ups). Each PR lists its "Possible
   misidentifications (iNat ID taken as given)" for him to check (#902 holds 40).
-- **In flight**: #871 (Q350, parked), #882 (Q123 j corals, parked); agents: fish judging (batch 8), the fish smoke's `syncPull` reload race,
-  IMR lecture photos traced to their sources.
+- **In flight**: #871 (Q350, parked), #882 (Q123 j corals, parked); agent: fish judging (batch 10, with a calibration check).
 - **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync; no hand correction (D8).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (Q334), `claude/level-count-from-log`,
   `claude/fish-todo-wip`, `claude/photo-genus-ability` (#637), `claude/time-weighted-steps` (#808, Q335).
@@ -62,6 +62,11 @@ Each PR or study gives its recommendations; most are one-word answers:
   fields read-only (C1)"; the note recommends editable with the original kept and restorable (this changes Q341).
 - **#892 species step 1 (a-d)**; **#874 comeback (a-f)**; **#883 Q351 step 2 (a)** and **#904 refit (a, b)**: no
   game change now; **#886 Professionalise (a-f)**: a domain (~US$10-12 a year), accounts, an IMR agreement, backups.
+- **#925 IMR lecture photos (a-e), rights**: 86 of the 118 game photos come from Corals of the World (photographer
+  known; terms: personal, non-commercial, academic use with citation, all else reserved). Rec. (a) credit them and ask
+  Corals of the World (his to send), replace any not allowed; 34 photos with no source found: ask the IMR trainer.
+  Note: the tracing agent sent the photos' public R2 addresses to Yandex image search, unasked (integrator's brief did
+  not forbid it); briefs now forbid any outside service without his go.
 - **Small ones**: #885 log the tapped photo (a `Code.gs` field) or not; #914 cap the two surprise-only sharks at 5
   photos in the game data too (now 30 and 48); a "watermark" tag for fish photos so Home skips them (#909); covers
   above coral genera in the Tree (#906), and with which default.
@@ -90,5 +95,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-15 ~04:10 Manila, integrator, through the night (Rule 0: agents work on, nothing asked of Pierre): 21
+2026-11-15 ~06:20 Manila, integrator, through the night (Rule 0: agents work on, nothing asked of Pierre): 25
 merges after the 35 of 11-14; the questions above wait for his morning.
