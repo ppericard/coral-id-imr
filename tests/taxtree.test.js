@@ -3,7 +3,7 @@
 // several shapes (never assuming a level count or rank names).
 const test = require('node:test'),
   assert = require('node:assert');
-const {ttBuild, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttShown, ttRows, ttKey} = require('../taxtree.js');
+const {ttBuild, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey} = require('../taxtree.js');
 
 // A chain of 9 levels with ranks of any word, one missing (absent) and one empty, and a side branch.
 const deep = () => {
@@ -82,6 +82,27 @@ test('taxtree: problems are reported, never fixed silently', () => {
   // every node still reachable from a root: no node lost
   const all = new Set(T.roots.flatMap(x => ttUnder(T, x)));
   assert.deepStrictEqual([...all].sort(), ['c1', 'c2', 'c3', 'o', 'r']);
+});
+
+test('taxtree: the nearest node on the way up that a test accepts (a node page’s unit), at any depth', () => {
+  const T = ttBuild(deep()),
+    unit = n => n.rank === 'family';
+  // itself, then its ancestors, the nearest first
+  assert.strictEqual(ttNearest(T, 'n6', unit), 'n6');
+  assert.strictEqual(ttNearest(T, 'n8', unit), 'n6');
+  assert.strictEqual(
+    ttNearest(T, 'n8', n => /^(clade|genus)$/.test(n.rank || '')),
+    'n7'
+  );
+  // above every unit, on a side branch with none, or an id not in the tree: none
+  assert.strictEqual(ttNearest(T, 'n4', unit), null);
+  assert.strictEqual(ttNearest(T, 'x', unit), null);
+  assert.strictEqual(ttNearest(T, 'gone', unit), null);
+  // the root itself counts
+  assert.strictEqual(
+    ttNearest(T, 'x', n => n.id === 'n0'),
+    'n0'
+  );
 });
 
 test('taxtree: a filter shows what it accepts, with what leads to it and what is under it', () => {

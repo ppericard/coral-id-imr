@@ -697,6 +697,16 @@
     if (c && !fishJuv(c, j(c.f), F)) return c;
     return (fishCoverRule(L, F, tid, j, seen) || {}).p || null;
   }
+  // A leaf's (a species') cover, as the app's sheets show it (learn.js fishSpPhotos, spPhoto): his ★ pick while in play
+  // and not a juvenile, else its first photo that is not a juvenile in the page's order (L: featured first, then the game's
+  // order: fishOrder), else its first; null for no photo. A leaf has no default rule of its own (Q339 (b) picks among a
+  // node's leaves).
+  function fishLeafCover(L, F, tid, j = () => null) {
+    const k = (((F || {}).genera || {})[tid] || {}).cover,
+      adult = p => !fishJuv(p, j(p.f), F);
+    L = L || [];
+    return (k && L.find(p => p.f === k && adult(p))) || L.find(adult) || L[0] || null;
+  }
   // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
   // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
   // whether the leaves competed on a reference photo, mine: p is his ★ cover of that leaf}; null for no photo.
@@ -814,17 +824,22 @@
   // species' target; for a genus or family the species at target, ok, of all, of), easy, ref, ph (phases shown), wait
   // (candidates waiting; a species also waitObs, the new observations they hold), need (what is missing, as fishNeeds
   // words), imr}.
-  function fishCov(U, play, species, cand, F, j = () => null) {
-    F = F || {};
-    // The candidates waiting, by the species they wait in now: one Pierre sent elsewhere with Not this waits there
-    // (fishState; Codex review #659).
+  // The candidates waiting (cand: fish-cand.json's, by their first species), by the species they wait in now: one Pierre
+  // sent elsewhere with Not this waits there (fishState; Codex review #659); one in play, rejected or gone does not wait.
+  // {species id: [photo]}. Read by Coverage and the Tree's node pages.
+  function fishWaiting(cand, F) {
     const waiting = {};
     Object.entries(cand || {}).forEach(([orig, L]) =>
-      L.forEach(p => {
-        const x = fishState(F, p.f, orig);
+      (L || []).forEach(p => {
+        const x = fishState(F || {}, p.f, orig);
         if (x.st === null) (waiting[x.sid] = waiting[x.sid] || []).push(p);
       })
     );
+    return waiting;
+  }
+  function fishCov(U, play, species, cand, F, j = () => null) {
+    F = F || {};
+    const waiting = fishWaiting(cand, F);
     const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
       isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
       spRow = (sid, fam) => {
@@ -1258,6 +1273,7 @@
     fishOrder,
     fishCoverOf,
     fishCoverRule,
+    fishLeafCover,
     fishNear,
     fishRec,
     fishSeenFrom,
@@ -1267,6 +1283,7 @@
     fishNeeds,
     fishUnits,
     fishCov,
+    fishWaiting,
     fishLook,
     fishAgree,
     fishPairs,
