@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-14, about 20:05 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-14, about 22:10 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, its 11-14 handover first, what bites, the open work).
 
 Last checked: reports and events: 2026-11-12 ~09:45 Manila
@@ -14,15 +14,16 @@ Last checked: reports and events: 2026-11-12 ~09:45 Manila
 
 Main: sheet script **v131** (#876). No player report read since 11-12.
 
-- **Merged 11-14** (22 PRs): #861 Tree tab; #862-#863; #864 default covers (Q339 b); #865 Light proposals; #866;
-  #867 `Timings` tab; #868 *N. argenteus*; #869 Q354 Pacific photo taxa; #870 Cover proposals; #872 the "easy to
-  correct" rule; #873 Q124 (b) bold letters; #874 comeback study; #875 #877 #878 #879 fish judging (1,555 judged, 988 in
-  play, s088 and s244 included); #876 fish Answer log and Pairs; #880 Tree node pages; #883 Q351 step 2 study (scripts in
-  `tools/studies/q351/`); #884 Candidate photos push split and Pillow by hash (live run green, 11-14 ~20:00); #886 the
-  "Professionalise the platform" study.
-- **In flight**: #871 (Q350, parked: questions); #882 (Q123 j corals, parked: privacy question); #885 Find the X
-  (a level-3 check on one unclear guardrail running); agents: fish judging (next batch), the Tree WoRMS view, the coral
-  confusion heatmap (Q123 m).
+- **Merged 11-14** (35 PRs): #861 Tree tab, #880 node pages, #887 WoRMS view; #864 default covers (Q339 b), #865 Light
+  proposals, #870 Cover proposals, #899 the admin names a ★ cover now judged a juvenile; #867 `Timings` tab; #868
+  *N. argenteus*; #869 Q354 Pacific photo taxa; #872 the "easy to correct" rule; #873 Q124 (b) bold letters, #891 Q124
+  (d) name roots (23 coral genera); #885 Find the X (fish quiz); #876 fish Answer log and Pairs, #895 fish Journey; #889
+  coral confusion heatmap (Q123 m), #896 its follow-ups; #874 comeback study, #883 Q351 step 2, #886 Professionalise
+  study, #892 species step-1 design; #875 #877-#879 #888 #890 #893 fish judging (3,206 judged, 2,109 in play; every game
+  species now has photos), #894 `add_refs` fix; #884 Candidate photos push split (live run green); #897 a test fix;
+  #862, #863, #866.
+- **In flight**: #871 (Q350, parked), #882 (Q123 j corals, parked); agents: fish judging (batch n7), Tree filters, the
+  Q351 batch refit (read-only).
 - **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync; no hand correction (D8).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (Q334), `claude/level-count-from-log`,
   `claude/fish-todo-wip`, `claude/photo-genus-ability` (#637), `claude/time-weighted-steps` (#808, Q335).
@@ -51,6 +52,12 @@ Numbered for good only when the answer commits the future and will be cited late
 - **The comeback study (#874) a-f**; **Q351 step 2 (#883) (a)**: no change to the game, the same plan re-run at about
   20 players; **the Professionalise study (#886) a-f**: a domain (~US$10-12 a year, who pays), account ownership, the
   sheet's Google account, an agreement with IMR, a second person, a weekly backup outside Google.
+- **#892 species step 1 (a-d)**: the device key for a common name's progress (rec. `s091:ternatechromis`), names
+  as units in the draw, species on the leaderboard (a `Code.gs` change first), what an answer logs.
+- **Two judgements of one photo** (reference `fi…` and candidate copy): today the candidate wins silently; tonight that
+  turned his ★ Damselfishes cover (adult as a reference) into a juvenile, so it is ignored (the Tree bar says so; pick
+  another or retag). 1,086 of 1,760 doubly judged photos differ (48 on the phase). Rec. (C): one judgement per photo,
+  an agent re-looks at the ~120 that differ on phase or by 2+ ease; the reference copy plays meanwhile.
 - **#885 Find the X**: log the tapped photo (a `Code.gs` field; rows logged before cannot get it back), or not.
 - Answered 11-14: Q352-Q355, Q230, *N. argenteus*, the #861/#864 choices. Q339-Q351 earlier.
 
@@ -77,5 +84,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-14 ~20:05 Manila, integrator: 22 merges; Pierre's rule "push what is
+2026-11-14 ~22:10 Manila, integrator: 35 merges; Pierre's rule "push what is
 easy to correct afterwards" written into AGENTS.md (the invented "never merged on silence" clause removed); Q352-Q354.
