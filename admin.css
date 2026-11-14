@@ -5517,6 +5517,25 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-tcard > .dots {
   padding-right: 8px;
 }
+/* The corals' Tree, a genus's page (admin-coraltree.js): its featured photos per view, each opening its genus page. */
+.adm-ctfeat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.adm-ctfeat a {
+  display: block;
+  line-height: 0;
+}
+.adm-ctfeat img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+}
+.adm-ctok {
+  font-size: 0.85rem;
+}
 /* Fish Coverage (admin plan PR 8): To do chips, the table scrolls sideways inside its box on phones. */
 .adm-ftodo {
   flex-wrap: wrap;
