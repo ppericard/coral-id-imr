@@ -1277,6 +1277,12 @@
       }
       return ok({sha: 'demo' + SHA, content: b64(CUR), ...((opts.method || 'GET') === 'PUT' ? {content: {sha: 'demo' + SHA}} : {})});
     }
+    // Another repository file, read only (the judging package's proposals: admin-light.js): the local copy.
+    const fp = /^\/contents\/([\w./-]+?)(\?|$)/.exec(path);
+    if (fp && (opts.method || 'GET') === 'GET' && !fp[1].includes('..')) {
+      const r = await real(fp[1], {cache: 'no-cache'}).catch(() => null);
+      if (r && r.ok) return ok({sha: 'demo', content: b64(await r.text())});
+    }
     return new Response(JSON.stringify({message: 'Not Found (demo)'}), {status: 404});
   }
   // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
