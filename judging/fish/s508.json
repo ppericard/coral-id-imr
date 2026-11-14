@@ -151,6 +151,38 @@
   "fish-s508-cand-435664631": {
    "code": "o1g1smm2",
    "keep": "dup"
+  },
+  "fish-s508-cand-435664729": {
+   "code": "o1g2ss12",
+   "keep": "dup"
+  },
+  "fish-s508-cand-457663644": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s508-cand-730778214": {
+   "code": "o1g0smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a striped fish about its size, sharp and partly hidden just behind it: confusion possible"
+  },
+  "fish-s508-cand-616223900": {
+   "code": "p1g1sl15",
+   "keep": "best"
+  },
+  "fish-s508-cand-344524370": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s508-cand-636865374": {
+   "code": "p1g1smk3",
+   "keep": "alt"
+  },
+  "fish-s508-cand-636865391": {
+   "code": "p1g1smk3",
+   "keep": "best"
   }
  }
 }

@@ -199,6 +199,10 @@
   "fish-s058-cand-760053632": {
    "code": "p1g1msx1",
    "keep": "dup"
+  },
+  "fish-s058-cand-760056768": {
+   "code": "o1g1mmk2",
+   "keep": "best"
   }
  }
 }

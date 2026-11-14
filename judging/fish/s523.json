@@ -135,6 +135,50 @@
   "fish-s523-cand-545241345": {
    "code": "o1g0sl14",
    "keep": "best"
+  },
+  "fish-s523-cand-642763104": {
+   "code": "o1g1bm1j1",
+   "keep": "best"
+  },
+  "fish-s523-cand-753549523": {
+   "code": "p1g2mm1j1",
+   "keep": "best"
+  },
+  "fish-s523-cand-542106835": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s523-cand-556353888": {
+   "code": "o1g1smo3",
+   "keep": "best"
+  },
+  "fish-s523-cand-596075618": {
+   "code": "p1g0sms4",
+   "keep": "best"
+  },
+  "fish-s523-cand-752777652": {
+   "code": "o1g1mms2",
+   "keep": "alt"
+  },
+  "fish-s523-cand-752777651": {
+   "code": "p1g1mms2",
+   "keep": "dup"
+  },
+  "fish-s523-cand-752777687": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s523-cand-545241348": {
+   "code": "o1g1slk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a butterflyfish of another genus, half its size and sharp, just behind it: confusion possible"
+  },
+  "fish-s523-cand-617006253": {
+   "code": "p1g1slo4",
+   "keep": "best"
   }
  }
 }

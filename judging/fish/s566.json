@@ -481,6 +481,16 @@
   "fish-s566-cand-594604633": {
    "code": "p1g1msx1",
    "keep": "dup"
+  },
+  "fish-s566-cand-619302044": {
+   "code": "p1g1smk3",
+   "keep": "alt",
+   "phase": "terminal"
+  },
+  "fish-s566-cand-619302041": {
+   "code": "o1g1slk3",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }
