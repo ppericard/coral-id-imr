@@ -55,6 +55,32 @@ const server = http.createServer((req, res) => {
 // and photos; the 390 px job runs them all); SMOKE_ONLY=players runs one part.
 const PARTS = ['main', 'players', 'photos'];
 const WIDTHS = [390, 1280];
+// Dark theme as the app sets it: the ⚙ Theme (reefid-sync-theme) puts data-theme on <html> (admin.html's inline script).
+// The app and the admin never follow the system's prefers-color-scheme (rule U3), so Playwright's colorScheme: 'dark'
+// shows the light page. With data-theme dark, the page and its main cards (sel, the first 5) must have a dark background
+// (luminance under 0.2: --surface dark is 0.02, light 1). Returns what is still light ('' when all is dark); the theme is
+// put back as it was.
+const darkCards = (p, sel) =>
+  p.evaluate(sel => {
+    const H = document.documentElement,
+      was = H.dataset.theme,
+      lum = c => {
+        const [r, g, b] = (c.match(/[\d.]+/g) || [255, 255, 255])
+          .slice(0, 3)
+          .map(x => Number(x) / 255)
+          .map(x => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+    H.dataset.theme = 'dark';
+    const C = [document.body, ...[...document.querySelectorAll(sel)].slice(0, 5)].map(e => [
+        e === document.body ? 'body' : e.className,
+        getComputedStyle(e).backgroundColor
+      ]),
+      light = C.filter(([, c]) => /^rgba\(.*, 0\)$/.test(c) || lum(c) >= 0.2);
+    if (was) H.dataset.theme = was;
+    else delete H.dataset.theme;
+    return C.length < 2 ? `no ${sel}` : light.map(([k, c]) => `${k} ${c}`).join(', ');
+  }, sel);
 (async () => {
   const run = slot.parts(PARTS, {main: ['main'], more: ['players', 'photos']}),
     ws = slot.widths(WIDTHS);
@@ -496,6 +522,8 @@ const WIDTHS = [390, 1280];
         )
           fails.push(`${w}px Tree: Damselfishes ${JSON.stringify({...u, gens: u.gens.length})}`);
         if (w === 1280 && u.cur !== 'f:Damselfishes') fails.push(`${w}px Tree: Damselfishes not the row selected (${u.cur})`);
+        const dkT = await darkCards(p, '#view .adm-tile');
+        if (dkT) fails.push(`${w}px Tree, dark theme: still light ${dkT}`);
         // The Chromis heading's default thumb (no genus cover of his): its species most seen around the instance's centre
         // among the species with a reference-level adult photo in play, else with an adult photo (autosort.js fishCoverOf,
         // the species records admin-fish.js registers; Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864).
@@ -2304,6 +2332,8 @@ const WIDTHS = [390, 1280];
         (w < 600 ? h0.scroll <= 0 : h0.scroll > 0)
       )
         fails.push(`${w}px Analyses heatmap: ${JSON.stringify(h0)}`);
+      const dkH = await darkCards(p, '#view .adm-kpis > div, #view .adm-scard');
+      if (dkH) fails.push(`${w}px Analyses heatmap, dark theme: still light ${dkH}`);
       if (w < 600 && h0) {
         // scrolled inside its box: the column names and the row names stay in view
         const st = await p.evaluate(() => {
@@ -5378,6 +5408,8 @@ const WIDTHS = [390, 1280];
           jo.wide > 0
         )
           fe.push(`Journey ${JSON.stringify(jo)}`);
+        const dkJ = await darkCards(fq, '.adm-journey .adm-scard');
+        if (dkJ) fe.push(`dark theme: still light ${dkJ}`);
         if (process.env.SHOTS)
           for (const sc of ['light', 'dark']) {
             await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
@@ -5397,6 +5429,8 @@ const WIDTHS = [390, 1280];
           };
         });
         if (ss.ids.length || !ss.genus || ss.wide > 0) fe.push(`the session unfolded ${JSON.stringify(ss)}`);
+        const dkS = await darkCards(fq, '.adm-journey [data-sdet] .adm-sess');
+        if (dkS) fe.push(`the session unfolded, dark theme: still light ${dkS}`);
         if (process.env.SHOTS)
           for (const sc of ['light', 'dark']) {
             await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
@@ -5819,6 +5853,8 @@ const WIDTHS = [390, 1280];
           s.wide > 0
         )
           le.push(`the view ${JSON.stringify(s)}`);
+        const dkL = await darkCards(lq, '#view .adm-lprop');
+        if (dkL) le.push(`dark theme: still light ${dkL}`);
         const [f0, f1] = s.tiles;
         const x0 = LP.find(x => x.photo === f0),
           x1 = LP.find(x => x.photo === f1);
@@ -5934,6 +5970,8 @@ const WIDTHS = [390, 1280];
           s.wide > 0
         )
           ce.push(`the view ${JSON.stringify(s)}`);
+        const dkC = await darkCards(cq, '#view .adm-cprop');
+        if (dkC) ce.push(`dark theme: still light ${dkC}`);
         const [n0, n1] = s.tiles;
         const rule0 = await cq.evaluate(n => coverOpen(coverList(), DRAFT.fish).find(x => x.id === n).rule.f, n0);
         await cq.click(`.adm-cprop[data-n="${n0}"] [data-cpa]`);
