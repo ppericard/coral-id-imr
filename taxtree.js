@@ -79,6 +79,12 @@
   }
   // The first node under id (itself first, then depth first) that pred accepts, else null.
   const ttFirst = (T, id, pred) => ttUnder(T, id).find(x => pred(T.node.get(x))) || null;
+  // The nearest node on the way up from id (itself first, then its parent, up to the root) that pred accepts, else null:
+  // a node's unit (the page that holds its photos' choices), or null for a node above every unit.
+  const ttNearest = (T, id, pred) =>
+    ttPath(T, id)
+      .reverse()
+      .find(x => pred(T.node.get(x))) ?? null;
   // The nodes a filter shows: those pred accepts (a tag: IMR, a circle), their ancestors (to reach them) and everything
   // under them; keep: ids always shown with their ancestors (the node on screen). A Set of ids.
   function ttShown(T, pred, keep = []) {
@@ -142,7 +148,7 @@
         return null;
     }
   }
-  const API = {ttBuild, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttShown, ttRows, ttKey};
+  const API = {ttBuild, ttPath, ttUnder, ttLeaves, ttRoll, ttFirst, ttNearest, ttShown, ttRows, ttKey};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

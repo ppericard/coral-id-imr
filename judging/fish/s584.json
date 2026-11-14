@@ -1,0 +1,198 @@
+{
+ "photos": {
+  "fish-s584-cand-384987519": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.25,
+    0.85,
+    0.85
+   ]
+  },
+  "fish-s584-cand-333166045": {
+   "code": "o1g0sls4",
+   "keep": "best"
+  },
+  "fish-s584-cand-554323902": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "bb": [
+    0.05,
+    0.25,
+    0.75,
+    0.65
+   ]
+  },
+  "fish-s584-cand-602120609": {
+   "code": "p1g0ml14",
+   "keep": "best"
+  },
+  "fish-s584-cand-602120613": {
+   "code": "p1g1mls3",
+   "keep": "dup"
+  },
+  "fish-s584-cand-729418805": {
+   "code": "d1g0sm13",
+   "keep": "best"
+  },
+  "fish-s584-cand-434382259": {
+   "code": "o1g0smk2",
+   "keep": "best"
+  },
+  "fish-s584-cand-615805307": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s584-cand-730778283": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s584-cand-379432344": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.15,
+    0.9,
+    0.85
+   ]
+  },
+  "fish-s584-cand-330407709": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s584-cand-330407719": {
+   "code": "o1g1smk1",
+   "keep": "dup"
+  },
+  "fish-s584-cand-330407745": {
+   "code": "o1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s584-cand-682700087": {
+   "code": "p1d0sm13",
+   "keep": "best"
+  },
+  "fish-s584-cand-682700131": {
+   "code": "p1d0ss12",
+   "keep": "dup"
+  },
+  "fish-s584-cand-728816500": {
+   "code": "o1d1bm11",
+   "keep": "best"
+  },
+  "fish-s584-cand-728816501": {
+   "code": "o1g1bl11",
+   "keep": "dup"
+  },
+  "fish-s584-cand-332588819": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.05,
+    0.3,
+    0.95,
+    0.75
+   ]
+  },
+  "fish-s584-cand-388941211": {
+   "code": "o0g0sl13",
+   "keep": "best"
+  },
+  "fish-s584-cand-729413850": {
+   "code": "o1g3sm11",
+   "keep": "best"
+  },
+  "fish-s584-cand-430285125": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.35,
+    0.15,
+    0.95,
+    0.75
+   ]
+  },
+  "fish-s584-cand-625088317": {
+   "code": "o1g1sm12",
+   "keep": "best"
+  },
+  "fish-s584-cand-378117283": {
+   "code": "o1g1sms2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "The two orange fish on the sponge look like anthias, not a soldierfish: subject unclear, out until a fresh look."
+  },
+  "fish-s584-cand-388956707": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.15,
+    0.85,
+    0.8
+   ]
+  },
+  "fish-s584-cand-388956733": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s584-cand-388956667": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s584-cand-388956708": {
+   "code": "d1g1sl12",
+   "keep": "dup"
+  },
+  "fish-s584-cand-388956616": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s584-cand-282629411": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.1,
+    0.35,
+    0.9,
+    0.8
+   ]
+  },
+  "fish-s584-cand-729415141": {
+   "code": "p1g0slo4",
+   "keep": "best"
+  },
+  "fish-s584-cand-435421094": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s584-cand-625088332": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s584-cand-333128229": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.2,
+    0.85,
+    0.75
+   ]
+  },
+  "fish-s584-cand-284114080": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.1,
+    0.2,
+    0.95,
+    0.85
+   ]
+  }
+ }
+}
