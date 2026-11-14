@@ -1893,6 +1893,11 @@ const WIDTHS = [390, 1280];
             diag: [...T.querySelectorAll('td.hm-d')].filter(d => d.textContent).length,
             nd: T.querySelectorAll('td.hm-d').length,
             lo: T.querySelectorAll('td.hm-lo').length,
+            // the whole slate on the map, answered or not (Codex review #889)
+            slate: slateOf(DATA).length,
+            // a cell offered but never mixed up is a full-size target too (Codex review #889)
+            flat: [...T.querySelectorAll('td a')].filter(x => !x.textContent && x.getBoundingClientRect().height < 10).length,
+            leg: [...document.querySelectorAll('#view .adm-hm-leg span')].map(x => x.textContent).join(' | '),
             link: a ? decodeURIComponent(a.getAttribute('href')) : '',
             pair: m ? [m[1], m[2]].sort().join('|') : '',
             wide: document.documentElement.scrollWidth - innerWidth,
@@ -1902,15 +1907,17 @@ const WIDTHS = [390, 1280];
       const h0 = await hm();
       if (
         !h0 ||
-        h0.rows < 30 ||
+        h0.rows < h0.slate ||
         h0.cols !== h0.rows ||
+        h0.flat ||
+        h0.leg !== 'Under 5% | 5%-10% | 10%-20% | 20%-30% | 30%+ | Under 20 offers | Look-alike | From the data' ||
         h0.nd !== h0.rows ||
         h0.diag ||
         h0.fams < 3 ||
         String(h0.sum) !== h0.kp['Mix-ups'] ||
         !h0.sum ||
         !h0.lo ||
-        h0.link !== `./#learn/compare/${h0.pair.replace('|', '/')}` ||
+        h0.link !== `./#learn/compare/${h0.pair.split('|').join('/')}` ||
         h0.wide > 0 ||
         (w < 600 ? h0.scroll <= 0 : h0.scroll > 0)
       )

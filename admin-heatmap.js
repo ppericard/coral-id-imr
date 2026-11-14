@@ -35,17 +35,18 @@
     return out;
   }
   // The matrix: C, confusionOf's {pair, dir}; typed, noChoiceMixups' typed {"shown|answered": n}; rec(n), a unit's record
-  // ({fam}); prior(a, b), the pair's start [name, rate] (admin.js pairPrior). Returns {units in display order, groups
+  // ({fam}); prior(a, b), the pair's start [name, rate] (admin.js pairPrior); roster, the subject's units, each on the map
+  // even with no answer yet (its row and column empty: missing data shows; Codex review #889). Returns {units in display order, groups
   // [[family, first, last index]], cell {"shown|answered": {off, mix, sc, pt, pv, look, dl}}, typed (as given), mix (the
   // mix-ups from choices), nt (the typed ones)}. A cell's dl: the pair (both ways) is a look-alike from the data (core.js
   // dataLook on the pair's own score), the same reading as Pairs'.
-  function heatMatrix(C, typed, rec, prior) {
+  function heatMatrix(C, typed, rec, prior, roster) {
     C = C || {};
     typed = typed || {};
     const pair = C.pair || {},
       dir = C.dir || {},
       key = (a, b) => (a < b ? a + '|' + b : b + '|' + a),
-      U = new Set();
+      U = new Set(roster || []);
     [...Object.keys(dir), ...Object.keys(typed)].forEach(k => k.split('|').forEach(u => u && U.add(u)));
     const pv = (a, b) => prior(a, b)[1],
       psc = (a, b) => K.confScore(pair[key(a, b)], pv(a, b)),
@@ -114,7 +115,9 @@ function statsHeat() {
     gx = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || {look: []},
     rec = n => (many ? fishUnitRec(FISHA, n, S.sheets.genus) : gx(n)),
     prior = (a, b) => pairPrior(a, b, rec(a), rec(b)),
-    M = ofAns('heat:' + S.id + ':' + !!FISHA, () => heatMatrix(C, NC.typed, rec, prior)),
+    // the roster: the corals' slate (core.js slateOf: the games' and the progress's genera), the bonus genera once met;
+    // another subject's units as met (its roster joins with its admin page)
+    M = ofAns('heat:' + S.id + ':' + !!FISHA, () => heatMatrix(C, NC.typed, rec, prior, many ? [] : slateOf(DATA))),
     U = M.units,
     // a unit's name: a coral genus as it is, another subject's unit by its name (fishAdmin)
     lab = n => (many ? (FISHA && FISHA.gen[n] ? FISHA.gen[n].name : String(n).replace(/^[a-z]:/, '')) : n),
@@ -176,8 +179,8 @@ function statsHeat() {
         fam =
           fams && g[1] === i
             ? `<th class="hm-fam" rowspan="${g[2] - g[1] + 1}" title="${esc(g[0])}">${
-                // the family's name where its rows hold it (about 6.5 px a letter, 22 px a row at the least), else its title only
-                g[0].length * 6.5 <= (g[2] - g[1] + 1) * 22 ? `<span>${esc(g[0])}</span>` : ''
+                // the family's name where its rows hold it (about 7 px a letter, 22 px a row at the least), else its title only
+                g[0].length * 7 <= (g[2] - g[1] + 1) * 22 ? `<span>${esc(g[0])}</span>` : ''
               }</th>`
             : '';
       return `<tr>${fam}<th scope="row" class="hm-row${it}${gStart.has(i) && i ? ' hm-fr' : ''}" title="${esc(lab(a))}">${esc(lab(a))}</th>${U.map((_, j) => td(i, j)).join('')}</tr>`;
@@ -185,10 +188,11 @@ function statsHeat() {
   const sw = (c, t) => `<span><i class="hm-sw ${c}"></i>${t}</span>`,
     leg = typedOn
       ? `<p class="adm-an-leg adm-hm-leg">${sw('hm-q1', '1')}${sw('hm-q2', '2')}${sw('hm-q3', '3-4')}${sw('hm-q4', '5+')}</p>`
-      : `<p class="adm-an-leg adm-hm-leg">${sw('hm-q0', `Under ${pc(HEAT.BINS[0], 1)}`)}${sw('hm-q1', pc(HEAT.BINS[1], 1))}${sw('hm-q2', `${pc(CONF.TRAP, 1)} trap`)}${sw('hm-q3', pc(CONF.LOOK, 1))}${sw('hm-q4', 'More')}${sw(
-          'hm-q2 hm-lo',
-          `Under ${CONF.N} offers`
-        )}${sw('hm-lk', 'Look-alike')}${sw('hm-dl', 'From the data')}</p>`;
+      : `<p class="adm-an-leg adm-hm-leg">${
+          // each strength by its interval (heatBin: from a bound, under the next); the third bound is the quiz's threshold for a pair as a trap
+          HEAT.BINS.map((x, k) => sw('hm-q' + k, k ? `${pc(HEAT.BINS[k - 1], 1)}-${pc(x, 1)}` : `Under ${pc(x, 1)}`)).join('') +
+          sw('hm-q' + HEAT.BINS.length, `${pc(HEAT.BINS[HEAT.BINS.length - 1], 1)}+`)
+        }${sw('hm-q2 hm-lo', `Under ${CONF.N} offers`)}${sw('hm-lk', 'Look-alike')}${sw('hm-dl', 'From the data')}</p>`;
   $v.innerHTML =
     head +
     kp +

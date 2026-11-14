@@ -5699,7 +5699,7 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   border-radius: var(--r-xs);
   overscroll-behavior: contain;
 }
-@media (min-width: 1200px) {
+@media (min-width: 1024px) {
   .adm-hm {
     --hm-cs: 25px;
   }
@@ -5715,7 +5715,7 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   background: var(--surface);
 }
@@ -5735,6 +5735,7 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-hmt td > a,
 .adm-hmt td > span {
   display: block;
+  height: calc(var(--hm-cs) - 1px);
   line-height: calc(var(--hm-cs) - 1px);
   color: inherit;
   text-decoration: none;
@@ -5810,7 +5811,6 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   transform: rotate(180deg);
   white-space: nowrap;
   padding: 4px 0;
-  font-size: 0.68rem;
 }
 .adm-hmt .hm-row {
   left: var(--hm-fw);

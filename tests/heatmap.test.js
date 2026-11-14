@@ -190,3 +190,14 @@ test('the admin loads the heatmap module after admin.js, and the view sits next 
   // the corals' admin pages are every page; another subject's name it once its matrix is ready (none yet)
   for (const S of C.SUBJECTS) if (S.admin.pages) assert.ok(!S.admin.pages.includes('analyses/difficulty/heatmap'), S.id);
 });
+
+test('heatMatrix: every unit of the roster on the map, an unanswered one with empty cells (Codex review #889)', () => {
+  const R = warm('a', []),
+    M = heatMatrix(C.confusionOf(R), {}, rec, prior, Object.keys(G));
+  assert.deepStrictEqual([...M.units].sort(), Object.keys(G).sort());
+  // Goniastrea was never shown nor offered: on both axes, no cell
+  assert.ok(!Object.keys(M.cell).some(k => k.split('|').includes('Goniastrea')));
+  // a unit met outside the roster (a bonus genus once played) joins it
+  R.push(row('a', 'Acropora', 'Acropora', 1, 'Acropora Anacropora'));
+  assert.ok(heatMatrix(C.confusionOf(R), {}, rec, prior, Object.keys(G)).units.includes('Anacropora'));
+});
