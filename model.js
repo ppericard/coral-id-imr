@@ -586,17 +586,23 @@ function groupsOfRank(L) {
   cl.forEach((C, n) => C.length > 1 && (out[n] = C));
   return out;
 }
-// The groups of the units in play, every rank (of), and each unit's declared partners of its rank in play (decl), kept
-// until the answers count, the subject or the pooled stats change.
+// The groups of the units in play, every rank (of), and each unit's declared partners of its rank in play (decl). Built
+// again only when their inputs change (Codex review #871: the clustering takes tens of milliseconds): the units in play
+// (pool()) or the pooled stats (a new PCONF object). The units in play are read again only when something that moves
+// them may have changed (the subject, the answers count: a fish genus enters at its family's Advanced; the settings Q:
+// the bonus genera, the scientific names), so the many calls of one question (examOn for every unit) cost a key.
 let GROUPS = null;
 const groupsNow = () => {
-  const key = SUBJ.id + '|' + answersSoFar();
-  if (GROUPS && GROUPS.key === key && GROUPS.pc === PCONF) return GROUPS;
+  const tick = SUBJ.id + '|' + answersSoFar() + '|' + (typeof Q === 'object' ? JSON.stringify(Q) : '');
+  if (GROUPS && GROUPS.tick === tick && GROUPS.pc === PCONF) return GROUPS;
+  const L = typeof pool === 'function' ? pool() : slateGenera(),
+    key = L.join('|');
+  if (GROUPS && GROUPS.key === key && GROUPS.pc === PCONF) return Object.assign(GROUPS, {tick});
   const by = {};
-  (typeof pool === 'function' ? pool() : slateGenera()).forEach(n => (by[rankOf(n)] = by[rankOf(n)] || []).push(n));
+  L.forEach(n => (by[rankOf(n)] = by[rankOf(n)] || []).push(n));
   const decl = {};
-  Object.values(by).forEach(L => L.forEach(n => (decl[n] = L.filter(m => m !== n && declared(n, m)))));
-  GROUPS = {key, pc: PCONF, of: Object.assign({}, ...Object.values(by).map(groupsOfRank)), decl};
+  Object.values(by).forEach(R => R.forEach(n => (decl[n] = R.filter(m => m !== n && declared(n, m)))));
+  GROUPS = {tick, key, pc: PCONF, of: Object.assign({}, ...Object.values(by).map(groupsOfRank)), decl};
   return GROUPS;
 };
 const groupMap = () => groupsNow().of;

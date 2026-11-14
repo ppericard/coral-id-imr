@@ -155,4 +155,22 @@ test('the groups follow the pooled stats (a new PCONF object) and the units in p
   run(e, 'PCONF = {...PCONF};');
   assert.notStrictEqual(groups(e), a, 'recomputed with the stats');
   assert.strictEqual(JSON.stringify(groups(e)), JSON.stringify(a), 'the same data, the same groups');
+  // An answer with the same units in play and the same stats: not built again (Codex review #871, the cost on phones).
+  const b = groups(e);
+  e.ctx.P['~level'] = {ok: 7, ko: 3};
+  assert.strictEqual(groups(e), b, 'kept across answers while the units in play are the same');
+  // The bonus genera turned on, then off again, with no answer in between: the groups follow at once.
+  const bonus = RW.unitsOf('coral').extra;
+  e.ctx.Q.bon = true;
+  const on = groups(e);
+  assert.ok(
+    Object.keys(on).some(n => bonus.includes(n)),
+    'bonus genera on: in the groups'
+  );
+  e.ctx.Q.bon = false;
+  assert.ok(!Object.keys(groups(e)).some(n => bonus.includes(n)), 'off again: out of the groups at once');
+  assert.ok(
+    Object.values(groups(e)).every(g => g.every(n => !bonus.includes(n))),
+    'no group keeps one as a partner'
+  );
 });
