@@ -343,6 +343,115 @@
   "fish-s569-cand-472409393": {
    "code": "o1g0smkj1",
    "keep": "best"
+  },
+  "fish-s569-cand-388476139": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-45396714": {
+   "code": "p1g1ss1jc1",
+   "keep": "best"
+  },
+  "fish-s569-cand-625346127": {
+   "code": "p1g1mm1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-624121253": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-573590697": {
+   "code": "p1g1ml13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-521815020": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-754668252": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-480996755": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-480996194": {
+   "code": "p0g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s569-cand-669645814": {
+   "code": "p1g2sm12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-551654589": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s569-cand-479215965": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-600510361": {
+   "code": "o0g2ml12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-760870680": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s569-cand-650397551": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-680715683": {
+   "code": "p1g1mlo2",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-673240510": {
+   "code": "p1g2mmk1",
+   "keep": "best"
+  },
+  "fish-s569-cand-614115464": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-508078163": {
+   "code": "o1g2slo2",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-461783441": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-668200500": {
+   "code": "p1g2sm13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-652827579": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s569-cand-595761735": {
+   "code": "o1g1ml1j2",
+   "keep": "best"
+  },
+  "fish-s569-cand-622784402": {
+   "code": "p1g2slo2",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s569-cand-482556948": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
   }
  }
 }

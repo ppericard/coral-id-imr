@@ -135,6 +135,14 @@
   "fish-s301-cand-329208053": {
    "code": "p1g1sl14",
    "keep": "dup"
+  },
+  "fish-s301-cand-38546435": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s301-cand-762260661": {
+   "code": "o1g0sl14",
+   "keep": "best"
   }
  }
 }
