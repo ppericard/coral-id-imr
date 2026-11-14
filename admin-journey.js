@@ -48,7 +48,8 @@ const jOrder = items =>
     .map(([x]) => x[1])
     .join('');
 // jorder: end
-const jStart = (S, before) => {
+// tm: the time's words (the Journey's Cards list: the player's local time, jLocal; the session summary: the admin's clock).
+const jStart = (S, before, tm = jTime) => {
   if (!S || !startOpt(S.c)) return [[null, '<li><b>Start</b> not answered yet</li>']];
   // The history's events (core.js startEvents): the answers given, and the eases taken with Coral basics.
   const ev = startEvents(S),
@@ -58,19 +59,19 @@ const jStart = (S, before) => {
   return [
     ...h.map(([c, a, t, via], i) => [
       t || null,
-      `<li><b>${!i ? 'Start' : c === h[i - 1][0] ? 'Answered again' : 'Changed to'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)} · ${JSTART[via] || esc(via || '')}`}${t ? ' · ' + jTime(t) : ''}</li>`
+      `<li><b>${!i ? 'Start' : c === h[i - 1][0] ? 'Answered again' : 'Changed to'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)} · ${JSTART[via] || esc(via || '')}`}${t ? ' · ' + tm(t) : ''}</li>`
     ]),
     ...ev
       .filter(x => x[3] === 'ease')
       .map(([c, a, t, , of]) => [
         t || null,
-        `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
+        `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + tm(t) : ''}</li>`
       ]),
     ...Object.entries(S.fb || {}).map(([k, [a, t]]) => {
       const [c, d] = k.split('-');
       return [
         t || null,
-        `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`
+        `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + tm(t) : ''}</li>`
       ];
     })
   ];
@@ -157,6 +158,43 @@ function jGames(R, S, conds = []) {
     .map(x => x.slice(0, 3));
 }
 // jgames: end
+// jlocal: begin
+// The Cards list in the player's own local time (Pierre's list of 2026-11-05, left from #554: they were the admin's
+// clock): a time at the UTC offset the player's device logged with their answer nearest to it (sheet v44, readAnswers
+// index 14, minutes east of UTC; +480 in the rows logged before), so a trip or a daylight saving change follows their
+// answers. R: the player's rows in time order. jOffAt: that offset, or null when no row has a valid one (an older script
+// or app sent none): an integer of at most 840 minutes either way, as Code.gs tz_; two answers as near, the earlier.
+// jAtText: t moved by the offset and written in UTC, so neither the admin's own zone nor its daylight saving enters; as
+// admin.js dateText 'dmhm' ("4 Nov, 18:40", 24 h, the browser's language); null for a time that is not one (the caller
+// then keeps dateText). jUtcText: the offset's words ("UTC+8", "UTC−3:30", "UTC+0").
+const jOffOk = o => Number.isInteger(o) && Math.abs(o) <= 840;
+const jOffAt = (R, t) => {
+  let best = null,
+    gap = Infinity;
+  if (!Number.isFinite(t)) return null;
+  for (const r of R || []) {
+    const d = r && Number.isFinite(r[1]) && jOffOk(r[14]) ? Math.abs(r[1] - t) : Infinity;
+    if (d < gap) [gap, best] = [d, r[14]];
+  }
+  return best;
+};
+const JAT = {};
+const jAtText = (t, o) =>
+  Number.isFinite(t) && jOffOk(o)
+    ? (JAT.f =
+        JAT.f ||
+        new Intl.DateTimeFormat([], {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+          timeZone: 'UTC'
+        })).format(new Date(t + o * 60000))
+    : null;
+const jUtcText = o =>
+  `UTC${o < 0 ? '−' : '+'}${Math.floor(Math.abs(o) / 60)}${Math.abs(o) % 60 ? ':' + String(Math.abs(o) % 60).padStart(2, '0') : ''}`;
+// jlocal: end
 const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
   jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
@@ -352,6 +390,12 @@ function renderJourney(name, anonId = '') {
       .sort((a, b) => a - b);
 
   // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
+  // Their times in the player's own local time (jlocal), the offset in the title; the admin's clock when none is logged.
+  const jLocal = t => {
+    const o = jOffAt(R, t),
+      x = jAtText(t, o);
+    return x == null ? jTime(t) : `<span class="adm-jt" data-t="${t}" title="${jUtcText(o)}">${x}</span>`;
+  };
   const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name, ASUBJ),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
@@ -393,14 +437,14 @@ function renderJourney(name, anonId = '') {
         .reduce((o, g) => ((o[jOffSlate(g, J.slate)] = o[jOffSlate(g, J.slate)] || []).push(g), o), {})
     ).map(([w, L]) => [
       cardT(CM[L[0]]) || null,
-      `<li><b>${esc(w[0].toUpperCase() + w.slice(1))} cards</b> ${L.length}: ${L.slice(0, 8).map(jUnit).join(', ')}${L.length > 8 ? ', …' : ''} · first ${jTime(cardT(CM[L[0]]))}</li>`
+      `<li><b>${esc(w[0].toUpperCase() + w.slice(1))} cards</b> ${L.length}: ${L.slice(0, 8).map(jUnit).join(', ')}${L.length > 8 ? ', …' : ''} · first ${jLocal(cardT(CM[L[0]]))}</li>`
     ]),
     // The steps of the path from the answer log (jSteps: the first genus question, the first family of circle 2 or 3), for
     // every player, signed in or not.
     steps = jSteps(R, g => (M && M.gen[g]) || null, ASUBJ),
     stepItems = steps.map(s => [
       s[4],
-      `<li><b>${esc(jStepWords(s)[0])}</b> from answer ${s[0] + 1} · ${jUnit(s[3])} · ${jTime(s[4])}</li>`
+      `<li><b>${esc(jStepWords(s)[0])}</b> from answer ${s[0] + 1} · ${jUnit(s[3])} · ${jLocal(s[4])}</li>`
     ]),
     stepsList = stepItems.length ? `<ul class="adm-jcards">${jOrder(stepItems)}</ul>` : '';
   const cardsLine = !C
@@ -412,11 +456,11 @@ function renderJourney(name, anonId = '') {
         : C.err
           ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>${stepsList}`
           : `<ul class="adm-jcards">${jOrder([
-              ...jStart(C.start, before),
+              ...jStart(C.start, before, jLocal),
               first.length
                 ? [
                     cardT(CM[first[0]]) || null,
-                    `<li><b>First cards</b> ${first.map(jUnit).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+                    `<li><b>First cards</b> ${first.map(jUnit).join(', ')} · ${jLocal(cardT(CM[first[0]]))}</li>`
                   ]
                 : [
                     null,
@@ -429,20 +473,20 @@ function renderJourney(name, anonId = '') {
                 ? [
                     [
                       offer.t || cardT([openAt]) || null,
-                      `<li><b>Opened all ${many}</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} ${many} at once</li>`
+                      `<li><b>Opened all ${many}</b> after answer ${openN} · ${jLocal(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} ${many} at once</li>`
                     ],
                     ...(offer.bk === 'one'
                       ? [
                           [
                             offer.bt || null,
-                            `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} ${many} closed, ${backs.length} still closed</li>`
+                            `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jLocal(offer.bt)} · ${offer.bn} ${many} closed, ${backs.length} still closed</li>`
                           ]
                         ]
                       : offer.bk === 'keep'
                         ? [
                             [
                               offer.bt || null,
-                              `<li><b>Kept all ${many}</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
+                              `<li><b>Kept all ${many}</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jLocal(offer.bt)}</li>`
                             ]
                           ]
                         : [])
@@ -451,7 +495,7 @@ function renderJourney(name, anonId = '') {
                   ? [
                       [
                         offer.t || null,
-                        `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+                        `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jLocal(offer.t) : ''}</li>`
                       ]
                     ]
                   : [[null, `<li><b>Open all ${many}</b> not used</li>`]])

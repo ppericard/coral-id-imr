@@ -3367,9 +3367,12 @@ const WIDTHS = [390, 1280];
           const j = await q.evaluate(() => ({
             kpis: document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' '),
             col: [...document.querySelectorAll('.adm-jtbl thead th')].some(t => t.textContent === 'Progress'),
-            learned: document.querySelectorAll('.adm-jlearn').length
+            learned: document.querySelectorAll('.adm-jlearn').length,
+            // Before sheet v44 no UTC offset is served: the Cards keep the admin's clock.
+            cards: /First cards/.test((document.querySelector('.adm-jcards') || {}).innerText || ''),
+            local: document.querySelectorAll('.adm-jt').length
           }));
-          if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1)
+          if (/Progress|↻ saved/.test(j.kpis) || !/ 1\/\d+ Learned/i.test(j.kpis) || j.col || j.learned !== 1 || !j.cards || j.local)
             fails.push(`${w}px Journey before v28: ${JSON.stringify(j)}`);
           // Before sheet v30 the pages opened are not read: the section says which script version it waits for.
           await q
@@ -3845,12 +3848,28 @@ const WIDTHS = [390, 1280];
           .catch(() => {});
         const carla = await p.evaluate(() => ({
           t: (document.querySelector('.adm-jcards') || {}).innerText || '',
-          line: !!document.querySelector('svg.adm-jl line.o')
+          line: !!document.querySelector('svg.adm-jl line.o'),
+          // Her Cards in her own local time (the demo's Paris, UTC+1: sheet v44's offset), whatever this browser's zone:
+          // each time as Intl writes its instant in that zone.
+          local: [...document.querySelectorAll('.adm-jcards .adm-jt')].map(s => [
+            s.title,
+            s.textContent ===
+              new Intl.DateTimeFormat([], {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+                hourCycle: 'h23',
+                timeZone: 'Etc/GMT-1'
+              }).format(new Date(Number(s.dataset.t)))
+          ])
         }));
         if (
           !/Opened all genera after answer 40.*offer card/.test(carla.t) ||
           !/Kept all genera when asked after answer 70/.test(carla.t) ||
-          !carla.line
+          !carla.line ||
+          carla.local.length < 3 ||
+          carla.local.some(([u, ok]) => u !== 'UTC+1' || !ok)
         )
           fails.push(`${w}px journey (Carla): ${JSON.stringify(carla)}`);
         await go('players/list/journey/' + encodeURIComponent('Ana Demo'));
