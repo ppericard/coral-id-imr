@@ -272,6 +272,110 @@
   "fish-s189-cand-710255748": {
    "code": "o1g1ssx1",
    "keep": "best"
+  },
+  "fish-s189-cand-384974491": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s189-cand-384976606": {
+   "code": "o0g1sm1j1",
+   "keep": "dup"
+  },
+  "fish-s189-cand-160210598": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s189-cand-348421920": {
+   "code": "p1g1bm11",
+   "keep": "best"
+  },
+  "fish-s189-cand-25741594": {
+   "code": "o1g1smo2",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s189-cand-592437585": {
+   "code": "d1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s189-cand-546258594": {
+   "code": "o1d2bs11",
+   "keep": "best"
+  },
+  "fish-s189-cand-38527383": {
+   "code": "p1g1smo3",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s189-cand-176298243": {
+   "code": "o1g1bl11",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s189-cand-658725097": {
+   "code": "p1g1bm11",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s189-cand-710255756": {
+   "code": "p1g1sl14",
+   "keep": "alt",
+   "phase": "female"
+  },
+  "fish-s189-cand-434429019": {
+   "code": "o1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s189-cand-705117422": {
+   "code": "o1g1sl14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s189-cand-705117450": {
+   "code": "o1g1sm13",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s189-cand-705117444": {
+   "code": "o1g1sm13",
+   "keep": "alt",
+   "phase": "terminal"
+  },
+  "fish-s189-cand-434430346": {
+   "code": "o1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s189-cand-434430357": {
+   "code": "o1g1smk2",
+   "keep": "alt",
+   "phase": "female"
+  },
+  "fish-s189-cand-598937294": {
+   "code": "o1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s189-cand-751811945": {
+   "code": "o1g1bm11",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s189-cand-717143498": {
+   "code": "o1d1ssx1",
+   "keep": "best"
+  },
+  "fish-s189-cand-717143530": {
+   "code": "o1d1ssx1",
+   "keep": "alt"
+  },
+  "fish-s189-cand-743385950": {
+   "code": "p1g1ss12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s189-cand-347413513": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
   }
  }
 }

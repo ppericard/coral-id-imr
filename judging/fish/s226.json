@@ -259,6 +259,106 @@
   "fish-s226-cand-753075806": {
    "code": "o1g1ssk1",
    "keep": "best"
+  },
+  "fish-s226-cand-248129144": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s226-cand-638815520": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s226-cand-661813823": {
+   "code": "d1g1ss11",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "seems to be in a tank (a frame edge at the bottom), not on the reef"
+  },
+  "fish-s226-cand-656489337": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s226-cand-630350262": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-654074615": {
+   "code": "o1g1smk2",
+   "keep": "best"
+  },
+  "fish-s226-cand-619049637": {
+   "code": "o1g1sl14",
+   "keep": "best"
+  },
+  "fish-s226-cand-63481901": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s226-cand-335400592": {
+   "code": "o1g1smk2",
+   "keep": "best"
+  },
+  "fish-s226-cand-335068172": {
+   "code": "o1g2bm11",
+   "keep": "dup"
+  },
+  "fish-s226-cand-335400636": {
+   "code": "o1g1bm11",
+   "keep": "dup"
+  },
+  "fish-s226-cand-33044847": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-754459546": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-754459507": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s226-cand-727278827": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s226-cand-657899867": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-674419534": {
+   "code": "p1g1bm11",
+   "keep": "best"
+  },
+  "fish-s226-cand-690171214": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-268683223": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s226-cand-690769797": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s226-cand-666977332": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-637930651": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-747769589": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s226-cand-680059709": {
+   "code": "p1g2smk1",
+   "keep": "best"
   }
  }
 }

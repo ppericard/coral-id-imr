@@ -139,6 +139,14 @@
   "fish-s070-cand-713617615": {
    "code": "o1g1ml13",
    "keep": "best"
+  },
+  "fish-s070-cand-616285778": {
+   "code": "o0g2ss11",
+   "keep": "best"
+  },
+  "fish-s070-cand-616285792": {
+   "code": "o0g2ssx1",
+   "keep": "dup"
   }
  }
 }
