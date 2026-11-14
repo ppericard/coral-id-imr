@@ -5020,9 +5020,15 @@ const WIDTHS = [390, 1280];
           return true;
         });
         if (!ok) fe.push("no fish answers of Ben's in the demo");
+        // The steps (the log) and the cards (Ben's saved copy, read on its own: Cards: loading… until then) both drawn.
         await fq
-          .waitForFunction(() => /Genus questions/.test((document.querySelector('.adm-journey') || {}).textContent), null, {timeout: 20000})
-          .catch(() => fe.push('the steps never drawn'));
+          .waitForFunction(
+            () =>
+              (t => /Genus questions/.test(t) && /Open all families/.test(t))((document.querySelector('.adm-journey') || {}).textContent),
+            null,
+            {timeout: 30000}
+          )
+          .catch(() => fe.push('the steps or the cards never drawn'));
         // What the page says, with every attribute but the links' (a title, an SVG tooltip may hold a unit too).
         const seen = () =>
           fq.evaluate(() => {
