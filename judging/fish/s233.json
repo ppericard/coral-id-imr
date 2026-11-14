@@ -288,6 +288,22 @@
   "fish-s233-cand-593630067": {
    "code": "p1g1smo4",
    "keep": "best"
+  },
+  "fish-s233-cand-593630072": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s233-cand-593630082": {
+   "code": "p1g1sm14",
+   "keep": "dup"
+  },
+  "fish-s233-cand-696168895": {
+   "code": "p1g1slo3",
+   "keep": "best"
+  },
+  "fish-s233-cand-675778236": {
+   "code": "p1g1sl14",
+   "keep": "best"
   }
  }
 }

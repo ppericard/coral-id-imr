@@ -139,6 +139,102 @@
   "fish-s208-cand-461172070": {
    "code": "p1g1sl14",
    "keep": "best"
+  },
+  "fish-s208-cand-303034637": {
+   "code": "p1g1sm1j3",
+   "keep": "dup"
+  },
+  "fish-s208-cand-303034665": {
+   "code": "p1g2ss1j2",
+   "keep": "dup"
+  },
+  "fish-s208-cand-616874379": {
+   "code": "p1g0smkj2",
+   "keep": "best"
+  },
+  "fish-s208-cand-268080026": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-610324641": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-388474525": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s208-cand-388474639": {
+   "code": "p1g1smk2",
+   "keep": "dup"
+  },
+  "fish-s208-cand-618926041": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-176601473": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s208-cand-468468546": {
+   "code": "o1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s208-cand-468468547": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-468468548": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s208-cand-468468554": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s208-cand-286451230": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s208-cand-563546932": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-163934011": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-259104652": {
+   "code": "o1g1smo3",
+   "keep": "best"
+  },
+  "fish-s208-cand-438915424": {
+   "code": "o1g1bsx1",
+   "keep": "best"
+  },
+  "fish-s208-cand-258830881": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s208-cand-298486481": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s208-cand-298486485": {
+   "code": "o1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s208-cand-298486467": {
+   "code": "o1g2ss12",
+   "keep": "dup"
+  },
+  "fish-s208-cand-298486694": {
+   "code": "p0g2sm12",
+   "keep": "dup"
+  },
+  "fish-s208-cand-298486671": {
+   "code": "o0g2ss11",
+   "keep": "dup"
   }
  }
 }

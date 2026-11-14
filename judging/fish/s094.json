@@ -91,6 +91,50 @@
   "fish-s094-cand-111832415": {
    "code": "p1g1sm14",
    "keep": "best"
+  },
+  "fish-s094-cand-721590317": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s094-cand-1408724": {
+   "code": "p1g1slo3",
+   "keep": "best"
+  },
+  "fish-s094-cand-532565052": {
+   "code": "p1d2sl12",
+   "keep": "best"
+  },
+  "fish-s094-cand-252098438": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s094-cand-179372601": {
+   "code": "p1d1sm13",
+   "keep": "best"
+  },
+  "fish-s094-cand-131208849": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s094-cand-487169784": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s094-cand-606514230": {
+   "code": "o1g0slo3",
+   "keep": "best"
+  },
+  "fish-s094-cand-586502600": {
+   "code": "p1d1slo3",
+   "keep": "best"
+  },
+  "fish-s094-cand-654463062": {
+   "code": "o1d1smk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a banded damselfish of another genus, about two thirds its size, overlapping it from behind: confusion possible"
   }
  }
 }

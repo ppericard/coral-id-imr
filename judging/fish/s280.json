@@ -219,6 +219,22 @@
   "fish-s280-cand-340757114": {
    "code": "o1g0slk3",
    "keep": "best"
+  },
+  "fish-s280-cand-329916718": {
+   "code": "h1g0sl13",
+   "keep": "alt"
+  },
+  "fish-s280-cand-329916739": {
+   "code": "h1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s280-cand-329916724": {
+   "code": "o1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s280-cand-329916722": {
+   "code": "o1g0sl13",
+   "keep": "best"
   }
  }
 }
