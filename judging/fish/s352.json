@@ -114,11 +114,7 @@
   },
   "fish-s352-cand-679549128": {
    "code": "d1g1sl12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: plain black, yellow tail fan"
+   "keep": "best"
   },
   "fish-s352-cand-252416910": {
    "code": "o1g1sm13",
@@ -142,19 +138,11 @@
   },
   "fish-s352-cand-757063925": {
    "code": "o1g1ss12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: pale, no net pattern"
+   "keep": "best"
   },
   "fish-s352-cand-411723483": {
    "code": "o1g1sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: plain black, yellow fins"
+   "keep": "best"
   },
   "fish-s352-cand-411723481": {
    "code": "o1g1sm12",

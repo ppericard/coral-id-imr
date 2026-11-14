@@ -162,11 +162,7 @@
   },
   "fish-s067-cand-304621532": {
    "code": "d1g1sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: slender, plain green, no bars"
+   "keep": "best"
   },
   "fish-s067-cand-620771048": {
    "code": "p1g1ml13",
@@ -186,11 +182,7 @@
   },
   "fish-s067-cand-305969940": {
    "code": "o1g1sm13",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: slender, plain green, no bars"
+   "keep": "best"
   }
  }
 }

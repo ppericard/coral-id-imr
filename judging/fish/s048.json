@@ -186,11 +186,7 @@
   },
   "fish-s048-cand-465630850": {
    "code": "o1g1sl13",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: orange body, yellow tail"
+   "keep": "best"
   },
   "fish-s048-cand-458144336": {
    "code": "p1g1sl1j2",
@@ -202,19 +198,11 @@
   },
   "fish-s048-cand-555719961": {
    "code": "o1g1slk2",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: orange body; a young sweetlips beside it"
+   "keep": "best"
   },
   "fish-s048-cand-541157061": {
    "code": "o1g2sm12",
-   "keep": "best",
-   "unsure": [
-    "code"
-   ],
-   "note": "looks like a different fish from the rest of its species: pale blue body, dark tail"
+   "keep": "best"
   },
   "fish-s048-cand-649127027": {
    "code": "o1g1sm13",
