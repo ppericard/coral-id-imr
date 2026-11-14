@@ -122,7 +122,13 @@ prefixed `demo:`). Use it for screenshots and to test an admin change; when you 
 keep `admin-demo.js` in step. No build step. Tests: `node tests/run.js` (every `tests/*.test.js` under `node --test`, in the
 machine slot: rule W24; Node only, no npm) and the Playwright
 smokes (`tests/*.smoke.js`; CI installs Playwright in a temporary folder: never add a `package.json`); add a case when
-you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). Pure logic
+you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). **A smoke
+waits for and answers a quiz question only through `tests/answer.js`** (`qa.ready(p)`, then `smokeAnswer(right | unit)`
+in the page): it answers whatever format is shown (the choices, a typed question, a fish surprise) and fails at once
+with what is on screen, never as a bare timeout; a check of one format asserts the `fmt` it returns. `tests/answer.test.js`
+fails on a smoke line that names a quiz answer control or answers with a number key itself (a deliberate one, a read of
+the choices or a check of one format, says `answer.js: <why>` on or above its line) and on an answer control in `app.js`
+`qAnswers` the helper does not know. Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
 `.github/workflows/checks.yml` (JS syntax, tests, JSON, `data.json` layout, Python, versions) and
 `.github/workflows/smokes.yml`, each Playwright smoke in its own parallel job `smoke (<name>)` (pages in four groups and
@@ -136,7 +142,8 @@ cancels the run still going on the PR. **Session hooks**
 (`git show origin/main:tools/brief.py | python3 -I -`), never the checked-out branch's (a branch could put any code
 there): a change to `tools/brief.py` reaches the hooks once merged.
 *Source:* repository practice, by 2026-11-01; hooks, 2026-11-05; docs-only PRs skip the smokes, Pierre, 2026-11-08
-(Q305).
+(Q305); one answerer for the smokes, Pierre, 2026-11-13 (fix the structure, not the one spot: a typed question hung the
+overlays smoke on #855).
 
 ### W13
 
@@ -291,7 +298,7 @@ Code that must name an old key on purpose carries `rename-app: keep`.
 ### W22
 
 **Several agents at once: a worktree each, one smoke at a time.** The integrator launches decided work at once (AGENTS.md
-"Working mode"), within rule W27's cap of three agents at a time; the shared machine is protected by `tests/slot.js`. Each agent works in a
+"Working mode"), within rule W27's cap of four agents at a time, balanced by weight; the shared machine is protected by `tests/slot.js`. Each agent works in a
 **worktree of its own** (`.claude/worktrees/<name>`), sparse when it does not need the photos (`git sparse-checkout set --no-cone '/*' '!/img/'`: the disk is small): link `img` to
 the main checkout only to run a test, never stage it, stage files by name, and remove the worktree when the work is
 merged. **One Playwright smoke at a time on the machine** (`tests/slot.js`; `SMOKE_SLOTS=1` while several agents run),
@@ -300,7 +307,7 @@ runs. At most two open PRs per
 agent. The stash is shared by every worktree: never `git stash pop` blindly (push with a unique message, apply by SHA).
 Who merges: AGENTS.md "Working mode" (the integrator, never a subagent). A thread in its own container (claude.ai
 Projects mode) still keeps at most two open PRs and runs only the smoke part its change touches.
-*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped at three agents by rule W27, Pierre, 2026-11-09.
+*Source:* 2026-11-04; launch at once, Pierre, 2026-11-05; capped by rule W27, Pierre, 2026-11-09 (three), 2026-11-14 (four, balanced by weight).
 
 ### W23
 
@@ -370,7 +377,11 @@ in a burst. *Source:* Pierre, 2026-11-08 (Q305).
 
 **Bounded cost, no conflicts: few agents, small PRs, two Codex rounds, then cut.** The integrator holds to these, each
 checked before it launches or relaunches an agent:
-- **At most three agents at a time**, each on one PR with one subject. A finished agent is stopped, not kept waiting.
+- **At most four agents at a time, balanced by weight** (Pierre, 2026-11-14: "la limite est plus complexe que ça. Ya des
+  agents qui prennent peu de ressources et d'autres beaucoup. C'est ça qu'il faut équilibrer"): heavy agents (simulations,
+  smoke runs, long test suites) share the machine through `tests/slot.js`, so no more than two or three of them run at
+  once; light ones (read-only studies, docs) fill the remaining places. Each agent is on one PR or one study with one
+  subject. A finished agent is stopped, not kept waiting.
 - **Every branch starts from `origin/main`**, never from another PR's branch: no stacked PRs. A PR that would contain
   another is the same PR.
 - **No two open PRs on the same sensitive file at once** (`Code.gs`, `core.js`, `sync.js`, `model.js`): the second waits
