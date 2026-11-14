@@ -239,6 +239,100 @@
   "fish-s187-cand-625637528": {
    "code": "o1g1mm13",
    "keep": "best"
+  },
+  "fish-s187-cand-622057869": {
+   "code": "p1g1smx1",
+   "keep": "best"
+  },
+  "fish-s187-cand-674547298": {
+   "code": "o1g1ss12",
+   "keep": "best"
+  },
+  "fish-s187-cand-625637482": {
+   "code": "o1g1sl13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-595749554": {
+   "code": "o1g2sl12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-595749582": {
+   "code": "o1g3sl12",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-654162221": {
+   "code": "o1g2sl12",
+   "keep": "best"
+  },
+  "fish-s187-cand-759643501": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-658206798": {
+   "code": "o1g2sm12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-57847604": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s187-cand-758269602": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-17120280": {
+   "code": "o1g1sm13",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-17120489": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-18327716": {
+   "code": "o1g1sm13",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-604764607": {
+   "code": "p1g2sm12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-658206773": {
+   "code": "o1g1sl14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-650135366": {
+   "code": "p1g1ss11",
+   "keep": "best"
+  },
+  "fish-s187-cand-330633617": {
+   "code": "h1g1ml12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-732716365": {
+   "code": "d1g1smx1",
+   "keep": "best"
+  },
+  "fish-s187-cand-330634399": {
+   "code": "o1g2ml12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s187-cand-382293742": {
+   "code": "o1d1ml12",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }

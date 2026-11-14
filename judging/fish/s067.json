@@ -151,6 +151,46 @@
   "fish-s067-cand-627561289": {
    "code": "p1g1bl12",
    "keep": "best"
+  },
+  "fish-s067-cand-627561340": {
+   "code": "p1g1ml13",
+   "keep": "dup"
+  },
+  "fish-s067-cand-350008273": {
+   "code": "o1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s067-cand-304621532": {
+   "code": "d1g1sm12",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: slender, plain green, no bars"
+  },
+  "fish-s067-cand-620771048": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s067-cand-749314914": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s067-cand-710254643": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s067-cand-710254640": {
+   "code": "p1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s067-cand-305969940": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: slender, plain green, no bars"
   }
  }
 }

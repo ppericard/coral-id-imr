@@ -95,6 +95,106 @@
   "fish-s076-cand-fb-Nenig_u3": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s076-cand-332508349": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s076-cand-606380111": {
+   "code": "o1g1bm11",
+   "keep": "dup"
+  },
+  "fish-s076-cand-606380105": {
+   "code": "o0g1bl11",
+   "keep": "best"
+  },
+  "fish-s076-cand-730207306": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: grey body, dark bar, yellow fins"
+  },
+  "fish-s076-cand-731142204": {
+   "code": "p1g1bm11",
+   "keep": "best"
+  },
+  "fish-s076-cand-690927112": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s076-cand-625748109": {
+   "code": "p1g1mm12",
+   "keep": "best"
+  },
+  "fish-s076-cand-598153731": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: yellow-green, no dark body"
+  },
+  "fish-s076-cand-603493250": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s076-cand-759543271": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s076-cand-759543288": {
+   "code": "p1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s076-cand-332221494": {
+   "code": "o0g1bl11",
+   "keep": "best"
+  },
+  "fish-s076-cand-596070984": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s076-cand-726190003": {
+   "code": "o1g2ss11",
+   "keep": "best"
+  },
+  "fish-s076-cand-660639538": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s076-cand-655728441": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s076-cand-726144264": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s076-cand-726144310": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s076-cand-726144341": {
+   "code": "o1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s076-cand-759693307": {
+   "code": "o1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s076-cand-759693324": {
+   "code": "o1g1ssk1",
+   "keep": "dup"
+  },
+  "fish-s076-cand-757767782": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s076-cand-757767604": {
+   "code": "o1g0sm13",
+   "keep": "alt"
   }
  }
 }

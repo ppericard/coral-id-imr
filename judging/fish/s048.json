@@ -171,6 +171,66 @@
   "fish-s048-cand-477520541": {
    "code": "o1g1bs11",
    "keep": "best"
+  },
+  "fish-s048-cand-575176109": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s048-cand-645823030": {
+   "code": "d1g1ss1j1",
+   "keep": "best"
+  },
+  "fish-s048-cand-255717146": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s048-cand-465630850": {
+   "code": "o1g1sl13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: orange body, yellow tail"
+  },
+  "fish-s048-cand-458144336": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s048-cand-538900552": {
+   "code": "o1g2ssxj1",
+   "keep": "best"
+  },
+  "fish-s048-cand-555719961": {
+   "code": "o1g1slk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: orange body; a young sweetlips beside it"
+  },
+  "fish-s048-cand-541157061": {
+   "code": "o1g2sm12",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: pale blue body, dark tail"
+  },
+  "fish-s048-cand-649127027": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s048-cand-332536782": {
+   "code": "o1g2bm11",
+   "keep": "best"
+  },
+  "fish-s048-cand-616489643": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s048-cand-523506696": {
+   "code": "o1g1ml12",
+   "keep": "best"
   }
  }
 }

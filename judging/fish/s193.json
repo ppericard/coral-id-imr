@@ -251,6 +251,113 @@
   "fish-s193-cand-601151613": {
    "code": "o1g2bl11",
    "keep": "best"
+  },
+  "fish-s193-cand-604121337": {
+   "code": "o0g1sm12",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-601151616": {
+   "code": "o1g1bl11",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-601151617": {
+   "code": "d1g2mm11",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-742483813": {
+   "code": "o1g1ml13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-615721124": {
+   "code": "o1g1smk2",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-581565396": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s193-cand-581565741": {
+   "code": "p1g1sm13",
+   "keep": "alt",
+   "phase": "female"
+  },
+  "fish-s193-cand-596070634": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s193-cand-705117400": {
+   "code": "p1g1ss12",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s193-cand-617987732": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-617990065": {
+   "code": "p1g1ss12",
+   "keep": "dup",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-57688445": {
+   "code": "p1g1bl11",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s193-cand-19458173": {
+   "code": "p1g1ss12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-382297010": {
+   "code": "o1g1bm11",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-606855709": {
+   "code": "p1g1ml13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-606855710": {
+   "code": "p1g1sl14",
+   "keep": "alt",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-525448759": {
+   "code": "o1g1sl13",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-332783830": {
+   "code": "p1g1sm1j2",
+   "keep": "alt"
+  },
+  "fish-s193-cand-749421354": {
+   "code": "p1g1ss12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s193-cand-570746235": {
+   "code": "o1g1sl14",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "looks like a different fish from the rest of its species: orange-brown cheek, no green saddle"
+  },
+  "fish-s193-cand-671539029": {
+   "code": "d1g1sm12",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }
