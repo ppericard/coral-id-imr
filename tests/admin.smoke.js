@@ -1864,6 +1864,97 @@ const WIDTHS = [390, 1280];
         if (m1.on !== '1' || m1.head === m0.head) fails.push(`${w}px Analyses mix-up map, a family tapped: ${JSON.stringify({m0, m1})}`);
       }
     }
+    // Difficulty › Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus from the live log,
+    // the same rows and columns, in family blocks; the cells add up to the Mix-ups count, the diagonal empty, a cell opens
+    // the compare page of its two genera; Typed apart (its cells add up to its own count, no rate, nothing hatched). At 390
+    // the matrix scrolls inside its box (its header and names kept in view), never the page; at 1280 it fits its box.
+    {
+      await go('analyses/difficulty/heatmap');
+      const hm = () =>
+        p.evaluate(() => {
+          const box = document.querySelector('#view .adm-hm'),
+            T = box && box.querySelector('.adm-hmt');
+          if (!T) return null;
+          const num = L => [...L].reduce((t, e) => t + (Number(e.textContent) || 0), 0),
+            kp = Object.fromEntries(
+              [...document.querySelectorAll('#view .adm-kpis > div')].map(d => [
+                d.querySelector('span').textContent,
+                d.querySelector('b').textContent
+              ])
+            ),
+            a = [...T.querySelectorAll('td a')].find(x => x.textContent),
+            m = a && /^(.+) shown, (.+) (?:answered|typed): /.exec(a.title);
+          return {
+            rows: T.querySelectorAll('tbody tr').length,
+            cols: T.querySelectorAll('thead .hm-col').length,
+            fams: T.querySelectorAll('.hm-fam').length,
+            sum: num(T.querySelectorAll('td')),
+            kp,
+            diag: [...T.querySelectorAll('td.hm-d')].filter(d => d.textContent).length,
+            nd: T.querySelectorAll('td.hm-d').length,
+            lo: T.querySelectorAll('td.hm-lo').length,
+            // the whole slate on the map, answered or not (Codex review #889)
+            slate: slateOf(DATA).length,
+            // a cell offered but never mixed up is a full-size target too (Codex review #889)
+            flat: [...T.querySelectorAll('td a')].filter(x => !x.textContent && x.getBoundingClientRect().height < 10).length,
+            leg: [...document.querySelectorAll('#view .adm-hm-leg span')].map(x => x.textContent).join(' | '),
+            link: a ? decodeURIComponent(a.getAttribute('href')) : '',
+            pair: m ? [m[1], m[2]].sort().join('|') : '',
+            wide: document.documentElement.scrollWidth - innerWidth,
+            scroll: box.scrollWidth - box.clientWidth
+          };
+        });
+      const h0 = await hm();
+      if (
+        !h0 ||
+        h0.rows < h0.slate ||
+        h0.cols !== h0.rows ||
+        h0.flat ||
+        h0.leg !== 'Under 5% | 5%-10% | 10%-20% | 20%-30% | 30%+ | Under 20 offers | Look-alike | From the data' ||
+        h0.nd !== h0.rows ||
+        h0.diag ||
+        h0.fams < 3 ||
+        String(h0.sum) !== h0.kp['Mix-ups'] ||
+        !h0.sum ||
+        !h0.lo ||
+        h0.link !== `./#learn/compare/${h0.pair.split('|').join('/')}` ||
+        h0.wide > 0 ||
+        (w < 600 ? h0.scroll <= 0 : h0.scroll > 0)
+      )
+        fails.push(`${w}px Analyses heatmap: ${JSON.stringify(h0)}`);
+      if (w < 600 && h0) {
+        // scrolled inside its box: the column names and the row names stay in view
+        const st = await p.evaluate(() => {
+          const box = document.querySelector('#view .adm-hm');
+          box.scrollIntoView();
+          box.scrollLeft = 300;
+          box.scrollTop = 300;
+          const b = box.getBoundingClientRect(),
+            th = box.querySelector('thead .hm-col:last-child').getBoundingClientRect(),
+            rh = box.querySelector('tbody tr:last-child .hm-row').getBoundingClientRect();
+          return {box: box.scrollLeft > 0 && box.scrollTop > 0, top: Math.round(th.top - b.top), left: Math.round(rh.left - b.left)};
+        });
+        if (!st.box || Math.abs(st.top) > 2 || st.left > 30) fails.push(`${w}px Analyses heatmap scrolled: ${JSON.stringify(st)}`);
+      }
+      await p.click('#view [data-sf="hm"][data-v="typed"]');
+      await settle();
+      const h1 = await hm();
+      if (!h1 || String(h1.sum) !== h1.kp['Typed mix-ups'] || !h1.sum || h1.lo || h1.rows !== h0.rows || h1.wide > 0)
+        fails.push(`${w}px Analyses heatmap, Typed: ${JSON.stringify(h1)}`);
+      await p.click('#view [data-sf="hm"][data-v="pick"]');
+      await settle();
+      // not a fish page yet (core.js SUBJECTS admin pages): the corals first
+      if (
+        once &&
+        (await p.evaluate(() =>
+          hasPage(
+            SUBJECTS.find(S => S.admin.pages),
+            'analyses/difficulty/heatmap'
+          )
+        ))
+      )
+        fails.push(`${w}px Analyses heatmap: on the fish side already`);
+    }
     if (once) {
       // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
       await go('analyses/difficulty/formats');
@@ -2044,7 +2135,8 @@ const WIDTHS = [390, 1280];
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Photos.') fe.push(`the line on what is not there: "${at.not}"`);
+            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Heatmap.')
+              fe.push(`the line on what is not there: "${at.not}"`);
             // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
             // fish report
             const [H, LV] = await fq.evaluate(() => [
