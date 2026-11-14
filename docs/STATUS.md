@@ -5,14 +5,14 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-14, about 16:50 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-14, about 18:30 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, its 11-14 handover first, what bites, the open work).
 
 Last checked: reports and events: 2026-11-12 ~09:45 Manila
 
 ## Now
 
-Main: sheet script **v130** (#867, merged about 16:50 by a merge train with #869). No player report read since
+Main: sheet script **v131** (#876). No player report read since
 11-12.
 
 - **Merged 11-14**: #862 (Pierre's answers of 11-14 recorded), #863 (smokes answer every question format through one
@@ -22,11 +22,13 @@ Main: sheet script **v130** (#867, merged about 16:50 by a merge train with #869
   those with a reference photo; 49 of 180 cards changed; his 28 covers kept), #868 (s278 shown as *Neoniphon
   argenteus*, the PDF's "argentus" kept in the source), #870 (Photo review › Cover proposals: his 24 family covers beside
   the rule's pick).
-- **Merged 11-14 evening (train)**: #867 (the sheet's `Timings` tab: sampled ms and rows of each full read and save, no
-  player data; the measure behind Q352), #869 (Q354: s088 and s244 photos from their Pacific taxa, IMR names kept, the
-  credit keeps the iNaturalist name; three C5 points).
-- **In flight**: #871 (Q350 confusion groups, Q355 B being built); agents: Q124 (b) bold differing
-  letters, fish photo judging (the 81 Q354 candidates first, then the backlog).
+- **Merged 11-14 evening**: #867 (the sheet's `Timings` tab, no player data; the measure behind Q352) and #869 (Q354:
+  s088 and s244 photos from their Pacific taxa, IMR names kept; three C5 points), by a train; #873 (Q124 (b): "Similar
+  names" with the differing letters in bold, corals and fish) and #872 (this rule and STATUS), by a train; #876 (fish
+  Answer log and Pairs at parity; sheet v131); #874 (the comeback study, read-only).
+- **In flight**: #871 (Q350, parked: see the questions); fish judging #875 (the 81 Q354 candidates), #877, #878, #879
+  (1,555 judged, 988 in play), merged one by one; agents: Q123 j for the corals (`Code.gs`), Tree node pages, Find the
+  X's format.
 - **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync on a current app; no
   hand correction (the board is already right, D8).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (Q334), `claude/level-count-from-log`,
@@ -57,11 +59,14 @@ mode"); the others are asked plainly. An answered one goes into its PR and off t
   recalibrated later (about 20 players with returns); the comeback's rust total given `INTRO.SLACK` (rec. yes, learnsim
   first); log the comeback's rust at its start (rec. yes); keep the recall discount after a comeback (rec. not now).
   Numbers are given when asked.
-- Answered 11-14: Q355 (#871) B, "ok pour B" (the first cards as on main, no pull of a pair the cap split;
-  declared pairs forced inside groups); Q352 (D1 behind a Worker when a measured threshold is crossed), Q353 (no paid tier; a monthly cost is
-  settled with IMR), Q354 a (s164 kept, a C5 point) and b (Pacific photo taxa for s088 and s244, C5 points; the credit
-  keeps the iNaturalist name, "ok pour (a)"); Q230: nothing to build (the list would be empty); N. argenteus corrected;
-  the #861 and #864 choices; the 152 proposals and cover proposals as admin views. Q339-Q351 earlier (ROADMAP rows).
+- **For the morning: #871 after Q355 (B)**. B's checks showed fish breaches not in the table Pierre answered on; a
+  second look (seeds 511-520) and a variant B' (B for corals, the first build's starter order for fish) followed.
+  B' = B for corals and = A for fish: the app-world fish cells all hold. Left, under every variant: the fish rated
+  world's lecture RA reaches Open Water later (57 → 65 / 70 → 116 answers) and the expert has fewer units at Open Water
+  at 1,000 (−1 to −3.8); the coral rated beginner's shown score at 1,000 −1.3 (margin −1). Recommendation: ship B',
+  these costs accepted, or a third look. Tables in #871 and LEARNING "Confusion groups" (branch).
+- Answered 11-14: Q352-Q355, Q230, N. argenteus, the #861/#864 choices (PR Decisions; ROADMAP rows). Q339-Q351
+  earlier.
 
 Last question number: Q355
 
