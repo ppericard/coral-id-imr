@@ -46,18 +46,27 @@ sheet script version first (rule D4). Question d settles the answer log.
 - **46 of the 951 listed names hold an apostrophe** ("Talbot’s damsel", "Clark’s anemonefish"). An apostrophe fails the
   sheet's unit pattern (`Code.gs` `BOARD_U_`, and the log's unit check in `logAnswers_`). The curly one also fails the
   "Taxon shown" pattern, so such a name would be logged blank there.
-- **A name slug fits.** The species id, then a colon, then the name lower-cased with its apostrophes dropped, is at most
-  40 characters for every listed name. Example: `s091:ternate chromis`. Forty is exactly the limit of both the unit
-  pattern and the log.
+- **A slug of letters and digits only is the key that fits.** Three patterns in `logAnswers_` each refuse a key that
+  `G` alone would accept:
+  - a space: Choices (`ch`) is the units joined by spaces, so a unit with a space makes the cell ambiguous;
+  - a space: a duel's mode (`quiz-duel|A|B`) carries units, and `M` has no space;
+  - a hyphen: Choices' pattern `CH` refuses it ("Striped poison-fang blenny mimic").
+
+  The fitting key is the species id, a colon, then the name lower-cased with everything but letters and digits removed:
+  `s091:ternatechromis`. For all 951 listed names it passes `G`, `CH`, `M` and `BOARD_U_`, is unique within its species
+  and is at most 37 characters (the limit is 40). Today's units (`f:…`, `g:…`) hold no space or hyphen either.
 - **The leaderboard tree overflows.** The sheet keeps the fish tree only up to 9,000 characters (`Code.gs`
-  `boardTreeOk_`). With one entry per species and the shortest keys possible, the tree is about 22,700 characters for
-  circle 1 alone and about 32,800 for every circle. Today it fits only because species without units are packed by
-  genus.
+  `boardTreeOk_`). With one entry per species and the keys above, the tree is about 34,600 characters for circle 1
+  alone and about 48,700 for every circle. Even the shortest keys possible (`s091a`) give about 22,700 for circle 1.
+  Today it fits only because species without units are packed by genus.
+- **The tree goes with every save.** `sync.js` `syncSummary` puts `boards` in every save's summary, so a 49 KB tree would
+  add about 49 KB to each save.
 - **A rejected tree is dropped silently** (`boardUnitsSave_`), and the sheet keeps the last tree it accepted. So the
   leaderboard would keep ranking without species credit, while My progress (`treeScore` over the app's `UNITS` fish tree) would show it. The
   board and the ring would disagree.
-- **The answer log needs no sheet change** for a unit like `s091:ternate chromis`, the rank word `species` or a mode
-  suffix such as `|cn`: each fits its `logAnswers_` pattern.
+- **The answer log needs no sheet change** for a unit like `s091:ternatechromis`, the rank word `species` or a mode
+  suffix such as `|cn`: each fits its `logAnswers_` pattern, Choices and a duel's mode included. A key with a space or
+  a hyphen would need one.
 
 ## Questions for Pierre
 
@@ -65,8 +74,9 @@ sheet script version first (rule D4). Question d settles the answer log.
 its key. Fish progress travels with the player's data and syncs between devices, so changing the key later is a
 migration.
 
-- **A**: species id and a name slug, `s091:ternate chromis`. It survives a reordered list. A corrected or new name
-  starts at 0, and a removed name drops out.
+- **A**: species id and a slug of the name in letters and digits only, `s091:ternatechromis`. It survives a reordered
+  list. A corrected or new name starts at 0, and a removed name drops out. A slug with spaces would break the log's
+  Choices and duel cells.
 - **B**: species id and position, `s091:1`. It is short, but a reordered or corrected list moves progress to the wrong
   name.
 - **C**: one unit per species. This goes against "every listed name needed" (it would need a per-name field inside the
@@ -74,28 +84,33 @@ migration.
 
 *Recommendation: A.*
 
-**(b) How a species with several names is asked.**
+**(b) How a species with several names is asked.** This applies to the 269 species with 2 or 3 names.
 
 - **A**: each listed name is a unit in the draw. A species' names open together, on one card that shows them all, and
   the draw then favours the weaker name by itself, with no new mechanism (rule L11). The species still opens as one
-  step ("one at a time").
-- **B**: the species is drawn and the name asked least is shown (`cnShow`), crediting that name's unit. This needs a
-  new notion, a unit holding sub-units for the Elo, the opening and the levels (rules L6, L11).
+  step ("one at a time"). This replaces the "asked least" rule that FISH_PATH and `cnShow` describe today; `cnShow` is
+  kept only to break ties.
+  A typed question asks one name's unit. If the player types another listed name of the same species, it is right and
+  credits the name typed, while the name asked gets nothing.
+- **B**: what FISH_PATH and `cnShow` describe today. The species is drawn and the name asked least is shown, crediting
+  that name's unit. This needs a new notion, a unit holding sub-units for the Elo, the opening and the levels (rules L6,
+  L11).
 
 *Recommendation: A.*
 
 **(c) The leaderboard with species.** A sheet script PR is needed before species count on the board.
 
-- **A**: the sheet stores the tree over several script properties (about 35,000 characters, in chunks under the 9,000
-  limit). The app sends species units only once the sheet reports that version (a new `*_SHEET` gate, rule D4); until
-  then species are not opened.
-- **B**: a compact tree that the sheet expands with its own copy of the species list.
+- **A**: the sheet stores the tree over several script properties (about 49,000 characters, in chunks under the 9,000
+  limit). The app sends the tree only when it changed (not with every save, as today) and sends species units only once
+  the sheet reports that version (a new `*_SHEET` gate, rule D4); until then species are not opened.
+- **B**: a compact tree that the sheet expands with its own copy of the species list. It is small on every save, but
+  the sheet then has to keep a copy of the species list in step with the app.
 - **C**: ship step 1 with species left out of the score and the board for now. This breaks "the fish board ranks by
   the % My progress shows", and the score would jump once species are added.
 
 *Recommendation: A.* It is one PR on the `Code.gs` line (STATUS "Next" 1), then the app PR.
 
-**(d) What a common-name answer logs.** The answer logs the name's unit (`s091:ternate chromis`, under (a) A) as the
+**(d) What a common-name answer logs.** The answer logs the name's unit (`s091:ternatechromis`, under (a) A) as the
 unit asked, `species` as its rank, and the name shown in "Taxon shown" (blank for a curly apostrophe; the unit still
 says which name). No new mode code is used in step 1, whose display is fixed. The display schedule's suffixes come
 with scientific names. This is the format the fish replay and the Analyses will read later.
