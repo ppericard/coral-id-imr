@@ -12,7 +12,7 @@ Last checked: reports and events: 2026-11-12 ~09:45 Manila
 
 ## Now
 
-Main: sheet script **v129** (live after #861's deploy); v130 is assigned on #867's branch. No player report read since
+Main: sheet script **v130** (#867, merged about 16:50 by a merge train with #869). No player report read since
 11-12.
 
 - **Merged 11-14**: #862 (Pierre's answers of 11-14 recorded), #863 (smokes answer every question format through one
@@ -22,9 +22,10 @@ Main: sheet script **v129** (live after #861's deploy); v130 is assigned on #867
   those with a reference photo; 49 of 180 cards changed; his 28 covers kept), #868 (s278 shown as *Neoniphon
   argenteus*, the PDF's "argentus" kept in the source), #870 (Photo review › Cover proposals: his 24 family covers beside
   the rule's pick).
-- **In flight**: #867 (the sheet's `Timings` tab: sampled ms and rows of each full read and save, no player data; the
-  measure behind Q352), #869 (Q354: s088 and s244 photos fetched from their Pacific taxa, IMR names kept, the credit
-  keeps the iNaturalist name; three C5 points); #871 (Q350 confusion groups, Q355 B being built); agents: Q124 (b) bold differing
+- **Merged 11-14 evening (train)**: #867 (the sheet's `Timings` tab: sampled ms and rows of each full read and save, no
+  player data; the measure behind Q352), #869 (Q354: s088 and s244 photos from their Pacific taxa, IMR names kept, the
+  credit keeps the iNaturalist name; three C5 points).
+- **In flight**: #871 (Q350 confusion groups, Q355 B being built); agents: Q124 (b) bold differing
   letters, the comeback study (read-only), fish photo judging (the 81 Q354 candidates first, then the backlog).
 - **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync on a current app; no
   hand correction (the board is already right, D8).
@@ -36,7 +37,7 @@ Main: sheet script **v129** (live after #861's deploy); v130 is assigned on #867
 Four agents at a time (rule W27), the slots kept full from this queue (Pierre, 11-14: "Tu lances tout ce que tu peux
 lancer"); what is easy to correct afterwards ships (AGENTS.md "Working mode"):
 
-1. Merge #867 and #869 once green; then the `Code.gs` line, one PR at a time: Q123 j (corals, then fish), the Analyses
+1. The `Code.gs` line, one PR at a time: Q123 j (corals, then fish), the Analyses
    machine key (fail-closed; Pierre's steps later), roles step 1 (`can_()` and the audit tab).
 2. Fish photo judging, batch after batch (about 10,100 candidates left).
 3. Fish admin at parity: the Answer log and Pairs, then Journey details.
