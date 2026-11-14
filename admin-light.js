@@ -36,6 +36,11 @@
     ]
   ];
   const LIGHT_FLAGS = {j: 'Juvenile', c: 'Camouflage', a: 'Out of water', p: 'Phase', r: 'Reference photo'};
+  // The retired codes of the rubric, by position (judging/FISH.md "Tags"): count m ("other species, not sorted", before the
+  // split of 2026-11-09), read but never typed again. A proposal that would move a tag to one is never offered (lightLoad);
+  // his own code may still carry it (kept as his).
+  const LIGHT_RETIRED = {6: 'm'};
+  const lightRetired = x => Object.entries(LIGHT_RETIRED).some(([i, c]) => x.rejudged[0][i] === c && x.curated[0][i] !== c);
   const same = (F, f, v) => (F.tags || {})[f] === v[0] && (F.ease || {})[f] === v[1];
   // The proposals still open in the fish draft F: the photo still his add in play, its tags and ease both still the ones
   // the proposal was made against (curated: a value he set since is a newer choice of his), and not kept (Keep mine).
@@ -83,7 +88,7 @@
       kept: (P || []).filter(x => (D.kept || {})[x.photo] === set && (S.kept || {})[x.photo] !== set).length
     };
   }
-  const API = {LIGHT_SET, LIGHT_WORDS, LIGHT_FLAGS, lightOpen, lightAccept, lightKeep, lightDiff, lightCounts};
+  const API = {LIGHT_SET, LIGHT_WORDS, LIGHT_FLAGS, LIGHT_RETIRED, lightRetired, lightOpen, lightAccept, lightKeep, lightDiff, lightCounts};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
@@ -100,7 +105,9 @@ function lightLoad() {
     .then(f => (f ? JSON.parse(f.text).curation || [] : []))
     .catch(() => [])
     .then(L => {
-      LIGHT = Array.isArray(L) ? L.filter(x => x && x.photo && Array.isArray(x.curated) && Array.isArray(x.rejudged)) : [];
+      LIGHT = Array.isArray(L)
+        ? L.filter(x => x && x.photo && Array.isArray(x.curated) && Array.isArray(x.rejudged) && !lightRetired(x))
+        : [];
       status();
       if (cur === LIGHT_PAGE) render();
     });

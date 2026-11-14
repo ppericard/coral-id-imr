@@ -6,7 +6,7 @@ const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path'),
-  {LIGHT_SET, lightOpen, lightAccept, lightKeep, lightDiff, lightCounts} = require('../admin-light.js'),
+  {LIGHT_SET, lightRetired, lightOpen, lightAccept, lightKeep, lightDiff, lightCounts} = require('../admin-light.js'),
   {fishRun, fishUndo, autoCheck} = require('../autosort.js'),
   {merge3} = require('../core.js');
 
@@ -103,7 +103,11 @@ test('the proposals file: Pierre’s adds, curated -> re-judged, each a change; 
       assert.ok(Number.isInteger(e) && e >= 1 && e <= 5);
     });
     assert.ok(lightDiff(x).length > 0, x.photo);
+    // never a move to a retired code (count m, before 2026-11-09): fish-s050-cand-79944621 was one, its count kept as his
+    assert.ok(!lightRetired(x), `${x.photo}: ${x.curated[0]} -> ${x.rejudged[0]}`);
   });
+  assert.ok(lightRetired({curated: ['p1n0sms', 3], rejudged: ['p1g0smm', 3]}));
+  assert.ok(!lightRetired({curated: ['p1n0smm', 2], rejudged: ['p1g0smm', 2]})); // his own m, unchanged: kept as his
   assert.strictEqual(new Set(C.map(x => x.photo)).size, C.length);
   // the curplay copy leaves the answers out (players never read them)
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'tools', 'curplay.py'), 'utf8'), /FISH_DROP = \([^)]*'kept'/);
