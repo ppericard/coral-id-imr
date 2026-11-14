@@ -43,7 +43,9 @@ function storage() {
 // A worker of sw.js whose shell cache is named V: its handlers, and the requests it sent to the network.
 // opts.fetch replaces the network (e.g. offline: it fails); opts.waiting: a newer version waits (registration.waiting).
 function worker(V, store, net, opts = {}) {
-  const on = {};
+  const on = {},
+    sent = [], // messages to the waiting version
+    skips = []; // skipWaiting() calls
   const res = url => ({
     ok: true,
     status: 200,
@@ -55,9 +57,9 @@ function worker(V, store, net, opts = {}) {
   const ctx = {
     self: {
       addEventListener: (t, f) => (on[t] = f),
-      skipWaiting: async () => {},
+      skipWaiting: async () => void skips.push(1),
       clients: {claim: async () => {}, matchAll: async () => []},
-      registration: {waiting: opts.waiting ? {state: 'installed'} : null}
+      registration: {waiting: opts.waiting ? {state: 'installed', postMessage: m => sent.push(m)} : null}
     },
     caches: store.api,
     fetch: opts.fetch || (async r => (net.push(String(r.url || r)), res(String(r.url || r)))),
@@ -77,6 +79,9 @@ function worker(V, store, net, opts = {}) {
     return Promise.all(L);
   };
   return {
+    sent,
+    skips,
+    message: data => wait({type: 'message', data}),
     // One fetch event as the browser sends it: its reply (respondWith) and its lifetime (waitUntil), apart.
     dispatch: (url, mode = 'navigate') => {
       const L = {};
@@ -239,4 +244,26 @@ test('a navigation while a newer version waits is left to the browser; other req
   assert.ok(waiting.dispatch(SITE + 'app.js?v=1', 'no-cors').reply, 'a versioned file too');
   const calm = worker('reefid-shell-v1', storage(), []);
   assert.ok(calm.dispatch(SITE + 'admin.html?demo').reply, 'no version waiting: the page is answered by the worker');
+});
+
+// A swap held by Chromium (2026-11-14: a request that came in the instant the old worker was stopped for the swap started
+// it again, and the new version then waited over 90 s): the old worker asks the waiting version, at each request, to take
+// over again, and the waiting version calls skipWaiting() again on that message, and on no other.
+test('a worker with a newer version waiting asks it to take over; the waiting version calls skipWaiting() again', async () => {
+  const old = worker('reefid-shell-v1', storage(), [], {waiting: true});
+  old.dispatch(SITE + 'manifest.webmanifest', 'cors');
+  old.dispatch(SITE + 'index.html');
+  // (made in the sandbox's realm: compared as JSON)
+  assert.strictEqual(
+    JSON.stringify(old.sent),
+    JSON.stringify([{t: 'reefid-skip'}, {t: 'reefid-skip'}]),
+    'one ask per request, navigations included'
+  );
+  const calm = worker('reefid-shell-v1', storage(), []);
+  calm.dispatch(SITE + 'manifest.webmanifest', 'cors');
+  const next = worker('reefid-shell-v2', storage(), []);
+  await next.message({t: 'other'});
+  assert.deepStrictEqual(next.skips, [], 'another message changes nothing');
+  await next.message({t: 'reefid-skip'});
+  assert.deepStrictEqual(next.skips, [1]);
 });
