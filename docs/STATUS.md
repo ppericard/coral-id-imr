@@ -5,63 +5,54 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-14, about 16:50 Manila, by the integrator. **A new integrator starts here, then reads
+Written 2026-11-14, about 20:05 Manila, by the integrator. **A new integrator starts here, then reads
 [INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, its 11-14 handover first, what bites, the open work).
 
 Last checked: reports and events: 2026-11-12 ~09:45 Manila
 
 ## Now
 
-Main: sheet script **v130** (#867, merged about 16:50 by a merge train with #869). No player report read since
-11-12.
+Main: sheet script **v131** (#876). No player report read since 11-12.
 
-- **Merged 11-14**: #862 (Pierre's answers of 11-14 recorded), #863 (smokes answer every question format through one
-  helper), #861 (admin Photos › Families becomes **Tree**, the key's classification as a tree of any depth; sheet v129),
-  #865 (Photo review › Light proposals: the 152 re-judged light tags, Accept / Keep mine), #866 (`fish_refs.py` region
-  labels fixed), #864 (Q339 (b): a family or genus card shows the most-seen species near the instance centre among
-  those with a reference photo; 49 of 180 cards changed; his 28 covers kept), #868 (s278 shown as *Neoniphon
-  argenteus*, the PDF's "argentus" kept in the source), #870 (Photo review › Cover proposals: his 24 family covers beside
-  the rule's pick).
-- **Merged 11-14 evening (train)**: #867 (the sheet's `Timings` tab: sampled ms and rows of each full read and save, no
-  player data; the measure behind Q352), #869 (Q354: s088 and s244 photos from their Pacific taxa, IMR names kept, the
-  credit keeps the iNaturalist name; three C5 points).
-- **In flight**: #871 (Q350 confusion groups, Q355 B being built); agents: Q124 (b) bold differing
-  letters, fish photo judging (the 81 Q354 candidates first, then the backlog).
-- **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync on a current app; no
-  hand correction (the board is already right, D8).
+- **Merged 11-14** (22 PRs): #861 Tree tab; #862-#863; #864 default covers (Q339 b); #865 Light proposals; #866;
+  #867 `Timings` tab; #868 *N. argenteus*; #869 Q354 Pacific photo taxa; #870 Cover proposals; #872 the "easy to
+  correct" rule; #873 Q124 (b) bold letters; #874 comeback study; #875 #877 #878 #879 fish judging (1,555 judged, 988 in
+  play, s088 and s244 included); #876 fish Answer log and Pairs; #880 Tree node pages; #883 Q351 step 2 study (scripts in
+  `tools/studies/q351/`); #884 Candidate photos push split and Pillow by hash (live run green, 11-14 ~20:00); #886 the
+  "Professionalise the platform" study.
+- **In flight**: #871 (Q350, parked: questions); #882 (Q123 j corals, parked: privacy question); #885 Find the X
+  (a level-3 check on one unclear guardrail running); agents: fish judging (next batch), the Tree WoRMS view, the coral
+  confusion heatmap (Q123 m).
+- **Rows 9 and 10** (Q322): not synced since #840, still doubled; corrected at their next sync; no hand correction (D8).
 - **Kept on branches, no PR (W27)**: `claude/admin-signout-seal` (Q334), `claude/level-count-from-log`,
   `claude/fish-todo-wip`, `claude/photo-genus-ability` (#637), `claude/time-weighted-steps` (#808, Q335).
 
 ## Next
 
-Four agents at a time (rule W27), the slots kept full from this queue (Pierre, 11-14: "Tu lances tout ce que tu peux
-lancer"); what is easy to correct afterwards ships (AGENTS.md "Working mode"):
+Four agents at a time (W27), the slots kept full from this queue; what is easy to correct afterwards ships:
 
-1. The `Code.gs` line, one PR at a time: Q123 j (corals, then fish), the Analyses
-   machine key (fail-closed; Pierre's steps later), roles step 1 (`can_()` and the audit tab).
-2. Fish photo judging, batch after batch (about 10,100 candidates left).
-3. Fish admin at parity: the Answer log and Pairs, then Journey details.
-4. Tree: node pages (replacing the ★ switch), the WoRMS view, filters, the sheet overlay (Q341), then the corals.
-5. Find the X's format (Q321), rebuilt; the species level, step 1 (FISH_PATH).
-6. Read-only studies: Q351 step 2, the coral confusion heatmap (Q123 m), "Professionalise the platform".
-7. The approved-photos workflow follow-ups (split the push job, `pip --require-hashes`); Q124 (d) name roots.
-   Deadline: the domain and repository rename before December 2026 (Pierre's choice of name).
+1. `Code.gs`, one PR at a time: #882 once answered, then Q123 j fish, the Analyses machine key, roles step 1.
+2. Fish photo judging, one batch PR at a time (about 8,500 candidates left).
+3. Tree: the WoRMS view, filters, the sheet overlay (Q341), the corals; fish admin Journey details.
+4. The species level, step 1 (FISH_PATH); Q124 (d) name roots; Find the X follow-ups (prefetch, the `find` offset).
+5. The Q351 batch refit (read-only, decided).
+   Deadline: the domain and repository rename before December 2026 (see the Professionalise study).
 
 ## Questions for Pierre
 
-Numbered for good (never reset) only when the answer commits the future and will be cited later (AGENTS.md "Working
-mode"); the others are asked plainly. An answered one goes into its PR and off this list.
+Numbered for good only when the answer commits the future and will be cited later (AGENTS.md "Working mode").
+**For the morning** (after 16:30 nothing new goes to Pierre, Rule 0); each study gives its recommendations:
 
-- **For the morning (after 16:30 nothing new goes to Pierre, Rule 0)**: the comeback study (#874) questions a-f: keep P11's
-  4-question comeback (rec. yes); no look-alike groups in the comeback on purpose (rec. no); FSRS stabilities
-  recalibrated later (about 20 players with returns); the comeback's rust total given `INTRO.SLACK` (rec. yes, learnsim
-  first); log the comeback's rust at its start (rec. yes); keep the recall discount after a comeback (rec. not now).
-  Numbers are given when asked.
-- Answered 11-14: Q355 (#871) B, "ok pour B" (the first cards as on main, no pull of a pair the cap split;
-  declared pairs forced inside groups); Q352 (D1 behind a Worker when a measured threshold is crossed), Q353 (no paid tier; a monthly cost is
-  settled with IMR), Q354 a (s164 kept, a C5 point) and b (Pacific photo taxa for s088 and s244, C5 points; the credit
-  keeps the iNaturalist name, "ok pour (a)"); Q230: nothing to build (the list would be empty); N. argenteus corrected;
-  the #861 and #864 choices; the 152 proposals and cover proposals as admin views. Q339-Q351 earlier (ROADMAP rows).
+- **#871 (Q350 after Q355 B)**: ship B' (B for corals, the first build's starter order for fish; the app-world fish
+  cells hold), accepting what stays under every variant (fish rated world: the lecture RA's first Open Water later, the
+  expert's units at Open Water at 1,000 lower; coral rated beginner's score at 1,000 −1.3), or a third look.
+- **#882 (Q123 j corals, D2/D7)**: the `Stats` tab keeps per-player derived state (admin id, never served, blanked by a
+  delete); accept, or pooled sums only (an approximation). Not urgent (the 100 KB limit around December).
+- **The comeback study (#874) a-f**; **Q351 step 2 (#883) (a)**: no change to the game, the same plan re-run at about
+  20 players; **the Professionalise study (#886) a-f**: a domain (~US$10-12 a year, who pays), account ownership, the
+  sheet's Google account, an agreement with IMR, a second person, a weekly backup outside Google.
+- **#885 Find the X**: log the tapped photo (a `Code.gs` field; rows logged before cannot get it back), or not.
+- Answered 11-14: Q352-Q355, Q230, *N. argenteus*, the #861/#864 choices. Q339-Q351 earlier.
 
 Last question number: Q355
 
@@ -70,16 +61,13 @@ Last question number: Q355
 Actions only Pierre can do.
 
 - **In the admin, when he wants**: Photo review › Light proposals (152) and › Cover proposals (24), then Publish.
-- **For an IMR trainer**: the three Q354 points (two lyretail anthias s164 / s511; *Chromis agilis* and *Halichoeres
-  marginatus* split into Pacific taxa), in `points.json` (admin Points).
-- Check the type of the "Coral ID analyses" token and the R2 token's scope.
-- **Delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
+- **For an IMR trainer**: the three Q354 points in `points.json` (admin Points).
+- Check the "Coral ID analyses" token's type and the R2 token's scope; **delete his rewrite backup** when he says so; restrict the Coral Finder PDF's sharing on his Drive.
 - From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
   morning report scheduled task from claude.ai; the 8 unsure fish candidates and the expert analyses' photos (11-06);
   genus common names without a source (Cephalopholis, Centropyge, Dendrochirus, Dascyllus), if he wants them; covers for
   the 11 fish entries with no reference-level photo.
-- **Astrea and Anacropora**: a photo hunt at the Dauin sites IMR trainers know (links: `git show 4c8251a:docs/STATUS.md`).
-- **Protect `main`**; renew the admin GitHub token before late January 2027; look for the IMR benthic deck.
+- **Astrea and Anacropora** photo hunt (links: `git show 4c8251a:docs/STATUS.md`); **protect `main`**; renew the admin GitHub token before late January 2027; look for the IMR benthic deck.
 
 ## Parked after hours
 
@@ -89,5 +77,5 @@ Ideas Pierre dictated after 17:30, untouched until the morning, then turned into
 
 ## Last stop
 
-2026-11-14 ~16:50 Manila, integrator: eight merges (#861-#870 but #867, #869 in flight); Pierre's rule "push what is
+2026-11-14 ~20:05 Manila, integrator: 22 merges; Pierre's rule "push what is
 easy to correct afterwards" written into AGENTS.md (the invented "never merged on silence" clause removed); Q352-Q354.
