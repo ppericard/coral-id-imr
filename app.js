@@ -583,6 +583,39 @@ const cover = g =>
 const JUV_PH = 'juvenile';
 const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
+// A leaf's presence around the instance's centre (Pierre, 2026-11-13, Q339: "Il faudra rendre générique la localisation
+// centrale de l'instance"; the centre: tools/instance.json, fish.json centre): [its distinct Research Grade observers,
+// its observations] within the centre's radius, from its record's present: nearU and nearN, else their first names
+// (dauinU and dauin, which tools/build_fish.py still writes). [0, 0] with none.
+const nearSeen = r => {
+  const p = (r && r.present) || {};
+  return [p.nearU ?? p.dauinU ?? 0, p.nearN ?? p.dauin ?? 0];
+};
+// The default cover of a node with leaves when Pierre has picked none (Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864):
+// among its leaves with a reference-level photo that is not a juvenile (core.js refLevel), the one most seen around the
+// instance's centre by distinct observers (ties: observations, then the easy order), then his ★ cover of that leaf when
+// he picked one in play ("mon choix était le meilleur au moment avec ce que j'avais sous les yeux"), else that leaf's
+// easiest such reference photo (easyRank: the licence breaking ties). With no reference photo under the node: the most
+// seen leaf among those with an adult photo, then his ★ cover of it, else its easiest adult photo. Never a juvenile while
+// the node has another photo (juvP); a node with no presence keeps the easy order's first. L: the node's photos in play
+// (p.sp: its leaf), seen(leaf id): [observers, observations] (nearSeen), d: easyRank's difficulty, pick(leaf id): his ★
+// cover of that leaf, or null. autosort.js fishCoverOf is the admin's copy (tests/fishcovers.test.js holds them together).
+function seenCover(L, seen, d, pick = () => null) {
+  const R = easyRank(L, d),
+    A = R.filter(p => !juvP(p)),
+    Ref = A.filter(refLevel);
+  let best = null;
+  (Ref.length ? Ref : A).forEach(p => {
+    const s = seen(p.sp) || [0, 0];
+    if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
+  });
+  if (!best) return R[0] || null;
+  const k = pick(best.p.sp);
+  return (k && A.find(p => p.f === k.f)) || best.p;
+}
+// A fish species' presence (FISH.sps: fish.json species by id) and his ★ cover of it (FISH.covers: app.js fishCurate).
+const fishSeen = sid => nearSeen(((FISH && FISH.sps) || {})[sid]);
+const fishSpPick = sid => ((FISH && FISH.covers) || {})[sid] || null;
 // applyCuration(d, c) and applySlots(d, c, {picks, autoq}) live in core.js (tested in tests/photos.test.js).
 let CUR_NEW = null,
   curAt = Date.now(); // curation read again later (curRefresh)
@@ -840,7 +873,7 @@ const fishBuild = () => {
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
 // card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
 // unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its stopgap
-// copy while the candidate is not downloaded yet) counting; else the cover as before (the first of the easyRank order).
+// copy while the candidate is not downloaded yet) counting; else the default (seenCover: the most seen species' easiest).
 // Feature (up to autosort.js FISHFEAT per species, his order): featP {species id: [photo]}, those still in play, the
 // species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
 // Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
@@ -878,10 +911,13 @@ function fishCurate(X, cur, F) {
     }
     if (fe.length) g.featP = Object.fromEntries(fe);
   });
-  // Every unit's card photo without his pick: the first of the game's order that is not a juvenile (juvP, adultFirst).
+  // Every unit's card photo without his pick (Q339 (b), seenCover): its species with a reference photo most seen around
+  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile.
+  const spr = new Map(((F && F.species) || []).map(s => [s.id, s])),
+    seen = sid => nearSeen(spr.get(sid));
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide;
-    if (!g.coverP && L.length && juvP(L.find(p => p.f === g.cover))) g.cover = adultFirst(easyRank(L)).f;
+    if (!g.coverP && L.length) g.cover = seenCover(L, seen, undefined, sid => X.covers[sid]).f;
   });
   return X;
 }
@@ -950,8 +986,9 @@ function rankPhotos() {
   Object.entries(FISH.gen).forEach(([n, g]) => {
     // The list the draw reads keeps no licence; the card photo breaks ties on it (core.js easyCover, Q270).
     g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p), false);
-    // The card photo: his pick, else the first of the rated order that is not a juvenile (adultFirst; licences break ties).
-    if (g.views.wide.length) g.cover = (g.coverP || adultFirst(easyRank(g.views.wide, p => photoDiff(n, p)))).f;
+    // The card photo: his pick, else the most seen species' first photo in the rated order that is not a juvenile
+    // (seenCover, Q339 (b); licences break ties).
+    if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, fishSeen, p => photoDiff(n, p), fishSpPick)).f;
   });
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the

@@ -19,6 +19,9 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
   FFULL = false, // this tab: also show the candidates of species at their target
   FASIDE = false; // this tab: also show the ones the pass is sure go, not applied (the fish auto-sort's keep off)
 const FSKIP = new Set();
+// The species records the default covers read their presence around the instance's centre from (autosort.js
+// fishCoverOf, fishSeenFrom; Pierre, 2026-11-13, Q339 (b)): fish.json's, once admin.js fishLoad has them (FISHC).
+fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // The card Pierre is setting rows or a crop on stays on screen (his values move it in the order: a phase he clears is no
 // longer a missing one) until he decides it, skips it or sends it elsewhere (Not this); every other render, an Undo
 // included, shows the queue's first.
