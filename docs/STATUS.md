@@ -35,7 +35,7 @@ Four agents at a time (W27), the slots kept full from this queue; what is easy t
 2. Fish photo judging, one batch PR at a time (about 8,500 candidates left).
 3. Tree: the WoRMS view, filters, the sheet overlay (Q341), the corals; fish admin Journey details.
 4. The species level, step 1 (FISH_PATH); Q124 (d) name roots; Find the X follow-ups (prefetch, the `find` offset).
-5. The Q351 batch refit (read-only, decided); SECURITY.md's Sheets cell limit (20 million, not 10).
+5. The Q351 batch refit (read-only, decided).
    Deadline: the domain and repository rename before December 2026 (see the Professionalise study).
 
 ## Questions for Pierre
