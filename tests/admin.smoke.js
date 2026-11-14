@@ -753,6 +753,103 @@ const WIDTHS = [390, 1280];
         await go(other.hash + 'photos/tree/key/f%3ANone');
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: an unknown node ${JSON.stringify(u)}`);
+        // The WoRMS view (#fish/photos/tree/worms/<node id>; Pierre, 2026-11-13, Q340: views Key | WoRMS): the reference
+        // taxonomy (fish.json ref) built without a problem above the same leaves as the Key's, at any depth and WoRMS's
+        // ranks; the ids the two trees share are exactly the leaves (a species is one node in both views, every taxon above
+        // it w:<AphiaID>); All | IMR shows the same leaves in both. A WoRMS taxon's page is read-only: no ★ Cover and no
+        // tile writing a cover (data-cvk), its default cover by the rule, its children's cards; nothing reaches the draft.
+        // A species' page is its Key page, ★ Cover writing under the species' own id. The view switch keeps a species.
+        {
+          const wt = await p.evaluate(() => {
+            const K = fuTreeOf(FISHC.units),
+              W = fuWormsOf(FISHC.units),
+              leaves = T => T.roots.flatMap(r => ttLeaves(T, r)).sort(),
+              both = [...W.node.keys()].filter(x => K.node.has(x)).sort(),
+              imr = (T, f) => [...ttShown(T, f)].filter(x => !T.kids.get(x).length).sort(),
+              depth = Math.max(...[...W.node.keys()].map(x => ttPath(W, x).length));
+            return {
+              problems: W.problems,
+              n: leaves(W).length,
+              same: JSON.stringify(leaves(W)) === JSON.stringify(leaves(K)),
+              both: JSON.stringify(both) === JSON.stringify(leaves(K)),
+              ns: [...W.node.keys()].filter(x => !W.node.get(x).sid && !/^w:\d+$/.test(x)).slice(0, 3),
+              imr: JSON.stringify(imr(W, x => !!x.imr)) === JSON.stringify(imr(K, x => !!x.tag)),
+              ranks: [...new Set([...W.node.values()].map(x => x.rank))],
+              depth,
+              ord: ([...W.node.values()].find(x => x.rank === 'order' && W.kids.get(x.id).length > 1) || {}).id,
+              gen: ([...W.node.values()].find(x => x.rank === 'genus' && W.kids.get(x.id).length > 1) || {}).id,
+              fam0: ttFirst(W, W.roots[0], x => x.rank === 'family'),
+              keys: Object.keys((DRAFT.fish || {}).genera || {}).length
+            };
+          });
+          if (
+            wt.problems.length ||
+            !wt.same ||
+            !wt.both ||
+            wt.ns.length ||
+            !wt.imr ||
+            wt.n < 600 ||
+            wt.depth < 6 ||
+            !['class', 'order', 'family', 'genus', 'species'].every(r => wt.ranks.includes(r))
+          )
+            fails.push(`${w}px Tree WoRMS: the tree ${JSON.stringify({...wt, ranks: wt.ranks.join(',')})}`);
+          const wp = () =>
+            p.evaluate(() => ({
+              hash: location.hash,
+              sel: (document.querySelector('.adm-tree [aria-selected="true"]') || {dataset: {}}).dataset.tt || '',
+              crumbs: document.querySelectorAll('.adm-crumbs a').length,
+              cards: [...document.querySelectorAll('.adm-tcard')].map(a => a.dataset.ttc),
+              star: document.querySelectorAll('[data-fu="cover"]').length,
+              cvk: [...new Set([...document.querySelectorAll('[data-cvk]')].map(t => t.dataset.cvk))],
+              why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+              views: [...document.querySelectorAll('#subnav .adm-views a')].map(a => [a.textContent, a.getAttribute('href')]),
+              label: (document.querySelector('.adm-tree') || {getAttribute: () => ''}).getAttribute('aria-label'),
+              keys: Object.keys((DRAFT.fish || {}).genera || {}).length,
+              wide: document.documentElement.scrollWidth - innerWidth
+            }));
+          const wh = id => other.hash + 'photos/tree/worms/' + encodeURIComponent(id);
+          // The view alone and an id of the Key's: WoRMS's first family; an id of WoRMS's in the Key: the Key's first family.
+          for (const h of [other.hash + 'photos/tree/worms', wh('f:Damselfishes')]) {
+            await go(h);
+            const x = await wp();
+            if (x.hash !== '#' + h || (w === 1280 && x.sel !== wt.fam0) || x.label !== 'WoRMS')
+              fails.push(`${w}px Tree WoRMS: #${h} ${JSON.stringify({...x, cards: x.cards.length})}`);
+          }
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(wt.ord));
+          u = await fu();
+          if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: a WoRMS id in the Key ${JSON.stringify(u)}`);
+          // A WoRMS order and genus: read-only, their default cover by the rule, their children's cards.
+          for (const id of [wt.ord, wt.gen]) {
+            await go(wh(id));
+            const x = await wp();
+            if (
+              x.star ||
+              x.cvk.length ||
+              x.cards.length < 2 ||
+              !/^Default: /.test(x.why) ||
+              x.keys !== wt.keys ||
+              x.crumbs < 1 ||
+              x.wide > 0 ||
+              (w === 1280 && x.sel !== id) ||
+              x.views.map(v => v[0]).join() !== 'Key,WoRMS'
+            )
+              fails.push(`${w}px Tree WoRMS: ${id} ${JSON.stringify(x)}`);
+          }
+          if (w === 390) await shot('tree-worms-genus-390');
+          // A species: its Key page (★ Cover on its own id), the WoRMS path above it; the switch keeps it.
+          const sid = (await wp()).cards[0];
+          await go(wh(sid));
+          let x = await wp();
+          if (!x.star || x.cvk.join() !== sid || x.crumbs < 4 || (w === 1280 && x.sel !== sid) || x.wide > 0)
+            fails.push(`${w}px Tree WoRMS: a species ${JSON.stringify(x)}`);
+          const toKey = (x.views.find(v => v[0] === 'Key') || [])[1];
+          if (toKey !== '#' + other.hash + 'photos/tree/key/' + encodeURIComponent(sid))
+            fails.push(`${w}px Tree WoRMS: the switch to Key ${toKey}`);
+          await go(toKey.slice(1));
+          x = await wp();
+          if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
+            fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
+        }
         // What the game plays is what the admin counts (fish-game.json, whatever the route: the sure candidates and the
         // reference photos too, not curation.json's adds alone): each species' obs/target is at least the game's observations.
         await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
