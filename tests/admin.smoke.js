@@ -957,7 +957,8 @@ const WIDTHS = [390, 1280];
                 L = new Set(ids.flatMap(id => ttLeaves(K, id))),
                 fam = [...W.node.values()].filter(n => n.rank === 'family' && ttLeaves(W, n.id).some(s => L.has(s))).map(n => n.id),
                 opts = [...document.querySelectorAll('.adm-gsel2 option')].map(o => o.value).filter(Boolean),
-                sel = (document.querySelector('.adm-tree [aria-selected="true"]') || {dataset: {}}).dataset.tt || '';
+                // the family on screen, read from the bar's select (the tree is hidden on phones)
+                sel = (document.querySelector('.adm-gsel2') || {}).value || '';
               // the families' select: every WoRMS family holding the pair's species, and the one on screen
               return {
                 fam,
@@ -967,7 +968,7 @@ const WIDTHS = [390, 1280];
                   JSON.stringify([...new Set([...fam, ...(fam.includes(sel) ? [] : [sel])])].sort()) === JSON.stringify(opts.slice().sort())
               };
             }, want.pair.ids);
-            if (!wv.fam.length || (w === 1280 && !wv.ok)) fails.push(`${w}px Tree tags: a look-alike pair in WoRMS ${JSON.stringify(wv)}`);
+            if (!wv.fam.length || !wv.ok) fails.push(`${w}px Tree tags: a look-alike pair in WoRMS ${JSON.stringify(wv)}`);
           }
           // No tag: every family again.
           await go(other.hash + 'photos/tree/key/' + encodeURIComponent(sel));

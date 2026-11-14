@@ -5428,7 +5428,18 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font: inherit;
   font-size: 0.85rem;
 }
-/* The Tree's tag filter (beside All | IMR): pressed like the segment while a tag is chosen. */
+/* The Tree's tag filter (beside All | IMR): no wider than a short tag (a pair's long name is cut, its count kept in the
+   list), so the bar keeps its line; pressed like the segment while a tag is chosen. */
+.adm-ttag {
+  width: 15em;
+}
+@media (max-width: 599px) {
+  .adm-ttag {
+    width: auto;
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
 .adm-ttag.on {
   background: var(--accent);
   border-color: var(--accent);
