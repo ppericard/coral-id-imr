@@ -259,6 +259,30 @@
   "fish-s599-cand-fb-Pllin_j0": {
    "code": "p1g1sl1j4",
    "keep": "best"
+  },
+  "fish-s599-cand-758269484": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s599-cand-758269466": {
+   "code": "p1g0sm14",
+   "keep": "dup"
+  },
+  "fish-s599-cand-761532447": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s599-cand-663112087": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s599-cand-608448492": {
+   "code": "p1g0smo4",
+   "keep": "best"
+  },
+  "fish-s599-cand-675764156": {
+   "code": "p1g1ss12",
+   "keep": "best"
   }
  }
 }
