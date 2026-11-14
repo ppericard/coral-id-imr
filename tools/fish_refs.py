@@ -39,6 +39,7 @@ Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the obse
 is offline. Taxa 30 a request; one or two observation searches per taxon with a usable reference photo (the faved 200
 in the box, then anywhere while a photo is missing), then one or two id-window searches per photo still missing.
 Usage: python3 tools/fish_refs.py [--offline | --refresh] [--only t01,t02]
+       python3 tools/fish_refs.py --relabel   (after a change to region(): the away list's regions again, offline)
 """
 import argparse
 import bisect
@@ -171,6 +172,10 @@ def passes(o, want):
 
 
 # The rough regions of an observation outside the box (the order matters: the first that holds), for Pierre's Q230.
+# Longitudes east of 180 are negative (the dateline at -180): Fiji, Samoa and Tonga straddle it. The Maldives come before
+# the Arabian Sea, whose box reaches 78 E (a northern Maldives atoll read "Arabian Sea"), and India's east coast is the
+# Bay of Bengal; New Zealand, the Cook, Line and Marshall Islands have boxes of their own before what is left of the
+# central Pacific (they all read "Fiji, Samoa, central Pacific" until 2026-11-14). After a change: --relabel.
 def region(o):
     ll = ll_of(o)
     if not ll or len(ll) != 2:
@@ -181,21 +186,35 @@ def region(o):
         return "Indo-West Pacific"
     if 12 <= la <= 30.5 and 32 <= lo <= 43.5:
         return "Red Sea"
+    if (-10 <= la < 8 and 65 < lo <= 82) or (8 <= la <= 10 and 79.5 <= lo <= 82):
+        return "Maldives, Sri Lanka, Chagos"
     if 5 <= la <= 31 and 43.5 < lo <= 78:
         return "Arabian Sea and the Gulfs"
     if -40 <= la < 12 and 20 <= lo <= 65:
         return "Western Indian Ocean"
+    if 5 <= la <= 30 and 78 < lo < 90:
+        return "Bay of Bengal"
     if -40 <= la <= 30 and 65 < lo < 90:
-        return "Maldives, Sri Lanka, Chagos"
+        return "Central Indian Ocean"
     if 15 <= la <= 30 and -179 <= lo <= -154:
         return "Hawaii"
     if -30 <= la <= -5 and -156 <= lo <= -124:
         return "French Polynesia"
-    if -40 <= la <= 30 and (lo > 170 or lo < -124):
-        return "Fiji, Samoa, central Pacific"
+    if -50 <= la < -25 and (lo > 165 or lo <= -170):
+        return "New Zealand and Kermadec Islands"
+    if -25 <= la < -5 and (lo > 170 or lo <= -167):
+        return "Fiji, Samoa, Tonga"
+    if -25 <= la < -5 and -167 < lo < -156:
+        return "Cook Islands"
+    if -5 <= la < 15 and lo > 170:
+        return "Marshall and Gilbert Islands"
+    if -5 <= la < 15 and -180 <= lo < -150:
+        return "Line and Phoenix Islands"
+    if -30 <= la <= 30 and (lo > 170 or lo < -124):
+        return "Central Pacific, elsewhere"
     if la > 30 and 100 <= lo <= 180:
         return "North of 30 N (Japan, Korea, China)"
-    if la < -30 and 90 <= lo <= 180:
+    if la < -30 and (lo >= 90 or lo < -125):
         return "South of 30 S"
     if -125 <= lo <= -77 and (la <= 9 or (la <= 15 and lo <= -84) or (lo <= -92 and not (la >= 18 and lo >= -98))):
         return "Eastern Pacific"
@@ -410,6 +429,18 @@ def away_obj(p, o, src):
             "lic": p["lic"], "from": src, "reg": region(o), "ll": [round(x, 1) for x in ll_of(o)]}
 
 
+def relabel(doc):
+    """The away list's regions again from each photo's stored coordinates (ll, to 0.1 degree), after a change to region():
+    no request, the photos untouched. Returns how many labels changed."""
+    n = 0
+    for L in doc["away"].values():
+        for x in L:
+            r = region({"loc": f"{x['ll'][0]},{x['ll'][1]}"})
+            n += r != x["reg"]
+            x["reg"] = r
+    return n
+
+
 def write(doc):
     dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
     lines = ["{", f'"_doc":{dump(doc["_doc"])},']
@@ -426,8 +457,14 @@ def main():
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--offline", action="store_true")
     g.add_argument("--refresh", action="store_true")
+    g.add_argument("--relabel", action="store_true")
     ap.add_argument("--only", default="")
     a = ap.parse_args()
+    if a.relabel:
+        doc = json.loads(OUT.read_text(encoding="utf-8"))
+        print(f"away: {relabel(doc)} region labels changed")
+        write(doc)
+        return
     net = ff.Net(CACHE, offline=a.offline, refresh=a.refresh)
     F = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     only = set(filter(None, a.only.split(",")))
