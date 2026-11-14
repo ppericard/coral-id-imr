@@ -215,7 +215,8 @@ body.admin .hdr-tools[hidden] {
   display: block;
   margin: 2px 0 0;
 }
-.adm-ptx i {
+.adm-ptx i,
+.adm-swg .adm-ptx i {
   font: inherit;
   font-style: italic;
 }
