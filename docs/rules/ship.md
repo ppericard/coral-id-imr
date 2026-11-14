@@ -222,13 +222,17 @@ otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents 
 
 **Check visually with Playwright (Chromium), light and dark**: a small change at one phone and one desktop width, **a big
 interface change or redesign at every width of rule U4** (surprises hide in the other sizes); check that games fit one
-screen; open the browser console: no errors. **After a big change to the interface or the flow, replay the whole app as
+screen; open the browser console: no errors. **Dark is the app's ⚙ Theme, never the system's**: set `reefid-sync-theme`
+to `dark` (plain text) in localStorage before the page loads (an init script), or `data-theme="dark"` on `<html>`; Playwright's
+`colorScheme: 'dark'` changes nothing, since the app and the admin ignore `prefers-color-scheme` (rule U3), so its "dark"
+screenshot is the light page (#908's were). **After a big change to the interface or the flow, replay the whole app as
 a brand-new player**: an empty browser, phone and desktop, light and dark, from the first load through the tour, the
 first cards, a few dozen questions (Again, duels, the offer, achievements), My progress, the other games, Identify,
 Tools, help and settings; screenshots at each step, every overlay alone on screen and closable. Not needed for internal
 code or small fixes.
 *Why:* an RA found the tour and the first genus card on screen together: the tests pre-set "tour seen" or "cards seen",
-so no test met both. *Source:* Pierre, 2026-11-02; every width, 2026-11-05.
+so no test met both. *Source:* Pierre, 2026-11-02; every width, 2026-11-05; how to set dark, 2026-11-15 (screenshots
+taken with `colorScheme` showed the light admin).
 
 ### W18
 
