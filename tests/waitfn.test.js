@@ -1,7 +1,7 @@
 // page.waitForFunction never awaits a Promise its predicate returns: a Promise is truthy, so the wait ends at once,
 // whatever it resolves to. A smoke's "no version waiting" check in net.smoke.js test 9 (getRegistration().then(...))
 // guarded nothing that way until 2026-11-14 (a hang on a merge train). A check that needs an async read polls
-// page.evaluate instead (net.smoke.js until). This test fails on a waitForFunction whose predicate is async or
+// page.evaluate in a loop instead. This test fails on a waitForFunction whose predicate is async or
 // returns a .then(...) chain, in tests/ and tools/.
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -60,5 +60,5 @@ test('no waitForFunction predicate returns a Promise (tests/, tools/)', () => {
       const src = fs.readFileSync(path.join(ROOT, dir, f), 'utf8');
       for (const p of predicates(src)) if (returnsPromise(p.text)) bad.push(`${dir}/${f}:${p.line}: ${p.text.trim().slice(0, 80)}`);
     }
-  assert.deepStrictEqual(bad, [], 'poll page.evaluate instead (net.smoke.js until):\n' + bad.join('\n'));
+  assert.deepStrictEqual(bad, [], 'poll page.evaluate in a loop instead:\n' + bad.join('\n'));
 });

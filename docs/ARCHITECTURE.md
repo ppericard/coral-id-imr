@@ -163,7 +163,9 @@ Registered by `app.js` once every tier is in (https only); it serves the app off
   for the swap) is not answered: the browser loads it from the network. In Chromium that navigation takes the waiting
   version over and stops the old worker with the navigation's fetch event in it, and a page the worker was answering
   then never loaded (2026-11-14, `tests/net.smoke.js` check 9, which holds such a swap; a worker that only passed the
-  request on hung the same way). The cost: a page opened offline in that moment gets no offline copy.
+  request on hung the same way). The cost, only while a version waits (usually under a second, longer while the old
+  worker is kept busy or was started again): such a page gets neither the offline copy nor, on a slow line, the cached
+  copy after `SLOW`.
 - **No time limit on Cache Storage**: every reply waits for it (the `soon` limit of #531 was removed on 2026-11-08). It
   was added for the net.smoke step-9 hang, read then as a stalled Cache Storage; that hang was traced on 2026-11-05 to a
   navigation that reached the old worker in the instant Chromium stopped it for a version swap (the test now opens the

@@ -519,12 +519,6 @@ const server = http.createServer((req, res) => {
       for (const t = Date.now(); (s.n || Date.now() - s.at < 500) && Date.now() - t < 20000;) await pg.waitForTimeout(100);
     };
   };
-  // Waits until fn, run in the page, gives a truthy value, awaited when it is a Promise (page.waitForFunction is not:
-  // a Promise counts as truthy at once); false after ms.
-  const until = async (pg, fn, ms) => {
-    for (const t = Date.now(); Date.now() - t < ms; await pg.waitForTimeout(100)) if (await pg.evaluate(fn).catch(() => false)) return true;
-    return false;
-  };
   {
     // No Playwright route in this test (2026-11-04): the admin page of the last check now and then never reached
     // DOMContentLoaded on CI (about 1 run in 13), waiting on the worker's own fetch of admin.html, which never reached
@@ -710,8 +704,8 @@ const server = http.createServer((req, res) => {
       await c3.send('ServiceWorker.enable');
       SWV = 3 + k;
       await q2.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
-      // Held: still waiting 2 s after its install, the old worker running again.
-      await until(q2, () => navigator.serviceWorker.getRegistration().then(g => !!g && !g.installing && !!g.waiting), 10000);
+      // Held: still waiting 2 s after the old worker's stop began (the request sent then), the old worker running again.
+      for (const t = Date.now(); !poked && Date.now() - t < 10000;) await q2.waitForTimeout(100);
       await q2.waitForTimeout(2000);
       held = await q2.evaluate(() => navigator.serviceWorker.getRegistration().then(g => !!g && !!g.waiting));
       await c3.detach();
