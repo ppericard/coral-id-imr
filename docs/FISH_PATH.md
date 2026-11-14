@@ -375,7 +375,7 @@ Decided from the admin pooling study:
 
 - **One subject switch** in the admin for everything, with each side's to-do count on it, and subject-neutral pages (ROADMAP "Admin: one
   subject switch, subject-neutral pages").
-- **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20. That is enough at entry
+- **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20 (5 for a species met only on the surprise cards: Pierre, 2026-11-08, ROADMAP "Surprise-only species"). That is enough at entry
   (family) level; at species level Pierre expects **30 to 40 photos per species** soon, so players learn the species and not the photos,
   and to cover their variability (quality, individuals, profile or front, colour, partly hidden). The candidate cap since 2026-11-05
   (Pierre, Q36): 30 photos for a stable species, +10 per extra phase (juvenile, intermediate, male or terminal, female), at most 60, the

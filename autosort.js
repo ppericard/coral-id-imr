@@ -119,8 +119,11 @@
   const FISHW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
   // Observations in play per species (Pierre, 2026-11-04): 8 per circle-1 species, 12 for the PDF's 24 most sighted
   // (fish.json cs, the cheatsheet), at most 20 for now. The auto-sort proposes up to the target; Pierre adds beyond it.
-  const FISHT = {obs: 8, top: 12, cap: 20};
-  const fishTarget = sp => (sp && sp.cs ? FISHT.top : FISHT.obs);
+  // A species met only on the surprise cards (a wink family's: fishSpecies marks it wink) keeps a few really good photos,
+  // not a whole stock (Pierre, 2026-11-08, docs/ROADMAP.md "Surprise-only species"): its target is FISHT.wink, and the
+  // admin's Tree shows that many of its photos in play, the rest on demand (fishWinkFold).
+  const FISHT = {obs: 8, top: 12, cap: 20, wink: 5};
+  const fishTarget = sp => (sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
   function fishParse(code) {
     const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
     if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
@@ -821,6 +824,28 @@
       });
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
+  // The species records the admin reads ({id: fish.json species}), each species of a wink family (fish.json families
+  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink. Read only, never stored.
+  function fishSpecies(J) {
+    J = J || {};
+    const wk = new Set((J.families || []).filter(f => f && f.wink).flatMap(f => f.species || []));
+    return Object.fromEntries((J.species || []).map(x => [x.id, wk.has(x.id) ? {...x, wink: true} : x]));
+  }
+  // A wink species' photos in play on the admin's Tree (docs/ROADMAP.md "Surprise-only species"): only n (FISHT.wink) shown,
+  // the rest folded. Its featured photos (Pierre's Feature) always shown, then the surprise card's own photos (fish.json
+  // wink.photos, by photo id as quiz.js winkPhoto reads them, in their order), then the page's order (fishOrder: reference
+  // level first, then the easiest). row: fishOrder's {feat, rest}; returns {feat, show (rest shown), fold (rest folded)}.
+  // Display only: every photo stays in play and counted.
+  function fishWinkFold(row, photos, n = FISHT.wink) {
+    const feat = (row && row.feat) || [],
+      rest = (row && row.rest) || [],
+      want = (photos || []).map(fishPid),
+      at = p => want.indexOf(fishPid(p.f)),
+      card = rest.filter(p => at(p) >= 0).sort((a, b) => at(a) - at(b)),
+      ord = [...card, ...rest.filter(p => at(p) < 0)],
+      k = Math.max(0, n - feat.length);
+    return {feat, show: ord.slice(0, k), fold: ord.slice(k)};
+  }
 
   // Fish Coverage (admin plan PR 8; docs/ROADMAP.md "Admin for every subject" row 8): per family, genus and species, the
   // photos in play, the observations against the target, the easy photos (ease 4-5), the reference photos, the phases shown
@@ -1289,6 +1314,8 @@
     FISHEASY,
     fishNeeds,
     fishUnits,
+    fishSpecies,
+    fishWinkFold,
     fishCov,
     fishWaiting,
     fishLook,
