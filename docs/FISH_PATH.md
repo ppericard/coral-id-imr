@@ -1,6 +1,7 @@
 # Fish naming path: design spec
 
-Status: design agreed with Pierre on 2026-11-03; the species level not built. Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
+Status: design agreed with Pierre on 2026-11-03; the species level not built (its step 1, common names, waits on four
+questions: [docs/reviews/2026-11-14-species-step1.md](reviews/2026-11-14-species-step1.md)). Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
 "Subjects", docs/LEARNING.md "Fish on the same model"). This file says what comes next: species names, common then Latin, and the IMR
 shortcut (since 2026-11-04 the fish welcome question and the open-all card). It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
 track: every unlock is a performance threshold or a share that rises with progress (docs/LEARNING.md "Considered and not adopted").
