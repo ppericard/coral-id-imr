@@ -91,6 +91,86 @@
   "fish-s237-cand-fb-Hasol_m0": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s237-cand-489211622": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s237-cand-256058324": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s237-cand-489211635": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s237-cand-655061158": {
+   "code": "p1d0smo3",
+   "keep": "dup"
+  },
+  "fish-s237-cand-655060999": {
+   "code": "p1d0sm14",
+   "keep": "best"
+  },
+  "fish-s237-cand-228351159": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s237-cand-362259871": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s237-cand-240611074": {
+   "code": "o1g1smo3",
+   "keep": "best"
+  },
+  "fish-s237-cand-240611087": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s237-cand-446872887": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s237-cand-711138820": {
+   "code": "p1g2sm13",
+   "keep": "best"
+  },
+  "fish-s237-cand-221194393": {
+   "code": "o1g1msk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a dark damselfish about the wrasse's size, sharp, at lower left: confusion possible, not certain"
+  },
+  "fish-s237-cand-423821501": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s237-cand-50752086": {
+   "code": "p1g0sm15",
+   "keep": "best"
+  },
+  "fish-s237-cand-712995735": {
+   "code": "p1g0mm14",
+   "keep": "best"
+  },
+  "fish-s237-cand-635182869": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s237-cand-552022778": {
+   "code": "p1g2mm12",
+   "keep": "best"
+  },
+  "fish-s237-cand-654112629": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s237-cand-924186": {
+   "code": "p1g1sm14",
+   "keep": "best"
   }
  }
 }
