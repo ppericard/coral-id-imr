@@ -130,8 +130,14 @@ test("real data: every curated fish cover in play is the card's photo, the admin
   Object.entries(G).forEach(([id, k]) => {
     const g = FISH.gen[id];
     if (!k.cover || !g) return;
-    const inPlay = g.views.wide.some(p => C.fishPid(p.f) === C.fishPid(k.cover));
-    if (inPlay) {
+    const rec = g.views.wide.find(p => C.fishPid(p.f) === C.fishPid(k.cover));
+    // A pick on a juvenile is ignored, by the app and the admin alike (Pierre, 2026-11-13: "Un juvénile ne devrait
+    // probablement jamais finir en couverture"; the next test): a judging pass can tag his pick juvenile after he made it.
+    if (rec && X.juvP(rec)) {
+      assert.notStrictEqual(C.fishPid(X.cover(g).f), C.fishPid(k.cover), `${id}: a juvenile pick is ignored`);
+      return;
+    }
+    if (rec) {
       n++;
       assert.strictEqual(C.fishPid(X.cover(g).f), C.fishPid(k.cover), id);
     }
