@@ -355,6 +355,25 @@
   "fish-s203-cand-763034205": {
    "code": "p1g3mm11",
    "keep": "dup"
+  },
+  "fish-s203-cand-469143140": {
+   "code": "o1g1slo3",
+   "keep": "alt",
+   "phase": "terminal"
+  },
+  "fish-s203-cand-469143100": {
+   "code": "p1g1slk3",
+   "keep": "alt",
+   "phase": "terminal",
+   "unsure": [
+    "code"
+   ],
+   "note": "a squirrelfish about two thirds its size, sharp, just behind it: confusion possible"
+  },
+  "fish-s203-cand-490013369": {
+   "code": "p1g2ml13",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }

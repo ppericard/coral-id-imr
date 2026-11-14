@@ -287,6 +287,21 @@
   "fish-s195-cand-598691011": {
    "code": "p1d1ss11",
    "keep": "dup"
+  },
+  "fish-s195-cand-598921184": {
+   "code": "p1g1sm14",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s195-cand-393797549": {
+   "code": "p1g2ms12",
+   "keep": "best",
+   "phase": "terminal"
+  },
+  "fish-s195-cand-380928199": {
+   "code": "p1g1slo3",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }
