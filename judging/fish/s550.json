@@ -207,6 +207,18 @@
   "fish-s550-cand-425707666": {
    "code": "o1g0sl1c3",
    "keep": "dup"
+  },
+  "fish-s550-cand-719162130": {
+   "code": "p1g0ss1c1",
+   "keep": "dup"
+  },
+  "fish-s550-cand-719162161": {
+   "code": "p0g0sm1c2",
+   "keep": "best"
+  },
+  "fish-s550-cand-719162183": {
+   "code": "p0g0mm1c1",
+   "keep": "dup"
   }
  }
 }
