@@ -12,7 +12,7 @@ const fs = require('fs'),
 let CLOCK = 1.8e12;
 function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F']} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    block = cut(src, '// First meeting with a genus (Pierre', 'const introSince');
+    block = cut(src, '// First meeting with a genus (Pierre', '// Comeback after a break (Pierre');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject

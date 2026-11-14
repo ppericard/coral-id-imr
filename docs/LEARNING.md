@@ -1105,7 +1105,9 @@ time, each on its card, but never as the answer of the question right after its 
   (easiest first); the first question is about one of them, never with that card's own photo (`photoSet(n, skip)`; a
   new-player walkthrough, 2026-11-02, got the very same photo twice in a row; same for a duel that brings a card).
 - **When a genus opens** stays the progressive path's call (below): a draw that falls on a genus not met yet shows its
-  card and asks about a genus already met. At least `INTRO.EVERY` (2) answers between two cards.
+  card and asks about a genus already met. No new card while one is still to be asked (`openPace`), so two cards are at
+  least `INTRO.GAP` (2) answers apart (`INTRO.EVERY`, 2 answers between cards, went on 2026-11-14: it never bound,
+  Q350 j, "Confusion groups").
 - **A ★ genus after the genera it is compared to** (Pierre, 2026-11-03): it opens, on a card of its own or among the
   first cards, only once the surveyed genera its card names are met ("Starred genera after their reference", below).
 - **Held while the player falls behind** (`introHold`, Pierre, 2026-11-02): no new card while a running sum of how
@@ -1807,8 +1809,8 @@ Pierre: rather than spamming a beginner with 40 genera, focus on the easiest one
 everything estimated from the data. Before, a genus never seen weighed 10 against 1-4 for one being learned: a beginner
 met the 39 slate genera almost at once.
 
-- **Opening by results** (one rule since 2026-11-03, below): when the path allows a card (at least `INTRO.EVERY`
-  answers since the last one, no opening hold, not in the floor of a visit or a comeback), the question opens a genus
+- **Opening by results** (one rule since 2026-11-03, below): when the path allows a card (no opening hold, not in the floor of a visit
+  or a comeback, the opening's pace, the right-answer rule; `INTRO.EVERY` went on 2026-11-14), the question opens a genus
   with the chance `openChance` = 1 − shaky / `OPEN.K` (8): the free share of K places for genera met and still
   *shaky*, a work-in-progress limit with a slope, not a switch. Until 2026-11-03 the genera not met yet shared
   `OPEN.READY` (35%) of the genus draw while no genus met was shaky, down in a straight line to `OPEN.TRICKLE` (3%) at
@@ -1876,7 +1878,7 @@ yet (`OPEN.READY` 35% down to `OPEN.TRICKLE` 3% at `OPEN.K` 10 shaky genera, the
 (`noOpen`) joined them. The last three are rules about *when* a card may come; the share was a second way of saying
 *how often*. Now one: when a card may come, the question opens a genus with the chance `openChance` = 1 − shaky /
 `OPEN.K` (`model.js`), the genus drawn among those not met yet by `openPick` (easiest first as far as the data are
-trusted, most common first: unchanged); since 2026-11-12, from 200 answers, a genus still shaky after 10 of its own
+trusted, most common first; since 2026-11-14 by confusion group first: "Confusion groups"); since 2026-11-12, from 200 answers, a genus still shaky after 10 of its own
 answers takes no place ("A unit stuck shaky"). The genus draw (`weighted`) only weighs the genera met. `READY`, `TRICKLE` and
 the share arithmetic went; K was recalibrated, as the review expected (the chance to open with nothing shaky is now 1,
 was 0.35).
@@ -2188,6 +2190,122 @@ seeds 321-340 and the fish (no arm left in). What the tables show:
 The patch (`OPEN.STUCK` 10, `OPEN.LEVEL`, `OPEN.SETTLED` 200, `stuckFree`, with its unit tests) is kept off the
 repository. `tools/ratedworld.js` keeps the global level since this calibration (`level` in the rows, `lv` every 25
 answers).
+
+### Confusion groups (2026-11-14, Q350)
+
+Decided by Pierre on 2026-11-14 (Q350, "oui à tout" to the [study](reviews/2026-11-06-confusion-group-opening-study.md)'s
+questions a-j, f changed: "je pense qu'il faut quand même forcer les paires déclarées. Si elles sont déclarées par des
+enseignants, c'est qu'il y a un intérêt à les voir ensemble, même s'ils sont faciles à distinguer"). Look-alike units
+open close together, so they are in play at the same time (interleaving pays most for similar categories, and only
+while they are juxtaposed: the study's §2).
+
+**Plan, declared before the runs** (rule L11; committed before any output):
+
+- **Level 2** (the opening, for every player; a regression check of decided values: G_MAX 3 and the trap level are the
+  study's and Pierre's, the declared-pairs change needs no new constant, so no calibration).
+- **Arms**: base = `main` at e0e019a5; this branch. The `INTRO.EVERY` removal alone was checked first: `main` and the
+  branch without the groups gave the same questions, seed for seed (seeds 401-402, the four coral profiles, 300
+  questions, the field learner and the rated world).
+- **The app world**: `tools/learnsim.js`, corals (the four profiles) and fish (the five), seeds 501-510 (`--seed0 500`;
+  the study used 1-30), 300 questions, the item learner and `--learner field`, `--stats` the sheet's `?stats=1` of
+  2026-11-14 (v128: 904 coral pairs pooled, no fish pair yet).
+- **Primary** (app world, corals): **partners closer**, per run the median over a fixed set of pairs of the answers
+  between the first meetings of the two units (a unit not met counts 301), down; the set: the 59 declared coral pairs
+  and the 4 pairs from the data alone at `CONF.TRAP` or more on those stats (63 pairs, the same in both arms, not the
+  new groups' own); pooled over the profiles and both learners (80 pairs of runs), the stratified sign-flip of
+  `tools/learncmp.js`. **Second, in a Holm family of two**: look-alike accuracy at question 300 (`look`, the learner's
+  true 2-choice accuracy on the declared pairs), up; expected small (+0.006 in the study on 120 pairs), so also read
+  as "no worse": the one-sided 90% bound of the paired difference above −0.02.
+- **Guardrails**: `tools/learncmp.js`'s at 100 and 300 (true knowledge, E, units met, units at Open Water, first unit
+  at Open Water, longest plateau), every profile of both subjects, each learner; the beginner's units met by question
+  100 at most 17 (the CI limit, `tests/profiles.smoke.js`, which must pass); the beginner's right % over answers 1-100,
+  the one-sided bound of the paired difference above −3 points.
+- **Costs expected** (declared): the first openings are less "easy and common first" (the free draw picks only the
+  first unit; the rest follows the groups and the declared pairs: the order check below), and a look-alike arrives as a
+  trap sooner, so the right % of the first 100 answers may drop up to the bound above (the study: −0.4 to −0.9
+  points), and the first unit at Open Water may come later, within its margin.
+- **The rated world**: `--world rated`, corals (four profiles) and fish (five), seeds 501-510, the count learner, 1,000
+  answers, `tools/learncmp.js` base against the branch, every guardrail. Its units have no pooled confusions and its
+  learner no pair skill, so it checks the guardrails on groups built from the priors alone (the declared pairs), not
+  the gain.
+- **The real log** (rule L12): a replay cannot judge the opening (a different draw asks other questions). Measured
+  instead, read-only: how far apart the real players met the partners of the new groups under today's rule (the gap
+  the change closes), and how many units entered the exam with a group partner not met (where the exam gate would
+  have bitten).
+
+**Added after the first look** (declared before running; exploratory, uncorrected): the corals' app world breached
+guardrails at the start of the path (the beginner's first unit at Open Water about 45 answers later, the right % of
+answers 1-50 of the beginner and the lecture RA 3-8 points lower). To show Pierre where the cost comes from, three
+arms on one scratch copy of this branch patched in turn, the same world and seeds (501-510, 300 questions, both
+learners), the beginner, the lecture RA and the strong RA, each against the base: **S** the study's rule before f
+changed (groups by average linkage alone, no declared pair forced, no pull of a pair the cap split); **F** this branch
+with the first cards (`INTRO.START`) drawn as on `main` (the groups from the first card after them); **N** this branch
+without the pull of a declared pair the cap split (tier 2). F and N together only if neither alone holds. Read: the
+partners' gap, the look-alike accuracy at 300 and `tools/learncmp.js`'s guardrails, as above. No constant moves.
+
+**The groups today** (the sheet's stats of 2026-11-14; the declared coral pairs join all 40 slate genera into one
+connected graph, so the cap of 3 decides which of them share a group, the most confused first): 13 coral groups,
+Acropora–Montipora–Porites; Pocillopora–Seriatopora–Stylophora; Duncanopsammia–Tubastraea–Turbinaria;
+Astreopora–Cyphastrea–Echinopora; Mycedium–Pectinia; Lobophyllia–Plerogyra; Leptoria–Pavona–Platygyra;
+Hydnophora–Merulina–Pachyseris; Alveopora–Goniopora–Heliofungia; Danafungia–Fungia–Lithophyllon;
+Ctenactis–Herpolitha–Lobactis; Diploastrea–Dipsastraea; Astrea–Favites–Goniastrea; 4 lone genera (Anacropora,
+Galaxea, Halomitra, Millepora). 32 of the 59 declared coral pairs are split by the cap and pull their partner instead. Fish families (no pooled answers
+yet): Butterflyfishes–Angelfishes–Moorish Idol, Snappers–Coral Breams–Emperors, Parrotfishes–Wrasses,
+Soldierfishes–Squirrelfishes–Cardinalfishes, Triggerfishes–Filefishes, Lizardfishes–Sandperches; fish genera: IMR's
+Surgeonfish (Acanthurus, Ctenochaetus, Zebrasoma). Before the runs, the order alone (`openPick` 200 times from zero,
+the stats above, descriptive): coral group partners opened a median 1 place apart (main: 9), declared pairs 2 (11);
+after the very first unit every coral opening is a group partner (23 of 40) or a declared partner (16): the free draw
+picks the first unit only, so the first 10 units are a little less easy (mean `gd` −0.33, main −0.49). Fish: partners
+1 place apart (17), the free draw still picks 56 of 65 openings.
+
+**Results** (the app world, seeds 501-510, 300 questions; `tools/learncmp.js` and the plan's script):
+
+- **Primary, passed**: partners closer, the median answers between the first meetings of the 63 pairs, 61-102 → 13-17
+  by profile (pooled sign-flip p ≤ 1e-5, 100,000 draws, 80 pairs of runs); look-alike accuracy at 300, 0.940 → 0.945
+  (p 1e-4; Holm passes both). Fish, the 11 declared family pairs: 38-52 → 6-8 answers apart; look-alike accuracy
+  0.961 → 0.963 (p 0.07, no worse).
+- **Fish: every guardrail held** (both learners, the five profiles; a few unclear cells, none breached); right % of
+  answers 1-100 within −1.3 points.
+- **Corals: guardrails breached at the start of the path** (to Pierre, rule L11):
+
+  | Coral cell, base → branch (item learner / field learner) | beginner | lecture RA |
+  | --- | --- | --- |
+  | right %, answers 1-100 (bound −3 points) | 80.3 → 77.2 / 76.3 → 72.2 | 89.1 → 85.1 / 86.7 → 81.4 |
+  | right %, answers 1-50 | 81.8 → 76.6 / 76.6 → 69.4 | 89.4 → 86.0 / 90.2 → 82.6 |
+  | first unit at Open Water (margin +10-18 answers) | 62 → 112 / 93 → 135, breached | 45 → 45 / 39 → 43 |
+  | units at Open Water at 300 | 4.5 → 3.1 / 3.6 → 2.5 | 8.0 → 6.3 / 6.7 → 5.5 |
+  | true knowledge at 300 | 0.660 → 0.647 / 0.558 → 0.582 | 0.816 → 0.824 / 0.824 → 0.827 |
+
+  The strong RA's item-learner true knowledge (−0.024) and E (+0.049) were breached too; no other arm or learner
+  repeats them (its first unit at Open Water comes sooner), so they were not chased with more seeds. The expert holds
+  everything. Units met by question 100 (the beginner, read against the base: the base's item learner already
+  exceeds the smoke's limit of 17 on these seeds): 18.0 → 17.1 / 14.9 → 15.3; `tests/profiles.smoke.js`, which holds
+  that limit on its own 8 seeds, passes (12-17).
+- **Where the coral cost comes from** (the arms declared above; beginner, lecture RA and strong RA):
+
+  | Arm | partners apart (beginner item / field) | right % 1-100, beginner (item / field) | lecture RA | breached |
+  | --- | --- | --- | --- | --- |
+  | this branch | 74 → 17 / 102 → 17 | −3.1 / −4.1 | −4.0 / −5.3 | beginner's first Open Water, right % |
+  | S, the study's rule (no pair forced) | 74 → 66 / 102 → 62 | −2.0 / −0.1 | −0.4 / 0.0 | beginner's first Open Water (item) |
+  | F, first cards as on `main` | 74 → 20 / 102 → 25 | −1.5 / −2.6 | −3.4 / −4.1 | beginner's first Open Water and knowledge (item) |
+  | N, no pull of a pair the cap split | 74 → 37 / 102 → 31 | −2.5 / −2.3 | −3.0 / −3.2 | beginner's first Open Water (item) |
+  | F and N | 74 → 32 / 102 → 39 | −1.0 / −2.1 | −3.4 / −3.9 | lecture RA's units at Open Water at 300 (item) |
+
+  The start cost follows the declared pairs: every arm that forces them costs the lecture RA 3-5 points of right % in
+  its first 100 answers (S, which lets the data split them, costs nothing there, but brings partners much less close);
+  the beginner's late first Open Water comes from the first cards being a look-alike group and from the pulls (F and N
+  together bring it back to the base). No arm holds every guardrail; the decision is Pierre's (the PR).
+- **The real log** (the Answers tab as read on 2026-11-12, 2,047 + 983 coral answers of 12 players with 50 or more;
+  read-only, players pseudonymised): under today's rule, the 10 players on the path met the two genera of a pair of the
+  new groups a median 51 answers apart (213 pairs, 23% within 15), the declared pairs 48 (378 pairs, 22%); in 92 of the
+  363 group pairs one genus was met and the other never. No coral exam question is in the log yet, so the exam gate
+  could not have bitten (and cannot be judged there).
+- **The rated world**: seeds 501-510, 1,000 answers, the count learner, `tools/learncmp.js`. Its units have no
+  pooled confusions and its learner no pair skill: the groups come from the declared pairs, and it reads guardrails,
+  not the gain. **Corals**: breached for the beginner, E at 300 (−0.506 → −0.470, +0.036) and the shown score at 1,000
+  (41.2 → 39.9, −1.3; margin −1); the others held or unclear (true knowledge held everywhere, at 300 and 1,000; units met
+  at 300 up, 25.9 → 28.8 for the beginner). **Fish**: no breach; unclear cells only (the beginner's first unit at Open
+  Water 177 → 206, units met at 100), every shown score at 1,000 within 0.4 points.
 
 ### After the collapsed runs of 2026-11-03 (2026-11-04)
 
@@ -5908,6 +6026,10 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-14, Pierre (Q350, "oui à tout" to the confusion-group study's a-j, f changed: declared pairs forced): look-alike
+  units open by confusion group, the exam waits for the group, `INTRO.EVERY` removed ("Confusion groups"). Built and
+  checked: partners 4-5 times closer, fish every guardrail held; the corals' start of the path breached guardrails
+  (the beginner's first unit at Open Water, the first answers' right %), back to Pierre with options before it ships.
 - 2026-11-12, Pierre (Q337 (a)): the card that offered to open all genera goes, for every subject; Open all stays on the
   first cards and in My progress, the back card stays ("First meeting with a genus"). Q338 (a), "a unit still shaky
   after N of its own answers stops holding the opening": calibrated among 8 / 10 / 12 / 15, none passed the plan

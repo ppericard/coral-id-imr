@@ -5,7 +5,7 @@
 // the start's lean, photoSet with its Gaussian photo choice and RARE, typed questions, drawW, shaky, OPEN.K, openPace,
 // openRight, openPick, the exam), the fish units built as the app builds them (core.js fishGen and fishPhotos, app.js
 // fishGenera). Only the planner around them is written here, as quiz.js planPhoto does it: the first cards, a card when
-// the path allows one (INTRO.EVERY, openPace, openRight, openChance), the target drawn among the units met (nextTarget),
+// the path allows one (openPace, openRight, openChance), the target drawn among the units met (nextTarget),
 // a unit opened on a card asked as soon as it is ready; no Again, duel or comeback (they are not in the rated world).
 // Both subjects: the fish units built as the app builds them (above), the corals' too (coralUnits); --learner count or item.
 //
@@ -195,7 +195,7 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'introSince', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   if (!U.slate) U = unitsOfX(U);
@@ -395,7 +395,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     let cards = introStart(list);
     const start = cards.length > 0,
       met = list.filter(M.introReady);
-    if (!start && met.length && M.introSince() >= M.INTRO.EVERY && !M.introHold() && M.openPace(at, []) && M.openRight(at)) {
+    if (!start && met.length && !M.introHold() && M.openPace(at, []) && M.openRight(at)) {
       const fresh = list.filter(n => !M.introduced(n) && M.mayOpen(n));
       if (fresh.length && ctx.Math.random() < M.openChance(list)) cards = [M.openPick(fresh, list)];
     }
