@@ -6,7 +6,8 @@ Pierre, 2026-11-05 and 2026-11-06: a photo a reference source uses to represent 
 first photo (judging/FISH.md "Reference photos"; core.js easyRank ranks the reference flag first among equally easy
 photos). Before this file a cover was tagged only when it happened to be among the fetched candidates (2 game photos).
 
-For every game species (fish.json species of a level-1 entry, not `out`), every circle-1 genus (app.js fishGenera: the
+For every game species (fish.json species of a level-1 entry, not `out`; its taxon the one its candidates come from,
+tools/fetch_fish.py photo_taxon: its photoTaxon when it has one, Q354 b), every circle-1 genus (app.js fishGenera: the
 first word of a circle-1 species' name) and every entry's family (fish.json teach fam), in this order:
   1. iNaturalist: the taxon's cover, then the other photos its taxon page shows (taxon_photos, iNaturalist's order),
      for a species all of them, for a genus or a family the first, that pass every game photo rule on the observation that holds it (the rules of tools/fetch_fish.py:
@@ -346,7 +347,7 @@ def fb_objs(s, fb, n=FB_MAX):
 def build(net, F, only=()):
     sp = {s["id"]: s for s in F["species"]}
     entries = [t for t in F["teach"] if t.get("level") == 1 and (not only or t["id"] in only)]
-    game = {t["id"]: [sp[i] for i in t.get("species", []) if i in sp and not sp[i].get("out") and sp[i].get("inat")] for t in entries}
+    game = {t["id"]: [sp[i] for i in t.get("species", []) if i in sp and not sp[i].get("out") and ff.photo_taxon(sp[i])] for t in entries}
     gen = {}  # entry id -> {genus name: [species]}, app.js fishGenera: circle-1 entries, circle-1 species
     for t in entries:
         if t.get("circle") == 1:
@@ -362,7 +363,7 @@ def build(net, F, only=()):
             names[(g, "genus")] = None
     for k in names:
         names[k] = find(net, *k)
-    T = taxa(net, [s["inat"] for L in game.values() for s in L] + [v for v in names.values() if v])
+    T = taxa(net, [ff.photo_taxon(s) for L in game.values() for s in L] + [v for v in names.values() if v])
     # The faved 200 of every taxon with a usable photo first: their (photo id, observation id) pairs place the other
     # photos' observations (obs_of).
     A = anchors([held(net, t) for t in sorted(T) if any(usable(p) for p in T[t]["photos"])])
@@ -386,7 +387,7 @@ def build(net, F, only=()):
 
     for t in entries:
         tid, L = t["id"], game[t["id"]]
-        by_inat = {s["inat"]: s for s in L}
+        by_inat = {ff.photo_taxon(s): s for s in L}
         fam = names.get((t.get("fam"), "family"))
         if fam:
             stats["family"][1] += 1
@@ -397,14 +398,14 @@ def build(net, F, only=()):
         for g, S in (gen.get(tid) or {}).items():
             gid = names.get((g, "genus"))
             stats["genus"][1] += 1
-            got = pick(net, T, gid, {s["inat"] for s in S}, 1, A) if gid else []
+            got = pick(net, T, gid, {ff.photo_taxon(s) for s in S}, 1, A) if gid else []
             if got:
                 stats["genus"][0] += 1
                 put(tid, inat_obj(*got[0], by_inat[got[0][1]["sp"]]["id"]), "g:" + g)
         for s in L:
             stats["species"] += 1
             far, seen = [], []
-            got = pick(net, T, s["inat"], {s["inat"]}, INAT_MAX, A, far, seen)
+            got = pick(net, T, ff.photo_taxon(s), {ff.photo_taxon(s)}, INAT_MAX, A, far, seen)
             audit += [(s["id"], *x) for x in seen]
             listed = {x["f"] for L in away.values() for x in L}  # two species iNaturalist lumps: listed once
             far = [x for x in map(lambda y: away_obj(*y), far) if x["f"] not in listed]
