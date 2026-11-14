@@ -1,0 +1,216 @@
+{
+ "photos": {
+  "fish-s590-cand-760907966": {
+   "code": "p1g1sm14",
+   "keep": "best",
+   "bb": [
+    0.2,
+    0.3,
+    0.85,
+    0.7
+   ]
+  },
+  "fish-s590-cand-760907993": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671655547": {
+   "code": "p1g0ss1ja1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671655675": {
+   "code": "p1g0sl1ja2",
+   "keep": "best"
+  },
+  "fish-s590-cand-671655723": {
+   "code": "p1g0sl1ja2",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671655775": {
+   "code": "p1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671655812": {
+   "code": "p1g0ss1ja1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-678710340": {
+   "code": "o1g1bs1c1",
+   "keep": "best"
+  },
+  "fish-s590-cand-688442746": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s590-cand-674445715": {
+   "code": "p1g1sss2",
+   "keep": "alt"
+  },
+  "fish-s590-cand-674445717": {
+   "code": "p1g0smo4",
+   "keep": "best"
+  },
+  "fish-s590-cand-408426175": {
+   "code": "o1g2mss1",
+   "keep": "best"
+  },
+  "fish-s590-cand-703685905": {
+   "code": "d1g1bss1",
+   "keep": "best"
+  },
+  "fish-s590-cand-664978260": {
+   "code": "p1g2mmk1",
+   "keep": "best"
+  },
+  "fish-s590-cand-615720375": {
+   "code": "p1g0sms4",
+   "keep": "best"
+  },
+  "fish-s590-cand-648022949": {
+   "code": "o1g1sls3",
+   "keep": "best"
+  },
+  "fish-s590-cand-332302828": {
+   "code": "p0g2bl11",
+   "keep": "best"
+  },
+  "fish-s590-cand-728007264": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s590-cand-698222965": {
+   "code": "o1g1smk2",
+   "keep": "best"
+  },
+  "fish-s590-cand-690938197": {
+   "code": "p1g1mss2",
+   "keep": "best"
+  },
+  "fish-s590-cand-751538179": {
+   "code": "o1g1mss2",
+   "keep": "best"
+  },
+  "fish-s590-cand-728832705": {
+   "code": "p1g2mss1",
+   "keep": "best"
+  },
+  "fish-s590-cand-752731978": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s590-cand-679540077": {
+   "code": "p1g2bms1",
+   "keep": "best"
+  },
+  "fish-s590-cand-674537507": {
+   "code": "o1g1smo3",
+   "keep": "best"
+  },
+  "fish-s590-cand-705124374": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s590-cand-695743109": {
+   "code": "p1g2bss1",
+   "keep": "best"
+  },
+  "fish-s590-cand-267087497": {
+   "code": "p1g1mss2",
+   "keep": "best"
+  },
+  "fish-s590-cand-689549489": {
+   "code": "p1g2bms1",
+   "keep": "best"
+  },
+  "fish-s590-cand-689549493": {
+   "code": "p1g2bss1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-689549497": {
+   "code": "p1g2bss1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671653737": {
+   "code": "p1g0sl1ja2",
+   "keep": "best"
+  },
+  "fish-s590-cand-671653792": {
+   "code": "p0g0sl1ja1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671653851": {
+   "code": "p0g0sl1ja1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671653923": {
+   "code": "p1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671653989": {
+   "code": "o1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671654043": {
+   "code": "p1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s590-cand-671654096": {
+   "code": "p1g0sm1ja2",
+   "keep": "dup"
+  },
+  "fish-s590-cand-383262929": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "bb": [
+    0.25,
+    0.3,
+    0.7,
+    0.6
+   ]
+  },
+  "fish-s590-cand-619866537": {
+   "code": "d1g0ss1j1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A slender banded fish on sand, unlike the deep-bodied convict surgeonfish on the other photos: look again."
+  },
+  "fish-s590-cand-619866471": {
+   "code": "p1g0ss1j1",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "A slender banded fish on sand, unlike the deep-bodied convict surgeonfish on the other photos: look again."
+  },
+  "fish-s590-cand-626694090": {
+   "code": "p1g2bsxj1",
+   "keep": "best"
+  },
+  "fish-s590-cand-703685849": {
+   "code": "d1g1bss1",
+   "keep": "best"
+  },
+  "fish-s590-cand-408426228": {
+   "code": "o1g1smo3",
+   "keep": "best"
+  },
+  "fish-s590-cand-631370931": {
+   "code": "d1g1msk1",
+   "keep": "best"
+  },
+  "fish-s590-cand-631370964": {
+   "code": "d1g1msk1",
+   "keep": "dup"
+  },
+  "fish-s590-cand-668638775": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s590-cand-427603362": {
+   "code": "d1g2bs11",
+   "keep": "best"
+  }
+ }
+}

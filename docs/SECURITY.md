@@ -22,20 +22,34 @@ leak of the Sheet would expose little.
 
 `.github/workflows/approved-photos.yml` downloads and decodes files from the internet (photos and JSON from iNaturalist
 and FishBase, decoded by Pillow installed from PyPI) and pushes its results to `main`, which the sync script updates
-itself from. Since the security check of 2026-11-13:
-- the workflow's token is read-only by default; only the two jobs that push (`photos`, `fish`) get `contents: write`,
-  the `r2` job reads only (R2 has its own keys);
+itself from. Since the security check of 2026-11-13 and its follow-ups:
+- the workflow's token is read-only by default. The jobs that download and decode (`photos`, `fish`) and the `r2` job
+  read only; each of the first two hands its result to a push job as an artifact: the staged diff of its own files
+  (binary, renames off) and the commit of `main` it applies to;
+- only the two push jobs (`photos-push`, `fish-push`) get `contents: write`. They run no repository code and nothing
+  downloaded (a checkout of `main`, the artifact, their own shell), and treat the artifact as hostile: the base must be a
+  commit of `main` (else `git pull --rebase` would carry foreign commits onto it); before anything is written, every
+  path the diff changes must be one of their job's files (`git apply --numstat`: `data.json`, `cand.json`,
+  `excluded.json`, `fish-game.json`, `img/<name>`; `fish-cand.json`, `tools/fish_refill.json`) and its only extended
+  headers a regular file created or deleted (`git apply --summary`: a rename, a copy, a mode change, a symlink are
+  refused); once applied, the staged files are checked again (paths, mode 100644 or deleted, nothing else changed).
+  Then they commit under the bot's name and the same message as before, rebase on today's `main` and push
+  (`tests/photospush.test.js` runs their shell on crafted patches);
 - every checkout has `persist-credentials: false`: no token is written to `.git/config`, and the git reads after it
   (the blobs fetched on demand, `git pull --rebase`) go without one, the repository being public;
-- the write token is given only to the `Commit` steps, in their own environment, and handed to `git push` alone as an
-  HTTP header for that one process (`GIT_CONFIG_*`), its base64 form masked in the log.
+- the write token is given only to the push jobs' `Commit` steps, in their own environment, and handed to `git push`
+  alone as an HTTP header for that one process (`GIT_CONFIG_*`), its base64 form masked in the log;
+- Python packages are installed by hash (`pip install --require-hashes -r tools/requirements.txt`, here and in Checks):
+  a Pillow file swapped on PyPI or on the way is refused.
 
-So a file-read bug or a leak in a download or decode step finds no write credential on disk or in its environment.
-**Not covered**: code that takes over a step of a job that pushes (a decoder exploit, a compromised package) runs in the
-same job as the `Commit` step and could still reach the token (a git hook, `$GITHUB_ENV`, the runner's memory). Closing
-that needs the work split in two jobs: one without write access makes the commit, a second one, running no downloaded
-code, checks it touches only its own files and pushes it. Pillow is pinned by version, not by hash (`pip install
---require-hashes`): both are follow-ups.
+So code that takes over a download or decode step (a decoder exploit, a compromised package) runs in a job with a
+read-only token and no write credential anywhere; the most it can do is hand over a diff of its own job's files, which
+the push job commits as it would the real result (that is the trust the workflow needs: it writes those files).
+**Not covered**: the `photos` job still holds the R2 keys for its upload of the new photos (`tools/r2_sync.sh
+r2-upload`, before the commit marks them downloaded): such code could write to the photo bucket (never to `main`).
+Like any job, a read-only one also holds the runner's own token for artifacts and the Actions cache: such code could
+save a cache entry under `main` that a later run restores (the Smokes' Playwright Chromium cache, when `main` has none
+of that key yet); those runs hold read-only tokens too.
 
 ## Protections in the sync script (v12)
 

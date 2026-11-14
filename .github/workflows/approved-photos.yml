@@ -14,12 +14,15 @@ on:
     # (tools/fish_judge.json boxes, suggest.json bb) makes its tile, {f}-x.webp, uploaded the same way (Q321 D4).
     paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py]
   workflow_dispatch:
-# Read only by default (security check, 2026-11-13): a job that pushes gets contents: write for itself, and only its
-# Commit step holds the token (see the photos job). Every checkout has persist-credentials: false: no token on disk
-# (.git/config) or in the environment while photos and JSON from iNaturalist and FishBase are downloaded and decoded
-# (Pillow, from PyPI). The git reads after the checkout (the blobs the blob:none clone fetches on demand, git pull
-# --rebase) need no credential: the repository is public. Not covered: code that takes over a step of a job that pushes
-# could still reach the token (docs/SECURITY.md).
+# Read only by default (security check, 2026-11-13; the jobs split, its follow-up): the work that downloads and decodes
+# photos and JSON from iNaturalist and FishBase (Pillow, from PyPI by hash) runs in read-only jobs (photos, fish), which
+# hand their result to the next job as a patch (an artifact: the staged diff of their own files and the commit of main
+# it applies to). Only the two push jobs (photos-push, fish-push) get contents: write; they run no repository code and
+# nothing downloaded: they check the patch touches only their job's files (paths and file modes, renames refused) and
+# applies to a commit of main, then commit it under the same message as before and push it, the token held by their
+# Commit step alone. Every checkout has persist-credentials: false: no token on disk (.git/config) or in the
+# environment. The git reads after a checkout (the blobs the blob:none clone fetches on demand, git pull --rebase) need
+# no credential: the repository is public (docs/SECURITY.md).
 permissions:
   contents: read
 concurrency:
@@ -28,8 +31,6 @@ concurrency:
 jobs:
   photos:
     runs-on: ubuntu-26.04
-    permissions:
-      contents: write
     steps:
       # The latest main, not the commit that started the run: a run queued behind another (two Publishes in a row, the
       # concurrency group above) must start from that run's commit, or its own commit conflicts with it on data.json
@@ -43,11 +44,11 @@ jobs:
           filter: blob:none
           persist-credentials: false
       # Python pinned, not the image's own python3 (3.14 on Ubuntu 26.04, 3.12 on 24.04); the latest stable (rule W9),
-      # the same in every workflow. Pillow pinned in tools/requirements.txt.
+      # the same in every workflow. Pillow pinned in tools/requirements.txt, by version and by hash.
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
-      - run: pip install -r tools/requirements.txt
+      - run: pip install --require-hashes -r tools/requirements.txt
       # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). --fish: the
       # fish photos Pierre put in play (iNaturalist or FishBase, his crop applied) and fish-game.json, the list the fish
       # game reads (tools/fish_game.py; admin plan PR 7). The files go to r2-upload/ (gitignored), uploaded below before
@@ -78,6 +79,86 @@ jobs:
       # those curation.json uses, cand.json the others). fetch_local.py ends with the same step; this one also covers
       # whatever ran after it (tests/coralcand.test.js, tests/photos.test.js).
       - run: python tools/fetch_local.py --tidy
+      # The commit to make, for photos-push: this job's files staged as before, their diff (binary, renames off) and the
+      # commit of main it applies to. Uploaded even when empty (no change: photos-push then commits nothing).
+      - name: Prepare the commit
+        shell: bash
+        run: |
+          git add data.json cand.json excluded.json fish-game.json img
+          mkdir -p "$RUNNER_TEMP/change"
+          git rev-parse HEAD > "$RUNNER_TEMP/change/base"
+          git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: photos-change
+          path: ${{ runner.temp }}/change/
+          if-no-files-found: error
+          retention-days: 1
+  # The push of the photos job's commit: no Python, no repository script, no download but the artifact. Same commit,
+  # message and files as when the photos job pushed itself.
+  photos-push:
+    needs: photos
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      # Today's main with its history (the base must be on it; git pull --rebase replays the commit on top).
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: photos-change
+          path: ${{ runner.temp }}/change
+      # The artifact is not trusted. Its base must be a commit of main (else the rebase below would replay foreign
+      # commits onto main); before anything is written, every path the patch changes must be one of the photos job's
+      # files (git apply --numstat) and its only extended headers a plain file created or deleted (git apply --summary:
+      # a rename, a copy, a mode change, a symlink are refused); once applied to the index, the staged files are checked
+      # again, as regular files (mode 100644, or deleted), and nothing else may differ.
+      # Same text in fish-push, only ALLOWED differs (tests/photospush.test.js runs it on crafted patches).
+      - name: Apply and check the change
+        shell: bash
+        env:
+          CHANGE: ${{ runner.temp }}/change
+          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          base=$(cat "$CHANGE/base")
+          [[ $base =~ ^[0-9a-f]{40}$ ]] || fail "the base is not a commit id"
+          git merge-base --is-ancestor "$base" HEAD || fail "the base $base is not a commit of main"
+          git reset -q --hard "$base"
+          patch="$CHANGE/change.patch"
+          [ -s "$patch" ] || { echo "No change to commit."; exit 0; }
+          tab=$'\t'
+          git apply --numstat -z "$patch" > "$RUNNER_TEMP/numstat"
+          while IFS= read -r -d '' rec; do
+            [[ $rec =~ ^[0-9-]+${tab}[0-9-]+${tab}(.+)$ ]] || fail "an unreadable entry in the patch"
+            p=${BASH_REMATCH[1]}
+            [[ $p =~ $ALLOWED ]] || fail "the patch touches $p"
+          done < "$RUNNER_TEMP/numstat"
+          git apply --summary "$patch" > "$RUNNER_TEMP/summary"
+          plain='^ (create|delete) mode 100644 (.+)$'
+          while IFS= read -r l; do
+            [[ $l =~ $plain ]] || fail "not a plain file change: $l"
+            p=${BASH_REMATCH[2]}
+            [[ $p =~ $ALLOWED ]] || fail "the patch touches $p"
+          done < "$RUNNER_TEMP/summary"
+          git apply --index "$patch"
+          git diff --cached --name-only --no-renames -z > "$RUNNER_TEMP/names"
+          while IFS= read -r -d '' p; do
+            [[ $p =~ $ALLOWED ]] || fail "staged: $p"
+          done < "$RUNNER_TEMP/names"
+          git diff --cached --raw --no-renames > "$RUNNER_TEMP/raw"
+          modes=$(awk '$2 != "100644" && $2 != "000000"' "$RUNNER_TEMP/raw")
+          [ -z "$modes" ] || fail "a file that is not a regular file: $modes"
+          git diff --quiet || fail "the working tree differs from the index"
+          [ -z "$(git ls-files --others)" ] || fail "untracked files after the patch"
+          git diff --cached --stat
       # The only step that holds the write token: in its own environment, handed to git push alone as an HTTP header for
       # that one process (GIT_CONFIG_*, the header actions/checkout would have written to .git/config), never written to
       # disk. Its base64 form is masked: the runner masks the token, not its encodings.
@@ -87,7 +168,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.json cand.json excluded.json fish-game.json img
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: download added ones, refill the lists"
           git pull --rebase origin main
@@ -100,16 +180,15 @@ jobs:
   # a run, the shortest first, with tools/fetch_fish.py's rules (Research Grade, the licences, the Philippines first,
   # abroad the Indo-West Pacific only); a species searched to the end is noted in tools/fish_refill.json and asked again a
   # month later; FishBase (offline) fills what iNaturalist left. About one request a second, batched (rule C7). After the
-  # photos job, from today's main (its commit, if any, is on it), even if it failed: the two touch different files.
-  # Nothing is downloaded (candidates stay remote) and curation.json is never written (rule A1): the new candidates wait
-  # for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's auto-sort applies.
+  # photos push, from today's main (its commit, if any, is on it), even if the photos jobs failed: the two touch
+  # different files. Nothing is downloaded (candidates stay remote) and curation.json is never written (rule A1): the
+  # new candidates wait for the judging pass (python3 tools/judging_fish.py todo), whose sure decisions the admin's
+  # auto-sort applies. Read-only like photos: fish-push commits its result.
   fish:
-    needs: photos
+    needs: photos-push
     if: ${{ !cancelled() }}
     runs-on: ubuntu-26.04
     timeout-minutes: 90
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -121,14 +200,87 @@ jobs:
       # shell: bash sets pipefail, so a failed refill fails the step despite the tee.
       - run: python tools/fetch_fish.py --refill --circle 1 --circle 2 --circle 3 | tee -a "$GITHUB_STEP_SUMMARY"
         shell: bash
-      # The write token in this step only, as in the photos job's Commit.
+      # The commit to make, for fish-push, as in the photos job.
+      - name: Prepare the commit
+        shell: bash
+        run: |
+          git add fish-cand.json tools/fish_refill.json
+          mkdir -p "$RUNNER_TEMP/change"
+          git rev-parse HEAD > "$RUNNER_TEMP/change/base"
+          git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fish-change
+          path: ${{ runner.temp }}/change/
+          if-no-files-found: error
+          retention-days: 1
+  # The push of the fish job's commit, as photos-push: only after the fish job itself succeeded (the photos jobs may
+  # have failed: the fish job still ran).
+  fish-push:
+    needs: fish
+    if: ${{ !cancelled() && needs.fish.result == 'success' }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: fish-change
+          path: ${{ runner.temp }}/change
+      # As in photos-push, with the fish job's two files.
+      - name: Apply and check the change
+        shell: bash
+        env:
+          CHANGE: ${{ runner.temp }}/change
+          ALLOWED: '^(fish-cand\.json|tools/fish_refill\.json)$'
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          base=$(cat "$CHANGE/base")
+          [[ $base =~ ^[0-9a-f]{40}$ ]] || fail "the base is not a commit id"
+          git merge-base --is-ancestor "$base" HEAD || fail "the base $base is not a commit of main"
+          git reset -q --hard "$base"
+          patch="$CHANGE/change.patch"
+          [ -s "$patch" ] || { echo "No change to commit."; exit 0; }
+          tab=$'\t'
+          git apply --numstat -z "$patch" > "$RUNNER_TEMP/numstat"
+          while IFS= read -r -d '' rec; do
+            [[ $rec =~ ^[0-9-]+${tab}[0-9-]+${tab}(.+)$ ]] || fail "an unreadable entry in the patch"
+            p=${BASH_REMATCH[1]}
+            [[ $p =~ $ALLOWED ]] || fail "the patch touches $p"
+          done < "$RUNNER_TEMP/numstat"
+          git apply --summary "$patch" > "$RUNNER_TEMP/summary"
+          plain='^ (create|delete) mode 100644 (.+)$'
+          while IFS= read -r l; do
+            [[ $l =~ $plain ]] || fail "not a plain file change: $l"
+            p=${BASH_REMATCH[2]}
+            [[ $p =~ $ALLOWED ]] || fail "the patch touches $p"
+          done < "$RUNNER_TEMP/summary"
+          git apply --index "$patch"
+          git diff --cached --name-only --no-renames -z > "$RUNNER_TEMP/names"
+          while IFS= read -r -d '' p; do
+            [[ $p =~ $ALLOWED ]] || fail "staged: $p"
+          done < "$RUNNER_TEMP/names"
+          git diff --cached --raw --no-renames > "$RUNNER_TEMP/raw"
+          modes=$(awk '$2 != "100644" && $2 != "000000"' "$RUNNER_TEMP/raw")
+          [ -z "$modes" ] || fail "a file that is not a regular file: $modes"
+          git diff --quiet || fail "the working tree differs from the index"
+          [ -z "$(git ls-files --others)" ] || fail "untracked files after the patch"
+          git diff --cached --stat
+      # The write token in this step only, as in photos-push.
       - name: Commit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add fish-cand.json tools/fish_refill.json
           git diff --cached --quiet && exit 0
           git commit -m "Candidate photos: refill the short fish species"
           git pull --rebase origin main
@@ -137,10 +289,10 @@ jobs:
           GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
             GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $auth" git push origin HEAD:main
   # img/ copied to R2 and the bucket checked (every photo that lives on R2 only has its four files there), in its own
-  # job under the same concurrency group as photos-r2.yml (Codex review #380), from today's main (the commit above, if
+  # job under the same concurrency group as photos-r2.yml (Codex review #380), from today's main (the photos commit, if
   # any, is on it). Its push starts no other workflow (GITHUB_TOKEN), hence this job.
   r2:
-    needs: photos
+    needs: photos-push
     runs-on: ubuntu-26.04
     # Reads only: R2 has its own keys.
     permissions:
