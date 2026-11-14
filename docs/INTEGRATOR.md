@@ -5,7 +5,21 @@ then [STATUS.md](STATUS.md) for where things stand, then this page for how the w
 2026-11-07 by the integrator of 2026-11-02..07, before a quota pause. Keep it current: it is the working knowledge that is
 not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives in STATUS.md).
 
-## Handover of 2026-11-12 evening (read first)
+## Handover of 2026-11-14 evening (read first)
+
+What the day added (Pierre's words in AGENTS.md "Working mode", not repeated here), as habits:
+
+- **Keep the four agent slots full from the whole queue** (Pierre, 11-14: "Tu lances tout ce que tu peux lancer…
+  Qui t'as demandé de te limiter ?"): when a slot frees, the next decided item starts; never offer him a short list.
+- **Filter an agent's "Choices I made" before passing it on**: what is easy to correct afterwards ships as your call.
+- **A rule said to be Pierre's quotes his words.** #558 (11-05) wrote "never merged on silence… even when it looks
+  reversible" as his; he never said it (11-14) and it is gone. Paraphrase only as "integrator's reading".
+- **Do not stretch a decision of his to cover a new point**: Q354's "IMR names on screen" was taken to cover the photo
+  credit; he chose the other way (the credit keeps the iNaturalist name).
+- **An interruption to ask a question is not a stop**: answer, then carry on.
+- **Before 16:30 nothing winds down** (Rule 0): no "end-of-day update" talk before then.
+
+## Handover of 2026-11-12 evening
 
 This session runs in **auto mode** (Pierre, 2026-11-12: kept): a permission classifier judges each command; repo allow
 rules pass before it (`.claude/settings.json`: resolving review threads). What the two days added:
@@ -67,9 +81,7 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   **What gets a number** (Pierre, 2026-11-08, replacing the line of that afternoon; the definition is in AGENTS.md
   "Working mode"): two tests, both needed. (1) The answer commits the future: the players' learning or game, the
   engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost. (2) The answer will
-  be cited later, to show how a point was reached. **Not numbered**, asked plainly: a visual detail inside an agreed
-  design (screenshots and "OK?"), an implementation detail (the agent's or your call, written in the PR), the order or
-  priorities (he sets his ROADMAP order himself: "which next?" is never numbered), a confirmation or a fact, the wording
+  be cited later, to show how a point was reached. **Not numbered**, asked plainly: a confirmation or a fact, the wording
   of a rule already decided (his OK goes in the rule's *Source* line). Every answer, numbered or not, is quoted in the
   PR's Decisions; small questions go in batches. Past numbers are not renumbered. Subagents prepare their questions
   with the same tests and say in their report which ones would be numbered.

@@ -166,6 +166,60 @@ const typeSpell = (text, name) => {
     .join('')
     .replace(/<\/b><b>/g, ''); // neighbouring letters in one bold run
 };
+// Similar names after a mix-up (the name study's question b, docs/reviews/2026-11-05-name-confusion-study.md 5.1 and 6;
+// Pierre, 2026-11-14, Q124: "Je suis tes recommandations pour tout"): the two names as shown, the letters that differ in
+// bold, for a pair that shares its first letter or has a bigram Dice of at least 0.4. The study's measures: the names in
+// lower case, '#' at each end, bigrams counted with repeats (its namestudy/prep.py).
+const nameBigrams = s => {
+  const L = Array.from(`#${String(s).toLowerCase()}#`);
+  return L.slice(1).map((c, i) => L[i] + c);
+};
+// The bigram Dice of two names as {shared, total}: Dice = 2 × shared / total (0 to 1).
+const nameDice = (a, b) => {
+  const A = nameBigrams(a),
+    B = nameBigrams(b),
+    n = new Map();
+  A.forEach(k => n.set(k, (n.get(k) || 0) + 1));
+  let shared = 0;
+  B.forEach(k => n.get(k) > 0 && (n.set(k, n.get(k) - 1), shared++));
+  return {shared, total: A.length + B.length};
+};
+// Two names alike enough to mark (namesDiff): not the same name, and the same first letter or a Dice of 0.4 or more
+// (2 × shared / total ≥ 0.4, in whole numbers: 5 × shared ≥ total).
+const namesAlike = (a, b) => {
+  const x = String(a).toLowerCase(),
+    y = String(b).toLowerCase();
+  if (!x || !y || x === y) return false;
+  if (Array.from(x)[0] === Array.from(y)[0]) return true;
+  const {shared, total} = nameDice(x, y);
+  return 5 * shared >= total;
+};
+// The two names, escaped, with the letters that differ in bold: what lies between their common beginning and their
+// common ending (capitals aside), as the study's "Lepto<b>ria</b> / Lepto<b>seris</b>". A name that holds the other
+// whole (Fungia / Danafungia) has nothing in bold. Only letters are marked, never a space or a sign.
+const namesDiff = (a, b) => {
+  const A = Array.from(String(a)),
+    B = Array.from(String(b)),
+    lo = c => c.toLowerCase();
+  let p = 0,
+    s = 0;
+  while (p < A.length && p < B.length && lo(A[p]) === lo(B[p])) p++;
+  while (s < A.length - p && s < B.length - p && lo(A[A.length - 1 - s]) === lo(B[B.length - 1 - s])) s++;
+  const mark = L =>
+    L.map((c, i) => (i >= p && i < L.length - s && /\p{L}/u.test(c) ? `<b>${esc(c)}</b>` : esc(c)))
+      .join('')
+      .replace(/<\/b><b>/g, '');
+  return [mark(A), mark(B)];
+};
+// The feedback's line for a mix-up of unit t with unit c when their names are alike (namesAlike), '' otherwise: the photo's
+// unit first, then the answer, each written as uname writes it.
+const namesLine = (t, c) => {
+  const a = unameT(t),
+    b = unameT(c);
+  if (!namesAlike(a, b)) return '';
+  const [x, y] = namesDiff(a, b);
+  return `<p class="vs ndiff">Similar names: ${unameIn(t, x)} / ${unameIn(c, y)}</p>`;
+};
 // The unit a typed reading m gives on a question on unit t: its unit; for a name several units share (core.js
 // typeMatchIn shared: Holocentridae, the Soldierfishes' and the Squirrelfishes'), t when t is one of them (right,
 // Pierre, 2026-11-09, Q319), else none: a wrong answer that counts against t only, no mix-up recorded (Q319), as "I
@@ -860,7 +914,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   if (typeof helpedArm === 'function') helpedArm(nb);
 }
 // The answer's feedback, up to the report button (answer): the verdict, the unit's ID tips, why the answer given is
-// another unit, and more behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
+// another unit (first, when the two names are alike, the two with the letters that differ in bold: namesLine), and more
+// behind a fold. A genus: its IMR ID tips and mnemonic, the Coral ID Key criteria (Coral Finder book, by page), a link to
 // its sheet and to the comparison. A fish entry (a record with a name, core.js fishGen): the IMR cues, how IMR tells the
 // look-alike apart (lk), the sub-entries IMR names inside it and its phases; no sheet or comparison page yet. step: a
 // typed answer's spelling step (typeStep), said in the verdict's one line. tx: the photo's own taxon (app.js photoTaxon),
@@ -872,7 +927,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
     apart = C && fish ? ((g.lk || []).find(([o]) => o === c) || (C.lk || []).find(([o]) => o === target) || [])[1] : '';
   const vs = C
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-      `<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
   const named = inner =>
