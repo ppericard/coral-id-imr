@@ -28,6 +28,7 @@ const http = require('http'),
   path = require('path');
 const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
+const qa = require('./answer.js'); // answers the question on screen, whatever its format
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
   '.html': 'text/html',
@@ -61,6 +62,7 @@ const server = http.createServer((req, res) => {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch();
   const ctx = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+  await ctx.addInitScript(qa.PAGE); // smokeAnswer in every page (it draws no random number: Math.random is seeded below)
   await ctx.route(
     u => !u.href.startsWith(base),
     r => r.abort()
@@ -83,16 +85,10 @@ const server = http.createServer((req, res) => {
   // Runs inside the page: app.js globals (P, photoSet, distractors, BONUS...) are in scope.
   const out = await p.evaluate(() => {
     // Answers the question on screen with genus g: its choice, or typed on a typed question (model.js TYPED; '' = I
-    // don't know). The choices of the question: the buttons, or those the draw chose for a typed one (SHOWNQ).
-    const say = g => {
-        const b = document.querySelector(`#view [data-c="${CSS.escape(g)}"]`);
-        if (b) return b.click();
-        const f = document.querySelector('#view .tyform');
-        if (!g) return f.querySelector('[data-idk]').click();
-        f.querySelector('input').value = g;
-        f.requestSubmit();
-      },
+    // don't know): tests/answer.js. The choices of the question: the buttons, or those the draw chose for a typed one (SHOWNQ).
+    const say = g => smokeAnswer(g),
       choices = () => {
+        // answer.js: the choices read
         const L = [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c);
         return L.length ? L : (SHOWNQ && SHOWNQ[2]) || [];
       };
@@ -236,6 +232,7 @@ const server = http.createServer((req, res) => {
         document.querySelectorAll('.unlock').forEach(x => x.remove());
         const g = SHOWNQ[1],
           ty = !!SHOWNQ.typed,
+          // answer.js: the typed format checked
           dom = !!document.querySelector('#view .tyform') && !document.querySelector('#view [data-c]');
         if (ty !== dom || ty !== !!TYPEDQ) fails.push(`typed question ${g}: planned ${ty}, form on screen ${dom}`);
         if (genScore(g) >= 0.85) (n.hi++, (n.hiT += ty)); // a genus near its exam (89% at the start)
@@ -257,6 +254,7 @@ const server = http.createServer((req, res) => {
         fails.push('no typed question in 200');
       };
       let g = typedQ();
+      // answer.js: a typed question drawn above (typedQ)
       const f = () => document.querySelector('#view .tyform'),
         // two different neighbouring letters swapped, from the third on (Millepora's "ll" swapped is no typo)
         sw = [...g].findIndex((x, i) => i >= 2 && g[i + 1] && x !== g[i + 1]),
@@ -1057,6 +1055,7 @@ const server = http.createServer((req, res) => {
           if (q.intro && !q.start) prev === false ? afterMiss++ : afterRight++;
           const good = Math.random() < 0.6,
             wrong = choices().find(c => c !== q[1]);
+          // answer.js: a typed miss is I don't know
           say(good ? q[1] : document.querySelector('#view .tyform') ? '' : wrong);
           prev = good;
           planNext('quiz');
@@ -1290,6 +1289,7 @@ const server = http.createServer((req, res) => {
         if (!SHOWNQ.warm) break;
         nCb++;
         const t = SHOWNQ[1],
+          // answer.js: the choices read
           ch = [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c);
         if (SHOWNQ.intro || SHOWNQ.auto || SHOWNQ[4].exam || !(P[t] || {}).ok || !(SHOWNQ.cb < 1) || !noOpen())
           fails.push(`comeback question ${i}: ${JSON.stringify({t, intro: SHOWNQ.intro, cb: SHOWNQ.cb, ok: (P[t] || {}).ok})}`);
@@ -1478,10 +1478,7 @@ const server = http.createServer((req, res) => {
             document.querySelectorAll('.unlock').forEach(x => x.remove());
             // Right: its choice, or typed on a typed question (model.js TYPED: a genus well on its way is sometimes
             // asked typed).
-            const b = document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`),
-              f = document.querySelector('#view .tyform');
-            if (b) b.click();
-            else ((f.querySelector('input').value = SHOWNQ[1]), f.requestSubmit());
+            smokeAnswer(SHOWNQ[1]);
           }
           const A = store.get(ACHK, {}) || {};
           return {seen, mx: (P[t] || {}).mx, learn1: A.learn1, gone: (A._gone || {}).learn1, M: store.get(MXL.KEY, null)};

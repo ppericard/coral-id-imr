@@ -4,6 +4,7 @@ const http = require('http'),
   zlib = require('zlib');
 const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
+const qa = require('./answer.js'); // waits for and answers the question on screen, whatever its format
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
   '.html': 'text/html',
@@ -175,7 +176,8 @@ const server = http.createServer((req, res) => {
     await ready(p2).catch(() => fails.push('Start-up waited for curation.json although a copy was kept'));
     if (Date.now() - t > 10000) fails.push(`Start-up with a kept curation took ${Date.now() - t} ms`);
     for (let i = 0; i < 3; i++) {
-      await p2.click('#view [data-c]');
+      await qa.ready(p2);
+      await p2.evaluate(() => smokeAnswer(false));
       await p2
         .waitForFunction(() => typeof NEXTQ !== 'undefined' && NEXTQ && NEXTQ.args, null, {timeout: 5000})
         .catch(() => fails.push('No next question planned during the feedback'));
@@ -251,6 +253,7 @@ const server = http.createServer((req, res) => {
         const n = document.getElementById('qfail').getBoundingClientRect(),
           at = document.elementFromPoint(n.left + 4, n.top + n.height / 2);
         return {
+          // answer.js: every control counted
           open: [...document.querySelectorAll('#view [data-c], #view [data-w], #view .tyform input')].filter(b => !b.disabled).length,
           seen: !!at && !!at.closest('#qfail'),
           icon: [...document.querySelectorAll('#view .qstage img')].filter(i => getComputedStyle(i).visibility !== 'hidden').length,
@@ -269,8 +272,10 @@ const server = http.createServer((req, res) => {
       if (!st.tiles.length || !st.tiles.every(Boolean))
         fails.push(`A question photo that did not load shows no "photo missing" tile (${st.tiles})`);
       if (!st.figs.length || st.figs.some(h => h < 150)) fails.push(`The question stage collapsed: ${st.figs}`);
+      // answer.js: a closed answer tried
       const b1 = await p.$('#view [data-c]');
       if (b1) await b1.click({force: true}).catch(() => {});
+      // answer.js: a closed answer tried
       await p.keyboard.press('1');
       if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('An answer to a question with no photo shown counted');
       // A photo of the question that comes later opens the answers again: the hint if the question has one, else one
@@ -283,14 +288,11 @@ const server = http.createServer((req, res) => {
           const st = document.querySelector('#view .qstage');
           st.insertAdjacentHTML('beforeend', `<figure class="qph"><img src="${src}" alt=""></figure>`);
         }, 'img/' + anyS());
-      await p
-        .waitForSelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform input:not([disabled])', {
-          timeout: 10000
-        })
-        .catch(() => fails.push('A photo of the question that came later did not open its answers'));
+      if (!(await qa.ready(p, {timeout: 10000, optional: true})))
+        fails.push('A photo of the question that came later did not open its answers');
       await p.click('#qfail button', {timeout: 5000}).catch(() => fails.push('"Another question" could not be clicked'));
       if ((await p.evaluate(() => answersSoFar())) !== n0) fails.push('Skipping a photo that did not load counted an answer');
-      if (!(await p.$('#view [data-c]'))) fails.push('"Another question" did not show a question');
+      if (!(await qa.ready(p, {timeout: 10000, optional: true}))) fails.push('"Another question" did not show a question');
     }
     if (errs.length) fails.push('Skip: ' + errs.slice(0, 3).join(' | '));
     await ctx.close();
@@ -768,7 +770,7 @@ const server = http.createServer((req, res) => {
   }
   // Links straight to a page on a first visit: the page waits for its tier, then opens.
   for (const [h, sel] of [
-    ['quiz', '#view [data-c]'],
+    ['quiz', qa.SEL],
     ['progress', '#view .pring'],
     ['lab', '#view .lab a']
   ]) {
@@ -990,10 +992,11 @@ const server = http.createServer((req, res) => {
       const n = asked;
       // A question none of whose photos showed takes no answer (#490: its answers are closed): said as a failure of this
       // check, never a click that waits 30 s and stops every check after it (2026-11-04, a local run).
-      const b = await p.$('#view .q:not(.done) [data-c]:not([disabled])');
-      if (!b) fails.push('R2 cut off: the question took no answer (none of its photos showed, so its answers were closed)');
+      await qa.install(p);
+      if (!(await p.$(qa.SEL)))
+        fails.push('R2 cut off: the question took no answer (none of its photos showed, so its answers were closed)');
       else {
-        await b.click();
+        await p.evaluate(() => smokeAnswer(false));
         await p.evaluate(() => document.querySelectorAll('.unlock .next, .achpop').forEach(x => x.click && x.click()));
         await p.click('#next', {timeout: 10000}).catch(() => fails.push('R2 cut off: no Next after the answer'));
         const s2 = (await shown(p)) || [],

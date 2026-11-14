@@ -122,7 +122,13 @@ prefixed `demo:`). Use it for screenshots and to test an admin change; when you 
 keep `admin-demo.js` in step. No build step. Tests: `node tests/run.js` (every `tests/*.test.js` under `node --test`, in the
 machine slot: rule W24; Node only, no npm) and the Playwright
 smokes (`tests/*.smoke.js`; CI installs Playwright in a temporary folder: never add a `package.json`); add a case when
-you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). Pure logic
+you change logic they cover (a photo rule: `tests/photos.test.js`; the question draw: `tests/draw.smoke.js`). **A smoke
+waits for and answers a quiz question only through `tests/answer.js`** (`qa.ready(p)`, then `smokeAnswer(right | unit)`
+in the page): it answers whatever format is shown (the choices, a typed question, a fish surprise) and fails at once
+with what is on screen, never as a bare timeout; a check of one format asserts the `fmt` it returns. `tests/answer.test.js`
+fails on a smoke line that names a quiz answer control or answers with a number key itself (a deliberate one, a read of
+the choices or a check of one format, says `answer.js: <why>` on or above its line) and on an answer control in `app.js`
+`qAnswers` the helper does not know. Pure logic
 shared by app and admin (curation merge, progress merge, photo Elo) lives in `core.js` so it can be tested. Every PR runs
 `.github/workflows/checks.yml` (JS syntax, tests, JSON, `data.json` layout, Python, versions) and
 `.github/workflows/smokes.yml`, each Playwright smoke in its own parallel job `smoke (<name>)` (pages in four groups and
@@ -136,7 +142,8 @@ cancels the run still going on the PR. **Session hooks**
 (`git show origin/main:tools/brief.py | python3 -I -`), never the checked-out branch's (a branch could put any code
 there): a change to `tools/brief.py` reaches the hooks once merged.
 *Source:* repository practice, by 2026-11-01; hooks, 2026-11-05; docs-only PRs skip the smokes, Pierre, 2026-11-08
-(Q305).
+(Q305); one answerer for the smokes, Pierre, 2026-11-13 (fix the structure, not the one spot: a typed question hung the
+overlays smoke on #855).
 
 ### W13
 
