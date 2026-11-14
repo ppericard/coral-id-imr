@@ -191,8 +191,9 @@ async function findTheX(b, base, errs) {
       if (!wrong) wrong = pick;
     }
     ok(seen >= 3, `Find the X questions: ${seen}`);
-    // A tile that never loads (its retries and its 480 px step spent): its answers close at once, since the photos are the
-    // choices (Codex review #885), with the usual way out; another tile coming in later does not open them again.
+    // Its photos are its choices (Codex review #885): no answer is taken while a tile is still loading; a distractor tile
+    // that never loads (its retries and its 480 px step spent) keeps the answers closed, with the usual way out, nothing
+    // scored or logged; another tile coming in later does not open them again.
     let fx = null;
     for (let i = 0; i < 80 && !fx; i++) {
       NEXTQ = null;
@@ -204,7 +205,13 @@ async function findTheX(b, base, errs) {
     ok(fx, 'a Find the X for the failed tile');
     if (fx) {
       const ims = [...document.querySelectorAll('#view .fxt img')],
-        bad = ims[0],
+        // a distractor's tile
+        bad = ims[fx[2].findIndex(n => n !== fx[1])],
+        good = ims.filter(im => im !== bad),
+        logN = () => (SYNC ? SYNC.log : store.get(LOG0, [])).length,
+        n0 = logN(),
+        // answer.js: a tap on the right tile, as a player's (whether it is taken is what this checks)
+        tapRight = () => document.querySelector(`#view .fxt [data-c="${CSS.escape(fx[1])}"]`).click(),
         // the other three in (a file of the site: the photos' host is out of reach in the smokes), so the stage has photos
         come = im =>
           new Promise(
@@ -213,7 +220,9 @@ async function findTheX(b, base, errs) {
               im.setAttribute('src', 'icon-192.png?' + ims.indexOf(im) + '-' + Date.now())
             )
           );
-      await Promise.all(ims.slice(1).map(come));
+      await Promise.all(good.map(come));
+      tapRight();
+      ok(logN() === n0 && !document.querySelector('#view .q.done'), 'no answer taken while a tile is still loading');
       // as at the end of its way: R2 asked again (r2try), its 480 px step spent (low, no data-lo left), retried twice
       Object.assign(bad.dataset, {retry: '2', low: '1', r2try: '1'});
       bad.removeAttribute('data-lo');
@@ -222,8 +231,10 @@ async function findTheX(b, base, errs) {
       // answer.js: the answers' state after a tile failed (none can be answered: nothing to smokeAnswer)
       const shut = () => [...document.querySelectorAll('#view .fxt [data-c]')].every(b => b.disabled);
       ok(shut() && document.querySelector('#view .q.qnone') && document.getElementById('qfail'), 'a missing tile closes the answers');
-      await come(ims[1]);
+      await come(good[0]);
       ok(shut(), 'another tile loading does not open them again');
+      tapRight();
+      ok(logN() === n0 && !document.querySelector('#view .q.done'), 'nothing scored or logged on a set with a tile missing');
     }
     // Back to 0: none.
     FIND.P = 0;

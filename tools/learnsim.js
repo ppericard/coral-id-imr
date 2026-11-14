@@ -812,7 +812,12 @@ function play(cfg) {
       const f = document.querySelector('#view .tyform');
       if (!pick) f.querySelector('[data-idk]').click();
       else ((f.querySelector('input').value = pick), f.requestSubmit());
-    } else document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
+    } else {
+      // A Find the X opens its answers once its four tiles are in (quiz.js question): the photos' host is out of reach
+      // here, so each tile is counted in (its load event), as a player's would be once it came.
+      document.querySelectorAll('#view .qstage.qfx .fxt img').forEach(im => im.dispatchEvent(new Event('load')));
+      document.querySelector(`#view [data-c="${CSS.escape(pick)}"]`).click();
+    }
     planNext(cur); // answer()'s top-up after the feedback
     if (oa.at !== null && lastE !== null)
       oa.ans.push({k: answersSoFar() - oa.at, e: lastE, p: pTrue, ok: good ? 1 : 0, all: oa.set.includes(t), first});

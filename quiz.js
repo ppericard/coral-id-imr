@@ -353,6 +353,17 @@ function question(cur, target, choices, prompt, set, kq) {
   bindQuizNav(cur);
   fitStage();
   qclockArm();
+  // Find the X: its photos are its choices, so it is answered only once all four are in (a tile still loading is a choice
+  // the player cannot see; Codex review #885). One that fails for good keeps them closed: app.js's error listener then
+  // offers another question, and nothing is scored or logged.
+  if (fx) {
+    const q = $v.querySelector('.q'),
+      tiles = [...q.querySelectorAll('.qstage .fxt img')],
+      inn = new Set(tiles.filter(im => im.complete && im.naturalWidth)),
+      gate = () => qAnswers(q, inn.size === tiles.length && !q.classList.contains('qnone'));
+    tiles.forEach(im => im.addEventListener('load', () => (inn.add(im), gate())));
+    gate();
+  }
   const hb = document.getElementById('hintb');
   const showHint = () => {
     if (hintShown || !set.hint) return;
