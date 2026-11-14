@@ -210,7 +210,8 @@ function doGet_(e){
   ROWS_ = null;
   if (e.parameter.stats && !e.parameter.av) oldApp_('photo stats');
   if (e.parameter.stats) behind_(e.parameter);  // v50: a device on a replaced app version
-  if (e.parameter.stats) { TIM_.op = 'stats'; const st = stats_(true); return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
+  if (e.parameter.stats) { TIM_.op = 'stats'; const st = statsServed_() || stats_(true);  // vNEXT: the snapshot (statsFold_), else the whole log
+    return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
   if (e.parameter.achs) return json_(achs_());
@@ -919,10 +920,80 @@ const guess_ = (mode, choices) => {
   const n = String(choices || '').split(/\s+/).filter(Boolean).length;
   return n >= 2 && n < 4 ? 1 / n : 0.25;
 };
+// A player's trust counters [answers, right, sum of guess rates, sum of their variances], one answer added (vNEXT: kept
+// per player in the pooled stats' snapshot, statsFold_), and whether they make the player trusted (TRUST).
+const trustAdd_ = (t, ok, g) => { t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); return t; };
+const trustOk_ = t => !!t && t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z;
 function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
   const T = Object.create(null), out = Object.create(null);  // v115: keyed by names, no inherited entry
-  rows.forEach(([w, ok, m, an, ch]) => { const t = T[w] = T[w] || [0, 0, 0, 0, an], g = guess_(m, ch); t[0]++; t[1] += ok; t[2] += g; t[3] += g * (1 - g); });
-  Object.keys(T).forEach(w => { const t = T[w]; out[w] = t[0] >= TRUST.N && (t[1] - t[2]) / Math.sqrt(t[3]) >= TRUST.Z; });
+  rows.forEach(([w, ok, m, an, ch]) => trustAdd_(T[w] = T[w] || [0, 0, 0, 0, an], ok, guess_(m, ch)));
+  Object.keys(T).forEach(w => { out[w] = trustOk_(T[w]); });
+  return out;
+}
+// vNEXT: the pooled stats as a fold, one answer at a time, so the whole log (stats_) and a few new rows at a time
+// (statsFold_) run the very same steps. An answer as the fold reads it (a "mini row"): [tab row, time ms, player key,
+// unit shown, answered, right 0|1, mode, photos, logged expectation (null when none), choices]. The player key is the
+// lower-case name in stats_, the admin's anonymous id (aid_) in the snapshot, which never holds a name (rule D2).
+const tOf_ = r => new Date(r[1]).getTime() || 0;  // an unreadable time sorts first (it compared as NaN before vNEXT)
+const statsMini_ = (r, row, w) => [row, tOf_(r), w, String(r[2] || ''), String(r[3]), Number(r[4]) ? 1 : 0, String(r[5]), String(r[6]), numOrNull_(r[8]), String(r[11] || '')];
+// Oldest first, the tab's order between equal times (the stable sort of stats_ before vNEXT).
+const statsOrder_ = (a, b) => a[1] - b[1] || a[0] - b[0];
+const nul_ = () => Object.create(null);
+// An empty fold. at: when its last run started; dirty: the mark of the last rewrite of the log it saw (statsDirty_);
+// roster, sx: the roster time (rosterAt_) and the ids left out of the
+// statistics (sxSet_) it is built with; cause: why it was (re)built, built: when; why: the same until it is caught up,
+// then ''; runs: the runs since.
+function statsNew_(roster, sx, at, why){
+  return {f: STATS.FMT, v: VERSION, at: at, dirty: '', built: at, cause: why, why: why, runs: 0, roster: roster, sx: sx, c: 0, id: '', h: null, pf: '',
+    T: nul_(), U: nul_(), P: nul_(), PG: nul_(), G: nul_(), R: nul_(), H: nul_(), conf: nul_(), mem: MEM.PRIOR.slice(), I: [0, 0, 0, 0], N: [0, 0, 0, 0],
+    skip: {excluded: 0, photos: 0}, L: nul_(), pend: []};
+}
+// One answer folded into S (m: a mini row, in time order). tr: its player rates the photos (trusted, not left out);
+// ex: its player is left out of the statistics; idx: the game photos (photoIdx_). The rules are stats_'s (above):
+// confusions and format points from trusted players, the hierarchical photo Elo with the photo memory, the player's
+// ability. The photo memory is kept per player and photo as its bucket (memBucket_), all the rule reads of [shown, right].
+function statsStep_(S, m, tr, ex, idx){
+  const w = m[2], sg = m[3], sa = m[4], ok = m[5], mode = m[6], fs = m[7].split(/\s+/).filter(Boolean), ch = m[9];
+  if (tr) ch.split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = S.conf[k] = S.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
+  // v77: each question format's offset is fitted on the trusted answers' points (core.js fmtPoint, fmtFit).
+  if (tr && sg) { const p = CORE_.fmtPoint(mode, m[8], ch, ok); if (p) (S.L[p[0]] = S.L[p[0]] || []).push(p.slice(1)); }
+  if (ex) S.skip.excluded++;
+  if (!fs.length) return;
+  let pk = true;
+  try { pk = !tr || photoCheck_(idx, CORE_.replaySubject(), sg, fs) !== 'other'; } catch (e) {}  // a check that fails flags nothing
+  if (!pk) S.skip.photos++;
+  const P = S.P, PG = S.PG, sig = x => 1 / (1 + Math.exp(-x)), g = guess_(mode, ch), ra = S.R[w] = S.R[w] || [PLAYER0, 0];
+  // v115 (review of #801): only an answer that rates (rt) makes a genus offset and gives its photos their genus (PG,
+  // the served difficulty's offset); any other names a photo's genus only while no rating answer has (a photo nobody
+  // rated, served at weight 0), so a left-out or flagged answer moves no photo difficulty and adds no offset.
+  const rt = tr && pk, go = rt ? (S.G[sg] = S.G[sg] || [0, 0]) : S.G[sg] || [0, 0];  // v31: the genus offset, shared by the photos of the genus
+  const ph = fs.map(f => ((rt || !(f in PG)) && (PG[f] = sg), P[f] = P[f] || [0, 0, 0, 0])), b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
+  // One expectation for the photos and the player, with the player's memory of these photos (v26).
+  const Hw = S.H[w] = S.H[w] || nul_(), hb = fs.map(f => Hw[f] || 0), mem = S.mem;
+  const s = sig(ra[0] - b - hb.reduce((t, k) => t + mem[k], 0) / hb.length), e = g + (1 - g) * s, d = ok - e, n = ra[1];
+  // The photos and the memory offsets move on trusted players' answers, weighed by their experience.
+  if (rt) {
+    const wt = n / (n + PHOTO_W.N), D = (1 - g) * s * (1 - s), v = Math.max(1e-6, e * (1 - e)), A = [0, 0, 0, 0], tau = MEM.N * infoAt_(1, 4);
+    // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
+    ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d * wt; p[2] += wt; p[1] += ok * wt; p[3]++; });
+    go[0] -= GENUS_K / (1 + go[1] / 10) * d * wt; go[1] += wt;
+    hb.forEach(k => A[k] += 1 / hb.length);
+    for (let j = 1; j < 4; j++) if (A[j]) { S.I[j] += wt * (D * A[j]) ** 2 / v; mem[j] -= wt * d * D * A[j] / v / (tau + S.I[j]); S.N[j] += A[j]; }
+    S.N[0] += A[0];
+  }
+  ra[0] += 0.6 / (1 + n / 40) * d; ra[1]++;
+  // [shown, right] as its bucket: new 0, shown never right 1, right once 2, right twice or more 3 (each photo shown, in turn).
+  fs.forEach(f => { const k = Hw[f] || 0; Hw[f] = ok ? (k >= 2 ? 3 : 2) : k || 1; });
+}
+// What a fold serves: {ok, photos: {file: [difficulty, weighed answers, weighed right, answers]}, conf, mem, memn, gd,
+// fmt}, the public ?stats=1 reply (stats_ adds ras and skip for the admin).
+// [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
+// photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
+// v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
+function statsOut_(S){
+  const out = {ok: true, photos: nul_(), conf: S.conf, mem: S.mem.map(x => Math.round(x * 100) / 100), memn: S.N.map(x => Math.round(x * 10) / 10), gd: nul_(), fmt: CORE_.fmtFit(S.L)};
+  Object.keys(S.P).forEach(f => { const p = S.P[f]; out.photos[f] = [Math.round(((S.G[S.PG[f]] || [0])[0] + p[0]) * 100) / 100, Math.round(p[2] * 10) / 10, Math.round(p[1] * 10) / 10, p[3]]; });
+  Object.keys(S.G).forEach(n => out.gd[n] = [Math.round(S.G[n][0] * 100) / 100, Math.round(S.G[n][1] * 10) / 10]);
   return out;
 }
 // read (v115): true where no script lock is held (the public stats, readStats): the game pools are read from GitHub
@@ -931,74 +1002,244 @@ function trusted_(rows){  // rows: [who, right 0|1, mode, anonymous, choices]
 // The stats are cached with chk: 1 once their photos were checked against every subject's pool (a read, or every pool
 // cached); stats made under the lock with a pool not cached yet are cached with chk: 0, which a read never takes: it
 // reads the pools and makes them again (Codex review #801), and a replay under the lock takes them as they are.
+// vNEXT: the whole log folded in one go (statsStep_, statsOut_); the public ?stats=1 is served from the snapshot the
+// trigger folds a few rows at a time (statsServed_, statsFold_) and comes here only while there is none.
 function stats_(read){
   const cache = CacheService.getScriptCache(), hit = cache.get('stats17');
   if (hit) { const v = JSON.parse(hit); if (!read || v.chk) return v; }
   const t0 = Date.now();  // v130: a build is timed (the Timings tab), its read of the Answers tab apart
   // v115 (review of #801): every map keyed by a photo, unit or name has no prototype (Object.create(null)), so an id
   // such as constructor or __proto__ logged before word_ refused them is an entry like any other, never an inherited one.
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: Object.create(null), ras: {}, conf: Object.create(null), mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: Object.create(null), fmt: {}};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers'), out = {ok: true, photos: nul_(), ras: {}, conf: nul_(), mem: MEM.PRIOR.slice(), memn: [0, 0, 0, 0], gd: nul_(), fmt: {}};
   if (!sh || sh.getLastRow() < 2) return out;
-  const rows = answerRows_().filter(r => r[0]).sort((a, b) => new Date(a[1]) - new Date(b[1]));
-  const P = Object.create(null), PG = Object.create(null), G = Object.create(null), R = Object.create(null), H = Object.create(null), sig = x => 1 / (1 + Math.exp(-x));
-  const mem = MEM.PRIOR.slice(), I = [0, 0, 0, 0], N = [0, 0, 0, 0], tau = MEM.N * infoAt_(1, 4);
   // One player whatever the capitalisation of the name (find_ and hash_ match names case-blind; aid_ lowercases too).
-  const trust = trusted_(rows.map(r => [lc_(r[0]), Number(r[4]) ? 1 : 0, String(r[5]), lc_(r[0]).indexOf('~anon ') === 0, String(r[11] || '')]));
+  const rows = answerRows_().filter(r => r[0]), M = rows.map((r, i) => statsMini_(r, i, lc_(r[0]))).sort(statsOrder_);
+  const trust = trusted_(M.map(m => [m[2], m[5], m[6], m[2].indexOf('~anon ') === 0, m[9]]));
   // v115: the players and devices the admin left out of the statistics (sxSet_) count as untrusted: they rate nothing.
-  const salt = anonSalt_(), sx = sxSet_(), EX = Object.create(null), isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
+  const salt = anonSalt_(), sx = sxSet_(), EX = nul_(), isEx = w => sx.size > 0 && (w in EX ? EX[w] : (EX[w] = sx.has(aid_(w, salt))));
   Object.keys(trust).forEach(w => { if (trust[w] && isEx(w)) trust[w] = false; });
   // v115: an answer whose photos are of another unit (photoCheck_ 'other') rates no photo and no photo memory.
   const idx = (() => { try { return photoIdx_(read ? undefined : true); } catch (e) { return null; } })();  // every subject's; fetched only when read
   out.chk = read || (idx && idx.n >= CORE_.SUBJECTS.filter(S => S.pool).length) ? 1 : 0;  // a pool missing under the lock: 0
-  out.skip = {excluded: 0, photos: 0};
-  rows.forEach(r => {
-    const who = lc_(r[0]), ok = Number(r[4]) ? 1 : 0, mode = String(r[5]), fs = String(r[6]).split(/\s+/).filter(Boolean);
-    const sg = String(r[2]), sa = String(r[3]);
-    if (trust[who]) String(r[11] || '').split(/\s+/).filter(x => x && x !== sg).forEach(x => { const k = sg < x ? sg + '|' + x : x + '|' + sg, c = out.conf[k] = out.conf[k] || [0, 0]; c[0]++; if (!ok && sa === x) c[1]++; });
-    if (isEx(who)) out.skip.excluded++;
-    if (!fs.length) return;
-    let pk = true;
-    try { pk = !trust[who] || photoCheck_(idx, CORE_.rowSubject(r), sg, fs) !== 'other'; } catch (e) {}  // a check that fails flags nothing
-    if (!pk) out.skip.photos++;
-    const g = guess_(mode, r[11]), ra = R[who] = R[who] || [PLAYER0, 0];
-    // v115 (review of #801): only an answer that rates (rt) makes a genus offset and gives its photos their genus (PG,
-    // the served difficulty's offset); any other names a photo's genus only while no rating answer has (a photo nobody
-    // rated, served at weight 0), so a left-out or flagged answer moves no photo difficulty and adds no offset.
-    const rt = trust[who] && pk, gs = String(r[2] || ''), go = rt ? (G[gs] = G[gs] || [0, 0]) : G[gs] || [0, 0];  // v31: the genus offset, shared by the photos of the genus
-    const ph = fs.map(f => ((rt || !(f in PG)) && (PG[f] = gs), P[f] = P[f] || [0, 0, 0, 0])), b = go[0] + ph.reduce((t, p) => t + p[0], 0) / ph.length + (ph.length === 1 ? 0.5 : 0);  // one view alone is harder (app.js PICKD.SINGLE)
-    // One expectation for the photos and the player, with the player's memory of these photos (v26).
-    const hs = fs.map(f => H[who + '|' + f] = H[who + '|' + f] || [0, 0]);
-    const s = sig(ra[0] - b - memFam_(hs, mem)), e = g + (1 - g) * s, d = ok - e, n = ra[1];
-    // The photos and the memory offsets move on trusted players' answers, weighed by their experience.
-    if (rt) {
-      const w = n / (n + PHOTO_W.N), D = (1 - g) * s * (1 - s), v = Math.max(1e-6, e * (1 - e)), A = [0, 0, 0, 0];
-      // Counts are weighed too: they damp later steps and tell the app how sure the rating is (photoDiff).
-      ph.forEach(p => { p[0] -= 0.8 / (1 + p[2] / 10) / ph.length * d * w; p[2] += w; p[1] += ok * w; p[3]++; });
-      go[0] -= GENUS_K / (1 + go[1] / 10) * d * w; go[1] += w;
-      hs.forEach(h => A[memBucket_(h)] += 1 / hs.length);
-      for (let j = 1; j < 4; j++) if (A[j]) { I[j] += w * (D * A[j]) ** 2 / v; mem[j] -= w * d * D * A[j] / v / (tau + I[j]); N[j] += A[j]; }
-      N[0] += A[0];
-    }
-    ra[0] += 0.6 / (1 + n / 40) * d; ra[1]++;
-    hs.forEach(h => { h[0]++; h[1] += ok; });
-  });
-  // [difficulty, weighed answers, weighed right, answers]: the 4th (v18) is the plain count of the answers that rated the
-  // photo, for the admin's filters (Pierre, 2026-11-02: a photo answered once weighs under 1 and "≥1" hid it).
-  // v31: the difficulty served is the photo's total, its genus's offset + its residual; gd the offsets.
-  Object.keys(P).forEach(f => out.photos[f] = [Math.round(((G[PG[f]] || [0])[0] + P[f][0]) * 100) / 100, Math.round(P[f][2] * 10) / 10, Math.round(P[f][1] * 10) / 10, P[f][3]]);
-  Object.keys(G).forEach(n => out.gd[n] = [Math.round(G[n][0] * 100) / 100, Math.round(G[n][1] * 10) / 10]);
+  const S = statsNew_(0, [], t0, '');
+  M.forEach(m => statsStep_(S, m, !!trust[m[2]], isEx(m[2]), idx));
+  const o = statsOut_(S);
+  ['photos', 'conf', 'mem', 'memn', 'gd', 'fmt'].forEach(k => { out[k] = o[k]; });
+  out.skip = S.skip;
   // v55: the answers a deleted account left ("~deleted <id>") rate the photos, never a player: no ability for them.
   const arch = archivedSet_();  // v58: an archive's answers rate the photos, never a player either
-  Object.keys(R).forEach(n => { if (n.indexOf('~deleted ') !== 0 && !arch.has(n)) out.ras[aid_(n, salt)] = [Math.round(R[n][0] * 100) / 100, R[n][1]]; });
-  out.mem = mem.map(x => Math.round(x * 100) / 100);
-  out.memn = N.map(x => Math.round(x * 10) / 10);
-  // v77 (Pierre, 2026-11-06, Q138): each question format's offset, fitted on the trusted answers' logged expectation
-  // (core.js fmtOffsetsOf, the app's PFMT: its ability steps and its photo aim, logged in each answer's scoring record;
-  // the full replay below takes it for the rows logged without one, rules version 8).
-  out.fmt = CORE_.fmtOffsetsOf(rows.filter(r => !isEx(lc_(r[0]))).map(r => rowOf_(lc_(r[0]), r)));  // v115: without the excluded
+  Object.keys(S.R).forEach(n => { if (n.indexOf('~deleted ') !== 0 && !arch.has(n)) out.ras[aid_(n, salt)] = [Math.round(S.R[n][0] * 100) / 100, S.R[n][1]]; });
   try { cache.put('stats17', JSON.stringify(out), 600); } catch (err) {}  // too big for the cache: computed each time
   tim_('stats build', t0, rows.length, LOG.length);
   return out;
+}
+
+// vNEXT (Q123 j, Pierre 2026-11-14: "j first", the pooled stats built incrementally; the storage study's plan): the
+// photo stats the app asks for (?stats=1) are no longer made from a read of the whole Answers tab at each request (the
+// cache, 100 KB a value, would no longer hold them by December, and the read grows with the log): the 15-minute trigger
+// folds the new rows into a snapshot, a few thousand at a time, and the request reads the snapshot. Corals only (the
+// subject stats_ rates); fish follow in their own change.
+// Exactly what stats_ makes from the whole log, run for run (tests/statsfold.test.js), which takes care: stats_ reads the
+// answers oldest first by their time, not in the tab's order, decides who is trusted on each player's whole log, leaves
+// out the ids sxSet_ lists and checks the photos against today's game pools. So the fold keeps two parts:
+// - settled: the answers older than STATS.LAG (a day) at the run that settled them, folded once, in time order;
+// - pending: the newer ones, kept as mini rows and folded again on top of the settled part at each run, for what is
+//   served (they may still be overtaken by a slower device's answers, or move a player's trust).
+// The fold starts again from the first row (a rebuild, in the same bounded steps, over as many runs as it takes) when
+// what it settled no longer holds: an answer logged older than what is settled (a device a day late), a player with
+// settled answers whose trust flips, the ids left out of the statistics changed, a game pool changed for a photo already
+// folded (statsPoolFp_), the Answers tab rewritten (a sign-in's anonymous answers moved to the name, a merge, a delete, a
+// one-shot migration: statsDirty_), a new script version, the snapshot missing or unreadable, the cursor's row no longer
+// the one it read. Meanwhile the last snapshot is served (same version, at most STATS.AGE old), and none at all after a
+// delete, merge or archive (rosterChanged_: statsDirty_ drops it), when ?stats=1 makes stats_ as before.
+// The tab (STATS.TAB): row 2 the reply served (no player data: what ?stats=1 always sent), row 3 the fold (Note: when
+// and why it was built), each JSON in CHUNK-character cells from column G. The fold holds, by admin id (aid_, never a
+// name, rule D2), what the rules need per player: trust counters, ability, photo memory buckets, and the pending answers
+// (their unit, answer, mode, photos, choices, expectation). It is internal and versioned (STATS.FMT): no other code
+// reads it, and a new format rebuilds it. Rule D7: any delete, merge or archive (rosterChanged_) blanks it at once
+// (statsDirty_), before the next run builds it again without the account. The cursor is mirrored in the Script Property
+// STATS.PROP; the two disagreeing (a run cut between its writes) rebuild too.
+const STATS = {TAB: 'Stats', HEAD: ['Part', 'Version', 'Updated', 'Rows', 'Roster', 'Note', 'Data'], FMT: 1, LAG: 864e5, ROWS: 2000, RUN_ROWS: 30000, BUDGET: 60000, UNTIL: 240000, AGE: 36e5, TTL: 1200, LOCK_MS: 10000, PROP: 'STATS_FOLD', DIRTY: 'STATS_DIRTY', ON: true};
+const STATS_DATA = STATS.HEAD.length - 1;  // the first chunk's index (column G)
+const statsCacheKey_ = () => 'statsS' + VERSION;
+// Writes one part (row 2 served, row 3 the fold): its cells, then the JSON in CHUNK-character cells, each with a
+// leading ' so Sheets keeps it as text (never a number, a date or a formula), cells left over from a longer one blanked.
+function statsPut_(sh, row, meta, json){
+  const out = meta.slice();
+  for (let i = 0, j = 0; i < json.length; i = j) {
+    j = Math.min(json.length, i + CHUNK);
+    if (j < json.length && /[\ud800-\udbff]/.test(json.charAt(j - 1))) j--;  // never a character cut in two
+    out.push("'" + json.slice(i, j));
+  }
+  const old = sh.getLastColumn();
+  while (out.length < old) out.push('');
+  // A new tab has 26 columns: the cells a longer JSON needs are added first (getRange can't reach past the grid).
+  if (sh.getMaxColumns && sh.getMaxColumns() < out.length) sh.insertColumnsAfter(sh.getMaxColumns(), out.length - sh.getMaxColumns());
+  sh.getRange(row, 1, 1, out.length).setValues([out]);
+}
+// The fold as JSON and back: a number JSON cannot hold (an infinite guess rate from a mode such as quiz|k0, which only a
+// tampered app sends) is kept as '~Infinity', '~-Infinity' or '~NaN' (no unit, mode or photo holds a ~), so a run
+// reads back exactly what the last one wrote.
+const statsJson_ = S => JSON.stringify(S, (k, v) => (typeof v === 'number' && !isFinite(v) ? '~' + v : v));
+const STATS_NUM = {'~Infinity': Infinity, '~-Infinity': -Infinity, '~NaN': NaN};
+// One part read: {meta: its first cells, json}; null when the row is empty.
+function statsGet_(sh, row){
+  if (!sh || sh.getLastRow() < row) return null;
+  const w = sh.getLastColumn();
+  if (w <= STATS_DATA) return null;
+  const v = sh.getRange(row, 1, 1, w).getValues()[0];
+  return {meta: v.slice(0, STATS_DATA), json: v.slice(STATS_DATA).map(String).join('')};
+}
+// The fold as written (statsFold_), its maps without a prototype again; null when missing or unreadable.
+function statsLoad_(sh){
+  try {
+    const g = statsGet_(sh, 3);
+    if (!g || String(g.meta[0]) !== 'state') return null;
+    const S = JSON.parse(g.json, (k, v) => (typeof v === 'string' && Object.prototype.hasOwnProperty.call(STATS_NUM, v) ? STATS_NUM[v] : v));
+    if (!S || typeof S !== 'object' || !Array.isArray(S.pend) || typeof S.c !== 'number') return null;
+    const re = o => { const x = nul_(); Object.keys(o || {}).forEach(k => { x[k] = o[k]; }); return x; };
+    ['T', 'U', 'P', 'PG', 'G', 'R', 'H', 'conf', 'L'].forEach(k => { S[k] = re(S[k]); });
+    Object.keys(S.H).forEach(w => { S.H[w] = re(S.H[w]); });
+    return S;
+  } catch (e) { return null; }
+}
+// What the photo check (photoCheck_) reads for the photos already folded: their entries in the game pools and the
+// subject's parent units. A change there rebuilds (another answer may now rate a photo, or no longer).
+function statsPoolFp_(S, idx){
+  const sid = CORE_.replaySubject(), v = idx ? [own_(idx.up, sid) || null, Object.keys(S.P).sort().map(f => own_(idx.at, f) || 0)] : null;
+  return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, JSON.stringify(v), Utilities.Charset.UTF_8));
+}
+// The Answers tab was rewritten (relabel_, dropRows_, a one-shot migration): the fold starts again at the next run.
+// all (rosterChanged_: an account left normal operation, or who is left out of the statistics changed; anonDelete):
+// the fold's player data is blanked now (rule D7) and the snapshot served goes too, so ?stats=1 makes stats_ until the
+// fold is rebuilt.
+function statsDirty_(all){
+  try { PropertiesService.getScriptProperties().setProperty(STATS.DIRTY, Date.now() + ':' + Math.random()); } catch (e) {}  // a new mark each time
+  try {
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(STATS.TAB), w = sh ? sh.getLastColumn() : 0;
+    if (all) [2, 3].forEach(r => { if (w && sh.getLastRow() >= r) sh.getRange(r, 1, 1, w).setValues([new Array(w).fill('')]); });
+  } catch (e) {}
+  if (all) try { CacheService.getScriptCache().remove(statsCacheKey_()); } catch (e) {}
+}
+// The public stats from the snapshot: cached (statsCacheKey_, in parts: cacheBigPut_), else row 2 of the tab when it
+// was made by this version, at most STATS.AGE ago (the trigger runs every 15 minutes) and after the last delete, merge
+// or archive (rosterAt_). null otherwise: the caller makes stats_ as before.
+function statsServed_(){
+  if (!STATS.ON) return null;
+  const c = CacheService.getScriptCache();
+  try { const hit = cacheBigGet_(c, statsCacheKey_()); if (hit) return JSON.parse(hit); } catch (e) {}
+  try {
+    const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(STATS.TAB), g = statsGet_(sh, 2);
+    if (!g || String(g.meta[0]) !== 'served' || Number(g.meta[1]) !== VERSION) return null;
+    if (Date.now() - (new Date(g.meta[2]).getTime() || 0) > STATS.AGE || Number(g.meta[4]) < rosterAt_()) return null;
+    const o = JSON.parse(g.json);
+    if (!o || typeof o !== 'object' || !o.photos) return null;
+    tim_('read Stats', t0, Number(g.meta[3]) || '', '');
+    try { cacheBigPut_(c, statsCacheKey_(), g.json, STATS.TTL); } catch (e) {}
+    return o;
+  } catch (e) { return null; }
+}
+// One run of the fold (the 15-minute trigger: statsFoldRun_). Reads the rows after the cursor, STATS.ROWS at a time,
+// at most STATS.RUN_ROWS and STATS.BUDGET ms a run (at least one step); once it has read the whole tab it settles what
+// is older than STATS.LAG, folds the rest on top and writes what is served. A run that stops before the end writes its
+// progress and the next one goes on. o (tests): now (the clock the lag reads), rows, max, budget. Returns {why: why the
+// fold was started again ('' when not), read, settled, pending, caught: it reached the last row, ms}.
+function statsFold_(o){
+  o = o || {};
+  const t0 = Date.now(), now = typeof o.now === 'number' ? o.now : t0, B = o.rows || STATS.ROWS, cap = o.max || STATS.RUN_ROWS, budget = o.budget || STATS.BUDGET;
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), an = ss.getSheetByName('Answers'), last = an ? Math.max(0, an.getLastRow() - 1) : 0;
+  const props = PropertiesService.getScriptProperties(), dirty = () => String(props.getProperty(STATS.DIRTY) || ''), mark = dirty();
+  const roster = rosterAt_(), sxL = [...sxSet_()].sort(), sx = new Set(sxL);
+  const idx = (() => { try { return photoIdx_(); } catch (e) { return null; } })();  // fetched when not cached: no lock held here
+  const tab = sheet_(STATS.TAB, STATS.HEAD);
+  let S = statsLoad_(tab), why = '';
+  if (!S) why = 'missing';
+  else if (S.f !== STATS.FMT || S.v !== VERSION) why = 'new version';
+  else if (S.dirty !== mark) why = 'log rewritten';
+  else if (S.roster < roster) why = 'account removed';
+  else if (S.sx.join(' ') !== sxL.join(' ')) why = 'left out changed';
+  else {
+    let m = null;
+    try { m = JSON.parse(props.getProperty(STATS.PROP) || 'null'); } catch (e) {}
+    if (!m || m.c !== S.c || m.at !== S.at) why = 'cursor';
+    else if (S.c > last || (S.c && String(an.getRange(S.c + 1, 8).getValue()) !== S.id)) why = 'rows moved';
+    else if (statsPoolFp_(S, idx) !== S.pf) why = 'pools changed';
+  }
+  const reset = w => { why = w; return statsNew_(roster, sxL, t0, w); };
+  if (why) S = reset(why);
+  const salt = anonSalt_(), K = nul_(), key = n => K[n] = K[n] || aid_(n, salt);
+  const width = an && an.getMaxColumns ? Math.min(LOG.length, an.getMaxColumns()) : LOG.length;
+  const more = () => S.c < last && read < cap && (!read || Date.now() - t0 < budget);
+  let read = 0, settled = 0, caught = false, served = null, tr = null;
+  for (;;) {
+    while (more()) {
+      const k = Math.min(B, last - S.c);
+      let v = an.getRange(S.c + 2, 1, k, width).getValues();
+      if (width < LOG.length) v = v.map(r => r.concat(new Array(LOG.length - width).fill('')));
+      read += k;
+      const fresh = [];
+      let late = false;
+      // The rows stats_ reads (answerRows_: the corals', never a surprise card's, no reserved word; with a player).
+      v.forEach((r, i) => { if (!r[0] || protoRow_(r) || !replayed_(r)) return; const m = statsMini_(r, S.c + 2 + i, key(lc_(r[0]))); if (S.h !== null && m[1] < S.h) late = true; fresh.push(m); });
+      if (late) { S = reset('late answer'); continue; }
+      fresh.forEach(m => S.pend.push(m));
+      S.c += k;
+      S.id = String(v[k - 1][7]);
+    }
+    if (S.c < last) break;  // the next run goes on
+    // Every row read: each pending player's trust on their whole log (settled counters, then their pending rows in order).
+    const L = S.pend.sort(statsOrder_), T2 = nul_();
+    L.forEach(m => trustAdd_(T2[m[2]] = T2[m[2]] || (S.T[m[2]] || [0, 0, 0, 0]).slice(), m[5], guess_(m[6], m[9])));
+    tr = x => trustOk_(T2[x]) && !sx.has(x);
+    if (Object.keys(T2).some(x => x in S.U && !!S.U[x] !== tr(x))) { S = reset('trust changed'); if (more()) continue; break; }
+    const H = Math.max(S.h === null ? -Infinity : S.h, now - STATS.LAG);
+    while (settled < L.length && L[settled][1] < H) {
+      const m = L[settled++], x = m[2];
+      trustAdd_(S.T[x] = S.T[x] || [0, 0, 0, 0], m[5], guess_(m[6], m[9]));
+      S.U[x] = tr(x) ? 1 : 0;
+      statsStep_(S, m, tr(x), sx.has(x), idx);
+    }
+    S.pend = L.slice(settled);
+    S.h = H;
+    caught = true;
+    break;
+  }
+  S.at = t0;
+  S.dirty = mark;
+  S.runs++;
+  S.pf = statsPoolFp_(S, idx);
+  const built = S.why;
+  if (caught) S.why = '';
+  const json = statsJson_(S);
+  if (caught) { S.pend.forEach(m => statsStep_(S, m, tr(m[2]), sx.has(m[2]), idx)); served = JSON.stringify(statsOut_(S)); }
+  // Written under the script lock (Codex review #882), which every rewrite of the log and every delete, merge or archive
+  // holds: one of them while this run read the log, or now, and nothing is written (what this run folded is stale; the
+  // next run rebuilds), so a fold never puts back what a delete just blanked (rule D7). The lock busy: the next run.
+  const stale = {why: why, read: read, settled: settled, pending: S.pend.length, caught: false, ms: Date.now() - t0, stale: true};
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(STATS.LOCK_MS)) return stale;
+  try {
+    if (dirty() !== mark || rosterAt_() > S.roster) return stale;
+    const note = 'built from ' + new Date(S.built).toISOString() + ' (' + S.cause + '), ' + S.runs + ' run' + (S.runs === 1 ? '' : 's') + (caught ? '' : ', going on');
+    statsPut_(tab, 3, ['state', VERSION, new Date(), S.c, S.roster, note], json);
+    props.setProperty(STATS.PROP, JSON.stringify({c: S.c, at: S.at, v: VERSION}));
+    if (served !== null) {
+      statsPut_(tab, 2, ['served', VERSION, new Date(), S.c, S.roster, ''], served);
+      try { cacheBigPut_(CacheService.getScriptCache(), statsCacheKey_(), served, STATS.TTL); } catch (e) {}
+    }
+  } finally { lock.releaseLock(); }
+  tim_('stats fold', t0, read, LOG.length);
+  return {why: why, built: built, read: read, settled: settled, pending: S.pend.length, caught: caught, rows: S.c, ms: Date.now() - t0, runs: S.runs};
+}
+// From the 15-minute trigger (autoUpdate, when up to date, after the leaderboard's replays): one run of the fold, unless
+// the trigger run is already long (STATS.UNTIL from its start: the next run folds). The Deploy log says when a build
+// for a new version (or the first) is complete, and a failure.
+function statsFoldRun_(log){
+  if (!STATS.ON || Date.now() - TIM_.t0 > STATS.UNTIL) return;
+  try {
+    const r = statsFold_();
+    if (r.caught && (r.built === 'missing' || r.built === 'new version')) log('pooled stats: snapshot built for v' + VERSION + ' (' + r.rows + ' answer rows, ' + r.runs + ' run' + (r.runs === 1 ? '' : 's') + ', last one ' + r.ms + ' ms)');
+  } catch (e) { log('pooled stats fold failed: ' + e.message); }
 }
 
 // Players' reports (v7): from a game, after the answer, a player says the expected genus is probably wrong (and may say
@@ -1123,6 +1364,7 @@ function rosterAt_(){
 function rosterChanged_(){
   ['achs15', 'stats17'].concat(CORE_.SUBJECTS.filter(S => S.board).map(boardCache_)).forEach(k => { try { CacheService.getScriptCache().remove(k); } catch (e) {} });
   try { PropertiesService.getScriptProperties().setProperty('ROSTER_AT', String(Date.now())); } catch (e) {}
+  statsDirty_(true);  // vNEXT: the pooled stats' snapshot, its player data blanked now and rebuilt without the account (rule D7)
 }
 function analyses_(p){
   if (!isAdmin_(String(p.token || ''))) return {ok: false, error: 'token'};
@@ -1639,6 +1881,7 @@ function dropRows_(tab, name, col){
   const v = sh.getRange(2, col || 1, sh.getLastRow() - 1, 1).getValues(), k = lc_(name); let n = 0;
   for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) { sh.deleteRow(i + 2); n++; }
   if (tab === 'Answers') dropHold_(name);
+  if (tab === 'Answers' && n) statsDirty_();  // vNEXT: the pooled stats' fold starts again
   return n;
 }
 // Renames the name in column `col` of tab `tab` (answers, reports): one write of the whole column.
@@ -1647,7 +1890,7 @@ function relabel_(tab, col, from, into){
   const rg = sh.getRange(2, col, sh.getLastRow() - 1, 1), v = rg.getValues(), k = lc_(from); let n = 0;
   v.forEach(r => { if (lc_(r[0]) === k) { r[0] = safe_(into); n++; } });
   if (n) rg.setValues(v);
-  if (n && tab === 'Answers') { dropHold_(from); dropHold_(into); }  // their opening hold (hold_) is computed again
+  if (n && tab === 'Answers') { dropHold_(from); dropHold_(into); statsDirty_(); }  // their opening hold (hold_) is computed again; vNEXT: the pooled stats' fold starts again
   return n;
 }
 // v109: blanks the Device column (DEV_COL) of every Answers row of this name: one write of that column, only when a cell
@@ -1894,6 +2137,7 @@ function users_(p){
       pagesDrop_(new Set([...ids].filter(x => !named.has(x))));
       [...ids].filter(x => SX_ID.test(x) && !named.has(x)).forEach(x => sxPut_(x, false));  // v115: no row left for ids with no answer
       try { CacheService.getScriptCache().remove('stats17'); } catch (e) {}
+      if (n) statsDirty_(true);  // vNEXT: the pooled stats' snapshot without them, rebuilt
       return {ok: true, answers: n};
     } finally { lock.releaseLock(); }
   }
@@ -2221,7 +2465,7 @@ function autoUpdate_(){
     // AUTO_PENDING: a version whose code is already in place but whose deployment did not finish (a failed /versions or
     // /deployments call). The code running now is then that version, so it must finish the deployment, not skip it.
     const props = PropertiesService.getScriptProperties(), pending = Number(props.getProperty('AUTO_PENDING') || 0);
-    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); } return 'up to date (v' + VERSION + ')'; }
+    if (v <= VERSION && !pending) { try { once_(log); } finally { boardWarmRun_(log); statsFoldRun_(log); } return 'up to date (v' + VERSION + ')'; }
     if (v > VERSION && code.indexOf('function autoUpdate(') < 0) { log('v' + v + ' not installed: it has no autoUpdate'); return 'skipped'; }
     const man = get('appsscript.json'), id = ScriptApp.getScriptId(), auth = {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()};
     const api = (method, path, body) => { const o = {method: method, headers: auth, muteHttpExceptions: true}; if (body) { o.contentType = 'application/json'; o.payload = JSON.stringify(body); }
@@ -2357,7 +2601,7 @@ function once_(log){
   Object.keys(ONCE_).forEach(k => {
     if (props.getProperty('ONCE_' + k)) return;
     const lock = LockService.getScriptLock(); lock.waitLock(30000);
-    try { const m = ONCE_[k](); props.setProperty('ONCE_' + k, String(Date.now())); log('one-shot ' + k + ' (v' + VERSION + '): ' + m); }
+    try { const m = ONCE_[k](); props.setProperty('ONCE_' + k, String(Date.now())); statsDirty_(); log('one-shot ' + k + ' (v' + VERSION + '): ' + m); }  // vNEXT: it may rewrite Answers
     catch (e) { log('one-shot ' + k + ' failed: ' + e.message); }
     finally { lock.releaseLock(); }
   });
@@ -4179,25 +4423,34 @@ const CORE_ = (function () { const module = {exports: {}};
   const FMT = {N: 20, SD: 1};
   function fmtOffsetsOf(rows) {
     const trust = trustOf(rows),
-      by = {},
-      sg = x => 1 / (1 + Math.exp(-x));
+      by = {};
     rows.forEach(r => {
-      const m = String(r[5] || ''),
-        e = r[7];
-      if (!trust[r[0]] || m.indexOf('quiz') !== 0 || !r[2] || typeof e !== 'number' || !isFinite(e)) return;
-      const g = guessOf(m, r[10]),
-        q = Math.min(0.99, Math.max(0.01, g < 1 ? (e - g) / (1 - g) : 0.5)),
-        f = fmtOf(
-          m,
-          String(r[10] || '')
-            .split(/\s+/)
-            .filter(Boolean).length
-        );
-      (by[f] = by[f] || []).push([Math.log(q / (1 - q)), g, r[4] ? 1 : 0]);
+      const p = trust[r[0]] && r[2] ? fmtPoint(r[5], r[7], r[10], r[4]) : null;
+      if (p) (by[p[0]] = by[p[0]] || []).push(p.slice(1));
     });
-    const out = {};
+    return fmtFit(by);
+  }
+  // One answer's point for the fit (fmtOffsetsOf), its player trusted and its unit shown: [format, e, g, right 0|1], null
+  // when it is no quiz question or has no logged expectation e. m: its mode, ch: its choices (space-separated). Code.gs
+  // collects the same points as it folds the answer log a few rows at a time (statsStep_) and fits them with fmtFit.
+  function fmtPoint(m, e, ch, ok) {
+    m = String(m || '');
+    if (m.indexOf('quiz') !== 0 || typeof e !== 'number' || !isFinite(e)) return null;
+    const n = String(ch || '')
+      .split(/\s+/)
+      .filter(Boolean).length;
+    return [fmtOf(m, n), e, guessOf(m, ch), ok ? 1 : 0];
+  }
+  // The fit itself over {format: [[e, g, right], ...]}, the points in log order: {format: [offset, answers]} for each
+  // format with FMT.N points or more.
+  function fmtFit(by) {
+    const out = {},
+      sg = x => 1 / (1 + Math.exp(-x));
     Object.keys(by).forEach(f => {
-      const L = by[f];
+      const L = by[f].map(([e, g, y]) => {
+        const q = Math.min(0.99, Math.max(0.01, g < 1 ? (e - g) / (1 - g) : 0.5));
+        return [Math.log(q / (1 - q)), g, y];
+      });
       if (L.length < FMT.N) return;
       let d = 0;
       for (let it = 0; it < 50; it++) {
@@ -8061,6 +8314,8 @@ const CORE_ = (function () { const module = {exports: {}};
     fmtOf,
     FMT,
     fmtOffsetsOf,
+    fmtPoint,
+    fmtFit,
     fmtOff,
     FMT_SHEET,
     fmtsOf,

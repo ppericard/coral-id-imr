@@ -22,13 +22,20 @@ function makeSheet(name) {
     getLastColumn: () =>
       Math.max(
         0,
-        ...rows.map(r => {
+        // Array.from: a row never written (a hole, row 2 when only row 3 was) counts as empty, as in Sheets.
+        ...Array.from(rows, r => {
           let n = (r || []).length;
           while (n && (r[n - 1] === '' || r[n - 1] === undefined)) n--;
           return n;
         })
       ),
     getMaxRows: () => Math.max(1000, rows.length),
+    // The grid's width: unbounded unless a test sets maxCols (a new Sheets tab has 26); writing past it throws as in Sheets.
+    maxCols: Infinity,
+    getMaxColumns: () => sheet.maxCols,
+    insertColumnsAfter(c, n) {
+      sheet.maxCols += n;
+    },
     appendRow(vals) {
       rows[sheet.getLastRow()] = vals.slice();
     },
@@ -60,6 +67,7 @@ function makeSheet(name) {
         },
         setValue: v => range.setValues([[v]]),
         setValues(vals) {
+          if (c - 1 + nc > sheet.maxCols) throw new Error('Range not found');
           if (vals.length !== nr || vals.some(x => x.length !== nc))
             throw new Error('The number of columns in the data does not match the range.');
           vals.forEach((row, i) =>
@@ -197,6 +205,9 @@ function loadCodeGs(opts = {}) {
   // The Timings tab (Code.gs TIM) stays off unless a test asks for it (opts.timings), so no other test meets a tab that
   // sampling made at random; a test that turns it on sets TIM.EVERY, TIM.SLOW… itself.
   if (!opts.timings) vm.runInContext('TIM.ON = false', ctx);
+  // The pooled stats' snapshot (Code.gs STATS, sheet vNEXT) likewise: off unless a test asks for it (opts.stats), so ?stats=1
+  // makes stats_ and the trigger folds nothing (it would fetch the game pools) in every other test.
+  if (!opts.stats) vm.runInContext('STATS.ON = false', ctx);
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
   return {ctx, sheets, cache, props, fetched, lock, get, post};
