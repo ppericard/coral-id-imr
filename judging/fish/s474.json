@@ -243,6 +243,22 @@
   "fish-s474-cand-367530343": {
    "code": "h1g0sl1aj2",
    "keep": "dup"
+  },
+  "fish-s474-cand-641809737": {
+   "code": "o1g1sm13",
+   "keep": "alt"
+  },
+  "fish-s474-cand-641809767": {
+   "code": "o1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s474-cand-475153657": {
+   "code": "p1d1ss1c1",
+   "keep": "best"
+  },
+  "fish-s474-cand-475154786": {
+   "code": "t1d1ss1c1",
+   "keep": "dup"
   }
  }
 }
