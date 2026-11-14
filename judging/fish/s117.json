@@ -119,6 +119,102 @@
   "fish-s117-cand-fb-Pobra_u0": {
    "code": "p1d0sm13",
    "keep": "best"
+  },
+  "fish-s117-cand-594961908": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-611779909": {
+   "code": "o1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-358745226": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-466668745": {
+   "code": "p1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-466668867": {
+   "code": "p1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-601323420": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-488087498": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-719154833": {
+   "code": "p1g0sm1j2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-719154876": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-733518029": {
+   "code": "p1d3bm11",
+   "keep": "best"
+  },
+  "fish-s117-cand-550204512": {
+   "code": "p1g0smkj2",
+   "keep": "best"
+  },
+  "fish-s117-cand-1423763": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s117-cand-604915308": {
+   "code": "p1g1smoj2",
+   "keep": "best"
+  },
+  "fish-s117-cand-19042246": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s117-cand-347887676": {
+   "code": "p1g0ssoj2",
+   "keep": "best"
+  },
+  "fish-s117-cand-267335056": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s117-cand-213255018": {
+   "code": "p1d0smkj2",
+   "keep": "dup"
+  },
+  "fish-s117-cand-213262264": {
+   "code": "o0d1sm1j1",
+   "keep": "dup"
+  },
+  "fish-s117-cand-213261759": {
+   "code": "p1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-691903350": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s117-cand-458621856": {
+   "code": "o1g1mm1j2",
+   "keep": "best"
+  },
+  "fish-s117-cand-574452811": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s117-cand-292861485": {
+   "code": "p1d1ml13",
+   "keep": "best"
+  },
+  "fish-s117-cand-354345734": {
+   "code": "o1d1ml13",
+   "keep": "best"
   }
  }
 }

@@ -1,0 +1,220 @@
+{
+ "photos": {
+  "fish-s574-cand-540069020": {
+   "code": "o1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s574-cand-540069052": {
+   "code": "o1g1ss1c1",
+   "keep": "dup"
+  },
+  "fish-s574-cand-540069077": {
+   "code": "o0g1ss11",
+   "keep": "dup"
+  },
+  "fish-s574-cand-79235873": {
+   "code": "o1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-748261540": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s574-cand-737422320": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s574-cand-313188140": {
+   "code": "o1g0sl1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-545629494": {
+   "code": "d1g1smo2",
+   "keep": "best"
+  },
+  "fish-s574-cand-545629518": {
+   "code": "d1g1smo2",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387315037": {
+   "code": "o1g0sl1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-387295060": {
+   "code": "o1g0sl1j3",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387295080": {
+   "code": "o1g0sl1j3",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387295111": {
+   "code": "o1g0sl1j3",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387295108": {
+   "code": "o1g0sl1j3",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387295118": {
+   "code": "h1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387295146": {
+   "code": "h1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s574-cand-387295151": {
+   "code": "o1g0sl1j3",
+   "keep": "dup"
+  },
+  "fish-s574-cand-755870359": {
+   "code": "p1g1sm13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "Yellow with black spots, unlike the dark white-spotted guineafowl puffers on the other photos: look again."
+  },
+  "fish-s574-cand-513989012": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s574-cand-108667012": {
+   "code": "o1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-446967916": {
+   "code": "o1g2ss11",
+   "keep": "best"
+  },
+  "fish-s574-cand-446967910": {
+   "code": "o1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s574-cand-726233800": {
+   "code": "o1g3sm11",
+   "keep": "best"
+  },
+  "fish-s574-cand-568106185": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.25,
+    0.25,
+    0.95,
+    0.7
+   ]
+  },
+  "fish-s574-cand-633686445": {
+   "code": "o1g2sm12",
+   "keep": "best"
+  },
+  "fish-s574-cand-633686555": {
+   "code": "p1g2sm12",
+   "keep": "dup"
+  },
+  "fish-s574-cand-616233786": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s574-cand-616233833": {
+   "code": "o1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s574-cand-616233882": {
+   "code": "p1g2sm12",
+   "keep": "best"
+  },
+  "fish-s574-cand-616233940": {
+   "code": "o1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s574-cand-547532046": {
+   "code": "h1g0sl1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-236430211": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s574-cand-248964937": {
+   "code": "o1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-345934305": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.25,
+    0.8,
+    0.7
+   ]
+  },
+  "fish-s574-cand-637558936": {
+   "code": "o1g0sm1cj1",
+   "keep": "best"
+  },
+  "fish-s574-cand-249611979": {
+   "code": "o0g0sl13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "An olive puffer with fine white spots and a large pale head, unlike the black guineafowl puffers: look again."
+  },
+  "fish-s574-cand-439113853": {
+   "code": "o0g1sm12",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "A grey puffer with sparse pale specks, unlike the black guineafowl puffers: look again."
+  },
+  "fish-s574-cand-333079932": {
+   "code": "p1g2sl12",
+   "keep": "best"
+  },
+  "fish-s574-cand-62022746": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s574-cand-663376324": {
+   "code": "d1g1ss11",
+   "keep": "best"
+  },
+  "fish-s574-cand-705184760": {
+   "code": "d1g1sm12",
+   "keep": "best"
+  },
+  "fish-s574-cand-654677544": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s574-cand-166945485": {
+   "code": "p1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s574-cand-257432718": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s574-cand-257432795": {
+   "code": "o1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s574-cand-257432844": {
+   "code": "p1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s574-cand-459647195": {
+   "code": "o1g0ss1j1",
+   "keep": "best"
+  },
+  "fish-s574-cand-253394834": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  }
+ }
+}

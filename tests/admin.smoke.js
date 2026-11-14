@@ -753,6 +753,105 @@ const WIDTHS = [390, 1280];
         await go(other.hash + 'photos/tree/key/f%3ANone');
         u = await fu();
         if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: an unknown node ${JSON.stringify(u)}`);
+        // The WoRMS view (#fish/photos/tree/worms/<node id>; Pierre, 2026-11-13, Q340: views Key | WoRMS): the reference
+        // taxonomy (fish.json ref) built without a problem above the same leaves as the Key's, at any depth and WoRMS's
+        // ranks; the ids the two trees share are exactly the leaves (a species is one node in both views, every taxon above
+        // it w:<AphiaID>); All | IMR shows the same leaves in both. A WoRMS taxon's page is read-only: no ★ Cover and no
+        // tile writing a cover (data-cvk), its default cover by the rule, its children's cards; nothing reaches the draft.
+        // A species' page is its Key page, ★ Cover writing under the species' own id. The view switch keeps a species.
+        {
+          const wt = await p.evaluate(() => {
+            const K = fuTreeOf(FISHC.units),
+              W = fuWormsOf(FISHC.units),
+              leaves = T => T.roots.flatMap(r => ttLeaves(T, r)).sort(),
+              both = [...W.node.keys()].filter(x => K.node.has(x)).sort(),
+              imr = (T, f) => [...ttShown(T, f)].filter(x => !T.kids.get(x).length).sort(),
+              depth = Math.max(...[...W.node.keys()].map(x => ttPath(W, x).length));
+            return {
+              problems: W.problems,
+              n: leaves(W).length,
+              same: JSON.stringify(leaves(W)) === JSON.stringify(leaves(K)),
+              both: JSON.stringify(both) === JSON.stringify(leaves(K)),
+              ns: [...W.node.keys()].filter(x => !W.node.get(x).sid && !/^w:\d+$/.test(x)).slice(0, 3),
+              imr: JSON.stringify(imr(W, x => !!x.imr)) === JSON.stringify(imr(K, x => !!x.tag)),
+              ranks: [...new Set([...W.node.values()].map(x => x.rank))],
+              depth,
+              ord: ([...W.node.values()].find(x => x.rank === 'order' && W.kids.get(x.id).length > 1) || {}).id,
+              gen: ([...W.node.values()].find(x => x.rank === 'genus' && W.kids.get(x.id).length > 1) || {}).id,
+              fam0: ttFirst(W, W.roots[0], x => x.rank === 'family'),
+              root: W.roots[0],
+              keys: Object.keys((DRAFT.fish || {}).genera || {}).length
+            };
+          });
+          if (
+            wt.problems.length ||
+            !wt.same ||
+            !wt.both ||
+            wt.ns.length ||
+            !wt.imr ||
+            wt.n < 600 ||
+            wt.depth < 6 ||
+            !['class', 'order', 'family', 'genus', 'species'].every(r => wt.ranks.includes(r))
+          )
+            fails.push(`${w}px Tree WoRMS: the tree ${JSON.stringify({...wt, ranks: wt.ranks.join(',')})}`);
+          const wp = () =>
+            p.evaluate(() => ({
+              hash: location.hash,
+              sel: (document.querySelector('.adm-tree [aria-selected="true"]') || {dataset: {}}).dataset.tt || '',
+              crumbs: document.querySelectorAll('.adm-crumbs a').length,
+              cards: [...document.querySelectorAll('.adm-tcard')].map(a => a.dataset.ttc),
+              star: document.querySelectorAll('[data-fu="cover"]').length,
+              cvk: [...new Set([...document.querySelectorAll('[data-cvk]')].map(t => t.dataset.cvk))],
+              why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+              views: [...document.querySelectorAll('#subnav .adm-views a')].map(a => [a.textContent, a.getAttribute('href')]),
+              label: (document.querySelector('.adm-tree') || {getAttribute: () => ''}).getAttribute('aria-label'),
+              keys: Object.keys((DRAFT.fish || {}).genera || {}).length,
+              wide: document.documentElement.scrollWidth - innerWidth
+            }));
+          const wh = id => other.hash + 'photos/tree/worms/' + encodeURIComponent(id);
+          // The view alone and an id of the Key's: WoRMS's first family; an id of WoRMS's in the Key: the Key's first family.
+          for (const h of [other.hash + 'photos/tree/worms', wh('f:Damselfishes')]) {
+            await go(h);
+            const x = await wp();
+            if (x.hash !== '#' + h || (w === 1280 && x.sel !== wt.fam0) || x.label !== 'WoRMS')
+              fails.push(`${w}px Tree WoRMS: #${h} ${JSON.stringify({...x, cards: x.cards.length})}`);
+          }
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(wt.ord));
+          u = await fu();
+          if (u.sel !== (await p.evaluate(() => FISHC.units[0].id))) fails.push(`${w}px Tree: a WoRMS id in the Key ${JSON.stringify(u)}`);
+          // A WoRMS class (the root: the rule over every photo under it), order and genus: read-only, their default cover by
+          // the rule, their children's cards.
+          for (const id of [wt.root, wt.ord, wt.gen]) {
+            await go(wh(id));
+            const x = await wp();
+            if (
+              x.star ||
+              x.cvk.length ||
+              x.cards.length < 2 ||
+              !/^Default: /.test(x.why) ||
+              x.keys !== wt.keys ||
+              x.crumbs < (id === wt.root ? 0 : 1) ||
+              x.wide > 0 ||
+              (w === 1280 && x.sel !== id) ||
+              x.views.map(v => v[0]).join() !== 'Key,WoRMS'
+            )
+              fails.push(`${w}px Tree WoRMS: ${id} ${JSON.stringify(x)}`);
+          }
+          if (w === 390) await shot('tree-worms-genus-390');
+          // A species: its Key page (★ Cover on its own id), the WoRMS path above it; the switch keeps it.
+          const sid = (await wp()).cards[0];
+          await go(wh(sid));
+          let x = await wp();
+          if (!x.star || x.cvk.join() !== sid || x.crumbs < 4 || (w === 1280 && x.sel !== sid) || x.wide > 0)
+            fails.push(`${w}px Tree WoRMS: a species ${JSON.stringify(x)}`);
+          const toKey = (x.views.find(v => v[0] === 'Key') || [])[1];
+          if (toKey !== '#' + other.hash + 'photos/tree/key/' + encodeURIComponent(sid))
+            fails.push(`${w}px Tree WoRMS: the switch to Key ${toKey}`);
+          await go(toKey.slice(1));
+          x = await wp();
+          if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
+            fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
+        }
         // What the game plays is what the admin counts (fish-game.json, whatever the route: the sure candidates and the
         // reference photos too, not curation.json's adds alone): each species' obs/target is at least the game's observations.
         await go(other.hash + 'photos/tree/key/' + encodeURIComponent('f:Damselfishes'));
@@ -1864,6 +1963,97 @@ const WIDTHS = [390, 1280];
         if (m1.on !== '1' || m1.head === m0.head) fails.push(`${w}px Analyses mix-up map, a family tapped: ${JSON.stringify({m0, m1})}`);
       }
     }
+    // Difficulty › Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus from the live log,
+    // the same rows and columns, in family blocks; the cells add up to the Mix-ups count, the diagonal empty, a cell opens
+    // the compare page of its two genera; Typed apart (its cells add up to its own count, no rate, nothing hatched). At 390
+    // the matrix scrolls inside its box (its header and names kept in view), never the page; at 1280 it fits its box.
+    {
+      await go('analyses/difficulty/heatmap');
+      const hm = () =>
+        p.evaluate(() => {
+          const box = document.querySelector('#view .adm-hm'),
+            T = box && box.querySelector('.adm-hmt');
+          if (!T) return null;
+          const num = L => [...L].reduce((t, e) => t + (Number(e.textContent) || 0), 0),
+            kp = Object.fromEntries(
+              [...document.querySelectorAll('#view .adm-kpis > div')].map(d => [
+                d.querySelector('span').textContent,
+                d.querySelector('b').textContent
+              ])
+            ),
+            a = [...T.querySelectorAll('td a')].find(x => x.textContent),
+            m = a && /^(.+) shown, (.+) (?:answered|typed): /.exec(a.title);
+          return {
+            rows: T.querySelectorAll('tbody tr').length,
+            cols: T.querySelectorAll('thead .hm-col').length,
+            fams: T.querySelectorAll('.hm-fam').length,
+            sum: num(T.querySelectorAll('td')),
+            kp,
+            diag: [...T.querySelectorAll('td.hm-d')].filter(d => d.textContent).length,
+            nd: T.querySelectorAll('td.hm-d').length,
+            lo: T.querySelectorAll('td.hm-lo').length,
+            // the whole slate on the map, answered or not (Codex review #889)
+            slate: slateOf(DATA).length,
+            // a cell offered but never mixed up is a full-size target too (Codex review #889)
+            flat: [...T.querySelectorAll('td a')].filter(x => !x.textContent && x.getBoundingClientRect().height < 10).length,
+            leg: [...document.querySelectorAll('#view .adm-hm-leg span')].map(x => x.textContent).join(' | '),
+            link: a ? decodeURIComponent(a.getAttribute('href')) : '',
+            pair: m ? [m[1], m[2]].sort().join('|') : '',
+            wide: document.documentElement.scrollWidth - innerWidth,
+            scroll: box.scrollWidth - box.clientWidth
+          };
+        });
+      const h0 = await hm();
+      if (
+        !h0 ||
+        h0.rows < h0.slate ||
+        h0.cols !== h0.rows ||
+        h0.flat ||
+        h0.leg !== 'Under 5% | 5%-10% | 10%-20% | 20%-30% | 30%+ | Under 20 offers | Look-alike | From the data' ||
+        h0.nd !== h0.rows ||
+        h0.diag ||
+        h0.fams < 3 ||
+        String(h0.sum) !== h0.kp['Mix-ups'] ||
+        !h0.sum ||
+        !h0.lo ||
+        h0.link !== `./#learn/compare/${h0.pair.split('|').join('/')}` ||
+        h0.wide > 0 ||
+        (w < 600 ? h0.scroll <= 0 : h0.scroll > 0)
+      )
+        fails.push(`${w}px Analyses heatmap: ${JSON.stringify(h0)}`);
+      if (w < 600 && h0) {
+        // scrolled inside its box: the column names and the row names stay in view
+        const st = await p.evaluate(() => {
+          const box = document.querySelector('#view .adm-hm');
+          box.scrollIntoView();
+          box.scrollLeft = 300;
+          box.scrollTop = 300;
+          const b = box.getBoundingClientRect(),
+            th = box.querySelector('thead .hm-col:last-child').getBoundingClientRect(),
+            rh = box.querySelector('tbody tr:last-child .hm-row').getBoundingClientRect();
+          return {box: box.scrollLeft > 0 && box.scrollTop > 0, top: Math.round(th.top - b.top), left: Math.round(rh.left - b.left)};
+        });
+        if (!st.box || Math.abs(st.top) > 2 || st.left > 30) fails.push(`${w}px Analyses heatmap scrolled: ${JSON.stringify(st)}`);
+      }
+      await p.click('#view [data-sf="hm"][data-v="typed"]');
+      await settle();
+      const h1 = await hm();
+      if (!h1 || String(h1.sum) !== h1.kp['Typed mix-ups'] || !h1.sum || h1.lo || h1.rows !== h0.rows || h1.wide > 0)
+        fails.push(`${w}px Analyses heatmap, Typed: ${JSON.stringify(h1)}`);
+      await p.click('#view [data-sf="hm"][data-v="pick"]');
+      await settle();
+      // not a fish page yet (core.js SUBJECTS admin pages): the corals first
+      if (
+        once &&
+        (await p.evaluate(() =>
+          hasPage(
+            SUBJECTS.find(S => S.admin.pages),
+            'analyses/difficulty/heatmap'
+          )
+        ))
+      )
+        fails.push(`${w}px Analyses heatmap: on the fish side already`);
+    }
     if (once) {
       // Once: Formats against a direct count, the milestone switch, a script before v35, views remembered, To do, Hidden, the view filter.
       await go('analyses/difficulty/formats');
@@ -2044,7 +2234,8 @@ const WIDTHS = [390, 1280];
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Photos.') fe.push(`the line on what is not there: "${at.not}"`);
+            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Heatmap.')
+              fe.push(`the line on what is not there: "${at.not}"`);
             // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
             // fish report
             const [H, LV] = await fq.evaluate(() => [
@@ -4768,6 +4959,150 @@ const WIDTHS = [390, 1280];
           if (!lb.open || /\b[fgs]:[A-Z]/.test(lb.cap) || !lb.cap.trim()) fe.push(`a photo enlarged ${JSON.stringify(lb)}`);
         }
         if (fe.length) fails.push(`${vw}px Fish Answer log and Pairs: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
+      // Fish admin at parity, Journey details: a fish Journey names its units as the Answer log does (a family by name, a
+      // genus in italics, an IMR sub-entry with its IMR name), titles and the chart's tooltips included; its Cards and
+      // steps say the subject's words (Open all families), the genus cards (admin-demo.js: Ben's fish saved copy) and the
+      // steps of the path (admin-journey.js jSteps: circles 2 and 3, the first genus question), also as marks on the
+      // chart; Games counts the fish formats and the questions on each rank, without the Custom quiz or the Duel tab the
+      // fish do not have; its sheets opened in the fish words. Ben's log gets, after his demo answers, a family of each
+      // later circle, genus questions and typed answers. Then a fish session of the Journey unfolds, its names too. No raw
+      // unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px; SHOTS: the page in light and dark (2x).
+      for (const vw of [1280, 390]) {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          fc = await b.newContext({
+            viewport: {width: vw, height: 900},
+            serviceWorkers: 'block',
+            ...(process.env.SHOTS ? {deviceScaleFactor: 2} : {})
+          });
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/players/list/journey/Ben%20Demo`);
+        await fq
+          .waitForFunction(
+            () =>
+              cur === 'players/list/journey/Ben Demo' &&
+              FISHA &&
+              ANS &&
+              /Cards/.test((document.querySelector('.adm-journey') || {}).textContent),
+            null,
+            {timeout: 90000}
+          )
+          .catch(() => fe.push('Journey not drawn'));
+        const ok = await fq.evaluate(() => {
+          const id = (USERS.users.find(u => u.name === 'Ben Demo') || {}).id,
+            R = rowsOf()
+              .filter(r => r[0] === id)
+              .sort((a, b) => a[1] - b[1]),
+            last = R[R.length - 1],
+            ph = Object.keys(FISHA.ph),
+            fam = c => (Object.values(FISHA.gen).find(g => g.circle === c) || {}).id,
+            add = [];
+          if (!last || !fam(2) || !fam(3)) return false;
+          let t = last[1];
+          const mk = (shown, ans, right, mode, ch) =>
+            Object.assign([...last], {1: (t += 30e3), 2: shown, 3: ans, 4: right, 5: mode, 6: ph[add.length % ph.length], 10: ch});
+          add.push(mk(fam(2), fam(2), 1, 'quiz', [fam(2), 'f:Wrasses', 'f:Snappers', 'f:Angelfishes'].join(' ')));
+          add.push(mk(fam(3), 'f:Wrasses', 0, 'quiz', [fam(3), 'f:Wrasses', 'f:Snappers', 'f:Angelfishes'].join(' ')));
+          for (let i = 0; i < 6; i++)
+            add.push(
+              mk('g:Amphiprion', i % 2 ? 'g:Amphiprion' : 'g:Chromis', i % 2, 'quiz', 'g:Amphiprion g:Chromis g:Dascyllus g:Pomacentrus')
+            );
+          for (let i = 0; i < 4; i++) add.push(mk('g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+          ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+          render();
+          return true;
+        });
+        if (!ok) fe.push("no fish answers of Ben's in the demo");
+        // The steps (the log) and the cards (Ben's saved copy, read on its own: Cards: loading… until then) both drawn.
+        await fq
+          .waitForFunction(
+            () =>
+              (t => /Genus questions/.test(t) && /Open all families/.test(t))((document.querySelector('.adm-journey') || {}).textContent),
+            null,
+            {timeout: 30000}
+          )
+          .catch(() => fe.push('the steps or the cards never drawn'));
+        // What the page says, with every attribute but the links' (a title, an SVG tooltip may hold a unit too).
+        const seen = () =>
+          fq.evaluate(() => {
+            const V = document.getElementById('view'),
+              html = V.innerHTML.replace(/ href="[^"]*"/g, ''),
+              rows = sel => [...V.querySelectorAll(sel)].map(e => e.textContent.replace(/\s+/g, ' ').trim());
+            return {
+              cards: rows('.adm-jcards li').slice(0, 12),
+              marks: [...V.querySelectorAll('svg text.o')].map(e => e.textContent),
+              games: rows('.adm-journey .adm-scard')
+                .filter(t => /^Games/.test(t))
+                .join(''),
+              h3: rows('.adm-jwide h3'),
+              th: (V.querySelector('.adm-jtbl th') || {}).textContent || '',
+              imr: rows('.adm-jtbl td small').includes(ORG.short + ' ' + FISHA.imr['g:Amphiprion']),
+              sheets: (V.querySelector('[data-jsheets] h3') || {}).textContent || '',
+              ids: (html.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              coral: Object.keys(DATA.gen)
+                .filter(g => new RegExp(`\\b${g}\\b`).test(html))
+                .slice(0, 3),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+        const jo = await seen(),
+          has = (L, re) => L.some(x => re.test(x));
+        if (
+          !has(jo.cards, /^Start I’m at IMR/) ||
+          !has(jo.cards, /^Genus cards 2: Amphiprion/) ||
+          !has(jo.cards, /^Circle 2 from answer 49 /) ||
+          !has(jo.cards, /^Circle 3 from answer 50 /) ||
+          !has(jo.cards, /^Genus questions from answer 51 · Amphiprion/) ||
+          !has(jo.cards, /^Open all families not used/) ||
+          has(jo.cards, /genera/) ||
+          ['Circle 2', 'Circle 3', 'Genus'].some(m => !jo.marks.includes(m)) ||
+          !/Family questions/.test(jo.games) ||
+          !/Genus questions/.test(jo.games) ||
+          !/Typed/.test(jo.games) ||
+          /Custom quiz|Duels|duels \(tab\)/.test(jo.games) ||
+          !jo.h3.some(h => /^Families and genera \d+/.test(h)) ||
+          jo.th !== 'Family or genus' ||
+          !jo.imr ||
+          jo.sheets !== 'Family, genus and species sheets opened' ||
+          jo.ids.length ||
+          jo.coral.length ||
+          jo.wide > 0
+        )
+          fe.push(`Journey ${JSON.stringify(jo)}`);
+        if (process.env.SHOTS)
+          for (const sc of ['light', 'dark']) {
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
+            await fq.waitForTimeout(300);
+            await fq.screenshot({path: path.join(process.env.SHOTS, `fish-journey-${vw}-${sc}.png`), fullPage: true});
+          }
+        // Its last session unfolds (admin-journey.js sessionSummary): the units it met by name too.
+        await fq.click('.adm-journey [data-recent] [data-sopen]');
+        await fq.waitForSelector('.adm-journey [data-sdet] .adm-sess', {timeout: 10000}).catch(() => fe.push('a session does not unfold'));
+        const ss = await fq.evaluate(() => {
+          const S = document.querySelector('.adm-journey [data-sdet]'),
+            html = S ? S.innerHTML.replace(/ href="[^"]*"/g, '') : '';
+          return {
+            ids: (html.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+            genus: /Amphiprion/.test(html),
+            wide: document.documentElement.scrollWidth - innerWidth
+          };
+        });
+        if (ss.ids.length || !ss.genus || ss.wide > 0) fe.push(`the session unfolded ${JSON.stringify(ss)}`);
+        if (process.env.SHOTS)
+          for (const sc of ['light', 'dark']) {
+            await fq.evaluate(t => (document.documentElement.dataset.theme = t), sc); // the app's ⚙ theme (admin.html)
+            await fq.waitForTimeout(300);
+            const el = await fq.$('.adm-journey [data-sdet]');
+            if (el) await el.screenshot({path: path.join(process.env.SHOTS, `fish-journey-session-${vw}-${sc}.png`)});
+          }
+        if (fe.length) fails.push(`${vw}px Fish Journey: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not

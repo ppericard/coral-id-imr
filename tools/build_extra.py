@@ -121,8 +121,8 @@ for g, (pages, tr, crit, qt) in X.items():
     for l in L: leaf.setdefault(l, []).append(g)
     lk = LOOK.get(g, {})
     out[g] = dict(fam=fam, pages=pages, tr=tr, crit=crit, qt=qt, sum=crit[0], look=list(lk), lsrc=lk, views=views, x={'rg': rg, 'two': two, 'nonscl': g in NONSCL})
-    # A re-run keeps the photo selection already made (views, cover, levels) and the plain line (tools/apply_plain_sheets.py): only new genera get fresh photos.
-    for k in ('views', 'cover', 'levels', 'plain'):
+    # A re-run keeps the photo selection already made (views, cover, levels), the plain line (tools/apply_plain_sheets.py) and the name roots (tools/apply_name_roots.py): only new genera get fresh photos.
+    for k in ('views', 'cover', 'levels', 'plain', 'root'):
         if k in OLD.get(g, {}): out[g][k] = OLD[g][k]
     print(g, fam, L, 'rg', rg, 'two', two, 'photos', sum(map(len, views.values())))
 # Coral Finder front page: the last group (book p. 77-78) is not in the IMR key, so it is added here.

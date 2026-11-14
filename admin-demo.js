@@ -845,6 +845,24 @@
           ]);
         })
       );
+      // Ben's fish saved copy, for his fish Journey's Cards (fish admin at parity, Journey details): he answered "I'm at IMR"
+      // in the tour; the first cards on his first 3 families, the others one at a time just before their first question;
+      // two IMR genera (an IMR player meets them at their family's Open Water) on cards of their own near his last answers.
+      {
+        const mine = frows.filter(r => r[0] === 'Ben Demo').sort((x, y) => x[1] - y[1]),
+          fi = {};
+        mine.forEach((r, i) => {
+          if (fi[r[2]]) return;
+          const a = Object.keys(fi).length < 3 ? 0 : i;
+          fi[r[2]] = [a, a ? 0 : 1, (mine[Math.max(0, a - 1)] || r)[1] + (a ? 1 : -1), a ? 'c' : 's'];
+        });
+        ['g:Amphiprion', 'g:Chromis'].forEach((g, k) => (fi[g] = [mine.length - 4 + k, 0, mine[mine.length - 5 + k][1] + 1, 'c']));
+        const t0 = mine[0][1] - 1;
+        Object.assign(users['ben demo'].data, {
+          [subjKey(FS.id, 'intro')]: JSON.stringify(fi),
+          [startKey(FS.id)]: JSON.stringify({c: 'imr', t: t0, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: [['imr', 0, t0, 'tour']]})
+        });
+      }
       // The fish side's Analyses report (one report per subject, sheet v113): the seven made-up analysis players
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
