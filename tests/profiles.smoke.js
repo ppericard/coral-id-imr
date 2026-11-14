@@ -44,6 +44,7 @@ const server = http.createServer((req, res) => {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const b = await chromium.launch();
   const ctx = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'});
+  await ctx.addInitScript(require('./answer.js').PAGE); // smokeAnswer: answers whatever question is shown
   await ctx.route(
     u => !u.href.startsWith(base),
     r => r.abort()
@@ -99,7 +100,9 @@ const server = http.createServer((req, res) => {
         const t = window.__q[1];
         if (!first.includes(t)) first.push(t);
         // A typed question (model.js TYPED) has no buttons: its choices are the draw's, unseen; nothing to guess from.
+        // answer.js: the format read
         const typed = !!document.querySelector('#view .tyform'),
+          // answer.js: the choices read
           ch = typed ? window.__q[2] : [...document.querySelectorAll('#view [data-c]')].map(x => x.dataset.c),
           traps = ch.filter(c => c !== t && (confusable(t, c) || pooledConf(t, c) >= CONF.TRAP)).length,
           all = Object.values(GX(t).views).flat(),
@@ -110,6 +113,7 @@ const server = http.createServer((req, res) => {
             .filter(Boolean)
             .map(x => photoDiff(t, x)),
           diff = pd.length ? pd.reduce((a, x) => a + x, 0) / pd.length : 0,
+          // answer.js: the choices read
           kq = Math.min(ch.length, Number((document.querySelector('#view .ans') || {dataset: {}}).dataset.k) || ch.length),
           pk = sig(logit(Math.min(0.995, Math.max(0.005, know[t]))) - diff - (fs.length === 1 ? 0.5 : 0)),
           right = rnd() < pk || (!typed && rnd() < 1 / kq),
@@ -125,12 +129,10 @@ const server = http.createServer((req, res) => {
         }
         if (typed) {
           blk.ty++;
-          const f = document.querySelector('#view .tyform');
-          if (!pick) f.querySelector('[data-idk]').click();
-          else ((f.querySelector('input').value = pick), f.requestSubmit());
           // A typed right answer: every genus, its look-alikes included, was a possible answer (model.js pgWeight).
           if (right) typedOk.add(t);
-        } else document.querySelector(`[data-c="${CSS.escape(pick)}"]`).click();
+        }
+        smokeAnswer(pick); // tests/answer.js: the choice, or typed ('' = I don't know)
         know[t] += rate * (1 - know[t]);
         // Progress (core.js PROG): a genus reaches its exam's entry (95%) only once it has been asked beside one of its
         // look-alikes (Pierre, 2026-11-02: never confirmed before it has been compared with the genera it gets confused with).

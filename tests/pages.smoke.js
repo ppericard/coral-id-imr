@@ -9,6 +9,7 @@ const http = require('http'),
   {execFileSync} = require('child_process');
 const {chromium} = require('./calm.js'); // playwright; contexts in reduced motion by default
 const slot = require('./slot.js');
+const qa = require('./answer.js'); // waits for and answers the question on screen, whatever its format
 const ROOT = path.join(__dirname, '..');
 const TYPES = {
   '.html': 'text/html',
@@ -219,7 +220,7 @@ async function overlays(b, base) {
     });
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForSelector('#view [data-c]');
+    await qa.ready(p);
     const CASES = [
       ['genus', () => introShow([slateGenera()[1]], false)],
       // A big step (quiz.js openOfferShow, the fish circle 3's card; the coral open-all offer went, Q337), on a made-up set.
@@ -427,6 +428,7 @@ async function overlays(b, base) {
     await p.waitForTimeout(200);
     await p.keyboard.press('Escape');
     await p.waitForTimeout(200);
+    // answer.js: a new player's first question: choices
     await p.keyboard.press('1');
     await p.waitForTimeout(200);
     const r = await p.evaluate(() => ({lb: !document.getElementById('lightbox').hidden, answered: !!document.getElementById('next')}));
@@ -471,7 +473,10 @@ async function overlays(b, base) {
   // achievement toast that came with an answer holds it. Then the queued events: the one-tap question's (the first ever
   // is the plain one, core.js PULSE0, logged with its item id), an error from one of the app's files, and no noise.
   // (Test-suite review D2, 2026-11-04: a second new player played to 40 answers in the main loop only for the exact 35
-  // and the queue; both are checked here now.)
+  // and the queue; both are checked here now.) A genus can pass TYPED.from within these 60 answers, so a typed question
+  // may come (#855's first head hung 30 s waiting for choice buttons): the questions after answers 5, 19 and 34 (a miss,
+  // the sign-in card's answer, the one-tap question's) are made typed (model.js TYPED forced from the answer before, as
+  // the next question is planned then, until a typed one is on screen), so typed answers meet the prompts every run.
   {
     const [c, p] = await open(
       {viewport: {width: 390, height: 844}},
@@ -480,34 +485,43 @@ async function overlays(b, base) {
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const seenP = [],
-      toastAt = new Set(); // the answers that came with an achievement toast (it holds a prompt due then)
+      toastAt = new Set(), // the answers that came with an achievement toast (it holds a prompt due then)
+      FORCE = [5, 19, 34],
+      typedAt = [];
     for (let i = 0; i < 60; i++) {
-      await p.waitForSelector('#view [data-c]:not([disabled])');
-      const r = await p.evaluate(i => {
-        // A new genus's card is read and closed before answering, as a player does.
-        document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-        // This session started PULSE.SESS_MS ago (the smoke answers in seconds): its answers decide (quiz.js pulseSess).
-        (st => st.v && localStorage.setItem('reefid-pulse', JSON.stringify({...st, v: {...st.v, t0: Date.now() - PULSE.SESS_MS}})))(
-          JSON.parse(localStorage.getItem('reefid-pulse') || '{}')
-        );
-        // A toast is tapped away (without following its link) before answering.
-        document.querySelectorAll('.achpop a').forEach(a => {
-          a.addEventListener('click', e => e.preventDefault());
-          a.click();
-        });
-        const t = SHOWNQ[1],
-          bs = [...document.querySelectorAll('#view [data-c]')];
-        (i % 6 === 5 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
-        const card = document.querySelector('.unlock'),
-          toast = !!document.querySelector('.achpop') || achBusy;
-        return {
-          a: answersSoFar(),
-          sign: !!document.querySelector('.unlock.signnudge'),
-          inline: !!document.querySelector('#after [data-pulse]'),
-          other: !!card && !card.matches('.signnudge'),
-          toast
-        };
-      }, i);
+      await qa.ready(p);
+      const r = await p.evaluate(
+        ([i, due, met]) => {
+          // A new genus's card is read and closed before answering, as a player does.
+          document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+          // This session started PULSE.SESS_MS ago (the smoke answers in seconds): its answers decide (quiz.js pulseSess).
+          (st => st.v && localStorage.setItem('reefid-pulse', JSON.stringify({...st, v: {...st.v, t0: Date.now() - PULSE.SESS_MS}})))(
+            JSON.parse(localStorage.getItem('reefid-pulse') || '{}')
+          );
+          // A toast is tapped away (without following its link) before answering.
+          document.querySelectorAll('.achpop a').forEach(a => {
+            a.addEventListener('click', e => e.preventDefault());
+            a.click();
+          });
+          const fmt = smokeAnswer(i % 6 !== 5).fmt;
+          // The next question (planned after this answer: quiz.js planNext) typed while a forced one is still to come; the
+          // original rule back once they all came.
+          window.TY0 = window.TY0 || {from: TYPED.from, at: TYPED.at};
+          Object.assign(TYPED, due > met + (fmt === 'typed') ? {from: 0, at: [[0, 1]]} : TY0);
+          const card = document.querySelector('.unlock'),
+            toast = !!document.querySelector('.achpop') || achBusy;
+          return {
+            fmt,
+            a: answersSoFar(),
+            sign: !!document.querySelector('.unlock.signnudge'),
+            inline: !!document.querySelector('#after [data-pulse]'),
+            other: !!card && !card.matches('.signnudge'),
+            toast
+          };
+        },
+        [i, FORCE.filter(k => k <= i + 1).length, typedAt.length]
+      );
+      if (r.fmt === 'typed') typedAt.push(i);
       if (r.toast) toastAt.add(r.a);
       if (r.sign || r.inline) seenP.push({...r, k: r.sign ? 'sign-in' : 'pulse'});
       // Next: the one-tap question, when due, comes as a card before the next question; "Not now" (Escape) closes it and
@@ -528,6 +542,7 @@ async function overlays(b, base) {
       });
       if (n) seenP.push({...n, k: 'pulse'});
     }
+    if (typedAt.length < FORCE.length) fails.push(`typed questions forced after answers ${FORCE}: met at ${JSON.stringify(typedAt)}`);
     const sign = seenP.find(x => x.k === 'sign-in'),
       pulse = seenP.find(x => x.k === 'pulse'),
       gaps = seenP.slice(1).map((x, k) => x.a - seenP[k].a);
@@ -588,7 +603,7 @@ async function overlays(b, base) {
       N = 9,
       pev = () => p.evaluate(() => JSON.parse(localStorage.getItem('reefid-evq') || '[]').filter(x => x.k === 'pulse'));
     for (let i = 0; i < 60 && asked.length < N; i++) {
-      await p.waitForSelector('#view [data-c]:not([disabled])');
+      await qa.ready(p);
       const way = asked.length === N - 1 ? 'leave' : WAYS[asked.length % WAYS.length],
         before = (await pev()).length;
       const inline = await p.evaluate(
@@ -609,9 +624,7 @@ async function overlays(b, base) {
               JSON.stringify({...JSON.parse(localStorage.getItem('reefid-pulse')), at: a - PULSE.EVERY * PULSE.AFTERX})
             );
           }
-          const t = SHOWNQ[1],
-            cs = [...document.querySelectorAll('#view [data-c]')];
-          (i % 4 === 3 ? cs.find(x => x.dataset.c !== t) : cs.find(x => x.dataset.c === t)).click();
+          smokeAnswer(i % 4 !== 3);
           return !!document.querySelector('#after [data-pulse], #after .pulse');
         },
         [i, asked.length > 0]
@@ -705,11 +718,14 @@ async function overlays(b, base) {
       else if (way === 'esc') await p.keyboard.press('Escape');
       else await p.evaluate(() => (location.hash = 'progress'));
       await p.waitForTimeout(300);
-      const after = await p.evaluate(() => ({
-        up: !!document.querySelector('.unlock.pulsecard'),
-        next: !!document.querySelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform'),
-        h: location.hash
-      }));
+      const after = await p.evaluate(
+        sel => ({
+          up: !!document.querySelector('.unlock.pulsecard'),
+          next: !!document.querySelector(sel),
+          h: location.hash
+        }),
+        qa.SEL
+      );
       const ev = (await pev()).slice(before).map(x => ({r: x.r, src: x.src, m: x.m, lv: typeof x.lv}));
       asked.push({...shown, at: undefined, it, way, tap, early, waited, enter, after, ev, n0: before});
       if (way === 'leave') {
@@ -757,14 +773,16 @@ async function overlays(b, base) {
     await c.close();
   }
   // The right answer's celebration (app.css .cheer) plays on the choice and on "✓ Yes", and not at all with
-  // prefers-reduced-motion; Next is there and focused at once.
+  // prefers-reduced-motion; Next is there and focused at once. A new player's first question: always the choices.
   for (const reducedMotion of ['no-preference', 'reduce']) {
     const [c, p] = await open({viewport: {width: 1280, height: 800}, reducedMotion}, seen);
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForSelector('#view [data-c]');
+    await qa.ready(p);
     const r = await p.evaluate(() => {
-      document.querySelector(`#view [data-c="${CSS.escape(SHOWNQ[1])}"]`).click();
+      const {fmt} = smokeAnswer();
+      if (fmt !== 'choices') return {fmt};
+      // answer.js: after a fmt 'choices' check
       const b = document.querySelector('#view .ans button.ok'),
         v = document.querySelector('#after .fb h3 .v');
       return {
@@ -890,17 +908,10 @@ async function overlays(b, base) {
     const asked = [],
       modes = [];
     for (let i = 0; i < 12; i++) {
-      await p.waitForSelector('#view .q:not(.done)');
+      await qa.ready(p);
       const r = await p.evaluate(i => {
         document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-        const t = SHOWNQ[1],
-          bs = [...document.querySelectorAll('#view [data-c]')];
-        if (bs.length) (i % 4 === 3 ? bs.find(b => b.dataset.c !== t) : bs.find(b => b.dataset.c === t)).click();
-        else {
-          const f = document.querySelector('#view .tyform');
-          f.querySelector('input').value = t;
-          f.requestSubmit();
-        }
+        const {t} = smokeAnswer(i % 4 !== 3);
         const L = store.get(LOG0, []);
         return {h: location.hash, t, m: (L[L.length - 1] || {}).m};
       }, i);
@@ -1036,7 +1047,7 @@ async function overlays(b, base) {
     };
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForSelector('#view [data-c]');
+    await qa.ready(p);
     // The corallites hint, when the question has one: its photo is one of those shown, so it goes too (Codex review #785).
     const hint = await p.evaluate(() => !!document.getElementById('hintb'));
     if (hint) await p.click('#hintb');
@@ -1293,7 +1304,7 @@ async function overlays(b, base) {
     const card = cardOf(p);
     await p.goto(base + '#practice/quiz');
     await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
-    await p.waitForSelector('.ans button, .tyq input', {timeout: 15000}).catch(() => {});
+    await qa.ready(p, {timeout: 15000});
     // The thanks is due once curation.json is in (Pierre's Done): on a slow runner it can come after the first answer,
     // and the card then waits for a later break, so the check waits for it (a flake on CI, #603).
     await p.waitForFunction(() => helpedIds().length > 0, null, {timeout: 10000}).catch(() => {});
@@ -1302,10 +1313,7 @@ async function overlays(b, base) {
     // reader on corallites alone, Sharp eye), whose toast is up when the answer arms the break, and the thanks then waits
     // for a later break (never over a toast); which question comes first is drawn at random, so a right answer made this
     // check fail now and then on CI, never on a re-run (#603, #652). A wrong answer earns none.
-    const target = await p.evaluate(() => SHOWNQ && SHOWNQ[1]);
-    const typed = await p.$('.tyq input');
-    if (typed) (await p.fill('.tyq input', target === 'Acropora' ? 'Porites' : 'Acropora'), await p.keyboard.press('Enter'));
-    else await p.click(`.ans button[data-c]:not([data-c="${target}"])`);
+    await p.evaluate(() => smokeAnswer(false));
     await p.waitForSelector('#next', {timeout: 5000});
     const toast = await p.evaluate(() => document.querySelector('.achpop b')?.textContent || null); // none: else no break
     const a1 = await card(1500); // the answer's feedback: still no card
@@ -1495,7 +1503,8 @@ async function signin(base) {
         fails.push('visit log, Fish switched on the same page: ' + JSON.stringify(pv));
       await p.evaluate(() => go('quiz'));
       await p.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .q'), null, {timeout: 15000});
-      const r = await p.evaluate(async () => {
+      await qa.install(p);
+      const r = await p.evaluate(async SEL => {
         // The fish achievements already held: their pop-ups (First families at about 20 answers) would hold the card a few
         // answers (quiz.js promptOk: no prompt with an achievement toast), which is not what this checks.
         store.set(ACHK, {_v: ACH_V, ...Object.fromEntries(FISH_ACH.map(a => [a.id, 1]))});
@@ -1512,19 +1521,9 @@ async function signin(base) {
         for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-          if (!(await until(() => document.querySelector('#view .q:not(.done) :is([data-c], .tyform, [data-w])')))) break;
+          if (!(await until(() => document.querySelector(SEL)))) break;
           const n0 = answersSoFar();
-          if (document.querySelector('#view .q.wink')) document.querySelector('#view [data-w]').click();
-          else {
-            const t = SHOWNQ[1],
-              b = [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c === t);
-            if (b) b.click();
-            else {
-              const f = document.querySelector('#view .tyform');
-              f.querySelector('input').value = GX(t).name;
-              f.requestSubmit();
-            }
-          }
+          smokeAnswer();
           // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).
           await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
           if (document.querySelector('.unlock.signnudge')) at.push(answersSoFar());
@@ -1533,7 +1532,7 @@ async function signin(base) {
           route();
         }
         return {at, n: answersSoFar(), subj: SUBJ.id, used: localStorage.getItem('reefid-nudge'), log0: store.get(LOG0, []).length};
-      });
+      }, qa.SEL);
       // Its fish answers wait on the device for the sheet like coral ones (LOG0; sheet v60 logs every subject's).
       if (r.subj !== 'fish' || r.at.length !== 1 || r.at[0] !== 20 || r.used !== '1' || r.log0 !== r.n)
         fails.push('sign-in card for a fish-only player: ' + JSON.stringify(r));
@@ -2746,12 +2745,10 @@ async function tipsCheck(b, base) {
   // One question answered (wrong unless right), toasts and genus cards closed as a player would; then Next, unless
   // toast. Returns whether the tip was there after the answer and after Next.
   const play = async (p, {right = false, toast = false} = {}) => {
-    await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+    await qa.ready(p, {timeout: 10000});
     const at = await p.evaluate(right => {
       document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-      const t = SHOWNQ ? SHOWNQ[1] : null, // the Duel tab has no SHOWNQ: its first choice, right or wrong
-        bs = [...document.querySelectorAll('#view [data-c]')];
-      (right ? bs.find(x => x.dataset.c === t) : bs.find(x => x.dataset.c !== t)).click();
+      smokeAnswer(right);
       return !!document.querySelector('.tipcard');
     }, right);
     // dis: the card's buttons, at once, take no tap (a tap on a disabled button does nothing).
@@ -2866,10 +2863,7 @@ async function tipsCheck(b, base) {
       if (!r.next) fails.push(`${W} not shown at a break from 40 questions`);
       else {
         await p.click('.tipcard [data-b="2"]'); // waits for the button to take taps (TIP.WAIT)
-        const nx = await p
-          .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 5000})
-          .then(() => true)
-          .catch(() => false);
+        const nx = await qa.ready(p, {timeout: 5000, optional: true});
         if (!nx || (await p.$('.unlock.tipcard'))) fails.push(`${W} Got it did not go on to the next question`);
       }
       await c.close();
@@ -2893,15 +2887,14 @@ async function tipsCheck(b, base) {
       await p.evaluate(() => (achPop = () => {}));
       let early = 0;
       for (let i = 0; i < 7; i++) if ((await play(p)).next) early++;
-      await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+      await qa.ready(p, {timeout: 10000});
       const r = await p.evaluate(() => {
         document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
         document.querySelectorAll('.achpop').forEach(x => x.remove());
         achQ.length = 0;
         achBusy = false;
-        const t = SHOWNQ[1],
-          pre = {ok: promptOk(), due: pulseDue(), a: answersSoFar(), at: localStorage.getItem('reefid-prompt-at')};
-        [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== t).click();
+        const pre = {ok: promptOk(), due: pulseDue(), a: answersSoFar(), at: localStorage.getItem('reefid-prompt-at')};
+        smokeAnswer(false);
         const inline = !!document.querySelector('#after .pulse'),
           armed = document.getElementById('next').onclick !== route;
         document.querySelectorAll('.achpop').forEach(x => x.remove());
@@ -2932,9 +2925,7 @@ async function tipsCheck(b, base) {
         shown++;
         await p.waitForFunction(() => [...document.querySelectorAll('.tipcard [data-b]')].every(x => !x.disabled), null, {timeout: 5000});
         await p.evaluate(() => [...document.querySelectorAll('.tipcard [data-b]')].find(x => x.textContent === 'Got it').click());
-        await p
-          .waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000})
-          .catch(() => fails.push(`${W} duel: no next duel after the tip`));
+        if (!(await qa.ready(p, {timeout: 10000, optional: true}))) fails.push(`${W} duel: no next duel after the tip`);
         const after = await p.evaluate(() => ({
           intro: !!document.querySelector('.unlock.intro'),
           tip: !!document.querySelector('.tipcard')
@@ -3006,17 +2997,10 @@ async function customLeftCheck(b, base) {
   // failure is reported rather than stopping the smoke.
   const play = async p => {
     if (await p.$('.leftcard')) await p.click('.leftcard [data-b="2"]');
-    await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled]), #view .q:not(.done) .tyform', {timeout: 10000});
+    await qa.ready(p, {timeout: 10000});
     const at = await p.evaluate(() => {
       document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-      const t = SHOWNQ[1],
-        bs = [...document.querySelectorAll('#view .q:not(.done) [data-c]')];
-      if (bs.length) bs.find(x => x.dataset.c === t).click();
-      else {
-        const f = document.querySelector('#view .tyform');
-        f.querySelector('input').value = t;
-        f.requestSubmit();
-      }
+      smokeAnswer();
       return !!document.querySelector('.leftcard');
     });
     await p.waitForSelector('#next', {timeout: 10000});
@@ -3179,17 +3163,16 @@ async function duelReliefCheck(b, base) {
   // The question on screen redrawn so its genus is known (__T), then answered right or wrong; toasts closed unless
   // toast (one is then raised before Next); then Next. Returns whether the card was up after the answer and after Next.
   const play = async (p, {right = false, toast = false, next = true} = {}) => {
-    await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+    await qa.ready(p, {timeout: 10000});
     if (!(await p.evaluate(() => !!window.__T))) {
       await p.evaluate(() => route());
-      await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+      await qa.ready(p, {timeout: 10000});
     }
     const at = await p.evaluate(right => {
       document.querySelectorAll('.unlock.intro').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
-      const t = window.__T,
-        bs = [...document.querySelectorAll('#view [data-c]')];
+      const t = window.__T;
       window.__T = null;
-      (right ? bs.find(x => x.dataset.c === t) : bs.find(x => x.dataset.c !== t)).click();
+      smokeAnswer(right ? t : false);
       return !!document.querySelector('.reliefcard');
     }, right);
     if (!next) return {at};
@@ -3295,10 +3278,7 @@ async function duelReliefCheck(b, base) {
         )
           fails.push(`${W} the card: ${JSON.stringify({...k, dis: r.dis})}`);
         await pick(p, '[data-keep]');
-        const nx = await p.evaluate(() => ({
-          q: !!document.querySelector('#view .q:not(.done) [data-c]'),
-          card: !!document.querySelector('.unlock')
-        }));
+        const nx = await p.evaluate(sel => ({q: !!document.querySelector(sel), card: !!document.querySelector('.unlock')}), qa.SEL);
         if (!nx.q || nx.card) fails.push(`${W} Keep drilling: ${JSON.stringify(nx)}`);
         const ev = await evs(p);
         if (ev.join() !== 'pulse:shown:quiz-duel,pulse:keep:quiz-duel') fails.push(`${W} events: ${JSON.stringify(ev)}`);
@@ -3384,7 +3364,7 @@ async function duelReliefCheck(b, base) {
         }
         if (way === 'button') await p.locator('#view [data-duelback]:visible').click();
         else await p.goBack();
-        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000}).catch(() => {});
+        await qa.ready(p, {timeout: 10000, optional: true});
         const bk = await p.evaluate(() => ({h: decodeURIComponent(location.hash), run: {...DUELRUN}, back: DUELBACK}));
         if (bk.h !== PAIR || !bk.run.shown || bk.back) fails.push(`${W} back to the duel (${way}): ${JSON.stringify(bk)}`);
         const ev = await evs(p);
@@ -3431,11 +3411,10 @@ async function duelReliefCheck(b, base) {
       if (!got) fails.push(`${W} (mix) not shown at a later break while the hold is on`);
       else {
         await pick(p, '[data-b="1"]');
-        const at = await p.evaluate(() => ({
-          h: location.hash,
-          q: !!document.querySelector('#view [data-c]'),
-          card: !!document.querySelector('.reliefcard')
-        }));
+        const at = await p.evaluate(
+          sel => ({h: location.hash, q: !!document.querySelector(sel), card: !!document.querySelector('.reliefcard')}),
+          qa.SEL
+        );
         if (at.h !== '#practice/quiz' || at.card) fails.push(`${W} Mix in other genera: ${JSON.stringify(at)}`);
         const ev = await evs(p);
         if (ev.join() !== 'pulse:shown:quiz-duel,pulse:mix:quiz-duel') fails.push(`${W} mix events: ${JSON.stringify(ev)}`);
@@ -3449,10 +3428,9 @@ async function duelReliefCheck(b, base) {
       await p.evaluate(() => (HOLDS = INTRO.HOLD - 0.05));
       let n = 0;
       for (let i = 0; i < 3; i++) {
-        await p.waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 10000});
+        await qa.ready(p, {timeout: 10000});
         n += await p.evaluate(() => {
-          const t = SHOWNQ[1];
-          [...document.querySelectorAll('#view [data-c]')].find(x => x.dataset.c !== t).click();
+          smokeAnswer(false);
           document.querySelectorAll('.achpop').forEach(x => x.remove());
           achQ.length = 0;
           achBusy = false;
@@ -3728,9 +3706,9 @@ async function pagesVisit(b, base) {
     },
     answer = async p => {
       await p.evaluate(() => (location.hash = 'practice/quiz'));
-      await p.waitForSelector('#view [data-c]', {timeout: 20000});
+      await qa.ready(p, {timeout: 20000});
       await p.waitForTimeout(1200);
-      await p.evaluate(() => document.querySelector('#view [data-c]').click());
+      await p.evaluate(() => smokeAnswer(false));
       await p.waitForSelector('#after h3 a[href^="#learn/genus/"]');
       return p.$eval('#after h3 a[href^="#learn/genus/"]', a => decodeURIComponent(a.getAttribute('href').slice('#learn/genus/'.length)));
     };
@@ -4221,17 +4199,14 @@ async function newPlayer(b, base) {
   if (!(await p.evaluate(() => location.hash === '#practice/quiz'))) await p.evaluate(() => (location.hash = 'practice/quiz'));
   for (let i = 1; i <= 30; i++) {
     if (!(await close(`before answer ${i}`))) break;
-    const q = await p
-      .waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 15000})
-      .then(() => true)
-      .catch(() => false);
+    const q = await qa.ready(p, {timeout: 15000, optional: true});
     if (!q) {
       if (await close(`question ${i}`)) continue;
       fails.push(`new player: no question to answer at ${i} ${JSON.stringify(await over())}`);
       break;
     }
     // Clicked in the page: an achievement toast may lie over a button for a few seconds (a player taps through it).
-    await p.evaluate(() => document.querySelector('#view .q:not(.done) [data-c]:not([disabled])').click());
+    await p.evaluate(i => smokeAnswer(i % 4 !== 0), i); // mostly right, as a new player
     const nx = await p
       .waitForSelector('#next', {timeout: 10000})
       .then(() => true)
@@ -4290,10 +4265,7 @@ async function onePath(b, base) {
     // A card that took the break at Next (a tip, the relief card) is closed first, as a player would.
     let ok = false;
     for (let k = 0; k < 3 && !ok; k++) {
-      ok = await p
-        .waitForSelector('#view .q:not(.done) [data-c]:not([disabled])', {timeout: 5000})
-        .then(() => true)
-        .catch(() => false);
+      ok = await qa.ready(p, {timeout: 5000, optional: true});
       if (!ok) {
         // Escape: "Got it" on a tip, "Keep drilling" on the relief card; then Next if the duel answered is still there.
         if (await p.$('.unlock.intro')) cards++;
@@ -4328,8 +4300,9 @@ async function onePath(b, base) {
       document.querySelectorAll('.achpop').forEach(x => x.remove());
       achQ.length = 0;
       achBusy = false;
+      // answer.js: a duel: two choices
       const cs = [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(x => x.dataset.c);
-      document.querySelector('#view .q:not(.done) [data-c]').click();
+      smokeAnswer(cs[0]); // a duel: its first choice, right or wrong
       return {card, cs};
     });
     await p.waitForSelector('#next:not([disabled])', {timeout: 10000}).catch(() => {});
@@ -4343,8 +4316,9 @@ async function onePath(b, base) {
     fails.push(`one path, Duel tab: ${JSON.stringify({cards, out, met: met.length})}`);
   // "Drill this pair" on a pair not unlocked: an unlocked duel instead, no card.
   await p.evaluate(() => (location.hash = 'practice/duels/Acropora/Montipora'));
-  await p.waitForSelector('#view .q:not(.done) [data-c]', {timeout: 10000}).catch(() => {});
+  await qa.ready(p, {timeout: 10000, optional: true});
   const dr = await p.evaluate(() => ({
+    // answer.js: a duel: two choices
     cs: [...document.querySelectorAll('#view .q:not(.done) [data-c]')].map(x => x.dataset.c),
     card: !!document.querySelector('.unlock.intro')
   }));
@@ -4824,7 +4798,7 @@ async function installCheck(b, base) {
   // again, without marking anything.
   {
     const [c, p, errs] = await open({ios: true, hash: '#practice/quiz'});
-    await p.waitForSelector('#view .q [data-c]', {timeout: 15000}).catch(() => {});
+    await qa.ready(p, {timeout: 15000, optional: true});
     if (!(await none(p))) fails.push('install, iPhone: the card over a quiz question');
     await p.evaluate(() => (location.hash = '#home'));
     if (!(await card(p))) fails.push('install, iPhone: no card on Home on the 3rd visit');
@@ -5114,6 +5088,7 @@ const PARTS = [
       // first question is about one of them, its choices among them (Pierre, 2026-11-02).
       await q2.waitForSelector('.unlock.intro', {timeout: 5000}).catch(() => {});
       // The quiz's keys never answer the question behind a card (Codex review #350).
+      // answer.js: the key behind a card answers nothing
       await q2.keyboard.press('1');
       if (await q2.evaluate(() => !!document.getElementById('next') || !!P[LEVEL])) fails.push(`${w}px key 1 answered behind a card`);
       const seen = [];
@@ -5179,6 +5154,7 @@ const PARTS = [
         }
         await q2.click('.unlock.intro .next');
       }
+      // answer.js: a new player's first question: choices
       const ch = await q2.evaluate(() => [...document.querySelectorAll('#view [data-c]')].map(b => b.dataset.c));
       // My progress offers to open every genus (RAs who had the lecture and skipped the button on the first cards).
       await q2.evaluate(() => (location.hash = 'progress'));
@@ -5399,6 +5375,7 @@ const PARTS = [
       });
       if (under.hash !== '#practice/quiz' || !under.card || under.shown) fails.push(`tour over the first cards: ${JSON.stringify(under)}`);
       // The quiz's answer keys never answer the question under the tour (Codex review #353).
+      // answer.js: the key under the tour answers nothing
       await qt.keyboard.press('1');
       await qt.waitForTimeout(200);
       if (await qt.evaluate(() => !!document.getElementById('next') || !!P[LEVEL]))
@@ -5554,7 +5531,8 @@ const PARTS = [
         // made this check fail in CI on PR #410: the hint was tried once and skipped under the toast); clicked in the page,
         // so Playwright does not wait for the toast to leave first.
         const nextQ = async (p, toast) => {
-          await p.click('#view [data-c]');
+          await qa.ready(p);
+          await p.evaluate(() => smokeAnswer(false)); // a miss: no achievement toast but the one raised here
           if (toast)
             await p.evaluate(() => (achPop({tier: 1, icon: '🧪', title: 'Smoke', desc: 'test'}), document.getElementById('next').click()));
           else await p.click('#next');
