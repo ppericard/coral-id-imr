@@ -32,6 +32,7 @@ Main: sheet script **v131** (#876). No player report read since 11-12. The night
   game species has photos; about 1,000 candidates left (ease 4-5 share 14% to 38% across batches; a blind re-judge of 40 found no systematic drift, too few to measure ease 5) (refills keep adding top-ups). Each PR lists its "Possible
   misidentifications (iNat ID taken as given)" for him to check (#902 holds 40).
 - **In flight**: #871 (Q350, parked), #882 (Q123 j corals, parked); agent: fish judging (batch 11).
+- **Rows 9 and 10** (Q322): still doubled; corrected at their next sync; no hand correction (D8).
 - **Kept on branches, no PR (W27)**: admin-signout-seal, level-count-from-log, fish-todo-wip, photo-genus-ability, time-weighted-steps.
 
 ## Next
@@ -45,8 +46,7 @@ Four agents at a time (W27); what is easy to correct afterwards ships:
 
 ## Questions for Pierre
 
-Numbered for good only when the answer commits the future and will be cited later (AGENTS.md "Working mode").
-Each PR or study gives its recommendations; most are one-word answers:
+Numbered only when the answer commits the future (AGENTS.md); each PR or study gives its recommendations:
 
 - **#871 (Q350 after Q355 B)**: ship B' (B for corals, the first build's starter order for fish), accepting the costs
   left under every variant (fish rated world: the lecture RA's first Open Water later, the expert's units at Open
