@@ -2044,16 +2044,21 @@ const WIDTHS = [390, 1280];
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Pairs, Learning › Answer log.')
-              fe.push(`the line on what is not there: "${at.not}"`);
-            // every view the fish side has: Stops (live) and the others, each drawn from the fish report
-            const H = await fq.evaluate(() =>
-              TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h)))
-            );
-            if (H.length !== 11 || H.some(h => /photos$|pairs$|answer-log$/.test(h)) || !H.includes('analyses/learning/stops'))
+            if (at.not !== 'Not for fish yet: Difficulty › Photos.') fe.push(`the line on what is not there: "${at.not}"`);
+            // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
+            // fish report
+            const [H, LV] = await fq.evaluate(() => [
+              TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
+              LIVE_STATS
+            ]);
+            if (
+              H.length !== 13 ||
+              H.some(h => /photos$/.test(h)) ||
+              ['analyses/learning/stops', 'analyses/difficulty/pairs', 'analyses/learning/answer-log'].some(h => !H.includes(h))
+            )
               fe.push(`its views ${H.join(' ')}`);
-            // the views drawn from the fish report (Stops, the live one, has no report to draw)
-            for (const h of vw === 1280 ? H.filter(h => !/stops$/.test(h)) : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
+            // the views drawn from the fish report (the live ones have no report to draw: their own block below)
+            for (const h of vw === 1280 ? H.filter(h => !LV.includes(h)) : ['analyses/overview', 'analyses/difficulty/mix-ups']) {
               at = await look('fish/' + h);
               if (at.none || !/^Fish: /.test(at.badge) || at.words || at.ids.length || at.coral || at.wide > 0)
                 fe.push(`#fish/${h} ${JSON.stringify({...at, views: undefined})}`);
@@ -4639,6 +4644,130 @@ const WIDTHS = [390, 1280];
         )
           fe.push(`Health ${JSON.stringify(hl)}`);
         if (fe.length) fails.push(`${vw}px Fish Stops and Health: ${fe.slice(0, 4).join(' | ')}`);
+        await fc.close();
+      }
+      // Fish admin at parity, the next step: Analyses › Learning › Answer log and Analyses › Difficulty › Pairs follow the
+      // Corals | Fish switch (rule A4). The demo's fish answers are family questions picked from choices; a few genus
+      // questions, typed answers and a mix-up of two genera of one family are added to its log (as the fresh Health block
+      // below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
+      // with its IMR name), the questions on each rank and typed against picked, no Elo column (the sheet sends the corals'
+      // levels), no compare page; Pairs: the two genera start as look-alikes, the fish photos and observations, the typed
+      // mix-ups apart; no raw unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px.
+      for (const vw of [1280, 390]) {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          fc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
+        await fc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const fq = await fc.newPage(),
+          fe = [];
+        fq.on('pageerror', e => fe.push(e.message));
+        await fq.goto(base + `admin.html?demo&v=${VER}#fish/analyses/learning/answer-log`);
+        await fq
+          .waitForFunction(
+            () => cur === 'analyses/learning/answer-log' && FISHA && ANS && document.querySelector('#view .adm-scard'),
+            null,
+            {
+              timeout: 90000
+            }
+          )
+          .catch(() => fe.push('Answer log not drawn'));
+        const ok = await fq.evaluate(() => {
+          const R = rowsOf(),
+            ids = [...new Set(R.map(r => r[0]))].slice(0, 2),
+            ph = Object.keys(FISHA.ph),
+            add = [];
+          if (!R.length || ids.length < 2) return false;
+          let t = Date.now() - 300 * 60e3;
+          const mk = (id, shown, ans, right, mode, ch) =>
+            Object.assign([...R[0]], {0: id, 1: (t += 1000), 2: shown, 3: ans, 4: right, 5: mode, 6: ph[add.length % ph.length], 10: ch});
+          ids.forEach(id => {
+            for (let i = 0; i < 6; i++)
+              add.push(
+                mk(
+                  id,
+                  'g:Amphiprion',
+                  i % 2 ? 'g:Amphiprion' : 'g:Chromis',
+                  i % 2,
+                  'quiz',
+                  'g:Amphiprion g:Chromis g:Dascyllus g:Pomacentrus'
+                )
+              );
+            for (let i = 0; i < 4; i++) add.push(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+          });
+          ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
+          render();
+          return true;
+        });
+        if (!ok) fe.push('no fish answers in the demo');
+        const seen = () =>
+          fq.evaluate(() => {
+            const V = document.getElementById('view');
+            return {
+              h3: [...V.querySelectorAll('.adm-scard h3')].map(h => h.textContent.trim()),
+              cond: [...V.querySelectorAll('.adm-scard')]
+                .filter(x => /^Conditions/.test(x.textContent))
+                .map(x => [...x.querySelectorAll('td:first-child')].map(td => td.textContent))
+                .flat(),
+              th: [...V.querySelectorAll('th')].map(e => e.textContent.trim()),
+              players: ([...document.querySelectorAll('.adm-kpis > *')].find(e => /Players/i.test(e.textContent)) || {}).textContent || '',
+              want: String(new Set(rowsOf().map(r => r[0])).size),
+              imr: [...V.querySelectorAll('td small')].map(e => e.textContent),
+              // an IMR sub-entry's tag (fishAdmin imr): its IMR name, after the organisation's short name (core.js ORG)
+              imrWant: FISHA.imr['g:Amphiprion'] ? ORG.short + ' ' + FISHA.imr['g:Amphiprion'] : '',
+              cmp: V.querySelectorAll('a[href*="cmp-"]').length,
+              ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              coral: Object.keys(DATA.gen)
+                .filter(g => new RegExp(`\\b${g}\\b`).test(V.textContent))
+                .slice(0, 3),
+              pair: [...V.querySelectorAll('tr')]
+                .filter(tr => /Amphiprion · Chromis/.test(tr.textContent))
+                .map(tr => tr.cells[1].textContent),
+              zo: V.querySelectorAll('[data-zo]').length,
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+        const lg = await seen();
+        if (
+          lg.h3.join(' | ') !== 'Learning curve | Calibration | Conditions | Families and genera | Mix-ups' ||
+          ['Family questions', 'Genus questions', 'Typed', 'From choices'].some(c => !lg.cond.includes(c)) ||
+          lg.cond.some(c => /view|corallites/i.test(c)) ||
+          lg.th.includes('Elo') ||
+          !lg.players.includes(lg.want) ||
+          !lg.imrWant ||
+          !lg.imr.includes(lg.imrWant) ||
+          lg.cmp ||
+          lg.ids.length ||
+          lg.coral.length ||
+          lg.wide > 0
+        )
+          fe.push(`Answer log ${JSON.stringify(lg)}`);
+        await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/pairs'));
+        await fq
+          .waitForFunction(() => cur === 'analyses/difficulty/pairs' && document.querySelector('#view .adm-scard'), null, {timeout: 60000})
+          .catch(() => fe.push('Pairs not drawn'));
+        const pr = await seen();
+        if (
+          pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
+          pr.pair.join() !== 'Look-alike' ||
+          !pr.zo ||
+          pr.cmp ||
+          pr.ids.length ||
+          pr.coral.length ||
+          pr.wide > 0
+        )
+          fe.push(`Pairs ${JSON.stringify(pr)}`);
+        // a fish photo enlarges alone, its family named in the caption
+        else {
+          await fq.click('#view [data-zo]');
+          const lb = await fq.evaluate(() => ({
+            open: !$('lightbox').hidden,
+            cap: ($('lightbox').querySelector('.lb-cap') || {}).textContent || ''
+          }));
+          if (!lb.open || /\b[fgs]:[A-Z]/.test(lb.cap) || !lb.cap.trim()) fe.push(`a photo enlarged ${JSON.stringify(lb)}`);
+        }
+        if (fe.length) fails.push(`${vw}px Fish Answer log and Pairs: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
       // A fresh admin session straight to fish Health (Codex review #800): a candidate photo everyone misses keeps its Not
