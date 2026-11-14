@@ -5281,6 +5281,25 @@ a.psrc:focus-visible {
 .pwall .pw.s0 {
   border: 1px dashed var(--line);
 }
+/* "Mystery" tiles (progress.js mysteryOf; Pierre, 2026-11-04): a unit not met yet, for a player who sees them, keeps its
+   place as a "not seen" tile with a "?" for its name: no photo, no name, not a link (no href: no pointer, no hover). */
+.pwall .pw.myst {
+  display: grid;
+  place-items: center;
+}
+.pwall .pw .pwq {
+  font: 700 var(--fs-2xl) / 1 var(--display);
+  color: var(--muted);
+}
+.pslate .ps.myst i,
+.pseg a.myst i {
+  font-style: normal;
+  font-weight: 700;
+}
+.pslate .ps.myst:hover,
+.pseg a.myst:hover {
+  filter: none;
+}
 .pwall .pw .pwb {
   position: absolute;
   left: 0;

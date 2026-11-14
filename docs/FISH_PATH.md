@@ -562,9 +562,11 @@ on families only to an IMR RA with every species open:
   bottom as the coral page's views.
 - Shared by all three: the card (its ring shows the global score; levels, a one-line species summary), the "Open all" box while entries or
   species are still unopened, and a drill-down per entry (review and latest first, the rest capped; species not open counted, not listed).
-- **"Mystery" tiles for units not met yet** (Pierre, 2026-11-04; ROADMAP): an entry or species the player has not met shows as a masked
-  tile, for everyone on fish. On corals only for beginners (the first-launch answer "I'm new to corals"); RAs who had the IMR course and
-  players who know corals well see the genera as today.
+- **"Mystery" tiles for units not met yet** (Pierre, 2026-11-04; built 2026-11-15): a unit the player has not met shows as a masked
+  tile ("?", no name, photo or link), for everyone on fish. On corals only for beginners (the first-launch answer "I'm new to corals");
+  RAs who had the IMR course and players who know corals well see the genera as today (`progress.js` `mysteryOf`, `app.js` `UNITS`
+  `mystery`; docs/ARCHITECTURE.md "Pages and routing"). Built for the families and scientific genera on the photo wall; the species
+  tiles get the same mask when the species level brings them.
 
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 
