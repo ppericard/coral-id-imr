@@ -19,6 +19,20 @@
     const L = g.views.wide;
     return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || adultFirst(L)) : cover(g);
   };
+  // The Learn band rotates (ROADMAP "Fish Home mosaic: rotate the photos"; Pierre, 2026-11-08: for variety, instead of
+  // always the same photo per family): a landscape tile shows, at each drawing of Home, one of its unit's photos that suit
+  // it (landOk), drawn at random from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js
+  // refLevel) in the game's easy order, at most LAND_ROT in all. A unit with none keeps tilePhoto's photo, as before.
+  const LAND_ROT = 6;
+  const landPool = g => {
+    const out = landOk(g.coverP) ? [g.coverP] : [];
+    for (const p of g.views.wide) {
+      if (out.length >= LAND_ROT) break;
+      if (p !== g.coverP && landOk(p) && refLevel(p)) out.push(p);
+    }
+    return out;
+  };
+  const bandPhoto = (g, land) => (land && pick(landPool(g))) || tilePhoto(g, land);
   const ph = (n, v) => {
     const g = DATA.gen[n];
     if (!g) return '';
@@ -47,14 +61,15 @@
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
     // A subject whose photos are wide (UNITS land: fish, Pierre 2026-11-08: "most fish are horizontal", square tiles cut
     // them) gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
-    // photo picked to suit them (tilePhoto: Pierre's cover when it suits the tile, else the first of its easiest that does).
+    // photo picked to suit them, one of several at each drawing (bandPhoto: Pierre's cover or a reference photo that suits
+    // the tile; none, tilePhoto: the first of its easiest that does).
     const land = !!UNITS[SUBJ.id].land;
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)
           .map(
             n =>
-              `<img ${thumb(tilePhoto(GX(n), land), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
+              `<img ${thumb(bandPhoto(GX(n), land), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
           )
           .join('')
       : shuffle(names)

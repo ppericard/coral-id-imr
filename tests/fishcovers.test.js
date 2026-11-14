@@ -227,6 +227,64 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
   assert.strictEqual(ctx.tile({views: {wide: [jl, jp]}}, true).f, 'jl', 'juveniles only: the first');
 });
 
+// The Learn band rotates (home.js landPool, bandPhoto; ROADMAP "Fish Home mosaic: rotate the photos", Pierre,
+// 2026-11-08): each landscape tile draws one of its unit's photos that suit it, his cover first (Q291) then its reference
+// photos (core.js refLevel) in the game's order, at most LAND_ROT; a unit with none keeps tilePhoto's photo.
+test('Home band: a landscape tile rotates among his cover and the reference photos that suit it', () => {
+  const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
+    X = app(),
+    at = {i: 0},
+    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, refLevel: C.refLevel, pick: a => a[at.i]};
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) +
+      '\nthis.tile = tilePhoto; this.pool = landPool; this.band = bandPhoto; this.ROT = LAND_ROT;',
+    ctx
+  );
+  const ref = (f, o = {}) => ({f, ar: 1.5, jt: 'p1g0sl1', e: 5, ...o}),
+    r1 = ref('r1'),
+    r2 = ref('r2'),
+    r3 = ref('r3'),
+    easy = ref('easy', {e: 4}), // fits, not a reference photo (e 4 without rep)
+    sq = ref('sq', {ar: 1}),
+    cut = ref('cut', {jt: 'p0g0sl1'}),
+    juv = ref('juv', {jt: 'p1g0sl1j'}),
+    cov = ref('cov', {e: 3}); // his cover: fits the tile, not reference-level
+  assert.ok(C.refLevel(r1) && !C.refLevel(easy) && !C.refLevel(cov));
+  const g = {views: {wide: [r1, sq, cut, juv, easy, r2, cov, r3]}};
+  const fs_ = L => Array.from(L, p => p.f); // out of the vm's realm
+  assert.deepStrictEqual(fs_(ctx.pool(g)), ['r1', 'r2', 'r3'], 'the reference photos that suit the tile, in order');
+  assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: cov})), ['cov', 'r1', 'r2', 'r3'], 'his cover first, once, reference or not');
+  assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: r2})), ['r2', 'r1', 'r3'], 'a cover among them is not shown twice');
+  assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: sq})), ['r1', 'r2', 'r3'], 'a cover that does not suit the tile stays out');
+  const many = {views: {wide: Array.from({length: 10}, (_, i) => ref('m' + i))}};
+  assert.strictEqual(ctx.pool(many).length, ctx.ROT, `at most LAND_ROT (${ctx.ROT})`);
+  // The band draws among them; a unit with none keeps tilePhoto's photo; square tiles: the card photo.
+  at.i = 2;
+  assert.strictEqual(ctx.band({...g, coverP: cov}, true).f, 'r2');
+  at.i = 0;
+  assert.strictEqual(ctx.band({...g, coverP: cov}, true).f, 'cov');
+  const none = {views: {wide: [sq, easy, r1].map(p => ({...p, e: p === r1 ? 3 : p.e}))}};
+  assert.strictEqual(ctx.pool(none).length, 0);
+  assert.strictEqual(ctx.band(none, true).f, ctx.tile(none, true).f, 'none to rotate: the photo as before');
+  assert.strictEqual(ctx.band(none, true).f, 'easy');
+  assert.strictEqual(ctx.band({...g, coverP: sq}, false).f, 'sq', 'square tiles: the card photo');
+  // On the real files: every photo a tile can draw suits it, his fitting cover leads, and most circle-1 units rotate.
+  const FISH = app().run(
+    {f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))},
+    read('curation.json')
+  );
+  const units = Object.values(FISH.gen).filter(u => u.views.wide.length && u.circle === 1);
+  units.forEach(u => {
+    const P = ctx.pool(u);
+    assert.ok(P.length <= ctx.ROT && new Set(P).size === P.length, u.name);
+    P.forEach(p => assert.ok(p.ar >= 1.3 && p.ar <= 1.8 && p.jt.charAt(1) === '1' && !X.juvP(p), `${u.name} ${p.f}`));
+    if (P.length && u.coverP && P.includes(u.coverP)) assert.strictEqual(P[0], u.coverP, u.name);
+  });
+  const rot = units.filter(u => ctx.pool(u).length > 1).length;
+  assert.ok(rot > units.length / 2, `${rot} of ${units.length} circle-1 units rotate`);
+});
+
 // A wink's surprise card (quiz.js winkPhoto; Pierre, 2026-11-08, Q290, of the Thresher sharks: "we can use my cover for
 // the card"): his ★ Cover while in play (coverP), else one of the wink's chosen photos in play, else the unit's best.
 test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q290)", () => {
