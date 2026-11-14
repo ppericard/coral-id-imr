@@ -171,6 +171,18 @@
   "fish-s064-cand-602438449": {
    "code": "p1g1bm12",
    "keep": "best"
+  },
+  "fish-s064-cand-467554118": {
+   "code": "p1g1sls3",
+   "keep": "best"
+  },
+  "fish-s064-cand-344048801": {
+   "code": "o1g1mlk2",
+   "keep": "dup"
+  },
+  "fish-s064-cand-344048834": {
+   "code": "o1g1ml13",
+   "keep": "best"
   }
  }
 }

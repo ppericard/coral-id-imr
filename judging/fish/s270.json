@@ -344,6 +344,14 @@
   "fish-s270-cand-762955357": {
    "code": "p1g2bsx1",
    "keep": "dup"
+  },
+  "fish-s270-cand-428109835": {
+   "code": "p1g3bs11",
+   "keep": "best"
+  },
+  "fish-s270-cand-570866738": {
+   "code": "p1g0ml14",
+   "keep": "best"
   }
  }
 }

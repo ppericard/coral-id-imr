@@ -151,6 +151,62 @@
   "fish-s043-cand-544356953": {
    "code": "p1g1sl14",
    "keep": "best"
+  },
+  "fish-s043-cand-353921978": {
+   "code": "p1g0sm1j4",
+   "keep": "best"
+  },
+  "fish-s043-cand-353922014": {
+   "code": "o1g0sm1j3",
+   "keep": "dup"
+  },
+  "fish-s043-cand-286420373": {
+   "code": "p1d1mmoj2",
+   "keep": "best"
+  },
+  "fish-s043-cand-207224606": {
+   "code": "o1d1sm1j2",
+   "keep": "best"
+  },
+  "fish-s043-cand-207225459": {
+   "code": "p1d1sssj1",
+   "keep": "dup"
+  },
+  "fish-s043-cand-271271619": {
+   "code": "o1g1smkj2",
+   "keep": "dup"
+  },
+  "fish-s043-cand-271271749": {
+   "code": "p1g1sm1j4",
+   "keep": "best"
+  },
+  "fish-s043-cand-55141461": {
+   "code": "o1g1sl1j3",
+   "keep": "best"
+  },
+  "fish-s043-cand-293576388": {
+   "code": "p1d1mmkj2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a pale fish about its size, partly behind it and overlapping it: confusion possible"
+  },
+  "fish-s043-cand-259464124": {
+   "code": "o1g1mmoj2",
+   "keep": "best"
+  },
+  "fish-s043-cand-533667931": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s043-cand-471326580": {
+   "code": "p1g1smo3",
+   "keep": "best"
+  },
+  "fish-s043-cand-613848234": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }
