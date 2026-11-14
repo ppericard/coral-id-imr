@@ -2320,7 +2320,29 @@ picks the first unit only, so the first 10 units are a little less easy (mean `g
   against B, the profiles of those cells, `--looks 2`): the app world's cells held or unclear (casual diver's first unit
   at Open Water 87 → 68 item, 93 → 91 field; beginner's units met at 100 17.2 → 16.0 field, held); the rated world's
   two breaches repeat: the lecture RA's first unit at Open Water 70 → 89 (+19, margin +14), the expert's units at Open
-  Water at 1,000 57.3 → 54.1 (−3.2, margin −2.9); the lecture RA's units met at 100 unclear (18.1 → 16.8). To Pierre. **The rated world, corals under B**: the beginner's shown score at 1,000 41.2 → 39.9 (−1.3, margin −1),
+  Water at 1,000 57.3 → 54.1 (−3.2, margin −2.9); the lecture RA's units met at 100 unclear (18.1 → 16.8). To Pierre.
+- **B'** (prepared for Pierre's morning answer, commit "Variant B'"): B, but a subject whose first cards are its
+  starter core (the fish) draws them in the group order, as first built; the corals keep B's unit-by-unit first cards.
+  Checked against the same bases: the corals give B's runs exactly (app and rated world, seeds 501-510); the fish give
+  the first build's (A's) rows exactly on 501-510. On 511-520 the two rated-world fish breaches come back under B' too
+  (so under A as well): the lecture RA's first unit at Open Water 70 → 116, the expert's units at Open Water at 1,000
+  57.3 → 53.5. They come from the groups in the fish rated world (or its noise on these seeds), not from B's first
+  cards; the app world's fish cells hold or are unclear under B' on both seed sets.
+
+  | Fish cell (base → arm) | seeds | A | B | B' |
+  | --- | --- | --- | --- | --- |
+  | app, casual diver's first unit at Open Water, item | 501-510 | 65 → 63 held | 65 → 81 **breached** | 65 → 63 held |
+  | same | 511-520 | (as B') | 87 → 68 held | 87 → 94 unclear |
+  | app, casual diver's first unit at Open Water, field | 501-510 | 85 → 74 held | 85 → 105 **breached** | 85 → 74 held |
+  | same | 511-520 | (as B') | 93 → 91 unclear | 93 → 81 held |
+  | app, beginner's units met at 100, field | 501-510 | 17.1 → 15.4 unclear | 17.1 → 14.3 **breached** | 17.1 → 15.4 unclear |
+  | same | 511-520 | (as B') | 17.2 → 16.0 held | 17.2 → 16.3 unclear |
+  | rated, lecture RA's first unit at Open Water | 501-510 | 57 → 65 unclear | 57 → 71 **breached** | 57 → 65 unclear |
+  | same | 511-520 | (as B') | 70 → 89 **breached** | 70 → 116 **breached** |
+  | rated, expert's units at Open Water at 1,000 | 501-510 | 59.2 → 58.1 held | 59.2 → 55.6 **breached** | 59.2 → 58.1 held |
+  | same | 511-520 | (as B') | 57.3 → 54.1 **breached** | 57.3 → 53.5 **breached** |
+  | rated, lecture RA's units met at 100 | 501-510 | 19.8 → 18.8 unclear | 19.8 → 17.6 **breached** | 19.8 → 18.8 unclear |
+  | same | 511-520 | (as B') | 18.1 → 16.8 unclear | 18.1 → 16.8 unclear | **The rated world, corals under B**: the beginner's shown score at 1,000 41.2 → 39.9 (−1.3, margin −1),
   breached as first built; the other cells held or unclear.
 - **The real log** (the Answers tab as read on 2026-11-12, 2,047 + 983 coral answers of 12 players with 50 or more;
   read-only, players pseudonymised): under today's rule, the 10 players on the path met the two genera of a pair of the
