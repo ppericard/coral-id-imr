@@ -1,1 +1,0 @@
-The embedded `core.js` names the fish admin's Photos › Families page `photos/tree` (`SUBJECTS` fish `admin` `pages`): the tab became Tree, the key's classification as a tree of any depth (Pierre, 2026-11-13, Q340); nothing the script computes changes.
