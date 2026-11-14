@@ -155,6 +155,14 @@
   "fish-s022-cand-459822019": {
    "code": "p1g1smo3",
    "keep": "dup"
+  },
+  "fish-s022-cand-257419737": {
+   "code": "p1g0slo4",
+   "keep": "best"
+  },
+  "fish-s022-cand-250383886": {
+   "code": "o1g0sss2",
+   "keep": "best"
   }
  }
 }

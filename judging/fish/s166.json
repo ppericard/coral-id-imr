@@ -191,6 +191,14 @@
   "fish-s166-cand-516985978": {
    "code": "o1d1sl12",
    "keep": "dup"
+  },
+  "fish-s166-cand-607848095": {
+   "code": "o0d0ml11",
+   "keep": "best"
+  },
+  "fish-s166-cand-640578103": {
+   "code": "p1g0slo4",
+   "keep": "best"
   }
  }
 }

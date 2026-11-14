@@ -143,6 +143,14 @@
   "fish-s332-cand-287162439": {
    "code": "p1g1mm13",
    "keep": "best"
+  },
+  "fish-s332-cand-470972049": {
+   "code": "o1g2ml12",
+   "keep": "alt"
+  },
+  "fish-s332-cand-470972050": {
+   "code": "p1g2ml12",
+   "keep": "best"
   }
  }
 }

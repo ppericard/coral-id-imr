@@ -203,6 +203,18 @@
   "fish-s128-cand-332685123": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s128-cand-214817366": {
+   "code": "p1g2bs11",
+   "keep": "best"
+  },
+  "fish-s128-cand-349601246": {
+   "code": "p1g0ss1a1",
+   "keep": "best"
+  },
+  "fish-s128-cand-186703716": {
+   "code": "p1g0sl15",
+   "keep": "best"
   }
  }
 }
