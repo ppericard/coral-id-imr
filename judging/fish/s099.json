@@ -171,6 +171,22 @@
   "fish-s099-cand-246333780": {
    "code": "o1g0sl13",
    "keep": "best"
+  },
+  "fish-s099-cand-306896476": {
+   "code": "o1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s099-cand-306896460": {
+   "code": "o1g2ssk1",
+   "keep": "dup"
+  },
+  "fish-s099-cand-542215810": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s099-cand-593578319": {
+   "code": "p1g1sm13",
+   "keep": "best"
   }
  }
 }
