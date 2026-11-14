@@ -2249,7 +2249,7 @@ Acropora–Montipora–Porites; Pocillopora–Seriatopora–Stylophora; Duncanop
 Astreopora–Cyphastrea–Echinopora; Mycedium–Pectinia; Lobophyllia–Plerogyra; Leptoria–Pavona–Platygyra;
 Hydnophora–Merulina–Pachyseris; Alveopora–Goniopora–Heliofungia; Danafungia–Fungia–Lithophyllon;
 Ctenactis–Herpolitha–Lobactis; Diploastrea–Dipsastraea; Astrea–Favites–Goniastrea; 4 lone genera (Anacropora,
-Galaxea, Halomitra, Millepora). 32 of the 59 declared coral pairs are split by the cap and pull their partner instead. Fish families (no pooled answers
+Galaxea, Halomitra, Millepora). 32 of the 59 declared coral pairs are split by the cap (as built first, they pulled their partner instead; not in B, below). Fish families (no pooled answers
 yet): Butterflyfishes–Angelfishes–Moorish Idol, Snappers–Coral Breams–Emperors, Parrotfishes–Wrasses,
 Soldierfishes–Squirrelfishes–Cardinalfishes, Triggerfishes–Filefishes, Lizardfishes–Sandperches; fish genera: IMR's
 Surgeonfish (Acanthurus, Ctenochaetus, Zebrasoma). Before the runs, the order alone (`openPick` 200 times from zero,
@@ -2295,6 +2295,30 @@ picks the first unit only, so the first 10 units are a little less easy (mean `g
   its first 100 answers (S, which lets the data split them, costs nothing there, but brings partners much less close);
   the beginner's late first Open Water comes from the first cards being a look-alike group and from the pulls (F and N
   together bring it back to the base). No arm holds every guardrail; the decision is Pierre's (the PR).
+- **Pierre's choice: B** (2026-11-14 16:48, Q355: "ok pour B"): declared pairs stay forced inside the groups and a
+  group's members open in a row; the first cards (`INTRO.START`) are drawn unit by unit as before the groups
+  (`openPick` `first`); a declared pair the cap split pulls nothing. **B shipped, checked again** (the same plan, seeds
+  501-510; its rows equal the arm "F and N" above, seed for seed, with the expert added): partners closer, the 63 coral
+  pairs 61-102 → 25-39 answers apart (p ≤ 1e-5), look-alike accuracy at 300 0.940 → 0.944 (p 0.002), Holm passes both.
+
+  | Coral cell, base → B (item / field learner) | beginner | lecture RA | strong RA | expert |
+  | --- | --- | --- | --- | --- |
+  | partners apart (median answers) | 74 → 32 / 102 → 39 | 61 → 25 / 68 → 31 | 64 → 27 / 66 → 26 | 61 → 27 / 58 → 26 |
+  | right %, answers 1-100 | −1.0 / −2.1 | **−3.4 / −3.9** | +0.9 / +0.3 | −0.4 / −0.1 |
+  | first unit at Open Water | 54 → 53 / 93 → 83 | 45 → 45 / 39 → 42 | 30 → 27 / 28 → 29 | 21 → 22 / 21 → 21 |
+  | units at Open Water at 300 | 4.5 → 3.1 / 3.6 → 3.1 | **8.0 → 5.9 breached** / 6.7 → 5.8 | 11.1 → 11.7 / 9.6 → 10.9 | 16.3 → 16.4 / 18.2 → 18.3 |
+  | true knowledge at 300 | 0.660 → 0.667 / 0.558 → 0.564 | 0.816 → 0.819 / 0.824 → 0.828 | 0.861 → 0.851 / 0.864 → 0.864 | 0.954 → 0.953 / 0.953 → 0.953 |
+
+  The two cells in bold are the costs shown to Pierre with B, accepted with his choice; every other cell held or was
+  unclear. **Fish under B (new, not in the table shown to Pierre; waits for the integrator)**: partners 38-52 → 6-8
+  answers apart as before (p ≤ 1e-5); right % of answers 1-100 within −1.6 points; but cells that held as first built
+  are breached now: the app world, the casual diver's first unit at Open Water 65 → 81 (item) and 85 → 105 (field), the
+  beginner's units met at 100 17.1 → 14.3 (field); the rated world, the lecture RA's first unit at Open Water 57 → 71
+  and units met at 100, the expert's units at Open Water at 1,000. For the fish, B differs from the first build only in
+  the order of the four starter-core cards (the first cards are the starter core either way; no fish declared pair is
+  split by the cap), so these may be the noise of 10 seeds on run-level measures; a second look on seeds 511-520 would
+  say. **The rated world, corals under B**: the beginner's shown score at 1,000 41.2 → 39.9 (−1.3, margin −1),
+  breached as first built; the other cells held or unclear.
 - **The real log** (the Answers tab as read on 2026-11-12, 2,047 + 983 coral answers of 12 players with 50 or more;
   read-only, players pseudonymised): under today's rule, the 10 players on the path met the two genera of a pair of the
   new groups a median 51 answers apart (213 pairs, 23% within 15), the declared pairs 48 (378 pairs, 22%); in 92 of the
