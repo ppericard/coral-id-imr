@@ -554,13 +554,21 @@ def load(root, name, default=None):
 
 def inputs(root=ROOT):
     """(fish, curation, candidates, their judgements, reference photos, reference codes, reference crops, reference keeps):
-    what plan reads."""
+    what plan reads. One judgement per photo (Pierre, 2026-11-15; tools/fish_judge.py one_judgement): a reference photo
+    that is also a candidate is read with its candidate judgement (judging/fish/<species>.json: code and keep; none while
+    it is unsure), never its copy in tools/fish_judge.json."""
+    import fish_judge as FJ
     fish, cur = load(root, 'fish.json'), load(root, 'curation.json', {})
     cand, sug = load(root, 'fish-cand.json', {'cand': {}}), (load(root, 'suggest.json', {}) or {}).get('fish') or {}
     refs = (load(root, os.path.join('tools', 'fish_refs.json'), {}) or {}).get('photos') or {}
     J = load(root, os.path.join('tools', 'fish_judge.json'), {}) or {}
     codes = {f: c for m in (J.get('photos') or {}).values() for f, c in m.items()}
-    return fish, cur, cand, sug, refs, codes, J.get('crops') or {}, J.get('keep') or {}
+    cj = FJ.cand_judgements(root)
+    for r in (r for L in refs.values() for r in L):  # a reference photo judged only as a candidate is judged
+        if r.get('f') and r['f'] not in codes and pid(r['f']) in cj:
+            codes[r['f']] = cj[pid(r['f'])]['code']
+    codes, keep = FJ.one_judgement(codes, J.get('keep'), cj)
+    return fish, cur, cand, sug, refs, codes, J.get('crops') or {}, keep
 
 
 def boxes_in(root=ROOT):

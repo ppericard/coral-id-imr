@@ -135,8 +135,8 @@ for a genus or a family, a photo of a game species of the entry; the observation
 taxon's most faved, `obs_of`; a photo whose observation is outside the box is listed under `away`, never taken, while
 Pierre's Q230 is open), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
 `tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
---todo`, codes under their entry in `tools/fish_judge.json` `photos`; the iNaturalist ones and FishBase's main picture
-carry `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
+--todo`, codes under their entry in `tools/fish_judge.json` `photos` (one that is also a candidate is judged once, in the
+candidate's file: "One judgement per photo" below); the iNaturalist ones and FishBase's main picture carry `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
 candidates"): every reference photo judged sure on the candidates' rubric (one kind of fish, count `1` or `s`; in the
 water, no `a`) is in play by itself, whatever its level (`tools/fish_game.py` `ref_play`, `judged_sure`; the stopgap list of
 `fish-photos.json`, which took only the reference-level ones, is retired since 2026-11-15). The same photo as one in play stays out, always; **a reference photo on an observation
@@ -149,6 +149,37 @@ read the reference look (`p1g0s` then size `l` or `m`, count `1` or `s`, no `j`,
 one kind of fish only (count `1` or `s`: never other species in view, `o` or `k`, nor an unclear subject, rule P3). A
 reference-level photo comes before every other photo (`easyRank`: the card's cover and each list's first photos) and a
 never-seen one weighs 3 times more in the draw (fish `SUBJECTS` `calib.ref`, `model.js` `photoSet`), never exclusively.
+
+## One judgement per photo (2026-11-15)
+
+Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: as a reference photo (`tools/fish_refs.json`
+`fi<id>` or `fb<stem>`, its code in `tools/fish_judge.json`) and as a candidate (`fish-cand.json`
+`fish-<species>-cand-<id>`, judged in `judging/fish/<species>.json`). They are one photo (`tools/fish_game.py` `pid`), so:
+
+- **The candidate's judging file is the single source** of such a photo: its code, its `keep` within the observation, its
+  phase and its doubts. The build reads it for the reference route too (`tools/fish_judge.py` `one_judgement`, called by
+  `tools/fish_game.py` `inputs`): best or alt enters like a candidate, dup stays out, and an unsure judgement leaves the
+  reference copy unjudged until it is settled. A reference photo with no candidate copy keeps its own code here.
+- **Judge it once**, in the candidate's file, then `python3 tools/judging_fish.py one` copies the code and `keep` onto the
+  reference copy in `tools/fish_judge.json`; `python3 tools/judging_fish.py one --check` lists every divergence and exits
+  1 on any (`tests/onejudgement.test.js` runs it on the repository, so a new divergence fails the checks). A photo judged in
+  two species files that disagree is reported, never settled by the tool. `fish_judge.py --sheets --refs --todo` counts a
+  photo judged as a candidate as judged.
+- **The re-judge of 2026-11-15**: 2,058 photos were judged twice (715 of them still reference photos; the rest were
+  stopgap photos, retired that day); 756 pairs had the same code, 1,302 did not, and 183 disagreed on what matters (the
+  juvenile flag 85, the ease by two points or more 105, whether the photo may play 32, the legacy count `m` 2, a reference
+  copy in play while its candidate judgement was unsure 2; a photo may count twice). Those 183 were judged again once, blind to both earlier codes,
+  on sheets of 6 at 480 x 360 px and at 1,024 px for the close calls (the juveniles): the new code is the single judgement.
+  The other 1,119 pairs, which differed by one ease point or on a tag that changes nothing above, took the candidate's
+  code, which is the one already in play for the photos the candidate route puts in play. Of the 34 reference keeps, 7
+  disagreed with their candidate's (alt against dup): looked at against their observation's photos, 4 are alt, 3 dup.
+  Pierre's adds keep his tags and ease (`curation.json`, rule A1): where the new judgement changes the ease, the juvenile
+  flag or whether the photo may play, it is proposed to him in the admin's Photo review › Light proposals, "One judgement
+  per photo" (`judging/fish-one-judgement.json`, 42 photos; `admin-light.js` `LIGHT_SETS`).
+- **Still route-dependent**: the reference flag `r` and its ease point come from the record's `rep`, which only the
+  reference record carries for 423 of these photos (`fish-cand.json` tags only the taxon's cover; `tools/fish_refs.json`
+  every photo of the taxon page). The same code can then give the photo one ease point more as a reference photo than as a
+  candidate: a separate question, left as it is.
 
 ## A proposed crop
 
