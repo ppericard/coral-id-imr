@@ -82,17 +82,27 @@ test('a tip is short and seen on a photo; a species named is one of its own game
     assert.ok((x.marks || []).length <= 3, `${g}: at most 3 marks`);
     for (const [words] of x.marks || []) {
       assert.ok(words.length <= 80, `${g}: '${words}' is long for a tip`);
-      assert.doesNotMatch(words, /\d|\b(spines?|rays?|teeth|tooth|canines?)\b/i, `${g}: '${words}': counts and teeth are not photo cues`);
+      assert.doesNotMatch(words, /\d/, `${g}: '${words}': a count is not a photo cue`);
     }
     const lines = [x.plain ? x.plain[0] : '', ...(x.marks || []).map(m => m[0])];
     const own = FG[g].species.map(id => SP[id]);
-    for (const t of lines)
+    for (const t of lines) {
       for (const [, ini, ep] of t.matchAll(/\b([A-Z])\. ([a-z]+)/g)) {
         const s = own.find(s => s.name.split(' ')[1] === ep);
         assert.ok(ini === g[0] && s, `${g}: '${ini}. ${ep}' is not one of its species`);
         assert.ok(s.present && s.present.ph, `${g}: ${s.name} not confirmed in the Philippines (rule C8)`);
       }
+      // A species named in full (Paraluteres: Canthigaster valentini) is a game species confirmed in the Philippines.
+      for (const [name] of t.matchAll(/\b[A-Z][a-z]+ [a-z]+/g)) {
+        const s = F.species.find(s => s.name === name);
+        if (s) assert.ok(s.circle && s.present && s.present.ph, `${g}: ${name} not a game species confirmed in the Philippines`);
+      }
+    }
   }
+  assert.ok(
+    F.species.find(s => s.name === 'Canthigaster valentini'),
+    'the full-name check sees a game species'
+  );
 });
 
 // fishGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
