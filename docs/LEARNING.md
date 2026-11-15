@@ -3835,6 +3835,16 @@ fish player past a family's Advanced; this commit, before any run):
 - **Real log (rule L12)**: no species row exists yet (the species are never asked before this), so no replay can judge
   it. Measured instead: a log with no species row replays exactly as before (`tests/species.test.js`).
 
+**The rated world's horizon, revised before any of its results was read** (2026-11-15):
+- **Why**: with the species in, one run of 10,000 answers takes 34 minutes (the strong RA, measured locally). Most of the
+  time goes to `core.js` `faOf`, called for every answered unit at every answer, so the time grows about with the square
+  of the units answered.
+- **What happened**: the two GitHub runs of 10 seeds × 5 profiles could not end inside the workflow's 6 hours. They were
+  cancelled unread.
+- **What replaces them**: the rated world at **3,000 answers** (the level-2 horizon of the table below), 10 seeds, normal
+  photos, the same arms (`main` 219354c, this branch's 0719e1cb), the same guardrails and watched cells. Its rows are at
+  1,000 and 3,000. 10,000 answers waits for the `faOf` speed-up (a tooling fix of its own, rule W27).
+
 **Exploratory arms, declared before counting** (2026-11-15, after the app world breached `famAdv` at 600; the integrator's
 list for Pierre's options). Each arm is a variant of this branch, held in a scratch copy and not committed:
 - **(after)**: this branch as it is.
