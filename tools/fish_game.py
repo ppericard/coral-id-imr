@@ -704,10 +704,14 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
     from rights import rights_rank
     G = ((cur or {}).get('fish') or {}).get('genera') or {}
     covers = {pid(k['cover']) for k in G.values() if isinstance(k, dict) and k.get('cover')}
+    # His covers on a juvenile he confirmed (coverJ naming the cover's photo: autosort.js fishCoverJ; Pierre, 2026-11-15)
+    # come with the adults.
+    jok = {pid(k['cover']) for k in G.values()
+           if isinstance(k, dict) and k.get('cover') and k.get('coverJ') and pid(k['coverJ']) == pid(k['cover'])}
     fam = {sid: f['id'] for f in (fish or {}).get('families') or [] for sid in f.get('species') or []}
 
     def key(r):
-        return (juvenile(r), pid(r['f']) not in covers, not ref_level(r), -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r),
+        return (juvenile(r) and pid(r['f']) not in jok, pid(r['f']) not in covers, not ref_level(r), -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r),
                 r['f'])
 
     def pick(L):
