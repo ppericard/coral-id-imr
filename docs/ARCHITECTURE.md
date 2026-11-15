@@ -246,7 +246,8 @@ Layout (code re-review M5): written only by `tools/datajson.py` `dump()`: one to
 - Photo object: `f` file stem in `img/`, `ar` width/height (quiz layout; `r: 1` means remote, see below), `a` attribution, `lic`, `o` original URL (the observation: the draw's colony identity, `p.o || p.f`, and the photo memory's key),
   **IMR lecture photos** (`course`): `imr: true`, `slide`, `v` their view; once traced to their original source (Pierre,
   2026-11-15: "credit the photos now with their original sources"; the study #925, `tools/imr_sources.json`, written by
-  `tools/apply_imr_sources.py`, `--check` in the tests), `a` "<photographer> / Corals of the World" and **`pg`** the page
+  `tools/apply_imr_sources.py` on `course` and on the course records an exclusion archived in `excluded.json`, so a
+  Restore brings one back credited; `--check` in the tests), `a` "<photographer> / Corals of the World" and **`pg`** the page
   that states that credit, the credit's link (`app.js` `credit`, `lectCredit`, `photoSrc`, the genus sheet's strip; the
   admin's `lbCap`), never `o` (two lecture photos from one species page are two colonies) nor `src` (the online original
   the app falls back to); no `lic` (the site states none per picture). Before the answer `blindCredit` names the

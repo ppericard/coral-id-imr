@@ -39,17 +39,22 @@ test('an author or a licence only comes with the page that states it', () => {
 });
 
 // The credits (Pierre, 2026-11-15, #925: "credit the photos now with their original sources"): each lecture photo traced
-// to its original carries in data.json course its credit a ("<photographer> / <site>") and pg (the page that states it,
+// to its original carries on its course record its credit a ("<photographer> / <site>") and pg (the page that states it,
 // the credit's link), as tools/apply_imr_sources.py writes them; one not traced carries neither. Never o (the draw's
 // observation and the photo memory's key: two photos of one species page are two colonies) nor src (an online original).
-test('data.json course: a traced lecture photo credits its photographer and links its page; never o or src', () => {
+// The course records are data.json course and the ones Pierre's exclusions archived in excluded.json (tools/excluded.py:
+// a Publish may move one there at any time, so every traced photo is in one or the other; Codex review #939).
+test('course records: a traced lecture photo credits its photographer and links its page; never o or src', () => {
   const C = require('../core.js'),
-    course = Object.values(D.course).flat(),
-    by = Object.fromEntries(course.map(p => [p.f, p]));
+    archived = Object.values(X.photos)
+      .filter(x => x.in === 'course' && x.p)
+      .map(x => x.p),
+    by = Object.fromEntries([...Object.values(D.course).flat(), ...archived].map(p => [p.f, p]));
+  const want = Object.entries(S.photos).filter(([, r]) => r.found === 'original').length;
   let n = 0;
   for (const [f, r] of Object.entries(S.photos)) {
     const p = by[f];
-    if (!p) continue; // the comparison picture, the excluded photo
+    if (!p) continue; // the comparison picture (data.json cmp)
     assert.ok(p.imr && !('o' in p) && !('src' in p), f + ': no o or src on a lecture photo');
     if (r.found === 'original') {
       n++;
@@ -62,9 +67,40 @@ test('data.json course: a traced lecture photo credits its photographer and link
       assert.strictEqual(C.rightsClass(p), 'imr', f);
     }
   }
-  assert.strictEqual(n, 86);
+  assert.strictEqual(n, want, 'every traced photo credited, in play or archived');
   // the file as the tool writes it
   require('child_process').execFileSync('python3', ['tools/apply_imr_sources.py', '--check'], {cwd: ROOT});
+});
+
+// A traced photo Pierre excludes (its record archived in excluded.json by tools/excluded.py) keeps its credit, so a
+// Restore brings it back credited; the tool credits it there and does not call it missing (Codex review #939).
+test('apply_imr_sources: a traced photo archived by an exclusion is credited there, not missing', () => {
+  const out = JSON.parse(
+    require('child_process').execFileSync(
+      'python3',
+      [
+        '-c',
+        `import sys, json; sys.path.insert(0, 'tools')
+import apply_imr_sources as A
+S = {'photos': {'imr-p1_i1': {'found': 'original', 'source': {'author': 'X Y', 'site': 'Corals of the World', 'page': 'https://www.coralsoftheworld.org/a/'}},
+                'imr-p1_i2': {'found': 'original', 'source': {'author': 'Z', 'site': 'Corals of the World', 'page': 'https://www.coralsoftheworld.org/b/'}},
+                'imr-p1_i3': {'found': 'none', 'source': None}}}
+d = {'course': {'G': [{'f': 'imr-p1_i1', 'imr': True}, {'f': 'imr-p1_i3', 'imr': True}]}}
+X = {'photos': {'imr-p1_i2': {'in': 'course', 'g': 'G', 'i': 1, 'p': {'f': 'imr-p1_i2', 'imr': True}}}}
+done = A.apply(d, X, S)
+print(json.dumps([sorted(done), d['course']['G'], X['photos']['imr-p1_i2']['p']]))`
+      ],
+      {cwd: ROOT, encoding: 'utf8'}
+    )
+  );
+  assert.deepStrictEqual(out, [
+    ['imr-p1_i1', 'imr-p1_i2'],
+    [
+      {f: 'imr-p1_i1', imr: true, a: 'X Y / Corals of the World', pg: 'https://www.coralsoftheworld.org/a/'},
+      {f: 'imr-p1_i3', imr: true}
+    ],
+    {f: 'imr-p1_i2', imr: true, a: 'Z / Corals of the World', pg: 'https://www.coralsoftheworld.org/b/'}
+  ]);
 });
 
 // The app's credit (app.js credit, blindCredit, photoSrc): the slide, then the photographer linked to the page after the
