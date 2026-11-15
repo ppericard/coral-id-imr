@@ -167,8 +167,16 @@ test('the re-judge of 2026-11-09: every photo with other species is sorted, and 
 fish, cur, cand, sug, refs, codes, crops, rkeep = G.inputs('.')
 todo, keep, _ = G.plan(fish, cur, cand, sug, G.load('.', 'fish-game.json', {'photos': {}}), refs, codes, crops, rkeep=rkeep)
 print(json.dumps({r['f']: r.get('jt') for r in [r for r, _, _ in todo] + list(keep.values())}))`);
+  // A species met only on the surprise cards keeps its 5 best (Q372: tools/fish_game.py wink_trim), so an o add of one
+  // may be out for that reason; a k one never plays.
+  const wink = new Set(
+    read('fish.json')
+      .teach.filter(t => t.wink)
+      .flatMap(t => t.species || [])
+  );
   legacy.forEach(x => {
     const c = S[x].jt[6];
+    if (wink.has(FC.add[x]) && c === 'o') return;
     assert.strictEqual(x in plan, c === 'o', `${x}: sorted ${c}, ${x in plan ? 'in play' : 'out'}`);
     if (c === 'o') assert.strictEqual(plan[x][6], 'o', `${x}: its game record carries o`);
   });
