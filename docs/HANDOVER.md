@@ -127,7 +127,7 @@ Details in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - **Manual deploy (before the setup, or if self-update fails).** Give Pierre this raw link to copy: <https://raw.githubusercontent.com/ppericard/coral-id-imr/main/tools/sync/Code.gs>. His steps (French UI): open the Google Sheet "IMR Coral ID – RA progress" > **Extensions > Apps Script** > select all of `Code.gs` and paste the new code > save (disk icon) > **Déployer > Gérer les déploiements** > pencil icon (**Modifier**) on the existing deployment > **Version : Nouvelle version** > **Déployer**. The URL stays the same. Then check `v` with the link above.
 - A redeploy does **not** grant new permissions. If a new version uses a new Google service, Pierre must run, once in the editor, a function that calls it and accept the prompt (this is how `UrlFetchApp` was granted for v8: `function autoriser(){ UrlFetchApp.fetch("https://api.github.com"); }`).
 - Never change the column layout of the `RAs` tab (positional); add tabs instead.
-- Sheet id `1R-L_JqKz9eFF8jvnmPy2g12Zrpn__uWm1Y32kkMfQUE` (Pierre's Drive). Secret Script Properties `ANON_SALT` and, from v139, `PCLOUD_TOKEN` (the weekly backup to Pierre's pCloud, [BACKUP.md](BACKUP.md)); never in the repo or a chat.
+- Sheet id `1R-L_JqKz9eFF8jvnmPy2g12Zrpn__uWm1Y32kkMfQUE` (Pierre's Drive). Secret Script Properties `ANON_SALT` and, for the weekly backup to Pierre's pCloud ([BACKUP.md](BACKUP.md)), `PCLOUD_UPLOAD_CODE` (v144, an upload link's code, the one Pierre uses) or `PCLOUD_TOKEN` (v139); never in the repo or a chat.
 
 ## Admin workflow (what Pierre does, what you must not break)
 

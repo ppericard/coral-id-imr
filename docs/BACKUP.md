@@ -6,29 +6,74 @@ the data never passes through an agent, GitHub or this repository (Pierre, 2026-
 PR"; the professionalise study's question f, [reviews/2026-11-14-professionalise-study.md](reviews/2026-11-14-professionalise-study.md)
 §3.6, with pCloud in place of R2).
 
+It reaches pCloud one of two ways, set in the script's properties:
+
+- **A pCloud upload link** (`PCLOUD_UPLOAD_CODE`, sheet v144; the way Pierre uses). Pierre, 2026-11-15: no pCloud
+  OAuth app (making one needs pCloud's approval), a pCloud upload link instead ("Request files"), made on his account
+  on pCloud's European servers. The link's code can only add files: it cannot read, list or delete anything, so **old
+  backups are not pruned by the script** on this path; Pierre deletes them by hand. Setup: "Pierre's setup: upload
+  link" below.
+- **A pCloud OAuth token** (`PCLOUD_TOKEN`, sheet v139): the script makes its folder and keeps the 12 newest backups.
+  Setup: "Other setup: an OAuth token" below. If both are set, the token is used and every log line says so.
+
 ## What it does
 
 - **What**: every tab of the spreadsheet, as one `.xlsx` file, named `reef-id-sheet-YYYY-MM-DD.xlsx` (the day in Manila
-  time), in the pCloud folder `/IMR/reef-id-sheet-backups` (made if missing). The file is built by the script from the
+  time). With an upload link it lands in the folder the link was made for (pCloud renames a second file of the same
+  name, so a second run on one day adds a copy). With a token it lands in the pCloud folder
+  `/IMR/reef-id-sheet-backups` (made if missing). The file is built by the script from the
   cell values: numbers, true/false and dates keep their type, text stays text (a text starting with `=` or `+` is never
   read as a formula). Formulas, colours, frozen rows and hidden columns are not kept: the script writes plain data.
 - **When**: every Sunday at about 02:00 Manila time (a weekly trigger, `backupWeekly`), and whenever Pierre clicks
   **Reef ID > Back up to pCloud now** in the sheet's menu.
-- **Kept**: the **12 newest** backups of that folder (about three months). Older ones are deleted, only files named as
-  above, only in that folder, and only after the new file was uploaded. pCloud keeps a deleted file in its trash for a
-  while (its own retention), then it is gone.
-- **Log**: one line per run in the sheet's **Deploy log** tab, starting `pCloud backup:`. It gives the file name and size,
-  how many old backups were deleted, or why nothing was saved: `not configured` (no token), `pCloud refused the token or
-  the folder (result N)` (N is pCloud's error number), `needs authorisation`, `failed: …`. The token never appears there.
+- **Kept**: with an upload link, **everything**: the script cannot delete through the link, so Pierre deletes old
+  backups by hand (for example keeping the 12 newest, about three months). With a token, the **12 newest**
+  backups of that folder; older ones are deleted, only files named as above, only in that folder, and only after the
+  new file was uploaded. pCloud keeps a deleted file in its trash for a while (its own retention), then it is gone.
+- **Log**: one line per run in the sheet's **Deploy log** tab, starting `pCloud backup:`. It gives the file name, or why
+  nothing was saved:
+  - upload link: `saved reef-id-sheet-….xlsx (upload link; old backups are not pruned)`, or `upload of … to the upload
+    link failed (result N…)` where N is pCloud's error number, in words for the link's own errors (7002 deleted, 7004
+    expired, 7007 full, 7008 file limit);
+  - token: the size and how many old backups were deleted, or `pCloud refused the token or the folder (result N)`;
+  - either: `not configured` (no token nor code, or one not valid), `needs authorisation`, `failed: …`; with both set,
+    the line ends `[token path; PCLOUD_UPLOAD_CODE not used]`.
+
+  The token and the code never appear there (they are scrubbed from any error text), nor pCloud's error text.
 - **Safety**: the backup runs on its own, never inside a player's request, never under the script's lock and never in
-  the 15-minute trigger (`autoUpdate`). A missing token or a refused one only writes its log line: the app, the
+  the 15-minute trigger (`autoUpdate`). A missing token or code, or a refused one, only writes its log line: the app, the
   leaderboard and the self-update keep working. It needs **no new Google permission**: it reads the sheet with the
   permission the script already has and calls pCloud with the "external requests" permission it already has. (Google's
   own export of the file would have needed a Drive permission, and a permission added to the script's manifest is
   expected to stop the web app and its trigger until Pierre accepts it, which the self-update cannot undo: not tried,
   so avoided. The script builds the file itself instead.)
 
-## Pierre's one-time setup (about 10 minutes, on a computer)
+## Pierre's setup: upload link (about 5 minutes, on a computer)
+
+The link's code is a secret (whoever has it can add files to that folder of your pCloud): it goes **only** into the
+script's settings, never into a chat, an e-mail, GitHub or a file.
+
+1. **The upload link** (done, 2026-11-15). Check in pCloud that it has **no expiry date, no file limit and no space
+   limit**: when one is reached, pCloud refuses the upload and the Deploy log says `result 7004` (expired), `7007`
+   (full) or `7008` (file limit).
+2. **Paste its code into the script.** In the sheet: **Extensions > Apps Script > Project settings** (gear,
+   "Paramètres du projet") **> Script properties > Add script property**: property `PCLOUD_UPLOAD_CODE`, value the
+   `code=` value of your upload link (the part after `code=`, up to the end or to the next `&`). Optionally add the
+   property `PCLOUD_HOST` = `eapi.pcloud.com` (it is the default for the upload link anyway). Save.
+3. **The first backup.** Reload the sheet, then click **Reef ID > Back up to pCloud now** (the menu appears once the
+   script version with the upload link is live, about 15 minutes after the merge). The first click makes the weekly
+   trigger too. A note at the bottom right and the Deploy log's last line say what happened: `saved
+   reef-id-sheet-YYYY-MM-DD.xlsx (upload link; old backups are not pruned)`, and the file is in the link's folder in
+   pCloud. Not tried against pCloud before this first click (agents never call pCloud): if the line says `failed` or
+   gives a `result`, send the line (it holds no secret) to an agent.
+4. **Old backups are pruned by hand.** Every month or so, in the link's folder in pCloud, delete the
+   `reef-id-sheet-….xlsx` files beyond the 12 newest.
+
+To stop the backups: delete the property `PCLOUD_UPLOAD_CODE` (each run then only logs "not configured"), and in Apps
+Script **Triggers** (clock icon) delete the `backupWeekly` trigger. To revoke the code itself: delete the upload link in
+pCloud.
+
+## Other setup: an OAuth token (not used: it needs a pCloud app, which pCloud must approve)
 
 The token is a secret: it goes **only** into the script's settings, never into a chat, an e-mail, GitHub or a file.
 
@@ -68,13 +113,14 @@ applications.
 
 ## Restore
 
-1. In pCloud, download the newest `reef-id-sheet-YYYY-MM-DD.xlsx` from `/IMR/reef-id-sheet-backups`.
+1. In pCloud, download the newest `reef-id-sheet-YYYY-MM-DD.xlsx` from the upload link's folder (with a token:
+   `/IMR/reef-id-sheet-backups`).
 2. To look at it or check one tab: open it in Google Sheets, Excel or LibreOffice.
 3. To rebuild the sync sheet (the Google account or the sheet is lost): in Google Drive, **New > Google Sheets**, then
    **File > Import > Upload**, choose the file, **Replace spreadsheet**, **Import data**. Every tab comes back with its
    name and values. Then open **Extensions > Apps Script** in that sheet, paste `tools/sync/Code.gs` from `main` and
    `tools/sync/appsscript.json`, deploy it as a web app (HANDOVER.md "Code.gs (progress sync) and how to redeploy"), and
-   point `SYNC_URL` in `app.js` at the new `/exec` address (a PR). The Script Properties (`ANON_SALT`, the token) are not
+   point `SYNC_URL` in `app.js` at the new `/exec` address (a PR). The Script Properties (`ANON_SALT`, the code or the token) are not
    in the backup: `ANON_SALT` must be set again to its old value, or every anonymous player's admin id changes. Ask an
    agent to walk through it.
 4. Partial restore (one tab damaged): import the file into a new spreadsheet, then copy the tab's rows into the live
@@ -88,8 +134,9 @@ itself (the pooled stats' `Stats` snapshots, the `Replayed` tabs), and the answe
 ## Privacy and deleted accounts (rule D7)
 
 A backup is a copy of the sheet as it was that day, names and answers included, in Pierre's pCloud only (privacy.html
-says so). An account deleted, merged or archived in the admin stays in the backups made before, until they age out
-(12 weeks, then pCloud's trash). No normal feature of the app reads them; they are opened only to restore.
+says so). An account deleted, merged or archived in the admin stays in the backups made before, until they are deleted:
+with the upload link, when Pierre prunes them by hand (the script cannot); with a token, when they age out (12 weeks).
+Then pCloud's trash. No normal feature of the app reads them; they are opened only to restore.
 
-Code: `tools/sync/Code.gs` `backup_`, `xlsx_`, `installBackup`, `backupNow`, `backupWeekly`, `onOpen`; tests
+Code: `tools/sync/Code.gs` `backup_`, `backupCode_`, `backupLink_`, `xlsx_`, `installBackup`, `backupNow`, `backupWeekly`, `onOpen`; tests
 `tests/backup.test.js` (stubbed pCloud, in-memory sheet).
