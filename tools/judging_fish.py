@@ -19,9 +19,13 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
     python3 tools/judging_fish.py big <photo>      the 1024 px version, for a closer look
     python3 tools/judging_fish.py todo             species with candidates not judged yet
     python3 tools/judging_fish.py rep              re-apply the reference flag (fish-cand.json rep) to suggest.json "fish"
-    python3 tools/judging_fish.py codes            re-apply the judging files' codes, unsure fields and notes to the
-                                                   candidates already judged in suggest.json "fish" (a re-judge of some
-                                                   tags, e.g. the other species split, Q323)
+    python3 tools/judging_fish.py codes            re-apply the judging files' codes, keep, phase, unsure fields and
+                                                   notes to the candidates already judged in suggest.json "fish" (a
+                                                   re-judge of some photos, e.g. the other species split, Q323)
+    python3 tools/judging_fish.py one [--check]    one judgement per photo (Pierre, 2026-11-15): copy the candidate
+                                                   judgement of a photo that is also a reference photo onto its copy in
+                                                   tools/fish_judge.json (code and keep); --check lists the divergences
+                                                   and exits 1 on any (tests/onejudgement.test.js)
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
 
@@ -361,8 +365,48 @@ def cmd_rep(fields=("jt", "e")):
     with open(P("suggest.json"), "w", encoding="utf-8") as fh:
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
-    what = "Reference flag" if fields == ("jt", "e") else "Codes, unsure fields and notes"
+    what = "Reference flag" if fields == ("jt", "e") else "Codes, keep, phase, unsure fields and notes"
     print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"fish\".")
+
+
+def one_fix(text, D):
+    """tools/fish_judge.json's text with each divergence D (fish_judge.py one_check: code and keep) set to the candidate
+    copy, in place: the file keeps its layout (one entry per line), only those values change."""
+    import re
+    for f, field, old, new in D:
+        if field not in ("code", "keep"):
+            continue
+        pat = re.compile(r'("%s":\s*)"%s"' % (re.escape(f), re.escape(old)))
+        text, n = pat.subn(lambda m: m.group(1) + json.dumps(new), text, count=1)
+        if n != 1:
+            raise SystemExit(f"tools/fish_judge.json: {f} {field} {old!r} not found")
+    return text
+
+
+def cmd_one(only_check, root=None):
+    """One judgement per photo (Pierre, 2026-11-15; tools/fish_judge.py one_judgement): the candidate judgement
+    (judging/fish/<species>.json) is the single source of a photo judged both as a reference photo and as a candidate.
+    --check lists every divergence of tools/fish_judge.json from it (exit 1); without it, copies the candidate's code
+    and keep onto the reference copies. A photo judged in two species files that disagree is reported, never settled.
+    root: the repository (a test's made-up one)."""
+    from fish_judge import cand_judgements, one_check
+    root = root or ROOT
+    src = os.path.join(root, "tools", "fish_judge.json")
+    text = open(src, encoding="utf-8").read()
+    D = one_check(json.loads(text), cand_judgements(root))
+    for f, field, a, b in D:
+        print(f"{'DIVERGES' if only_check else 'copied'}: {f} {field}: tools/fish_judge.json {a!r}, judging/fish {b!r}")
+    twice = [d for d in D if d[1] == "twice"]
+    if only_check:
+        print(f"{len(D)} divergence(s) between the two copies of a photo judged twice"
+              + (": python3 tools/judging_fish.py one copies the candidate judgement onto the reference copy" if D else "."))
+        sys.exit(1 if D else 0)
+    if len(D) > len(twice):
+        with open(src, "w", encoding="utf-8") as fh:
+            fh.write(one_fix(text, D))
+    print(f"{len(D) - len(twice)} reference cop{'y' if len(D) - len(twice) == 1 else 'ies'} set to the candidate judgement"
+          + (f"; {len(twice)} photo(s) judged twice as candidates, to settle by hand" if twice else "."))
+    sys.exit(1 if twice else 0)
 
 
 def cmd_todo():
@@ -391,6 +435,8 @@ if __name__ == "__main__":
     elif rest[:1] == ["rep"]:
         cmd_rep()
     elif rest[:1] == ["codes"]:
-        cmd_rep(("jt", "e", "u", "n"))
+        cmd_rep(("jt", "e", "k", "ph", "u", "n"))
+    elif rest[:1] == ["one"]:
+        cmd_one("--check" in a)
     else:
         cmd_import(ids(rest) if rest else [], "--check" in a, BY)
