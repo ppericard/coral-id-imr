@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The curated fish game photos (admin plan PR 7): writes fish-game.json, the photos Pierre put in play in the admin's fish
-Candidates, downloaded in the four sizes and hosted on Cloudflare R2, which the fish game reads instead of the stopgap
-list (fish-photos.json, tools/fish_photos.py) wherever an entry has enough of them (core.js fishPhotos).
+Candidates, downloaded in the four sizes and hosted on Cloudflare R2, which the fish game reads (core.js fishPhotos), and
+fish-photos.json beside it (see "fish-photos.json" below). Since 2026-11-15 (Pierre: retire the stopgap, the sheet-only
+photos to R2) no fish photo is shown straight from iNaturalist or FishBase.
 
 In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish photo in play hosted on R2; in_play):
   - Pierre's adds (the admin's rule, core.js fishOn, ported here as fish_on): curation.json fish.add names the photo's
@@ -47,12 +48,23 @@ A photo that fails to download is left out until the next run (printed); one no 
 files stay on R2, unused: nothing is deleted from the bucket). Entries in fish.json order, an entry's photos by its
 species order, then the easiest, then by name (never Pierre's own by priority: Q148). One photo per line.
 
+fish-photos.json (written here too, the same run; the stopgap list of remote iNaturalist photos it held until 2026-11-15
+is retired):
+  - "photos": the first photos, a few of fish-game.json's records per entry (first_photos: the adults, Pierre's covers in
+    play first, then the reference photos, the easiest; FIRST at most), already on R2, read only while fish-game.json is
+    not in (app.js fishHome: Home before the biggest file; core.js fishPhotos);
+  - "sheet": the sheet-only photos (tools/fish_photos.py --sheet writes them, remote, r: 1): a species with no photo in
+    play keeps its own, downloaded here like a game photo (its four files into DIR, uploaded with them) and then listed
+    without r, so the app reads it from R2 (its src stays the fallback, as a game record's); a species with a photo in
+    play loses it (Pierre, 2026-11-05: sheet-only is for a species with no game photo).
+
   python3 tools/fish_game.py [--out DIR] [--max N]   download what is new and write fish-game.json (run by tools/fetch_approved.py
                                            --fish in the Candidate photos workflow, after each Publish)
-  python3 tools/fish_game.py --rewrite     write fish-game.json again in the current layout (the short form), nothing
-                                           downloaded: after a merge that took another copy of it
-  python3 tools/fish_game.py --plan        print what a run would download, the expected R2 volume, and the entries that
-                                           would still use the stopgap; writes nothing, downloads nothing
+  python3 tools/fish_game.py --rewrite     write fish-game.json again in the current layout (the short form) and
+                                           fish-photos.json from it, nothing downloaded: after a merge that took another
+                                           copy of either
+  python3 tools/fish_game.py --plan        print what a run would download (the sheet-only photos too) and the expected
+                                           R2 volume; writes nothing, downloads nothing
 """
 import argparse
 import concurrent.futures as cf
@@ -75,6 +87,11 @@ import fish_short  # noqa: E402  (the file's short form: o and src)
 
 OUT_FILE = 'fish-game.json'
 V = 1
+PHOTOS_FILE = 'fish-photos.json'
+PHOTOS_V = 2  # 2: the first photos (records on R2) in place of the stopgap's remote ones (2026-11-15)
+# The first photos per entry in fish-photos.json (first_photos): enough for Home's tiles and band before fish-game.json is
+# in, and a small game if it cannot come.
+FIRST = 8
 UA = {'User-Agent': 'coral-id-imr/1.0'}
 # Only these photo hosts (this runs in a GitHub Action that can write to main; code review 2026-11-01, L8).
 HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org', 'www.fishbase.de', 'www.fishbase.se')
@@ -82,8 +99,8 @@ HOSTS = ('inaturalist-open-data.s3.amazonaws.com', 'static.inaturalist.org', 'ww
 # answers 500 to browsers), and www.fishbase.de.
 FB_HOSTS = ('www.fishbase.de', 'www.fishbase.se')
 FB_TRIES, FB_PAUSE = 4, 5.0  # FishBase answers 500 at times: up to 4 tries, 5 s, 10 s, 15 s apart
-# core.js FISHPH: an entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more; tools/
-# fish_judge.py WANT and EARLY, Pierre 2026-11-04: at least 5 very easy photos per circle-1 entry), else with the stopgap's.
+# Pierre's minimum of very easy photos per circle-1 entry (2026-11-04: at least MIN photos of ease EASY or more; tools/
+# fish_judge.py WANT and EARLY), for --plan's count of the entries short of them.
 MIN, EASY = 5, 4
 # The average size of one photo's four files on R2 (a sample of 24 iNaturalist photos already there, 2026-11-05:
 # 226 + 93 + 32 + 10 KB), for --plan's volume estimate.
@@ -619,16 +636,91 @@ def run(out='r2-upload', root=ROOT, get=opener, pause=FB_PAUSE, workers=6, write
     d = doc(fish, keep)
     if d['photos'] == (prev or {}).get('photos') and (prev or {}).get('built'):
         d['built'] = prev['built']  # nothing changed: the same bytes, no commit
+    # The sheet-only photos still remote, downloaded like a game photo (one at a time, after the rest).
+    fp = load(root, PHOTOS_FILE, {}) or {}
+    sheet = sheet_of(fp.get('sheet'), d['photos'])
+    for r in [r for L in sheet.values() for r in L if r.get('r')]:
+        try:
+            download(r, None, out, get, pause)
+            r.pop('r')
+            done += 1
+        except Exception as e:
+            failed.append(r['f'])  # stays remote (r: 1) until the next run
+            print('failed:', r['f'], e)
     if write:
         text = dumps(d)
         p = os.path.join(root, OUT_FILE)
         if not os.path.exists(p) or open(p, encoding='utf-8').read() != text:
             open(p, 'w', encoding='utf-8').write(text)
+        write_photos(root, fp, first_photos(d['photos'], cur, fish), sheet)
     return done, failed, sum(len(L) for L in d['photos'].values()), wait
 
 
-def stopgap_entries(fish, game_photos):
-    """The level-1 entries that would still play with the stopgap's photos (fewer than MIN very easy curated ones)."""
+def juvenile(r):
+    """A record of a juvenile (its phase, or the judging tags' j flag): never a cover (app.js juvP)."""
+    return r.get('ph') == 'juvenile' or 'j' in (r.get('jt') or '')[7:]
+
+
+def first_photos(game, cur=None, fish=None, n=FIRST):
+    """fish-photos.json "photos": {teaching id: [record]}, at most n of each entry's fish-game.json records (game: its
+    photos, every record whole), the ones Home and the first questions want before the whole list is in: the adults first
+    (a juvenile is never a cover: app.js juvP), Pierre's covers (curation.json fish.genera {id: {cover}}, by photo id),
+    the reference photos (rep, or the judging tags' r flag), the easiest, then by name; the best of each family of the
+    entry's species before any second one (fish: fish.json families; core.js fishGen gives a photo to its species' family:
+    Groupers' entry holds the Soapfishes'), so every family has its photos. Every one is already on R2 (the same record)."""
+    G = ((cur or {}).get('fish') or {}).get('genera') or {}
+    covers = {pid(k['cover']) for k in G.values() if isinstance(k, dict) and k.get('cover')}
+    fam = {sid: f['id'] for f in (fish or {}).get('families') or [] for sid in f.get('species') or []}
+
+    def key(r):
+        ref = bool(r.get('rep')) or 'r' in (r.get('jt') or '')[7:]
+        return (juvenile(r), pid(r['f']) not in covers, not ref, -(r.get('e') or 0), r['f'])
+
+    def pick(L):
+        L, seen, lead = sorted(L, key=key), set(), []
+        for r in L:
+            if fam.get(r.get('sp')) not in seen:
+                seen.add(fam.get(r.get('sp')))
+                lead.append(r)
+        return (lead + [r for r in L if r not in lead])[:max(n, len(lead))]
+    return {t: pick(L) for t, L in (game or {}).items() if L}
+
+
+def sheet_of(sheet, game):
+    """The sheet-only photos kept: {species id: [record]} of the species with no photo in play (game: fish-game.json
+    photos), copies (a download changes them)."""
+    on = {r.get('sp') for L in (game or {}).values() for r in L}
+    return {sid: [dict(r) for r in L] for sid, L in (sheet or {}).items() if sid not in on and L}
+
+
+def photos_dumps(d):
+    """fish-photos.json: one entry per line under "photos", one species per line under "sheet" (every record whole)."""
+    c = lambda v: json.dumps(v, ensure_ascii=False, separators=(',', ':'))  # noqa: E731
+
+    def part(k):
+        rows = ',\n'.join(f'{c(t)}:{c(L)}' for t, L in d[k].items())
+        return f'{c(k)}:{{' + (f'\n{rows}\n' if rows else '') + '}'
+    head = [f'{c(k)}:{c(v)}' for k, v in d.items() if k not in ('photos', 'sheet')]
+    return '{' + ',\n'.join(head + [part('photos'), part('sheet')]) + '}\n'
+
+
+def write_photos(root, prev, first, sheet):
+    """Writes fish-photos.json (the first photos, the sheet-only photos), its built date kept when nothing changed."""
+    d = {'v': PHOTOS_V, 'built': date.today().isoformat(),
+         'about': "the first fish photos (a few of fish-game.json's per entry, read until it is in) and the sheet-only photos, "
+                  'all on R2 (tools/fish_game.py first_photos, sheet_of)', 'photos': first, 'sheet': sheet}
+    same = (prev or {}).get('v') == PHOTOS_V and prev.get('photos') == first and prev.get('sheet') == sheet
+    if same and prev.get('built'):
+        d['built'] = prev['built']
+    text = photos_dumps(d)
+    p = os.path.join(root, PHOTOS_FILE)
+    if not os.path.exists(p) or open(p, encoding='utf-8').read() != text:
+        open(p, 'w', encoding='utf-8').write(text)
+
+
+def short_entries(fish, game_photos):
+    """The level-1 entries with fewer than MIN very easy photos in play (more judged photos wanted; they play all the same:
+    the stopgap that joined them is retired)."""
     _, order = entries(fish)
     return [t for t in order if sum(1 for p in game_photos.get(t, []) if (p.get('e') or 0) >= EASY) < MIN]
 
@@ -644,7 +736,12 @@ def main():
         d = load(ROOT, OUT_FILE)
         with open(os.path.join(ROOT, OUT_FILE), 'w', encoding='utf-8') as fh:
             fh.write(dumps(d))
-        print(f'{OUT_FILE} written again ({sum(len(L) for L in d["photos"].values())} photos)')
+        fp = load(ROOT, PHOTOS_FILE, {}) or {}
+        sheet = sheet_of(fp.get('sheet'), d['photos'])
+        write_photos(ROOT, fp, first_photos(d['photos'], load(ROOT, 'curation.json', {}), load(ROOT, 'fish.json')), sheet)
+        wait = sum(1 for L in sheet.values() for r in L if r.get('r'))
+        print(f'{OUT_FILE} written again ({sum(len(L) for L in d["photos"].values())} photos); {PHOTOS_FILE} from it '
+              f'({sum(len(L) for L in sheet.values())} sheet-only photos, {wait} to download at the next run)')
         return
     if a.plan:
         fish, cur, cand, sug, refs, codes, crops, rkeep = inputs(ROOT)
@@ -665,8 +762,11 @@ def main():
               f'to make: {tl} alone (the original fetched again) and {tw} with their download, about '
               f'{(tl + tw) * TILE_KB / 1024:.1f} MB; {sum(1 for r in allr.values() if tile_tags(r.get("jt")) and not r.get("bb"))} '
               'photos pass the tile tags but wait for a box (judging/FISH.md "The fish\'s box")')
-        st = stopgap_entries(fish, d['photos'])
-        print(f'entries still with the stopgap photos (fewer than {MIN} very easy curated ones): {len(st)}: ' + ', '.join(st))
+        sh = [r for L in sheet_of((load(ROOT, PHOTOS_FILE, {}) or {}).get('sheet'), d['photos']).values() for r in L if r.get('r')]
+        print(f'sheet-only photos to download: {len(sh)} ({len(sh) * 4} files, about {len(sh) * KB_PER_PHOTO / 1024:.1f} MB)'
+              + (': ' + ', '.join(r['f'] for r in sh) if sh else ''))
+        st = short_entries(fish, d['photos'])
+        print(f'entries with fewer than {MIN} very easy photos in play (more judged photos wanted): {len(st)}: ' + ', '.join(st))
         return
     import slot
     slot.guard('tools/fish_game.py')  # one heavy run at a time on the machine (rule W24)

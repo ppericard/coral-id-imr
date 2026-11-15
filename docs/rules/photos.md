@@ -18,7 +18,8 @@ mixes sources on purpose for variety.
   when he has picked none) is a photo of its leaf **most seen around the instance's centre by distinct observers**, that
   leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `fishCoverOf`). **One exception for his own photos:** every photo of his that is
   compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
-  included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`).
+  included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`, until the stopgap list
+  was retired on 2026-11-15: ARCHITECTURE.md "Photos, stopgap").
 - **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
   judged sure on the rubric and the reference photos judged sure on the same rubric, whatever their reference level, enter
   the same way (`tools/fish_game.py`,

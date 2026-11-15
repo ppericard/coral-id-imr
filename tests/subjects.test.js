@@ -116,7 +116,7 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
     assert.ok(g.name && g.fam && Array.isArray(g.look) && Array.isArray(g.forms), g.id);
     g.look.forEach(o => assert.ok(X.gen[o] && o !== g.id, `${g.id} look ${o}`));
     assert.ok(Array.isArray(g.views.wide), g.id);
-    g.views.wide.forEach(p => assert.ok(p.f && p.src && p.r === 1 && p.o, g.id));
+    g.views.wide.forEach(p => assert.ok(p.f && p.src && !p.r && p.o, g.id)); // on R2, the original kept for the fallback
     // every game photo shows a species of its family (Diploprion's photos are the Soapfishes', not the Groupers')
     const own = new Set(F.families.find(f => f.id === g.id).species);
     g.views.wide.forEach(p => assert.ok(own.has(p.sp), `${g.id}: ${p.f} ${p.sp}`));
@@ -151,37 +151,53 @@ test('fishGen: the book’s families as engine records, circle 1 = 28 families, 
   if (noSrc) assert.match(X.gen[noSrc.id].lsrc[noSrc.look[0][0]], /^IMR fish presentation/);
 });
 
-test('fish-photos.json: the stopgap list, remote iNaturalist photos, one per observation (Pierre’s own: every compatible photo), accepted licences', () => {
-  const ok = new Set(['cc0', 'cc-by', 'cc-by-sa', 'cc-by-nc', 'cc-by-nc-sa']);
-  assert.ok(PH.stopgap, 'says it is a stopgap');
+// No fish photo hot-linked (Pierre, 2026-11-15: the stopgap of remote iNaturalist photos retired, the sheet-only photos
+// to R2): fish-photos.json's first photos are records of fish-game.json (on R2, the same name, crop and shape), and its
+// sheet-only photos are on R2 too. The one exception: a sheet-only photo tools/fish_photos.py has just found, remote
+// (r: 1) until the next Candidate photos run downloads it (tools/fish_game.py sheet_of): from an allowed photo host only.
+test('fish-photos.json: no remote photo, the first photos are fish-game.json records in play, the sheet-only photos on R2', () => {
+  const ok = new Set(['cc0', 'cc-by', 'cc-by-nc']),
+    GM = C.fishGameRead(read('fish-game.json')).photos,
+    game = new Map(Object.values(GM).flatMap(L => L.map(p => [p.f, p])));
+  assert.ok(!('stopgap' in PH), 'the stopgap is retired');
+  assert.strictEqual(PH.v, 2);
   Object.entries(PH.photos).forEach(([id, L]) => {
     assert.ok(
       F.teach.some(t => t.id === id && t.level === 1),
       id
-    ); // listed by old entry id; fishGen gives each photo to its species' family
-    // One photo per observation, Pierre's own aside: every compatible photo of his observations is in (Q148, 2026-11-06).
-    const obs = L.filter(p => !p.own).map(p => p.o),
-      fs = L.map(p => p.f);
-    assert.strictEqual(new Set(obs).size, obs.length, `${id}: one photo per observation`);
-    assert.strictEqual(new Set(fs).size, fs.length, `${id}: each photo once`);
+    ); // listed by teaching entry; fishGen gives each photo to its species' family
+    assert.ok(L.length && L.length <= 8, `${id}: a few first photos`); // FIRST, or one per family of the entry if more
     L.forEach(p => {
-      // FishBase's own photos (tools/fish_refs.py; Pierre, 2026-11-06: in automatically when the licence allows) come
-      // from its www.fishbase.se mirror.
-      if (p.via === 'fishbase') assert.match(p.src, /^https:\/\/www\.fishbase\.se\/images\/species\/[^/]+$/, p.f);
-      else
-        assert.match(
-          p.src,
-          /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)\/photos\/\d+\/original\./,
-          p.f
-        );
-      assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`); // Pierre's own whatever their licence (rule S2)
-      // A species that leaves the game (e.g. circle 3 needs "confirmed near Dauin", 2026-11-03) leaves these photos too.
-      const s = F.species.find(x => x.id === p.sp);
-      assert.ok(s && !s.out && s.circle, `${p.f}: ${p.t} (${p.sp}) is not in the game`);
+      assert.ok(!p.r, `${p.f}: remote`);
+      assert.deepStrictEqual(p, game.get(p.f), `${p.f}: not the record fish-game.json holds (python3 tools/fish_game.py --rewrite)`);
+      assert.ok((GM[id] || []).includes(game.get(p.f)), `${p.f}: under another entry in fish-game.json`);
     });
   });
+  // The first photos as tools/fish_game.py first_photos picks them (its order: on the fixture, tests/fishgame.test.js),
+  // whatever Pierre's covers are today (a Publish changes them before the workflow writes the file again): every entry
+  // of fish-game.json has some, every circle-1 family among them, the adults before a juvenile.
+  assert.deepStrictEqual(Object.keys(PH.photos).sort(), Object.keys(GM).sort(), 'every entry of fish-game.json');
+  const juv = p => p.ph === 'juvenile' || /j/.test(String(p.jt || '').slice(7));
+  Object.entries(PH.photos).forEach(([id, L]) => {
+    const k = L.findIndex(juv);
+    assert.ok(k < 0 || L.slice(k).every(juv) || GM[id].filter(p => !juv(p)).length < L.length, `${id}: a juvenile before an adult`);
+  });
+  const remote = [];
+  Object.values(PH.sheet || {}).forEach(L =>
+    L.forEach(p => {
+      assert.ok(p.own || ok.has(p.lic), `${p.f} licence ${p.lic}`);
+      if (!p.r) return;
+      remote.push(p.f);
+      // Waiting for the next Candidate photos run: its original on an allowed host, never shown from it but as the
+      // fallback (tools/fish_game.py HOSTS).
+      assert.match(p.src, /^https:\/\/(inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org|www\.fishbase\.(se|de))\//, p.f);
+    })
+  );
+  // On 2026-11-15, the one sheet-only photo left (Pomacentrus armillatus') waits for the run after the merge.
+  assert.ok(remote.length <= 1, `remote sheet-only photos: ${remote.join(', ')}`);
   const X = C.fishGen(F, PH.photos);
-  X.c1.forEach(n => assert.ok(X.gen[n].views.wide.length, `${n} has photos`));
+  X.c1.forEach(n => assert.ok(X.gen[n].views.wide.length, `${n} has photos before fish-game.json is in`));
+  Object.values(X.gen).forEach(g => g.views.wide.forEach(p => assert.ok(!p.r, `${g.id} ${p.f}: remote`)));
 });
 
 test('typed fish names: the IMR name, its parts, the family names, the sub-entries', () => {

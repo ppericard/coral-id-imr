@@ -290,7 +290,6 @@
   //           'group' (the admin and the players of its group, picked in the admin's Players: app.js subjOpen, sheet v48
   //           Code.gs groupIds_). Opening fish to everyone is this one field (docs/ARCHITECTURE.md "Beta")
   //   card    the kind of its first-meeting card (app.js CARD_KINDS: its emoji)
-  //   remote  its photos are iNaturalist's, not the site's (the fish stopgap, tools/fish_photos.py): preloaded all the same
   //   views   the views a question may show, [code, label] (one view: one photo per question)
   //   optin   the opt-in choices: Q[k] true = on, Q[k + 'T'] when chosen, and for a part of the slate opened by choice
   //           Q[k + 'N'] its "Not now" count, Q[k + 'A'] the answer count at the last one (app.js UNITS[id].sets: units
@@ -528,7 +527,6 @@
       zoom: 'the markings and the fins',
       // A word a typed name may leave out (core.js fishTypeNames): "trigger" for Triggerfish.
       typeDrop: 'fish',
-      remote: true,
       // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
       // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
       beta: {
@@ -712,8 +710,8 @@
   // (family ids), lk (how to tell each apart, IMR's words), qt (the IMR cues), group (its group in the identification key in force, fish.json
   // key: the index of a reef fish ID book for the Indo-Pacific; rule S3), forms (that group: the wrong choices
   // start in other groups, as coral growth forms), ig (the same group), cm (how common near Dauin), views {wide:
-  // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: fish-photos.json "photos" (old entry id -> photo
-  // objects, each to its species' family).
+  // photos}, levels 1, circle, wink, names (accepted when typed)}. photos: the photos in play (fishPhotos: teaching id ->
+  // photo objects, each to its species' family).
   // key: the identification key in force ({id, region, cite (full), short}, null for a region with none) and groups its
   // groups in its order ({n, title, pages}).
   // c1 / c2 / c3 = the families of each circle (all on the path and in the progress since Pierre, 2026-11-06, Q175: app.js
@@ -937,9 +935,10 @@
       });
     return out;
   }
-  // The fish game photos (admin plan PR 7): the photos Pierre put in play in the admin's fish Candidates, downloaded to R2
-  // (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish), take the place of the
-  // stopgap list (fish-photos.json, remote iNaturalist photos) entry by entry.
+  // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
+  // sure), downloaded to R2 (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish).
+  // The stopgap list of remote iNaturalist photos they replaced entry by entry was retired on 2026-11-15 (Pierre): no fish
+  // photo is shown straight from iNaturalist or FishBase any more.
   // fishOn(F, f, sid): photo f is in play for species sid, F being curation.json fish: add names sid, the photo is neither
   // rejected (seen) nor excluded, and its Not this (out), if set, names that same species (the admin's rule, Not this
   // coming with admin plan PR 5b; tools/fish_game.py fish_on is its copy).
@@ -988,7 +987,7 @@
     );
   // mine: Pierre's tag on the photo (curation.json fish tags), passed by the admin only (autosort.js fishGameIn).
   const fishIn = (F, p, gone, mine) => !!p && (fishOn(F, p.f, p.sp) || (!!p.auto && !gone.has(fishPid(p.f)))) && !fishOther(mine, p.jt);
-  // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (stopgap fi<id>, candidate
+  // A photo's identity across the lists (tools/fish_game.py pid): i + its iNaturalist photo id (sheet photo fi<id>, candidate
   // fish-<species>-cand-<id>), b + its FishBase file stem (candidate fish-<species>-cand-fb-<stem>, reference or sheet
   // photo fb<stem>: Codex review #660, so Pierre's curation of a FishBase candidate applies to its reference copy too),
   // else its name.
@@ -1020,47 +1019,23 @@
     G && G.photos && typeof G.photos === 'object'
       ? {...G, photos: Object.fromEntries(Object.entries(G.photos).map(([t, L]) => [t, Array.isArray(L) ? L.map(fishGameRow) : L]))}
       : G;
-  // An entry plays on its curated photos alone once it has MIN very easy ones (ease EASY or more: the easy photos the
-  // draw favours at the start, judging/FISH.md), Pierre's minimum for every circle-1 entry (2026-11-04: at least 5 very
-  // easy photos; tools/fish_judge.py WANT); with fewer, the stopgap's photos join its curated ones.
-  const FISHPH = {MIN: 5, EASY: 4};
-  // fishPhotos(stop, game, cur): {teaching id: [photo]}, what fishGen takes. stop: fish-photos.json photos; game:
-  // fish-game.json photos (each with sp, the species it is in play for); cur: curation.json (or a draft), null when not
-  // loaded yet. Pierre's curation applies at once, before the workflow runs again: a curated photo shows only while it is
-  // in play (fishOn on its species) and not excluded for good (curation exclude, by name or photo id); a stopgap photo
-  // never shows once Pierre rejected, excluded or moved (Not this) the same photo as a candidate, nor when the entry's
-  // curated photos hold that photo or its observation. With no curation (not loaded), the lists as they are.
-  // fish (fish.json, optional): an entry on its curated photos alone still keeps the stopgap's photos of every scientific
-  // genus its curated photos do not cover (the genus: the species name's first word, as app.js fishGenera reads it), so
-  // no genus unit loses its photos when its entry switches (Codex review #614).
-  function fishPhotos(stop, game, cur, fish) {
+  // fishPhotos(first, game, cur): {teaching id: [photo]}, what fishGen takes. game: fish-game.json photos (each with sp,
+  // the species it is in play for); first: fish-photos.json photos, a few of those same records per entry (tools/
+  // fish_game.py first_photos, on R2 too), read only while the game list is not in (app.js fishHome: Home before
+  // fish-game.json; or when it cannot come); cur: curation.json (or a draft), null when not loaded yet. Pierre's curation
+  // applies at once, before the workflow runs again: a photo shows only while it is in play (fishIn: his add, or a photo
+  // that entered by itself he did not reject, exclude or move) and not excluded for good (curation exclude, by name or
+  // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2 (2026-11-15: the stopgap of
+  // remote iNaturalist photos, which joined an entry short of 5 very easy curated photos, is retired).
+  function fishPhotos(first, game, cur) {
     const F = cur && cur.fish,
-      gname = new Map(((fish && fish.species) || []).map(s => [s.id, String(s.name || '').split(/\s+/)[0]])),
-      genus = p => (p && p.sp && gname.get(p.sp)) || '',
       X = (cur && cur.exclude) || {},
       xid = new Set(Object.keys(X).map(fishPid)),
-      gone = new Set(xid),
-      out = {},
-      cu = {},
-      cid = new Set();
-    if (F) ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => gone.add(fishPid(f))));
-    const autoGone = F ? fishGone(cur) : gone;
-    Object.entries(game || {}).forEach(([t, L]) => {
-      cu[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, autoGone)) && !X[p.f] && !xid.has(fishPid(p.f)));
-      cu[t].forEach(p => cid.add(fishPid(p.f)));
-    });
-    new Set([...Object.keys(stop || {}), ...Object.keys(cu)]).forEach(t => {
-      const C = cu[t] || [],
-        obs = new Set(C.map(p => p.o).filter(Boolean));
-      // A stopgap photo with other species one could take for its subject stays out too (fishOther: its jt, Q323).
-      const S = ((stop || {})[t] || []).filter(
-        p => p && p.f && !gone.has(fishPid(p.f)) && !cid.has(fishPid(p.f)) && !(p.o && obs.has(p.o)) && !fishOther(null, p.jt)
-      );
-      if (C.filter(p => (p.e || 0) >= FISHPH.EASY).length < FISHPH.MIN) return (out[t] = [...C, ...S]);
-      const have = new Set(C.map(genus));
-      // The units' reference photos (tools/fish_refs.py, judged at the reference level: from) stay too (Pierre, 2026-11-06:
-      // the covers and first photos are reference photos, whoever took them).
-      out[t] = [...C, ...S.filter(p => p.from || (genus(p) && !have.has(genus(p))))];
+      gone = F ? fishGone(cur) : xid,
+      G = game && Object.keys(game).length ? game : first || {},
+      out = {};
+    Object.entries(G).forEach(([t, L]) => {
+      out[t] = (L || []).filter(p => p && p.f && p.sp && (!F || fishIn(F, p, gone)) && !X[p.f] && !xid.has(fishPid(p.f)));
     });
     return out;
   }
@@ -3372,7 +3347,7 @@
       return out;
     },
     entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur, f), (ph || {}).sheet);
+      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur), (ph || {}).sheet);
       return Object.fromEntries(
         Object.values(F.gen)
           .filter(g => !g.wink)
@@ -5726,7 +5701,6 @@
     fishIn,
     fishGone,
     fishPid,
-    FISHPH,
     fishPhotos,
     unitPool,
     exposureOf,

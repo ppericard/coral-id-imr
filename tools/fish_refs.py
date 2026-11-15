@@ -30,9 +30,9 @@ first word of a circle-1 species' name) and every entry's family (fish.json teac
 Each photo object has fish-photos.json's shape plus rep ("inaturalist" for the cover or a taxon-page photo, "fishbase"
 for FishBase's main picture; FishBase's other photos have none), via ("fishbase"), from (cover, taxon, fishbase) and for (the units it represents: species ids, "g:<genus>",
 "fam:<family>"), keyed by species (fish.json species id), so the file outlives a renaming of the teaching entries.
-tools/fish_judge.py apply() adds each one to the game photos of the entry that holds its species once it is judged at
-the reference level (core.js refLevel) (tools/fish_judge.json
-photos), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
+tools/fish_game.py ref_play puts each one in play (fish-game.json, on R2) for the entry that holds its species once it is
+judged sure on the candidates' rubric, whatever its reference level (Pierre, 2026-11-08, Q212; tools/fish_judge.json
+photos; the stopgap list of fish-photos.json, retired on 2026-11-15, took the reference-level ones), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
 point (judging/FISH.md). One already in the list is tagged in place.
 
 Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the observations, read only, through tools/inat.py (about one request a second, the project's User-Agent, 429 / 5xx retried after a pause; rule C7), every reply cached
@@ -65,7 +65,7 @@ SPECIES_RANKS = ("species", "subspecies", "variety")
 DEAD = (17, 19)
 # No cap per species (Pierre, 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to complement
 # the weaker ones on iNaturalist"): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
-# rules is listed; the judging decides which play (reference level only, tools/fish_judge.py add_refs).
+# rules is listed; the judging decides which play (tools/fish_game.py ref_play).
 INAT_MAX = FB_MAX = None
 # iNaturalist API v2 observation fields the rules read (a v1 reply of 200 observations weighs about 12 MB).
 FIELDS = ("id,quality_grade,location,place_ids,captive,taxon.id,taxon.name,taxon.rank,taxon.min_species_taxon_id,user.login,"

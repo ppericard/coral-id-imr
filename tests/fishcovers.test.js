@@ -18,11 +18,14 @@ const ROOT = path.join(__dirname, '..'),
   src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 
 // The app's fish build (fishBuild, fishCurate, fishGenera, rankPhotos) and its card photo (cover), with photoDiff
-// (model.js) when given: run(raw, cur) builds FISH from {f, ph, gm} under curation cur.
+// (model.js) when given: run(raw, cur) builds FISH from {f, ph, gm} under curation cur. The made-up worlds below list
+// their photos as fish-photos.json's first photos (gm empty): records of photos in play by themselves (auto), as the
+// real file's are, so Pierre's curation takes one out by its photo id (core.js fishPhotos, fishIn).
+const inPlay = P => Object.fromEntries(Object.entries(P || {}).map(([t, L]) => [t, L.map(p => ({auto: 'cand', ...p}))]));
 function app(photoDiff) {
   const ctx = {
     fishGen: C.fishGen,
-    fishPhotos: C.fishPhotos,
+    fishPhotos: (first, game, cur) => C.fishPhotos(game && Object.keys(game).length ? first : inPlay(first), game, cur),
     easyRank: C.easyRank,
     easyCover: C.easyCover,
     fishPid: C.fishPid,
@@ -45,7 +48,7 @@ function app(photoDiff) {
   return ctx;
 }
 
-// One family of two species in one genus, its photos from the stopgap list: fi1 the easiest, fi2 harder, fi3 of s2.
+// One family of two species in one genus, its photos in play (auto: inPlay above): fi1 the easiest, fi2 harder, fi3 of s2.
 const F = {
   families: [{id: 'f:A', name: 'As', sci: ['Aidae'], species: ['s1', 's2'], genera: ['g:Xus'], circle: 1}],
   genera: [{id: 'g:Xus', name: 'Xus', species: ['s1', 's2']}],
@@ -82,7 +85,7 @@ test("fish cover: Pierre's ★ Cover is the card's photo while in play, else the
   assert.strictEqual(X.cover(G).f, 'fi1');
   assert.ok(!G.views.wide.some(p => p.f === 'fi2'));
   assert.strictEqual(X.cover(X.run(raw(), cur({cover: 'gone'})).gen['f:A']).f, 'fi1');
-  // The same photo under its candidate name (the admin picked the candidate, the game still plays its stopgap copy).
+  // The same photo under its candidate name (the admin picked the candidate, the game plays its reference copy).
   assert.strictEqual(X.cover(X.run(raw(), cur({cover: 'fish-s1-cand-2'})).gen['f:A']).f, 'fi2');
   // The genus unit (fishGenera) keeps its own cover: a family's pick is the family's.
   const g = X.run(raw(), cur({cover: 'fi2'})).gen['g:Xus'];
@@ -353,7 +356,7 @@ test("genus and species covers: a 'g:' key is the genus's card, a species key it
   assert.strictEqual(B.covers['g:Yus'].f, 'fi5', 'a genus with no unit');
   assert.strictEqual(B.covers.s3.f, 'fi5');
   assert.ok(!B.gen.s1 && !B.gen['g:Yus'], 'no unit made for them');
-  // A photo of another species or genus is no cover of this one; a candidate name finds its stopgap copy.
+  // A photo of another species or genus is no cover of this one; a candidate name finds its reference copy.
   B = X.run(raw2(), cur2({s1: {cover: 'fi3'}, 'g:Yus': {cover: 'fi1'}, s2: {cover: 'fish-s1-cand-2'}}));
   assert.deepStrictEqual(Object.keys(B.covers), []);
   assert.strictEqual(X.run(raw2(), cur2({s1: {cover: 'fish-s1-cand-2'}})).covers.s1.f, 'fi2');
