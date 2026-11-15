@@ -797,7 +797,8 @@ let FTREE = null,
   FSPH = null,
   FSPH_OF = null;
 const ftree = () => {
-  const f = (FISHRAW && FISHRAW.f) || null;
+  // fish.json as the units read it, the content editor's edits in force (app.js FISHF), else as built
+  const f = FISHF || (FISHRAW && FISHRAW.f) || null;
   if (FTREE_OF !== f || !FTREE) ((FTREE = fishTree(f || {})), (FTREE_OF = f));
   return FTREE;
 };
@@ -1065,6 +1066,21 @@ function fishGenusRow(g, flat) {
 // FishBase's length types other than total length (species LTypeMaxM), in words.
 const LTYPE = {SL: 'standard length', FL: 'fork length', WD: 'disc width', OT: '(another measure)'};
 const srcA = x => `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`;
+// The source the content editor gave with his edit of slot k of record r (core.js contentApply esrc; Pierre, 2026-11-15,
+// Q359 e: optional, shown with the slot when given): esrcOf its record, esrcIn a few words after a text, esrcP a line
+// after a list; '' without one. esrcT its words alone, for a line inside a link (a look-alike card).
+const esrcOf = (r, k) => ((r && r.esrc) || {})[k] || null;
+const esrcIn = (r, k) => {
+  const s = esrcOf(r, k);
+  return s ? ` <small class="esrc">(${s.u ? srcA(s) : esc(s.t)})</small>` : '';
+};
+const esrcP = (r, k) => {
+  const s = esrcOf(r, k);
+  return s ? `<p class="note esrc">Source: ${s.u ? srcA(s) : esc(s.t)}</p>` : '';
+};
+const esrcT = (r, k) => (esrcOf(r, k) ? '; ' + esrcOf(r, k).t : '');
+// The content editor's free note on a node's sheet (SUBJECTS content: the note slot, fish.json records enote), '' without one.
+const fishNote = r => (r && r.enote ? `<p class="note fnote">${esc(r.enote)}${esrcIn(r, 'note')}</p>` : '');
 const spFacts = s => {
   const z = s.size,
     d = s.depth;
@@ -1087,9 +1103,9 @@ const famSizes = f => {
 };
 const fishMarks = f =>
   (f.marks || []).length || (f.life || []).length || famSizes(f)
-    ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${
+    ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${esrcP(f, 'marks')}` : ''}${
         (f.life || []).length || famSizes(f)
-          ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${(f.life || []).map(x => `<li>${esc(x)}</li>`).join('')}${famSizes(f)}</ul>`
+          ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${(f.life || []).map(x => `<li>${esc(x)}</li>`).join('')}${famSizes(f)}</ul>${esrcP(f, 'life')}`
           : ''
       }<p class="note msrc">${(f.msrc || []).length ? 'Sources: ' : ''}${(f.msrc || [])
         .map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)))
@@ -1124,12 +1140,16 @@ function fishFamily(f) {
     ap = f.apart || {},
     said0 = (f.look || [])
       .filter(([o]) => T.fam[o])
-      .map(([o, t]) => (t || !ap[o] ? [o, t, (f.lsrc || {})[o] || 'IMR fish presentation'] : [o, ap[o], msrc])),
+      .map(([o, t]) =>
+        t || !ap[o]
+          ? [o, t, ((f.lsrc || {})[o] || 'IMR fish presentation') + esrcT(f, 'look/' + o)]
+          : [o, ap[o], msrc + esrcT(f, 'apart/' + o)]
+      ),
     said = [
       ...said0,
       ...Object.keys(ap)
         .filter(o => T.fam[o] && !said0.some(x => x[0] === o))
-        .map(o => [o, ap[o], msrc])
+        .map(o => [o, ap[o], msrc + esrcT(f, 'apart/' + o)])
     ],
     mixed =
       u && typeof dataLooks === 'function'
@@ -1157,14 +1177,14 @@ function fishFamily(f) {
   const phase = (f.phase || []).length,
     jsec =
       phase || f.juv || juv.length
-        ? `<h3>Juveniles and phases</h3>${phase ? `<ul class="crit">${f.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="note">IMR fish presentation${f.sl ? ', ' + slideLine(f.sl) : ''}</p>` : ''}${
+        ? `<h3>Juveniles and phases</h3>${phase ? `<ul class="crit">${f.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="note">IMR fish presentation${f.sl ? ', ' + slideLine(f.sl) : ''}</p>${esrcP(f, 'phase')}` : ''}${
             f.juv && f.juv.note
               ? `<p class="fjuv">${esc(f.juv.note)}${(f.juv.src || [])
                   .map(
                     (x, i) =>
                       ` <a class="srcn" href="${esc(safeUrl(x))}" target="_blank" rel="noopener" title="Source ${i + 1}">[${i + 1}]</a>`
                   )
-                  .join('')}</p>`
+                  .join('')}${esrcIn(f, 'juv.note')}</p>`
               : ''
           }${juv.length ? `<div class="ftiles juv">${juv.map(p => `<figure class="ftile">${fishPic(p, flat, p.t || 'Juvenile')}<figcaption><i>${esc(p.t || '')}</i><span>Juvenile</span></figcaption></figure>`).join('')}</div>` : ''}`
         : '';
@@ -1175,8 +1195,9 @@ function fishFamily(f) {
     <div class="hero">
       ${hero ? `<button type="button" class="zoom hero-ph" data-z="0" aria-label="Enlarge photo: ${esc(f.name)}"><img src="${img(hero, 's')}" srcset="${srcset(hero)}" sizes="(max-width: 599.98px) 100vw, 45vw" alt="${esc(f.name)}">${ZOOMI}</button>` : `<span class="hero-ph">${noFish()}</span>`}
       <div class="idbox">
-        ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>` : ''}
+        ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(f, 'cues')}</div>` : ''}
         ${fishMarks(f)}
+        ${fishNote(f)}
         ${G.map(g => fishRoot(g, f.id)).join('')}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
         <details class="more sheetmore"><summary>More details</summary>
@@ -1221,7 +1242,8 @@ function fishGenus(g) {
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
-    ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div></div>` : ''}
+    ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'cues')}</div></div>` : ''}
+    ${fishNote(g)}
     ${fishRoot(g, g.id)}
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
     <h3>Species <small>${L.length}</small></h3>${fishTiles(L, flat)}
@@ -1267,6 +1289,7 @@ function fishSpecies(s) {
     <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
+    ${fishNote(s)}
     ${fishRoot(g, 's:' + s.name)}
     ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
     ${
