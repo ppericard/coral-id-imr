@@ -233,10 +233,11 @@ const fishRot = f => rotNorm(((DRAFT.fish || {}).rot || {})[f]);
 const fishSrc = (p, s, blind) =>
   crSrc({...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (!blind && (p.j ? p.j.c : p.cr)) || null, ro: fishRot(p.f)}}, s);
 // Where a fish photo comes from: Pierre's own, FishBase, or iNaturalist near Dauin, in the Philippines, elsewhere in the
-// Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag).
+// Indo-West Pacific (the coral origins' colours, admin.js ORIGINS), then its rights class (admin.js rightsTag) and, when
+// its name is a former combination or an iNaturalist spelling WoRMS writes otherwise, the WoRMS name (admin.js nameTag).
 const fishSrcTag = p => {
   const o = origin(p);
-  return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}`;
+  return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}${nameTag(p, FISHS)}`;
 };
 const fishName = sid => {
   const s = FISHC.species[sid] || {},
