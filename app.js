@@ -689,6 +689,9 @@ function fishGenera(X, F) {
   // assez urgent"; "On publie").
   (F.families || []).forEach(f => {
     const E = X.gen[f.id],
+      // the sources the content editor gave with his look-alike lines (core.js contentApply esrc 'look/<id>'; Q359 e, rule
+      // C2), by the other family's id: said with the line in the quiz feedback (quiz.js fbBody; Codex review #957)
+      lks = Object.entries(f.esrc || {}).filter(([k]) => k.startsWith('look/')),
       by = [
         ...new Set(
           (f.msrc || [])
@@ -700,8 +703,13 @@ function fishGenera(X, F) {
             .filter(Boolean)
         )
       ].join(', ');
+    if (E && lks.length) E.lksrc = Object.fromEntries(lks.map(([k, s]) => [k.slice(5), s]));
+    // the same for its phase lines, shown under More in the quiz feedback (quiz.js fbBody; Codex review #957)
+    if (E && f.esrc && f.esrc.phase) E.psrc = f.esrc.phase;
     if (!E || E.qt || !(f.marks || []).length) return;
     E.qt = f.marks;
+    // the source the content editor gave with an edit of them (core.js contentApply esrc; Q359 e), shown with them (tipsList)
+    if (f.esrc && f.esrc.marks) E.qsrc = f.esrc.marks;
     E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
   });
   (F.families || [])
@@ -740,6 +748,7 @@ function fishGenera(X, F) {
           lk: [],
           lsrc: {},
           qt: cues,
+          ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
           tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
           // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
@@ -901,12 +910,22 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // photos per entry (the same records, read until fish-game.json is in) and the sheet-only photos, on R2 too; core.js
 // fishPhotos keeps those in play under Pierre's curation (CUR), so FISH is made again whenever the curation is (build,
 // fishBuild).
+// FISHF: fish.json with the content editor's edits laid over it (core.js contentApply; Pierre, 2026-11-15, Q359): what
+// the units and the sheets read (learn.js ftree), made again with the units whenever the curation is; fish.json itself
+// (FISHRAW.f) when nothing is edited.
 let FISH = null,
   FISHP = null,
   FISHH = null,
-  FISHRAW = null;
+  FISHRAW = null,
+  FISHF = null;
 const fishBuild = () => {
-  const {f, ph, gm} = FISHRAW;
+  const {ph, gm} = FISHRAW,
+    // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
+    f = (FISHF = contentApply(
+      SUBJECTS.find(S => S.pool.files[0] === 'fish.json'),
+      FISHRAW.f,
+      CUR
+    ));
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
@@ -1636,12 +1655,17 @@ addEventListener(
   },
   true
 );
-// Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
+// Short ID tips; genera the lecture skips fall back to the Coral Finder summary. Tips the content editor reworded with a
+// source (qsrc: core.js fishGen, app.js fishGenera; Q359 e, rule C2) show it under them, wherever they are shown.
 const tipsList = (g, cls = '') =>
   g.qt
     ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
         .map(x => `<li>${x}</li>`)
-        .join('')}</ul>`
+        .join('')}</ul>${
+        g.qsrc && g.qsrc.t
+          ? `<p class="note esrc">Source: ${g.qsrc.u ? `<a href="${esc(safeUrl(g.qsrc.u))}" target="_blank" rel="noopener">${esc(g.qsrc.t)}</a>` : esc(g.qsrc.t)}</p>`
+          : ''
+      }`
     : `<p class="keyid">${gloss(g.sum)}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
