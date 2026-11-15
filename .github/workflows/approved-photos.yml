@@ -15,6 +15,10 @@ on:
     # fish-photos.json: a sheet-only photo tools/fish_photos.py found (remote, r: 1) is downloaded and uploaded the same
     # way (tools/fish_game.py sheet_of; 2026-11-15: no fish photo shown straight from iNaturalist or FishBase).
     paths: [curation.json, suggest.json, tools/fish_judge.json, tools/fish_refs.json, tools/fish_game.py, fish-photos.json]
+  # Weekly, for the licence refresh (tools/licences.py: an author can change the licence of their photos at any time);
+  # the other steps run too, as on a run by hand. Wednesday 03:47 Manila.
+  schedule:
+    - cron: '47 19 * * 2'
   workflow_dispatch:
 # Read only by default (security check, 2026-11-13; the jobs split, its follow-up): the work that downloads and decodes
 # photos and JSON from iNaturalist and FishBase (Pillow, from PyPI by hash) runs in read-only jobs (photos, fish), which
@@ -51,6 +55,15 @@ jobs:
         with:
           python-version: '3.15'
       - run: pip install --require-hashes -r tools/requirements.txt
+      # The licence refresh, on the weekly schedule and on a run by hand, never at a Publish (it asks iNaturalist about
+      # every observation listed: about 140 requests at one a second, rule C7): the credit and the licence of every
+      # iNaturalist photo listed brought up to date at the source (fish-cand.json, tools/fish_refs.json, the sheet-only
+      # photos; data.json, cand.json, excluded.json) and in fish-game.json; a photo whose licence the rules no longer
+      # accept leaves play, each one a warning on the run and listed in its summary. Before fetch_approved.py, so
+      # tools/fish_game.py builds fish-game.json from the refreshed sources. A request that fails writes nothing.
+      # --others: Pierre's own photos are left out (he does not change them weekly; Pierre, 2026-11-15).
+      - if: github.event_name != 'push'
+        run: python tools/licences.py --others --summary "$GITHUB_STEP_SUMMARY"
       # --games: a game photo of Millepora or a bonus genus still remote (r: 1) is downloaded too (R2 step 2). --fish: the
       # fish photos Pierre put in play (iNaturalist or FishBase, his crop applied) and fish-game.json, the list the fish
       # game reads (tools/fish_game.py; admin plan PR 7), then fish-photos.json from it (its first photos per entry, and
@@ -87,7 +100,7 @@ jobs:
       - name: Prepare the commit
         shell: bash
         run: |
-          git add data.json cand.json excluded.json fish-game.json fish-photos.json img
+          git add data.json cand.json excluded.json fish-game.json fish-photos.json fish-cand.json tools/fish_refs.json img
           mkdir -p "$RUNNER_TEMP/change"
           git rev-parse HEAD > "$RUNNER_TEMP/change/base"
           git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
@@ -127,7 +140,7 @@ jobs:
         shell: bash
         env:
           CHANGE: ${{ runner.temp }}/change
-          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-photos\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
+          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-photos\.json|fish-cand\.json|tools/fish_refs\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }
