@@ -23,7 +23,7 @@ data, bulk changes to his curation).
 **Alpha phase: no backward compatibility for old URLs, old keys or old app versions.** Rename cleanly, everywhere (code
 must say what things are). Where real data would be lost (a player's saved data under a renamed key, logged rows under
 an old page name), migrate the data once, in the data itself (the app moves its own stored keys at start-up, e.g.
-`core.js` `migrateIdKey`; the sheet script moves its own rows once after its install, `Code.gs` `ONCE_`, logged in the
+`core.js` `migrateRoutes`; the sheet script moves its own rows once after its install, `Code.gs` `ONCE_`, logged in the
 Deploy log), then forget the old name: no redirect, no permanent dual read. Old app versions may break; players update.
 The deploy-order rule D4 still holds (the app never relies on a sheet feature before the sheet has it).
 *Source:* Pierre, 2026-11-04.
