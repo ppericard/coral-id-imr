@@ -162,10 +162,10 @@ test('the app: quiz.js logs the tile tapped as pa, only for a Find the X; sync.j
   const quiz = read('quiz.js'),
     sync = read('sync.js');
   // go(): the photo of the tile whose unit was given (the four units are distinct), null for any other question.
-  assert.ok(quiz.includes('const tp = fx ? (fx.find(x => x.n === c) || {}).p : null;'));
-  assert.ok(/answer\(cur, c, target, [^\n]*, tm, tp\);/.test(quiz));
-  assert.ok(quiz.includes('function answer(cur, c, target, ph, cor, unseen, tm = {}, tp = null) {'));
-  assert.ok(quiz.includes('...(tp && tp.f ? {pa: tp.f} : {})'));
+  assert.ok(quiz.includes('const tap = fx ? (fx.find(x => x.n === c) || {}).p : null;'));
+  assert.ok(/answer\(cur, c, target, [^\n]*, tm, tap\);/.test(quiz));
+  assert.ok(quiz.includes('function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {'));
+  assert.ok(quiz.includes('...(tap && tap.f ? {pa: tap.f} : {})'));
   // Both sends: a save's answers and an anonymous batch; nothing else in sync.js sends answers.
   assert.ok(sync.includes('answers: log.map(a => logOut(a, sheetV())),'));
   assert.ok(sync.includes('anonAnswers: batch.map(a => logOut(a, sheetV())),'));

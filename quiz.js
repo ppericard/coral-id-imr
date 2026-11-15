@@ -436,8 +436,8 @@ function question(cur, target, choices, prompt, set, kq) {
     answered = true;
     QOPEN = false;
     // A Find the X: the photo tapped (its four units are distinct, so the tile of the unit given), logged with the answer.
-    const tp = fx ? (fx.find(x => x.n === c) || {}).p : null;
-    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tp);
+    const tap = fx ? (fx.find(x => x.n === c) || {}).p : null;
+    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tap);
     // Find the X: each tile now says its unit (the right one ticked, the one tapped crossed: never colour alone), its
     // source (rule P5) and opens the four photos whole.
     if (fx)
@@ -651,8 +651,8 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-// tp: a Find the X's photo tapped (question), logged as pa; null for any other question.
-function answer(cur, c, target, ph, cor, unseen, tm = {}, tp = null) {
+// tap: a Find the X's photo tapped (question), logged as pa; null for any other question.
+function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
   // a comeback question takes its genus's recall as it is now (Codex review #374).
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
@@ -861,7 +861,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tp = null) {
     // A Find the X's photo tapped (Pierre, 2026-11-15, Q371): sheet vNEXT keeps it (Answers Photo answered); sent only
     // from PA_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). Information only: no score,
     // replay or rule reads it.
-    ...(tp && tp.f ? {pa: tp.f} : {})
+    ...(tap && tap.f ? {pa: tap.f} : {})
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
