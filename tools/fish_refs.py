@@ -442,7 +442,7 @@ def relabel(doc):
     return n
 
 
-def write(doc):
+def write(doc, out=None):
     dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
     lines = ["{", f'"_doc":{dump(doc["_doc"])},']
     for part in ("photos", "away"):
@@ -450,7 +450,7 @@ def write(doc):
         lines.append(",\n".join(f'"{k}":{dump(v)}' for k, v in doc[part].items()))
         lines.append("}," if part == "photos" else "}")
     lines += ["}"]
-    OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    Path(out or OUT).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main():

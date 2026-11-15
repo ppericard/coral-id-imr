@@ -1390,7 +1390,7 @@ const darkCards = (p, sel) =>
         let r = await rv();
         if (
           r.hash !== '#' + other.hash + 'photos/review/ease' ||
-          r.views.join() !== 'Ease,Phase & framing' ||
+          r.views.join() !== 'Ease,Phase & framing,By difficulty' ||
           !r.tiles ||
           !/^Ease: same as/.test(r.agree) ||
           r.note ||
@@ -5731,6 +5731,56 @@ const darkCards = (p, sel) =>
               )
               .catch(async () => fe.push(`after Remove on ${gone}: ${JSON.stringify(await shown())}`));
           }
+        }
+        // Photo review › By difficulty on the fish side (fish admin at parity), on the same answers: after Ease and Phase &
+        // framing; the photos by their answers alone (no photo difficulty: the sheet rates the corals' photos only), the
+        // candidate photo missed 9 times by 3 players among the hardest with its numbers and its family page's tools, the
+        // photo Removed above left out; Easiest turns the order round; its own help; no sideways scroll.
+        if (!fe.length && pre.f) {
+          await fq.evaluate(() => (location.hash = '#fish/photos/review/by-difficulty'));
+          await fq
+            .waitForFunction(() => cur === 'photos/review/by-difficulty' && document.querySelector('.adm-fdiffg .adm-ftile'), null, {
+              timeout: 60000
+            })
+            .catch(() => fe.push('By difficulty not drawn'));
+          const dv = () =>
+            fq.evaluate(f => {
+              const T = [...document.querySelectorAll('.adm-fdiffg .adm-ftile')],
+                me = T.find(e => e.dataset.f === f),
+                seen = Object.keys((DRAFT.fish || {}).seen || {});
+              return {
+                views: [...document.querySelectorAll('#subnav .adm-views [data-view]')].map(a => a.dataset.view.split('/').pop()),
+                first: T.length ? T[0].dataset.f : '',
+                n: T.length,
+                cap: me ? (me.querySelector('.adm-hnum') || {}).textContent || '' : '',
+                not: !!(me && me.querySelector('[data-fu="not"]')),
+                removed: T.filter(e => seen.includes(e.dataset.f)).length,
+                rec: /recognised by/.test(document.getElementById('view').textContent),
+                wide: document.documentElement.scrollWidth - innerWidth
+              };
+            }, pre.f);
+          const d0 = await dv();
+          if (
+            d0.views.slice(0, 3).join() !== 'ease,phase-framing,by-difficulty' ||
+            d0.first !== pre.f ||
+            !/^0% right · 9 answers · 3\/3 players$/.test(d0.cap) ||
+            !d0.not ||
+            d0.removed ||
+            d0.rec ||
+            d0.wide > 0
+          )
+            fe.push(`By difficulty ${JSON.stringify(d0)}`);
+          await fq.click('[data-do="easy"]');
+          await fq.waitForTimeout(300);
+          const d1 = await dv();
+          if (d1.first === pre.f || !d1.n) fe.push(`By difficulty, Easiest ${JSON.stringify(d1)}`);
+          await fq.click('[data-do="hard"]');
+          // its own help behind "?": the answers alone, no photo difficulty
+          await fq.click('#help');
+          if (await fq.$('#admhelp [data-ht="page"]')) await fq.click('#admhelp [data-ht="page"]');
+          const ht = await fq.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
+          if (!/from the answers alone/.test(ht) || /Elo/.test(ht)) fe.push(`By difficulty, help ${ht.slice(0, 80)}`);
+          await fq.click('#help');
         }
         if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();

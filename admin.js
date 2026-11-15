@@ -1550,10 +1550,12 @@ const GROUPS = [
         [
           ['quality', 'Quality'],
           ['growth-form', 'Growth form'],
-          ['by-difficulty', 'By difficulty'],
           // The fish views (admin plan PR 9, renderFishReview): a subject whose unit rank is the family (hasPage).
           ['ease', 'Ease', {rank: 'family'}],
           ['phase-framing', 'Phase & framing', {rank: 'family'}],
+          // Every subject's (fish admin at parity: the fish side's from its answers alone, renderFishDiff), after the fish
+          // views so that the fish Photo review still opens on Ease.
+          ['by-difficulty', 'By difficulty'],
           // Proposals of the light re-judge (admin-light.js, Pierre 2026-11-14): in the switch only while one is open.
           [
             'light-proposals',
@@ -3483,7 +3485,7 @@ function render() {
   if (anPage(cur)) return typeof renderAnalyses === 'function' ? renderAnalyses() : ($v.innerHTML = '<p class="note">Loading…</p>'); // the Analyses group (admin-analyses.js)
   // A device that never signed in, by anonymous id (its own route: a player's name may start with any character).
   if (cur.startsWith('players/list/anon/')) return renderJourney('', cur.slice('players/list/anon/'.length));
-  if (cur === 'photos/review/by-difficulty') return renderDiff();
+  if (cur === 'photos/review/by-difficulty') return ASUBJ.sheets ? renderFishDiff() : renderDiff();
   if (cur === 'photos/stats/overview') return renderPstats();
   if (modeKey() === 'stats') return renderStats();
   if (cur === 'photos/look-alikes') return ASUBJ.rank === 'family' ? renderFishMont() : renderMont();
@@ -4165,6 +4167,7 @@ const HELP = {
     <p><b>Questions or a mistake:</b> ask Pierre Pericard.</p>`,
   todo: `<p>Everything that needs your eye, most urgent first: a red <b>Health</b> line when Health finds photos everyone misses or genera players are stuck on (nothing when all is well), the players' <b>reports</b>, the photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days (app errors, photos that did not load, failed saves), the photos <b>out of the presence rule</b> (taken abroad, of a species not confirmed in the Philippines: rule C8; <b>Remove</b>, <b>Keep</b> or <b>Remove all</b>, as in Reports), the <b>share-alike</b> photos (CC BY-SA, CC BY-NC-SA: no longer taken for corals; same actions), Featured photos rated Poor, and last the judging agent's <b>suggestions</b>. Each part works as in its own view: <b>Reports</b> (reports, flags, Poor featured photos and suggestions, the former Triage page), <b>Errors</b> (with the one-tap answers and load times), <b>Health</b>.</p>`,
   fishtodo: `<p>Everything on the fish side that needs your eye, most urgent first: a red <b>Health</b> line when Health finds fish photos everyone misses or families or genera players are stuck on (nothing when all is well), the players' <b>reports</b> about fish (and those about no subject), the fish photos you <b>flagged</b> on the site, the <b>errors</b> the players' devices sent in the last 30 days, and last the fish <b>photos</b> work as counts, each opening its page: the <b>candidates</b> waiting in Candidates (the auto-sort's Checks apart, and those of a species at its target or set aside, as the swiper hides them), the open <b>cover proposals</b> and <b>light proposals</b> (Photo review), and Coverage's To do (under its All | IMR filter; a click opens Coverage › Games on those rows). The corals' photo sections (out of the presence rule, share-alike, Featured rated Poor, the judging agent's suggestions) have no fish counterpart here: the fish candidates already carry the pass's judgment. Each part works as in its own view: <b>Reports</b>, <b>Errors</b>, <b>Health</b>.</p>`,
+  fishdiff: `<p>Every fish photo players answered, by how often they got it right: <b>Hardest</b> first (the lowest share right) or <b>Easiest</b>, more answers first on a tie; <b>≥1</b>, <b>≥3</b>, <b>≥10</b> answers at least. Counted from the answers alone, as Health counts them: every answer that showed the photo, family and genus questions alike (the sheet rates the corals' photos only, so there is no photo difficulty here yet). Under each photo: the share right, its answers and the players who miss it out of those who answered it. Each photo has every tool of its family page (Tags with its <b>Ease</b>, Remove, Not this, Crop, ×); one already taken out of play leaves the list, and the next comes in. A long list shows its first photos, the rest counted below.</p>`,
   points: `<p>The points to settle: questions for an IMR trainer (<b>Trainer</b>), nomenclature points (<b>Names</b>), discrepancies between sources (<b>Sources</b>) and content questions for you (<b>Content</b>); each side (Corals | Fish) lists its own. Agents add them (<code>points.json</code>, most important first); you settle them. <b>Open</b> first, <b>Stand-by</b> below (set aside, still here), <b>Resolved</b> and <b>Dismissed</b> folded at the bottom. Age = since the point was added. Tap a point to open its page.</p>`,
   point: `<p>One point, made to show from a phone: the question, the photos to show (tap one to enlarge it, ‹ › to step through them), a field under each photo for the answer, and your notes. The photos are numbered, without their names, so the answer is the trainer's own; <b>Names</b> shows them (and the full caption in the enlarged photo). <b>Resolved</b>, <b>Stand-by</b> (it sinks below the open points and stays) or <b>Dismiss</b>, then <b>Reopen</b> if needed; one click, Undo (Ctrl+Z) steps back. <b>Context</b>: where the point comes from and its sources.</p><p>Your status, notes and answers are part of your curation: kept in this browser's draft, sent with <b>Publish</b> (curation.json <code>points</code>), which is public: no names of people in the notes.</p>`,
   hidden: `<p>Every photo taken off the site with <b>Remove</b>, all genera together (on a genus page they wait with the candidates). <b>Put back</b> returns one to its view; Undo steps back as everywhere.</p>`,
@@ -4244,7 +4247,7 @@ function toggleHelp() {
             'analyses/difficulty/heatmap': 'statsheat',
             'analyses/learning/answer-log': 'statslog',
             'analyses/learning/stops': 'statsstop',
-            'photos/review/by-difficulty': 'diff'
+            'photos/review/by-difficulty': ASUBJ.sheets ? 'fishdiff' : 'diff'
           }[cur] || modeKey();
   h = document.createElement('div');
   h.id = 'admhelp';
@@ -7849,6 +7852,77 @@ function renderDiff() {
       })
   );
   bindQ();
+  bindStats();
+}
+
+// Photo review › By difficulty on the side of a subject the sheet does not rate (fish admin at parity; the sheet's photo
+// ratings, stats_, are the replayed subject's only): its photos ranked by their answers alone, as its Health counts them
+// (photoAnswers over rowsOf: every answer that showed the photo, family and genus questions alike), the lowest share right
+// first (Hardest) or the highest (Easiest), more answers first on a tie; at least SF.min answers (the corals' segment).
+// PH: photoAnswers' {f: {n, ok}}. [{f, n, ok, r}], in order. Pure: tests/fishdiff.test.js.
+function diffByAnswers(PH, min, order) {
+  const s = order === 'easy' ? -1 : 1;
+  return Object.entries(PH || {})
+    .filter(([, o]) => o && o.n >= min)
+    .map(([f, o]) => ({f, n: o.n, ok: o.ok, r: o.ok / o.n}))
+    .sort((a, b) => s * (a.r - b.r) || b.n - a.n || (a.f < b.f ? -1 : a.f > b.f ? 1 : 0));
+}
+// The page: each photo with every tool of its family's page (fishRepTile: Tags with its ease, Remove, Not this, ×...), its
+// numbers in the caption as on Health; a photo already out (excluded, Not this, removed) left out, as Health does, so
+// acting on one brings the next in. FDIFF_MAX shown, the rest counted. The fish data (fishAdmin) and the family pages'
+// data for the tiles' tools (fishLoad) are read behind the page.
+const FDIFF_MAX = 48;
+function renderFishDiff() {
+  status();
+  const S = ASUBJ,
+    here = () => cur === 'photos/review/by-difficulty' && ASUBJ === S;
+  if (!ANS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadStats().then(() => here() && render());
+    return;
+  }
+  if (ANS.old) {
+    $v.innerHTML = `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`}</p>`;
+    return;
+  }
+  if (!FISHA) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    fishAdmin().then(() => here() && FISHA && render());
+    return;
+  }
+  const FD = DRAFT.fish || {},
+    done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
+    PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
+    L = diffByAnswers(PH, SF.min, DIFF_ORDER);
+  if (L.length && !FISHC) fishLoad().then(() => here() && render());
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
+    num = o => {
+      const m = missedBy(PH[o.f]);
+      return `<span class="adm-hnum"><b${o.r < HEALTH.PH_LOW ? ' class="warnc"' : ''}>${pct(o.ok, o.n)}</b> right · ${plural(o.n, 'answer')} · <span title="Players who miss it / players">${m.miss}/${m.pl} players</span></span>`;
+    };
+  $v.innerHTML = `<section class="adm-quality adm-fdiff"><div class="adm-shead">${segBtns('min', [
+    [1, '≥1'],
+    [3, '≥3'],
+    [10, '≥10']
+  ])}<span class="note">answers</span>
+    <span class="adm-qseg adm-sseg" role="group" aria-label="Order"><button type="button" data-do="hard" aria-pressed="${DIFF_ORDER === 'hard'}">Hardest</button><button type="button" data-do="easy" aria-pressed="${DIFF_ORDER === 'easy'}">Easiest</button></span></div>
+    ${
+      L.length
+        ? `<div class="adm-grid adm-qgrid adm-fdiffg">${L.slice(0, FDIFF_MAX)
+            .map(o => fishRepTile({...FISHA.ph[o.f], genus: FISHA.ph[o.f].entry}, {cap: num(o)}))
+            .join('')}</div>${L.length > FDIFF_MAX ? `<p class="note">+${L.length - FDIFF_MAX} more</p>` : ''}`
+        : '<p class="note">No answers yet.</p>'
+    }</section>`;
+  $v.querySelectorAll('[data-do]').forEach(
+    b =>
+      (b.onclick = () => {
+        DIFF_ORDER = b.dataset.do;
+        store.set('reefid-admin-diff', DIFF_ORDER);
+        render();
+      })
+  );
+  const g = $v.querySelector('.adm-fdiffg');
+  if (g) bindFishTiles(g);
   bindStats();
 }
 

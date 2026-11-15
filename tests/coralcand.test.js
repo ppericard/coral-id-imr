@@ -202,7 +202,16 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
     sizes = job.indexOf('python tools/photos.py');
   assert.ok(files > 0 && files < sizes && sizes < tidy, 'a restored lecture photo: its file from history, its sizes, then back');
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
-  assert.match(job, /git add data\.json cand\.json excluded\.json fish-game\.json fish-photos\.json img/);
+  assert.match(
+    job,
+    /git add data\.json cand\.json excluded\.json fish-game\.json fish-photos\.json fish-cand\.json tools\/fish_refs\.json img/
+  );
+  // The licence refresh (tools/licences.py): weekly and by hand, never at a Publish; before tools/fish_game.py builds
+  // fish-game.json from the sources it refreshed.
+  assert.match(y, /\n {2}schedule:\n {4}- cron: '[^']+'\n/);
+  const lic = job.indexOf('python tools/licences.py');
+  assert.ok(lic > 0 && lic < job.indexOf('python tools/fetch_approved.py'), 'the licences before the fish photos');
+  assert.match(job, /- if: github\.event_name != 'push'\n\s+run: python tools\/licences\.py --others --summary "\$GITHUB_STEP_SUMMARY"\n/);
 });
 
 // One full refill for genus A, near Dauin only (the other tiers answer nothing), against a stubbed iNaturalist.
