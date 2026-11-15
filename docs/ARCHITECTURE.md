@@ -293,7 +293,8 @@ circles and pairs come with the next steps).
 - **Sources reach the units too** (rule C2): an edited tip's source becomes the unit's `qsrc` (`fishGen`; `app.js`
   `fishGenera` for the marks that stand for missing tips and for a genus's tips), shown under the tips wherever they are
   (`app.js` `tipsList`: quiz feedback, cards, the ID tips view); an edited look-alike line's goes after its own in `lsrc`
-  (`fishLookSrc`).
+  (`fishLookSrc`) and, by the other family's id, in the unit's `lksrc` (`app.js` `fishGenera`), which the quiz feedback's
+  "Tell them apart (IMR; source)" says (`quiz.js` `fbBody`; the IMR label stays, Q359 a).
 - **The players' copy** (`tools/curplay.py`) keeps each entry's `v` and `src` only.
 
 ### Suggestion files (machine-written, Pierre confirms in admin)

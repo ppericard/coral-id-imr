@@ -987,10 +987,14 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
   const g = GX(target),
     fish = !!g.name,
     C = !good && GX(c) ? GX(c) : null,
-    apart = C && fish ? ((g.lk || []).find(([o]) => o === c) || (C.lk || []).find(([o]) => o === target) || [])[1] : '';
+    own = C && fish ? (g.lk || []).find(([o]) => o === c) : null,
+    apart = C && fish ? (own || (C.lk || []).find(([o]) => o === target) || [])[1] : '',
+    // the source the content editor gave when he reworded that line (app.js fishGenera lksrc; Q359 e, rule C2): said after
+    // the IMR label, which stays (Q359 a)
+    asrc = apart ? ((own ? g.lksrc : C.lksrc) || {})[own ? c : target] : null;
   const vs = C
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
   const named = inner =>
