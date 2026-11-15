@@ -397,9 +397,12 @@ function doPost_(e){
       g.getRange(gr, 1, 1, head.length).setValues([[safe_(name), (s.learned || 0) + '/' + (s.total || 0)].concat(genera.map(n => LABELS[s.genera[n]] || ''))])
         .setBackgrounds([['#ffffff', '#ffffff'].concat(genera.map(n => COLORS[s.genera[n]] || '#ffffff'))]);
     }
-    try { boardUnitsSave_(s.boards); } catch (err) {}  // v95: the units of each other subject's leaderboard
+    // v95: the units of each other subject's leaderboard. vNEXT: bt, the trees the sheet holds, only once that step ran to
+    // the end (a failure is logged, and its reply without bt makes the app send its tree again).
+    let bt = null;
+    try { bt = boardUnitsSave_(s.boards); } catch (err) { boardLog_('save', 'the leaderboard step failed: ' + String(err && err.message || err).slice(0, 200), ''); }
     TIM_.op = 'save';  // v130: a completed save is timed as a whole, to its reply (timEnd_)
-    out = {ok: true, log: true, rev: rev + 1, acct: kept._acct};  // v58: the generation, known to the creating device at once (Codex review #603)
+    out = {ok: true, log: true, rev: rev + 1, acct: kept._acct, ...(bt ? {bt} : {})};  // v58: the generation, known to the creating device at once (Codex review #603)
     // v116: the checksum of the copy now saved, under the new key names (core.js dataSum), so a light app knows it holds
     // that very copy (sync.js sdSaved) and sends only what changes next time.
     if (p.light) { const k2 = CORE_.keysIn(kept); delete k2._acct; out.sum = CORE_.dataSum(k2); }
@@ -1658,41 +1661,141 @@ function adminDrop_(h){
 // v101: a subject with a global score (core.js SUBJECTS score) sends its tree instead, {f: [[family, weight, circle]],
 // s: [[weight, genus, species, [common names] (null: none at all), circle]]} (app.js UNITS tree, core.js treeScore), kept the same way once it
 // passes boardTreeOk_ (and a list sent afterwards by an older app never replaces it): every unit a word as above, every weight a finite number from 0 to 1000, every circle 1 to 9, at
-// most 400 families and 1500 species entries, its JSON at most 9000 characters (a script property's limit).
+// most 400 families and 1500 species entries, its JSON at most BOARD_TREE_MAX_ characters (9000 before vNEXT).
+// vNEXT (Pierre, 2026-11-15, Q375: "ok", docs/reviews/2026-11-14-species-step1.md (c) A): the tree is kept in chunks, so a
+// tree with one entry per species fits (Q362: one unit per species; fish.json measured at 662 entries, about 26,000
+// characters with short species units and 41,000 with the longest; today's packed tree about 6,000):
+// - its entries are cut, in order, into chunks {f, s} of at most BOARD_CHUNK_ characters of JSON (a script property holds
+//   9 kB; boardChunks_), each kept as BOARD_UNITS_<id>@<sum>#<i>, sum the tree's checksum (core.js dataSum); then the
+//   subject's own key is set to '@<chunks> <sum>', last, and the chunks of any other sum are deleted (boardTreePut_). A
+//   board read under way (board_ takes no lock) so reads one tree whole, never a mix, and one that finds a chunk gone
+//   reads the key again (boardTreeGet_);
+// - every chunk passes the entry checks on its own (boardChunkOk_) and the whole tree boardTreeOk_, when it comes in and
+//   when it is read back, its checksum too when read back;
+// - a tree refused, a kept tree that cannot be read back, or a save whose leaderboard step failed is never dropped
+//   silently: a line goes to the Deploy log (boardLog_), once per tree and reason in 6 hours, since an app from before
+//   sync.js TREE_SHEET sends its tree with every save;
+// - every save reply carries bt {id: the checksum of the tree the sheet holds, '' for none} for each subject with a
+//   score, once this step ran to the end, so an app from TREE_SHEET sends its tree only when it changed, or when the
+//   sheet holds another one (sync.js boardUnits, treesSeen);
+// - a value kept by an older script (a list, or the tree's JSON itself) is read as before.
 const BOARD_U_ = /^[A-Za-z][A-Za-z0-9: -]{0,39}$/;
-function boardTreeOk_(T){
-  const u = x => typeof x === 'string' && BOARD_U_.test(x), u0 = x => x === '' || u(x),
-    w = x => typeof x === 'number' && isFinite(x) && x >= 0 && x <= 1000, c = x => Number.isInteger(x) && x >= 1 && x <= 9;
-  if (!T || typeof T !== 'object' || Array.isArray(T) || !Array.isArray(T.f) || !Array.isArray(T.s)) return null;
-  if (!T.f.length || T.f.length > 400 || T.s.length > 1500) return null;
-  if (!T.f.every(e => Array.isArray(e) && e.length === 3 && u(e[0]) && w(e[1]) && c(e[2]))) return null;
-  if (!T.s.every(e => Array.isArray(e) && e.length === 5 && w(e[0]) && u0(e[1]) && u0(e[2]) && (e[3] === null || (Array.isArray(e[3]) && e[3].length <= 3 && e[3].every(u))) && c(e[4]))) return null;
-  const json = JSON.stringify({f: T.f, s: T.s});
-  return json.length <= 9000 ? json : null;
+const BOARD_TREE_MAX_ = 50000, BOARD_CHUNK_ = 8000;
+const boardU_ = x => typeof x === 'string' && BOARD_U_.test(x),
+  boardW_ = x => typeof x === 'number' && isFinite(x) && x >= 0 && x <= 1000,
+  boardC_ = x => Number.isInteger(x) && x >= 1 && x <= 9,
+  boardF_ = e => Array.isArray(e) && e.length === 3 && boardU_(e[0]) && boardW_(e[1]) && boardC_(e[2]),
+  boardS_ = e => Array.isArray(e) && e.length === 5 && boardW_(e[0]) && (e[1] === '' || boardU_(e[1])) && (e[2] === '' || boardU_(e[2])) &&
+    (e[3] === null || (Array.isArray(e[3]) && e[3].length <= 3 && e[3].every(boardU_))) && boardC_(e[4]),
+  boardFS_ = T => !!T && typeof T === 'object' && !Array.isArray(T) && Array.isArray(T.f) && Array.isArray(T.s);
+// Why a tree is refused, '' when it passes: counts and positions only, for the Deploy log.
+function boardTreeWhy_(T){
+  if (!boardFS_(T)) return 'not a tree {f, s}';
+  if (!T.f.length || T.f.length > 400 || T.s.length > 1500) return T.f.length + ' families and ' + T.s.length + ' species entries (1 to 400, at most 1500)';
+  const f = T.f.findIndex(e => !boardF_(e)), s = T.s.findIndex(e => !boardS_(e));
+  if (f >= 0) return 'family entry ' + f + ' malformed';
+  if (s >= 0) return 'species entry ' + s + ' malformed';
+  const n = JSON.stringify({f: T.f, s: T.s}).length;
+  return n > BOARD_TREE_MAX_ ? n + ' characters (at most ' + BOARD_TREE_MAX_ + ')' : '';
 }
+function boardTreeOk_(T){ return boardTreeWhy_(T) ? null : JSON.stringify({f: T.f, s: T.s}); }
+// One kept chunk (text: its JSON as kept): a tree's entries, at most BOARD_CHUNK_ characters.
+const boardChunkOk_ = (C, text) => boardFS_(C) && C.f.every(boardF_) && C.s.every(boardS_) && text.length <= BOARD_CHUNK_;
+// A tree's entries, families then species in order, cut into chunks of at most BOARD_CHUNK_ characters: their JSON texts.
+function boardChunks_(T){
+  const out = [], EMPTY = 15;  // '{"f":[],"s":[]}'
+  let C = {f: [], s: []}, n = EMPTY;
+  const add = (k, e) => {
+    const m = JSON.stringify(e).length + 1;  // the entry and its comma
+    if (n + m > BOARD_CHUNK_ && (C.f.length || C.s.length)) { out.push(JSON.stringify(C)); C = {f: [], s: []}; n = EMPTY; }
+    C[k].push(e);
+    n += m;
+  };
+  T.f.forEach(e => add('f', e));
+  T.s.forEach(e => add('s', e));
+  out.push(JSON.stringify(C));
+  return out;
+}
+const boardSum_ = json => CORE_.dataSum({t: json});
+// The checksum of the tree a subject's board holds, '' for none (nothing kept, or a list): the save reply's bt.
+function boardTreeSum_(S){
+  const v = PropertiesService.getScriptProperties().getProperty(BOARD_UNITS_ + S.id) || '', m = /^@\d+ (\S+)$/.exec(v);
+  if (m) return m[1];
+  if (!/^\{/.test(v)) return '';
+  try { const json = boardTreeOk_(JSON.parse(v)); return json ? boardSum_(json) : ''; } catch (e) { return ''; }  // an older script's
+}
+// Keeps a tree (json: boardTreeOk_'s) in chunks, the subject's key last, then drops every other tree's chunks.
+function boardTreePut_(S, json){
+  const props = PropertiesService.getScriptProperties(), key = BOARD_UNITS_ + S.id, sum = boardSum_(json), own = key + '@' + sum + '#';
+  if (boardTreeSum_(S) === sum) return;
+  const texts = boardChunks_(JSON.parse(json));
+  texts.forEach((t, i) => props.setProperty(own + i, t));
+  props.setProperty(key, '@' + texts.length + ' ' + sum);
+  props.getKeys().filter(k => k.indexOf(key + '@') === 0 && k.indexOf(own) !== 0).forEach(k => props.deleteProperty(k));
+}
+// The tree a subject's board holds, read back whole ({f, s}); null when it holds none or a list, and when it cannot be
+// read (logged).
+function boardTreeGet_(S){
+  const props = PropertiesService.getScriptProperties(), key = BOARD_UNITS_ + S.id;
+  let why = '', v = '';
+  for (let k = 0; k < 2 && !why; k++) {
+    v = props.getProperty(key) || '';
+    const m = /^@(\d+) (\S+)$/.exec(v);
+    if (!m) {
+      // A tree an older script kept as one JSON text, or none.
+      if (!/^\{/.test(v)) return null;
+      try { const T = JSON.parse(v); if (boardTreeOk_(T)) return T; why = boardTreeWhy_(T); } catch (e) { why = 'not JSON'; }
+      break;
+    }
+    const texts = [];
+    for (let i = 0; i < Number(m[1]); i++) texts.push(props.getProperty(key + '@' + m[2] + '#' + i));
+    if (texts.some(t => t == null)) { if (k) why = 'a chunk missing'; continue; }  // replaced while read: the key again
+    const C = texts.map(t => { try { return JSON.parse(t); } catch (e) { return null; } }), bad = C.findIndex((c, i) => !boardChunkOk_(c, texts[i]));
+    if (bad >= 0) { why = 'chunk ' + bad + ' malformed'; break; }
+    const T = {f: [].concat(...C.map(c => c.f)), s: [].concat(...C.map(c => c.s))}, json = boardTreeOk_(T);
+    if (!json) why = boardTreeWhy_(T);
+    else if (boardSum_(json) !== m[2]) why = 'checksum differs';
+    else return T;
+  }
+  boardLog_(S.id, 'the kept tree cannot be read (' + why + '): no %, until an app sends its tree again', v);
+  return null;
+}
+// A leaderboard line in the Deploy log, once per subject, what and key in 6 hours; it never fails the request.
+function boardLog_(id, what, key){
+  try {
+    const c = CacheService.getScriptCache(), ck = 'boardlog:' + CORE_.dataSum({w: id + '|' + what + '|' + key});
+    if (c.get(ck)) return;
+    c.put(ck, '1', 21600);
+    sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), ('Leaderboard (' + id + '): ' + what).slice(0, 500)]);
+  } catch (e) {}
+}
+// Keeps the units or tree each subject's apps sent (summary.boards), and returns bt {id: boardTreeSum_} for each subject
+// with a score, whether it sent one or not.
 function boardUnitsSave_(boards){
-  if (!boards || typeof boards !== 'object') return;
-  const B0 = CORE_.SUBJECTS.find(x => x.board);
-  CORE_.SUBJECTS.filter(S => S.board && S !== B0 && boards[S.id] && typeof boards[S.id] === 'object').forEach(S => {
-    let json = null;
-    const props = PropertiesService.getScriptProperties();
-    if (Array.isArray(boards[S.id])) {
+  const B0 = CORE_.SUBJECTS.find(x => x.board), bt = {}, props = PropertiesService.getScriptProperties();
+  CORE_.SUBJECTS.filter(S => S.board && S !== B0).forEach(S => {
+    const b = boards && typeof boards === 'object' ? boards[S.id] : null;
+    if (Array.isArray(b)) {
       // An app from before the score sends a list: it never replaces a tree a current app sent (Codex review #730), so the
       // board stays on the scale My progress shows.
-      if (S.score && /^\{/.test(props.getProperty(BOARD_UNITS_ + S.id) || '')) return;
-      const list = boards[S.id].map(String).filter(u => BOARD_U_.test(u)).slice(0, 400);
-      if (list.length) json = JSON.stringify(list);
-    } else if (S.score) json = boardTreeOk_(boards[S.id]);
-    if (!json) return;
-    if (props.getProperty(BOARD_UNITS_ + S.id) !== json) props.setProperty(BOARD_UNITS_ + S.id, json);
+      const list = b.map(String).filter(u => BOARD_U_.test(u)).slice(0, 400), json = JSON.stringify(list);
+      if (list.length && !(S.score && /^[{@]/.test(props.getProperty(BOARD_UNITS_ + S.id) || '')) && props.getProperty(BOARD_UNITS_ + S.id) !== json)
+        props.setProperty(BOARD_UNITS_ + S.id, json);
+    } else if (b && typeof b === 'object' && S.score) {
+      const json = boardTreeOk_(b);
+      if (json) boardTreePut_(S, json);
+      else boardLog_(S.id, 'a tree sent was refused (' + boardTreeWhy_(b) + '); the board keeps the one it holds', boardTreeWhy_(b) + ':' + String(JSON.stringify(b)).length);
+    }
+    if (S.score) bt[S.id] = boardTreeSum_(S);
   });
+  return bt;
 }
-// What a subject's board counts: its units list, or (v101) its tree ({f, s}); [] when nothing was sent yet.
+// What a subject's board counts: its units list, or (v101) its tree ({f, s}); [] when nothing was sent yet, or when the
+// tree kept cannot be read back (boardTreeGet_, logged).
 function boardUnits_(S){
-  try {
-    const L = JSON.parse(PropertiesService.getScriptProperties().getProperty(BOARD_UNITS_ + S.id) || '[]');
-    return Array.isArray(L) ? L.map(String) : L && typeof L === 'object' && Array.isArray(L.f) ? L : [];
-  } catch (e) { return []; }
+  const v = PropertiesService.getScriptProperties().getProperty(BOARD_UNITS_ + S.id) || '';
+  if (/^[{@]/.test(v)) return boardTreeGet_(S) || [];
+  try { const L = JSON.parse(v || '[]'); return Array.isArray(L) ? L.map(String) : []; } catch (e) { return []; }
 }
 function board_(sid){
   const S = boardSubj_(sid), first = S === CORE_.SUBJECTS.find(x => x.board), key = boardCache_(S);
