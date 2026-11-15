@@ -53,11 +53,14 @@ presentation names a sea slug phase, and `seaslug-cand.json` carries no `rep`.
 
 ## The views that matter
 
-The study of 2026-11-15 ([nudibranch mode study](../docs/reviews/2026-11-15-nudibranch-mode-study.md) §5.2) read where a
-sea slug's characters show: the dorids (*Chromodoris*, *Hypselodoris*, *Phyllidia*) from above or dorso-laterally,
-showing the rhinophores, the gill plume and the mantle's pattern and rim (the phyllidiids' dorsal tubercles too: Stoffels
-et al. 2016); the aeolids (*Pteraeolidia*, *Phyllodesmium*, *Coryphellina*) from the side, showing the cerata and the oral
-tentacles; an animal on its back, a ventral view through glass, a curled-up or swimming animal hides them. So:
+The brief for this rubric (2026-11-15) names the views that matter for nudibranchs: dorsal, lateral, the rhinophores and
+the gills visible. The study of 2026-11-15 ([nudibranch mode study](../docs/reviews/2026-11-15-nudibranch-mode-study.md)
+§5.2) had proposed the same, labelled a **[guess]** to check against a guide: the dorids (*Chromodoris*, *Hypselodoris*,
+*Phyllidia*) from above or dorso-laterally, showing the rhinophores, the gill plume and the mantle's pattern and rim; the
+aeolids (*Pteraeolidia*, *Phyllodesmium*, *Coryphellina*) from the side, showing the cerata and the oral tentacles; an
+animal on its back, a ventral view through glass, a curled-up or swimming animal hiding them. Only the phyllidiids'
+tubercles are read from a source there (Stoffels et al. 2016: "Structure and pattern of the notal tubercles are important
+characters for identification"). So, until a guide is checked (the first judging pass may say more):
 
 - **dorsal (`d`), lateral (`p`) and dorso-lateral (`o`) are the sea slugs' good views**: any of them can be very easy.
   Unlike the fish, a view from above is a reference view and caps nothing.
@@ -65,18 +68,17 @@ tentacles; an animal on its back, a ventral view through glass, a curled-up or s
 
 ## Rhinophores and gills
 
-The rhinophores (the paired sensory tentacles on the head) and the gills (a dorid's plume on the back) are among the
-characters the views above show. The flag `f` records what the photo shows: they are there but **withdrawn** (pulled into
-their pockets) or **hidden** (cut by the frame, under the substrate, behind another animal). The judge reads the photo, not
-the body plan: circle 1 holds 39 nudibranchs, 3 sacoglossans, 2 headshield slugs and 1 sidegill slug (the
+The rhinophores and the gills are among the characters the brief asks to see. The flag `f` records what the photo shows:
+they are there but **withdrawn** (the photo shows them drawn in, or only the place they come out of) or **hidden** (cut by
+the frame, under the substrate, behind another animal). The judge reads the photo, not the body plan: circle 1 holds 39 nudibranchs, 3 sacoglossans, 2 headshield slugs and 1 sidegill slug (the
 [species list](../docs/reviews/2026-11-15-seaslug-list.md) §4.1), and a photo that shows no plume and no sign of one
 withdrawn or hidden gets no `f`. It caps nothing: a very easy photo (5) has no `f`; with it, a photo is at most easy (4) by
 the ease scale.
 
 ## Macro framing
 
-Most sea slugs are a few millimetres to a few centimetres long, so their good photos are macro shots (the study §5.2). The
-very easy sea-slug photo is the macro the field guides show: the whole animal large in the frame (`l`), sharp on its head
+Many sea slugs are small, so their good photos are macro shots (the study §5.2, a **[guess]** there; the brief asks for
+macro framing). The very easy sea-slug photo is a macro: the whole animal large in the frame (`l`), sharp on its head
 end and its pattern, in a good view, its rhinophores and gills showing. So size `m` is a mild shortfall here (the fish's 5
 accepts `m`) and `s` a strong one; a photo where the animal is a speck on the reef is hard (2) or very hard (1). A crop is
 proposed when the animal is small in the frame or the margins distract (below, Candidates).
