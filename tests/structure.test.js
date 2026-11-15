@@ -104,7 +104,13 @@ test('in no circle: the family and its genera left out, its species out, look-al
   const G = C.fishReplayGen(A);
   assert.ok(!G['f:Angelfishes'] && !G['f:Butterflyfishes'].look.includes('f:Angelfishes'));
   assert.ok(!C.fishNameIndex(A, {}).some(e => e.g === 'f:Angelfishes'));
-  const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+  const ctx = {
+    DOM: {EX: 0.9},
+    easyCover: C.easyCover,
+    fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
+    rankWeights: C.rankWeights
+  };
   vm.createContext(ctx);
   vm.runInContext(
     block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',

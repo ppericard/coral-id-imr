@@ -106,7 +106,13 @@ test('a tip is short and seen on a photo; a species named is one of its own game
 });
 
 // fishGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
-const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+const ctx = {
+  DOM: {EX: 0.9},
+  easyCover: C.easyCover,
+  fishScoreTree: C.fishScoreTree,
+  fishSpUnits: C.fishSpUnits,
+  rankWeights: C.rankWeights
+};
 vm.createContext(ctx);
 vm.runInContext(
   [block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}), 'this.fishGenera = fishGenera;'].join('\n'),
