@@ -558,8 +558,8 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
 });
 // judging/FISH.md "Caps" and "Reference photos", the same rule as tools/fish_judge.py cap(): a reference photo (rep) gets
 // the flag r and one ease point (REP_BONUS), the caps applied after it.
-// The typed flags j c a w (w, a visible watermark or text: Q373) in that order; w caps nothing.
-const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])(j?c?a?w?)([1-5])$/;
+// The typed flags j c a w (w, a visible watermark or text: Q373), as tools/fish_judge.py CODE; w caps nothing.
+const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$/;
 const capOf = (code, phase, juvOk, rep) => {
   const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
     fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : '');

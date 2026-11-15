@@ -487,9 +487,9 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     F = (cur or {}).get('fish') or {}
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
     species = {s['id']: s for s in (fish or {}).get('species') or []}
-    todo, keep, auto = [], {}, tags_auto(F)
+    todo, keep = [], {}
     for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep):
-        r, c, o = record(sid, p, F, sug, orig, species, route, auto), crop_of(F, p['f']), old.get(p['f'])
+        r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
         mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
         if not mine and route == 'cand':
             c = ((sug or {}).get(p['f']) or {}).get('c')
