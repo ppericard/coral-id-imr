@@ -4882,7 +4882,7 @@
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 112;
-  // The sync script version that replays a subject's progress under the content editor's structure (Code.gs vNEXT:
+  // The sync script version that replays a subject's progress under the content editor's structure (Code.gs v146:
   // subjGen_ applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not
   // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
   // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
