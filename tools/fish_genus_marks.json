@@ -1,0 +1,317 @@
+{
+  "about": "The fish genera's own presentation and ID marks, for the circle-1 genera the IMR fish presentation gives no cues for (Pierre, 2026-11-08: each genus needs a short presentation and its ID cues, sourced, rules C2, C3, C6, before the genera open to more players). Our own words, never copied, written from public sources: src, each {t, u}, t starting with the source's short name before its first comma. families: the families done (every circle-1 genus of these without IMR cues is in genera with marks, or in none with its reason). genera, by genus name: plain, [one or two sentences on what the genus looks like and how it lives, its refs]; marks, 1 to 3 [visible feature that tells it from the other genera of its family, its refs], a ref being [src key, where in it (key couplet or species account, page)]. Only features seen on a photo: never a fin-ray, spine or scale count, a tooth or a feature inside the mouth; a species named is one of the genus's game species (rule C6). none: a genus left without marks and why (no visible feature in the sources read): never a mark guessed. A genus with IMR cues is never here: the IMR cues stay apart (rule C1). tools/build_fish.py add_families puts plain, marks, msrc and mby on fish.json genera; app.js fishGenera shows them on the genus card, learn.js genMarks on the sheet the genus opens.",
+  "src": {
+    "fao-lab": {
+      "t": "FAO species guide, Labridae (Westneat 2001), key to the genera",
+      "u": "https://www.fao.org/4/y0870e/y0870e02.pdf"
+    },
+    "fao-lab03": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e03.pdf"
+    },
+    "fao-lab04": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e04.pdf"
+    },
+    "fao-lab05": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e05.pdf"
+    },
+    "fao-lab06": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e06.pdf"
+    },
+    "fao-lab07": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e07.pdf"
+    },
+    "fao-lab08": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e08.pdf"
+    },
+    "fao-lab09": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e09.pdf"
+    },
+    "fao-lab10": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e10.pdf"
+    },
+    "fb-anampses-meleagrides": {
+      "t": "FishBase, Anampses meleagrides",
+      "u": "https://www.fishbase.se/summary/Anampses-meleagrides.html"
+    },
+    "fb-labropsis-manabei": {
+      "t": "FishBase, Labropsis manabei",
+      "u": "https://www.fishbase.se/summary/Labropsis-manabei.html"
+    },
+    "fb-paracheilinus-carpenteri": {
+      "t": "FishBase, Paracheilinus carpenteri",
+      "u": "https://www.fishbase.se/summary/Paracheilinus-carpenteri.html"
+    },
+    "fb-pseudocheilinus-hexataenia": {
+      "t": "FishBase, Pseudocheilinus hexataenia",
+      "u": "https://www.fishbase.se/summary/Pseudocheilinus-hexataenia.html"
+    },
+    "fb-pteragogus-enneacanthus": {
+      "t": "FishBase, Pteragogus enneacanthus",
+      "u": "https://www.fishbase.se/summary/Pteragogus-enneacanthus.html"
+    }
+  },
+  "families": ["f:Wrasses"],
+  "genera": {
+    "Thalassoma": {
+      "plain": [
+        "Bold wrasses of shallow coral and rocky reefs; some, such as T. amblycephalum, gather above the reef to feed on plankton.",
+        [["fao-lab09", "Thalassoma lunare, p. 3462"], ["fao-lab09", "Thalassoma amblycephalum, p. 3461"]]
+      ],
+      "marks": [["Short, blunt snout, never drawn out into a tube (Gomphosus)", [["fao-lab", "couplet 27, p. 3386"]]]]
+    },
+    "Gomphosus": {
+      "plain": [
+        "Wrasses whose long, thin jaws pick small animals out of cracks in coral and rock, from 1 to 15 m.",
+        [["fao-lab06", "Gomphosus varius, p. 3432"]]
+      ],
+      "marks": [["Snout drawn out into a long, thin tube made by both jaws", [["fao-lab", "couplet 27, p. 3386"]]]]
+    },
+    "Labroides": {
+      "plain": [
+        "Small, slender wrasses; L. dimidiatus keeps cleaning stations where other fishes come to have their parasites picked off, even inside the mouth and gills.",
+        [["fao-lab07", "Labroides dimidiatus, p. 3443"]]
+      ],
+      "marks": [
+        ["Slender body", [["fao-lab", "couplet 17, p. 3385"]]],
+        ["Lower lip split in two by a deep notch", [["fao-lab", "couplet 17, p. 3385"]]]
+      ]
+    },
+    "Labrichthys": {
+      "plain": [
+        "Wrasses of shallow lagoon reefs rich in coral, where they eat coral polyps, above all of staghorn Acropora.",
+        [["fao-lab07", "Labrichthys unilineatus, p. 3442"]]
+      ],
+      "marks": [
+        ["Lips that close into a short tube", [["fao-lab", "couplet 16, p. 3385"]]],
+        ["Body deeper than Labroides, the lower lip not split", [["fao-lab", "couplet 17, p. 3385"]]]
+      ]
+    },
+    "Diproctacanthus": {
+      "plain": [
+        "Small wrasses, about 10 cm, of sheltered lagoons rich in coral: adults eat coral polyps, juveniles clean other fishes.",
+        [["fao-lab06", "Diproctacanthus xanthurus, p. 3430"]]
+      ],
+      "marks": [
+        ["Lips that close into a short tube", [["fao-lab", "couplet 16, p. 3385"]]],
+        ["Straight snout profile (Labropsis: rounded)", [["fao-lab", "couplet 19, p. 3385"]]],
+        ["Long, slim tail base", [["fao-lab", "couplet 19, p. 3385"]]]
+      ]
+    },
+    "Labropsis": {
+      "plain": [
+        "Small wrasses of rich coral reefs, alone or in small groups; adults eat coral polyps and may also clean other fishes.",
+        [["fb-labropsis-manabei", "Biology"]]
+      ],
+      "marks": [
+        ["Lips that close into a short tube", [["fao-lab", "couplet 16, p. 3385"]]],
+        ["Rounded snout profile in adults (Diproctacanthus: straight)", [["fao-lab", "couplet 19, p. 3385"]]],
+        ["Short, deep tail base", [["fao-lab", "couplet 19, p. 3385"]]]
+      ]
+    },
+    "Cheilinus": {
+      "plain": [
+        "Deep-bodied wrasses of coral reefs and the sand or seagrass nearby; they feed mostly on hard-shelled animals such as molluscs and crustaceans.",
+        [["fao-lab04", "Cheilinus chlorourus, p. 3413"], ["fao-lab04", "Cheilinus fasciatus, p. 3414"], ["fao-lab04", "Cheilinus trilobatus, p. 3415"]]
+      ],
+      "marks": [
+        ["Body as deep as the head is long, or deeper", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Jaws end level at the front", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Often vertical bars, or pale spots on a dark body", [["fao-lab", "couplet 11, p. 3384"]]]
+      ]
+    },
+    "Oxycheilinus": {
+      "plain": [
+        "Slimmer cousins of Cheilinus that hunt small fishes, shrimps and other crustaceans on coral reefs.",
+        [["fao-lab08", "Oxycheilinus digrammus, p. 3449"], ["fao-lab08", "Oxycheilinus orientalis, p. 3450"], ["fao-lab", "couplet 11, p. 3384"]]
+      ],
+      "marks": [
+        ["Body less deep than the head is long", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Lower jaw juts out beyond the upper", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Often a stripe along the body, or a black spot at the front of the dorsal fin", [["fao-lab", "couplet 11, p. 3384"]]]
+      ]
+    },
+    "Epibulus": {
+      "plain": [
+        "Wrasses whose jaws can shoot far forward, as a long tube, to snap up prey.",
+        [["fao-lab", "couplet 9, p. 3383"]]
+      ],
+      "marks": [
+        ["Mouth closed, the long lower jaw reaches back under the head to the gill cover", [["fao-lab", "couplet 9, p. 3383"]]]
+      ]
+    },
+    "Pseudocheilinus": {
+      "plain": [
+        "Small, shy wrasses that keep among coral branches on seaward reefs and eat small crustaceans.",
+        [["fb-pseudocheilinus-hexataenia", "Biology"]]
+      ],
+      "marks": [
+        ["Snout fairly long and pointed", [["fao-lab", "couplet 13, p. 3384"]]],
+        ["Dorsal and anal fins low (Paracheilinus: tall, often with filaments)", [["fao-lab", "couplet 13, p. 3384"]]]
+      ]
+    },
+    "Paracheilinus": {
+      "plain": [
+        "Small wrasses, about 8 cm, that school above coral or rubble at the foot of steep outer reef slopes; males are larger and more colourful than females.",
+        [["fb-paracheilinus-carpenteri", "Size, Morphology, Biology"]]
+      ],
+      "marks": [
+        ["Dorsal and anal fins tall and colourful, often with trailing filaments", [["fao-lab", "couplet 13, p. 3384"]]],
+        ["Short, blunt snout", [["fao-lab", "couplet 13, p. 3384"]]]
+      ]
+    },
+    "Novaculichthys": {
+      "plain": [
+        "Wrasses of the sand and rubble around reefs that turn over rocks to find the animals beneath; the juveniles look like drifting seaweed.",
+        [["fao-lab08", "Novaculichthys taeniourus, p. 3447"]]
+      ],
+      "marks": [
+        ["Head sloping gently to the snout (Iniistius: almost vertical)", [["fao-lab", "couplet 15 (Iniistius as Xyrichtys), p. 3384"]]],
+        ["Dark bands radiating from the eye across a pale head", [["fao-lab", "couplet 15, p. 3384"]]],
+        ["Dark body with a white spot on each scale", [["fao-lab", "couplet 15, p. 3384"]]]
+      ]
+    },
+    "Iniistius": {
+      "plain": [
+        "Razorfishes of open sand: they hover just above the bottom and dive head first into the sand when danger comes.",
+        [["fao-lab10", "as Xyrichtys pavo, p. 3466"], ["fao-lab10", "as Xyrichtys pentadactylus, p. 3467"]]
+      ],
+      "marks": [
+        ["Blunt head, dropping almost vertically to the snout", [["fao-lab", "couplet 15 (as Xyrichtys), p. 3384"]]],
+        ["Body mostly pale", [["fao-lab", "couplet 15 (as Xyrichtys), p. 3384"]]]
+      ]
+    },
+    "Hemigymnus": {
+      "plain": [
+        "Large wrasses, up to about 50 cm, of coral reefs and reef flats; H. melapterus takes in mouthfuls of sand, sorts out the small animals and blows the sand out.",
+        [["fao-lab07", "Hemigymnus melapterus, p. 3439"]]
+      ],
+      "marks": [
+        ["Very thick, fleshy lips, the upper one jutting beyond the lower", [["fao-lab", "couplet 22, p. 3385"]]],
+        ["Adults: pink and blue-green bands on the head", [["fao-lab", "couplet 22, p. 3385"]]]
+      ]
+    },
+    "Pteragogus": {
+      "plain": [
+        "Small, secretive wrasses that hide among dense weed, from shallow reefs with algae to deeper soft bottoms.",
+        [["fb-pteragogus-enneacanthus", "Biology"]]
+      ],
+      "marks": [
+        ["Lips not thick (Hemigymnus: very thick)", [["fao-lab", "couplet 22, p. 3385"]]],
+        ["Adults brown to dark red with blotches", [["fao-lab", "couplet 22, p. 3385"]]]
+      ]
+    },
+    "Anampses": {
+      "plain": [
+        "Wrasses of mixed coral, rubble and sand on seaward reefs; males and females are often coloured very differently.",
+        [["fb-anampses-meleagrides", "Morphology, Biology"]]
+      ],
+      "marks": [["In most species a coloured spot or bar on each scale", [["fao-lab", "couplet 24, p. 3386"]]]]
+    },
+    "Macropharyngodon": {
+      "plain": [
+        "Small wrasses with a deep, flattened body and a striking pattern of spots or bands.",
+        [["fao-lab", "couplet 31, p. 3386"], ["fao-lab07", "Macropharyngodon meleagris, p. 3446"]]
+      ],
+      "marks": [
+        ["Deep, flattened body", [["fao-lab", "couplet 31, p. 3386"]]],
+        ["Bright bands on head and body, or bright blotches, or a spot on each scale", [["fao-lab", "couplet 31, p. 3386"]]]
+      ]
+    },
+    "Halichoeres": {
+      "plain": [
+        "A large genus of mostly small wrasses of coral reefs, rocky shores and the sand nearby.",
+        [["fao-lab06", "Halichoeres hortulanus, p. 3434"], ["fao-lab06", "Halichoeres chloropterus, p. 3433"], ["fao-lab06", "Halichoeres melanurus, p. 3436"]]
+      ],
+      "marks": [
+        ["Body less deep than Macropharyngodon, the dorsal fin starting further back", [["fao-lab", "couplet 31, p. 3386"]]]
+      ]
+    },
+    "Stethojulis": {
+      "plain": [
+        "Small wrasses that swim fast in small groups over shallow reefs and reef flats, beating their pectoral fins.",
+        [["fao-lab09", "Stethojulis bandanensis, p. 3459"]]
+      ],
+      "marks": [
+        ["Pectoral fins set high, just behind the gill cover", [["fao-lab", "couplet 32, p. 3387"]]],
+        ["Narrow tail base", [["fao-lab", "couplet 32, p. 3387"]]]
+      ]
+    },
+    "Cheilio": {
+      "plain": [
+        "Long, slim wrasses, up to about 50 cm, of shallow back reefs and weedy areas; they eat crustaceans and small fishes.",
+        [["fao-lab04", "Cheilio inermis, p. 3417"]]
+      ],
+      "marks": [
+        ["Very long, slim body", [["fao-lab", "couplet 33, p. 3387"]]],
+        ["Long snout", [["fao-lab", "couplet 33, p. 3387"]]]
+      ]
+    },
+    "Hologymnosus": {
+      "plain": [
+        "Long-bodied wrasses of coral reefs and rocky bottoms that hunt small fishes and crustaceans.",
+        [["fao-lab07", "Hologymnosus annulatus, p. 3440"], ["fao-lab07", "Hologymnosus doliatus, p. 3441"]]
+      ],
+      "marks": [
+        ["Long snout with fleshy lips (Coris: short snout)", [["fao-lab", "couplet 34, p. 3387"]]],
+        ["Very small, numerous scales", [["fao-lab", "couplet 34, p. 3387"]]]
+      ]
+    },
+    "Coris": {
+      "plain": [
+        "Wrasses of coral reefs and lagoons that eat hard-shelled prey; the young can look nothing like the adults, as in C. gaimard.",
+        [["fao-lab05", "Coris gaimard, p. 3428"]]
+      ],
+      "marks": [
+        ["Short snout (Hologymnosus: long)", [["fao-lab", "couplet 34, p. 3387"]]],
+        ["Body fairly deep", [["fao-lab", "couplet 35, p. 3387"]]]
+      ]
+    },
+    "Cirrhilabrus": {
+      "plain": [
+        "Small wrasses, C. lubbocki about 7 cm, that feed on plankton just above coral rubble and small branching corals on outer reefs.",
+        [["fao-lab05", "Cirrhilabrus lubbocki, p. 3425"]]
+      ],
+      "marks": [
+        ["Small mouth", [["fao-lab", "couplet 3, p. 3382"]]],
+        ["Males often brilliant red, purple or blue", [["fao-lab", "couplet 3, p. 3382"]]]
+      ]
+    },
+    "Pseudodax": {
+      "plain": [
+        "Solitary wrasses of rock and coral reefs, to about 60 m, that scrape small animals off the bottom; the juveniles pick parasites from other fishes.",
+        [["fao-lab09", "Pseudodax moluccanus, p. 3456"]]
+      ],
+      "marks": [
+        ["Grey to purplish, with a reddish spot on each scale", [["fao-lab", "couplet 3, p. 3382"]]],
+        ["Orange-red nape", [["fao-lab", "couplet 3, p. 3382"]]]
+      ]
+    },
+    "Bodianus": {
+      "plain": [
+        "Wrasses of coral reefs; B. axillaris eats molluscs and crustaceans, and its young live in coral caves and sometimes clean other fishes.",
+        [["fao-lab03", "Bodianus axillaris, p. 3408"]]
+      ]
+    },
+    "Choerodon": {
+      "plain": [
+        "Solitary wrasses of shallow coral reefs and seagrass beds that eat crustaceans, molluscs and sea urchins.",
+        [["fao-lab04", "Choerodon anchorago, p. 3418"]]
+      ]
+    }
+  },
+  "none": {
+    "Bodianus": "the FAO key (couplets 2, 4, 5) sets it apart by spine, ray and scale counts and the scales of the cheek and fins only: nothing seen on a photo",
+    "Choerodon": "the FAO key (couplets 2, 4) sets it apart by spine counts, canine teeth and small cheek scales only: nothing seen on a photo",
+    "Cymolutes": "the FAO key (couplet 14) sets it apart by anal spines and scale counts only: nothing seen on a photo",
+    "Novaculoides": "the FAO key (2001) puts its species in Novaculichthys, whose colour there fits N. taeniourus only: no source of its own read",
+    "Wetmorella": "the FAO key (couplet 10) sets it apart by the scales of the cheek and gill cover only: nothing seen on a photo"
+  }
+}
