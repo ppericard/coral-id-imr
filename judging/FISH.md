@@ -215,9 +215,30 @@ choices per family in the app" has the details.
   - every reference-level landscape photo (the band's kind) by an author already tagged once: 342 photos, 134 of them
     tagged.
   
-  **Not covered**: the players' ratings re-sort a family's photos (`app.js` `rankPhotos`), so the band can later reach
-  reference photos by other authors that nobody has looked at yet (about 1,900 photos are of the band's kind).
-  ROADMAP "Watermark pass, the rest" holds that work.
+  Not covered then: the players' ratings re-sort a family's photos (`app.js` `rankPhotos`), so the band could later
+  reach reference photos by other authors that nobody had looked at (1,888 photos are of the band's kind).
+- **The second pass, the same day** (ROADMAP "Watermark pass, the rest") took the rest of the band's kind: every
+  band-kind photo (`home.js` `landR2` and `core.js` `refLevel`, from `fish-game.json`) beyond each family's first 10 in
+  the game's order (`core.js` `easyRank`) and not by an author the first pass had tagged. That is 1,153 photos. The
+  first pass's band-kind tags sit near the top of that order (81 of 83 within the first 16; the other 2 are a ★ cover
+  and one photo 43 deep), which confirms its first 10 per family had been looked at.
+  - Each R2 file (`-m`, Pierre's crop applied) was seen on contact sheets of 12 at 380 px with local contrast raised:
+    32 tagged.
+  - Every other photo by a tagged author (60) was seen again at 510 px: 2 faint signatures the sheets had missed
+    (Karen Willshaw, David Rolla).
+  - So the top 12% and bottom 25% of each of the other 1,119 photos were seen at 700 px, local contrast raised, sorted
+    by author; a control sheet of known faint marks showed them all; no new tag. The side edges and the middle of
+    the frame were seen at 380 px only (2 of the tags sat there: a vertical credit on the left edge, a name mid-right).
+  - As the first pass did for its authors, the band-kind photos in each family's first 10 by the 20 authors this pass
+    tagged (21, all looked at in the first pass) were seen again whole at 510 px and in bands at 700 px, beside the
+    controls: 1 more tag (Rafi Amar), on a photo Home can draw today.
+
+  **35 tagged** in all: photographers' names, signatures and logos, one caption, 1 FishBase photo. None is one of
+  Pierre's ★ covers, and none has tags he set himself.
+- **Every band-kind photo has now been looked at.** Still to look at the same way (ROADMAP "Watermark pass, the
+  rest"): the photos a new refill or reference run brings into the pools. Also the photos the Identify art and a tile
+  can fall back on (`home.js` `tilePhoto`), for a family with few band-kind photos once the ratings re-sort it: the
+  first `landR2` photo in its first 10, which need not be reference-level, else its first adult photo.
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
