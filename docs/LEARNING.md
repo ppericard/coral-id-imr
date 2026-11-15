@@ -3816,7 +3816,8 @@ during its first 20 answers.
 - **The real log** (rule L12): a replay cannot judge a draw change (another draw asks other questions). What it can
   measure, read-only and per player: how many of each player's fish answers were on a phase photo in that unit's first
   10 answers (the answers this change moves later). The subagent that builds it has no access to the sheet (outside
-  services excluded from its task): the integrator, who holds the data, runs it or Pierre waives it.
+  services excluded from its task): the integrator, who holds the data, runs it or Pierre waives it. Run on
+  2026-11-15: "The real log, results" below.
 
 **The app world, results** (5 profiles × 5 seeds, then the second look on seeds 1-20; before = `--calib '{"phase":0}'`,
 after = this branch; learncmp with 2 looks: bounds at 95%). The first look's after arm, as first run (commit 3417f88f),
@@ -3885,6 +3886,36 @@ breach is the lecture RA's alone, under heavy tails only: under normal photos th
 rest of its pool, where the 15% of photos 1.5 logits harder than their prior says weigh more. Whatever the cause, the
 lecture RA's first family reaches Open Water 14 answers later on average (a 23% longer wait). No wall either way: every run met phase photos by 3,000 answers
 (`phAns` 236-472 against 526-566), `phLate@3000` 0.18 → 0.18-0.21. Per rule L11 the breach goes to Pierre.
+
+**The real log, results** (rule L12; 2026-11-15, read-only). The sheet's Answers tab read through the Google Sheets
+connector, nothing written; the copy holding names deleted after the run (rule D2). Players P1-P9 by their number of
+fish answers, labels of this measure only (the mapping is with the integrator, outside the repository). Fish rows,
+surprise cards left out, every player trusted by `core.js` `trustOf`: 2,355 answers, one photo each, 2026-11-06 13:07 to
+2026-11-13 16:40. A unit's answers are the player's earlier answers with the same unit shown (column C, the `t` that
+`scoreAnswer` counts in `ok` + `ko`), in time order; the phase is `core.js` `phaseOf` on today's `fish-game.json`
+(main's f993fb60, merged in this branch: 4,707 of its 24,323 photos have one). **523 of the 1,828 answers in a unit's
+first 10 are on photos no longer in that file** (mostly 2026-11-06, the fish game's first day), so their phase is
+unknown; the three versions of the file of 2026-11-06 to 2026-11-09 recover 54 such answers and no early phase one.
+
+| Player | Early answers, phase known | On a phase photo (juvenile / other) | Right − expected on them | Right − expected, the other early answers |
+| --- | --- | --- | --- | --- |
+| P1 | 458 | 34 (25 / 9) | 91% − 83% = +8 | 95% − 85% = +10 |
+| P2 | 309 | 23 (17 / 6) | 87% − 81% = +6 | 90% − 84% = +6 |
+| P3 | 320 | 16 (15 / 1) | 94% − 78% = +16 | 81% − 78% = +3 |
+| P4 | 150 | 8 (8 / 0) | 75% − 72% = +3 | 80% − 76% = +5 |
+| P7, P8 | 36, 13 | 1, 1 | too few | −5, +9 |
+| P9 | 18 | 0 | | −2 |
+| P5, P6 | 0, 1 | not measured (their early photos are gone from the file) | | |
+
+- **What #953 would have moved**: 83 answers (67 on juveniles, 16 on other phases), 6.4% of the 1,305 early answers of
+  known phase, nearly all from four players; an upper bound, since a unit under the fallback holds nothing back. The
+  app world's before arm had 10-12% (`phEarly@300`), on today's pool. The ramp would also have thinned 42 phase answers
+  at a unit's 11th to 19th answer; past it, 4.
+- **Against expected**: the four players measured were right at or above the expectation on these early phase photos
+  (+3 to +16 points), as on their other early answers (+3 to +10); per player, phase minus other: −2, 0, +12, −2. So
+  the engine's expectation already priced these photos, and the log shows no player meeting them early at a cost
+  beyond it. Descriptive only: four players allow no test (the smallest two-sided sign-flip p is 0.125). It cannot
+  show whether holding them back helps (what the card and the stage teach), only that the change moves few real answers.
 
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
