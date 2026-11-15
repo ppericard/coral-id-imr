@@ -51,7 +51,8 @@ test('the IMR genera: those an IMR sub-entry names alone, Naso alone of the surg
   assert.strictEqual(X.gen['g:Chromis'].tl, 'ID tips (IMR, Chromis, slide 8)');
   assert.strictEqual(X.gen['g:Heniochus'].tl, 'ID tips (IMR, Bannerfish, slides 13, 23)');
   assert.ok(!X.gen['g:Amphiprion'].qt && X.gen['g:Amphiprion'].tl === 'Its species here (IMR, Anemonefish, slide 22)');
-  assert.strictEqual(X.gen['g:Abudefduf'].tl, 'Its species here');
+  // a genus with a presentation and no marks (tools/fish_genus_marks.json none: Abudefduf) keeps its species line
+  assert.ok(X.gen['g:Abudefduf'].tl === 'Its species here' && X.gen['g:Abudefduf'].plain);
 });
 
 test('everyone: a family’s genera from its Advanced, not its Open Water (Pierre, 2026-11-08)', () => {
