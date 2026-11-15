@@ -1709,7 +1709,7 @@ async function freshPlayers(b, base, errs) {
         s = FISH.sps[p.sp] || {};
       return {
         sci: s.name || '',
-        common: cnList(s)[0] || '',
+        common: cnFirst(s, imrNow()), // the player's first name (Q376 (a): the IMR name at IMR, the main name otherwise)
         now: s.now && s.now !== s.name ? s.now : '',
         line: !!document.querySelector('.fbsp')
       };
