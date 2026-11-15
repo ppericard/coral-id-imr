@@ -128,7 +128,7 @@ class Net:
         if hit:
             return v
         host = urllib.parse.urlsplit(url).hostname or ""
-        client = self.wiki if host.endswith("wikimedia.org") or host.endswith("wikipedia.org") else inat.CLIENT
+        client = self.wiki if host in ("wikimedia.org", "en.wikipedia.org") else inat.CLIENT
         return self._keep(url, client.get(url, missing=True))
 
     def page(self, url):
@@ -263,9 +263,13 @@ def aggregate(obs, roots, taxa, places, centre):
 
 
 def world_counts(net, ids, query):
-    """{taxon: worldwide observations matching query}: species_counts, 100 taxa a request; a species' own row plus the
-    rows below it (its subspecies)."""
-    return inat.leaf_counts(net.get, ids, query, estimate=True)
+    """{taxon: worldwide observations matching query}, exact: species_counts, 100 taxa a request; a species that
+    species_counts cannot count exactly (an observed subspecies: its species-rank observations are left out there) is
+    asked alone (observations, per_page=0)."""
+    out = inat.leaf_counts(net.get, ids, query)
+    for t in sorted(t for t, n in out.items() if n is None):
+        out[t] = (net.get(f"{inat.V1}observations?taxon_id={t}&{query}&per_page=0") or {}).get("total_results", 0)
+    return out
 
 
 # ---------------------------------------------------------------- WoRMS

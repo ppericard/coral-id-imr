@@ -38,6 +38,23 @@ print(json.dumps({'ids': [x['id'] for x in obs], 'pages': len(urls), 'taxa': t, 
   assert.deepStrictEqual(o.places['9'], {name: 'Prov', level: 10});
 });
 
+test('world counts are exact: a species with an observed subspecies is asked alone (Codex review #950)', () => {
+  const o = py(`
+asked = []
+class Net:
+    def get(self, url):
+        asked.append(url.split('/v1/')[1].split('?')[0])
+        if 'species_counts' in url:
+            return {'total_results': 3, 'results': [{'taxon': {'id': 10, 'ancestor_ids': [1, 10]}, 'count': 7},
+                                                    {'taxon': {'id': 21, 'ancestor_ids': [1, 20, 21]}, 'count': 4},
+                                                    {'taxon': {'id': 20, 'ancestor_ids': [1, 20]}, 'count': 2}]}
+        return {'total_results': 9}
+print(json.dumps([b.world_counts(Net(), [10, 20, 30], 'quality_grade=research'), asked]))
+`);
+  assert.deepStrictEqual(o[0], {10: 7, 20: 9, 30: 0}, 'species 20 has a subspecies row: its own count is asked alone');
+  assert.deepStrictEqual(o[1], ['observations/species_counts', 'observations']);
+});
+
 test('aggregate: distinct observers, a subspecies counts for its species, near Dauin by distance, rule C8, licences', () => {
   const o = py(`
 taxa = {1: {'name': 'Nudibranchia', 'rank': 'order'}, 2: {'name': 'Fam', 'rank': 'family'}, 3: {'name': 'Aa', 'rank': 'genus'},
