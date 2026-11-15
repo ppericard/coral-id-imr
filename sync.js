@@ -269,10 +269,33 @@ const rvsAsk = () =>
       .filter(S => rpOn(S, sheetV()) && rpUnits(S))
       .map(S => [S.id, rvAsk(S)])
   );
-const rvsParam = () =>
-  Object.entries(rvsAsk())
-    .map(([k, v]) => `&rv_${encodeURIComponent(k)}=${v}`)
-    .join('');
+// The structure stamps (core.js structStamp; design note v2, step 3; Pierre, 2026-11-15, Q363 h A): a subject whose
+// circles and look-alike pairs the content editor may change (SUBJECTS structure) keeps the stamp its progress was last
+// replayed with (stKey: reefid-sync-<subject>-st, travelling with the progress data as its rules version does; '' for the
+// base's structure, also when never set) and says it with each request (sts), with the stamp of the units it holds when
+// that differs (stn: the sheet then reads the curation again at once). The sheet replays the log when its own stamp is
+// another, as for a rules version, and the reply's st is adopted with the replay (replayAdoptS). Only from the script
+// that replays under the structure (core.js STRUCT_SHEET; rule D4): before, nothing is sent and the units hold the text
+// slots alone (app.js fishBuild).
+const stKey = S => subjKey(S.id, 'st');
+const stApplied = S => String(store.get(stKey(S), '') || '');
+const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= STRUCT_SHEET;
+const stNow = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].st ? String(UNITS[S.id].st() || '') : '');
+// {sts: {subject: stamp applied}, stn: {subject: stamp of the units here, when another}}, for the subjects asked (rvsAsk).
+const stsAsk = rv => {
+  const L = rpSubjects().filter(S => S.id in rv && stOn(S, sheetV())),
+    stn = Object.fromEntries(L.filter(S => stNow(S) !== stApplied(S)).map(S => [S.id, stNow(S)]));
+  return L.length ? {sts: Object.fromEntries(L.map(S => [S.id, stApplied(S)])), ...(Object.keys(stn).length ? {stn} : {})} : {};
+};
+const rvsParam = () => {
+  const rv = rvsAsk(),
+    st = stsAsk(rv);
+  return [
+    ...Object.entries(rv).map(([k, v]) => `&rv_${encodeURIComponent(k)}=${v}`),
+    ...Object.entries(st.sts || {}).map(([k, v]) => `&st_${encodeURIComponent(k)}=${encodeURIComponent(v)}`),
+    ...Object.entries(st.stn || {}).map(([k, v]) => `&sn_${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+  ].join('');
+};
 // A subject's replay in a reply: the corals' replay, another's in replays (Code.gs replays_).
 const rpOf = (j, S) => (!j ? null : S.replay ? j.replay : (j.replays || {})[S.id]);
 // The reset of each other subject replayed, as a request carried it (the replay's cutoff, replayAdoptS).
@@ -335,8 +358,12 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
   pending = subjEntries(pending, SUBJ.id); // this device's queued answers of that subject on top, never another's
   if (!(Number(v) >= RV_SHEET) || !rpOn(S, v)) return false;
   if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
-  // A newer version, or the same one asked again for answers logged from a refused save (rvAsk).
-  if (rp.rv < rvApplied(S) || (rp.rv === rvApplied(S) && !lgFor(S))) return false;
+  // The structure stamp it was made under (STRUCT_SHEET: '' for the base's structure, also when the reply has none), null
+  // for a subject with no structure or an older script.
+  const st = stOn(S, v) ? String(rp.st || '') : null;
+  // A newer version, the same one under another structure (stsAsk; Q363 h A), or the same one asked again for answers
+  // logged from a refused save (rvAsk).
+  if (rp.rv < rvApplied(S) || (rp.rv === rvApplied(S) && !lgFor(S) && (st === null || st === stApplied(S)))) return false;
   // Never a version newer than this app's own rules (core.js rvOf): an app that does not know it cannot hold what it
   // brings (2026-11-09: devices still on an app from before rules version 9 adopted its replay without the domain-score
   // bar and marked it applied, so they never took it again once updated); the app takes it once it is updated.
@@ -409,6 +436,8 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
     store.set(rvKey(S), rp.rv);
+    // the structure it was replayed under ('' for the base's: set only over a stamp held, so no edit adds no key)
+    if (st !== null && (st || stApplied(S))) store.set(stKey(S), st);
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
     // device's answers the sheet has not counted yet, which stay this device's own (P minus the base) and go on top at
     // the next merge (core.js replayBase). Left at the saved copy, another device saving its own adoption of the same log
@@ -797,6 +826,7 @@ function syncOnce(tries = 0, pulled = null) {
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
           rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
           ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
+          ...stsAsk(rvs), // and their structure stamps (STRUCT_SHEET)
           ...(pendingFrom(log) === null ? {} : {pt: pendingFrom(log)}), // the replay's ids cover every answer sent (pendingFrom)
           // First send after signing in: the answers this device sent anonymously move to this name (script v12).
           ...(me.anon ? {anon: me.anon} : {}),
@@ -1499,6 +1529,7 @@ function repsSeen(j) {
 const NOTES_KEY = 'reefid-sheet-notes';
 function sheetSeen(j) {
   if (j && Number(j.v) > 0 && Number(j.v) !== Number(store.get(SHEETV, 0))) store.set(SHEETV, Number(j.v));
+  if (typeof structSeen === 'function') structSeen(); // app.js: the units made again under the structure (STRUCT_SHEET)
   notesSeen(j);
 }
 // Kept before a replay is adopted (mergeSavedIn, the save reply): the card it brings shows its PS at once.
@@ -1658,7 +1689,8 @@ function signIn(name, pin, j) {
   // The rules version applied (RVK) is the account's, 0 when its data has none: this device's (an anonymous replay adopted
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
-    [RVK, ...rpSubjects().map(rvKey)].forEach(k => localStorage.removeItem(k));
+    // and its structure stamps likewise (stKey)
+    [RVK, ...rpSubjects().map(rvKey), ...rpSubjects().map(stKey)].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name
@@ -1779,8 +1811,8 @@ function signOutClear(all) {
     ...SUBJECTS.flatMap(S => [
       // the first-launch question's answer is the player's too (model.js startSet)
       // and the surprise cards it has met (quiz.js WINKK; Codex review #652: the next player would inherit them)
-      // rv: the rules version its progress was replayed with (replayAdoptS; the corals' is RVK)
-      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'start', 'wink'].map(k => subjKey(S.id, k)),
+      // rv: the rules version its progress was replayed with (replayAdoptS; the corals' is RVK); st, its structure stamp
+      ...['progress', 'quiz', 'reset', 'intro', 'intro-offer', 'rv', 'st', 'start', 'wink'].map(k => subjKey(S.id, k)),
       // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; Codex review #850, rule D7)
       ...['hold', 'comeback', 'custom-left'].map(k => subjDev(S.id, k)),
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; Codex review #851, D7)
