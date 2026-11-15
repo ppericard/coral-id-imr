@@ -4294,7 +4294,9 @@
         const e = p && Number(p.e);
         if (!p || !p.f || !(e >= 1 && e <= 5)) return;
         const jt = String(p.jt || '');
-        out[p.f] = [e, String(p.ph || ''), jt.charAt(0), jt.charAt(1)];
+        // a reference photo's record carries its tags but no ph (tools/fish_game.py record): its juvenile flag (j, past
+        // the seven tags) is its phase then (Codex review #943)
+        out[p.f] = [e, String(p.ph || (jt.slice(7).includes('j') ? 'juvenile' : '')), jt.charAt(0), jt.charAt(1)];
       })
     );
     return out;

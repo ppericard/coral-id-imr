@@ -18,13 +18,20 @@ test('photoMetaFish: ease, phase, view and whole from the game records; a photo 
         {f: 'a', e: 5, jt: 'p1g0sl1r'},
         {f: 'b', e: 2, jt: 'o0g0sm1j', ph: 'juvenile'},
         {f: 'c', e: '3', jt: 'h1d0sms', ph: 'male'},
+        // a reference photo: its tags, no ph; its juvenile flag is its phase (Codex review #943)
+        {f: 'r', e: 4, jt: 'p1g0sm1jr'},
         {f: 'd', jt: 'p1g0sl1'},
         {f: 'e', e: 9},
         null
       ]
     }
   });
-  assert.deepStrictEqual(M, {a: [5, '', 'p', '1'], b: [2, 'juvenile', 'o', '0'], c: [3, 'male', 'h', '1']});
+  assert.deepStrictEqual(M, {
+    a: [5, '', 'p', '1'],
+    b: [2, 'juvenile', 'o', '0'],
+    c: [3, 'male', 'h', '1'],
+    r: [4, 'juvenile', 'p', '1']
+  });
   assert.deepStrictEqual(A.photoMetaFish(null), {});
   // the real file: every photo the game plays with an ease
   const G = C.fishGameRead(JSON.parse(fs.readFileSync(path.join(ROOT, 'fish-game.json'), 'utf8'))),
@@ -33,6 +40,19 @@ test('photoMetaFish: ease, phase, view and whole from the game records; a photo 
       .flat()
       .filter(p => p && p.e).length;
   assert.ok(Object.keys(R).length > 1000 && Object.keys(R).length <= n);
+  // every juvenile the game knows reads as one, with or without its ph
+  const juv = Object.values(G.photos)
+    .flat()
+    .filter(
+      p =>
+        p &&
+        p.e &&
+        !p.ph &&
+        String(p.jt || '')
+          .slice(7)
+          .includes('j')
+    );
+  assert.ok(juv.length && juv.every(p => R[p.f][1] === 'juvenile'), String(juv.length));
 });
 
 // Made-up fish answers with a known effect of the judged ease (0.6 logit per point toward a right answer) and of a
