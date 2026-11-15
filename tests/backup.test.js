@@ -2,7 +2,7 @@
 // in-memory sheet (tests/gas.js) with UrlFetchApp stubbed, so nothing reaches Google or pCloud (rule D1). Checks the file's
 // name, the requests' shape (the token only in the Authorization header, only to pCloud's two hosts), that the token is
 // never logged or returned, the paths without a token or an authorisation, the region fallback, the retention, and the
-// .xlsx's parts. The upload-link path (sheet vNEXT, PCLOUD_UPLOAD_CODE; Pierre, 2026-11-15): its one uploadtolink
+// .xlsx's parts. The upload-link path (sheet v144, PCLOUD_UPLOAD_CODE; Pierre, 2026-11-15): its one uploadtolink
 // request, the host's default and allow-list, the code never logged or returned, the token path first when both are set.
 const test = require('node:test'),
   assert = require('node:assert');
@@ -352,7 +352,7 @@ test('scale: 20,000 answer rows, one time zone lookup per hour of the log, each 
   assert.ok(Math.abs(last - ((t0 + 19999 * 9e3 + 8 * 36e5) / 864e5 + 25569)) < 1e-9, String(last));
 });
 
-// The upload-link path (vNEXT; Pierre, 2026-11-15: an upload link instead of a pCloud OAuth app). A made-up code.
+// The upload-link path (v144; Pierre, 2026-11-15: an upload link instead of a pCloud OAuth app). A made-up code.
 const CODE = 'kZfakeUploadLinkCode0123456789Xy';
 // What the script showed or kept, without the request URLs (the code is in the upload's URL, the only form pCloud's docs give).
 const shown = (s, ret) => JSON.stringify(Object.values(s.sheets).map(sh => sh.rows)) + String(ret) + JSON.stringify(s.toasts);

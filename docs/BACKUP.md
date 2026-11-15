@@ -8,7 +8,7 @@ PR"; the professionalise study's question f, [reviews/2026-11-14-professionalise
 
 It reaches pCloud one of two ways, set in the script's properties:
 
-- **A pCloud upload link** (`PCLOUD_UPLOAD_CODE`, sheet vNEXT; the way Pierre uses). Pierre, 2026-11-15: no pCloud
+- **A pCloud upload link** (`PCLOUD_UPLOAD_CODE`, sheet v144; the way Pierre uses). Pierre, 2026-11-15: no pCloud
   OAuth app (making one needs pCloud's approval), a pCloud upload link instead ("Request files"), made on his account
   on pCloud's European servers. The link's code can only add files: it cannot read, list or delete anything, so **old
   backups are not pruned by the script** on this path; Pierre deletes them by hand. Setup: "Pierre's setup: upload
