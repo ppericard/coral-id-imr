@@ -1667,13 +1667,30 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
     .map(k => k.split('|'))
     .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
     .map(p => p.sort());
+// A choice's label as its button shows it (app.js unameT: the unit's name), compared as typed (letters only, core.js
+// typeNormAll: Yellowtail / Yellow-tail wrasse read as one). Two units may carry the same name (Pierre, 2026-11-15, Q381:
+// two fish species may share a common name), but a question never shows two choices of one label (distractors).
+const choiceKey = n =>
+  String((GX(n) || {}).name || n)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[^a-z]/g, '');
+// The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
+const choiceApart = (L, taken = []) => {
+  const seen = new Set(taken.map(choiceKey));
+  return L.filter(n => !seen.has(choiceKey(n)) && seen.add(choiceKey(n)));
+};
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
   // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (Codex review #526: a family with one genus at Advanced had one choice).
-  const rk = rankOf(t);
+  // Never a choice of the target's label, nor two of one label (choiceApart, Q381): of two units of one label, the one
+  // the rules below rank first is kept and the next one takes the other's place.
+  const rk = rankOf(t),
+    tk = choiceKey(t);
   list = list.filter(n => rankOf(n) === rk);
   if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
+  list = list.filter(n => n === t || choiceKey(n) !== tk);
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
@@ -1687,15 +1704,17 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
     pooled = list
       .filter(n => n !== t && known(n) && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
       .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
-    look = [...mine, ...pooled],
+    look = choiceApart([...mine, ...pooled]),
     out = look.slice(0, traps),
     left = list.filter(n => n !== t && !look.includes(n));
   // Exactly `traps` traps when other genera met exist; genera never met only to make up the three.
   if (traps >= 2)
-    return [...out, ...ranked.filter(n => known(n) && !look.includes(n)), ...look.slice(traps), ...ranked.filter(n => !known(n))].slice(
-      0,
-      3
-    );
+    return choiceApart([
+      ...out,
+      ...ranked.filter(n => known(n) && !look.includes(n)),
+      ...look.slice(traps),
+      ...ranked.filter(n => !known(n))
+    ]).slice(0, 3);
   const T = GX(t);
   const tf = imrFormsOf(t),
     apart = n => !imrFormsOf(n).some(f => tf.includes(f));
@@ -1717,7 +1736,7 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
     res = [...out];
   const add = (L, spread) =>
     L.forEach(n => {
-      if (res.length >= 3 || res.includes(n) || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
+      if (res.length >= 3 || !choiceApart([n], res).length || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
       res.push(n);
       imrFormsOf(n).forEach(f => used.add(f));
     });
@@ -1760,15 +1779,16 @@ function customChoices(t, sel, play, traps, known) {
   const own = distractors(t, sel, traps, known);
   if (own.length >= 3) return own;
   const got = own.filter(n => known(n) && confusable(t, n)).length;
-  return [
+  // Never a label twice across the two (choiceApart, Q381).
+  return choiceApart([
     ...own,
     ...distractors(
       t,
-      play.filter(n => !sel.includes(n)),
+      play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
       Math.max(0, traps - got),
       known
     )
-  ].slice(0, 3);
+  ]).slice(0, 3);
 }
 // The custom quiz's "My mix-ups" view (Pierre, 2026-11-03: "you usually know you make mistakes around these kinds of
 // genera, so you go there"): the genera in play grouped by the player's own confusions, most confused first.
