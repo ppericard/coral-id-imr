@@ -215,13 +215,107 @@ test('a gate the PR adds gets the assigned version even after main reached its p
     r.commit();
     r.git('checkout', '-q', 'pr');
     r.git('merge', '-q', '--no-edit', 'main');
-    fails(r.check(), /gates this PR adds or changes at or below main's VERSION 8: NEW_SHEET = 8 \(core\.js\): write 9/);
+    fails(r.check(), /gates this PR adds at or below main's VERSION 8: NEW_SHEET = 8 \(core\.js\): write 9/);
     const a = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
     ok(a, /core\.js: NEW_SHEET 8 -> 9/);
     assert.match(r.read('core.js'), /const OLD_SHEET = 5;\nconst NEW_SHEET = 9;/);
     ok(r.check(), /assigned: v9/);
     r.edit('core.js', 'const NEW_SHEET = 9;', 'const NEW_SHEET = 8;');
-    fails(r.check(), /gates this PR adds or changes not at its VERSION 9: NEW_SHEET = 8/);
+    fails(r.check(), /gates this PR adds not at its VERSION 9: NEW_SHEET = 8/);
+  } finally {
+    r.done();
+  }
+});
+
+// The PR, branched before main took v8 with a gate of its own (app.js PA_SHEET = 8, as #958 did): its own gate NEW_SHEET
+// waits at 8. Returns the repository with the pr branch checked out, main not merged yet.
+const behind = () => {
+  const r = repo();
+  r.write('tools/sync/Code.gs', r.read('tools/sync/Code.gs') + 'function more(){ return 3; }\n');
+  r.edit('core.js', 'const x = 1;', 'const NEW_SHEET = 8;\nconst x = 1;');
+  r.write('tools/sync/changes/claude-x.md', 'more answers 3\n');
+  r.commit();
+  r.git('checkout', '-q', 'main');
+  r.edit('tools/sync/Code.gs', 'VERSION 7 (2026-11-08: v7:', 'VERSION 8 (2026-11-08: v8: other; v7:');
+  r.edit('tools/sync/Code.gs', 'const VERSION = 7;', 'const VERSION = 8;');
+  r.edit('docs/ARCHITECTURE.md', 'tabs; v7 (', 'tabs; v8 (2026-11-08) other; v7 (');
+  r.write('app.js', 'const PA_SHEET = 8;\n');
+  r.commit();
+  r.git('checkout', '-q', 'pr');
+  return r;
+};
+const assigned = r => {
+  assert.match(r.read('app.js'), /^const PA_SHEET = 8;$/m, "main's gate stays at main's number");
+  assert.match(r.read('core.js'), /^const NEW_SHEET = 9;$/m, "the PR's own gate takes the new VERSION");
+  assert.match(r.read('tools/sync/Code.gs'), /^const VERSION = 9;/m);
+};
+
+test("--assign after main was merged in, the merge not committed yet (a conflict resolved): main's gates stay, the PR's own gate is bumped (#952)", () => {
+  const r = behind();
+  try {
+    // The merge stops before its commit, as a conflict does: HEAD is still the branch's old tip, MERGE_HEAD is main.
+    r.git('merge', '-q', '--no-commit', '--no-ff', 'main');
+    const a = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
+    ok(a, /core\.js: NEW_SHEET 8 -> 9/);
+    assert.doesNotMatch(a.stdout, /PA_SHEET/);
+    assigned(r);
+    r.git('add', '-A');
+    r.git('commit', '-q', '--no-edit');
+    ok(r.check(), /assigned: v9/);
+    ok(r.check('--main'));
+    // The state #952 was left in: main's gate bumped with the PR's. --check sees it.
+    r.edit('app.js', 'const PA_SHEET = 8;', 'const PA_SHEET = 9;');
+    fails(r.check(), /gates main already has, at or below its VERSION 8, changed by this PR: PA_SHEET = 9 \(app\.js; main: 8\)/);
+  } finally {
+    r.done();
+  }
+});
+
+test('--assign after a committed merge or a rebase on main: the same result', () => {
+  for (const how of ['merge', 'rebase']) {
+    const r = behind();
+    try {
+      if (how === 'merge') r.git('merge', '-q', '--no-edit', 'main');
+      else r.git('rebase', '-q', 'main');
+      fails(r.check(), /at or below main's VERSION 8: NEW_SHEET = 8 \(core\.js\): write 9/);
+      const a = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
+      ok(a, /core\.js: NEW_SHEET 8 -> 9/);
+      assert.doesNotMatch(a.stdout, /PA_SHEET/, how);
+      assigned(r);
+      ok(r.check(), /assigned: v9/);
+    } finally {
+      r.done();
+    }
+  }
+});
+
+test('--assign refuses a branch not up to date with main, unresolved conflicts, and a PR that changes a gate main has', () => {
+  const r = behind();
+  try {
+    const old = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
+    assert.strictEqual(old.status, 1, old.stdout + old.stderr);
+    assert.match(old.stderr, /does not hold main yet: merge main into the branch first/);
+    assert.ok(fs.existsSync(path.join(r.d, 'tools/sync/changes/claude-x.md')), 'refused before anything is written');
+    // Both sides edit the same line: the merge stops with an unmerged path.
+    r.write('core.js', r.read('core.js').replace('const x = 1;', 'const x = 2;'));
+    r.commit();
+    r.git('checkout', '-q', 'main');
+    r.edit('core.js', 'const x = 1;', 'const x = 3;');
+    r.commit();
+    r.git('checkout', '-q', 'pr');
+    assert.strictEqual(spawnSync('git', ['-C', r.d, 'merge', '-q', 'main'], {encoding: 'utf-8'}).status, 1);
+    const mid = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
+    assert.strictEqual(mid.status, 1, mid.stdout + mid.stderr);
+    assert.match(mid.stderr, /unresolved conflicts \(core\.js\)/);
+    r.write('core.js', r.read('core.js').replace(/<<<<<<<[^]*?=======\n([^]*?)>>>>>>> main\n/, '$1'));
+    r.git('add', '-A');
+    r.git('commit', '-q', '--no-edit');
+    // A PR that moves main's gate instead of adding its own: --check and --assign both say so.
+    r.edit('app.js', 'const PA_SHEET = 8;', 'const PA_SHEET = 9;');
+    fails(r.check(), /changed by this PR: PA_SHEET = 9 \(app\.js; main: 8\)/);
+    const moved = r.run('--assign', '--base', 'main', '--date', '2026-11-08');
+    assert.strictEqual(moved.status, 1, moved.stdout + moved.stderr);
+    assert.match(moved.stderr, /PA_SHEET = 9 \(app\.js; main: 8\)/);
   } finally {
     r.done();
   }
