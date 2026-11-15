@@ -673,6 +673,16 @@ them before it merges.
    stamp replays, and the boards follow (rule D8). The app is gated on that sheet version (rule D4). The agents' photo
    tools and the build's report read the circles in force. *Needs:* question (h); steps 1-2. It changes the sheet
    script.
+   *Built (2026-11-15, Q363 h A, Q366):* the apply, the stamp, the sheet's replay keyed by it, the boards, the app's
+   gate and the photo tools (docs/ARCHITECTURE.md "The content editor's edits", "Other subjects' replays"). Left for
+   later: each instance's words for its circles and the build's report of circle-1 genera with no name root; and, for
+   step 4, the leaderboard's score tree (the fish board's weights per family and circle, which devices send with their
+   saves: after a circle Publish it follows the first save of a device on the new units, so step 4's Publish should send
+   it, or the sheet derive it under the stamp; Codex review #977). Found
+   while building: every fish answer carries its scoring record, which the replay scores as the game did, so withdrawn
+   or added pairs move no replayed record today; a circle edit moves one only where a unit leaves or joins the units (a
+   family in or out of no circle, the genera of a family leaving or joining circle 1), as the unit wrongly given. The stamp is `''` for the base's structure, so the deploy
+   replays nobody.
    *Checked on the real log (rule L12, 2026-11-15, read-only):* does every fish answer carry a scoring record the replay
    can use? The replay takes the record from the Answers tab's Scoring column (`Code.gs` `rowOf_`: `core.js` `scoreRec`
    on column W); with one, `replayProgress` scores the answer as the game did, its look-alike flag `l` included, and
@@ -683,10 +693,10 @@ them before it merges.
    blank or unreadable scoring record: 0 blank, 0 that `scoreRec` rejects, 0 without a unit shown, 0 with a record but
    no photo or a single choice, and no fish row from an anonymous device or a deleted account. Per player (labels of
    this check only, by fish answers; 0 without a usable record each): P1 732, P2 652, P3 423, P4 233, P5 103, P6 97,
-   P7 63, P8 27, P9 25. 967 of the records carry `l: 1`, which the replay takes as logged. The same holds with the
-   `scoreRec` of #977's branch (unchanged). This confirms the premise of the step's finding (the replay takes the logged
-   record on every fish row, so a pair edit moves no replayed record today); it is a count, not a replay under an
-   edited structure, which stays #977's fixture test.
+   P7 63, P8 27, P9 25. 967 of the records carry `l: 1`, which the replay takes as logged. #977 left `scoreRec` and
+   `rowOf_` unchanged, and the count is the same with its `core.js`. This confirms the premise of the finding above (the
+   replay takes the logged record on every fish row, so a pair edit moves no replayed record today); it is a count, not
+   a replay under an edited structure, which stays #977's fixture test.
 4. **The admin's structure editor:** a circle on each family page, pairs added and withdrawn on the node pages and in
    the Look-alikes filter, and the Publish confirmation. *Needs:* step 3.
 5. **The IMR instance's layer as its own files:** the IMR parts of `tools/fish_source.json` (circles, `look` groups and

@@ -2159,15 +2159,19 @@ test('v55 Replayed: a device row goes when its answers are claimed or deleted', 
 // from the answer log"): the other subjects the sheet replays (core.js replayedSubjects: fish) get their replay too, from
 // their own rows and units (core.js fishReplayGen over fish.json), asked by their own rules version (rvs), in their own tab.
 const FJSON = fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8'),
+  CJSON = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8'),
   FGEN = C.fishReplayGen(JSON.parse(FJSON));
-const withFish = (n = {c: 0, f: 0}) => ({
+// curation.json too: the content editor's structure the fish replay applies (Code.gs subjCur_, sheet overlay step 3).
+const withFish = (n = {c: 0, f: 0, cur: 0}) => ({
   n,
   fetch: url =>
     /\/main\/data\.json$/.test(url)
       ? (n.c++, {getResponseCode: () => 200, getContentText: () => DJSON})
       : /\/main\/fish\.json$/.test(url)
         ? (n.f++, {getResponseCode: () => 200, getContentText: () => FJSON})
-        : null
+        : /\/main\/curation\.json$/.test(url)
+          ? (n.cur++, {getResponseCode: () => 200, getContentText: () => CJSON})
+          : null
 });
 const fa = (id, i, x = {}) =>
   ans(id, {
