@@ -633,12 +633,17 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
     ),
     entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id])));
   // Pierre's adds in play, then the photos that entered by themselves (Q180, Q199: candidates judged sure, reference-level
-  // photos; tests/fishgame.test.js checks the routes on a fixture).
+  // photos; tests/fishgame.test.js checks the routes on a fixture). A species met only on the surprise cards keeps its 5
+  // best (Q372: tools/fish_game.py wink_trim, tests/winkstock.test.js), the auto-sort's adds among the others.
+  const wink = new Set(F.teach.filter(t => t.wink).flatMap(t => t.species || []));
   assert.strictEqual(
-    plan.filter(p => !p.auto).length,
-    Object.keys(FC.add || {}).filter(f => C.fishOn(FC, f, FC.add[f]) && !C.fishOther((FC.tags || {})[f], (S[f] || {}).jt)).length,
+    plan.filter(p => !p.auto && !wink.has(p.sp)).length,
+    Object.keys(FC.add || {}).filter(
+      f => !wink.has(FC.add[f]) && C.fishOn(FC, f, FC.add[f]) && !C.fishOther((FC.tags || {})[f], (S[f] || {}).jt)
+    ).length,
     'every photo Pierre has in play is listed, but other species one could take for the subject (Q323)'
   );
+  wink.forEach(s => assert.ok(plan.filter(p => p.sp === s).length <= 5, `${s}: a surprise-only species keeps 5 photos`));
   assert.ok(plan.some(p => p.auto === 'cand') && plan.some(p => p.auto === 'ref'), 'and the photos in play by themselves');
   plan.forEach(p => {
     // The judged tags with their flags (the phase p and reference r flags included), then the ease.
