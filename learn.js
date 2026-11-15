@@ -753,7 +753,13 @@ function viewFishList() {
     if (p) flat.push({...p, genus: n});
     return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${g.tl ? `<p class="label">${g.tl}</p>` : ''}${tipsList(g)}${
       g.lk.length
-        ? `<p class="note">Don't confuse with ${g.lk.map(([o, t]) => `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))})`).join('; ')}</p>`
+        ? `<p class="note">Don't confuse with ${g.lk
+            .map(
+              ([o, t]) =>
+                // an edited line names the source given with it (app.js fishGenera lksrc; Q359 e, rule C2)
+                `<b>${esc(unameT(o))}</b> (${esc(t.replace(/^[^:]*:\s*/, ''))}${((g.lksrc || {})[o] || {}).t ? '; ' + esc(g.lksrc[o].t) : ''})`
+            )
+            .join('; ')}</p>`
         : ''
     }${g.sub.length ? `<p class="note">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}</div></article>`;
   };
@@ -1236,7 +1242,7 @@ function fishGenus(g) {
     cover = x => genCover(x) || nodeCover(genSpecies(x));
   const card = x => {
     const p = cover(x);
-    return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}</small><b class="cmpgo">Open →</b></span></a>`;
+    return `<a class="lt" href="${esc(hr('g-' + x.id))}">${p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="${esc(x.name)}" loading="lazy">` : noFish()}<span><i>${esc(x.name)}</i><small>${genSpecies(x).length} species${x.imr ? ' · IMR entry: ' + esc(x.imr) : ''}</small><span class="psum">${esc(x.cues.join(' · '))}</span><small class="lsrc">IMR fish presentation${x.sl ? ', ' + slideLine(x.sl) : ''}${esc(esrcT(x, 'cues'))}</small><b class="cmpgo">Open →</b></span></a>`;
   };
   $v.innerHTML = `<p class="lede">One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
   <article class="sheet fsheet">
