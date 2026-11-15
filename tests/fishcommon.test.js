@@ -1,8 +1,10 @@
 // The curated common names of the fish species (Pierre, 2026-11-04: 1 to 3 per species, never more; published as
-// selected, Pierre, 2026-11-08, Q313; docs/FISH_PATH.md "Common names"): tools/fish_common.py selects them into
-// tools/fish_common.json (every name with its sources), tools/build_fish.py writes them into fish.json (species cn), and
-// the species level reads them through app.js cnList, cnShow (multiple choice: one listed name at a time, rotating) and
-// cnTypeNames (typed: only the listed names and their spellings). The blocks of app.js run in a vm on core.js.
+// selected, Pierre, 2026-11-08, Q313; which name comes first, Pierre, 2026-11-15, Q376; docs/FISH_PATH.md "Common names"):
+// tools/fish_common.py selects them into tools/fish_common.json (every name with its sources), tools/build_fish.py writes
+// them into fish.json (species cn, the main name first; cni, the IMR name's place; cnr, the regional names), and the app
+// reads them through app.js cnList, cnFirst (the player's first name: the IMR name for a player at IMR, the main name for
+// the others), cnShow (multiple choice: the player's first name) and cnTypeNames (typed: every listed and regional name
+// and their spellings). The blocks of app.js run in a vm on core.js.
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
@@ -17,7 +19,10 @@ const ROOT = path.join(__dirname, '..'),
   P = read('tools/fish_common.json').species,
   SRCN = read('tools/fish_common_src.json').species,
   GAME = F.species.filter(s => s.circle),
-  norm = C.typeNormAll;
+  norm = C.typeNormAll,
+  key = n => n.toLowerCase().replace(/[\s\-‐‑'’`]/g, ''),
+  IMR = s => s.common && ['pdf', 'slides'].includes(s.src || 'pdf'),
+  byName = n => F.species.find(s => s.name === n);
 
 const ctx = {typeNormAll: C.typeNormAll};
 vm.createContext(ctx);
@@ -25,17 +30,17 @@ vm.runInContext(
   block(fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'), '// The curated common names of a fish species', '\n  return out;\n}\n', {
     file: 'app.js',
     through: 1
-  }) + '\nthis.M = {cnList, cnShow, cnTypeNames};',
+  }) + '\nthis.M = {cnList, cnFirst, cnShow, cnTypeNames};',
   ctx
 );
-const {cnList, cnShow, cnTypeNames} = ctx.M;
+const {cnList, cnFirst, cnShow, cnTypeNames} = ctx.M;
 // match: typeMatchIn over every typed name, read on the names near the text only (tests/typenear.js: the same answer,
 // without an edit distance to each of the 1,300 names; the sweep below took 80 s). The last test checks the two agree.
 const TN = cnTypeNames(GAME),
   full = text => C.typeMatchIn(TN, text, norm),
   match = matcher(TN, norm);
 
-test('every game species has 1 to 3 listed names, each with a source, the PDF name first, none listed twice; none only when no reference names it (Q247)', () => {
+test('every game species has 1 to 3 listed names, each with a source, none listed twice; none only when no reference names it (Q247)', () => {
   const n = {0: 0, 1: 0, 2: 0, 3: 0};
   GAME.forEach(s => {
     const p = P[s.id],
@@ -50,85 +55,122 @@ test('every game species has 1 to 3 listed names, each with a source, the PDF na
         `${s.name}: no listed name although a reference names it`
       );
     }
-    // fish.json holds the selection as it is: the name shown, then its other spellings.
+    // fish.json holds the selection as it is: the name shown, then its other spellings; the IMR name's place; the
+    // regional names.
     assert.deepStrictEqual(
       L,
       p.names.map(x => [x.name, ...(x.alt || [])]),
       `${s.name}: fish.json cn is not tools/fish_common.json`
     );
+    assert.strictEqual(s.cni, p.imr, `${s.name}: fish.json cni`);
+    assert.deepStrictEqual(s.cnr, p.regional && p.regional.map(x => [x.name, ...(x.alt || [])]), `${s.name}: fish.json cnr`);
     p.names.forEach(x => assert.ok(x.from.length, `${s.name}: ${x.name} has no source`));
     assert.strictEqual(p.sp, s.name);
-    // The PDF name first, as written; a PDF name flagged as a likely slip (check) shows FishBase's spelling, the PDF form
-    // still accepted when typed (Pierre, 2026-11-05).
-    if (s.common && !(s.check && (p.names[0].alt || []).includes(s.common)))
-      assert.strictEqual(p.names[0].name, s.common, `${s.name}: the PDF name first, as written`);
-    else if (s.common) assert.ok(p.names[0].alt.includes(s.common), `${s.name}: the PDF form accepted when typed`);
-    // No two spellings of one name listed apart.
-    const keys = p.names.map(x => x.name.toLowerCase().replace(/[\s\-‐‑'’`]/g, ''));
+    // No two spellings of one name listed apart, nor a regional name that is a listed one.
+    const keys = [...p.names, ...(p.regional || [])].map(x => key(x.name));
     assert.strictEqual(new Set(keys).size, keys.length, `${s.name}: a name listed twice`);
   });
-  F.species.filter(s => !s.circle).forEach(s => assert.ok(!s.cn, `${s.name}: out of the game, no list`));
+  F.species.filter(s => !s.circle).forEach(s => assert.ok(!s.cn && s.cni === undefined && !s.cnr, `${s.name}: out of the game, no list`));
   assert.ok(n[1] && n[2] && n[3] && n[0] <= 5, JSON.stringify(n));
   // The file is what the selection gives (tools/fish_common.py --check).
   const r = require('child_process').spawnSync('python3', [path.join(ROOT, 'tools', 'fish_common.py'), '--check'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
 });
 
-test('the order: the species’ own (PDF) name first, then the most shared (in the most references)', () => {
-  const refs = x => (x.from.some(f => f === 'fbMain' || /^fb\d/.test(f)) ? 1 : 0) + (x.from.some(f => /^inat/.test(f)) ? 1 : 0);
+// Pierre, 2026-11-15, Q376 (a) B: iNaturalist's default English name first (FishBase's main name where iNaturalist has
+// none), for every player but an IMR one; the IMR name always listed, marked (cni).
+test('the main name first: iNaturalist’s default, else FishBase’s main name; the IMR name listed and marked, as written', () => {
+  let inat = 0,
+    fbm = 0,
+    imrNotMain = 0;
   GAME.forEach(s => {
-    const L = P[s.id].names,
-      rest = L.filter((x, i) => !(i === 0 && x.from.some(f => ['pdf', 'slides', 'dauin', 'wink'].includes(f))));
+    const p = P[s.id];
+    if (!p.names.length) return;
+    const f = p.names[0].from,
+      gone = (p.dropped || []).filter(d => !d.regional).map(d => key(d.name)),
+      r = SRCN[s.id] || {},
+      im = r.inat && r.inat.main,
+      fm = r.fb && r.fb.main;
+    if (f.includes('inatMain')) inat++;
+    // iNaturalist's default not first only when it is another species' name (the shared-name rule, Q319: below).
+    else if (im) assert.ok(gone.length, `${s.name}: iNaturalist's default ${im} not first and not dropped as shared`);
+    if (!f.includes('inatMain') && f.includes('fbMain')) fbm++;
+    if (!f.includes('inatMain') && !f.includes('fbMain'))
+      assert.ok(f.some(t => ['pdf', 'slides', 'dauin', 'wink'].includes(t)) || p.single, `${s.name}: the main name from no reference`);
+    if (!im && fm && !gone.length) assert.ok(f.includes('fbMain'), `${s.name}: no iNaturalist name, FishBase's main name first`);
+    // The IMR name: listed, marked, as written (a PDF slip shows FishBase's spelling, the PDF form accepted when typed).
+    if (IMR(s)) {
+      assert.ok(Number.isInteger(s.cni), `${s.name}: the IMR name not marked`);
+      const x = p.names[s.cni];
+      assert.ok(
+        x.from.some(t => t === 'pdf' || t === 'slides'),
+        `${s.name}: cni is not its IMR name`
+      );
+      if (!(s.check && (x.alt || []).includes(s.common))) assert.strictEqual(x.name, s.common, `${s.name}: the IMR name as written`);
+      if (s.cni) imrNotMain++;
+    } else assert.strictEqual(s.cni, undefined, `${s.name}: marked IMR without an IMR name`);
+  });
+  // The study's count (docs/reviews/2026-11-15-common-name-sources-study.md §7.1: 107 of the 367 IMR-named species), less
+  // the two whose iNaturalist default is another species' name (Pomacentrus armillatus' Brown damsel, Diproctacanthus
+  // xanthurus' Yellowtail wrasse): one of them keeps its IMR name first, the other gets FishBase's main name.
+  assert.strictEqual(imrNotMain, 105);
+  assert.ok(inat > 600 && fbm >= 3, JSON.stringify({inat, fbm}));
+  // Examples (the study's): Crescent wrasse → Moon wrasse, Brushtail tang → Brown tang; IMR = main: one name.
+  assert.deepStrictEqual(cnList(byName('Thalassoma lunare')), ['Moon wrasse', 'Crescent wrasse']);
+  assert.strictEqual(byName('Thalassoma lunare').cni, 1);
+  assert.strictEqual(cnList(byName('Zebrasoma scopas'))[0], 'Brown tang');
+  assert.deepStrictEqual(cnList(byName('Pomacentrus moluccensis')), ['Lemon damsel']);
+  assert.strictEqual(byName('Pomacentrus moluccensis').cni, 0);
+  // A Dauin source's name is no IMR name: listed, never marked.
+  assert.strictEqual(byName('Novaculoides macrolepidotus').cni, undefined);
+});
+
+test('the order: the main name, then the species’ own, then the most shared (in the most references)', () => {
+  const refs = x => (x.from.some(f => f === 'fbMain' || /^fb\d/.test(f)) ? 1 : 0) + (x.from.some(f => /^inat/.test(f)) ? 1 : 0),
+    own = x => x.from.some(f => ['pdf', 'slides', 'dauin', 'wink'].includes(f));
+  GAME.forEach(s => {
+    const L = P[s.id].names.slice(1);
+    // the species' own name next, when it is not the main name
+    if (L.some(own)) assert.ok(own(L[0]), `${s.name}: its own name right after the main name`);
+    const rest = L.filter(x => !own(x));
     rest.forEach((x, i) => i && assert.ok(refs(rest[i - 1]) >= refs(x), `${s.name}: ${x.name} before a less shared name`));
   });
-  assert.deepStrictEqual(cnList(F.species.find(s => s.id === 's086')), ['Reticulated dascyllus', 'Reticulated damselfish']);
+  assert.deepStrictEqual(cnList(byName('Dascyllus reticulatus')), ['Reticulated damselfish', 'Reticulated dascyllus']);
 });
 
-test('multiple choice: one listed name at a time, rotating, the least asked first, the list’s order on a tie', () => {
-  const s = F.species.find(x => x.id === 's086'),
-    seen = [0, 0],
-    shown = [];
-  for (let k = 0; k < 6; k++) {
-    const n = cnShow(s, i => seen[i]);
-    shown.push(n);
-    seen[cnList(s).indexOf(n)]++;
+// Q376 (a) B and (b) A: the player's first name, the IMR name for a player at IMR (model.js imrSaid), the main name for
+// the others; a multiple-choice question shows it, always the same one (no rotation: the main name fills the unit).
+test('the name a player sees first and multiple choice shows: the IMR name at IMR, the main name for the others', () => {
+  const s = byName('Dascyllus reticulatus');
+  assert.strictEqual(cnFirst(s, false), 'Reticulated damselfish');
+  assert.strictEqual(cnFirst(s, true), 'Reticulated dascyllus');
+  for (let k = 0; k < 4; k++) {
+    assert.strictEqual(cnShow(s, false), 'Reticulated damselfish', 'always the same one');
+    assert.strictEqual(cnShow(s, true), 'Reticulated dascyllus');
   }
-  assert.deepStrictEqual(shown, [
-    'Reticulated dascyllus',
-    'Reticulated damselfish',
-    'Reticulated dascyllus',
-    'Reticulated damselfish',
-    'Reticulated dascyllus',
-    'Reticulated damselfish'
-  ]);
-  assert.strictEqual(
-    cnShow(s, i => [3, 1][i]),
-    'Reticulated damselfish',
-    'the least asked'
-  );
-  assert.strictEqual(cnShow(s), 'Reticulated dascyllus', 'nothing asked yet: the first, the most shared');
-  assert.strictEqual(
-    cnShow({cn: [['Lemon damsel', 'Lemon damselfish']]}, () => 9),
-    'Lemon damsel',
-    'one name: always it'
-  );
-  assert.strictEqual(cnShow({}), '', 'no listed name (Q247)');
-  // Over enough questions every listed name of every species is shown.
+  // IMR name = main name: the same for both; a Dauin species (no IMR name): the main name for both.
+  const lemon = byName('Pomacentrus moluccensis');
+  assert.strictEqual(cnFirst(lemon, true), cnFirst(lemon, false));
+  const dauin = byName('Novaculoides macrolepidotus');
+  assert.strictEqual(cnFirst(dauin, true), cnList(dauin)[0]);
+  assert.strictEqual(cnFirst({}, true), '', 'no listed name (Q247)');
+  assert.strictEqual(cnFirst(null, true), '');
+  assert.strictEqual(cnFirst({cn: [['A']], cni: 4}, true), 'A', 'a mark out of the list: the main name');
+  // Every game species: the IMR player's first is its IMR name, the others' its main name.
   GAME.filter(x => x.cn).forEach(x => {
-    const c = x.cn.map(() => 0);
-    for (let k = 0; k < x.cn.length; k++) c[cnList(x).indexOf(cnShow(x, i => c[i]))]++;
-    assert.ok(
-      c.every(v => v === 1),
-      x.name
-    );
+    assert.strictEqual(cnFirst(x, false), x.cn[0][0], x.name);
+    assert.strictEqual(cnFirst(x, true), IMR(x) ? x.cn[x.cni][0] : x.cn[0][0], x.name);
   });
+  // Old app versions read cn[0][0] alone (fishTaxon before Q376): the main name, never a regional one.
+  GAME.filter(x => x.cnr).forEach(x => assert.ok(!x.cnr.flat().includes(x.cn[0][0]), x.name));
 });
 
-test('typed: the listed names and their spellings are accepted, as their species; no other reference name is', () => {
-  const owners = new Map();
-  GAME.forEach(s => (s.cn || []).flat().forEach(x => owners.set(norm(x), [...(owners.get(norm(x)) || []), s.id])));
+test('typed: every listed and regional name and their spellings are accepted, as their species; no other reference name is', () => {
+  const owners = new Map(),
+    all = s => [...(s.cn || []), ...(s.cnr || [])].flat();
+  GAME.forEach(s => all(s).forEach(x => owners.set(norm(x), [...(owners.get(norm(x)) || []), s.id])));
   GAME.forEach(s =>
-    (s.cn || []).flat().forEach(x => {
+    all(s).forEach(x => {
       const m = match(x),
         own = owners.get(norm(x));
       // A name two species list (flagged shared in tools/fish_common.json: "Twospot wrasse") is right for both (Pierre,
@@ -139,13 +181,14 @@ test('typed: the listed names and their spellings are accepted, as their species
       assert.strictEqual(C.typeVerdict(m, s.id), 'exact');
     })
   );
-  // Every other English name FishBase or iNaturalist gives a species is no exact answer for it: only the listed ones.
+  // Every other English name FishBase or iNaturalist gives a species is no exact answer for it: only the listed and
+  // regional ones.
   let other = 0;
   GAME.forEach(s => {
     const r = SRCN[s.id] || {},
-      mine = new Set((s.cn || []).flat().map(norm)),
-      all = [...((r.inat || {}).names || []), ...((r.fb || {}).names || []).map(x => x[0]), (r.fb || {}).main, (r.inat || {}).main];
-    all
+      mine = new Set(all(s).map(norm)),
+      refs = [...((r.inat || {}).names || []), ...((r.fb || {}).names || []).map(x => x[0]), (r.fb || {}).main, (r.inat || {}).main];
+    refs
       .filter(x => x && !mine.has(norm(x)))
       .forEach(x => {
         other++;
@@ -154,12 +197,87 @@ test('typed: the listed names and their spellings are accepted, as their species
       });
   });
   assert.ok(other > 500, `${other} unlisted reference names checked`);
-  // Examples: Lemon damsel's other names (Yellow damsel), Reticulated dascyllus' (Headband humbug) are no answer.
+  // Examples: the IMR name and the main name are both right (Q376 (a)); Lemon damsel's other name (Yellow damsel) is no
+  // answer.
+  assert.strictEqual(C.typeVerdict(match('Crescent wrasse'), 's256'), 'exact', 'the IMR name');
+  assert.strictEqual(C.typeVerdict(match('Moon wrasse'), 's256'), 'exact', 'the main name');
   assert.strictEqual(C.typeVerdict(match('Yellow damsel'), 's119'), 'none');
-  assert.strictEqual(C.typeVerdict(match('Headband humbug'), 's086'), 'none');
   assert.strictEqual(C.typeVerdict(match('Lemon damselfish'), 's119'), 'exact', 'a recorded spelling of a listed name');
   assert.strictEqual(C.typeVerdict(match('Reticulated damselfsh'), 's086'), 'close', 'a slip: the spelling step, as everywhere');
   assert.strictEqual(C.typeVerdict(match('Lemon'), 's119'), 'none', 'no short form');
+});
+
+// Q376 (c): the regional standard names (iNaturalist's name under the Australia place: AS 5300 / Fishes of Australia)
+// are accepted when typed, never shown: not in cn, so no page and no older app shows them.
+test('regional names: accepted when typed, never listed, never another species’ name', () => {
+  const s = byName('Chromis ternatensis'),
+    d = byName('Dascyllus reticulatus');
+  assert.deepStrictEqual(cnList(s), ['Ternate chromis']);
+  assert.strictEqual(s.cnr[0][0], 'Swallowtail puller', 'the region’s own form first');
+  assert.strictEqual(C.typeVerdict(match('Swallowtail puller'), s.id), 'exact');
+  assert.strictEqual(C.typeVerdict(match('Headband humbug'), d.id), 'exact');
+  assert.ok(!cnList(d).includes('Headband humbug'));
+  assert.strictEqual(C.typeVerdict(match('Western clown anemonefish'), byName('Amphiprion ocellaris').id), 'exact');
+  // Every regional name is iNaturalist's under a region, never the species' main name.
+  let n = 0;
+  GAME.filter(x => x.cnr).forEach(x =>
+    P[x.id].regional.forEach(r => {
+      n++;
+      assert.ok(r.from.includes('inat:Australia'), `${x.name}: ${r.name}`);
+    })
+  );
+  assert.ok(n > 100, String(n));
+  // Dropped where another game species has it, or a spelling of it: Painted sweetlips is Diagramma pictum's own.
+  const pic = P[byName('Plectorhinchus picus').id];
+  assert.ok(pic.dropped.some(x => x.regional && x.name === 'Painted sweetlips' && x.sharedWith.includes('Diagramma pictum')));
+  assert.strictEqual(C.typeVerdict(match('Painted sweetlips'), byName('Diagramma pictum').id), 'exact');
+  // The family's typed answers read them too (core.js fishNameIndex: 'sp', a species of that family).
+  const idx = C.fishNameIndex(F, {});
+  assert.ok(idx.some(x => x.x === 'Swallowtail puller' && x.g === s.family && x.vr === 'sp'));
+});
+
+// A main name that is another game species' name goes through the shared-name rule (FISH_PATH, Q319; the study §7.1):
+// it stays the species' that owns it (its IMR name), and the other's main name is the next of the rule.
+test('shared-name moves: a main name that is another species’ IMR name stays that species’ alone', () => {
+  const moves = [
+    // [species whose iNaturalist default it is, the name, the species whose IMR name it is, the main name instead]
+    ['Forcipiger longirostris', 'Longnose butterflyfish', 'Forcipiger flavissimus', 'Big longnose butterflyfish'],
+    ['Pomacentrus armillatus', 'Brown damsel', 'Pomacentrus opisthostigma', 'Bracelet damselfish'],
+    ['Lutjanus fulviflamma', 'Blackspot snapper', 'Lutjanus ehrenbergii', 'Dory snapper'],
+    ['Diproctacanthus xanthurus', 'Yellow-tail wrasse', 'Anampses meleagrides', 'Yellowtail tubelip']
+  ];
+  moves.forEach(([a, nm, b, main]) => {
+    const A = byName(a),
+      B = byName(b);
+    assert.ok(
+      P[A.id].dropped.some(x => x.name === nm && x.sharedWith.includes(b)),
+      `${a}: ${nm} dropped`
+    );
+    assert.ok(!A.cn.flat().map(key).includes(key(nm)), `${a}: ${nm} not listed`);
+    assert.strictEqual(A.cn[0][0], main, `${a}: its main name`);
+    assert.ok(B.cn.flat().map(key).includes(key(nm)), `${b}: keeps ${nm}`);
+    assert.strictEqual(C.typeVerdict(match(nm), B.id), 'exact');
+  });
+  // F. flavissimus: iNaturalist's Forceps butterflyfish first, its IMR name second.
+  assert.deepStrictEqual(cnList(byName('Forcipiger flavissimus')).slice(0, 2), ['Forceps butterflyfish', 'Longnose butterflyfish']);
+  // No two game species show players the same first name, but the pairs Q319 accepted for both (IMR names alike).
+  [false, true].forEach(imr => {
+    const seen = new Map();
+    GAME.filter(x => x.cn).forEach(x => {
+      const k = key(cnFirst(x, imr));
+      seen.set(k, [...(seen.get(k) || []), x.name]);
+    });
+    const twice = [...seen.values()].filter(v => v.length > 1).map(v => v.sort().join(' / '));
+    assert.deepStrictEqual(
+      twice.sort(),
+      [
+        'Halichoeres biocellatus / Oxycheilinus bimaculatus',
+        'Halichoeres papilionaceus / Novaculoides macrolepidotus',
+        ...(imr ? ['Halichoeres prosopeion / Thalassoma amblycephalum'] : [])
+      ].sort(),
+      imr ? 'IMR players' : 'other players'
+    );
+  });
 });
 
 test('match reads as typeMatchIn on every name: exact, close, shared, other and no answers alike (tests/typenear.js)', () => {
