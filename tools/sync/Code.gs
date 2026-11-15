@@ -2676,6 +2676,147 @@ function over_(key, limit, n){
   return false;
 }
 
+// Backup of the whole spreadsheet to Pierre's pCloud (vNEXT; Pierre, 2026-11-15: "OK, launch the pCloud backup PR";
+// docs/BACKUP.md). Once a week (trigger backupWeekly) and from the sheet's menu (Reef ID > Back up to pCloud now): every
+// tab is read here (SpreadsheetApp, the scope the script already has), written as one .xlsx built in the script (no
+// Drive export: that needs a Drive scope the manifest does not hold, and a scope added to the manifest would stop the
+// web app and the 15-minute trigger until Pierre authorises it), and uploaded server to server to pCloud's HTTP API
+// (UrlFetchApp, script.external_request, already granted) as reef-id-sheet-YYYY-MM-DD.xlsx in the folder
+// reef-id-sheet-backups of /IMR (or of the folder whose id is the Script Property PCLOUD_FOLDER_ID). The 12 newest
+// backups of that folder are kept, older ones deleted (only files named as above, only in that folder, only after the
+// new upload succeeded). The pCloud token is the Script Property PCLOUD_TOKEN (a pCloud OAuth access token, which pCloud
+// says does not expire): sent only to the two pCloud API hosts, as an Authorization header (never in a URL), never
+// logged, stored or returned. PCLOUD_HOST (api.pcloud.com, US accounts, or eapi.pcloud.com, EU accounts) is optional:
+// without it the first call tries both. No token, a refused token or a missing authorisation only writes one line to the
+// Deploy log and returns: nothing here runs in a request, under the script lock or in autoUpdate's path.
+const BACKUP = {HOSTS: ['api.pcloud.com', 'eapi.pcloud.com'], PARENT: 'IMR', FOLDER: 'reef-id-sheet-backups', KEEP: 12,
+  NAME: /^reef-id-sheet-\d{4}-\d{2}-\d{2}\.xlsx$/, HANDLER: 'backupWeekly'};
+// The sheet's menu (a simple trigger: no authorisation needed to show it; addMenu needs only this spreadsheet's scope).
+function onOpen(){
+  try { SpreadsheetApp.getActiveSpreadsheet().addMenu('Reef ID', [{name: 'Back up to pCloud now', functionName: 'backupNow'}]); } catch (e) {}
+}
+// The weekly trigger, made once (by the menu's first run, or run by hand in the editor); a second call makes none.
+function installBackup(){
+  if (ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === BACKUP.HANDLER)) return 'the weekly trigger is already there';
+  ScriptApp.newTrigger(BACKUP.HANDLER).timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
+  backupLog_('weekly trigger made (Sundays, about 02:00 script time)');
+  return 'weekly trigger made';
+}
+function backupWeekly(){ return backup_(); }
+function backupNow(){
+  try { installBackup(); } catch (e) { backupLog_('weekly trigger not made: ' + String(e && e.message || e).slice(0, 200)); }
+  const m = backup_();
+  try { SpreadsheetApp.getActiveSpreadsheet().toast(m, 'pCloud backup', 15); } catch (e) {}
+  return m;
+}
+function backupLog_(m){
+  const t = 'pCloud backup: ' + m;
+  try { sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), t.slice(0, 500)]); } catch (e) {}
+  return t;
+}
+// The file's name: the day in the script's time zone (the manifest's, Asia/Manila).
+function backupName_(d){
+  const tz = typeof Session !== 'undefined' && Session.getScriptTimeZone ? Session.getScriptTimeZone() : 'Asia/Manila';
+  return 'reef-id-sheet-' + Utilities.formatDate(d, tz, 'yyyy-MM-dd') + '.xlsx';
+}
+function backup_(){
+  let token = '';
+  const scrub = s => { s = String(s); return token ? s.split(token).join('[token]') : s; };
+  try {
+    const pr = PropertiesService.getScriptProperties();
+    token = String(pr.getProperty('PCLOUD_TOKEN') || '').trim();
+    if (!token) return backupLog_('not configured (no PCLOUD_TOKEN in the Script Properties)');
+    const host = String(pr.getProperty('PCLOUD_HOST') || '').trim().toLowerCase();
+    if (host && BACKUP.HOSTS.indexOf(host) < 0) return backupLog_('not configured (PCLOUD_HOST must be api.pcloud.com or eapi.pcloud.com)');
+    const parent = String(pr.getProperty('PCLOUD_FOLDER_ID') || '').trim();
+    if (parent && !/^\d{1,20}$/.test(parent)) return backupLog_('not configured (PCLOUD_FOLDER_ID must be a pCloud folder id, digits only)');
+    const name = backupName_(new Date()), file = xlsx_(name);
+    // One pCloud call: parameters in the URL (never the token), the token in the header; the reply's numeric result
+    // (0 = done), or the HTTP status as a negative number when the reply is not pCloud's JSON.
+    const call = (h, method, q, payload) => {
+      const o = {method: payload ? 'post' : 'get', headers: {Authorization: 'Bearer ' + token}, muteHttpExceptions: true};
+      if (payload) o.payload = payload;
+      const r = UrlFetchApp.fetch('https://' + h + '/' + method + '?' + Object.keys(q).map(k => k + '=' + encodeURIComponent(q[k])).join('&'), o);
+      let j = null; try { j = JSON.parse(r.getContentText()); } catch (e) {}
+      return j && typeof j.result === 'number' ? j : {result: -r.getResponseCode()};
+    };
+    const folder = (h, id, nm) => { const j = call(h, 'createfolderifnotexists', {folderid: id, name: nm}); return j.result === 0 && j.metadata ? String(j.metadata.folderid) : ''; };
+    // The first call finds the account's region when PCLOUD_HOST is not set: the token is tried on the US host, then the EU one.
+    let h = '', top = '', res = 0;
+    for (const x of host ? [host] : BACKUP.HOSTS) {
+      const j = call(x, 'createfolderifnotexists', parent ? {folderid: parent, name: BACKUP.FOLDER} : {folderid: 0, name: BACKUP.PARENT});
+      if (j.result === 0 && j.metadata) { h = x; top = String(j.metadata.folderid); break; }
+      res = j.result;
+    }
+    if (!h) return backupLog_('pCloud refused the token or the folder (result ' + res + '); check PCLOUD_TOKEN' + (parent ? ' and PCLOUD_FOLDER_ID' : '') + ' (docs/BACKUP.md)');
+    const dir = parent ? top : folder(h, top, BACKUP.FOLDER);
+    if (!/^\d+$/.test(dir)) return backupLog_('the folder ' + BACKUP.FOLDER + ' could not be made in pCloud');
+    const up = call(h, 'uploadfile', {folderid: dir, filename: name, nopartial: 1}, {file: file});
+    const meta = up.result === 0 && up.metadata && up.metadata[0];
+    if (!meta || !(Number(meta.size) > 0)) return backupLog_('upload of ' + name + ' failed (result ' + up.result + ')');
+    const mb = (Number(meta.size) / 1048576).toFixed(1) + ' MB';
+    // Retention: only after the upload succeeded, only this folder, only files named as backups, newest names kept.
+    const ls = call(h, 'listfolder', {folderid: dir});
+    if (ls.result !== 0 || !ls.metadata || !Array.isArray(ls.metadata.contents))
+      return backupLog_('saved ' + name + ' (' + mb + '); old backups not checked (result ' + ls.result + ')');
+    const old = ls.metadata.contents.filter(f => f && !f.isfolder && f.fileid && BACKUP.NAME.test(String(f.name)) && String(f.fileid) !== String(meta.fileid))
+      .sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0)).slice(BACKUP.KEEP - 1);
+    const gone = old.filter(f => call(h, 'deletefile', {fileid: f.fileid}).result === 0).length;
+    return backupLog_('saved ' + name + ' (' + mb + ')' + (gone ? ', ' + gone + ' older backup' + (gone === 1 ? '' : 's') + ' deleted' : '') +
+      (gone < old.length ? ', ' + (old.length - gone) + ' could not be deleted' : ''));
+  } catch (e) {
+    const m = scrub(e && e.message || e);
+    if (/authori[sz]|permission|scope/i.test(m)) return backupLog_('needs authorisation (docs/BACKUP.md): ' + m.slice(0, 200));
+    return backupLog_('failed: ' + m.slice(0, 300));
+  }
+}
+// The whole spreadsheet as one .xlsx (Office Open XML): one worksheet per tab, every value as the sheet holds it
+// (numbers, true/false, dates as dates, text as text: a text cell is never read as a formula on import). Formulas,
+// formats, frozen rows and hidden columns are not kept; the sheet holds data the script writes.
+function xlsx_(name){
+  const tabs = SpreadsheetApp.getActiveSpreadsheet().getSheets(), seen = {};
+  const tz = typeof Session !== 'undefined' && Session.getScriptTimeZone ? Session.getScriptTimeZone() : 'Asia/Manila';
+  const esc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const col = c => { let s = ''; for (c++; c; c = Math.floor((c - 1) / 26)) s = String.fromCharCode(65 + (c - 1) % 26) + s; return s; };
+  // A date: its day and time in the script's time zone, as Excel's serial day number (days since 1899-12-30).
+  const serial = d => { const m = /^(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)$/.exec(Utilities.formatDate(d, tz, "yyyy-MM-dd'T'HH:mm:ss.SSS"));
+    return (Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) / 864e5 + 25569); };
+  const cell = (v, ref) => {
+    if (v === '' || v === null || v === undefined) return '';
+    if (typeof v === 'number' && isFinite(v)) return '<c r="' + ref + '"><v>' + v + '</v></c>';
+    if (typeof v === 'boolean') return '<c r="' + ref + '" t="b"><v>' + (v ? 1 : 0) + '</v></c>';
+    if (v instanceof Date || Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? '' : '<c r="' + ref + '" s="1"><v>' + serial(v) + '</v></c>';
+    return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + esc(v) + '</t></is></c>';
+  };
+  const NS = 'http://schemas.openxmlformats.org/', XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const sheets = tabs.map((sh, i) => {
+    let t = String(sh.getName()).replace(/[\[\]:*?\/\\]/g, '_').replace(/^'|'$/g, '_').slice(0, 31) || 'Sheet' + (i + 1);
+    while (seen[t.toLowerCase()]) t = t.slice(0, 27) + '_' + (i + 1);
+    seen[t.toLowerCase()] = 1;
+    const nr = sh.getLastRow(), nc = sh.getLastColumn(), rows = nr && nc ? sh.getRange(1, 1, nr, nc).getValues() : [], out = [];
+    rows.forEach((row, r) => { const cs = row.map((v, c) => cell(v, col(c) + (r + 1))).join(''); if (cs) out.push('<row r="' + (r + 1) + '">' + cs + '</row>'); });
+    return {name: t, xml: XML + '<worksheet xmlns="' + NS + 'spreadsheetml/2006/main"><sheetData>' + out.join('') + '</sheetData></worksheet>'};
+  });
+  const ct = 'application/vnd.openxmlformats-officedocument.spreadsheetml.';
+  const files = [
+    ['[Content_Types].xml', XML + '<Types xmlns="' + NS + 'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="' + ct + 'sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="' + ct + 'styles+xml"/>' +
+      sheets.map((s, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="' + ct + 'worksheet+xml"/>').join('') + '</Types>'],
+    ['_rels/.rels', XML + '<Relationships xmlns="' + NS + 'package/2006/relationships"><Relationship Id="rId1" Type="' + NS + 'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml', XML + '<workbook xmlns="' + NS + 'spreadsheetml/2006/main" xmlns:r="' + NS + 'officeDocument/2006/relationships"><sheets>' +
+      sheets.map((s, i) => '<sheet name="' + esc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels', XML + '<Relationships xmlns="' + NS + 'package/2006/relationships">' +
+      sheets.map((s, i) => '<Relationship Id="rId' + (i + 1) + '" Type="' + NS + 'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+      '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + NS + 'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ['xl/styles.xml', XML + '<styleSheet xmlns="' + NS + 'spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy-mm-dd hh:mm:ss"/></numFmts>' +
+      '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']
+  ].concat(sheets.map((s, i) => ['xl/worksheets/sheet' + (i + 1) + '.xml', s.xml]));
+  return Utilities.zip(files.map(f => Utilities.newBlob(f[1], 'application/xml', f[0])), name).setContentType(ct + 'sheet');
+}
+
 // The app's core.js (progress engine, replayProgress), embedded by tools/sync_core.py: Code.gs reaches it as CORE_.
 // Its own module object keeps its names out of this script's globals (TRUST, MEM... are Code.gs's own).
 const CORE_ = (function () { const module = {exports: {}};
