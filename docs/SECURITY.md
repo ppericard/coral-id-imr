@@ -134,7 +134,7 @@ The admin's account (v125, the 🌱 after its name) is kept by its code hash in 
 only by a read with the admin's token from the admin page signed in to that account (its code checked), never from what a
 player sends; a delete, a merge (its from) and an archive clear it, and no player can type the seedling or a look-alike
 in a new name (`core.js` `reservedName`).
-The pooled stats' snapshots (sheet v134, the `Stats` tab; vNEXT, one per subject: `Stats Fish` too; ARCHITECTURE.md
+The pooled stats' snapshots (sheet v134, the `Stats` tab; v137, one per subject: `Stats Fish` too; ARCHITECTURE.md
 "Progress sync"): each fold keeps, by admin
 id and never by name, each player's trust counts, ability, photo memory and the last day's answers (unit, answer, mode,
 photos, choices, expectation), never served. A delete, a merge or an archive (`rosterChanged_`), a change to who is left
