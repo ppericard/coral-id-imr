@@ -40,26 +40,33 @@ Four agents at a time (W27); what is easy to correct afterwards ships:
 
 ## Questions for Pierre
 
-Asked one at a time with full context, from the brief `questions-pierre.md` (16 points, the integrator's scratchpad):
-1 domain and 2 accounts wait (Pierre: "trop compliquée pour l'instant"; the name not found yet); 3 answered (Q362); 4
-recomputed with one unit per species first; 5 answered (Q359); 6-16 next. **Decided 11-15**:
+Asked one at a time with full context, from the brief `questions-pierre.md` (16 points, the integrator's scratchpad).
+**Not now** (Pierre): 1 domain ("trop compliquée pour l'instant", the name not found yet), 2 accounts, 6 IMR agreement,
+8 a second person. **Still to ask**: 4 (the species leaderboard, its size recomputed with one unit per species); the
+reference bonus (#942: a photo's reference flag and +1 ease belong to its record, 423 photos judged both ways).
 
 - **Q356** #871: B for every subject (Pierre: "quelque chose qui soit cohérent entre tous les modes de jeu").
 - **Q357** #882: per-player state in `Stats` accepted (numbers over all the data, stored, never simplified).
-- **Q358** one judgement per photo; "n'hésite pas à les remettre en cause et à faire des propositions" (his choices).
-- **Q359** #903: IMR text editable, original restorable (changes Q341 a); the editing is the content-editor role's;
-  circles and look-alike pairs are per-instance content set by the organisation's content owner; presence follows
-  the instance's location; the editor's text stays when the base changes, the new base proposed; a source optional,
-  encouraged.
-- **Q360** #925: credit the lecture photos now (#939), no request to Corals of the World yet; permission or replacements
-  before any wider or commercial deployment.
-- **Q361** licence refresh: weekly for the other photographers only ("je ne vais pas les changer toutes les semaines").
-- **Q362** fish species: one progress unit per species; how it is filled by its names comes later (the study).
-- **New, for the brief**: a photo's reference flag and its +1 ease belong to its record, not the photo: 423 photos
-  judged both ways get one ease point more when they play as a reference (#942, parked in ROADMAP).
-- AVIF (#933) and the 500px account (his, confirmed) noted; his photos on Commons: 114 files, 32 Wikipedia articles.
+- **Q358** one judgement per photo (#942); "n'hésite pas à les remettre en cause et à faire des propositions".
+- **Q359** #903: IMR text editable, original restorable (changes Q341 a); editing is the content editor's; circles and
+  pairs per instance; presence from the instance's location; a stale edit kept, the new base proposed; sources optional.
+- **Q360** #925: credit the lecture photos now (#939), no request yet; permission or replacements before any wider or
+  commercial deployment.
+- **Q361** licence refresh: weekly for the other photographers only (#936).
+- **Q362** fish species: one progress unit per species; how it is filled by its names comes later (a study runs).
+- **Q363-Q366** overlay v2 (#945): (h) circles or pairs changed: everyone's progress recomputed from the log; (j) rights
+  separate in theory, the platform admin may grant himself the role, logged; (k) the pilot sign-in is enough to
+  publish for now; the stored format of the note's section 6: "ok".
+- **Q367** comeback: as is, plus the rust tolerance (simulated first, its own PR). **Q368** the engine unchanged,
+  measured again at about 20 players. **Q369** sea slugs: one subject; circle 1 = the stars (Wikipedia views and
+  public article mentions) and the most common, any group; rarer ones later; the Philippines as its area; scientific
+  names only. **Q370** AVIF parked. **Q371** log the tapped photo in Find the X. **Q372** the two surprise-only sharks
+  at 5 photos in the game data too. **Q373** a "watermark" tag for fish photos, Home skips them (games unchanged).
+  **Q374** no covers above coral genera for now.
+- Noted: the 500px account is his; his photos on Commons: 114 files, 32 Wikipedia articles (thresher shark: the lead
+  image of 5 pages, about 210,000 views a year); a first sheet backup in his pCloud (xlsx, 11-15 11:39).
 
-Last question number: Q362
+Last question number: Q374
 
 ## Pierre's hands
 
