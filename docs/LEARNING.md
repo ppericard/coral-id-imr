@@ -3723,7 +3723,44 @@ player, the first phase photo moves from about question 15 to about question 180
 a player meets about 32 families, about 9 answers each, so most units are still in their first 10 answers; `phLate`
 (units past 20 answers) has too few questions there to read (2-8 runs per profile). `perPhoto` (repeats) moves by
 less than 0.002. Exploratory, not declared (no verdict): N = 5 on the same seeds brings the first phase photo at about
-question 42-66 (medians), some in every run, `phAns` 10-17, every guardrail held.
+question 42-66 (medians), some in every run, `phAns` 10-17, no guardrail breached or left unclear.
+
+**The rated world, results** (fish, 3,000 answers, the app told the truth, the count learner; before =
+`--calib '{"phase":0}'`, after = this branch; 2 looks). Normal photos, first look seeds 1-10 (no breach; ten guardrail
+cells unclear), then the declared second look on seeds 1-20 (`--seed0 10` for 11-20, the two files of each arm joined):
+the primary `phEarly@3000` down in 100 of 100 pairs (0.17-0.19 → 0.000). Every guardrail held at 20 seeds but three
+cells, all with their means inside their margins:
+
+| Unclear at 20 seeds | Paired difference [one-sided 95% bound] | Margin |
+| --- | --- | --- |
+| Beginner, answers to the first unit at Open Water | +10.7 [+36.7] | +35.8 |
+| Beginner, units at Open Water at 1,000 answers | −0.8 [−2.2] | −2.0 |
+| Strong RA, units at Open Water at 1,000 answers | −2.1 [−3.8] | −2.6 |
+
+True knowledge (within ±0.002 at every checkpoint), E, the global score (−0.3 to +0.7 points), the plateau, the share
+under ease 4 before Open Water and the units met are held in every profile. No wall: at 3,000 answers every run has met
+phase photos (`phAns`, profile means, 224-463 after against 526-573 before; at 1,000 answers 32-112 against 173-178);
+once a unit has 20 answers their share is the same or a little higher (`phLate@3000` 0.18 → 0.18-0.21: the phase
+photos still never seen then carry the never-seen bonus); the first phase photo moves from about answer 4-8 to about
+answer 80-246 (medians per profile; the IMR RAs and the expert, who answer many families a few times each, the
+latest). Repeats (`perPhoto@3000`) up by 0.002-0.013.
+
+Heavy-tailed photos (`--dist tail`), first look seeds 1-10: two breaches, the lecture RA's answers to the first unit at
+Open Water (+22.9 [+53.8], margin +17.2) and the expert's units at Open Water at 1,000 answers (−3.5 [−6.4], margin
+−2.9), and eleven cells unclear; the declared second look on seeds 1-20: the primary down in 100 of 100 pairs, and
+
+| Not held at 20 seeds, heavy tails | Paired difference [one-sided 95% bound] | Margin | Verdict |
+| --- | --- | --- | --- |
+| **Lecture RA, answers to the first unit at Open Water** | **+14.3 [+30.8]** (62.9 → 77.2) | +12.6 | **breached** |
+| Casual diver, global score at 1,000 answers | −0.5 [−1.1] | −1 | unclear |
+| Units at Open Water at 1,000 answers: beginner, casual diver, strong RA, expert | −1.0 [−2.2], −0.7 [−2.0], −1.0 [−3.0], −1.6 [−3.5] | −2.0, −2.0, −2.6, −3.0 | unclear |
+
+every other cell held (true knowledge within ±0.005, E, the plateau, the share under ease 4, the units met). The
+breach is the lecture RA's alone, under heavy tails only: under normal photos the same measure moved −5.3 [+9.6]
+(held). Its cause was not measured. A guess: holding a unit's phase photos back leaves its first 10 questions on the
+rest of its pool, where the 15% of photos 1.5 logits harder than their prior says weigh more. Whatever the cause, the
+lecture RA's first family reaches Open Water 14 answers later on average (a 23% longer wait). No wall either way: every run met phase photos by 3,000 answers
+(`phAns` 236-472 against 526-566), `phLate@3000` 0.18 → 0.18-0.21. Per rule L11 the breach goes to Pierre.
 
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
@@ -6292,6 +6329,12 @@ hard. A new yardstick comes first, and every candidate bar is judged by it in se
 
 ## Decision log
 
+- 2026-11-15, the ROADMAP row of 2026-11-07 (Pierre: "we must put back a progressive path that presents juveniles and
+  sexual dimorphism"), built in #953 ("Juveniles and colour phases in stages"): phase photos held back from a unit's
+  first `SUBJECTS` `calib` `phase` answers (fish 10), then in stages; two cards per subject. Checked at level 2: the
+  primary as intended in both worlds; the app world's no-wall check fails at 300 questions (10 runs of 100 meet no phase
+  photo), the rated world's heavy tails breach the lecture RA's wait for the first Open Water (+14 answers); N, the
+  class-A juveniles and the breach go to Pierre with the PR.
 - 2026-11-14, Pierre (Q350, "oui à tout" to the confusion-group study's a-j, f changed: declared pairs forced): look-alike
   units open by confusion group, the exam waits for the group, `INTRO.EVERY` removed ("Confusion groups"). Built and
   checked: partners 4-5 times closer, fish every guardrail held; the corals' start of the path breached guardrails
