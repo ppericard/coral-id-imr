@@ -21,14 +21,17 @@ const GEN = {
   'f:Butterflyfishes': {name: 'Butterflyfishes'},
   'f:Angelfishes': {name: 'Angelfishes'},
   'g:Chromis': {name: 'Chromis', rank: 'genus'},
-  'g:Chrysiptera': {name: 'Chrysiptera', rank: 'genus'}
+  'g:Chrysiptera': {name: 'Chrysiptera', rank: 'genus'},
+  // a species unit by its common name (the species level): upright, as a family
+  's:s091': {name: 'Ternate chromis', rank: 'species', sci: 'Chromis ternatensis'}
 };
 const ctx = {GX: n => GEN[n]};
 vm.createContext(ctx);
 vm.runInContext(
   cut(app, 'const esc = ', '\n', {file: 'app.js'}) +
     cut(app, 'const unameT = ', '\n', {file: 'app.js'}) +
-    cut(app, 'const unameIn = ', '\n};\n', {file: 'app.js', through: 1}) +
+    cut(app, 'const uplain = ', '\n};\n', {file: 'app.js', through: 1}) +
+    cut(app, 'const unameIn = ', '\n', {file: 'app.js'}) +
     cut(app, 'const uname = ', '\n', {file: 'app.js'}) +
     cut(quiz, 'const nameBigrams = ', '// The unit a typed reading m gives', {file: 'quiz.js'}) +
     '\nthis.M = {esc, uname, nameDice, namesAlike, namesDiff, namesLine};',
@@ -144,4 +147,5 @@ test('the feedback line: the photo first, then the answer, each set as uname set
   assert.strictEqual(uname('Favites'), '<i>Favites</i>');
   assert.strictEqual(uname('f:Angelfishes'), 'Angelfishes');
   assert.strictEqual(uname('g:Chromis'), '<i>Chromis</i>');
+  assert.strictEqual(uname('s:s091'), 'Ternate chromis');
 });

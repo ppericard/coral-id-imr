@@ -1153,6 +1153,7 @@ async function freshPlayers(b, base, errs) {
       dropPlans();
       SHOWNQ = null;
       question('quiz', t, [t, ...ch], 'Which species?', photoSet(t));
+      // answer.js: reads the rendered buttons' labels, answers nothing
       const bs = [...document.querySelectorAll('#view .ans button')];
       ok(
         bs.length === 4 && bs.every(b => b.classList.contains('plain') && b.querySelector('.csn small')),
