@@ -34,12 +34,12 @@ Marks: **[measured]** counted by a script on the data named; **[read]** read tod
    committee standards for their own countries. IUCN flags one "preferred" name with no stated basis. Wikipedia titles
    an article by "the English name that is most common", else by the scientific name **[read]**.
 2. **The sources disagree a lot.** In the 40-species sample, a species gets 1 to 6 different first names across 11
-   sources; only 7 of the 40 get a single name everywhere **[measured]**. Over the 639 game species that have all three,
-   the IMR name, FishBase's main name and iNaturalist's default are the same name for 308 (48 %) **[measured]**.
+   sources; only 7 of the 40 get a single name everywhere **[measured]**. Over the 365 IMR-named species that have all
+   three, the IMR name, FishBase's main name and iNaturalist's default are the same name for 166 (45 %) **[measured]**.
 3. **The IMR name follows iNaturalist more than FishBase.** On the 367 species named by the IMR PDF or slides, it
    matches iNaturalist's default for 260 (71 %) and FishBase's main name for 199 of 365 (55 %) **[measured]**. (The
-   other 294 game species carry a name from circle 3's Dauin sources, not IMR's; 292 of them equal iNaturalist's
-   default.) Against the plurality of the other source families, the IMR name agrees 14 times in 31. FishBase's main
+   other 294 game species, added from the Dauin sources or a wink and named by a reference, carry a name that is not IMR's (`src` dauin or wink); 292 of them
+   equal iNaturalist's default.) Against the plurality of the other source families, the IMR name agrees 14 times in 31. FishBase's main
    name agrees 18 in 28, iNaturalist's default 19 in 30 and FishBase's most-recorded name 19 in 25 **[measured, small
    sample]**.
 4. **The sources are not independent.** ASFIS and FishBase's main name are the same for 18 of 19 sample species. The
@@ -282,7 +282,7 @@ species named by the IMR PDF or slides:
 | FishBase main and iNaturalist default, every game species | 341 of 639 (53 %) | |
 | All three, IMR-named species | 166 of 365 (45 %); 40 species have three different names | |
 
-The 294 species with a Dauin-source name match iNaturalist's default for 292, so those names most likely come from
+The other 294 species with a reference name (`src` dauin or wink) match iNaturalist's default for 292, so those names most likely come from
 iNaturalist **[guess]**. They are left out of the IMR figures.
 
 **In the sample, one vote per source family.** The families are:
