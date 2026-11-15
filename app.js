@@ -595,8 +595,14 @@ const cover = g =>
 // jamais finir en couverture"): a photo whose phase is the juvenile one (its record's ph, the judged phase word that
 // tools/fish_game.py writes as autosort.js fishPhase reads it) or whose tags carry the juvenile flag (judging/FISH.md).
 // adultFirst(L): the first of L that is not one, else L's first (a unit with juvenile photos only keeps one).
+// One exception, Pierre's own (2026-11-15, the Boxfishes' yellow juvenile, "far more popular and recognisable than the
+// adults"): his ★ cover on a juvenile once he confirmed it in the admin (curation.json fish genera {id: {cover, coverJ}},
+// autosort.js fishCoverJ): coverOk(k, p), photo p may be node k's cover (k: its curation record). The defaults never
+// take a juvenile.
 const JUV_PH = 'juvenile';
 const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7)));
+const coverOk = (k, p) =>
+  !!p && (!juvP(p) || !!(k && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(p.f) === fishPid(k.cover)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
 // A leaf's presence around the instance's centre (Pierre, 2026-11-13, Q339: "Il faudra rendre générique la localisation
 // centrale de l'instance"; the centre: tools/instance.json, fish.json centre): [its distinct Research Grade observers,
@@ -625,8 +631,10 @@ function seenCover(L, seen, d, pick = () => null) {
     if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
   });
   if (!best) return R[0] || null;
-  const k = pick(best.p.sp);
-  return (k && A.find(p => p.f === k.f)) || best.p;
+  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers)
+  const k = pick(best.p.sp),
+    c = k && R.find(p => p.f === k.f);
+  return (c && (!juvP(c) || k.cj) && c) || best.p;
 }
 // A fish species' presence (FISH.sps: fish.json species by id) and his ★ cover of it (FISH.covers: app.js fishCurate).
 const fishSeen = sid => nearSeen(((FISH && FISH.sps) || {})[sid]);
@@ -914,7 +922,8 @@ function fishCurate(X, cur, F) {
       pool = pool || Object.values(X.gen).flatMap(u => (u.rank ? [] : u.views.wide));
       const L = pool.filter(p => S.has(p.sp)),
         cv = L.find(p => p.f === k.cover) || L.find(p => fishPid(p.f) === fishPid(k.cover));
-      if (cv && !juvP(cv)) X.covers[id] = cv; // never a juvenile (juvP)
+      // never a juvenile (juvP), unless he confirmed it (coverOk): then marked cj, which seenCover reads
+      if (coverOk(k, cv)) X.covers[id] = juvP(cv) ? {...cv, cj: 1} : cv;
       return;
     }
     if (!g || !k) return;
@@ -924,8 +933,8 @@ function fishCurate(X, cur, F) {
       fe = Object.entries(k.feat || {})
         .map(([sid, F]) => [sid, [...new Set((F || []).map(at).filter(p => p && p.sp === sid))]])
         .filter(([, F]) => F.length);
-    if (cv && !juvP(cv)) {
-      g.coverP = cv;
+    if (coverOk(k, cv)) {
+      g.coverP = juvP(cv) ? {...cv, cj: 1} : cv;
       g.cover = cv.f;
     }
     if (fe.length) g.featP = Object.fromEntries(fe);

@@ -20,7 +20,7 @@ const test = require('node:test'),
     juvCovers
   } = require('../admin-covers.js'),
   {lightOpen, lightKeep} = require('../admin-light.js'),
-  {fishCover, fishCoverOf, fishLeafCover, fishWaiting} = require('../autosort.js'),
+  {fishCover, fishCoverOf, fishLeafCover, fishWaiting, fishCoverJ, fishCoverYes, fishCoverJOk, fishDrop} = require('../autosort.js'),
   {merge3} = require('../core.js');
 
 // Family f:A, genus g:B (species s1, s2); s2 seen by more observers around the centre. Every photo an adult reference
@@ -184,7 +184,7 @@ test('a node page’s cover and why (Photos › Tree): his ★, else the rule on
   assert.deepStrictEqual([c.p.f, c.by, c.juv, c.gone], ['fi4', 'rule', true, false]);
   assert.strictEqual(
     nodeCoverWhy(c, 'Dauin'),
-    'Default: Most seen near Dauin: 9 observers · your ★ cover is now judged a juvenile: pick another or retag'
+    'Default: Most seen near Dauin: 9 observers · your ★ cover is now judged a juvenile: ignored until you confirm it'
   );
   c = nodeCover('g:B', L, {genera: {'g:B': {cover: 'gone'}}}, j, false, seen());
   assert.deepStrictEqual([c.by, c.gone], ['rule', true]);
@@ -203,7 +203,7 @@ test('a node page’s cover and why (Photos › Tree): his ★, else the rule on
   assert.deepStrictEqual([c.p.f, c.by, c.juv], ['fi2', 'first', true]);
   assert.strictEqual(
     nodeCoverWhy(c),
-    'Default: its first photo (featured, then the easiest) · your ★ cover is now judged a juvenile: pick another or retag'
+    'Default: its first photo (featured, then the easiest) · your ★ cover is now judged a juvenile: ignored until you confirm it'
   );
   // no photo at all
   c = nodeCover('s9', [], {}, j, true);
@@ -234,7 +234,7 @@ test('his ★ cover under the other name of the same photo (reference fi<id>, ca
         assert.deepStrictEqual([c.juv, c.gone], [juv, false], `${what}: ${id}`);
         if (juv) {
           assert.notStrictEqual(c.p.f, inPlay, `${what}: ${id} never a juvenile`);
-          assert.match(nodeCoverWhy(c, 'Dauin'), /your ★ cover is now judged a juvenile: pick another or retag$/, `${what}: ${id}`);
+          assert.match(nodeCoverWhy(c, 'Dauin'), /your ★ cover is now judged a juvenile: ignored until you confirm it$/, `${what}: ${id}`);
           assert.deepStrictEqual(
             juvCovers(
               [id, 's2'],
@@ -277,6 +277,62 @@ test('his ★ cover under the other name of the same photo (reference fi<id>, ca
     j4 = f => j(f) || j('fi' + f.split('-').pop());
   assert.strictEqual(fishCoverOf(L4, {}, 'f:A', j4, seen()).f, 'fi4');
   assert.strictEqual(fishCoverOf(L4, {genera: {s2: {cover: 'fi3'}}}, 'f:A', j4, seen()).f, 'fish-s2-cand-3');
+});
+
+// Pierre's exception (2026-11-15): his ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id:
+// {cover, coverJ}}, coverJ naming the cover's photo): ★ Cover's yes (fishCoverYes), the Tree page's one click
+// (fishCoverJOk); a new pick, taking it off, Remove or a proposal accepted drop the confirmation with the old pick. The
+// default rule alone never takes a juvenile.
+test('a juvenile ★ cover he confirmed: in force on its node page, at any rank; the default never takes one', () => {
+  const Fy = fishCoverYes({}, 'f:A', 'fi9');
+  assert.deepStrictEqual(Fy.genera, {'f:A': {cover: 'fi9', coverJ: 'fi9'}});
+  assert.ok(fishCoverJ(Fy, 'f:A', L[4]) && fishCoverJ(Fy, 'f:A', 'fi9') && !fishCoverJ(Fy, 'f:A', 'fi1') && !fishCoverJ(Fy, 'g:B', 'fi9'));
+  let c = nodeCover('f:A', L, Fy, j, false, seen());
+  assert.deepStrictEqual([c.p.f, c.by, c.juv, c.jok], ['fi9', 'mine', false, true]);
+  assert.strictEqual(nodeCoverWhy(c, 'Dauin'), 'Your ★ cover, a juvenile you confirmed');
+  assert.deepStrictEqual(
+    juvCovers(['f:A'], () => L, Fy, j),
+    [],
+    'no warning'
+  );
+  // the confirmation of another photo is none; the one click confirms the cover there
+  const Fn = {genera: {'f:A': {cover: 'fi9', coverJ: 'fi1'}}};
+  assert.ok(nodeCover('f:A', L, Fn, j, false, seen()).juv);
+  assert.deepStrictEqual(
+    juvCovers(['f:A'], () => L, Fn, j),
+    ['f:A']
+  );
+  assert.deepStrictEqual(fishCoverJOk(Fn, 'f:A').genera['f:A'], {cover: 'fi9', coverJ: 'fi9'});
+  assert.deepStrictEqual(fishCoverJOk({}, 'f:A').genera, {}, 'no cover: nothing to confirm');
+  // dropped with the pick: taken off, another pick, Remove, a proposal accepted
+  assert.deepStrictEqual(fishCover(Fy, 'f:A', 'fi9').genera, {});
+  assert.deepStrictEqual(fishCover(Fy, 'f:A', 'fi1').genera, {'f:A': {cover: 'fi1'}});
+  assert.deepStrictEqual(fishDrop(Fy, 'f:A', 'fi9').genera, {});
+  const x = coverProposal('f:A', L, Fy, j, seen());
+  assert.deepStrictEqual([x.his.f, x.rule.f], ['fi9', 'fi4'], 'in force, so the rule may still propose its photo');
+  assert.deepStrictEqual(coverAccept(Fy, x).genera, {'f:A': {cover: 'fi4'}});
+  // a genus and a leaf alike
+  assert.strictEqual(fishCoverOf(L, fishCoverYes({}, 'g:B', 'fi9'), 'g:B', j, seen()).f, 'fi9');
+  const S1 = [L[4], L[1], L[0]];
+  assert.strictEqual(fishLeafCover(S1, fishCoverYes({}, 's1', 'fi9'), 's1', j).f, 'fi9');
+  c = nodeCover('s1', S1, fishCoverYes({}, 's1', 'fi9'), j, true);
+  assert.deepStrictEqual([c.p.f, c.by, c.jok], ['fi9', 'mine', true]);
+  // the default: s1 the most seen; its easiest photo (fi9) a juvenile is never taken, but his confirmed ★ of s1 is
+  const S = {s1: [9, 30], s2: [1, 1]};
+  assert.notStrictEqual(fishCoverOf(L, {}, 'f:A', j, seen(S)).f, 'fi9');
+  assert.notStrictEqual(fishCoverOf(L, {genera: {s1: {cover: 'fi9'}}}, 'f:A', j, seen(S)).f, 'fi9');
+  assert.strictEqual(fishCoverOf(L, fishCoverYes({}, 's1', 'fi9'), 'f:A', j, seen(S)).f, 'fi9');
+  // a proposal of the rule's photo that is his confirmed juvenile ★ of its species: accepted, it holds on the node too
+  const Fs = fishCoverYes({genera: {'f:A': {cover: 'fi4'}}}, 's1', 'fi9'),
+    xs = coverProposal('f:A', L, Fs, j, seen(S));
+  assert.deepStrictEqual([xs.his.f, xs.rule.f, xs.mine], ['fi4', 'fi9', true]);
+  const Fsa = coverAccept(Fs, xs);
+  assert.deepStrictEqual(Fsa.genera['f:A'], {cover: 'fi9', coverJ: 'fi9'});
+  assert.strictEqual(nodeCover('f:A', L, Fsa, j, false, seen(S)).by, 'mine');
+  // Publish keeps it (merge3: key by key, onto a published file changed elsewhere)
+  const base = {fish: {genera: {'f:A': {cover: 'fi9'}}}},
+    out = merge3(base, {fish: fishCoverJOk(base.fish, 'f:A')}, {fish: {genera: {'f:A': {cover: 'fi9', ok: true}}}});
+  assert.deepStrictEqual(out.fish.genera['f:A'], {cover: 'fi9', ok: true, coverJ: 'fi9'});
 });
 
 test('a node page’s candidates waiting: by the species they wait in now, never one in play, rejected or gone', () => {
