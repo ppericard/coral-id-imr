@@ -95,6 +95,134 @@
   "fish-s085-cand-643303561": {
    "code": "p1g1sss2",
    "keep": "dup"
+  },
+  "fish-s085-cand-197143040": {
+   "code": "p1g1sm1j3",
+   "keep": "best"
+  },
+  "fish-s085-cand-197143056": {
+   "code": "p1g1sm1j3",
+   "keep": "dup"
+  },
+  "fish-s085-cand-197143023": {
+   "code": "o1g1ss1j2",
+   "keep": "dup"
+  },
+  "fish-s085-cand-160165901": {
+   "code": "p1g1sssj2",
+   "keep": "best"
+  },
+  "fish-s085-cand-160165912": {
+   "code": "p1g1sssj2",
+   "keep": "dup"
+  },
+  "fish-s085-cand-543161145": {
+   "code": "p1g0sm1j4",
+   "keep": "best"
+  },
+  "fish-s085-cand-457524642": {
+   "code": "p1g1mm1j3",
+   "keep": "best"
+  },
+  "fish-s085-cand-457524638": {
+   "code": "d1g1mm1j2",
+   "keep": "dup"
+  },
+  "fish-s085-cand-269006457": {
+   "code": "p1g1sso2",
+   "keep": "best"
+  },
+  "fish-s085-cand-660594251": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s085-cand-714775021": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s085-cand-714775132": {
+   "code": "p1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s085-cand-614420718": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s085-cand-66138253": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s085-cand-637449274": {
+   "code": "d1g1sm12",
+   "keep": "dup"
+  },
+  "fish-s085-cand-637449287": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s085-cand-637455662": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s085-cand-357893852": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s085-cand-614106841": {
+   "code": "p1d1bs12",
+   "keep": "best"
+  },
+  "fish-s085-cand-614106842": {
+   "code": "p1d1bs11",
+   "keep": "dup"
+  },
+  "fish-s085-cand-614106835": {
+   "code": "p1d1bs11",
+   "keep": "dup"
+  },
+  "fish-s085-cand-654692512": {
+   "code": "p1d1ss1j2",
+   "keep": "best"
+  },
+  "fish-s085-cand-308940330": {
+   "code": "p1g1smkj2",
+   "keep": "best"
+  },
+  "fish-s085-cand-304622872": {
+   "code": "o1g0sms3",
+   "keep": "best"
+  },
+  "fish-s085-cand-727288649": {
+   "code": "p1g0smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "the most central fish is another Dascyllus, two humbugs behind: same genus, but the subject may be taken for it"
+  },
+  "fish-s085-cand-429599984": {
+   "code": "p1g0ss1j3",
+   "keep": "best"
+  },
+  "fish-s085-cand-457663468": {
+   "code": "o1g1sm1j3",
+   "keep": "best"
+  },
+  "fish-s085-cand-608114836": {
+   "code": "o1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s085-cand-307206925": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s085-cand-652825732": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s085-cand-264996955": {
+   "code": "p1g1sl14",
+   "keep": "best"
   }
  }
 }

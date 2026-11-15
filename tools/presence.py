@@ -26,6 +26,10 @@ from taxonomy import aliases  # the species rows of tools/taxonomy.json: former 
 NEAR_OBSERVERS = 2
 PH_OBSERVERS = 3
 CHECKLISTS = Path(__file__).resolve().parent / "presence_checklists.json"
+# The instance's centre (tools/instance.json centre; Pierre, 2026-11-13, Q339): "near" is within radiusKm of it. Today
+# Dauin, 40 km; the query is the same string as before (the reply caches are keyed by URL).
+CENTRE = json.loads((Path(__file__).resolve().parent / "instance.json").read_text(encoding="utf-8"))["centre"]
+NEAR_AREA = f"lat={CENTRE['lat']}&lng={CENTRE['lon']}&radius={CENTRE['radiusKm']}"
 
 
 def near_dauin(observers_dauin, imr=False):
@@ -126,9 +130,9 @@ def species_presence_many(get, taxa, kind="coral", extra=""):
     ph = [x for x in rows("place_id=6873") if x["taxon"].get("rank") == "species"]
     if not ph:
         return {t: {} for t in taxa}
-    dn = {x["taxon"]["id"]: x["count"] for x in rows("lat=9.19&lng=123.26&radius=40")}
+    dn = {x["taxon"]["id"]: x["count"] for x in rows(NEAR_AREA)}
     lst = {x["taxon"]["id"]: listed(kind, [x["taxon"]["name"]]) for x in ph}
-    near_q = f"quality_grade=research&lat=9.19&lng=123.26&radius=40{extra}"
+    near_q = f"quality_grade=research&{NEAR_AREA}{extra}"
     ph_q = f"quality_grade=research&place_id=6873{extra}"
     solo = lambda q: lambda t: get(f"{api}/observers?taxon_id={t}&{q}&per_page=1").get("total_results", 0)  # noqa: E731
     od = inat.observer_counts(get, {x["taxon"]["id"]: dn[x["taxon"]["id"]] for x in ph

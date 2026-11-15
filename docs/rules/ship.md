@@ -133,7 +133,7 @@ shared by app and admin (curation merge, progress merge, photo Elo) lives in `co
 `.github/workflows/checks.yml` (JS syntax, tests, JSON, `data.json` layout, Python, versions) and
 `.github/workflows/smokes.yml`, each Playwright smoke in its own parallel job `smoke (<name>)` (pages in four groups and
 fish in two, `SMOKE_PART`, each group in a job of its own or `tests/smokeparts.test.js` fails; admin whole at 390 px and
-in two groups at 1280, `SMOKE_W` / `SMOKE_PART`), `fail-fast: false` so every failing smoke reports. **A PR that changes
+in three groups at 1280, `SMOKE_W` / `SMOKE_PART`), `fail-fast: false` so every failing smoke reports. **A PR that changes
 only docs skips the smokes** (every file under `docs/`, a `*.md` at the root, the PR template or `LICENSE`); `checks`
 still runs on it, `tests/docs.test.js` included. A merge train's push runs both workflows in full (rule W26). A new push
 cancels the run still going on the PR. **Session hooks**
@@ -222,13 +222,17 @@ otherwise. Prefer a small, re-runnable `tools/apply_*.py` script that documents 
 
 **Check visually with Playwright (Chromium), light and dark**: a small change at one phone and one desktop width, **a big
 interface change or redesign at every width of rule U4** (surprises hide in the other sizes); check that games fit one
-screen; open the browser console: no errors. **After a big change to the interface or the flow, replay the whole app as
+screen; open the browser console: no errors. **Dark is the app's ⚙ Theme, never the system's**: set `reefid-sync-theme`
+to `dark` (plain text) in localStorage before the page loads (an init script), or `data-theme="dark"` on `<html>`; Playwright's
+`colorScheme: 'dark'` changes nothing, since the app and the admin ignore `prefers-color-scheme` (rule U3), so its "dark"
+screenshot is the light page (#908's were). **After a big change to the interface or the flow, replay the whole app as
 a brand-new player**: an empty browser, phone and desktop, light and dark, from the first load through the tour, the
 first cards, a few dozen questions (Again, duels, the offer, achievements), My progress, the other games, Identify,
 Tools, help and settings; screenshots at each step, every overlay alone on screen and closable. Not needed for internal
 code or small fixes.
 *Why:* an RA found the tour and the first genus card on screen together: the tests pre-set "tour seen" or "cards seen",
-so no test met both. *Source:* Pierre, 2026-11-02; every width, 2026-11-05.
+so no test met both. *Source:* Pierre, 2026-11-02; every width, 2026-11-05; how to set dark, 2026-11-15 (screenshots
+taken with `colorScheme` showed the light admin).
 
 ### W18
 

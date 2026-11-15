@@ -71,7 +71,7 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   1. every check is green on the current head, and no failed job was re-run to get green (rule W23); in a merge train
      (rule W26), green on its own head and the train that holds it green;
   2. every Codex finding is fixed or answered, every review thread resolved;
-  3. **every choice in it was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
+  3. **every choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
      words (quoted with their date in the PR's "Decisions" section), or a decided process (once he agreed how a thing
      is done and checked the first results, its outputs ship without asking him item by item: fish photo judging on the
      agreed rubric, per-species photo pre-proposals; only a change to the process itself waits for him); the PR's
@@ -79,20 +79,18 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   4. it was rebased on `origin/main` right before the merge (Publish commits land without PRs), or it rides a green
      merge train whose tree `main` then equals (rule W26), and goes in as a squash merge titled `… (#N)` (rule W18); a
      PR that changes `Code.gs` gets its `VERSION` from the integrator at that moment (rule D3).
-- **The integrator decides the small choices; Pierre decides the ones that matter**: he validates every choice with an
-  impact, not micro-details. **With impact**, to Pierre: something players see
-  or feel differently (a new screen, a game rule, a learning value, content, a photo choice), anything costly to undo,
-  or a choice that commits later work (a data format, a structure, a convention other code will follow). **Without
-  impact**, the integrator's own, shipped under the contract and listed in Decisions as "integrator's call": a clearer
-  word in a text, a frame moved a few pixels because it overflowed, the fix of something plainly broken, a name inside
-  the code, a test. When in doubt, ask.
-- **Otherwise the PR waits for Pierre.** A choice with impact he has not made (a design option, a wording players read,
-  a layout, a default, a threshold, a changed game rule) goes to him as a question (below); the integrator merges once
-  he has answered, his answer pasted into the PR. **A choice is never merged on silence**: once presented to him with a
-  recommendation, it waits for his answer, even when it looks reversible and invisible to players (side effects show up
-  later, above all in how the game behaves); no "default unless he objects". **Game changes do not wait for that**: a
-  PR that holds only decided things merges under the contract, whatever it touches. After a merge that changes what
-  players meet or how the game behaves, tell Pierre in one line what went live (information, not a question).
+- **The integrator decides the small choices; Pierre decides the ones that are costly to undo.** Pierre, 2026-11-14:
+  "Tu pushe la mise en page. Au pire je corrigerais après. Il faut que tu pushes tout ce qui est facile à corriger à
+  posteriori." **Easy to correct afterwards**: shipped under the contract, listed in Decisions as "integrator's call"
+  (with "easy to correct" when players see it): a layout, a wording players read, a visible setting or default, a
+  design option, a name inside the code, a test, the fix of something plainly broken, an implementation detail ("ça
+  c'est du micro management… je ne devrais pas à choisir", Pierre, 2026-11-14). After a merge that changes what players
+  meet or how the game behaves, tell Pierre in one line what went live (information, not a question); he corrects
+  afterwards if he wants.
+- **Costly to undo: the PR waits for Pierre.** A choice whose effects cannot simply be taken back (a data format or a
+  structure other code will follow, a migration, a change whose effect on players' records or progress cannot be
+  reverted, content the IMR owns) goes to him as a question (below); the integrator merges once he has answered, his
+  answer pasted into the PR. A PR that holds only decided things merges under the contract, whatever it touches.
 - **Always ask first**, even when it looks decided: anything destructive or irreversible (history rewrite, deleting
   data, bulk changes to his curation, the sheet's column layout), anything about money, accounts or access, anything
   sent outside the project.
@@ -103,9 +101,8 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   question gets a number** (Q1, Q2…, for good, never reset; the last number used is in STATUS, so it carries across
   sessions and Claude accounts) only when it passes both tests: its answer commits the future (the players' learning or
   game, the engine's model, data or privacy, rights, a rule's substance, an irreversible action, a big cost) **and** it
-  will be cited later. Asked plainly, without a number: a visual detail inside an agreed design (screenshots and "OK?"),
-  an implementation detail (the agent's or integrator's call, written in the PR), the order or priorities, a
-  confirmation or a fact, the wording of a rule already decided (his OK goes in the rule's *Source* line). Agents that
+  will be cited later. Asked plainly, without a number (and only when costly to undo: the rest ships,
+  above; never the order, run independent work in parallel): a confirmation or a fact, the wording of a rule already decided (his OK goes in the rule's *Source* line). Agents that
   prepare questions (a subagent in its report) apply the same tests. Every answer, numbered or not, is quoted in the
   PR's Decisions; small questions go in batches; past numbers stay as they are (Pierre, 2026-11-08). Open numbered ones
   wait in STATUS "Questions for Pierre" until he answers (the answer then goes into the PR). Each gives one or

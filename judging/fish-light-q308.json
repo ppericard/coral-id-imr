@@ -1,5 +1,5 @@
 {
-"_doc": ["Fish photo re-judge on rubric 6 (Pierre, 2026-11-08, Q308: light g is the fish well lit whatever the background, d the fish itself poorly lit, n only the night livery; judging/FISH.md \"Tags\").", "photos: every code changed, [where, entry or species, photo, old code, new code]; where is judge (tools/fish_judge.json photos) or cand (judging/fish/<species>.json). Codes as typed, before the tool's caps and flags.", "curation: Pierre's adds whose tags and ease curation.json fish.tags / fish.ease still hold from the earlier judgement (tools/fish_game.py reads them first), [curated tags, ease] -> [re-judged tags, ease after the caps]: a proposal only, never written by a script (rule A1)."],
+"_doc": ["Fish photo re-judge on rubric 6 (Pierre, 2026-11-08, Q308: light g is the fish well lit whatever the background, d the fish itself poorly lit, n only the night livery; judging/FISH.md \"Tags\").", "photos: every code changed, [where, entry or species, photo, old code, new code]; where is judge (tools/fish_judge.json photos) or cand (judging/fish/<species>.json). Codes as typed, before the tool's caps and flags.", "curation: Pierre's adds whose tags and ease curation.json fish.tags / fish.ease still hold from the earlier judgement (tools/fish_game.py reads them first), [curated tags, ease] -> [re-judged tags, ease after the caps]: a proposal only, never written by a script (rule A1). A proposal never moves a tag to a retired code (count m, \"other species, not sorted\", never typed since 2026-11-09): fish-s050-cand-79944621 keeps his count s (integrator, 2026-11-14; admin-light.js lightRetired, tests/fishlight.test.js)."],
 "photos": [
 ["cand", "s002", "fish-s002-cand-fb-Chaur_u0", "p1n0sl13", "p1g0sl15"],
 ["cand", "s004", "fish-s004-cand-704529396", "o1d1sm13", "o1g1sm14"],
@@ -1075,7 +1075,7 @@
 {"photo": "fish-s039-cand-174799800", "curated": ["p1n0sl1", 3], "rejudged": ["p1g0sl1", 5]},
 {"photo": "fish-s049-cand-473097122", "curated": ["p1n0sl1", 3], "rejudged": ["p1g0sl1", 5]},
 {"photo": "fish-s050-cand-615454655", "curated": ["p1n0sl1", 3], "rejudged": ["p1g0sl1", 4]},
-{"photo": "fish-s050-cand-79944621", "curated": ["p1n0sms", 3], "rejudged": ["p1g0smm", 3]},
+{"photo": "fish-s050-cand-79944621", "curated": ["p1n0sms", 3], "rejudged": ["p1g0sms", 3]},
 {"photo": "fish-s066-cand-756242763", "curated": ["p1d0sl1", 4], "rejudged": ["p1g0sl1", 5]},
 {"photo": "fish-s067-cand-606601132", "curated": ["p1d0sl1", 4], "rejudged": ["p1g0sl1", 5]},
 {"photo": "fish-s069-cand-536940684", "curated": ["p1d1sm1", 3], "rejudged": ["p1g1sm1", 4]},

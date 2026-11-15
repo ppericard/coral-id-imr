@@ -119,6 +119,46 @@
   "fish-s315-cand-fb-Syvar_u4": {
    "code": "p1g1slsc3",
    "keep": "best"
+  },
+  "fish-s315-cand-592997025": {
+   "code": "p1g1sl1c3",
+   "keep": "best"
+  },
+  "fish-s315-cand-592997065": {
+   "code": "p1g1sl1c3",
+   "keep": "dup"
+  },
+  "fish-s315-cand-642144198": {
+   "code": "d1g1ss1c1",
+   "keep": "best"
+  },
+  "fish-s315-cand-327693424": {
+   "code": "d1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s315-cand-259668922": {
+   "code": "o1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s315-cand-674726350": {
+   "code": "d1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s315-cand-724571072": {
+   "code": "o1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s315-cand-608105066": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s315-cand-525905680": {
+   "code": "o1g1sl1c3",
+   "keep": "best"
+  },
+  "fish-s315-cand-563065896": {
+   "code": "o1g1mm1c2",
+   "keep": "best"
   }
  }
 }

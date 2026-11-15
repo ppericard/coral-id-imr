@@ -210,6 +210,16 @@ body.admin .hdr-tools[hidden] {
   font-weight: 400;
   margin-left: 6px;
 }
+/* A species whose photos come from another iNaturalist taxon (admin.js fishPtx, Q354 b): its own line. */
+.adm-row h3 .adm-ptx {
+  display: block;
+  margin: 2px 0 0;
+}
+.adm-ptx i,
+.adm-swg .adm-ptx i {
+  font: inherit;
+  font-style: italic;
+}
 .adm-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -3816,6 +3826,12 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-jcards li {
   margin: 2px 0;
 }
+/* A unit's link inside a line of text (the journey's Cards and steps, Not met yet): the line's size, no gap before a comma. */
+.adm-jcards .adm-gen,
+.adm-jnot .adm-gen {
+  font-size: inherit;
+  margin-right: 0;
+}
 
 /* A genus learned (mastery exam passed): a small green tag beside its name in the journey's list. */
 .adm-jlearn {
@@ -5291,12 +5307,92 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   background: var(--good-bg);
   font-weight: 600;
 }
-/* The fish units page (admin plan PR 6 on the book's families): the key group headings of the family list, the IMR tag,
+/* Photos › Tree (Pierre, 2026-11-13, Q340): the tree at the left, one row per node, indented by its level (--lv), the
+   ▸ / ▾ to unfold; a family's row as the list had it (.adm-g, its cover); the rank a small grey word. Then the IMR tag,
    the All | IMR filter, one block per genus with its species inside. */
-.adm-fgrp {
-  margin: 10px 4px 2px;
-  font-size: 0.75rem;
+@media (min-width: 821px) {
+  .adm.adm-treep {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+.adm-tree {
+  display: grid;
+  gap: 1px;
+}
+.adm-tt {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  padding-left: calc(var(--lv, 0) * 12px);
+  border-radius: var(--r-sm);
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+.adm-tt:hover {
+  background: var(--surface-2);
+}
+.adm-tt.cur {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--accent);
+}
+.adm-tt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.adm-ttw {
+  flex: 0 0 18px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.adm-tt > .adm-g {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px 4px 0;
+}
+.adm-tt > .adm-g small {
+  font-size: var(--fs-xs);
+}
+.adm-tt > .adm-g:hover {
+  background: none;
+}
+.adm-ttn {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px 3px 0;
+}
+.adm-ttn small {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.adm-ttk {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.adm-ttr {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--muted);
+}
+.adm-tt > .dots {
+  padding-right: 8px;
+}
+.adm-tt .dot {
+  color: var(--bad);
+  font-size: 0.8rem;
+}
+/* A genus or species the tree opens scrolls to just under the header and the page's sticky bar. */
+.adm-main .adm-fgen,
+.adm-main .adm-row[data-sid] {
+  scroll-margin-top: calc(var(--hdr-h, 64px) + 64px);
 }
 .adm-src.adm-imrt {
   border-color: var(--accent);
@@ -5316,17 +5412,17 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
-/* A genus's and a species' cover in its heading (Pierre, 2026-11-13); his pick ringed in the cover mark's colour. */
+/* A node's cover in its heading and in its page's bar (Pierre, 2026-11-13); his pick ringed in the cover mark's colour. */
 .adm-hthumb {
   display: inline-block;
   vertical-align: middle;
   margin: 0 8px 0 0;
 }
-.adm-hthumb.mine {
+.adm-sthumb.mine {
   outline: 2px solid #e0a526;
   outline-offset: 1px;
 }
-/* The genus a family's page is narrowed to. */
+/* A node page's drill-down: its children, each opening its page. */
 .adm-fgsel {
   min-height: 34px;
   max-width: 100%;
@@ -5338,9 +5434,115 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font: inherit;
   font-size: 0.85rem;
 }
+/* The Tree's tag filter (beside All | IMR): no wider than a short tag (a pair's long name is cut, its count kept in the
+   list), so the bar keeps its line; pressed like the segment while a tag is chosen. */
+.adm-ttag {
+  width: 15em;
+}
+@media (max-width: 599px) {
+  .adm-ttag {
+    width: auto;
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
+.adm-ttag.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.adm-ttag.on option,
+.adm-ttag.on optgroup {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 400;
+}
+/* A node's page (Photos › Tree): the path from the root above the bar (each ancestor a link), the cover's why on a line
+   of its own; a heading's name opens its node's page; a group's page, its children's cards (each as its tree row). */
+.adm-crumbs {
+  flex: 1 0 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.adm-crumbs a {
+  color: inherit;
+}
+.adm-crumbs b {
+  color: var(--ink);
+}
+.adm-cvwhy {
+  flex: 1 0 100%;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.adm-nlink {
+  color: inherit;
+  text-decoration: none;
+}
+.adm-nlink:hover {
+  text-decoration: underline;
+}
+.adm-tcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+  margin: 8px 0 18px;
+}
+.adm-tcard {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+}
+.adm-tcard:hover {
+  border-color: var(--accent);
+}
+.adm-tcard > .adm-g,
+.adm-tcard > .adm-ttn {
+  flex: 1;
+  min-width: 0;
+}
+.adm-tcard > .adm-ttn {
+  padding: 6px 8px;
+}
+.adm-tcard small {
+  font-size: var(--fs-xs);
+}
+.adm-tcard > .dots {
+  padding-right: 8px;
+}
+/* The corals' Tree, a genus's page (admin-coraltree.js): its featured photos per view, each opening its genus page. */
+.adm-ctfeat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.adm-ctfeat a {
+  display: block;
+  line-height: 0;
+}
+.adm-ctfeat img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+}
+.adm-ctok {
+  font-size: 0.85rem;
+}
 /* Fish Coverage (admin plan PR 8): To do chips, the table scrolls sideways inside its box on phones. */
 .adm-ftodo {
   flex-wrap: wrap;
+}
+/* To do › All on the fish side: its photo work's counts, links among buttons, styled alike (no underline). */
+a.adm-fchip {
+  text-decoration: none;
 }
 .adm-fishcovw {
   overflow-x: auto;
@@ -5473,4 +5675,284 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   color: var(--accent);
   font-weight: 600;
   margin-right: 4px;
+}
+/* Photo review › Light proposals (admin-light.js): what a proposal changes, his value struck through, the re-judged one
+   in bold, one line each; Accept / Keep mine under it. */
+.adm-ldiff {
+  margin: 4px 8px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-xs);
+}
+.adm-ldiff span {
+  color: var(--muted);
+}
+.adm-ldiff s {
+  color: var(--muted);
+}
+.adm-lprop .adm-acts .adm-qseg {
+  width: 100%;
+}
+.adm-lprop .adm-acts .adm-qseg button {
+  flex: 1 1 0;
+}
+/* Photo review › Cover proposals (admin-covers.js): one card per node, his cover and the rule's side by side, each with the
+   species it shows, the rule's why under it; Accept / Keep mine under both. */
+.adm-cgrid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
+}
+.adm-cprop > figcaption {
+  font-size: var(--fs-s);
+  color: var(--ink);
+  padding-bottom: 6px;
+}
+.adm-cpair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 0 6px;
+}
+.adm-cside {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-cside .adm-ph {
+  border-radius: calc(var(--r) / 2);
+  overflow: hidden;
+}
+.adm-cwhy {
+  font-size: var(--fs-xs);
+}
+.adm-cprop .adm-acts .adm-qseg {
+  width: 100%;
+}
+.adm-cprop .adm-acts .adm-qseg button {
+  flex: 1 1 0;
+}
+.adm-cside .adm-t {
+  flex: none;
+  font-style: normal;
+}
+/* Analyses › Difficulty › Heatmap (admin-heatmap.js statsHeat): every unit against every unit in its own scroll box, the
+   header row and the name columns sticky, so a phone scrolls the matrix inside the box, never the page. Cells in the
+   accent at five strengths (the mix-up rate, or the typed count), hatched under CONF.N offers, a declared look-alike
+   outlined, one from the data dashed; a line between two families. Larger cells on a touch screen (rule U4: by media). */
+.adm-hm {
+  --hm-cs: 22px;
+  --hm-fw: 20px;
+  --hm-lw: 112px;
+  overflow: auto;
+  max-height: min(78vh, 1180px);
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xs);
+  overscroll-behavior: contain;
+}
+@media (min-width: 1024px) {
+  .adm-hm {
+    --hm-cs: 25px;
+  }
+}
+@media (pointer: coarse) {
+  .adm-hm {
+    --hm-cs: 28px;
+    --hm-lw: 100px;
+  }
+}
+.adm-hmt {
+  width: max-content;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+}
+.adm-hmt td,
+.adm-hmt th {
+  padding: 0;
+  border: 0;
+}
+.adm-hmt td {
+  width: var(--hm-cs);
+  min-width: var(--hm-cs);
+  height: var(--hm-cs);
+  text-align: center;
+  border-right: 1px solid var(--surface);
+  border-bottom: 1px solid var(--surface);
+}
+.adm-hmt td > a,
+.adm-hmt td > span {
+  display: block;
+  height: calc(var(--hm-cs) - 1px);
+  line-height: calc(var(--hm-cs) - 1px);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+.adm-hmt td > a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.adm-hmt th {
+  background: var(--surface);
+  color: var(--muted);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.adm-hmt thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 104px;
+  vertical-align: bottom;
+}
+.adm-hmt .hm-col {
+  width: var(--hm-cs);
+  min-width: var(--hm-cs);
+  max-width: var(--hm-cs);
+}
+.adm-hmt .hm-col span {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 98px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 0;
+  color: var(--ink);
+}
+.adm-hmt .hm-corner {
+  left: 0;
+  width: calc(var(--hm-fw) + var(--hm-lw));
+  z-index: 4;
+  text-align: left;
+  vertical-align: bottom;
+  padding: 0 6px 4px 4px;
+  font-size: var(--fs-xs);
+}
+.adm-hmt .hm-corner span {
+  display: block;
+}
+.adm-hmt .hm-corner span + span {
+  text-align: right;
+}
+.adm-hmt .hm-fam,
+.adm-hmt .hm-row {
+  position: sticky;
+  z-index: 1;
+}
+.adm-hmt .hm-fam {
+  left: 0;
+  width: var(--hm-fw);
+  min-width: var(--hm-fw);
+  max-width: var(--hm-fw);
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+.adm-hmt .hm-fam span {
+  display: inline-block;
+  position: sticky;
+  top: 108px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  padding: 4px 0;
+}
+.adm-hmt .hm-row {
+  left: var(--hm-fw);
+  width: var(--hm-lw);
+  min-width: var(--hm-lw);
+  max-width: var(--hm-lw);
+  padding: 0 6px 0 4px;
+  text-align: right;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-hmt.nofam .hm-row {
+  left: 0;
+}
+.adm-hmt.nofam .hm-corner {
+  width: var(--hm-lw);
+}
+.adm-hmt .hm-it {
+  font-style: italic;
+}
+.adm-hmt .hm-d {
+  background: var(--line);
+}
+/* Dark: --line is close to the lightest cells (a typed 1, a rate of 5-10%), so the diagonal goes darker than any cell. */
+:root[data-theme='dark'] .adm-hmt .hm-d {
+  background: var(--bg);
+}
+.adm-hmt .hm-fr {
+  border-top: 1.5px solid var(--muted);
+}
+.adm-hmt .hm-fc {
+  border-left: 1.5px solid var(--muted);
+}
+.adm-hm .hm-q0,
+.adm-hm-leg .hm-q0 {
+  background: var(--surface-2);
+}
+.adm-hm .hm-q1,
+.adm-hm-leg .hm-q1 {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+.adm-hm .hm-q2,
+.adm-hm-leg .hm-q2 {
+  background: color-mix(in srgb, var(--accent) 45%, var(--surface));
+}
+.adm-hm .hm-q3,
+.adm-hm-leg .hm-q3 {
+  background: color-mix(in srgb, var(--accent) 72%, var(--surface));
+  color: var(--surface);
+}
+.adm-hm .hm-q4,
+.adm-hm-leg .hm-q4 {
+  background: var(--accent);
+  color: var(--surface);
+}
+.adm-hm .hm-lo,
+.adm-hm-leg .hm-lo {
+  background-image: repeating-linear-gradient(45deg, transparent 0 4px, color-mix(in srgb, var(--surface) 45%, transparent) 4px 5px);
+}
+.adm-hm .hm-lk,
+.adm-hm-leg .hm-lk {
+  outline: 1.5px solid var(--ink);
+  outline-offset: -2px;
+}
+.adm-hm .hm-dl,
+.adm-hm-leg .hm-dl {
+  outline: 1.5px dashed var(--ink);
+  outline-offset: -2px;
+}
+.adm-hm-leg {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  margin: 0 0 8px;
+}
+.adm-hm-leg span::before {
+  display: none;
+}
+.adm-hm-leg .hm-sw {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-xs);
+  margin-right: 5px;
+  vertical-align: -3px;
+}
+.adm-hm-leg .hm-sw.hm-lk,
+.adm-hm-leg .hm-sw.hm-dl {
+  background: var(--surface-2);
+  outline-offset: -1.5px;
 }

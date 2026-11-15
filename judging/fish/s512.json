@@ -287,6 +287,65 @@
    "code": "p1g0sl15",
    "keep": "best",
    "phase": "male"
+  },
+  "fish-s512-cand-592537436": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s512-cand-592537430": {
+   "code": "p1g2ss12",
+   "keep": "alt",
+   "phase": "male"
+  },
+  "fish-s512-cand-80609008": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s512-cand-604799334": {
+   "code": "o1g1sm14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s512-cand-429965990": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s512-cand-429965989": {
+   "code": "p1g1smo4",
+   "keep": "alt",
+   "phase": "male"
+  },
+  "fish-s512-cand-465158265": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s512-cand-458144345": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s512-cand-440115890": {
+   "code": "p1d1ss12",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s512-cand-588886035": {
+   "code": "o1g0sl14",
+   "keep": "best",
+   "phase": "female"
+  },
+  "fish-s512-cand-467139540": {
+   "code": "p1g2slk2",
+   "keep": "best",
+   "phase": "male"
+  },
+  "fish-s512-cand-467139553": {
+   "code": "p1g2slk2",
+   "keep": "dup",
+   "phase": "male"
   }
  }
 }

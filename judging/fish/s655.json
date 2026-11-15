@@ -131,6 +131,26 @@
   "fish-s655-cand-389926466": {
    "code": "p1g0sm14",
    "keep": "best"
+  },
+  "fish-s655-cand-411823093": {
+   "code": "p1g2ms12",
+   "keep": "dup"
+  },
+  "fish-s655-cand-411823111": {
+   "code": "p1g2ms12",
+   "keep": "dup"
+  },
+  "fish-s655-cand-411823116": {
+   "code": "p1g2ms12",
+   "keep": "best"
+  },
+  "fish-s655-cand-411823133": {
+   "code": "p1g2ms12",
+   "keep": "dup"
+  },
+  "fish-s655-cand-411823152": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
   }
  }
 }

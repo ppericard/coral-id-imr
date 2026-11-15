@@ -48,6 +48,12 @@ test('a fish photo named to the species: its first curated common name, then its
     fish([{f: 'x', sp: 's100'}], 'f:Damselfishes'),
     '<p class="fbsp">This photo: Blackbar chromis · <i>Chromis retrofasciata</i> <small>(now <i>Pycnochromis retrofasciatus</i> in WoRMS)</small></p>'
   );
+  // A PDF spelling shown another way by Pierre's decision (s278, the PDF's "Neoniphon argentus"; 2026-11-14): the name
+  // shown, no "now" beside it.
+  assert.strictEqual(
+    fish([{f: 'x', sp: 's278'}], 'f:Squirrelfishes'),
+    '<p class="fbsp">This photo: Clearfin squirrelfish · <i>Neoniphon argenteus</i></p>'
+  );
   // A species no reference names (Q247): the scientific name alone.
   assert.strictEqual(fish([{f: 'x', sp: 's679'}], 'f:Bigeyes'), '<p class="fbsp">This photo: <i>Priacanthus starnesi</i></p>');
 });

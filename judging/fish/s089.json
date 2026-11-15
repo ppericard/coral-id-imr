@@ -163,6 +163,26 @@
   "fish-s089-cand-597513948": {
    "code": "p1g1ml14",
    "keep": "best"
+  },
+  "fish-s089-cand-322150867": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s089-cand-72718955": {
+   "code": "p1g2bl11",
+   "keep": "best"
+  },
+  "fish-s089-cand-464907397": {
+   "code": "p1g1slk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a larger dark fish of another family just behind it, in shade and soft: confusion possible"
+  },
+  "fish-s089-cand-153877574": {
+   "code": "p1g1sm14",
+   "keep": "best"
   }
  }
 }

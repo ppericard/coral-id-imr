@@ -19,6 +19,9 @@ let FQ = store.get('reefid-admin-fq', 'all') === 'chk' ? 'chk' : 'all', // the q
   FFULL = false, // this tab: also show the candidates of species at their target
   FASIDE = false; // this tab: also show the ones the pass is sure go, not applied (the fish auto-sort's keep off)
 const FSKIP = new Set();
+// The species records the default covers read their presence around the instance's centre from (autosort.js
+// fishCoverOf, fishSeenFrom; Pierre, 2026-11-13, Q339 (b)): fish.json's, once admin.js fishLoad has them (FISHC).
+fishSeenFrom(sid => (FISHC && FISHC.species && FISHC.species[sid]) || null);
 // The card Pierre is setting rows or a crop on stays on screen (his values move it in the order: a phase he clears is no
 // longer a missing one) until he decides it, skips it or sends it elsewhere (Not this); every other render, an Undo
 // included, shows the queue's first.
@@ -380,7 +383,7 @@ function renderFishCand() {
     candFlags(
       `${
         nFull
-          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (8 observations, 12 for the cheatsheet's): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
+          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
           : ''
       }${
         nAside
@@ -406,7 +409,7 @@ function renderFishCand() {
     $v.innerHTML = `<section class="adm-sw adm-fsw${chk ? ' adm-blind' : ''}${FTAGS_OPEN ? ' adm-ftopen' : ''}" data-f="${esc(p.f)}" data-s="${esc(sid)}">${seg}
       <figure class="adm-swcard">
         <button type="button" class="adm-swph" data-zoom aria-label="Enlarge"><img ${fishSrc(pb, 0, chk)} alt=""></button>
-        <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}</span>
+        <span class="adm-swg"><i>${esc(n.sci)}</i>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}${from ? `<small>from <i>${esc(fishName(from).sci)}</i></small>` : ''}${fishPtx(FISHC.species[sid])}</span>
         <button type="button" class="adm-swx" data-x title="Exclude" aria-label="Exclude for good">×</button>
         <figcaption>${chk ? '<span class="adm-src adm-chk" title="Check">Check</span>' : ''}${fishSrcTag(p)}${!chk && ph ? `<span class="adm-src${nph ? ' adm-fnew' : ''}" title="${nph ? 'A phase none of its photos in play shows' : 'Its phase'}">${esc(ph)}${nph ? ' · new' : ''}</span>` : ''}${p.st ? `<span class="adm-src" title="iNaturalist / FishBase life stage or sex">${esc(p.st)}</span>` : ''}<span class="adm-t">${esc(p.t || '')}</span>${link}</figcaption>
       </figure>${chk ? '' : fishJudged(j)}

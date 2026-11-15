@@ -99,6 +99,50 @@
   "fish-s308-cand-fb-Patet_u0": {
    "code": "p1g0sl14",
    "keep": "best"
+  },
+  "fish-s308-cand-282458502": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s308-cand-454335349": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s308-cand-642868735": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-681527515": {
+   "code": "p1d1sl12",
+   "keep": "best"
+  },
+  "fish-s308-cand-681527635": {
+   "code": "p1d1sm12",
+   "keep": "dup"
+  },
+  "fish-s308-cand-435690390": {
+   "code": "d1g1sm1c1",
+   "keep": "best"
+  },
+  "fish-s308-cand-47218794": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s308-cand-595033091": {
+   "code": "p1g2bm11",
+   "keep": "best"
+  },
+  "fish-s308-cand-384984022": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s308-cand-407659531": {
+   "code": "o1g1sm1c2",
+   "keep": "best"
+  },
+  "fish-s308-cand-591246080": {
+   "code": "p1g2bs1c1",
+   "keep": "best"
   }
  }
 }

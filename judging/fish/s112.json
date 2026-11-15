@@ -195,6 +195,18 @@
   "fish-s112-cand-637617608": {
    "code": "p1g1ssx1",
    "keep": "dup"
+  },
+  "fish-s112-cand-703710850": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s112-cand-739834481": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s112-cand-739834517": {
+   "code": "p1g1sl1j2",
+   "keep": "alt"
   }
  }
 }

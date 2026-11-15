@@ -192,16 +192,17 @@ test('the photo lists follow curation.json: nothing Pierre excluded in data.json
 
 test('the Candidate photos workflow starts from the latest main and tidies the lists before its commit', () => {
   const y = fs.readFileSync(path.join(ROOT, '.github/workflows/approved-photos.yml'), 'utf8');
-  const job = y.slice(y.indexOf('  photos:'), y.indexOf('  r2:'));
+  // The photos job (read-only) makes the commit; photos-push (tests/photospush.test.js) pushes it.
+  const job = y.slice(y.indexOf('\n  photos:\n'), y.indexOf('\n  photos-push:\n'));
   assert.match(job, /actions\/checkout@v\d+\n\s+with:\n\s+ref: main\n/, 'a queued run must see the commit of the run before it');
   const tidy = job.indexOf('python tools/fetch_local.py --tidy'),
-    commit = job.indexOf('name: Commit');
+    commit = job.indexOf('name: Prepare the commit');
   assert.ok(tidy > 0 && tidy < commit, 'the tidy step runs before the commit');
   const files = job.indexOf('python tools/apply_excluded_archive.py --files'),
     sizes = job.indexOf('python tools/photos.py');
   assert.ok(files > 0 && files < sizes && sizes < tidy, 'a restored lecture photo: its file from history, its sizes, then back');
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
-  assert.match(job, /git add data\.json cand\.json excluded\.json fish-game\.json img/);
+  assert.match(job, /git add data\.json cand\.json excluded\.json fish-game\.json fish-photos\.json img/);
 });
 
 // One full refill for genus A, near Dauin only (the other tiers answer nothing), against a stubbed iNaturalist.

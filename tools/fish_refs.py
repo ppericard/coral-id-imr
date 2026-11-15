@@ -6,7 +6,8 @@ Pierre, 2026-11-05 and 2026-11-06: a photo a reference source uses to represent 
 first photo (judging/FISH.md "Reference photos"; core.js easyRank ranks the reference flag first among equally easy
 photos). Before this file a cover was tagged only when it happened to be among the fetched candidates (2 game photos).
 
-For every game species (fish.json species of a level-1 entry, not `out`), every circle-1 genus (app.js fishGenera: the
+For every game species (fish.json species of a level-1 entry, not `out`; its taxon the one its candidates come from,
+tools/fetch_fish.py photo_taxon: its photoTaxon when it has one, Q354 b), every circle-1 genus (app.js fishGenera: the
 first word of a circle-1 species' name) and every entry's family (fish.json teach fam), in this order:
   1. iNaturalist: the taxon's cover, then the other photos its taxon page shows (taxon_photos, iNaturalist's order),
      for a species all of them, for a genus or a family the first, that pass every game photo rule on the observation that holds it (the rules of tools/fetch_fish.py:
@@ -29,9 +30,9 @@ first word of a circle-1 species' name) and every entry's family (fish.json teac
 Each photo object has fish-photos.json's shape plus rep ("inaturalist" for the cover or a taxon-page photo, "fishbase"
 for FishBase's main picture; FishBase's other photos have none), via ("fishbase"), from (cover, taxon, fishbase) and for (the units it represents: species ids, "g:<genus>",
 "fam:<family>"), keyed by species (fish.json species id), so the file outlives a renaming of the teaching entries.
-tools/fish_judge.py apply() adds each one to the game photos of the entry that holds its species once it is judged at
-the reference level (core.js refLevel) (tools/fish_judge.json
-photos), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
+tools/fish_game.py ref_play puts each one in play (fish-game.json, on R2) for the entry that holds its species once it is
+judged sure on the candidates' rubric, whatever its reference level (Pierre, 2026-11-08, Q212; tools/fish_judge.json
+photos; the stopgap list of fish-photos.json, retired on 2026-11-15, took the reference-level ones), like any game photo: a reference photo is judged on what it shows, and its rep adds the flag r and one ease
 point (judging/FISH.md). One already in the list is tagged in place.
 
 Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the observations, read only, through tools/inat.py (about one request a second, the project's User-Agent, 429 / 5xx retried after a pause; rule C7), every reply cached
@@ -39,6 +40,7 @@ Network: iNaturalist API v1 for the taxa, v2 (only the fields used) for the obse
 is offline. Taxa 30 a request; one or two observation searches per taxon with a usable reference photo (the faved 200
 in the box, then anywhere while a photo is missing), then one or two id-window searches per photo still missing.
 Usage: python3 tools/fish_refs.py [--offline | --refresh] [--only t01,t02]
+       python3 tools/fish_refs.py --relabel   (after a change to region(): the away list's regions again, offline)
 """
 import argparse
 import bisect
@@ -63,7 +65,7 @@ SPECIES_RANKS = ("species", "subspecies", "variety")
 DEAD = (17, 19)
 # No cap per species (Pierre, 2026-11-06 14:02: "don't limit ourselves: the goal is a maximum of good photos to complement
 # the weaker ones on iNaturalist"): every iNaturalist cover and taxon-page photo and every FishBase photo that passes the
-# rules is listed; the judging decides which play (reference level only, tools/fish_judge.py add_refs).
+# rules is listed; the judging decides which play (tools/fish_game.py ref_play).
 INAT_MAX = FB_MAX = None
 # iNaturalist API v2 observation fields the rules read (a v1 reply of 200 observations weighs about 12 MB).
 FIELDS = ("id,quality_grade,location,place_ids,captive,taxon.id,taxon.name,taxon.rank,taxon.min_species_taxon_id,user.login,"
@@ -171,6 +173,10 @@ def passes(o, want):
 
 
 # The rough regions of an observation outside the box (the order matters: the first that holds), for Pierre's Q230.
+# Longitudes east of 180 are negative (the dateline at -180): Fiji, Samoa and Tonga straddle it. The Maldives come before
+# the Arabian Sea, whose box reaches 78 E (a northern Maldives atoll read "Arabian Sea"), and India's east coast is the
+# Bay of Bengal; New Zealand, the Cook, Line and Marshall Islands have boxes of their own before what is left of the
+# central Pacific (they all read "Fiji, Samoa, central Pacific" until 2026-11-14). After a change: --relabel.
 def region(o):
     ll = ll_of(o)
     if not ll or len(ll) != 2:
@@ -181,21 +187,35 @@ def region(o):
         return "Indo-West Pacific"
     if 12 <= la <= 30.5 and 32 <= lo <= 43.5:
         return "Red Sea"
+    if (-10 <= la < 8 and 65 < lo <= 82) or (8 <= la <= 10 and 79.5 <= lo <= 82):
+        return "Maldives, Sri Lanka, Chagos"
     if 5 <= la <= 31 and 43.5 < lo <= 78:
         return "Arabian Sea and the Gulfs"
     if -40 <= la < 12 and 20 <= lo <= 65:
         return "Western Indian Ocean"
+    if 5 <= la <= 30 and 78 < lo < 90:
+        return "Bay of Bengal"
     if -40 <= la <= 30 and 65 < lo < 90:
-        return "Maldives, Sri Lanka, Chagos"
+        return "Central Indian Ocean"
     if 15 <= la <= 30 and -179 <= lo <= -154:
         return "Hawaii"
     if -30 <= la <= -5 and -156 <= lo <= -124:
         return "French Polynesia"
-    if -40 <= la <= 30 and (lo > 170 or lo < -124):
-        return "Fiji, Samoa, central Pacific"
+    if -50 <= la < -25 and (lo > 165 or lo <= -170):
+        return "New Zealand and Kermadec Islands"
+    if -25 <= la < -5 and (lo > 170 or lo <= -167):
+        return "Fiji, Samoa, Tonga"
+    if -25 <= la < -5 and -167 < lo < -156:
+        return "Cook Islands"
+    if -5 <= la < 15 and lo > 170:
+        return "Marshall and Gilbert Islands"
+    if -5 <= la < 15 and -180 <= lo < -150:
+        return "Line and Phoenix Islands"
+    if -30 <= la <= 30 and (lo > 170 or lo < -124):
+        return "Central Pacific, elsewhere"
     if la > 30 and 100 <= lo <= 180:
         return "North of 30 N (Japan, Korea, China)"
-    if la < -30 and 90 <= lo <= 180:
+    if la < -30 and (lo >= 90 or lo < -125):
         return "South of 30 S"
     if -125 <= lo <= -77 and (la <= 9 or (la <= 15 and lo <= -84) or (lo <= -92 and not (la >= 18 and lo >= -98))):
         return "Eastern Pacific"
@@ -327,7 +347,7 @@ def fb_objs(s, fb, n=FB_MAX):
 def build(net, F, only=()):
     sp = {s["id"]: s for s in F["species"]}
     entries = [t for t in F["teach"] if t.get("level") == 1 and (not only or t["id"] in only)]
-    game = {t["id"]: [sp[i] for i in t.get("species", []) if i in sp and not sp[i].get("out") and sp[i].get("inat")] for t in entries}
+    game = {t["id"]: [sp[i] for i in t.get("species", []) if i in sp and not sp[i].get("out") and ff.photo_taxon(sp[i])] for t in entries}
     gen = {}  # entry id -> {genus name: [species]}, app.js fishGenera: circle-1 entries, circle-1 species
     for t in entries:
         if t.get("circle") == 1:
@@ -343,7 +363,7 @@ def build(net, F, only=()):
             names[(g, "genus")] = None
     for k in names:
         names[k] = find(net, *k)
-    T = taxa(net, [s["inat"] for L in game.values() for s in L] + [v for v in names.values() if v])
+    T = taxa(net, [ff.photo_taxon(s) for L in game.values() for s in L] + [v for v in names.values() if v])
     # The faved 200 of every taxon with a usable photo first: their (photo id, observation id) pairs place the other
     # photos' observations (obs_of).
     A = anchors([held(net, t) for t in sorted(T) if any(usable(p) for p in T[t]["photos"])])
@@ -367,7 +387,7 @@ def build(net, F, only=()):
 
     for t in entries:
         tid, L = t["id"], game[t["id"]]
-        by_inat = {s["inat"]: s for s in L}
+        by_inat = {ff.photo_taxon(s): s for s in L}
         fam = names.get((t.get("fam"), "family"))
         if fam:
             stats["family"][1] += 1
@@ -378,14 +398,14 @@ def build(net, F, only=()):
         for g, S in (gen.get(tid) or {}).items():
             gid = names.get((g, "genus"))
             stats["genus"][1] += 1
-            got = pick(net, T, gid, {s["inat"] for s in S}, 1, A) if gid else []
+            got = pick(net, T, gid, {ff.photo_taxon(s) for s in S}, 1, A) if gid else []
             if got:
                 stats["genus"][0] += 1
                 put(tid, inat_obj(*got[0], by_inat[got[0][1]["sp"]]["id"]), "g:" + g)
         for s in L:
             stats["species"] += 1
             far, seen = [], []
-            got = pick(net, T, s["inat"], {s["inat"]}, INAT_MAX, A, far, seen)
+            got = pick(net, T, ff.photo_taxon(s), {ff.photo_taxon(s)}, INAT_MAX, A, far, seen)
             audit += [(s["id"], *x) for x in seen]
             listed = {x["f"] for L in away.values() for x in L}  # two species iNaturalist lumps: listed once
             far = [x for x in map(lambda y: away_obj(*y), far) if x["f"] not in listed]
@@ -410,6 +430,18 @@ def away_obj(p, o, src):
             "lic": p["lic"], "from": src, "reg": region(o), "ll": [round(x, 1) for x in ll_of(o)]}
 
 
+def relabel(doc):
+    """The away list's regions again from each photo's stored coordinates (ll, to 0.1 degree), after a change to region():
+    no request, the photos untouched. Returns how many labels changed."""
+    n = 0
+    for L in doc["away"].values():
+        for x in L:
+            r = region({"loc": f"{x['ll'][0]},{x['ll'][1]}"})
+            n += r != x["reg"]
+            x["reg"] = r
+    return n
+
+
 def write(doc):
     dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
     lines = ["{", f'"_doc":{dump(doc["_doc"])},']
@@ -426,8 +458,14 @@ def main():
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--offline", action="store_true")
     g.add_argument("--refresh", action="store_true")
+    g.add_argument("--relabel", action="store_true")
     ap.add_argument("--only", default="")
     a = ap.parse_args()
+    if a.relabel:
+        doc = json.loads(OUT.read_text(encoding="utf-8"))
+        print(f"away: {relabel(doc)} region labels changed")
+        write(doc)
+        return
     net = ff.Net(CACHE, offline=a.offline, refresh=a.refresh)
     F = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
     only = set(filter(None, a.only.split(",")))

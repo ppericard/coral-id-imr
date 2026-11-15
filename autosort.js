@@ -119,8 +119,11 @@
   const FISHW = {tags: 't', ease: 'e', phase: 'p', crop: 'c'};
   // Observations in play per species (Pierre, 2026-11-04): 8 per circle-1 species, 12 for the PDF's 24 most sighted
   // (fish.json cs, the cheatsheet), at most 20 for now. The auto-sort proposes up to the target; Pierre adds beyond it.
-  const FISHT = {obs: 8, top: 12, cap: 20};
-  const fishTarget = sp => (sp && sp.cs ? FISHT.top : FISHT.obs);
+  // A species met only on the surprise cards (a wink family's: fishSpecies marks it wink) keeps a few really good photos,
+  // not a whole stock (Pierre, 2026-11-08, docs/ROADMAP.md "Surprise-only species"): its target is FISHT.wink, and the
+  // admin's Tree shows that many of its photos in play, the rest on demand (fishWinkFold).
+  const FISHT = {obs: 8, top: 12, cap: 20, wink: 5};
+  const fishTarget = sp => (sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
   function fishParse(code) {
     const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
     if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
@@ -174,7 +177,7 @@
   // licence or Pierre's own before CC BY-NC (core.js rightsRank, a tie-break only: Pierre, 2026-11-08, Q270), then a fixed
   // order, whoever took the photo (Pierre, 2026-11-06: his own photos are never forced; before, they came first); the
   // rest wait as candidates. Off (keepOn false): nothing applied, Checks still drawn.
-  const {refScore, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid, FISH_COUNT, fishOther} =
+  const {refScore, refLevel, easyRank, rightsRank, fishOn, fishIn, fishGone, fishPid, FISH_COUNT, fishOther} =
     typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   function fishRun(cands, sug, species, F, day, keepOn = true) {
     F = F || {};
@@ -610,10 +613,14 @@
       full: false
     };
   }
-  // The family's cover: this photo, or none again (his pick taken off).
+  // Photo f among the photos L: under its name, else the same photo under another name (core.js fishPid: a reference
+  // photo fi<id> and its candidate copy fish-<species>-cand-<id> are one photo, and the game plays one copy), as the app
+  // finds his picks (app.js fishCurate); null when it is not there.
+  const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => fishPid(p.f) === fishPid(f)))) || null;
+  // The family's cover: this photo, or none again (his pick taken off, under either of its names).
   const fishCover = (F, tid, f) =>
     fishPick(F, tid, k => {
-      if (k.cover === f) delete k.cover;
+      if (k.cover && fishPid(k.cover) === fishPid(f)) delete k.cover;
       else k.cover = f;
     });
   // Validated, or not.
@@ -641,26 +648,30 @@
   // ease and tags, else the pass's; a reference source, rep or the flag r), the easiest, the most reference-like
   // (refScore), an open licence or his own before CC BY-NC (rightsRank, Q270), then a fixed hash. Never by who took them
   // (Pierre, 2026-11-06: his own photos are never boosted; the easy and reference photos come first, whoever took them).
+  // A photo as core.js easyRank and refLevel read it: his ease and tags, else the pass's (j).
+  const fishEase = (p, F, j) => ((F || {}).ease || {})[p.f] || (j(p.f) || {}).e || 0;
+  function fishRec(p, F, j) {
+    const jt = ((F || {}).tags || {})[p.f] || (j(p.f) || {}).jt || '';
+    return {
+      f: p.f,
+      jt,
+      e: fishEase(p, F, j) || undefined,
+      rep: p.rep || jt.slice(7).includes('r') || undefined,
+      lic: p.lic,
+      own: p.own,
+      a: p.a,
+      p
+    };
+  }
   function fishOrder(L, F, tid, sid, j = () => null) {
     F = F || {};
     const fe = ((((F.genera || {})[tid] || {}).feat || {})[sid] || []).filter(f => L.some(p => p.f === f)),
-      ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
-      jt = p => (F.tags || {})[p.f] || (j(p.f) || {}).jt || '',
       R = L.filter(p => !fe.includes(p.f));
     return {
       feat: fe.map(f => L.find(p => p.f === f)),
       rest: easyRank(
-        R.map(p => ({
-          f: p.f,
-          jt: jt(p),
-          e: ease(p) || undefined,
-          rep: p.rep || jt(p).slice(7).includes('r') || undefined,
-          lic: p.lic,
-          own: p.own,
-          a: p.a,
-          p
-        })),
-        x => -(ease(x.p) || 3)
+        R.map(p => fishRec(p, F, j)),
+        x => -(fishEase(x.p, F, j) || 3)
       ).map(x => x.p)
     };
   }
@@ -677,14 +688,65 @@
     const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
     return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
-  function fishCoverOf(L, F, tid, j = () => null) {
+  // Without his pick, the default cover of a node with leaves (Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864): among its
+  // leaves (species) with a reference-level photo that is not a juvenile (core.js refLevel), the one most seen around the
+  // instance's centre by distinct observers (ties: observations, then the game's order), then his ★ cover of that leaf
+  // while in play and not a juvenile, else that leaf's first such reference photo in the game's order; with no reference
+  // photo under the node, the most seen leaf with an adult photo, his ★ cover of it, else its first adult photo; a node
+  // with no presence keeps the order's first.
+  // seen(leaf id): [observers, observations] around the centre (fishNear); by default from the species records the admin
+  // registers (fishSeenFrom, admin-fish.js). A photo's leaf: the species his curation adds it to (F.add: a photo sent
+  // elsewhere with Not this and added there keeps its candidate's first species in sid), else its game record's (sp), else
+  // its candidate's (sid). The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
+  // His pick is found under either of its names (fishAt).
+  function fishCoverOf(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
-      juv = p => fishJuv(p, j(p.f), F),
-      c = k && L.find(p => p.f === k);
-    if (c && !juv(c)) return c;
-    const R = fishOrder(L, F, tid, '', j).rest;
-    return R.find(p => !juv(p)) || R[0] || null;
+      c = fishAt(L, k);
+    if (c && !fishJuv(c, j(c.f), F)) return c;
+    return (fishCoverRule(L, F, tid, j, seen) || {}).p || null;
   }
+  // A leaf's (a species') cover, as the app's sheets show it (learn.js fishSpPhotos, spPhoto): his ★ pick while in play
+  // and not a juvenile, else its first photo that is not a juvenile in the page's order (L: featured first, then the game's
+  // order: fishOrder), else its first; null for no photo. A leaf has no default rule of its own (Q339 (b) picks among a
+  // node's leaves).
+  function fishLeafCover(L, F, tid, j = () => null) {
+    const k = (((F || {}).genera || {})[tid] || {}).cover,
+      adult = p => !fishJuv(p, j(p.f), F),
+      c = fishAt(L, k);
+    L = L || [];
+    return (c && adult(c) ? c : null) || L.find(adult) || L[0] || null;
+  }
+  // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
+  // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
+  // whether the leaves competed on a reference photo, mine: p is his ★ cover of that leaf}; null for no photo.
+  function fishCoverRule(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
+    const juv = p => fishJuv(p, j(p.f), F),
+      R = fishOrder(L, F, tid, '', j).rest,
+      A = R.filter(p => !juv(p)),
+      Ref = A.filter(p => refLevel(fishRec(p, F, j))),
+      leaf = p => ((F || {}).add || {})[p.f] || p.sp || p.sid;
+    let best = null;
+    (Ref.length ? Ref : A).forEach(p => {
+      const s = seen(leaf(p)) || [0, 0];
+      if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
+    });
+    if (!best) return R[0] ? {p: R[0], leaf: leaf(R[0]), seen: [0, 0], ref: false, mine: false} : null;
+    const sk = (((F || {}).genera || {})[leaf(best.p)] || {}).cover,
+      m = fishAt(A, sk);
+    return {p: m || best.p, leaf: leaf(best.p), seen: best.s, ref: Ref.length > 0, mine: !!m};
+  }
+  // A leaf's presence around the instance's centre (Q339: "Il faudra rendre générique la localisation centrale de
+  // l'instance"; the centre: tools/instance.json, fish.json centre): [distinct Research Grade observers, observations]
+  // from its record's present, nearU and nearN, else their first names (dauinU, dauin: tools/build_fish.py); [0, 0] with
+  // none. The app's copy: app.js nearSeen.
+  const fishNear = r => {
+    const p = (r && r.present) || {};
+    return [p.nearU ?? p.dauinU ?? 0, p.nearN ?? p.dauin ?? 0];
+  };
+  // Where fishCoverOf finds a species' record by id (the admin's fish.json species, FISHC: admin-fish.js registers it);
+  // none until then, so every default keeps the game's order.
+  let fishSeenOf = () => null;
+  const fishSeenFrom = get => (fishSeenOf = typeof get === 'function' ? get : () => null);
   // The IMR phases of a family (fish.json families phase: the phase lines of the IMR entries that cover it; dimorph: its
   // sexes differ), as the phase words of fishPhase: juveniles, intermediate (sub-adult, initial) and terminal phases,
   // males and females.
@@ -762,6 +824,28 @@
       });
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
+  // The species records the admin reads ({id: fish.json species}), each species of a wink family (fish.json families
+  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink. Read only, never stored.
+  function fishSpecies(J) {
+    J = J || {};
+    const wk = new Set((J.families || []).filter(f => f && f.wink).flatMap(f => f.species || []));
+    return Object.fromEntries((J.species || []).map(x => [x.id, wk.has(x.id) ? {...x, wink: true} : x]));
+  }
+  // A wink species' photos in play on the admin's Tree (docs/ROADMAP.md "Surprise-only species"): only n (FISHT.wink) shown,
+  // the rest folded. Its featured photos (Pierre's Feature) always shown, then the surprise card's own photos (fish.json
+  // wink.photos, by photo id as quiz.js winkPhoto reads them, in their order), then the page's order (fishOrder: reference
+  // level first, then the easiest). row: fishOrder's {feat, rest}; returns {feat, show (rest shown), fold (rest folded)}.
+  // Display only: every photo stays in play and counted.
+  function fishWinkFold(row, photos, n = FISHT.wink) {
+    const feat = (row && row.feat) || [],
+      rest = (row && row.rest) || [],
+      want = (photos || []).map(fishPid),
+      at = p => want.indexOf(fishPid(p.f)),
+      card = rest.filter(p => at(p) >= 0).sort((a, b) => at(a) - at(b)),
+      ord = [...card, ...rest.filter(p => at(p) < 0)],
+      k = Math.max(0, n - feat.length);
+    return {feat, show: ord.slice(0, k), fold: ord.slice(k)};
+  }
 
   // Fish Coverage (admin plan PR 8; docs/ROADMAP.md "Admin for every subject" row 8): per family, genus and species, the
   // photos in play, the observations against the target, the easy photos (ease 4-5), the reference photos, the phases shown
@@ -771,17 +855,22 @@
   // species' target; for a genus or family the species at target, ok, of all, of), easy, ref, ph (phases shown), wait
   // (candidates waiting; a species also waitObs, the new observations they hold), need (what is missing, as fishNeeds
   // words), imr}.
-  function fishCov(U, play, species, cand, F, j = () => null) {
-    F = F || {};
-    // The candidates waiting, by the species they wait in now: one Pierre sent elsewhere with Not this waits there
-    // (fishState; Codex review #659).
+  // The candidates waiting (cand: fish-cand.json's, by their first species), by the species they wait in now: one Pierre
+  // sent elsewhere with Not this waits there (fishState; Codex review #659); one in play, rejected or gone does not wait.
+  // {species id: [photo]}. Read by Coverage and the Tree's node pages.
+  function fishWaiting(cand, F) {
     const waiting = {};
     Object.entries(cand || {}).forEach(([orig, L]) =>
-      L.forEach(p => {
-        const x = fishState(F, p.f, orig);
+      (L || []).forEach(p => {
+        const x = fishState(F || {}, p.f, orig);
         if (x.st === null) (waiting[x.sid] = waiting[x.sid] || []).push(p);
       })
     );
+    return waiting;
+  }
+  function fishCov(U, play, species, cand, F, j = () => null) {
+    F = F || {};
+    const waiting = fishWaiting(cand, F);
     const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
       isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
       spRow = (sid, fam) => {
@@ -843,6 +932,22 @@
     });
     return out;
   }
+  // Coverage's To do (fish): what to act on, each [key, level of fishCov's rows, words, row test]; F: curation.json fish.
+  // Inbox › Coverage › Games shows each as a chip over its rows, To do › All its counts (admin.js renderFishCov,
+  // fishTodoLines).
+  const FISHCOV_TODO = [
+    ['spwait', 'sp', 'species under target with candidates waiting', r => r.obs < r.tgt && r.wait],
+    ['spnone', 'sp', 'species with no photo in play', r => !r.n],
+    ['famv', 'fam', 'families validated but incomplete', (r, F) => !!(((F && F.genera) || {})[r.id] || {}).ok && r.need.length],
+    ['famnr', 'fam', 'families not ready to validate', r => r.need.length]
+  ];
+  // Its counts over fishCov's rows C, those keep(row) lets through (the IMR filter): [[key, level, words, n]], n > 0 only.
+  const fishCovTodo = (C, F, keep = () => true) =>
+    FISHCOV_TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(r => keep(r) && fn(r, F)).length]).filter(x => x[3]);
+  // The fish candidates To do counts (Candidates' queue, autosort.js fishQueue): those the swiper shows by default, never
+  // the auto-sort's Checks (Pierre, 2026-11-09: not to-dos, they have their own count in Candidates), nor the ones of a
+  // species at its target or set aside.
+  const fishCandTodo = Q => (Q || []).filter(x => !x.chk && !x.full && !x.aside).length;
   // Where to look (fish): the species most worth a candidate search, those under target whose waiting candidates cannot
   // fill the gap; the IMR course's (circle 1) first, then the PDF's most sighted (cs), then the largest gap. [{...species
   // row, gap}], best first.
@@ -1209,18 +1314,30 @@
     FISHFEAT,
     fishPick,
     fishFeat,
+    fishAt,
     fishCover,
     fishOk,
     fishDrop,
     fishOrder,
     fishCoverOf,
+    fishCoverRule,
+    fishLeafCover,
+    fishNear,
+    fishRec,
+    fishSeenFrom,
     fishJuv,
     fishUnitPhases,
     FISHEASY,
     fishNeeds,
     fishUnits,
+    fishSpecies,
+    fishWinkFold,
     fishCov,
+    fishWaiting,
     fishLook,
+    FISHCOV_TODO,
+    fishCovTodo,
+    fishCandTodo,
     fishAgree,
     fishPairs,
     FMONT_V,

@@ -11,21 +11,26 @@ const test = require('node:test'),
   vm = require('vm'),
   block = require('./block.js');
 const C = require('../core.js'),
-  A = require('../autosort.js');
+  A = require('../autosort.js'),
+  {nodeCover} = require('../admin-covers.js');
 const ROOT = path.join(__dirname, '..'),
   read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
   src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8');
 
 // The app's fish build (fishBuild, fishCurate, fishGenera, rankPhotos) and its card photo (cover), with photoDiff
-// (model.js) when given: run(raw, cur) builds FISH from {f, ph, gm} under curation cur.
+// (model.js) when given: run(raw, cur) builds FISH from {f, ph, gm} under curation cur. The made-up worlds below list
+// their photos as fish-photos.json's first photos (gm empty): records of photos in play by themselves (auto), as the
+// real file's are, so Pierre's curation takes one out by its photo id (core.js fishPhotos, fishIn).
+const inPlay = P => Object.fromEntries(Object.entries(P || {}).map(([t, L]) => [t, L.map(p => ({auto: 'cand', ...p}))]));
 function app(photoDiff) {
   const ctx = {
     fishGen: C.fishGen,
-    fishPhotos: C.fishPhotos,
+    fishPhotos: (first, game, cur) => C.fishPhotos(game && Object.keys(game).length ? first : inPlay(first), game, cur),
     easyRank: C.easyRank,
     easyCover: C.easyCover,
     fishPid: C.fishPid,
     fishScoreTree: C.fishScoreTree,
+    refLevel: C.refLevel,
     ...(photoDiff ? {photoDiff} : {})
   };
   vm.createContext(ctx);
@@ -37,13 +42,13 @@ function app(photoDiff) {
       block(src, 'const fishBuild = () => {', 'const fishLoad = () =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
       '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); }; this.cover = cover;' +
-      '\nthis.juvP = juvP; this.adultFirst = adultFirst;',
+      '\nthis.juvP = juvP; this.adultFirst = adultFirst; this.seenCover = seenCover; this.nearSeen = nearSeen;',
     ctx
   );
   return ctx;
 }
 
-// One family of two species in one genus, its photos from the stopgap list: fi1 the easiest, fi2 harder, fi3 of s2.
+// One family of two species in one genus, its photos in play (auto: inPlay above): fi1 the easiest, fi2 harder, fi3 of s2.
 const F = {
   families: [{id: 'f:A', name: 'As', sci: ['Aidae'], species: ['s1', 's2'], genera: ['g:Xus'], circle: 1}],
   genera: [{id: 'g:Xus', name: 'Xus', species: ['s1', 's2']}],
@@ -80,7 +85,7 @@ test("fish cover: Pierre's ★ Cover is the card's photo while in play, else the
   assert.strictEqual(X.cover(G).f, 'fi1');
   assert.ok(!G.views.wide.some(p => p.f === 'fi2'));
   assert.strictEqual(X.cover(X.run(raw(), cur({cover: 'gone'})).gen['f:A']).f, 'fi1');
-  // The same photo under its candidate name (the admin picked the candidate, the game still plays its stopgap copy).
+  // The same photo under its candidate name (the admin picked the candidate, the game plays its reference copy).
   assert.strictEqual(X.cover(X.run(raw(), cur({cover: 'fish-s1-cand-2'})).gen['f:A']).f, 'fi2');
   // The genus unit (fishGenera) keeps its own cover: a family's pick is the family's.
   const g = X.run(raw(), cur({cover: 'fi2'})).gen['g:Xus'];
@@ -114,7 +119,9 @@ test('fish Feature: his featured photos of a species, in his order, those in pla
 });
 
 // On the real files: every curated cover the game plays is the family's card photo, as the admin's page shows it
-// (autosort.js fishCoverOf over the photos in play, fishGameIn).
+// (autosort.js fishCoverOf over the photos in play, fishGameIn), and the admin's Tree bar gives the app's reason (his ★, a
+// juvenile ignored, out of play: admin-covers.js nodeCover), the photo matched by its id under either name (core.js
+// fishPid: his pick on a reference photo whose candidate copy the game plays, 2026-11-14, f:Damselfishes).
 test("real data: every curated fish cover in play is the card's photo, the admin's and the app's alike", () => {
   const f = read('fish.json'),
     P = read('fish-photos.json'),
@@ -123,14 +130,38 @@ test("real data: every curated fish cover in play is the card's photo, the admin
     X = app(),
     FISH = X.run({f, ph: P, gm: gm.photos ? gm : {photos: {}}}, cu),
     G = (cu.fish || {}).genera || {},
-    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
-    units = A.fishUnits(f);
+    all = Object.values(gm.photos || {}).flat(),
+    play = A.fishGameIn(all, cu),
+    gj = new Map(all.map(p => [p.f, {e: p.e, jt: p.jt}])), // the admin's fuJ falls back on the game record's judgment
+    units = A.fishUnits(f),
+    pid = C.fishPid;
   let n = 0;
+  Object.entries(G).forEach(([id, k]) => {
+    const g = FISH.gen[id],
+      u = units.find(x => x.id === id);
+    if (!k.cover || !g || !u) return;
+    const rec = g.views.wide.find(p => pid(p.f) === pid(k.cover)),
+      why = !rec ? 'gone' : X.juvP(rec) ? 'juv' : 'mine',
+      c = nodeCover(
+        id,
+        play.filter(p => u.species.includes(p.sp)),
+        cu.fish,
+        x => gj.get(x) || null
+      );
+    assert.strictEqual(c.gone ? 'gone' : c.juv ? 'juv' : c.by, why, `${id}: the admin's reason is the app's`);
+    if (why === 'mine') assert.strictEqual(pid(c.p.f), pid(X.cover(g).f), `${id}: the admin's cover is the app's`);
+  });
   Object.entries(G).forEach(([id, k]) => {
     const g = FISH.gen[id];
     if (!k.cover || !g) return;
-    const inPlay = g.views.wide.some(p => C.fishPid(p.f) === C.fishPid(k.cover));
-    if (inPlay) {
+    const rec = g.views.wide.find(p => C.fishPid(p.f) === C.fishPid(k.cover));
+    // A pick on a juvenile is ignored, by the app and the admin alike (Pierre, 2026-11-13: "Un juvénile ne devrait
+    // probablement jamais finir en couverture"; the next test): a judging pass can tag his pick juvenile after he made it.
+    if (rec && X.juvP(rec)) {
+      assert.notStrictEqual(C.fishPid(X.cover(g).f), C.fishPid(k.cover), `${id}: a juvenile pick is ignored`);
+      return;
+    }
+    if (rec) {
       n++;
       assert.strictEqual(C.fishPid(X.cover(g).f), C.fishPid(k.cover), id);
     }
@@ -142,7 +173,8 @@ test("real data: every curated fish cover in play is the card's photo, the admin
           cu.fish,
           id
         );
-    if (adm && adm.f === k.cover) assert.strictEqual(X.cover(g).f, k.cover, `${id}: the admin shows it, the app must too`);
+    if (adm && pid(adm.f) === pid(k.cover))
+      assert.strictEqual(pid(X.cover(g).f), pid(k.cover), `${id}: the admin shows it, the app must too`);
   });
   if (Object.values(G).some(k => k.cover)) assert.ok(n, 'at least one curated cover is in play');
 });
@@ -196,6 +228,118 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
   assert.strictEqual(ctx.tile({views: {wide: [jl, jp, land]}}, true).f, 'land');
   assert.strictEqual(ctx.tile({views: {wide: [jl, sq]}}, true).f, 'sq', 'nothing suits: the first that is not a juvenile');
   assert.strictEqual(ctx.tile({views: {wide: [jl, jp]}}, true).f, 'jl', 'juveniles only: the first');
+});
+
+// The Learn band rotates (home.js landPool, bandPhoto; ROADMAP "Fish Home mosaic: rotate the photos", Pierre,
+// 2026-11-08): each landscape tile draws one of its unit's photos that suit it, his cover first (Q291) then its reference
+// photos (core.js refLevel) in the game's order, at most LAND_ROT, the day's pick (dayPick: the same all day, so the
+// service worker's cached photos serve Home after the day's first visit); a unit with none keeps tilePhoto's photo.
+const homeBand = () => {
+  const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
+    X = app(),
+    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, refLevel: C.refLevel};
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) +
+      '\nthis.tile = tilePhoto; this.pool = landPool; this.band = bandPhoto; this.ROT = LAND_ROT;',
+    ctx
+  );
+  return {X, ctx};
+};
+const DAY = 864e5,
+  NOON = new Date(2026, 10, 15, 12).getTime(); // local noon: three hours either way stay in the day
+test('Home band: a landscape tile rotates among his cover and the reference photos that suit it', () => {
+  const {X, ctx} = homeBand();
+  const ref = (f, o = {}) => ({f, ar: 1.5, jt: 'p1g0sl1', e: 5, ...o}),
+    r1 = ref('r1'),
+    r2 = ref('r2'),
+    r3 = ref('r3'),
+    easy = ref('easy', {e: 4}), // fits, not a reference photo (e 4 without rep)
+    sq = ref('sq', {ar: 1}),
+    cut = ref('cut', {jt: 'p0g0sl1'}),
+    juv = ref('juv', {jt: 'p1g0sl1j'}),
+    cov = ref('cov', {e: 3}); // his cover: fits the tile, not reference-level
+  assert.ok(C.refLevel(r1) && !C.refLevel(easy) && !C.refLevel(cov));
+  const g = {views: {wide: [r1, sq, cut, juv, easy, r2, cov, r3]}};
+  const fs_ = L => Array.from(L, p => p.f); // out of the vm's realm
+  assert.deepStrictEqual(fs_(ctx.pool(g)), ['r1', 'r2', 'r3'], 'the reference photos that suit the tile, in order');
+  assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: cov})), ['cov', 'r1', 'r2', 'r3'], 'his cover first, once, reference or not');
+  assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: r2})), ['r2', 'r1', 'r3'], 'a cover among them is not shown twice');
+  assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: sq})), ['r1', 'r2', 'r3'], 'a cover that does not suit the tile stays out');
+  const many = {views: {wide: Array.from({length: 10}, (_, i) => ref('m' + i))}};
+  assert.strictEqual(ctx.pool(many).length, ctx.ROT, `at most LAND_ROT (${ctx.ROT})`);
+  // The band shows one of them, the day's: the same at every drawing of a day (three hours either way), each of them over
+  // the days, not the same for every unit; a unit with none keeps tilePhoto's photo; square tiles: the card photo.
+  const gc = {...g, coverP: cov},
+    pool = fs_(ctx.pool(gc)),
+    days = Array.from({length: 60}, (_, k) => ctx.band(gc, true, 'f:A', NOON + k * DAY).f);
+  days.forEach(f => assert.ok(pool.includes(f), f));
+  assert.deepStrictEqual([...new Set(days)].sort(), [...pool].sort(), 'over 60 days, every photo of the pool');
+  [-3, -1, 1, 3].forEach(h => assert.strictEqual(ctx.band(gc, true, 'f:A', NOON + h * 36e5).f, days[0], `the day's pick, ${h} h`));
+  assert.ok(
+    Array.from({length: 20}, (_, k) => ctx.band(gc, true, 'f:' + k, NOON).f).some(f => f !== days[0]),
+    "the day's pick differs between units"
+  );
+  const none = {views: {wide: [sq, easy, r1].map(p => ({...p, e: p === r1 ? 3 : p.e}))}};
+  assert.strictEqual(ctx.pool(none).length, 0);
+  assert.strictEqual(ctx.band(none, true, 'f:A', NOON).f, ctx.tile(none, true).f, 'none to rotate: the photo as before');
+  assert.strictEqual(ctx.band(none, true, 'f:A', NOON).f, 'easy');
+  assert.strictEqual(ctx.band({...g, coverP: sq}, false, 'f:A', NOON).f, 'sq', 'square tiles: the card photo');
+  // On the real files: every photo a tile can draw suits it, his fitting cover leads, and most circle-1 units rotate.
+  const FISH = app().run(
+    {f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))},
+    read('curation.json')
+  );
+  const units = Object.values(FISH.gen).filter(u => u.views.wide.length && u.circle === 1);
+  units.forEach(u => {
+    const P = ctx.pool(u);
+    assert.ok(P.length <= ctx.ROT && new Set(P).size === P.length, u.name);
+    P.forEach(p => assert.ok(p.ar >= 1.3 && p.ar <= 1.8 && p.jt.charAt(1) === '1' && !X.juvP(p), `${u.name} ${p.f}`));
+    if (P.length && u.coverP && P.includes(u.coverP)) assert.strictEqual(P[0], u.coverP, u.name);
+  });
+  const rot = units.filter(u => ctx.pool(u).length > 1).length;
+  assert.ok(rot > units.length / 2, `${rot} of ${units.length} circle-1 units rotate`);
+});
+
+// Home's band rotates only among photos on R2, never one still remote (r: 1 with its online original: fish-photos.json,
+// the stopgap's), which app.js thumb serves from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver;
+// a unit with one R2 photo that suits the tile shows it every day, as before #909. A tile's own pick takes one on R2
+// first; before fish-game.json is in (app.js fishHome) every photo is remote, and it still takes one that suits the tile.
+test('Home band: rotates only among R2 photos; a tile prefers one on R2', () => {
+  const {X, ctx} = homeBand();
+  const ref = (f, o = {}) => ({f, ar: 1.5, jt: 'p1g0sl1', e: 5, ...o}),
+    rem = (f, o) => ref(f, {r: 1, src: `https://inaturalist-open-data.s3.amazonaws.com/photos/${f.slice(2)}/original.jpg`, ...o}),
+    a = rem('fi9001'),
+    b = ref('r1'),
+    c = rem('fi9002'),
+    d = ref('r2');
+  assert.ok(C.refLevel(a) && C.refLevel(c), 'remote reference photos that suit the tile');
+  const fs_ = L => Array.from(L, p => p.f);
+  assert.deepStrictEqual(fs_(ctx.pool({views: {wide: [a, b, c, d]}})), ['r1', 'r2'], 'only the R2 photos rotate');
+  assert.deepStrictEqual(fs_(ctx.pool({views: {wide: [a, b, c]}, coverP: a})), ['r1'], 'one R2 photo: that one');
+  const one = {views: {wide: [a, b, c]}};
+  for (let k = 0; k < 30; k++) assert.strictEqual(ctx.band(one, true, 'f:A', NOON + k * DAY).f, 'r1', 'one R2 photo: every day');
+  // A unit with no pool: the tile's own pick (and the Identify door's art), the first R2 photo that suits it.
+  assert.strictEqual(ctx.tile({views: {wide: [rem('fi9003', {e: 4}), ref('e1', {e: 4})]}}, true).f, 'e1');
+  // Remote photos only (the stopgap's, before fish-game.json): the first that suits the tile, never one of another shape.
+  const stop = {views: {wide: [rem('fi9004', {ar: 1}), rem('fi9005', {e: 4})]}};
+  assert.strictEqual(ctx.pool(stop).length, 0);
+  assert.strictEqual(ctx.band(stop, true, 'f:A', NOON).f, 'fi9005', 'all remote: the one that suits the tile');
+  // On the real files, with and without his curation: no remote photo in any unit's pool, nor on the tile of one with none.
+  const raw = {f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))};
+  for (const cur of [read('curation.json'), null]) {
+    const units = Object.values(X.run(raw, cur).gen).filter(u => u.views.wide.length),
+      shown = u => (ctx.pool(u).length ? ctx.pool(u) : [ctx.tile(u, true)]);
+    assert.deepStrictEqual(
+      units.flatMap(u =>
+        shown(u)
+          .filter(p => p.r && p.src)
+          .map(p => `${u.name} ${p.f}`)
+      ),
+      [],
+      cur ? 'curated' : 'no curation yet'
+    );
+  }
 });
 
 // A wink's surprise card (quiz.js winkPhoto; Pierre, 2026-11-08, Q290, of the Thresher sharks: "we can use my cover for
@@ -258,13 +402,15 @@ test("genus and species covers: a 'g:' key is the genus's card, a species key it
   assert.deepStrictEqual(Object.keys(B.covers), []);
   B = X.run(raw2(), cur2({'g:Xus': {cover: 'fi3'}, s1: {cover: 'fi2'}, 'g:Yus': {cover: 'fi5'}, s3: {cover: 'fi5'}}));
   assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi3', "the genus unit's card");
-  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi1', "the family's card unchanged");
+  // The family's default shows s1 (no presence: the easy order's first species), so his ★ cover of s1 (Pierre, 2026-11-14
+  // on #864: never override a manual choice).
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2', "the family's default: his ★ cover of its species");
   assert.strictEqual(B.gen['g:Xus'].views.wide[0].f, 'fi1', "the games' order unchanged");
   assert.strictEqual(B.covers.s1.f, 'fi2');
   assert.strictEqual(B.covers['g:Yus'].f, 'fi5', 'a genus with no unit');
   assert.strictEqual(B.covers.s3.f, 'fi5');
   assert.ok(!B.gen.s1 && !B.gen['g:Yus'], 'no unit made for them');
-  // A photo of another species or genus is no cover of this one; a candidate name finds its stopgap copy.
+  // A photo of another species or genus is no cover of this one; a candidate name finds its reference copy.
   B = X.run(raw2(), cur2({s1: {cover: 'fi3'}, 'g:Yus': {cover: 'fi1'}, s2: {cover: 'fish-s1-cand-2'}}));
   assert.deepStrictEqual(Object.keys(B.covers), []);
   assert.strictEqual(X.run(raw2(), cur2({s1: {cover: 'fish-s1-cand-2'}})).covers.s1.f, 'fi2');
@@ -291,14 +437,17 @@ function sheets(B) {
       thumb: p => `data-f="${p.f}"`,
       noFish: () => '<nofish>',
       spOpen: () => true,
-      genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id))
+      genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id)),
+      seenCover: X.seenCover,
+      fishSeen: sid => X.nearSeen((B.sps || {})[sid]),
+      fishSpPick: sid => (B.covers || {})[sid] || null
     };
   vm.createContext(ctx);
   vm.runInContext(
     'let FSPH = null, FSPH_OF = null;\n' +
       block(ls, 'const fishSpPhotos = () => {', '// The one "No photo yet" drawing', {file: 'learn.js'}) +
       block(ls, 'function fishGenusRow(g, flat) {', '\n}\n', {through: 1, file: 'learn.js'}) +
-      '\nthis.spPhoto = spPhoto; this.genCover = genCover; this.sp = fishSpPhotos; this.row = fishGenusRow;',
+      '\nthis.spPhoto = spPhoto; this.genCover = genCover; this.sp = fishSpPhotos; this.row = fishGenusRow; this.nodeCover = nodeCover;',
     ctx
   );
   return ctx;
@@ -433,4 +582,186 @@ test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alon
   assert.deepStrictEqual([...ctx.ranks(plants)], ['order', 'family', 'genus']);
   assert.strictEqual(ctx.rankOf(plants, 'f:Rosaceae'), 'family');
   assert.strictEqual(ctx.rankOf(coral, 'Acropora'), coral.rank);
+});
+
+// ---- The default cover of a node with leaves (Pierre, 2026-11-13, Q339 (b): "ok" to distinct observers; 2026-11-14 on
+// #864: among the species that have a reference photo; his ★ species cover when he picked one): when he has picked no
+// cover for the node, among its species with a reference-level photo that is not a juvenile, the one most seen around the
+// instance's centre by distinct observers (ties: observations, then the easy order), then his ★ cover of that species,
+// else its easiest such reference photo; with no reference photo under the node, the most seen species with an adult
+// photo; a node with no presence keeps the easy order's first. The app (app.js seenCover: fishCurate, rankPhotos;
+// learn.js nodeCover) and the admin (autosort.js fishCoverOf) alike.
+// f:A and g:Xus hold s1 (fi1 e5, fi2 e3) and s2 (fi3 e4, fi6 e2): fi1 leads the easy order; none is reference-level
+// unless a case makes it one (side profile, sharp, a reference source: core.js refLevel).
+const seenF = pres => ({...F2, species: F2.species.map(s => (pres[s.id] ? {...s, present: pres[s.id]} : s))});
+const REFJT = 'p1g0sl1';
+const seenRaw = (pres, juv = [], ref = []) => {
+  const r = raw2();
+  r.f = seenF(pres);
+  Object.values(r.ph.photos)
+    .flat()
+    .forEach(p => {
+      if (juv.includes(p.f)) p.ph = 'juvenile';
+      if (ref.includes(p.f)) Object.assign(p, {jt: REFJT, rep: 'inaturalist', e: Math.max(p.e, 4)});
+    });
+  return r;
+};
+const CASES = [
+  // [what, presence, juveniles, reference-level photos, the default]
+  ['no presence: the easy order, as before', {}, [], [], 'fi1'],
+  [
+    'no reference photo: the most observers wins over the easiest photo',
+    {s1: {dauinU: 2, dauin: 5}, s2: {dauinU: 9, dauin: 9}},
+    [],
+    [],
+    'fi3'
+  ],
+  ['tied observers: the most observations', {s1: {dauinU: 9, dauin: 12}, s2: {dauinU: 9, dauin: 9}}, [], [], 'fi1'],
+  ['tied observers and observations: the easy order', {s1: {dauinU: 9, dauin: 9}, s2: {dauinU: 9, dauin: 9}}, [], [], 'fi1'],
+  ['its easiest photo a juvenile: its next', {s2: {dauinU: 9, dauin: 9}}, ['fi3'], [], 'fi6'],
+  ['every photo of it juvenile: the next species', {s2: {dauinU: 9, dauin: 9}}, ['fi3', 'fi6'], [], 'fi1'],
+  ['juveniles only: the easy order keeps one', {s2: {dauinU: 9, dauin: 9}}, ['fi1', 'fi2', 'fi3', 'fi6'], [], 'fi1'],
+  ['the generic names first (nearU, nearN), the first names after', {s1: {dauinU: 2}, s2: {nearU: 1, dauinU: 9}}, [], [], 'fi1'],
+  ['nearN breaks the tie as dauin did', {s1: {nearU: 3, nearN: 3}, s2: {nearU: 3, nearN: 4, dauin: 1}}, [], [], 'fi3'],
+  ['(b): only the species with a reference photo compete', {s1: {dauinU: 9, dauin: 9}, s2: {dauinU: 2, dauin: 2}}, [], ['fi6'], 'fi6'],
+  ['(b): its reference photo, not its easiest photo', {s2: {dauinU: 9, dauin: 9}}, [], ['fi6', 'fi1'], 'fi6'],
+  ['(b): among several with one, the most seen', {s1: {dauinU: 9}, s2: {dauinU: 2}}, [], ['fi6', 'fi2'], 'fi2'],
+  ['(b): a juvenile reference photo does not count', {s1: {dauinU: 9}, s2: {dauinU: 2}}, ['fi6'], ['fi6'], 'fi1']
+];
+test('default cover (Q339 (b)): the most seen species with a reference photo, then its reference photo; ties, juveniles', () => {
+  const X = app();
+  CASES.forEach(([what, pres, juv, ref, want]) => {
+    const B = X.run(seenRaw(pres, juv, ref), cur2({}));
+    assert.strictEqual(X.cover(B.gen['f:A']).f, want, `family: ${what}`);
+    assert.strictEqual(X.cover(B.gen['g:Xus']).f, want, `genus unit: ${what}`);
+  });
+  // His pick of the node wins, at every rank, even over the most seen species.
+  const pres = {s2: {dauinU: 9, dauin: 9}};
+  let B = X.run(seenRaw(pres), cur2({'f:A': {cover: 'fi2'}, 'g:Xus': {cover: 'fi1'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2');
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi1');
+  // His ★ cover of the species the default shows is the node's photo (Pierre, 2026-11-14: "mon choix était le meilleur au
+  // moment avec ce que j'avais sous les yeux"), even when it is not its reference photo; another species' pick is not.
+  B = X.run(seenRaw(pres, [], ['fi3']), cur2({s2: {cover: 'fi6'}, s1: {cover: 'fi2'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi6');
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi6');
+  B = X.run(seenRaw(pres, ['fi6'], ['fi3']), cur2({s2: {cover: 'fi6'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi3', 'a juvenile species pick is ignored');
+  // The players' ratings (rankPhotos) order the photos within the species; the species stays the most seen.
+  const Y = app((n, p) => ({fi1: -9, fi6: -8, fi3: -1})[p.f] || 0);
+  B = Y.run(seenRaw(pres), cur2({}));
+  assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1', "the games' order is unchanged");
+  assert.strictEqual(Y.cover(B.gen['f:A']).f, 'fi6', 'the rated order within the most seen species');
+  assert.strictEqual(Y.cover(Y.run(seenRaw(pres), cur2({s2: {cover: 'fi3'}})).gen['f:A']).f, 'fi3', 'rankPhotos keeps his species pick');
+  // The sheets (learn.js nodeCover: the family hero, its look-alike cards, the sibling genus cards) read the same rule.
+  let L = sheets(X.run(seenRaw(pres, ['fi3']), cur2({})));
+  assert.strictEqual(L.nodeCover(F2.species.slice(0, 2)).f, 'fi6');
+  L = sheets(X.run(seenRaw(pres), cur2({s2: {cover: 'fi6'}})));
+  assert.strictEqual(L.nodeCover(F2.species.slice(0, 2)).f, 'fi6', 'his species pick');
+  assert.strictEqual(sheets(X.run(seenRaw({}), cur2({}))).nodeCover(F2.species.slice(0, 2)).f, 'fi1', 'no presence: as before');
+});
+
+// The admin's copy (autosort.js fishCoverOf: the family's and the genus headings' default thumbs) picks as the app does.
+test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's seenCover", () => {
+  const X = app(),
+    E = {fi1: 5, fi2: 3, fi3: 4, fi6: 2};
+  CASES.forEach(([what, pres, juv, ref, want]) => {
+    const r = seenRaw(pres, juv, ref),
+      sp = Object.fromEntries(r.f.species.map(s => [s.id, s])),
+      rec = Object.fromEntries(r.ph.photos.t1.map(p => [p.f, p])),
+      // the judgment the admin reads (fuJ): the record's ease and tags
+      jr = f => ({e: (rec[f] || {}).e || E[f], jt: (rec[f] || {}).jt}),
+      L = r.ph.photos.t1.map(p => ({f: p.f, sp: p.sp, ...(p.ph ? {ph: p.ph} : {}), ...(p.rep ? {rep: p.rep} : {})}));
+    assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', jr, sid => A.fishNear(sp[sid])).f, want, `admin: ${what}`);
+    assert.strictEqual(X.seenCover(r.ph.photos.t1, sid => X.nearSeen(sp[sid])).f, want, `app: ${what}`);
+    // the admin's own records carry the species as sid
+    assert.strictEqual(
+      A.fishCoverOf(
+        L.map(({sp: s, ...p}) => ({...p, sid: s})),
+        {},
+        'f:A',
+        jr,
+        sid => A.fishNear(sp[sid])
+      ).f,
+      want
+    );
+  });
+  const j = f => ({e: E[f]});
+  // His ★ cover of the species the default shows; a juvenile one ignored (the admin reads his phase too).
+  const spP = {s2: {present: {dauinU: 9}}},
+    LP = ['fi1', 'fi2', 'fi3', 'fi6'].map(f => ({f, sp: f === 'fi1' || f === 'fi2' ? 's1' : 's2'}));
+  assert.strictEqual(A.fishCoverOf(LP, {genera: {s2: {cover: 'fi6'}}}, 'f:A', j, sid => A.fishNear(spP[sid])).f, 'fi6');
+  assert.strictEqual(A.fishCoverOf(LP, {genera: {s1: {cover: 'fi2'}}}, 'f:A', j, sid => A.fishNear(spP[sid])).f, 'fi3');
+  assert.strictEqual(
+    A.fishCoverOf(LP, {genera: {s2: {cover: 'fi6'}}, phase: {fi6: 'juvenile'}}, 'f:A', j, sid => A.fishNear(spP[sid])).f,
+    'fi3',
+    'a juvenile species pick is ignored'
+  );
+  // A photo's species in the admin: the one his curation adds it to (a candidate of s1 sent to s2 with Not this and added
+  // there still carries sid s1), else its game record's, else its candidate's; a record with neither reads as unseen.
+  const sp2 = {s2: {present: {dauinU: 9}}},
+    M = [
+      {f: 'fi1', sid: 's1'},
+      {f: 'fi3', sid: 's1'}
+    ];
+  assert.strictEqual(A.fishCoverOf(M, {}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi1');
+  assert.strictEqual(A.fishCoverOf(M, {add: {fi3: 's2'}}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi3', 'its species is the add');
+  assert.strictEqual(A.fishCoverOf([{f: 'fi1'}, {f: 'fi3', sp: 's2'}], {}, 'f:A', j, sid => A.fishNear(sp2[sid])).f, 'fi3');
+  // His pick wins; with no species registered (fishSeenFrom not called) every default keeps the game's order.
+  const sp = {s2: {present: {dauinU: 9}}},
+    L = [
+      {f: 'fi1', sp: 's1'},
+      {f: 'fi3', sp: 's2'}
+    ];
+  assert.strictEqual(A.fishCoverOf(L, {genera: {'f:A': {cover: 'fi1'}}}, 'f:A', j, sid => A.fishNear(sp[sid])).f, 'fi1');
+  assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j).f, 'fi1', 'nothing registered: as before');
+  A.fishSeenFrom(sid => sp[sid]);
+  try {
+    assert.strictEqual(A.fishCoverOf(L, {}, 'f:A', j).f, 'fi3', 'the registered records (admin-fish.js)');
+  } finally {
+    A.fishSeenFrom(null);
+  }
+});
+
+// On the real files: every fish unit Pierre has not picked a cover for shows a photo of its species most seen around the
+// centre among those with a reference-level adult photo in play (else among those with an adult photo), his ★ cover of
+// that species when he has one, in the app and in the admin, each over its own pool (the admin's: the game photos read
+// with their records' judgments; the app's adds the stopgap's, and the two read juveniles each their way).
+test('real data: the default covers are of the most seen species with a reference photo, app and admin (Q339 (b))', () => {
+  const f = read('fish.json'),
+    gm = C.fishGameRead(read('fish-game.json')),
+    cu = read('curation.json'),
+    X = app(),
+    B = X.run({f, ph: read('fish-photos.json'), gm}, cu),
+    sp = Object.fromEntries(f.species.map(s => [s.id, s])),
+    seen = sid => X.nearSeen(sp[sid]),
+    key = sid => seen(sid)[0] * 1e6 + seen(sid)[1],
+    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    rec = Object.fromEntries(play.map(p => [p.f, p])),
+    j = fid => rec[fid] || null,
+    nodes = Object.fromEntries([...f.families, ...f.genera].map(u => [u.id, new Set(u.species)])),
+    picks = (cu.fish || {}).genera || {};
+  assert.ok(f.centre && f.centre.name && Number.isFinite(f.centre.lat) && f.centre.radiusKm > 0, 'fish.json centre');
+  let n = 0;
+  Object.entries(B.gen).forEach(([id, g]) => {
+    if (g.coverP || !g.views.wide.length || !nodes[id]) return;
+    const A0 = g.views.wide.filter(p => !X.juvP(p)),
+      R0 = A0.filter(C.refLevel),
+      c = g.views.wide.find(p => p.f === g.cover);
+    if (!A0.length) return;
+    n++;
+    assert.ok(!X.juvP(c), `${id}: never a juvenile`);
+    assert.strictEqual(key(c.sp), Math.max(...(R0.length ? R0 : A0).map(p => key(p.sp))), `${id}: ${sp[c.sp].name} is not its species`);
+    if (B.covers[c.sp]) assert.strictEqual(c.f, B.covers[c.sp].f, `${id}: his ★ cover of ${sp[c.sp].name}`);
+    else if (R0.some(p => p.sp === c.sp)) assert.ok(C.refLevel(c), `${id}: its reference photo`);
+    const L = play.filter(p => nodes[id].has(p.sp)),
+      adm = A.fishCoverOf(L, cu.fish, id, j, sid => A.fishNear(sp[sid])),
+      ad = L.filter(p => !A.fishJuv(p, j(p.f), cu.fish)),
+      ar = ad.filter(p => C.refLevel(A.fishRec(p, cu.fish, j)));
+    if (!adm || !ad.length) return;
+    assert.strictEqual(key(adm.sp), Math.max(...(ar.length ? ar : ad).map(p => key(p.sp))), `${id}: the admin shows ${sp[adm.sp].name}`);
+    const k = (picks[adm.sp] || {}).cover;
+    if (k && ad.some(p => p.f === k)) assert.strictEqual(adm.f, k, `${id}: the admin shows his ★ cover of ${sp[adm.sp].name}`);
+  });
+  assert.ok(n > 50, `${n} units checked`);
 });

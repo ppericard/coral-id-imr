@@ -1521,7 +1521,8 @@ async function signin(base) {
         for (let i = 0; i < 40 && answersSoFar() < 22; i++) {
           document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
           if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-          if (!(await until(() => document.querySelector(SEL)))) break;
+          // a Find the X's tiles counted in first (tests/answer.js smokeTiles: the photos' host is out of reach here)
+          if (!(await until(() => (window.smokeTiles && smokeTiles(), document.querySelector(SEL))))) break;
           const n0 = answersSoFar();
           smokeAnswer();
           // The answer's feedback drawn (or the wink's): the sign-in card, when due, is up by then (quiz.js answer).
@@ -4444,6 +4445,78 @@ async function onePath(b, base) {
   return fails;
 }
 
+// Similar names after a mix-up (the name study's question b; Pierre, 2026-11-14, Q124; quiz.js namesLine): a player who
+// met 4 genera drills two of their pairs in the Duel tab and misses each. Pocillopora / Stylophora (Dice 0.48): the
+// feedback says "Similar names:", the genus shown first, then the answer, each in italics with the letters that differ
+// in bold, and the "Your answer" line after it; Favites / Pocillopora (no first letter, Dice under 0.4): the "Your
+// answer" line only. On a phone, Next stays in view (rule U2). Returns the failures.
+async function namesCheck(b, base) {
+  const fails = [],
+    MET = ['Pocillopora', 'Stylophora', 'Favites', 'Dipsastraea'];
+  for (const [w, h] of [
+    [390, 844],
+    [1280, 800]
+  ]) {
+    const c = await b.newContext({viewport: {width: w, height: h}, serviceWorkers: 'block', intro: true});
+    await c.route(
+      u => !u.href.startsWith(base),
+      r => r.abort()
+    );
+    await c.addInitScript(M => {
+      localStorage.setItem('reefid-tour', '"done"');
+      localStorage.setItem('reefid-nudge', '1');
+      localStorage.setItem('reefid-sync-coral-start', JSON.stringify({c: 'new', via: 'tour', at: 0, t: 1}));
+      localStorage.getItem('reefid-sync-coral-intro') ||
+        localStorage.setItem('reefid-sync-coral-intro', JSON.stringify(Object.fromEntries(M.map(n => [n, [0, 1, 1, 's']]))));
+      localStorage.getItem('reefid-sync-coral-quiz') || localStorage.setItem('reefid-sync-coral-quiz', '{"bon":false}');
+    }, MET);
+    await c.addInitScript(TIPS_OFF);
+    const p = await c.newPage(),
+      errs = [];
+    p.on('pageerror', e => errs.push(e.message));
+    await p.goto(base + '#practice/duels/Pocillopora/Stylophora');
+    await p.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
+    for (const [pair, alike] of [
+      [['Pocillopora', 'Stylophora'], true],
+      [['Favites', 'Pocillopora'], false]
+    ]) {
+      await p.evaluate(P => (location.hash = `practice/duels/${P.join('/')}`), pair);
+      if (!(await qa.ready(p, {timeout: 10000, optional: true}))) {
+        fails.push(`similar names ${w}: no duel ${pair.join('/')}`);
+        continue;
+      }
+      const r = await p.evaluate(() => {
+        document.querySelectorAll('.unlock').forEach(x => (x.ulClose ? x.ulClose() : x.remove()));
+        const a = smokeAnswer(false),
+          nd = document.querySelector('#after .ndiff'),
+          vs = [...document.querySelectorAll('#after .vs')].map(x => x.className),
+          nb = document.getElementById('next').getBoundingClientRect();
+        return {
+          fmt: a.fmt,
+          t: a.t,
+          given: a.given,
+          text: nd ? nd.textContent : null,
+          its: nd ? [...nd.querySelectorAll('i')].map(i => i.querySelectorAll('b').length) : [],
+          bold: nd ? getComputedStyle(nd.querySelector('b')).fontWeight : null,
+          vs,
+          next: nb.bottom <= innerHeight && nb.top >= 0
+        };
+      });
+      const want = alike ? `Similar names: ${r.t} / ${r.given}` : null;
+      if (r.fmt !== 'choices' || !pair.includes(r.t) || !pair.includes(r.given) || r.t === r.given)
+        fails.push(`similar names ${w}: not a mix-up of the duel ${pair.join('/')} ${JSON.stringify(r)}`);
+      else if (r.text !== want) fails.push(`similar names ${w}, ${pair.join('/')}: line ${JSON.stringify(r.text)}, expected ${want}`);
+      else if (alike && (r.its.length !== 2 || r.its.some(n => n < 1) || +r.bold < 600 || r.vs[0] !== 'vs ndiff'))
+        fails.push(`similar names ${w}: the names not in italics with bold letters, or not first ${JSON.stringify(r)}`);
+      else if (!r.vs.length) fails.push(`similar names ${w}, ${pair.join('/')}: no "Your answer" line ${JSON.stringify(r)}`);
+      if (!r.next) fails.push(`similar names ${w}, ${pair.join('/')}: Next out of view after the answer`);
+    }
+    if (errs.length) fails.push(`similar names ${w}: page errors ${errs.slice(0, 3).join(' | ')}`);
+    await c.close();
+  }
+  return fails;
+}
+
 // The subject to start with (Pierre, 2026-11-06; tour.js pick, plan): a player with one subject gets the six steps as
 // before, with no word of another subject; a player of the fish group gets the subject choice first, forced, then that
 // subject's question, where to switch, and the rest in that subject's words; a group member who signs in during the tour
@@ -4844,7 +4917,8 @@ async function installCheck(b, base) {
 // admin.html?readonly; overlays: cards, prompts and the one-tap question (inside main's 390 pass when both run, else on
 // their own); tips: the "Did you know?" tips (tipsCheck) and the custom quiz's reminder (customLeftCheck); relief: the Duel tab's relief card (duelReliefCheck); start: the first-launch question and its fallback cards
 // (startSmoke); newplayer: a brand-new player from an empty browser through the tour and 30 answers (newPlayer); onepath:
-// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); subjtour: the subject to start with in
+// the Duel tab, Memory and the custom quiz on the genera unlocked only (onePath); names: similar names after a mix-up
+// (namesCheck); subjtour: the subject to start with in
 // the tour, for a player with one subject and with two (subjTour); install: the offer to install the app (installCheck).
 const PARTS = [
     'main',
@@ -4858,6 +4932,7 @@ const PARTS = [
     'subjtour',
     'newplayer',
     'onepath',
+    'names',
     'signin',
     'replay',
     'notices',
@@ -4867,7 +4942,7 @@ const PARTS = [
 
 (async () => {
   const run = slot.parts(PARTS, {
-      main: ['main', 'tips', 'onepath', 'newplayer'],
+      main: ['main', 'tips', 'onepath', 'names', 'newplayer'],
       overlays: ['overlays'],
       more: ['relief', 'start', 'signin', 'replay', 'notices'],
       rest: ['basics', 'credits', 'visit', 'subjtour', 'install']
@@ -4937,6 +5012,28 @@ const PARTS = [
     });
     if (pl.text !== pl.want || !pl.afterPhoto || !pl.beforeTips || pl.label)
       fails.push(`${w}px genus sheet plain line: ${JSON.stringify(pl)}`);
+    // The roots of the name (Q124 d, learn.js rootLine): on the same sheet, after the ID tips box and outside it, with
+    // its dictionary links.
+    const rt = await p.evaluate(() => {
+      const e = document.querySelector('#view .sheet .nameroot'),
+        tips = document.querySelector('#view .sheet .tipbox');
+      return {
+        text: e ? e.textContent : '',
+        afterTips: !!(e && tips && tips.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING),
+        inTips: !!(e && e.closest('.tipbox')),
+        links: e ? [...e.querySelectorAll('.rsrc a')].map(a => a.href) : [],
+        visible: !!(e && e.getBoundingClientRect().height > 0)
+      };
+    });
+    if (
+      !/^Name roots: Goni·astrea: “angle” \(Greek gōnia\) \+ “star” \(Greek astēr\)\. It fits the ID tip/.test(rt.text) ||
+      !rt.afterTips ||
+      rt.inTips ||
+      !rt.visible ||
+      !rt.links.length ||
+      !rt.links.every(u => /^https:\/\//.test(u))
+    )
+      fails.push(`${w}px genus sheet name roots: ${JSON.stringify(rt)}`);
     // The tool is the Coral ID Key (Pierre, 2026-11-04): "Coral Finder" on a page (help, folds and pop-ups included)
     // only names the book, cited by page (Coral Finder p. 63, Same Coral Finder box: …, p. 47-56), as the 2022 book,
     // "the Coral Finder book" or one of its terms (tests/idkey.test.js checks the code's strings).
@@ -5229,6 +5326,40 @@ const PARTS = [
           tip: tile ? tile.title : null
         };
       });
+      // "Mystery" tiles (Pierre, 2026-11-04; progress.js mysteryOf, app.js UNITS mystery): this player said "I'm new to
+      // corals", so every genus not met yet is a "?" on each view, with no link, no name and no tooltip naming it; a player
+      // who had the IMR course sees every genus as before.
+      const myst = await q2.evaluate(() => {
+        const names = slateGenera(),
+          read = () =>
+            [...document.querySelectorAll('#view .pgwrap .myst')].map(a => ({
+              href: a.hasAttribute('href'),
+              text: a.textContent + ' ' + a.title + ' ' + a.innerHTML,
+              img: !!a.querySelector('img')
+            })),
+          views = {};
+        for (const v of ['slate', 'photos', 'groups']) {
+          document.querySelector(`#view [data-pv="${v}"]`).click();
+          views[v] = read();
+        }
+        document.querySelector('#view [data-pv="slate"]').click();
+        const o = store.get(startKey(SUBJ.id), null);
+        store.set(startKey(SUBJ.id), {...o, c: 'imr'});
+        quizBoard();
+        const imr = document.querySelectorAll('#view .myst').length;
+        store.set(startKey(SUBJ.id), o);
+        quizBoard();
+        return {
+          left: introLeft().length,
+          counts: Object.fromEntries(Object.entries(views).map(([k, L]) => [k, L.length])),
+          named: Object.values(views)
+            .flat()
+            .filter(t => t.href || t.img || names.some(n => t.text.includes(n))).length,
+          imr
+        };
+      });
+      if (!myst.left || Object.values(myst.counts).some(k => k !== myst.left) || myst.named || myst.imr)
+        fails.push(`${w}px My progress, mystery tiles: ${JSON.stringify(myst)}`);
       if (mc.badge !== `${mc.met}/${mc.n} genera unlocked` || mc.met + mc.left !== mc.n || /Not seen/.test(mc.tip || '') || !mc.tip)
         fails.push(`${w}px My progress, genera met: ${JSON.stringify(mc)}`);
       else {
@@ -5241,6 +5372,9 @@ const PARTS = [
         // The card follows at once: every genus unlocked.
         const un = await q2.evaluate(() => (document.querySelector('#view .pbadge .pbunl') || {}).textContent || '');
         if (un !== `${mc.n}/${mc.n} genera unlocked`) fails.push(`${w}px open all genera: the card says "${un}"`);
+        // ... and every genus shows: no mystery tile left.
+        const ml = await q2.evaluate(() => document.querySelectorAll('#view .myst').length);
+        if (ml) fails.push(`${w}px open all genera: ${ml} mystery tiles left`);
       }
       // Every slate genus is now met, so the bonus genera offer (a prompt, tested in draw.smoke.js) would come at 30 and
       // move the one-tap question to 40: this player has already chosen (⚙ Bonus genera: Off). Likewise the card offering
@@ -5650,6 +5784,7 @@ print(json.dumps({g: {v: fl.colonies(g, G, d.get('cand') or {}, cur, fl.excluded
   if (run.has('subjtour')) for (const f of await subjTour(b, base)) fails.push(f);
   if (run.has('newplayer')) for (const f of await newPlayer(b, base)) fails.push(f);
   if (run.has('onepath')) for (const f of await onePath(b, base)) fails.push(f);
+  if (run.has('names')) for (const f of await namesCheck(b, base)) fails.push(f);
   if (run.has('install')) for (const f of await installCheck(b, base)) fails.push(f);
   await b.close();
   if (run.has('signin')) for (const f of await signin(base)) fails.push(f);

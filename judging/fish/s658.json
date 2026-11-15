@@ -127,6 +127,14 @@
   "fish-s658-cand-711424900": {
    "code": "o1d0sm12",
    "keep": "dup"
+  },
+  "fish-s658-cand-711424188": {
+   "code": "o1d0sm12",
+   "keep": "dup"
+  },
+  "fish-s658-cand-697029968": {
+   "code": "o1g0sl13",
+   "keep": "best"
   }
  }
 }

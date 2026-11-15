@@ -23,7 +23,7 @@ vm.runInContext(
 );
 
 test("fishReplayGen: the app's fish units, their look-alikes and family lines, from fish.json alone", () => {
-  const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, GM.photos, CUR, F), PH.sheet), F),
+  const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, GM.photos, CUR), PH.sheet), F),
     want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam}])),
     got = C.fishReplayGen(F);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(got)), JSON.parse(JSON.stringify(want)));

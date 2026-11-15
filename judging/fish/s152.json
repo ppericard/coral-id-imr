@@ -239,6 +239,14 @@
   "fish-s152-cand-325011341": {
    "code": "p1g1sms3",
    "keep": "alt"
+  },
+  "fish-s152-cand-219330378": {
+   "code": "p1g2mss2",
+   "keep": "best"
+  },
+  "fish-s152-cand-258085031": {
+   "code": "p1g2smo2",
+   "keep": "best"
   }
  }
 }

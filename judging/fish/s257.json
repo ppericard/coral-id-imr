@@ -210,6 +210,102 @@
   "fish-s257-cand-176252174": {
    "code": "p1g2bs11",
    "keep": "best"
+  },
+  "fish-s257-cand-576259836": {
+   "code": "p1g1sm1j2",
+   "keep": "best"
+  },
+  "fish-s257-cand-19564888": {
+   "code": "p1g1smk2",
+   "keep": "best"
+  },
+  "fish-s257-cand-630350272": {
+   "code": "p1g1bm12",
+   "keep": "best"
+  },
+  "fish-s257-cand-604148831": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s257-cand-241929908": {
+   "code": "o1g1smk2",
+   "keep": "best"
+  },
+  "fish-s257-cand-89534109": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s257-cand-79950122": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s257-cand-450069637": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s257-cand-12450488": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s257-cand-470734967": {
+   "code": "o1g1bm12",
+   "keep": "best"
+  },
+  "fish-s257-cand-470734988": {
+   "code": "p1g1bm12",
+   "keep": "dup"
+  },
+  "fish-s257-cand-470735007": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s257-cand-666265030": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s257-cand-593262110": {
+   "code": "p1g0sms3",
+   "keep": "best"
+  },
+  "fish-s257-cand-755900957": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s257-cand-567391998": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s257-cand-636969132": {
+   "code": "p1g0smkj2",
+   "keep": "best"
+  },
+  "fish-s257-cand-652049817": {
+   "code": "p1g1sssj1",
+   "keep": "best"
+  },
+  "fish-s257-cand-755847545": {
+   "code": "p1g0sskj1",
+   "keep": "best"
+  },
+  "fish-s257-cand-593334425": {
+   "code": "p1g0sskj1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-593334422": {
+   "code": "p1g0sskj1",
+   "keep": "best"
+  },
+  "fish-s257-cand-635071878": {
+   "code": "o1g1msoj1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-635071879": {
+   "code": "p1g1bs1j1",
+   "keep": "dup"
+  },
+  "fish-s257-cand-635071446": {
+   "code": "p1g1ss1j2",
+   "keep": "best"
   }
  }
 }

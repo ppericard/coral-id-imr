@@ -48,7 +48,8 @@ const jOrder = items =>
     .map(([x]) => x[1])
     .join('');
 // jorder: end
-const jStart = (S, before) => {
+// tm: the time's words (the Journey's Cards list: the player's local time, jLocal; the session summary: the admin's clock).
+const jStart = (S, before, tm = jTime) => {
   if (!S || !startOpt(S.c)) return [[null, '<li><b>Start</b> not answered yet</li>']];
   // The history's events (core.js startEvents): the answers given, and the eases taken with Coral basics.
   const ev = startEvents(S),
@@ -58,19 +59,19 @@ const jStart = (S, before) => {
   return [
     ...h.map(([c, a, t, via], i) => [
       t || null,
-      `<li><b>${!i ? 'Start' : c === h[i - 1][0] ? 'Answered again' : 'Changed to'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)} · ${JSTART[via] || esc(via || '')}`}${t ? ' · ' + jTime(t) : ''}</li>`
+      `<li><b>${!i ? 'Start' : c === h[i - 1][0] ? 'Answered again' : 'Changed to'}</b> ${esc(jSaid(c))} · ${via === 'inferred' ? `<b>inferred</b> from the level, ${before(t, a)} answers` : `after answer ${before(t, a)} · ${JSTART[via] || esc(via || '')}`}${t ? ' · ' + tm(t) : ''}</li>`
     ]),
     ...ev
       .filter(x => x[3] === 'ease')
       .map(([c, a, t, , of]) => [
         t || null,
-        `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + jTime(t) : ''}</li>`
+        `<li><b>Eased</b> to the start of ${esc(jSaid(c))} (said “${esc(jSaid(of))}”), after answer ${before(t, a)} · Coral basics taken on the fallback card${t ? ' · ' + tm(t) : ''}</li>`
       ]),
     ...Object.entries(S.fb || {}).map(([k, [a, t]]) => {
       const [c, d] = k.split('-');
       return [
         t || null,
-        `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + jTime(t) : ''}</li>`
+        `<li><b>Fallback card</b> ${JFB[d] || esc(k)} “${esc(jSaid(c))}”, after answer ${before(t, a)}${t ? ' · ' + tm(t) : ''}</li>`
       ];
     })
   ];
@@ -87,13 +88,127 @@ const jOffSlate = (n, slate) => {
   return r !== jRankOf(first) && JRANK[r] ? JRANK[r] : 'bonus';
 };
 // joffslate: end
+// jsteps: begin
+// The steps of a player's path besides the units met and learned (fish admin at parity, Journey details): the first
+// question on each rank of the subject's units other than its own (SUBJECTS sheets and rank: the fish scientific genera,
+// later its species) and on each circle after the first (a unit record's circle: the fish families that open after the
+// IMR course's, circle 2 by itself, circle 3 by the player's yes). A subject with neither (the corals) has none. R: the
+// player's rows in time order ([id, time, unit shown, ...]); rec(n): the unit's record or null; S: the subject.
+// [[answer index, 'rank' | 'circle', the rank's word or the circle's number, the unit asked, time]], in answer order.
+function jSteps(R, rec, S) {
+  const P = Object.entries(S.sheets || {}).filter(([k]) => k !== S.rank),
+    seen = new Set(),
+    out = [];
+  R.forEach((r, i) => {
+    const g = String(r[2] || ''),
+      c = (rec(g) || {}).circle,
+      k = (P.find(([, p]) => g.startsWith(p)) || [])[0];
+    const step = (key, kind, w) => {
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push([i, kind, w, g, r[1]]);
+    };
+    if (k) step('r' + k, 'rank', k);
+    if (typeof c === 'number' && c > 1) step('c' + c, 'circle', c);
+  });
+  return out;
+}
+// A step's words: [its line in the Cards list, its short mark on the chart].
+const jStepWords = ([, kind, w]) =>
+  kind === 'rank' ? [`${w[0].toUpperCase() + w.slice(1)} questions`, w[0].toUpperCase() + w.slice(1)] : [`Circle ${w}`, `Circle ${w}`];
+// jsteps: end
+// jgames: begin
+// The Journey's Games card (as on Players, Pierre 2026-11-02: "bring that page's numbers into the journey"): the player's
+// answers in the subject by format, [title, answers, right], the formats with no answer left out. The photo quiz split:
+// its own questions, the "Again: A or B?" rematch after a mix-up (2 choices, logged as the photo quiz), a look-alike duel
+// slipped into it (|d), typed (|t: model.js TYPED, its exam questions also under Mastery exam), Find the X (|f), the
+// mastery exam (|x, from 2026-11-02). The Custom quiz and the Duel tab only for a subject that has them (SUBJECTS
+// pages; the Duel tab's row kept at 0, as before); a subject whose units sit at several ranks (SUBJECTS sheets) adds
+// the questions on each rank, as the Answer log's Conditions count them (conds: admin.js logConds(R, S); fish admin at
+// parity, Journey details).
+function jGames(R, S, conds = []) {
+  const has = p => (S.pages || []).includes(p),
+    nch = r =>
+      String(r[10] || '')
+        .split(' ')
+        .filter(Boolean).length,
+    ranks = Object.keys(S.sheets || {}).map(k => k[0].toUpperCase() + k.slice(1) + ' questions');
+  const count = ([t, f, keep]) => {
+    const L = R.filter(f);
+    return [t, L.length, L.reduce((n, r) => n + r[4], 0), keep];
+  };
+  return [
+    ...[
+      ['Quiz', r => /^quiz(\||$)/.test(r[5]) && !/\|[xdtf](\||$)/.test(r[5]) && nch(r) !== 2],
+      ['Again: A or B? (after a mix-up)', r => /^quiz(\||$)/.test(r[5]) && !/\|[dt](\||$)/.test(r[5]) && nch(r) === 2],
+      // A duel slipped into the custom quiz is logged quiz|s|d|k2 (quiz.js answer).
+      ['Look-alike duel in the quiz', r => /^quiz\|(s\|)?d(\||$)/.test(r[5])],
+      ['Typed (recall)', r => /^quiz\|(.*\|)?t(\||$)/.test(r[5])],
+      // Find the X (|f, quiz.js FIND): one name, four photos (the subjects whose photos read as tiles: the fish).
+      ['Find the X', r => /^quiz\|(.*\|)?f(\||$)/.test(r[5])],
+      ['Mastery exam', r => /\|x$/.test(r[5])],
+      // The custom quiz (quiz|s…, 2026-11-03): photo-quiz answers on the units the player picked, also in the rows above.
+      ...(has('quiz-custom') ? [[`Custom quiz (${S.many} picked)`, r => /^quiz\|s(\||$)/.test(r[5])]] : []),
+      ...(has('quiz-duel') ? [['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5]), true]] : [])
+    ].map(count),
+    ...conds.filter(c => ranks.includes(c[0])),
+    count(['Other', r => !/^quiz/.test(r[5])])
+  ]
+    .filter(x => x[1] || x[3] === true)
+    .map(x => x.slice(0, 3));
+}
+// jgames: end
+// jlocal: begin
+// The Cards list in the player's own local time (Pierre's list of 2026-11-05, left from #554: they were the admin's
+// clock): a time at the UTC offset the player's device logged with their answer nearest to it (sheet v44, readAnswers
+// index 14, minutes east of UTC; +480 in the rows logged before), so a trip or a daylight saving change follows their
+// answers. R: the player's rows in time order. jOffAt: that offset, or null when no row has a valid one (an older script
+// or app sent none): an integer of at most 840 minutes either way, as Code.gs tz_; two answers as near, the earlier.
+// jAtText: t moved by the offset and written in UTC, so neither the admin's own zone nor its daylight saving enters; as
+// admin.js dateText 'dmhm' ("4 Nov, 18:40", 24 h, the browser's language); null for a time that is not one (the caller
+// then keeps dateText). jUtcText: the offset's words ("UTC+8", "UTC−3:30", "UTC+0").
+const jOffOk = o => Number.isInteger(o) && Math.abs(o) <= 840;
+const jOffAt = (R, t) => {
+  let best = null,
+    gap = Infinity;
+  if (!Number.isFinite(t)) return null;
+  for (const r of R || []) {
+    const d = r && Number.isFinite(r[1]) && jOffOk(r[14]) ? Math.abs(r[1] - t) : Infinity;
+    if (d < gap) [gap, best] = [d, r[14]];
+  }
+  return best;
+};
+const JAT = {};
+const jAtText = (t, o) =>
+  Number.isFinite(t) && jOffOk(o)
+    ? (JAT.f =
+        JAT.f ||
+        new Intl.DateTimeFormat([], {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+          timeZone: 'UTC'
+        })).format(new Date(t + o * 60000))
+    : null;
+const jUtcText = o =>
+  `UTC${o < 0 ? '−' : '+'}${Math.floor(Math.abs(o) / 60)}${Math.abs(o) % 60 ? ':' + String(Math.abs(o) % 60).padStart(2, '0') : ''}`;
+// jlocal: end
 const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js dateText; Pierre, 2026-11-03: admin pages load slower)
   jTime = t => dateText(t, 'dmhm'),
   jPts = x => (x == null ? '–' : `${x > 0 ? '+' : ''}${Math.round(100 * x)} pts`);
-// A unit on a journey or in a session: a genus of the site's data in italics with its page; another subject's unit by
-// its name (its entries read once, admin.js fishAdmin, as a report names one), plain.
-const jName = g => (FISHA && FISHA.gen[g] ? FISHA.gen[g].name : g),
-  jUnit = g => (DATA.gen[g] ? `<a class="adm-gen" href="${esc(genusHref(g))}"><i>${esc(g)}</i></a>` : `<i>${esc(jName(g))}</i>`),
+// A unit on a journey or in a session, as Analyses › Learning › Answer log names it (fish admin at parity, #876): admin.js
+// repUnit, a coral genus in italics with its page, another subject's unit once its entries are read (admin.js fishAdmin)
+// by its name (a family plain, a genus or species in italics, its id's prefix off) with its family's page in Tree; an IMR
+// sub-entry (a genus the IMR course names otherwise: fishAdmin imr) with its IMR name beside it. jName: the same in plain
+// text, for a title or a chart's tooltip.
+const jImr = g => (FISHA && FISHA.imr[g]) || '',
+  jName = g =>
+    (FISHA && FISHA.gen[g] ? FISHA.gen[g].name : String(g).replace(/^[a-z]:/, '')) + (jImr(g) ? ` (${ORG.short} ${jImr(g)})` : ''),
+  jUnit = g =>
+    repUnit(g, true) +
+    (jImr(g) ? ` <small title="Its name in the ${esc(ORG.short)} course">${esc(ORG.short)} ${esc(jImr(g))}</small>` : ''),
   // The subject's word for its units, capitalised (Genera, Families).
   jMany = (S = ASUBJ) => S.many[0].toUpperCase() + S.many.slice(1),
   jOne = (S = ASUBJ) => S.one[0].toUpperCase() + S.one.slice(1);
@@ -183,11 +298,13 @@ function journeyChart(series, top, opt = {}) {
   const days = (opt.days || [])
     .map(([i, t]) => `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="d"><title>${esc(t)}</title></line>`)
     .join('');
+  // Several marks (Opened all, the steps of a path: jSteps) put their labels on rows of their own, in turn, so two close
+  // marks do not write over each other; a label near the right edge sits on the left of its line.
   const marks = (opt.marks || [])
-    .map(
-      ([i, t]) =>
-        `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="o"><title>${esc(t)}</title></line><text x="${x(i) + 4}" y="${pt + 12}" class="o">${esc(t)}</text>`
-    )
+    .map(([i, t], k) => {
+      const end = x(i) > W - pr - 90;
+      return `<line x1="${x(i)}" x2="${x(i)}" y1="${pt}" y2="${H - pb}" class="o"><title>${esc(t)}</title></line><text x="${x(i) + (end ? -4 : 4)}" y="${pt + 12 + 14 * (k % 3)}" class="o"${end ? ' text-anchor="end"' : ''}>${esc(t)}</text>`;
+    })
     .join('');
   const stars = (opt.stars || [])
     .map(
@@ -273,6 +390,12 @@ function renderJourney(name, anonId = '') {
       .sort((a, b) => a - b);
 
   // 0. The cards: when each genus was shown, and whether (and how) all were opened at once.
+  // Their times in the player's own local time (jlocal), the offset in the title; the admin's clock when none is logged.
+  const jLocal = t => {
+    const o = jOffAt(R, t),
+      x = jAtText(t, o);
+    return x == null ? jTime(t) : `<span class="adm-jt" data-t="${t}" title="${jUtcText(o)}">${x}</span>`;
+  };
   const C = !full ? {none: 1, map: {}, offer: null} : anonId ? {anon: 1, map: {}, offer: null} : journeyCards(name, ASUBJ),
     // Progress replayed from the whole log (admin.js progOf, docs/LEARNING.md "Full replay"), with the saved copy's
     // mastery exams; beside it what the saved copy says when it differs. null while the saved copy is read.
@@ -303,45 +426,67 @@ function renderJourney(name, anonId = '') {
   const first = byKind('start').sort((a, b) => CM[a][0] - CM[b][0]),
     singles = byKind('card'),
     alls = byKind('all'),
-    backs = byKind('back');
+    backs = byKind('back'),
+    many = esc(ASUBJ.many),
+    // The cards of units outside the slate (a fish scientific genus, a coral bonus genus), one line per word beside them
+    // (jOffSlate), at the first one's time: byKind counts the slate's only.
+    offCards = Object.entries(
+      Object.keys(CM)
+        .filter(g => !J.slate.has(g) && kindOf(CM[g]) !== 'back')
+        .sort((a, b) => cardT(CM[a]) - cardT(CM[b]))
+        .reduce((o, g) => ((o[jOffSlate(g, J.slate)] = o[jOffSlate(g, J.slate)] || []).push(g), o), {})
+    ).map(([w, L]) => [
+      cardT(CM[L[0]]) || null,
+      `<li><b>${esc(w[0].toUpperCase() + w.slice(1))} cards</b> ${L.length}: ${L.slice(0, 8).map(jUnit).join(', ')}${L.length > 8 ? ', …' : ''} · first ${jLocal(cardT(CM[L[0]]))}</li>`
+    ]),
+    // The steps of the path from the answer log (jSteps: the first genus question, the first family of circle 2 or 3), for
+    // every player, signed in or not.
+    steps = jSteps(R, g => (M && M.gen[g]) || null, ASUBJ),
+    stepItems = steps.map(s => [
+      s[4],
+      `<li><b>${esc(jStepWords(s)[0])}</b> from answer ${s[0] + 1} · ${jUnit(s[3])} · ${jLocal(s[4])}</li>`
+    ]),
+    stepsList = stepItems.length ? `<ul class="adm-jcards">${jOrder(stepItems)}</ul>` : '';
   const cardsLine = !C
-    ? '<p class="note">Cards: loading…</p>'
+    ? '<p class="note">Cards: loading…</p>' + stepsList
     : C.none
-      ? ''
+      ? stepsList
       : C.anon
-        ? '<p class="note">Cards: not saved (not signed in).</p>'
+        ? '<p class="note">Cards: not saved (not signed in).</p>' + stepsList
         : C.err
-          ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>`
+          ? `<p class="note">Cards: the player's saved progress could not be read (${esc(C.err)}); ↻ to try again.</p>${stepsList}`
           : `<ul class="adm-jcards">${jOrder([
-              ...jStart(C.start, before),
+              ...jStart(C.start, before, jLocal),
               first.length
                 ? [
                     cardT(CM[first[0]]) || null,
-                    `<li><b>First cards</b> ${first.map(g => `<i>${esc(g)}</i>`).join(', ')} · ${jTime(cardT(CM[first[0]]))}</li>`
+                    `<li><b>First cards</b> ${first.map(jUnit).join(', ')} · ${jLocal(cardT(CM[first[0]]))}</li>`
                   ]
                 : [
                     null,
                     '<li><b>First cards</b> none saved (progress from before the cards, or played on another device not synced yet)</li>'
                   ],
               [null, `<li><b>Cards one at a time</b> ${singles.length}</li>`],
+              ...offCards,
+              ...stepItems,
               ...(openAt != null
                 ? [
                     [
                       offer.t || cardT([openAt]) || null,
-                      `<li><b>Opened all genera</b> after answer ${openN} · ${jTime(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} genera at once</li>`
+                      `<li><b>Opened all ${many}</b> after answer ${openN} · ${jLocal(offer.t || cardT([openAt]))}${offer.via ? ' · ' + (JVIA[offer.via] || esc(offer.via)) : ''} · ${offer.n ?? alls.length + backs.length} ${many} at once</li>`
                     ],
                     ...(offer.bk === 'one'
                       ? [
                           [
                             offer.bt || null,
-                            `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)} · ${offer.bn} genera closed, ${backs.length} still closed</li>`
+                            `<li><b>Back to one at a time</b> after answer ${before(offer.bt, offer.bat)} · ${jLocal(offer.bt)} · ${offer.bn} ${many} closed, ${backs.length} still closed</li>`
                           ]
                         ]
                       : offer.bk === 'keep'
                         ? [
                             [
                               offer.bt || null,
-                              `<li><b>Kept all genera</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jTime(offer.bt)}</li>`
+                              `<li><b>Kept all ${many}</b> when asked after answer ${before(offer.bt, offer.bat)} · ${jLocal(offer.bt)}</li>`
                             ]
                           ]
                         : [])
@@ -350,10 +495,10 @@ function renderJourney(name, anonId = '') {
                   ? [
                       [
                         offer.t || null,
-                        `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jTime(offer.t) : ''}</li>`
+                        `<li><b>Offer to open all</b> declined after answer ${offer.at}${offer.t ? ' · ' + jLocal(offer.t) : ''}</li>`
                       ]
                     ]
-                  : [[null, '<li><b>Open all genera</b> not used</li>']])
+                  : [[null, `<li><b>Open all ${many}</b> not used</li>`]])
             ])}</ul>`;
 
   // Learned genera and when: the answer that passed the exam, i.e. the last right exam question (|x) on the genus
@@ -414,13 +559,16 @@ function renderJourney(name, anonId = '') {
         [total, total]
       ],
       days: dayStarts,
-      dots: J.marks.map(([i, g, t]) => [i, J.met[i], `${g}: answer ${i + 1}, ${jTime(t)}`]),
-      marks: openN != null ? [[Math.min(R.length - 1, openN), 'Opened all']] : [],
-      stars: lrnPts.map(([g, i]) => [i, lrnSeries[i], `${g} learned: answer ${i + 1}, ${jTime(R[i][1])}`]),
+      dots: J.marks.map(([i, g, t]) => [i, J.met[i], `${jName(g)}: answer ${i + 1}, ${jTime(t)}`]),
+      // Opened all, and the steps of the path (jSteps), in answer order.
+      marks: [...(openN != null ? [[Math.min(R.length - 1, openN), 'Opened all']] : []), ...steps.map(s => [s[0], jStepWords(s)[1]])].sort(
+        (a, b) => a[0] - b[0]
+      ),
+      stars: lrnPts.map(([g, i]) => [i, lrnSeries[i], `${jName(g)} learned: answer ${i + 1}, ${jTime(R[i][1])}`]),
       label: `${jMany()} met over time`
     })}
     <p class="adm-axis"><span>answer 1 · ${jDate(R[0][1])}</span><span>vertical lines: a new day</span><span>answer ${R.length} · ${jDate(R[R.length - 1][1])}</span></p>
-    ${cardsLine ? `<h4>Cards</h4>${cardsLine}` : ''}</section>`;
+    ${cardsLine ? `<h4>Cards${steps.length ? ' and steps' : ''}</h4>${cardsLine}` : ''}</section>`;
 
   // 2. Easy and hard for them: right answers against the chance the game expected (photo difficulty, their level).
   const scored = Object.entries(J.G).filter(([, s]) => s.n >= JOURNEY.MIN && s.score != null),
@@ -448,7 +596,7 @@ function renderJourney(name, anonId = '') {
         ? `<table class="adm-tbl">${mixes
             .map(([k, n]) => {
               const [a, b] = k.split('|');
-              return `<tr><td><i>${esc(jName(a))}</i> → <i>${esc(jName(b))}</i></td><td class="n">${n}×</td></tr>`;
+              return `<tr><td>${jUnit(a)} → ${jUnit(b)}</td><td class="n">${n}×</td></tr>`;
             })
             .join('')}</table>`
         : '<p class="note">None</p>'
@@ -459,7 +607,7 @@ function renderJourney(name, anonId = '') {
             .map(g => `<i>${esc(g)}</i>`)
             .join(', ')}</p>`
         : ''
-    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(g => `<i>${esc(jName(g))}</i>`).join(', ')}</p>` : ''}</section>`;
+    }${full && notMet.length ? `<h3>Not met yet <small>${notMet.length}</small></h3><p class="adm-jnot">${notMet.map(jUnit).join(', ')}</p>` : ''}</section>`;
 
   // 3. Every genus asked, in the order they were met (or easiest / hardest first).
   const rows = Object.entries(J.G).sort((a, b) =>
@@ -494,58 +642,29 @@ function renderJourney(name, anonId = '') {
     };
   const dots = h => `<span class="adm-jdots">${[...h].map(c => `<i class="${c === '1' ? 'ok' : 'ko'}"></i>`).join('')}</span>`,
     sortBtn = (k, t) => `<button type="button" data-jsort="${k}" aria-pressed="${JSORT === k}">${t}</button>`;
-  const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>${jMany()} <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
-    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>${jOne()}</th>${full ? '<th title="When its card showed: after which answer">Card</th>' : ''}<th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th>${RP ? `<th title="The genus's bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th>` : ''}<th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
+  // Units of another rank among them (the fish genera beside the families): the words of the subject's Answer log
+  // (admin.js manyWord, stopWord: Families and genera, Family or genus).
+  const ranks = rows.some(([g]) => !J.slate.has(g) && jOffSlate(g, J.slate) !== 'bonus'),
+    tMany = ranks ? esc(manyWord(ASUBJ)) : jMany(),
+    tOne = ranks ? esc(stopWord(ASUBJ)) : jOne();
+  const table = `<section class="adm-scard adm-jwide"><div class="adm-shead"><h3>${tMany} <small>${rows.length}</small></h3><span class="adm-qseg adm-sseg" role="group">${sortBtn('met', 'Order met')}${sortBtn('easy', 'Easiest')}${sortBtn('hard', 'Hardest')}${sortBtn('n', 'Most asked')}</span></div>
+    <div class="adm-tscroll"><table class="adm-tbl adm-jtbl"><thead><tr><th>${tOne}</th>${full ? '<th title="When its card showed: after which answer">Card</th>' : ''}<th title="Its first question">First asked</th><th>Answers</th><th>Right</th><th title="Right answers against the chance the game expected">vs expected</th>${RP ? `<th title="The ${esc(ASUBJ.one)}'s bar, replayed from every answer in the log with the current rules (↻ saved: what the copy in the sheet still says)">Progress</th>` : ''}<th>Last 10</th><th>Answered instead</th></tr></thead><tbody>${rows
       .map(([g, s]) => {
         const inst = Object.entries(s.inst)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 2)
-          .map(([x, n]) => `<i>${esc(jName(x))}</i> ${n}×`)
+          .map(([x, n]) => `${jUnit(x)} ${n}×`)
           .join(', ');
         return `<tr><td>${jUnit(g)}${g in LRN ? ` <span class="adm-jlearn" title="Learned (mastery exam passed)${lrnAt[g] != null ? ': ' + esc(jTime(R[lrnAt[g]][1])) : ''}">learned</span>` : ''}${J.slate.has(g) ? '' : ` <small>${jOffSlate(g, J.slate)}</small>`}</td>${full ? `<td class="n">${cardCell(g, s)}</td>` : ''}<td class="n" title="${esc(jTime(s.t0))}">#${s.first + 1} · ${jDate(s.t0)}</td><td class="n">${s.n}</td><td>${pct(s.ok, s.n)} ${sbar(s.ok, s.n, s.ok / s.n < 0.5 ? 'bad' : '')}</td><td class="n${s.score != null && s.score < -0.1 ? ' warnc' : ''}">${jPts(s.score)}</td>${RP ? `<td class="n">${genProg(g)}</td>` : ''}<td>${dots(s.h)}</td><td>${inst}</td></tr>`;
       })
       .join('')}</tbody></table></div></section>`;
 
-  // 3b. Games (as on Players, Pierre 2026-11-02: "bring that page's numbers into the journey"), with the photo quiz
-  // split: its own 4-choice questions, the "Again: A or B?" rematch after a mix-up (2 choices, logged as the photo
-  // quiz), and the mastery exam questions (|x, from 2026-11-02); Look-alike duels are their own tab in Practice.
-  const GM = [
-      [
-        'Quiz',
-        r =>
-          /^quiz(\||$)/.test(r[5]) &&
-          !/\|[xdt](\||$)/.test(r[5]) &&
-          String(r[10] || '')
-            .split(' ')
-            .filter(Boolean).length !== 2
-      ],
-      [
-        'Again: A or B? (after a mix-up)',
-        r =>
-          /^quiz(\||$)/.test(r[5]) &&
-          !/\|[dt](\||$)/.test(r[5]) &&
-          String(r[10] || '')
-            .split(' ')
-            .filter(Boolean).length === 2
-      ],
-      // A duel slipped into the custom quiz is logged quiz|s|d|k2 (quiz.js answer).
-      ['Look-alike duel in the quiz', r => /^quiz\|(s\|)?d(\||$)/.test(r[5])],
-      // Typed questions (quiz.js, model.js TYPED, logged |t; their exam questions too, also counted under Mastery exam).
-      ['Typed (recall)', r => /^quiz\|(.*\|)?t(\||$)/.test(r[5])],
-      ['Mastery exam', r => /\|x$/.test(r[5])],
-      // The custom quiz (quiz|s…, 2026-11-03): photo-quiz answers on the genera the player picked, also in the rows above.
-      ['Custom quiz (genera picked)', r => /^quiz\|s(\||$)/.test(r[5])],
-      ['Look-alike duels (tab)', r => /^quiz-duel/.test(r[5])],
-      ['Other', r => !/^quiz/.test(r[5])]
-    ].map(([t, f]) => {
-      const L = R.filter(f);
-      return [t, L.length, L.reduce((n, r) => n + r[4], 0)];
-    }),
-    games = `<section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${GM.filter(([t, n]) => n || /^Look-alike duels/.test(t))
-      .map(
-        ([t, n, r]) => `<tr><td>${t}</td><td class="n">${pct(r, n)}</td><td>${n ? sbar(r, n) : ''}</td><td class="n">${n || '0'}</td></tr>`
-      )
-      .join('')}</table></section>`;
+  // 3b. Games: the player's answers by format, the subject's own (jGames), with the questions on each rank.
+  const games = `<section class="adm-scard"><h3>Games</h3><table class="adm-tbl">${jGames(R, ASUBJ, logConds(R, ASUBJ))
+    .map(
+      ([t, n, r]) => `<tr><td>${t}</td><td class="n">${pct(r, n)}</td><td>${n ? sbar(r, n) : ''}</td><td class="n">${n || '0'}</td></tr>`
+    )
+    .join('')}</table></section>`;
 
   // 4. When they played (Pierre, 2026-11-03: by the hour, not only by the day): one row a day from the first day to
   // the last, days without an answer included, one cell an hour (this device's time zone); the shade is the answers that
@@ -604,24 +723,37 @@ function renderJourney(name, anonId = '') {
       S = subjectOf(sj);
     return esc(pg) + (S.pv ? ` (${esc(S.name)})` : '');
   };
+  // The pages they spent most time on: every page, or on the side of a subject with sheets at several ranks, its own.
   const pagesTop = Object.entries(RT_)
+    .filter(([k]) => !ASUBJ.sheets || k.startsWith(ASUBJ.pv))
     .sort((a, b) => b[1][1] - a[1][1] || b[1][0] - a[1][0])
     .slice(0, 8);
-  const sheetsSec = `<section class="adm-scard" data-jsheets><h3>Genus sheets opened${SH ? ` <small>${SH.G.length}</small>` : ''}</h3>${
+  // A subject whose sheets sit at several ranks (SUBJECTS sheets: the fish family, genus and species sheets) logs them as
+  // one page with no unit (admin.js sheetVisit, as Analyses › Learning › Stops counts them): the times and the time
+  // spent over the visits that showed its pages, no table per unit (fish admin at parity, Journey details).
+  const mine = PR ? PR.filter(x => x.id === u.id) : [],
+    SV = ASUBJ.sheets ? mine.map(x => sheetVisit(x, ASUBJ)) : [],
+    sv = SV.filter(Boolean).reduce((a, v) => [a[0] + v[0], a[1] + v[1]], [0, 0]),
+    svN = new Set(mine.filter((x, i) => SV[i]).map(x => x.vi)).size;
+  const sheetsSec = `<section class="adm-scard" data-jsheets><h3>${ASUBJ.sheets ? esc(sheetsTitle(ASUBJ)) : 'Genus sheets opened'}${SH && !ASUBJ.sheets ? ` <small>${SH.G.length}</small>` : ''}</h3>${
     !PGS
       ? '<p class="note">Loading…</p>'
       : PGS.err
         ? `<p class="note">${esc(PGS.err)}</p>`
-        : !SH.visits
-          ? '<p class="note">No visit recorded yet.</p>'
+        : !(ASUBJ.sheets ? svN : SH.visits)
+          ? `<p class="note">No visit${ASUBJ.sheets ? ` with ${esc(ASUBJ.name)} pages` : ''} recorded yet.</p>`
           : `${
-              SH.G.length
-                ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
-                    o =>
-                      `<tr><td><a class="adm-gen" href="${esc(genusHref(o.g))}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
-                  ).join('')}</tbody></table></div>`
-                : '<p class="note">None opened.</p>'
-            }<p class="note">${SH.visits} visit${SH.visits === 1 ? '' : 's'} recorded · most time on ${pagesTop.map(([k, [n, sc]]) => `${pageLabel(k)} ${secs(sc)} (${n}×)`).join(', ')}</p>`
+              ASUBJ.sheets
+                ? sv[0]
+                  ? `<p>Opened ${sv[0]} time${sv[0] === 1 ? '' : 's'} · ${secs(sv[1])}</p>`
+                  : '<p class="note">None opened.</p>'
+                : SH.G.length
+                  ? `<div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Times</th><th class="n">Time</th><th>First opened</th><th>From</th></tr></thead><tbody>${SH.G.map(
+                      o =>
+                        `<tr><td><a class="adm-gen" href="${esc(genusHref(o.g))}"><i>${esc(o.g)}</i></a></td><td class="n">${o.n}</td><td class="n">${secs(o.s)}</td><td title="Opened first ${esc(jTime(o.first))}">${o.asked ? 'after asked' : '<b>before asked</b>'}</td><td>${FROM_T[o.from] || 'Other'}</td></tr>`
+                    ).join('')}</tbody></table></div>`
+                  : '<p class="note">None opened.</p>'
+            }<p class="note">${(n => `${n} visit${n === 1 ? '' : 's'}${ASUBJ.sheets ? ` with ${esc(ASUBJ.name)} pages` : ''} recorded`)(ASUBJ.sheets ? svN : SH.visits)}${pagesTop.length ? ` · most time on ${pagesTop.map(([k, [n, sc]]) => `${pageLabel(k)} ${secs(sc)} (${n}×)`).join(', ')}` : ''}</p>`
   }</section>`;
 
   $v.innerHTML =
@@ -658,7 +790,7 @@ function renderJourney(name, anonId = '') {
       ...(RT.length ? [['Median time', RT[Math.floor(RT.length / 2)].toFixed(1) + ' s']] : []),
       ...(ZM.length ? [['Enlarged', pct(ZM.filter(Boolean).length, ZM.length)]] : [])
     ]) +
-    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${own ? sheetsSec : ''}${recentSessions(R, {own: 1, user: anonId ? {id: anonId, anon: 1} : u})}${daysSec}</div>`;
+    `<div class="adm-sgrid adm-journey">${prog}${eh}${table}${games}${own || ASUBJ.sheets ? sheetsSec : ''}${recentSessions(R, {own: 1, user: anonId ? {id: anonId, anon: 1} : u})}${daysSec}</div>`;
   bindJReload();
   bindSess(); // the sessions unfold under their row (admin.js)
   pagesFresh(here); // read again once stale (admin.js)
@@ -866,7 +998,7 @@ function sessionSummary(id, L, name, o = {}) {
       prog: sp && sp.prog,
       saved: !name || !full ? undefined : S && !S.err ? S : S && {}
     }),
-    gi = g => `<i>${esc(jName(g))}</i>`,
+    gi = jUnit,
     gl = jUnit,
     names = G =>
       G.map(gi)
@@ -890,7 +1022,7 @@ function sessionSummary(id, L, name, o = {}) {
   ];
   if (F.met.length)
     said.push(F.met.length <= 3 ? `Met ${names(F.met.map(x => x[1]))} for the first time.` : `Met ${F.met.length} new ${esc(ASUBJ.many)}.`);
-  if (F.offer && F.offer.open && F.inS(F.offer.t)) said.push('Opened all genera.');
+  if (F.offer && F.offer.open && F.inS(F.offer.t)) said.push(`Opened all ${esc(ASUBJ.many)}.`);
   if (learned && learned.length) said.push(`Learned ${names(learned)}.`);
   if (F.improved.length)
     said.push(`Most progress on ${names(F.improved.slice(0, 2).map(x => x[0]))} (${jPts(F.improved[0][2] - F.improved[0][1])}).`);
@@ -927,8 +1059,8 @@ function sessionSummary(id, L, name, o = {}) {
                 ...(100 - lo >= 40 ? [[Math.round((lo + 100) / 20) * 10, Math.round((lo + 100) / 20) * 10 + '%']] : []),
                 [100, '100%']
               ],
-              dots: F.met.map(([i, g]) => [i, lo, `${g}: first question`]),
-              stars: (learned || []).map(g => [L.indexOf(lastX[g]), 100, `${g} learned`]),
+              dots: F.met.map(([i, g]) => [i, lo, `${jName(g)}: first question`]),
+              stars: (learned || []).map(g => [L.indexOf(lastX[g]), 100, `${jName(g)} learned`]),
               label: 'Right answers in the session',
               w: Math.max(280, Math.min(900, innerWidth >= 1024 ? Math.round(pw * 0.42) : pw)),
               h: 140
@@ -996,7 +1128,7 @@ function sessionSummary(id, L, name, o = {}) {
               ? [
                   [
                     F.offer.t,
-                    `<li><b>${F.offer.open ? 'Opened all genera' : 'Offer to open all'}</b>${F.offer.open ? '' : ' declined'} after answer ${before(F.offer.t, F.offer.at)}</li>`
+                    `<li><b>${F.offer.open ? `Opened all ${esc(ASUBJ.many)}` : 'Offer to open all'}</b>${F.offer.open ? '' : ' declined'} after answer ${before(F.offer.t, F.offer.at)}</li>`
                   ]
                 ]
               : []),
@@ -1004,7 +1136,7 @@ function sessionSummary(id, L, name, o = {}) {
               ? [
                   [
                     F.offer.bt,
-                    `<li><b>${F.offer.bk === 'one' ? 'Back to one at a time' : 'Kept all genera'}</b> after answer ${before(F.offer.bt, F.offer.bat)}</li>`
+                    `<li><b>${F.offer.bk === 'one' ? 'Back to one at a time' : `Kept all ${esc(ASUBJ.many)}`}</b> after answer ${before(F.offer.bt, F.offer.bat)}</li>`
                   ]
                 ]
               : [])

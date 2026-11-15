@@ -111,6 +111,118 @@
   "fish-s331-cand-fb-Pamul_u9": {
    "code": "p1g0sl14",
    "keep": "best"
+  },
+  "fish-s331-cand-197967365": {
+   "code": "o1d2bs11",
+   "keep": "best"
+  },
+  "fish-s331-cand-223216329": {
+   "code": "d1d1sms1",
+   "keep": "best"
+  },
+  "fish-s331-cand-298400309": {
+   "code": "o1n1sssj1",
+   "keep": "best"
+  },
+  "fish-s331-cand-739830242": {
+   "code": "p1g0sl1ja2",
+   "keep": "best"
+  },
+  "fish-s331-cand-38189183": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s331-cand-189509069": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s331-cand-349268466": {
+   "code": "o1g1smk2",
+   "keep": "best"
+  },
+  "fish-s331-cand-705139660": {
+   "code": "o1g1smx1",
+   "keep": "best"
+  },
+  "fish-s331-cand-621831239": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s331-cand-621831246": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s331-cand-756323056": {
+   "code": "p1g0sm1a2",
+   "keep": "best"
+  },
+  "fish-s331-cand-683161690": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s331-cand-683161736": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s331-cand-654672194": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s331-cand-605836800": {
+   "code": "p1n1sl13",
+   "keep": "best"
+  },
+  "fish-s331-cand-727572445": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s331-cand-637584332": {
+   "code": "o1g1mm12",
+   "keep": "best"
+  },
+  "fish-s331-cand-586575946": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s331-cand-606333764": {
+   "code": "o1g1slo3",
+   "keep": "best"
+  },
+  "fish-s331-cand-606333794": {
+   "code": "o1g1smo2",
+   "keep": "alt"
+  },
+  "fish-s331-cand-305622319": {
+   "code": "o1n1bm11",
+   "keep": "best"
+  },
+  "fish-s331-cand-624843042": {
+   "code": "p1n1sl13",
+   "keep": "best"
+  },
+  "fish-s331-cand-305962628": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s331-cand-674603268": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "in a tank or container, not on the reef"
+  },
+  "fish-s331-cand-756911132": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s331-cand-305960338": {
+   "code": "p1g1smx1",
+   "keep": "best"
+  },
+  "fish-s331-cand-327122440": {
+   "code": "p1g1bm12",
+   "keep": "best"
   }
  }
 }

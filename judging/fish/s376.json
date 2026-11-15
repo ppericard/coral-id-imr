@@ -203,6 +203,18 @@
   "fish-s376-cand-436468976": {
    "code": "p1g1ss12",
    "keep": "best"
+  },
+  "fish-s376-cand-89564121": {
+   "code": "p1g1ss11",
+   "keep": "dup"
+  },
+  "fish-s376-cand-462651846": {
+   "code": "o1g0sl13",
+   "keep": "best"
+  },
+  "fish-s376-cand-257191953": {
+   "code": "o1g1sl13",
+   "keep": "best"
   }
  }
 }

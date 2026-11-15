@@ -108,12 +108,65 @@ print(json.dumps([FR.region({"loc": f"{a},{b}"}) for a, b in pts]))`);
     'Maldives, Sri Lanka, Chagos',
     'Hawaii',
     'French Polynesia',
-    'Fiji, Samoa, central Pacific',
+    'Fiji, Samoa, Tonga',
     'North of 30 N (Japan, Korea, China)',
     'South of 30 S',
     'Eastern Pacific',
     'Atlantic, Mediterranean, elsewhere'
   ]);
+});
+
+// Points the boxes once put in the wrong region: New Zealand, the Cook Islands, Kiritimati and the Marshall Islands read
+// "Fiji, Samoa, central Pacific", a northern Maldives atoll "Arabian Sea", India's east coast "Maldives, Sri Lanka".
+test('the regions: New Zealand, the Cook, Line and Marshall Islands, the Maldives each in their own', () => {
+  const out = py(`
+pts = [(-35.5, 174.7), (-29.3, -177.9), (-44.0, -176.5), (-21.2, -159.8), (-9.0, -158.0), (1.9, -157.4), (5.9, -162.1),
+       (7.1, 171.2), (1.4, 173.0), (5.4, 72.9), (6.6, 73.1), (7.0, 80.0), (12.9, 80.3), (15.4, 73.8), (9.9, 76.2),
+       (-17.8, 180.0), (-17.8, -179.9), (-18.1, 178.4), (-13.8, -171.8), (-21.1, -175.2), (-8.5, 179.2),
+       (-31.5, 159.1), (-40.0, -150.0), (10.0, -140.0)]
+print(json.dumps([FR.region({"loc": f"{a},{b}"}) for a, b in pts]))`);
+  assert.deepStrictEqual(out, [
+    'New Zealand and Kermadec Islands', // Auckland
+    'New Zealand and Kermadec Islands', // Raoul Island, Kermadec
+    'New Zealand and Kermadec Islands', // Chatham Islands, east of the dateline
+    'Cook Islands', // Rarotonga
+    'Cook Islands', // Penrhyn
+    'Line and Phoenix Islands', // Kiritimati
+    'Line and Phoenix Islands', // Palmyra
+    'Marshall and Gilbert Islands', // Majuro
+    'Marshall and Gilbert Islands', // Tarawa
+    'Maldives, Sri Lanka, Chagos', // Raa Atoll (an away photo of Pseudanthias squamipinnis)
+    'Maldives, Sri Lanka, Chagos', // Haa Dhaalu, the north of the Maldives
+    'Maldives, Sri Lanka, Chagos', // Sri Lanka
+    'Bay of Bengal', // Chennai
+    'Arabian Sea and the Gulfs', // Goa: still the Arabian Sea
+    'Arabian Sea and the Gulfs', // Kochi, Kerala: still the Arabian Sea
+    'Fiji, Samoa, Tonga', // Fiji on the dateline (180 reads -180)
+    'Fiji, Samoa, Tonga', // Fiji just east of it
+    'Fiji, Samoa, Tonga', // Suva
+    'Fiji, Samoa, Tonga', // Apia, Samoa
+    'Fiji, Samoa, Tonga', // Nuku'alofa, Tonga
+    'Fiji, Samoa, Tonga', // Funafuti, Tuvalu
+    'South of 30 S', // Lord Howe Island
+    'South of 30 S', // the open South Pacific
+    'Central Pacific, elsewhere' // the open central Pacific
+  ]);
+  // --relabel: the stored list's regions again from its coordinates, the rest untouched.
+  const doc = py(`
+doc = {"away": {"s1": [{"f": "fi1", "reg": "Fiji, Samoa, central Pacific", "ll": [-35.5, 174.7]},
+                       {"f": "fi2", "reg": "Red Sea", "ll": [27.9, 34.3]}]}}
+print(json.dumps({"n": FR.relabel(doc), "doc": doc}))`);
+  assert.deepStrictEqual(doc, {
+    n: 1,
+    doc: {
+      away: {
+        s1: [
+          {f: 'fi1', reg: 'New Zealand and Kermadec Islands', ll: [-35.5, 174.7]},
+          {f: 'fi2', reg: 'Red Sea', ll: [27.9, 34.3]}
+        ]
+      }
+    }
+  });
 });
 
 test('tools/fish_refs.json: no ND licence in play or listed; a photo left out pending Q230 is never a reference photo', () => {

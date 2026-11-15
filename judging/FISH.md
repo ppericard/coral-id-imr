@@ -8,14 +8,15 @@ through it (no wall since 2026-11-06). This file is the rubric, so the pass can 
 and give the same kind of result.
 
 Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `tools/fish_source.json`);
-`python3 tools/fish_judge.py` writes them into `fish-photos.json` (`e`, `jt` and a proposed crop `c` on each photo) and
-prints the summary;
-`tools/fish_photos.py` re-applies them whenever it rebuilds the photo list. `tests/fish.test.js` checks that every
-game photo is judged (every circle and the winks), that every code is valid and that the caps below hold.
+`tools/fish_game.py` reads them for the reference photos it puts in play, `tools/judging_fish.py` writes the candidates'
+into `suggest.json`, and `python3 tools/fish_judge.py` prints the summary of the photos in play (`fish-game.json`).
+Until 2026-11-15 it also wrote them into the stopgap list of `fish-photos.json` (remote iNaturalist photos, retired).
+`tests/fish.test.js` checks that every code is valid, that the caps below hold and that every circle-1 entry has 5 very
+easy photos in play.
 
 ## How to look
 
-1. `python3 tools/fish_judge.py --sheets <dir>` downloads every game photo at iNaturalist's `medium` size (500 px)
+1. `python3 tools/fish_judge.py --sheets <dir>` downloads every photo in play at iNaturalist's `medium` size (500 px)
    into `<dir>/img` and draws contact sheets of 12 (4 x 3, each photo in a 300 x 225 cell, its number and the
    observer's species name above it, a 5 x 5 grid over it for the crops) into `<dir>/sheets`. Keep `<dir>` outside the
    repository; delete it after. `--only t28,t29` limits the sheets to some entries, `--todo` to the photos not judged
@@ -134,12 +135,11 @@ for a genus or a family, a photo of a game species of the entry; the observation
 taxon's most faved, `obs_of`; a photo whose observation is outside the box is listed under `away`, never taken, while
 Pierre's Q230 is open), and adds FishBase's photos of each species that pass its rules (its main picture first, up to 3):
 `tools/fish_refs.json`, kept by species. Judge them like any photo: `python3 tools/fish_judge.py --sheets <dir> --refs
---todo`, codes under their entry in `tools/fish_judge.json` `photos`. Once judged, each joins its entry's game photos
-(`tools/fish_judge.py` `add_refs`; never in place of a game photo: one of an observation already in the game stays out), the iNaturalist ones and
-FishBase's main picture with `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
+--todo`, codes under their entry in `tools/fish_judge.json` `photos`; the iNaturalist ones and FishBase's main picture
+carry `rep`. **On R2, like a candidate** (Pierre, 2026-11-08, Q212: "we bring them in like
 candidates"): every reference photo judged sure on the candidates' rubric (one kind of fish, count `1` or `s`; in the
-water, no `a`) is in play by itself, whatever its level (`tools/fish_game.py` `ref_play`, `judged_sure`); the stopgap list
-(`fish-photos.json`) still takes only the reference-level ones. The same photo as one in play stays out, always; **a reference photo on an observation
+water, no `a`) is in play by itself, whatever its level (`tools/fish_game.py` `ref_play`, `judged_sure`; the stopgap list of
+`fish-photos.json`, which took only the reference-level ones, is retired since 2026-11-15). The same photo as one in play stays out, always; **a reference photo on an observation
 already in play** (another photo of it is a game photo) is judged against that observation's photos like a candidate
 (Pierre, 2026-11-08, Q218: "judge them with the others, see the duplicates, take them out"): `tools/fish_judge.json`
 `keep` {photo: `best` | `alt` | `dup`}; `best` or `alt` enters, `dup` stays out, and it waits until judged.

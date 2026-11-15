@@ -155,6 +155,11 @@ const loc = (p, s) => {
   return AWAY && o.src ? photoOnline(o.src, s) : photoUrl(`img/${p.f}${s ? '-' + s : ''}.webp${ver(o)}`);
 };
 const img = (p, size) => (p.r && p.src ? inat(p, size === 's' ? 'medium' : 'large') : loc(p, size));
+// A fish photo's tile (Find the X; tools/fish_game.py, Pierre 2026-11-09, Q321 D4): {f}-x.webp on R2, a 360 px square cut
+// around the fish, its square (xc) and its rewrite count (iv: a rotation corrected leaves xc as it was) in the address,
+// so a new tile is a new file for the caches (sw.js serves photos cache-first; Codex review #885). A photo with none, or
+// once R2 has failed (a tile has no online original), its 480 px file instead, the fish whole in its photo.
+const tileSrc = p => (p.xc && !p.r && !AWAY ? photoUrl(`img/${p.f}-x.webp?x=${p.xc.join('_')}${p.iv ? '.' + p.iv : ''}`) : img(p, 's'));
 // Photo quality (Pierre, 2026-11-01: slow, unstable connections in the Philippines): a big photo (game, sheet cover)
 // gets the smallest file that covers its box at the screen's density, counted up to 2x (a 3x phone sees no difference).
 // Saver takes the 480 px file for game photos and stage photos whatever the box; Full always takes the 1600 px file. Auto is Saver when the browser reports
@@ -424,12 +429,12 @@ function cropWatch() {
 const NOPHOTO =
   '<svg viewBox="0 0 64 48"><path class="np-t" d="M8 16a5 5 0 0 1 5-5h8l4-5h14l4 5h8a5 5 0 0 1 5 5v22a5 5 0 0 1-5 5H13a5 5 0 0 1-5-5z"/><circle cx="32" cy="27" r="9"/><path class="np-x" d="M10 4l44 42"/><path d="M10 4l44 42"/></svg>';
 const noPhoto = i => {
-  const box = i.closest('.qph, .ulphoto');
+  const box = i.closest('.qph, .ulphoto, .fxt');
   if (box && !box.querySelector('.nophoto'))
     box.insertAdjacentHTML('beforeend', `<span class="nophoto" aria-hidden="true">${NOPHOTO}</span>`);
 };
 const noPhotoGone = i => {
-  const n = i.closest('.qph, .ulphoto');
+  const n = i.closest('.qph, .ulphoto, .fxt');
   if (n) n.querySelectorAll('.nophoto').forEach(x => x.remove());
 };
 // Unstable connection (Pierre, 2026-11-01): a photo that fails is tried again twice (after 1 s, then 4 s); a game photo
@@ -484,9 +489,10 @@ $v.addEventListener(
         };
       }
       // Another photo of the question may come later, one still trying or one added since (the hint, Codex review
-      // #490): the answers open again then (the load listener below).
+      // #490): the answers open again then (the load listener below). A Find the X's photos are its choices (quiz.js
+      // question): one missing is a choice the player cannot see, so its answers close at once (Codex review #885).
       const q = $v.querySelector('.q');
-      if (q && ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth)) {
+      if (q && (q.querySelector('.qstage.qfx') || ![...q.querySelectorAll('.qstage img')].some(x => x.complete && x.naturalWidth))) {
         q.classList.add('qnone');
         qAnswers(q, false);
       }
@@ -506,7 +512,8 @@ $v.addEventListener(
       e.target.naturalWidth &&
       e.target.closest('.q.qnone:not(.done) .qstage') &&
       e.target.closest('.q');
-    if (!q) return;
+    // A Find the X opens again only once none of its four photos is missing.
+    if (!q || q.querySelector('.qstage.qfx img.fail')) return;
     q.classList.remove('qnone');
     qAnswers(q, true);
   },
@@ -583,6 +590,39 @@ const cover = g =>
 const JUV_PH = 'juvenile';
 const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
+// A leaf's presence around the instance's centre (Pierre, 2026-11-13, Q339: "Il faudra rendre générique la localisation
+// centrale de l'instance"; the centre: tools/instance.json, fish.json centre): [its distinct Research Grade observers,
+// its observations] within the centre's radius, from its record's present: nearU and nearN, else their first names
+// (dauinU and dauin, which tools/build_fish.py still writes). [0, 0] with none.
+const nearSeen = r => {
+  const p = (r && r.present) || {};
+  return [p.nearU ?? p.dauinU ?? 0, p.nearN ?? p.dauin ?? 0];
+};
+// The default cover of a node with leaves when Pierre has picked none (Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864):
+// among its leaves with a reference-level photo that is not a juvenile (core.js refLevel), the one most seen around the
+// instance's centre by distinct observers (ties: observations, then the easy order), then his ★ cover of that leaf when
+// he picked one in play ("mon choix était le meilleur au moment avec ce que j'avais sous les yeux"), else that leaf's
+// easiest such reference photo (easyRank: the licence breaking ties). With no reference photo under the node: the most
+// seen leaf among those with an adult photo, then his ★ cover of it, else its easiest adult photo. Never a juvenile while
+// the node has another photo (juvP); a node with no presence keeps the easy order's first. L: the node's photos in play
+// (p.sp: its leaf), seen(leaf id): [observers, observations] (nearSeen), d: easyRank's difficulty, pick(leaf id): his ★
+// cover of that leaf, or null. autosort.js fishCoverOf is the admin's copy (tests/fishcovers.test.js holds them together).
+function seenCover(L, seen, d, pick = () => null) {
+  const R = easyRank(L, d),
+    A = R.filter(p => !juvP(p)),
+    Ref = A.filter(refLevel);
+  let best = null;
+  (Ref.length ? Ref : A).forEach(p => {
+    const s = seen(p.sp) || [0, 0];
+    if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
+  });
+  if (!best) return R[0] || null;
+  const k = pick(best.p.sp);
+  return (k && A.find(p => p.f === k.f)) || best.p;
+}
+// A fish species' presence (FISH.sps: fish.json species by id) and his ★ cover of it (FISH.covers: app.js fishCurate).
+const fishSeen = sid => nearSeen(((FISH && FISH.sps) || {})[sid]);
+const fishSpPick = sid => ((FISH && FISH.covers) || {})[sid] || null;
 // applyCuration(d, c) and applySlots(d, c, {picks, autoq}) live in core.js (tested in tests/photos.test.js).
 let CUR_NEW = null,
   curAt = Date.now(); // curation read again later (curRefresh)
@@ -826,24 +866,25 @@ const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.uni
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
 // Fish (core.js fishGen over fish.json and the photos): fetched the first time the fish subject is needed. The photos:
-// fish-game.json, the ones Pierre put in play, hosted on R2 (tools/fish_game.py, admin plan PR 7), and fish-photos.json,
-// the stopgap list (remote iNaturalist photos, tools/fish_photos.py) and the sheet-only photos; core.js fishPhotos
-// picks per entry under Pierre's curation (CUR), so FISH is made again whenever the curation is (build, fishBuild).
+// fish-game.json, the ones in play, hosted on R2 (tools/fish_game.py, admin plan PR 7), and fish-photos.json, its first
+// photos per entry (the same records, read until fish-game.json is in) and the sheet-only photos, on R2 too; core.js
+// fishPhotos keeps those in play under Pierre's curation (CUR), so FISH is made again whenever the curation is (build,
+// fishBuild).
 let FISH = null,
   FISHP = null,
   FISHH = null,
   FISHRAW = null;
 const fishBuild = () => {
   const {f, ph, gm} = FISHRAW;
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f), CUR, f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
 // card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
-// unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its stopgap
-// copy while the candidate is not downloaded yet) counting; else the cover as before (the first of the easyRank order).
+// unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its
+// reference copy) counting; else the default (seenCover: the most seen species' easiest).
 // Feature (up to autosort.js FISHFEAT per species, his order): featP {species id: [photo]}, those still in play, the
 // species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
 // Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
@@ -881,17 +922,20 @@ function fishCurate(X, cur, F) {
     }
     if (fe.length) g.featP = Object.fromEntries(fe);
   });
-  // Every unit's card photo without his pick: the first of the game's order that is not a juvenile (juvP, adultFirst).
+  // Every unit's card photo without his pick (Q339 (b), seenCover): its species with a reference photo most seen around
+  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile.
+  const spr = new Map(((F && F.species) || []).map(s => [s.id, s])),
+    seen = sid => nearSeen(spr.get(sid));
   Object.values(X.gen).forEach(g => {
     const L = g.views.wide;
-    if (!g.coverP && L.length && juvP(L.find(p => p.f === g.cover))) g.cover = adultFirst(easyRank(L)).f;
+    if (!g.coverP && L.length) g.cover = seenCover(L, seen, undefined, sid => X.covers[sid]).f;
   });
   return X;
 }
 // In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): fishHome,
-// fish.json and fish-photos.json (the families and the stopgap's photos), enough for Home, which start-up waits for; then
+// fish.json and fish-photos.json (the families and their first photos), enough for Home, which start-up waits for; then
 // fishLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
-// 2: need). Until it is in, the units play on the stopgap's photos only, as when it cannot come; then they are built
+// 2: need). Until it is in, the units play on the first photos only, as when it cannot come; then they are built
 // again with it. A launch that finds it in the service worker's cache waits for it at start-up, as before (fishCached).
 const fishHome = () =>
   FISHH ||
@@ -899,7 +943,7 @@ const fishHome = () =>
     .then(([f, ph]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
-      // curated photos are not required: without them every family plays on the stopgap's.
+      // whole list is not required: without it every family plays on its first photos.
       if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
       if (!FISHRAW) FISHRAW = {f, ph, gm: {photos: {}}};
       return FISHRAW;
@@ -908,7 +952,7 @@ const fishHome = () =>
       FISHH = null;
       throw e;
     }));
-// The subject's data still partial (the fish units on the stopgap's photos only, until fish-game.json is in): what reads
+// The subject's data still partial (the fish units on their first photos only, until fish-game.json is in): what reads
 // the units' photos once for good waits (model.js domRecalcAll, the one-time rebuild of an old record's bar).
 const dataPartial = () => !!(UNITS[SUBJ.id].partial && UNITS[SUBJ.id].partial());
 // Whether this device's service worker already holds fish-game.json (a launch after the first, the same version): then
@@ -953,8 +997,9 @@ function rankPhotos() {
   Object.entries(FISH.gen).forEach(([n, g]) => {
     // The list the draw reads keeps no licence; the card photo breaks ties on it (core.js easyCover, Q270).
     g.views.wide = easyRank(g.views.wide, p => photoDiff(n, p), false);
-    // The card photo: his pick, else the first of the rated order that is not a juvenile (adultFirst; licences break ties).
-    if (g.views.wide.length) g.cover = (g.coverP || adultFirst(easyRank(g.views.wide, p => photoDiff(n, p)))).f;
+    // The card photo: his pick, else the most seen species' first photo in the rated order that is not a juvenile
+    // (seenCover, Q339 (b); licences break ties).
+    if (g.views.wide.length) g.cover = (g.coverP || seenCover(g.views.wide, fishSeen, p => photoDiff(n, p), fishSpPick)).f;
   });
 }
 // Per-subject state of the other files (model.js: the first-meeting cards, the opening hold, the comeback; quiz.js: the
@@ -1775,6 +1820,10 @@ const UNITS = {
     // Its line under its name where a new player picks the subject to start with (tour.js pick).
     pick: 'The coral genera of the IMR slate, as on ReefCloud photos.',
     slate: () => slateOf(DATA),
+    // Who sees the "mystery" tiles on My progress (progress.js mysteryOn; Pierre, 2026-11-04): from the player's first-launch
+    // answer c (null before any), only "I'm new to corals"; RAs who had the IMR course and players who know corals well
+    // see every genus as before.
+    mystery: c => c === 'new',
     // The species a photo shows, for the answer log (app.js speciesShown): none, a coral question is about the genus.
     species: () => '',
     // The photo's species, said under the verdict (photoTaxon): coralTaxon.
@@ -1807,6 +1856,9 @@ const UNITS = {
         )
     ],
     winks: () => [],
+    // The tile photos of unit n (Find the X, quiz.js planPhoto): none, so the corals never play it (Pierre, 2026-11-03:
+    // fish only; coral photos do not read as small thumbnails).
+    tiles: () => [],
     // The Learn page (#learn/genera): the Genera page (learn.js), and a genus's sheet (#learn/genus/Acropora).
     list: () => viewGenera(),
     sheet: n => viewGenus(n),
@@ -1834,7 +1886,7 @@ const UNITS = {
     load: () => fishLoad(),
     // What start-up waits for: the files of Home (fishHome), and the curated photos too when this device holds them.
     home: () => fishHome().then(() => fishCached().then(c => c && fishLoad())),
-    // Between the two: the units on the stopgap's photos only (dataPartial).
+    // Between the two: the units on their first photos only (dataPartial).
     partial: () => !!FISHRAW && !FISHRAW.full,
     pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
@@ -1849,7 +1901,7 @@ const UNITS = {
       },
       progress: {
         d: tap =>
-          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family in the game.`
+          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family in the game: a ? for each one you have not met yet.`
       }
     },
     // The cards that tell a player about the subject, one per way it opens (core.js SUBJECTS open; progress.js subjHello:
@@ -1886,6 +1938,9 @@ const UNITS = {
     // players who are not experts to "I know reef fish well"). The answer's variables and the window are kept as they are.
     startFb: false,
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
+    // The "mystery" tiles on My progress (progress.js mysteryOn; Pierre, 2026-11-04): for every fish player, whatever
+    // their first-launch answer.
+    mystery: () => true,
     // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
     tree: () => (FISH ? FISH.tree : null),
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
@@ -1935,7 +1990,7 @@ const UNITS = {
     // The photo's species, said under the verdict (photoTaxon): fishTaxon.
     taxon: p => fishTaxon(FISH && FISH.sps, p),
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
-    // fishPid: one photo under its stopgap, candidate and reference names), and what the flag records: file (its name),
+    // fishPid: one photo under its candidate and reference names), and what the flag records: file (its name),
     // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
     photo: f => {
       const id = fishPid(f),
@@ -1981,6 +2036,10 @@ const UNITS = {
     // The winks (quiz.js winkShow): for every fish player, from circle 1 on (Pierre, 2026-11-03: "ça sera rigolo" for the
     // people working on the IMR course).
     winks: () => (FISH ? FISH.winks.filter(n => FISH.gen[n].views.wide.length) : []),
+    // The tile photos of unit n (Find the X, quiz.js planPhoto; Pierre, 2026-11-09, Q321 D4): its game photos that have
+    // the square tile cut around the fish (fish-game.json xc, tools/fish_game.py), so a family plays it only once judged
+    // photos with a fish's box are in play.
+    tiles: n => ((GX(n) || {views: {}}).views.wide || []).filter(p => p && p.xc),
     list: () => viewFishList(),
     // Its sheets (learn.js): a family, a genus or a species, by its id (core.js SUBJECTS sheets), and the page bar's
     // name line for each.
@@ -1991,7 +2050,7 @@ const UNITS = {
       `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
-      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
+      `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
     // The quiz's ? text (quiz.js gameHelp).
     help: () => `<p class="lede">Name the fish family in the photo: the families of the reef fish ID book, IMR’s name shown beside its own. Pick an answer (or press 1-4); after answering you get the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and, when you mix up two look-alikes, how IMR tells them apart. <b>Next</b> (or Enter) goes on. The other choices start in other groups of the ID book and the look-alikes come in as you get a family right.</p>
   <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s name, IMR’s name, its scientific name and the names IMR uses inside it (Chromis, Bannerfish...). Every fish family counts in your progress. You start with the families of the IMR survey; more families open as you go. <b>Photos</b>: from iNaturalist and FishBase; the easiest, reference-quality photos come first, whoever took them.</p>`,
@@ -2135,10 +2194,12 @@ const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // A unit's name as shown: a genus (its key is its name) in italics, a fish entry (its key is a stable id, fish.json) by
 // its IMR name. unameT: the plain text (tooltips, aria labels).
 const unameT = n => (GX(n) || {}).name || n;
-const uname = n => {
+// unameIn: unit n's name already written as h (escaped HTML: quiz.js namesLine marks letters in it), set as uname sets it.
+const unameIn = (n, h) => {
   const g = GX(n) || {};
-  return g.name && !g.rank ? esc(g.name) : `<i>${esc(g.name || n)}</i>`; // a fish scientific genus in italics, as a coral genus
+  return g.name && !g.rank ? h : `<i>${h}</i>`; // a fish scientific genus in italics, as a coral genus
 };
+const uname = n => unameIn(n, esc(unameT(n)));
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.

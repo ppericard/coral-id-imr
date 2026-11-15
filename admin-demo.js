@@ -295,7 +295,8 @@
       rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, 'learn/genus/' + g3),
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'page', '', 'home'),
-      // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
+      // A report from the fish beta: a teaching id and a reference photo in play (fish-game.json and fish-photos.json's first
+      // photos, on R2; the stopgap's remote fi<id> photos it named until 2026-11-15 are retired).
       rp(
         5,
         'Eli Demo',
@@ -305,7 +306,7 @@
         '',
         'Demo fish report: not a damselfish.',
         'quiz',
-        'fi464458713',
+        'fi10243932',
         'fish/practice/quiz'
       ),
       // Send feedback from a game: the question's unit and photos come with it (app.js helpEnd, quiz.js qNow).
@@ -845,6 +846,24 @@
           ]);
         })
       );
+      // Ben's fish saved copy, for his fish Journey's Cards (fish admin at parity, Journey details): he answered "I'm at IMR"
+      // in the tour; the first cards on his first 3 families, the others one at a time just before their first question;
+      // two IMR genera (an IMR player meets them at their family's Open Water) on cards of their own near his last answers.
+      {
+        const mine = frows.filter(r => r[0] === 'Ben Demo').sort((x, y) => x[1] - y[1]),
+          fi = {};
+        mine.forEach((r, i) => {
+          if (fi[r[2]]) return;
+          const a = Object.keys(fi).length < 3 ? 0 : i;
+          fi[r[2]] = [a, a ? 0 : 1, (mine[Math.max(0, a - 1)] || r)[1] + (a ? 1 : -1), a ? 'c' : 's'];
+        });
+        ['g:Amphiprion', 'g:Chromis'].forEach((g, k) => (fi[g] = [mine.length - 4 + k, 0, mine[mine.length - 5 + k][1] + 1, 'c']));
+        const t0 = mine[0][1] - 1;
+        Object.assign(users['ben demo'].data, {
+          [subjKey(FS.id, 'intro')]: JSON.stringify(fi),
+          [startKey(FS.id)]: JSON.stringify({c: 'imr', t: t0, at: 0, via: 'tour', n: 0, s: 0, fb: {}, h: [['imr', 0, t0, 'tour']]})
+        });
+      }
       // The fish side's Analyses report (one report per subject, sheet v113): the seven made-up analysis players
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
@@ -968,7 +987,9 @@
           .map(u => lc(u.name))
       ); // v58: archives, flag 2
     // Index 11: answered without signing in (sheet v17), so trustOf leaves it out of the photo ratings as the sheet does.
-    // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged.
+    // 12, 13 (sheet v23): seconds to answer and enlarged, null when not logged. 14 (sheet v44): the device's UTC offset,
+    // minutes east: Manila's, Carla's Paris (winter time), so her Journey's Cards show her own local time.
+    const tz = r => (V >= 44 ? (r[0] === 'Carla Demo' ? 60 : 480) : null);
     out.rows = [...S.rows, ...S.after].map(r => [
       aid(r[0]),
       r[1],
@@ -983,13 +1004,14 @@
       r[11],
       /^~anon /.test(r[0]) ? 1 : /^~deleted /.test(r[0]) || arch.has(lc(r[0])) ? 2 : 0, // v55/v58: a deleted account's or an archive's
       r[12] ?? null,
-      r[13] ?? null
+      r[13] ?? null,
+      tz(r)
     ]);
     // v60: the other subject's answers, the subject at index 17 (core.js LOG_SUBJ). The answers given while the page is
     // open (DEMO_ANSWER, S.after) are the tab's last rows: moved after them.
     const after = out.rows.splice(S.rows.length);
     S.frows.forEach(r =>
-      out.rows.push([aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], 0, r[12], r[13], null, null, null, r[18]])
+      out.rows.push([aid(r[0]), r[1], r[2], r[3], r[4], r[5], r[6], r[8], r[9], r[10], r[11], 0, r[12], r[13], tz(r), null, null, r[18]])
     );
     out.rows.push(...after);
     Object.values(S.users).forEach(u => {
@@ -1276,6 +1298,12 @@
         console.info('[demo] Publish kept in memory only:', b.message);
       }
       return ok({sha: 'demo' + SHA, content: b64(CUR), ...((opts.method || 'GET') === 'PUT' ? {content: {sha: 'demo' + SHA}} : {})});
+    }
+    // Another repository file, read only (the judging package's proposals: admin-light.js): the local copy.
+    const fp = /^\/contents\/([\w./-]+?)(\?|$)/.exec(path);
+    if (fp && (opts.method || 'GET') === 'GET' && !fp[1].includes('..')) {
+      const r = await real(fp[1], {cache: 'no-cache'}).catch(() => null);
+      if (r && r.ok) return ok({sha: 'demo', content: b64(await r.text())});
     }
     return new Response(JSON.stringify({message: 'Not Found (demo)'}), {status: 404});
   }

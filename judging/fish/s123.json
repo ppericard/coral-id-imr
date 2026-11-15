@@ -95,6 +95,66 @@
   "fish-s123-cand-fb-Lukas_u2": {
    "code": "p1g0sls4",
    "keep": "best"
+  },
+  "fish-s123-cand-410873955": {
+   "code": "d1g0sms3",
+   "keep": "best"
+  },
+  "fish-s123-cand-388482375": {
+   "code": "p1g1smk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "silver snappers with yellow fins around it, maybe another genus, as sharp and close as the subject: confusion possible"
+  },
+  "fish-s123-cand-388482368": {
+   "code": "p1g1smk2",
+   "keep": "dup"
+  },
+  "fish-s123-cand-599174053": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s123-cand-599174109": {
+   "code": "p1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s123-cand-368397513": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s123-cand-344445744": {
+   "code": "p1g0sms3",
+   "keep": "best"
+  },
+  "fish-s123-cand-465274939": {
+   "code": "o1g1slo3",
+   "keep": "best"
+  },
+  "fish-s123-cand-341180785": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s123-cand-585605152": {
+   "code": "p1g0sms4",
+   "keep": "best"
+  },
+  "fish-s123-cand-579754718": {
+   "code": "p1g1sls4",
+   "keep": "best"
+  },
+  "fish-s123-cand-345173371": {
+   "code": "p1g2sss2",
+   "keep": "best"
+  },
+  "fish-s123-cand-345174107": {
+   "code": "p1g0smk4",
+   "keep": "alt",
+   "unsure": [
+    "code"
+   ],
+   "note": "a dark fish with a white band, about the snappers' size and sharp, at lower left: confusion possible, not certain"
   }
  }
 }

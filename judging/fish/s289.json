@@ -99,6 +99,70 @@
   "fish-s289-cand-427397480": {
    "code": "p1g1smo3",
    "keep": "best"
+  },
+  "fish-s289-cand-3007731": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s289-cand-276848955": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s289-cand-79812569": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s289-cand-575218596": {
+   "code": "p1g0sms3",
+   "keep": "best"
+  },
+  "fish-s289-cand-258279800": {
+   "code": "p1g0slk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a silver cardinalfish with a yellow eye line, about two thirds its size and sharp, below it: maybe another genus"
+  },
+  "fish-s289-cand-238428222": {
+   "code": "p1g0sl1a2",
+   "keep": "best"
+  },
+  "fish-s289-cand-605301702": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s289-cand-605301698": {
+   "code": "o1g0slk3",
+   "keep": "alt"
+  },
+  "fish-s289-cand-605301695": {
+   "code": "o1g0sl13",
+   "keep": "alt"
+  },
+  "fish-s289-cand-437953409": {
+   "code": "p1g1ss12",
+   "keep": "best"
+  },
+  "fish-s289-cand-437953411": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s289-cand-3004020": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s289-cand-553825321": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s289-cand-515860455": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s289-cand-61894398": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }

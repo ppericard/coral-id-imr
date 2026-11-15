@@ -87,7 +87,8 @@ test('the fish units from the players copy: the same photos in play, covers and 
       easyRank: C.easyRank,
       easyCover: C.easyCover,
       fishPid: C.fishPid,
-      fishScoreTree: C.fishScoreTree
+      fishScoreTree: C.fishScoreTree,
+      refLevel: C.refLevel
     };
   vm.createContext(ctx);
   vm.runInContext(
