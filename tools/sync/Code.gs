@@ -835,19 +835,42 @@ function subjCur_(sid, force){
   return x;
 }
 // {gen, st}: the replay's units under the structure in force and its stamp (subjCur_), null when they cannot be made.
+// vNEXT (design note v2, step 4; Codex review #977): a subject whose leaderboard ranks by a global score and whose sheet
+// makes its tree (core.js SUBJECTS replayed tree: fish, fishBoardTree, the app's own UNITS tree) gets that tree made from
+// the same file and structure, kept beside the units under the same fingerprint (STREE_, its own key: the tree grows with
+// the species level), so the board's weights per family and circle follow a circle Publish with the replays, whether a
+// device saves or not (subjTreeKept_, board_).
+const SGEN_ = 'sgen2:', STREE_ = 'stree1:';
+const subjTreeOn_ = S => !!(S.score && S.replayed && typeof S.replayed.tree === 'function');
 function subjRpl_(sid, force){
   const S = CORE_.subjectOf(sid), X = subjCur_(sid, force);
   if (!X || !(S.replayed && typeof S.replayed.gen === 'function')) return null;
-  const c = CacheService.getScriptCache(), k = 'sgen2:' + S.id + ':' + X.fp, hit = c.get(k);
-  if (hit) return JSON.parse(hit);
+  const c = CacheService.getScriptCache(), k = SGEN_ + S.id + ':' + X.fp, tk = STREE_ + S.id + ':' + X.fp, hit = c.get(k);
+  if (hit && (!subjTreeOn_(S) || c.get(tk))) return JSON.parse(hit);
   const d = mainJson_(((S.pool || {}).files || [])[0]);
   if (!d) return null;
   const cur = S.admin && S.admin.cur ? {[S.admin.cur]: {content: X.c}} : {content: X.c},
-    gen = S.replayed.gen(CORE_.contentApply(S, d, cur));
+    A = CORE_.contentApply(S, d, cur),
+    gen = S.replayed.gen(A);
   if (!gen || !Object.keys(gen).length) return null;
   const out = {gen: gen, st: CORE_.structStamp(S, d, cur)};
   try { c.put(k, JSON.stringify(out), 21600); } catch (e) {}
+  if (subjTreeOn_(S)) {
+    try { const T = S.replayed.tree(A), json = T ? boardTreeOk_(T) : null; if (json) c.put(tk, json, 21600); } catch (e) {}
+  }
   return out;
+}
+// The tree a subject's leaderboard ranks by when the sheet makes it (subjTreeOn_): the one made with its replay's units
+// under the structure in force (subjRpl_), from the cache only (board_ never fetches; the 15-minute trigger keeps it
+// there, subjStRefresh_), checked as a tree an app sends (boardTreeOk_); null when it is not there: the tree the apps sent
+// then (boardUnits_), as before.
+function subjTreeKept_(S){
+  if (!S.structure || !subjTreeOn_(S)) return null;
+  const c = CacheService.getScriptCache();
+  try {
+    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), T = X ? JSON.parse(c.get(STREE_ + S.id + ':' + X.fp) || 'null') : null;
+    return T && boardTreeOk_(T) ? {f: T.f, s: T.s} : null;
+  } catch (e) { return null; }
 }
 // A subject's structure stamp now ('' for a subject with none), null when it cannot be read.
 const subjSt_ = sid => (CORE_.subjectOf(sid).structure ? (x => (x ? x.st : null))(subjRpl_(sid)) : '');
@@ -856,7 +879,7 @@ function subjStKept_(sid){
   const S = CORE_.subjectOf(sid), c = CacheService.getScriptCache();
   if (!S.structure) return '';
   try {
-    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), Y = X ? JSON.parse(c.get('sgen2:' + S.id + ':' + X.fp) || 'null') : null;
+    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), Y = X ? JSON.parse(c.get(SGEN_ + S.id + ':' + X.fp) || 'null') : null;
     return Y && typeof Y.st === 'string' ? Y.st : null;
   } catch (e) { return null; }
 }
@@ -1951,9 +1974,12 @@ function board_(sid){
     // v16: the % from the saved progress, over the genera of the list (the "By genus" tab's columns, written from each
     // sync's summary), with the app's formula (pctOf_); the app-sent Progress column only when that can't be read.
     // v95: another subject's, over its units (boardUnits_), from its own saved progress only (the
-    // Progress column is the first subject's).
+    // Progress column is the first subject's). vNEXT: a subject ranked by a tree, over the tree the sheet makes with its
+    // replay's units under the structure in force when it holds one (subjTreeKept_), so a circle Publish moves the board
+    // with no device's save; a list kept from an app from before the score stays the board's scale, as before.
     const bg = first ? SpreadsheetApp.getActiveSpreadsheet().getSheetByName('By genus') : null,
-      list = first ? (bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : []) : boardUnits_(S),
+      kept = first ? null : boardUnits_(S),
+      list = first ? (bg && bg.getLastColumn() > 2 ? bg.getRange(1, 3, 1, bg.getLastColumn() - 2).getValues()[0].map(String).filter(Boolean) : []) : Array.isArray(kept) && kept.length ? kept : subjTreeKept_(S) || kept,
       pk = CORE_.subjKey(S.id, 'progress');
     // v118 (Pierre, 2026-11-09, rule D8): a player whose saved copy applied an older rules version of the subject than
     // today's (core.js rvOf) is ranked by the progress their app will hold once it adopts the replay of their log
@@ -3725,7 +3751,8 @@ const CORE_ = (function () { const module = {exports: {}};
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
       // No floor: the log is the only reference, a fish bar may go down (Pierre, 2026-11-09, Q330).
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
+      // tree: its leaderboard's tree as the sheet makes it with the replay's units (fishBoardTree; Code.gs subjRpl_, board_).
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, tree: F => fishBoardTree(F)},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -4173,6 +4200,16 @@ const CORE_ = (function () { const module = {exports: {}};
         ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
       });
     return out;
+  }
+  // The tree of the fish global score as the app makes it (app.js UNITS tree: fishScoreTree over fishGen's families and
+  // app.js fishGenera's scientific genera), from fish.json alone: fishReplayGen's genera are those units (no photo changes
+  // which exist). The sync sheet ranks the fish leaderboard by it, made with its replay's units under the structure in
+  // force (SUBJECTS replayed tree; Code.gs subjRpl_, board_), so a circle Publish moves the board's weights with the
+  // replays, whether a device saves or not (Codex review #977; design note v2, step 4). tests/structure.test.js checks it
+  // is the app's tree, with and without a structure edit.
+  function fishBoardTree(F) {
+    const X = fishGen(F || {}, {});
+    return fishScoreTree({...X, gen: {...fishReplayGen(F), ...X.gen}}, F || {});
   }
   // The fish structure in force (SUBJECTS fish structure apply; design note v2 sections 1 and 2, step 3): fish.json F with
   // the content editor's circles and pairs X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null,
@@ -4965,6 +5002,32 @@ const CORE_ = (function () { const module = {exports: {}};
       m = {...(isObj(nodes[id]) ? nodes[id] : {})};
     delete m[slot];
     return {...c, nodes: {...nodes, [id]: m}};
+  }
+  // A pair's key (Q366, the design note's section 6, [format]): the two node ids in code-point order joined by |, as
+  // structEntries reads it.
+  const contentPairKey = (a, b) => {
+    const x = String(a),
+      y = String(b);
+    return x < y ? x + '|' + y : y + '|' + x;
+  };
+  // One pair edit, as the admin's draft writes it (one click, one Undo step; design note v2 step 4): content map C with
+  // pair key k declared (v 1) or withdrawn (v null) over the base now (1 when the base declares it, else null), with its
+  // source src when given (Q359 e: asked when a pair is added, never required) and the time t; a value equal to the base
+  // removes the entry (contentPairDrop). A new map.
+  function contentPairSet(C, k, v, base, src, t) {
+    if (eq(v, base)) return contentPairDrop(C, k);
+    const s = contentSrc(src),
+      c = isObj(C) ? C : {},
+      pairs = isObj(c.pairs) ? c.pairs : {};
+    return {...c, pairs: {...pairs, [k]: {v, was: base == null ? null : base, ...(s ? {src: s} : {}), t}}};
+  }
+  // The pair's entry removed (↺ Restore): the base's pair again. The pairs map stays, {} when emptied, for the merge, as a
+  // node's map does (contentDrop).
+  function contentPairDrop(C, k) {
+    const c = isObj(C) ? C : {},
+      pairs = {...(isObj(c.pairs) ? c.pairs : {})};
+    delete pairs[k];
+    return {...c, pairs};
   }
   // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06) read from fish.json
   // alone: fam, gen and sp by id (the species of the families only, so none of those left out of the game), spOf (a
@@ -9384,6 +9447,7 @@ const CORE_ = (function () { const module = {exports: {}};
     subjDev,
     fishGen,
     fishReplayGen,
+    fishBoardTree,
     easyRank,
     easyCover,
     refFirst,
@@ -9434,6 +9498,9 @@ const CORE_ = (function () { const module = {exports: {}};
     contentOut,
     contentSet,
     contentDrop,
+    contentPairKey,
+    contentPairSet,
+    contentPairDrop,
     fishTree,
     renameUnits,
     renameLogEntry,
