@@ -628,6 +628,9 @@
           'photos/candidates',
           'photos/review/ease',
           'photos/review/phase-framing',
+          // By difficulty (fish admin at parity): its photos ranked by their answers alone (admin.js renderFishDiff; the
+          // sheet rates the corals' photos only)
+          'photos/review/by-difficulty',
           'photos/look-alikes',
           // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report but
           // What makes a photo hard (analyses photos false), and the views drawn from the live answer log (admin.js
