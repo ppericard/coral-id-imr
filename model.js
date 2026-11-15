@@ -1026,7 +1026,8 @@ const introHold = () => HOLDS >= INTRO.HOLD;
 // back. No new constant: h is already in success units, the scale the Elo steps the ability on. Never on an exam
 // question (as hard as the game gets).
 const holdEase = () => Math.min(0, INTRO.HOLD - HOLDS);
-// slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs).
+// slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs
+// plus INTRO.SLACK, Q367).
 const holdNext = (h, e, good, slack = INTRO.SLACK) =>
   Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - slack) * 1000) / 1000);
 function holdStep(e, good) {
@@ -1082,9 +1083,10 @@ function holdSync(h, log, ids) {
 //   at least -ln R: a little easier, never more than the rust explains), no card, duel or exam. Logged |c and counted in
 //   the opening hold with the chance they really had (the plausible choices k as for any question, and the rust: a
 //   miss the rust explains adds less).
-// - It ends by the answers: a CUSUM like the opening hold's (holdNext), rust <- max(0, rust + p - right - l), p the
-//   recall-adjusted chance of the question, l the rust the question itself repairs (its genus is reviewed): doing better
-//   than expected melts it fast, worse keeps it going; it ends at 0. A break during a comeback adds to it.
+// - It ends by the answers: a CUSUM like the opening hold's (holdNext), rust <- max(0, rust + p - right - l - SLACK), p
+//   the recall-adjusted chance of the question, l the rust the question itself repairs (its genus is reviewed), SLACK the
+//   opening hold's tolerance, INTRO.SLACK 0.1 (Q367, 2026-11-15): doing better than expected melts it fast, more than 0.1
+//   an answer worse keeps it going; it ends at 0. A break during a comeback adds to it.
 // - SESSION.GAP: a new visit starts after 30 minutes without an answer (Pierre, 2026-11-02: the standard session timeout
 //   of web analytics, Google Analytics, also commonly used to cut learning logs into sessions), never at a page
 //   load (a reload or an update is no new visit). From a new visit, and from the start of a comeback, the first
@@ -1190,12 +1192,15 @@ function comebackOf(met) {
   return CB.ok ? L.slice(-h) : L.slice(0, h);
 }
 // A comeback answer: right or wrong against the recall-adjusted chance p (R the genus's recall, th its ability, d the
-// photo's difficulty, k the plausible choices); l = the rust it repairs.
+// photo's difficulty, k the plausible choices); l = the rust it repairs. The allowance an answer is l plus the opening
+// hold's tolerance, INTRO.SLACK (Pierre, 2026-11-15, Q367: without it a player 0.075 an answer below expectation stayed in
+// a comeback for a whole 40-question visit and no genus opened; docs/LEARNING.md "The comeback's tolerance"). A player
+// more than 0.1 an answer below expectation still stays in it.
 function comebackStep(R, th, d, k, good) {
   const x = (1 - 1 / k) * sig(th - d),
     p = 1 / k + x * R;
   if (good) CB.ok++;
-  CB.r = holdNext(CB.r, p, good, x * (1 - R));
+  CB.r = holdNext(CB.r, p, good, x * (1 - R) + INTRO.SLACK);
   cbSave();
 }
 // The times an answer leaves in the progress: the genus's last answer and days answered right, the player's last answer.

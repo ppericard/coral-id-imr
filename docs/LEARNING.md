@@ -1809,10 +1809,12 @@ and only widens its uncertainty after inactivity).
   multiplies the chance of recognising by R, which lowers its log-odds by at least −ln R, so the photos are a little
   easier, never more than the rust explains (R 0.9: 0.1 easier; 0.6: 0.5).
 - **When it ends**: by the answers, a CUSUM like the opening hold's (`holdNext`, Page 1954): rust ← max(0, rust + p −
-  right − l), p = 1/k + (1 − 1/k)·R·sig(ability − difficulty) the recall-adjusted chance of the question, l = (1 −
-  1/k)(1 − R)·sig(ability − difficulty) the rust the question itself repairs (its genus is reviewed, its R back to 1). A
-  player doing better than expected melts it fast, worse keeps it going; it ends at 0. A long break while the app stays
-  open counts the same: the gap is checked whenever a question is planned or answered.
+  right − l − `INTRO.SLACK`), p = 1/k + (1 − 1/k)·R·sig(ability − difficulty) the recall-adjusted chance of the
+  question, l = (1 − 1/k)(1 − R)·sig(ability − difficulty) the rust the question itself repairs (its genus is reviewed,
+  its R back to 1), and the opening hold's tolerance, 0.1 an answer (Q367, 2026-11-15, below: "The comeback's
+  tolerance"). A player doing better than expected melts it fast, more than 0.1 an answer worse keeps it going; it ends
+  at 0. A long break while the app stays open counts the same: the gap is checked whenever a question is planned or
+  answered.
 - **Fairness**: a miss in the comeback weighs what it proves with the recall-adjusted chance (`pgMissW(th, d, k, R)`): a
   miss the rust explains costs less progress. Its logged expectation `e` is the same recall-adjusted chance.
 - **A new visit opens no genus at first** (Pierre, 2026-11-02: "reopening a new genus straight away would be a

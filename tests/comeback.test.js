@@ -10,8 +10,11 @@ const {pgMissW} = require('../core.js');
 
 const DAY = 864e5,
   MIN = 60000;
-function model({P = {}, th = {}, answers = 0} = {}) {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+// The opening hold's tolerance as model.js sets it (INTRO.SLACK), which the comeback's sum takes too (Q367).
+const SRC = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
+  SLACK = Number(/const INTRO = \{[\s\S]*?\bSLACK: ([\d.]+)/.exec(SRC)[1]);
+function model({P = {}, th = {}, answers = 0, slack = SLACK} = {}) {
+  const src = SRC,
     pick = (a, b) => cut(src, a, b),
     hold = /const holdNext = [\s\S]*?;\n/.exec(src.slice(src.indexOf('const holdNext')))[0],
     block = pick('// Comeback after a break (Pierre', 'function weighted(');
@@ -19,7 +22,7 @@ function model({P = {}, th = {}, answers = 0} = {}) {
     ctx = {
       P,
       LEVEL: '~level',
-      INTRO: {SLACK: 0.1},
+      INTRO: {SLACK: slack},
       PICKD: {P: 0.8},
       aimOff: (k = 4) => Math.log((0.8 - 1 / k) / (1 - 1 / k) / (1 - (0.8 - 1 / k) / (1 - 1 / k))),
       pgMissW, // core.js (shared with the full replay since 2026-11-03)
@@ -145,6 +148,70 @@ test('comeback stop rule: a CUSUM that right answers melt and misses keep going;
   const r = M.cb().r;
   M.comebackStep(0.6, 0, -1, 4, false);
   assert.ok(M.cb().r > r);
+});
+
+// The comeback's tolerance (Pierre, 2026-11-15, Q367; docs/LEARNING.md "The comeback's tolerance"): the comeback's sum
+// takes the opening hold's tolerance, INTRO.SLACK an answer, on top of the rust a question repairs.
+// n comeback questions, m of them missed and spread evenly from the first (a miss at 0, then every n/m), each at the
+// recall-adjusted chance p on a usual 4-choice question; the answer at which the comeback ended (0: it ran them all) and
+// the sum at the start.
+function cbRun({genera, ago, n, m, p, slack}) {
+  const M = model({P: player(genera, ago), slack});
+  M.rustNow();
+  const r0 = M.cb().r,
+    R = M.recallAt('g0'),
+    s = (p - 1 / 4) / ((1 - 1 / 4) * R), // sig(th - d) that gives the chance p at the recall R
+    th = Math.log(s / (1 - s));
+  let end = 0;
+  for (let i = 0; i < n && !end; i++) {
+    M.comebackStep(R, th, 0, 4, !(Math.ceil(((i + 1) * m) / n) > Math.ceil((i * m) / n)));
+    if (M.cb().r === 0) end = i + 1;
+  }
+  return {r0, R, end, r: M.cb().r};
+}
+
+test("the study's case (Q367): 0.075 an answer below expectation no longer holds a whole 40-question visit", () => {
+  // P5, 2026-11-06 (docs/reviews/2026-11-14-comeback-study.md): back after 1.03 days with 29 genera answered right, 40
+  // comeback questions, 27 right at a mean expectation of 0.75. The order of her answers is not published: here the
+  // misses come every third answer from the first, an order under which the rule before Q367 ran all 40, as hers did.
+  const P5 = {genera: 29, ago: 1.03 * DAY, n: 40, m: 13, p: 0.75};
+  const before = cbRun({...P5, slack: 0}),
+    now = cbRun(P5);
+  // An honest starting sum: the FSRS rust of 29 genera after a day (each genus at stability x 0.5, one day answered right).
+  assert.ok(before.r0 > 0.5 && before.r0 < 1, before.r0);
+  assert.ok(before.R > 0.9 && before.R < 1, before.R);
+  assert.strictEqual(before.end, 0, 'the rule before Q367: still in the comeback after 40 questions');
+  assert.ok(before.r > before.r0 + 1, `the sum grew: ${before.r0} -> ${before.r}`);
+  assert.ok(now.end > 0 && now.end < 40, `the tolerance ends it within the visit (${now.end})`);
+  assert.strictEqual(SLACK, 0.1, "model.js INTRO.SLACK, the opening hold's tolerance");
+});
+
+test('the tolerance does not end every comeback: more than 0.1 an answer below expectation still holds it', () => {
+  // 24 right of 40 at 0.75 (0.15 below): the sum still grows, as Pierre's Q367 keeps for a player who really struggles.
+  const r = cbRun({genera: 29, ago: 1.03 * DAY, n: 40, m: 16, p: 0.75});
+  assert.strictEqual(r.end, 0);
+  assert.ok(r.r > r.r0, `${r.r0} -> ${r.r}`);
+  // At the expected rate (30 of 40) it now ends sooner than before.
+  const at = slack => cbRun({genera: 29, ago: 3 * DAY, n: 40, m: 10, p: 0.75, slack}).end;
+  assert.ok(at(SLACK) > 0 && (at(0) === 0 || at(SLACK) < at(0)), `${at(SLACK)} / ${at(0)}`);
+});
+
+test("the comeback reads the opening hold's tolerance itself: INTRO.SLACK 0 gives the rule before Q367", () => {
+  // One right answer at p 0.75, R 0.9, l = 0.75 x 2/3 x 0.1: the sum falls by 1 - p + l, plus the tolerance.
+  const step = slack => {
+    const M = model({slack});
+    M.setCb({r: 2, t: 0, ok: 0, f: 0});
+    const x = 0.75 * (2 / 3),
+      th = Math.log(2 / 3 / (1 - 2 / 3));
+    M.comebackStep(0.9, th, 0, 4, true);
+    return {r: M.cb().r, l: x * 0.1, p: 0.25 + x * 0.9};
+  };
+  const a = step(0),
+    b = step(0.1),
+    c = step(0.3);
+  assert.ok(Math.abs(a.r - Math.round((2 + a.p - 1 - a.l) * 1000) / 1000) < 1e-9, a.r);
+  assert.ok(Math.abs(b.r - (a.r - 0.1)) < 1.5e-3, `${b.r} ${a.r}`);
+  assert.ok(Math.abs(c.r - (a.r - 0.3)) < 1.5e-3, `${c.r} ${a.r}`);
 });
 
 test('comeback questions: the surest genera until one is right, then the most rusted', () => {
