@@ -6,7 +6,17 @@ const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path'),
-  {LIGHT_SET, lightRetired, lightOpen, lightAccept, lightKeep, lightDiff, lightCounts} = require('../admin-light.js'),
+  {
+    LIGHT_SET,
+    LIGHT_SETS,
+    lightSets,
+    lightRetired,
+    lightOpen,
+    lightAccept,
+    lightKeep,
+    lightDiff,
+    lightCounts
+  } = require('../admin-light.js'),
   {fishRun, fishUndo, autoCheck} = require('../autosort.js'),
   {merge3} = require('../core.js');
 
@@ -91,8 +101,18 @@ test('what a proposal changes, in words; what Publish counts', () => {
   assert.deepStrictEqual(lightCounts(P, D, D), {accepted: 0, kept: 0});
 });
 
-test('the proposals file: Pierre’s adds, curated -> re-judged, each a change; curation.json untouched by tools', () => {
-  const J = JSON.parse(fs.readFileSync(path.join(__dirname, '..', LIGHT_SET.file), 'utf8')),
+test('the proposals files: Pierre’s adds, curated -> re-judged, each a change; curation.json untouched by tools', () => {
+  LIGHT_SETS.forEach(s => proposalsFile(s));
+  assert.deepStrictEqual(LIGHT_SETS[0], LIGHT_SET);
+  assert.strictEqual(new Set(LIGHT_SETS.map(s => s.id)).size, LIGHT_SETS.length);
+  assert.ok(
+    LIGHT_SETS.every(s => s.id === LIGHT_SET.id || s.title),
+    'a later set has the heading of its section'
+  );
+});
+
+function proposalsFile(s) {
+  const J = JSON.parse(fs.readFileSync(path.join(__dirname, '..', s.file), 'utf8')),
     C = J.curation;
   assert.ok(Array.isArray(C) && C.length > 0);
   const code = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/;
@@ -111,4 +131,45 @@ test('the proposals file: Pierre’s adds, curated -> re-judged, each a change; 
   assert.strictEqual(new Set(C.map(x => x.photo)).size, C.length);
   // the curplay copy leaves the answers out (players never read them)
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'tools', 'curplay.py'), 'utf8'), /FISH_DROP = \([^)]*'kept'/);
+}
+
+// One judgement per photo (Pierre, 2026-11-15): a second set of proposals (judging/fish-one-judgement.json), read beside
+// the light re-judge's; each proposal carries its set, a Keep mine records that set, and a photo in two sets shows the
+// later set's proposal only, so answering it never reopens the earlier one.
+test('several proposal sets: each proposal answered in its own set, a photo proposed twice shows the later one', () => {
+  const later = LIGHT_SETS[1].id,
+    Q = [
+      {photo: 'fish-s1-cand-2', curated: ['p1d0sl1', 4], rejudged: ['p1d0sl1j', 2]},
+      {photo: 'fish-s9-cand-9', curated: ['p1g0sl1', 4], rejudged: ['p1g0sl1', 5]}
+    ],
+    L = lightSets([P, Q]);
+  assert.deepStrictEqual(
+    L.map(x => [x.photo, x.set, x.rejudged[1]]),
+    [
+      ['fish-s1-cand-1', LIGHT_SET.id, 5],
+      ['fish-s1-cand-2', later, 2],
+      ['fish-s2-cand-3', LIGHT_SET.id, 2],
+      ['fish-s9-cand-9', later, 5]
+    ]
+  );
+  const F = draft();
+  assert.deepStrictEqual(
+    lightOpen(L, F).map(x => x.photo),
+    ['fish-s1-cand-1', 'fish-s1-cand-2', 'fish-s2-cand-3']
+  );
+  // Keep mine on the later set's proposal: recorded as that set, the photo's proposal done, the others still open.
+  const K = lightKeep(F, L[1]);
+  assert.deepStrictEqual(K.kept, {'fish-s1-cand-2': later});
+  assert.deepStrictEqual(
+    lightOpen(L, K).map(x => x.photo),
+    ['fish-s1-cand-1', 'fish-s2-cand-3']
+  );
+  // A Keep mine of the light re-judge does not answer another set's proposal of the same photo.
+  assert.strictEqual(lightOpen(L, lightKeep(F, L[1], LIGHT_SET.id)).length, 3);
+  // Publish's counts, each in its own set.
+  assert.deepStrictEqual(lightCounts(L, lightAccept(K, L[0]), F), {accepted: 1, kept: 1});
+  // A photo the draft holds with the re-judged values from another route (the auto-sort's add of a photo not in the
+  // published file) is no answer to its proposal.
+  const G = {add: {'fish-s9-cand-9': 's9'}, tags: {'fish-s9-cand-9': 'p1g0sl1'}, ease: {'fish-s9-cand-9': 5}};
+  assert.deepStrictEqual(lightCounts(L, G, {}), {accepted: 0, kept: 0});
 });
