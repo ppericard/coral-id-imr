@@ -458,6 +458,58 @@ const darkCards = (p, sel) =>
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
+      // Its To do (fish admin at parity): the views All, Reports, Errors, Health and Points; Reports and All never show the
+      // corals' photo sections (core.js SUBJECTS admin todo: they showed on the fish Reports before); All ends with its photo
+      // work, counts that open its pages under its prefix, a Coverage count landing on Coverage › Games with that chip
+      // pressed and the same count.
+      {
+        const secs = () =>
+          p.evaluate(() => ({
+            h2: [...document.querySelectorAll('#view .adm-qhead h2')].map(h => h.firstChild.textContent.trim()),
+            coral: document.querySelectorAll('#view [data-rulesec], #view [data-sasec], #view .adm-ruleq, #view .adm-saq').length,
+            views: [...document.querySelectorAll('#subnav .adm-views [data-view]')].map(a => a.dataset.view),
+            hl: [...document.querySelectorAll('#view [data-hline] a')].map(a => a.getAttribute('href')),
+            links: [...document.querySelectorAll('#view .adm-fishtodo a')].map(a => a.getAttribute('href')),
+            cov: [...document.querySelectorAll('#view .adm-fishtodo [data-ftcov]')].map(b => [b.dataset.ftcov, b.textContent]),
+            wide: document.documentElement.scrollWidth - innerWidth
+          }));
+        const coralSec = t => /presence rule|Share-alike|rated Poor|^Suggested/i.test(t);
+        const fr = await secs();
+        if (fr.h2.some(coralSec) || fr.coral || !fr.h2.includes('Flagged on the site'))
+          fails.push(`${w}px Subjects: ${other.id} Reports sections ${JSON.stringify(fr)}`);
+        await go(other.hash + 'inbox/todo/all');
+        await p
+          .waitForFunction(() => document.querySelector('#view [data-fishwork]'), null, {timeout: 60000})
+          .catch(() => fails.push(`${w}px Subjects: ${other.id} To do › All, no photo work drawn`));
+        const fa = await secs();
+        if (
+          fa.views.join() !== ['all', 'reports', 'errors', 'health', 'points'].map(v => 'inbox/todo/' + v).join() ||
+          fa.h2.some(coralSec) ||
+          fa.coral ||
+          !fa.h2.includes('Reports and feedback') ||
+          !fa.h2.includes('Flagged on the site') ||
+          fa.h2[fa.h2.length - 1] !== 'Photos' ||
+          !fa.links.includes('#' + other.hash + 'photos/candidates') ||
+          fa.links.some(h => !h.startsWith('#' + other.hash)) ||
+          fa.hl.some(h => h !== '#' + other.hash + 'inbox/todo/health') ||
+          !fa.cov.length ||
+          fa.wide > 0
+        )
+          fails.push(`${w}px Subjects: ${other.id} To do › All ${JSON.stringify(fa)}`);
+        if (fa.cov.length) {
+          await p.click(`#view [data-ftcov="${fa.cov[0][0]}"]`);
+          await settle();
+          const cv = await p.evaluate(() => ({
+            hash: location.hash,
+            on: [...document.querySelectorAll('#view [data-fishtodo][aria-pressed="true"]')].map(b => [b.dataset.fishtodo, b.textContent])
+          }));
+          if (cv.hash !== '#' + other.hash + 'inbox/coverage/games' || JSON.stringify(cv.on) !== JSON.stringify([fa.cov[0]]))
+            fails.push(`${w}px Subjects: ${other.id} To do › All's Coverage count ${JSON.stringify({cv, from: fa.cov[0]})}`);
+          // the chip set back, as it was
+          await p.click(`#view [data-fishtodo="${fa.cov[0][0]}"]`);
+          await settle();
+        }
+      }
       // The fish units page (admin plan PR 6 on the book's families; Photos › Tree since Pierre, 2026-11-13, Q340): the fish
       // side's first Photos tab (Candidates the other) (never on the corals' side), the key's tree at the left (key groups,
       // the book's families with the IMR tag on those in the IMR course, their genera and species), a family's page with
@@ -3212,6 +3264,48 @@ const darkCards = (p, sel) =>
         // A point that does not exist says so.
         await go('inbox/todo/points/no-such-point');
         if (!/No point no-such-point/.test(await text())) fails.push(`${w}px Points: an unknown point`);
+      }
+      // Each side lists its own points (fish admin at parity; points.json subj, the Corals | Fish switch): the corals' none of
+      // the fish ones, the fish side its own with their open count, a point's page and its way back under its prefix.
+      {
+        const want = await p.evaluate(() => {
+          const L = (PTS ? PTS.points : []).filter(x => x.subj === 'fish' && ptStatus(DRAFT.points, x.id) === 'open');
+          return {ids: L.map(x => x.id), fish: (PTS ? PTS.points : []).filter(x => x.subj === 'fish').map(x => x.id)};
+        });
+        await go('inbox/todo/points');
+        const cl = await pl();
+        if (cl.open.some(id => want.fish.includes(id)))
+          fails.push(`${w}px Points: a fish point on the corals' side ${JSON.stringify(cl.open)}`);
+        await go('fish/inbox/todo/points');
+        const fl = await pl(),
+          hrefs = await p.evaluate(() => [...document.querySelectorAll('#view [data-pt]')].map(a => a.getAttribute('href')));
+        if (
+          !want.ids.length ||
+          fl.open.join() !== want.ids.join() ||
+          fl.count !== `Points ${want.ids.length}` ||
+          hrefs.some(h => !h.startsWith('#fish/inbox/todo/points/')) ||
+          fl.wide > 0
+        )
+          fails.push(`${w}px Points, fish: the list ${JSON.stringify({fl, want, hrefs: hrefs.slice(0, 2)})}`);
+        if (want.ids.length) {
+          await p.click(`[data-pt="${want.ids[0]}"]`);
+          await settle();
+          const fp = await p.evaluate(() => ({
+            hash: location.hash,
+            s: ASUBJ.id,
+            q: !!document.querySelector('.adm-ptq'),
+            back: (document.querySelector('.adm-ptbar .adm-link') || {getAttribute: () => ''}).getAttribute('href'),
+            view: (document.querySelector('#subnav .adm-views [aria-pressed="true"]') || {}).dataset?.view || ''
+          }));
+          if (
+            fp.hash !== '#fish/inbox/todo/points/' + want.ids[0] ||
+            fp.s !== 'fish' ||
+            !fp.q ||
+            fp.back !== '#fish/inbox/todo/points' ||
+            fp.view !== 'inbox/todo/points'
+          )
+            fails.push(`${w}px Points, fish: a point's page ${JSON.stringify(fp)}`);
+        }
       }
     }
     // The players' part (SMOKE_ONLY=players; CI runs it with the photos' part in the admin 1280 "more" job): Players ›

@@ -65,12 +65,15 @@ test('no admin page filters answers or players by who they are (isMe is a mark o
 });
 
 // Codex review #600: the Inbox's Health line (healthLine0) reads the player rows, never the answers a deleted account
-// left (sheet v55 flag 2), as the Health page does.
+// left (sheet v55 flag 2), as the Health page does; another subject's (the fish To do › All) its rows, which leave them
+// out too (rowsOf: goneRow).
 test('the Health line reads the player rows, not a deleted account', () => {
   const src = read('admin.js'),
-    b = block(src, 'function healthLine0() {', '\n}', {file: 'admin.js', through: true});
+    b = block(src, 'function healthLine0(S) {', '\n}', {file: 'admin.js', through: true});
   assert.match(b, /playerRows\(\)/);
+  assert.match(b, /rowsOf\(S\)/);
   assert.doesNotMatch(b, /ANS\.rows/);
+  assert.match(block(src, 'const rowsOf = (S = ASUBJ) =>', '\n', {file: 'admin.js', through: true}), /goneRow/);
 });
 
 // Codex review #600: an answer log dropped while the Analyses pages read it (a delete or merge: sheetAgain) is read

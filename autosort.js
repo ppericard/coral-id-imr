@@ -932,6 +932,22 @@
     });
     return out;
   }
+  // Coverage's To do (fish): what to act on, each [key, level of fishCov's rows, words, row test]; F: curation.json fish.
+  // Inbox › Coverage › Games shows each as a chip over its rows, To do › All its counts (admin.js renderFishCov,
+  // fishTodoLines).
+  const FISHCOV_TODO = [
+    ['spwait', 'sp', 'species under target with candidates waiting', r => r.obs < r.tgt && r.wait],
+    ['spnone', 'sp', 'species with no photo in play', r => !r.n],
+    ['famv', 'fam', 'families validated but incomplete', (r, F) => !!(((F && F.genera) || {})[r.id] || {}).ok && r.need.length],
+    ['famnr', 'fam', 'families not ready to validate', r => r.need.length]
+  ];
+  // Its counts over fishCov's rows C, those keep(row) lets through (the IMR filter): [[key, level, words, n]], n > 0 only.
+  const fishCovTodo = (C, F, keep = () => true) =>
+    FISHCOV_TODO.map(([k, l, t, fn]) => [k, l, t, C[l].filter(r => keep(r) && fn(r, F)).length]).filter(x => x[3]);
+  // The fish candidates To do counts (Candidates' queue, autosort.js fishQueue): those the swiper shows by default, never
+  // the auto-sort's Checks (Pierre, 2026-11-09: not to-dos, they have their own count in Candidates), nor the ones of a
+  // species at its target or set aside.
+  const fishCandTodo = Q => (Q || []).filter(x => !x.chk && !x.full && !x.aside).length;
   // Where to look (fish): the species most worth a candidate search, those under target whose waiting candidates cannot
   // fill the gap; the IMR course's (circle 1) first, then the PDF's most sighted (cs), then the largest gap. [{...species
   // row, gap}], best first.
@@ -1319,6 +1335,9 @@
     fishCov,
     fishWaiting,
     fishLook,
+    FISHCOV_TODO,
+    fishCovTodo,
+    fishCandTodo,
     fishAgree,
     fishPairs,
     FMONT_V,
