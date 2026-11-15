@@ -824,6 +824,45 @@ print(json.dumps({'top': top[0], 'tiles': sorted(f for f in __import__('os').lis
 // original, kept for the fallback; its credit, licence and observation exactly as they were); a species with a photo in
 // play loses its sheet-only photo; a rerun with nothing new writes the same bytes.
 const read2 = (dir, f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+
+// The first photos in core.js easyRank's order (Codex review #931): the reference-level photos (core.js refLevel) before
+// the rest, whatever their source flag, then the easiest; Pierre's cover and one photo per family before them. On t52's
+// shape: ten ease-3 photos of a FishBase main picture's kind (rep) and two ease-5 photos with the reference look, no rep,
+// which an order by the rep flag left out of the eight.
+test('fish_game.py first_photos: the reference-level photos first, as core.js easyRank; covers and families kept', () => {
+  const rec = (f, sp, e, jt, k = {}) => ({f, sp, e, jt, ...k}),
+    L = [
+      ...Array.from({length: 10}, (_, i) => rec(`fish-s1-cand-${100 + i}`, 's1', 3, 'p1g0sm1r', {rep: 'fishbase'})),
+      rec('fish-s2-cand-201', 's2', 5, 'p1g0sl1'),
+      rec('fish-s2-cand-202', 's2', 5, 'p1g0sl1'),
+      rec('fish-s1-cand-300', 's1', 2, 'p1g0sm1'), // his cover: first, whatever its ease
+      rec('fish-s3-cand-400', 's3', 1, 'o1g1bm1') // the only photo of another family: kept
+    ],
+    fish = {
+      families: [
+        {id: 'f:A', species: ['s1', 's2']},
+        {id: 'f:B', species: ['s3']}
+      ]
+    },
+    cur = {fish: {genera: {'f:A': {cover: 'fish-s1-cand-300'}}}};
+  const got = JSON.parse(
+    py(
+      `import fish_game as G
+print(json.dumps(G.first_photos({'t52': json.loads(sys.argv[1])}, json.loads(sys.argv[2]), json.loads(sys.argv[3]))['t52']))`
+        .replace('sys.argv[1]', JSON.stringify(JSON.stringify(L)))
+        .replace('sys.argv[2]', JSON.stringify(JSON.stringify(cur)))
+        .replace('sys.argv[3]', JSON.stringify(JSON.stringify(fish)))
+    )
+  ).map(p => p.f);
+  assert.strictEqual(got.length, 8);
+  assert.deepStrictEqual(got.slice(0, 2), ['fish-s1-cand-300', 'fish-s3-cand-400'], 'his cover, then the other family');
+  assert.deepStrictEqual(got.slice(2, 4), ['fish-s2-cand-201', 'fish-s2-cand-202'], 'the reference-level photos next');
+  assert.ok(
+    L.filter(p => C.refLevel(p)).every(p => got.includes(p.f)),
+    'every reference-level photo kept (core.js refLevel agrees)'
+  );
+  assert.ok(!C.refLevel(L[0]) && C.refLevel(L[10]));
+});
 test(
   'fish_game.py on a fixture: fish-photos.json, the first photos from the game list, the sheet-only photo on R2',
   {skip: !pil && 'Pillow missing'},

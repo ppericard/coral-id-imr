@@ -181,6 +181,13 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
   Object.entries(PH.photos).forEach(([id, L]) => {
     const k = L.findIndex(juv);
     assert.ok(k < 0 || L.slice(k).every(juv) || GM[id].filter(p => !juv(p)).length < L.length, `${id}: a juvenile before an adult`);
+    // core.js easyRank's order: an entry with an adult reference-level photo in play has one among its first photos
+    // (Codex review #931: t52 kept eight ease-3 photos and left out its two ease-5 reference-level Waspfish photos).
+    if (GM[id].some(p => C.refLevel(p) && !juv(p)))
+      assert.ok(
+        L.some(p => C.refLevel(p)),
+        `${id}: no reference-level photo first`
+      );
   });
   const remote = [];
   Object.values(PH.sheet || {}).forEach(L =>

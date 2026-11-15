@@ -51,7 +51,7 @@ species order, then the easiest, then by name (never Pierre's own by priority: Q
 fish-photos.json (written here too, the same run; the stopgap list of remote iNaturalist photos it held until 2026-11-15
 is retired):
   - "photos": the first photos, a few of fish-game.json's records per entry (first_photos: the adults, Pierre's covers in
-    play first, then the reference photos, the easiest; FIRST at most), already on R2, read only while fish-game.json is
+    play first, then core.js easyRank's order: reference level, the easiest; FIRST at most), already on R2, read only while fish-game.json is
     not in (app.js fishHome: Home before the biggest file; core.js fishPhotos);
   - "sheet": the sheet-only photos (tools/fish_photos.py --sheet writes them, remote, r: 1): a species with no photo in
     play keeps its own, downloaded here like a game photo (its four files into DIR, uploaded with them) and then listed
@@ -661,20 +661,46 @@ def juvenile(r):
     return r.get('ph') == 'juvenile' or 'j' in (r.get('jt') or '')[7:]
 
 
+# core.js refLevel's and refScore's copies (the reference level and the reference look of a judged photo).
+REF_LOOK = re.compile(r'^p1g0s[lm][1s]$')
+REF_GOOD, REF_REP = 'p1g0sl1', 8
+
+
+def ref_level(r):
+    """core.js refLevel: one kind of fish (count 1 or s), and a reference source's photo (rep) judged very easy, or any
+    photo judged ease 5 with the reference look (no juvenile, camouflage or out of the water)."""
+    jt, e = str(r.get('jt') or ''), r.get('e') or 0
+    return (len(jt) >= 7 and jt[6] in '1s'
+            and ((e >= 4 and bool(r.get('rep'))) or (e == 5 and bool(REF_LOOK.match(jt[:7])) and not set(jt[7:]) & set('jca'))))
+
+
+def ref_score(jt):
+    """core.js refScore: how much a judged photo looks like a reference photo (the r flag, the field-guide traits)."""
+    c = str(jt or '')
+    if len(c) < 7:
+        return 0
+    fl = re.sub(r'\d+$', '', c[7:])
+    return (REF_REP if 'r' in fl else 0) + sum(c[i] == v for i, v in enumerate(REF_GOOD)) - sum(x in fl for x in 'jca')
+
+
 def first_photos(game, cur=None, fish=None, n=FIRST):
     """fish-photos.json "photos": {teaching id: [record]}, at most n of each entry's fish-game.json records (game: its
     photos, every record whole), the ones Home and the first questions want before the whole list is in: the adults first
     (a juvenile is never a cover: app.js juvP), Pierre's covers (curation.json fish.genera {id: {cover}}, by photo id),
-    the reference photos (rep, or the judging tags' r flag), the easiest, then by name; the best of each family of the
-    entry's species before any second one (fish: fish.json families; core.js fishGen gives a photo to its species' family:
-    Groupers' entry holds the Soapfishes'), so every family has its photos. Every one is already on R2 (the same record)."""
+    then in core.js easyRank's order: the reference-level photos (refLevel: ref_level), the easiest, the most
+    reference-like (ref_score), an open licence (tools/rights.py rights_rank), then by name (Codex review #931: an order
+    by the rep flag alone kept eight ease-3 photos of t52 and left out both its ease-5 reference-level Waspfish photos);
+    the best of each family of the entry's species before any second one (fish: fish.json families; core.js fishGen gives
+    a photo to its species' family: Groupers' entry holds the Soapfishes'), so every family has its photos. Every one is
+    already on R2 (the same record)."""
+    from rights import rights_rank
     G = ((cur or {}).get('fish') or {}).get('genera') or {}
     covers = {pid(k['cover']) for k in G.values() if isinstance(k, dict) and k.get('cover')}
     fam = {sid: f['id'] for f in (fish or {}).get('families') or [] for sid in f.get('species') or []}
 
     def key(r):
-        ref = bool(r.get('rep')) or 'r' in (r.get('jt') or '')[7:]
-        return (juvenile(r), pid(r['f']) not in covers, not ref, -(r.get('e') or 0), r['f'])
+        return (juvenile(r), pid(r['f']) not in covers, not ref_level(r), -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r),
+                r['f'])
 
     def pick(L):
         L, seen, lead = sorted(L, key=key), set(), []
