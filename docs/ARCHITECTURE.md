@@ -287,8 +287,13 @@ circles and pairs come with the next steps).
   by its new id's.
 - **Draft and Publish**: one Save is one draft step (`contentSet`; `contentDrop` for ↺ Restore keeps the node's map, `{}`,
   so the merge never drops another device's slot); Publish writes the map sorted with no empty map (`contentOut`, from
-  `admin.js` `output` and `fishOut`), merges slot by slot (`merge3`) and counts the edits per rank ("2 fish family sheet
-  edits").
+  `admin.js` `output` and `fishOut`), merges node by node and slot by slot (`merge3`), each entry whole (`wholeAt`: a
+  hide on one device and a rewording on another conflict, mine wins, never mixed), and counts the edits per rank ("2 fish
+  family sheet edits").
+- **Sources reach the units too** (rule C2): an edited tip's source becomes the unit's `qsrc` (`fishGen`; `app.js`
+  `fishGenera` for the marks that stand for missing tips and for a genus's tips), shown under the tips wherever they are
+  (`app.js` `tipsList`: quiz feedback, cards, the ID tips view); an edited look-alike line's goes after its own in `lsrc`
+  (`fishLookSrc`).
 - **The players' copy** (`tools/curplay.py`) keeps each entry's `v` and `src` only.
 
 ### Suggestion files (machine-written, Pierre confirms in admin)

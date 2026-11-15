@@ -856,6 +856,16 @@
   }
   // A unit's card photo: the first of its photos in easyRank order, the rights breaking ties (Q270); null with none.
   const easyCover = (L, d) => easyRank(L, d)[0] || null;
+  // A family's look-alike lines' sources (fishGen lsrc), by the other family's id.
+  const fishLookSrc = t => {
+    const L =
+        t.lsrc ||
+        Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+      E = t.esrc || {};
+    return Object.keys(E).some(k => k.startsWith('look/'))
+      ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
+      : L;
+  };
   function fishGen(F, photos, sheet) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
@@ -906,11 +916,12 @@
         forms: t.group ? ['g' + t.group] : [],
         look: [...new Set((t.look || []).map(([id]) => id).filter(id => id !== t.id))],
         lk: (t.look || []).map(([id, txt]) => [id, txt]),
-        // Each look-alike line's source: the family's own (fish.json lsrc, Pierre's declared groups, #662), else the slides.
-        lsrc:
-          t.lsrc ||
-          Object.fromEntries((t.look || []).map(([id]) => [id, 'IMR fish presentation' + (t.sl ? ', slide ' + t.sl.join(', ') : '')])),
+        // Each look-alike line's source: the family's own (fish.json lsrc, Pierre's declared groups, #662), else the slides;
+        // then the source the content editor gave when he reworded it (contentApply esrc, Q359 e).
+        lsrc: fishLookSrc(t),
         qt: t.cues && t.cues.length ? t.cues : null,
+        // The source given with an edit of its tips (contentApply esrc; Q359 e, rule C2), shown with them (app.js tipsList).
+        ...(t.cues && t.cues.length && t.esrc && t.esrc.cues ? {qsrc: t.esrc.cues} : {}),
         sum: t.why || t.note || '',
         phase: t.phase || [],
         // The names IMR uses inside it (its sub-entries: Chromis, Anemonefish, Bannerfish...), each once.
@@ -1697,13 +1708,21 @@
     eq = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
   // conf (optional): collects the paths where both sides changed the same choice differently, so Publish can say which
   // published choices this draft replaced (the rule stays the same: mine wins).
+  // The maps whose values are single choices though objects: the content editor's entries ({v, was, src, t, by}, written
+  // whole at each Save: contentSet), a node's under content nodes <id> and the pairs under content pairs. Merged key by
+  // key, a hide on one device (v null, read as no change from a slot never edited) and a rewording on another mixed into
+  // one entry (Codex review #952); whole, they conflict and mine wins.
+  const wholeAt = p =>
+    (p.length >= 3 && p[p.length - 3] === 'content' && p[p.length - 2] === 'nodes') ||
+    (p.length >= 2 && p[p.length - 2] === 'content' && p[p.length - 1] === 'pairs');
   function merge3(base, mine, theirs, conf, path = []) {
     const b = isObj(base) ? base : {},
       m = isObj(mine) ? mine : {},
       t = isObj(theirs) ? theirs : {},
+      whole = wholeAt(path),
       out = {};
     new Set([...Object.keys(b), ...Object.keys(m), ...Object.keys(t)]).forEach(k => {
-      const both = isObj(m[k]) && isObj(t[k]);
+      const both = isObj(m[k]) && isObj(t[k]) && !whole;
       if (conf && !both && !eq(m[k], b[k]) && !eq(t[k], b[k]) && !eq(m[k], t[k])) conf.push([...path, k]);
       const v = eq(m[k], b[k]) ? t[k] : eq(t[k], b[k]) ? m[k] : both ? merge3(b[k], m[k], t[k], conf, [...path, k]) : m[k];
       // A copy, never a shared object: setQ & co. edit DRAFT's maps in place, and a map shared with SAVED would change

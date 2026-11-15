@@ -68,7 +68,7 @@ test('replace, hide and add: the edits in force, the raw file untouched, the uni
       nodes: {
         [BF.id]: {
           cues: e(['Tip one', 'Tip two'], BF.cues, {src: {t: 'A field guide', u: 'https://example.org/guide'}}),
-          ['look/' + lk]: e('Words of my own', BF.look.find(([o]) => o === lk)[1]),
+          ['look/' + lk]: e('Words of my own', BF.look.find(([o]) => o === lk)[1], {src: {t: 'A look source'}}),
           marks: e(null, BF.marks || null),
           note: e('A note on the sheet', null)
         },
@@ -83,7 +83,7 @@ test('replace, hide and add: the edits in force, the raw file untouched, the uni
   assert.ok(!('marks' in b), 'hidden');
   assert.strictEqual(b.enote, 'A note on the sheet');
   assert.ok(!('note' in b) || b.note === BF.note, 'the free note never lands in the wink line');
-  assert.deepStrictEqual(b.esrc, {cues: {t: 'A field guide', u: 'https://example.org/guide'}});
+  assert.deepStrictEqual(b.esrc, {cues: {t: 'A field guide', u: 'https://example.org/guide'}, ['look/' + lk]: {t: 'A look source'}});
   // A keyed line: its words change, the line (the pair) stays where it was.
   assert.deepStrictEqual(
     b.look.map(([o]) => o),
@@ -105,6 +105,15 @@ test('replace, hide and add: the edits in force, the raw file untouched, the uni
     X0 = C.fishGen(F, {});
   assert.deepStrictEqual(X.gen[BF.id].qt, ['Tip one', 'Tip two']);
   assert.strictEqual(X.gen[BF.id].lk.find(([o]) => o === lk)[1], 'Words of my own');
+  // Their sources go with them into the units (Codex review #952; rule C2): the tips' (app.js tipsList shows it wherever
+  // the tips are shown), the look-alike line's after its own; none where nothing was edited.
+  assert.deepStrictEqual(X.gen[BF.id].qsrc, {t: 'A field guide', u: 'https://example.org/guide'});
+  assert.strictEqual(X.gen[BF.id].lsrc[lk], X0.gen[BF.id].lsrc[lk] + '; A look source');
+  assert.ok(Object.values(X0.gen).every(g => !('qsrc' in g)));
+  assert.deepStrictEqual(
+    Object.keys(X0.gen).filter(id => id !== BF.id && JSON.stringify(X.gen[id].lsrc) !== JSON.stringify(X0.gen[id].lsrc)),
+    []
+  );
   Object.keys(X0.gen).forEach(id => assert.deepStrictEqual([X.gen[id].look, X.gen[id].circle], [X0.gen[id].look, X0.gen[id].circle], id));
   assert.deepStrictEqual(C.fishReplayGen(A), C.fishReplayGen(F));
   assert.deepStrictEqual([X.c1, X.c2, X.c3], [X0.c1, X0.c2, X0.c3]);
@@ -282,11 +291,23 @@ test('two devices: Publish merges slot by slot (merge3), the same slot on both i
     t2 = put(base, c => C.contentSet(c, BF.id, 'cues', ['Theirs'], BF.cues, null, 5)),
     conf2 = [],
     M2 = C.merge3(base, m2, t2, conf2);
-  assert.deepStrictEqual(M2.fish.content.nodes[BF.id].cues.v, ['Mine']);
-  assert.ok(
-    conf2.some(p => p.join('/').startsWith(`fish/content/nodes/${BF.id}/cues`)),
-    JSON.stringify(conf2)
-  );
+  assert.deepStrictEqual(M2.fish.content.nodes[BF.id].cues, m2.fish.content.nodes[BF.id].cues, 'mine, whole');
+  assert.deepStrictEqual(conf2, [['fish', 'content', 'nodes', BF.id, 'cues']]);
+  // A slot never edited, hidden here and reworded there (Codex review #952): one conflict, my hide whole, never mixed
+  // with their words; the other way round, my words whole.
+  const m4 = put(base, c => C.contentSet(c, BF.id, 'life', null, BF.life || null, null, 7)),
+    t4 = put(base, c => C.contentSet(c, BF.id, 'life', ['Their words'], BF.life || null, null, 8)),
+    conf4 = [];
+  assert.deepStrictEqual(C.merge3(base, m4, t4, conf4).fish.content.nodes[BF.id].life, m4.fish.content.nodes[BF.id].life);
+  assert.deepStrictEqual(conf4, [['fish', 'content', 'nodes', BF.id, 'life']]);
+  assert.deepStrictEqual(C.merge3(base, t4, m4).fish.content.nodes[BF.id].life, t4.fish.content.nodes[BF.id].life);
+  // The pairs' entries merge whole too (the same format; their editor is a later step).
+  const pb = {content: {pairs: {}}},
+    pm = {content: {pairs: {'a|b': {v: null, was: 1, t: 1}}}},
+    pt = {content: {pairs: {'a|b': {v: 1, was: null, src: {t: 'S'}, t: 2}}}};
+  assert.deepStrictEqual(C.merge3(pb, pm, pt).content.pairs['a|b'], pm.content.pairs['a|b']);
+  // Elsewhere objects still merge key by key (a coral genus's choices).
+  assert.deepStrictEqual(C.merge3({genera: {A: {}}}, {genera: {A: {cover: 'x'}}}, {genera: {A: {ok: 1}}}).genera.A, {cover: 'x', ok: 1});
   // A Restore here while the other device adds a slot to the same node: the restore stands and their slot stays (the
   // node's map kept, empty, in the draft).
   const r = put(base, c => C.contentDrop(c, BF.id, 'cues')),

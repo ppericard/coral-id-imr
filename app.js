@@ -702,6 +702,8 @@ function fishGenera(X, F) {
       ].join(', ');
     if (!E || E.qt || !(f.marks || []).length) return;
     E.qt = f.marks;
+    // the source the content editor gave with an edit of them (core.js contentApply esrc; Q359 e), shown with them (tipsList)
+    if (f.esrc && f.esrc.marks) E.qsrc = f.esrc.marks;
     E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
   });
   (F.families || [])
@@ -740,6 +742,7 @@ function fishGenera(X, F) {
           lk: [],
           lsrc: {},
           qt: cues,
+          ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
           tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, then the count.
           sum:
@@ -1631,12 +1634,17 @@ addEventListener(
   },
   true
 );
-// Short ID tips; genera the lecture skips fall back to the Coral Finder summary.
+// Short ID tips; genera the lecture skips fall back to the Coral Finder summary. Tips the content editor reworded with a
+// source (qsrc: core.js fishGen, app.js fishGenera; Q359 e, rule C2) show it under them, wherever they are shown.
 const tipsList = (g, cls = '') =>
   g.qt
     ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
         .map(x => `<li>${x}</li>`)
-        .join('')}</ul>`
+        .join('')}</ul>${
+        g.qsrc && g.qsrc.t
+          ? `<p class="note esrc">Source: ${g.qsrc.u ? `<a href="${esc(safeUrl(g.qsrc.u))}" target="_blank" rel="noopener">${esc(g.qsrc.t)}</a>` : esc(g.qsrc.t)}</p>`
+          : ''
+      }`
     : `<p class="keyid">${gloss(g.sum)}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
