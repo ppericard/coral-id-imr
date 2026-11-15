@@ -728,4 +728,30 @@ test('a structure Publish: the replay made under the new stamp adopted at the sa
   assert.ok(a.sent.slice(n).every(b => !b.sts || b.sts.fish === st));
   assert.strictEqual(a.store.get('reefid-sync-fish-st', null), st);
   assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-fish-st']), st, 'saved with the progress');
+  // Codex review #977: another device, still on the old structure, saves its copy over it (the butterflyfishes' record
+  // in it, which the new structure's replay does not make; its stamp the base's, '', which it holds as a key: stsAsk).
+  // This device never merges it into its own: it asks for the replay of the whole log again (its rules version back to
+  // 0) and adopts it, the stamp in force kept.
+  s.post({
+    name: 'Ana',
+    pin: '1234',
+    data: {
+      'reefid-sync-coral-progress': '{}',
+      'reefid-sync-fish-progress': JSON.stringify({...today, 'f:Butterflyfishes': {ok: 0, ko: 2, h: '', dp: [1, 2]}}),
+      'reefid-sync-fish-rv': String(FRV),
+      'reefid-sync-fish-st': '""'
+    },
+    summary: {},
+    answers: []
+  });
+  await a.syncPush();
+  const Q = a.fish();
+  assert.ok(!Q['f:Butterflyfishes'], "the other structure's record not merged in");
+  assert.deepStrictEqual([Q['f:Damselfishes'].ok, Q['f:Damselfishes'].ko], [want['f:Damselfishes'].ok, want['f:Damselfishes'].ko]);
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  assert.strictEqual(a.store.get('reefid-sync-fish-st', null), st);
+  assert.ok(
+    a.sent.some(b => b.rvs && b.rvs.fish === 0),
+    'the replay asked for again'
+  );
 });

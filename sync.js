@@ -282,9 +282,13 @@ const stApplied = S => String(store.get(stKey(S), '') || '');
 const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= STRUCT_SHEET;
 const stNow = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].st ? String(UNITS[S.id].st() || '') : '');
 // {sts: {subject: stamp applied}, stn: {subject: stamp of the units here, when another}}, for the subjects asked (rvsAsk).
+// The stamp applied is then held as a key ('' when none yet), so this device's saves always say it: a whole copy saved
+// without it would keep another device's stamp beside this device's progress (core.js keepSubjectKeys), and the merge
+// guard (mergeSubject stOff) could not tell the two structures apart (Codex review #977).
 const stsAsk = rv => {
-  const L = rpSubjects().filter(S => S.id in rv && stOn(S, sheetV())),
-    stn = Object.fromEntries(L.filter(S => stNow(S) !== stApplied(S)).map(S => [S.id, stNow(S)]));
+  const L = rpSubjects().filter(S => S.id in rv && stOn(S, sheetV()));
+  L.forEach(S => store.get(stKey(S), null) === null && store.set(stKey(S), ''));
+  const stn = Object.fromEntries(L.filter(S => stNow(S) !== stApplied(S)).map(S => [S.id, stNow(S)]));
   return L.length ? {sts: Object.fromEntries(L.map(S => [S.id, stApplied(S)])), ...(Object.keys(stn).length ? {stn} : {})} : {};
 };
 const rvsParam = () => {
@@ -436,8 +440,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       n => (afterBkt(before[n]) ? 'rules' : 'bkt')
     );
     store.set(rvKey(S), rp.rv);
-    // the structure it was replayed under ('' for the base's: set only over a stamp held, so no edit adds no key)
-    if (stamp !== null && (stamp || stApplied(S))) store.set(stKey(S), stamp);
+    if (stamp !== null) store.set(stKey(S), stamp); // the structure it was replayed under ('' for the base's)
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
     // device's answers the sheet has not counted yet, which stay this device's own (P minus the base) and go on top at
     // the next merge (core.js replayBase). Left at the saved copy, another device saving its own adoption of the same log
@@ -523,6 +526,20 @@ function mergeSubject(j, d, S, mine) {
   const RO = rpOn(S, j.v),
     RK = rvKey(S),
     rpS = rpOf(j, S);
+  // A saved copy replayed under another structure than this device's (stKey; STRUCT_SHEET): neither is the other's
+  // older or newer version of one history, so it is never merged into this one (its units' records were made under
+  // other circles and pairs: a family in no circle would get its records back), and the replay of the whole log is asked
+  // for again (the rules version back to 0, as for a copy under older rules), whose adoption sets the stamp in force
+  // (Codex review #977: a device on the new structure merged another's save under the old one, and said the new stamp
+  // after, so no replay came).
+  const stOff = (() => {
+    if (!RO || !stOn(S, j.v)) return false;
+    try {
+      return String(JSON.parse(d[stKey(S)] || '""') || '') !== stApplied(S);
+    } catch (e) {
+      return true;
+    }
+  })();
   const introIn = () => introMerge(d[INTRO.KEY], d[INTRO.OFFER.KEY]); // first-meeting cards seen on another device
   // The surprise cards (winks) shown on another device: once per player, whatever a reset (quiz.js winkMerge).
   if (typeof winkMerge === 'function') winkMerge(d[sKey('wink')]);
@@ -580,7 +597,8 @@ function mergeSubject(j, d, S, mine) {
     // The sheet's replay since the reset is asked for again (the rules version back to 0) when this copy may lack
     // answers: answers played here after that reset and not in the sheet yet (the save that follows logs them), or a
     // copy under older rules than this device applied (saved by an older app, or before its device's replay came back).
-    if (RO && (subjEntries(SYNC.log, S.id).some(a => String(a.t || '') > rr) || (Number(d[RK]) || 0) < rvApplied(S))) store.set(RK, 0);
+    if (RO && (subjEntries(SYNC.log, S.id).some(a => String(a.t || '') > rr) || (Number(d[RK]) || 0) < rvApplied(S) || stOff))
+      store.set(RK, 0);
     store.set(sKey('progress'), P);
     if (typeof memRecalcAll === 'function') memRecalcAll(); // a record pulled from before the photo memory (model.js)
     if (typeof domRecalcAll === 'function') domRecalcAll(); // a non-replayed subject's units pulled under the moving average (model.js)
@@ -625,7 +643,7 @@ function mergeSubject(j, d, S, mine) {
   const waitRp = RO && lgFor(S) && !recovered;
   if (waitRp) store.set(RK, 0);
   if (!mine && !recovered && !waitRp) {
-    if (rvSaved >= rvApplied(S)) {
+    if (rvSaved >= rvApplied(S) && !stOff) {
       // In place: other code holds P by name only, but keep the same object anyway.
       const M = mergeProgress(SYNC[BK] || {}, P, R);
       // A copy under newer rules than this device applied (another device adopted their replay): a learned mark that
@@ -638,7 +656,7 @@ function mergeSubject(j, d, S, mine) {
       Object.assign(P, M);
       // The saved record is now part of P: it becomes the baseline, so a failed send can't count it twice.
       SYNC[BK] = copy(R);
-    } else store.set(RK, rvSaved);
+    } else store.set(RK, stOff ? 0 : rvSaved);
   }
   store.set('reefid-account', SYNC);
   store.set(sKey('progress'), P);

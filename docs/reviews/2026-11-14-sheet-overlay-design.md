@@ -675,7 +675,10 @@ them before it merges.
    script.
    *Built (2026-11-15, Q363 h A, Q366):* the apply, the stamp, the sheet's replay keyed by it, the boards, the app's
    gate and the photo tools (docs/ARCHITECTURE.md "The content editor's edits", "Other subjects' replays"). Left for
-   later: each instance's words for its circles and the build's report of circle-1 genera with no name root. Found
+   later: each instance's words for its circles and the build's report of circle-1 genera with no name root; and, for
+   step 4, the leaderboard's score tree (the fish board's weights per family and circle, which devices send with their
+   saves: after a circle Publish it follows the first save of a device on the new units, so step 4's Publish should send
+   it, or the sheet derive it under the stamp; Codex review #977). Found
    while building: every fish answer carries its scoring record, which the replay scores as the game did, so withdrawn
    or added pairs move no replayed record today; a circle edit moves one only where a unit leaves or joins the units (a
    family in or out of no circle, the genera of a family leaving or joining circle 1), as the unit wrongly given. The stamp is `''` for the base's structure, so the deploy
