@@ -18,6 +18,8 @@
 //   admin token.
 // - load order: a fish record under the former moving average, opened by a link straight to a quiz page with data.json
 //   late (and fish.json in between), rebuilt once the data is in, with no page error, Fish kept, as on a plain load;
+// - a cold first launch (no fish-game.json cached): Home drawn from fish-photos.json's first photos, nothing asked of
+//   iNaturalist or FishBase (coldHome; 2026-11-15, the stopgap retired);
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 // A page key's address (core.js routeOut), for the corals.
@@ -87,6 +89,63 @@ async function settle(q, keep = '') {
     await q.click(`${sel} [data-b="1"]`);
   }
   return 'start-up cards kept coming';
+}
+// (12) A cold first launch on fish (no service worker, so no fish-game.json cached: app.js fishCached false): Home is drawn
+// from fish-photos.json's first photos while fish-game.json is held back, and nothing is asked of iNaturalist or FishBase
+// (2026-11-15: the stopgap of remote photos retired; before, the whole band came from iNaturalist at that moment, after
+// every change to fish-game.json). R2 is answered by a stub image, so no fallback to an original (core.js photoAway) can
+// hide behind a failed R2; every other host is refused and recorded.
+async function coldHome(b, base, errs) {
+  const fails = [],
+    away = [],
+    c = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'}),
+    R2 = /const PHOTO_BASE = '([^']*)'/.exec(fs.readFileSync(path.join(ROOT, 'core.js'), 'utf8'))[1], // the bucket's address
+    PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'),
+    held = [];
+  c.on('request', r => /inaturalist|fishbase/.test(new URL(r.url()).hostname) && away.push(r.url()));
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (r.request().url().startsWith(R2) ? r.fulfill({status: 200, contentType: 'image/png', body: PNG}) : r.abort())
+  );
+  await c.route(
+    u => u.href.startsWith(base) && u.pathname === '/fish-game.json',
+    r => void held.push(r)
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-cold')) {
+        sessionStorage.setItem('fish-cold', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`cold Home: ${e.message}`));
+  await q.goto(base + '#home');
+  const drawn = await q
+    // Not APP_READY: start-up is not over while fish-game.json is held (tier 2); Home is drawn before.
+    .waitForFunction(() => typeof FISHRAW === 'object' && FISHRAW && document.querySelectorAll('#view .hdtiles img').length, null, {
+      timeout: 30000
+    })
+    .then(
+      () => true,
+      () => false
+    );
+  if (!drawn) fails.push('cold Home: no fish photo on the band before fish-game.json');
+  await q.waitForTimeout(1500); // the lazy images in view load
+  const r = await q.evaluate(() => ({
+    partial: !!(FISHRAW && !Object.keys(FISHRAW.gm.photos).length),
+    srcs: [...document.querySelectorAll('img')].flatMap(i => [i.getAttribute('src') || '', i.getAttribute('srcset') || ''])
+  }));
+  if (!r.partial) fails.push('cold Home: fish-game.json was not held back');
+  const bad = r.srcs.filter(s => /inaturalist|fishbase/.test(s));
+  if (bad.length) fails.push(`cold Home: ${bad.length} photo address(es) on iNaturalist or FishBase, e.g. ${bad[0].slice(0, 120)}`);
+  if (away.length) fails.push(`cold Home: ${away.length} request(s) to iNaturalist or FishBase, e.g. ${away[0].slice(0, 120)}`);
+  held.forEach(x => x.abort().catch(() => {}));
+  await c.close();
+  return fails;
 }
 // (11) Find the X (quiz.js FIND, planFind; Pierre, 2026-11-03, Q321 D1): one name, four photos, slipped into the fish quiz.
 // Every circle-1 family met but three, FIND.P set to 1 for the run so it comes at once: never on a family not met, nor with
@@ -2769,6 +2828,8 @@ async function freshPlayers(b, base, errs) {
   const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
   // (11) Find the X: findTheX, above.
   const fx = await findTheX(b, base, errs);
+  // (12) A cold first launch: coldHome, above.
+  const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -3082,7 +3143,7 @@ async function freshPlayers(b, base, errs) {
         );
     }
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

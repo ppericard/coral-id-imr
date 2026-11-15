@@ -137,12 +137,12 @@ print(json.dumps([G.record(s, p, cur['fish'], sug, o, None, r) for s, p, o, r in
     recs.filter(p => C.fishIn({...CUR.fish, tags: undefined}, p, gone)).map(p => p.f),
     [f(2), f(4), f(6), f(7)]
   );
-  // A stopgap photo with k never joins; with o it does.
+  // A first photo (fish-photos.json, read until fish-game.json is in) with k never plays; with o it does.
   const P = C.fishPhotos(
     {
       t01: [
-        {f: 'fi1', sp: 's001', src: 'x', jt: 'p1g0smk'},
-        {f: 'fi2', sp: 's001', src: 'x', jt: 'p1g0smo'}
+        {f: 'fi1', sp: 's001', src: 'x', jt: 'p1g0smk', auto: 'ref'},
+        {f: 'fi2', sp: 's001', src: 'x', jt: 'p1g0smo', auto: 'ref'}
       ]
     },
     {},

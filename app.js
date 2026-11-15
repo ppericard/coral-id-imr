@@ -863,24 +863,25 @@ const rankUnits = rk => [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.uni
 // names never meet). The engine reads every subject's units through it.
 const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen[n] : undefined);
 // Fish (core.js fishGen over fish.json and the photos): fetched the first time the fish subject is needed. The photos:
-// fish-game.json, the ones Pierre put in play, hosted on R2 (tools/fish_game.py, admin plan PR 7), and fish-photos.json,
-// the stopgap list (remote iNaturalist photos, tools/fish_photos.py) and the sheet-only photos; core.js fishPhotos
-// picks per entry under Pierre's curation (CUR), so FISH is made again whenever the curation is (build, fishBuild).
+// fish-game.json, the ones in play, hosted on R2 (tools/fish_game.py, admin plan PR 7), and fish-photos.json, its first
+// photos per entry (the same records, read until fish-game.json is in) and the sheet-only photos, on R2 too; core.js
+// fishPhotos keeps those in play under Pierre's curation (CUR), so FISH is made again whenever the curation is (build,
+// fishBuild).
 let FISH = null,
   FISHP = null,
   FISHH = null,
   FISHRAW = null;
 const fishBuild = () => {
   const {f, ph, gm} = FISHRAW;
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR, f), ph.sheet), f), CUR, f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
 // card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
-// unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its stopgap
-// copy while the candidate is not downloaded yet) counting; else the default (seenCover: the most seen species' easiest).
+// unit's game photos (views.wide: in play, core.js fishPhotos), the same photo under another name (fishPid: its
+// reference copy) counting; else the default (seenCover: the most seen species' easiest).
 // Feature (up to autosort.js FISHFEAT per species, his order): featP {species id: [photo]}, those still in play, the
 // species' first photos on the sheets (learn.js fishSpPhotos), as the admin's page shows them (autosort.js fishOrder).
 // Neither changes the games' photos or their order (model.js photoSet). ok (✓ Validated) is the admin's own.
@@ -929,9 +930,9 @@ function fishCurate(X, cur, F) {
   return X;
 }
 // In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): fishHome,
-// fish.json and fish-photos.json (the families and the stopgap's photos), enough for Home, which start-up waits for; then
+// fish.json and fish-photos.json (the families and their first photos), enough for Home, which start-up waits for; then
 // fishLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
-// 2: need). Until it is in, the units play on the stopgap's photos only, as when it cannot come; then they are built
+// 2: need). Until it is in, the units play on the first photos only, as when it cannot come; then they are built
 // again with it. A launch that finds it in the service worker's cache waits for it at start-up, as before (fishCached).
 const fishHome = () =>
   FISHH ||
@@ -939,7 +940,7 @@ const fishHome = () =>
     .then(([f, ph]) => {
       // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
       // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
-      // curated photos are not required: without them every family plays on the stopgap's.
+      // whole list is not required: without it every family plays on its first photos.
       if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
       if (!FISHRAW) FISHRAW = {f, ph, gm: {photos: {}}};
       return FISHRAW;
@@ -948,7 +949,7 @@ const fishHome = () =>
       FISHH = null;
       throw e;
     }));
-// The subject's data still partial (the fish units on the stopgap's photos only, until fish-game.json is in): what reads
+// The subject's data still partial (the fish units on their first photos only, until fish-game.json is in): what reads
 // the units' photos once for good waits (model.js domRecalcAll, the one-time rebuild of an old record's bar).
 const dataPartial = () => !!(UNITS[SUBJ.id].partial && UNITS[SUBJ.id].partial());
 // Whether this device's service worker already holds fish-game.json (a launch after the first, the same version): then
@@ -1882,7 +1883,7 @@ const UNITS = {
     load: () => fishLoad(),
     // What start-up waits for: the files of Home (fishHome), and the curated photos too when this device holds them.
     home: () => fishHome().then(() => fishCached().then(c => c && fishLoad())),
-    // Between the two: the units on the stopgap's photos only (dataPartial).
+    // Between the two: the units on their first photos only (dataPartial).
     partial: () => !!FISHRAW && !FISHRAW.full,
     pick: 'The reef fish families, as on the IMR survey videos.',
     // The welcome tour's words for its steps on this subject (tour.js words; the corals' are the steps' own): {t, d}, d a
@@ -1986,7 +1987,7 @@ const UNITS = {
     // The photo's species, said under the verdict (photoTaxon): fishTaxon.
     taxon: p => fishTaxon(FISH && FISH.sps, p),
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
-    // fishPid: one photo under its stopgap, candidate and reference names), and what the flag records: file (its name),
+    // fishPid: one photo under its candidate and reference names), and what the flag records: file (its name),
     // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
     photo: f => {
       const id = fishPid(f),

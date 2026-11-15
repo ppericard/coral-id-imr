@@ -659,15 +659,29 @@ def moved_of(cur):
     return frozenset(((cur or {}).get("fish") or {}).get("out") or {})
 
 
-def game_photos(fp):
-    """{species id: [its game and sheet photos]} from fish-photos.json (photos per entry, sheet per species; each sp)."""
-    out = {}
-    for part in ("photos", "sheet"):
-        for L in ((fp or {}).get(part) or {}).values():
+def game_photos(fp, gm=None):
+    """{species id: [its game and sheet photos]} from fish-photos.json (fp: its first photos per entry, sheet per species;
+    each sp) and fish-game.json (gm: the photos in play, per entry), each photo once. The photos in play are fish-game.json's
+    since the stopgap list fish-photos.json held was retired (2026-11-15); its first photos are a few of the same records.
+    Without their ph: a game record's phase may be its source's label (tools/fish_game.py phase), which counts through its
+    own thresholds (species_phases: inat:N, fishbase:N), so only its judged tags (jt) record a phase here, as the stopgap's
+    records did."""
+    out, seen = {}, set()
+    for d, part in ((gm, "photos"), (fp, "photos"), (fp, "sheet")):
+        for L in ((d or {}).get(part) or {}).values():
             for p in L:
-                if p.get("sp"):
-                    out.setdefault(p["sp"], []).append(p)
+                if p.get("sp") and p.get("f") not in seen:
+                    seen.add(p.get("f"))
+                    out.setdefault(p["sp"], []).append({k: v for k, v in p.items() if k != "ph"})
     return out
+
+
+def game_files(photos):
+    """(fish-photos.json, fish-game.json) as read: photos the path of the first (--photos), the second next to it, its
+    records whole (tools/fish_short.py); {} for a file that is not there."""
+    import fish_short
+    rd = lambda p: json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}  # noqa: E731
+    return rd(Path(photos)), fish_short.full_doc(rd(Path(photos).with_name("fish-game.json")))
 
 
 def phase_query(ph, taxa, where):
@@ -854,10 +868,9 @@ def run(args):
     have = json.loads(cand_path.read_text(encoding="utf-8")).get("cand", {}) if cand_path.exists() else {}
     cur = json.loads(Path(args.cur).read_text(encoding="utf-8")) if Path(args.cur).exists() else {}
     sug = json.loads(Path(args.suggest).read_text(encoding="utf-8")) if Path(args.suggest).exists() else {}
-    fp = json.loads(Path(args.photos).read_text(encoding="utf-8")) if Path(args.photos).exists() else {}
     fbsrc = (json.loads(Path(args.fbsrc).read_text(encoding="utf-8")) if Path(args.fbsrc).exists() else {}).get("species") or {}
     gone, excl = state(cur, sug)
-    sugf, moved, game = (sug or {}).get("fish") or {}, moved_of(cur), game_photos(fp)
+    sugf, moved, game = (sug or {}).get("fish") or {}, moved_of(cur), game_photos(*game_files(args.photos))
     net = Net(args.cache, offline=args.offline, refresh=args.refresh, plan=args.plan)
     only = set(filter(None, (args.only or "").split(",")))
     used = {pid(p["f"]) for L in have.values() for p in L} - {None}
@@ -1129,7 +1142,7 @@ def refill(args):
     have = rd(args.cand).get("cand", {})
     fbsrc = rd(args.fbsrc).get("species") or {}
     gone, _ = state(cur, sug)
-    F, sugf, moved, game = (cur or {}).get("fish") or {}, (sug or {}).get("fish") or {}, moved_of(cur), game_photos(rd(args.photos))
+    F, sugf, moved, game = (cur or {}).get("fish") or {}, (sug or {}).get("fish") or {}, moved_of(cur), game_photos(*game_files(args.photos))
     S = species_list(fish, set(args.circle))
     rows = {s["id"]: shortness(s, t, have.get(s["id"], []), gone, F, sugf, game.get(s["id"], ()),
                                (fbsrc.get(s["id"]) or {}).get("photos") or (), moved, args.cap) for s, t in S}
@@ -1185,7 +1198,8 @@ def main(argv=None):
     a.add_argument("--cand", default=str(ROOT / "fish-cand.json"))
     a.add_argument("--cur", default=str(ROOT / "curation.json"))
     a.add_argument("--suggest", default=str(ROOT / "suggest.json"))
-    a.add_argument("--photos", default=str(ROOT / "fish-photos.json"), help="the game photos (their judging tags record phases)")
+    a.add_argument("--photos", default=str(ROOT / "fish-photos.json"),
+                   help="fish-photos.json; the photos in play are read from fish-game.json next to it (their judging tags record phases)")
     a.add_argument("--fbsrc", default=str(ROOT / "tools" / "fishbase_src.json"), help="FishBase rows (their life stages record phases)")
     a.add_argument("--cache", default=str(ROOT / "tools" / ".cache" / "fish_photos.json"))
     args = a.parse_args(argv)

@@ -295,7 +295,8 @@
       rp(2, '', 'photo', g3, '', '', 'Demo report: blurry (sent without signing in).', 'photo', pics[g3][0].f, 'learn/genus/' + g3),
       rp(3, 'Dio Demo', 'info', g2, '', '', 'Demo feedback: a typo on this sheet.', 'sheet', '', 'learn/genus/' + g2),
       rp(4, 'Ana Demo', 'idea', '', '', '', 'Demo feedback: a timer in the quiz?', 'page', '', 'home'),
-      // A report from the fish beta: a teaching id and a remote iNaturalist photo (fish-photos.json).
+      // A report from the fish beta: a teaching id and a reference photo in play (fish-game.json and fish-photos.json's first
+      // photos, on R2; the stopgap's remote fi<id> photos it named until 2026-11-15 are retired).
       rp(
         5,
         'Eli Demo',
@@ -305,7 +306,7 @@
         '',
         'Demo fish report: not a damselfish.',
         'quiz',
-        'fi464458713',
+        'fi10243932',
         'fish/practice/quiz'
       ),
       // Send feedback from a game: the question's unit and photos come with it (app.js helpEnd, quiz.js qNow).

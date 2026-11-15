@@ -28,7 +28,7 @@ vm.runInContext(
   ].join('\n'),
   ctx
 );
-const X = ctx.fishGenera(C.fishGen(F, PH.photos), F);
+const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, C.fishGameRead(json('fish-game.json')).photos, null)), F); // the photos in play
 ctx.GX = n => X.gen[n];
 const fam = n => X.gen[n].parent,
   // scores: family -> score; met: the genera already met

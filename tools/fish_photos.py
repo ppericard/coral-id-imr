@@ -1,31 +1,10 @@
 #!/usr/bin/env python3
-"""Writes fish-photos.json: the photos the fish quiz shows, as remote iNaturalist photos (nothing downloaded).
+"""Writes fish-photos.json "sheet": the sheet-only fish photos, found on iNaturalist and FishBase.
 
-STOPGAP (2026-11-03): until the fish photo pipeline exists (downloaded, judged and curated photos, as for the corals,
-built by another agent), the fish quiz shows iNaturalist photos straight from iNaturalist, like a coral candidate photo
-waiting to be downloaded (data.json `r: 1`, app.js img()). The pipeline replaces this file; the app reads only the
-photo objects below, so nothing else changes then. Varied quality on purpose (very good to bad, blue / green water) is
-the pipeline's goal, not this script's: here the photos come as iNaturalist ranks them.
-
-For each level-1 teaching entry of fish.json (every circle, winks too), the observations of its species in the game
-(species without `out`), in this order (rules S2 and P1):
-  1. Research Grade observations in the Philippines with a CC0 or CC BY photo, then CC BY-NC; never a share-alike
-     licence nor an ND one (Pierre's rules, 2026-11-03; a crop is a derivative);
-  2. when that leaves an entry short: Research Grade observations anywhere, same licence order (its species are all
-     confirmed in the Philippines: fish.json keeps the others out of the game).
-Pierre's own observations (iNaturalist user ppericard) identified to the species are usable even Needs ID (Pierre,
-2026-11-03: he names a species only when very sure; his only, nobody else's), whatever their licence (his photos).
-Every compatible photo of his is in the list (Pierre, 2026-11-06, Q148: never left out, never boosted; his_ok), all of
-an observation's compatible photos, and they take none of the other observers' PER places (until then his came first
-and filled them).
-Within each step the species take turns in fish.json order (the PDF cheatsheet's most sighted first), so an entry's
-photos spread over its species; at most PER observations per entry, one photo per observation (its first one, the one
-the observer chose), since a quiz question shows one observation (rule P4).
-
-Photo object, as data.json's: {f: 'fi<photo id>' (unique, never a file), o: observation URL, src: the original photo
-URL (app.js inat() swaps the size), r: 1 (remote), a: attribution, lic, t: species name as iNaturalist has it, sp:
-fish.json species id, own: true for Pierre's, loc: dauin (within 40 km) / ph / world, ar: width / height, e / jt: the
-judged ease 1-5 and tags (tools/fish_judge.py, judging/FISH.md)}.
+The stopgap list this script wrote under "photos" until 2026-11-15 (remote iNaturalist photos the fish quiz showed
+straight from iNaturalist, from 2026-11-03, while the curated photos on R2 did not exist yet) is retired (Pierre,
+2026-11-15): every fish photo in play is on R2 (fish-game.json, tools/fish_game.py), and fish-photos.json "photos" now
+holds a few of those records per entry, written by tools/fish_game.py (first_photos). This script writes "sheet" only.
 
 Sheet-only photos ("sheet": {species id: [photo]}, Pierre, 2026-11-05). A few circle-1 species have no game photo and
 no candidate, because iNaturalist files their photos under another species (Pomacentrus armillatus: iNaturalist and
@@ -46,35 +25,37 @@ photo object carries use: 'ref' (the corals' word for "sheet only", curation.jso
 files it under another species of fish.json. Two batched requests for every species of SHEET (the taxa, then their
 observations in the Indo-West Pacific box).
 
+A photo found here is written remote (r: 1, src its original); the Candidate photos workflow downloads it in the four
+sizes and uploads it to R2 like a game photo, then lists it without r (tools/fish_game.py run, sheet_of), so the app
+reads it from R2. A photo already downloaded (the same f and src, no r) is kept as it is. A species that has a photo in
+play loses its sheet-only photo at that run (tools/fish_game.py sheet_of).
+
 Every iNaturalist reply is cached in tools/.cache/fish-photos.json (git-ignored): a rerun is offline and identical;
---refresh asks again. Usage: python3 tools/fish_photos.py [--offline | --refresh] [--per 24] [--sheet]
-(--sheet: only the sheet-only photos, the game photos kept as they are.)
+--refresh asks again. Usage: python3 tools/fish_photos.py [--offline | --refresh]
 """
 import argparse
 import json
 import math
 import sys
-from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_fish as bf  # noqa: E402  (its cached, paced Net)
-import fish_judge  # noqa: E402  (the judged ease of each photo)
+import fish_game  # noqa: E402  (fish-photos.json's writer: photos_dumps)
 from fetch_fish import IWP, in_iwp  # noqa: E402  (the Indo-West Pacific box of the fish candidates)
 import fetch_fishbase as fbase  # noqa: E402  (FishBase photos: the same rules, from tools/fishbase_src.json)
 
 ROOT = bf.ROOT
 OUT = ROOT / "fish-photos.json"
 bf.CACHE = ROOT / "tools" / ".cache" / "fish-photos.json"
-V = 1
-PER = 24
 DAUIN = (9.19, 123.26)
 # Pierre's licence rules (2026-11-03, the fish photo lists): never share-alike, never ND (a crop is a derivative).
 LIC1, LIC2 = "cc0,cc-by", "cc-by-nc"
 # The species that may keep a sheet-only photo (Pierre, 2026-11-05; see the top): fish.json species ids, the circle-1
 # species with no game photo nor candidate. Chromis agilis (iNaturalist: Pycnochromis agilis), Siganus margaritiferus,
-# Pomacentrus armillatus (filed under P. opisthostigma), Halichoeres chlorocephalus, H. marginatus. Only P. armillatus
-# has a photo that passes the rules (2026-11-05); the others are asked again at each run. Add an id to try another.
+# Pomacentrus armillatus (filed under P. opisthostigma), Halichoeres chlorocephalus, H. marginatus. Asked at each run; a
+# species that has a photo in play since (H. chlorocephalus: FishBase's, 2026-11-15) loses its sheet-only photo at the next
+# Candidate photos run (tools/fish_game.py sheet_of). Add an id to try another.
 SHEET = ["s088", "s061", "s105", "s238", "s244"]
 
 
@@ -82,12 +63,6 @@ def km(a, b):
     la1, lo1, la2, lo2 = map(math.radians, (*a, *b))
     h = math.sin((la2 - la1) / 2) ** 2 + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2
     return 6371 * 2 * math.asin(math.sqrt(h))
-
-
-def obs(taxa, extra):
-    """Observations of these iNaturalist taxa (and below), first 200, iNaturalist's default order."""
-    url = f"{bf.INAT}observations?taxon_id={','.join(map(str, taxa))}&photos=true&per_page=200&{extra}"
-    return (bf.NET.get(url) or {}).get("results", [])
 
 
 def where(o):
@@ -101,116 +76,6 @@ def where(o):
 def ratio(p):
     dim = p.get("original_dimensions") or {}
     return round(dim["width"] / dim["height"], 3) if dim.get("width") and dim.get("height") else None
-
-
-def photo_of(o, p, sp):
-    """Photo p of observation o as a photo object, or None (no original URL)."""
-    lic = (p.get("license_code") or "").lower()
-    url = (p.get("url") or "").replace("/square.", "/original.")
-    if "/original." not in url:
-        return None
-    out = {"f": f"fi{p['id']}", "o": f"https://www.inaturalist.org/observations/{o['id']}", "src": url, "r": 1,
-           "a": p.get("attribution") or "", "lic": lic or "c", "t": (o.get("taxon") or {}).get("name", ""), "sp": sp,
-           "loc": where(o)}
-    if (o.get("user") or {}).get("login") == bf.PIERRE:
-        out["own"] = True
-    if ratio(p):
-        out["ar"] = ratio(p)
-    return out
-
-
-def photo(o, sp, lic_ok):
-    """The observation's first photo with an accepted licence, as a photo object, or None."""
-    for p in o.get("photos") or []:
-        if lic_ok((p.get("license_code") or "").lower()):
-            out = photo_of(o, p, sp)
-            if out:
-                return out
-    return None
-
-
-def mine(o):
-    return (o.get("user") or {}).get("login") == bf.PIERRE
-
-
-# What Pierre decided on fish photos (curation.json) and what the judging pass said (tools/fish_judge.json codes,
-# suggest.json "fish"), read once by his_ok: loaded by main(); empty in a test unless given.
-DECIDED = {"gone": set(), "codes": {}, "sug": {}}
-
-
-def load_decided(root=None):
-    """The iNaturalist photo ids Pierre rejected, excluded or moved with Not this (curation.json fish seen, exclude,
-    out; the top-level exclude), the game photos' judged codes by photo id and the candidates' judgements by photo id."""
-    root = root or ROOT
-    pid = lambda f: str(f).rsplit("-", 1)[-1].removeprefix("fi")  # noqa: E731
-    cur = json.loads((root / "curation.json").read_text(encoding="utf-8")) if (root / "curation.json").exists() else {}
-    fish = cur.get("fish") or {}
-    gone = {pid(f) for k in ("seen", "exclude", "out") for f in (fish.get(k) or {})} | {pid(f) for f in cur.get("exclude") or {}}
-    codes = {pid(f): c for f, c in fish_judge.load_src()[0].items()}
-    sug = json.loads((root / "suggest.json").read_text(encoding="utf-8")).get("fish", {}) if (root / "suggest.json").exists() else {}
-    DECIDED.update(gone=gone, codes=codes, sug={pid(f): v for f, v in sug.items()})
-
-
-def his_ok(p, o, inat):
-    """Pierre's photo p of his observation o of iNaturalist taxon inat is compatible (Pierre, 2026-11-06, Q148): it passes
-    the game photo rules (sheet_ok: identified to this species, even Needs ID; any licence, his; the Indo-West Pacific
-    box; never captive or Dead), he did not reject, exclude or move it (curation.json), and the judging rubric does not
-    set it aside (judging/FISH.md: a near-duplicate of its observation's best photo, an unclear subject, out of the
-    water). Such a photo is always in the pool."""
-    if not mine(o) or not sheet_ok(p, o, inat):
-        return False
-    i = str(p["id"])
-    if i in DECIDED["gone"]:
-        return False
-    j = DECIDED["sug"].get(i) or {}
-    code = DECIDED["codes"].get(i) or j.get("jt") or ""
-    return j.get("k") != "dup" and code[6:7] != "x" and "a" not in code[7:].rstrip("12345")
-
-
-def entry(node, species):
-    """The photos of one teaching entry. Pierre's own (Pierre, 2026-11-06, Q148): every compatible photo of his
-    observations (his_ok), whatever their number, never left out and never boosted: they take no room. Then the other
-    observers', steps in order, species taking turns, at most PER observations, one photo each (its first)."""
-    sp = [s for s in (species[i] for i in node.get("species", [])) if not s.get("out") and s.get("inat")]
-    if not sp:
-        return []
-    by_taxon = {s["inat"]: s for s in sp}
-    taxa = [s["inat"] for s in sp]
-    tx = lambda o: (o.get("taxon") or {}).get("min_species_taxon_id") or (o.get("taxon") or {}).get("id")  # noqa: E731
-    got, seen = [], set()
-    for o in sorted(obs(taxa, f"user_login={bf.PIERRE}&hrank=species&lrank=species"), key=lambda o: -o["id"]):
-        if tx(o) in by_taxon and o["id"] not in seen:
-            seen.add(o["id"])
-            got += [x for x in (photo_of(o, p, by_taxon[tx(o)]["id"]) for p in o.get("photos") or [] if his_ok(p, o, tx(o))) if x]
-    steps = [
-        (f"quality_grade=research&place_id=6873&photo_license={LIC1}", lambda lic: lic in LIC1.split(",")),
-        (f"quality_grade=research&place_id=6873&photo_license={LIC2}", lambda lic: lic in LIC2.split(",")),
-        (f"quality_grade=research&photo_license={LIC1}", lambda lic: lic in LIC1.split(",")),
-        (f"quality_grade=research&photo_license={LIC2}", lambda lic: lic in LIC2.split(",")),
-    ]
-    n = 0  # the other observers' photos: PER at most
-    for k, (q, ok) in enumerate(steps):
-        if n >= PER:
-            break
-        if k >= 2 and n >= PER // 2:  # worldwide only for an entry left short in the Philippines
-            break
-        queues = {t: [] for t in taxa}
-        for o in sorted(obs(taxa, q), key=lambda o: -o["id"]):  # iNaturalist's order, the newest first
-            if tx(o) in queues and o["id"] not in seen and not mine(o):
-                queues[tx(o)].append(o)
-        while n < PER and any(queues.values()):
-            for t in taxa:
-                if n >= PER:
-                    break
-                while queues[t]:
-                    o = queues[t].pop(0)
-                    p = photo(o, by_taxon[t]["id"], ok)
-                    if p:
-                        seen.add(o["id"])
-                        got.append(p)
-                        n += 1
-                        break
-    return got
 
 
 SHEET_LIC = set(LIC1.split(",") + LIC2.split(","))
@@ -318,47 +183,27 @@ def sheet(F):
     return out
 
 
+def keep_done(new, old):
+    """The sheet photos to write: new (sheet()), each one already downloaded (old: the file's, the same f and src, no r)
+    kept as it is (its shape measured, listed for R2)."""
+    have = {(p.get("f"), p.get("src")): p for L in (old or {}).values() for p in L if not p.get("r")}
+    return {sid: [have.get((p.get("f"), p.get("src")), p) for p in L] for sid, L in new.items()}
+
+
 def main():
-    global PER
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--offline", action="store_true")
     g.add_argument("--refresh", action="store_true")
-    ap.add_argument("--per", type=int, default=PER)
-    ap.add_argument("--sheet", action="store_true", help="only the sheet-only photos; the game photos kept as they are")
     a = ap.parse_args()
-    PER = a.per
     bf.NET = bf.Net(offline=a.offline, refresh=a.refresh)
     F = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
-    if a.sheet:
-        doc = json.loads(OUT.read_text(encoding="utf-8"))
-        try:
-            doc["sheet"] = sheet(F)
-        finally:
-            bf.NET.save()
-        fish_judge.write(doc)
-        return
-    species = {s["id"]: s for s in F["species"]}
-    load_decided()
-    photos = {}
+    doc = json.loads(OUT.read_text(encoding="utf-8"))
     try:
-        for t in F["teach"]:
-            if t.get("level") != 1:
-                continue
-            photos[t["id"]] = entry(t, species)
-            own = sum(1 for p in photos[t["id"]] if p.get("own"))
-            print(f"{t['id']} {t['name']}: {len(photos[t['id']])} photos ({own} Pierre's)")
-        sheet_only = sheet(F)
+        doc["sheet"] = keep_done(sheet(F), doc.get("sheet"))
     finally:
         bf.NET.save()
-    # The judged ease of each photo (judging/FISH.md; tools/fish_judge.json), kept through a rebuild.
-    print(f"judged photos: {fish_judge.apply(photos, F)}")
-    fish_judge.write({"v": V, "built": date.today().isoformat(),
-                      "stopgap": "remote iNaturalist photos until the fish photo pipeline exists (tools/fish_photos.py)",
-                      "photos": photos, "sheet": sheet_only})
-    short = [k for k, v in photos.items() if len(v) < 6]
-    if short:
-        print("Fewer than 6 photos:", ", ".join(short))
+    OUT.write_text(fish_game.photos_dumps(doc), encoding="utf-8")
 
 
 if __name__ == "__main__":
