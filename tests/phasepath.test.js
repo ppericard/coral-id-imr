@@ -37,12 +37,16 @@ test('the calibration: the corals hold nothing back, the fish 10 answers', () =>
 test('the card trigger: the first photo whose kind has no card yet, once per kind', () => {
   const adult = {f: 'a', sp: 's1'},
     juv = {f: 'j', sp: 's1', ph: 'juvenile'},
-    male = {f: 'm', sp: 's1', ph: 'male'},
+    male = {f: 'm', sp: 's1', ph: 'male', jt: 'p1g0sl1p4'},
     juvTag = {f: 't', sp: 's1', jt: 'p1g1sm1j2'};
   assert.strictEqual(C.phaseKind(adult), '');
   assert.strictEqual(C.phaseKind(juvTag), 'juvenile');
   assert.strictEqual(C.phaseKind(male), 'phase');
-  assert.strictEqual(C.phaseKind({ph: 'intermediate'}), 'phase');
+  assert.strictEqual(C.phaseKind({ph: 'intermediate', jt: 'p1g0sl1pr5'}), 'phase');
+  // A male or a female judged on an entry not marked dimorph (no phase flag p): held back by the draw, but no card says
+  // its sexes look different (rule C2).
+  assert.strictEqual(C.phaseKind({ph: 'male', jt: 'p1g0sl14'}), '');
+  assert.strictEqual(C.phaseKind({ph: 'female'}), '');
   const none = () => false;
   assert.strictEqual(C.phaseCardOf([adult], none), null);
   assert.deepStrictEqual(C.phaseCardOf([adult, juv], none), {p: juv, k: 'juvenile'});

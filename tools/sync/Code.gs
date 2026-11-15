@@ -3513,9 +3513,13 @@ const CORE_ = (function () { const module = {exports: {}};
   // (no wall, Pierre 2026-11-06).
   const phaseStage = (N, m) => (!(N > 0) ? 1 : m < N ? 0 : Math.min(1, (m - N + 1) / N));
   // The explanation card a phase photo brings (quiz.js phaseArm): 'juvenile', 'phase' for a sex or colour phase, '' none.
+  // A sex or colour phase only on a photo whose tags carry the phase flag p: its entry is marked dimorph, the IMR
+  // presentation saying its sexes or colour phases look different (judging/FISH.md "Tags"; the Parrotfishes, the Anthias),
+  // so the card's "males and females can look very different" is sourced (rule C2); a male or a female judged elsewhere
+  // (a stingray, a wrasse) brings none.
   const phaseKind = p => {
     const w = phaseOf(p);
-    return !w ? '' : w === PHASE_JUV ? 'juvenile' : 'phase';
+    return !w ? '' : w === PHASE_JUV ? 'juvenile' : /p/.test(String(p.jt || '').slice(7)) ? 'phase' : '';
   };
   // The first photo of a question's photos L whose card has not been shown yet (seen(kind)), with its kind; null if none.
   const phaseCardOf = (L, seen) => {

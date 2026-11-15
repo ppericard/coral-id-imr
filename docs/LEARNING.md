@@ -3648,7 +3648,11 @@ unchanged and a subject that tags phases one day sets its own N.
 (`learn.js`: the IMR presentation's phase lines, the juvenile note with its sources, juvenile photos), and the
 feedback's "More" lists the phase lines. Built (`quiz.js` `phaseArm`, `phaseShow`; `core.js` `phaseKind`,
 `phaseCardOf`, `phasePair`): the first question that shows a juvenile, and the first that shows a sex or colour phase,
-bring a card at the break at Next, once per kind and subject (on the device and in the account's synced `TOLD`). It
+bring a card at the break at Next, once per kind and subject (on the device and in the account's synced `TOLD`). A sex
+or colour phase brings it only on an entry marked `dimorph` (the tags' phase flag `p`: the IMR presentation says its
+sexes or phases differ, so far the Parrotfishes and the Anthias), since the card says "males and females can look very
+different" (rule C2): a male or a female judged on a stingray, a shark or a wrasse is held back by the draw like any
+phase photo but brings no card. It
 shows the photo just answered beside one of the same species in another phase (a juvenile beside an adult; a male beside
 a female; FISH_PATH.md "Introduced with an explanation", Pierre 2026-11-04), each labelled, the photo's taxon line, and
 the unit's IMR phase lines when it has some; its title is Pierre's own wording ("Careful: this was a juvenile, it can

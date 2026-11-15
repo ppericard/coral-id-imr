@@ -488,6 +488,53 @@ async function freshPlayers(b, base, errs) {
       return {fails, gated};
     }, 15);
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
+    // The card through the game's own path, once (quiz.js phaseArm): an answer whose photo has a sex or colour phase
+    // (core.js phaseKind) arms the break; Next shows the card over the question answered; Got it marks it shown and goes on
+    // to the next question. Every unit opened first, so the next question brings no unit's card (which the break waits for).
+    if (seed === 11) {
+      const a = await q.evaluate(() => {
+        document.querySelectorAll('.unlock, .achpop').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+        if (typeof achQ !== 'undefined') achQ.length = 0;
+        if (typeof achBusy !== 'undefined') achBusy = false;
+        introAll('progress');
+        dropPlans();
+        NEXTQ = null;
+        route();
+        const n = FISH.c1.find(n => GX(n).views.wide.some(p => phaseKind(p) === 'phase')),
+          p = n && GX(n).views.wide.find(x => phaseKind(x) === 'phase');
+        if (!p || !document.querySelector('#view .q')) return {why: `no question or no phase photo (${n})`};
+        smokeAnswer();
+        const nb = document.getElementById('next');
+        nb.onclick = route; // the break left free (a prompt or a tip this answer armed)
+        return {armed: phaseArm(nb, 'quiz', [p], n, false), seen: phaseSeen('phase')};
+      });
+      if (!a.armed || a.seen) fresh.push(`new player ${seed}: the phase card not armed (${JSON.stringify(a)})`);
+      else {
+        // An achievement toast the answer brought would hold the card back (overlayBusy): gone, as a player waits it out.
+        await q.evaluate(() => {
+          document.querySelectorAll('.achpop').forEach(d => d.remove());
+          if (typeof achQ !== 'undefined') achQ.length = 0;
+          if (typeof achBusy !== 'undefined') achBusy = false;
+        });
+        await q.click('#next');
+        const shown = await q.waitForSelector('.unlock.phasecard', {timeout: 5000}).catch(() => null);
+        if (!shown)
+          fresh.push(
+            `new player ${seed}: Next showed no phase card (${await q.evaluate(() => [...document.querySelectorAll('.unlock, .achpop, #tour')].map(d => d.className).join() || 'nothing over the page')})`
+          );
+        else {
+          await q.click('.unlock.phasecard [data-b]');
+          const on = await q
+            .waitForFunction(() => !document.querySelector('.unlock.phasecard') && document.querySelector('#view .q:not(.done)'), null, {
+              timeout: 5000
+            })
+            .then(() => true)
+            .catch(() => false);
+          if (!on) fresh.push(`new player ${seed}: Got it did not go on to the next question`);
+          if (!(await q.evaluate(() => phaseSeen('phase')))) fresh.push(`new player ${seed}: the phase card not marked shown`);
+        }
+      }
+    }
     await c6.close();
   }
   return fresh;
