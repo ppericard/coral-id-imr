@@ -492,8 +492,10 @@ function play(cfg) {
       .flatMap(S => (S.all ? S.all() : S.units()))
       .forEach(g => {
         if (g in know) return;
-        // A set's unit (a fish scientific genus) by its family (GX parent): gen (tools/learnprof.js).
-        know[g] = LEARNPROF.genKnown(prof, knows, (GX(g) || {}).parent, (GX(g) || {}).imrg) ? prof.hi : prof.lo;
+        // A set's unit (a fish scientific genus) by its family (GX parent): gen (tools/learnprof.js); a species by its
+        // common name (the species level) from the profile's low start, as the rated world (tools/ratedworld.js).
+        know[g] =
+          (GX(g) || {}).rank !== 'species' && LEARNPROF.genKnown(prof, knows, (GX(g) || {}).parent, (GX(g) || {}).imrg) ? prof.hi : prof.lo;
       });
   const kn = g => know[g] ?? prof.lo;
   const teach = (g, x) => {
@@ -811,7 +813,8 @@ function play(cfg) {
     if (typed) {
       const f = document.querySelector('#view .tyform');
       if (!pick) f.querySelector('[data-idk]').click();
-      else ((f.querySelector('input').value = pick), f.requestSubmit());
+      // a species is typed by its common name (its id holds no letters to read)
+      else ((f.querySelector('input').value = (GX(pick) || {}).rank === 'species' ? GX(pick).name : pick), f.requestSubmit());
     } else {
       // A Find the X opens its answers once its four tiles are in (quiz.js question): the photos' host is out of reach
       // here, so each tile is counted in (its load event), as a player's would be once it came.

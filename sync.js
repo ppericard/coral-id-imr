@@ -98,6 +98,13 @@ const boardUnits = () =>
 // account (one tree per subject for the whole sheet).
 const TREE_SHEET = 143;
 const treeOn = () => sheetV() >= TREE_SHEET;
+// The fish species level (Pierre, 2026-11-15, Q362, Q375; docs/reviews/2026-11-14-species-step1.md): its units open, and
+// count in the global score and its leaderboard tree (app.js UNITS fish tree), only once the sheet keeps the tree in
+// chunks (treeOn) and replays the species units as the game scores them (SPECIES_SHEET: core.js fishReplayGen lists them,
+// with the family they start from); before, the species are not opened and the tree is the one of before (rule D4).
+// The one predicate every species rule reads.
+const SPECIES_SHEET = 145;
+const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();
 const treeSum = T => {

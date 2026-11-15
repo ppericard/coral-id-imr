@@ -1257,7 +1257,9 @@ const misses = h => [...h].filter(x => x === '0').length;
 // default player's, so an adopted replay never takes back what the game did live. A subject the sheet does not replay
 // (SUBJECTS replay: fish) has no replay to wait for: its prior applies at once.
 const startP = () => (!startS().replay || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
-const ability = n => abilityOf(P, n, startP());
+// A unit whose record names the unit it starts from (from: a fish species, its family; core.js fishSpUnits) starts from
+// that unit's ability when never answered (core.js abilityOf).
+const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
 // (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
@@ -1507,9 +1509,11 @@ const examLooks = n => {
 const lookLeft = n => looksLeft(P, n, examLooks(n));
 // And its confusion group met (Pierre, 2026-11-14, Q350 d): the exam opens once the unit's group partners that can open
 // (matesLeft: in play, behind no gate) are met; an exam already under way (s.ex) goes on.
+// A unit whose record says noex has no mastery exam (a fish species, step 1: docs/reviews/2026-11-14-species-step1.md, "No
+// species exam yet"; its bar tops out at 95%).
 const examOn = n => {
   const s = P[n] || {};
-  return !s.mx && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
+  return !s.mx && !(GX(n) || {}).noex && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
 };
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
@@ -1670,11 +1674,17 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
 // A choice's label as its button shows it (app.js unameT: the unit's name), compared as typed (letters only, core.js
 // typeNormAll: Yellowtail / Yellow-tail wrasse read as one). Two units may carry the same name (Pierre, 2026-11-15, Q381:
 // two fish species may share a common name), but a question never shows two choices of one label (distractors).
-const choiceKey = n =>
-  String((GX(n) || {}).name || n)
+const labelKey = x =>
+  String(x)
     .toLowerCase()
     .normalize('NFD')
     .replace(/[^a-z]/g, '');
+const choiceKey = n => labelKey((GX(n) || {}).name || n);
+// The labels a choice must not carry on a question about unit t: its own, and every other name its record lists (also:
+// a fish species' listed common names with their spellings, app.js fishGenera), since each of them names t too
+// (typed, any of them is right: Q376 (b)). Outside IMR, "Longnose butterflyfish" is the main name of F. longirostris and
+// a listed name of F. flavissimus: never a wrong choice on a photo of F. flavissimus.
+const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map(labelKey)].filter(Boolean));
 // The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
 const choiceApart = (L, taken = []) => {
   const seen = new Set(taken.map(choiceKey));
@@ -1684,13 +1694,13 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
   // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (Codex review #526: a family with one genus at Advanced had one choice).
-  // Never a choice of the target's label, nor two of one label (choiceApart, Q381): of two units of one label, the one
-  // the rules below rank first is kept and the next one takes the other's place.
+  // Never a choice of the target's label or of another name it lists (choiceKeys), nor two of one label (choiceApart,
+  // Q381): of two units of one label, the one the rules below rank first is kept and the next one takes the other's place.
   const rk = rankOf(t),
-    tk = choiceKey(t);
+    tk = choiceKeys(t);
   list = list.filter(n => rankOf(n) === rk);
   if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
-  list = list.filter(n => n === t || choiceKey(n) !== tk);
+  list = list.filter(n => n === t || !tk.has(choiceKey(n)));
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])

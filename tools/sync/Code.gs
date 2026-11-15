@@ -3998,6 +3998,35 @@ const CORE_ = (function () { const module = {exports: {}};
             .map(G => G.id);
         ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
       });
+    // The species units (fishSpUnits, below), each with its look-alikes, its family line and the unit it starts from
+    // (from: abilityOf), so the replay counts a species picked wrongly as the game does (rule L2) and starts a species
+    // from its family's ability as the game does.
+    fishSpUnits(F || {}, X).forEach(u => (out[u.id] = {look: u.look.slice(), fam: u.fam, from: u.from}));
+    return out;
+  }
+  // The fish species units (Pierre, 2026-11-15, Q362: one progress unit per species; docs/reviews/
+  // 2026-11-14-species-step1.md, step 1: photo questions answered by common name): 's:' + the species id (s:s091), one
+  // for each species with a listed common name (fish.json cn; a species with none has no common-name unit, Q247) in a
+  // family in play (a wink family's species are never asked), in each family's species order (fish.json families
+  // species: the commonness order, cmi), the order they open in. Each with: s, its fish.json record; family, its family
+  // unit; look, the other species units of its family (its look-alikes: the traps of its choices once the player gets it
+  // right, rule L7, as a scientific genus's are its sibling genera); fam, its family's line (the card's and the
+  // feedback's, the replay's family prior); from, the unit a species never answered starts from: its family (Pierre,
+  // 2026-11-03, docs/FISH_PATH.md "Unlock rules": "a species starts from its entry's ability"; abilityOf). The app's
+  // units (app.js fishSpUnitsUnits) and the sheet's replay (fishReplayGen) read this one list. X: fishGen's units, when
+  // built already.
+  function fishSpUnits(F, X) {
+    const G = (X || fishGen(F || {}, {})).gen,
+      sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
+      out = [];
+    ((F && F.families) || []).forEach(f => {
+      const E = G[f.id];
+      if (!E || E.wink) return;
+      const L = (f.species || []).map(id => sp.get(id)).filter(s => s && (s.cn || []).length),
+        ids = L.map(s => 's:' + s.id),
+        fam = E.name + (E.fam ? ' · ' + E.fam : '');
+      L.forEach((s, i) => out.push({id: ids[i], s, family: f.id, look: ids.filter(o => o !== ids[i]), fam, from: f.id}));
+    });
     return out;
   }
   // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
@@ -4623,7 +4652,8 @@ const CORE_ = (function () { const module = {exports: {}};
       .map((f, i) => [f, i])
       .sort((a, b) => (a[0].group || 99) - (b[0].group || 99) || a[1] - b[1])
       .map(x => x[0].id);
-    const spOf = id => sp[id] || (String(id).startsWith('s:') ? byName[String(id).slice(2)] || null : null);
+    // a species by its id (s091), its sheet id (s:<name>) or its unit (s:s091, fishSpUnits)
+    const spOf = id => sp[id] || (String(id).startsWith('s:') ? sp[String(id).slice(2)] || byName[String(id).slice(2)] || null : null);
     const go = id => {
       if (fam[id]) return id;
       const s = spOf(id);
@@ -6107,7 +6137,19 @@ const CORE_ = (function () { const module = {exports: {}};
       s => (s.sets.sci || 0) >= 5
     ],
     ['fgen20', 'Name dropper', '20 scientific genera at Advanced level or above (80%+)', 2, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 20],
-    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60]
+    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60],
+    // The species named by a common name (the species level, step 1; Pierre, 2026-11-08, Q259-Q264: a species named at
+    // Advanced, its common-name unit's bar at 80%; docs/LEARNING.md "Fish achievements, around the global score").
+    ['fsp1', 'First name terms', 'A species at Advanced level (80%+) by its common name', 1, '🐟', s => ((s.setsAdv || {}).sp || 0) >= 1],
+    ['fsp10', 'Name tags', '10 species at Advanced level or above by their common names', 2, '🐟', s => ((s.setsAdv || {}).sp || 0) >= 10],
+    [
+      'fsp50',
+      'Fish ID nerd',
+      '50 species at Advanced level or above by their common names',
+      3,
+      '🐟',
+      s => ((s.setsAdv || {}).sp || 0) >= 50
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id.
@@ -6327,7 +6369,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
   // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
   // The circle is the family's (treeScore by: the components per circle).
-  function fishScoreTree(X, F) {
+  // on: the species level on (sync.js speciesOn: the sheet keeps the tree in chunks and replays the species units; rule
+  // D4): each species with a common-name unit (fishSpUnits, Q362: one unit per species, filled by its names, Q376 (b))
+  // then has an entry of its own, [weight, genus, '', [its unit], circle], its unit in the common-name place (C, Q242);
+  // its scientific name has no unit yet (''). Off, the tree is the one of before, whatever the data.
+  function fishScoreTree(X, F, on) {
     const sp = new Map((F.species || []).map(s => [s.id, s])),
       fam = new Map((F.families || []).map(f => [f.id, f])),
       fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
@@ -6339,8 +6385,11 @@ const CORE_ = (function () { const module = {exports: {}};
       circ = id => X.gen[id].circle || 1;
     L.forEach(([s, id], i) => {
       fw[id] = (fw[id] || 0) + w[i];
-      const g = s.genus && X.gen[s.genus] ? s.genus : '',
-        named = !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
+      const g = s.genus && X.gen[s.genus] ? s.genus : '';
+      // The species level on: a species with a listed name has its own entry, its unit as its common names; one with none
+      // (Q247) has none, null, packed as before.
+      if (on && (s.cn || []).length) return pack.set('s:' + s.id, [w[i], g, '', ['s:' + s.id], circ(id)]);
+      const named = on ? false : !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
         key = g + '|' + circ(id) + '|' + named,
         e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
       e[0] += w[i];
@@ -7196,8 +7245,12 @@ const CORE_ = (function () { const module = {exports: {}};
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
   // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
   // from (playerStart); 0, the default player's, when they have not answered.
-  const abilityOf = (P, n, p = 0) => {
+  // from: the unit a unit never answered starts from instead (a fish species: its family, Pierre, 2026-11-03,
+  // docs/FISH_PATH.md "Unlock rules"; core.js fishSpUnits from), once that unit has an ability of its own; none, or one
+  // never answered: the global level, as any unit.
+  const abilityOf = (P, n, p = 0, from) => {
     const s = (P || {})[n] || {};
+    if (typeof s.th !== 'number' && from && from !== n && typeof ((P || {})[from] || {}).th === 'number') return abilityOf(P, from, p);
     if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, p);
     return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(P, n, s)));
   };
@@ -7215,8 +7268,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // surprise either way.
   // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered. S: the shared slope of the
   // answer model (scoreAnswer slopeOf, Q147: 1 until the sheet estimates it).
-  function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1) {
-    const th = abilityOf(P, n, p),
+  function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1, from) {
+    const th = abilityOf(P, n, p, from),
       g = 1 / k,
       e = g + (1 - g) * sigm(S * (th - d)),
       m = (s.ok || 0) + (s.ko || 0);
@@ -7357,7 +7410,8 @@ const CORE_ = (function () { const module = {exports: {}};
       dm = d0 + fam + cf,
       out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
     if (scored) {
-      const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p),
+      // q.from, q.cfrom: the units the unit shown and the unit given start from when never answered (abilityOf from)
+      const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p, q.from),
         look = typeof q.look === 'function' ? !!q.look() : !!q.look;
       let w = null;
       // The bar (Q135): the domain score from the player's own answers on the genus, the question's difficulty as the game
@@ -7374,7 +7428,7 @@ const CORE_ = (function () { const module = {exports: {}};
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
       // step weighed by its time against the player's earlier ones.
       const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
-      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q));
+      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q), q.from);
       Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(slopeOf(q) * (th0 - dm))});
     }
     // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
@@ -7422,7 +7476,7 @@ const CORE_ = (function () { const module = {exports: {}};
         const Rc = typeof q.Rc === 'number' ? q.Rc : 1;
         // The bar: no miss in its posterior (a false alarm, counted by its record's offers and mix-ups and taken off its
         // bar by faOf, Q174); a record of the former rules (s.pg): a miss on the photo shown, as before.
-        if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, Rc, aimOf(P[LEVEL].th)));
+        if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p, q.cfrom), d0, k, Rc, aimOf(P[LEVEL].th)));
         delete x.L;
         x.u = (x.u || 0) + 1;
       }
@@ -8013,6 +8067,9 @@ const CORE_ = (function () { const module = {exports: {}};
         const pr = startPriorAt(own(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
+        // the units a species shown or given starts from (fishReplayGen from: its family), as the game does (abilityOf)
+        if ((gen[t] || {}).from) q.from = gen[t].from;
+        if (wrong && gen[c].from) q.cfrom = gen[c].from;
         // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
         q.mu = sc && typeof sc.m === 'number' ? sc.m : gdv(t);
         q.muc = sc && typeof sc.n === 'number' ? sc.n : gdv(c);
@@ -9010,6 +9067,7 @@ const CORE_ = (function () { const module = {exports: {}};
     subjDev,
     fishGen,
     fishReplayGen,
+    fishSpUnits,
     easyRank,
     easyCover,
     refFirst,

@@ -292,8 +292,7 @@ const typeStep = (m, text, sp, t) => {
   // A name several units share (razorfish, Holocentridae): the name as it is spelled, nothing more: it is no old name
   // nor another name of the unit (Codex review #834).
   if (m.shared) return {spelled: s, plain: true, old: false, alt: false};
-  const u = GX(m.g || t);
-  return {spelled: !m.old && u && u.name && !u.rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+  return {spelled: !m.old && uplain(m.g || t) ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
@@ -344,7 +343,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <div class="qstage${fx ? ' qfx' : ''}">${fx ? fx.map(tile).join('') : ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name && !GX(c).rank ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
+      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${GX(c) && GX(c).sci ? `<span class="csn">${esc(unameT(c))}<small>${esc(GX(c).sci)}</small></span>` : esc(unameT(c))}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -760,7 +759,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // logged with the answer so the replay meets the same ones.
     dom: domRules(),
     mu: genusDiff(target),
-    ...(!good && GX(c) ? {muc: genusDiff(c)} : {})
+    ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
+    // A unit never answered starts from the unit its record names (a fish species: its family; core.js abilityOf), as the
+    // sheet's replay does (fishReplayGen from).
+    ...(GX(target).from ? {from: GX(target).from} : {}),
+    ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
   });
   const res = scoreAnswer(P, q),
     {th0, dm} = res,
@@ -2059,6 +2062,9 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
 function introCard(n, o = {}) {
   const g = GX(n),
     p = cover(g),
+    // a set's line on its units' cards: a text, or a function of the unit (app.js UNITS fish sets sp: the milestone)
+    sc = isBonus(n) ? setOf(n).card : '',
+    scard = typeof sc === 'function' ? sc(n) : sc,
     star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
     tips = tipsList(g),
     hinted = !!o.hint && tips.includes('data-gt');
@@ -2070,7 +2076,7 @@ function introCard(n, o = {}) {
     title: uname(n),
     body: `${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) && setOf(n).card ? `<p class="ulnote">${setOf(n).card}</p>` : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : scard ? `<p class="ulnote">${scard}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
       ${o.note ? `<p class="ulnote">${o.note}</p>` : ''}`,
     primary: {text: o.btn || 'Got it'},

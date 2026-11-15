@@ -132,6 +132,7 @@ test('the fish units from the players copy: the same photos in play, covers and 
       easyCover: C.easyCover,
       fishPid: C.fishPid,
       fishScoreTree: C.fishScoreTree,
+      fishSpUnits: C.fishSpUnits,
       refLevel: C.refLevel,
       contentApply: C.contentApply,
       SUBJECTS: C.SUBJECTS

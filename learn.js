@@ -871,12 +871,13 @@ const famUnit = fid => {
     ? fid
     : Object.keys(R.ids || {}).find(t => (R.ids[t] === fid || Object.values((R.split || {})[t] || {}).includes(fid)) && GX(t)) || '';
 };
-// "Opened for me" (Pierre, Q5): until the game asks species, a species counts as opened once its family is at Advanced,
-// the level at which a family's species open (docs/FISH_PATH.md "Unlock rules"), or once its scientific genus is met.
+// "Opened for me" (Pierre, Q5): a species counts as opened once its family is at Advanced, the level at which a family's
+// species open (docs/FISH_PATH.md "Unlock rules"), once its scientific genus is met, or once its own unit is met (the
+// species level, app.js fishGenera: s:s091).
 const spOpen = s => {
   if (typeof genScore !== 'function') return false;
   const u = famUnit(s.family);
-  return (!!GX(s.genus) && introduced(s.genus)) || (!!u && genScore(u) >= LV_AT[1]);
+  return (!!GX('s:' + s.id) && introduced('s:' + s.id)) || (!!GX(s.genus) && introduced(s.genus)) || (!!u && genScore(u) >= LV_AT[1]);
 };
 // The species filter, on by default each time a sheet opens (Pierre, Q5; viewFishSheet): one tap shows every species.
 let fishMine = true;

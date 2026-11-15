@@ -30,7 +30,11 @@ function model(imr, look = {}, units = null) {
       Object.fromEntries(
         F.species
           .filter(s => s.circle && s.cn)
-          .map(s => [s.id, {name: cnShow(s, imr), look: look[s.id] || [], fam: s.family, ig: s.family, forms: []}])
+          .map(s => [
+            s.id,
+            // also: its listed names with their spellings (app.js fishGenera), read by model.js choiceKeys
+            {name: cnShow(s, imr), also: (s.cn || []).flat(), look: look[s.id] || [], fam: s.family, ig: s.family, forms: []}
+          ])
       ),
     ctx = {
       P: {},
@@ -51,7 +55,7 @@ function model(imr, look = {}, units = null) {
   vm.runInContext(
     block(src, 'function wpick', '// Which genus to ask next') +
       block(src, 'const trapsFor = ', '// Once the whole file is in') +
-      '\nthis.M = {distractors, customChoices, choiceKey, choiceApart};',
+      '\nthis.M = {distractors, customChoices, choiceKey, choiceKeys, choiceApart};',
     ctx
   );
   return {M: ctx.M, label: n => GEN[n].name};
@@ -122,6 +126,43 @@ test('two distractors of one label: one only, whichever rule ranks it first (tra
   }
 });
 
+// The gap #969 left for the species level: a wrong choice whose label is another listed name of the target (outside IMR,
+// on a photo of Forcipiger flavissimus, "Longnose butterflyfish", the main name of F. longirostris and a listed name of
+// F. flavissimus, typed right). model.js choiceKeys: never a choice of any listed name of the target. The pairs on the real
+// fish.json, as each player type reads the labels: 5 outside IMR, 9 at IMR; none of them is ever offered.
+test('a wrong choice never carries another listed name of the target: the real pairs, outside IMR and at IMR', () => {
+  const norm = x =>
+      x
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[^a-z]/g, ''),
+    L = F.species.filter(s => s.circle && s.cn);
+  [
+    [false, 5],
+    [true, 9]
+  ].forEach(([imr, want]) => {
+    const {M, label} = model(imr),
+      pairs = [];
+    L.forEach(t => {
+      const own = norm(label(t.id)),
+        keys = new Set(t.cn.flat().map(norm));
+      L.forEach(o => o !== t && norm(label(o.id)) !== own && keys.has(norm(label(o.id))) && pairs.push([t.id, o.id]));
+    });
+    assert.strictEqual(pairs.length, want, `${imr ? 'IMR' : 'other'}: ${pairs.map(([t, o]) => `${t}/${label(o)}`)}`);
+    if (!imr) assert.ok(pairs.some(([t, o]) => t === id('Forcipiger flavissimus') && o === id('Forcipiger longirostris')));
+    const rest = ['Chromis viridis', 'Pomacentrus pavo', 'Thalassoma lunare', 'Coris gaimard'].map(id);
+    pairs.forEach(([t, o]) => {
+      assert.ok(M.choiceKeys(t).has(M.choiceKey(o)));
+      for (let k = 0; k < 4; k++) {
+        const ch = [...M.distractors(t, [t, o, ...rest], k, all)],
+          cu = [...M.customChoices(t, [t, o], [t, o, ...rest], k, all)];
+        assert.ok(!ch.includes(o) && !cu.includes(o), `${label(t)}: ${label(o)} offered (${k} traps)`);
+        assert.strictEqual(ch.length, 3);
+      }
+    });
+  });
+});
+
 test('choiceApart: the first of each label, none of a label taken', () => {
   const {M} = model(false),
     [a, b, c] = ['Halichoeres biocellatus', 'Oxycheilinus bimaculatus', 'Thalassoma lunare'].map(id);
@@ -136,7 +177,13 @@ test('no two units of one rank in today’s game share a label: the draw is unch
   // corals' genera are their names. Read as model.js choiceKey reads a label.
   const APP = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     PH = read('fish-photos.json'),
-    ctx = {DOM: {EX: 0.9}, easyCover: core.easyCover, fishScoreTree: core.fishScoreTree, rankWeights: core.rankWeights};
+    ctx = {
+      DOM: {EX: 0.9},
+      easyCover: core.easyCover,
+      fishScoreTree: core.fishScoreTree,
+      fishSpUnits: core.fishSpUnits,
+      rankWeights: core.rankWeights
+    };
   vm.createContext(ctx);
   vm.runInContext(
     block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
@@ -146,14 +193,19 @@ test('no two units of one rank in today’s game share a label: the draw is unch
     {M} = model(false, {}, X.gen);
   const byRank = {};
   Object.entries(X.gen).forEach(([n, g]) => (byRank[g.rank || ''] = byRank[g.rank || ''] || []).push([M.choiceKey(n), n]));
-  assert.ok(Object.keys(byRank).length >= 2, Object.keys(byRank).join(','));
+  assert.ok(Object.keys(byRank).length >= 3, Object.keys(byRank).join(','));
+  // The species units (app.js fishGenera) may share a label (Q381): only the shared first names this player type
+  // reads (here outside IMR: imrNow not loaded), each on two species, kept apart by choiceApart (tests below).
+  const shared = {};
   Object.entries(byRank).forEach(([rk, L]) => {
     const seen = new Map();
     L.forEach(([k, n]) => {
+      if (rk === 'species' && seen.has(k)) return void (shared[k] = [seen.get(k), n]);
       assert.ok(!seen.has(k), `${rk || 'entry'}: ${n} and ${seen.get(k)} share a label`);
       seen.set(k, n);
     });
   });
+  assert.deepStrictEqual(Object.keys(shared).sort(), ['browndamsel', 'seagrasswrasse', 'twospotwrasse', 'yellowtailwrasse']);
   // The corals: a genus's label is its name (no record name: choiceKey reads the id).
   const D = read('data.json'),
     CK = model(false, {}, {}).M.choiceKey,

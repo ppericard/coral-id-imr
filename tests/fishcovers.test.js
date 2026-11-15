@@ -30,6 +30,7 @@ function app(photoDiff) {
     easyCover: C.easyCover,
     fishPid: C.fishPid,
     fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
     refLevel: C.refLevel,
     contentApply: C.contentApply,
     SUBJECTS: C.SUBJECTS,

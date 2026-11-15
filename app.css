@@ -7311,6 +7311,19 @@ html.touring .unlock {
 .ans button.plain {
   font-style: normal;
 }
+/* A fish species by its common name, its scientific name in small type underneath (the species level, step 1: the two
+   names associated; quiz.js question). */
+.ans .csn small {
+  display: block;
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.ans .ok .csn small,
+.ans .ko .csn small {
+  color: inherit;
+}
 /* A subject in beta (core.js SUBJECTS beta): a small tag on its name in the subject switches (Home, the header chip's menu). */
 small.beta {
   display: inline-block;

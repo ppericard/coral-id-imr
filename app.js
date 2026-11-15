@@ -790,8 +790,91 @@ function fishGenera(X, F) {
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
   // Their records by id, for the photo's species said under the verdict (UNITS taxon, fishTaxon).
   X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
-  X.tree = fishScoreTree(X, F); // core.js: the tree of the fish global score
+  // The fish species level, step 1 (Pierre, 2026-11-03 and 2026-11-04, docs/FISH_PATH.md "Unlock rules"; 2026-11-15, Q362,
+  // Q376, Q381; docs/reviews/2026-11-14-species-step1.md): one unit per species with a listed common name (core.js
+  // fishSpUnits: s:s091), asked as a photo then four common names, its scientific name in small type under each
+  // (schedule step 1, so the two get associated). Its record, beside the families and genera in X.gen: rank 'species'
+  // (its choices and typed answers stay among species: model.js distractors, quiz.js typeMatch), its family (parent: its
+  // species open once the family is at Advanced, one at a time, in the family's commonness order: spPlay; from: a species
+  // never answered starts from its family's ability, core.js abilityOf), the family's group and forms (easy wrong choices
+  // from other groups first), the other species of its family as look-alikes (the traps once it is answered right, rule
+  // L7) but no declared group (decl: no confusion group, model.js groupsOfRank; the pairs come from the players'
+  // mix-ups), its family's photos of that species, no mastery exam yet (noex: docs/reviews/2026-11-14-species-step1.md,
+  // "No species exam yet": its bar tops out at 95%). Its label (name) is the player's first common name (cnFirst, Q376
+  // (a): the IMR name for a player at IMR, read when shown); sci, its scientific name; also, every listed name with its
+  // spellings (a wrong choice never carries one: model.js choiceKeys). X.spl: every species unit, in the families' order.
+  // (typeof: the tools and tests that run fishGenera alone read the main name, fish.json cn's first, as outside IMR.)
+  const imr = () => typeof imrNow === 'function' && imrNow(),
+    first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr()) : ((s.cn || [])[0] || [])[0]) || s.common || s.name;
+  X.spl = fishSpUnits(F, X).map(u => {
+    const E = X.gen[u.family],
+      s = u.s,
+      wide = E.views.wide.filter(p => p.sp === s.id);
+    X.gen[u.id] = {
+      id: u.id,
+      get name() {
+        return first(s);
+      },
+      sci: s.name,
+      sp: s.id,
+      rank: 'species',
+      one: 'species',
+      parent: u.family,
+      from: u.from,
+      fam: u.fam,
+      wfam: [],
+      fish: 1,
+      circle: E.circle,
+      group: E.group,
+      ig: E.ig,
+      forms: E.forms,
+      look: u.look,
+      decl: [],
+      lk: [],
+      lsrc: {},
+      also: (s.cn || []).flat(),
+      qt: null,
+      tl: 'Its names',
+      // Its card's and its feedback's line: its scientific name (the WoRMS name beside it, rule S2), then its other listed
+      // names (read when shown: the first one is the player's).
+      get sum() {
+        const f = first(s),
+          o = (s.cn || []).map(n => n[0]).filter(x => x !== f);
+        return `${s.name}${s.now && s.now !== s.name ? ` (now ${s.now} in WoRMS)` : ''}.${o.length ? ` Also called ${o.join(', ')}.` : ''}`;
+      },
+      species: [s.id],
+      phase: [],
+      sub: [],
+      cm: Math.round(Math.sqrt((s.present || {}).dauin || 0)),
+      levels: 1,
+      noex: 1,
+      views: {wide},
+      names: []
+    };
+    if (wide.length) X.gen[u.id].cover = easyCover(wide).f;
+    return u.id;
+  });
+  // core.js: the tree of the fish global score, without the species units and with them (UNITS fish tree: spOn)
+  X.tree = fishScoreTree(X, F);
+  X.treeSp = fishScoreTree(X, F, true);
   return X;
+}
+// The species units in play (the sp set, UNITS fish sets): from L (FISH.spl), for each family at Advanced (score: genScore,
+// LV_AT[1]; Pierre, 2026-11-03), its species met (met: introduced; a species met stays in) and the next one not met in
+// the family's order, the most met around Dauin first (core.js fishSpUnits, fish.json cmi), so they open one at a time
+// in that order, through the opening's usual pace (model.js openPick). on: the species level is on (spOn); off, none.
+function spPlay(L, score, met, on) {
+  if (!on) return [];
+  const by = new Map();
+  L.forEach(n => {
+    const p = GX(n).parent;
+    if (!by.has(p)) by.set(p, []);
+    by.get(p).push(n);
+  });
+  return [...by].flatMap(([p, U]) => {
+    const next = score(p) >= LV_AT[1] && U.find(n => !met(n) && photoAny(n));
+    return [...U.filter(met), ...(next ? [next] : [])];
+  });
 }
 // The scientific genera in play (the sci set, UNITS fish sets), from L (FISH.sci) by their family's score (score: genScore)
 // and whether met (met: introduced; a genus met stays in): units, offered to everyone (Pierre, 2026-11-08: back at
@@ -906,6 +989,8 @@ const fishTaxon = (R, p, imr) => {
 // The player answered "I'm at IMR" to the fish (model.js imrSaid; Q227: whatever the answer now), for cnFirst; false
 // where model.js is not loaded.
 const imrNow = () => typeof imrSaid === 'function' && !!imrSaid();
+// The fish species level on (sync.js speciesOn, rule D4); false where sync.js is not loaded.
+const spOn = () => typeof speciesOn === 'function' && !!speciesOn();
 // A coral photo's taxon: its iNaturalist species (data.json, cand.json t), only when that species is in the genus asked n
 // (a photo Pierre moved to another genus keeps its old name: nothing then) and the identification is sure: Research Grade
 // (no gid) or Pierre's own (rule S2). A photo named to the genus only, or an IMR lecture photo (no t), says nothing more
@@ -2014,7 +2099,9 @@ const UNITS = {
     // their first-launch answer.
     mystery: () => true,
     // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
-    tree: () => (FISH ? FISH.tree : null),
+    // With the species units once the species level is on (spOn; rule D4: the sheet keeps the tree in chunks and replays
+    // them), read when used, so the tree follows the sheet's version as its replies come.
+    tree: () => (FISH ? (spOn() ? FISH.treeSp : FISH.tree) : null),
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
@@ -2076,13 +2163,20 @@ const UNITS = {
     },
     // The typed names: the entries' (core.js fishTypeNames) and the name index (fishNameIndex: the names of their genera
     // and species and the kind words, fish.json vn, with Pierre's exceptions, curation.json fish.names), each read as
-    // the family it lifts to (Q319, Q320), a known word as such, never as a slip of another name.
-    names: () =>
-      fishTypeNames(
-        FISH ? FISH.gen : {},
-        SUBJ.typeDrop,
-        FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []
-      ),
+    // the family it lifts to (Q319, Q320), a known word as such, never as a slip of another name. The species units
+    // (fishSpUnitsUnits) are read apart: their listed and regional names with their spellings only (cnTypeNames: no short
+    // form, no other number), each its species unit's; a name two species list is right for the one asked (typeMatchIn
+    // shared, Q381). A typed answer is read among the names of the rank asked (quiz.js typeMatch), so a family question
+    // never meets them.
+    names: () => {
+      const G = FISH ? FISH.gen : {},
+        own = Object.fromEntries(Object.entries(G).filter(([, g]) => g.rank !== 'species')),
+        sp = (FISH ? FISH.spl || [] : []).map(n => FISH.sps[G[n].sp]);
+      return [
+        ...fishTypeNames(own, SUBJ.typeDrop, FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []),
+        ...cnTypeNames(sp).map(o => ({...o, g: 's:' + o.g}))
+      ];
+    },
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
@@ -2173,6 +2267,33 @@ const UNITS = {
         row: 'Turn on scientific names',
         onToast: () => `Scientific names on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
         card: ''
+      },
+      // The species by their common names (fishSpUnitsUnits, above; docs/FISH_PATH.md "Unlock rules": branch A of the
+      // tree): no offer and no switch, every player meets them (Pierre, 2026-11-03: "an entry's species open when the
+      // entry reaches Advanced"; 2026-11-04: entry by entry, never all at once), once the species level is on (spOn,
+      // rule D4). auto: a family's species from its Advanced, one at a time in its commonness order (spPlay). all: every
+      // species unit, for setOf and the choices (rankUnits). They count in the fish % (the common names, core.js
+      // treeScore C).
+      {
+        k: 'sp',
+        all: () => (FISH ? FISH.spl || [] : []),
+        units: () => [],
+        auto: () => (FISH && typeof genScore === 'function' ? spPlay(FISH.spl || [], genScore, introduced, spOn()) : []),
+        due: () => false,
+        page: false, // not on the families page
+        kick: 'Species',
+        title: () => 'Species names',
+        body: 'For the families you know well: a photo and four species, by their common names.',
+        note: '',
+        tag: 'Species',
+        name: 'Species',
+        // The first species met: its card marks the milestone (Pierre, 2026-11-04, docs/FISH_PATH.md "Name-display
+        // schedule", milestones: "the first unlock of species names, even if it concerns only one or two entries at
+        // first"), once per player (the units met, synced), never again.
+        card: n =>
+          (FISH.spl || []).some(o => o !== n && introduced(o))
+            ? ''
+            : '<b>Your first species name.</b> A family you know well (Advanced) now brings its species, one at a time, the most met around Dauin first.'
       }
     ]
   }
@@ -2267,10 +2388,13 @@ const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // its IMR name. unameT: the plain text (tooltips, aria labels).
 const unameT = n => (GX(n) || {}).name || n;
 // unameIn: unit n's name already written as h (escaped HTML: quiz.js namesLine marks letters in it), set as uname sets it.
-const unameIn = (n, h) => {
+// A unit whose label is a common name, upright: a fish family, a fish species asked by its common name (its scientific
+// name beside it, sci); a coral genus and a fish scientific genus are in italics.
+const uplain = n => {
   const g = GX(n) || {};
-  return g.name && !g.rank ? h : `<i>${h}</i>`; // a fish scientific genus in italics, as a coral genus
+  return !!g.name && (!g.rank || !!g.sci);
 };
+const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');

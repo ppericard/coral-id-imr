@@ -3794,6 +3794,47 @@ question's choices genera and every entry question's entries. Not measured: what
 how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
 take many questions). To check with learnsim fish profiles once they exist.
 
+### Fish: the species level, step 1, by common name (2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md)
+
+One unit per species with a listed common name (`core.js` `fishSpUnits`: `s:s091`, 659 on 2026-11-15), in a family in
+play. A family's species join the game once the family is at Advanced. They open one at a time in the family's
+commonness order (`app.js` `spPlay`: the species met, then the next one), through the usual opening (`OPEN`, the card,
+`introHold`). The app turns this on only once the sheet keeps the tree in chunks and replays the species units
+(`sync.js` `speciesOn`: `TREE_SHEET` and `SPECIES_SHEET`).
+- **Start**: a species never answered starts from its family's ability (`core.js` `abilityOf` from, as the replay does).
+- **Choices**: wrong choices of its rank only. Easy ones first come from other families' groups; then the other species
+  of its family, its look-alikes, are the traps (rule L7). It has no declared confusion group and no mastery exam yet, so
+  its bar tops out at 95%.
+- **Score**: each species' unit is its common-name credit C in the global score (`fishScoreTree` with the species on).
+  Families plus every common name give 89%.
+- **Not built in step 1**: a wrong pick of another family's species also counting against both families (#892, "Feeding
+  the families"). It needs its own scoring of the family question and a fish rules version once species rows exist.
+
+**The check, declared before running** (rule L11, level 2: it changes the opening, the draw and the score for every
+fish player past a family's Advanced; this commit, before any run):
+- **Worlds and arms**: before `main` (219354c), after this branch, the same seeds. Fish, the default profiles (beginner,
+  casual diver, lecture RA, strong RA, expert).
+  - Rated world (`tools/ratedworld.js`, which now builds the species units as the app does): 10 seeds per profile,
+    10,000 answers, normal photos; then the same with heavy tails (`--dist tail`).
+  - App world: 5 seeds per profile, 600 questions (the species come after a family's Advanced). It runs on a GitHub
+    runner (`learncheck.yml`), not the shared machine.
+- **Primary** (#892's): the families' pace at Advanced, `famAdv@3000` in the rated world with normal photos. It is a
+  claim of no harm, so it is read as a guardrail: held when the one-sided bound of the paired difference stays above −2
+  families or −5% of before (the larger; the margin of units at Open Water), for each profile. It is also read at 300, 600,
+  1,000 and 10,000 answers.
+- **Guardrails**: every guardrail of the table below, in both worlds, at the checkpoints both reach, with its margin. No
+  cost is declared, so a breach goes to Pierre.
+- **Watched, with bounds declared here**:
+  - success near the target: the right % since the last checkpoint, held when both one-sided bounds stay within ±3 points
+    at 1,000, 3,000 and 10,000 answers;
+  - the genus share: the share of answers on the scientific genera, held when the upper bound stays under +0.05 (Q208).
+  - The share of answers on the species is reported (exploratory), with the species met and at each level, so a run where
+    none open is seen.
+- **Looks**: 2 declared (one-sided bounds at 95%). The second look runs only on a cell that is unclear at 10 seeds, with
+  20 seeds and that cell alone.
+- **Real log (rule L12)**: no species row exists yet (the species are never asked before this), so no replay can judge
+  it. Measured instead: a log with no species row replays exactly as before (`tests/species.test.js`).
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
@@ -5812,6 +5853,7 @@ paired difference on the side of harm; validated with #735):
 | Longest plateau of the shown score | the run | +20% | Pierre's "fast at the start, slow after", without a flat stretch a fifth longer |
 | Share under ease 4 before Open Water | questions 1-300; answers 1-1,000 | +0.05 | half of the 0.1 Pierre set (Q252): a change must not undo half of it unnoticed |
 | Units met | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera, as before) | the pace of new units, as the CI test reads it; two units is a card or two a session |
+| Fish families at Advanced (`famAdv`) | 300 and 600 questions; 1,000, 3,000 and 10,000 answers | −2 families or −5%, the larger | the families' pace while genera and species share the draw (#892, 2026-11-15); the margin of the units at Open Water |
 
 None comes from the seeds' spread, which only sizes the seeds. A change meant to move one of them declares that cost
 and its accepted bound before running (rule L11).
@@ -5857,8 +5899,10 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
 (the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
 `unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
-`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
-exist yet, so their kinds are empty until they do.
+`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `famAdv` (the fish families at Advanced) and `spShare` (the share of answers on the fish species; both 2026-11-15, the species level), `right`, `prog`, `thErr`. The species units (kind `species`) are in both worlds
+since the species level (step 1, by common name); the scientific species names do not exist yet. After the guardrails,
+learncmp also prints, with no margin, the right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the
+one-sided bounds either side.
 
 **On a GitHub runner** (tier 2 and level 3, too long for the shared machine): Actions › "Learning check (tier 2)" › Run
 workflow (`.github/workflows/learncheck.yml`, manual dispatch only), with the version with the change (`after`: its

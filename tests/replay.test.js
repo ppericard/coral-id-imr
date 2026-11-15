@@ -652,7 +652,7 @@ test('response time: the replay of the log rebuilds the abilities the app steppe
   assert.ok(quiz.includes('sec: tm.rt,') && quiz.includes('timed: rtOn()') && quiz.includes('scoreAnswer(P, q)'));
   const live = sheet => {
     // No first-launch answer: the default prior; the corals on screen (model.js startS).
-    const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars(), startS: () => C.subjectOf('coral')};
+    const M = {...C, P: {}, sheetV: () => sheet, startV: () => C.startVars(), startS: () => C.subjectOf('coral'), GX: () => undefined};
     vm.createContext(M);
     vm.runInContext(
       cut('const startP = ', ';\n') +
@@ -822,7 +822,14 @@ test('the first-launch prior in the live ability only from sheet v36 (Codex revi
     src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
     cut = (a, b) => block(src, a, b, {through: true});
   const at = (sheet, S = C.subjectOf('coral')) => {
-    const M = {...C, P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}}, sheetV: () => sheet, startV: () => C.startVars('know'), startS: () => S};
+    const M = {
+      ...C,
+      P: {[C.LEVEL]: {ok: 10, ko: 2, th: 0.4}},
+      sheetV: () => sheet,
+      startV: () => C.startVars('know'),
+      startS: () => S,
+      GX: () => undefined
+    };
     vm.createContext(M);
     vm.runInContext(cut('const startP = ', ';\n') + cut('const ability = ', ';\n') + '\nthis.T = {ability};', M);
     return M.T.ability('Pocillopora');
