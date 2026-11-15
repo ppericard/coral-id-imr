@@ -146,7 +146,7 @@ out of the statistics and `anonDelete` blank every subject's at once and drop th
 the trigger builds it again from the Answers tab as it is then (a run writes under the script lock, which a delete
 holds, and writes nothing when one came since it began); meanwhile `?stats=1` makes the stats from the whole log
 as before. The reply it serves holds what `?stats=1` always sent (photo ratings, confusions, offsets), no player.
-Its row 4 (sheet vNEXT) holds what the admin's `readStats` adds, each player's ability by admin id, never a name, and
+Its row 4 (sheet v145) holds what the admin's `readStats` adds, each player's ability by admin id, never a name, and
 is read only with the admin token; the same deletes blank it with the fold, and the archived players are left out
 when it is read.
 

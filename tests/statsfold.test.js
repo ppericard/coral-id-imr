@@ -441,7 +441,7 @@ test('a delete just before the fold writes: nothing written, the account stays g
   assert.ok(!fold(s, now).stale);
 });
 
-// vNEXT (the step #882 and #940 left next; Pierre, 2026-11-15, Q357): the other readers of stats_ read the snapshot too,
+// v145 (the step #882 and #940 left next; Pierre, 2026-11-15, Q357): the other readers of stats_ read the snapshot too,
 // with exactly the numbers of the whole log, and make stats_ only when the snapshot is not served.
 // What readStats sends (the admin's reply, with ras, skip and chk), as it goes on the wire.
 const wire = o => JSON.parse(JSON.stringify(o));
