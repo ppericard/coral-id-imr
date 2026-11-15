@@ -4143,7 +4143,8 @@ const darkCards = (p, sel) =>
             )
             .then(h => h.jsonValue())
             .catch(() => null);
-          if (!fr || !/inaturalist/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
+          // Its photo on R2 (or its original once R2 failed): the reference photo the demo report names.
+          if (!fr || !/10243932/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
         }
         await reportsBar();
       }
@@ -5552,7 +5553,10 @@ const darkCards = (p, sel) =>
             C = await fetch('fish-cand.json').then(r => r.json()),
             cf = new Set(Object.values(C.cand || {}).flatMap(L => L.map(x => x.f))),
             D = DRAFT.fish || {},
-            open = Object.keys(FISHA.ph).filter(x => !['exclude', 'out', 'seen'].some(k => (D[k] || {})[x])),
+            // photos the demo's players never answered (its fish answers draw from fish-photos.json's first photos, the
+            // game's own records since 2026-11-15: one answered right by others is not one everyone misses)
+            said = new Set(rowsOf().flatMap(r => String(r[6] || '').split(' '))),
+            open = Object.keys(FISHA.ph).filter(x => !said.has(x) && !['exclude', 'out', 'seen'].some(k => (D[k] || {})[x])),
             f = open.find(x => cf.has(x)),
             more = open.filter(x => x !== f).slice(0, 24),
             r0 = rowsOf()[0];
