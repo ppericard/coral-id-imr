@@ -3862,6 +3862,42 @@ How they are run and read:
 - **Reading**: exploratory and uncorrected. These are options with numbers for Pierre, not a verdict. The arm he picks is
   then checked in full, both worlds, as declared above.
 
+**Results, the app world** (fish, 5 seeds × 600 questions, every arm against `main` on the same seeds; the branch's own
+run on GitHub, learncheck 43703441937, and the local one give the same numbers):
+- **The declared check**: `famAdv` at 600 is **breached** for the lecture RA (4.4 → 1.4 families at Advanced), the strong
+  RA (9.6 → 3.4) and the expert (11.2 → 3.2). The longest plateau is breached for the lecture RA (87 → 104) and the strong
+  RA (103 → 123). The right % is outside its ±3 bound for the lecture RA (93.9 → 86.5) and the strong RA (96.5 → 84.7).
+  The beginner and the casual diver hold; they reach no family's Advanced by 600.
+- **The arms** (exploratory, uncorrected): means over the 5 seeds, `main` → the arm. "Species met" counts the species
+  units met by question 600.
+
+| Arm | Families at Advanced, lecture RA / strong RA / expert | Right %, strong RA | Species share, strong RA / expert | Species met, strong RA / expert |
+|---|---|---|---|---|
+| main | 4.4 / 9.6 / 11.2 | 96.5 | 0 / 0 | 0 / 0 |
+| this branch | 1.4 / 3.4 / 3.2 | 84.7 | 0.24 / 0.32 | 32 / 52 |
+| (1) no family start | 1.8 / 2.8 / 3.2 | 84.1 | 0.25 / 0.31 | 28 / 54 |
+| (2) shaky until 10 | 2.2 / 5.0 / 7.4 | 91.5 | 0.15 / 0.13 | 11 / 10 |
+| (3) cap 20% | 2.6 / 4.6 / 5.2 | 86.2 | 0.18 / 0.23 | 32 / 57 |
+| (1)+(2) | 2.2 / 5.6 / 5.0 | 91.3 | 0.13 / 0.15 | 11 / 12 |
+| (1)+(3) | 1.4 / 4.4 / 4.8 | 86.7 | 0.19 / 0.23 | 34 / 51 |
+| (2)+(3) | 3.0 / 7.2 / 7.2 | 90.9 | 0.13 / 0.12 | 10 / 10 |
+| (4) from Divemaster | 3.8 / 6.8 / 8.2 | 92.1 | 0.08 / 0.10 | 13 / 23 |
+| (5) families first | 4.4 / 9.6 / 11.2 | 96.5 | 0 / 0 | 0 / 0 |
+| (6) next after Open Water | 3.8 / 6.8 / 8.0 | 93.3 | 0.06 / 0.10 | 7 / 12 |
+
+- **The cause is not the family start**: arm (1) is the branch's result again. The loss follows the species' share of
+  the answers. In this branch, the species opened by 600 got about 4 answers each and almost none reached Open Water:
+  a family at Advanced kept opening its next species, as each one was met, before the previous one was known.
+- **(3) is not a 20% share**: it caps the weighted draw only. A species' first questions, right after its card, are not
+  drawn, so the expert's share is still 23%.
+- **(5) measured nothing at 600**: no species opened in any run. Pierre's line of 2026-11-04 is "there is no switch from
+  families to species". (4) opened almost none for the lecture RA. Both need a longer horizon to be judged.
+- **No arm that opens species before 600 holds** `famAdv` for the strong RA and the expert. The closest are (6), (2)+(3)
+  and (4): −2.8 to −4.0 families against a margin of −2. Families at Advanced per 100 family answers fall too (strong RA
+  1.67 → 0.79 in this branch, 1.33 in (6)), so the loss is not only fewer family questions. A count at a threshold
+  (80%) is not linear in the answers, though, so this does not separate the two.
+- **Not measured**: the right % by kind of unit. The files keep no per-answer result.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
