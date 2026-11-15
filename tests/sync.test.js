@@ -856,6 +856,7 @@ test('readAlerts: admin only, newest first, the last 3000, a capped name served 
   const t0 = Date.now() + 1000;
   add(t0, 'limit reached: n:ana demo (3000 per 6 h)');
   add(t0 + 1000, 'limit reached: n:~deleted Ab12Cd34 (3000 per 6 h)');
+  add(t0 + 1500, 'limit reached: n:~tilda demo (3000 per 6 h)');
   add(t0 + 2000, 'photos not of the unit shown: Zz99Yy88 (3 of 10 answers)');
   const before = JSON.stringify(s.sheets.Alerts.rows),
     r = s.post({readAlerts: 1, token: T});
@@ -865,13 +866,14 @@ test('readAlerts: admin only, newest first, the last 3000, a capped name served 
     r.rows.map(x => x[1]),
     [
       'photos not of the unit shown: Zz99Yy88 (3 of 10 answers)',
+      `limit reached: n:${run("aid_('~Tilda Demo')")} (3000 per 6 h)`,
       'limit reached: n:~deleted Ab12Cd34 (3000 per 6 h)',
       `limit reached: n:${run("aid_('Ana Demo')")} (3000 per 6 h)`,
       'limit reached: a:flooder002 (600 per 6 h)'
     ],
-    'newest first; the name as the id admin Players shows (aid_ is case-blind); a deleted account kept as redact_ left it'
+    'newest first; the name as the id admin Players shows (aid_ is case-blind), a name starting with ~ too; a deleted account kept as redact_ left it'
   );
-  assert.ok(!/ana demo/i.test(JSON.stringify(r)), 'no name in the reply');
+  assert.ok(!/ana demo|tilda/i.test(JSON.stringify(r)), 'no name in the reply');
   assert.strictEqual(r.rows[0][0], t0 + 2000, 'the time in ms');
   // The window: the last 3000 lines, as readEvents.
   for (let i = 0; i < 3000; i++) add(t0 + 3000 + i, 'limit reached: anon (6000 per 6 h)');

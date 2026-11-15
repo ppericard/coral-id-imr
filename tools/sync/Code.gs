@@ -1778,7 +1778,8 @@ function readAlerts_(token){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Alerts');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_();
-  const hide = s => s.replace(/^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/, (m, a, name, b) => /^~/.test(name) ? m : a + aid_(name, salt) + ' ' + b);
+  // Only redact_'s exact "~deleted <admin id>" is kept: a player's own name may start with ~ too.
+  const hide = s => s.replace(/^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/, (m, a, name, b) => /^~deleted [A-Za-z0-9+/]{8}$/.test(name) ? m : a + aid_(name, salt) + ' ' + b);
   const rows = sh.getRange(from, 1, n - from + 2, 2).getValues().filter(x => String(x[1]))
     .map(x => [new Date(x[0]).getTime() || 0, hide(String(x[1]))]);
   return {ok: true, rows: rows.reverse()};
