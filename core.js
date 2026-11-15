@@ -564,7 +564,8 @@
       // replay reads, from the subject's first pool file (fish.json). rvs: its own rules versions (FISH_RVS, rvsOf), so a
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
       // No floor: the log is the only reference, a fish bar may go down (Pierre, 2026-11-09, Q330).
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS},
+      // tree: its leaderboard's tree as the sheet makes it with the replay's units (fishBoardTree; Code.gs subjRpl_, board_).
+      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, tree: F => fishBoardTree(F)},
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -1012,6 +1013,16 @@
         ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
       });
     return out;
+  }
+  // The tree of the fish global score as the app makes it (app.js UNITS tree: fishScoreTree over fishGen's families and
+  // app.js fishGenera's scientific genera), from fish.json alone: fishReplayGen's genera are those units (no photo changes
+  // which exist). The sync sheet ranks the fish leaderboard by it, made with its replay's units under the structure in
+  // force (SUBJECTS replayed tree; Code.gs subjRpl_, board_), so a circle Publish moves the board's weights with the
+  // replays, whether a device saves or not (Codex review #977; design note v2, step 4). tests/structure.test.js checks it
+  // is the app's tree, with and without a structure edit.
+  function fishBoardTree(F) {
+    const X = fishGen(F || {}, {});
+    return fishScoreTree({...X, gen: {...fishReplayGen(F), ...X.gen}}, F || {});
   }
   // The fish structure in force (SUBJECTS fish structure apply; design note v2 sections 1 and 2, step 3): fish.json F with
   // the content editor's circles and pairs X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null,
@@ -1804,6 +1815,32 @@
       m = {...(isObj(nodes[id]) ? nodes[id] : {})};
     delete m[slot];
     return {...c, nodes: {...nodes, [id]: m}};
+  }
+  // A pair's key (Q366, the design note's section 6, [format]): the two node ids in code-point order joined by |, as
+  // structEntries reads it.
+  const contentPairKey = (a, b) => {
+    const x = String(a),
+      y = String(b);
+    return x < y ? x + '|' + y : y + '|' + x;
+  };
+  // One pair edit, as the admin's draft writes it (one click, one Undo step; design note v2 step 4): content map C with
+  // pair key k declared (v 1) or withdrawn (v null) over the base now (1 when the base declares it, else null), with its
+  // source src when given (Q359 e: asked when a pair is added, never required) and the time t; a value equal to the base
+  // removes the entry (contentPairDrop). A new map.
+  function contentPairSet(C, k, v, base, src, t) {
+    if (eq(v, base)) return contentPairDrop(C, k);
+    const s = contentSrc(src),
+      c = isObj(C) ? C : {},
+      pairs = isObj(c.pairs) ? c.pairs : {};
+    return {...c, pairs: {...pairs, [k]: {v, was: base == null ? null : base, ...(s ? {src: s} : {}), t}}};
+  }
+  // The pair's entry removed (↺ Restore): the base's pair again. The pairs map stays, {} when emptied, for the merge, as a
+  // node's map does (contentDrop).
+  function contentPairDrop(C, k) {
+    const c = isObj(C) ? C : {},
+      pairs = {...(isObj(c.pairs) ? c.pairs : {})};
+    delete pairs[k];
+    return {...c, pairs};
   }
   // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06) read from fish.json
   // alone: fam, gen and sp by id (the species of the families only, so none of those left out of the game), spOf (a
@@ -6223,6 +6260,7 @@
     subjDev,
     fishGen,
     fishReplayGen,
+    fishBoardTree,
     easyRank,
     easyCover,
     refFirst,
@@ -6273,6 +6311,9 @@
     contentOut,
     contentSet,
     contentDrop,
+    contentPairKey,
+    contentPairSet,
+    contentPairDrop,
     fishTree,
     renameUnits,
     renameLogEntry,
