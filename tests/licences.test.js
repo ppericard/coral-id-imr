@@ -334,20 +334,15 @@ print(json.dumps(calls))`);
   assert.deepStrictEqual(r, [200, 200, 50]);
 });
 
-test("the repository: every fish game record carries its source's credit and licence (tools/fish_game.py record)", () => {
-  const R = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+test("every fish game record left carries its source's credit and licence (tools/fish_game.py record: the next run agrees)", () => {
+  const dir = fixture();
+  run(dir);
   const src = {};
-  for (const L of Object.values(R('fish-cand.json').cand)) for (const p of L) src[p.f] = p;
-  for (const L of Object.values(R('tools/fish_refs.json').photos)) for (const p of L) src[p.f] ||= p;
-  let n = 0;
-  for (const L of Object.values(R('fish-game.json').photos))
-    for (const p of L) {
-      const s = src[p.f];
-      if (!s) continue;
-      n++;
-      assert.deepStrictEqual([p.a, p.lic], [s.a, s.lic], p.f);
-    }
-  assert.ok(n > 1000, `${n} records checked`);
+  for (const L of Object.values(read(dir, 'fish-cand.json').cand)) for (const p of L) src[p.f] = p;
+  for (const L of Object.values(read(dir, 'tools/fish_refs.json').photos)) for (const p of L) src[p.f] ||= p;
+  const game = Object.values(read(dir, 'fish-game.json').photos).flat();
+  assert.strictEqual(game.length, 3);
+  for (const p of game) assert.deepStrictEqual([p.a, p.lic], [src[p.f].a, src[p.f].lic], p.f);
 });
 
 test('the workflow report: the summary lists what left play, each one also a warning on the run', () => {
