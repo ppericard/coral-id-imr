@@ -168,14 +168,18 @@ Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: 
 - **The re-judge of 2026-11-15**: 2,058 photos were judged twice (715 of them still reference photos; the rest were
   stopgap photos, retired that day); 756 pairs had the same code, 1,302 did not, and 183 disagreed on what matters (the
   juvenile flag 85, the ease by two points or more 105, whether the photo may play 32, the legacy count `m` 2, a reference
-  copy in play while its candidate judgement was unsure 2; a photo may count twice). Those 183 were judged again once, blind to both earlier codes,
-  on sheets of 6 at 480 x 360 px and at 1,024 px for the close calls (the juveniles): the new code is the single judgement.
+  copy in play while its candidate judgement was unsure 2; a photo may count twice). Those 183 were judged again once,
+  blind to both earlier codes, on sheets of 6 at 480 x 360 px and at 1,024 px for the close calls (the juveniles); then,
+  where the observer's or FishBase's life stage (`fish-cand.json` `st`) said juvenile and the look said adult, the `j` flag
+  was taken (36 photos: nothing on the photo against it, and the harder value is the rubric's when a tag cannot be
+  settled; the build reads `st` as the phase of a photo whose code has no `j` anyway, `tools/fish_game.py` `phase`). The
+  new code is the single judgement.
   The other 1,119 pairs, which differed by one ease point or on a tag that changes nothing above, took the candidate's
   code, which is the one already in play for the photos the candidate route puts in play. Of the 34 reference keeps, 7
   disagreed with their candidate's (alt against dup): looked at against their observation's photos, 4 are alt, 3 dup.
   Pierre's adds keep his tags and ease (`curation.json`, rule A1): where the new judgement changes the ease, the juvenile
   flag or whether the photo may play, it is proposed to him in the admin's Photo review › Light proposals, "One judgement
-  per photo" (`judging/fish-one-judgement.json`, 42 photos; `admin-light.js` `LIGHT_SETS`).
+  per photo" (`judging/fish-one-judgement.json`, 38 photos; `admin-light.js` `LIGHT_SETS`).
 - **Still route-dependent**: the reference flag `r` and its ease point come from the record's `rep`, which only the
   reference record carries for 423 of these photos (`fish-cand.json` tags only the taxon's cover; `tools/fish_refs.json`
   every photo of the taxon page). The same code can then give the photo one ease point more as a reference photo than as a
