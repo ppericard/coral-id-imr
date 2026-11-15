@@ -189734,8 +189734,8 @@
    "k": "best"
   },
   "seaslug-119429-cand-630857433": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-119429-cand-638068233": {
@@ -189884,8 +189884,8 @@
    "k": "best"
   },
   "seaslug-119438-cand-290210766": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-119438-cand-352078827": {
@@ -190264,13 +190264,13 @@
    "k": "best"
   },
   "seaslug-121048-cand-735205824": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-121048-cand-746859282": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1d0sl1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-121050-cand-479302354": {
@@ -190414,8 +190414,8 @@
    "k": "best"
   },
   "seaslug-121406-cand-502097306": {
-   "jt": "p1g0sl1",
-   "e": 5,
+   "jt": "p0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-121406-cand-503657449": {
@@ -190539,8 +190539,8 @@
    "k": "best"
   },
   "seaslug-125934-cand-640479095": {
-   "jt": "p1g0sl1w",
-   "e": 5,
+   "jt": "o1g0sl1w",
+   "e": 4,
    "k": "best"
   },
   "seaslug-125934-cand-693751879": {
@@ -190549,8 +190549,8 @@
    "k": "best"
   },
   "seaslug-125934-cand-714368321": {
-   "jt": "o1g0sl1",
-   "e": 5,
+   "jt": "o1g0ml1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-125934-cand-716568118": {
@@ -190714,8 +190714,8 @@
    "k": "best"
   },
   "seaslug-142294-cand-489709202": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-142294-cand-511102766": {
@@ -190769,8 +190769,8 @@
    "k": "best"
   },
   "seaslug-142294-cand-735205772": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-142953-cand-276563673": {
@@ -190779,9 +190779,13 @@
    "k": "best"
   },
   "seaslug-142953-cand-290235068": {
-   "jt": "o1g0sms",
-   "e": 3,
-   "k": "best"
+   "jt": "o1g0smk",
+   "e": 2,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "A grey-green and a near-black nudibranch side by side, the same size: maybe two species (k), maybe a pair (s)."
   },
   "seaslug-142953-cand-311569844": {
    "jt": "o0g0sl1",
@@ -190869,8 +190873,8 @@
    "k": "best"
   },
   "seaslug-142953-cand-751841815": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "o0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-199475-cand-175388690": {
@@ -190889,8 +190893,8 @@
    "k": "best"
   },
   "seaslug-199475-cand-442928663": {
-   "jt": "p1g0sl1w",
-   "e": 5,
+   "jt": "p0g0sl1w",
+   "e": 3,
    "k": "best"
   },
   "seaslug-199475-cand-443257447": {
@@ -191029,8 +191033,8 @@
    "k": "best"
   },
   "seaslug-201640-cand-574281556": {
-   "jt": "p1g0sl1",
-   "e": 5,
+   "jt": "p1g0ml1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-201640-cand-593298673": {
@@ -191039,8 +191043,8 @@
    "k": "best"
   },
   "seaslug-201640-cand-594659048": {
-   "jt": "p1g0sl1",
-   "e": 5,
+   "jt": "p1g0ml1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-201640-cand-617158638": {
@@ -191229,8 +191233,8 @@
    "k": "best"
   },
   "seaslug-468033-cand-595498000": {
-   "jt": "d1g0sm1j",
-   "e": 2,
+   "jt": "d1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-468033-cand-599691974": {
@@ -191244,7 +191248,7 @@
    "k": "best"
   },
   "seaslug-468033-cand-638458086": {
-   "jt": "o1g0sl1",
+   "jt": "o1g0sls",
    "e": 5,
    "k": "best"
   },
@@ -191759,8 +191763,8 @@
    "k": "best"
   },
   "seaslug-50554-cand-702608402": {
-   "jt": "o1g0sl1",
-   "e": 5,
+   "jt": "o1d0sl1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-50554-cand-712238431": {
