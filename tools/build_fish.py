@@ -86,6 +86,7 @@ Check: node --test tests/fish.test.js
 """
 import argparse
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -102,6 +103,7 @@ SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (ad
 FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
 GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
 GROOTS = ROOT / "tools" / "fish_genus_roots.json"  # the genus name roots, from The ETYFish Project (add_families: genus_root)
+GMARKS = ROOT / "tools" / "fish_genus_marks.json"  # the genera's own presentation and ID marks, sourced (genus_marks)
 CNAMES = ROOT / "tools" / "fish_common.json"  # the species' curated common names, 1 to 3 (add_families; tools/fish_common.py)
 WINKP = ROOT / "tools" / "fish_wink_photos.json"  # the surprise cards' own photos (add_families: wink_photos)
 OUT = ROOT / "fish.json"
@@ -718,6 +720,15 @@ def add_families(o, key, declared=()):
     # circle-1 genus has one or a reason in skip.
     groots = json.loads(GROOTS.read_text(encoding="utf-8")) if GROOTS.exists() else {}
     rts, rskip = dict(groots.get("genera", {})), groots.get("skip", {})
+    # The genera's own presentation and ID marks (tools/fish_genus_marks.json; Pierre, 2026-11-08): plain, marks, msrc, mby,
+    # checked (genus_marks); every circle-1 genus of a family done has marks, IMR cues or a reason in none.
+    gmk = json.loads(GMARKS.read_text(encoding="utf-8")) if GMARKS.exists() else {}
+    if gmk and set(gmk) - {"about", "src", "families", "genera", "none"}:
+        sys.exit("tools/fish_genus_marks.json: keys about, src, families, genera and none only")
+    # (the families done are the key in force's ids: another key's are left aside, as tools/fish_sheets.json's; the test
+    # tests/genusmarks.test.js checks them against fish.json)
+    mks, mnone, mdone = dict(gmk.get("genera", {})), gmk.get("none", {}), set(gmk.get("families", [])) & set(fams)
+    msrc_used = set()
     go = []
     for g, x in gens.items():
         r = {"id": x["id"], "name": g, "family": x["family"], "circle": x["circle"]}
@@ -739,6 +750,14 @@ def add_families(o, key, declared=()):
             r["root"] = genus_root(g, rt, r)
         elif r["circle"] == 1 and g not in rskip:
             sys.exit(f"tools/fish_genus_roots.json: circle-1 genus {g} has neither a root nor a reason in skip")
+        mk = mks.pop(g, None)
+        if mk is not None:
+            r.update(genus_marks(g, mk, r, g in mnone, gmk.get("src", {}), msrc_used, [sp[i] for i in x["species"]]))
+        elif g in mnone:
+            if not str(mnone[g]).strip() or r.get("cues"):
+                sys.exit(f"tools/fish_genus_marks.json: none {g}: a reason, and never for a genus with IMR cues")
+        elif r["circle"] == 1 and x["family"] in mdone and not r.get("cues"):
+            sys.exit(f"tools/fish_genus_marks.json: circle-1 genus {g} of a family done has neither marks nor a reason in none")
         r["species"] = x["species"]
         go.append(r)
     if gnames:
@@ -746,6 +765,11 @@ def add_families(o, key, declared=()):
     lost = [*rts, *(n for n in rskip if n not in gens)]
     if lost:
         sys.exit(f"tools/fish_genus_roots.json: not genera of fish.json: {', '.join(lost)}")
+    lost = [*mks, *(n for n in mnone if n not in gens)]
+    if lost:
+        sys.exit(f"tools/fish_genus_marks.json: not genera of fish.json: {', '.join(lost)}")
+    if set(gmk.get("src", {})) - msrc_used:
+        sys.exit(f"tools/fish_genus_marks.json: sources never used: {', '.join(sorted(set(gmk['src']) - msrc_used))}")
     o["genera"] = go
     # The name index's kind words (tools/fish_names.py; Pierre, 2026-11-09, Q319, Q320): the head words of the species'
     # names shown and the families whose species carry them, fish.json vn.
@@ -829,6 +853,67 @@ def genus_root(name, x, r):
         root["fit"] = x["fit"]
     root["src"] = [{"t": f"The ETYFish Project ({name})", "u": f"https://etyfish.org/{x['page']}/"}]
     return root
+
+
+def genus_marks(name, x, r, none, src, used, mine):
+    """A genus's own presentation and ID marks (tools/fish_genus_marks.json; Pierre, 2026-11-08) as fish.json fields:
+    plain (one or two sentences), marks (1 to 3 visible features), msrc (each source once, {t, u}: the source's t, then
+    where in it) and mby ({plain: [msrc indexes], marks: [[msrc indexes] per mark]}). The build stops on anything else
+    (rules C1, C2, C3, C6): a genus with IMR cues, a line without a source, marks and a reason in none together, a mark
+    with a number (a count is never a photo cue), a line too long for a tip, a species named that is not one of its own."""
+    def bad(why):
+        sys.exit(f"tools/fish_genus_marks.json {name}: {why}")
+    if r.get("cues"):
+        bad("has IMR cues: the IMR cues stay apart (rule C1)")
+    if set(x) - {"plain", "marks"} or not (x.get("plain") or x.get("marks")):
+        bad("keys plain and marks only, one of them given")
+    marks = x.get("marks") or []
+    if marks and none:
+        bad("both marks and a reason in none")
+    if not marks and not none:
+        bad("no marks: give its reason in none")
+    if len(marks) > 3:
+        bad("at most 3 marks")
+    eps = {s["name"].split()[1] for s in mine if len(s["name"].split()) > 1}
+    msrc, out = [], {}
+
+    def refs(text, rr, longest):
+        if not isinstance(text, str) or not text.strip() or len(text) > longest or text != " ".join(text.split()):
+            bad(f"'{text}': a line of at most {longest} characters")
+        for ini, ep in re.findall(r"\b([A-Z])\. ([a-z]+)", text):
+            if ini != name[0] or ep not in eps:
+                bad(f"'{ini}. {ep}' is not one of its game species (rule C6)")
+        if not rr:
+            bad(f"'{text}' has no source")
+        ix = []
+        for q in rr:
+            if not (isinstance(q, list) and len(q) == 2 and q[0] in src and isinstance(q[1], str) and q[1].strip()):
+                bad(f"'{text}': a source is [a key of src, where in it]")
+            s = src[q[0]]
+            if not s.get("t") or not str(s.get("u", "")).startswith("https://"):
+                bad(f"src {q[0]}: t and an https u")
+            used.add(q[0])
+            e = {"t": f"{s['t']}, {q[1]}", "u": s["u"]}
+            if e not in msrc:
+                msrc.append(e)
+            ix.append(msrc.index(e))
+        return ix
+    by = {}
+    if x.get("plain"):
+        p = x["plain"]
+        if not (isinstance(p, list) and len(p) == 2) or len(re.findall(r"[.!?](?:\s|$)", p[0])) > 2:
+            bad("plain is [one or two sentences, sources]")
+        by["plain"] = refs(p[0], p[1], 180)
+        out["plain"] = p[0]
+    if marks:
+        if any(not (isinstance(m, list) and len(m) == 2) for m in marks):
+            bad("a mark is [words, sources]")
+        if any(re.search(r"\d", m[0]) for m in marks):
+            bad("a mark with a number: a count is never a photo cue")
+        by["marks"] = [refs(m[0], m[1], 80) for m in marks]
+        out["marks"] = [m[0] for m in marks]
+    out["msrc"], out["mby"] = msrc, by
+    return out
 
 
 def regroup(src_path, check):
