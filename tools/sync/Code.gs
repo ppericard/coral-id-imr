@@ -7527,7 +7527,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // entry's pa; Pierre, 2026-11-15, Q371). An answer goes to the sheet with pa only once the script's replies say
   // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
   // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
-  const PA_SHEET = 142;
+  const PA_SHEET = 141;
   const logOut = (a, v) => {
     if (!a || a.pa === undefined || Number(v) >= PA_SHEET) return a;
     const o = {...a};
