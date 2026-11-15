@@ -29,13 +29,39 @@ const slim = cur =>
 const FULL = read('curation.json'),
   PLAY = slim(FULL);
 
+// A content map's entries cut to v and src (the content editor's edits: what the app applies and shows, core.js contentApply).
+const slimC = c =>
+  c && {
+    ...c,
+    ...(c.nodes
+      ? {
+          nodes: Object.fromEntries(
+            Object.entries(c.nodes).map(([i, m]) => [
+              i,
+              Object.fromEntries(
+                Object.entries(m).map(([s, e]) => [s, Object.fromEntries(Object.entries(e).filter(([k]) => k === 'v' || k === 'src'))])
+              )
+            ])
+          )
+        }
+      : {}),
+    ...(c.pairs
+      ? {
+          pairs: Object.fromEntries(
+            Object.entries(c.pairs).map(([p, e]) => [p, Object.fromEntries(Object.entries(e).filter(([k]) => k === 'v' || k === 'src'))])
+          )
+        }
+      : {})
+  };
 test('curation-play.json: curation.json without auto, fish tags and ease, and fish auto but its undone adds', () => {
-  const {auto, fish, ...rest} = FULL,
-    {fish: pf, ...prest} = PLAY;
+  const {auto, fish, content, ...rest} = FULL,
+    {fish: pf, content: pc, ...prest} = PLAY;
   assert.deepStrictEqual(prest, rest);
-  const {tags, ease, auto: fa, ...frest} = fish || {},
-    {auto: pa, ...pfrest} = pf || {};
+  assert.deepStrictEqual(pc, slimC(content));
+  const {tags, ease, auto: fa, content: fc, ...frest} = fish || {},
+    {auto: pa, content: pfc, ...pfrest} = pf || {};
   assert.deepStrictEqual(pfrest, frest);
+  assert.deepStrictEqual(pfc, slimC(fc));
   // The fish auto-sort log keeps only its undone adds ('-a…', core.js fishGone), day by day.
   const undone = Object.fromEntries(
     Object.entries(fa || {})
@@ -48,6 +74,21 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
   // An undone add (none in the real log today) is kept; a decision is not.
   const t = slim({v: 1, fish: {auto: {'2026-11-09': {a: '-a1x', b: 'ate', c: 'r'}, '2026-11-08': {d: 'ate'}}, tags: {a: 'x'}}});
   assert.deepStrictEqual(t, {v: 1, fish: {auto: {'2026-11-09': {a: '-a1x'}}}});
+  // The content editor's edits (made up) keep v and src only, never was, t or by, in both parts, nodes and pairs.
+  const E = {v: ['a'], was: ['b'], src: {t: 'S'}, t: 1, by: 'p1'},
+    K = {v: ['a'], src: {t: 'S'}};
+  assert.deepStrictEqual(
+    slim({
+      v: 1,
+      content: {nodes: {Acropora: {imr: E}}, pairs: {'A|B': {v: null, was: 1, t: 2}}},
+      fish: {content: {nodes: {'f:X': {cues: E, note: {v: null, was: 'x', t: 3}}, 'f:Y': {}}}}
+    }),
+    {
+      v: 1,
+      content: {nodes: {Acropora: {imr: K}}, pairs: {'A|B': {v: null}}},
+      fish: {content: {nodes: {'f:X': {cues: K, note: {v: null}}, 'f:Y': {}}}}
+    }
+  );
   // His confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ, 2026-11-15) reaches the players.
   const G = {'f:A': {cover: 'fi1', coverJ: 'fi1'}};
   assert.deepStrictEqual(slim({fish: {genera: G, tags: {fi1: 'p1g0sl1j'}}}).fish.genera, G);
@@ -91,11 +132,13 @@ test('the fish units from the players copy: the same photos in play, covers and 
       easyCover: C.easyCover,
       fishPid: C.fishPid,
       fishScoreTree: C.fishScoreTree,
-      refLevel: C.refLevel
+      refLevel: C.refLevel,
+      contentApply: C.contentApply,
+      SUBJECTS: C.SUBJECTS
     };
   vm.createContext(ctx);
   vm.runInContext(
-    'let FISH = null, FISHRAW = null, CUR = null;\n' +
+    'let FISH = null, FISHRAW = null, CUR = null, FISHF = null;\n' +
       block(src, 'const VIEWS = [', '];\n', {through: 1, file: 'app.js'}) +
       block(src, 'const allPhotos = g =>', '// applyCuration(d, c) and applySlots', {file: 'app.js'}) +
       block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
@@ -117,6 +160,20 @@ test('the fish units from the players copy: the same photos in play, covers and 
   assert.ok(L.length, 'automatic photos in fish-game.json');
   assert.deepStrictEqual([...C.fishGone(slim(U))].sort(), [...C.fishGone(U)].sort());
   assert.deepStrictEqual(JSON.stringify(ctx.run(raw, slim(U))), JSON.stringify(ctx.run(raw, U)));
+  // With the content editor's edits (made up: none on main today), one of them stale (was differs from the base), the
+  // same units from the copy without was, t and by: the app reads v and src only (core.js contentApply).
+  const fam = raw.f.families.find(f => (f.cues || []).length);
+  U.fish.content = {
+    nodes: {
+      [fam.id]: {
+        cues: {v: ['An edited tip'], was: ['Not the base any more'], src: {t: 'A made-up source'}, t: 1, by: 'p1'},
+        note: {v: 'A note', was: null, t: 2}
+      }
+    }
+  };
+  const E1 = ctx.run(raw, U);
+  assert.deepStrictEqual(E1.gen[fam.id].qt, ['An edited tip']);
+  assert.deepStrictEqual(JSON.stringify(ctx.run(raw, slim(U))), JSON.stringify(E1));
   // The reports thanked (progress.js handledSeen on curation seen).
   assert.deepStrictEqual(C.handledSeen(PLAY.seen, {}), C.handledSeen(FULL.seen, {}));
 });

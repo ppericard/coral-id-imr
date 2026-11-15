@@ -515,6 +515,27 @@ const xChanged = () => !same(DRAFT.exclude || {}, SAVED.exclude || {});
 const mtChanged = () => !same(DRAFT.mont || {}, SAVED.mont || {});
 // The points to handle (curation.json "points", To do › Points).
 const ptChanged = () => !same(DRAFT.points || {}, SAVED.points || {});
+// The content editor's edits (curation.json content in each subject's part: core.js contentOf; the fish's under fish, so
+// also a fish curation change), compared as published (contentOut: an emptied map is no change).
+const coChanged = () => SUBJECTS.some(S => !same(contentOut(contentOf(DRAFT, S)), contentOut(contentOf(SAVED, S))));
+// Publish's count of them, per subject and rank of their node (fuRankOf: from SUBJECTS sheets): "2 fish family sheet edits".
+function contentSummary() {
+  return SUBJECTS.filter(S => S.content).flatMap(S => {
+    const a = contentOut(contentOf(DRAFT, S)).nodes || {},
+      b = contentOut(contentOf(SAVED, S)).nodes || {},
+      n = {};
+    new Set([...Object.keys(a), ...Object.keys(b)]).forEach(id =>
+      new Set([...Object.keys(a[id] || {}), ...Object.keys(b[id] || {})]).forEach(s => {
+        if (same((a[id] || {})[s], (b[id] || {})[s])) return;
+        const r = fuRankOf(S, id);
+        n[r] = (n[r] || 0) + 1;
+      })
+    );
+    return Object.keys(S.content)
+      .filter(r => n[r])
+      .map(r => [n[r], `${S.what.toLowerCase()} ${r} sheet edit`]);
+  });
+}
 // Lead photos of the growth-form tiles on the Coral ID Key start (curation.json "tile" {form letter: [f, ...]}, at most
 // 3, in click order): set with 📌 in the Growth form view. A pinned photo leads its IMR form's tile and the Coral ID Key
 // tile that starts from that form (Br → Branching, En → Thin plates and crusts, Ma → Massive, Sm → Columns,
@@ -1374,6 +1395,7 @@ function status0() {
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
       fiChanged() ? 'fish curation' : '',
+      coChanged() ? 'sheet edits' : '',
       ptChanged() ? 'points to handle' : '',
       rpChanged() ? 'report statuses' : ''
     ].filter(Boolean);
@@ -7184,6 +7206,8 @@ const output = () => {
     });
   const retest = sorted(DRAFT.retest);
   const fish = fishOut(DRAFT.fish);
+  // The content editor's edits of the subject whose part is the top level (core.js contentOut: sorted, no empty map).
+  const content = contentOut(DRAFT.content);
   // Pierre's state of the points to handle (To do › Points): by point id, each point's fields sorted.
   const points = {};
   Object.keys(DRAFT.points || {})
@@ -7212,12 +7236,13 @@ const output = () => {
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
     ...(Object.keys(fish).length ? {fish} : {}),
+    ...(Object.keys(content).length ? {content} : {}),
     ...(Object.keys(points).length ? {points} : {}),
     ...(Object.keys(reps).length ? {reps} : {})
   };
 };
 // curation.json "fish" as published (autosort.js "Fish curation"): each map sorted by key, empty maps left out, the
-// auto log one sorted map per day, as the coral keys.
+// auto log one sorted map per day, as the coral keys; the content editor's edits as core.js contentOut writes them.
 function fishOut(F) {
   const out = {};
   Object.keys(F || {})
@@ -7225,6 +7250,11 @@ function fishOut(F) {
     .forEach(k => {
       const m = F[k];
       if (!m || typeof m !== 'object' || Array.isArray(m)) return;
+      if (k === 'content') {
+        const c = contentOut(m);
+        if (Object.keys(c).length) out[k] = c;
+        return;
+      }
       const o = {};
       Object.keys(m)
         .sort()
@@ -7314,6 +7344,8 @@ function pubSummary() {
     ...(typeof lightSummary === 'function' ? lightSummary() : []),
     // The cover proposals answered Keep mine (Photo review › Cover proposals, admin-covers.js); an Accept is a cover above.
     ...(typeof coverSummary === 'function' ? coverSummary() : []),
+    // The content editor's edits, per rank (contentSummary).
+    ...contentSummary(),
     [nDiff(DRAFT.points, SAVED.points), 'point to handle']
   ]
     .filter(([c]) => c)
@@ -7353,8 +7385,9 @@ async function save() {
     au = auChanged(),
     fi = fiChanged(),
     pt = ptChanged(),
-    rp = rpChanged();
-  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi || pt || rp) || !TOKEN) return;
+    rp = rpChanged(),
+    co = coChanged();
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi || pt || rp || co) || !TOKEN) return;
   if (!confirm(`Publish to the public site?\n\n${pubSummary()}`)) return;
   const b = $('save');
   b.disabled = true;
@@ -7370,7 +7403,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(co ? ['sheet edits'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.

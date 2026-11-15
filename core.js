@@ -593,6 +593,37 @@
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
       // f:Damselfishes, g:Chromis; a species by its name, s:Chromis ternatensis): #fish/learn/genus/Chromis.
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
+      // The text slots its content editor may edit on each rank's sheets (docs/reviews/2026-11-14-sheet-overlay-design.md
+      // v2; Pierre, 2026-11-15, Q359 and Q366), laid over fish.json by core.js contentApply: at, where the rank's records sit
+      // in the built file (a list of records with an id, or a map by id); each slot k, its name in curation.json (a field of
+      // the record; a.b, a field inside one; with rows or map, k/<other id> is one line of a keyed field, [[id, text]] or
+      // {id: text}, at the ids the base holds only: a new id would be a new pair, which is structure); t, its type (text, one
+      // string; list, a list of strings replaced whole); n, its name on the admin's pages; imr, the IMR's own words (their
+      // label stays: Q359 a); f, the record's field when it is not k (the free note: a wink family's note is its surprise
+      // card's line, read as its sum).
+      content: {
+        family: {
+          at: 'families',
+          slots: [
+            {k: 'cues', n: 'ID tips', t: 'list', imr: 1},
+            {k: 'phase', n: 'Phases', t: 'list', imr: 1},
+            {k: 'look', n: 'Look-alike', t: 'text', rows: 1},
+            {k: 'marks', n: 'ID marks', t: 'list'},
+            {k: 'life', n: 'Behaviour, habitat, size', t: 'list'},
+            {k: 'apart', n: 'Tell apart', t: 'text', map: 1},
+            {k: 'juv.note', n: 'Juveniles', t: 'text'},
+            {k: 'note', n: 'Note', t: 'text', f: 'enote'}
+          ]
+        },
+        genus: {
+          at: 'genera',
+          slots: [
+            {k: 'cues', n: 'ID tips', t: 'list', imr: 1},
+            {k: 'note', n: 'Note', t: 'text', f: 'enote'}
+          ]
+        },
+        species: {at: 'species', slots: [{k: 'note', n: 'Note', t: 'text', f: 'enote'}]}
+      },
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
@@ -1325,6 +1356,232 @@
     if (!S || !S.sheets) return s;
     const r = renamedId(S, s);
     return Object.values(S.sheets).some(p => r.startsWith(p) && r.length > p.length) ? r : null;
+  }
+
+  // ---- The content editor's edits (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q366) ----
+  // The built file (fish.json: the sources and the instance's layer, resolved at build) is the base; the edits sit in the
+  // instance's curation, in the subject's part (SUBJECTS admin.cur: curation.json fish.content, the corals' content at the
+  // top), as content {nodes: {node id: {slot: entry}}, pairs: {"a|b": entry}} (pairs: structure, a later step), each entry
+  // {v, was, src, t, by}: v the value in force (null hides the slot), was the base when it was edited (null: the slot was
+  // empty), src an optional source {t, u}, t when (ms), by who (from the editors' relay on). Only the admin's draft and
+  // Publish write it (rule A1). A slot is declared by the subject (SUBJECTS content); anything else is never applied and is
+  // listed by contentEntries as orphaned, never dropped.
+  const contentOf = (cur, S) => {
+    const P = S && S.admin && S.admin.cur ? (cur || {})[S.admin.cur] : cur,
+      c = P && P.content;
+    return isObj(c) ? c : {};
+  };
+  // A rank's records by id ({id: {rec, i}}: i its place in the list, or its key in a map), from its declaration D.
+  const contentRecs = (R, D) => {
+    const L = (R || {})[D.at],
+      out = new Map();
+    if (Array.isArray(L)) L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i}));
+    else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && out.set(id, {rec: r, i: id}));
+    return out;
+  };
+  // Every node a subject's slots reach in built file R: {id: {rank, rec, i}}.
+  function contentNodes(S, R) {
+    const out = new Map();
+    Object.entries((S && S.content) || {}).forEach(([rank, D]) =>
+      contentRecs(R, D).forEach((x, id) => !out.has(id) && out.set(id, {rank, ...x}))
+    );
+    return out;
+  }
+  // A slot's declaration at a rank by its stored name (cues, juv.note, look/f:Angelfishes), with the key of a keyed slot,
+  // or null when the rank declares no such slot.
+  function contentSlot(S, rank, name) {
+    const L = ((((S && S.content) || {})[rank] || {}).slots || []).filter(Boolean),
+      n = String(name),
+      j = n.indexOf('/'),
+      own = L.find(x => !x.rows && !x.map && x.k === n);
+    if (own) return {sp: own, key: null};
+    if (j < 1 || j === n.length - 1) return null;
+    const sp = L.find(x => (x.rows || x.map) && x.k === n.slice(0, j));
+    return sp ? {sp, key: n.slice(j + 1)} : null;
+  }
+  // A value of a slot's type, empty as null (an empty list or text is no value: the slot shows nothing).
+  const contentVal = (sp, v) =>
+    sp.t === 'list'
+      ? Array.isArray(v) && v.length && v.every(x => typeof x === 'string')
+        ? v
+        : null
+      : typeof v === 'string' && v.trim()
+        ? v
+        : null;
+  // Whether v may stand in a slot: null (hidden), or a value of its type, every line with words in it.
+  const contentOk = (sp, v) =>
+    v === null ||
+    (sp.t === 'list'
+      ? Array.isArray(v) && !!v.length && v.every(x => typeof x === 'string' && !!x.trim())
+      : typeof v === 'string' && !!v.trim());
+  // A slot's base value in record r (null: empty), or undefined when a keyed slot's key is not in the base (no such line).
+  function contentBase(sp, r, key) {
+    const f = sp.f || sp.k;
+    if (sp.rows) {
+      const x = (Array.isArray(r[f]) ? r[f] : []).find(y => Array.isArray(y) && y[0] === key);
+      return x ? contentVal(sp, x[1]) : undefined;
+    }
+    if (sp.map) return isObj(r[f]) && Object.prototype.hasOwnProperty.call(r[f], key) ? contentVal(sp, r[f][key]) : undefined;
+    return contentVal(
+      sp,
+      f.split('.').reduce((o, x) => (isObj(o) ? o[x] : undefined), r)
+    );
+  }
+  // Writes v (null: hidden) into record r, a copy the caller owns. A keyed slot keeps its line and only changes its words
+  // (blank when hidden): the line is the pair, and pairs are structure (fishGen look, fishReplayGen).
+  function contentPut(sp, r, key, v) {
+    const f = sp.f || sp.k,
+      val = Array.isArray(v) ? v.slice() : v;
+    if (sp.rows) r[f] = r[f].map(y => (Array.isArray(y) && y[0] === key ? [y[0], val == null ? '' : val, ...y.slice(2)] : y));
+    else if (sp.map) r[f] = {...r[f], [key]: val == null ? '' : val};
+    else {
+      const P = f.split('.'),
+        last = P.pop();
+      let o = r;
+      P.forEach(x => (o = o[x] = isObj(o[x]) ? {...o[x]} : {}));
+      if (val == null) delete o[last];
+      else o[last] = val;
+    }
+  }
+  // An entry's state against the base value now (Q359 c): absorbed (the base now says what the editor wrote), fresh (the
+  // base is the one he edited), else stale (the base changed since: the admin shows the three texts; players keep his).
+  const contentState = (e, base) => (eq(base, e && e.v) ? 'absorbed' : eq(base, e && e.was) ? 'fresh' : 'stale');
+  const contentSrc = s =>
+    isObj(s) && typeof s.t === 'string' && s.t.trim() ? {t: s.t, ...(typeof s.u === 'string' && s.u ? {u: s.u} : {})} : null;
+  // Every node entry of the subject's content C (contentOf) against built file R: {id (as stored), node (the id in force:
+  // renamedId), slot, e, rank, sp, key, base, state}, state fresh, stale or absorbed when it applies, else orphan with why:
+  // node (no node of that id), slot (not declared at its rank, or a line the base does not hold), value (not of its type),
+  // shadow (an old id's entry for a slot its new id's own entry sets). Sorted by node id, then slot.
+  function contentEntries(S, R, C) {
+    const N = contentNodes(S, R),
+      out = [],
+      taken = new Set();
+    const L = Object.entries(isObj(C && C.nodes) ? C.nodes : {})
+      .flatMap(([id, m]) => Object.entries(isObj(m) ? m : {}).map(([slot, e]) => ({id, node: renamedId(S, id), slot, e})))
+      // the new id's own entries first, so an old id's entry is the one shadowed
+      .sort(
+        (a, b) =>
+          (a.id !== a.node) - (b.id !== b.node) ||
+          (a.node < b.node ? -1 : a.node > b.node ? 1 : a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0)
+      );
+    L.forEach(x => {
+      const n = N.get(x.node),
+        d = n && contentSlot(S, n.rank, x.slot),
+        base = d ? contentBase(d.sp, n.rec, d.key) : undefined,
+        why = !n
+          ? 'node'
+          : !d || base === undefined
+            ? 'slot'
+            : !isObj(x.e) || !contentOk(d.sp, x.e.v)
+              ? 'value'
+              : taken.has(x.node + '\n' + x.slot)
+                ? 'shadow'
+                : '';
+      if (!why) taken.add(x.node + '\n' + x.slot);
+      out.push({
+        ...x,
+        rank: n ? n.rank : '',
+        sp: d ? d.sp : null,
+        key: d ? d.key : null,
+        base: base === undefined ? null : base,
+        state: why ? 'orphan' : contentState(x.e, base),
+        ...(why ? {why} : {})
+      });
+    });
+    return out.sort((a, b) => (a.node < b.node ? -1 : a.node > b.node ? 1 : a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0));
+  }
+  // Built file R with the edits of subject S in curation cur laid over it (Q359: the editor's text in force, a stale one
+  // included, until he answers it): a new object sharing every record it does not change, R itself when nothing applies.
+  // It reads v and src only (players get the curation without was, t and by: tools/curplay.py). An edited record carries
+  // esrc {slot: {t, u}}, the sources given, shown with the slot (Q359 e). The app before the units are made (app.js
+  // fishBuild) and the admin, to show what is in force.
+  function contentApply(S, R, cur) {
+    const Cm = contentOf(cur, S);
+    if (!isObj(Cm.nodes) || !Object.keys(Cm.nodes).length) return R; // nothing edited: no node index to build
+    const L = contentEntries(S, R, Cm).filter(x => x.state !== 'orphan');
+    if (!L.length) return R;
+    const N = contentNodes(S, R),
+      out = {...R},
+      done = new Set(),
+      recs = new Map();
+    L.forEach(x => {
+      const n = N.get(x.node),
+        at = S.content[n.rank].at;
+      if (!done.has(at)) {
+        out[at] = Array.isArray(R[at]) ? R[at].slice() : {...R[at]};
+        done.add(at);
+      }
+      let r = recs.get(x.node);
+      if (!r) {
+        r = JSON.parse(JSON.stringify(n.rec));
+        recs.set(x.node, r);
+        out[at][n.i] = r;
+      }
+      contentPut(x.sp, r, x.key, x.e.v);
+      const s = contentSrc(x.e.src);
+      if (s) r.esrc = {...(r.esrc || {}), [x.slot]: s};
+    });
+    return out;
+  }
+  // The content map as published (admin.js output, fishOut): node ids, slots and pair keys sorted, each entry's keys in the
+  // format's order (v, was, src, t, by, then any other), empty maps left out; {} when nothing is left. The draft keeps its
+  // empty maps (a restored slot leaves {}), so a merge never drops what another device published meanwhile (merge3).
+  function contentOut(C) {
+    const K = ['v', 'was', 'src', 't', 'by'],
+      ent = e =>
+        isObj(e)
+          ? Object.fromEntries(
+              [
+                ...K.filter(k => k in e),
+                ...Object.keys(e)
+                  .filter(k => !K.includes(k))
+                  .sort()
+              ].map(k => [k, e[k]])
+            )
+          : e,
+      sortMap = (m, f) => {
+        const o = {};
+        Object.keys(isObj(m) ? m : {})
+          .sort()
+          .forEach(k => {
+            const v = f(m[k]);
+            if (v != null && !(isObj(v) && !Object.keys(v).length)) o[k] = v;
+          });
+        return o;
+      },
+      out = {};
+    Object.keys(isObj(C) ? C : {})
+      .sort()
+      .forEach(k => {
+        const v = k === 'nodes' ? sortMap(C.nodes, m => sortMap(m, ent)) : k === 'pairs' ? sortMap(C.pairs, ent) : C[k];
+        if (v != null && !(isObj(v) && !Object.keys(v).length)) out[k] = v;
+      });
+    return out;
+  }
+  // One edit, as the admin's draft writes it (one Save, one Undo step): content map C with node id's slot set to v (null:
+  // hidden) over the base value now (was), with its source src when given and the time t; a value equal to the base
+  // removes the entry (contentDrop: nothing of his to keep). A new map: the draft's maps are never changed in place.
+  function contentSet(C, id, slot, v, base, src, t) {
+    if (eq(v, base)) return contentDrop(C, id, slot);
+    const s = contentSrc(src),
+      c = isObj(C) ? C : {},
+      nodes = isObj(c.nodes) ? c.nodes : {};
+    return {
+      ...c,
+      nodes: {
+        ...nodes,
+        [id]: {...(isObj(nodes[id]) ? nodes[id] : {}), [slot]: {v, was: base == null ? null : base, ...(s ? {src: s} : {}), t}}
+      }
+    };
+  }
+  // The slot's entry removed (↺ Restore, Take the new): the base shows again. Its node's map stays, {} when emptied, and so
+  // does nodes: a key gone would make the next merge drop what another device published in it meanwhile (merge3).
+  function contentDrop(C, id, slot) {
+    const c = isObj(C) ? C : {},
+      nodes = isObj(c.nodes) ? c.nodes : {},
+      m = {...(isObj(nodes[id]) ? nodes[id] : {})};
+    delete m[slot];
+    return {...c, nodes: {...nodes, [id]: m}};
   }
   // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06) read from fish.json
   // alone: fam, gen and sp by id (the species of the families only, so none of those left out of the game), spOf (a
@@ -5743,6 +6000,19 @@
     fishGameRead,
     renamedId,
     sheetIdOf,
+    contentOf,
+    contentNodes,
+    contentSlot,
+    contentVal,
+    contentOk,
+    contentBase,
+    contentState,
+    contentSrc,
+    contentEntries,
+    contentApply,
+    contentOut,
+    contentSet,
+    contentDrop,
     fishTree,
     renameUnits,
     renameLogEntry,

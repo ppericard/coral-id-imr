@@ -886,12 +886,22 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // photos per entry (the same records, read until fish-game.json is in) and the sheet-only photos, on R2 too; core.js
 // fishPhotos keeps those in play under Pierre's curation (CUR), so FISH is made again whenever the curation is (build,
 // fishBuild).
+// FISHF: fish.json with the content editor's edits laid over it (core.js contentApply; Pierre, 2026-11-15, Q359): what
+// the units and the sheets read (learn.js ftree), made again with the units whenever the curation is; fish.json itself
+// (FISHRAW.f) when nothing is edited.
 let FISH = null,
   FISHP = null,
   FISHH = null,
-  FISHRAW = null;
+  FISHRAW = null,
+  FISHF = null;
 const fishBuild = () => {
-  const {f, ph, gm} = FISHRAW;
+  const {ph, gm} = FISHRAW,
+    // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
+    f = (FISHF = contentApply(
+      SUBJECTS.find(S => S.pool.files[0] === 'fish.json'),
+      FISHRAW.f,
+      CUR
+    ));
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
