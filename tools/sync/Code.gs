@@ -2679,8 +2679,9 @@ function over_(key, limit, n){
 // Backup of the whole spreadsheet to Pierre's pCloud (vNEXT; Pierre, 2026-11-15: "OK, launch the pCloud backup PR";
 // docs/BACKUP.md). Once a week (trigger backupWeekly) and from the sheet's menu (Reef ID > Back up to pCloud now): every
 // tab is read here (SpreadsheetApp, the scope the script already has), written as one .xlsx built in the script (no
-// Drive export: that needs a Drive scope the manifest does not hold, and a scope added to the manifest would stop the
-// web app and the 15-minute trigger until Pierre authorises it), and uploaded server to server to pCloud's HTTP API
+// Drive export: that needs a Drive scope the manifest does not hold, and autoUpdate installs main's manifest as it is: a
+// scope added there is expected to stop the web app and the 15-minute trigger until Pierre authorises it; not tried, so
+// avoided), and uploaded server to server to pCloud's HTTP API
 // (UrlFetchApp, script.external_request, already granted) as reef-id-sheet-YYYY-MM-DD.xlsx in the folder
 // reef-id-sheet-backups of /IMR (or of the folder whose id is the Script Property PCLOUD_FOLDER_ID). The 12 newest
 // backups of that folder are kept, older ones deleted (only files named as above, only in that folder, only after the
@@ -2772,21 +2773,34 @@ function backup_(){
 }
 // The whole spreadsheet as one .xlsx (Office Open XML): one worksheet per tab, every value as the sheet holds it
 // (numbers, true/false, dates as dates, text as text: a text cell is never read as a formula on import). Formulas,
-// formats, frozen rows and hidden columns are not kept; the sheet holds data the script writes.
+// formats, frozen rows and hidden columns are not kept; the sheet holds data the script writes. Text goes once into a
+// shared-strings table (the answer log repeats the same names, units and modes on every row), as Google's export does.
 function xlsx_(name){
   const tabs = SpreadsheetApp.getActiveSpreadsheet().getSheets(), seen = {};
   const tz = typeof Session !== 'undefined' && Session.getScriptTimeZone ? Session.getScriptTimeZone() : 'Asia/Manila';
-  const esc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // XML 1.0 refuses the control characters (but tab and newlines) and U+FFFE, U+FFFF: they are dropped.
+  const BAD = new RegExp('[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFE\\uFFFF]', 'g');
+  const esc = s => String(s).replace(BAD, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const col = c => { let s = ''; for (c++; c; c = Math.floor((c - 1) / 26)) s = String.fromCharCode(65 + (c - 1) % 26) + s; return s; };
-  // A date: its day and time in the script's time zone, as Excel's serial day number (days since 1899-12-30).
-  const serial = d => { const m = /^(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)$/.exec(Utilities.formatDate(d, tz, "yyyy-MM-dd'T'HH:mm:ss.SSS"));
-    return (Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6], +m[7]) / 864e5 + 25569); };
+  // A date: its day and time in the script's time zone, as Excel's serial day number (days since 1899-12-30). The zone's
+  // offset is asked once per hour of the log (one Utilities call per hour, not per answer row).
+  const offs = {};
+  const serial = d => {
+    const t = d.getTime(), h = Math.floor(t / 36e5) * 36e5;
+    if (offs[h] === undefined) {
+      const m = /^(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)$/.exec(Utilities.formatDate(new Date(h), tz, "yyyy-MM-dd'T'HH:mm:ss"));
+      offs[h] = Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - h;
+    }
+    return (t + offs[h]) / 864e5 + 25569;
+  };
+  const sst = [], sid = new Map();
+  const str = s => { let k = sid.get(s); if (k === undefined) { k = sst.length; sst.push(s); sid.set(s, k); } return k; };
   const cell = (v, ref) => {
     if (v === '' || v === null || v === undefined) return '';
     if (typeof v === 'number' && isFinite(v)) return '<c r="' + ref + '"><v>' + v + '</v></c>';
     if (typeof v === 'boolean') return '<c r="' + ref + '" t="b"><v>' + (v ? 1 : 0) + '</v></c>';
     if (v instanceof Date || Object.prototype.toString.call(v) === '[object Date]') return isNaN(v.getTime()) ? '' : '<c r="' + ref + '" s="1"><v>' + serial(v) + '</v></c>';
-    return '<c r="' + ref + '" t="inlineStr"><is><t xml:space="preserve">' + esc(v) + '</t></is></c>';
+    return '<c r="' + ref + '" t="s"><v>' + str(String(v)) + '</v></c>';
   };
   const NS = 'http://schemas.openxmlformats.org/', XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
   const sheets = tabs.map((sh, i) => {
@@ -2801,13 +2815,17 @@ function xlsx_(name){
   const files = [
     ['[Content_Types].xml', XML + '<Types xmlns="' + NS + 'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
       '<Override PartName="/xl/workbook.xml" ContentType="' + ct + 'sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="' + ct + 'styles+xml"/>' +
+      '<Override PartName="/xl/sharedStrings.xml" ContentType="' + ct + 'sharedStrings+xml"/>' +
       sheets.map((s, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="' + ct + 'worksheet+xml"/>').join('') + '</Types>'],
     ['_rels/.rels', XML + '<Relationships xmlns="' + NS + 'package/2006/relationships"><Relationship Id="rId1" Type="' + NS + 'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
     ['xl/workbook.xml', XML + '<workbook xmlns="' + NS + 'spreadsheetml/2006/main" xmlns:r="' + NS + 'officeDocument/2006/relationships"><sheets>' +
       sheets.map((s, i) => '<sheet name="' + esc(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets></workbook>'],
     ['xl/_rels/workbook.xml.rels', XML + '<Relationships xmlns="' + NS + 'package/2006/relationships">' +
       sheets.map((s, i) => '<Relationship Id="rId' + (i + 1) + '" Type="' + NS + 'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
-      '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + NS + 'officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + NS + 'officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+      '<Relationship Id="rId' + (sheets.length + 2) + '" Type="' + NS + 'officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>'],
+    ['xl/sharedStrings.xml', XML + '<sst xmlns="' + NS + 'spreadsheetml/2006/main" uniqueCount="' + sst.length + '">' +
+      sst.map(s => '<si><t xml:space="preserve">' + esc(s) + '</t></si>').join('') + '</sst>'],
     ['xl/styles.xml', XML + '<styleSheet xmlns="' + NS + 'spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy-mm-dd hh:mm:ss"/></numFmts>' +
       '<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' +
       '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +

@@ -45,8 +45,9 @@ The token is a secret: it goes **only** into the script's settings, never into a
    `https://api.pcloud.com/oauth2_token?client_id=CLIENT_ID&client_secret=CLIENT_SECRET&code=CODE`
    If the reply says `"result": 0`, it holds `"access_token": "…"`: that is the token, and the account is on the US
    servers. If the reply is an error, open the same address with `eapi.pcloud.com` in place of `api.pcloud.com`: an
-   account on pCloud's European servers answers there. The code works once and only for a few minutes; if it is too
-   late, start step 2 again.
+   account on pCloud's European servers answers there. A code may work only once and only for a few minutes (not
+   checked here): if `eapi.pcloud.com` then says the code is invalid or expired, open the authorize address again for a
+   new code and exchange it on `eapi.pcloud.com` first.
 3. **Paste it into the script, nowhere else.** In the sheet: **Extensions > Apps Script > Project settings** (gear,
    "Paramètres du projet") **> Script properties > Add script property**: property `PCLOUD_TOKEN`, value the token.
    Optional properties:

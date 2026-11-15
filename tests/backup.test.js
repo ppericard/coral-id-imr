@@ -138,9 +138,9 @@ test('the requests: folders, then a multipart upload; the token only in the Auth
 
 test('a folder id in PCLOUD_FOLDER_ID: the backup folder is made inside it', () => {
   const pc = pcloud();
-  const s = load({fetch: pc.fetch, props: {PCLOUD_TOKEN: TOKEN, PCLOUD_FOLDER_ID: '27586829822'}});
+  const s = load({fetch: pc.fetch, props: {PCLOUD_TOKEN: TOKEN, PCLOUD_FOLDER_ID: '12345678901'}});
   assert.match(run(s), /saved/);
-  assert.deepStrictEqual(pc.calls[0].q, {folderid: '27586829822', name: 'reef-id-sheet-backups'});
+  assert.deepStrictEqual(pc.calls[0].q, {folderid: '12345678901', name: 'reef-id-sheet-backups'});
   assert.strictEqual(pc.calls[1].method, 'uploadfile');
   assert.strictEqual(pc.calls[1].q.folderid, '222');
 });
@@ -270,6 +270,7 @@ test('the .xlsx: one worksheet per tab, values typed, text never a formula, long
   an.appendRow(['Time', 'Who', 'Right', 'Ms', 'Note', 'Off']);
   an.appendRow([new Date('2026-11-15T00:00:00Z'), 'P2 <&> "q"', true, 1234.5, "=HYPERLINK('x')", '+480']);
   an.appendRow(['', long, false, 0, 'a\u0001b', -0.25]);
+  an.appendRow(['', 'P2 <&> "q"']);
   ss.insertSheet('Odd: [name]/?*');
   ss.insertSheet('Empty');
   const z = s.ctx.xlsx_('reef-id-sheet-2026-11-15.xlsx');
@@ -280,6 +281,7 @@ test('the .xlsx: one worksheet per tab, values typed, text never a formula, long
     '_rels/.rels',
     'xl/workbook.xml',
     'xl/_rels/workbook.xml.rels',
+    'xl/sharedStrings.xml',
     'xl/styles.xml',
     'xl/worksheets/sheet1.xml',
     'xl/worksheets/sheet2.xml',
@@ -293,26 +295,58 @@ test('the .xlsx: one worksheet per tab, values typed, text never a formula, long
   const a = z.parts['xl/worksheets/sheet2.xml'];
   // 2026-11-15 08:00 Manila = 46341 + 1/3.
   assert.match(a, /<c r="A2" s="1"><v>46341\.3333333333\d*<\/v><\/c>/);
-  assert.ok(a.includes('<c r="B2" t="inlineStr"><is><t xml:space="preserve">P2 &lt;&amp;&gt; &quot;q&quot;</t></is></c>'));
+  // A text cell is a shared string (t="s"): its index in xl/sharedStrings.xml, each text once.
+  const sst = [...z.parts['xl/sharedStrings.xml'].matchAll(/<si><t xml:space="preserve">(.*?)<\/t><\/si>/gs)].map(m => m[1]);
+  const text = ref => {
+    const m = new RegExp('<c r="' + ref + '" t="s"><v>(\\d+)</v></c>').exec(a);
+    return m && sst[+m[1]];
+  };
+  assert.strictEqual(text('B2'), 'P2 &lt;&amp;&gt; &quot;q&quot;');
   assert.ok(a.includes('<c r="C2" t="b"><v>1</v></c>'));
   assert.ok(a.includes('<c r="D2"><v>1234.5</v></c>'));
-  assert.ok(a.includes('<c r="E2" t="inlineStr"><is><t xml:space="preserve">=HYPERLINK(\'x\')</t></is></c>'));
-  assert.ok(a.includes('<c r="F2" t="inlineStr"><is><t xml:space="preserve">+480</t></is></c>'));
+  assert.strictEqual(text('E2'), "=HYPERLINK('x')");
+  assert.strictEqual(text('F2'), '+480');
   assert.ok(!a.includes('<c r="A3"'), 'an empty cell is left out');
-  assert.ok(a.includes('<t xml:space="preserve">' + long + '</t>'));
-  assert.ok(a.includes('<c r="E3" t="inlineStr"><is><t xml:space="preserve">ab</t></is></c>'), 'a control character is dropped');
+  assert.strictEqual(text('B3'), long);
+  assert.strictEqual(text('E3'), 'ab', 'a control character is dropped');
   assert.ok(a.includes('<c r="F3"><v>-0.25</v></c>'));
+  assert.strictEqual(new Set(sst).size, sst.length, 'each text is stored once');
+  assert.strictEqual(a.match(/<c r="B4" t="s"><v>(\d+)<\/v>/)[1], a.match(/<c r="B2" t="s"><v>(\d+)<\/v>/)[1]);
+  assert.match(z.parts['xl/sharedStrings.xml'], new RegExp('uniqueCount="' + sst.length + '"'));
   assert.strictEqual(z.parts['xl/worksheets/sheet4.xml'].match(/<sheetData>(.*)<\/sheetData>/)[1], '');
-  assert.ok(
-    z.parts['xl/_rels/workbook.xml.rels'].includes(
-      'Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"'
-    )
-  );
+  const rels = z.parts['xl/_rels/workbook.xml.rels'];
+  assert.ok(rels.includes('Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles"'));
+  assert.ok(rels.includes('Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"'));
+  assert.ok(z.parts['[Content_Types].xml'].includes('<Override PartName="/xl/sharedStrings.xml"'));
   // Column letters past Z.
   const w = ss.insertSheet('Wide');
   w.appendRow(Array.from({length: 28}, (_, i) => i));
   const z2 = s.ctx.xlsx_('x.xlsx');
   assert.match(z2.parts['xl/worksheets/sheet5.xml'], /<c r="Z1"><v>25<\/v><\/c><c r="AA1"><v>26<\/v><\/c><c r="AB1"><v>27<\/v><\/c>/);
+});
+
+test('scale: 20,000 answer rows, one time zone lookup per hour of the log, each repeated text stored once', () => {
+  let calls = 0;
+  const s = load({
+    tabs: false,
+    more: ctx => {
+      const f = ctx.Utilities.formatDate;
+      ctx.Utilities.formatDate = (...a) => (calls++, f(...a));
+    }
+  });
+  const an = s.ctx.SpreadsheetApp.getActiveSpreadsheet().insertSheet('Answers');
+  const t0 = Date.UTC(2026, 10, 1);
+  for (let i = 0; i < 20000; i++)
+    an.rows.push(['P' + (i % 40), new Date(t0 + i * 9e3), ['Acropora', 'Porites', 'Favites'][i % 3], 'Porites', i % 2, 'quiz', 'id' + i]);
+  const t = Date.now();
+  const z = s.ctx.xlsx_('x.xlsx');
+  assert.ok(Date.now() - t < 15000, 'built in ' + (Date.now() - t) + ' ms');
+  assert.strictEqual(calls, 50, '20,000 rows 9 s apart span 50 hours');
+  const sst = z.parts['xl/sharedStrings.xml'].match(/<si>/g).length;
+  assert.strictEqual(sst, 40 + 3 + 1 + 20000, 'names, units, the mode and the unique ids, once each');
+  // The last row (no header here: row 20000 is answer 19999): its time in Manila (UTC+8) as a serial day.
+  const last = +/<c r="B20000" s="1"><v>([\d.]+)<\/v><\/c>/.exec(z.parts['xl/worksheets/sheet1.xml'])[1];
+  assert.ok(Math.abs(last - ((t0 + 19999 * 9e3 + 8 * 36e5) / 864e5 + 25569)) < 1e-9, String(last));
 });
 
 test('the menu, the weekly trigger made once, and Back up now', () => {
@@ -345,7 +379,7 @@ test('the menu, the weekly trigger made once, and Back up now', () => {
   assert.doesNotThrow(() => s2.ctx.onOpen());
 });
 
-test('no manifest scope is added (a new scope would stop the web app and the trigger until authorised)', () => {
+test('no manifest scope is added (a new scope is expected to stop the web app and the trigger until authorised)', () => {
   const man = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'tools', 'sync', 'appsscript.json'), 'utf8'));
   assert.deepStrictEqual(man.oauthScopes, [
     'https://www.googleapis.com/auth/spreadsheets.currentonly',
