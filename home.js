@@ -66,7 +66,9 @@
     document.documentElement.dataset.page = 'lab'; // full width, like the Lab (lab.css)
     // Before the data (app.js beforeData: the corals' doors, UNITS doorsFirst), no names: the band stays empty until it comes.
     const names = DATA ? Object.keys(DATA.gen) : [],
-      fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name; // a subject whose units have names of their own (fish entries)
+      fish = !!DATA && !!(GX(slateGenera()[0]) || {}).name, // a subject whose units have names of their own (fish entries)
+      // its words where they are not the corals' (app.js UNITS door: the fish's, the sea slugs')
+      W = UNITS[SUBJ.id].door || {};
     // The subject switch (Pierre, 2026-11-04; docs/DESIGN.md "Subject switch"): one full-width Corals | Fish row above
     // the doors, the one relaxation of "two doors only" (rule U12), the twin of the header's switch (app.js
     // showSubj), one state. Only for a player with two subjects or more (app.js subjMine: the admin's only while fish is
@@ -115,11 +117,11 @@
         <section class="hdoor identify">
           <a class="hdart rc${land ? ' land' : ''}" href="${esc(hr(key))}" tabindex="-1" aria-hidden="true">${fishArt}</a>
           <div class="hdbody">
-            <p class="hdwhen">In EventMeasure<span class="wide"> · or a photo from your dive</span></p>
-            <h2>Identify a fish</h2>
-            <p class="hddesc">The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.</p>
+            <p class="hdwhen">${W.when}</p>
+            <h2>${esc(W.title)}</h2>
+            <p class="hddesc">${esc(W.desc)}</p>
             <div class="hdacts">
-              <a class="hdbtn" href="${esc(hr(key))}"><b>Fish ID Key</b><small>Coming soon</small></a>
+              <a class="hdbtn" href="${esc(hr(key))}"><b>${esc(W.btn)}</b><small>${esc(W.soon)}</small></a>
             </div>
           </div>
         </section>`
@@ -135,12 +137,12 @@
             </div>
           </div>
         </section>`;
-    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? 'a fish on a survey video' : 'a coral on a ReefCloud photo'}, or one you photographed on a dive.</p><div class="home-page">${subj}
+    $v.innerHTML = `<p class="lede">Two ways in. Learn &amp; practise while you are learning the ${SUBJ.many}; Identify when you need to name ${fish ? W.need : 'a coral on a ReefCloud photo, or one you photographed on a dive'}.</p><div class="home-page">${subj}
       <div class="hdoors">
         <section class="hdoor learn${newb ? ' newb' : ''}">
           <a class="hdart" href="${esc(hr('quiz'))}" tabindex="-1" aria-hidden="true"><span class="hdtiles${land ? ' land' : ''}">${tiles}</span></a>
           <div class="hdbody">
-            <p class="hdwhen">Learning phase<span class="wide"> · before ${fish ? 'EventMeasure' : 'ReefCloud'} or your next dive</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
+            <p class="hdwhen">Learning phase<span class="wide"> · before ${fish ? W.before : 'ReefCloud or your next dive'}</span></p>${newb ? '<a class="hdnewk" href="' + esc(hr('basics')) + '" title="New to corals? Start with the basics (5 min)">New to corals? Basics in 5 min ›</a>' : ''}
             <h2>Learn &amp; practise</h2>
             <p class="hddesc">Get to know the ${SUBJ.many}, then train your eye on photos<span class="wide"> until you recognise each one at a glance</span>. Your progress is saved as you go.</p>
             <div class="hdacts">
@@ -157,12 +159,13 @@ ${idoor}
   // The Fish ID Key, coming soon (Pierre, 2026-11-04: Identify shows the current subject's tool only, "Fish ID Key, coming
   // soon" in fish mode; ROADMAP "Fish ID Key for EventMeasure"). The Coral ID Key is reached through the subject switch.
   window.viewFishKey = function () {
+    const W = UNITS[SUBJ.id].door || {}; // the subject's words (app.js UNITS door)
     $v.innerHTML = `<div class="keysoon">
       <svg class="ksi" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg>
-      <h3>Fish ID Key</h3>
-      <p class="kswhen">Coming soon</p>
-      <p>A key to name the fish on the IMR survey videos and in your own photos, as the Coral ID Key does for corals.</p>
-      <p><a class="next" href="${esc(hr('genera'))}">Learn the fish families</a></p>
+      <h3>${esc(W.btn)}</h3>
+      <p class="kswhen">${esc(W.soon)}</p>
+      <p>${esc(W.key)}</p>
+      <p><a class="next" href="${esc(hr('genera'))}">Learn the ${esc(SUBJ.what.toLowerCase())} ${esc(SUBJ.many)}</a></p>
     </div>`;
   };
   // About and credits (Pierre, 2026-11-03): no credits block on the pages, only the one-line credit at the bottom of Home

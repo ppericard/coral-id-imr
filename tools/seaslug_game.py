@@ -100,7 +100,7 @@ def build(L, cand, sug):
             'id': i,
             'name': s['name'],
             **({'now': w['accepted']} if w.get('accepted') and w['accepted'] != s['name'] else {}),
-            **({'ref': w['aphiaAcc'] or w['aphia']} if w.get('aphiaAcc') or w.get('aphia') else {}),
+            **({'ref': w.get('aphiaAcc') or w['aphia']} if w.get('aphiaAcc') or w.get('aphia') else {}),
             'inat': s['inat'],
             'circle': 1,
             'family': fid,

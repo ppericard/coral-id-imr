@@ -116,6 +116,15 @@ const GATES = {
     assert.strictEqual(on, app, 'the app and the sync agree');
     return on;
   },
+  // The sea slugs' beta group (core.js SUBJECTS seaslug sheet; Code.gs groupIds_): the admin's Players page offers it from
+  // the script that knows the subject; before, the line that says which version it needs.
+  SEASLUG_SHEET: (v, N) =>
+    fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {
+      subjGroup: S => S.open === 'group',
+      USERS: v === undefined ? {} : {v},
+      GROUP_SHEET: 48,
+      ASUBJ: null
+    })({open: 'group', sheet: N}),
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.

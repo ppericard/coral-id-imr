@@ -3606,6 +3606,9 @@ const CORE_ = (function () { const module = {exports: {}};
       'f:RequiemSharks': 'Requiem Sharks'
     }
   };
+  // The sync script version that knows the sea-slug subject (rule D4): its group (Code.gs groupIds_) can be set from the
+  // admin's Players page from it (admin.js groupOn, SUBJECTS sheet).
+  const SEASLUG_SHEET = 147;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -3864,6 +3867,69 @@ const CORE_ = (function () { const module = {exports: {}};
         obs: 'Observations',
         origins: [
           ['own', 'Pierre', 'Pierre'],
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World']
+        ]
+      }
+    },
+    {
+      // The sea slugs (Pierre, 2026-11-15, Q369: one "sea slugs" subject, its circles by popularity, the Philippines as its
+      // area, a stars set, scientific names only; Q377: circle 1 of 45 species; study docs/reviews/2026-11-15-nudibranch-
+      // mode-study.md §9, step 5). Read through the fish engine (app.js UNITS seaslug get: seaslug.json and
+      // seaslug-game.json, built by tools/seaslug_game.py): families, then the genera as an opt-in set; the species have
+      // their sheets. In beta, opened to a group (rule S1): the admin and the players Pierre adds on its Players page.
+      id: 'seaslug',
+      dev: 'seaslug-',
+      base: ['sbase', 'spending'],
+      name: 'Sea slugs',
+      icon: '<path d="M3 16.5c2.2-3 5.4-4.3 9.3-4.3 3.6 0 6.5 1.3 8.7 3.9-2.8 1.3-5.8 1.9-9 1.9-3.3 0-6.3-.5-9-1.5z"/><path d="M6.5 13.4 5.2 9.6M9 12.6l.2-3.8M17.6 13.4c0-1.6.8-2.8 2.2-3.5M17.6 13.4c.9-1.2 2-1.7 3.4-1.6"/>',
+      one: 'family',
+      many: 'families',
+      what: 'Sea slug',
+      several: 'sea slug species',
+      card: 'sea slug',
+      lecture: 'a sea slug ID course',
+      pv: 'seaslug.',
+      hash: 'seaslug/',
+      zoom: 'the rhinophores, the gills and the pattern of the mantle',
+      beta: {
+        kick: 'Sea slugs…',
+        line: '<b>Sea slugs are in beta</b>: nudibranchs and other sea slugs of the Philippines, by their scientific names, iNaturalist photos for now. Feedback welcome.'
+      },
+      // The admin and its group only (rule S1; the group managed on its admin Players page). sheet: the sync script
+      // version that knows this subject (Code.gs groupIds_: its group can be set and is reported from it; rule D4).
+      open: 'group',
+      sheet: SEASLUG_SHEET,
+      views: [['wide', 'Photo']],
+      // sci: its genera, offered as the fish's scientific genera are (app.js UNITS seaslug sets).
+      optin: ['sci'],
+      rank: 'family',
+      // Not replayed by the sheet (no replayed): its progress merges against its own base, as the fish's did before the
+      // replay. No leaderboard, no achievements, no Analyses report and no photo pool yet.
+      replay: false,
+      // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
+      // observations, the sea slugs' candidate count (Q377).
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
+      pages: ['genera', 'sheet', 'quiz'],
+      sheets: {family: 'f:', genus: 'g:', species: 's:'},
+      progress: ['photos'],
+      // No IMR content (study §8): no "I'm at IMR" answer.
+      start: {
+        q: 'How well do you know sea slugs?',
+        opts: {
+          new: ['I’m new to sea slugs', 'Start from scratch: a few easy families first.'],
+          know: ['I know sea slugs well', 'A diver or a photographer: you can already name many families.']
+        }
+      },
+      // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
+      // not about one subject's photos, its Players page holding its beta group.
+      admin: {
+        cur: 'seaslug',
+        todo: [],
+        pages: ['inbox/todo/all', 'inbox/todo/reports', 'inbox/todo/errors', 'players/list'],
+        obs: 'Observations',
+        origins: [
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
           ['world', 'iNat elsewhere', 'World']
