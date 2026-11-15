@@ -451,6 +451,40 @@ async function freshPlayers(b, base, errs) {
         ok(low > 0 || es[es.length - 1] >= cut, `${n}: the harder photos never come after Open Water`);
         P[n] = s0;
       });
+      // Juveniles and colour phases in stages (Pierre, 2026-11-07; docs/LEARNING.md "Juveniles and colour phases in
+      // stages"): no photo with a judged phase in an entry's first answers (core.js phaseStage, SUBJECTS calib phase);
+      // past its stages they come (no wall), checked on the entries with 20 easy phase photos or more.
+      FISH.c1.forEach(n => {
+        const L = GX(n).views.wide,
+          s0 = JSON.parse(JSON.stringify(st(n)));
+        if (!L.some(p => phaseOf(p))) return;
+        P[n] = {ok: 0, ko: 0, th: 0, pg: 0};
+        let early = 0;
+        for (let k = 0; k < 60; k++) photoSet(n).shown.forEach(x => (early += phaseOf(x) ? 1 : 0));
+        ok(!early, `${n}: ${early} phase photos drawn in its first answers`);
+        if (L.filter(p => phaseOf(p) && (p.e || 0) >= 4).length >= 20) {
+          P[n] = {ok: 25, ko: 2, th: 1.5, pg: 0.85};
+          let late = 0;
+          for (let k = 0; k < 300; k++) photoSet(n).shown.forEach(x => (late += phaseOf(x) ? 1 : 0));
+          ok(late > 0, `${n}: no phase photo once its stages are past (a wall)`);
+        }
+        P[n] = s0;
+      });
+      // Their card (quiz.js phaseShow): a juvenile beside an adult of its species, then marked shown for this kind only.
+      const nJ = FISH.c1.find(n => GX(n).views.wide.some(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(n).views.wide))),
+        pJ = nJ && GX(nJ).views.wide.find(p => phaseOf(p) === 'juvenile' && phasePair(p, GX(nJ).views.wide));
+      ok(!!pJ, 'a juvenile with an adult of its species in play');
+      if (pJ) {
+        ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
+        const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
+        ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
+        ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
+        const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
+        ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
+        d.close(1);
+        ok(phaseSeen('juvenile') && !phaseSeen('phase'), 'marked shown for juveniles only');
+        ok(phaseCardOf([pJ], phaseSeen) === null, 'a second juvenile brings no card');
+      }
       return {fails, gated};
     }, 15);
     fresh.push(...r.fails.map(m => `new player ${seed}: ${m}`));
