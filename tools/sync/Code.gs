@@ -1724,10 +1724,12 @@ function boardTreeSum_(S){
   if (!/^\{/.test(v)) return '';
   try { const json = boardTreeOk_(JSON.parse(v)); return json ? boardSum_(json) : ''; } catch (e) { return ''; }  // an older script's
 }
-// Keeps a tree (json: boardTreeOk_'s) in chunks, the subject's key last, then drops every other tree's chunks.
+// Keeps a tree (json: boardTreeOk_'s) in chunks, the subject's key last, then drops every other tree's chunks. The same
+// tree already kept is written again only when it cannot be read back (a chunk lost or altered: the resend repairs it).
+// Under the script lock (doPost_'s save), so one writer at a time.
 function boardTreePut_(S, json){
   const props = PropertiesService.getScriptProperties(), key = BOARD_UNITS_ + S.id, sum = boardSum_(json), own = key + '@' + sum + '#';
-  if (boardTreeSum_(S) === sum) return;
+  if (boardTreeSum_(S) === sum && boardTreeGet_(S)) return;
   const texts = boardChunks_(JSON.parse(json));
   texts.forEach((t, i) => props.setProperty(own + i, t));
   props.setProperty(key, '@' + texts.length + ' ' + sum);

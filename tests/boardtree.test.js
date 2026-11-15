@@ -119,11 +119,13 @@ test('the sheet: a malformed tree or chunk is refused, the board keeps or drops 
   assert.strictEqual(s.ctx.boardUnits_({id: 'fish'}).length, 0);
   assert.match(logRows(s)[4], /cannot be read \(a chunk missing\)/);
   assert.strictEqual(logRows(s).length, 5);
-  // An app sends its tree again: whole again.
-  s.props[k1] = good;
-  delete s.props.BOARD_UNITS_fish;
+  // An app sends the same tree again (its key still names it): the save writes it again, whole, a chunk gone or altered.
   same(save(s, {fish: T}).bt, {fish: sum});
   same(s.ctx.boardUnits_({id: 'fish'}), T);
+  s.props[k1] = '{"f":[],"s":[[1,"=SUM(A1)","",null,1]]}';
+  same(save(s, {fish: T}).bt, {fish: sum});
+  same(s.ctx.boardUnits_({id: 'fish'}), T);
+  assert.strictEqual(s.props[k1], good);
 });
 
 test('the sheet: a tree replaced while the board reads it is read whole, the new one; a failed step is logged and its reply has no bt', () => {
