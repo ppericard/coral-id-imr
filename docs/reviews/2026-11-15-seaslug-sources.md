@@ -131,7 +131,8 @@ Pierre (2026-11-15): egg ribbons and egg masses are never candidate photos. Reco
   animal (named *H. sanguineus* in 1999) and the revision's ontogeny figures for *H. lacer*. The 43 juveniles of §1.2
   are *H. lacer* by their iNaturalist identifications. Under the decided rule ("+5 only where a source documents a
   different-looking juvenile", Q377), *H. lacer* would get 5 more candidates: proposed, not applied
-  (`tools/seaslug_source.json` holds the rule, no per-species list yet).
+  (`tools/seaslug_source.json` holds the rule, no per-species list yet). **Applied since** with the candidate photos
+  (`photos.juvenile` in the source; `tools/fetch_seaslugs.py` holds the 5 for Life Stage: Juvenile observations).
 
 ## 2. Reference sources for sea slugs
 
