@@ -3931,18 +3931,18 @@ fish game in a browser, the answer at which each achievement first enters the re
 | fc2 | Supporting cast | every circle-2 family (those that open right after the IMR course's) at Advanced or above | 2 |
 | fc3adv | Muck diver | 20 families beyond the IMR course (circle 3) at Advanced or above | 3 |
 | flearncore | Transect master | every family of the IMR course learned (its exam passed) | 3 |
+| fsp1, fsp10, fsp50 | First name terms, Name tags, Fish ID nerd | 1, 10, 50 species at Advanced or above by their common names (the species level, step 1, 2026-11-15: `achSnap` `setsAdv.sp`) | 1, 2, 3 |
 
 flearn30 joins `ACH_LEARN` (taken back with a learned mark, as the other Instructor ones). The circles read `UNITS` fish
 `circles` (`progress.js` `achSnap` `circ`), the genera at Advanced `achSnap` `setsAdv`; the % reads the global score from the
 device's progress (`treeScore` over `UNITS` tree), whatever the sheet's version (the achievements need nothing from it).
 
-**Waiting, 9** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
-confuse; names proposed for when they are built):
-- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): today's score tops out at 67% (families and
-  every genus), the species level brings the rest.
-- At the species level: fsp1 "First name terms", fsp10 "Name tags", fsp50 "Fish ID nerd" (species named by a common name at
-  Advanced); fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with both names at
-  Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
+**Waiting, 6** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
+confuse; names proposed for when they are built; fsp1, fsp10 and fsp50 came with the species level's step 1):
+- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): the families, every genus and every common
+  name top out at 95% once the species level is on; 100% needs the scientific species names.
+- At the species level: fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with
+  both names at Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
 - Fish basics: fbasics, with the module.
 - Also for the species level (Q261, counted beyond the 33): "Usual suspects", the X fish most often seen (circle 1, then
   every circle), and "Rare finds", the X least often seen at Dauin, by the rank of observers near Dauin (`present.dauinU`,
