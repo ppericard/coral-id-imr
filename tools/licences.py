@@ -11,7 +11,8 @@ What it reads and writes (FILES), each through its own writer, so an unchanged f
   - fish-game.json, the fish photos in play, and fish-photos.json "photos", its first photos, written again from it
     (tools/fish_game.py first_photos: the licence is the last key of their order);
   - data.json (the coral photos in play, the candidates curation.json names), cand.json (the coral candidates waiting),
-    excluded.json (the photos Pierre excluded, kept for his Restore: their text only, they are out of play already).
+    excluded.json (the photos Pierre excluded, kept for his Restore: tools/excluded.py restore_unexcluded puts one back
+    without a licence check, so one whose licence the rules now refuse leaves it too, the rest only follow).
 Not read: points.json (a point's photos carry a, o, src only as a fallback, written by hand; no licence there),
 tools/fish_judge.json "add" (the stopgap's additions, no longer read by the game), curation.json (rule A1: it holds no
 credit anyway).
@@ -30,7 +31,7 @@ What a new licence does (the existing licence rules, nothing new):
       tools/fish_game.py does not bring it back; one Pierre added in the admin leaves with it (fish_game.py in_play
       finds no record for it);
       corals (tools/fetch_local.py LICS: CC0, CC BY, CC BY-NC): an all-rights-reserved or "no derivatives" photo leaves
-      data.json or cand.json. Share-alike follows rule P1: a coral candidate waiting is dropped by tools/fetch_local.py
+      data.json, cand.json or excluded.json (his Restore cannot bring it back). Share-alike follows rule P1: a coral candidate waiting is dropped by tools/fetch_local.py
       drop_share_alike at the same workflow run (never one curation.json names); a coral photo in play stays, its
       licence updated, for Pierre to keep or remove (admin To do › Share-alike); both are reported;
     a photo that leaves comes back only through the candidate searches, once its licence allows it again (they search
@@ -63,12 +64,12 @@ BATCH = 200  # observations a request (iNaturalist's most per page)
 FIELDS = 'id,user.login,photos.id,photos.license_code,photos.attribution'
 CORAL_OK = ('cc0', 'cc-by', 'cc-by-nc')  # tools/fetch_local.py LICS
 SHARE_ALIKE = ('cc-by-sa', 'cc-by-nc-sa')
-# (file, subject, role): role "play" and "cand" lists lose a photo whose new licence the rules refuse; "text" lists
-# (excluded.json) only follow the new credit and licence. fish-photos.json is handled apart (its sheet, then its first
+# (file, subject, role): every list loses a photo whose new licence the rules refuse; "gone" (excluded.json: {f: {place,
+# p: record}}) loses its entry, and a photo turned share-alike there is not reported (out of play). fish-photos.json is handled apart (its sheet, then its first
 # photos from fish-game.json).
 FILES = (('fish-cand.json', 'fish', 'cand'), (os.path.join('tools', 'fish_refs.json'), 'fish', 'play'),
          ('fish-game.json', 'fish', 'play'), ('data.json', 'coral', 'play'), ('cand.json', 'coral', 'cand'),
-         ('excluded.json', 'coral', 'text'))
+         ('excluded.json', 'coral', 'gone'))
 PHOTOS_FILE = 'fish-photos.json'
 OBS_RE = re.compile(r'^(?:https://www\.inaturalist\.org/observations/)?(\d+)$')
 SRC_RE = re.compile(r'^https://(?:inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)/photos/(\d+)/')
@@ -196,10 +197,10 @@ def refresh(docs, found, seen, subject_of, role_of):
         code, attr, login = found[ph]
         own = bool(p.get('own')) or login == PIERRE
         ok = usable(subject, role, code, own)
-        if ok is False and role != 'text':
+        if ok is False:
             rep['left'].append((f, p['f'], p.get('lic'), code))
             return False
-        if ok == 'sa' and role != 'text' and (p.get('lic') or '') != code:
+        if ok == 'sa' and role != 'gone' and (p.get('lic') or '') != code:
             rep['sa'].append((f, p['f'], code))
         old = p.get('lic')
         if update(p, code, attr, own):
@@ -214,9 +215,11 @@ def refresh(docs, found, seen, subject_of, role_of):
         if d is None:
             continue
         subject, role = subject_of[f], role_of[f]
-        if role == 'text':
-            for p in list(records(d)):
-                one(f, p, subject, role)
+        if role == 'gone':
+            G = d.get('photos') or {}
+            for k in [k for k, r in G.items() if isinstance(r, dict) and isinstance(r.get('p'), dict)
+                      and not one(f, r['p'], subject, role)]:
+                del G[k]
             continue
         for L in list(lists(d)):
             L[:] = [p for p in L if not isinstance(p, dict) or one(f, p, subject, role)]

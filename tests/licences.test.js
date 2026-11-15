@@ -173,6 +173,14 @@ function fixture() {
         v: 'wide',
         i: 0,
         p: {f: 'acropora-wide-24', a: BY('Jo', 'CC BY'), lic: 'cc-by', o: OBS + 204, t: 'Acropora', own: false, src: SRC(24), loc: 'dauin'}
+      },
+      'acropora-wide-25': {
+        in: 'gen',
+        g: 'acropora',
+        k: 'views',
+        v: 'wide',
+        i: 1,
+        p: {f: 'acropora-wide-25', a: BY('Lu', 'CC BY'), lic: 'cc-by', o: OBS + 205, t: 'Acropora', own: false, src: SRC(25), loc: 'dauin'}
       }
     }
   });
@@ -194,7 +202,8 @@ const WORLD = {
   201: ['gus', [[21, 'cc-by-sa', BY('Gus', 'CC BY-SA')]]],
   202: ['hal', [[22, 'cc-by-nc-nd', BY('Hal', 'CC BY-NC-ND')]]],
   203: ['ivy', [[23, null, '(c) Ivy, all rights reserved']]],
-  204: ['jo', [[24, 'cc-by-nd', BY('Jo', 'CC BY-ND')]]]
+  204: ['jo', [[24, 'cc-by-nd', BY('Jo', 'CC BY-ND')]]],
+  205: ['lu', [[25, 'cc-by-sa', BY('Lu', 'CC BY-SA')]]]
 };
 const STUB = `
 import re
@@ -254,7 +263,7 @@ test('a photo made more open, or stricter but still accepted: its credit and lic
   assert.strictEqual(fp.sheet.s002[0].a, BY('Fay', 'CC BY'), 'wording alone never rewrites a credit');
   assert.deepStrictEqual(r.opener, {'fish-cand.json': 1, 'fish-game.json': 1});
   // Stricter: CC BY to CC BY-NC (12), his own CC BY to no licence (16, which stays: lic own), a coral photo to share-alike
-  // (21, which stays in play) and an excluded one to ND (24, which stays excluded).
+  // (21, which stays in play) and an excluded one to share-alike (25, which stays excluded, restorable for Pierre).
   assert.deepStrictEqual(r.stricter, {'fish-cand.json': 2, 'fish-game.json': 1, 'data.json': 1, 'excluded.json': 1});
   assert.deepStrictEqual(r.nc[0]['fish-game.json'], 1);
   assert.deepStrictEqual(r.nc[1]['fish-game.json'], 0);
@@ -275,6 +284,7 @@ test('a fish photo whose licence the rules refuse leaves every fish list and is 
     [
       ['data.json', 'acropora-wide-22'],
       ['cand.json', 'acropora-cand-23'],
+      ['excluded.json', 'acropora-wide-24'],
       ['fish-cand.json', 'fish-s001-cand-13'],
       ['fish-cand.json', 'fish-s001-cand-14'],
       ['fish-cand.json', 'fish-s001-cand-15'],
@@ -284,7 +294,7 @@ test('a fish photo whose licence the rules refuse leaves every fish list and is 
   );
 });
 
-test('corals: share-alike stays in play for Pierre (reported), "no derivatives" or all rights reserved leaves; excluded photos only follow', () => {
+test('corals: share-alike stays in play for Pierre (reported), "no derivatives" or all rights reserved leaves; excluded photos too, which Restore would bring back', () => {
   const dir = fixture(),
     r = run(dir);
   const wide = read(dir, 'data.json').gen.acropora.views.wide;
@@ -292,8 +302,13 @@ test('corals: share-alike stays in play for Pierre (reported), "no derivatives" 
   assert.strictEqual(wide[0].lic, 'cc-by-sa');
   assert.deepStrictEqual(r.sa, [['data.json', 'acropora-wide-21', 'cc-by-sa']]);
   assert.deepStrictEqual(read(dir, 'cand.json').cand, {}, 'a genus left with no candidate is not listed');
-  const ex = read(dir, 'excluded.json').photos['acropora-wide-24'].p;
-  assert.strictEqual(ex.lic, 'cc-by-nd', 'kept for his Restore, its licence brought up to date');
+  // excluded.json: tools/excluded.py restore_unexcluded checks no licence, so a refused one leaves it (Codex review #936);
+  // a share-alike one stays for his Restore, its licence brought up to date (rule P1: his to keep).
+  const ex = read(dir, 'excluded.json').photos;
+  assert.deepStrictEqual(Object.keys(ex), ['acropora-wide-25']);
+  assert.strictEqual(ex['acropora-wide-25'].p.lic, 'cc-by-sa');
+  assert.ok(r.left.some(x => x[0] === 'excluded.json' && x[1] === 'acropora-wide-24'));
+  assert.ok(!r.sa.some(x => x[0] === 'excluded.json'), 'out of play: not reported as share-alike');
 });
 
 test('no answer is not a licence: a photo iNaturalist no longer returns stays as it is, reported; FishBase is never asked', () => {
@@ -351,10 +366,10 @@ test('the workflow report: the summary lists what left play, each one also a war
     r = run(dir, {summary: sum});
   const md = fs.readFileSync(sum, 'utf8');
   assert.match(md, /^### Licence refresh: /);
-  assert.match(md, /Left play \(licence the rules refuse\): 7/);
+  assert.match(md, /Left play \(licence the rules refuse\): 8/);
   assert.match(md, /fish-game\.json: fish-s001-cand-13 \(cc-by-nc -> cc-by-nd\)/);
   assert.match(md, /Pierre's photos credited CC BY-NC: .*fish-game\.json 1 -> 0/);
   const warn = r.log.filter(l => l.startsWith('::warning '));
-  assert.strictEqual(warn.length, 7);
+  assert.strictEqual(warn.length, 8);
   assert.match(warn.join('\n'), /cand\.json: acropora-cand-23 is now all rights reserved \(was cc-by\)/);
 });
