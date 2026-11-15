@@ -272,6 +272,10 @@
   "fish-s384-cand-277866054": {
    "code": "o1g0sl1j2",
    "keep": "alt"
+  },
+  "fish-s384-cand-181289095": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
   }
  }
 }

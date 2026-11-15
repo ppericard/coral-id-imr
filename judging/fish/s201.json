@@ -454,6 +454,15 @@
    "code": "o0g0slo3",
    "keep": "best",
    "phase": "terminal"
+  },
+  "fish-s201-cand-655817750": {
+   "code": "o0g1slk2",
+   "keep": "best",
+   "phase": "terminal",
+   "unsure": [
+    "code"
+   ],
+   "note": "a grey fish with yellow fins and a dark band, as large and sharp, beside it: maybe a parrotfish (o), maybe not"
   }
  }
 }
