@@ -57,9 +57,14 @@ def layer_path(subject, inst=None):
 
 
 def load_layer(subject, path=None):
-    """The layer of a subject ({} when the instance has none)."""
+    """The layer of a subject ({} when the instance names none); a layer file named but missing stops (it would build
+    as no layer: every fish node in circle 1, no cue)."""
     p = Path(path) if path else layer_path(subject)
-    return json.loads(p.read_text(encoding="utf-8")) if p and p.exists() else {}
+    if not p:
+        return {}
+    if not p.exists():
+        sys.exit(f"the instance's {subject} layer: {p} does not exist (tools/instance.json layer)")
+    return json.loads(p.read_text(encoding="utf-8"))
 
 
 def layer_dumps(lay):
