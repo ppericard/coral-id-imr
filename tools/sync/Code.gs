@@ -3224,10 +3224,10 @@ const CORE_ = (function () { const module = {exports: {}};
       board: true,
       // Its Analyses report (Pierre, 2026-11-08: "fish when the fish analyses exist"; one report per subject, refitted every
       // 1000 fish answers): its units are what the questions ask, families and scientific genera as the fish tree has
-      // them (one, many: the admin's words for them on its Analyses pages). photos false: no photo features of its own in
-      // the analyses yet (its judged ease, phase and framing are not read), so What makes a photo hard is not among its
-      // admin pages.
-      analyses: {photos: false, one: 'family or genus', many: 'families and genera'},
+      // them (one, many: the admin's words for them on its Analyses pages). photos 'judged': its photos' judged features,
+      // read by What makes a photo hard (analysis.js photoMetaFish: ease, phase and framing, from fish-game.json; fish
+      // admin at parity, 2026-11-15), the corals' true their view, quality, sharpness and source.
+      analyses: {photos: 'judged', one: 'family or genus', many: 'families and genera'},
       // Its global score (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the square-root
       // display; docs/FISH_PATH.md "My progress (fish)"): core.js treeScore over its tree (app.js UNITS fish tree), shown
       // as its headline % (model.js headPct: the header, My progress, the leaderboard, the fish % achievements) with its
@@ -3285,12 +3285,14 @@ const CORE_ = (function () { const module = {exports: {}};
           // sheet rates the corals' photos only)
           'photos/review/by-difficulty',
           'photos/look-alikes',
-          // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report but
-          // What makes a photo hard (analyses photos false), and the views drawn from the live answer log (admin.js
+          // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report, and
+          // the views drawn from the live answer log (admin.js
           // LIVE_STATS), from the fish answers (fish admin at parity, 2026-11-08): Stops (admin.js statsHealth,
           // healthSheets), Pairs (statsConf) and Answer log (statsPlayers).
           'analyses/overview',
           'analyses/speed',
+          // What makes a photo hard on its judged features (analyses photos 'judged'; 2026-11-15)
+          'analyses/difficulty/photos',
           'analyses/difficulty/formats',
           'analyses/difficulty/mix-ups',
           'analyses/difficulty/time',

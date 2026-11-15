@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 13; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 14; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
@@ -25,6 +25,7 @@
   // 12: model checks (chk): each binary model's predictions of a player left out, calibration, quantile residuals, the
   // paired log-loss against the app's expectation; Answer time's residuals
   // 13: the correlations of the estimates over the bootstrap draws (ent rb), the mix-up families' stability (map stab)
+  // 14: the fish photos' judged features in Photo factors (fph: ease, phase, framing), the judged ease a primary effect
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
@@ -929,6 +930,74 @@
       return a;
     });
   }
+  // The fish photos' own features (Pierre, 2026-11-08, ROADMAP "Analyses for the fish": "the fish photos' own features
+  // (judged ease, phase, framing) in What makes a photo hard"): meta.fph {file: [ease 1-5, phase word ('' none,
+  // 'juvenile', 'male'...), view letter (p profile, o oblique, h head-on, t tail, d from above), whole ('1' the whole fish,
+  // '0' part of it)]} (photoMetaFish). The same model as the corals' (LLTM with player, unit and photo random effects):
+  // judged ease per point (centred on 3), the phase against none, the framing against a whole fish in profile. No "one
+  // view alone": a fish question shows one photo.
+  const PH_FX = [
+    ['ease', 'Judged easier (per ease point, 1-5)'],
+    ['juv', 'Juvenile (vs adult, no phase)'],
+    ['phase', 'Another phase: male, female, intermediate (vs none)'],
+    ['oblique', 'Oblique view (vs profile)'],
+    ['face', 'Head-on, tail or from above (vs profile)'],
+    ['partial', 'Part of the fish (vs whole)']
+  ];
+  function fphRows(A, meta) {
+    const PH = meta.fph || {},
+      D = A.filter(a => a.ph.length && a.ph.every(f => PH[f] && PH[f][0]));
+    return D.map(a => {
+      const P = a.ph.map(f => PH[f]),
+        share = fn => P.filter(fn).length / P.length;
+      a.X = [
+        1,
+        mean(P.map(x => x[0])) - 3,
+        share(x => x[1] === 'juvenile'),
+        share(x => !!x[1] && x[1] !== 'juvenile'),
+        share(x => x[2] === 'o'),
+        share(x => /^[htd]$/.test(x[2] || '')),
+        share(x => x[3] === '0'),
+        a.typed
+      ];
+      return a;
+    });
+  }
+  // Each subject's photo features (meta: ph the corals', fph the fish's): the model's terms, its rows, the tables of
+  // answers by feature and the words of the photo lists ("Harder than their … say").
+  const PH_LAB = {
+    view: k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k,
+    src: k => ({imr: 'IMR lecture', own: 'Pierre’s', inat: 'Other iNaturalist'})[k] || k,
+    q: k => ({3: 'Good', 2: 'Fair', 1: 'Poor'})[k] || k,
+    ease: k => ({5: '5 (very easy)', 1: '1 (very hard)'})[k] || String(k),
+    phase: k => (k ? k[0].toUpperCase() + k.slice(1) : 'None (adult)'),
+    fview: k => ({p: 'Profile', o: 'Oblique', h: 'Head-on', t: 'Tail', d: 'From above'})[k] || 'Not judged',
+    whole: k => ({1: 'Whole fish', 0: 'Part of the fish'})[k] || 'Not judged'
+  };
+  const phSpec = meta =>
+    meta && meta.fph && Object.keys(meta.fph).length
+      ? {
+          X: PH_FX,
+          PH: meta.fph,
+          rows: fphRows,
+          of: 'ease, phase and framing',
+          tabs: [
+            ['ease', 'Ease', x => x[0], PH_LAB.ease],
+            ['phase', 'Phase', x => x[1] || '', PH_LAB.phase],
+            ['view', 'View', x => x[2] || '', PH_LAB.fview],
+            ['whole', 'Whole or part', x => x[3] || '', PH_LAB.whole]
+          ]
+        }
+      : {
+          X: PH_X,
+          PH: (meta && meta.ph) || {},
+          rows: phRows,
+          tabs: [
+            ['views', 'View', x => x[0], PH_LAB.view],
+            ['sources', 'Source', x => x[3], PH_LAB.src],
+            ['quality', 'Quality', x => x[1], PH_LAB.q]
+          ]
+        };
   function phFit(D) {
     const F = [
       factor(
@@ -953,7 +1022,9 @@
     return {M, F};
   }
   function photo(A, B, seed, meta) {
-    const D = phRows(A, meta);
+    const SP = phSpec(meta),
+      PH_X = SP.X,
+      D = SP.rows(A, meta);
     if (D.length < 200) return thin(D.length, 200);
     const {M, F} = phFit(D),
       n = D.length,
@@ -969,10 +1040,13 @@
         seed
       );
     // Reported as difficulty: + = harder (the opposite sign of the log-odds of a right answer).
-    const effects = PH_X.map(([k, l], j) => eff(k, l, -M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}));
+    // On the fish features, one no answer measured (no photo shown with it) is left out, as in Confusions.
+    const effects = PH_X.map(([k, l], j) =>
+      SP.of && !M.nz[j + 1] ? null : eff(k, l, -M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]})
+    ).filter(Boolean);
     effects.push(sdEff('sd_photo', 'SD photo (beyond its features)', F[2].tau2, F[2].n, bi, 'logit', 0.25, n, mean([...F[2].cv])));
     effects.push(sdEff('sd_genus', 'SD genus', F[1].tau2, F[1].n, bi, 'logit', 0.25, n, mean([...F[1].cv])));
-    const PH = meta.ph,
+    const PH = SP.PH,
       tab = (key, lab) => {
         const o = {};
         D.forEach(a =>
@@ -1011,18 +1085,13 @@
         a => a.g0,
         seed
       ),
-      views: tab(
-        x => x[0],
-        k => ({wide: 'Colony', medium: 'Close-up', macro: 'Corallites'})[k] || k
-      ),
-      sources: tab(
-        x => x[3],
-        k => ({imr: 'IMR lecture', own: 'Pierre’s', inat: 'Other iNaturalist'})[k] || k
-      ),
-      quality: tab(
-        x => x[1],
-        k => ({3: 'Good', 2: 'Fair', 1: 'Poor'})[k] || k
-      ),
+      // the tables of answers by feature: the corals' views, sources and quality as before; another subject's under tabs
+      ...(SP.of
+        ? {
+            of: SP.of,
+            tabs: SP.tabs.map(([k, t, key, lab]) => ({k, t, rows: tab(key, lab).sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0))}))
+          }
+        : Object.fromEntries(SP.tabs.map(([k, , key, lab]) => [k, tab(key, lab)]))),
       harder: L.slice(0, 8),
       easier: L.slice(-8).reverse(),
       ent: entOf(
@@ -1779,7 +1848,7 @@
         B,
         seed
       );
-    // A view never shown (a subject whose photos have no views: the fish, SUBJECTS analyses photos false) is no effect:
+    // A view never shown (a subject whose photos have no coral views: the fish, SUBJECTS analyses photos 'judged') is no effect:
     // nothing measured it, so it is left out rather than read "no clear effect" (and kept out of the multiple-testing count).
     const effects = CF_X.map(([k, l], j) =>
       M.nz[j + 1] ? eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}) : null
@@ -3645,6 +3714,19 @@
       own: {name: 'Pierre’s photo instead of an IMR lecture photo', o: 'right', inv: true},
       inat: {name: 'Another iNaturalist photo instead of an IMR lecture photo', o: 'right', inv: true},
       alone: {name: 'One view shown alone instead of several views', o: 'right', inv: true},
+      // the fish photos' judged features (PH_FX)
+      ease: {
+        name: 'A photo judged one point easier (ease 1-5)',
+        o: 'right',
+        inv: true,
+        up: 'The judged ease predicts the right answers: the draw can keep starting from the easy photos.',
+        down: 'Photos judged easier are missed more: check the ease rubric (judging/FISH.md).'
+      },
+      juv: {name: 'A juvenile instead of an adult', o: 'right', inv: true},
+      phase: {name: 'A male, female or intermediate phase instead of none', o: 'right', inv: true},
+      oblique: {name: 'An oblique view instead of a profile', o: 'right', inv: true},
+      face: {name: 'Head-on, tail or from above instead of a profile', o: 'right', inv: true},
+      partial: {name: 'Part of the fish instead of the whole fish', o: 'right', inv: true},
       sd_photo: {name: 'How much photos differ, beyond these features', o: 'right', who: 'photo'},
       sd_genus: {name: 'How much genera differ from each other', o: 'right', who: 'genus'}
     },
@@ -3923,7 +4005,9 @@
   const PRIMARY = {
     rt: ['right', 'diff'], // is answer time a signal: right answers faster, harder questions slower
     zoom: ['rel'], // does enlarging a photo help the same player
-    photo: ['poor', 'macro'], // the photo rules the games rest on: Poor photos harder, corallites harder than a colony
+    // the photo rules the games rest on: Poor photos harder, corallites harder than a colony; on the fish side (2026-11-15,
+    // chosen before any fish result was seen), does the judged ease the draw starts from predict the right answers
+    photo: ['poor', 'macro', 'ease'],
     fmt: ['oe_k4', 'oe_typed'], // is the app's expected chance right on its main format and on typed answers
     conf: ['macro'], // do corallites shown cut mix-ups (an SD is never primary: its test is rough near 0, see pOf)
     learn: ['slope', 'again'], // does practice work; does "Again" after a miss help
@@ -4197,6 +4281,25 @@
     return out;
   }
 
+  // The fish photos' features (core.js SUBJECTS analyses photos 'judged'), from the photos the game plays: fish-game.json
+  // (game: the file, or {photos: {any: [records]}}), whose records carry what the game reads, Pierre's ease and tags first,
+  // else the judging pass's (tools/fish_game.py: e the ease 1-5, jt the tags, ph the phase word, juvenile included).
+  // {file: [ease, phase word or '', view letter or '', whole '1' | '0' | '']}; a photo with no ease is left out. The same
+  // for the workflow (tools/analyses.js) and the admin's Recompute here (FISHC.plays): a change Pierre has not published
+  // yet waits for the next Candidate photos run.
+  function photoMetaFish(game) {
+    const out = {};
+    Object.values((game && game.photos) || {}).forEach(L =>
+      (Array.isArray(L) ? L : []).forEach(p => {
+        const e = p && Number(p.e);
+        if (!p || !p.f || !(e >= 1 && e <= 5)) return;
+        const jt = String(p.jt || '');
+        out[p.f] = [e, String(p.ph || ''), jt.charAt(0), jt.charAt(1)];
+      })
+    );
+    return out;
+  }
+
   /* ---------- The report: every milestone, earlier ones reused ---------- */
   // A milestone's fingerprint: its answers (count, last time, right answers, players), so a stored result is reused only
   // for the very same answers under the same code (AV).
@@ -4244,7 +4347,8 @@
     const all = (rows || []).slice().sort((a, b) => a[1] - b[1]),
       live = o.live && all.length % STEP ? all.length : 0,
       Ms = milestones(all.length).concat(live ? [live] : []),
-      mh = hashOf(meta && meta.ph),
+      // the fish photos' features too (fph): a judgment changed refits every milestone, as a coral view or quality
+      mh = hashOf(meta && meta.ph) + (meta && meta.fph ? ':' + hashOf(meta.fph) : ''),
       B = o.B == null ? BOOT : o.B,
       Bh = Math.min(B, o.Bh == null ? 199 : o.Bh),
       cap = o.hcap == null ? 60000 : o.hcap,
@@ -4368,6 +4472,7 @@
     bh,
     correct,
     photoMeta,
+    photoMetaFish,
     leftOut,
     fpOf,
     hashOf,
