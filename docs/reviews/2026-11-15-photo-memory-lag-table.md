@@ -111,8 +111,11 @@ plan unchanged.
 
 **Verdict: Stop, for both subjects**, by the stop rule's second clause (fewer than two lag bands with 30 or more answers
 on a seen photo from 3 or more players; no band reaches 80%, so the first clause does not apply). On the corals only the
-1-7 days band qualifies (50% of the repeats; the > 7 days band has 29.8 answers from 1 player, the short bands too few
-players); on the fish only the under-10-minutes band does (58%). The primary test cannot run (1 player with answers at both short and long lag, on each
+1-7 days band qualifies (50% of the repeats; the > 7 days band has 29.8 answers from 1 player, the < 10 min band 22.5
+answers from 8 players, the others fewer); on the fish only the under-10-minutes band does (58%). The verdict holds on
+the plan's primary rows (those with a scoring record). On every coral row (the secondary, below) four bands qualify and
+the stop rule would not hold, but the primary test there has 4 players of the 6 needed, the plan's "Unclear": no lag
+term either way. The primary test cannot run (1 player with answers at both short and long lag, on each
 subject; 6 needed). **No lag term; step 2 does not start.** Nothing in the table contradicts the literature either: the
 few short-lag cells sit above expectation, as Pelánek's curve predicts, but they are too few to be read.
 
@@ -243,8 +246,8 @@ lag effect, only consistent with one.
 
 - The connector's reply (three ranges, A2:W5669) was saved by the session to its tool-results files, joined in the
   scratchpad, and the names replaced by P1-P15. One deviation from the plan: the labels follow each player's number of
-  answers over both subjects (surprise cards left out), not within the subject; they are this study's labels only, and
-  the mapping went to the integrator, never into a committed file. The joined copies were deleted after the first run;
+  answers over both subjects (surprise cards left out), not within the subject; they are this study's labels only; the mapping of
+  the labels named here (P1-P4) went to the integrator, never into a committed file. The joined copies were deleted after the first run;
   the connector's three reply files stayed in the session's tool-results until the re-run below, and were deleted then
   with every other copy.
 - **Re-run**: a second agent rejoined the same three replies on 2026-11-15 (11:45 Manila) and ran the same script,
