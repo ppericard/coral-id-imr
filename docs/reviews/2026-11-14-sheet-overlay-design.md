@@ -1,7 +1,13 @@
 # The Tree's sheet overlay: the stored shape, and seven questions before building
 
-**Status: waiting on Pierre (questions a-g).** This note is docs only and changes nothing in the app. It was written on
-`origin/main` at c2d241f, on 2026-11-14 during Pierre's night, and nothing was built.
+**Status: v2 (2026-11-15), waiting on Pierre (questions h, j and k, and two rule wordings).** Pierre answered (a),
+(b), (c) and (e) on 2026-11-15 (Q359), and his answers widen the overlay. It now covers each instance's circles and
+look-alike pairs, and the content editor's role: see [v2](#v2-2026-11-15-per-instance-content-and-roles) at the end.
+v1 below is kept as written, except where a line says Q359 replaced it. This note is docs only and changes nothing in
+the app. v1 was written on `origin/main` at c2d241f, on 2026-11-14 during Pierre's night; v2 at 92292eca, checked
+again at 2ab9832d (only photo data changed in between). Nothing was built. Steps 1 and 2 of v2's plan (the text
+slots) need no numbered question, only Pierre's plain OK on the [format] calls of section 6 before step 1 merges: a
+stored format is costly to undo (AGENTS.md "Working mode").
 
 **The step.** Pierre edits a sheet's text (a family, genus or species sheet, at any level of the tree) from the admin,
 and the edit is stored in `curation.json` as an overlay on top of the built content (ROADMAP "The Tree tab", Q341 (a),
@@ -17,7 +23,9 @@ read it, and Pierre's own published edits will be written in it. So it waits for
 - **Only Pierre's Publish writes it** (rule A1): no script, rebuild or PR. A rebuild of `fish.json` or `data.json`
   never changes an edit; at most it reports one.
 - **Structure stays from the sources** (the Tree row; rules C2, S3): the tree, the names, the groups and the look-alike
-  pairs are never edited in the admin.
+  pairs are never edited in the admin. *Replaced by Q359 (2026-11-15):* the tree, the names, the key's groups and
+  presence stay from the sources. Each instance's circles and look-alike pairs belong to that instance, and its content
+  editor edits them (v2).
 - **Stable ids with a forwards table**, and **an overlay whose node is gone shows as orphaned, never dropped** (the
   Tree row).
 - **Any subject** (rule S1; Pierre, 2026-11-13: "coraux, nudibranches ou plantes"): nothing in the format or its code
@@ -202,7 +210,8 @@ every original one click away. It changes what Q341 (a) recorded, so it needs hi
 sources, and they drive typed answers, choices and traps. Species have no text slot today, so each rank gets one new
 slot, `note`, shown on its sheet.
 
-*Recommendation: as written.*
+*Recommendation: as written.* *Answered otherwise (Q359): texts, circles and look-alike pairs are editable; presence
+and names are not (v2).*
 
 **(c) A stale edit on players' screens** (the base changed after he edited).
 
@@ -258,7 +267,421 @@ list that changes.
 
 ## Order of work once answered
 
+*Replaced by v2's step plan.*
+
 1. **Format PR**: the slot lists in `SUBJECTS`, the apply function in `core.js` (app and admin), `tools/curplay.py`,
    the tests. No admin UI; `curation.json` untouched, so nothing changes for players.
 2. **Admin PR**: the editor on the fish Tree node pages, the three states, Undo, Publish's count.
 3. **Corals**: their slot list and node pages, with the Tree's corals step.
+
+## v2 (2026-11-15): per-instance content and roles
+
+### What Pierre answered (Q359, 2026-11-15; translated, his words in quotes)
+
+- **(a) The IMR's own words are editable**, with the original kept and restorable. This changes what Q341 (a) recorded
+  ("IMR-verbatim fields read-only"). The label stays as it is (v1's option B; see the integrator's calls below).
+- **Who edits.** "You say admin, but we'll need to talk about different rights": editing a sheet's text is the right of
+  the **content editor** role (ROADMAP "Roles, instances and cohorts", Q342), not of the admin as such.
+- **(b) What is editable.**
+  - The texts: yes.
+  - **Circles: yes.** "Circles will necessarily be per instance … defined according to what IMR decided … it's the
+    person in the organisation responsible for the content."
+  - **Look-alike pairs: likely yes.** "It will depend on how people teach them." So the editor can add and withdraw
+    them, and each instance decides whether to.
+  - **Presence: no.** It follows from a parameter of the instance, its location. It stays computed by rule C8 around the
+    instance's centre (`tools/instance.json`), never edited by hand.
+  - **Names: no.** They stay from the sources; a separate study covers common-name sources and localisation.
+- **(c) A stale edit: option A.** When the base changes after an edit, players keep the editor's text. The editor sees
+  the new base beside it, with Keep mine, Take the new one, or Edit.
+- **(e) Sources: option A.** A source is optional and encouraged, never required: "ideally the content editor will use
+  AI agents to complete the content … we can encourage but not force". The editor prompts for a source when a fact is
+  added.
+- **Not answered:** (d), (f) and (g). They are implementation details, so they become integrator's calls (section 6),
+  as v1 recommended, each marked when it fixes a stored format. (d), where the map sits, is call (i), with the
+  instance added.
+
+### 1. Three layers: the sources, the instance, the editor
+
+| Layer | What it holds | Where it is stored | Who writes it |
+|---|---|---|---|
+| **Sources** | The tree (WoRMS, the identification key in force), the names (rule S2), the key's groups (rule S3), presence near the instance's centre (rule C8), our own sourced sheet lines (fish `marks`, `life`, `apart`, `juv`; coral `crit`, `info`, `plain`…), and pairs from a published reference any instance may use (the Coral Finder's, with its rights tag) | `tools/fish_source.json` (its reference parts), `tools/fish_sheets.json`, the coral tools; built into `fish.json` and `data.json` | Agents, through PRs (rules C2, C5) |
+| **The instance** | Its circles, its declared look-alike pairs and their words, its course texts (fish `cues` and `phase`, coral `imr` and `mn`), its tag (`imr`, `imrWith`, the sub-entries), its starter core (`start`), its reference list (the IMR PDF, a presence input), its centre | Today, mixed into the source files above, and `tools/instance.json` for the centre; later, the instance's own files that `tools/instance.json` names (step 5) | Agents, from the organisation's documents, through PRs |
+| **The editor's edits** | Every change the instance's content editor makes: text slots, circles, pairs | The instance's curation, in each subject's part (call (i)) | The content editor, through the draft and Publish only (rule A1) |
+
+- **What today's IMR content becomes: the IMR instance's layer.** That means the IMR presentation's circles, cues,
+  phase lines and look-alike lines, the IMR Lecture 6 notes and mnemonics, the IMR lecture's coral pairs, and Pierre's
+  declared fish groups (`fish_source.json` `look`; Pierre is the IMR instance's content person). It stays as files the
+  build reads, with their sources (`lsrc`, the slides). It is **never moved into `curation.json`**:
+  - that would be a script writing his curation (rule A1);
+  - the IMR course would then show as a pile of edits;
+  - a rebuild from the documents could no longer reach it.
+
+  Nothing changes for players.
+- **The built file is per instance.** `fish.json` and `data.json` are the sources plus the instance's layer, resolved
+  at build, as today. They are the base that the edits' `was` and the three states (fresh, stale, absorbed) compare
+  against. "Restore" goes back to that base. A second instance gets its own built files from the same sources and its
+  own layer; their path is decided with that instance, and nothing stored changes for it.
+- **Presence does not depend on the circle.** Read in `tools/build_fish.py` `needs_near` and counted on `fish.json` at
+  92292eca: every species out for "not confirmed near Dauin" (4) is off the IMR list (`src` `dauin`) and needs that
+  test in any circle. Every IMR-list species is near by rule C8's IMR-list reason. So a circle edit brings no species
+  in and takes none out of presence. A circle edit cannot be a back door around rule C8.
+- **What else reads the circles** (searched in `tools/` at 2ab9832d), and what the edit layer does about it:
+  - **The base only holds families in a circle.** `build_fish.py` makes `fish.json` `families` from the game's
+    species, and a reference-list species whose family has no teaching node is "family in no circle", out of the game.
+    So the editor can move any family of the base between circles, or to no circle, and back. A family the base does
+    not hold cannot be brought in by an edit: it needs a teaching node in the instance's layer, through a PR.
+  - **The circle sits on four records.** The teaching node, the family, its genera (the smallest circle of their
+    species) and each species (Q214: a species takes its family's circle). `core.js` reads the species' own `circle`
+    (the circle-1 genus units, `fishReplayGen`). The apply writes a family's circle onto all four, never the family
+    alone.
+  - **Two build checks read circle 1.** `start` keeps circle-1 entries only, and every circle-1 genus needs a name root
+    or a reason to skip it (`tools/fish_genus_roots.json`). The apply keeps `start` to the circle-1 entries in force. A
+    genus that joins circle 1 with no root simply shows none on its sheet; the stale report (below) lists it.
+  - **The agents' photo tools read the base's circles**: what `tools/fetch_fish.py` fetches first (circle 1 by
+    default), the five very easy photos per circle-1 entry (`tools/fish_judge.py`), the reference photos of the
+    circle-1 genera (`tools/fish_refs.py`), and the photo order in `fish-game.json` (`tools/fish_game.py`). Left as
+    they are, a family the editor moves into circle 1 would miss circle 1's photo minimum and its genera's reference
+    photos. Step 3 makes them read the circles in force (the base with the edits applied, `curation.json` read, never
+    written: rule A1).
+
+### 2. The stored shape of the edits (v1's shape, extended)
+
+```
+curation.json  (the instance's curation: today the IMR instance's; call (i), section 6)
+  content:                         the corals' part (their curation is the top level)
+    nodes:   {"Acropora": {"imr": {"v": "…", "was": "…", "t": …}}}
+    pairs:   {"Acropora|Montipora": {"v": null, "was": 1, "t": …}}
+  fish:
+    content:                       the fish part (SUBJECTS fish admin.cur)
+      nodes:
+        "f:Damselfishes": {"cues":   {"v": ["…"], "was": ["…"], "src": {"t": "…", "u": "…"}, "t": …, "by": "…"},
+                           "circle": {"v": 2, "was": 1, "t": …}}
+      pairs:
+        "f:Parrotfishes|f:Wrasses":        {"v": null, "was": 1, "t": …}
+        "f:Blennies|f:Gobies":             {"v": 1, "was": null, "src": {…}, "t": …}
+```
+
+- **One map, `content`, replaces v1's `sheet`**, because it now holds more than sheet text. Its entries keep v1's form
+  `{v, was, src, t}`, plus `by` once editors other than Pierre publish (section 3).
+- **`nodes`**: per node, per declared slot, as in v1. The text slots are v1's. **`circle` is one more slot**:
+  - its value is one of the subject's circles, declared as subject data (fish: 1, 2, 3);
+  - `v: null` hides it as any slot, which here means **in no circle**: off this instance's game, as the build already
+    leaves a family with no circle;
+  - the ranks that carry a circle are declared in `SUBJECTS` (fish: the families; a species takes its family's circle,
+    Q214). The corals have no circles (rule S1: nothing names a subject).
+- **`pairs`**: one entry per pair, keyed by the two node ids sorted in code-point order and joined by `|`, as the
+  pooled confusion keys are.
+  - `v: 1` means declared; `v: null` means withdrawn.
+  - `was` is the base's value: 1 when the instance's layer declares the pair, `null` when it does not.
+  - A pair joins two nodes of one rank, at the ranks where the subject declares pairs (fish: the families; corals: the
+    genera).
+  - The pair's words stay text slots on each node (`look/<other id>`, v1). Adding a pair may come with words, and the
+    editor then asks for a source (Q359 (e)).
+- **Text apart from structure.** Only `circle` slots and `pairs` change the game. The **structure stamp**, a short hash
+  of the canonical JSON of the circles and pairs in force, is computed by one `core.js` function in the app, the admin
+  and the sheet. It is never stored in `curation.json`, so two devices can never conflict on it. It tells each reader
+  that the structure changed (section 4).
+- **The players' copy** (`tools/curplay.py`) keeps `content` with `v` and `src`, and drops `was`, `t` and `by`, as v1
+  said.
+- **Undo, Restore and Publish** work as in v1: one draft step per Save; ↺ Restore removes the entry and leaves an empty
+  map; Publish merges node by node, slot by slot and pair by pair (`merge3`).
+- **A withdrawn pair keeps its photo pair** (`mont`, `fish.mont`): unused while the pair is withdrawn, back when the
+  pair is restored (rule A1: nothing is deleted on his behalf).
+
+**How each reader resolves the layers.**
+
+- **The build** writes the sources plus the instance's layer, as today. It never applies the edits, and at most prints
+  the entries a new base makes stale or absorbed (v1).
+- **One function in `core.js`** applies the edits to the raw records, text and structure, before the units are made
+  (`fishGen` and the coral units). The admin runs it on the draft, to show what is in force. The app runs it on the
+  players' copy.
+- **The sheet script runs the same function.** `Code.gs` embeds `core.js` (rule D3). Its replay's units come today
+  from the raw `fish.json` on `main` alone: `subjGen_` fetches the first file of the subject's pool and caches the
+  units 6 hours under `sgen1:<subject>`; `fishReplayGen` reads `look` and `circle === 1`. It does not read
+  `curation.json` for the replay today. Step 3 makes it also fetch `curation.json` from `main` (the full file: the
+  players' copy is written only at deploy) and apply its `content` before making the units. The sheet learns the stamp
+  only by reading the curation, so the stamp cannot be the cache key on its own. How it stays fresh is an
+  integrator's call (section 6): the 15-minute trigger re-reads the curation, one more fetch per run (96 a day, of the
+  20,000 the account may make), and keys the units by the stamp; a device that saves with a stamp the sheet does not
+  hold makes it re-read at once. So the sheet replays with an old structure for 15 minutes at most, never 6 hours.
+- **The app applies structure edits only once the sheet script that applies them is live** (rule D4). Before that, it
+  applies the text edits only.
+- **A node or pair that resolves to nothing** (a node renamed past the forwards table, a pair with one side gone) is
+  orphaned: kept, not applied, and listed in the admin (v1).
+
+### 3. Roles: who may edit, and how Publish records who changed what
+
+**Today.** The admin page changes nothing without a GitHub token that can push to the repository. The sheet checks the
+same token (`Code.gs` `isAdmin_`, docs/SECURITY.md). Publish commits `curation.json` with "(by <GitHub login>)" in its
+message. Pierre is the only person who holds one. No roles study is in `docs/reviews/`: the roles plan is the ROADMAP row
+"Roles, instances and cohorts" (Q342-Q349). Its steps are:
+
+1. `can_()` and the audit tab;
+2. cohorts and the trainer view;
+3. the instance overlay;
+4. the editors' relay;
+5. better sign-in.
+
+**Already decided by Q342** (the roles row): the platform admin's right covers the code, the base database and
+creating instances; the instance owner grants roles in the instance; the content editor holds "every right on the
+instance's content without Pierre's approval, no code, no players' data". So the base (the sources layer) is the
+platform's, and an instance's layer and edits are its content editor's. What Q342 leaves open is question (j).
+
+**Roles step 3, "the instance overlay".** This design is its content half: the `content` map (steps 1-4 of the plan
+below) and the IMR layer as the instance's own files (step 5). The other half, an instance's players, settings and sheet
+(Q343: one shared sheet now, one per organisation later), stays with the roles plan.
+
+**Phase 0, before any roles step.** The editor ships in the admin behind the token. Pierre edits, as the IMR instance's
+content person, and nobody else can. Rule A1 holds: edits go only through the draft and Publish, with Undo step by step
+and no bulk reset. Nothing about roles is stored yet.
+
+**Phase 1, roles step 1** (what must exist first: the sheet's roles table, each row an account, a role and a scope;
+`can_(account, right, scope)`; an Audit tab).
+- Pierre's account holds `content` on the `imr` instance (question (j)).
+- Each Publish that carries `content` changes sends one audit row to the sheet. The row holds:
+  - who: the account;
+  - what: each node and slot or pair, before and after;
+  - when, and the commit.
+- The token still does the commit.
+
+**Phase 2, roles step 4: the editors' relay** (Q348; what must exist first: step 1, the slot lists of step 1 below, and
+question (k)).
+- A content editor works on the same admin pages, signed in, with no GitHub token. Their Publish sends the draft's
+  `content` changes to the sheet script, which:
+  - checks `can_(account, 'content', instance)`;
+  - validates each entry against the subject's declared slots (a known node, a known slot, the value's type and
+    length, a circle among the declared ones, a pair inside one declared rank);
+  - merges with `merge3` onto the latest file, as the admin does;
+  - commits with the relay's own credential. No editor ever holds a token that can push (Q342).
+- **The relay accepts the `content` map only.** Whether an editor may also curate photos belongs to the roles plan, not
+  to this note.
+- **Who changed what.**
+  - The entry's `by` is the account's anonymous id.
+  - The commit message says "(by a content editor, <anonymous id>)".
+  - The person's name goes only in the sheet's Audit tab, which only admins read (rule D2: no staff or player name in
+    the repository).
+  - The admin shows "edited by" from the sheet.
+- **The page never enforces.** The admin hides the editor from an account without the right, but only the sheet's
+  check counts.
+
+**Rule C5 is unchanged.** An edit never settles an open point in `points.json`: the point stays open in the admin's
+Points until it is settled there. An edit may be how its answer is applied, and the point says so when it is closed.
+
+### 4. What editing circles and pairs does to the game
+
+**What they drive today** (read in the code at 92292eca unless marked as a guess, rule W11):
+
+| Change | What it moves |
+|---|---|
+| A family's **circle** | the path: circle 1 is the core that "I've had the IMR lecture" opens at once (`UNITS fish core`); circle 2 opens once every circle-1 family is met (`app.js` `fishGate`); circle 3 opens only after the player says yes, offered once the circle-1 part of the score reaches 55% (`fishC3`, `opens`) |
+| | the scientific genus units, which exist only for circle-1 families (`app.js` `fishGenera`; the sheet's replay, `core.js` `fishReplayGen`) |
+| | the global score's parts per circle, the headline %, the leaderboard (`treeScore`, rule D8) and the circle-3 threshold |
+| | the achievements that read circles ("House reef", "Supporting cast": `FISH_ACH`) |
+| | the offer card's words ("Beyond the IMR course"), which are IMR's (`UNITS fish opens`): another instance needs its own words for its circles (a data field, step 3) |
+| A **pair** | the opening order: declared pairs always grouped (Q350 (f), `model.js` `declaredOf`) |
+| | the traps among the choices (`model.js` choices; `CONF.LOOK` 0.3 against the family's 0.12 as the pooled confusion's prior) |
+| | the duels (`UNITS fish pairs`: the Duel tab, the duels slipped into the quiz) |
+| | the mastery exam's entry: a unit is asked beside each of its look-alikes first (Q129, `core.js` `looksLeft`, `model.js` `examLooks`) |
+| | the progress itself: the replay's known mix-ups and the weight of an answer read the pair's prior (`core.js` `replayProgress` `prior`, `lookOf`), and a right answer with a look-alike among the choices weighs more (`PROG.LOOK`) |
+| | the Look-alikes pages and their photo pairs (`mont`) |
+| | corals: the ★ rule, under which a starred genus opens after its look-alike reference (rule L5); a coral pair edit may change which genus that is (a guess, not read; to check in step 8) |
+
+**Species units (Q362, 2026-11-15: one progress unit per fish species, not built yet).** A species takes its family's
+circle (Q214), so a circle edit will move its species' units with the family, under the same replay. Pairs stay between
+families here (the only rank `fish.json` declares them at); pairs between species, if an instance wants them, wait for
+that build.
+
+**Why a structure change needs a replay.** A player's bars are their answer log replayed under the rules (rule D9). If
+the pairs or circles change and nothing is replayed:
+- each device keeps bars built under the old structure, while its new answers count under the new one;
+- the sheet replays with whatever structure it read;
+- the two disagree until the next rules version, and the leaderboard follows the sheet.
+
+Rule D5 cannot carry it: a rules version is an entry in `core.js` `RVS`, which is code, and an editor's Publish changes
+no code. So the structure stamp plays that part: when the stamp a device applied differs from the sheet's, the sheet
+replays that player's log under the structure in force. That is question (h).
+
+**Is it reversible?**
+- **The bars: yes.** The log is never changed. Undoing an edit gives the same structure, and the next replay gives the
+  same bars back, up to the pooled statistics that moved meanwhile, as with any replay.
+- A circle edit never changes a unit's id, so nothing moves in the log.
+- A unit that leaves the slate keeps its record and its log. Its answers still replay: the replay reads `gen` only for
+  the priors, `gen[t] || {}`. It is no longer shown or counted, and it comes back at the undo.
+
+**What is not reversible: each flagged as costly to undo, so for Pierre (points 2-5 only ever favour the player;
+point 1 can go against them):**
+
+1. **Learned marks: the replay never gives one, and can take one away.** The replay keeps a mark from the saved copy
+   (`core.js` `replayedOf`: "The replay does not decide the exam"), unless it finds a miss after the exam that leaves
+   the bar under the keep line (`keepsMark`, the replay's `lm` later than the mark). Under new pairs the answers weigh
+   differently, so a miss the old structure survived may now fall under the line. The mark then goes silently (rules
+   D6 and D9, `mxRecalc`, Q332). Undoing the edit does not bring it back: only an exam passed gives a mark. The other
+   way, if a pair is withdrawn, a unit's exam can open sooner, because it no longer needs that pair compared, and a
+   mark passed then stays when the pair comes back. An exam in progress stays unless a later miss ends it, as in play.
+   **A pair added to a learned unit** can cost its mark only as any structure replay can, as just said. The keep line
+   (`keepsMark`: the domain score `ds` less the player's own false-alarm rate, `faOf`, from their mix-ups and offers)
+   does not ask for the new look-alike to be compared, but `ds` is replayed under the new pair's prior and weights.
+   Units not learned yet must now be compared with the new look-alike before their exam (`looksLeft`).
+2. **Achievements stay.** None is taken back (Q332, `MXL.QUIET`). If a weak family leaves circle 1, "House reef" can
+   come at once for some players, and it stays when the family returns.
+3. **Units opened stay open.** `mayOpen` gates only the units not open yet. A family moved into circle 1 and met stays
+   open after it moves back to circle 3, even for a player who declined circle 3.
+4. **Cards and offers seen stay seen.** That covers first-meeting cards and the circle-3 offer answered. The level's
+   answer count never goes down (`replayedOf`).
+5. **What was played meanwhile.** The questions, traps and duels drawn under the old structure are in the log as played.
+   The leaderboard positions shown meanwhile were seen.
+
+**The two cases asked.**
+- **The editor withdraws a pair.** For every player, at their next sync:
+  - traps, duels and the confusion groups stop pairing the two units;
+  - the exam no longer waits for that pair;
+  - the answers where one was among the other's choices are weighed again under the family or base prior.
+
+  Bars move a little, up or down. How much was not measured (a guess: small, as the prior is one input of the
+  known-mix-up term). Points 1-5 above apply. Restoring the pair gives the bars back at the next replay. Data never
+  withdraw a declared pair (Q350 (f)); the instance's editor can, because the pair was the instance's declaration.
+- **The editor moves a family between circles.**
+  - What opens next follows the new circles. If the family moves into circle 1, a player already in circle 2 meets it
+    first: circle 2's openings pause until then.
+  - What is open stays open.
+  - The score's parts, the headline % and the leaderboard move at the next replay.
+  - Leaving circle 1 takes the family's scientific genera off the slate. Their records are kept, and they come back
+    with it.
+  - "In no circle" takes the family off the game and out of the %. Its records are kept.
+  - Achievements already earned stay (point 2).
+
+**Pooled statistics across instances.** The pooled mix-up counts are counts of answers, whatever pairs are declared
+(`confusionOf`). The look-alike prior is added when they are read, from the pairs in force (`core.js` near `CONF.LOOK`,
+`model.js`). So instances with different pairs can share one pool (the ROADMAP's "generic product" row), and each reads
+it with its own prior.
+
+**Cost.** Each Publish that changes the structure makes the next sync of every player of that subject a full replay,
+and the sheet's 15-minute trigger warms the leaderboards (rule D8). For the fish that was 9 of the 13 accounts in the
+measure of 2026-11-09 (docs/LEARNING.md "The log, the only reference for progress"). The trigger quota is 90 minutes a
+day on Pierre's personal Google account (the professionalise study of 2026-11-14, row 4: "not dated; watch it"). So the
+admin sends structure edits in one Publish, and that Publish asks for a confirmation saying it changes every player's
+path and progress (rule A2: only site-wide actions confirm).
+
+### 5. Questions for Pierre
+
+**(h) When an instance's content editor changes its circles or look-alike pairs, what happens to players' progress?**
+Players' bars depend on which units are look-alikes and in which circle (the traps, the exam's entry, the score's parts).
+*Fixes a stored format: the structure stamp in the sheet's Replayed tabs and on each device. Costly to undo.*
+
+- **A**: every player's progress is recalculated from their answers, silently, as for a new rules version (rules D5,
+  D6, D8, D9). Bars may go down or up. Achievements and units already open stay. A learned mark stays unless the
+  recalculated bar falls under the keep line after a miss; a mark lost so does not come back at the undo. Undoing the
+  edit gives the same bars back at the next recalculation.
+- **B**: only answers given after the change count under it, and past bars stay as they were. The phone and the sheet
+  then disagree until the next rules version, and an undo cannot give the old bars back.
+- **C**: the editor's circles and pairs change the path and the draw only. The progress keeps reading the instance's own
+  circles and pairs from its documents. Nothing is recalculated, but a pair the editor added would count for the traps
+  and not for the bar or the exam.
+
+*Recommendation: A.* One reference for everyone, the answer log (rule D9). Every device, the sheet and the leaderboard
+agree, and the bars are reversible. Achievements and open units only ever favour the player; a lost learned mark is the
+same as after any rules version today. If A, rule D5 gets one line (the wording below).
+
+**(i) Where the edits are stored** (v1's (d)): no longer a question. It is an implementation detail, now an
+integrator's call marked [format] (section 6). Its letter is kept so later references stay right.
+
+**(j) May the platform admin edit an instance's content without holding that instance's content-editor role?**
+*Access (AGENTS.md: always asked).* Q342 already gave the content to the content editor and the base to the platform
+admin. What it did not say is whether the platform admin's own account also edits every instance's content, as the
+GitHub token allows today. It matters from roles step 1 on (step 6 of the plan).
+
+- **A**: yes. The platform admin may edit every instance's content.
+- **B**: no. Only the holders of that instance's content-editor role may. The platform admin gets the role where the
+  instance owner grants it (Q342: the owner grants roles in the instance), and the grant is logged. For IMR today,
+  Pierre is both, so he grants it to himself once.
+
+*Recommendation: B.* Each organisation then sees exactly who may change its content, and who did. For IMR it costs one
+grant. Until roles step 1 exists, the token stays the only gate (phase 0).
+
+**(k) Is the pilot's sign-in (a name and a 4-digit code, Q349) enough for an editor to publish through the relay?**
+*Access.* It gates only step 7 of the plan (the editors' relay). A content edit reaches every player of the instance.
+Today, five wrong codes lock a name for 10 minutes (docs/SECURITY.md), so trying every code takes days, not minutes.
+
+- **A**: yes, for the pilot. Every relay Publish shows in the admin's Inbox, and every edit can be undone one step at a
+  time, with its original kept in `was`.
+- **B**: no. Editors other than Pierre wait for the better sign-in (roles step 5).
+
+*Recommendation: A for the pilot, B before a second organisation.* The pilot's editors are a few people Pierre knows.
+Every edit can be undone and is traced, and B would hold the relay until step 5.
+
+**Rule wordings to confirm** (no number: a rule's wording, its substance already decided):
+- **C2**, one line added: "An instance's content editor's own words, pairs and circles carry a source when they give
+  one; the editor asks for one when a fact is added (Q359 (e))."
+- **D5**, one line added if (h) is A: "A change to an instance's circles or look-alike pairs replays every player's
+  progress as a rules version does, keyed by the structure stamp instead of an `RVS` entry; rules D6 and D8 apply."
+
+### 6. Integrator's calls (easy to correct, stated, not asked)
+
+Marked **[format]** when the call fixes a stored format. Those calls go in the format PR's Decisions, so Pierre sees
+them before it merges.
+
+- **[format] (i), where the edits are stored** (v1's (d)): inside each instance's own curation, in each subject's part
+  (`fish.content`; `content` at the top for the corals). The instance is the file: today's `curation.json` is the IMR
+  instance's, and another instance gets its own. Nothing inside names an instance. Why: Q346 (a) already made
+  `curation.json` the instance's; one Publish and one merge path; it follows how each subject's choices are split
+  (`SUBJECTS` `admin.cur`), and the relay checks the map's path. Set aside: one file for every instance with a level
+  per instance (every instance's Publish rewrites one shared file), and a separate content file per instance (two
+  Publish paths, two merges).
+- **[format]** The map is named `content`, with `nodes` and `pairs`, and replaces v1's `sheet`.
+- **[format]** The pair key is the two node ids in code-point order joined by `|`. `v` is 1 or `null`. The words are
+  the node text slots `look/<other id>`.
+- **[format]** `circle` is a node slot, its values declared per subject, and `null` means in no circle.
+- **[format]** `by` is the account's anonymous id, from the relay step on. The name is kept only in the Audit tab.
+- **[format]** A list slot is one value, replaced whole (v1's (g), option A).
+- **[format]** The structure stamp is a hash of the canonical circles and pairs in force. It is stored in the sheet's
+  Replayed tabs and on each device, never in `curation.json`.
+- The sheet re-reads `curation.json` at its 15-minute trigger, and at once when a device saves with a stamp it does not
+  hold, and keys its replay units by the stamp (section 2).
+- The apply writes a family's circle onto its teaching node, genera and species, and keeps `start` to the circle-1
+  entries in force (section 1).
+- The build prints, beside the stale entries, the circle-1 genera in force with no name root; the agents' photo tools
+  read the circles in force (section 1).
+- The nodes with no sheet in the app (WoRMS taxa `w:`, the genera the app sends on) are not editable in this step (v1's
+  (f), option A). The format already takes any node id.
+- An edited IMR text keeps the IMR label (v1's (a), option B). The original is one click away in the admin. Easy to
+  correct.
+- An editor's pair counts as a declared pair (Q350 (f): always grouped). Withdrawing one is the instance withdrawing its
+  own declaration.
+- The editor asks for a source when an empty slot is filled, a pair is added, or a fact (size, depth) is edited, and
+  never requires one (Q359 (e)).
+- The Coral Finder's pairs belong to the sources, with their rights tag. The IMR lecture's pairs and Pierre's fish
+  groups belong to the IMR instance.
+- A structure Publish confirms once, saying it changes every player's path and progress.
+- A new instance with no layer of its own starts with one circle and no declared pair. It is not built now.
+- **Not in this design:**
+  - the coral slate (the numbered and starred genera, Millepora, the bonus genera) as instance content, and each
+    instance's words for its circles: their own step and question, when a second instance comes;
+  - names (the common-name study);
+  - rule C8's "near Dauin" and "the IMR reference list" read as the instance's (the instance's-centre row).
+
+### 7. Step plan (one PR each, in order)
+
+1. **The format, text slots.** v1's step 1 under v2's names: the slot lists in `SUBJECTS`, the apply function in
+   `core.js` for the text slots, `tools/curplay.py`, the tests. Nothing changes for players. *Needs:* no numbered
+   question; Pierre's plain OK on the [format] calls (section 6), listed in its Decisions, before it merges. `core.js`
+   changes, so it needs a changes file (rule D3).
+2. **The admin's text editor**, on the fish Tree node pages: the three states, Undo, Restore, the source prompt and the
+   Publish count. *Needs:* step 1. Pierre edits through the token (phase 0).
+3. **Structure in the apply:** the `circle` slot and `pairs`, the structure stamp, and each instance's words for its
+   circles as data. The apply writes a circle onto the family's four records and keeps `start` in circle 1. The sheet
+   also fetches `curation.json`, applies the same function to its replay's units and keys them by the stamp. A changed
+   stamp replays, and the boards follow (rule D8). The app is gated on that sheet version (rule D4). The agents' photo
+   tools and the build's report read the circles in force. *Needs:* question (h); steps 1-2. It changes the sheet
+   script.
+4. **The admin's structure editor:** a circle on each family page, pairs added and withdrawn on the node pages and in
+   the Look-alikes filter, and the Publish confirmation. *Needs:* step 3.
+5. **The IMR instance's layer as its own files:** the IMR parts of `tools/fish_source.json` (circles, `look` groups and
+   words, cues, phase lines, `start`) and the coral IMR fields move to the files that `tools/instance.json` names (an
+   `id` and a `name` join its `centre`). The build composes them, and `fish.json` and `data.json` stay byte for byte
+   (a test). *Needs:* nothing. It is easy to undo, and needed before a second instance.
+6. **Roles step 1** (the roles plan): `can_()`, the roles table, the Audit tab, and the content audit row of the
+   admin's Publish. *Needs:* question (j).
+7. **The editors' relay** (roles step 4): Publish with no token for content editors, validation from the slot lists,
+   `by`, the commit message, the Inbox line. *Needs:* steps 3 and 6, question (k).
+8. **Corals:** their slot lists and pairs at the genus rank (checking the ★ rule, L5), with the Tree's coral step.
+   *Needs:* steps 1-4.
