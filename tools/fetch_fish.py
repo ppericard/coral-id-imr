@@ -45,6 +45,9 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
   keep), and its photos count against the cap by weight (Pierre, 2026-11-08, Q226, option b): its first photo 1, each
   further photo EXTRA_W (0.5) (obs_cost), so an observation with many photos takes less room than as many observations;
   a refill brings the photos an observation already among the candidates still has. One function for both tools: species_room.
+  A species met only on the surprise cards (a wink entry's: whale shark, thresher sharks) keeps a few very good photos,
+  not a stock (Pierre, 2026-11-08; 2026-11-15, Q372): its cap is WINK_CAP (5, tools/fish_game.py WINK_KEEP, autosort.js
+  FISHT.wink), so neither the refill nor FishBase searches it once it holds 5, and --topup leaves it alone.
 - Candidates stay remote (r: 1, shown from `src` straight from iNaturalist), like coral candidates: nothing is downloaded,
   never commit a photo. Record shape as coral candidates (data.json "cand"): f, a, lic, o, t, own, loc (dauin/ph/world),
   src, r, plus st (life stage / sex annotations) and ni (Pierre's own Needs ID observation, confirmed by rule S2).
@@ -126,6 +129,15 @@ OLD_LIMIT = 4  # photos per observation at most until 2026-11-08: the observatio
 # The cap per species (Pierre, 2026-11-05, Q36; before: 20 observations per species, 2026-11-04): 30 photos for a stable
 # species, +10 per extra phase, at most 60; each extra phase aims at PER_PHASE photos of its own, the rest is free.
 BASE_CAP, PER_PHASE, MAX_CAP = 30, 10, 60
+# The cap of a species met only on the surprise cards (fish.json teach wink; Pierre, 2026-11-15, Q372): 5 photos, the
+# 5 tools/fish_game.py keeps in play for it (WINK_KEEP) and the admin's target (autosort.js FISHT.wink).
+WINK_CAP = 5
+
+
+def is_wink(t):
+    """A fish.json teaching entry or family met only on the surprise cards: it carries a wink (its card: a dict)."""
+    w = (t or {}).get("wink")
+    return isinstance(w, dict) or bool(w)
 PHASES = ("juvenile", "intermediate", "male", "female")  # the extra phases, in this order; "male" = male or terminal phase
 # Words of the judging tags (judging/FISH.md phase values) and of the sources (iNaturalist and FishBase life stage and
 # sex; record st) -> phase. "adult" is no extra phase.
@@ -481,7 +493,8 @@ def topup(args):
     blocks; a species it puts over its cap only waits longer for new observations (nothing is removed). One that holds
     any other number was fetched since 2026-11-08, whole or cut by the room (the searches then bring the rest: an
     observation among the candidates is no longer skipped); one with a photo
-    Pierre sent elsewhere, or no longer identified as that species on iNaturalist, brings nothing more. The --refill runs it for every species of its circles first. Returns
+    Pierre sent elsewhere, or no longer identified as that species on iNaturalist, brings nothing more. The --refill runs it for every species of its circles first,
+    never for a species met only on the surprise cards (a wink entry's: a few photos, WINK_CAP; Q372). Returns
     {species id: photos added}."""
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
     fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
@@ -491,7 +504,9 @@ def topup(args):
     only = set(filter(None, (args.only or "").split(",")))
     used = {pid(p["f"]) for L in have.values() for p in L} - {None}
     want = {}
-    for s, _ in species_list(fish, set(args.circle), only):
+    for s, t in species_list(fish, set(args.circle), only):
+        if is_wink(t):
+            continue  # a few very good photos, not a stock (Q372)
         L = have.get(s["id"], [])
         recs = Counter(p["o"] for p in L)
         bad = {p["o"] for p in L if p["f"] in moved}
@@ -639,10 +654,13 @@ def species_room(s, t, L, gone, sug=None, game=(), fb=(), moved=frozenset(), cap
     {"cap", "phases" (species_phases), "have" (photos still usable, weighted per observation: obs_cost), "held"
     ({phase: photos kept of it, counted the same way}), "obs" ({observation: photos still usable}), "room", "rooms",
     "free" (phase_room)}. L: its candidates; gone(f): state(); cap: a fixed cap (--cap) instead of cap_of. An
-    observation's first usable photo in list order counts 1, the others EXTRA_W."""
+    observation's first usable photo in list order counts 1, the others EXTRA_W. A species of a wink entry (met only on
+    the surprise cards) never holds more than WINK_CAP, whatever the cap (Q372)."""
     sug = sug or {}
     phases = species_phases(s, t, L, sug, game, fb, moved)
     c = cap_of(phases) if cap is None else cap
+    if is_wink(t):
+        c = min(c, WINK_CAP)
     held, obs = Counter(), Counter()
     for p in L:
         if not gone(p["f"]):

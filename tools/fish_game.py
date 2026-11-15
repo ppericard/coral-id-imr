@@ -14,6 +14,9 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
   - the units' reference photos (tools/fish_refs.json) judged sure on the same rubric as a candidate, whatever their
     reference level (tools/fish_judge.json codes after the caps; judged_sure: one kind of fish, in the water; Pierre,
     2026-11-08, Q212: "we bring them in like candidates"), auto: "ref", unless their observation is already in play (rule P4).
+  A species met only on the surprise cards (whale shark, thresher sharks: fish.json wink) keeps only its WINK_KEEP (5) best
+  photos of these (Pierre, 2026-11-15, Q372; wink_trim): his covers and featured photos, his own adds and the surprise
+  card's photos always, then the best in core.js easyRank's order; the rest leaves fish-game.json.
   A photo in play by itself leaves play once Pierre rejects, excludes or moves it (by photo id: core.js fishIn, fish_in).
   The top-level "exclude" (photos excluded for good everywhere) is honoured too, by name and by photo id. At most MAX
   downloads a run (--max), the reference photos and the starter entries first; the rest at the next runs.
@@ -81,7 +84,7 @@ from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-from fetch_fish import PHASE_WORD, PHASES  # noqa: E402  (the phase words, as autosort.js FPHW)
+from fetch_fish import PHASE_WORD, PHASES, is_wink  # noqa: E402  (the phase words, as autosort.js FPHW; a wink entry)
 import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
 import fish_short  # noqa: E402  (the file's short form: o and src)
 
@@ -474,6 +477,70 @@ def tier(fish):
     return lambda r, route: (0 if route == 'ref' else 1 if of.get(r['sp']) in start else 2 if circle.get(of.get(r['sp'])) == 1 else 3)
 
 
+# A species met only on the surprise cards (a wink entry's: fish.json families and teach wink) keeps at most WINK_KEEP
+# photos in play (Pierre, 2026-11-08: "4-5 very good reference photos"; 2026-11-15, Q372: the game data too, not only the
+# admin's Tree): autosort.js FISHT.wink, the admin's target for them.
+WINK_KEEP = 5
+AUTO_ADD = re.compile(r'^a')  # autosort.js fish log code: an add the auto-sort applied itself (never a Check, ?a, nor undone, -a)
+
+
+def wink_species(fish):
+    """{species id: its wink ({choices, photos...})} of the species met only on the surprise cards (fish.json families and
+    teaching entries marked wink: whale shark, thresher sharks)."""
+    out = {}
+    for x in [*((fish or {}).get('families') or []), *((fish or {}).get('teach') or [])]:
+        if isinstance(x, dict) and is_wink(x):
+            for s in x.get('species') or []:
+                out.setdefault(s, x['wink'] if isinstance(x['wink'], dict) else {})
+    return out
+
+
+def wink_key(r):
+    """core.js easyRank's order, the licence included (the card photo's order): the reference-level photos first, the
+    easiest, the most reference-like (ref_score), an open licence, then by name."""
+    from rights import rights_rank
+    return (not ref_level(r), -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r), r['f'])
+
+
+def wink_trim(recs, fish, cur, n=WINK_KEEP):
+    """The photos in play kept (Pierre, 2026-11-15, Q372): recs [record] (record: f, sp, o, e, jt, rep...) less, for each
+    species met only on the surprise cards, all but its n best. Always kept, whatever their number, by photo id (pid):
+    Pierre's own picks (curation.json fish genera covers and featured photos, at any rank; an add he made himself, not one
+    the auto-sort applied), and the surprise card's own photos (fish.json wink photos, which quiz.js winkPhoto draws from).
+    Then, up to n, the best by wink_key, a new observation first (the admin counts observations in play against FISHT.wink:
+    with fewer, its Candidates queue and auto-sort would open again), then any. Other species: unchanged."""
+    W = wink_species(fish)
+    if not W:
+        return list(recs)
+    F = (cur or {}).get('fish') or {}
+    mine = set()
+    for k in (F.get('genera') or {}).values():
+        if isinstance(k, dict):
+            if k.get('cover'):
+                mine.add(pid(k['cover']))
+            mine |= {pid(f) for L in (k.get('feat') or {}).values() for f in (L or [])}
+    auto = {pid(f) for day in (F.get('auto') or {}).values() for f, c in (day or {}).items() if AUTO_ADD.match(str(c))}
+    mine |= {pid(f) for f in (F.get('add') or {}) if pid(f) not in auto}
+    by, kept = {}, set()
+    for r in recs:
+        if r.get('sp') in W:
+            by.setdefault(r['sp'], []).append(r)
+    for sid, L in by.items():
+        card = {pid(f) for f in (W[sid].get('photos') or [])}
+        keep = [r for r in L if pid(r['f']) in mine or pid(r['f']) in card]
+        rest = sorted((r for r in L if pid(r['f']) not in mine and pid(r['f']) not in card), key=wink_key)
+        obs = {r.get('o') or r['f'] for r in keep}
+        for new in (True, False):  # a new observation first, then any
+            for r in rest:
+                if len(keep) >= n:
+                    break
+                if id(r) not in {id(x) for x in keep} and (not new or (r.get('o') or r['f']) not in obs):
+                    keep.append(r)
+                    obs.add(r.get('o') or r['f'])
+        kept |= {id(r) for r in keep}
+    return [r for r in recs if r.get('sp') not in W or id(r) in kept]
+
+
 def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=None, rkeep=None, boxes=None):
     """(todo, keep, wait): the records to download [(record, crop, iv)], the ones already downloaded with the right crop
     {f: record}, and how many more are in play than this run takes (limit: at most that many downloads, tier order).
@@ -488,8 +555,12 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
     species = {s['id']: s for s in (fish or {}).get('species') or []}
     todo, keep = [], {}
-    for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep):
-        r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
+    rows = [(sid, p, route, record(sid, p, F, sug, orig, species, route)) for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep)]
+    kept = {id(r) for r in wink_trim([x[3] for x in rows], fish, cur)}  # the surprise-only species: their WINK_KEEP best (Q372)
+    for sid, p, route, r in rows:
+        if id(r) not in kept:
+            continue
+        c, o = crop_of(F, p['f']), old.get(p['f'])
         mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
         if not mine and route == 'cand':
             c = ((sug or {}).get(p['f']) or {}).get('c')
