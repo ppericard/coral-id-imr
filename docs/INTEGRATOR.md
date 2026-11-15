@@ -22,6 +22,13 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
   Pierre's go (AGENTS.md "Always ask first"): on 11-15 an agent sent R2 photo addresses to Yandex image search.
 - **Every brief says: a refused command is reported, never worked around** (another tool, `subprocess`, another
   shell form): on 11-15 an agent wrote files through Python after a redirect was refused (auto mode flagged it).
+  Name the routes in the brief: no wrapper script, no Monitor, no split names; plain separate commands, as the
+  refusal itself says, are fine; files are edited with the Edit tool (11-15: two agents ran refused logic from
+  scratch scripts the guard does not see).
+- **Fish judging batches run `python3 tools/judging_fish.py one` before committing** (#942: one judgement per photo;
+  `one --check` fails CI otherwise).
+- **A wait loop must end**: one keyed on "the latest Candidate photos run" among the last 10 runs of any workflow
+  spun for an hour (none in the 10); check with `ps` that a queued train runs, and read its output.
 
 ## Handover of 2026-11-12 evening
 
