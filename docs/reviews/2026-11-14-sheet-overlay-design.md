@@ -683,6 +683,20 @@ them before it merges.
    or added pairs move no replayed record today; a circle edit moves one only where a unit leaves or joins the units (a
    family in or out of no circle, the genera of a family leaving or joining circle 1), as the unit wrongly given. The stamp is `''` for the base's structure, so the deploy
    replays nobody.
+   *Checked on the real log (rule L12, 2026-11-15, read-only):* does every fish answer carry a scoring record the replay
+   can use? The replay takes the record from the Answers tab's Scoring column (`Code.gs` `rowOf_`: `core.js` `scoreRec`
+   on column W); with one, `replayProgress` scores the answer as the game did, its look-alike flag `l` included, and
+   only a row without one would have its look-alike test rebuilt from the replay's units, where an added or withdrawn
+   pair would count. The whole tab was read through the connector (5,668 rows, columns A-Y, newest answer 2026-11-13
+   16:40), and every fish row counted, not only those since each player's reset (a superset of what the replay reads),
+   surprise cards (5) left out. Of the **2,355 fish answers** (2026-11-06 13:07 to 2026-11-13 16:40), **none** has a
+   blank or unreadable scoring record: 0 blank, 0 that `scoreRec` rejects, 0 without a unit shown, 0 with a record but
+   no photo or a single choice, and no fish row from an anonymous device or a deleted account. Per player (labels of
+   this check only, by fish answers; 0 without a usable record each): P1 732, P2 652, P3 423, P4 233, P5 103, P6 97,
+   P7 63, P8 27, P9 25. 967 of the records carry `l: 1`, which the replay takes as logged. #977 left `scoreRec` and
+   `rowOf_` unchanged, and the count is the same with its `core.js`. This confirms the premise of the finding above (the
+   replay takes the logged record on every fish row, so a pair edit moves no replayed record today); it is a count, not
+   a replay under an edited structure, which stays #977's fixture test.
 4. **The admin's structure editor:** a circle on each family page, pairs added and withdrawn on the node pages and in
    the Look-alikes filter, and the Publish confirmation. *Needs:* step 3.
    *Built (2026-11-15):* a Structure box above the Sheet on each family page the app gives a sheet (not a wink family):
