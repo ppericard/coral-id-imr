@@ -312,7 +312,10 @@ function viewGenus(name) {
     paths = [...DATA.key, ...(g.x ? DATA.x.groups : [])].flatMap(k =>
       k.leaves.filter(l => l.g.includes(name) || (XL[l.id] || []).includes(name)).map(l => ({k, l}))
     );
-  const imr = g.imr || [];
+  const imr = g.imr || [],
+    // The IMR ID tips box: on a slate genus with lecture notes or tips of its own, each slot shown on its own content (a
+    // content editor hiding the lecture notes keeps the tips; Codex review #988).
+    tipsIn = !g.x && (imr.length > 0 || (g.qt || []).length > 0);
   // Each view row shows the sheet set (applySlots): 3 featured, then the other IMR and Pierre's photos behind a fold.
   const inView = v => {
     const s = (g.sl || {})[v];
@@ -363,7 +366,7 @@ function viewGenus(name) {
       <div class="idbox">
         ${plainLine(g)}${esrcP(g, 'plain')}
         ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
-        ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR)${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
+        ${tipsIn || g.mn ? `<div class="tipbox">${tipsIn ? `<h3>ID tips (IMR)${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
         ${rootLine(g, slateOf(DATA))}
         ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}${esrcP(g, 'imr')}</div>` : ''}
         ${imr.length ? '' : cfList}
