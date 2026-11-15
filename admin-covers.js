@@ -8,8 +8,11 @@
 // photo>><the rule's photo>'}: that pair answered, never shown again; a later pick of the rule or a cover of his own
 // another day makes a new pair, which may come back); Accept all in one Undo step behind a confirm (rule A2: bulk). A
 // proposal is live, from the draft: it is done once answered, once his cover changed, or once the rule agrees. A node
-// with no cover of his, or one out of play or on a juvenile (the default already applies there), has none. His Publish
-// sends it all. The view is in the switch only while a proposal is open (admin.js TABS: its `live` option, hasPage).
+// with no cover of his, or one out of play or on a juvenile (the default already applies there), has none. His ★ cover on
+// a watermarked photo (Pierre, 2026-11-15, Q379: the default never takes one) gets the rule's photo without a watermark,
+// open until he answers whatever an earlier Keep mine said; its Keep mine is also the Tree page's Keep (coverW: autosort.js
+// fishCoverW). His Publish sends it all. The view is in the switch only while a proposal is open (admin.js TABS: its
+// `live` option, hasPage).
 //
 // The pure part (coverProposal, coverOpen, coverAccept, coverKeep, coverKeptN, coverWhy; nodeCover and nodeCoverWhy, the
 // Tree's node pages' cover and its why; juvCovers, the bar's warning of his covers now judged juveniles) runs in Node too: tests/fishcoverprop.test.js.
@@ -23,7 +26,9 @@
   // The proposal for node id, its photos in play L (the Tree page's: autosort.js fishCoverOf's), in the fish draft F: his
   // cover while in force (in L, not a juvenile) beside the rule's pick, when they are not the same photo (fishPid); else
   // null. {id, his: photo, hisLeaf, rule: photo, leaf: the rule's leaf, seen: [observers, observations] of that leaf
-  // around the centre, ref, mine: as fishCoverRule}. seen(leaf id) as fishCoverRule's (default: the registered records).
+  // around the centre, ref, mine: as fishCoverRule; wm: his cover is watermarked and he has not kept it (autosort.js
+  // fishWm, fishCoverW; Pierre, 2026-11-15, Q379), the rule's photo then one without a watermark (the rule's own: it takes
+  // none while the node has another adult photo)}. seen(leaf id) as fishCoverRule's (default: the registered records).
   function coverProposal(id, L, F, j = () => null, seen) {
     F = F || {};
     const k = ((F.genera || {})[id] || {}).cover;
@@ -32,25 +37,34 @@
     if (!his || fishPid(his.f) !== fishPid(k)) return null; // his pick, under either of its names (autosort.js fishAt)
     const r = A.fishCoverRule(L, F, id, j, seen);
     if (!r || fishPid(r.p.f) === fishPid(his.f)) return null;
-    const leaf = p => (F.add || {})[p.f] || p.sp || p.sid;
-    return {id, his, hisLeaf: leaf(his), rule: r.p, leaf: r.leaf, seen: r.seen, ref: r.ref, mine: r.mine};
+    const leaf = p => (F.add || {})[p.f] || p.sp || p.sid,
+      wm = A.fishWm(his, j(his.f), F) && !A.fishCoverW(F, id, his) && !A.fishWm(r.p, j(r.p.f), F);
+    return {id, his, hisLeaf: leaf(his), rule: r.p, leaf: r.leaf, seen: r.seen, ref: r.ref, mine: r.mine, wm};
   }
-  // The proposals still open in the fish draft F: not answered Keep mine for this very pair.
-  const coverOpen = (X, F) => (X || []).filter(x => x && ((F || {}).kept || {})[x.id] !== coverKey(x));
+  // The proposals still open in the fish draft F: not answered Keep mine for this very pair; one for a watermarked cover he
+  // has not kept (wm) stays open whatever an earlier Keep mine of the pair said, made before the watermark was known.
+  const coverOpen = (X, F) => (X || []).filter(x => x && (x.wm || ((F || {}).kept || {})[x.id] !== coverKey(x)));
   // Accept: the rule's photo as his cover of the node (set, never toggled off as ★ Cover's second click would).
-  // His confirmation of a juvenile cover goes with his old pick (autosort.js fishCoverJ); the rule's photo carries one when
-  // it is his confirmed juvenile ★ cover of its leaf (fishCoverRule's mine), so it stays in force on the node too.
+  // His confirmation of a juvenile cover, or his Keep of a watermarked one, goes with his old pick (autosort.js fishCoverJ,
+  // fishCoverW); the rule's photo carries one when it is his confirmed juvenile ★ cover of its leaf (fishCoverRule's
+  // mine), so it stays in force on the node too.
   const coverAccept = (F, x) =>
     A.fishPick(F || {}, x.id, k => {
       k.cover = x.rule.f;
+      delete k.coverW;
       if (A.fishCoverJ(F, x.leaf, x.rule)) k.coverJ = x.rule.f;
       else delete k.coverJ;
     });
-  // Keep mine: his cover stays; the pair is recorded as answered (curation.json fish.kept).
+  // Keep mine: his cover stays; the pair is recorded as answered (curation.json fish.kept). On a watermarked cover (wm),
+  // the Keep of the Tree page too (autosort.js fishCoverWOk): one answer, one Undo step.
   const coverKeep = (F, x) => {
     F = F || {};
-    return {...F, kept: {...(F.kept || {}), [x.id]: coverKey(x)}};
+    const N = {...F, kept: {...(F.kept || {}), [x.id]: coverKey(x)}};
+    return x.wm ? A.fishCoverWOk(N, x.id) : N;
   };
+  // The Tree page's Keep on a watermarked ★ cover (WM_ASK): his Keep (autosort.js fishCoverWOk) and, when the node has a
+  // proposal open (x), its Keep mine, so he answers once (coverKeep).
+  const coverWKeep = (F, id, x) => (x ? coverKeep(F, {...x, wm: true}) : A.fishCoverWOk(F || {}, id));
   // What Publish sends of the answers: the Keep mine of a cover proposal new or changed since the published file S.
   const coverKeptN = (D, S) =>
     Object.entries((D || {}).kept || {}).filter(([n, v]) => String(v).startsWith(COVER_KEPT) && ((S || {}).kept || {})[n] !== v).length;
@@ -74,7 +88,8 @@
   // force: autosort.js fishCoverJ, Pierre's exception of 2026-11-15), gone: his pick is not among L (out of play). His pick is found
   // under either of its names (autosort.js fishAt: a reference photo and its candidate copy are one photo, as the app finds
   // it), so a pick made on one copy and judged again on the other says why it is ignored. leaf: id is a leaf of its tree.
-  // seen(leaf id) as fishCoverRule's.
+  // seen(leaf id) as fishCoverRule's. wm: his ★ cover in force is watermarked (autosort.js fishWm) and he has not kept it
+  // (the page asks WM_ASK), wok: one he kept (fishCoverW; Pierre, 2026-11-15, Q379).
   function nodeCover(id, L, F, j = () => null, leaf = false, seen) {
     F = F || {};
     L = L || [];
@@ -85,8 +100,10 @@
       juv = young && !jok,
       gone = !!k && !q,
       p = leaf ? A.fishLeafCover(L, F, id, j) : A.fishCoverOf(L, F, id, j, seen),
-      by = !p ? '' : q && p === q && !juv ? 'mine' : leaf ? 'first' : 'rule';
-    return {p: p || null, by, rule: by === 'rule' ? A.fishCoverRule(L, F, id, j, seen) : null, juv, jok, gone};
+      by = !p ? '' : q && p === q && !juv ? 'mine' : leaf ? 'first' : 'rule',
+      marked = by === 'mine' && A.fishWm(q, j(q.f), F),
+      wok = marked && A.fishCoverW(F, id, q);
+    return {p: p || null, by, rule: by === 'rule' ? A.fishCoverRule(L, F, id, j, seen) : null, juv, jok, gone, wm: marked && !wok, wok};
   }
   // Why that photo, in a line (the page's bar): his ★, else the default and its reason (coverWhy for the rule's, with the
   // centre's name), with his pick ignored or out of play said. A pick on a juvenile he has not confirmed (one judged a
@@ -97,7 +114,9 @@
       c.by === 'mine'
         ? c.jok
           ? 'Your ★ cover, a juvenile you confirmed'
-          : 'Your ★ cover'
+          : c.wok
+            ? 'Your ★ cover, a watermark you kept'
+            : 'Your ★ cover'
         : c.by === 'rule'
           ? `Default: ${coverWhy(c.rule || {}, centre)}`
           : 'Default: its first photo (featured, then the easiest)';
@@ -108,6 +127,11 @@
   // confirmation of a ★ cover that is a juvenile, or that an open proposal would make one (admin-light.js lightJ).
   const JUV_Q = 'This photo is a juvenile. Use it as the cover anyway?';
   const JUV_ASK = 'Juvenile: confirm as cover?';
+  // The Tree page's question on a ★ cover he picked that is watermarked and not kept (nodeCover's wm; Pierre, 2026-11-15,
+  // Q379), with its two answers: Keep (coverWKeep) and Choose another (the Cover proposals view, where its proposal is).
+  const WM_ASK = 'Watermark: keep as cover?',
+    WM_KEEP = 'Keep',
+    WM_OTHER = 'Choose another';
   // The nodes whose ★ cover is ignored as a juvenile (the Tree's sticky bar warns of them on every page): nodeCover on
   // each node's own photos in play, P(node id) (admin.js fuNodePhotos, the node pages' own), so the warning and the
   // node's page agree. ids: the node ids with a cover of his, in the Tree's order; leaf(id): id is a leaf.
@@ -117,11 +141,15 @@
     JUV_WHY,
     JUV_Q,
     JUV_ASK,
+    WM_ASK,
+    WM_KEEP,
+    WM_OTHER,
     coverKey,
     coverProposal,
     coverOpen,
     coverAccept,
     coverKeep,
+    coverWKeep,
     coverKeptN,
     coverWhy,
     nodeCover,
@@ -214,7 +242,7 @@ function renderCovers() {
     const p = i ? x.rule : x.his,
       sid = i ? x.leaf : x.hisLeaf;
     return `<div class="adm-cside"><button type="button" class="adm-ph" data-cpz="${i}" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>
-      <span class="adm-t">${i ? 'Rule' : 'Yours'} <i>${esc(spName(sid))}</i></span>${i ? `<small class="adm-cwhy">${esc(coverWhy(x, centre))}</small>` : ''}</div>`;
+      <span class="adm-t">${i ? 'Rule' : 'Yours'} <i>${esc(spName(sid))}</i></span>${i ? `<small class="adm-cwhy">${esc(coverWhy(x, centre))}</small>` : x.wm ? '<small class="adm-cwhy warnc adm-cwm">Watermark</small>' : ''}</div>`;
   };
   const tile = x =>
     `<figure class="adm-tile adm-cprop" data-n="${esc(x.id)}"><figcaption><b>${esc(x.name)}</b></figcaption><div class="adm-cpair">${side(x, 0)}${side(x, 1)}</div>

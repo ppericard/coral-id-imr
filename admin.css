@@ -5477,6 +5477,11 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font-size: var(--fs-xs);
   color: var(--muted);
 }
+/* the Tree page's question on a watermarked ★ cover (admin-covers.js WM_ASK) before its two answers */
+.adm-fwmq {
+  align-self: center;
+  font-size: var(--fs-xs);
+}
 .adm-nlink {
   color: inherit;
   text-decoration: none;

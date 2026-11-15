@@ -1855,6 +1855,65 @@ const darkCards = (p, sel) =>
           await p.evaluate(() => undo());
           await settle();
           await go(famHash);
+          // A watermarked ★ cover (Pierre, 2026-11-15, Q379): the default never takes one, but his pick stays in force and
+          // the node's page asks "Watermark: keep as cover?": Keep records coverW beside the cover and answers the node's
+          // proposal (one Undo step); Choose another opens Cover proposals, where his cover's proposal shows the watermark.
+          const wf = gc.t[0];
+          await p.evaluate(
+            ([f, fam]) => {
+              const t = fuJt(DRAFT.fish, f) || 'p1g0sl1';
+              DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', t.slice(7).includes('w') ? t : fishTag(t, 'w'));
+              DRAFT.fish = fishPick(DRAFT.fish, fam, k => {
+                k.cover = f;
+                delete k.coverJ;
+                delete k.coverW;
+              });
+              saveDraft();
+              render();
+            },
+            [wf, fam]
+          );
+          await settle();
+          const wq = () =>
+            p.evaluate(fam => {
+              const seg = document.querySelector('.adm-fwm');
+              return {
+                ask: ((document.querySelector('.adm-fwmq') || {}).textContent || '').trim(),
+                acts: seg ? [...seg.querySelectorAll('button')].map(b => b.textContent.trim()) : [],
+                bar: ((document.querySelector('.adm-filter > .adm-sthumb.mine') || {}).dataset || {}).f,
+                why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+                k: (DRAFT.fish.genera || {})[fam] || {},
+                kept: (DRAFT.fish.kept || {})[fam] || ''
+              };
+            }, fam);
+          d = await wq();
+          if (d.ask !== 'Watermark: keep as cover?' || d.acts.join() !== 'Keep,Choose another' || d.bar !== wf || d.k.cover !== wf)
+            fails.push(`${w}px Families: a watermarked ★ cover in force, asked about ${JSON.stringify(d)}`);
+          await shot('watermark-ask-1280', '.adm-treep .adm-filter');
+          if (process.env.SHOTS) {
+            const was = await p.evaluate(() => document.documentElement.dataset.theme || '');
+            await p.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+            await shot('watermark-ask-dark-1280', '.adm-treep .adm-filter');
+            await p.evaluate(t => (t ? (document.documentElement.dataset.theme = t) : delete document.documentElement.dataset.theme), was);
+          }
+          await p.click('[data-fwok]');
+          await settle();
+          d = await wq();
+          if (d.ask || d.acts.length || d.bar !== wf || d.k.coverW !== wf || !d.kept || !/a watermark you kept/.test(d.why))
+            fails.push(`${w}px Families: Keep on a watermarked ★ cover ${JSON.stringify(d)}`);
+          await p.evaluate(() => undo());
+          await settle();
+          d = await wq();
+          if (!d.ask || d.k.coverW || d.kept) fails.push(`${w}px Families: Undo of the Keep ${JSON.stringify(d)}`);
+          await p.click('[data-fwcp]');
+          await settle();
+          d = await p.evaluate(fam => ({h: location.hash, wm: !!document.querySelector(`.adm-cprop[data-n="${fam}"] .adm-cwm`)}), fam);
+          if (d.h !== '#' + other.hash + 'photos/review/cover-proposals' || !d.wm)
+            fails.push(`${w}px Families: Choose another opens its proposal ${JSON.stringify(d)}`);
+          await shot('watermark-proposal-1280', `.adm-cprop[data-n="${fam}"]`);
+          await p.evaluate(() => undo());
+          await settle();
+          await go(famHash);
           // Other species in view (Q323): an add whose count is k (confusion possible) or the legacy m with no pass to sort
           // it is out of play, listed apart with Keep in play (count o) and Remove; Keep in play puts it back, one Undo step.
           const ko = await p.evaluate(sid => {
