@@ -901,7 +901,8 @@ def genus_marks(name, x, r, none, src, used, mine):
     by = {}
     if x.get("plain"):
         p = x["plain"]
-        if not (isinstance(p, list) and len(p) == 2) or len(re.findall(r"[.!?](?:\s|$)", p[0])) > 2:
+        # (a sentence ends at . ! or ?, never at a genus's initial: "C. kleinii")
+        if not (isinstance(p, list) and len(p) == 2) or len(re.findall(r"(?<!\b[A-Z])[.!?](?:\s|$)", p[0])) > 2:
             bad("plain is [one or two sentences, sources]")
         by["plain"] = refs(p[0], p[1], 180)
         out["plain"] = p[0]
