@@ -256,7 +256,7 @@ English "damsel" / "damselfish" covers the family.
 
 | Proxy | What it gave | Strength |
 |---|---|---|
-| Wikipedia title | 12 of 40 sample species titled by a common name; 25 by the scientific name (the guideline's "no consensus"); 3 not found | Weak to medium: an editors' choice under a usage rule, often copied from FishBase. Where it is a common name it agrees with FishBase's main name 10 of 12 |
+| Wikipedia title | 12 of 40 sample species titled by a common name; 25 by the scientific name (the guideline's "no consensus"); 3 not found | Weak to medium: an editors' choice under a usage rule, often FishBase's name **[guess]**. Where it is a common name it agrees with FishBase's main name 10 of 12 |
 | Wikipedia redirects | Which candidate names exist as redirects to the article (CSV column `wikipedia_redirects`) | Weak: shows a name exists, not that it is used |
 | Wikipedia pageviews (60 days, action API `prop=pageviews`) | From 41 (*Parapercis cylindrica*) to 7,900 (*Amphiprion ocellaris*, "Ocellaris clownfish") | It ranks species by interest, not names. Useful for which species are known, not for which name |
 | Google Books Ngram (English corpus, 1980-2022, case-insensitive) | 17 of 113 candidate names above the corpus threshold; 2 species with two comparable names (*Chromis viridis*: "Green chromis" over "Blue-green chromis", which is 0; *Amphiprion ocellaris*: "Clown anemonefish" 1.7e-9 over "False clown anemonefish" 3.0e-10 over "Ocellaris clownfish" 1.3e-10). "Sergeant major" and "domino" are high only because they name other things | Too thin for reef fish: books rarely print these names |
@@ -323,8 +323,9 @@ Wikipedia), when unique **[measured]**:
 
 - **Which source matches the others best:** FishBase's most-recorded name, iNaturalist's default and FishBase's main
   name, about 2 in 3.
-- **The IMR name matches less**, under 1 in 2. That is partly by design: the sample was chosen for species where the
-  IMR name differs.
+- **The IMR name matches less in the sample**, under 1 in 2. That is largely by design: strata B and D were chosen for
+  species where the IMR name differs. On all 367 IMR-named species it matches iNaturalist's default for 71 %, more
+  than FishBase's main name does (53 % over every game species).
 - **The Australian sources match least**, as expected of a regional standard.
 - **The three-reference majority rule is no better than iNaturalist's default alone** (14 of 16 against 13 of 16).
 - **The sample is small** (10 to 33 comparisons per source) and chosen for disagreement. These are directions, not a
@@ -364,7 +365,7 @@ build's summary for a look, never applied silently.
 | Case | Species |
 |---|---|
 | Main name differs from the IMR name (367 IMR-named species) | 107, circle 1: 99 |
-| Not in today's list at all (shown or as a spelling) | 15 |
+| Of the 367, iNaturalist's default not in today's list at all (shown or as a spelling) | 15 |
 | Dauin-named species whose name changes | 2 of 294 |
 | For comparison, the three-reference majority rule: differs from the IMR name | 125, circle 1: 115 |
 
@@ -453,7 +454,7 @@ name. The IMR name is never wrong for anyone.
     out;
   - one Wikidata `wbgetentities`;
   - the guideline "Wikipedia:Naming conventions (fauna)", read through WebFetch.
-- **Google Books Ngram** JSON, English corpus, 1980-2022, no smoothing, case-insensitive: 40 requests.
+- **Google Books Ngram** JSON, English corpus, 1980-2022, no smoothing, case-insensitive: one request per sample species, cached.
 - **Not reachable from this machine today**:
   - DORIS (connection failure, WebFetch 503);
   - INPN / TAXREF site (Cloudflare challenge, 403);
