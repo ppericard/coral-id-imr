@@ -127,9 +127,12 @@
       : Array.isArray(v)
         ? `<ul class="adm-csv">${v.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`
         : `<p class="adm-csv">${esc(v)}</p>`;
+  // An edit's source under its text; its link only when it is a web address (http or https: never a javascript: or data:
+  // link on the page that holds the publishing token, whoever typed it once editors publish through the relay).
   const shSrc = s => {
-    const x = C.contentSrc(s);
-    return x ? `<p class="adm-cssrc">${x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)}</p>` : '';
+    const x = C.contentSrc(s),
+      web = x && x.u && /^https?:\/\//i.test(x.u);
+    return x ? `<p class="adm-cssrc">${web ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)}</p>` : '';
   };
   const shBox = r => {
     const s0 = C.contentSrc(r.e && r.e.src) || {t: '', u: ''},

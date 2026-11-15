@@ -6392,6 +6392,21 @@ const darkCards = (p, sel) =>
           JSON.stringify(x.src) !== '{"t":"A made-up guide","u":"https://example.org/guide"}'
         )
           se.push(`note ${JSON.stringify(x)}`);
+        // Its source links to the web address; a link that is not one (javascript:) shows as words only.
+        if (!(await sq.evaluate(s => !!document.querySelector(s + ' .adm-cssrc a[href="https://example.org/guide"]'), row('note'))))
+          se.push('the source link');
+        await sq.evaluate(id => {
+          DRAFT.fish = {
+            ...DRAFT.fish,
+            content: contentSet(DRAFT.fish.content, id, 'life', ['x'], ['y'], {t: 'Bad', u: 'javascript:alert(1)'}, 9)
+          };
+          render();
+        }, FAM);
+        if (await sq.evaluate(() => !!document.querySelector('#view .adm-csheet a[href^="javascript"]'))) se.push('a javascript: link');
+        await sq.evaluate(id => {
+          DRAFT.fish = {...DRAFT.fish, content: contentDrop(DRAFT.fish.content, id, 'life')};
+          render();
+        }, FAM);
         // ⊘ Hide the marks.
         await act('marks', 'hide');
         await swait(() => document.querySelector('#view .adm-csheet [data-cs="marks"].is-fresh'));
