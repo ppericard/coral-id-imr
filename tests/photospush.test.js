@@ -85,7 +85,8 @@ const fresh = () => path.join(TMP, `w${++n}`);
     'fish-game.json',
     'fish-photos.json',
     'fish-cand.json',
-    'tools/fish_refill.json'
+    'tools/fish_refill.json',
+    'tools/fish_refs.json'
   ])
     write(seed, f, '{"a": 1}\n');
   write(seed, 'img/a.webp', BIN);
@@ -154,6 +155,9 @@ const refused = (change, jobName, why, reason) => {
 test("photos-push commits the photos job's change on top of a main that moved, same message and files", () => {
   const change = build(d => {
     write(d, 'data.json', '{"a": 2}\n');
+    // The licence refresh's sources of the fish photos in play (tools/licences.py).
+    write(d, 'fish-cand.json', '{"a": 2}\n');
+    write(d, 'tools/fish_refs.json', '{"a": 2}\n');
     write(d, 'img/b.webp', Buffer.concat([BIN, BIN]));
     fs.rmSync(path.join(d, 'img/a.webp'));
     write(d, 'tools/x.py', 'print(2)\n'); // not this job's file: the job's own git add leaves it out
@@ -175,7 +179,9 @@ test("photos-push commits the photos job's change on top of a main that moved, s
   assert.deepStrictEqual(git(ORIGIN, 'diff', '--name-status', '--no-renames', 'main~1', 'main').split('\n').sort(), [
     'A\timg/b.webp',
     'D\timg/a.webp',
-    'M\tdata.json'
+    'M\tdata.json',
+    'M\tfish-cand.json',
+    'M\ttools/fish_refs.json'
   ]);
   assert.deepStrictEqual(
     execFileSync('git', ['show', 'main:img/b.webp'], {cwd: ORIGIN, env: ENV}),
@@ -198,6 +204,12 @@ test("photos-push refuses a patch outside the photos job's files, a rename, a sy
     'photos-push',
     'a tool',
     'the patch touches tools/x.py'
+  );
+  refused(
+    build(d => write(d, 'tools/fish_refill.json', '{}\n'), {crafted: true}),
+    'photos-push',
+    "the fish job's file",
+    'the patch touches tools/fish_refill.json'
   );
   refused(
     build(d => write(d, '.github/workflows/w.yml', 'evil\n'), {crafted: true}),
