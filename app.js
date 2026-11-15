@@ -741,13 +741,22 @@ function fishGenera(X, F) {
           lsrc: {},
           qt: cues,
           tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
-          // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, then the count.
-          sum:
-            (L.length > 3 ? 'Most met here: ' : '') +
-            L.slice(0, 3)
-              .map(s => s.name.replace(/^\S+/, g[0] + '.') + (s.common ? ' (' + s.common + ')' : ''))
-              .join(', ') +
-            (L.length > 3 ? `; ${L.length} species in the game.` : ''),
+          // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
+          // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
+          // then the count.
+          get sum() {
+            const imr = imrNow();
+            return (
+              (L.length > 3 ? 'Most met here: ' : '') +
+              L.slice(0, 3)
+                .map(s => {
+                  const c = cnFirst(s, imr) || s.common;
+                  return s.name.replace(/^\S+/, g[0] + '.') + (c ? ' (' + c + ')' : '');
+                })
+                .join(', ') +
+              (L.length > 3 ? `; ${L.length} species in the game.` : '')
+            );
+          },
           species: L.map(s => s.id),
           phase: [],
           sub: [],
@@ -787,33 +796,33 @@ function sciOpen(L, score, met, imr, hand) {
   return {auto, units: L.filter(n => !(imr && GX(n).imrg) && at(n, hand ? LV_AT[0] : LV_AT[1]))};
 }
 // The curated common names of a fish species (fish.json species cn, from tools/fish_common.py; Pierre, 2026-11-04,
-// docs/FISH_PATH.md "Common names"): 1 to 3 names, the most shared first, each [the name shown, its other spellings];
-// none for a species no reference names (Q247). Common-name mastery of a species needs every listed name (core.js
-// treeScore: C is the mean of its names' bars), so a multiple-choice question shows one listed name at a time, rotating
-// (cnShow), and a typed answer is accepted only as a listed name (cnTypeNames). For the species level, which asks them.
+// docs/FISH_PATH.md "Common names"): 1 to 3 names, the main name first (iNaturalist's default, else FishBase's main
+// name: Pierre, 2026-11-15, Q376 (a)), each [the name shown, its other spellings]; cni, the place of the IMR name in cn;
+// cnr, the regional standard names (Q376 (c)), accepted when typed, never shown; none for a species no reference names
+// (Q247). The main name fills the species' one unit, any other listed name credits it too (Q362, Q376 (b)), so a
+// multiple-choice question shows the player's first name (cnShow) and a typed answer is right as any listed or regional
+// name (cnTypeNames).
 const cnList = s => ((s && s.cn) || []).map(n => n[0]);
-// The listed name a multiple-choice question on species s shows next: the one asked least so far (asked(i, name): how
-// many times its name i was asked), the list's order on a tie (the most shared first). '' for a species with none.
-function cnShow(s, asked) {
-  const L = cnList(s);
-  let best = -1,
-    low = Infinity;
-  L.forEach((n, i) => {
-    const k = Number((asked && asked(i, n)) || 0);
-    if (k < low) ((low = k), (best = i));
-  });
-  return best < 0 ? '' : L[best];
-}
+// The name a player sees first for species s (Q376 (a)): the IMR name for a player at IMR (imr: model.js imrSaid, read
+// by the caller), the main name for everyone else; '' for a species with none. Every page that names a species shows it.
+const cnFirst = (s, imr) => {
+  const L = cnList(s),
+    i = imr && s && Number.isInteger(s.cni) && L[s.cni] ? s.cni : 0;
+  return L[i] || '';
+};
+// The name a multiple-choice question on species s shows: the player's first name (cnFirst), always the same one.
+const cnShow = (s, imr) => cnFirst(s, imr);
 // The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
-// typeNormAll: [{k, g: the species id, old, alt}], each listed name and its recorded spellings (old: the spelling typed,
-// alt: 1), nothing else: no other name the references give, no short form without "fish" (fishTypeNames' drop is the
-// families'). A name two species list names both (typeMatchIn shared: right for each of them, Q319).
+// typeNormAll: [{k, g: the species id, old, alt}], each listed name and regional name with their recorded spellings
+// (old: the spelling typed, alt: 1), nothing else: no other name the references give, no short form without "fish"
+// (fishTypeNames' drop is the families'). A name two species list names both (typeMatchIn shared: right for each of
+// them, Q319).
 // vn (fish.json vn, the name index's kind words: razorfish, toby): known names that are no species' own, read as such
 // ({known}: "a name some fish species go by", the nudge), never as a slip of a species' name (Pierre, 2026-11-09, Q319).
 function cnTypeNames(L, vn) {
   const out = [];
   (L || []).forEach(s =>
-    ((s && s.cn) || []).forEach(n =>
+    [...((s && s.cn) || []), ...((s && s.cnr) || [])].forEach(n =>
       n.forEach((x, i) => {
         const k = typeNormAll(x);
         if (k && !out.some(o => o.k === k && o.g === s.id)) out.push({k, g: s.id, old: i ? x : '', alt: i ? 1 : 0});
@@ -857,15 +866,19 @@ const taxonLine = t => {
   return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${it(t.sci)}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
 };
 // A fish photo's taxon: the species it is in play for (fish-game.json sp, Pierre's curation applied: core.js fishPhotos),
-// by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), its first curated
-// common name (cnList: the PDF's first, Q313). Every fish game photo is named to the species (Research Grade, or Pierre's
-// own named to the species: rule S2); a photo without one says nothing.
-const fishTaxon = (R, p) => {
+// by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), the player's first
+// common name (cnFirst: the IMR name for a player at IMR, imr; the main name for the others, Q376 (a)). Every fish game
+// photo is named to the species (Research Grade, or Pierre's own named to the species: rule S2); a photo without one says
+// nothing.
+const fishTaxon = (R, p, imr) => {
   const s = p && p.sp && R && R[p.sp];
   return s && s.name
-    ? {id: p.sp, sci: s.name, common: cnList(s)[0] || '', now: s.now && s.now !== s.name ? s.now : '', rank: 'species'}
+    ? {id: p.sp, sci: s.name, common: cnFirst(s, imr), now: s.now && s.now !== s.name ? s.now : '', rank: 'species'}
     : null;
 };
+// The player answered "I'm at IMR" to the fish (model.js imrSaid; Q227: whatever the answer now), for cnFirst; false
+// where model.js is not loaded.
+const imrNow = () => typeof imrSaid === 'function' && !!imrSaid();
 // A coral photo's taxon: its iNaturalist species (data.json, cand.json t), only when that species is in the genus asked n
 // (a photo Pierre moved to another genus keeps its old name: nothing then) and the identification is sure: Research Grade
 // (no gid) or Pierre's own (rule S2). A photo named to the genus only, or an IMR lecture photo (no t), says nothing more
@@ -2004,8 +2017,8 @@ const UNITS = {
     },
     // The species a photo shows (fish-photos.json sp, its PDF name: fishGenera spn), for the answer log (speciesShown).
     species: p => (FISH && FISH.spn && p && p.sp && FISH.spn[p.sp]) || '',
-    // The photo's species, said under the verdict (photoTaxon): fishTaxon.
-    taxon: p => fishTaxon(FISH && FISH.sps, p),
+    // The photo's species, said under the verdict (photoTaxon): fishTaxon, by the player's first name (Q376 (a)).
+    taxon: p => fishTaxon(FISH && FISH.sps, p, imrNow()),
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
     // fishPid: one photo under its candidate and reference names), and what the flag records: file (its name),
     // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
@@ -2031,8 +2044,8 @@ const UNITS = {
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
-    // common names (the genera's, their IMR tags, the species': the PDF's and every listed one with its spellings, cn),
-    // from fish.json alone. Nothing for another rank.
+    // common names (the genera's, their IMR tags, the species': the PDF's, every listed one with its spellings, cn, and
+    // the regional ones, cnr), from fish.json alone. Nothing for another rank.
     typeOther: rk => {
       const F = rk === 'genus' && FISHRAW && FISHRAW.f;
       if (!F) return null;
@@ -2041,7 +2054,7 @@ const UNITS = {
         sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
         common: [
           ...(F.genera || []).flatMap(g => [g.common, g.imr]),
-          ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat()])
+          ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat(), ...(x.cnr || []).flat()])
         ].filter(Boolean)
       };
     },

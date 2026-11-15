@@ -326,7 +326,9 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   assert.strictEqual(s.now, undefined);
   assert.strictEqual(s.check, undefined);
   // Its data, all found by id: common names, size and depth, presence, iNaturalist taxon, family and genus.
-  assert.deepStrictEqual(s.cn, [['Clearfin squirrelfish'], ['Silver squirrelfish']]);
+  // iNaturalist's default first, the PDF's (its IMR name) second and marked (Q376 (a)).
+  assert.deepStrictEqual(s.cn, [['Silver squirrelfish'], ['Clearfin squirrelfish']]);
+  assert.strictEqual(s.cni, 1);
   assert.strictEqual(s.common, 'Clearfin squirrelfish');
   assert.deepStrictEqual([s.size.len, s.depth.m], [24, [1, 20]]);
   assert.strictEqual(s.inat, 194741);
@@ -696,10 +698,11 @@ test('juvenile classes: every circle-1 entry classed, with sources, as in the so
 // selection's own rules.
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
-  assert.strictEqual(P.s132.names[0].name, "Russell's snapper");
-  assert.ok(P.s132.names[0].alt.includes('Russelss’s snapper'));
-  assert.strictEqual(P.s008.names[0].name, 'Eastern triangular butterflyfish');
-  assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
+  // The IMR name (imr: its place; iNaturalist's default comes first since Q376 (a)).
+  assert.strictEqual(P.s132.names[P.s132.imr].name, "Russell's snapper");
+  assert.ok(P.s132.names[P.s132.imr].alt.includes('Russelss’s snapper'));
+  assert.strictEqual(P.s008.names[P.s008.imr].name, 'Eastern triangular butterflyfish');
+  assert.ok(P.s008.names[P.s008.imr].alt.includes('Eastern triangular'));
 });
 
 // Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a

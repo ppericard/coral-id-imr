@@ -1,0 +1,1 @@
+The embedded `core.js` copy follows the app: the fish name index (`fishNameIndex`) also reads each species' regional standard names (`fish.json` `cnr`: the Australian ones, such as "Swallowtail puller"), accepted when typed as that species' family (Pierre, 2026-11-15, Q376 (c)). The script's own behaviour and the progress rules are unchanged: the replay never reads typed names.
