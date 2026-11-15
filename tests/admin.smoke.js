@@ -5434,11 +5434,14 @@ const darkCards = (p, sel) =>
             .filter(g => new RegExp(`\\b${g}\\b`).test(V.textContent))
             .slice(0, 3),
           words: /Colon|recognised by|Far harder/.test(V.textContent),
+          // Coverage › Games' "+" total (autosort.js fishWaiting through fishCov): the same candidates waiting
+          cov: fishCov(FISHC.units, fuData().play, FISHC.species, FISHC.cand, DRAFT.fish || {}, fuJ).fam.reduce((t, r) => t + r.wait, 0),
           wide: document.documentElement.scrollWidth - innerWidth
         };
       });
       if (
         fo.heads.join() !== 'All photos,Per family,Fewest and most,Circles,Sources,Answers per photo,3+ answers per family' ||
+        fo.pool.Candidates !== fo.cov ||
         fo.kpi.join() !== 'Photos in play,Observations in play,Families in play,Candidates' ||
         Number(fo.kv[0]) !== fo.pool['In play'] ||
         !fo.pool['In play'] ||
