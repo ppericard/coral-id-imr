@@ -964,23 +964,41 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // FISHF: fish.json with the content editor's edits laid over it (core.js contentApply; Pierre, 2026-11-15, Q359): what
 // the units and the sheets read (learn.js ftree), made again with the units whenever the curation is; fish.json itself
 // (FISHRAW.f) when nothing is edited.
+// The editor's circles and pairs (core.js structApply; Q359, Q363 h A) only once the sync script replays the progress
+// under them (rule D4: structOn, core.js STRUCT_SHEET); before, the text slots alone, as before. FISHST: the structure
+// stamp of the units made (core.js structStamp, '' without the structure), FISHON: whether they were made under it.
 let FISH = null,
   FISHP = null,
   FISHH = null,
   FISHRAW = null,
-  FISHF = null;
+  FISHF = null,
+  FISHST = '',
+  FISHON = false;
 const fishBuild = () => {
-  const {ph, gm} = FISHRAW,
-    // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
-    f = (FISHF = contentApply(
-      SUBJECTS.find(S => S.pool.files[0] === 'fish.json'),
-      FISHRAW.f,
-      CUR
-    ));
+  // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
+  const S = SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+    {ph, gm} = FISHRAW,
+    on = structOn(),
+    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
+  FISHON = on;
+  FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
+// A reply from the script that replays under the structure, the units made before it without the structure the curation
+// holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
+function structSeen() {
+  if (!FISHRAW || FISHON === structOn() || CUR_NEW) return;
+  if (
+    structFp(
+      SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+      CUR
+    )
+  )
+    CUR_NEW = CUR;
+}
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
 // card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
@@ -2054,6 +2072,9 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
+    // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
+    st: () => (FISH ? FISHST : ''),
     core: () => (FISH ? FISH.c1 : []),
     // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
     // families, those that open right after them, those beyond the course.

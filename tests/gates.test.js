@@ -104,6 +104,18 @@ const GATES = {
   // The other subjects' replays, fish (sync.js rpOn, core.js REPLAYS_SHEET; Code.gs replays_): asked for and adopted
   // from the script that replays them under their own rules versions; before, fish merges as it did.
   REPLAYS_SHEET: (v, N) => fn('sync.js', 'const rpOn = ', '\n', 'rpOn', {REPLAYS_SHEET: N})({id: 'fish', replay: false, replayed: {}}, v),
+  // The content editor's structure (sync.js stOn, app.js structOn; core.js STRUCT_SHEET; Code.gs replays_ sts): the
+  // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
+  // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
+  STRUCT_SHEET: (v, N) => {
+    const on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {
+        STRUCT_SHEET: N,
+        rpOn: (S, x) => Number(x) >= 112
+      })({id: 'fish', structure: {}, replayed: {}}, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {STRUCT_SHEET: N, sheetV: () => (v === undefined ? 0 : v)})();
+    assert.strictEqual(on, app, 'the app and the sync agree');
+    return on;
+  },
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
