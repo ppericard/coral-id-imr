@@ -736,6 +736,23 @@ function fishGenera(X, F) {
           g = G.name,
           set = new Set(L.map(s => s.id)),
           cues = G.cues && G.cues.length ? G.cues : null,
+          // Its own ID marks when IMR gives no cues (fish.json marks, tools/fish_genus_marks.json; Pierre, 2026-11-08),
+          // under a label naming the marks' own sources (mby.marks: not the presentation's), never as IMR's (rule C1);
+          // their source per line is on the sheet (genMarks).
+          marks = !cues && G.marks && G.marks.length ? G.marks : null,
+          mby = [
+            ...new Set(
+              ((G.mby || {}).marks || [])
+                .flat()
+                .map(i => (G.msrc || [])[i] || {})
+                .map(s =>
+                  String(s.t || '')
+                    .split(',')[0]
+                    .trim()
+                )
+                .filter(Boolean)
+            )
+          ].join(', '),
           sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
           wide = E.views.wide.filter(p => set.has(p.sp));
         X.gen[id] = {
@@ -759,9 +776,15 @@ function fishGenera(X, F) {
           decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
           lk: [],
           lsrc: {},
-          qt: cues,
+          qt: cues || marks,
           ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
-          tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+          tl: cues
+            ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
+            : marks
+              ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
+              : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+          // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
+          ...(G.plain ? {plain: G.plain} : {}),
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
           // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
           // then the count.
