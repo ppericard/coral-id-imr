@@ -297,11 +297,13 @@ function doPost_(e){
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
-    if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
+    const who = gate_(p.token, 'players', p.readLive ? 'readLive' : p.readStats ? 'readStats' : 'readAnswers');  // vNEXT: roles step 1
+    if (!who) return json_({ok: false, error: 'token'});
     if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // v130: timed (timEnd_)
     // v145: readStats from the snapshot (statsAdmin_), else the whole log as before; s: the subject (statsSid_: the corals without it)
-    return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin}));
+    return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin, who: who}));
   }
+  if (p.roles || p.roleGrant || p.roleRevoke) return json_(roles_(p));  // vNEXT: roles step 1 (roles_)
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude)
   const {name, pin} = clean_(p);
   if (!name || !/^\d{4}$/.test(pin)) return json_({ok: false, error: 'input'});
@@ -912,6 +914,8 @@ function answers_(q){
     if (row && row[6] === h) {
       out.me = id(name);
       if (!archived_(row) && adminAcct_() !== h) try { adminClaim_(name, h); } catch (e) {}  // v125: the admin's account (adminAcct_)
+      // vNEXT (roles step 1): Pierre's grants, once, to the admin's account (rolesSeed_)
+      if (q.who && !archived_(row) && adminAcct_() === h) try { rolesSeed_(name, h, q.who); } catch (e) {}
     } else if (r) failed_(name);
   }
   const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
@@ -1501,8 +1505,156 @@ function isAdmin_(token){
   if (ok) cache.put(key, '1', 600);
   return ok;
 }
+
+// Roles step 1 (vNEXT; Pierre, 2026-11-13, Q342-Q349: scoped roles, enforced here by one can_() check and an audit log,
+// never by the page; Q364, 2026-11-15: rights are separate, the platform admin may grant himself a role and the grant is
+// logged; ROADMAP "Roles, instances and cohorts", docs/SECURITY.md "Roles and the Audit tab").
+// A grant is one account, one role, one scope; one account may hold several. Kept in the Roles tab (one row a grant:
+// Account, Role, Scope, Since, Code hash), not in columns of the RAs tab: an account holds any number of grants, and the
+// RAs columns are read by position. A grant holds only for the account it was made for (its name and its code hash), and
+// a delete, a merge (its from) or an archive drops its grants (rolesDrop_, rule D7), never moves them.
+// The player role is every account's and is not stored. Scopes: 'platform', 'instance:<id>' (this sheet serves one
+// instance, INSTANCE_: Q343, one shared sheet for now), later 'cohort:<id>' (roles step 2).
+// The admin token (isAdmin_: a GitHub token that can push to the repository) is the platform admin as today and passes
+// every right: whoever can push to main can change this script. Q364's separation holds for the rights an account holds
+// by its grants: an account holding only the platform admin role is refused an instance's players or content until it
+// holds that instance's role. Until a later step lets an account act by its name and code, every privileged endpoint
+// is reached with the token only (caller_), so who may do what is unchanged.
+const INSTANCE_ = 'imr', INST_SCOPE_ = 'instance:' + INSTANCE_;
+const ROLES = {TAB: 'Roles', HEAD: ['Account', 'Role', 'Scope', 'Since', 'Code hash'], SEED: 'ROLES_SEED',
+  // Q342: each role, the scope kind it is granted at and the rights it gives there. The platform admin's grant right
+  // reaches every scope (Q364: he may grant himself a role); every other right is the grant's own scope only.
+  DEF: {
+    admin: {at: 'platform', rights: ['platform', 'grant']},  // the code, the base database, creating instances
+    owner: {at: 'instance', rights: ['players', 'settings', 'grant']},  // grants roles in the instance, its players and settings
+    editor: {at: 'instance', rights: ['content']},  // every right on the instance's content, no code, no players' data
+    trainer: {at: 'instance', rights: ['cohorts']}  // creates cohorts and follows them (roles step 2); no content
+  },
+  // Pierre today (the task of 2026-11-15): platform admin, and owner and content editor of the IMR instance. Given once
+  // to the admin's account (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
+  SEEDS: [['admin', 'platform'], ['owner', INST_SCOPE_], ['editor', INST_SCOPE_]]};
+const scopeOk_ = (role, scope) => !!ROLES.DEF[role] && (ROLES.DEF[role].at === 'platform' ? scope === 'platform' : scope === INST_SCOPE_);
+// The grants the Roles tab holds, as {name (lower case), role, scope, h}.
+function grants_(){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB);
+  if (!sh || sh.getLastRow() < 2) return [];
+  return sh.getRange(2, 1, sh.getLastRow() - 1, ROLES.HEAD.length).getValues().filter(r => r[0])
+    .map(r => ({name: lc_(r[0]), role: String(r[1]), scope: String(r[2]), h: String(r[4])}));
+}
+// can_(who, right, scope): may this caller use this right in this scope? who: {token: true, id} (the admin token), or
+// {name, h, id} (an account whose code was checked by the caller), or null (nobody: refused).
+function can_(who, right, scope){
+  if (!who) return false;
+  if (who.token) return true;
+  const k = lc_(who.name);
+  if (!k || !who.h) return false;
+  return grants_().some(g => {
+    const d = g.name === k && g.h === String(who.h) && ROLES.DEF[g.role];
+    if (!d || d.rights.indexOf(right) < 0 || g.scope !== d.at && g.scope.indexOf(d.at + ':') !== 0) return false;
+    return g.role === 'admin' && right === 'grant' ? true : g.scope === scope;
+  });
+}
+// The caller of a privileged endpoint: today the admin token only (its id in the Audit tab: tokId_, never the token).
+const tokId_ = t => 'gh:' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, anonSalt_() + '|tok|' + t)).slice(0, 8);
+function caller_(token){
+  const t = String(token || '');
+  return isAdmin_(t) ? {token: true, id: tokId_(t)} : null;
+}
+// The Audit tab: one row per privileged action (Q342): Time, Admin id (the caller's: an account's anonymous id aid_, or
+// the token's tokId_; never a name), Action (a fixed word of the code, with a role and "(self)" for a grant), Scope,
+// Result ('ok' or the error answered), Target id (the anonymous id of the account it is about, never a name; blank when
+// none). Every change is written; a read is not (the admin page reads every minute: Players › Activity's readLive writes
+// nothing); a refusal is written at most AUDIT.DENY times every 6 hours (over_; anyone can send one). Nothing reads it
+// in normal operation: it outlives the accounts it names by id only (rule D7).
+const AUDIT = {TAB: 'Audit', HEAD: ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id'], DENY: 20};
+function audit_(id, action, scope, result, target){
+  try { sheet_(AUDIT.TAB, AUDIT.HEAD).appendRow([new Date(), safe_(id || ''), safe_(action), safe_(scope), safe_(result), safe_(target || '')]); } catch (e) {}
+}
+const auditOf_ = out => (out && out.ok ? 'ok' : String(out && out.error || 'error'));
+// The one gate of every privileged endpoint: the caller if can_ lets them use this right in this scope, else null, the
+// refusal audited (capped). Not under the script lock: a flood of refusals never holds up the players' saves.
+function gate_(token, right, action, scope){
+  const who = caller_(token), sc = scope || INST_SCOPE_;
+  if (can_(who, right, sc)) return who;
+  if (!over_('auditdeny', AUDIT.DENY)) audit_(who ? who.id : '', action, sc, 'denied', '');
+  return null;
+}
+// Grants of an account removed from normal operation (deleteAccount_, a merge's from, an archive): dropped, never moved
+// to another account, one audit row each (by: the caller's id). Under the script lock (the caller holds it).
+function rolesDrop_(name, by){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB);
+  if (!sh || sh.getLastRow() < 2) return 0;
+  const k = lc_(name), v = sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues(), id = aid_(name);
+  let n = 0;
+  for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) {
+    sh.deleteRow(i + 2); n++;
+    audit_(by, 'revoke ' + (ROLES.DEF[v[i][1]] ? v[i][1] : '?') + ' (account removed)', /^(platform|instance:[a-z0-9]+)$/.test(String(v[i][2])) ? String(v[i][2]) : '?', 'ok', id);
+  }
+  return n;
+}
+// One grant written (or found already held) for the live account (name, h). Under the script lock (the caller holds it).
+function grantPut_(name, h, role, scope, by, self){
+  const sh = sheet_(ROLES.TAB, ROLES.HEAD), k = lc_(name), act = 'grant ' + role + (self ? ' (self)' : '');
+  if (grants_().some(g => g.name === k && g.role === role && g.scope === scope && g.h === String(h))) { audit_(by, act, scope, 'held', aid_(name)); return 'held'; }
+  sh.appendRow([safe_(name), role, scope, new Date(), safe_(h)]);
+  audit_(by, act, scope, 'ok', aid_(name));
+  return 'ok';
+}
+// Pierre's grants (ROLES.SEEDS), given once to the admin's account the first time the admin page reads the answer log
+// with the token, signed in to it (answers_, its code checked): a property marks it done, so a revoke or a delete is
+// never silently granted again, and no other account ever gets it this way. Audited as self-grants by the token (Q364).
+function rolesSeed_(name, h, who){
+  const pr = PropertiesService.getScriptProperties();
+  if (pr.getProperty(ROLES.SEED)) return false;
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return false;  // busy: the admin page's next read tries again
+  try {
+    if (pr.getProperty(ROLES.SEED) || adminAcct_() !== String(h)) return false;
+    const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0,
+      row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null;
+    if (!row || row[6] !== h || archived_(row)) return false;
+    ROLES.SEEDS.forEach(([role, scope]) => grantPut_(String(row[0]), h, role, scope, who.id, true));
+    pr.setProperty(ROLES.SEED, String(Date.now()));
+    return true;
+  } finally { lock.releaseLock(); }
+}
+// POST {roles: 1, token} → {ok, grants: [{name, id, role, scope, since}]}: every grant (the token sees names already).
+// POST {roleGrant: {account, role, scope}, token} → {ok, result: 'ok' | 'held'}; {roleRevoke: {account, role, scope},
+// token} → {ok, result: 'ok' | 'none'}. Errors: token, input (an unknown role, or a scope it is not granted at), user (no
+// such account), archived. Each grant and revoke is audited, a self-grant marked "(self)" (Q364): the account's own, or,
+// with the token, the admin's account's (ADMIN_ACCT). No page sends them yet (roles step 1: no granting UI).
+function roles_(p){
+  const g = p.roleGrant || p.roleRevoke, act = p.roleGrant ? 'grant' : 'revoke';
+  if (!g) {
+    if (!gate_(p.token, 'grant', 'roles')) return {ok: false, error: 'token'};
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), salt = anonSalt_();
+    const rows = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 4).getValues().filter(r => r[0]) : [];
+    return {ok: true, grants: rows.map(r => ({name: String(r[0]), id: aid_(String(r[0]), salt), role: String(r[1]), scope: String(r[2]), since: new Date(r[3]).getTime() || 0}))};
+  }
+  if (typeof g !== 'object') return {ok: false, error: 'input'};
+  const role = String(g.role || ''), scope = String(g.scope || ''), name = String(g.account || '').trim().slice(0, 40);
+  if (!scopeOk_(role, scope) || !name) return {ok: false, error: 'input'};
+  const who = gate_(p.token, 'grant', act + ' ' + role, scope);
+  if (!who) return {ok: false, error: 'token'};
+  const lock = lock_();
+  try {
+    const ra = sheet_('RAs', HEAD), r = find_(ra, name), row = r ? ra.getRange(r, 1, 1, HEAD.length).getValues()[0] : null,
+      self = !!row && (who.token ? row[6] === adminAcct_() : lc_(who.name) === lc_(row[0]) && who.h === row[6]);
+    const fail = e => (audit_(who.id, act + ' ' + role + (self ? ' (self)' : ''), scope, e, aid_(name)), {ok: false, error: e});
+    if (!row) return fail('user');
+    if (archived_(row)) return fail('archived');
+    if (p.roleGrant) return {ok: true, result: grantPut_(String(row[0]), row[6], role, scope, who.id, self)};
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), k = lc_(row[0]);
+    const v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues() : [];
+    let n = 0;
+    for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k && String(v[i][1]) === role && String(v[i][2]) === scope) { sh.deleteRow(i + 2); n++; }
+    audit_(who.id, 'revoke ' + role + (self ? ' (self)' : ''), scope, n ? 'ok' : 'none', aid_(row[0]));
+    return {ok: true, result: n ? 'ok' : 'none'};
+  } finally { lock.releaseLock(); }
+}
+
 function reports_(token){
-  if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
+  if (!gate_(token, 'players', 'readReports')) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Reports'), key = {}; Object.keys(WHY).forEach(k => key[WHY[k]] = k);
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   // v58: verified 2 = the reporter is an archived record (Players › Archived), so the Inbox says so without the player
@@ -1547,8 +1699,15 @@ function rosterChanged_(){
   try { PropertiesService.getScriptProperties().setProperty('ROSTER_AT', String(Date.now())); } catch (e) {}
   statsDirty_(true);  // v134: the pooled stats' snapshot, its player data blanked now and rebuilt without the account (rule D7)
 }
+// The Analyses report holds per-player results: the instance's players right (gate_). A put is audited (roles step 1).
 function analyses_(p){
-  if (!isAdmin_(String(p.token || ''))) return {ok: false, error: 'token'};
+  const act = p.analysesGet ? 'analysesGet' : 'analysesPut', who = gate_(p.token, 'players', act);
+  if (!who) return {ok: false, error: 'token'};
+  const out = analysesDo_(p);
+  if (act === 'analysesPut') audit_(who.id, act, INST_SCOPE_, auditOf_(out), '');
+  return out;
+}
+function analysesDo_(p){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), a = ss.getSheetByName('Answers');
   if (p.analysesGet) {
     // v113: the subject asked, else the replayed one (the corals); one it does not know is refused, never read as the corals'
@@ -1726,7 +1885,7 @@ function events_(p){
 // newest first, the last 3000. Admins only (isAdmin_), like the reports. With pages: 1 (v30), the Pages tab instead, the
 // last PAGES_READ rows: one a visit, kept apart so that errors and load times never push them out of the window.
 function readEvents_(token, pages){
-  if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
+  if (!gate_(token, 'players', pages ? 'readPages' : 'readEvents')) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(pages ? PAGES_TAB : 'Events');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - (pages ? PAGES_READ : 3000));
@@ -2261,7 +2420,9 @@ function sxMove_(from, into){ const had = sxPut_(aid_(from), false); if (had && 
 // photo statistics only, Q86) and the reports too, with Verified 0: their content stays (a bad photo stays a bad photo),
 // open ones stay in the admin's Inbox as from a removed account, and nobody is ever thanked for them. Under the script
 // lock (the caller holds it). Returns {ok, answers, reports}: how many rows were deleted or relabelled.
-function deleteAccount_(name, all){
+// vNEXT (roles step 1): by, the id of who deletes (the admin's caller id, or the player's own anonymous id for a
+// self-delete), written in the Audit tab beside each grant the account loses (rolesDrop_).
+function deleteAccount_(name, all, by){
   const del = '~deleted ' + aid_(name);
   { const ra = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('RAs'), r = ra ? find_(ra, name) : 0; if (r) adminDrop_(ra.getRange(r, 7).getValue()); }  // v125
   const answers = all ? dropRows_('Answers', name) : relabel_('Answers', 1, name, del);
@@ -2270,6 +2431,7 @@ function deleteAccount_(name, all){
   pagesDrop_(new Set([aid_(name)]));
   ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, name));  // every subject's replay
   dropRows_(GROUPS.TAB, name, 2);  // v48: out of every beta group
+  rolesDrop_(name, by || '');  // vNEXT: its roles go (rule D7); the Audit tab keeps its rows, by anonymous id only
   sxMove_(name, all ? '' : del);  // v115: out of the statistics stays out, under the id the answers keep
   // Names merged into it before point nowhere now (Codex review #600): their devices are told the account was removed,
   // and their answers and reports never go under the deleted name (nor to someone who takes it later).
@@ -2304,7 +2466,7 @@ function selfDelete_(p){
     // archive; this device's account is not this one, so nothing is deleted (Codex review #603).
     if (typeof p.dacct === 'string' && p.dacct) { let d = {}; try { d = JSON.parse(readData_(String(row[0]), String(row[7] || '')).json || '{}') || {}; } catch (e) {}
       if (d._acct && d._acct !== p.dacct) return {ok: false, error: 'archived'}; }
-    const n = String(row[0]), out = deleteAccount_(n, true);
+    const n = String(row[0]), out = deleteAccount_(n, true, aid_(n));
     sheet_('Removed', REMOVED).appendRow([safe_(n), h, '', new Date()]);
     return {ok: true, deleted: true, answers: out.answers, reports: out.reports};
   } finally { lock.releaseLock(); }
@@ -2333,8 +2495,25 @@ function redact_(name, into){
   });
   return n;
 }
+// vNEXT (roles step 1): the instance's players right (gate_), and one Audit row per change, its target by anonymous id
+// (never the name the request carries). The action is told as usersDo_ below picks its branch; the list and userData
+// are reads, not audited.
 function users_(p){
-  if (!isAdmin_(String(p.token || ''))) return {ok: false, error: 'token'};
+  const act = p.userBoard ? 'userBoard' : p.userGroup ? 'userGroup' : p.userStart ? 'userStart' : p.statsExclude ? 'statsExclude'
+    : p.userData ? 'userData' : Array.isArray(p.anonDelete) ? 'anonDelete' : p.userArchive ? 'userArchive' : p.userDelete ? 'userDelete'
+    : p.userMerge ? 'userMerge' : 'users';
+  const who = gate_(p.token, 'players', act);
+  if (!who) return {ok: false, error: 'token'};
+  if (act === 'users' || act === 'userData') return usersDo_(p, who);
+  const id = x => aid_(String(x || '')), m = p.userMerge || {};
+  const target = act === 'userBoard' ? id(p.userBoard) : act === 'userStart' ? id(p.userStart) : act === 'userDelete' ? id(p.userDelete)
+    : act === 'userGroup' ? (Array.isArray(p.userGroup) ? '' : id(p.userGroup)) : act === 'statsExclude' ? (SX_ID.test(String(p.statsExclude)) ? String(p.statsExclude) : '')
+    : act === 'userArchive' ? id((p.userArchive || {}).from) : act === 'userMerge' ? id(m.from) + ' > ' + id(m.into) : '';
+  const out = usersDo_(p, who);
+  audit_(who.id, act, INST_SCOPE_, auditOf_(out), target);
+  return out;
+}
+function usersDo_(p, who){
   const ss = SpreadsheetApp.getActiveSpreadsheet(), ra = sheet_('RAs', HEAD);
   const row_ = name => { const r = find_(ra, name); return r ? {r: r, v: ra.getRange(r, 1, 1, HEAD.length).getValues()[0]} : null; };
   const removed_ = (name, h, into) => sheet_('Removed', REMOVED).appendRow([safe_(name), h, safe_(into || ''), new Date()]);
@@ -2462,6 +2641,7 @@ function users_(p){
         relabel_('Removed', 3, from, into);
         redact_(from, into);  // its name in the log tabs follows it, so deleting the archive leaves none (Codex review #603)
         dropRows_(GROUPS.TAB, from, 2);  // v58: an archive is in no beta group
+        rolesDrop_(from, who.id);  // vNEXT: nor holds any role (rule D7): the name is free again at once, so a grant kept by name would pass to whoever takes it
         sxMove_(from, into);  // v115: its answers stay out of the statistics if they were
         rplDrop_(from);  // the replay (v28; every subject's) is made again under the new name when asked
         rosterChanged_();  // v55: the three caches (achs15 too) and the Analyses report
@@ -2470,7 +2650,7 @@ function users_(p){
       if (p.userDelete) {
         const u = row_(String(p.userDelete)); if (!u) return {ok: false, error: 'user'};
         const name = String(u.v[0]);
-        const out = deleteAccount_(name, !!p.answers);
+        const out = deleteAccount_(name, !!p.answers, who.id);
         removed_(name, u.v[6], '');
         return out;
       }
@@ -2495,6 +2675,7 @@ function users_(p){
       // v48: the merged name's beta groups join the kept name's (each once).
       groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
+      rolesDrop_(from, who.id);  // vNEXT: the merged-away account's roles go, never to into (rule D7; a grant is given, not merged)
       sxMove_(from, '');  // v115: the kept name's choice holds for the answers it takes
       ['RAs', DATA_TAB, 'By genus'].concat(rplTabs_()).forEach(t => dropRows_(t, from));  // every subject's replay
       redact_(from, into);  // v55: its name in the log tabs becomes the name it joined
