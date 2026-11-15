@@ -127,8 +127,12 @@ test('typeMatchIn: the same reading as before, fish common names and coral gener
     close = 0,
     none = 0;
   [...textsOf(fishRaw.filter((_, i) => i % 7 === 0)), 'Reef goby z'].forEach(t => {
-    const m = C.typeMatchIn(fishSome, t, C.typeNormAll);
-    assert.deepStrictEqual(m, matchRef(fishSome, t, C.typeNormAll), t);
+    const m = C.typeMatchIn(fishSome, t, C.typeNormAll),
+      ref = matchRef(fishSome, t, C.typeNormAll);
+    // A name two species share (Twotone / Two-tone wrasse) reads as both since Q319 (shared), where the code before
+    // read "which one?" (near) on the same species: the sample meets one since the main names came first (Q376).
+    if (m && m.shared) assert.deepStrictEqual([...m.shared].sort(), [...ref.near].sort(), t);
+    else assert.deepStrictEqual(m, ref, t);
     if (!m) none++;
     else if (m.near) near++;
     else if (m.exact) exact++;

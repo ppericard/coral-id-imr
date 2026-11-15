@@ -139,6 +139,9 @@ test('the fish units from the players copy: the same photos in play, covers and 
   vm.createContext(ctx);
   vm.runInContext(
     'let FISH = null, FISHRAW = null, CUR = null, FISHF = null;\n' +
+      // a scientific genus's species line names each species by the player's first name (cnFirst; imrNow: not at IMR)
+      block(src, 'const cnList = s =>', '\n};\n', {through: 1, file: 'app.js'}) +
+      'const imrNow = () => false;\n' +
       block(src, 'const VIEWS = [', '];\n', {through: 1, file: 'app.js'}) +
       block(src, 'const allPhotos = g =>', '// applyCuration(d, c) and applySlots', {file: 'app.js'}) +
       block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
