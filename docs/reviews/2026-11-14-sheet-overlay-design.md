@@ -305,7 +305,7 @@ list that changes.
 | Layer | What it holds | Where it is stored | Who writes it |
 |---|---|---|---|
 | **Sources** | The tree (WoRMS, the identification key in force), the names (rule S2), the key's groups (rule S3), presence near the instance's centre (rule C8), our own sourced sheet lines (fish `marks`, `life`, `apart`, `juv`; coral `crit`, `info`, `plain`…), and pairs from a published reference any instance may use (the Coral Finder's, with its rights tag) | `tools/fish_source.json` (its reference parts), `tools/fish_sheets.json`, the coral tools; built into `fish.json` and `data.json` | Agents, through PRs (rules C2, C5) |
-| **The instance** | Its circles, its declared look-alike pairs and their words, its course texts (fish `cues` and `phase`, coral `imr` and `mn`), its tag (`imr`, `imrWith`, the sub-entries), its starter core (`start`), its reference list (the IMR PDF, a presence input), its centre | Today, mixed into the source files above, and `tools/instance.json` for the centre; later, the instance's own files that `tools/instance.json` names (step 5) | Agents, from the organisation's documents, through PRs |
+| **The instance** | Its circles, its declared look-alike pairs and their words, its course texts (fish `cues` and `phase`, coral `imr` and `mn`), its tag (`imr`, `imrWith`, the sub-entries), its starter core (`start`), its reference list (the IMR PDF, a presence input), its centre | Until step 5, mixed into the source files above, and `tools/instance.json` for the centre; since step 5 (built 2026-11-15), the instance's own files that `tools/instance.json` names (`tools/instances/imr/`), for the fields step 5 lists | Agents, from the organisation's documents, through PRs |
 | **The editor's edits** | Every change the instance's content editor makes: text slots, circles, pairs | The instance's curation, in each subject's part (call (i)) | The content editor, through the draft and Publish only (rule A1) |
 
 - **What today's IMR content becomes: the IMR instance's layer.** That means the IMR presentation's circles, cues,
@@ -703,6 +703,17 @@ them before it merges.
    words, cues, phase lines, `start`) and the coral IMR fields move to the files that `tools/instance.json` names (an
    `id` and a `name` join its `centre`). The build composes them, and `fish.json` and `data.json` stay byte for byte
    (a test). *Needs:* nothing. It is easy to undo, and needed before a second instance.
+   *Built (2026-11-15):* `tools/instance.json` gains `id` `imr`, `name` and `layer`, which names
+   `tools/instances/imr/fish.json` (every teaching node's circle, cues, look lines and phase lines, the sub-entries'
+   cues, `start`, the declared `look` groups) and `tools/instances/imr/coral.json` (`imrg`, each genus's `ig`, `imr`
+   and `mn`). `tools/instance.py` composes them: `tools/build_fish.py` reads `tools/fish_source.json` with the fish
+   layer laid on, and stops on a base that still carries a layer field; `data.json` keeps a copy of the coral fields,
+   laid on by `tools/datajson.py`, which refuses a `data.json` edit of them (docs/ARCHITECTURE.md "The instance's
+   layer"). The byte-for-byte test (`tests/instance.test.js`) takes the layer's fields off `fish.json` and `data.json`,
+   lays them again from the layer files and compares with the committed files; a changed layer fails it. Left in the
+   sources for now, each easy to move later: the coral pairs from the IMR lecture (mixed with the Coral Finder's in
+   `look` and `lsrc`; with step 8), the slide references (`sl`, `rsl`), the IMR tag (`src: imr`, `sign`, the entries'
+   IMR names), the coral slate and `deploy`.
 6. **Roles step 1** (the roles plan): `can_()`, the roles table, the Audit tab, and the content audit row of the
    admin's Publish. *Needs:* question (j).
 7. **The editors' relay** (roles step 4): Publish with no token for content editors, validation from the slot lists,

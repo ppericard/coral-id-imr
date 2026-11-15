@@ -3,6 +3,8 @@
 # the references. An exception to rule C1, made by Pierre himself. The ID tips themselves are corrected in
 # tools/id_tips.txt (tools/apply_id_tips.py); this script corrects the lecture notes (gen[g].imr, review slides included),
 # the mnemonic, the short description (sum) and Herpolitha's "to check" note. Re-runnable: python3 tools/apply_imr_corrections.py
+# The lecture notes and the mnemonic live in the IMR instance's coral layer (tools/instances/imr/coral.json, since step 5
+# of docs/reviews/2026-11-14-sheet-overlay-design.md): written there, then laid on data.json.
 #
 # - Seriatopora: corallites in neat rows, not "black" (Pierre has seen pale ones at Dauin; Corals of the World,
 #   S. hystrix: "Corallites are arranged in neat rows along branches", colour pink, cream, blue or green; Wikipedia and
@@ -22,6 +24,7 @@
 #   like a mushroom coral, but many mouths along the furrow; the "to check" note becomes an "Other sources" note.
 import json, os
 from datajson import dump  # the one data.json layout (one genus per line)
+from instance import CORAL_AFTER, coral_compose, load_layer, write_layer  # the IMR instance's coral layer
 
 P = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data.json')
 # genus -> field -> [(old, new)]; a pair whose old text is gone and new text is there is already applied.
@@ -52,10 +55,13 @@ HERPO_INFO = ('Solitary or colonial? Both are said, and both are true: the IMR l
 
 
 def main():
-    d = json.load(open(P, encoding='utf-8'))
+    # The lecture notes (imr) and the mnemonic (mn) are the IMR instance's: edited in its coral layer file
+    # (tools/instance.py), then laid on data.json; sum, check and info are data.json's own.
+    lay = load_layer('coral')
+    d = coral_compose(json.load(open(P, encoding='utf-8')), lay)
     for n, fields in FIX.items():
-        g = d['gen'][n]
         for k, pairs in fields.items():
+            g = lay['gen'][n] if k in CORAL_AFTER else d['gen'][n]
             for old, new in pairs:
                 if isinstance(g[k], list):
                     if old in g[k]:
@@ -64,13 +70,14 @@ def main():
                 else:
                     g[k] = g[k].replace(old, new)
                     assert new in g[k], (n, k, new)
-    if d['gen']['Seriatopora'].get('mn', '').startswith('"Serius Black"'):
-        d['gen']['Seriatopora']['mn'] = SERIA_MN
-    assert d['gen']['Seriatopora']['mn'] == SERIA_MN
+    if lay['gen']['Seriatopora'].get('mn', '').startswith('"Serius Black"'):
+        lay['gen']['Seriatopora']['mn'] = SERIA_MN
+    assert lay['gen']['Seriatopora']['mn'] == SERIA_MN
     h = d['gen']['Herpolitha']
     h.pop('check', None)
     h['info'] = [x for x in h.get('info', []) if not x.startswith('Solitary or colonial?')] + [HERPO_INFO]
-    dump(d, P)
+    write_layer('coral', lay)
+    dump(coral_compose(d, lay), P)
 
 
 if __name__ == '__main__':
