@@ -1,7 +1,7 @@
 # A nudibranch game mode for the Philippines (preliminary study, 2026-11-15)
 
-Read-only study for the ROADMAP row "More subjects". It changes no app code, data file, photo or account. Pierre,
-2026-11-15 (translated from French): "a preliminary study on the potential of adding a game mode for nudibranchs, a mode
+Read-only study for the ROADMAP row "More subjects". It changes no app code, data file, photo or account. Pierre, as relayed
+on 2026-11-15 (translated from French): "a preliminary study on the potential of adding a game mode for nudibranchs, a mode
 for nudibranchs in the Philippines in general rather than just Dauin. Starting by putting forward (1) the most common
 nudibranchs and (2) the most sought-after nudibranchs."
 
@@ -16,7 +16,9 @@ abstract; **[guess]** = my judgement, not checked.
 - iNaturalist API (`api.inaturalist.org`, v1 and v2): every Research Grade observation in the Philippines (place 6873) of
   Nudibranchia (23,909), Sacoglossa (1,726), Pleurobranchida (481), Cephalaspidea (1,558) and Aplysiida (415). Paged by
   id, 200 a request, through `tools/inat.py` (rule C7: paced at 1 s, the project's User-Agent). Then the taxa, places,
-  and worldwide licence counts per species (`species_counts`, 100 taxa a request).
+  and worldwide licence counts per species (`species_counts`, 100 taxa a request). One two-row test request, to check
+  the v2 field syntax, was sent with `curl` and the same User-Agent. Of the 28,089 observations pulled, 28,045 are
+  identified to species or below: the per-species counts use those.
 - WoRMS REST API (`marinespecies.org/rest`): the record of each of the 452 names, their English vernaculars, and the
   revised genera and species in §2.3.
 - GBIF occurrence API (`api.gbif.org`): Nudibranchia (order key 980) in country PH, faceted by dataset and species.
@@ -33,11 +35,15 @@ abstract; **[guess]** = my judgement, not checked.
    Oriental Mindoro, Negros Oriental and Cebu hold 9-13% each. A ranking by **distinct observers** (the fish's iNat
    signal) is robust to this. A province-balanced ranking gives the same order (Spearman 0.95), with 41 of the top 50 the
    same **[measured]**.
-3. **"Most common" and "most sought-after" are two different lists.** Only **23 of the 50 most-viewed species**
-   (Wikipedia) are in the **50 most common**. The top of the sought-after list is the "Shaun the Sheep" leaf slug
-   (*Costasiella kuroshimae*, a sacoglossan), the "sea bunny" (*Jorunna parva*), the Spanish dancer (*Hexabranchus
-   sanguineus*), the "Pikachu" (*Thecacera pacifica*) and Coleman's ghost melibe (*Melibe colemani*). None of the four
-   nudibranchs is in the common nudibranch top 80, and the leaf slug is not a nudibranch at all **[measured]**.
+3. **"Most common" and "most sought-after" differ most at the very top.** Among nudibranchs, 30 of the 50 most-viewed
+   species (Wikipedia) are in the 50 most common. But the most sought-after are rarely met:
+   - the "sea bunny" (*Jorunna parva*, 262nd by observers);
+   - the "Pikachu" (*Thecacera pacifica*, 176th);
+   - Coleman's ghost melibe (*Melibe colemani*, 83rd);
+   - the "Shaun the Sheep" leaf slug (*Costasiella kuroshimae*), the most viewed of all, is not a nudibranch.
+
+   The Spanish dancer is the exception once its two species are counted together: *H. sanguineus* is 144th, but *H.
+   lacer*, the one mostly recorded here, is 42nd **[measured]**.
 4. **Several sought-after slugs are not nudibranchs.** Sacoglossans (*Costasiella*, *Cyerce*, *Elysia*) are among the
    most viewed, faved and named on dive pages. The reference guide covers "nudibranchs and sea slugs" together. My
    recommendation is a **sea-slug subject**: nudibranchs first, the other groups later (§2.2) **[guess]**.
@@ -157,8 +163,9 @@ WoRMS records read on 2026-11-15 **[read]**: each name's status, accepted name a
 - **Robustness check.** A province-balanced share was also computed: for Batangas, Romblon, Oriental Mindoro, Negros
   Oriental, Cebu and Bohol, the share of the province's nudibranch observers who recorded the species, averaged over the
   six. It ranks the 352 confirmed species almost alike (Spearman 0.95), and 41 of the top 50 are the same **[measured]**.
-  The 9 it brings in are mostly Romblon specialities (*Phyllodesmium* species, *Melibe colemani*, *Doto ussi*), because
-  it gives Romblon's 44 observers the same weight as Batangas's 220. Kept as a column (`balanced_share`), not as the
+  The 9 it brings in are all over-represented in Romblon: 23% to 84% of their observations, against 13% for all
+  nudibranchs; 5 of them above 40% **[measured]**. The cause is that it gives Romblon's 44 observers the same weight as
+  Batangas's 220. Kept as a column (`balanced_share`), not as the
   ranking **[guess]**.
 
 ### 3.2 The ranked list
@@ -198,7 +205,7 @@ stated.
 
 ### 4.1 iNaturalist faves per observation: weak
 
-- **27,243 of the 28,045 Philippine sea-slug observations (97%) have no fave.** 714 have one **[measured]**.
+- **27,243 of the 28,045 species-level Philippine sea-slug observations (97%) have no fave.** 714 have one **[measured]**.
 - The rate rests on a handful of faves per species and follows who is active on the site.
 - Its top, among species with 30 or more observations:
   1. *Costasiella kuroshimae* (0.24);
@@ -224,8 +231,8 @@ stated.
   - **P8**: DAN, "On the Hunt" (2017, Anilao);
   - **P9**: X-Ray Mag, "Romblon: mystical island of phantoms, ghosts and butterflies".
 - **Genera or no species only**:
-  - P3: scuba.com "Nudibranchs, 5 great sites": *Hypselodoris* and *Phyllidia* for Anilao; its species are tied to
-    Indonesia;
+  - P3: scuba.com "Nudibranchs, 5 great sites": *Hypselodoris* and *Phyllidia* for Anilao; of its species, *Phyllidia
+    varicosa* is tied to Bali and the others to no place;
   - P5: Dive The World, Dauin: *Chromodoris*, *Phyllidia*, *Nembrotha*, *Tambja*;
   - Atlantis Dauin and Puerto Galera "Top 5"; Bluewater "Anilao trip report 2018"; Sea Explorers Dauin.
 - **Not readable**:
@@ -285,10 +292,14 @@ The cover species of the regional guides could not be checked from public pages.
 - **Proposed sought-after list**: Wikipedia pageviews (4.3) over the confirmed species, with the web mentions and the fave
   rate as tags only (Appendix B.1).
 - **Overlap with "common"** **[measured]**:
-  - 23 of its top 50 are in the common top 50;
-  - none of its top 5 is in the common nudibranch top 50: two are sacoglossans (*Costasiella kuroshimae*, and *Elysia
-    marginata*, the most common sacoglossan), three are nudibranchs ranked 144th to 262nd;
-  - only 35 of its top 50 are nudibranchs.
+  - like for like, nudibranchs only: 30 of the 50 most-viewed nudibranchs are in the common top 50. With every group
+    ranked together, 26 of 50;
+  - the divergence is at the top. None of the 5 most viewed is in the common nudibranch top 50:
+    - two are sacoglossans: *Costasiella kuroshimae*, and *Elysia marginata*, the most common sacoglossan;
+    - three are nudibranchs ranked 144th to 262nd;
+  - the Spanish dancer caveat (§2.3): the pages and Wikipedia say "Spanish dancer" for either *Hexabranchus* species.
+    Counted as one item, it is common (*H. lacer*, 42nd);
+  - 35 of the all-group top 50 are nudibranchs.
 - **What that means for the game**: "sought-after" is not a starting order. A beginner meets the common species first.
   The sought-after list could make:
   - a named set of "stars" with its own achievement;
@@ -307,7 +318,7 @@ Licence classes as the app's rules use them (rule P1; `tools/fetch_fish.py` `OK`
 An observation counts in the best class among its photos. Counts are per observation, since all photos of a question come
 from one observation (rule P4).
 
-- **Philippines** (all 28,045 sea-slug RG observations) **[measured]**:
+- **Philippines** (the 28,045 species-level sea-slug RG observations) **[measured]**:
   - open 1,039 (3.7%);
   - NC 17,253 (61.5%);
   - excluded 9,753 (34.8%).
@@ -326,18 +337,31 @@ from one observation (rule P4).
   - with open photos only, the top 50 reach 8 almost everywhere (49 of 50) but 30 only for 37.
   - **Presence rule.** A photo from abroad is allowed only for a species confirmed in the Philippines (rule C8). The 452
     confirmed species meet it by construction.
+- **The sought-after species are thinner in open photos** **[measured]**:
+
+  | Species | Open, worldwide | NC, worldwide |
+  |---|---|---|
+  | *Goniobranchus rubrocornutus* | 0 | 171 |
+  | *Cyerce nigra* | 3 | 205 |
+  | *Melibe colemani* | 7 | 102 |
+  | *Jorunna parva* | 8 | 135 |
+  | *Thecacera pacifica* | 8 | 259 |
+  | *Costasiella kuroshimae* | 20 | 229 |
+
+  With CC BY-NC they all reach the cap; open photos alone do not.
 - **Rights.** CC BY-NC photos cannot go into a paid or licensed product (ROADMAP "The app as a generic product"). The licence
   tie-break (CC0 / CC BY first among equals) carries over unchanged.
 
 ### 5.2 What is different about nudibranch photos
 
-- **Tiny animals, macro photos.** Many species are millimetres long. *Costasiella kuroshimae* is famous for being tiny:
-  the dive pages tell you to bring magnifiers. Most good photos are macro shots with a flash on a dark background. The
-  fish rubric already treats those as good light (judging/FISH.md, rubric 6) **[read]**.
+- **Tiny animals, macro photos** **[guess]**. Many sea slugs are a few millimetres to a few centimetres long, so most
+  good photos are macro shots with a flash on a dark background. The fish rubric already treats those as good light
+  **[read: judging/FISH.md, rubric 6]**.
 - **The views that matter differ by group** **[guess, to check against the guide before writing a rubric]**:
   - dorids (*Chromodoris*, *Hypselodoris*, *Phyllidia*): a dorsal or dorso-lateral view showing the rhinophores, the
-    gill plume and the mantle's pattern and rim. Phyllidiids need the dorsal tubercles: Stoffels et al. (2016) found the
-    "structure and pattern of the notal tubercles" important for identification **[read: abstract]**;
+    gill plume and the mantle's pattern and rim. Phyllidiids need the dorsal tubercles. Stoffels et al. (2016): "Structure
+    and pattern of the notal tubercles are important characters for identification" **[read: full text,
+    Introduction]**;
   - aeolids (*Pteraeolidia*, *Phyllodesmium*, *Coryphellina*): a lateral view showing the cerata and the oral tentacles;
   - an animal on its back, a ventral view through glass, or a curled-up or swimming animal hides the characters.
 - **Things to exclude or tag.** A nudibranch rubric needs its own tags (the fish's `view` values do not apply):
@@ -346,8 +370,8 @@ from one observation (rule P4).
   - **mating pairs or groups**, several of one kind: fine, like the fish's `s`;
   - **two species in frame**, such as a nudibranch on its prey sponge or hydroid: fine unless the other could be taken
     for the subject (rule P3);
-  - **camouflage**, such as *Phyllodesmium* on its soft coral, or *Melibe colemani* among *Xenia*.
-- **The annotations cannot do the filtering.** Of the 28,045 observations, only 19 are annotated "egg", 32 "juvenile" and
+  - **camouflage**: a slug matching the soft coral or seaweed it lives on **[guess]**.
+- **The annotations cannot do the filtering.** Of the 28,045 species-level observations, only 19 are annotated "egg", 32 "juvenile" and
   192 "adult" **[measured]**. Eggs and juveniles must be caught by the judging pass, as for the fish.
 - **Identification risk in the labels themselves.** Layton, Gosliner & Wilson (2018) delimited 39 *Chromodoris* taxa
   (18 undescribed). "Only five of 39 taxa" showed "stable colour patterns and distinct morphotypes" **[read: abstract]**.
@@ -413,12 +437,13 @@ from one observation (rule P4).
 **Sourced** (rule C2):
 - ***Chromodoris*, the black-lined species.** Layton et al. (2018) found colour patterns unreliable in the genus. They
   give "the first evidence for regional mimicry": *C. colemani* and *C. joshi* match "locally abundant congenerics"
-  **[read: abstract, doi:10.1016/j.ympev.2018.02.008]**. The Philippine species of this set are all in the common top 70:
-  *C. annae*, *C. willani*, *C. lochi*, *C. magnifica*, *C. colemani*, *C. strigata*, *C. alcalai*, *C. dianae*, *C.
-  joshi*. It is the strongest look-alike set, and the one where photo labels are least sure.
+  **[read: abstract, doi:10.1016/j.ympev.2018.02.008]**. 13 *Chromodoris* species are confirmed in the
+  Philippines. Nine of them are in the common top 70: *C. annae*, *C. willani*, *C. lochi*, *C. magnifica*, *C.
+  colemani*, *C. strigata*, *C. alcalai*, *C. dianae*, *C. joshi*. It is the strongest look-alike set, and the one where photo labels are least sure.
 - **Phyllidiidae** (*Phyllidia*, *Phyllidiella*, *Phyllidiopsis*, *Reticulidia*): 10 of the top 50. Stoffels et al.
-  (2016) **[read: abstract, doi:10.3897/zookeys.605.7136]**:
-  - "structure and pattern of the notal tubercles are important characters for identification";
+  (2016) **[read: abstract and Introduction, doi:10.3897/zookeys.605.7136]**:
+  - "Structure and pattern of the notal tubercles are important characters for identification"; "many species cannot be
+    identified based on colouration alone owing to their high intra-specific colour variation";
   - COI confirms the boundaries of the variable *Phyllidia elegans*, *P. varicosa* and *Phyllidiopsis krempfi*;
   - *Phyllidia* cf. *babai* hides 2 to 3 species.
 - ***Hexabranchus sanguineus* / *H. lacer*** (the two Spanish dancers): WoRMS cites Tibiriçá et al. 2023 **[read:
@@ -437,8 +462,9 @@ from one observation (rule P4).
 
 **Carries over** (rule S1: one engine, a subject is data):
 - a `core.js` `SUBJECTS` entry and its `UNITS` functions, opened to a group first (`open: 'group'`, S1);
-- the generic Tree `taxtree.js`. ARCHITECTURE already says another subject, "a nudibranch or plant key", "needs only data:
-  its ranks in `SUBJECTS` `sheets`, its tree on its units";
+- the generic Tree `taxtree.js`. On the admin's covers by node, ARCHITECTURE ("Fish content") already says: "Another
+  subject (a nudibranch or plant key, or the corals at more than one rank) needs only data: its ranks in `SUBJECTS`
+  `sheets`, its tree on its unit page (…), and its covers read by node id at build";
 - the photo pipeline: candidates, judging, R2, the licence tie-break;
 - presence (`tools/presence.py`: one rule, `kind` per subject);
 - `tools/inat.py`;
@@ -673,7 +699,7 @@ Ranked by distinct Research Grade observers in the Philippines, then half-degree
 
 ### B.1 English Wikipedia pageviews, the top 40 among the 452 confirmed sea slugs
 
-12 months, 2025-11 to 2026-10, users only. The rank in group is the species' commonness rank within its own group.
+12 months, 2025-11 to 2026-10, users only. The rank in group is the species' commonness rank within its own group. "In common top 50" means the nudibranch top 50 of Appendix A.
 
 | # | Species | Group | Wikipedia views, 12 months | PH observers (rank in group) | Faves per obs. | Web mentions | In common top 50 |
 |---|---|---|---|---|---|---|---|
