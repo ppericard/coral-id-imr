@@ -420,7 +420,8 @@ both:
 - **So at this note's merge: 0 species with a verified distinct juvenile, 2 leads** (*Hexabranchus*, *Jorunna
   funebris*). *Hexabranchus lacer*, the star added by Q377, has the most juvenile annotations of the 452 species (43).
   **Update (sources note §1.5)**: the *Hexabranchus* lead now has a readable source and 43 photographed juveniles; the
-  +5 for *H. lacer* is proposed there, not applied. The *P. forskalii* juveniles (15) look like small adults **[measured:
+  +5 for *H. lacer* was proposed there, and applied since with the candidate photos (`photos.juvenile`,
+  `tools/fetch_seaslugs.py`). The *P. forskalii* juveniles (15) look like small adults **[measured:
   their photos]**.
 
 ### 5.3 The photo target per species (decided, Q377; to revisit after the first judging pass)
