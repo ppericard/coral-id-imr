@@ -53,6 +53,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_fish as ff  # noqa: E402  (the cached, paced Net; IWP, in_iwp, OK)
 import fetch_fishbase as fbase  # noqa: E402  (FishBase's rules and records)
+from fish_inforce import in_force  # noqa: E402  (the circles in force: the content editor's, design note v2 step 3)
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "tools" / "fish_refs.json"
@@ -344,15 +345,20 @@ def fb_objs(s, fb, n=FB_MAX):
     return out
 
 
-def build(net, F, only=()):
+def build(net, F, only=(), live=None):
+    """live: fish.json with the circles in force (tools/fish_inforce.py), which choose the circle-1 genera; the species
+    photographed stay fish.json's (F), so a family the content editor takes out of the game keeps its reference photos for
+    the day it comes back."""
     sp = {s["id"]: s for s in F["species"]}
     entries = [t for t in F["teach"] if t.get("level") == 1 and (not only or t["id"] in only)]
     game = {t["id"]: [sp[i] for i in t.get("species", []) if i in sp and not sp[i].get("out") and ff.photo_taxon(sp[i])] for t in entries}
-    gen = {}  # entry id -> {genus name: [species]}, app.js fishGenera: circle-1 entries, circle-1 species
+    tc = {t["id"]: t.get("circle") for t in (live or F)["teach"]}
+    sc = {s["id"]: s.get("circle") for s in (live or F)["species"]}
+    gen = {}  # entry id -> {genus name: [species]}, app.js fishGenera: circle-1 entries, circle-1 species (in force)
     for t in entries:
-        if t.get("circle") == 1:
+        if tc.get(t["id"]) == 1:
             for s in game[t["id"]]:
-                if s.get("circle") == 1:
+                if sc.get(s["id"]) == 1:
                     gen.setdefault(t["id"], {}).setdefault(s["name"].split()[0], []).append(s)
     names = {}
     for t in entries:
@@ -468,9 +474,12 @@ def main():
         return
     net = ff.Net(CACHE, offline=a.offline, refresh=a.refresh)
     F = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
+    # the circles in force: the content editor's moves in curation.json laid over fish.json (read, never written)
+    cur = ROOT / "curation.json"
+    live = in_force(F, json.loads(cur.read_text(encoding="utf-8")) if cur.exists() else {})
     only = set(filter(None, a.only.split(",")))
     try:
-        photos, away, st = build(net, F, only)
+        photos, away, st = build(net, F, only, live)
     finally:
         net.save()
     order = [s["id"] for s in F["species"]]

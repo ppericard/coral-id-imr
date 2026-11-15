@@ -10,7 +10,8 @@ photo in play is on R2, fish-game.json). The sea slugs' rubric (judging/SEASLUG.
 differences (RUBRICS; cap and with_flag take the subject): tools/judging_fish.py --subject seaslug judges their candidates.
 This script:
   - prints the summary of the photos in play (fish-game.json): counts per tag, very easy photos (ease 4-5) per entry,
-    circle-1 entries short of them;
+    circle-1 entries short of them (the circles in force: the content editor's moves in curation.json laid over
+    fish.json, tools/fish_inforce.py);
   - with --sheets DIR: downloads the photos in play at iNaturalist's medium size (FishBase's whole) into DIR/img and draws
     contact sheets of 12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after);
     --only t28,t47 limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid
@@ -374,7 +375,15 @@ def main():
 
         slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
         return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo, a.refs)
-    summary(game(), json.loads((ROOT / "fish.json").read_text(encoding="utf-8")))
+    summary(game(), fish_now())
+
+
+def fish_now():
+    """fish.json with the circles in force (the content editor's moves in curation.json: tools/fish_inforce.py)."""
+    from fish_inforce import in_force
+    cur = ROOT / "curation.json"
+    return in_force(json.loads((ROOT / "fish.json").read_text(encoding="utf-8")),
+                    json.loads(cur.read_text(encoding="utf-8")) if cur.exists() else {})
 
 
 if __name__ == "__main__":
