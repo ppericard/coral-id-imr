@@ -2704,8 +2704,7 @@ const darkCards = (p, sel) =>
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Photos, Difficulty › Heatmap.')
-              fe.push(`the line on what is not there: "${at.not}"`);
+            if (at.not !== 'Not for fish yet: Difficulty › Heatmap.') fe.push(`the line on what is not there: "${at.not}"`);
             // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
             // fish report
             const [H, LV] = await fq.evaluate(() => [
@@ -2713,8 +2712,8 @@ const darkCards = (p, sel) =>
               LIVE_STATS
             ]);
             if (
-              H.length !== 13 ||
-              H.some(h => /photos$/.test(h)) ||
+              H.length !== 14 ||
+              !H.includes('analyses/difficulty/photos') ||
               ['analyses/learning/stops', 'analyses/difficulty/pairs', 'analyses/learning/answer-log'].some(h => !H.includes(h))
             )
               fe.push(`its views ${H.join(' ')}`);
@@ -2724,9 +2723,24 @@ const darkCards = (p, sel) =>
               if (at.none || !/^Fish: /.test(at.badge) || at.words || at.ids.length || at.coral || at.wide > 0)
                 fe.push(`#fish/${h} ${JSON.stringify({...at, views: undefined})}`);
             }
+            // What makes a photo hard on the fish photos' judged features (2026-11-15): the fish terms, the fish tables, the
+            // photo lists against ease, phase and framing, never a coral term
             if (vw === 1280) {
               at = await look('fish/analyses/difficulty/photos');
-              if (!/Not for fish yet/.test(at.note)) fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify(at)}`);
+              const ph = await fq.evaluate(() => {
+                const V = document.getElementById('view');
+                return {
+                  h: [...V.querySelectorAll('.adm-an-card h3, .adm-an-card summary')].map(e => e.textContent.trim()).join(' | '),
+                  t: V.textContent
+                };
+              });
+              if (
+                /Not for fish yet/.test(at.note) ||
+                /IMR lecture|Corallites|quality photo/i.test(ph.t) ||
+                !/Harder than their ease, phase and framing say/.test(ph.h) ||
+                !/\bEase\b/.test(ph.h)
+              )
+                fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
             }
           }
           // the corals' report on the corals' side, as before

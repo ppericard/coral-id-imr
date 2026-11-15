@@ -475,7 +475,10 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
     fs = require('fs'),
     data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json')));
   assert.deepStrictEqual(subjects(), ['coral', 'fish'], 'the replayed subject first, then every subject with analyses');
-  assert.deepStrictEqual(metaOf('fish'), {ph: {}}, 'no coral photo features for the fish');
+  // the fish: no coral photo features (ph), their own judged ones apart (fph: SUBJECTS analyses photos 'judged')
+  const fm = metaOf('fish');
+  assert.ok(Object.keys(fm.ph).length === 0, 'no coral photo features for the fish');
+  assert.ok(Object.keys(fm.fph).length > 1000, 'the fish photos’ judged features from fish-game.json');
   assert.ok(Object.keys(metaOf('coral').ph).length > 100, "the corals' photo features from data.json");
   const coral = A.demoLog(data, Date.UTC(2026, 10, 1), {
       days: 300,
@@ -540,14 +543,16 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
   };
   assert.ok(units(rf).length && units(rf).every(g => /^[fgs]:/.test(g)), units(rf).join(' '));
   assert.ok(units(rc).length && units(rc).every(g => !/^[fgs]:/.test(g)), units(rc).join(' '));
-  // the fish photos have one view: no view effect in its mix-ups, no photo feature in What makes a photo hard
+  // the fish photos have one view: no view effect in its mix-ups; What makes a photo hard on their judged features only
   const F = rf.R[1000].A;
   assert.deepStrictEqual(
     F.conf.effects.map(e => e.k),
     ['sd_player', 'sd_pair'],
     'no view never shown read as "no clear effect"'
   );
-  assert.deepStrictEqual(F.photo.effects, []);
+  const FK = ['ease', 'juv', 'phase', 'oblique', 'face', 'partial', 'sd_photo', 'sd_genus'];
+  assert.strictEqual(F.photo.of, 'ease, phase and framing');
+  assert.ok(F.photo.effects.length && F.photo.effects.every(e => FK.includes(e.k)), F.photo.effects.map(e => e.k).join(' '));
   assert.ok(
     ['medium', 'macro'].every(k => rc.R[1000].A.conf.effects.some(e => e.k === k)),
     "the corals' views kept"
