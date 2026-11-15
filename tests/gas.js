@@ -13,6 +13,7 @@ function makeSheet(name) {
   const sheet = {
     name,
     rows,
+    getName: () => name,
     frozen: 0,
     getLastRow: () => {
       let n = rows.length;
@@ -101,8 +102,22 @@ function loadCodeGs(opts = {}) {
     cache = {},
     props = {},
     fetched = [],
+    triggers = [],
+    menus = [],
+    toasts = [],
     lock = opts.lock || {busy: false};
-  const ss = {getSheetByName: n => sheets[n] || null, insertSheet: n => (sheets[n] = makeSheet(n))};
+  // getSheets: the tabs in the order they were made (Object keys of non-integer names keep insertion order).
+  const ss = {
+    getSheetByName: n => sheets[n] || null,
+    insertSheet: n => (sheets[n] = makeSheet(n)),
+    getSheets: () => Object.values(sheets),
+    addMenu: (name, items) => menus.push({name, items}),
+    toast: (msg, title) => toasts.push({msg, title})
+  };
+  // A time trigger as ScriptApp makes it: the builder's chain records {handler, every | weekDay, hour}.
+  const trigger = (handler, how) => ({
+    create: () => (triggers.push({handler, ...how, getHandlerFunction: () => handler}), triggers.at(-1))
+  });
   const cacheFits = v => {
     if (opts.cacheMax && Buffer.byteLength(String(v), 'utf8') > opts.cacheMax) throw new Error('Argument too large: value');
   };
@@ -116,12 +131,29 @@ function loadCodeGs(opts = {}) {
       // Byte[] as Apps Script gives them (signed); a blob of them, and its gunzip (Utilities.ungzip: a blob not in gzip
       // throws, as there).
       base64Decode: t => [...Buffer.from(String(t), 'base64')].map(b => (b > 127 ? b - 256 : b)),
-      newBlob: (bytes, type) => ({bytes, type, getBytes: () => bytes}),
+      newBlob: (bytes, type, name) =>
+        typeof bytes === 'string'
+          ? {text: bytes, type, name, getBytes: () => [...Buffer.from(bytes)]}
+          : {bytes, type, name, getBytes: () => bytes},
       ungzip: blob => {
         const out = require('zlib').gunzipSync(Buffer.from(blob.bytes.map(b => b & 255)));
         return {getBytes: () => [...out], getDataAsString: () => out.toString('utf8')};
       },
-      getUuid: () => crypto.randomUUID()
+      getUuid: () => crypto.randomUUID(),
+      // Utilities.zip as a record of what it was given (the blobs' names and text), not a real zip: tests read the parts.
+      zip: (blobs, name) => {
+        const z = {
+          zip: true,
+          name,
+          type: 'application/zip',
+          parts: Object.fromEntries(blobs.map(b => [b.name, b.text])),
+          getName: () => z.name,
+          setName: n => ((z.name = n), z),
+          setContentType: t => ((z.type = t), z),
+          getBytes: () => [...Buffer.from(JSON.stringify(z.parts))]
+        };
+        return z;
+      }
     },
     // opts.cacheMax: the largest value in bytes (Apps Script: 100 KB), over which put and putAll throw as Apps Script
     // does ("Argument too large"); none by default.
@@ -174,9 +206,15 @@ function loadCodeGs(opts = {}) {
     ScriptApp: {
       getScriptId: () => 'SCRIPT_ID',
       getOAuthToken: () => 'ya29.test',
-      getProjectTriggers: () => [],
-      deleteTrigger() {},
-      newTrigger: () => ({timeBased: () => ({everyMinutes: () => ({create() {}})})})
+      getProjectTriggers: () => triggers.slice(),
+      deleteTrigger: t => triggers.includes(t) && triggers.splice(triggers.indexOf(t), 1),
+      WeekDay: {SUNDAY: 'SUNDAY', MONDAY: 'MONDAY'},
+      newTrigger: handler => ({
+        timeBased: () => ({
+          everyMinutes: n => trigger(handler, {every: n}),
+          onWeekDay: d => ({atHour: h => trigger(handler, {weekDay: d, hour: h})})
+        })
+      })
     },
     // opts.lock = {busy: true}: the script lock is held by another request, as Apps Script then answers: waitLock throws
     // its "Lock timeout" exception, tryLock gives false. Set lock.busy back to false to free it. lock.onRelease runs at each
@@ -196,6 +234,8 @@ function loadCodeGs(opts = {}) {
     ContentService: {MimeType: {JSON: 'json'}, createTextOutput: t => ({setMimeType: () => JSON.parse(t)})},
     console
   };
+  // opts.extend(ctx): a test adds or replaces services (Session, Utilities.formatDate, a throwing SpreadsheetApp…).
+  if (opts.extend) opts.extend(ctx);
   vm.createContext(ctx);
   vm.runInContext(
     fs.readFileSync(path.join(__dirname, '..', 'tools', 'sync', 'Code.gs'), 'utf8') +
@@ -210,7 +250,7 @@ function loadCodeGs(opts = {}) {
   if (!opts.stats) vm.runInContext('STATS.ON = false', ctx);
   const get = q => ctx.doGet({parameter: q});
   const post = body => ctx.doPost({postData: {contents: JSON.stringify(body)}});
-  return {ctx, sheets, cache, props, fetched, lock, get, post};
+  return {ctx, sheets, cache, props, fetched, lock, triggers, menus, toasts, get, post};
 }
 // A request body as the sync script reads it (Code.gs doPost_): a light save (sync.js lightBody, sheet v116) unwrapped,
 // its gzip read (z) or as it came (lt); anything else as it is. Tests that look at what the app sent read it this way.

@@ -14,6 +14,7 @@ or a protection changes.
 | Leaderboard (`GET ?board=1`, v14) | Anyone | Shows each signed-in player's chosen name, progress % and Elo unless they opted out (⚙ Leaderboard: Off, a `reefid-sync` setting so it holds on every device; privacy.html says so). The progress % is computed by the script from the saved progress (v16), like the Elo from the answers; a tampered app could still save inflated progress, as it could fake answers. | Cached 5 minutes; nothing else about a player is returned. Per-player numbers (the anonymous answer log, each id's ability) are admin-only from v14 (POST with the token), so a public leaderboard row can't be matched to an anonymous id and its answer history. |
 | Names, reports, user management | Only with the admin GitHub token (checked by the script with GitHub) | — | `isAdmin_`. |
 | Self-update of the script | Whoever can push to `main` | Arbitrary script code. | Same trust as the site itself: only Pierre, his agents and the Candidate photos workflow's bot push to `main` (its credentials: below). |
+| The weekly backup to pCloud (sheet v139, [BACKUP.md](BACKUP.md)) | The script only; the token is the Script Property `PCLOUD_TOKEN` | Code pushed to `main` runs as the script, so it can read that token (as it can `ANON_SALT`) and, with it, Pierre's pCloud: everything the pCloud app was allowed to reach. A backup file leaked from pCloud exposes the sheet: names, code hashes, answers. | The token is sent only to `api.pcloud.com` or `eapi.pcloud.com` (any other `PCLOUD_HOST` is refused), only in the `Authorization` header (never a URL, which fetch errors can echo), and is never logged or returned (`backup_` scrubs it from any error text; `tests/backup.test.js`). A pCloud app limited to its own folder, if pCloud offers it, narrows the reach to that folder. Revoke: delete the app in pCloud. |
 
 No personal data beyond a chosen name is collected (no e-mail, no password; the 4-digit code is stored hashed), so a
 leak of the Sheet would expose little.
@@ -134,6 +135,9 @@ The admin's account (v125, the 🌱 after its name) is kept by its code hash in 
 only by a read with the admin's token from the admin page signed in to that account (its code checked), never from what a
 player sends; a delete, a merge (its from) and an archive clear it, and no player can type the seedling or a look-alike
 in a new name (`core.js` `reservedName`).
+The weekly backups to pCloud (sheet v139, [BACKUP.md](BACKUP.md)) are copies of the whole sheet as it was: an account
+deleted, merged or archived stays in the backups made before, until they age out (the 12 newest are kept, then pCloud's
+trash). No feature reads them; they are opened only to restore (privacy.html says so).
 The pooled stats' snapshots (sheet v134, the `Stats` tab; v137, one per subject: `Stats Fish` too; ARCHITECTURE.md
 "Progress sync"): each fold keeps, by admin
 id and never by name, each player's trust counts, ability, photo memory and the last day's answers (unit, answer, mode,
