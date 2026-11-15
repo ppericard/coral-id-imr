@@ -6573,8 +6573,9 @@ const darkCards = (p, sel) =>
       // Undo), ↺ Restore; Withdraw a pair (v null, was 1), ↺; Add a look-alike… asks for a source once, then saves with one
       // (v 1, was null, src); its words' line shows at once in the Sheet box; the Look-alikes filter's + Pair adds one
       // between two families chosen there, and its pair tag withdraws it again (his entry goes); the row and the Circle
-      // filter follow the circle in force; Publish confirms once, saying it changes every player's path and progress, counts
-      // circles and pairs, and publishes them; dark theme; no overflow at 1280 and 390.
+      // filter follow the circle in force; a stale circle shows its three values, Keep mine takes the base now; Publish
+      // confirms once, saying it changes every player's path and progress, counts circles and pairs, and publishes them;
+      // dark theme; no overflow at 1280 and 390 with each box open and with a pair's tools in the bar.
       {
         const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
         await sc.route(
@@ -6675,6 +6676,16 @@ const darkCards = (p, sel) =>
         await sq.selectOption('#view [data-stbox] [data-st-a]', ids.x);
         await swait(() => document.querySelector('#view [data-stbox] [data-st-b]'));
         await sq.selectOption('#view [data-stbox] [data-st-b]', ids.y);
+        // no overflow with the filter's box open, at 1280 and 390, nor with a pair's tools in the bar (below)
+        const wideAt = async what => {
+          for (const w of [1280, 390]) {
+            await sq.setViewportSize({width: w, height: 900});
+            const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+            if (wide > 0) se.push(`${w}px, ${what}: ${wide}px too wide`);
+          }
+          await sq.setViewportSize({width: 1280, height: 900});
+        };
+        await wideAt('the + Pair box');
         await sq.click('#view [data-stbox] [data-sta="save"]');
         await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
         await sq.click('#view [data-stbox] [data-sta="save"]');
@@ -6692,6 +6703,7 @@ const darkCards = (p, sel) =>
         await hasSel(`${bar} [data-sta="drop"]`, true);
         const lab = await sq.evaluate(k => document.querySelector(`#view [data-tttag] option[value="look:${k}"]`).textContent, KXY);
         if (!/\(added\)/.test(lab)) se.push(`the pair tag ${JSON.stringify(lab)}`);
+        await wideAt("a pair's tools in the bar");
         await sq.click(`${bar} [data-sta="drop"]`);
         await hasSel(bar, false);
         if (await pair(KXY)) se.push('the filter left the pair');
@@ -6699,18 +6711,25 @@ const darkCards = (p, sel) =>
           store.set(subjK('reefid-admin-tree-tag'), '');
           render();
         });
-        // Dark theme; no overflow at 1280, then at 390 with the add box open.
+        // Dark theme; no overflow with the page's add box open.
         const dk = await darkCards(sq, '#view .adm-cstruct .adm-cslot');
         if (dk) se.push(`dark theme: still light ${dk}`);
         await sq.selectOption(`${box} [data-stadd]`, ids.x);
         await swait(() => document.querySelector('#view [data-stbox]'));
-        for (const w of [1280, 390]) {
-          await sq.setViewportSize({width: w, height: 900});
-          const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
-          if (wide > 0) se.push(`${w}px: ${wide}px too wide`);
-        }
-        await sq.setViewportSize({width: 1280, height: 900});
+        await wideAt("the page's add box");
         await sq.click('#view [data-stbox] [data-sta="cancel"]');
+        // A stale circle (the base changed since his edit): its three values, Keep mine takes the base now; no overflow.
+        await sq.evaluate(id => {
+          DRAFT.fish = {...DRAFT.fish, content: contentSet(DRAFT.fish.content, id, 'circle', null, 3, null, 7)};
+          saveDraft();
+          render();
+        }, FAM);
+        await swait(() => document.querySelector('#view [data-stcid].is-stale .adm-cs3'));
+        await wideAt('a stale circle');
+        await sq.click('#view [data-stcid] [data-sta="keep"]');
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        c = await circ();
+        if (!c || c.v !== null || c.was !== 1 || c.t === 7) se.push(`Keep mine ${JSON.stringify(c)}`);
         // Publish: one confirmation saying it changes every player's path and progress; circles and pairs counted; published.
         const sum = await sq.evaluate(() => pubSummary());
         if (!/^1 fish circle edit$/m.test(sum) || !/^1 fish look-alike pair edit$/m.test(sum))

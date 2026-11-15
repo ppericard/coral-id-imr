@@ -855,8 +855,12 @@ function subjRpl_(sid, force){
   if (!gen || !Object.keys(gen).length) return null;
   const out = {gen: gen, st: CORE_.structStamp(S, d, cur)};
   try { c.put(k, JSON.stringify(out), 21600); } catch (e) {}
+  // A tree that cannot be made or is refused is kept as 0 (subjTreeKept_ reads no tree: the apps' then), so fish.json is not
+  // fetched again at every call for it.
   if (subjTreeOn_(S)) {
-    try { const T = S.replayed.tree(A), json = T ? boardTreeOk_(T) : null; if (json) c.put(tk, json, 21600); } catch (e) {}
+    let json = null;
+    try { const T = S.replayed.tree(A); json = T ? boardTreeOk_(T) : null; } catch (e) {}
+    try { c.put(tk, json || '0', 21600); } catch (e) {}
   }
   return out;
 }

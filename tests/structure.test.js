@@ -567,6 +567,17 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
     .forEach(k => delete s.cache[k]);
   save(T1);
   assert.strictEqual(board(), p1, 'the tree the app sent last');
+  const n1 = m.n.fish;
   s.ctx.subjStRefresh_();
   assert.strictEqual(board(), p0);
+  assert.strictEqual(m.n.fish, n1 + 1, 'fish.json read once to make it again');
+  // A tree the sheet could not make or refused is kept as 0: no tree of its own (the apps'), and fish.json is not read
+  // again at every call for it.
+  Object.keys(s.cache)
+    .filter(k => k.startsWith('stree1:'))
+    .forEach(k => (s.cache[k] = '0'));
+  s.ctx.subjStRefresh_();
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(m.n.fish, n1 + 1);
+  assert.strictEqual(board(), p1, 'the tree the app sent last');
 });
