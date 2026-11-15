@@ -89,8 +89,9 @@
   // - best or alt with its tags and ease: added (Poor-looking photos too: they stand in for SVS video frames; the ease
   //   says how hard, it is never a reason to set one aside).
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
-  // The flags after the seven tags: j c a typed by the judge, p (phase) and r (a reference photo, its `rep`) added by the tool.
-  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/;
+  // The flags after the seven tags: j c a w typed by the judge (w: a visible watermark or text, which only Home skips;
+  // Pierre, 2026-11-15, Q373), p (phase) and r (a reference photo, its `rep`) added by the tool.
+  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$/;
   // The doubts that weigh on the photo itself: every unsure field but the fish's box (bb), whose doubt only withholds the
   // photo's tile (tools/fish_game.py unsure, box_of; Codex review #826).
   const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
@@ -444,16 +445,49 @@
     return {...F, [field]: M};
   }
   // One tag of a rubric code changed (pos 0-6: view, whole, light, colour loss, clarity, size, count), or a flag toggled
-  // (pos 'j' juvenile, 'c' camouflage), on Pierre's code, else the pass's, else a plain profile one; the tool-made flags
-  // (p phase entry, r reference photo) kept as they were, in the rubric's order.
-  const FFLAGORD = 'jcapr';
+  // (pos 'j' juvenile, 'c' camouflage, 'w' watermark), on Pierre's code, else the pass's, else a plain profile one; the
+  // tool-made flags (p phase entry, r reference photo) kept as they were, in the rubric's order.
+  const FFLAGORD = 'jcawpr';
   function fishTag(code, pos, v) {
-    const c = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/.test(code || '') ? code : 'p1g0sm1';
+    const c = FISH_TAGS.test(code || '') ? code : 'p1g0sm1';
     if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
     const fl = new Set(c.slice(7));
     if (fl.has(pos)) fl.delete(pos);
     else fl.add(pos);
     return c.slice(0, 7) + [...FFLAGORD].filter(x => fl.has(x)).join('');
+  }
+  // The watermark flag (w: a visible watermark or text on the photo; Pierre, 2026-11-15, Q373) of a photo whose tags in
+  // the curation are the auto-sort's copy of the pass's (its log code still lists t: fishOwn takes it off at his first
+  // edit): the pass's w is added, as a judgement made after the copy. Tags he set himself stand as they are, so his
+  // Watermark off (or on) is his. mine: his tags; pass: the pass's jt; auto: the tags are the auto-sort's copy.
+  // tools/fish_game.py marked mirrors it.
+  function fishMarked(mine, pass, auto) {
+    if (
+      !auto ||
+      !FISH_TAGS.test(mine || '') ||
+      !String(pass || '')
+        .slice(7)
+        .includes('w') ||
+      mine.slice(7).includes('w')
+    )
+      return mine;
+    return fishTag(mine, 'w');
+  }
+  // Whether photo f's tags in curation F are the auto-sort's copy (its log code lists t; fishIdx, fishParse).
+  const fishTagsAuto = (F, f) => {
+    const x = fishIdx(F || {})[f];
+    return !!(x && (x.d.w || []).includes('tags'));
+  };
+  // Pierre's tags of photo f in curation F as the game reads them (fishMarked; pass: the pass's jt), or undefined with
+  // none. The log is read only when the pass's code carries w.
+  function fishTagsMine(F, f, pass) {
+    const own = ((F || {}).tags || {})[f];
+    return own &&
+      String(pass || '')
+        .slice(7)
+        .includes('w')
+      ? fishMarked(own, pass, fishTagsAuto(F, f))
+      : own;
   }
   // Pierre's Add from the swiper (pure): the photo in play for its species, with the pass's tags, ease, phase and crop
   // written beside it where he has none yet (the fish auto-sort writes its adds the same way, so every photo in play
@@ -1336,6 +1370,9 @@
     fishNotThis,
     fishSet,
     fishTag,
+    fishMarked,
+    fishTagsAuto,
+    fishTagsMine,
     fishAdd,
     fishReject,
     fishExclude,
