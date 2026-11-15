@@ -1,4 +1,4 @@
-// The sheet's backup to pCloud (Code.gs backup_, xlsx_; sheet vNEXT, Pierre 2026-11-15; docs/BACKUP.md): run against the
+// The sheet's backup to pCloud (Code.gs backup_, xlsx_; sheet v139, Pierre 2026-11-15; docs/BACKUP.md): run against the
 // in-memory sheet (tests/gas.js) with UrlFetchApp stubbed, so nothing reaches Google or pCloud (rule D1). Checks the file's
 // name, the requests' shape (the token only in the Authorization header, only to pCloud's two hosts), that the token is
 // never logged or returned, the paths without a token or an authorisation, the region fallback, the retention, and the
