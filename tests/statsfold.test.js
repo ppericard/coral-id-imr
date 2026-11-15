@@ -16,17 +16,36 @@ const H = 36e5,
 // A small seeded generator, so a failure replays.
 const rng = seed => () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
 
-// The games' photos (pools_'s cache): three coral genera and a fish unit.
+// The games' photos (pools_'s cache): three coral genera, three fish families whose photos are their species' (the fish
+// pool groups them by family, a species going up to its family: pools_'s parent units).
 const POOL = {
   coral: {
     Acropora: [['acropora-1', 'acropora-2'], ['acropora-3']],
     Porites: [['porites-1', 'porites-2']],
     Favia: [['favia-1'], ['favia-2']]
   },
-  fish: {'f:Damselfishes': [['fi123']]}
+  fish: {
+    'f:Damselfishes': [['fi1'], ['fi2'], ['fi3']],
+    'f:Butterflyfishes': [['fi4'], ['fi5']],
+    'f:Wrasses': [['fi6'], ['fi7']]
+  }
 };
-const pools = (s, P = POOL) => Object.entries(P).forEach(([k, v]) => (s.cache['pool2' + k] = JSON.stringify({p: v, u: {}})));
+const UP = {s091: 'f:Damselfishes', s088: 'f:Damselfishes', s244: 'f:Wrasses'};
+const pools = (s, P = POOL) =>
+  Object.entries(P).forEach(([k, v]) => (s.cache['pool2' + k] = JSON.stringify({p: v, u: k === 'fish' ? UP : {}})));
 const G = ['Acropora', 'Porites', 'Favia'];
+// The fish: questions at the family rank, and some at the species rank; each unit's photos.
+const FAM = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Wrasses'],
+  SPE = ['s091', 's088', 's244'];
+const FPH = {
+  'f:Damselfishes': ['fi1', 'fi2', 'fi3'],
+  'f:Butterflyfishes': ['fi4', 'fi5'],
+  'f:Wrasses': ['fi6', 'fi7'],
+  s091: ['fi1'],
+  s088: ['fi2', 'fi3'],
+  s244: ['fi6']
+};
+const SUBJ = ['coral', 'fish'];
 const MODES = ['quiz', 'quiz|k2', 'quiz|k3', 'quiz-duel', 'quiz|t', 'quiz|x', 'quiz|d'];
 
 // Who plays: their chance of a right answer (by day for Dee, who starts at random and then learns: trusted only later).
@@ -40,23 +59,26 @@ const WHO = [
   {anon: 'device0002', p: () => 0.9, bot: true}
 ];
 let ID = 0;
-// One session of answers at time t (ms): right per the player's chance, some at the same second, a few fish answers, a
-// surprise card, photos of another genus (the bot), a photo in no pool, a photo twice.
-function session(R, w, t, day) {
+// One session of answers at time t (ms), of the corals or the fish (fish: at the family rank, some at the species
+// rank): right per the player's chance, some at the same second, a surprise card, photos of another unit (the bot), a
+// photo in no pool, a photo twice.
+function session(R, w, t, day, subj) {
   const n = 6 + Math.floor(R() * 10),
+    fish = (subj || (R() < 0.4 ? 'fish' : 'coral')) === 'fish',
     out = [];
   for (let i = 0; i < n; i++) {
-    const g = G[Math.floor(R() * 3)],
+    const U = !fish ? G : R() < 0.3 ? SPE : FAM,
+      g = U[Math.floor(R() * 3)],
       ok = R() < w.p(day),
       m = MODES[Math.floor(R() * MODES.length)],
-      others = G.filter(x => x !== g),
+      others = U.filter(x => x !== g),
       wrong = others[Math.floor(R() * 2)];
     const k = m === 'quiz-duel' || m === 'quiz|d' ? 2 : m === 'quiz|t' ? 0 : 2 + Math.floor(R() * 2);
     const ch = k ? [g, ...others].slice(0, k).sort() : [];
-    const pick = () => g.toLowerCase() + '-' + (1 + Math.floor(R() * 3));
+    const pick = () => (fish ? FPH[g][Math.floor(R() * FPH[g].length)] : g.toLowerCase() + '-' + (1 + Math.floor(R() * 3)));
     let ph = [pick()];
     if (R() < 0.4) ph.push(pick());
-    if (w.bot) ph = ['porites-1'];
+    if (w.bot) ph = [fish ? 'fi4' : 'porites-1'];
     else if (R() < 0.05) ph = ['zzz-' + Math.floor(R() * 3)];
     const tt = t + Math.floor(i / (R() < 0.2 ? 1 : 2)) * 30000;
     const a = {
@@ -70,7 +92,7 @@ function session(R, w, t, day) {
       ch: ch.join(' ')
     };
     if (R() < 0.85) a.e = Math.round((0.3 + R() * 0.6) * 100) / 100;
-    if (R() < 0.04) Object.assign(a, {s: 'fish', g: 'f:Damselfishes', a: 'f:Damselfishes', ph: 'fi123', ch: ''});
+    if (fish) Object.assign(a, {s: 'fish', rk: U === SPE ? 'species' : 'family'});
     if (R() < 0.03) a.m = 'wink';
     out.push(a);
   }
@@ -82,12 +104,12 @@ function fixture(seed) {
   const R = rng(seed),
     L = [];
   for (let d = 0; d < 5; d++)
-    for (let k = 0; k < 9; k++) {
+    for (let k = 0; k < 14; k++) {
       // Dee every third session: random on the first two days, trusted from the third.
       const w = k % 3 === 1 ? WHO[3] : WHO[Math.floor(R() * WHO.length)],
         t = BASE + d * 24 * H + k * 1.5 * H + Math.floor(R() * H),
         x = R();
-      L.push({w, t, at: t + (x < 0.15 ? 2 * H : x < 0.2 ? 40 * H : 0.2 * H), answers: session(R, w, t, d)});
+      L.push({w, t, at: t + (x < 0.15 ? 2 * H : x < 0.23 ? 40 * H : 0.2 * H), answers: session(R, w, t, d)});
     }
   return L.sort((a, b) => a.at - b.at);
 }
@@ -99,22 +121,26 @@ const post = (s, p) =>
 // What ?stats=1 sends, from the whole log (stats_ as before v134), and from the snapshot.
 const PUB = ['ok', 'photos', 'conf', 'mem', 'memn', 'gd', 'fmt'];
 const pub = o => JSON.parse(JSON.stringify(Object.fromEntries(PUB.map(k => [k, o[k]]))));
-const full = s => {
-  delete s.cache.stats17;
+// sid: the subject (Code.gs statsSid_: the corals when none).
+const full = (s, sid) => {
+  delete s.cache[run(s, `statsKey17_(${JSON.stringify(sid)})`)];
   run(s, 'ROWS_ = null');
-  return pub(s.ctx.stats_(true));
+  return pub(s.ctx.stats_(true, sid));
 };
-const snap = s => {
-  delete s.cache[run(s, 'statsCacheKey_()')];
-  const o = s.ctx.statsServed_();
+const snap = (s, sid) => {
+  delete s.cache[run(s, `statsCacheKey_(${JSON.stringify(sid)})`)];
+  const o = s.ctx.statsServed_(sid);
   return o && pub(o);
 };
 const fold = (s, now, o = {}) => s.ctx.statsFold_(Object.assign({now, budget: 1e9}, o));
-const same = (s, msg) => {
-  const a = snap(s);
+const same = (s, msg, sid) => {
+  const a = snap(s, sid);
   assert.ok(a, msg + ': a snapshot is served');
-  assert.deepStrictEqual(a, full(s), msg);
+  assert.deepStrictEqual(a, full(s, sid), msg);
 };
+// Both subjects' folds run, then both compared.
+const foldAll = (s, now, o = {}) => SUBJ.map(sid => fold(s, now, Object.assign({sid}, o)));
+const sameAll = (s, msg) => SUBJ.forEach(sid => same(s, sid + ': ' + msg, sid));
 const load = () => {
   const s = loadCodeGs({stats: true});
   pools(s);
@@ -137,28 +163,45 @@ test('the fold serves what the whole log gives, after every run, at any number o
     posts.forEach((p, i) => {
       post(s, p);
       now = Math.max(now, p.at);
-      if (R() < 0.35 || i === posts.length - 1) {
-        // A run at most a few windows long, so a build takes several runs.
-        let r = fold(s, now + H, {rows, max: rows * 3});
-        seen.add(r.why).add(r.built);
-        while (!r.caught) {
-          r = fold(s, now + H, {rows, max: rows * 3});
-          seen.add(r.why).add(r.built);
-        }
-        settled += r.settled;
-        pending = Math.max(pending, r.pending);
-        same(s, rows + ' rows a run, after post ' + i);
-        checks++;
-      }
+      if (R() < 0.35 || i === posts.length - 1)
+        SUBJ.forEach(sid => {
+          // A run at most a few windows long, so a build takes several runs.
+          let r = fold(s, now + H, {sid, rows, max: rows * 3});
+          seen.add(sid + ' ' + r.why).add(sid + ' ' + r.built);
+          while (!r.caught) {
+            r = fold(s, now + H, {sid, rows, max: rows * 3});
+            seen.add(sid + ' ' + r.why).add(sid + ' ' + r.built);
+          }
+          assert.strictEqual(r.sid, sid);
+          settled += r.settled;
+          pending = Math.max(pending, r.pending);
+          same(s, sid + ', ' + rows + ' rows a run, after post ' + i, sid);
+          checks++;
+        });
     });
     assert.ok(settled > 0 && pending > 0, 'both parts used: ' + settled + ' settled, ' + pending + ' pending');
     seen.forEach(x => causes.add(x));
-    assert.ok(checks > 10);
-    const F = full(s);
-    assert.ok(Object.keys(F.fmt).length >= 3 && Object.keys(F.conf).length >= 3 && F.memn[3] > 0, 'every part of the stats in play');
+    assert.ok(checks > 20);
+    for (const sid of SUBJ) {
+      const F = full(s, sid);
+      assert.ok(
+        Object.keys(F.fmt).length >= 3 && Object.keys(F.conf).length >= 3 && F.memn[3] > 0,
+        sid + ': every part of the stats in play'
+      );
+    }
+    // The fish at both ranks, the bot's photos of another family flagged.
+    const FF = s.ctx.stats_(true, 'fish');
+    assert.ok(FF.skip.photos > 0 && SPE.some(u => u in FF.gd) && FAM.some(u => u in FF.gd), JSON.stringify([FF.skip, Object.keys(FF.gd)]));
+    // Each subject rates its own photos only.
+    assert.ok(Object.keys(full(s, 'fish').photos).every(f => /^(fi|zzz)/.test(f)));
+    assert.ok(!Object.keys(full(s, 'coral').photos).some(f => /^fi/.test(f)));
   }
   // The fixture meets the rebuilds that keep the fold exact (a late answer can take a trust change with it).
-  assert.ok(causes.has('missing') && causes.has('late answer') && causes.has('trust changed'), [...causes].join(', '));
+  for (const sid of SUBJ)
+    assert.ok(
+      ['missing', 'late answer', 'trust changed'].every(w => causes.has(sid + ' ' + w)),
+      [...causes].join(', ')
+    );
 });
 
 test('a run is bounded: it stops after its rows and the next run goes on; nothing is served before the end', () => {
@@ -195,49 +238,66 @@ test('every rebuild cause starts the fold again and it serves the whole log agai
     now = Math.max(...posts.map(p => p.at)) + 20 * H, // the last day's answers still pending
     id = n => s.ctx.aid_(n);
   posts.forEach(p => post(s, p));
+  // why: each subject's reason, the same for both when a string.
   const again = (why, act) => {
     act();
-    const r = fold(s, now);
-    assert.strictEqual(r.why, why, why);
-    assert.ok(r.caught, JSON.stringify(r));
-    same(s, why);
-    assert.strictEqual(fold(s, now).why, '', why + ': then up to date');
+    foldAll(s, now).forEach(r => {
+      const w = typeof why === 'string' ? why : why[r.sid] || '';
+      assert.strictEqual(r.why, w, r.sid + ': ' + w);
+      assert.ok(r.caught, JSON.stringify(r));
+      same(s, r.sid + ': ' + w, r.sid);
+    });
+    foldAll(s, now).forEach(r => assert.strictEqual(r.why, '', r.sid + ': ' + JSON.stringify(why) + ', then up to date'));
   };
-  assert.strictEqual(fold(s, now).why, 'missing');
-  same(s, 'first build');
+  assert.deepStrictEqual(
+    foldAll(s, now).map(r => r.why),
+    ['missing', 'missing']
+  );
+  sameAll(s, 'first build');
   // Nothing new: nothing read, the same served.
   const r0 = fold(s, now);
   assert.deepStrictEqual([r0.why, r0.read, r0.settled], ['', 0, 0]);
   // New answers: read and folded without a rebuild.
-  post(s, {w: WHO[0], answers: session(rng(5), WHO[0], now - H, 4)});
-  const r1 = fold(s, now);
-  assert.strictEqual(r1.why, '');
-  assert.ok(r1.read > 0);
-  same(s, 'new rows');
+  for (const sid of SUBJ) {
+    post(s, {w: WHO[0], answers: session(rng(5), WHO[0], now - H, 4, sid)});
+    const r1 = fold(s, now, {sid});
+    assert.strictEqual(r1.why, '');
+    assert.ok(r1.read > 0);
+    same(s, sid + ': new rows', sid);
+  }
+  assert.ok(Object.keys(snap(s, 'fish').photos).length > 0 && Object.keys(snap(s, 'fish').conf).length > 0, 'the fish rated');
   // Who is left out of the statistics changed (the admin's button: rosterChanged_ blanks the fold and the reply served).
   again('missing', () => {
     assert.ok(s.post({statsExclude: id('Eve'), on: true, token: TOK}).ok);
-    assert.strictEqual(snap(s), null, 'the snapshot served is dropped at once');
+    SUBJ.forEach(sid => assert.strictEqual(snap(s, sid), null, sid + ': the snapshot served is dropped at once'));
   });
   // The fold also checks the list itself, whatever changed it.
   again('left out changed', () => s.sheets['Stats excluded'].rows.splice(1, 1));
   // A device's anonymous answers move to the name it signs in with: the snapshot served stays meanwhile.
   again('log rewritten', () => {
     s.post({name: 'Ana', pin: '1111', data: {}, summary: {}, answers: [], anon: 'device0001'});
-    assert.ok(snap(s));
+    SUBJ.forEach(sid => assert.ok(snap(s, sid)));
   });
   again('missing', () => s.post({userDelete: 'Ben', token: TOK}));
   again('account removed', () => (s.props.ROSTER_AT = String(Date.now() + 1000)));
-  again('pools changed', () => pools(s, {...POOL, coral: {...POOL.coral, Porites: [['porites-1'], ['acropora-3']]}}));
-  again('new version', () => {
+  // A pool change rebuilds the subject whose folded photos it touches, only.
+  again({coral: 'pools changed'}, () => pools(s, {...POOL, coral: {...POOL.coral, Porites: [['porites-1'], ['acropora-3']]}}));
+  again({fish: 'pools changed'}, () =>
+    pools(s, {
+      coral: {...POOL.coral, Porites: [['porites-1'], ['acropora-3']]},
+      fish: {...POOL.fish, 'f:Wrasses': [['fi6'], ['fi7'], ['fi2']]}
+    })
+  );
+  again({coral: 'new version'}, () => {
     const tab = s.sheets.Stats,
       st = JSON.parse(tab.rows[2].slice(6).join(''));
     st.v--;
     const j = JSON.stringify(st);
     tab.rows[2] = tab.rows[2].slice(0, 6).concat([j]);
   });
-  again('missing', () => (s.sheets.Stats.rows[2][7] = 'not json'));
-  again('cursor', () => delete s.props.STATS_FOLD);
+  again({fish: 'missing'}, () => (s.sheets['Stats Fish'].rows[2][7] = 'not json'));
+  again({coral: 'cursor'}, () => delete s.props.STATS_FOLD);
+  again({fish: 'cursor'}, () => delete s.props.STATS_FOLD_fish);
   again('rows moved', () => s.sheets.Answers.rows.splice(5, 1));
   again('missing', () => s.post({userDelete: 'Cal', answers: true, token: TOK}));
   // A mode no app sends (quiz|k0: an infinite guess rate) is read back as written: no rebuild at every run.
@@ -246,17 +306,18 @@ test('every rebuild cause starts the fold again and it serves the whole log agai
     w: k0,
     answers: [{id: 'k0', t: new Date(now - H).toISOString(), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz|k0', ph: 'acropora-1', ch: ''}]
   });
-  post(s, {w: k0, answers: session(rng(4), k0, now - H, 4)});
+  post(s, {w: k0, answers: session(rng(4), k0, now - H, 4, 'coral')});
   assert.strictEqual(fold(s, now).why, '');
   same(s, 'an infinite guess rate, pending');
   const r2 = fold(s, now + 2 * 24 * H);
   assert.ok(r2.settled > 0 && r2.why === '', JSON.stringify(r2));
   // Its settled counters read back as written: more answers do not flip its trust.
-  post(s, {w: k0, answers: session(rng(6), k0, now + 2 * 24 * H - H, 4)});
+  post(s, {w: k0, answers: session(rng(6), k0, now + 2 * 24 * H - H, 4, 'coral')});
   assert.strictEqual(fold(s, now + 2 * 24 * H).why, '');
   same(s, 'an infinite guess rate, settled');
-  // An answer logged older than what is settled: a device two days late.
-  again('late answer', () => post(s, {w: WHO[0], answers: session(rng(9), WHO[0], now - 3 * 24 * H, 4)}));
+  // An answer logged older than what is settled: a device two days late, for one subject then the other.
+  for (const sid of SUBJ)
+    again({[sid]: 'late answer'}, () => post(s, {w: WHO[0], answers: session(rng(9), WHO[0], now - 3 * 24 * H, 4, sid)}));
 });
 
 // Rule D7: the fold holds per-player data by admin id; any delete, merge or archive blanks it at once.
@@ -265,17 +326,18 @@ test('a deleted account leaves nothing in the snapshot, at once and after the re
     const s = load(),
       now = BASE + 9 * 24 * H;
     fixture(5).forEach(p => post(s, p));
-    fold(s, now);
-    const tabText = () => JSON.stringify(s.sheets.Stats.rows),
+    foldAll(s, now);
+    const tabs = ['Stats', 'Stats Fish'],
+      tabText = t => JSON.stringify(s.sheets[t].rows),
       aid = s.ctx.aid_('Dee');
-    assert.ok(tabText().includes(aid), 'the fold keeps a player by admin id');
-    assert.ok(!/Dee|Ana|device0001/.test(tabText()), 'never a name or a device');
+    tabs.forEach(t => assert.ok(tabText(t).includes(aid), t + ': the fold keeps a player by admin id'));
+    tabs.forEach(t => assert.ok(!/Dee|Ana|device0001/.test(tabText(t)), t + ': never a name or a device'));
     s.post({userDelete: 'Dee', answers: all, token: TOK});
-    assert.ok(!tabText().includes(aid), 'blanked by the delete itself');
-    assert.strictEqual(snap(s), null, 'nothing served: ?stats=1 makes the whole log until the fold is rebuilt');
-    fold(s, now);
-    assert.ok(!tabText().includes(aid), 'rebuilt without them');
-    same(s, all ? 'everything deleted' : 'answers kept as ~deleted');
+    tabs.forEach(t => assert.ok(!tabText(t).includes(aid), t + ': blanked by the delete itself'));
+    SUBJ.forEach(sid => assert.strictEqual(snap(s, sid), null, sid + ': nothing served until the fold is rebuilt'));
+    foldAll(s, now);
+    tabs.forEach(t => assert.ok(!tabText(t).includes(aid), t + ': rebuilt without them'));
+    sameAll(s, all ? 'everything deleted' : 'answers kept as ~deleted');
   }
 });
 
@@ -288,20 +350,26 @@ test('the 15-minute trigger folds and logs the build; ?stats=1 then serves the s
   fixture(13).forEach(p => post(s, p));
   run(s, 'STATS.ROWS = 40; STATS.RUN_ROWS = 120');
   let k = 0;
-  while (!s.sheets['Deploy log'] || !s.sheets['Deploy log'].rows.some(r => /pooled stats: snapshot built/.test(r[1]))) {
+  const built = n =>
+    s.sheets['Deploy log'] && s.sheets['Deploy log'].rows.some(r => new RegExp('pooled stats \\(' + n + '\\): snapshot built').test(r[1]));
+  while (!built('corals') || !built('fish')) {
     s.ctx.autoUpdate();
     assert.ok(++k < 50);
   }
   assert.ok(k > 1, 'several runs at 120 rows a run');
-  const reply = s.get({stats: 1});
+  // ?stats=1 the corals' as before, &s=fish the fish's, each from its snapshot; a subject without photos: the corals'.
+  assert.deepStrictEqual(pub(s.get({stats: 1})), full(s));
   assert.ok(s.cache[run(s, 'statsCacheKey_()')], 'served from the snapshot, cached');
-  assert.deepStrictEqual(pub(reply), full(s));
+  assert.deepStrictEqual(pub(s.get({stats: 1, s: 'fish'})), full(s, 'fish'));
+  assert.ok(s.cache[run(s, "statsCacheKey_('fish')")]);
+  assert.notDeepStrictEqual(full(s, 'fish'), full(s));
+  assert.deepStrictEqual(pub(s.get({stats: 1, s: 'nothing'})), full(s));
   // The rest of the trigger's run still happens: a run already long leaves the fold to the next one.
   run(s, 'STATS.UNTIL = -1');
-  const before = JSON.stringify(s.sheets.Stats.rows);
+  const before = JSON.stringify([s.sheets.Stats.rows, s.sheets['Stats Fish'].rows]);
   s.post({name: 'Ana', pin: '1111', data: {}, summary: {}, answers: session(rng(2), WHO[0], BASE + 6 * 24 * H, 6)});
   s.ctx.autoUpdate();
-  assert.strictEqual(JSON.stringify(s.sheets.Stats.rows), before);
+  assert.strictEqual(JSON.stringify([s.sheets.Stats.rows, s.sheets['Stats Fish'].rows]), before);
 });
 
 test('an old snapshot, another version or the switch off: ?stats=1 makes the whole log as before', () => {
@@ -316,6 +384,9 @@ test('an old snapshot, another version or the switch off: ?stats=1 makes the who
   tab.rows[1][1] = 1;
   assert.strictEqual(snap(s), null, 'made by another version');
   tab.rows[1][1] = run(s, 'VERSION');
+  // The fish's: none folded yet, the whole log of the fish.
+  assert.strictEqual(snap(s, 'fish'), null);
+  assert.deepStrictEqual(pub(s.get({stats: 1, s: 'fish'})), full(s, 'fish'));
   run(s, 'STATS.ON = false');
   assert.strictEqual(snap(s), null);
   assert.deepStrictEqual(pub(s.get({stats: 1})), full(s));
