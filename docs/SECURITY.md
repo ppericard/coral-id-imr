@@ -166,8 +166,10 @@ The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves 
 id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name
 the player in brackets; the tab itself keeps the name, as before. A delete or a merge rewrites that mention in the tab
 (`redact_`: `~deleted <id>`, shown as it is, or the name it joined); an archive moves it to the archive's name, and the
-page leaves that line out (rule D7: an archive is in no normal view; the tab keeps it). Lines written by admin id before
-an archive (photos of another unit, a left-out device) stay under the old name's id, as in the tab.
+page leaves that line out (rule D7: an archive is in no normal view; the tab keeps it). **Not covered yet** (ROADMAP
+"Alerts lines follow the account"): the lines written by admin id (photos of another unit, a left-out device, `sd:`)
+never follow a delete, a merge or an archive, in the tab since #801; the page shows and counts them under the old name's
+id. Closing it means rewriting those ids in the tab on each of the three, a write-path change for its own PR.
 
 ## If it happens
 
