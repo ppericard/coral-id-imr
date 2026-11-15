@@ -2589,6 +2589,16 @@ td.cov-c .cov-off {
     --cut: 36em;
   }
 }
+/* To do › Alerts: each line is the whole alert, so it wraps in its cell instead of ending in "…" on phones. */
+.adm-alerts td:last-child {
+  max-width: none;
+  white-space: normal;
+}
+.adm-alerts code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
 .adm-tscroll.tall {
   max-height: 420px;
   overflow-y: auto;
