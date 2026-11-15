@@ -105,16 +105,18 @@ control above.
 
 ## Results
 
-The plan above was pushed as eb386fad before the tab was read; the results below were computed after, with the plan
-unchanged.
+The plan above was pushed as eb386fad before the tab was read (GitHub's activity log: branch created at eb386fad at
+03:27:17 UTC; the connector's three replies saved at 03:27:32-35 UTC); the results below were computed after, with the
+plan unchanged.
 
-**Verdict: Stop, for both subjects.** The repeats do not spread over the lag bands enough for a lag term to be
-estimated: on the corals only the 1-7 days band holds 30 answers on a seen photo from 3 players or more; on the fish only
-the under-10-minutes band does. The primary test cannot run (1 player with answers at both short and long lag, on each
+**Verdict: Stop, for both subjects**, by the stop rule's second clause (fewer than two lag bands with 30 or more answers
+on a seen photo from 3 or more players; no band reaches 80%, so the first clause does not apply). On the corals only the
+1-7 days band qualifies (50% of the repeats; the > 7 days band has 29.8 answers from 1 player, the short bands too few
+players); on the fish only the under-10-minutes band does (58%). The primary test cannot run (1 player with answers at both short and long lag, on each
 subject; 6 needed). **No lag term; step 2 does not start.** Nothing in the table contradicts the literature either: the
 few short-lag cells sit above expectation, as Pelánek's curve predicts, but they are too few to be read.
 
-**Data.** The Answers tab read through the Google Sheets connector on 2026-11-15 at about 11:25 Manila: 5,668 answers
+**Data.** The Answers tab read through the Google Sheets connector on 2026-11-15 at 11:27 Manila: 5,668 answers
 up to 2026-11-13 16:40 Manila (the same last row as the export of the Q351 studies: no answer logged since), read-only.
 Corals 3,308 answers of 15 players, fish 2,355 of 9 (5 surprise-card answers left out). Every player is trusted
 (`trustOf`). The Time column has minute resolution (two answers in the same minute have lag 0, in the first band).
@@ -124,7 +126,9 @@ on every row with a record (corals 1,255 / 1,255, fish 2,355 / 2,355), so the gu
 logged memory offset are read as the game used them, and the logit swap needed no skipped row. The replayed bucket and
 the logged offset agree on every coral row (0 disagreements); on the fish, 5 rows logged no offset on a photo the log
 shows as seen and 3 logged one on a photo the log shows as new (8 of 2,355: the app's `s.ps` and the log differ a
-little, likely answers from before sign-in or another device). Today's offsets used for the swap: corals 0 / +0.35 /
+little, likely answers from before sign-in or another device). The script also applies the record's scale `s` in the
+swap (x' = x + s · (f − f')), which the declared formula leaves out; `s` is absent or 1 on all 3,610 records, so the
+swap is the declared one. Today's offsets used for the swap: corals 0 / +0.35 /
 −0.68 / −1.17 (`photoMemOf` on this read; the same as the Q351 studies), fish the prior 0 / −0.5 / −0.5 / −1.5.
 
 **Primary rows: those with a scoring record** (corals from 2026-11-06 on; fish every row). Answers on a seen photo:
@@ -172,14 +176,20 @@ under the minimum cell and not read; intervals: player-cluster bootstrap, 2,000 
 | --- | --- | --- | --- | --- | --- | --- |
 | new photo (reference) | 2,276.0 | 9 | 87.7 | 81.1 | +6.6 | +3.9 to +8.5 |
 | shown never right, < 10 min | 11.0 | 4 | 90.9 | 84.0 | (+6.9) | too few |
-| shown never right, 10 min-7 days (1 answer in each of three bands) | 3.0 | ≤ 3 | 100.0 | 88.0 | (+12.0) | too few |
+| shown never right, 10 min-1 h | 1.0 | 1 | 100.0 | 88.8 | (+11.2) | too few |
+| shown never right, 1 h-1 day | 1.0 | 1 | 100.0 | 84.2 | (+15.8) | too few |
+| shown never right, 1-7 days | 1.0 | 1 | 100.0 | 91.1 | (+8.9) | too few |
+| shown never right, all lags (none over 7 days) | 14.0 | 5 | 92.9 | 84.9 | (+8.0) | too few |
 | right once, < 10 min | 34.0 | 7 | 97.1 | 86.8 | +10.2 | +5.9 to +11.9 |
 | right once, 10 min-1 h | 20.0 | 6 | 85.0 | 89.9 | −4.9 | −34.0 to +6.9 |
 | right once, 1 h-1 day | 5.0 | 1 | 100.0 | 89.6 | (+10.4) | too few |
 | right once, 1-7 days | 4.0 | 2 | 75.0 | 82.6 | (−7.6) | too few |
-| right 2+, all lags | 2.0 | 2 | 100.0 | 98.0 | (+2.0) | too few |
+| right once, all lags (none over 7 days) | 63.0 | 7 | 92.1 | 87.7 | +4.3 | −1.3 to +7.9 |
+| right 2+, all lags (1 at < 10 min, 1 at 1 h-1 day) | 2.0 | 2 | 100.0 | 98.0 | (+2.0) | too few |
 | all seen, < 10 min | 46.0 | 7 | 95.7 | 86.4 | +9.3 | +2.5 to +12.2 |
 | all seen, 10 min-1 h | 21.0 | 6 | 85.7 | 89.8 | −4.1 | −32.5 to +7.5 |
+| all seen, 1 h-1 day | 7.0 | 2 | 100.0 | 90.0 | (+10.0) | too few |
+| all seen, 1-7 days | 5.0 | 2 | 80.0 | 84.3 | (−4.3) | too few |
 | all seen, all lags | 79.0 | 7 | 92.4 | 87.5 | +4.9 | −2.5 to +8.7 |
 
 **Primary test**: corals 1 player with answers on both sides of a bucket (P1, D +9.7 points on 10.3 weighted
@@ -193,7 +203,7 @@ control qualifies nothing; it says only that, on new photos, coral answers soon 
 better than expected compared with days later.
 
 **Secondary (robustness, every epoch, the logged Expected as it is).** Corals 3,308 answers, 527.3 on a seen photo, in
-four bands with 30 or more answers (< 10 min 35%, 10 min-1 h 13%, 1 h-1 day 16%, 1-7 days 30%, > 7 days 6%): the
+four bands with 30 or more answers from 3 or more players (so the stop rule would not hold on these rows; < 10 min 35%, 10 min-1 h 13%, 1 h-1 day 16%, 1-7 days 30%, > 7 days 6% with 29.8 answers from 1 player): the
 coral repeats at short lag are mostly from the first days (2026-11-01 to 11-05), before the exposure change of #685 and
 before the scoring record. The primary contrast still has only 4 players (P1 +12.5, P2 −12.9, P3 +9.5, P4 −33.1
 points): cannot test. "Right once" falls with lag (+13.4 / +13.0 / +9.1 / −0.2 points from < 10 min to 1-7 days, 12 /
@@ -223,16 +233,24 @@ lag effect, only consistent with one.
   pace (corals about 140 answers on a seen photo in a week of scored rows, fish about 80) the corals reach 30 in a second
   band only if short repeats come back; the fish need long-lag repeats, which come when players return to a family after
   days.
-- **When to look again**: the same table, unchanged (this plan, these scripts' description), at each subject's next
-  1,000-answer milestone (corals 4,000 answers, fish 3,000), the cadence of the Analyses report. Until then no lag term.
+- **When to look again (proposed after the results; the plan declared a re-run only for "Unclear")**: the same table,
+  unchanged (this plan, these scripts' description), at each subject's next 1,000-answer milestone (corals 4,000
+  answers, fish 3,000), the cadence of the Analyses report. Until then no lag term.
 - Then, as the ROADMAP row has it: recovery on simulated logs with a known lag effect through `eloReplay` (including the
   catch-up bias on "shown never right"), and the real-log comparison buckets against buckets + lag, per player.
 
 ## How it was run
 
 - The connector's reply (three ranges, A2:W5669) was saved by the session to its tool-results files, joined in the
-  scratchpad, and the names replaced by P1-P15 (by number of answers, this study's labels); the copy with names was
-  deleted at once, and every copy at the end.
+  scratchpad, and the names replaced by P1-P15. One deviation from the plan: the labels follow each player's number of
+  answers over both subjects (surprise cards left out), not within the subject; they are this study's labels only, and
+  the mapping went to the integrator, never into a committed file. The joined copies were deleted after the first run;
+  the connector's three reply files stayed in the session's tool-results until the re-run below, and were deleted then
+  with every other copy.
+- **Re-run**: a second agent rejoined the same three replies on 2026-11-15 (11:45 Manila) and ran the same script,
+  primary and `--secondary`, on this branch's `core.js`, after checking that every Time parses (0 of 5,668 failed). Every
+  number above came back the same; the fish table above is the full output (the first write-up had merged its sparse
+  rows).
 - One Node script (scratchpad, about 280 lines, single use, not kept under `tools/`) on this checkout's `core.js`:
   replays each player's history per photo (counts, misses, last show; a revealed hint as a show), builds the photo-cells
   (1/n per photo), rebuilds and swaps the expectation as declared, applies the stop rule, prints the cells with a

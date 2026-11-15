@@ -4602,9 +4602,10 @@ decays with the time since the photo was last shown, its decay shape fixed from 
 Rule L1 gained the matching exception the same day (rule L1, "Second exception, photo memory"). Validation (rules L11,
 L12) in the review's order, the read-only table first (lag band × bucket, observed against expected, players the unit);
 ROADMAP "Photo memory that fades with time". **Step 1, 2026-11-15** ([the lag table](reviews/2026-11-15-photo-memory-lag-table.md),
-declared before reading the log): the stop rule holds on both subjects (on the log to 2026-11-13, coral repeats sit
-mostly at 1-7 days, fish repeats within 10 minutes: one lag band with enough answers each), so no lag term is added and
-step 2 waits; the table runs again at each subject's next 1,000-answer milestone.
+declared before reading the log): the stop rule holds on both subjects (on the log to 2026-11-13, only one lag band
+each holds 30 answers on a seen photo from 3 players or more: corals 1-7 days, half of their repeats; fish under 10
+minutes, 58%), so no lag term is added and step 2 waits; proposed: the same table again at each subject's next
+1,000-answer milestone.
 
 **In the app** (`quiz.js` `answer`, `model.js` `famOf`, `pgMemW`):
 
