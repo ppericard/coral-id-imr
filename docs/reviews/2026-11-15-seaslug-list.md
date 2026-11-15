@@ -38,6 +38,11 @@ He accepted the six recommendations of §6, now applied in `tools/seaslug_source
 
 The sections below give the numbers as decided. §6 keeps the questions as they were asked.
 
+**Follow-up, the same day** ([2026-11-15-seaslug-sources](2026-11-15-seaslug-sources.md)): the "Juvenile" annotations were
+checked photo by photo (all 97 of circle 1 show the animal, none an egg mass, so the counts below stand); the egg
+ribbons are under the "Egg" annotations and in *H. sanguineus*'s photo supply (§5.1); egg ribbons and egg masses are
+excluded from the candidates (`photos.exclude`, Pierre, 2026-11-15); and the reference sources for facts and photos.
+
 ## 1. Method
 
 ### 1.1 The tool and its data file
@@ -316,7 +321,9 @@ whichever single site is left out (§3.4).
 Stars first (by score), then the common species (by commonness rank). Photos: Research Grade observations; in the
 Philippines, each counted once by its best photo licence (open = CC0 / CC BY, NC = CC BY-NC); "world" (the Philippines
 included) counts the observations with at least one photo of that licence, so an observation can count in both. Juvenile:
-observations annotated "Life Stage: Juvenile". All **[measured]**.
+observations annotated "Life Stage: Juvenile"; every one shows the animal, none an egg mass (checked on their photos,
+[sources note](2026-11-15-seaslug-sources.md) §1.2). The photo columns include the egg-annotated observations, which
+matter for *H. sanguineus* only (§5.1). All **[measured]**.
 
 | # | Species | Group | Family | Common rank | PH observers | Near Dauin (observers) | Star score | Open / NC, PH | Open / NC, world | Juvenile, PH / world |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -378,6 +385,10 @@ both:
   (rule C8).
 - **From the Philippines alone** (each observation counted once): 44 of 45 have 12 or more, 42 of 45 have 20 or more.
   Below 20: *Jorunna parva* (5), *Hexabranchus sanguineus* (13), *Thecacera pacifica* (15).
+- **Egg ribbons, counted afterwards** ([sources note](2026-11-15-seaslug-sources.md) §1.3): 5 of *H. sanguineus*'s 13
+  Philippine observations, both open ones among them, are egg ribbons only (annotated "Life Stage: Egg"). Without them
+  it has **8** (all CC BY-NC), so 43 of the 45 have 12 or more from the Philippines alone; and 24 open and 251 NC worldwide (36 and 360 above). 161 of its 544
+  Research Grade observations worldwide are its egg rosettes. The other 44 species lose at most 3 worldwide.
 - **Open licences only (CC0 / CC BY)**, worldwide: 41 of 45 have 12 or more. Below 12: *Melibe colemani* (7), *Jorunna
   parva*, *Thecacera pacifica* (8 each), *Reticulidia halgerda* (11). Three of the four are stars: the sought-after
   species lean on CC BY-NC, as the study found.
@@ -392,8 +403,12 @@ both:
     *Hexabranchus lacer* (43), *Pleurobranchus forskalii* (15), *Pteraeolidia semperi* (10), *Jorunna funebris* (10).
   - In the Philippines, 7 of the 45 have one or more (*H. lacer* 6, *P. forskalii* 5).
   - An annotation says a juvenile was photographed, not that it looks different.
+  - **Checked afterwards on the photos** ([sources note](2026-11-15-seaslug-sources.md) §1.2): all 97 juvenile-annotated
+    observations of circle 1 show the animal, none an egg ribbon. The 43 *H. lacer* are small pale animals with a
+    violet edge and purple spots, unlike the red adult. The egg ribbons carry the "Egg" annotation instead (§5.1).
 - **Public sources for a juvenile that looks different**: two leads, **neither verified** (one search; the papers were
-  not read):
+  not read). Since then *Hexabranchus* has a readable source too, the Sea Slug Forum's "Juvenile Hexabranchus from
+  Philippines" (1999, from Dauin; sources note §1.5). The two leads as first found:
   - ***Hexabranchus***: Tibiriçá et al. 2023 (*Organisms Diversity & Evolution*, doi:10.1007/s13127-023-00611-0), the
     revision that split the Spanish dancer. A search result's excerpt of it says "the ontogeny of color pattern is
     discussed" and "young juveniles are gray with a marginal white line", without saying which of its species
@@ -402,9 +417,11 @@ both:
     precocious, a distinct phenotype or a new species" (Sheffield Hallam University repository). The title itself asks
     whether that form is a juvenile at all **[read: the title only]**.
   - Nothing was found for the other 43. That is not evidence that they have no distinct juvenile.
-- **So today: 0 species with a verified distinct juvenile, 2 leads** (*Hexabranchus*, *Jorunna funebris*).
-  *Hexabranchus lacer*, the star added by Q377, has the most juvenile annotations of the 452 species (43), which fits
-  the *Hexabranchus* lead. *Pleurobranchus forskalii* (15) is worth a look too.
+- **So at this note's merge: 0 species with a verified distinct juvenile, 2 leads** (*Hexabranchus*, *Jorunna
+  funebris*). *Hexabranchus lacer*, the star added by Q377, has the most juvenile annotations of the 452 species (43).
+  **Update (sources note §1.5)**: the *Hexabranchus* lead now has a readable source and 43 photographed juveniles; the
+  +5 for *H. lacer* is proposed there, not applied. The *P. forskalii* juveniles (15) look like small adults **[measured:
+  their photos]**.
 
 ### 5.3 The photo target per species (decided, Q377; to revisit after the first judging pass)
 
@@ -420,6 +437,7 @@ sighted), game cap 20; candidates capped at 30 for a stable species, +10 per ext
 | Game cap | 20 | **12** |
 | Candidates, stable species | 30 | **20** |
 | Per distinct juvenile form | +10 per phase | **+5**, only where a source documents a different-looking juvenile (2 leads today, §5.2) |
+| Egg ribbons, egg masses | — | **never candidates** (Pierre, 2026-11-15): the "Egg" annotations dropped, an egg-only photo dropped at judging (`photos.exclude`, sources note §1.4) |
 | Most | 60 | **30** (very variable colours: *Chromodoris*, *Phyllidia*) |
 
 Why fewer than the fish:
