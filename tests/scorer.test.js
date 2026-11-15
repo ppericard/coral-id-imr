@@ -146,7 +146,7 @@ function same(R, P, why) {
 }
 
 test('quiz.js answer scores through core.js scoreAnswer and logs its scoring record', () => {
-  const ans = block(quiz, 'function answer(cur, c, target, ph, cor, unseen, tm = {}) {', '\n}\n', {file: 'quiz.js'});
+  const ans = block(quiz, 'function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {', '\n}\n', {file: 'quiz.js'});
   assert.ok(ans.includes('const res = scoreAnswer(P, q)'));
   assert.ok(ans.includes('sc: scoreLog(q, res)'));
   assert.ok(ans.includes('e: Math.round(100 * res.e) / 100'));

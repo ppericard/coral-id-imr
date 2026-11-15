@@ -29,13 +29,13 @@ const devs = s => {
   return R.slice(1).map(r => [r[0], r[7], r[c] ?? '']);
 };
 
-test('Code.gs: Device is the last Answers column; every column before it stays where it was', () => {
+test('Code.gs: Device is Answers column Y, after every column before it, which stays where it was', () => {
   const s = loadCodeGs();
   save(s, 'Ana', [ans('a1')], {dev: DEV});
   const H = s.sheets.Answers.rows[0],
     LOG = vm.runInContext('LOG', s.ctx);
-  assert.strictEqual(H.at(-1), 'Device');
-  assert.strictEqual(H.length, 25);
+  assert.strictEqual(H[24], 'Device');
+  assert.strictEqual(H.length, 26, 'Photo answered after it (tests/findxlog.test.js)');
   assert.deepStrictEqual(
     [...H.slice(0, 24)],
     [

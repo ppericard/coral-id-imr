@@ -758,7 +758,7 @@ function syncOnce(tries = 0, pulled = null) {
           pin: me.pin,
           ...what,
           summary: syncSummary(),
-          answers: log,
+          answers: log.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
           rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
           ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
@@ -1232,7 +1232,7 @@ function sendAnon() {
     // gives it (v29); an older script ignores it.
     body: JSON.stringify({
       anon: who,
-      anonAnswers: batch,
+      anonAnswers: batch.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
       av: appVer(),
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
