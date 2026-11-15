@@ -88,6 +88,10 @@ const hardShare = (run, cp) => {
 // A run's record of one break (learnsim --breaks: per run, breaks [{brk, cbLen, cbOk, held, after, afterOk, holdAfter,
 // opens, ...}], each break from the same first session); none when the run did not take that break.
 const brkOf = (run, b) => (run.breaks || []).find(x => x.brk === b) || null;
+// learnsim's cap on the questions of one break, the comeback and the --after questions together (tools/learnsim.js,
+// "Breaks"): a break that reached it may have fewer --after questions than asked.
+const BRK_CAP = 200,
+  cut = x => (x.cbLen || 0) + (x.after || 0) >= BRK_CAP;
 const brkGet = f => (r, b) => {
   const x = brkOf(r, b);
   return x ? f(x) : null;
@@ -130,8 +134,15 @@ const MEASURES = {
   cbRight: {label: 'Right % during the comeback', kind: 'break', dg: 1, get: brkGet(x => (x.cbLen ? (100 * x.cbOk) / x.cbLen : null))},
   afterRight: {label: 'Right % in the questions after the comeback', kind: 'break', dg: 1, get: brkGet(x => (x.after ? (100 * x.afterOk) / x.after : null))},
   held: {label: 'Answers with no genus opening after the break (floor, comeback)', kind: 'break', dg: 1, get: brkGet(x => x.held)},
-  holdAfter: {label: 'Answers after the comeback with the opening hold on', kind: 'break', dg: 2, get: brkGet(x => x.holdAfter)},
-  open15: {label: 'Genera opened on their cards in the first 15 answers after the comeback', kind: 'break', dg: 2, get: brkGet(x => (x.opens || []).filter(q => q <= 15).length)},
+  // Counts over a window after the comeback: none when the window was cut (Codex review #951: learnsim stops a break at
+  // BRK_CAP questions in all, so a long comeback can leave fewer answers after it, and a count over less time is no pair).
+  holdAfter: {label: 'Answers after the comeback with the opening hold on', kind: 'break', dg: 2, get: brkGet(x => (cut(x) ? null : x.holdAfter))},
+  open15: {
+    label: 'Genera opened on their cards in the first 15 answers after the comeback',
+    kind: 'break',
+    dg: 2,
+    get: brkGet(x => (x.after < 15 ? null : (x.opens || []).filter(q => q <= 15).length))
+  },
   // The sheet's photo ratings in the rated world's population (--app sheet, tools/ratedworld.js runPop): one value per
   // seed (the population shares them), at the checkpoints of the players' answers; harm: +1 when higher is worse.
   rateErr: {label: 'Photo rating error against the truth (centred RMS, photos answered)', kind: 'pop', dg: 4, harm: 1, get: (p, cp) => popAt(p, cp, 'err')},

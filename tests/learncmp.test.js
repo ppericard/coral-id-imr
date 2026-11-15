@@ -345,6 +345,16 @@ test('break measures: the comeback and the questions after it, per break, a prim
   close(L.MEASURES.afterRight.get(run, '1d'), 80);
   assert.strictEqual(L.MEASURES.cbLen.get(run, '3d'), null, 'a break the run did not take');
   assert.strictEqual(L.MEASURES.cbRight.get({breaks: [brk('1d', 0, 0)]}, '1d'), null, 'no comeback: no right %');
+  // Codex review #951: a break that reached learnsim's cap of 200 questions has a cut window after the comeback; its
+  // counts over that window are no pair.
+  const capped = {breaks: [{brk: '1mo', cbLen: 200, cbOk: 150, held: 200, after: 0, afterOk: 0, holdAfter: 0, opens: []}]},
+    short = {breaks: [{brk: '1mo', cbLen: 190, cbOk: 150, held: 190, after: 10, afterOk: 8, holdAfter: 1, opens: [2]}]};
+  assert.strictEqual(L.MEASURES.open15.get(capped, '1mo'), null);
+  assert.strictEqual(L.MEASURES.holdAfter.get(capped, '1mo'), null);
+  assert.strictEqual(L.MEASURES.afterRight.get(capped, '1mo'), null);
+  assert.strictEqual(L.MEASURES.open15.get(short, '1mo'), null);
+  assert.strictEqual(L.MEASURES.holdAfter.get(short, '1mo'), null);
+  close(L.MEASURES.afterRight.get(short, '1mo'), 80);
   // 2 questions shorter in each of the 10 pairs: exact p 2 / 2^10.
   const R = L.compare(B, A, {primary: {at: L.parseAt('cbLen@1d'), dir: 'down'}});
   assert.ok(R.primary.clear);
