@@ -665,3 +665,18 @@ test('circle 3 by choice (Pierre, 2026-11-07 08:50; Q204): openState, the card o
   assert.strictEqual(q({beyond: true}, {beyond: false, beyondN: 1}).beyond, true);
   assert.strictEqual(q({beyond: false, beyondN: 2}, {beyond: false, beyondN: 1}).beyondN, 2);
 });
+
+test('admin todo: each subject names its To do sections; the fish have To do › All and Points, none of the coral photo sections', () => {
+  const CORAL = ['rule', 'sa', 'poor', 'sug'],
+    KNOWN = [...CORAL, 'photos'],
+    admin = fs.readFileSync(path.join(__dirname, '..', 'admin.js'), 'utf8');
+  C.SUBJECTS.forEach(S =>
+    assert.ok(Array.isArray(S.admin.todo) && S.admin.todo.every(k => KNOWN.includes(k)), `${S.id}: ${JSON.stringify(S.admin.todo)}`)
+  );
+  assert.deepStrictEqual(C.subjectOf('coral').admin.todo, CORAL);
+  const fish = C.subjectOf('fish').admin;
+  assert.deepStrictEqual(fish.todo, ['photos']);
+  ['inbox/todo/all', 'inbox/todo/points'].forEach(p => assert.ok(fish.pages.includes(p), p));
+  // admin.js renderTriage draws each section only for a subject that has it (they showed on the fish Reports before)
+  KNOWN.forEach(k => assert.ok(admin.includes(`has('${k}')`), `renderTriage gates ${k}`));
+});
