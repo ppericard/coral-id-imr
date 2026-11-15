@@ -1,5 +1,5 @@
 {
- "_doc": "The watermark pass (Pierre, 2026-11-15, Q373; judging/FISH.md \"Watermark\"): the fish photos Home can show (each family's cover and the reference photos its band rotates through, up to 10 per family in the game's order) judged by eye on their R2 file; each one listed carries a visible watermark or text (a photographer's name, a logo, a copyright line), with what the judge saw. python3 tools/judging_fish.py watermark writes the flag w into its single judgement; Home skips it, the games keep it; Pierre takes the flag off in the admin like any tag. The second pass (ROADMAP \"Watermark pass, the rest\") looked at 1,153 band-kind photos the first did not reach, so looked adds the two passes' counts (844 + 1,153); a few photos past the first pass's 10 per family may have been looked at in both, so it is not a count of distinct photos.",
+ "_doc": "The watermark pass (Pierre, 2026-11-15, Q373; judging/FISH.md \"Watermark\"): the fish photos Home can show (each family's cover and the reference photos its band rotates through, up to 10 per family in the game's order) judged by eye on their R2 file; each one listed carries a visible watermark or text (a photographer's name, a logo, a copyright line), with what the judge saw. python3 tools/judging_fish.py watermark writes the flag w into its single judgement; Home skips it, the games keep it; Pierre takes the flag off in the admin like any tag. The second pass (ROADMAP \"Watermark pass, the rest\") looked at 1,153 band-kind photos the first did not reach, so looked adds the two passes' counts (844 + 1,153); a few photos past the first pass's 10 per family may have been looked at in both, so it is not a count of distinct photos. The second pass also looked again at 21 photos of the first pass's count (the band-kind photos in each family's first 10 by the authors it tagged).",
  "at": "2026-11-15",
  "looked": 1997,
  "photos": {
@@ -54,6 +54,7 @@
   "fi31494488": "terence zahner",
   "fi31777264": "terence zahner photography",
   "fi319090441": "Rafi Amar signature, bottom left",
+  "fi319825555": "Rafi Amar signature, bottom left",
   "fi32211964": "terence zahner photography",
   "fi32507619": "terence zahner",
   "fi32575399": "(c)mda",
