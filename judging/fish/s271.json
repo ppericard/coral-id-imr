@@ -191,6 +191,14 @@
   "fish-s271-cand-378835670": {
    "code": "p1g2ss12",
    "keep": "dup"
+  },
+  "fish-s271-cand-378835678": {
+   "code": "p1g2msx1",
+   "keep": "dup"
+  },
+  "fish-s271-cand-375992755": {
+   "code": "o1g0sm13",
+   "keep": "best"
   }
  }
 }

@@ -127,6 +127,26 @@
   "fish-s669-cand-597513999": {
    "code": "o1g1sm13",
    "keep": "best"
+  },
+  "fish-s669-cand-341387956": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s669-cand-438840256": {
+   "code": "o1g0sl13",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a software text box covers the lower left of the photo (a screenshot of a viewer)"
+  },
+  "fish-s669-cand-441575737": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s669-cand-519967586": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
   }
  }
 }

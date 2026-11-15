@@ -211,6 +211,18 @@
   "fish-s495-cand-617710937": {
    "code": "p1g0sm1a3",
    "keep": "best"
+  },
+  "fish-s495-cand-617710923": {
+   "code": "p0g0sl1a2",
+   "keep": "dup"
+  },
+  "fish-s495-cand-358497173": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s495-cand-738259730": {
+   "code": "p1g1mss2",
+   "keep": "best"
   }
  }
 }
