@@ -2061,6 +2061,40 @@ const darkCards = (p, sel) =>
       await go('photos/genera/live/' + encodeURIComponent('Porites'));
       if ((await p.evaluate(() => (document.querySelector('.adm-sname') || {}).textContent)) !== 'Porites')
         fails.push(`${w}px #photos/genera/live/Porites: not the Porites page`);
+      // The IMR lecture photos' sources (Pierre, 2026-11-15, #925): on Stylophora's page a traced one (imr-p12_i8, Corals of
+      // the World) is NC with its photographer and site's terms in the badge's title, one found only as copies
+      // (imrl-p10_i2) is "source unknown" and keeps its IMR badge; its enlarged photo links the page that credits it.
+      await go('photos/genera/live/Stylophora');
+      const lt = await p.evaluate(() => {
+        const t = f => document.querySelector(`#view .adm-tile[data-f="${f}"]`);
+        const one = f => {
+          const e = t(f);
+          return e
+            ? {
+                rt: (e.querySelector('.adm-rt') || {}).textContent,
+                title: (e.querySelector('.adm-rt') || {}).title,
+                unk: !!e.querySelector('.adm-unk')
+              }
+            : null;
+        };
+        return {
+          traced: one('imr-p12_i8'),
+          unknown: one('imrl-p10_i2'),
+          cap: (zoom('Stylophora', 'imr-p12_i8'), (document.querySelector('#lightbox .lb-cap') || {}).innerHTML || '')
+        };
+      });
+      await p.evaluate(() => document.querySelector('#lightbox [data-x]') && document.querySelector('#lightbox [data-x]').click());
+      if (
+        !lt.traced ||
+        lt.traced.rt !== 'NC' ||
+        lt.traced.unk ||
+        !/Jim Maragos \/ Corals of the World · Corals of the World terms/.test(lt.traced.title) ||
+        !lt.unknown ||
+        lt.unknown.rt !== 'IMR' ||
+        !lt.unknown.unk ||
+        !/href="https:\/\/www\.coralsoftheworld\.org\/species_factsheets\/[^"]+"[^>]*>Jim Maragos \/ Corals of the World ↗/.test(lt.cap)
+      )
+        fails.push(`${w}px Stylophora: the lecture photos' sources ${JSON.stringify(lt)}`);
       const odd = 'A/B?c=1&d';
       await go('players/list/journey/' + encodeURIComponent(odd));
       const j = await p.evaluate(() => ({

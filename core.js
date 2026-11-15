@@ -753,9 +753,12 @@
     if (!m) return /no rights reserved/i.test(p.a || '') ? 'cc0' : null; // iNaturalist's CC0 credit
     return m[1] === 'CC0' ? 'cc0' : 'cc-' + m[1].slice(3).toLowerCase().trim().split(/\s+/).join('-');
   }
+  // An IMR lecture photo traced to its original source (data.json course pg, the page that credits it; Pierre, 2026-11-15,
+  // #925): 'nc', its site's terms (Corals of the World: personal, non-commercial or academic use with citation, all other
+  // rights reserved); one not traced stays 'imr'.
   function rightsClass(p) {
     if (!p) return 'nc';
-    if (p.imr) return 'imr';
+    if (p.imr) return p.pg ? 'nc' : 'imr';
     if (p.cf) return 'book';
     if (p.own) return 'own';
     return /^(cc0|cc-by)$/.test(licOf(p) || '') ? 'open' : 'nc';
