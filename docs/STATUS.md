@@ -55,6 +55,8 @@ recomputed with one unit per species first; 5 answered (Q359); 6-16 next. **Deci
   before any wider or commercial deployment.
 - **Q361** licence refresh: weekly for the other photographers only ("je ne vais pas les changer toutes les semaines").
 - **Q362** fish species: one progress unit per species; how it is filled by its names comes later (the study).
+- **New, for the brief**: a photo's reference flag and its +1 ease belong to its record, not the photo: 423 photos
+  judged both ways get one ease point more when they play as a reference (#942, parked in ROADMAP).
 - AVIF (#933) and the 500px account (his, confirmed) noted; his photos on Commons: 114 files, 32 Wikipedia articles.
 
 Last question number: Q362
