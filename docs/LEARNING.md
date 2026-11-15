@@ -1946,6 +1946,45 @@ with an honest starting rust, that is a finding for Pierre, not a fixture to tun
 expectation still stays in the comeback: the tolerance does not guarantee an end. And the comeback reads `INTRO.SLACK`
 itself (a stub at 0 gives the old rule).
 
+**Results** (2026-11-15; both arms from frozen copies of this branch, the base at the plan's commit, the same seeds 1-5;
+the machine shared with other runs, so no timing is read).
+
+- **Primary, clear at the first look**: comeback questions after a day, corals, 18 of 20 pairs shorter, stratified
+  sign-flip p 7.6·10⁻⁶ (exact; the look's threshold 0.025). Mean per profile: beginner 14.8 → 4.8, lecture RA 9.4 →
+  5.8, strong RA 9.8 → 5.6, expert 5.6 → 2.8 (no single profile clear under Holm at 5 seeds); pooled median 6 → 2. The
+  second look was not needed.
+- **Fish** (secondary, exploratory): after a day, 21 of 25 pairs shorter (p 1.0·10⁻⁵, 100,000 draws); pooled median 2
+  → 1; the beginner's mean 13.4 → 3.0.
+- **No visit all comeback**: comebacks of 40 questions or more after 8 h and a day: 1 of 20 coral runs before (the
+  beginner, 60 questions after a day), none after; fish none either way. After 3 days and a week, the coral runs of
+  40 or more went from 4 to 0, the fish from 1 to 0. The unit test of the study's case (above): the old rule runs all
+  40 questions (its sum 0.73 → 2.77), the new one ends at the 18th.
+- **The first session is identical** in both arms (every guardrail of the table: difference 0 in every pair, corals and
+  fish), so the pairing holds; every guardrail held.
+- **The rated world**: both arms' outputs identical (corals, 5 seeds × 1,000 answers, the date and run time aside), as
+  expected of a world without breaks.
+- **The cost declared, as large as feared at the long breaks** (median comeback questions [range], before → after):
+
+  | Break | Corals: beginner | lecture RA | strong RA | expert | Fish: beginner | casual diver | lecture RA | strong RA | expert |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 d | 3 [2-60] → 2 [2-13] | 6 [3-21] → 5 [2-13] | 7 [3-23] → 4 [2-14] | 4 [2-10] → 2 [2-6] | 13 [1-34] → 4 [1-5] | 5 [2-6] → 4 [1-5] | 2 [1-7] → 1 [1-5] | 2 → 1 | 2 [2-10] → 1 [1-6] |
+  | 3 d | 10 [8-43] → 10 [7-32] | 8 [5-19] → 6 [4-15] | 12 [8-27] → 6 [4-15] | 6 [5-16] → 4 [4-7] | 7 [5-24] → 6 [4-18] | 5 [3-14] → 4 [2-10] | 11 [4-13] → 6 [2-10] | 5 [3-10] → 3 [2-6] | 4 [3-9] → 3 [2-6] |
+  | 1 w | 14 [10-103] → 16 [9-22] | 21 [14-69] → 11 [9-13] | 11 [8-71] → 7 [6-11] | 8 → 6 | 8 [6-76] → 6 [5-17] | 7 [6-18] → 5 [5-14] | 6 [6-13] → 5 [5-10] | 6 [5-10] → 4 | 6 [6-7] → 4 [4-5] |
+  | 1 mo | 88 [67-133] → 50 [34-75] | 35 [23-64] → 20 [17-32] | 33 [24-38] → 18 [14-27] | 14 [13-16] → 11 [11-13] | 68 [9-109] → 37 [8-41] | 28 [21-34] → 16 [13-26] | 17 [10-23] → 14 [8-16] | 12 [10-15] → 10 [9-12] | 10 [10-12] → 8 [8-10] |
+
+  On the side of harm, after a month (corals; mean paired difference [one-sided 95% bound]): the answers with the
+  opening hold on in the 20 after the comeback rose, beginner +3.6 [+0.3], lecture RA +3.6 [−0.6], strong RA +2.2
+  [−1.1]; the right % in those 20 fell 2-5 points, none clear (beginner −5.0 [−14.5], lecture RA −2.0 [−14.4], strong RA
+  −5.0 [−13.9]). After a week no harm-side measure moved clearly; on the fish the right % after a week's comeback rose
+  (casual diver +7, strong RA +5). The genera opened in the 15 answers after a comeback did not rise anywhere. For
+  scale: today's month comebacks are about twice the 2026-11-02 table above (corals' beginner 36.5); with the tolerance
+  they come back to that table's range for the beginner (50, range 19-62 there) and a little under it for the lecture
+  and strong RA (20 and 18 against 22-63 and 20-39). No margin exists for these: they go to Pierre with options (the PR).
+- **The real log** (rule L12): not replayed (above). Arithmetic on the study's published figures only: P5's 40 comeback
+  answers, 27 right at a mean expectation of 0.75, moved the sum by about +3 less the rust the questions repaired; the
+  tolerance takes 4 more off over 40 answers, so her sum falls over the visit instead of growing. Whether it would have
+  ended, and when, depends on her starting rust and the order of her misses, which the study does not publish.
+
 ### Which genus comes next: the progressive path (2026-11-02)
 
 Pierre: rather than spamming a beginner with 40 genera, focus on the easiest ones, opening new ones as they go,
