@@ -1390,7 +1390,7 @@ const darkCards = (p, sel) =>
         let r = await rv();
         if (
           r.hash !== '#' + other.hash + 'photos/review/ease' ||
-          r.views.join() !== 'Ease,Phase & framing' ||
+          r.views.join() !== 'Ease,Phase & framing,By difficulty' ||
           !r.tiles ||
           !/^Ease: same as/.test(r.agree) ||
           r.note ||
@@ -5722,7 +5722,6 @@ const darkCards = (p, sel) =>
                 not: !!(me && me.querySelector('[data-fu="not"]')),
                 removed: T.filter(e => seen.includes(e.dataset.f)).length,
                 rec: /recognised by/.test(document.getElementById('view').textContent),
-                help: modeKey(),
                 wide: document.documentElement.scrollWidth - innerWidth
               };
             }, pre.f);
@@ -5734,7 +5733,6 @@ const darkCards = (p, sel) =>
             !d0.not ||
             d0.removed ||
             d0.rec ||
-            d0.help !== 'fishdiff' ||
             d0.wide > 0
           )
             fe.push(`By difficulty ${JSON.stringify(d0)}`);
@@ -5743,6 +5741,12 @@ const darkCards = (p, sel) =>
           const d1 = await dv();
           if (d1.first === pre.f || !d1.n) fe.push(`By difficulty, Easiest ${JSON.stringify(d1)}`);
           await fq.click('[data-do="hard"]');
+          // its own help behind "?": the answers alone, no photo difficulty
+          await fq.click('#help');
+          if (await fq.$('#admhelp [data-ht="page"]')) await fq.click('#admhelp [data-ht="page"]');
+          const ht = await fq.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
+          if (!/from the answers alone/.test(ht) || /Elo/.test(ht)) fe.push(`By difficulty, help ${ht.slice(0, 80)}`);
+          await fq.click('#help');
         }
         if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
