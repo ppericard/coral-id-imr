@@ -237,7 +237,7 @@ test('retention: the 12 newest backups kept, older ones deleted; nothing else is
   const backups = Array.from({length: 14}, (_, i) => ({fileid: 100 + i, name: 'reef-id-sheet-' + day(i) + '.xlsx', isfolder: false}));
   const others = [
     {fileid: 50, name: 'reef-id-sheet-2020-01-01.xlsx.bak', isfolder: false},
-    {fileid: 51, name: 'IMR Coral ID - RA progress.xlsx', isfolder: false},
+    {fileid: 51, name: 'my manual export.xlsx', isfolder: false},
     {folderid: 52, name: 'reef-id-sheet-2019-01-01.xlsx', isfolder: true},
     {fileid: 53, name: 'Reef-id-sheet-2019-01-01.xlsx', isfolder: false}
   ];
