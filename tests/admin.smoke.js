@@ -2704,8 +2704,7 @@ const darkCards = (p, sel) =>
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Heatmap.')
-              fe.push(`the line on what is not there: "${at.not}"`);
+            if (at.not !== 'Not for fish yet: Difficulty › Heatmap.') fe.push(`the line on what is not there: "${at.not}"`);
             // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
             // fish report
             const [H, LV] = await fq.evaluate(() => [
