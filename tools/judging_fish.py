@@ -32,6 +32,13 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    the listed photos whose code lacks it (exit 1 on any)
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
+    --subject seaslug (any command above but rep, one and watermark): the sea slugs' candidates instead (seaslug-cand.json,
+                                                   tools/fetch_seaslugs.py), on their rubric (judging/SEASLUG.md:
+                                                   tools/fish_judge.py RUBRICS "seaslug"): judging/seaslug/<taxon id>.json,
+                                                   imported into suggest.json "seaslug"; ids = iNaturalist taxon ids (the
+                                                   keys of seaslug-cand.json) or scientific names; no phase, no box, keep
+                                                   optional (one photo per observation: read as best), and the egg rule
+                                                   (#970's filter 2): {"egg": true} and no code excludes an egg-mass photo
 
 judging/fish/<species id>.json = {"photos": {photo: {code, keep, phase, crop, bb, unsure, note}}}; suggest.json "fish"
 {photo: {jt, e, k, ph, c, bb, u, n}} (autosort.js fishSure reads it): jt the tags and e the ease after the rubric's caps
@@ -46,7 +53,7 @@ import urllib.request
 from collections import Counter, OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fish_judge import CODE, NEW_COUNT, cap, juv_early  # noqa: E402  the rubric's code and caps, one for game photos and candidates
+from fish_judge import RUBRICS, cap, juv_early  # noqa: E402  the rubrics' codes and caps, one for game photos and candidates
 from fish_game import box_ok  # noqa: E402  the fish's box, as the tile tool reads it
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -60,6 +67,22 @@ def load(p, d=None):
         return d
 
 
+# The subjects this pass judges (use() switches; fish by default). Each: its candidates, its judging files, its rubric
+# (tools/fish_judge.py RUBRICS), the fields a judgement may hold, its phases, and the keep a judgement without one reads
+# (None: keep is required). Sea slugs (Pierre, 2026-11-15, Q369, Q377): one photo per observation (tools/fetch_seaslugs.py),
+# so keep reads best; no phase (rule C2: no presentation names one) and no fish's box (the tile is the fish games'); egg,
+# #970's filter 2 (judging/SEASLUG.md "Egg masses").
+SUBJECTS = {
+    "fish": {"dir": os.path.join("judging", "fish"), "cand": "fish-cand.json", "doc": "judging/FISH.md", "eg": "p1g0sm14",
+             "fields": {"code", "keep", "phase", "crop", "bb", "unsure", "note"}, "keep": None},
+    "seaslug": {"dir": os.path.join("judging", "seaslug"), "cand": "seaslug-cand.json", "doc": "judging/SEASLUG.md",
+                "eg": "d1g0sl15", "fields": {"code", "keep", "crop", "egg", "unsure", "note"}, "keep": "best"},
+}
+SUBJECT = "fish"
+CFG = SUBJECTS[SUBJECT]
+JDIR = CFG["dir"]
+CODE = RUBRICS[SUBJECT]["code"]
+NEW_COUNT = RUBRICS[SUBJECT]["count"]
 FISH = load("fish.json", {"species": [], "teach": []})
 SP = {s["id"]: s for s in FISH["species"]}
 CAND = (load("fish-cand.json", {}) or {}).get("cand", {})
@@ -75,17 +98,41 @@ for _t in FISH["teach"]:
 # juvenile is the code's j flag, an adult needs no tag. Never another category (rule C2).
 PHASES = ("subadult", "intermediate", "terminal", "female", "male")
 KEEP = ("best", "alt", "dup")
-FIELDS = {"code", "keep", "phase", "crop", "bb", "unsure", "note"}
+FIELDS = CFG["fields"]
+
+
+def use(subject):
+    """Points the pass at a subject of SUBJECTS: its candidates, species, judging files, rubric and fields. Sea slugs:
+    seaslug-cand.json keyed by iNaturalist taxon id, the species of tools/seaslugs.json, no teaching entry (no phase, no
+    juvenile class: every juvenile keeps the cap), their own curation.json key (none yet), never the fish's."""
+    global SUBJECT, CFG, JDIR, CODE, NEW_COUNT, SP, CAND, CUR, TEACH, ENTRY, FIELDS
+    if subject not in SUBJECTS:
+        sys.exit(f"Unknown subject {subject!r}: one of {', '.join(SUBJECTS)}")
+    SUBJECT, CFG = subject, SUBJECTS[subject]
+    JDIR, FIELDS = CFG["dir"], CFG["fields"]
+    CODE, NEW_COUNT = RUBRICS[subject]["code"], RUBRICS[subject]["count"]
+    CAND = (load(CFG["cand"], {}) or {}).get("cand", {})
+    CUR = (load("curation.json", {}) or {}).get(subject) or {}
+    if subject == "fish":
+        SP = {s["id"]: s for s in FISH["species"]}
+        TEACH = {t["id"]: t for t in FISH["teach"]}
+        ENTRY = {s: t for t in reversed(FISH["teach"]) if t.get("level") == 1 for s in t.get("species") or []}
+    else:
+        src = load(os.path.join("tools", "seaslugs.json"), {"species": []}) or {"species": []}
+        SP = {str(s["inat"]): {"id": str(s["inat"]), "name": s["name"]} for s in src.get("species", []) if s.get("inat")}
+        TEACH, ENTRY = {}, {}
 
 
 def ids(args):
-    """Species ids from species or teaching ids (all species with candidates when none)."""
+    """Species ids from species or teaching ids (all species with candidates when none); a scientific name gives its
+    species (a sea slug's id is its iNaturalist taxon id)."""
     if not args:
         return [s for s in CAND if CAND[s]]
-    T = {t["id"]: t for t in FISH["teach"]}
+    T = TEACH
+    names = {s.get("name"): k for k, s in SP.items()}
     out = []
     for a in args:
-        out += [s for s in (T[a].get("species") or []) if s in CAND] if a in T else [a]
+        out += [s for s in (T[a].get("species") or []) if s in CAND] if a in T else [a if a in SP or a not in names else names[a]]
     return out
 
 
@@ -117,7 +164,7 @@ def groups(sid):
 
 
 def fetch(p, size="medium"):
-    out = P("judging", "fish", "img", f"{p['f']}{'-l' if size == 'large' else ''}.jpg")
+    out = P(JDIR, "img", f"{p['f']}{'-l' if size == 'large' else ''}.jpg")
     if os.path.exists(out) and os.path.getsize(out):
         return out
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -189,7 +236,7 @@ def sheet(sid, k, L, start=0):
             d.rectangle([x, y * (H + GAP), x + 58, y * (H + GAP) + 46], fill=(0, 0, 0))
             d.text((x + 8, y * (H + GAP) + 4), str(n), fill=(255, 255, 0), font=font)
             x += im.width + GAP
-    out = P("judging", "fish", "sheets", sid, f"{k + 1}.jpg")
+    out = P(JDIR, "sheets", sid, f"{k + 1}.jpg")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     S.save(out, quality=85)
     return os.path.relpath(out, ROOT)
@@ -218,9 +265,10 @@ def cmd_sheets(names):
 
 def check(sid):
     E = []
-    j = load(f"judging/fish/{sid}.json")
+    jd = JDIR.replace(os.sep, "/")
+    j = load(f"{jd}/{sid}.json")
     if j is None:
-        return [f"{sid}: no judging/fish/{sid}.json"], None
+        return [f"{sid}: no {jd}/{sid}.json"], None
     if not isinstance(j, dict) or not isinstance(j.get("photos"), dict):
         return [f'{sid}: must be {{"photos": {{photo: judgment}}}}'], None
     if set(j) - {"photos"}:
@@ -233,7 +281,7 @@ def check(sid):
     for f, x in j["photos"].items():
         at = f"{sid}/{f}"
         if f in decided:
-            if isinstance(x, dict) and x.get("keep") == "best":
+            if isinstance(x, dict) and not x.get("egg") and x.get("keep", CFG["keep"]) == "best":
                 best[decided[f]["o"]].append(f)
             continue
         if f not in mine:
@@ -244,20 +292,29 @@ def check(sid):
             continue
         if set(x) - FIELDS:
             E.append(f"{at}: unknown fields {sorted(set(x) - FIELDS)}")
+        if "egg" in x and "egg" in FIELDS:
+            # The egg rule (#970's filter 2, judging/SEASLUG.md "Egg masses"): an egg mass with no whole animal
+            # recognisable, or a photo that cannot be told apart from one, is excluded: no code, no keep, no doubt.
+            if x["egg"] is not True or set(x) - {"egg", "note"}:
+                E.append(f"{at}: an egg-mass photo is {{\"egg\": true}} (a note at most): no code, keep, crop or unsure")
+            if len(x.get("note", "")) > 140:
+                E.append(f"{at}: note longer than 140 characters")
+            continue
         if not CODE.match(str(x.get("code", ""))):
-            E.append(f"{at}: code must follow judging/FISH.md \"Tags\" (e.g. p1g0sm14), not {x.get('code')!r}")
+            E.append(f"{at}: code must follow {CFG['doc']} \"Tags\" (e.g. {CFG['eg']}), not {x.get('code')!r}")
         elif str(x["code"])[6] not in NEW_COUNT:
             E.append(f"{at}: count m is the code before the split (Q323): o (other species, no risk of confusion) or k "
                      "(other species one could take for the subject)")
-        if x.get("keep") not in KEEP:
+        k = x.get("keep", CFG["keep"])
+        if k not in KEEP:
             E.append(f"{at}: keep must be one of {KEEP}")
-        elif x["keep"] == "best":
+        elif k == "best":
             best[mine[f]["o"]].append(f)
             new[mine[f]["o"]] += 1
         if "phase" in x and x["phase"] not in PHASES:
             E.append(f"{at}: phase is one of {PHASES}, or omitted")
         u = x.get("unsure", [])
-        if not isinstance(u, list) or set(u) - (FIELDS - {"unsure", "note"}):
+        if not isinstance(u, list) or set(u) - (FIELDS - {"unsure", "note", "egg"}):
             E.append(f"{at}: unsure must be a list of field names")
         elif u and not x.get("note"):
             E.append(f"{at}: note required when unsure is not empty")
@@ -275,7 +332,8 @@ def check(sid):
     missing = [f for f in mine if f not in j["photos"]]
     if missing:
         E.append(f"{sid}: {len(missing)} candidate(s) not judged yet, e.g. {missing[:3]}")
-    obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict)}
+    # An observation whose photos are all egg masses has no best: it leaves (the egg rule).
+    obs = {mine[f]["o"] for f, x in j["photos"].items() if f in mine and isinstance(x, dict) and not x.get("egg")}
     A = added(sid)
     for o in sorted(obs):
         nb = new[o] if o in A else len(best.get(o, []))  # Pierre's add is its best so far: a new one may beat it
@@ -289,11 +347,16 @@ def check(sid):
 def entry(sid, x, rep=None):
     """A judging file's record -> suggest.json "fish" (autosort.js fishSure): the tags and ease after the rubric's caps
     (tools/fish_judge.py cap: the phase flag for a dimorph entry, the juvenile classes of the species' entry, and the
-    reference flag r with its ease bonus for a candidate whose fish-cand.json record carries `rep`)."""
+    reference flag r with its ease bonus for a candidate whose fish-cand.json record carries `rep`). A sea slug's: its
+    rubric's caps (no entry: no phase, every juvenile capped), keep best when the judgement names none, and an egg-mass
+    photo as {egg: 1} (the egg rule: never in play)."""
+    if x.get("egg"):
+        return {"egg": 1, **({"n": x["note"]} if x.get("note") else {})}
     t = ENTRY.get(sid) or {}
     s = SP.get(sid) or {}
-    ease, tags = cap(x["code"], bool(t.get("dimorph")), juv_early(t.get("juv"), (s.get("name"), s.get("now"))), rep)
-    e = {"jt": tags, "e": ease, "k": x["keep"]}
+    ease, tags = cap(x["code"], bool(t.get("dimorph")), juv_early(t.get("juv"), (s.get("name"), s.get("now"))), rep,
+                     subject=SUBJECT)
+    e = {"jt": tags, "e": ease, "k": x.get("keep", CFG["keep"])}
     if x.get("phase"):
         e["ph"] = x["phase"]
     if x.get("crop") and x["crop"] != [0, 0, 1, 1]:
@@ -308,10 +371,10 @@ def entry(sid, x, rep=None):
 
 
 def cmd_import(names, only_check, by):
-    if not names and os.path.isdir(P("judging", "fish")):
-        names = sorted(x[:-5] for x in os.listdir(P("judging", "fish")) if x.endswith(".json"))
+    if not names and os.path.isdir(P(JDIR)):
+        names = sorted(x[:-5] for x in os.listdir(P(JDIR)) if x.endswith(".json"))
     if not names:
-        sys.exit("Nothing in judging/fish/ yet.")
+        sys.exit(f"Nothing in {JDIR.replace(os.sep, '/')}/ yet.")
     ok, bad = {}, []
     for sid in names:
         E, j = check(sid)
@@ -323,7 +386,7 @@ def cmd_import(names, only_check, by):
         sys.exit(1 if bad else 0)
     S = load("suggest.json", {}) or {}
     S.setdefault("by", {})
-    Sf = S.setdefault("fish", {})
+    Sf = S.setdefault(SUBJECT, {})
     stamp = datetime.date.today().isoformat()
     for sid, j in ok.items():
         for p in CAND.get(sid, []):
@@ -331,12 +394,12 @@ def cmd_import(names, only_check, by):
         rep = {p["f"]: p.get("rep") for p in CAND.get(sid, [])}
         for f, x in j["photos"].items():
             Sf[f] = entry(sid, x, rep.get(f))
-        S["by"].setdefault(sid, {})["fish"] = {"by": by, "at": stamp, "n": len(j["photos"])}
-    S["fish"] = dict(sorted(Sf.items()))
+        S["by"].setdefault(sid, {})[SUBJECT] = {"by": by, "at": stamp, "n": len(j["photos"])}
+    S[SUBJECT] = dict(sorted(Sf.items()))
     with open(P("suggest.json"), "w", encoding="utf-8") as fh:
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
-    print(f'Imported {len(ok)} species file(s): {len(S["fish"])} fish candidates judged in suggest.json "fish".')
+    print(f'Imported {len(ok)} species file(s): {len(S[SUBJECT])} {SUBJECT} candidates judged in suggest.json "{SUBJECT}".')
     sys.exit(1 if bad else 0)
 
 
@@ -346,17 +409,18 @@ def cmd_rep(fields=("jt", "e")):
     judgement gets the flag r and the ease bonus, one no longer tagged loses them. Only those entries change.
     fields ("codes": also u and n): re-applies a re-judge of some photos' codes, unsure fields and notes (the other
     species split of 2026-11-09, Q323) to the candidates already judged, without the whole species' --check (a species
-    may hold new candidates not judged yet, which the import refuses); waiting or decided alike."""
+    may hold new candidates not judged yet, which the import refuses); waiting or decided alike. The subject's (use):
+    suggest.json "seaslug" and judging/seaslug/ for the sea slugs, whose codes also re-apply the egg rule."""
     S = load("suggest.json", {}) or {}
-    Sf = S.get("fish") or {}
+    Sf = S.get(SUBJECT) or {}
     n = 0
     for sid, L in CAND.items():
-        j = load(f"judging/fish/{sid}.json")
+        j = load(f"{JDIR.replace(os.sep, '/')}/{sid}.json")
         if not j:
             continue
         for p in L:
             x, old = (j.get("photos") or {}).get(p["f"]), Sf.get(p["f"])
-            if not x or not old or not CODE.match(str(x.get("code", ""))):
+            if not x or not old or not (CODE.match(str(x.get("code", ""))) or (x.get("egg") is True and "egg" in FIELDS)):
                 continue
             new = entry(sid, x, p.get("rep"))
             if any(new.get(k) != old.get(k) for k in fields):
@@ -370,7 +434,7 @@ def cmd_rep(fields=("jt", "e")):
         json.dump(S, fh, indent=1, ensure_ascii=False)
         fh.write("\n")
     what = "Reference flag" if fields == ("jt", "e") else "Codes, keep, phase, unsure fields and notes"
-    print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"fish\".")
+    print(f"{what} re-applied: {n} judged candidates changed in suggest.json \"{SUBJECT}\".")
 
 
 def one_fix(text, D):
@@ -473,18 +537,29 @@ def cmd_watermark(only_check):
 
 
 def cmd_todo():
-    Sf = (load("suggest.json", {}) or {}).get("fish", {})
+    Sf = (load("suggest.json", {}) or {}).get(SUBJECT, {})
     T = [(sid, sum(1 for p in cands(sid) if p["f"] not in Sf), len(cands(sid))) for sid in CAND]
     T = [t for t in T if t[1]]
     for sid, a, b in T:
         print(f"{sid} {SP.get(sid, {}).get('name')}: {a} of {b} not judged")
-    print(f"{sum(t[1] for t in T)} fish candidates not judged in {len(T)} species.")
+    print(f"{sum(t[1] for t in T)} {SUBJECT} candidates not judged in {len(T)} species.")
+
+
+def args(a):
+    """(rest, by, subject) of the command line: the values of --by and --subject are theirs, never a species id."""
+    val = {k: a[a.index(k) + 1] for k in ("--by", "--subject") if k in a and a.index(k) + 1 < len(a)}
+    taken = {a.index(k) + 1 for k in val}
+    rest = [x for i, x in enumerate(a) if not x.startswith("--") and i not in taken]
+    return rest, val.get("--by", "claude"), val.get("--subject", "fish")
 
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    BY = a[a.index("--by") + 1] if "--by" in a else "claude"
-    rest = [x for x in a if not x.startswith("--") and x != BY]
+    rest, BY, subj = args(a)
+    if subj != "fish":
+        if rest[:1] and rest[0] in ("rep", "one", "watermark"):
+            sys.exit(f"{rest[0]}: the fish only (reference photos, the one-judgement copies and the watermark list are theirs)")
+        use(subj)
     if rest[:1] == ["sheets"]:
         import slot
 
@@ -498,7 +573,7 @@ if __name__ == "__main__":
     elif rest[:1] == ["rep"]:
         cmd_rep()
     elif rest[:1] == ["codes"]:
-        cmd_rep(("jt", "e", "k", "ph", "u", "n"))
+        cmd_rep(("jt", "e", "k", "ph", "u", "n", "egg"))
     elif rest[:1] == ["one"]:
         cmd_one("--check" in a)
     elif rest[:1] == ["watermark"]:

@@ -12,7 +12,8 @@ What it reads and writes (FILES), each through its own writer, so an unchanged f
     (tools/fish_game.py first_photos: the licence is the last key of their order);
   - data.json (the coral photos in play, the candidates curation.json names), cand.json (the coral candidates waiting),
     excluded.json (the photos Pierre excluded, kept for his Restore: tools/excluded.py restore_unexcluded puts one back
-    without a licence check, so one whose licence the rules now refuse leaves it too, the rest only follow).
+    without a licence check, so one whose licence the rules now refuse leaves it too, the rest only follow);
+  - seaslug-cand.json, the sea slugs' candidate photos (tools/fetch_seaslugs.py; no sea-slug photo is in play yet).
 Not read: points.json (a point's photos carry a, o, src only as a fallback, written by hand; no licence there),
 tools/fish_judge.json "add" (the stopgap's additions, no longer read by the game), curation.json (rule A1: it holds no
 credit anyway).
@@ -34,6 +35,8 @@ What a new licence does (the existing licence rules, nothing new):
       data.json, cand.json or excluded.json (his Restore cannot bring it back). Share-alike follows rule P1: a coral candidate waiting is dropped by tools/fetch_local.py
       drop_share_alike at the same workflow run (never one curation.json names); a coral photo in play stays, its
       licence updated, for Pierre to keep or remove (admin To do › Share-alike); both are reported;
+      sea slugs (the fish's rule, lic_ok: CC0, CC BY, CC BY-NC; Pierre's own without a licence, which
+      tools/fetch_seaslugs.py never takes but a later change of his could leave): the candidate leaves seaslug-cand.json;
     a photo that leaves comes back only through the candidate searches, once its licence allows it again (they search
     the accepted licences only);
   - an observation or a photo iNaturalist no longer returns (deleted, hidden, made private) is reported and left as it
@@ -72,7 +75,7 @@ SHARE_ALIKE = ('cc-by-sa', 'cc-by-nc-sa')
 # photos from fish-game.json).
 FILES = (('fish-cand.json', 'fish', 'cand'), (os.path.join('tools', 'fish_refs.json'), 'fish', 'play'),
          ('fish-game.json', 'fish', 'play'), ('data.json', 'coral', 'play'), ('cand.json', 'coral', 'cand'),
-         ('excluded.json', 'coral', 'gone'))
+         ('excluded.json', 'coral', 'gone'), ('seaslug-cand.json', 'seaslug', 'cand'))
 PHOTOS_FILE = 'fish-photos.json'
 # http as well: a few old coral records name their observation so (Codex review #936).
 OBS_RE = re.compile(r'^(?:https?://(?:www\.)?inaturalist\.org/observations/)?(\d+)$')
@@ -146,8 +149,9 @@ def fetch(obs, get=None):
 
 def usable(subject, role, code, own):
     """The licence rules on iNaturalist's licence code: True (keep), False (leaves play) or 'sa' (a share-alike coral photo:
-    kept and reported, rule P1; a waiting candidate is dropped by tools/fetch_local.py drop_share_alike)."""
-    if subject == 'fish':
+    kept and reported, rule P1; a waiting candidate is dropped by tools/fetch_local.py drop_share_alike). Sea slugs take
+    the fish's rule (CC0, CC BY, CC BY-NC: rule P1)."""
+    if subject in ('fish', 'seaslug'):
         return lic_ok(code, own)
     if code in CORAL_OK or (own and not code):
         return True

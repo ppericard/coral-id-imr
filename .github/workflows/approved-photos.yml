@@ -58,7 +58,7 @@ jobs:
       # The licence refresh, on the weekly schedule and on a run by hand, never at a Publish (it asks iNaturalist about
       # every observation listed: about 140 requests at one a second, rule C7): the credit and the licence of every
       # iNaturalist photo listed brought up to date at the source (fish-cand.json, tools/fish_refs.json, the sheet-only
-      # photos; data.json, cand.json, excluded.json) and in fish-game.json; a photo whose licence the rules no longer
+      # photos; data.json, cand.json, excluded.json; seaslug-cand.json) and in fish-game.json; a photo whose licence the rules no longer
       # accept leaves play, each one a warning on the run and listed in its summary. Before fetch_approved.py, so
       # tools/fish_game.py builds fish-game.json from the refreshed sources. A request that fails writes nothing.
       # --others: Pierre's own photos are left out (he does not change them weekly; Pierre, 2026-11-15).
@@ -100,7 +100,7 @@ jobs:
       - name: Prepare the commit
         shell: bash
         run: |
-          git add data.json cand.json excluded.json fish-game.json fish-photos.json fish-cand.json tools/fish_refs.json img
+          git add data.json cand.json excluded.json fish-game.json fish-photos.json fish-cand.json tools/fish_refs.json seaslug-cand.json img
           mkdir -p "$RUNNER_TEMP/change"
           git rev-parse HEAD > "$RUNNER_TEMP/change/base"
           git diff --cached --binary --no-renames > "$RUNNER_TEMP/change/change.patch"
@@ -140,7 +140,7 @@ jobs:
         shell: bash
         env:
           CHANGE: ${{ runner.temp }}/change
-          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-photos\.json|fish-cand\.json|tools/fish_refs\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
+          ALLOWED: '^(data\.json|cand\.json|excluded\.json|fish-game\.json|fish-photos\.json|fish-cand\.json|tools/fish_refs\.json|seaslug-cand\.json|img(/[A-Za-z0-9_-][A-Za-z0-9._-]*)+)$'
         run: |
           set -euo pipefail
           fail() { echo "::error::$1"; exit 1; }

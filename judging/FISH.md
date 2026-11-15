@@ -12,7 +12,8 @@ Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `to
 into `suggest.json`, and `python3 tools/fish_judge.py` prints the summary of the photos in play (`fish-game.json`).
 Until 2026-11-15 it also wrote them into the stopgap list of `fish-photos.json` (remote iNaturalist photos, retired).
 `tests/fish.test.js` checks that every code is valid, that the caps below hold and that every circle-1 entry has 5 very
-easy photos in play.
+easy photos in play. The sea slugs' rubric, [SEASLUG.md](SEASLUG.md), adapts this one on the same tools (`--subject
+seaslug`).
 
 ## How to look
 
