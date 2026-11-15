@@ -661,6 +661,40 @@
           "t": "Pierre, 2026-11-09, Q323"
         }
       ]
+    },
+    {
+      "id": "fish-diploprion-family",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-15",
+      "title": "Diploprion: Soapfishes, or WoRMS's Liopropomatidae",
+      "q": "The app teaches Diploprion (D. bifasciatum, s178) among the Soapfishes (Grammistidae, Diploprioninae); WoRMS and iNaturalist now place the genus in Liopropomatidae. Should the app keep it among the Soapfishes?",
+      "ctx": [
+        "Found by the fish section of tools/taxonomy.json (2026-11-15, WoRMS and iNaturalist). Nothing changed in the app (rules C1, C5).",
+        "WoRMS: Diploprion (AphiaID 204362), family Liopropomatidae; iNaturalist (taxon 87970) the same. The app's teaching family Soapfishes holds Grammistidae and the subfamily Diploprioninae."
+      ],
+      "src": [
+        {"t": "WoRMS, Diploprion", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=204362"},
+        {"t": "iNaturalist, Diploprion", "u": "https://www.inaturalist.org/taxa/87970"},
+        {"t": "tools/taxonomy.json fish gen.Diploprion (tools/taxonomy.py, 2026-11-15)"}
+      ]
+    },
+    {
+      "id": "fish-ferdauia-worms",
+      "kind": "names",
+      "subj": "fish",
+      "at": "2026-11-15",
+      "title": "Ferdauia in WoRMS: the genus unaccepted, its species accepted",
+      "q": "WoRMS marks the genus Ferdauia as unaccepted (→ Carangoides) while it keeps Ferdauia ferdau and F. orthogrammus as accepted species under it. Keep the app's Ferdauia ferdau as it is until WoRMS settles it?",
+      "ctx": [
+        "Found by the fish section of tools/taxonomy.json (2026-11-15). The app shows Ferdauia ferdau (circle 3, s466); nothing changed (rules C1, C5).",
+        "WoRMS: genus Ferdauia (AphiaID 296636) unaccepted, valid name Carangoides; Ferdauia ferdau (AphiaID 1802000) accepted, its parent that same genus record. iNaturalist: Ferdauia, an active genus (taxon 1359822)."
+      ],
+      "src": [
+        {"t": "WoRMS, Ferdauia ferdau", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=1802000"},
+        {"t": "iNaturalist, Ferdauia", "u": "https://www.inaturalist.org/taxa/1359822"},
+        {"t": "tools/taxonomy.json fish gen.Ferdauia (tools/taxonomy.py, 2026-11-15)"}
+      ]
     }
   ]
 }

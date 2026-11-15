@@ -42,11 +42,44 @@ test('taxonomy.json: the shape of each record, small, and never loaded by the ap
     assert.ok(r.now && Array.isArray(r.src) && r.src.length, k);
     if (r.iname) assert.notStrictEqual(r.iname, r.now, k);
   }
+  // Small: about 50 KB of corals and 120 KB of fish (one record per fish.json species), build time only.
   const kb = fs.statSync(path.join(ROOT, 'tools/taxonomy.json')).size / 1024;
-  assert.ok(kb < 120, `taxonomy.json is ${Math.round(kb)} KB`);
+  assert.ok(kb < 220, `taxonomy.json is ${Math.round(kb)} KB`);
   // Build time only (Pierre, 2026-11-05): no app or admin file reads it, and the service worker does not keep it.
   const app = fs.readdirSync(ROOT).filter(f => /\.(js|html)$/.test(f));
   app.forEach(f => assert.ok(!fs.readFileSync(path.join(ROOT, f), 'utf8').includes('taxonomy.json'), `${f} reads taxonomy.json`));
+});
+
+// Step (d) (ROADMAP "Taxonomy reference"): the fish section, from fish.json, every species in the game or out.
+test('taxonomy.json fish: every fish.json genus and species with its WoRMS and iNaturalist records; reports, never renames', () => {
+  const F = T.fish,
+    J = read('fish.json');
+  assert.ok(F.refreshed.worms && F.refreshed.inat && F.refreshed.checklist, 'refreshed dates');
+  assert.deepStrictEqual(Object.keys(F.gen).sort(), J.genera.map(g => g.name).sort());
+  assert.deepStrictEqual(Object.keys(F.species).sort(), J.species.map(s => s.name).sort());
+  for (const s of J.species) {
+    const o = F.species[s.name];
+    assert.strictEqual(o.app.id, s.id, s.name);
+    assert.ok(Number.isInteger(o.worms.id) && o.worms.st, `${s.name}: worms`);
+    assert.ok(Number.isInteger(o.inat.id), `${s.name}: inat`);
+  }
+  // A former combination, a lump, a spelling WoRMS has no record of: reported as flags, the name kept (rules C1, C5).
+  assert.deepStrictEqual(F.species['Chromis agilis'].flags, ['WoRMS: unaccepted -> Pycnochromis agilis (genus)']);
+  assert.match(F.species['Siganus margaritiferus'].flags.join('; '), /-> Siganus fuscescens \(species\)/);
+  assert.ok(
+    J.species.some(s => s.name === 'Chromis agilis'),
+    'the game keeps its name'
+  );
+  // Rows only for names met, each resolving to a fish species' WoRMS name.
+  const acc = new Set(Object.entries(F.species).map(([n, o]) => o.worms.now || n));
+  for (const [k, r] of Object.entries(F.spp)) {
+    assert.ok(acc.has(r.now) && r.src.length, k);
+    if (r.iname) assert.notStrictEqual(r.iname, r.now, k);
+  }
+  // fish.json's own former combination is a row (src app), so photos named so are flagged too.
+  assert.strictEqual(F.spp['Chromis agilis'].now, 'Pycnochromis agilis');
+  assert.ok(F.spp['Chromis agilis'].src.includes('app'));
+  assert.strictEqual(F.old.Concholabrus.worms.now, 'Cheilinus');
 });
 
 test('watch list (Q51): the four items, each with what the sources say now', () => {
@@ -255,9 +288,144 @@ test('names.json: the admin extract, in step with taxonomy.json; the admin reads
   assert.strictEqual(N.coral.worms.Pachyseris.fam, 'Pachyseridae');
   assert.strictEqual(N.coral.worms.Plerogyra.fam, 'Plerogyridae');
   assert.strictEqual(N.coral.worms.Diploastrea.fam, 'Diploastraeidae');
-  assert.match(fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8'), /side\('names\.json', ADM0\.id\)/);
+  // The admin loads every subject's section (one fetch), the first subject's for the corals' Tree.
+  const A = fs.readFileSync(path.join(ROOT, 'admin.js'), 'utf8');
+  assert.match(A, /SUBJECTS\.map\(S => side\('names\.json', S\.id\)/);
+  assert.match(A, /NAMES = NAMEJ\[ADM0\.id\]/);
+  // The fish section: its rows and former genera, no WoRMS map (the fish Tree reads fish.json ref).
+  assert.deepStrictEqual(Object.keys(N.fish.sp), Object.keys(T.fish.spp));
+  assert.ok(!('worms' in N.fish));
+  assert.strictEqual(N.fish.gen.Concholabrus, 'Cheilinus');
   const kb = fs.statSync(path.join(ROOT, 'names.json')).size / 1024;
   assert.ok(kb < 40, `names.json is ${Math.round(kb)} KB`);
+});
+
+test('nameFlag on the fish photos: a former combination or an iNaturalist spelling WoRMS writes otherwise', () => {
+  const N = read('names.json').fish;
+  const photos = [...Object.values(read('fish-cand.json').cand || {}).flat(), ...Object.values(read('fish-game.json').photos || {}).flat()];
+  const flagged = photos.filter(p => nameFlag(p, N));
+  assert.ok(flagged.length > 0, 'no fish photo flagged');
+  flagged.forEach(p => assert.ok(N.sp[p.t.split(' ').slice(0, 2).join(' ')] || N.gen[p.t.split(' ')[0]], p.f));
+  assert.deepStrictEqual(nameFlag({t: 'Chromis agilis'}, N), {kind: 'former', now: 'Pycnochromis agilis'});
+  assert.deepStrictEqual(nameFlag({t: 'Concholabrus fasciatus'}, N), {kind: 'spelling', now: 'Cheilinus fasciatus'});
+  assert.strictEqual(nameFlag({t: 'Pycnochromis retrofasciatus'}, N), null, "WoRMS's own name");
+});
+
+// Step (d) (ROADMAP "Taxonomy reference"): a subject whose unit is the species (the fish) gets its section from its own
+// file's AphiaIDs and iNaturalist taxa, through build_species. A small made-up world answered by a stub, no network.
+const SPSTUB = `
+import taxonomy as X
+W = "https://www.marinespecies.org/rest/"
+I = "https://api.inaturalist.org/v1/"
+def rec(aid, name, valid=None, vid=None, st="accepted", rank="Species", fam=None):
+    return dict(AphiaID=aid, scientificname=name, valid_name=valid or name, valid_AphiaID=vid or aid, status=st, rank=rank,
+                phylum="Chordata", family=fam, modified="2024-01-02T00:00:00Z")
+BYNAME = {"Aus bus": rec(100, "Aus bus", "Cus bus", 101, "superseded combination"), "Cus bus": rec(101, "Cus bus"),
+          "Aus eus": rec(300, "Aus eus"), "Aus gus": rec(400, "Aus gus"), "Zus zus": rec(500, "Zus zus"),
+          "Hus eus": rec(301, "Hus eus", "Aus eus", 300, "superseded combination"),
+          "Aus": rec(10, "Aus", rank="Genus", fam="Pomacentridae"), "Hus": rec(11, "Hus", "Aus", 10, "unaccepted", "Genus"),
+          "Snail": dict(rec(12, "Aus eus"), phylum="Mollusca")}
+BYID = {101: rec(101, "Cus bus"), 200: rec(200, "Aus diii"), 300: rec(300, "Aus eus"), 400: rec(400, "Aus gus")}
+ANC = [dict(id=1, name="Animalia", rank="kingdom"), dict(id=2, name="Chordata", rank="phylum"), dict(id=40, name="Pomacentridae", rank="family")]
+def tax(i, name, act=True, cur=(), genus=(50, "Aus")):
+    return dict(id=i, name=name, rank="species", is_active=act, current_synonymous_taxon_ids=list(cur),
+                ancestor_ids=[1, 2, 40, genus[0], i], ancestors=[*ANC, dict(id=genus[0], name=genus[1], rank="genus")])
+T = {1000: tax(1000, "Cus bus", genus=(51, "Cus")), 2000: tax(2000, "Aus dii"), 3000: tax(3000, "Aus eus", False, [3001]),
+     3001: tax(3001, "Fus eus", genus=(60, "Fus")), 4000: tax(4000, "Aus gus"),
+     50: dict(id=50, name="Aus", rank="genus", is_active=True, ancestors=ANC)}
+calls = []
+def get(u):
+    calls.append(u)
+    if u.startswith(W + "AphiaRecordsByNames"):
+        names = [X.urllib.parse.unquote(p.split("=", 1)[1]) for p in u.split("?", 1)[1].split("&") if p.startswith("scientificnames")]
+        return [[BYNAME[n], BYNAME["Snail"]] if n == "Aus eus" else [BYNAME[n]] if n in BYNAME else [] for n in names]
+    if u.startswith(W + "AphiaRecordsByAphiaIDs"):
+        return [BYID[int(p.split("=")[1])] for p in u.split("?", 1)[1].split("&") if int(p.split("=")[1]) in BYID]
+    if u.startswith(I + "taxa?q=Hus"):
+        return {"results": [dict(id=70, name="Hus", rank="genus", is_active=False, ancestor_ids=[1, 2, 40, 70], current_synonymous_taxon_ids=[50])]}
+    if u.startswith(I + "taxa?q="):
+        return {"results": []}
+    if u.startswith(I + "taxa/"):
+        return {"results": [T[int(i)] for i in u.split("/")[-1].split(",") if int(i) in T]}
+    raise AssertionError(u)
+SP = lambda sid, ref, inat, game=True, now=None: {"app": {"id": sid, "ref": ref, "inat": inat, **({"now": now} if now else {})}, "game": game}
+INP = {"genera": {"Aus": {"role": "circle 1", "app": {"fam": "Pomacentridae"}}},
+       "species": {"Aus bus": SP("s1", 101, 1000, now="Cus bus"), "Aus dii": SP("s2", 200, 2000, now="Aus diii"),
+                   "Aus eus": SP("s3", 300, 3000), "Aus gus": SP("s4", 999, 4000, False)},
+       "photos": {"Aus bus": ["s1"], "Cus bus": ["s1"], "Gus hus": ["s1"], "Zus zus": ["s3"]},
+       "checklist": {"names": {"Hus eus": [], "Zus zus": [], "Aus gus": []}, "decided": {}, "date": "2026-11-04"}}
+SUB = X.SUBJECTS["fish"]
+def run(prev, dates):
+    sec, rep = X.build_species(SUB, INP, get, prev, lambda: dates)
+    ch = X.log_changes(sec, prev, max(d for d in sec["refreshed"].values() if d))
+    return sec, rep, ch
+`;
+
+test('taxonomy.py build_species: WoRMS and iNaturalist names of each species, the rows met, a stable rerun', () => {
+  const R = py(`${SPSTUB}
+D = {"worms": "2026-11-15", "inat": "2026-11-15"}
+a, rep, ch1 = run({}, D)
+fa = X.render({"v": 1, "doc": "d", "refs": {}, "fish": a})
+b, _, ch2 = run(json.loads(json.dumps(a)), D)
+fb = X.render({"v": 1, "doc": "d", "refs": {}, "fish": b})
+print(json.dumps({"same": fa == fb, "valid": json.loads(fa)["fish"] == b, "ch1": ch1, "ch2": ch2, "sec": a, "rep": rep,
+                  "cls": X.classes(a, rep["game"]), "names": X.names_extract({"v": 1, "doc": "d", "fish": a})["fish"],
+                  "kinds": [X.kind(*p) for p in (("Aus bus", "Aus bus"), ("Chaetodon rafflesi", "Chaetodon rafflesii"),
+                            ("Acanthurus nigricaudus", "Acanthurus nigricauda"), ("Chromis retrofasciata", "Pycnochromis retrofasciatus"),
+                            ("Siganus margaritiferus", "Siganus fuscescens"), ("Ostorhinchus apogonides", "Ostorhinchus apogonoides"))],
+                  "inat": [c for c in calls if c.startswith(I)]}))`);
+  assert.ok(R.same && R.valid, 'the rerun wrote another file, or render is not valid JSON of the section');
+  assert.deepStrictEqual(R.ch1, ['first build: 1 genera, 4 species, 1 former genus names, 4 species rows, 0 watched items']);
+  assert.deepStrictEqual(R.ch2, []);
+  assert.deepStrictEqual(R.kinds, [null, 'spelling', 'spelling', 'genus', 'species', 'spelling']);
+  const S = R.sec.species;
+  // A former combination: WoRMS's record of the name as written, the accepted name and AphiaID beside it.
+  assert.deepStrictEqual(S['Aus bus'].worms, {id: 100, st: 'superseded combination', now: 'Cus bus', acc: 101});
+  assert.deepStrictEqual(S['Aus bus'].inat, {id: 1000, name: 'Cus bus'});
+  assert.deepStrictEqual(S['Aus bus'].flags, ['WoRMS: superseded combination -> Cus bus (genus)']);
+  // A spelling WoRMS has no record of: the AphiaID the file gives, marked not exact; iNaturalist keeps the file's spelling.
+  assert.deepStrictEqual(S['Aus dii'].worms, {id: 200, st: 'accepted', now: 'Aus diii', exact: false});
+  assert.deepStrictEqual(S['Aus dii'].flags, [
+    "WoRMS: no record of this spelling; the file's AphiaID 200 is Aus diii",
+    'iNaturalist: Aus dii (spelling of WoRMS Aus diii)'
+  ]);
+  // The homonym of another phylum is ignored; an inactive iNaturalist taxon points to the one it became.
+  assert.deepStrictEqual(S['Aus eus'].worms, {id: 300, st: 'accepted'});
+  assert.deepStrictEqual(S['Aus eus'].inat, {id: 3000, act: false, now: ['Fus eus']});
+  assert.ok(S['Aus eus'].flags.includes('iNaturalist: Fus eus (genus of WoRMS Aus eus)'), S['Aus eus'].flags.join('; '));
+  // A species out of the game is in the section too; the file's AphiaID behind WoRMS is reported as stale.
+  assert.deepStrictEqual(S['Aus gus'].app, {id: 's4'});
+  assert.ok(S['Aus gus'].flags.includes('stale: the file has Aus gus (999), WoRMS now Aus gus (400)'));
+  assert.deepStrictEqual(R.sec.gen.Aus, {
+    role: 'circle 1',
+    app: {fam: 'Pomacentridae'},
+    worms: {id: 10, st: 'accepted', fam: 'Pomacentridae', mod: '2024-01-02'},
+    inat: {id: 50, fam: 'Pomacentridae'}
+  });
+  // Rows: the names met that resolve to a species of the file; iNaturalist's name of it when it differs.
+  assert.deepStrictEqual(R.sec.spp, {
+    'Aus bus': {now: 'Cus bus', id: 101, src: ['app', 'photo']},
+    'Aus dii': {now: 'Aus diii', id: 200, src: ['app'], iname: 'Aus dii'},
+    'Gus hus': {now: 'Cus bus', id: null, src: ['photo']},
+    'Hus eus': {now: 'Aus eus', id: 300, src: ['checklist'], iname: 'Fus eus'}
+  });
+  // Zus zus: a photo of Aus eus that WoRMS accepts as another species: reported, no row.
+  assert.deepStrictEqual(R.rep.photos, ['Zus zus: WoRMS Zus zus, a photo of Aus eus']);
+  assert.deepStrictEqual(R.sec.old, {
+    Hus: {worms: {id: 11, st: 'unaccepted', now: 'Aus', mod: '2024-01-02'}, inat: {id: 70, act: false, now: ['Aus']}}
+  });
+  // The report's classes, the species in the game only.
+  assert.deepStrictEqual(Object.keys(R.cls.worms).sort(), ['genus', 'unknown']);
+  assert.deepStrictEqual(R.cls.inat, {
+    spelling: ['Aus dii: iNaturalist Aus dii, WoRMS Aus diii'],
+    inactive: ['Aus eus: iNaturalist Fus eus, WoRMS Aus eus']
+  });
+  // names.json: rows and former genera, no WoRMS map (this subject's Tree reads its own file).
+  assert.deepStrictEqual(R.names.gen, {Hus: 'Aus'});
+  assert.ok(!('worms' in R.names));
+  assert.deepStrictEqual(R.names.sp['Gus hus'], {now: 'Cus bus'});
+  // iNaturalist in batches (rule C7): the species' taxa in one call, the genera above them read from those records.
+  assert.match(R.inat[0], /taxa\/1000,2000,3000,4000$/);
 });
 
 test('names_extract / render_names: a made-up file, and --check fails when names.json lags', () => {
