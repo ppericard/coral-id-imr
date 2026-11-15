@@ -6,7 +6,8 @@ look-alike pairs, and the content editor's role: see [v2](#v2-2026-11-15-per-ins
 v1 below is kept as written, except where a line says Q359 replaced it. This note is docs only and changes nothing in
 the app. v1 was written on `origin/main` at c2d241f, on 2026-11-14 during Pierre's night; v2 at 92292eca, checked
 again at 2ab9832d (only photo data changed in between). Nothing was built. Steps 1 and 2 of v2's plan (the text
-slots) need no answer from Pierre.
+slots) need no numbered question, only Pierre's plain OK on the [format] calls of section 6 before step 1 merges: a
+stored format is costly to undo (AGENTS.md "Working mode").
 
 **The step.** Pierre edits a sheet's text (a family, genus or species sheet, at any level of the tree) from the admin,
 and the edit is stored in `curation.json` as an overlay on top of the built content (ROADMAP "The Tree tab", Q341 (a),
@@ -422,9 +423,9 @@ message. Pierre is the only person who holds one. No roles study is in `docs/rev
 5. better sign-in.
 
 **Already decided by Q342** (the roles row): the platform admin's right covers the code, the base database and
-creating instances; the content editor holds "every right on the instance's content without Pierre's approval, no code,
-no players' data". So the base (the sources layer) is the platform's, and an instance's layer and edits are its
-content editor's. What Q342 leaves open is question (j).
+creating instances; the instance owner grants roles in the instance; the content editor holds "every right on the
+instance's content without Pierre's approval, no code, no players' data". So the base (the sources layer) is the
+platform's, and an instance's layer and edits are its content editor's. What Q342 leaves open is question (j).
 
 **Roles step 3, "the instance overlay".** This design is its content half: the `content` map (steps 1-4 of the plan
 below) and the IMR layer as the instance's own files (step 5). The other half, an instance's players, settings and sheet
@@ -517,8 +518,10 @@ point 1 can go against them):**
    D6 and D9, `mxRecalc`, Q332). Undoing the edit does not bring it back: only an exam passed gives a mark. The other
    way, if a pair is withdrawn, a unit's exam can open sooner, because it no longer needs that pair compared, and a
    mark passed then stays when the pair comes back. An exam in progress stays unless a later miss ends it, as in play.
-   **A pair added to a learned unit** takes nothing away by itself: the keep line does not read the look-alikes. Units
-   not learned yet must now be compared with the new look-alike before their exam (`looksLeft`).
+   **A pair added to a learned unit** can cost its mark only as any structure replay can, as just said. The keep line
+   (`keepsMark`: the domain score `ds` less the player's own false-alarm rate, `faOf`, from their mix-ups and offers)
+   does not ask for the new look-alike to be compared, but `ds` is replayed under the new pair's prior and weights.
+   Units not learned yet must now be compared with the new look-alike before their exam (`looksLeft`).
 2. **Achievements stay.** None is taken back (Q332, `MXL.QUIET`). If a weak family leaves circle 1, "House reef" can
    come at once for some players, and it stays when the family returns.
 3. **Units opened stay open.** `mayOpen` gates only the units not open yet. A family moved into circle 1 and met stays
@@ -588,8 +591,9 @@ admin. What it did not say is whether the platform admin's own account also edit
 GitHub token allows today. It matters from roles step 1 on (step 6 of the plan).
 
 - **A**: yes. The platform admin may edit every instance's content.
-- **B**: no. Only the holders of that instance's content-editor role may. The platform admin grants the role to
-  himself where needed: for IMR at once, and the grant is logged.
+- **B**: no. Only the holders of that instance's content-editor role may. The platform admin gets the role where the
+  instance owner grants it (Q342: the owner grants roles in the instance), and the grant is logged. For IMR today,
+  Pierre is both, so he grants it to himself once.
 
 *Recommendation: B.* Each organisation then sees exactly who may change its content, and who did. For IMR it costs one
 grant. Until roles step 1 exists, the token stays the only gate (phase 0).
@@ -658,9 +662,9 @@ them before it merges.
 ### 7. Step plan (one PR each, in order)
 
 1. **The format, text slots.** v1's step 1 under v2's names: the slot lists in `SUBJECTS`, the apply function in
-   `core.js` for the text slots, `tools/curplay.py`, the tests. Nothing changes for players. *Needs:* nothing from
-   Pierre; its [format] calls (section 6) go in its Decisions, so he sees them before it merges. `core.js` changes, so
-   it needs a changes file (rule D3).
+   `core.js` for the text slots, `tools/curplay.py`, the tests. Nothing changes for players. *Needs:* no numbered
+   question; Pierre's plain OK on the [format] calls (section 6), listed in its Decisions, before it merges. `core.js`
+   changes, so it needs a changes file (rule D3).
 2. **The admin's text editor**, on the fish Tree node pages: the three states, Undo, Restore, the source prompt and the
    Publish count. *Needs:* step 1. Pierre edits through the token (phase 0).
 3. **Structure in the apply:** the `circle` slot and `pairs`, the structure stamp, and each instance's words for its
