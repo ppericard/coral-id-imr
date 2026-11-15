@@ -990,6 +990,26 @@ const fishRoot = (g, at) =>
         'among the fish'
       )
     : '';
+// A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json; Pierre,
+// 2026-11-08), on the sheet the genus opens, as its name roots (fishRoot): its page, the species sheet of a one-species
+// genus, the family sheet of a family's only genus. Each line with its sources' numbers, the sources listed below, never
+// as IMR's (rule C1: the IMR cues show in their own box).
+const genMarks = (g, at) => {
+  if (!g || !(g.plain || (g.marks || []).length) || fishGo(g.id) !== at) return '';
+  const S = g.msrc || [],
+    by = g.mby || {},
+    n = ix =>
+      (ix || [])
+        .map(i =>
+          S[i] ? ` <a class="srcn" href="${esc(safeUrl(S[i].u))}" target="_blank" rel="noopener" title="${esc(S[i].t)}">[${i + 1}]</a>` : ''
+        )
+        .join('');
+  return `<div class="fmarks gmarks">${g.plain ? `<p class="plainw">${esc(g.plain)}${n(by.plain)}</p>` : ''}${
+    (g.marks || []).length
+      ? `<h3>ID marks of <i>${esc(g.name)}</i></h3><ul class="crit">${g.marks.map((x, i) => `<li>${esc(x)}${n((by.marks || [])[i])}</li>`).join('')}</ul>`
+      : ''
+  }<p class="note msrc">Sources: ${S.map((x, i) => `[${i + 1}] <a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join('; ')} · ${repBtn({k: 'sheet', g: g.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`;
+};
 // The photos enlarge, the species filter redraws the page where it was.
 const fishBind = (flat, redraw) => {
   $v.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.z))));
@@ -1217,6 +1237,7 @@ function fishFamily(f) {
         ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(f, 'cues')}</div>` : ''}
         ${fishMarks(f)}
         ${fishNote(f)}
+        ${G.map(g => genMarks(g, f.id)).join('')}
         ${G.map(g => fishRoot(g, f.id)).join('')}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
         <details class="more sheetmore"><summary>More details</summary>
@@ -1262,6 +1283,7 @@ function fishGenus(g) {
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
     ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'cues')}</div></div>` : ''}
+    ${genMarks(g, g.id)}
     ${fishNote(g)}
     ${fishRoot(g, g.id)}
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
@@ -1310,6 +1332,7 @@ function fishSpecies(s) {
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
     ${fishNote(s)}
+    ${genMarks(g, 's:' + s.name)}
     ${fishRoot(g, 's:' + s.name)}
     ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
     ${
