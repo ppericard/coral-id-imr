@@ -3695,6 +3695,36 @@ during its first 20 answers.
   10 answers (the answers this change moves later). The subagent that builds it has no access to the sheet (outside
   services excluded from its task): the integrator, who holds the data, runs it or Pierre waives it.
 
+**The app world, results** (5 profiles × 5 seeds, then the second look on seeds 1-20; before = `--calib '{"phase":0}'`,
+after = this branch; learncmp with 2 looks: bounds at 95%). The first look's after arm (commit 3417f88f) drew 6 phase
+tiles on the Anthias in their first answers (the Find the X count above), fixed before both looks' after arms were
+read (32a2bd7d). Primary, `phEarly@300`, down in 100 of 100 pairs (p 10⁻⁵): 0.10-0.12 → 0.000 in every profile.
+Guardrails at the second look, paired difference [one-sided 95% bound]:
+
+| Guardrail | beginner | casual diver | lecture RA | strong RA | expert |
+| --- | --- | --- | --- | --- | --- |
+| True knowledge, q300 | −0.001 [−0.004] held | −0.001 [−0.004] held | −0.001 [−0.002] held | +0.001 [−0.000] held | 0 held |
+| E = bar − D\*, q300 | +0.004 [+0.019] held | +0.001 [+0.018] held | +0.004 [+0.015] held | −0.001 [+0.004] held | +0.001 [+0.008] held |
+| First unit at Open Water | −3.5 [+9.7] held | −5.8 [+1.7] held | −0.1 [+2.3] held | 0 held | 0 held |
+| Units at Open Water, q300 | +0.2 [−0.5] held | +0.3 [−0.4] held | 0 [−1.0] held | −0.6 [−1.4] held | +0.7 [−0.4] held |
+| Longest plateau | −2 [+7] held | **+4 [+11], unclear** (margin +10.8) | −8 [0] held | 0 [+4] held | −1 [+2] held |
+| Under ease 4 before Open Water, q300 | −0.006 held | −0.009 held | −0.004 held | +0.002 held | −0.002 held |
+| Units met, q100 / q300 | held / held | held / held | held / held | held / held | held / held |
+
+The first look (5 seeds) had the casual diver's E at +0.034 [+0.063], **breached** (its mean past +0.03), and left E
+(beginner), the first Open Water and the plateau (beginner, casual diver, lecture RA) and the units at Open Water
+(beginner, lecture RA) unclear; on 20 seeds every one is held but the casual diver's plateau. Both E values are
+negative (the bar under the true knowledge): a rise there is the bar under-claiming less, not an over-claim.
+
+No wall (declared measures): `phAns`, the answers on phase photos in questions 1-300, fall from 30-40 to 2-3 per
+player, the first phase photo moves from about question 15 to about question 180 (medians per profile 169-191), and
+**10 of the 100 runs meet none in their 300 questions** (beginner 2, casual diver 1, lecture RA 4, strong RA 2, expert
+1): the declared check "every run with phase photos before shows some after" fails at 300 questions. In 300 questions
+a player meets about 32 families, about 9 answers each, so most units are still in their first 10 answers; `phLate`
+(units past 20 answers) has too few questions there to read (2-8 runs per profile). `perPhoto` (repeats) moves by
+less than 0.002. Exploratory, not declared (no verdict): N = 5 on the same seeds brings the first phase photo at about
+question 42-66 (medians), some in every run, `phAns` 10-17, every guardrail held.
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
