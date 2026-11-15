@@ -246,6 +246,21 @@ test('regional names and the new genus names (Q376): right on a photo they desig
     assert.strictEqual(on(t, 'f:Lionfishes', 'Dendrochirus zebra'), 'f:Lionfishes', t);
 });
 
+// Pierre, 2026-11-15, Q381: two species may carry the same common name. The four names #954 kept with their IMR species
+// are listed by both again: typed on a family question, each is right on a photo of either species, a mistake on another.
+test('a common name two species share (Q381): right as their family on a photo of either, a mistake on another', () => {
+  const on = (text, fam, name) => family(text, fam, NAMES, [sid(name)]).got.c;
+  [
+    ['Longnose butterflyfish', 'f:Butterflyfishes', ['Forcipiger longirostris', 'Forcipiger flavissimus'], 'Chaetodon auriga'],
+    ['Brown damsel', 'f:Damselfishes', ['Pomacentrus armillatus', 'Pomacentrus opisthostigma'], 'Chromis viridis'],
+    ['Blackspot snapper', 'f:Snappers', ['Lutjanus fulviflamma', 'Lutjanus ehrenbergii'], 'Lutjanus kasmira'],
+    ['Yellowtail wrasse', 'f:Wrasses', ['Diproctacanthus xanthurus', 'Anampses meleagrides'], 'Thalassoma lunare']
+  ].forEach(([t, fam, both, other]) => {
+    both.forEach(n => assert.strictEqual(on(t, fam, n), fam, `${t} on ${n}`));
+    assert.strictEqual(on(t, fam, other), '', `${t} on ${other}`);
+  });
+});
+
 test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a pipefish wrong, no unit given (Q319)', () => {
   const s = family('razorfish', 'f:Shrimpfishes');
   assert.strictEqual(s.got.c, 'f:Shrimpfishes');

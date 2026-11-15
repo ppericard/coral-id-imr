@@ -110,21 +110,26 @@ is the design's shorthand, and internal identifiers may keep it.
   name and the iNaturalist default English name when each is found in both references; at most 3; then **the most shared first** (in the most references, then
   the main name of the most, then the most FishBase records, then FishBase's main name before iNaturalist's, then by name).
   Spellings of one name count once (Pearl-scaled / Pearlscale angelfish; Neon damsel / damselfish), the others kept to accept
-  when typed; the form shown is the IMR name's when the main name is a spelling of it. A name two game species share is dropped from the one that does not own it; a PDF name shared stays, flagged
-  (4 pairs on 2026-11-08: "Twospot wrasse", "Seagrass wrasse", Twotone / Two-tone wrasse, Blackstripe(d) cardinalfish:
-  each accepted for both species, "Also used for…", Pierre, 2026-11-09, Q319). **A main name goes through the same rule**
-  (the study §7.1): an iNaturalist default that is another game species' IMR name stays that species' alone, and the
-  species' main name is the next of the rule (FishBase's main name, else its own). 4 such names on 2026-11-15, each kept by
-  its IMR owner: "Longnose butterflyfish" (*Forcipiger longirostris* → *F. flavissimus*'s; *F. longirostris* shows "Big
-  longnose butterflyfish"), "Brown damsel" (*Pomacentrus armillatus* → *P. opisthostigma*'s; "Bracelet damselfish"),
-  "Blackspot snapper" (*Lutjanus fulviflamma* → *L. ehrenbergii*'s; "Dory snapper"), "Yellowtail wrasse" (*Diproctacanthus
-  xanthurus* → *Anampses meleagrides*'s; "Yellowtail tubelip"). A regional name is dropped where another game species has
-  it or a spelling of it (5: "Painted sweetlips" is *Diagramma pictum*'s). A species with no name of its own whose main name is in one reference only is flagged
+  when typed; the form shown is the IMR name's when the main name is a spelling of it. **Two species may carry the same
+  common name** (Pierre, 2026-11-15, Q381, replacing Q319's "a name two game species share is dropped from the one that
+  does not own it": "it's not impossible that several species share the same common name, and I'm not sure we should
+  block that case"): nothing is dropped for it, a main name included. **The base name is the right one for everyone
+  outside IMR**: iNaturalist's default, even when it is another species' IMR name; a player at IMR keeps the IMR name
+  first (Q376 (a)), the only place IMR decides. So *Forcipiger longirostris* shows "Longnose butterflyfish" (also
+  *F. flavissimus*'s IMR name), *Pomacentrus armillatus* "Brown damsel" (*P. opisthostigma*'s), *Lutjanus fulviflamma*
+  "Blackspot snapper" (*L. ehrenbergii*'s), *Diproctacanthus xanthurus* "Yellow-tail wrasse" (*Anampses meleagrides*'s
+  Yellowtail wrasse). The game avoids the ambiguity: a multiple-choice question never shows two choices of one label
+  (`model.js` `choiceApart`: another distractor takes the place), a shared name typed is right for the species asked
+  (either of them), and the species sheet says "Also used for …" with the other species. Each shared name is flagged
+  `shared` in `tools/fish_common.json`, and its top-level `shared` lists them all (name → species ids): 11 names on
+  2026-11-15, each on two species (Twospot wrasse, Seagrass wrasse, Twotone / Two-tone wrasse, Blackstripe(d)
+  cardinalfish, Moluccan cardinalfish / Moluccen cardinal, Clown anemonefish, Tailspot wrasse and the four above). A
+  regional name is dropped where another game species has it or a spelling of it (5: "Painted sweetlips" is *Diagramma
+  pictum*'s; it is only accepted typed). A species with no name of its own whose main name is in one reference only is flagged
   (`single`: *Nudiantennarius subteres*, Deep-water frogfish; *Cryptocentrus nigrocellatus*). Pierre, 2026-11-05: no
   third rule, and a PDF slip shows FishBase's spelling, the PDF form accepted when typed. **664 game species (2026-11-15)**: 3
-  with no name (Q247), 385 with 1, 251 with 2, 25 with 3; the IMR name is not the main name for 105 of the 367 IMR-named
-  species (the study's 107, less two whose iNaturalist default is another species' name), 11 names newly listed (the main
-  names not listed before), 118 species with a regional name. `tools/fish_common.py`'s summary lists every main name that
+  with no name (Q247), 381 with 1, 252 with 2, 28 with 3; the IMR name is not the main name for 107 of the 367 IMR-named
+  species (the study's count), 118 species with a regional name. `tools/fish_common.py`'s summary lists every main name that
   changed and every name newly listed, so a refetch that moves one is looked at before it ships.
 - **Where the player's first name shows** (`app.js` `cnFirst`, `imrNow`; the species level, which will ask them, is not built
   yet): the species tiles and the one-species genus rows of the family and genus sheets, the species sheet's title (its
@@ -133,8 +138,13 @@ is the design's shorthand, and internal identifiers may keep it.
   name (`common`).
 - **In the game** (`app.js`): `cnShow`, the name a multiple-choice question shows, the player's first; `cnTypeNames`, the typed
   names: the listed names, the regional names and their recorded spellings (the usual spelling tolerance applies, `core.js`
-  `typeMatchIn`), no other name the references give, no short form; a name two species list is right for each, "Also used
-  for…" (Q319); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`
+  `typeMatchIn`), no other name the references give, no short form; a name two species list is right for the species
+  asked, either of them (Q319, kept by Q381); the choices of a multiple-choice question never carry one label twice, nor
+  the target's (`model.js` `choiceKey`, `choiceApart`, in `distractors` and `customChoices`: letters only, so Yellowtail and
+  Yellow-tail wrasse are one label; no unit of one rank shares a label in today's game, `tests/choicelabels.test.js`); the
+  species sheet names the other species of a shared name under the name shown ("Also used for *Oxycheilinus
+  bimaculatus*", linked to its sheet; "“Clown anemonefish” is also used for …" for another listed name: `app.js` `cnAlso`,
+  `learn.js` `spAlso`); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`
   `fishNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
   regional name typed gets the "common name" nudge (Q237, `typeOther`). Still to build with the species level: the species'
   one common-name unit in the score tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null`
@@ -396,9 +406,9 @@ Gaps before species questions ship:
   photo memory; the fish pre-sort's automatic decisions (`FISHCHK`) make this workable. Targets: "Fish photos and the admin".
 - **Species-level look-alikes**, with the cue that tells each side apart. Only entries have `look` today. Sources: "Fish photos and the
   admin"; how the cues are taught: "How cues are taught" there.
-- **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319).
+- **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319); since Q381 (2026-11-15) any name two species carry stays on both, 11 in all ("Common names").
 - The three `check` names (likely PDF slips) to settle.
-- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; the four shared PDF names right for both species (Q319).
+- The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; a shared name right for the species asked, never two choices of one label (Q381).
 - Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design.
 
 ## Fish photos and the admin (Pierre, 2026-11-04)

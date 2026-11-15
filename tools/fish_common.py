@@ -42,10 +42,12 @@ that links two groups merges them): the form shown
 is the PDF's, else FishBase's main, else its most recorded; the others are kept in `alt` (to accept when typed). A main
 name of either reference that is not proposed is listed in `left`.
 A species with no name of its own whose main name is in one reference only is flagged (`single`); a species no
-reference names keeps none (Pierre, 2026-11-08, Q247: it has no common-name unit; a name is never invented). A name
-proposed for two game species, any of its spellings counted, is dropped from each species where it is neither the
-PDF's nor the only name (`dropped`), a main name too (its species' main name is then the next of the rule: FishBase's
-main name, else its own); a name still shared then is flagged `shared` (e.g. "Twospot wrasse", Q319). The summary
+reference names keeps none (Pierre, 2026-11-08, Q247: it has no common-name unit; a name is never invented). Two
+species may carry the same common name (Pierre, 2026-11-15, Q381, replacing Q319's ownership rule): a name proposed for
+two game species, any of its spellings counted, stays on both, a main name too (iNaturalist's default "Longnose
+butterflyfish" of Forcipiger longirostris is also F. flavissimus's IMR name), flagged `shared` with the other species and
+listed in the file's top-level `shared` (name -> species ids); the app keeps two choices of one label apart, accepts the
+name typed for the species asked, and the species sheet says "Also used for …". The summary
 lists every main name that changed and every name newly listed, to look at before it ships. Spelling and capitals: FishBase's
 form when it has the name (sentence case: "Ternate chromis"), else iNaturalist's with the words after the first in
 lower case unless capitalised in a FishBase name of these species (a person or place: "Bennett's"). A PDF name flagged
@@ -356,12 +358,12 @@ def select():
         if not fb:
             o["noFishBase"] = True
         out[s["id"]] = o
-    # Shared names: one name, two game species.
-    # Every spelling counts, the accepted ones (alt) too (Codex review #522: a typed answer must not name two species).
-    # First drop a shared name from each species where it is neither its own (PDF) name nor its only one, then flag the
-    # names still shared. A main name goes through the same rule (Q319; the 2026-11-15 study §7.1): iNaturalist's
-    # default "Longnose butterflyfish" of Forcipiger longirostris is the IMR name of F. flavissimus, so it stays
-    # F. flavissimus's alone and F. longirostris's main name falls to the next (below).
+    # Shared names: one name, two game species or more. Two species may carry the same common name: nothing is dropped
+    # for it (Pierre, 2026-11-15, Q381, replacing Q319's "dropped from the one that does not own it"): each keeps every
+    # name its selection gives, a main name too (iNaturalist's default "Longnose butterflyfish" of Forcipiger longirostris
+    # is also the IMR name of F. flavissimus). Every spelling counts, the accepted ones (alt) too. Each name shared is
+    # flagged `shared` with the other species, and listed in `shared()` (name -> species ids): the app keeps two choices
+    # of one label apart, accepts it typed for the species asked, and the sheet says "Also used for …".
     def spell(n):
         return {norm(x) for x in [n["name"]] + n.get("alt", [])}
 
@@ -374,15 +376,6 @@ def select():
                         seen[k].append(sid)
         return seen
 
-    for k, ids in shared().items():
-        if len(ids) < 2:
-            continue
-        for sid in ids:
-            o = out[sid]
-            for n in list(o["names"]):
-                if k in spell(n) and not any(t in OWN for t in n["from"]) and len(o["names"]) > 1:
-                    o["names"].remove(n)
-                    o.setdefault("dropped", []).append({"name": n["name"], "sharedWith": [out[i]["sp"] for i in ids if i != sid]})
     listed = shared()
     for k, ids in listed.items():
         if len(ids) < 2:
@@ -418,6 +411,38 @@ def select():
     return out
 
 
+def shared_names(out):
+    """The names two game species or more list (Q381: allowed, never dropped), name -> their species ids: every form
+    shown of a name flagged `shared` (a spelling shared counts: Blackstripe / Blackstriped cardinalfish), sorted."""
+    by = {}
+    for sid, o in out.items():
+        for n in o["names"]:
+            if n.get("shared"):
+                by.setdefault(n["name"], set()).add(sid)
+                by[n["name"]] |= {i for i, p in out.items() if p["sp"] in n["shared"]}
+    return {k: sorted(by[k]) for k in sorted(by, key=norm)}
+
+
+def shared_groups(out):
+    """The shared names counted as names, not forms: the forms of shared_names that share a spelling make one (Twotone /
+    Two-tone wrasse). [(forms, species ids)]."""
+    groups = []
+    for sid, o in out.items():
+        for n in o["names"]:
+            if not n.get("shared"):
+                continue
+            keys = {norm(x) for x in [n["name"]] + n.get("alt", [])}
+            ids = {sid} | {i for i, p in out.items() if p["sp"] in n["shared"]}
+            hit = [g for g in groups if g[0] & keys]
+            for g in hit:
+                groups.remove(g)
+                keys |= g[0]
+                ids |= g[2]
+            forms = {n["name"]}.union(*[g[1] for g in hit])
+            groups.append((keys, forms, ids))
+    return [(sorted(f), sorted(i)) for _, f, i in groups]
+
+
 def write(out, check):
     doc = ("Curated common names per fish species (1 to 3, the main name first, then the species' own, then the most "
            "shared; published, Pierre corrects them in use: Q313; the main name and the IMR name: Q376), written into "
@@ -426,8 +451,9 @@ def write(out, check):
            "name, fbMain = FishBase main English name, fbN = FishBase English records of the name (countries / references), "
            "inatMain = iNaturalist default English name, inat = another iNaturalist English name, inat:Australia = "
            "iNaturalist's name under the Australia place (a regional standard name). imr = the IMR name's place in names; "
-           "regional = regional names accepted when typed only.")
-    body = "{\n" + f' "_doc": {json.dumps(doc)},\n "species": {{\n' + ",\n".join(
+           "regional = regional names accepted when typed only; shared (on a name) = the other game species that list it. "
+           "Top-level shared: every name two game species or more list, name -> species ids (Q381: allowed).")
+    body = "{\n" + f' "_doc": {json.dumps(doc)},\n "shared": {json.dumps(shared_names(out), ensure_ascii=False)},\n "species": {{\n' + ",\n".join(
         f"  {json.dumps(k)}: {json.dumps(v, ensure_ascii=False, separators=(',', ':'))}" for k, v in out.items()) + "\n }\n}\n"
     if check:
         if not OUT.exists() or OUT.read_text() != body:
@@ -446,8 +472,8 @@ def summary(out, before):
     print(f"  PDF name kept: {sum(1 for o in out.values() if any('pdf' in x['from'] for x in o['names']))}; "
           f"IMR name not the main name: {sum(1 for o in out.values() if o.get('imr'))}; "
           f"no FishBase match: {sum(1 for o in out.values() if o.get('noFishBase'))}; "
-          f"shared names dropped: {sum(1 for o in out.values() for d in o.get('dropped', []) if not d.get('regional'))}; "
-          f"shared and kept: {sum(1 for o in out.values() for x in o['names'] if x.get('shared'))}; "
+          f"shared names (Q381): {len(shared_groups(out))} in {sum(1 for o in out.values() for x in o['names'] if x.get('shared'))} "
+          f"species' lists; "
           f"regional names: {sum(len(o.get('regional', [])) for o in out.values())} "
           f"({sum(1 for o in out.values() for d in o.get('dropped', []) if d.get('regional'))} dropped, shared)")
 
