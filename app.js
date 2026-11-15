@@ -744,13 +744,15 @@ function fishGenera(X, F) {
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
           // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
           // then the count.
+          // (typeof: the tools and tests that run fishGenera alone, tools/ratedworld.js, read the IMR name as before)
           get sum() {
-            const imr = imrNow();
+            const imr = typeof imrNow === 'function' && imrNow(),
+              first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr) : '');
             return (
               (L.length > 3 ? 'Most met here: ' : '') +
               L.slice(0, 3)
                 .map(s => {
-                  const c = cnFirst(s, imr) || s.common;
+                  const c = first(s) || s.common;
                   return s.name.replace(/^\S+/, g[0] + '.') + (c ? ' (' + c + ')' : '');
                 })
                 .join(', ') +
