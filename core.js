@@ -4400,11 +4400,11 @@
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
   const WINK_SHEET = 98;
   const logOk = (a, v) => (winkEntry(a) ? Number(v) >= WINK_SHEET : ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET);
-  // The sync script version that stores the photo a Find the X answer tapped (Code.gs vNEXT: Answers Photo answered, the
+  // The sync script version that stores the photo a Find the X answer tapped (Code.gs v141: Answers Photo answered, the
   // entry's pa; Pierre, 2026-11-15, Q371). An answer goes to the sheet with pa only once the script's replies say
   // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
   // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
-  const PA_SHEET = 140;
+  const PA_SHEET = 141;
   const logOut = (a, v) => {
     if (!a || a.pa === undefined || Number(v) >= PA_SHEET) return a;
     const o = {...a};

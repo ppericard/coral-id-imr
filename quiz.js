@@ -858,7 +858,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     ...(unitName(target) ? {tn: unitName(target)} : {}),
     ...(unitName(c) ? {ta: unitName(c)} : {}),
     ...(spShown ? {sp: spShown} : {}),
-    // A Find the X's photo tapped (Pierre, 2026-11-15, Q371): sheet vNEXT keeps it (Answers Photo answered); sent only
+    // A Find the X's photo tapped (Pierre, 2026-11-15, Q371): sheet v141 keeps it (Answers Photo answered); sent only
     // from PA_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). Information only: no score,
     // replay or rule reads it.
     ...(tap && tap.f ? {pa: tap.f} : {})

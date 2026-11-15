@@ -971,7 +971,7 @@ comparison of look-alikes, the other way round from the photo quiz (Kang & Pashl
 - **Logged with its own mode** `quiz|f` (custom quiz `quiz|s|f`): the unit's own photo in Photos, the four units in
   Choices in the order shown, the unit of the photo tapped in Answered, and the photo tapped itself in Photo answered
   (`pa`, right answers too; Pierre, 2026-11-15, Q371: its species, read through `fish-game.json`, for FISH_PATH's
-  species-to-family view; sheet vNEXT, sent only from `core.js` `PA_SHEET`, rule D4). The other photos are not in Photos:
+  species-to-family view; sheet v141, sent only from `core.js` `PA_SHEET`, rule D4). The other photos are not in Photos:
   every reader of the log takes the photos of a row as photos of the unit shown (the photo ratings, the memory, `Code.gs`
   `photoAlert_`). The sheet stores the mode as it comes. The replay scores a `|f` row exactly as the same row without it,
   and Photo answered is information only: no score, replay or rule reads it (`tests/findx.test.js`,
