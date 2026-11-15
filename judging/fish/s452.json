@@ -163,6 +163,22 @@
   "fish-s452-cand-345181882": {
    "code": "o1n0sm12",
    "keep": "alt"
+  },
+  "fish-s452-cand-469858984": {
+   "code": "o1d0ss1c1",
+   "keep": "dup"
+  },
+  "fish-s452-cand-336628119": {
+   "code": "o0g0sl13",
+   "keep": "alt"
+  },
+  "fish-s452-cand-564505086": {
+   "code": "o0d0sm12",
+   "keep": "dup"
+  },
+  "fish-s452-cand-564505100": {
+   "code": "p0g0sl13",
+   "keep": "dup"
   }
  }
 }

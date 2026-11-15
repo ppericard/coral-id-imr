@@ -179,6 +179,18 @@
   "fish-s389-cand-741536902": {
    "code": "p0d0sl1c2",
    "keep": "dup"
+  },
+  "fish-s389-cand-741536771": {
+   "code": "o1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s389-cand-741536772": {
+   "code": "p1g0smsc3",
+   "keep": "alt"
+  },
+  "fish-s389-cand-741536659": {
+   "code": "o0g0slsc2",
+   "keep": "dup"
   }
  }
 }
