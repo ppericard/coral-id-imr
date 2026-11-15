@@ -1972,14 +1972,24 @@ the machine shared with other runs, so no timing is read).
   | 1 w | 14 [10-103] → 16 [9-22] | 21 [14-69] → 11 [9-13] | 11 [8-71] → 7 [6-11] | 8 → 6 | 8 [6-76] → 6 [5-17] | 7 [6-18] → 5 [5-14] | 6 [6-13] → 5 [5-10] | 6 [5-10] → 4 | 6 [6-7] → 4 [4-5] |
   | 1 mo | 88 [67-133] → 50 [34-75] | 35 [23-64] → 20 [17-32] | 33 [24-38] → 18 [14-27] | 14 [13-16] → 11 [11-13] | 68 [9-109] → 37 [8-41] | 28 [21-34] → 16 [13-26] | 17 [10-23] → 14 [8-16] | 12 [10-15] → 10 [9-12] | 10 [10-12] → 8 [8-10] |
 
-  On the side of harm, after a month (corals; mean paired difference [one-sided 95% bound]): the answers with the
-  opening hold on in the 20 after the comeback rose, beginner +3.6 [+0.3], lecture RA +3.6 [−0.6], strong RA +2.2
-  [−1.1]; the right % in those 20 fell 2-5 points, none clear (beginner −5.0 [−14.5], lecture RA −2.0 [−14.4], strong RA
-  −5.0 [−13.9]). After a week no harm-side measure moved clearly; on the fish the right % after a week's comeback rose
-  (casual diver +7, strong RA +5). The genera opened in the 15 answers after a comeback did not rise anywhere. For
-  scale: today's month comebacks are about twice the 2026-11-02 table above (corals' beginner 36.5); with the tolerance
-  they come back to that table's range for the beginner (50, range 19-62 there) and a little under it for the lecture
-  and strong RA (20 and 18 against 22-63 and 20-39). No margin exists for these: they go to Pierre with options (the PR).
+  On the side of harm, after a month (corals; mean paired difference [one-sided 95% bound on the side of harm]): the
+  answers with the opening hold on in the 20 after the comeback rose, beginner +3.6 [+6.9] (its other bound +0.3: the
+  rise is clear), lecture RA +3.6 [+7.8], strong RA +2.2 [+5.5]; the right % in those 20 fell 2-5 points, none clear
+  (beginner −5.0 [−14.5], lecture RA −2.0 [−14.4], strong RA −5.0 [−13.9]). At 5 seeds "not clear" means a wide
+  interval, not no effect. After a week no harm-side measure moved clearly; on the fish the right % after a week's
+  comeback rose (casual diver +7, strong RA +5). The genera opened in the 15 answers after a comeback did not rise
+  anywhere. Against the 2026-11-02 table above (medians after a month: beginner 36.5, lecture RA 37, strong RA 29,
+  expert 15), today's base runs are about the same for the lecture RA, strong RA and expert (35, 33, 14) and over
+  twice for the beginner (88); with the tolerance the beginner comes back near that table (50, its range 19-62), while
+  the lecture RA and strong RA fall to about half of it (20 and 18, under its ranges 22-63 and 20-39). Against Q367's
+  "keep its length", the cost is real for three of the four profiles. No margin exists for these: they go to Pierre
+  with options (the PR).
+- The base's pooled median after a day, 6, differs from the study's 3: learnsim seeds each break by its index in
+  `--breaks`, and the study ran `--breaks 1d,3d,1w` (1 day first) where this check ran it third (inferred, not
+  checked).
+- The study's case in the unit test depends on the order: with the 27 right answers first, three right answers pay
+  about 0.82 against a starting sum of 0.73, so the rule before Q367 also ends by the third answer. The order with a
+  miss first, then every third answer, is the one that keeps the old rule on for all 40, as P5's was.
 - **The real log** (rule L12): not replayed (above). Arithmetic on the study's published figures only: P5's 40 comeback
   answers, 27 right at a mean expectation of 0.75, moved the sum by about +3 less the rust the questions repaired; the
   tolerance takes 4 more off over 40 answers, so her sum falls over the visit instead of growing. Whether it would have
