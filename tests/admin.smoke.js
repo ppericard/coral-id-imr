@@ -1249,8 +1249,9 @@ const darkCards = (p, sel) =>
         if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
         // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js fishPid), the
-        // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the demo's files). The column's
-        // total against a count made here: the units' species' candidates nobody decided (fishState) and not in play.
+        // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
+        // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
+        // admin.js has its own fishState, of a photo's words) and not in play.
         const pw = await p.evaluate(() => {
           const D = fuData(),
             F = D.F,
@@ -1264,7 +1265,7 @@ const darkCards = (p, sel) =>
             all = 0;
           Object.entries(FISHC.cand).forEach(([orig, L]) =>
             L.forEach(x => {
-              const s = fishState(F, x.f, orig);
+              const s = window.fishState(F, x.f, orig);
               if (s.st !== null || !sp.has(s.sid)) return;
               all++;
               if (!inPlay.has(fishPid(x.f))) n++;
@@ -1275,7 +1276,7 @@ const darkCards = (p, sel) =>
               (a, tr) => a + (parseInt(tr.children[col].textContent, 10) || 0),
               0
             );
-          return {plus, n, all, col};
+          return {plus, n, all, col, rows: document.querySelectorAll('.adm-fishcovt tbody tr').length, plays: (FISHC.plays || []).length};
         });
         if (pw.col < 0 || pw.plus !== pw.n || !(pw.n < pw.all))
           fails.push(`${w}px Fish Coverage, "+" (candidates waiting, none in play): ${JSON.stringify(pw)}`);
