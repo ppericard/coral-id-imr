@@ -11,28 +11,45 @@
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover).
   const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && !juvP(p);
+  // A photo served from R2 (onR2), not one still remote (r: 1 with its online original: fish-photos.json, the stopgap's),
+  // which app.js thumb takes from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver.
+  const onR2 = p => !(p.r && p.src),
+    landR2 = p => landOk(p) && onR2(p);
   // A unit's photo on a Home tile. Landscape tiles (UNITS land): Pierre's ★ Cover (coverP, app.js fishCurate) when it
   // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
-  // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it,
+  // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it, one
+  // on R2 first (before fish-game.json is in, app.js fishHome, every photo is remote: then one that suits it all the same),
   // else its first that is not a juvenile (app.js adultFirst). Other tiles: the unit's card photo (cover()).
   const tilePhoto = (g, land) => {
-    const L = g.views.wide;
-    return land ? (landOk(g.coverP) ? g.coverP : L.slice(0, 10).find(landOk) || adultFirst(L)) : cover(g);
+    const L = g.views.wide.slice(0, 10);
+    return land ? (landOk(g.coverP) ? g.coverP : L.find(landR2) || L.find(landOk) || adultFirst(g.views.wide)) : cover(g);
   };
   // The Learn band rotates (ROADMAP "Fish Home mosaic: rotate the photos"; Pierre, 2026-11-08: for variety, instead of
-  // always the same photo per family): a landscape tile shows, at each drawing of Home, one of its unit's photos that suit
-  // it (landOk), drawn at random from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js
-  // refLevel) in the game's easy order, at most LAND_ROT in all. A unit with none keeps tilePhoto's photo, as before.
+  // always the same photo per family): a landscape tile shows, each day, one of its unit's photos on R2 that suit it
+  // (landR2), picked from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js refLevel) in the
+  // game's easy order, at most LAND_ROT in all. A unit with none keeps tilePhoto's photo, as before.
   const LAND_ROT = 6;
   const landPool = g => {
-    const out = landOk(g.coverP) ? [g.coverP] : [];
+    const out = landR2(g.coverP) ? [g.coverP] : [];
     for (const p of g.views.wide) {
       if (out.length >= LAND_ROT) break;
-      if (p !== g.coverP && landOk(p) && refLevel(p)) out.push(p);
+      if (p !== g.coverP && landR2(p) && refLevel(p)) out.push(p);
     }
     return out;
   };
-  const bandPhoto = (g, land) => (land && pick(landPool(g))) || tilePhoto(g, land);
+  // The pick is the day's (dayPick: unit n and the local date, hashed), the same at every drawing of that day: the service
+  // worker keeps photos cache-first (sw.js), so a family drawn again that day comes from the phone's cache. Home still
+  // draws 12 of its families at random, so new ones are asked for until most families were drawn that day; a new pick at
+  // every drawing (#909) kept asking R2 for some 7 new photos at each visit.
+  const dayPick = (L, n, now = Date.now()) => {
+    if (!L.length) return null;
+    const d = new Date(now),
+      s = `${n}|${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
+    return L[h % L.length];
+  };
+  const bandPhoto = (g, land, n, now) => (land && dayPick(landPool(g), n, now)) || tilePhoto(g, land);
   const ph = (n, v) => {
     const g = DATA.gen[n];
     if (!g) return '';
@@ -61,15 +78,15 @@
       newb = basicsDue() && (G.ok || 0) + (G.ko || 0) < CHOICE.ASK && said !== 'imr' && said !== 'know';
     // A subject whose photos are wide (UNITS land: fish, Pierre 2026-11-08: "most fish are horizontal", square tiles cut
     // them) gets fewer, landscape tiles near 3:2 (home.css .hdtiles.land: as many as the band's shape takes), each family's
-    // photo picked to suit them, one of several at each drawing (bandPhoto: Pierre's cover or a reference photo that suits
-    // the tile; none, tilePhoto: the first of its easiest that does).
+    // photo picked to suit them, one of several, the day's (bandPhoto: Pierre's cover or a reference photo that suits the
+    // tile; none, tilePhoto: the first of its easiest that does).
     const land = !!UNITS[SUBJ.id].land;
     const tiles = fish
       ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
           .slice(0, 12)
           .map(
             n =>
-              `<img ${thumb(bandPhoto(GX(n), land), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
+              `<img ${thumb(bandPhoto(GX(n), land, n), land ? '(max-width:599.98px) calc((100vw - 40px) / 2), 260px' : '(max-width:599.98px) calc((100vw - 40px) / 4), 270px')} alt="" loading="lazy">`
           )
           .join('')
       : shuffle(names)
