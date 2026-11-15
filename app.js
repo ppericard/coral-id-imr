@@ -689,6 +689,9 @@ function fishGenera(X, F) {
   // assez urgent"; "On publie").
   (F.families || []).forEach(f => {
     const E = X.gen[f.id],
+      // the sources the content editor gave with his look-alike lines (core.js contentApply esrc 'look/<id>'; Q359 e, rule
+      // C2), by the other family's id: said with the line in the quiz feedback (quiz.js fbBody; Codex review #957)
+      lks = Object.entries(f.esrc || {}).filter(([k]) => k.startsWith('look/')),
       by = [
         ...new Set(
           (f.msrc || [])
@@ -700,6 +703,9 @@ function fishGenera(X, F) {
             .filter(Boolean)
         )
       ].join(', ');
+    if (E && lks.length) E.lksrc = Object.fromEntries(lks.map(([k, s]) => [k.slice(5), s]));
+    // the same for its phase lines, shown under More in the quiz feedback (quiz.js fbBody; Codex review #957)
+    if (E && f.esrc && f.esrc.phase) E.psrc = f.esrc.phase;
     if (!E || E.qt || !(f.marks || []).length) return;
     E.qt = f.marks;
     // the source the content editor gave with an edit of them (core.js contentApply esrc; Q359 e), shown with them (tipsList)
