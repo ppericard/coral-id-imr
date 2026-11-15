@@ -715,9 +715,11 @@ them before it merges.
    force; the tree the apps send stays the fallback when the sheet's is not cached (docs/ARCHITECTURE.md "Other
    subjects' replays"). Set aside: the Publish sending the tree (the admin holds no app units and the sheet has no
    admin call that keeps a board tree, so it needs a new script call anyway, and stays wrong after an undo published
-   from another device). Left: the admin's Photos › Look-alikes page lists the base's pairs only (`fishPairs` over
-   fish.json as built), so an added pair has no row there to pick its photo pair (`fish.mont`) until that page reads the
-   pairs in force.
+   from another device). *Then:* the admin's Photos › Look-alikes page reads the pairs in force on the draft
+   (`admin-content.js` `montPairs`: `fishPairs` over fish.json with the pairs laid over it, `sheetFile`; the circles left
+   out, as in the Tree's filter): an added pair has its row, marked "(added)", its photo pair stored in `fish.mont` under
+   its pair key as a base pair's (`fishPairs` keys by `contentPairKey`); a withdrawn pair has none, and its photo pair
+   stays in `fish.mont`, unused, back with the pair (section 2).
 5. **The IMR instance's layer as its own files:** the IMR parts of `tools/fish_source.json` (circles, `look` groups and
    words, cues, phase lines, `start`) and the coral IMR fields move to the files that `tools/instance.json` names (an
    `id` and a `name` join its `centre`). The build composes them, and `fish.json` and `data.json` stay byte for byte
