@@ -229,18 +229,24 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
 
 // The Learn band rotates (home.js landPool, bandPhoto; ROADMAP "Fish Home mosaic: rotate the photos", Pierre,
 // 2026-11-08): each landscape tile draws one of its unit's photos that suit it, his cover first (Q291) then its reference
-// photos (core.js refLevel) in the game's order, at most LAND_ROT; a unit with none keeps tilePhoto's photo.
-test('Home band: a landscape tile rotates among his cover and the reference photos that suit it', () => {
+// photos (core.js refLevel) in the game's order, at most LAND_ROT, the day's pick (dayPick: the same all day, so the
+// service worker's cached photos serve Home after the day's first visit); a unit with none keeps tilePhoto's photo.
+const homeBand = () => {
   const hs = fs.readFileSync(path.join(ROOT, 'home.js'), 'utf8'),
     X = app(),
-    at = {i: 0},
-    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, refLevel: C.refLevel, pick: a => a[at.i]};
+    ctx = {cover: g => g.coverP || g.views.wide[0], juvP: X.juvP, adultFirst: X.adultFirst, refLevel: C.refLevel};
   vm.createContext(ctx);
   vm.runInContext(
     block(hs, 'const LAND_AR = [', 'const ph = (n, v) =>', {file: 'home.js'}) +
       '\nthis.tile = tilePhoto; this.pool = landPool; this.band = bandPhoto; this.ROT = LAND_ROT;',
     ctx
   );
+  return {X, ctx};
+};
+const DAY = 864e5,
+  NOON = new Date(2026, 10, 15, 12).getTime(); // local noon: three hours either way stay in the day
+test('Home band: a landscape tile rotates among his cover and the reference photos that suit it', () => {
+  const {X, ctx} = homeBand();
   const ref = (f, o = {}) => ({f, ar: 1.5, jt: 'p1g0sl1', e: 5, ...o}),
     r1 = ref('r1'),
     r2 = ref('r2'),
@@ -259,16 +265,23 @@ test('Home band: a landscape tile rotates among his cover and the reference phot
   assert.deepStrictEqual(fs_(ctx.pool({...g, coverP: sq})), ['r1', 'r2', 'r3'], 'a cover that does not suit the tile stays out');
   const many = {views: {wide: Array.from({length: 10}, (_, i) => ref('m' + i))}};
   assert.strictEqual(ctx.pool(many).length, ctx.ROT, `at most LAND_ROT (${ctx.ROT})`);
-  // The band draws among them; a unit with none keeps tilePhoto's photo; square tiles: the card photo.
-  at.i = 2;
-  assert.strictEqual(ctx.band({...g, coverP: cov}, true).f, 'r2');
-  at.i = 0;
-  assert.strictEqual(ctx.band({...g, coverP: cov}, true).f, 'cov');
+  // The band shows one of them, the day's: the same at every drawing of a day (three hours either way), each of them over
+  // the days, not the same for every unit; a unit with none keeps tilePhoto's photo; square tiles: the card photo.
+  const gc = {...g, coverP: cov},
+    pool = fs_(ctx.pool(gc)),
+    days = Array.from({length: 60}, (_, k) => ctx.band(gc, true, 'f:A', NOON + k * DAY).f);
+  days.forEach(f => assert.ok(pool.includes(f), f));
+  assert.deepStrictEqual([...new Set(days)].sort(), [...pool].sort(), 'over 60 days, every photo of the pool');
+  [-3, -1, 1, 3].forEach(h => assert.strictEqual(ctx.band(gc, true, 'f:A', NOON + h * 36e5).f, days[0], `the day's pick, ${h} h`));
+  assert.ok(
+    Array.from({length: 20}, (_, k) => ctx.band(gc, true, 'f:' + k, NOON).f).some(f => f !== days[0]),
+    "the day's pick differs between units"
+  );
   const none = {views: {wide: [sq, easy, r1].map(p => ({...p, e: p === r1 ? 3 : p.e}))}};
   assert.strictEqual(ctx.pool(none).length, 0);
-  assert.strictEqual(ctx.band(none, true).f, ctx.tile(none, true).f, 'none to rotate: the photo as before');
-  assert.strictEqual(ctx.band(none, true).f, 'easy');
-  assert.strictEqual(ctx.band({...g, coverP: sq}, false).f, 'sq', 'square tiles: the card photo');
+  assert.strictEqual(ctx.band(none, true, 'f:A', NOON).f, ctx.tile(none, true).f, 'none to rotate: the photo as before');
+  assert.strictEqual(ctx.band(none, true, 'f:A', NOON).f, 'easy');
+  assert.strictEqual(ctx.band({...g, coverP: sq}, false, 'f:A', NOON).f, 'sq', 'square tiles: the card photo');
   // On the real files: every photo a tile can draw suits it, his fitting cover leads, and most circle-1 units rotate.
   const FISH = app().run(
     {f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))},
@@ -283,6 +296,47 @@ test('Home band: a landscape tile rotates among his cover and the reference phot
   });
   const rot = units.filter(u => ctx.pool(u).length > 1).length;
   assert.ok(rot > units.length / 2, `${rot} of ${units.length} circle-1 units rotate`);
+});
+
+// Home's band rotates only among photos on R2, never one still remote (r: 1 with its online original: fish-photos.json,
+// the stopgap's), which app.js thumb serves from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver;
+// a unit with one R2 photo that suits the tile shows it every day, as before #909. A tile's own pick takes one on R2
+// first; before fish-game.json is in (app.js fishHome) every photo is remote, and it still takes one that suits the tile.
+test('Home band: rotates only among R2 photos; a tile prefers one on R2', () => {
+  const {X, ctx} = homeBand();
+  const ref = (f, o = {}) => ({f, ar: 1.5, jt: 'p1g0sl1', e: 5, ...o}),
+    rem = (f, o) => ref(f, {r: 1, src: `https://inaturalist-open-data.s3.amazonaws.com/photos/${f.slice(2)}/original.jpg`, ...o}),
+    a = rem('fi9001'),
+    b = ref('r1'),
+    c = rem('fi9002'),
+    d = ref('r2');
+  assert.ok(C.refLevel(a) && C.refLevel(c), 'remote reference photos that suit the tile');
+  const fs_ = L => Array.from(L, p => p.f);
+  assert.deepStrictEqual(fs_(ctx.pool({views: {wide: [a, b, c, d]}})), ['r1', 'r2'], 'only the R2 photos rotate');
+  assert.deepStrictEqual(fs_(ctx.pool({views: {wide: [a, b, c]}, coverP: a})), ['r1'], 'one R2 photo: that one');
+  const one = {views: {wide: [a, b, c]}};
+  for (let k = 0; k < 30; k++) assert.strictEqual(ctx.band(one, true, 'f:A', NOON + k * DAY).f, 'r1', 'one R2 photo: every day');
+  // A unit with no pool: the tile's own pick (and the Identify door's art), the first R2 photo that suits it.
+  assert.strictEqual(ctx.tile({views: {wide: [rem('fi9003', {e: 4}), ref('e1', {e: 4})]}}, true).f, 'e1');
+  // Remote photos only (the stopgap's, before fish-game.json): the first that suits the tile, never one of another shape.
+  const stop = {views: {wide: [rem('fi9004', {ar: 1}), rem('fi9005', {e: 4})]}};
+  assert.strictEqual(ctx.pool(stop).length, 0);
+  assert.strictEqual(ctx.band(stop, true, 'f:A', NOON).f, 'fi9005', 'all remote: the one that suits the tile');
+  // On the real files, with and without his curation: no remote photo in any unit's pool, nor on the tile of one with none.
+  const raw = {f: read('fish.json'), ph: read('fish-photos.json'), gm: C.fishGameRead(read('fish-game.json'))};
+  for (const cur of [read('curation.json'), null]) {
+    const units = Object.values(X.run(raw, cur).gen).filter(u => u.views.wide.length),
+      shown = u => (ctx.pool(u).length ? ctx.pool(u) : [ctx.tile(u, true)]);
+    assert.deepStrictEqual(
+      units.flatMap(u =>
+        shown(u)
+          .filter(p => p.r && p.src)
+          .map(p => `${u.name} ${p.f}`)
+      ),
+      [],
+      cur ? 'curated' : 'no curation yet'
+    );
+  }
 });
 
 // A wink's surprise card (quiz.js winkPhoto; Pierre, 2026-11-08, Q290, of the Thresher sharks: "we can use my cover for
