@@ -10332,8 +10332,8 @@
       "fish-s204-cand-171671986": "s204",
       "fish-s204-cand-171671987": "s204",
       "fish-s204-cand-270201285": "s204",
-      "fish-s204-cand-333030518": "s204",
       "fish-s204-cand-340299786": "s204",
+      "fish-s204-cand-433355679": "s204",
       "fish-s204-cand-451490866": "s204",
       "fish-s204-cand-513904269": "s204",
       "fish-s204-cand-641673333": "s204",
@@ -17648,7 +17648,7 @@
         "fish-s204-cand-171671987": "ate",
         "fish-s204-cand-171671992": "r",
         "fish-s204-cand-270201285": "ate",
-        "fish-s204-cand-333030518": "ate",
+        "fish-s204-cand-333030518": "ae@toitna",
         "fish-s204-cand-340299786": "ate",
         "fish-s204-cand-451490866": "ate",
         "fish-s204-cand-483699008": "?a",
@@ -37428,6 +37428,7 @@
         "fish-s204-cand-280596816": "r",
         "fish-s204-cand-337120279": "r",
         "fish-s204-cand-337120293": "r",
+        "fish-s204-cand-433355679": "atep",
         "fish-s204-cand-469143421": "r",
         "fish-s204-cand-469143426": "r",
         "fish-s204-cand-469143909": "r",
@@ -43075,6 +43076,7 @@
       "fish-s204-cand-270201285": 4,
       "fish-s204-cand-333030518": 4,
       "fish-s204-cand-340299786": 4,
+      "fish-s204-cand-433355679": 5,
       "fish-s204-cand-451490866": 4,
       "fish-s204-cand-513904269": 3,
       "fish-s204-cand-641673333": 4,
@@ -47108,14 +47110,6 @@
         "where": "fish/practice/quiz · level auto · lightbox",
         "at": "2026-11-07T10:06:06.110Z"
       },
-      "i333030518": {
-        "file": "fish-s204-cand-333030518",
-        "unit": "f:Parrotfishes",
-        "sp": "s204",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T09:46:49.393Z"
-      },
       "i537385099": {
         "file": "fish-s117-cand-537385099",
         "unit": "f:Damselfishes",
@@ -47131,14 +47125,6 @@
         "view": "wide",
         "where": "fish/practice/quiz · level auto",
         "at": "2026-11-07T00:46:13.124Z"
-      },
-      "i587723539": {
-        "file": "fish-s430-cand-587723539",
-        "unit": "f:Lionfishes",
-        "sp": "s430",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T00:35:40.126Z"
       },
       "i592234291": {
         "file": "fish-s183-cand-592234291",
@@ -47196,14 +47182,6 @@
         "where": "fish/practice/quiz · level auto",
         "at": "2026-11-07T00:32:25.010Z"
       },
-      "i680856498": {
-        "file": "fish-s479-cand-680856498",
-        "unit": "f:Spadefishes",
-        "sp": "s479",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-07T00:35:09.640Z"
-      },
       "i688399674": {
         "file": "fish-s344-cand-688399674",
         "unit": "f:Triggerfishes",
@@ -47227,14 +47205,6 @@
         "view": "wide",
         "where": "fish/practice/quiz · level auto",
         "at": "2026-11-08T11:45:35.178Z"
-      },
-      "i726258560": {
-        "file": "fish-s463-cand-726258560",
-        "unit": "f:RequiemSharks",
-        "sp": "s463",
-        "view": "wide",
-        "where": "fish/practice/quiz · level auto",
-        "at": "2026-11-08T11:42:08.579Z"
       },
       "i728743801": {
         "file": "fish-s357-cand-728743801",
@@ -47335,6 +47305,7 @@
       "fish-s162-cand-121267632": "female",
       "fish-s162-cand-255876376": "male",
       "fish-s199-cand-fb-Scgho_m0": "male",
+      "fish-s204-cand-433355679": "female",
       "fish-s224-cand-fb-Hemel_f2": "female",
       "fish-s226-cand-33044918": "male",
       "fish-s230-cand-256180662": "male",
@@ -47460,6 +47431,9 @@
       "fish-s654-cand-709708651": "male",
       "fish-s673-cand-57395549": "male",
       "fish-s676-cand-60935469": "female"
+    },
+    "rot": {
+      "fish-s430-cand-587723539": 90
     },
     "seen": {
       "fish-s001-cand-267095474": 1,
@@ -50305,6 +50279,7 @@
       "fish-s204-cand-280596740": 1,
       "fish-s204-cand-280596807": 1,
       "fish-s204-cand-280596816": 1,
+      "fish-s204-cand-333030518": 1,
       "fish-s204-cand-337120279": 1,
       "fish-s204-cand-337120293": 1,
       "fish-s204-cand-469143421": 1,
@@ -54487,6 +54462,7 @@
       "fish-s463-cand-722356769": 1,
       "fish-s463-cand-724562201": 1,
       "fish-s463-cand-724562228": 1,
+      "fish-s463-cand-726258560": 1,
       "fish-s463-cand-729413620": 1,
       "fish-s463-cand-734279873": 1,
       "fish-s463-cand-734279875": 1,
@@ -54819,6 +54795,7 @@
       "fish-s479-cand-603763939": 1,
       "fish-s479-cand-617979174": 1,
       "fish-s479-cand-637294480": 1,
+      "fish-s479-cand-680856498": 1,
       "fish-s479-cand-680856569": 1,
       "fish-s479-cand-680856615": 1,
       "fish-s479-cand-680856690": 1,
@@ -59779,8 +59756,9 @@
       "fish-s204-cand-171671986": "p1g1sm1p",
       "fish-s204-cand-171671987": "p1g2sl1p",
       "fish-s204-cand-270201285": "p1g1sl1p",
-      "fish-s204-cand-333030518": "p1g1sl1p",
+      "fish-s204-cand-333030518": "p1g1slkp",
       "fish-s204-cand-340299786": "p1g1sm1p",
+      "fish-s204-cand-433355679": "p1g0sl1p",
       "fish-s204-cand-451490866": "p1g1sl1p",
       "fish-s204-cand-513904269": "p1g2sm1p",
       "fish-s204-cand-641673333": "p1g1sm1p",
