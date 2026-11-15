@@ -1468,7 +1468,8 @@ const darkCards = (p, sel) =>
           p.evaluate(() => ({
             rows: [...document.querySelectorAll('.adm-fishmont .adm-mrow')].map(r => r.querySelector('.adm-mhead b').textContent),
             prev: document.querySelectorAll('.adm-fishmont .adm-mprev img').length,
-            want: fishPairs(FISHC.units).length,
+            // the pairs in force (no structure edit here: the IMR course's)
+            want: montPairs(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ), FISHC.units).length,
             wide: document.documentElement.scrollWidth - innerWidth
           }));
         let l = await lk();
@@ -6730,9 +6731,64 @@ const darkCards = (p, sel) =>
         await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
         c = await circ();
         if (!c || c.v !== null || c.was !== 1 || c.t === 7) se.push(`Keep mine ${JSON.stringify(c)}`);
+        // Photos › Look-alikes lists the pairs in force (admin-content.js montPairs): the added pair has a row marked
+        // "(added)" (its family in no circle here: the circles take no pair out, as the Tree's filter), its photo pick
+        // stored under its pair key as a base pair's; a base pair withdrawn loses its row and keeps its pick in fish mont,
+        // back with the Undo, and withdrawn again its pick is published; dark theme; no overflow at 1280 and 390.
+        const KA = key(FAM, ids.add),
+          mrow = k => `#view .adm-fishmont .adm-mrow:has([data-k="${k}"])`,
+          mont = k => sq.evaluate(k => ((DRAFT.fish || {}).mont || {})[k] || null, k),
+          rowsOf = () =>
+            sq.evaluate(() =>
+              [...document.querySelectorAll('#view .adm-fishmont .adm-mrow')].map(r => r.querySelector('.adm-mhead b').textContent)
+            ),
+          pickIn = async (k, side) => {
+            const s = `${mrow(k)} .adm-mth[data-side="${side}"]:not(.on)`,
+              f = await sq.evaluate(s => (document.querySelector(s) || {dataset: {}}).dataset.f || null, s);
+            if (!f) {
+              se.push(`Look-alikes: no photo to pick in ${k}`);
+              return null;
+            }
+            await sq.click(`${mrow(k)} .adm-mth[data-side="${side}"][data-f="${f}"]`);
+            return f;
+          };
+        await sq.evaluate(() => (location.hash = '#fish/photos/look-alikes'));
+        await swait(() => document.querySelector('#view .adm-fishmont .adm-mrow'));
+        const n0 = await sq.evaluate(() => fishPairs(FISHC.units).length);
+        let mr = await rowsOf();
+        const head = await sq.evaluate(s => (document.querySelector(s + ' .adm-mhead b') || {}).textContent || '', mrow(KA));
+        if (mr.length !== n0 + 1 || !/ \(added\)$/.test(head) || mr.filter(t => /\(added\)/.test(t)).length !== 1)
+          se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, head})}`);
+        const fa = await pickIn(KA, 'a');
+        x = await mont(KA);
+        if (fa && (!x || x.a !== fa || KA !== (await sq.evaluate(([a, b]) => contentPairKey(b, a), [FAM, ids.add]))))
+          se.push(`Look-alikes: the added pair's pick ${JSON.stringify(x)}`);
+        // a base pair's pick, then the pair withdrawn (one draft step, as the Tree's Withdraw writes it)
+        const fb = await pickIn(K, 'b');
+        await sq.evaluate(k => {
+          DRAFT.fish = {...DRAFT.fish, content: contentPairSet(DRAFT.fish.content, k, null, 1, null, Date.now())};
+          saveDraft();
+          render();
+        }, K);
+        await hasSel(mrow(K), false);
+        mr = await rowsOf();
+        if (mr.length !== n0 || (await sq.$(mrow(K)))) se.push(`Look-alikes: the withdrawn pair's row ${mr.length}`);
+        if (fb && ((await mont(K)) || {}).b !== fb) se.push(`Look-alikes: the withdrawn pair's pick ${JSON.stringify(await mont(K))}`);
+        await sq.evaluate(() => undo());
+        await hasSel(mrow(K), true);
+        const back = await sq.evaluate(
+          s => (document.querySelector(s + ' .adm-mth[data-side="b"].on') || {dataset: {}}).dataset.f,
+          mrow(K)
+        );
+        if (fb && back !== fb) se.push(`Look-alikes: Undo brought back ${back}, not ${fb}`);
+        const mdk = await darkCards(sq, '#view .adm-fishmont .adm-mrow');
+        if (mdk) se.push(`Look-alikes, dark theme: still light ${mdk}`);
+        await wideAt('the Look-alikes page with an added pair');
+        await sq.evaluate(() => redo());
+        await hasSel(mrow(K), false);
         // Publish: one confirmation saying it changes every player's path and progress; circles and pairs counted; published.
         const sum = await sq.evaluate(() => pubSummary());
-        if (!/^1 fish circle edit$/m.test(sum) || !/^1 fish look-alike pair edit$/m.test(sum))
+        if (!/^1 fish circle edit$/m.test(sum) || !/^2 fish look-alike pair edits$/m.test(sum))
           se.push(`Publish summary ${JSON.stringify(sum)}`);
         await sq.click('#save');
         await sq
@@ -6746,9 +6802,12 @@ const darkCards = (p, sel) =>
           JSON.stringify(Object.keys(pub.nodes[FAM])) !== '["circle"]' ||
           pub.nodes[FAM].circle.v !== null ||
           pub.nodes[FAM].circle.was !== 1 ||
-          JSON.stringify(Object.keys(pub.pairs)) !== JSON.stringify([key(FAM, ids.add)])
+          JSON.stringify(Object.keys(pub.pairs)) !== JSON.stringify([KA, K].sort())
         )
           se.push(`published ${JSON.stringify(pub)}`);
+        // the picks published, the withdrawn pair's kept
+        const pm = await sq.evaluate(() => (SAVED.fish || {}).mont || {});
+        if ((fa && (pm[KA] || {}).a !== fa) || (fb && (pm[K] || {}).b !== fb)) se.push(`published picks ${JSON.stringify(pm)}`);
         if (dlg.length !== 1 || !/every player's path and progress/.test(dlg[0])) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
         if (se.length) fails.push(`Structure: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
