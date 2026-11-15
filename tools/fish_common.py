@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Curated common names of the fish species, 1 to 3 each (Pierre, 2026-11-04, docs/FISH_PATH.md "Common names: a short
-curated list per species": "1 to 3 well-used common names, never more, never a full reference list"; mastery of a
-species' common names needs all its listed names, so every name added makes it harder). Published without his prior
-check (Pierre, 2026-11-08, Q313: "Publie, je corrige à l'usage"): tools/build_fish.py writes the lists into fish.json
-(species `cn`), and he corrects them in use.
+curated list per species": "1 to 3 well-used common names, never more, never a full reference list"). Published
+without his prior check (Pierre, 2026-11-08, Q313: "Publie, je corrige à l'usage"): tools/build_fish.py writes the lists
+into fish.json (species `cn`, `cni`, `cnr`), and he corrects them in use.
+
+Which name comes first (Pierre, 2026-11-15, Q376, on the questions of
+docs/reviews/2026-11-15-common-name-sources-study.md): (a) the main name, iNaturalist's default English name (FishBase's
+main name where iNaturalist has none), first for every player but an IMR one, who sees the IMR name first; both always
+accepted; (b) the main name fills the species' one unit (Q362), any other listed name is accepted and credits it too;
+(c) the regional standard names (the Australian ones) are accepted when typed, never shown.
 
 Sources (every name keeps the sources it was found in):
 - pdf: the IMR reference PDF's common name (fish.json `common`, "as in the PDF, never corrected": rules C1 and
@@ -14,26 +19,34 @@ Sources (every name keeps the sources it was found in):
   recorded for), via https://huggingface.co/datasets/cboettig/fishbase, CC BY-NC); fbMain = FBname, fbN = the number
   of English records of that name for the species (countries / references: how widely it is used).
 - inat: iNaturalist's taxon names (api.inaturalist.org /v1/taxa, all_names, English lexicon); inatMain = the default
-  English name (preferred_common_name, locale en).
+  English name (preferred_common_name, locale en); inat:Australia = the default English name under the Australia
+  place preference (preferred_place_id 6744: the Australian standard names, Swallowtail Puller), kept when it is not
+  the default itself.
 
 Selection, at most 3 names (names compared without case, spaces, hyphens or apostrophe style):
-1. fish.json `common` (the PDF name: IMR's wording first, rule C1; or its slides, Dauin or wink source);
-2. the FishBase main English name and the iNaturalist default English name, when not already listed (each is the main
+1. the main name: iNaturalist's default English name, else FishBase's main English name, else fish.json `common`;
+2. fish.json `common` (the PDF name, IMR's wording, rule C1; or its slides, Dauin or wink source), when not the main
+   name already;
+3. the FishBase main English name and the iNaturalist default English name, when not already listed (each is the main
    name of a major public reference), but only when it recurs: found in both FishBase (its main name counts, with or
    without a comnames record) and iNaturalist;
 (no other name: Pierre, 2026-11-05, dropped the rule that added a name recorded 3+ times by FishBase).
-Order, deterministic: the species' own name first, then the most shared: found in the most references, then the main
-name of the most, then the most FishBase records, then FishBase's main name before iNaturalist's, then by name.
+Order, deterministic: the main name first, then the species' own name, then the most shared: found in the most
+references, then the main name of the most, then the most FishBase records, then FishBase's main name before
+iNaturalist's, then by name. `imr`: the place of the IMR name (the PDF's or the IMR presentation's) in the list, for
+the players at IMR. `regional`: the regional names not listed (accepted when typed only), dropped where another game
+species has that name or a spelling of it (`dropped`, `regional`).
 Spellings of one name count as one name (2 letters apart at most, a trailing "fish", or one the other's first words:
 Pearl-scaled / Pearlscale angelfish, Neon damsel / damselfish, Indo-Pacific sergeant / sergeant major; a spelling
 that links two groups merges them): the form shown
 is the PDF's, else FishBase's main, else its most recorded; the others are kept in `alt` (to accept when typed). A main
 name of either reference that is not proposed is listed in `left`.
-A species with no name of its own and none found in both references gets the main name of one (`single`); a species no
+A species with no name of its own whose main name is in one reference only is flagged (`single`); a species no
 reference names keeps none (Pierre, 2026-11-08, Q247: it has no common-name unit; a name is never invented). A name
 proposed for two game species, any of its spellings counted, is dropped from each species where it is neither the
-PDF's nor the only name (`dropped`); a name still shared then is flagged `shared` (e.g. "Twospot wrasse", FISH_PATH
-open question 1). Spelling and capitals: FishBase's
+PDF's nor the only name (`dropped`), a main name too (its species' main name is then the next of the rule: FishBase's
+main name, else its own); a name still shared then is flagged `shared` (e.g. "Twospot wrasse", Q319). The summary
+lists every main name that changed and every name newly listed, to look at before it ships. Spelling and capitals: FishBase's
 form when it has the name (sentence case: "Ternate chromis"), else iNaturalist's with the words after the first in
 lower case unless capitalised in a FishBase name of these species (a person or place: "Bennett's"). A PDF name flagged
 `check` in fish.json (a likely slip) shows FishBase's spelling, the PDF form kept in alt (accepted when typed; Pierre,
@@ -41,8 +54,10 @@ lower case unless capitalised in a FishBase name of these species (a person or p
 
 Usage:
   python3 tools/fish_common.py --inat               iNaturalist names of every game species (about 1 request a second,
-                                                     30 taxa a request) into tools/fish_common_src.json
-  python3 tools/fish_common.py --fishbase DIR       FishBase names from DIR/species.parquet and DIR/comnames.parquet
+                                                     30 taxa a request) into tools/fish_common_src.json, then
+                                                     --regional
+  python3 tools/fish_common.py --regional           the regional names alone (REGIONS, the same pacing)
+  python3 tools/fish_common.py --fishbase DIR      FishBase names from DIR/species.parquet and DIR/comnames.parquet
                                                      (needs pyarrow) into tools/fish_common_src.json
   python3 tools/fish_common.py                      offline: the selection, tools/fish_common.json, and a summary
   python3 tools/fish_common.py --check              fail when tools/fish_common.json is not what the selection gives
@@ -64,7 +79,9 @@ SRC = ROOT / "tools" / "fish_common_src.json"
 OUT = ROOT / "tools" / "fish_common.json"
 API = "https://api.inaturalist.org/v1/taxa/"
 MAX = 3
-OWN = ("pdf", "slides", "dauin", "wink")  # fish.json `common` by its species' src: kept as written, listed first
+OWN = ("pdf", "slides", "dauin", "wink")  # fish.json `common` by its species' src: kept as written, always listed
+IMR = ("pdf", "slides")  # the IMR names among them (the reference PDF, the IMR fish presentation): `imr`, Q376 (a)
+REGIONS = {"Australia": 6744}  # iNaturalist places whose preferred English name is a regional standard (Q376 (c))
 
 
 def norm(name):
@@ -117,6 +134,34 @@ def fetch_inat():
                 rec = src["species"].setdefault(sid, {})
                 rec["inat"] = {"id": r["id"], "main": r.get("preferred_common_name"), "names": eng}
         print(f"  iNaturalist: {min(i + 30, len(ids))} / {len(ids)} taxa", file=sys.stderr)
+    save_src(src)
+
+
+def fetch_regional():
+    """The regional standard names (Pierre, 2026-11-15, Q376 (c): accepted when typed, never shown first): iNaturalist's
+    default English name of each game taxon under a region's place preference (REGIONS: Australia, whose names are the
+    Australian Fish Names Standard AS 5300 / Fishes of Australia ones: Swallowtail Puller, Headband Humbug), batched 30
+    taxa a request. Kept in tools/fish_common_src.json species inat.place {region: name} only when it is not the default
+    name itself."""
+    src = load_src()
+    by = {}
+    for s in game_species():
+        by.setdefault(s["inat"], []).append(s["id"])
+    ids = list(by)
+    for sid in [i for L in by.values() for i in L]:
+        (src["species"].setdefault(sid, {}).get("inat") or {}).pop("place", None)
+    for region, place in REGIONS.items():
+        for i in range(0, len(ids), 30):
+            d = get(API + ",".join(map(str, ids[i:i + 30])) + f"?locale=en&preferred_place_id={place}&per_page=30")
+            for r in d["results"]:
+                nm = r.get("preferred_common_name")
+                for sid in by.get(r["id"], []):
+                    rec = src["species"].setdefault(sid, {}).get("inat")
+                    if rec and nm and norm(nm) != norm(rec.get("main") or ""):
+                        rec.setdefault("place", {})[region] = nm
+            print(f"  iNaturalist, {region}: {min(i + 30, len(ids))} / {len(ids)} taxa", file=sys.stderr)
+    src["regional"] = "iNaturalist /v1/taxa preferred_common_name under preferred_place_id " + ", ".join(
+        f"{p} ({r})" for r, p in REGIONS.items())
     save_src(src)
 
 
@@ -207,21 +252,22 @@ def select():
         for n, k in fb.get("names", []):
             fbForm.setdefault(norm(n), n)
             fbRec[norm(n)] = fbRec.get(norm(n), 0) + k
-        groups = []  # one per name, its spellings merged: {name, alt, own, fbMain, inatMain, fb (records), inat}
+        groups = []  # one per name, its spellings merged: {name, alt, own, fbMain, inatMain, fb (records), inat, reg}
 
         def add(name, **tags):
             if not name:
                 return
             hit = [g for g in groups if any(variant(name, x) for x in [g["name"]] + g["alt"])]
             if not hit:
-                g = {"name": name, "alt": [], "own": False, "fbMain": False, "inatMain": False, "fb": 0, "inat": False}
+                g = {"name": name, "alt": [], "own": False, "fbMain": False, "inatMain": False, "fb": 0, "inat": False,
+                     "reg": False}
                 groups.append(g)
             else:
                 # A spelling of two groups links them: one name (Codex review #522, Striate anglerfish / Striped angler).
                 g = hit[0]
                 for o in hit[1:]:
                     g["alt"] += [x for x in [o["name"]] + o["alt"] if norm(x) not in [norm(y) for y in [g["name"]] + g["alt"]]]
-                    for k in ("own", "fbMain", "inatMain", "inat"):
+                    for k in ("own", "fbMain", "inatMain", "inat", "reg"):
                         g[k] = g[k] or o[k]
                     g["fb"] += o["fb"]
                     groups.remove(o)
@@ -240,6 +286,8 @@ def select():
             add(fbForm.get(norm(inat["main"])) or tidy(inat["main"]), inatMain=True, inat=True)
         for n in inat.get("names", []):
             add(fbForm.get(norm(n)) or tidy(n), inat=True)
+        for region, n in sorted((inat.get("place") or {}).items()):
+            add(fbForm.get(norm(n)) or tidy(n), inat=True, reg=region)
         for g in groups:
             # The form shown: the species' own (PDF) name as written, else FishBase's main name, else its most recorded
             # spelling; the other spellings stay as alt (accepted when typed).
@@ -259,25 +307,45 @@ def select():
             # No third rule for other recorded names (Pierre, 2026-11-05: only the main names of the two references).
             return (g["fb"] > 0 or g["fbMain"]) and g["inat"] and (g["fbMain"] or g["inatMain"])
 
-        # The order, deterministic: the species' own (PDF) name first (rule C1), then the most shared: in the most
-        # references (FishBase, iNaturalist), then the main name of the most, then the most FishBase records, then
-        # FishBase's main name before iNaturalist's, then by name.
-        rank = sorted(groups, key=lambda g: (not g["own"], -((g["fb"] > 0 or g["fbMain"]) + g["inat"]),
+        # The main name, shown first to every player but an IMR one (Pierre, 2026-11-15, Q376 (a) B): iNaturalist's
+        # default English name, else FishBase's main name, else the species' own name. The order, deterministic: the
+        # main name first, then the species' own (its IMR name, rule C1, or its Dauin or wink source's), then the most
+        # shared: in the most references (FishBase, iNaturalist), then the main name of the most, then the most FishBase
+        # records, then FishBase's main name before iNaturalist's, then by name.
+        main = (next((g for g in groups if g["inatMain"]), None) or next((g for g in groups if g["fbMain"]), None)
+                or next((g for g in groups if g["own"]), None))
+        rank = sorted(groups, key=lambda g: (g is not main, not g["own"], -((g["fb"] > 0 or g["fbMain"]) + g["inat"]),
                                              -(g["fbMain"] + g["inatMain"]), -g["fb"], not g["fbMain"], norm(g["name"])))
-        pick = [g for g in rank if g["own"] or keep(g)][:MAX]
-        single = not pick and any(g["fbMain"] or g["inatMain"] for g in rank)
-        if single:  # no name of its own and none in both references: the best main name, flagged
-            pick = [next(g for g in rank if g["fbMain"] or g["inatMain"])]
-        names = []
-        for g in pick:
-            o = {"name": g["name"], "from": [x for x in (g["own"] or None, "fbMain" if g["fbMain"] else None,
+        pick = [g for g in rank if g is main or g["own"] or keep(g)][:MAX]
+        # No name of its own and its main name in one reference only: flagged (Nudiantennarius subteres).
+        single = bool(pick) and not any(g["own"] for g in pick) and not keep(main)
+
+        def entry(g):
+            e = {"name": g["name"], "from": [x for x in (g["own"] or None, "fbMain" if g["fbMain"] else None,
                                                           f"fb{g['fb']}" if g["fb"] else None,
                                                           "inatMain" if g["inatMain"] else None,
-                                                          "inat" if g["inat"] and not g["inatMain"] else None) if x]}
+                                                          "inat" if g["inat"] and not g["inatMain"] else None,
+                                                          f"inat:{g['reg']}" if g["reg"] else None) if x]}
             if g["alt"]:
-                o["alt"] = g["alt"]
-            names.append(o)
-        o = {"sp": s["name"], "names": names}
+                e["alt"] = g["alt"]
+            return e
+
+        o = {"sp": s["name"], "names": [entry(g) for g in pick]}
+        # The regional standard names (Q376 (c)): a region's iNaturalist name not listed, accepted when typed only, in
+        # the region's own form first (not a FishBase spelling of it: "Swallow-tail puffer").
+        regional = []
+        for g in rank:
+            if g["reg"] and g not in pick:
+                e = entry(g)
+                n = inat["place"][g["reg"]]
+                f = next((x for x in [e["name"]] + e.get("alt", []) if norm(x) == norm(fbForm.get(norm(n)) or tidy(n))), e["name"])
+                e["name"], alt = f, [x for x in [e["name"]] + e.get("alt", []) if x != f]
+                e.pop("alt", None)
+                if alt:
+                    e["alt"] = alt
+                regional.append(e)
+        if regional:
+            o["regional"] = regional
         left = [g["name"] for g in rank if g not in pick and (g["fbMain"] or g["inatMain"])]
         if left:
             o["left"] = left  # a main name of FishBase or iNaturalist not proposed (not in both, or over 3)
@@ -291,40 +359,74 @@ def select():
     # Shared names: one name, two game species.
     # Every spelling counts, the accepted ones (alt) too (Codex review #522: a typed answer must not name two species).
     # First drop a shared name from each species where it is neither its own (PDF) name nor its only one, then flag the
-    # names still shared.
+    # names still shared. A main name goes through the same rule (Q319; the 2026-11-15 study §7.1): iNaturalist's
+    # default "Longnose butterflyfish" of Forcipiger longirostris is the IMR name of F. flavissimus, so it stays
+    # F. flavissimus's alone and F. longirostris's main name falls to the next (below).
     def spell(n):
         return {norm(x) for x in [n["name"]] + n.get("alt", [])}
 
-    def shared():
+    def shared(key="names"):
         seen = {}
         for sid, o in out.items():
-            for n in o["names"]:
+            for n in o.get(key, []):
                 for k in spell(n):
                     if sid not in seen.setdefault(k, []):
                         seen[k].append(sid)
-        return {k: ids for k, ids in seen.items() if len(ids) > 1}
+        return seen
 
     for k, ids in shared().items():
+        if len(ids) < 2:
+            continue
         for sid in ids:
             o = out[sid]
             for n in list(o["names"]):
                 if k in spell(n) and not any(t in OWN for t in n["from"]) and len(o["names"]) > 1:
                     o["names"].remove(n)
                     o.setdefault("dropped", []).append({"name": n["name"], "sharedWith": [out[i]["sp"] for i in ids if i != sid]})
-    for k, ids in shared().items():
+    listed = shared()
+    for k, ids in listed.items():
+        if len(ids) < 2:
+            continue
         for sid in ids:
             for n in out[sid]["names"]:
                 if k in spell(n):
                     n["shared"] = sorted(set(n.get("shared", [])) | {out[i]["sp"] for i in ids if i != sid})
+    # A regional name is only an accepted extra: dropped where another game species lists it, a spelling of it (Pinstripe
+    # / Pinstriped wrasse), or has it as a regional name too (a typed name never takes a species' listed name from it).
+    every = [(i, x) for i, o in out.items() for key in ("names", "regional") for n in o.get(key, [])
+             for x in [n["name"]] + n.get("alt", [])]
+    for sid, o in out.items():
+        for n in list(o.get("regional", [])):
+            other = sorted({out[i]["sp"] for i, x in every if i != sid and any(variant(x, y) for y in [n["name"]] + n.get("alt", []))})
+            if other:
+                o["regional"].remove(n)
+                o.setdefault("dropped", []).append({"name": n["name"], "sharedWith": other, "regional": True})
+        if "regional" in o and not o["regional"]:
+            del o["regional"]
+    # The main name first, among the names kept: iNaturalist's default, else FishBase's main name, else the species' own
+    # (Q376 (a)); the others in their order. The IMR name, marked (shown first to a player at IMR): its place in the list.
+    for o in out.values():
+        L = o["names"]
+        m = next((n for t in ("inatMain", "fbMain") for n in L if t in n["from"]), None) or next(
+            (n for n in L if any(t in OWN for t in n["from"])), None)
+        if m and m is not L[0]:
+            L.remove(m)
+            L.insert(0, m)
+        i = next((i for i, n in enumerate(o["names"]) if any(t in IMR for t in n["from"])), None)
+        if i is not None:
+            o["imr"] = i
     return out
 
 
 def write(out, check):
-    doc = ("Curated common names per fish species (1 to 3, the most shared first; published, Pierre corrects them in use: "
-           "Q313), written into fish.json species cn by tools/build_fish.py: tools/fish_common.py, "
+    doc = ("Curated common names per fish species (1 to 3, the main name first, then the species' own, then the most "
+           "shared; published, Pierre corrects them in use: Q313; the main name and the IMR name: Q376), written into "
+           "fish.json species cn (names), cni (imr) and cnr (regional) by tools/build_fish.py: tools/fish_common.py, "
            "docs/FISH_PATH.md \"Common names\". from: pdf = IMR reference PDF (fish.json common), dauin = circle 3's source "
            "name, fbMain = FishBase main English name, fbN = FishBase English records of the name (countries / references), "
-           "inatMain = iNaturalist default English name, inat = another iNaturalist English name.")
+           "inatMain = iNaturalist default English name, inat = another iNaturalist English name, inat:Australia = "
+           "iNaturalist's name under the Australia place (a regional standard name). imr = the IMR name's place in names; "
+           "regional = regional names accepted when typed only.")
     body = "{\n" + f' "_doc": {json.dumps(doc)},\n "species": {{\n' + ",\n".join(
         f"  {json.dumps(k)}: {json.dumps(v, ensure_ascii=False, separators=(',', ':'))}" for k, v in out.items()) + "\n }\n}\n"
     if check:
@@ -335,32 +437,57 @@ def write(out, check):
     OUT.write_text(body)
 
 
-def summary(out):
+def summary(out, before):
+    """The counts, then every change of a main name against the file as it was (before), to look at before it ships (a
+    refetch can change iNaturalist's default names: the 2026-11-15 study §7.1), and every name newly on a species."""
     from collections import Counter
     n = Counter(len(o["names"]) for o in out.values())
     print(f"{len(out)} game species; names per species: " + ", ".join(f"{k}: {n[k]}" for k in sorted(n)))
     print(f"  PDF name kept: {sum(1 for o in out.values() if any('pdf' in x['from'] for x in o['names']))}; "
+          f"IMR name not the main name: {sum(1 for o in out.values() if o.get('imr'))}; "
           f"no FishBase match: {sum(1 for o in out.values() if o.get('noFishBase'))}; "
-          f"shared names dropped: {sum(len(o.get('dropped', [])) for o in out.values())}; "
-          f"shared and kept: {sum(1 for o in out.values() for x in o['names'] if x.get('shared'))}")
+          f"shared names dropped: {sum(1 for o in out.values() for d in o.get('dropped', []) if not d.get('regional'))}; "
+          f"shared and kept: {sum(1 for o in out.values() for x in o['names'] if x.get('shared'))}; "
+          f"regional names: {sum(len(o.get('regional', [])) for o in out.values())} "
+          f"({sum(1 for o in out.values() for d in o.get('dropped', []) if d.get('regional'))} dropped, shared)")
+
+    def spells(o, key="names"):
+        return {norm(y) for x in o.get(key, []) for y in [x["name"]] + x.get("alt", [])}
+    moved = [(k, (before.get(k) or {}).get("names", [{}])[0].get("name"), o["names"][0]["name"]) for k, o in out.items()
+             if o["names"] and (before.get(k) or {}).get("names") and before[k]["names"][0]["name"] != o["names"][0]["name"]]
+    if moved:
+        print(f"  main name changed: {len(moved)}")
+        for k, a, b in moved:
+            print(f"    {k} {out[k]['sp']}: {a} -> {b}")
+    new = [(k, x["name"]) for k, o in out.items() for x in o["names"] if not ({norm(y) for y in [x["name"]] + x.get(
+        "alt", [])} & spells(before.get(k) or {}))]
+    if new:
+        print(f"  names newly listed: {len(new)}")
+        for k, x in new:
+            others = [o["sp"] for j, o in out.items() if j != k and norm(x) in spells(o) | spells(before.get(j) or {})]
+            print(f"    {k} {out[k]['sp']}: {x}" + (f" (also {', '.join(others)}: check by hand)" if others else ""))
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--inat", action="store_true")
+    ap.add_argument("--regional", action="store_true")
     ap.add_argument("--fishbase", metavar="DIR")
     ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
     if a.inat:
         fetch_inat()
+    if a.inat or a.regional:
+        fetch_regional()  # after --inat, which writes each taxon's iNaturalist record afresh
     if a.fishbase:
         fetch_fishbase(a.fishbase)
-    if a.inat or a.fishbase:
+    if a.inat or a.regional or a.fishbase:
         return
+    before = json.loads(OUT.read_text()).get("species", {}) if OUT.exists() else {}
     out = select()
     write(out, a.check)
     if not a.check:
-        summary(out)
+        summary(out, before)
 
 
 if __name__ == "__main__":

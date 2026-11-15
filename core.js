@@ -1260,7 +1260,8 @@
   }
   // The fish name index (Pierre, 2026-11-09, Q319, Q320; docs/reviews/2026-11-09-shared-common-names.md), for typed
   // answers (fishTypeNames known): each name below the family with the family it lifts to and its role (vr): 'sp' a
-  // listed common name of a game species (fish.json cn, every spelling), 'ss' a species' scientific name (its PDF name
+  // listed common name of a game species (fish.json cn, every spelling) or a regional one (cnr, accepted when typed:
+  // Pierre, 2026-11-15, Q376 (c)), 'ss' a species' scientific name (its PDF name
   // and WoRMS's), 'gs' a genus's scientific name, 'gc' a genus's common name, 'k' a kind word carried by at least 2 of
   // the family's species or all of them (fish.json vn, tools/fish_names.py: razorfish, toby), with n and of; a kind word
   // a family's species carry less than that ('w') is known, owned by none: never read as a slip of another family's
@@ -1283,7 +1284,7 @@
       };
     const game = ((F && F.species) || []).filter(s => s.circle && !s.out && s.family);
     game.forEach(s => {
-      (s.cn || []).forEach(L => L.forEach(x => put(x, s.family, 'sp', 0, 0, [s.id])));
+      [...(s.cn || []), ...(s.cnr || [])].forEach(L => L.forEach(x => put(x, s.family, 'sp', 0, 0, [s.id])));
       [s.name, s.now].forEach(x => put(x, s.family, 'ss', 0, 0, [s.id]));
     });
     const inGame = new Set(game.map(s => s.genus));

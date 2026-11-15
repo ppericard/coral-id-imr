@@ -61,7 +61,8 @@ Each species: {id, name (PDF / source, or the source's shown), now (WoRMS accept
 taxon of its PDF name, else of the WoRMS name), circle (in the game) or out (why not), r (rank order: the PDF
 cheatsheet's 24 most sighted first, then the source order, i.e. PDF order, then the slides, winks, Dauin species),
 cmi (commonness index, 0-1, within its teaching entry: tools/fish_commonness.py), present, src (slides, dauin, wink; PDF when absent), sec (PDF section), pdf (pages), cs (cheatsheet rank), sl (slide),
-check, cn (the curated common names, 1 to 3, from tools/fish_common.json: add_families), photoTaxon (copied from the source:
+check, cn (the curated common names, 1 to 3, the main name first, from tools/fish_common.json: add_families), cni (the
+IMR name's place in cn), cnr (the regional names, accepted when typed), photoTaxon (copied from the source:
 the iNaturalist taxon its candidate photos come from, when not its own; Pierre, 2026-11-14, Q354 b)}. fish.json vn: the name index's
 kind words (razorfish, toby: tools/fish_names.py, add_families). A teaching node's `species` (and its sub-entries') are in commonness order, the most commonly met around Dauin
 first (Pierre, 2026-11-04: "common beats easy" to start; fish_commonness.apply(), its inputs in
@@ -686,17 +687,29 @@ def add_families(o, key, declared=()):
         if x.get("dep"):
             s["depth"] = {"m": x["dep"], "src": fsrc(x, "dsrc")}
     # The species' curated common names (tools/fish_common.json, tools/fish_common.py; Pierre, 2026-11-04: 1 to 3 per
-    # species, never more; published as selected, Pierre, 2026-11-08, Q313): cn, one list per name, the name shown first
-    # (the most shared first), then its other spellings, accepted when typed (Pearl-scaled / Pearlscale angelfish; a PDF
-    # slip's own form). A game species no reference names has none (Q247). Every source stays in tools/fish_common.json.
+    # species, never more; published as selected, Pierre, 2026-11-08, Q313): cn, one list per name, the name shown first,
+    # then its other spellings, accepted when typed (Pearl-scaled / Pearlscale angelfish; a PDF slip's own form); the main
+    # name first (Pierre, 2026-11-15, Q376 (a): iNaturalist's default, else FishBase's main name), so an app that reads
+    # cn[0] alone shows it. cni: the place in cn of the IMR name (the PDF's or the IMR presentation's), shown first to a
+    # player at IMR; cnr: the regional standard names (Q376 (c)), the same shape as cn, accepted when typed, never shown.
+    # Both additive: an older app ignores them. A game species no reference names has none (Q247). Every source stays in
+    # tools/fish_common.json.
     cnames = json.loads(CNAMES.read_text(encoding="utf-8")).get("species", {}) if CNAMES.exists() else {}
     for s in o["species"]:
-        s.pop("cn", None)
-        L = (cnames.get(s["id"]) or {}).get("names") or []
+        for k in ("cn", "cni", "cnr"):
+            s.pop(k, None)
+        c = cnames.get(s["id"]) or {}
+        L = c.get("names") or []
         if len(L) > 3:
             sys.exit(f"tools/fish_common.json {s['id']}: {len(L)} names, at most 3")
         if L and s.get("circle"):
             s["cn"] = [[n["name"], *n.get("alt", [])] for n in L]
+            if c.get("imr") is not None:
+                if not 0 <= c["imr"] < len(L) or not {"pdf", "slides"} & set(L[c["imr"]]["from"]):
+                    sys.exit(f"tools/fish_common.json {s['id']}: imr is not the place of its IMR name")
+                s["cni"] = c["imr"]
+            if c.get("regional"):
+                s["cnr"] = [[n["name"], *n.get("alt", [])] for n in c["regional"]]
     o["families"] = out
     # The genus common names (tools/fish_genus_names.json; Pierre, 2026-11-07: "some genera have common names. They
     # should be present somewhere"): common (the name) and csrc (its source, in words), checked against the data.
@@ -717,6 +730,8 @@ def add_families(o, key, declared=()):
         gn = gnames.pop(x["id"], None)
         if gn:
             r["common"], r["csrc"] = gn["common"], genus_csrc(x["id"], gn, r, u, [sp[i] for i in x["species"]], sp, fams[x["family"]])
+            if gn["from"] == "species":
+                r["cinf"] = 1  # inferred from its species' names, no reference names the genus (Q376 (d)): flagged on the sheet
         rt = rts.pop(g, None)
         if rt and g in rskip:
             sys.exit(f"tools/fish_genus_roots.json: {g} both has a root and is in skip")
@@ -741,8 +756,10 @@ def add_families(o, key, declared=()):
 def genus_csrc(gid, gn, r, u, mine, sp, fam):
     """The source of a genus common name (tools/fish_genus_names.json), in words, once checked: from imr, the IMR
     sub-entry naming this genus alone (Anemonefish for Amphiprion; not Surgeonfish, which names three genera); from
-    species, every species of the genus here (2 or more) has a common name ending in word, and no species of another genus
-    of its family has one. The build stops otherwise: the name is never kept on a guess (rule C2)."""
+    species, every species of the genus here (2 or more) has a common name ending in word (its own, fish.json common; with
+    of "listed", one of its listed names, cn), and no species of another genus of its family has one (an inferred name,
+    flagged cinf); from inat, iNaturalist's English name of the genus as read. The build stops otherwise: the name is
+    never kept on a guess (rule C2)."""
     def norm(t):
         return "".join(c for c in (t or "").lower() if c.isalpha())
 
@@ -756,11 +773,26 @@ def genus_csrc(gid, gn, r, u, mine, sp, fam):
         return "IMR fish presentation" + (f", slide{'s' if len(sl) > 1 else ''} " + ", ".join(map(str, sl)) if sl else "") + f" ({u['name']})"
     if gn["from"] == "species":
         w = gn["word"]
-        bad = [s["name"] for s in mine if not ends(s.get("common"), w)]
-        oth = [sp[i]["name"] for i in fam["species"] if sp[i]["genus"] != gid and ends(sp[i].get("common"), w)]
+        # of "listed": the species' listed names (fish.json cn, the form shown of each; Pierre, 2026-11-15, Q376 (d):
+        # Cephalopholis, whose IMR names say grouper and whose FishBase names say hind), else their own (common).
+        listed = gn.get("of") == "listed"
+
+        def has(s):
+            return any(ends(L[0], w) for L in s.get("cn") or []) if listed else ends(s.get("common"), w)
+        bad = [s["name"] for s in mine if not has(s)]
+        oth = [sp[i]["name"] for i in fam["species"] if sp[i]["genus"] != gid and has(sp[i])]
         if len(mine) < 2 or bad or oth:
             sys.exit(f"tools/fish_genus_names.json {gid}: '{gn['word']}' is not its species' own ({bad or oth or 'one species'})")
-        return f"Inferred from its species' common names (IMR reference list, FishBase): {'both' if len(mine) == 2 else f'all {len(mine)}'} here end in “{gn['word']}”"
+        n = 'both' if len(mine) == 2 else f'all {len(mine)}'
+        if listed:
+            return f"Inferred from its species' listed common names (FishBase, iNaturalist): {n} here have one ending in “{w}”"
+        return f"Inferred from its species' common names (IMR reference list, FishBase): {n} here end in “{w}”"
+    if gn["from"] == "inat":
+        # iNaturalist's default English name of the genus (Q376 (d): Centropyge, Dendrochirus, Dascyllus), as read on the
+        # date given, in sentence case.
+        if set(gn) != {"common", "from", "inat", "as", "read"} or norm(gn["common"]) != norm(gn["as"]):
+            sys.exit(f"tools/fish_genus_names.json {gid}: from inat takes common, inat (the taxon id), as (its name there) and read")
+        return f"iNaturalist's English name of the genus (“{gn['as']}”, taxon {gn['inat']}, read {gn['read']})"
     sys.exit(f"tools/fish_genus_names.json {gid}: from {gn['from']}?")
 
 
