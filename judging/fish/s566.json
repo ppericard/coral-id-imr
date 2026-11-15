@@ -508,6 +508,11 @@
    "code": "p1g1mm13",
    "keep": "best",
    "phase": "terminal"
+  },
+  "fish-s566-cand-612943731": {
+   "code": "o1g1sm13",
+   "keep": "best",
+   "phase": "terminal"
   }
  }
 }

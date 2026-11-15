@@ -335,6 +335,42 @@
   "fish-s341-cand-618206293": {
    "code": "p1g2bs11",
    "keep": "best"
+  },
+  "fish-s341-cand-618206301": {
+   "code": "p1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s341-cand-618206498": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s341-cand-618206513": {
+   "code": "p1g2bs11",
+   "keep": "dup"
+  },
+  "fish-s341-cand-618206521": {
+   "code": "o1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s341-cand-621817464": {
+   "code": "p1g1msx1",
+   "keep": "best"
+  },
+  "fish-s341-cand-639877217": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s341-cand-595786295": {
+   "code": "o1g1sl13",
+   "keep": "best"
+  },
+  "fish-s341-cand-680852003": {
+   "code": "p1g0sl1ja2",
+   "keep": "best"
+  },
+  "fish-s341-cand-680852072": {
+   "code": "p1g0sl1ja2",
+   "keep": "dup"
   }
  }
 }

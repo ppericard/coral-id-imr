@@ -299,6 +299,30 @@
   "fish-s375-cand-712479054": {
    "code": "p1g0sl14",
    "keep": "best"
+  },
+  "fish-s375-cand-461499249": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s375-cand-80628138": {
+   "code": "p1g1ms12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-80628151": {
+   "code": "p0g1ml12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-80628192": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s375-cand-683518871": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-658987880": {
+   "code": "p1g1ss12",
+   "keep": "best"
   }
  }
 }

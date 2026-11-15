@@ -219,6 +219,14 @@
   "fish-s427-cand-252021840": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s427-cand-758898779": {
+   "code": "o1g0sl1c3",
+   "keep": "dup"
+  },
+  "fish-s427-cand-42541482": {
+   "code": "o1g0sl13",
+   "keep": "best"
   }
  }
 }
