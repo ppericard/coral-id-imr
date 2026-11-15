@@ -2830,8 +2830,9 @@ function renderFishUnits(id, view = TREE) {
     cv = C.p,
     P = photosOf(sel),
     LV = new Set(ttLeaves(T, sel)),
-    // the candidates still waiting in each of its leaves (autosort.js fishWaiting: not in play, rejected nor gone)
-    W = fishWaiting(FISHC.cand, F),
+    // the candidates still waiting in each of its leaves (autosort.js fishWaiting: not in play, by photo id, rejected nor
+    // gone), as Coverage counts them
+    W = fishWaiting(FISHC.cand, F, D.play),
     nC = [...LV].reduce((a, s) => a + (W[s] || []).length, 0),
     unitPage = sel === u.id,
     // A heading's cover: the one in force, small, enlarged on a tap; ringed when it is his pick.
