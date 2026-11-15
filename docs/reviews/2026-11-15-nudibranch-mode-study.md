@@ -6,8 +6,8 @@ for nudibranchs in the Philippines in general rather than just Dauin. Starting b
 nudibranchs and (2) the most sought-after nudibranchs."
 
 The per-species data is in [`2026-11-15-nudibranch-mode-candidates.csv`](2026-11-15-nudibranch-mode-candidates.csv):
-one row for each of the 452 sea-slug species with Research Grade observations in the Philippines by 3 or more distinct
-observers (the column list is in Appendix C). It holds no observer id or name: observer counts are aggregates only.
+one row for each of the 452 sea-slug species that rule C8 confirms in the Philippines (the column list is in Appendix
+C). It holds no observer id or name: observer counts are aggregates only.
 
 Labels (rule W11): **[measured]** = counted by a script today; **[read]** = taken from a page, a record or a paper's
 abstract; **[guess]** = my judgement, not checked.
@@ -29,8 +29,7 @@ abstract; **[guess]** = my judgement, not checked.
 ## 1. Summary
 
 1. **There is plenty of material.** **484 nudibranch species** have Research Grade observations in the Philippines. **352
-   pass the presence rule C8** (3 or more distinct observers). **117 are confirmed near Dauin** (2 or more observers
-   within 40 km). With the other sea slugs: 651 species, **452 confirmed** **[measured]**.
+   pass the presence rule C8**. **117 are confirmed near Dauin** (2 or more observers within 40 km). With the other sea slugs: 651 species, **452 confirmed** **[measured]**.
 2. **The data is concentrated in Anilao.** Batangas holds 47% of the Philippine nudibranch observations. Romblon,
    Oriental Mindoro, Negros Oriental and Cebu hold 9-13% each. A ranking by **distinct observers** (the fish's iNat
    signal) is robust to this. A province-balanced ranking gives the same order (Spearman 0.95), with 41 of the top 50 the
@@ -51,10 +50,14 @@ abstract; **[guess]** = my judgement, not checked.
    BY photo; 61.5% carry CC BY-NC. Worldwide, every species of the common top 50 has 40 or more Research Grade
    observations with a CC0 / CC BY / CC BY-NC photo. 37 of the 50 have 30 or more with an open (CC0 / CC BY) photo
    alone **[measured]**.
-6. **Almost no well-used English names.** iNaturalist gives an English name to 40 of the top 50. WoRMS gives one to 24.
-   They **agree on 2** **[measured]**. Under the fish rule (a name found in two references; Q247: none invented), the
-   common-name branch would be nearly empty. The natural path is **scientific names only**: families, then genera,
-   then species.
+6. **Few well-used English names.** iNaturalist gives an English name to 40 of the top 50. WoRMS gives one to 24.
+   They **agree on 2** **[measured]**.
+   - The fish rule as built would still name 45 of the 50: through its `single` fallback, one reference's main name
+     when no name recurs in both.
+   - But 43 of those 45 would rest on one reference alone, or on two that disagree.
+   - So a common-name branch is possible under today's rule, built mostly on single-source names. Running this subject
+     on **scientific names only** (families, then genera, then species) is a preference I recommend, not something the
+     rules impose: question (d).
 7. **Taxonomy is stable enough to build on.** For 450 of the 452 names, iNaturalist uses the name WoRMS accepts. WoRMS
    follows the Chromodorididae revision of Johnson & Gosliner (2012) and later papers (§2.3) **[measured]**.
 8. **No IMR nudibranch content was found** in the repo's IMR material (§8). The mode would rest on WoRMS, the
@@ -78,7 +81,12 @@ iNaturalist, Research Grade (RG) and all verifiable (RG + Needs ID), on 2026-11-
 
 - 683 distinct observers recorded a nudibranch in the Philippines **[measured]**.
 - Rule C8's checklist route does not apply: `tools/presence_checklists.json` holds the FishBase and Corals of the World
-  checklists only, and has none for sea slugs **[read]**. Every confirmation above comes from the observer counts.
+  checklists only, and has none for sea slugs **[read]**. The IMR-list route has no sea-slug list either.
+- So the two routes left are 3 or more Research Grade observers in the Philippines, or confirmed near Dauin (2 or more
+  within 40 km). The confirmed totals apply both (`tools/presence.py` `ph_confirmed`).
+- No sea-slug species is confirmed by the near-Dauin route alone: every species with 2 or more observers near Dauin also
+  has 3 or more in the country **[measured]**. So "confirmed" and "3 or more Philippine observers" are the same 452
+  species today.
 - **GBIF** has 31,052 Nudibranchia occurrences in the Philippines under 592 species keys **[measured]**. By dataset:
   - iNaturalist RG: 17,071 (55%), 397 species;
   - Nudi Pixel: 6,844, 429 species;
@@ -399,13 +407,21 @@ from one observation (rule P4).
   *Hypselodoris* **[read: the records]**. I did not check where WoRMS's vernaculars come from.
 - **What divers actually say** is a handful of nicknames ("Spanish dancer", "Pikachu", "Shaun the Sheep", "sea bunny",
   "blue dragon"). These are not names of single species in every source.
-- **Meaning for the common-name branch.** Under the fish rule (FISH_PATH "Common names": names found in both references,
-  at most 3; Q247: a species no reference names has none) **[measured, on the fish rule as written]**:
-  - 2 of the top 50 would get a common-name unit;
-  - 7 of the 452 would.
-  - With FISH_PATH's `single` fallback (one reference's main name, when nothing else names it), about 40 of the top 50
-    would get iNaturalist's name. Most of those names are not "well-used".
-- **Recommendation** **[guess]**:
+- **Meaning for the common-name branch** **[measured]**. The fish rule as built (FISH_PATH "Common names",
+  `tools/fish_common.py`) keeps a name found in both references, at most 3. When none recurs, it gives the species one
+  reference's main name (`single`). A species no reference names has none (Q247). With iNaturalist and WoRMS as the two
+  references:
+
+  | Species set | Gets a common-name unit | Of which: a name both references give | Of which: one reference only, or two that disagree (`single`) | No name (Q247) |
+  |---|---|---|---|---|
+  | Common top 50 | 45 | 2 | 43 | 5 |
+  | Common top 100 | 77 | 2 | 75 | 23 |
+  | All 452 confirmed | 246 | 7 | 239 | 206 |
+
+  So **the rules do not make the branch empty**: it would hold about half the species, nearly all on a single
+  reference's name. For the fish, `single` is a rare exception (two species in 664). Here it would be the norm, and
+  Pierre asked for "well-used" names.
+- **Recommendation** **[guess]** (a preference, question (d)):
   - no common-name branch for this subject;
   - the **scientific path only**: families, genera, species, like the fish's branch B;
   - iNat's English name shown on the sheet as information, with its source;
@@ -582,8 +598,10 @@ Only decisions that are his. Each comes with a recommendation.
     (§4.6).
 - **(d) Names.**
   - Only 2 of the 50 most common species have an English name that two references agree on.
+  - The fish rule's fallback would still name 45 of them, 43 from a single reference or from two that disagree (§6.1).
   - Should this subject run on scientific names only (families, genera, species), with iNat's English names and the
-    dive nicknames shown on the sheets as information?
+    dive nicknames shown on the sheets as information? Or should it keep a common-name branch on those single-source
+    names, as the fish rule allows?
   - *Recommendation*: yes (§6.1).
 
 Decided here as implementation details:
@@ -829,8 +847,9 @@ alleni*" (WoRMS: original combination).
 
 ## Appendix C. The CSV's columns
 
-[`2026-11-15-nudibranch-mode-candidates.csv`](2026-11-15-nudibranch-mode-candidates.csv): the 452 sea-slug species with
-3 or more distinct Research Grade observers in the Philippines. Nudibranchs come first, each group in commonness order.
+[`2026-11-15-nudibranch-mode-candidates.csv`](2026-11-15-nudibranch-mode-candidates.csv): the 452 sea-slug species that
+rule C8 confirms in the Philippines. Today that is the same set as the species with 3 or more distinct Research Grade
+observers there (§2.1). Nudibranchs come first, each group in commonness order.
 
 - **Taxonomy**:
   - `group`, `family`, `genus`, `species`: iNaturalist's taxonomy;
