@@ -5292,6 +5292,20 @@
     "at": "2026-11-15",
     "n": 20
    }
+  },
+  "120989": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
+  },
+  "469421": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
   }
  },
  "photo": {},
@@ -190457,6 +190471,106 @@
    "e": 2,
    "k": "best"
   },
+  "seaslug-120989-cand-172792559": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-19308586": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120989-cand-254609568": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-265420320": {
+   "jt": "o1d0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120989-cand-330907654": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120989-cand-34100962": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-364351853": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120989-cand-389210508": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-460660240": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120989-cand-472959558": {
+   "jt": "o1g0sls",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-479802582": {
+   "jt": "o1g1sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120989-cand-523707043": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-603220172": {
+   "jt": "o1g0ss1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-120989-cand-610929179": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-625193771": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120989-cand-635921601": {
+   "jt": "h1g0sl1w",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120989-cand-650002899": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120989-cand-656513921": {
+   "jt": "d1g1ms1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-120989-cand-675741587": {
+   "jt": "d1g0mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120989-cand-721706586": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
   "seaslug-121048-cand-163942563": {
    "jt": "p1g0ml1",
    "e": 4,
@@ -191958,6 +192072,107 @@
   },
   "seaslug-468042-cand-95699646": {
    "jt": "o1g0sls",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-113196515": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-257317782": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-264465160": {
+   "jt": "o0d0sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-469421-cand-278900018": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-469421-cand-363343636": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-379547556": {
+   "jt": "o1g0sl1j",
+   "e": 2,
+   "k": "best",
+   "n": "A small white body with a thin orange rim and few markings: juvenile colours."
+  },
+  "seaslug-469421-cand-3801806": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-442899690": {
+   "jt": "h1g0sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-469421-cand-459204723": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-469421-cand-462581978": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-469421-cand-507511359": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-469421-cand-594974795": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-469421-cand-601635166": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-469421-cand-623863690": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-625294578": {
+   "jt": "o1d0ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-469421-cand-634039781": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-469421-cand-638433529": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-639974121": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-718234011": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-469421-cand-758217477": {
+   "jt": "p1g0sl1",
    "e": 4,
    "k": "best"
   },
