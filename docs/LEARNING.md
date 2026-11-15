@@ -3672,6 +3672,9 @@ during its first 20 answers.
   unit's first 10 answers, questions 1-300, pooled over the profiles (stratified sign-flip). Expected to fall to 0 (by
   construction: it checks the build in the real app, not a benefit).
 - **Looks**: 2 (the rated world from 10 to 20 seeds if a guardrail is unclear): the bounds at 95%, the primary at 0.025.
+  Added after the app world's first look, before running it (its 5 seeds left `over`, `firstOW`, `unitsOW` and `plateau`
+  unclear for the beginner, the casual diver or the lecture RA): the app world's second look on seeds 1-20 in both arms,
+  read with the same 2 looks; its verdicts replace the first look's.
 - **Guardrails**: every one of the table above, at its checkpoints, margins unchanged (`know`, `over`, `score`,
   `firstOW`, `unitsOW`, `plateau`, `hard`, `met`).
 - **No wall** (declared measures, not guardrails): `phLate` (the share of phase photos once a unit has 20 answers or
