@@ -3908,6 +3908,25 @@ run on GitHub, learncheck 43703441937, and the local one give the same numbers):
   (80%) is not linear in the answers, though, so this does not separate the two.
 - **Not measured**: the right % by kind of unit. The files keep no per-answer result.
 
+**Results, the rated world** (fish, 10 seeds × 3,000 answers, normal photos, this branch against `main`; learncheck
+43717079879; 95% one-sided bounds, 2 looks):
+- **Families at Advanced, breached** at 1,000 for all but the beginner (unclear), and at 3,000 for every profile:
+  - beginner 24.8 → 14.7;
+  - casual diver 32.0 → 9.5;
+  - lecture RA 26.6 → 18.6;
+  - strong RA 27.5 → 16.7;
+  - expert 27.1 → 15.9.
+- **The global score as shown, breached** for every profile at 1,000 and 3,000. It falls, from −1.3 to −4.6 points at
+  1,000 and from −1.6 to −6.7 at 3,000 (strong RA 53.8 → 47.1). Over this horizon the species' common-name credit does
+  not make up for the families' slower bars.
+- **The species' share** of answers 1-3,000 is 0.35 to 0.61. The right % falls with it, by −25 points for the casual
+  diver at 3,000 and −16 for the strong RA.
+- **Other guardrails**: true knowledge (D*) is held except the casual diver at 1,000 (−0.023). The units at Open Water at
+  1,000 are breached for three profiles. The plateau is unclear for three.
+- **So the loss is not only a delay**: by 3,000 answers the families have not caught up, and the score is lower.
+- **The arms**: not run in the rated world. One run of the branch took two hours on GitHub. The option Pierre picks gets
+  this check before it ships.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
