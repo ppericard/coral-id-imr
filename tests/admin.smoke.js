@@ -1815,6 +1815,13 @@ const darkCards = (p, sel) =>
             fails.push(`${w}px Families: a species cover on a juvenile ignored and flagged ${JSON.stringify(d)}`);
           // The one click on the species' page (jv's last): his pick in force, nothing flagged; Undo takes it back.
           const jsp = other.hash + 'photos/tree/key/' + encodeURIComponent(order.sid);
+          await shot('juvenile-confirm-1280', '.adm-treep .adm-filter');
+          if (process.env.SHOTS) {
+            const was = await p.evaluate(() => document.documentElement.dataset.theme || '');
+            await p.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+            await shot('juvenile-confirm-dark-1280', '.adm-treep .adm-filter');
+            await p.evaluate(t => (t ? (document.documentElement.dataset.theme = t) : delete document.documentElement.dataset.theme), was);
+          }
           await p.click('[data-fjok]');
           await settle();
           d = await jv();
