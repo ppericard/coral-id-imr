@@ -95,20 +95,25 @@ print(json.dumps({'t': t, 'k': k}))
   assert.deepStrictEqual(o.k, ['own', 'named', 'higher', 'shared']);
 });
 
-test('page_text: the visible text without scripts, the title, the date published', () => {
+test('page_text: the visible text and photo captions without scripts, the title, the date published (never a <time>)', () => {
   const o = py(`
 raw = '''<html><head><title>Old title</title><meta property="og:title" content="Top 5 slugs &amp; more">
 <meta property="article:published_time" content="2023-05-04T10:00:00+08:00"><script>var x = "Aa one";</script>
 <style>.Aa{}</style></head><body><p>We saw <i>Aa</i> <i>one</i> at Anilao.</p><time datetime="2020-01-01">x</time></body></html>'''
-t, d, x = b.page_text(raw)
-t2, d2, _ = b.page_text('<script type="application/ld+json">{"datePublished": "2019-02-03"}</script><p>hi</p>')
-print(json.dumps([t, d, x.strip(), t2, d2]))
+t, d, s, x = b.page_text(raw)
+t2, d2, s2, _ = b.page_text('<script type="application/ld+json">{"datePublished": "2019-02-03"}</script><p>hi</p>')
+_, d3, s3, x3 = b.page_text('<time datetime="2026-11-14">x</time><p><em>Cyerce nigra</em>and</p><img alt="Melibe colemani, a phantom">')
+print(json.dumps([t, d, x.strip(), t2, d2, s, s2, d3, s3, x3]))
 `);
   assert.strictEqual(o[0], 'Top 5 slugs & more');
   assert.strictEqual(o[1], '2023-05-04');
   assert.match(o[2], /We saw Aa one at Anilao\./);
   assert.doesNotMatch(o[2], /var x/);
   assert.strictEqual(o[4], '2019-02-03');
+  assert.deepStrictEqual([o[5], o[6]], ['article:published_time', 'JSON-LD datePublished']);
+  assert.deepStrictEqual([o[7], o[8]], [null, null], 'a <time> element is not the page date (a sidebar note can carry one)');
+  assert.match(o[9], /Cyerce nigra and/, 'a tag boundary separates words');
+  assert.match(o[9], /Melibe colemani, a phantom/, 'photo captions are read');
 });
 
 test('mentions: full names, synonyms, abbreviations only when unambiguous, nicknames; a species once per page', () => {

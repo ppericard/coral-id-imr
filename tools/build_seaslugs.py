@@ -81,6 +81,7 @@ OBS_FIELDS = ("id,faves_count,observed_on,location,user.id,taxon.id,taxon.name,t
 OPEN, NC = {"cc0", "cc-by"}, {"cc-by-nc"}
 LIFE_STAGE, JUVENILE, EGG = 1, 8, 7  # iNaturalist's controlled annotation ids
 PAGE_GAP = 2.0  # seconds between two page reads, whatever the host
+PAGE_UA = "Mozilla/5.0 (compatible; page-reader/1.0)"  # a generic User-Agent for the public pages: no project, no person
 TWO_LEVEL = {"com.au", "com.ph", "co.uk", "co.id", "org.uk"}
 
 
@@ -139,7 +140,7 @@ class Net:
         left = self.last_page + PAGE_GAP - time.monotonic()
         if left > 0:
             time.sleep(left)
-        req = urllib.request.Request(url, headers={"User-Agent": inat.UA, "Accept": "text/html,application/xhtml+xml"})
+        req = urllib.request.Request(url, headers={"User-Agent": PAGE_UA, "Accept": "text/html,application/xhtml+xml"})
         out = {"status": None, "final": url, "html": None}
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
@@ -340,24 +341,24 @@ class _Text(html.parser.HTMLParser):
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.parts, self.depth, self.meta, self.title, self.times, self._t = [], 0, {}, "", [], False
+        self.parts, self.depth, self.meta, self.title, self._t = [], 0, {}, "", False
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
+        self.parts.append(" ")  # "<em>Cyerce nigra</em>and": a tag boundary separates words
         if tag in self.SKIP:
             self.depth += 1
+        elif tag == "img" and a.get("alt") and not self.depth:
+            self.parts.append(" " + a["alt"] + " ")  # photo captions name species
         elif tag == "meta":
             k = (a.get("property") or a.get("name") or a.get("itemprop") or "").lower()
             if k and a.get("content"):
                 self.meta.setdefault(k, a["content"])
-        elif tag == "time" and a.get("datetime"):
-            self.times.append(a["datetime"])
         elif tag == "title":
             self._t = True
-        if tag in ("p", "div", "li", "br", "h1", "h2", "h3", "h4", "td", "tr", "figcaption"):
-            self.parts.append("\n")
 
     def handle_endtag(self, tag):
+        self.parts.append(" ")
         if tag in self.SKIP and self.depth:
             self.depth -= 1
         if tag == "title":
@@ -374,17 +375,18 @@ DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 
 
 def page_text(raw):
-    """(title, date published or None, the visible text) of an HTML page: scripts and styles left out; the date from
-    article:published_time, else JSON-LD datePublished, else the first <time datetime>, else og:updated_time."""
+    """(title, date published or None, the field it came from, the visible text) of an HTML page: scripts and styles
+    left out, photo captions (img alt) kept. The date only from a publication field: the meta article:published_time,
+    else a meta datePublished, else JSON-LD datePublished. Never a <time> element or a modified date: a sidebar's
+    <time> or an update is not the page's date (xray-mag.com's pages carry the front page's latest note time)."""
     p = _Text()
     p.feed(raw or "")
     m = p.meta
-    cands = [m.get("article:published_time"), m.get("datepublished"),
-             (re.search(r'"datePublished"\s*:\s*"([^"]+)"', raw or "") or [None, None])[1],
-             p.times[0] if p.times else None, m.get("og:updated_time"), m.get("article:modified_time")]
-    date = next((DATE_RE.search(c).group(1) for c in cands if c and DATE_RE.search(c)), None)
+    cands = [("article:published_time", m.get("article:published_time")), ("meta datePublished", m.get("datepublished")),
+             ("JSON-LD datePublished", (re.search(r'"datePublished"\s*:\s*"([^"]+)"', raw or "") or [None, None])[1])]
+    date, src = next(((DATE_RE.search(c).group(1), k) for k, c in cands if c and DATE_RE.search(c)), (None, None))
     title = html.unescape(m.get("og:title") or p.title or "").strip()
-    return title, date, re.sub(r"[ \t\r\f\v ]+", " ", "".join(p.parts))
+    return title, date, src, re.sub(r"[ \t\r\f\v ]+", " ", "".join(p.parts))
 
 
 def norm_text(t):
@@ -578,8 +580,9 @@ def build(net, src, log=print):
             rec["final"] = r["final"]
         rec["readable"] = bool(readable)
         if readable:
-            title, date, text = page_text(r["html"])
+            title, date, dsrc, text = page_text(r["html"])
             rec["title"], rec["date"] = title[:160], p.get("date") or date
+            rec["dateFrom"] = "source file" if p.get("date") else dsrc
             found = mentions(text, forms, nicks)
             rec["species"] = sorted(n for n in found if n in confirmed)
             rec["how"] = {n: k for n, k in sorted(found.items()) if n in confirmed and k != ["name"]}
