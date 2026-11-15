@@ -5334,6 +5334,20 @@
     "at": "2026-11-15",
     "n": 20
    }
+  },
+  "557665": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
+  },
+  "244849": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
   }
  },
  "photo": {},
@@ -191829,6 +191843,110 @@
    "e": 4,
    "k": "best"
   },
+  "seaslug-244849-cand-133045840": {
+   "jt": "d1g1ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-244849-cand-236217665": {
+   "jt": "d0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-244849-cand-248675338": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-249758688": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-258628543": {
+   "jt": "d1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-266524340": {
+   "jt": "o1g0sm1a",
+   "e": 2,
+   "k": "best",
+   "n": "On dry sand, out of the water."
+  },
+  "seaslug-244849-cand-272816397": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-244849-cand-290186884": {
+   "jt": "p1g1sm1",
+   "e": 3,
+   "k": "best",
+   "n": "Swimming in the blue, twisted."
+  },
+  "seaslug-244849-cand-314864198": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-34739149": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-37366593": {
+   "jt": "d1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-38653027": {
+   "jt": "h0g0sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-244849-cand-401598755": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-244849-cand-425393712": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-60452614": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-244849-cand-64363995": {
+   "jt": "o1g1sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-244849-cand-71200792": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "Curled up on a black background: the outline still reads."
+  },
+  "seaslug-244849-cand-76994482": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-89705717": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-244849-cand-98847995": {
+   "jt": "p1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "Swimming, the mantle folded: gills and rhinophores hidden."
+  },
   "seaslug-346881-cand-443268034": {
    "jt": "o1g0sl1w",
    "e": 4,
@@ -193739,6 +193857,107 @@
   "seaslug-54892-cand-718593182": {
    "jt": "d1g0sm1c",
    "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-104233420": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-177140241": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "Pale on a dark background, the animal translucent: it reads well."
+  },
+  "seaslug-557665-cand-182253782": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-557665-cand-337059692": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-557665-cand-360975715": {
+   "jt": "p1d0sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-557665-cand-393135044": {
+   "jt": "o0g0sm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-557665-cand-427843117": {
+   "jt": "o0g0sm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-557665-cand-440544170": {
+   "jt": "p1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-557665-cand-448438820": {
+   "jt": "h1g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-557665-cand-478143011": {
+   "jt": "p1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-505552170": {
+   "jt": "o1g0sl1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-517499869": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-557665-cand-551756195": {
+   "jt": "p1g0sl1cw",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-557665-cand-600838061": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-557665-cand-626505622": {
+   "jt": "p1g1ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-633673234": {
+   "jt": "p1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-638458141": {
+   "jt": "p1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-557665-cand-651916785": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-557665-cand-652681118": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-557665-cand-715412690": {
+   "jt": "p1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-56646-cand-163934583": {
