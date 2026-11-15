@@ -7,6 +7,8 @@ judging/cand/detail/
 tools/.cache/
 judging/fish/img/
 judging/fish/sheets/
+judging/seaslug/img/
+judging/seaslug/sheets/
 r2-upload/
 node_modules/
 .DS_Store
