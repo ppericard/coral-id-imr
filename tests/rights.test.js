@@ -25,6 +25,8 @@ const py = (code, input) =>
 test('rightsClass: IMR lecture, Coral Finder book, his own (whatever its licence), open (CC0, CC BY), the rest NC', () => {
   const ex = [
     [{imr: true, f: 'imr-p1_i1'}, 'imr', 1],
+    // traced to its original source (#925: pg, the page that credits it): its site's terms, non-commercial
+    [{imr: true, f: 'imr-p1_i2', a: 'X / Corals of the World', pg: 'https://www.coralsoftheworld.org/x/'}, 'nc', 1],
     [{cf: 1, f: 'acropora-cf-2-00'}, 'book', 1],
     [{own: true, lic: 'cc-by-nc'}, 'own', 0],
     [{own: true, lic: 'cc-by'}, 'own', 0],

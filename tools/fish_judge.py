@@ -14,6 +14,8 @@ This script:
     contact sheets of 12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after);
     --only t28,t47 limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid
     for the crops; --refs: the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) instead;
+  - one judgement per photo (Pierre, 2026-11-15): cand_judgements, one_judgement and one_check, the single judgement of a
+    photo that is both a reference photo and a candidate (its candidate's judging file; tools/judging_fish.py one);
   - with --boxes DIR: the box pass (judging/FISH.md "The fish's box"): the photos in play (fish-game.json) whose tags pass
     the tile rule (tools/fish_game.py tile_tags) and that have no box yet, the easiest first, one per observation, at most
     --n per entry (--only limits the entries), on sheets of 9 at 420 x 315 px with a 10 x 10 grid; the judge writes each
@@ -82,6 +84,80 @@ def load_src():
     return {f: c for entry in s["photos"].values() for f, c in entry.items()}, s.get("crops", {}), s.get("add", {})
 
 
+# One judgement per photo (Pierre, 2026-11-15). A photo can be met twice:
+# as a reference photo (tools/fish_refs.json fi<id> / fb<stem>, its code here in tools/fish_judge.json photos and keep)
+# and as a candidate (fish-cand.json fish-<species>-cand-<id>, judged in judging/fish/<species>.json). They are one
+# photo (tools/fish_game.py pid), so they get one judgement: the candidate's judging file is its single source (it holds
+# the whole judgement: code, keep within the observation, phase, unsure), and the reference copy is never read for such
+# a photo (one_judgement, tools/fish_game.py inputs). tools/judging_fish.py one copies it onto the reference copies, and
+# its --check (tests/onejudgement.test.js) fails on a new divergence.
+def cand_judgements(root=ROOT):
+    """{pid: {f, sid, code, keep, unsure}} of every candidate judgement (judging/fish/<species>.json), by photo identity
+    (tools/fish_game.py pid). A photo judged in two species files keeps both, listed under `also` (one_check reports
+    them when they disagree)."""
+    import fish_game as G
+    out = {}
+    d = Path(root) / "judging" / "fish"
+    for p in sorted(d.glob("s*.json")) if d.is_dir() else []:
+        for f, x in (json.loads(p.read_text(encoding="utf-8")).get("photos") or {}).items():
+            if not isinstance(x, dict) or not CODE.match(str(x.get("code", ""))):
+                continue
+            j = {"f": f, "sid": p.stem, "code": x["code"], "keep": x.get("keep"),
+                 "unsure": [u for u in x.get("unsure") or [] if u != "bb"]}  # a doubt on the box only withholds the tile
+            k = G.pid(f)
+            if k in out:
+                out[k].setdefault("also", []).append(j)
+            else:
+                out[k] = j
+    return out
+
+
+def one_judgement(codes, keep, cj):
+    """(codes, keep) of the reference photos with the single judgement applied (copies; the inputs stay as they are):
+    a reference photo that is also a candidate takes its candidate judgement (cj: cand_judgements), its code and its keep
+    (best or alt enters like a candidate, dup stays out), whatever tools/fish_judge.json holds; one whose candidate
+    judgement is unsure (a doubt on the code, the keep, the phase or the crop) has no code, so it waits like a photo not
+    judged yet (tools/fish_game.py ref_play). codes: {photo: code} (every reference photo's, tools/fish_judge.json
+    photos, and the photos of refs that are only candidates: pass them in to have them judged by their candidate's
+    judgement); keep: tools/fish_judge.json keep."""
+    import fish_game as G
+    codes, keep = dict(codes or {}), dict(keep or {})
+    for f in list(codes):
+        j = cj.get(G.pid(f))
+        if not j:
+            continue
+        if j["unsure"]:
+            codes.pop(f)
+            continue
+        codes[f] = j["code"]
+        if j.get("keep") in ("best", "alt", "dup"):
+            keep[f] = j["keep"]
+    return codes, keep
+
+
+def one_check(J, cj):
+    """The divergences between the two copies of a photo judged twice: [(photo, field, reference copy, candidate copy)],
+    field "code" (tools/fish_judge.json photos against judging/fish), "keep" (tools/fish_judge.json keep against the
+    candidate's keep, when the reference copy has one), or "twice" (two candidate judgements of one photo that disagree).
+    Empty when every photo has one judgement. J: tools/fish_judge.json."""
+    import fish_game as G
+    out = []
+    for m in (J.get("photos") or {}).values():
+        for f, c in m.items():
+            j = cj.get(G.pid(f))
+            if j and c != j["code"]:
+                out.append((f, "code", c, j["code"]))
+    for f, k in (J.get("keep") or {}).items():
+        j = cj.get(G.pid(f))
+        if j and j.get("keep") and k != j["keep"]:
+            out.append((f, "keep", k, j["keep"]))
+    for j in cj.values():
+        for o in j.get("also", []):
+            if (o["code"], o.get("keep")) != (j["code"], j.get("keep")):
+                out.append((j["f"], "twice", f'{o["f"]} {o["code"]} {o.get("keep")}', f'{j["code"]} {j.get("keep")}'))
+    return out
+
+
 def load_refs(fish=None):
     """tools/fish_refs.json photos (kept by species) as teaching id -> reference photo objects, each under the level-1
     entry that holds its species (FishBase's too: Pierre, 2026-11-06, FishBase enters automatically when its licence
@@ -142,6 +218,10 @@ def sheets(out, only=(), todo=False, refs=False):
     from PIL import Image, ImageDraw, ImageFont
     doc = game()
     J = load_src()[0] if todo else {}
+    if todo:  # a photo judged as a candidate is judged (one judgement per photo: one_judgement)
+        import fish_game as G
+        cj = cand_judgements()
+        J = {**J, **{p["f"]: 1 for L in load_refs().values() for p in L if G.pid(p["f"]) in cj}}
     if refs:  # the reference photos of tools/fish_refs.json instead of the game photos
         doc["photos"] = load_refs()
     doc["photos"] = {t: [p for p in L if p["f"] not in J] for t, L in doc["photos"].items() if not only or t in only}

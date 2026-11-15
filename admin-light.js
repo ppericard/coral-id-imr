@@ -8,13 +8,34 @@
 // (curation.json fish.kept {photo: 'q308'}: answered, never shown again); Accept all in one Undo step behind a confirm
 // (rule A2: bulk). His Publish sends it all. The view is in the switch only while a proposal is open (admin.js TABS:
 // its `live` option, hasPage).
+// A second set, the same way (Pierre, 2026-11-15: one judgement per photo): the photos judged twice
+// (as a reference photo and as a candidate) whose copies disagreed were judged again once, and his adds whose tags and
+// ease still hold the earlier judgement get the new one as a proposal: judging/fish-one-judgement.json, Keep mine
+// recorded as 'one'. Each proposal carries its set (x.set); a photo proposed by two sets shows the later set's only.
 //
-// The pure part (lightOpen, lightAccept, lightKeep, lightDiff, lightCounts) runs in Node too: tests/fishlight.test.js.
+// The pure part (lightOpen, lightAccept, lightKeep, lightDiff, lightCounts, lightSets) runs in Node too:
+// tests/fishlight.test.js.
 (function (root) {
   const A = typeof module !== 'undefined' && module.exports ? require('./autosort.js') : root;
-  // The proposal set: the file the admin reads from the repository (GitHub contents API, as curation.json; judging/ is not
-  // on the site) and the name a Keep mine records.
-  const LIGHT_SET = {file: 'judging/fish-light-q308.json', id: 'q308'};
+  // The proposal sets, oldest first: the file the admin reads from the repository (GitHub contents API, as curation.json;
+  // judging/ is not on the site), the name a Keep mine records, and the heading of its proposals (the light re-judge's
+  // are grouped by light change instead).
+  const LIGHT_SETS = [
+    {file: 'judging/fish-light-q308.json', id: 'q308'},
+    {file: 'judging/fish-one-judgement.json', id: 'one', title: 'One judgement per photo'}
+  ];
+  const LIGHT_SET = LIGHT_SETS[0];
+  // The proposals of every set read (lists in LIGHT_SETS order, each a file's `curation`), each tagged with its set; a
+  // photo in two sets keeps the later set's proposal only (so a Keep mine on it never reopens the earlier one).
+  function lightSets(Ls) {
+    const by = new Map();
+    LIGHT_SETS.forEach((s, i) =>
+      ((Ls || [])[i] || []).forEach(x => {
+        if (x && x.photo) by.set(x.photo, {...x, set: s.id});
+      })
+    );
+    return [...by.values()];
+  }
   // judging/FISH.md "Tags", every value in words (the good ones too: a proposal's "after" is mostly good light).
   const LIGHT_WORDS = [
     ['View', {p: 'profile', o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'}],
@@ -44,21 +65,22 @@
   const same = (F, f, v) => (F.tags || {})[f] === v[0] && (F.ease || {})[f] === v[1];
   // The proposals still open in the fish draft F: the photo still his add in play, its tags and ease both still the ones
   // the proposal was made against (curated: a value he set since is a newer choice of his), and not kept (Keep mine).
-  // Accepted ones carry the re-judged values, so they leave the list with the rest.
+  // Accepted ones carry the re-judged values, so they leave the list with the rest. A proposal's set is its own (x.set),
+  // else set.
   function lightOpen(P, F, set = LIGHT_SET.id) {
     F = F || {};
     return (P || []).filter(x => {
       const f = x.photo,
         sid = (F.add || {})[f];
-      return sid != null && A.fishOn(F, f, sid) && (F.kept || {})[f] !== set && same(F, f, x.curated);
+      return sid != null && A.fishOn(F, f, sid) && (F.kept || {})[f] !== (x.set || set) && same(F, f, x.curated);
     });
   }
   // Accept: the re-judged tags and ease as his (fishSet each, so an auto-sort log entry gives the fields up: fishOwn).
   function lightAccept(F, x) {
     return A.fishSet(A.fishSet(F || {}, x.photo, 'tags', x.rejudged[0]), x.photo, 'ease', x.rejudged[1]);
   }
-  // Keep mine: his values stay; the photo is recorded as answered for this set (curation.json fish.kept).
-  function lightKeep(F, x, set = LIGHT_SET.id) {
+  // Keep mine: his values stay; the photo is recorded as answered for its set (curation.json fish.kept).
+  function lightKeep(F, x, set = (x && x.set) || LIGHT_SET.id) {
     F = F || {};
     return {...F, kept: {...(F.kept || {}), [x.photo]: set}};
   }
@@ -78,39 +100,55 @@
     if (ea !== eb) out.push(['Ease', String(ea), String(eb)]);
     return out;
   }
-  // What Publish sends of the proposals: accepted (the draft carries the re-judged values, the published file does not)
-  // and kept (Keep mine answered since the published file).
+  // What Publish sends of the proposals: accepted (open in the published file S, the re-judged values in the draft D: a
+  // photo the draft took from another route with the same values is no answer) and kept (Keep mine answered since S).
   function lightCounts(P, D, S, set = LIGHT_SET.id) {
     D = D || {};
     S = S || {};
     return {
-      accepted: (P || []).filter(x => same(D, x.photo, x.rejudged) && !same(S, x.photo, x.rejudged)).length,
-      kept: (P || []).filter(x => (D.kept || {})[x.photo] === set && (S.kept || {})[x.photo] !== set).length
+      accepted: (P || []).filter(x => same(D, x.photo, x.rejudged) && same(S, x.photo, x.curated)).length,
+      kept: (P || []).filter(x => (D.kept || {})[x.photo] === (x.set || set) && (S.kept || {})[x.photo] !== (x.set || set)).length
     };
   }
-  const API = {LIGHT_SET, LIGHT_WORDS, LIGHT_FLAGS, LIGHT_RETIRED, lightRetired, lightOpen, lightAccept, lightKeep, lightDiff, lightCounts};
+  const API = {
+    LIGHT_SET,
+    LIGHT_SETS,
+    lightSets,
+    LIGHT_WORDS,
+    LIGHT_FLAGS,
+    LIGHT_RETIRED,
+    lightRetired,
+    lightOpen,
+    lightAccept,
+    lightKeep,
+    lightDiff,
+    lightCounts
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
 
 // ---- The admin view (browser only: admin.js state and helpers) ----
-// LIGHT: the proposals once read (null before; [] when there is no file or no token to read it with). Read once, on the
-// first look at a fish page's switch (lightLive), with the token (or the demo's stand-in): judging/ is not on the site.
+// LIGHT: the proposals of every set once read (null before; [] when there is no file or no token to read it with), each
+// with its set (lightSets). Read once, on the first look at a fish page's switch (lightLive), with the token (or the demo's
+// stand-in): judging/ is not on the site. A set whose file cannot be read counts as empty.
 const LIGHT_PAGE = 'photos/review/light-proposals';
 let LIGHT = null,
   LIGHT_P = null;
 function lightLoad() {
   if (LIGHT_P || !TOKEN) return LIGHT_P; // read-only (no token): nothing to read it with, nothing to answer
-  LIGHT_P = ghFile(LIGHT_SET.file)
-    .then(f => (f ? JSON.parse(f.text).curation || [] : []))
-    .catch(() => [])
-    .then(L => {
-      LIGHT = Array.isArray(L)
-        ? L.filter(x => x && x.photo && Array.isArray(x.curated) && Array.isArray(x.rejudged) && !lightRetired(x))
-        : [];
-      status();
-      if (cur === LIGHT_PAGE) render();
-    });
+  LIGHT_P = Promise.all(
+    LIGHT_SETS.map(s =>
+      ghFile(s.file)
+        .then(f => (f ? JSON.parse(f.text).curation || [] : []))
+        .catch(() => [])
+        .then(L => (Array.isArray(L) ? L : []))
+    )
+  ).then(Ls => {
+    LIGHT = lightSets(Ls).filter(x => Array.isArray(x.curated) && Array.isArray(x.rejudged) && !lightRetired(x));
+    status();
+    if (cur === LIGHT_PAGE) render();
+  });
   return LIGHT_P;
 }
 // The view's `live` option (admin.js TABS): in the switch while a proposal is open; false until the file is read.
@@ -144,9 +182,10 @@ function renderLight() {
     $v.innerHTML = '<p class="note">No light proposal left.</p>';
     return;
   }
-  // One row per change of the light tag (night livery → good, dim → good, night livery → dim; any other change last).
-  const rowOf = x => `${x.curated[0][2]}${x.rejudged[0][2]}`,
-    order = ['ng', 'dg', 'nd'],
+  // One row per change of the light tag (night livery → good, dim → good, night livery → dim; any other change last), then
+  // one per later set (its title).
+  const rowOf = x => (x.set && x.set !== LIGHT_SET.id ? `set:${x.set}` : `${x.curated[0][2]}${x.rejudged[0][2]}`),
+    order = ['ng', 'dg', 'nd', ...LIGHT_SETS.map(s => `set:${s.id}`)],
     keys = [...new Set(O.map(rowOf))].sort((a, b) => (order.indexOf(a) + 1 || 9) - (order.indexOf(b) + 1 || 9)),
     L = O.map(rec),
     W = LIGHT_WORDS[2][1];
@@ -163,7 +202,8 @@ function renderLight() {
   $v.innerHTML = `<div class="adm-filter adm-sticky"><button type="button" class="adm-fok" data-lpall>Accept all ${O.length}</button></div>${keys
     .map(k => {
       const R = O.filter(x => rowOf(x) === k),
-        t = k[0] !== k[1] ? `Light ${W[k[0]] || k[0]} → ${W[k[1]] || k[1]}` : 'Other';
+        s = LIGHT_SETS.find(z => `set:${z.id}` === k),
+        t = s ? s.title || s.id : k[0] !== k[1] ? `Light ${W[k[0]] || k[0]} → ${W[k[1]] || k[1]}` : 'Other';
       return `<section class="adm-row"><h3>${esc(t)} <small>${R.length} photo${R.length === 1 ? '' : 's'}</small></h3><div class="adm-grid">${R.map(tile).join('')}</div></section>`;
     })
     .join('')}`;

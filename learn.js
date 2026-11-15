@@ -328,7 +328,7 @@ function viewGenus(name) {
       const fig = p => {
         const i = flat.findIndex(x => x.f === p.f),
           alt = `${esc(name)}, ${p.imr ? 'IMR lecture photo' : label.toLowerCase() + ' view'}`;
-        return `<figure><button type="button" class="zoom" data-z="${i}" aria-label="Enlarge photo: ${alt}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${alt}" loading="lazy">${ZOOMI}</button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}` : credit(p)}</figcaption></figure>`;
+        return `<figure><button type="button" class="zoom" data-z="${i}" aria-label="Enlarge photo: ${alt}"><img src="${img(p, 's')}" srcset="${srcset(p)}" data-sz="strip" sizes="${sizesFor('strip')}" alt="${alt}" loading="lazy">${ZOOMI}</button><figcaption>${p.imr ? `<b class="lect">IMR lecture</b> · slide ${p.slide}${p.pg && p.a ? ` · <a href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener">${esc(p.a)}</a>` : ''}` : credit(p)}</figcaption></figure>`;
       };
       // The cover is already shown at the top: not repeated in its row when the row has other featured photos.
       const feat0 = g.sl[v].feat,

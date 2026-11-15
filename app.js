@@ -543,9 +543,10 @@ const srcset = p =>
     : `${loc(p, 's')} ${coverW(p, 480)}w, ${loc(p, 'm')} ${coverW(p, 960)}w${saver() ? '' : `, ${loc(p)} ${coverW(p, 1600)}w`}`;
 // Small source label on a game photo (Pierre, 2026-11-01: "sources en petit et cliquable sur chaque photo").
 // One shared component for every game. Shown only once the answer is out: an iNat link names the taxon and an IMR
-// slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; IMR lecture
-// photos have no public page, so they get a plain label. Hidden on phones (no room, Pierre): there the
-// enlarged view's caption already carries the clickable source.
+// slide number points to a genus. iNat photos (Pierre's and other observers') link to the observation; an IMR lecture
+// photo traced to its original source (Pierre, 2026-11-15, #925: data.json course a and pg, tools/apply_imr_sources.py)
+// links to the page that credits it, with its photographer; one not traced gets a plain label. Hidden on phones (no
+// room, Pierre): there the enlarged view's caption already carries the clickable source.
 const author = p =>
   (p.a || '')
     .replace(/^\(c\)\s*/i, '')
@@ -554,25 +555,32 @@ const author = p =>
 const photoSrc = p =>
   !p
     ? ''
-    : p.imr
-      ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
-      : /^https?:\/\/(www\.)?inaturalist\.org\//.test(p.o || '')
-        ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
-        : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
-          p.via === 'fishbase' && p.o
-          ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p))}: open the FishBase photo page"><span class="pa">${esc(author(p).replace(/,\s*via FishBase$/i, ''))} · </span>FishBase ↗</a>`
-          : '';
+    : p.imr && p.pg
+      ? `<a class="psrc" href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}. ${esc(author(p))}: open the page that credits it"><span class="pa">IMR lecture · </span>${esc(author(p))} ↗</a>`
+      : p.imr
+        ? `<span class="psrc" title="IMR Lecture 6${p.slide ? ', slide ' + esc(p.slide) : ''}">IMR lecture</span>`
+        : /^https?:\/\/(www\.)?inaturalist\.org\//.test(p.o || '')
+          ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p) || 'iNaturalist')}: open the iNaturalist observation"><span class="pa">${esc(author(p))} · </span>iNat ↗</a>`
+          : // A FishBase photo Pierre put in play (fish, admin plan PR 7): its author and FishBase's photo page.
+            p.via === 'fishbase' && p.o
+            ? `<a class="psrc" href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener" title="${esc(author(p))}: open the FishBase photo page"><span class="pa">${esc(author(p).replace(/,\s*via FishBase$/i, ''))} · </span>FishBase ↗</a>`
+            : '';
 // One colour per IMR lecture group, used everywhere a group appears (style="--g:…", CSS hsl(var(--g) …)).
 const groupHue = n => (n * 137) % 360;
+// An IMR lecture photo's credit: the lecture and slide, then, once traced (pg), its photographer and the page that credits
+// it (Corals of the World's terms ask for that citation).
+const lectCredit = p =>
+  `IMR Lecture 6, slide ${esc(p.slide)}${p.pg && p.a ? ` · <a href="${esc(safeUrl(p.pg))}" target="_blank" rel="noopener">${esc(p.a)}</a>` : ''}`;
 const credit = p =>
   p.imr
-    ? `IMR Lecture 6, slide ${esc(p.slide)}`
+    ? lectCredit(p)
     : `<i>${esc(p.t)}</i>${p.own && !p.nd ? ' <span class="own">Dauin</span>' : ''} · <a href="${esc(safeUrl(p.o))}" target="_blank" rel="noopener">${esc(p.a)}</a>`;
 // Before the answer the enlarged quiz photo credits its author by name only (Pierre, 2026-11-03): no taxon and no link,
-// which would give the genus away (rule P5); the full credit comes with the answer.
+// which would give the genus away (rule P5); the full credit comes with the answer. A traced IMR lecture photo: the
+// lecture, then its photographer and site (its page's address names the species: no link).
 const blindCredit = p => {
-  const n = p.imr ? '' : author(p);
-  return p.imr ? ' · IMR lecture' : n ? ` · © ${esc(n)}` : '';
+  const n = author(p);
+  return p.imr ? ' · IMR lecture' + (p.pg && n ? ` · © ${esc(n)}` : '') : n ? ` · © ${esc(n)}` : '';
 };
 const allPhotos = g => VIEWS.flatMap(([v]) => (g.views[v] || []).map(p => ({...p, view: v})));
 // Card photo: the one picked in curation.json (coverP, may be a lecture photo), else data.json's pick, else the first closer view.
