@@ -870,6 +870,56 @@ print(json.dumps(G.first_photos({'t52': json.loads(sys.argv[1])}, json.loads(sys
   );
   assert.ok(!C.refLevel(L[0]) && C.refLevel(L[10]));
 });
+// A watermarked photo (judged flag w, Q373) after its unit's adults without one (Pierre, 2026-11-15, Q379: the default
+// cover avoids them, app.js seenCover, which reads the first photos until fish-game.json is in; on 2026-11-15 the genus
+// units Gnathodentex, Neochirus and Dendrochirus had only watermarked first photos). The unit: the photo's genus, else its
+// family (fish.json). Three cases: a unit with an adult without one, a unit whose adults all carry one (order unchanged),
+// and his ★ cover on a watermarked photo (first all the same, rule A1, with an adult without one of its unit behind it).
+test('fish_game.py first_photos: a watermarked photo after its unit adults without one; his watermarked cover first', () => {
+  const rec = (f, sp, e, jt) => ({f, sp, e, jt}),
+    L = [
+      rec('fish-s1-cand-1', 's1', 5, 'p1g0sl1w'), // genus g:A1: reference level, the easiest, watermarked
+      rec('fish-s1-cand-2', 's1', 3, 'p1g0sm1'), // g:A1: its one adult without a watermark
+      rec('fish-s1-cand-3', 's1', 5, 'p1g0sl1j'), // g:A1: a juvenile without one, never a cover: no help
+      rec('fish-s2-cand-4', 's2', 5, 'p1g0sl1w'), // g:A2: every photo watermarked
+      rec('fish-s2-cand-5', 's2', 4, 'p1g0sl1w'),
+      rec('fish-s3-cand-6', 's3', 4, 'p1g0sl1w'), // no genus in fish.json: its family f:B, which has one without
+      rec('fish-s3-cand-7', 's3', 2, 'p1g0sm1')
+    ],
+    fish = {
+      families: [
+        {id: 'f:A', species: ['s1', 's2']},
+        {id: 'f:B', species: ['s3']}
+      ],
+      species: [{id: 's1', genus: 'g:A1'}, {id: 's2', genus: 'g:A2'}, {id: 's3'}]
+    };
+  const first = cur =>
+    JSON.parse(
+      py(
+        `import fish_game as G
+print(json.dumps(G.first_photos({'t11': json.loads(sys.argv[1])}, json.loads(sys.argv[2]), json.loads(sys.argv[3]))['t11']))`
+          .replace('sys.argv[1]', JSON.stringify(JSON.stringify(L)))
+          .replace('sys.argv[2]', JSON.stringify(JSON.stringify(cur)))
+          .replace('sys.argv[3]', JSON.stringify(JSON.stringify(fish)))
+      )
+    ).map(p => p.f);
+  const got = first({}),
+    at = f => got.indexOf(f);
+  // 1. A unit with an adult without a watermark: its watermarked photos after it, whatever their level and ease.
+  assert.ok(at('fish-s1-cand-2') < at('fish-s1-cand-1'), 'g:A1: the photo without a watermark first');
+  assert.ok(at('fish-s3-cand-7') < at('fish-s3-cand-6'), 'f:B (no genus): the photo without a watermark first');
+  assert.strictEqual(got[1], 'fish-s3-cand-7', "f:B's lead: the photo without a watermark");
+  // 2. A unit whose adults all carry one: easyRank's order as before (the reference level first), never pushed back.
+  assert.strictEqual(got[0], 'fish-s2-cand-4', "f:A's lead: g:A2's reference-level photo, all of g:A2's are watermarked");
+  assert.ok(at('fish-s2-cand-4') < at('fish-s2-cand-5') && at('fish-s2-cand-5') < at('fish-s1-cand-1'));
+  assert.ok(at('fish-s1-cand-3') === got.length - 1, 'the juvenile last');
+  // 3. His ★ cover on a watermarked photo: first all the same (his choice, rule A1); his unit's photo without one still
+  // among the first photos, for the default card.
+  const mine = first({fish: {genera: {'g:A1': {cover: 'fi1'}}}}); // under its other name (core.js fishPid)
+  assert.strictEqual(mine[0], 'fish-s1-cand-1', 'his watermarked cover first');
+  assert.ok(mine.includes('fish-s1-cand-2'), 'with the photo of his unit without a watermark');
+  assert.deepStrictEqual(new Set(mine), new Set(L.map(p => p.f)), 'every photo kept (fewer than FIRST)');
+});
 test(
   'fish_game.py on a fixture: fish-photos.json, the first photos from the game list, the sheet-only photo on R2',
   {skip: !pil && 'Pillow missing'},

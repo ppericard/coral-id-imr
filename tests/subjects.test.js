@@ -177,17 +177,42 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
   // whatever Pierre's covers are today (a Publish changes them before the workflow writes the file again): every entry
   // of fish-game.json has some, every circle-1 family among them, the adults before a juvenile.
   assert.deepStrictEqual(Object.keys(PH.photos).sort(), Object.keys(GM).sort(), 'every entry of fish-game.json');
-  const juv = p => p.ph === 'juvenile' || /j/.test(String(p.jt || '').slice(7));
+  const juv = p => p.ph === 'juvenile' || /j/.test(String(p.jt || '').slice(7)),
+    wm = p => /w/.test(String(p.jt || '').slice(7));
   Object.entries(PH.photos).forEach(([id, L]) => {
     const k = L.findIndex(juv);
     assert.ok(k < 0 || L.slice(k).every(juv) || GM[id].filter(p => !juv(p)).length < L.length, `${id}: a juvenile before an adult`);
-    // core.js easyRank's order: an entry with an adult reference-level photo in play has one among its first photos
-    // (Codex review #931: t52 kept eight ease-3 photos and left out its two ease-5 reference-level Waspfish photos).
-    if (GM[id].some(p => C.refLevel(p) && !juv(p)))
+    // core.js easyRank's order: an entry with an adult reference-level photo without a watermark in play has one among
+    // its first photos (Codex review #931: t52 kept eight ease-3 photos and left out its two ease-5 reference-level
+    // Waspfish photos). Without a watermark: a watermarked one ranks after its unit's adults without one, whatever its
+    // level (Q379; #968's call 2: the Moorish Idol's reference photos all carry one).
+    if (GM[id].some(p => C.refLevel(p) && !juv(p) && !wm(p)))
       assert.ok(
         L.some(p => C.refLevel(p)),
         `${id}: no reference-level photo first`
       );
+  });
+  // No default card watermarked before fish-game.json is in (Pierre, 2026-11-15, Q379; app.js seenCover reads these photos
+  // until then): a unit (a genus, else a family: fish.json) among an entry's first photos whose adults there all carry a
+  // watermark (judged flag w, Q373) has no adult without one in play, unless one of them is Pierre's ★ cover (his choice,
+  // rule A1: his watermarked covers stay first). On 2026-11-15 the genus units Gnathodentex, Neochirus and Dendrochirus
+  // had only watermarked first photos.
+  const gen = new Map(F.species.filter(s => s.genus).map(s => [s.id, s.genus])),
+    fam = new Map(F.families.flatMap(f => (f.species || []).map(s => [s, f.id]))),
+    covers = new Set(
+      Object.values((read('curation.json').fish || {}).genera || {})
+        .filter(k => k && k.cover)
+        .map(k => C.fishPid(k.cover))
+    ),
+    clean = p => !juv(p) && !wm(p);
+  Object.entries(PH.photos).forEach(([id, L]) => {
+    [gen, fam].forEach(U =>
+      new Set(L.map(p => U.get(p.sp)).filter(Boolean)).forEach(u => {
+        const A = L.filter(p => U.get(p.sp) === u && !juv(p));
+        if (!A.length || A.some(clean) || A.some(p => covers.has(C.fishPid(p.f)))) return;
+        assert.ok(!GM[id].some(p => U.get(p.sp) === u && clean(p)), `${id} ${u}: only watermarked first photos`);
+      })
+    );
   });
   const remote = [];
   Object.values(PH.sheet || {}).forEach(L =>
