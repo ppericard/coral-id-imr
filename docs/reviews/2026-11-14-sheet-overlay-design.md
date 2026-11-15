@@ -673,6 +673,13 @@ them before it merges.
    stamp replays, and the boards follow (rule D8). The app is gated on that sheet version (rule D4). The agents' photo
    tools and the build's report read the circles in force. *Needs:* question (h); steps 1-2. It changes the sheet
    script.
+   *Built (2026-11-15, Q363 h A, Q366):* the apply, the stamp, the sheet's replay keyed by it, the boards, the app's
+   gate and the photo tools (docs/ARCHITECTURE.md "The content editor's edits", "Other subjects' replays"). Left for
+   later: each instance's words for its circles and the build's report of circle-1 genera with no name root. Found
+   while building: every fish answer carries its scoring record, which the replay scores as the game did, so withdrawn
+   or added pairs move no replayed record today; a circle edit moves one only where a unit leaves or joins the units (a
+   family in or out of no circle, the genera of a family leaving or joining circle 1), as the unit wrongly given. The stamp is `''` for the base's structure, so the deploy
+   replays nobody.
 4. **The admin's structure editor:** a circle on each family page, pairs added and withdrawn on the node pages and in
    the Look-alikes filter, and the Publish confirmation. *Needs:* step 3.
 5. **The IMR instance's layer as its own files:** the IMR parts of `tools/fish_source.json` (circles, `look` groups and
