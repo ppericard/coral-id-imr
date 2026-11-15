@@ -5,8 +5,9 @@ v2, section 1 and step 3; Pierre, 2026-11-15, Q359, Q366).
 fish.json holds the base: the sources and the IMR instance's layer, resolved at build. The instance's content editor
 may move a family to another circle, or to none, in curation.json (fish.content nodes {family id: {circle: {v}}}; only
 the admin's draft and Publish write it, rule A1: read here, never written). The photo tools that read the circles
-(tools/fetch_fish.py, fish_judge.py, fish_refs.py, fish_game.py) read them through in_force, so a family the editor
-moves into circle 1 gets circle 1's photo work, and one he takes out of the game gets none.
+(tools/fetch_fish.py, fetch_fishbase.py, fish_judge.py, fish_refs.py, fish_game.py) read them through in_force, so a
+family the editor moves into circle 1 gets circle 1's photo work, and one he takes out of the game gets none. The tools
+that write data from fish.json (the build, the names, the taxonomy, FishBase's snapshot) keep reading the base.
 
 in_force is core.js fishStructure's circle part, as core.js structApply hands it the entries (structEntries: a family
 of the base, a value among CIRCLES or null, under the id as stored), checked against it on fixture edits by

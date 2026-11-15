@@ -904,7 +904,9 @@
     const byFam = {};
     Object.entries(photos || {}).forEach(([tid, L]) =>
       (L || []).forEach(p => {
-        const fid = famOf.get(p && p.sp) || FISH_RENAMED.ids[tid];
+        // its entry's family only for a species fish.json does not know: a species out of the game (its family in no
+        // circle by the content editor: core.js fishStructure) never lends its photos to the other family of its entry
+        const fid = famOf.get(p && p.sp) || (sp.has(p && p.sp) ? null : FISH_RENAMED.ids[tid]);
         if (fid) (byFam[fid] = byFam[fid] || []).push(p);
       })
     );

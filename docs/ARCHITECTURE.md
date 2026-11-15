@@ -324,7 +324,8 @@ editor; step 3, the circles and pairs in the apply and the replay, below; the ad
   the units made again at the next page change when a reply crosses it, `structSeen`); before, the text slots alone.
   **The sheet** replays under it (Progress sync, "Other subjects' replays"). **The agents' photo tools** read the circles
   in force (`tools/fish_inforce.py` `in_force`, the circle part of `fishStructure`, read from `curation.json`, never
-  written, `tests/structure.test.js` checks the two agree): `tools/fetch_fish.py` (the species of its circles),
+  written, `tests/structure.test.js` checks the two agree): `tools/fetch_fish.py` and `fetch_fishbase.py` (the species
+  of their circles),
   `fish_judge.py` (circle 1's very easy photos), `fish_refs.py` (the circle-1 genera; the species photographed stay
   `fish.json`'s, so a family out of the game keeps its reference photos) and `fish_game.py` (the download order only).
   Not built yet: each instance's words for its circles, the build's report of circle-1 genera with no name root

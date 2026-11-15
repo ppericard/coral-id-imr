@@ -115,6 +115,23 @@ test('in no circle: the family and its genera left out, its species out, look-al
   assert.ok(Object.values(U.gen).some(u => u.parent === 'f:Butterflyfishes'));
 });
 
+test("in no circle: the family's photos leave the game, never lent to the other family of its teaching node", () => {
+  // t13 (Groupers) holds the Soapfishes' species too: a photo listed under it went to its species' family.
+  const PH = JSON.parse(src('fish-photos.json')),
+    GM = C.fishGameRead(JSON.parse(src('fish-game.json'))),
+    photos = C.fishPhotos(PH.photos, GM.photos, CUR),
+    soap = new Set(fam(F, C3).species),
+    X0 = C.fishGen(F, photos, PH.sheet);
+  assert.ok(X0.gen[C3].views.wide.length > 0, 'the base shows them');
+  const X = C.fishGen(C.contentApply(S, F, cur({nodes: {[C3]: circ(null)}})), photos, PH.sheet);
+  assert.ok(!X.gen[C3]);
+  assert.ok(Object.values(X.gen).every(u => u.views.wide.every(p => !soap.has(p.sp))));
+  assert.deepStrictEqual(
+    X.gen['f:Groupers'].views.wide.map(p => p.f),
+    X0.gen['f:Groupers'].views.wide.map(p => p.f)
+  );
+});
+
 test('pairs: a withdrawn pair leaves both sides, an added one joins both with its source, its words in the text slot', () => {
   const P = {
       'f:Parrotfishes|f:Wrasses': {v: null, was: 1, t: 1},
