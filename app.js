@@ -2,7 +2,6 @@
 // First of all, the storage keys from before the rename to IMR Reef ID (2026-11-03) move to their new names (core.js
 // migrateKeys): nothing below may read a key before this line. The theme script of index.html reads both names itself.
 migrateStorage();
-migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
 migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
 let DATA;
 const $v = document.getElementById('view');
