@@ -9,8 +9,9 @@
   const LAND_AR = [1.3, 1.8];
   // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
   // judged tag, judging/FISH.md).
-  // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover).
-  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && !juvP(p);
+  // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover), but his ★ Cover on one he confirmed
+  // (cj: app.js fishCurate; Pierre's exception, 2026-11-15).
+  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);
   // A photo served from R2 (onR2), not one still remote (r: 1 with its online original: fish-photos.json, the stopgap's),
   // which app.js thumb takes from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver.
   const onR2 = p => !(p.r && p.src),

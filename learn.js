@@ -830,8 +830,13 @@ const fishSpPhotos = () => {
   return ((FSPH = by), (FSPH_OF = FISH), by);
 };
 // A species' one photo (its tile, its row): the first of its photos that is not a juvenile (app.js adultFirst), else its
-// first: his species cover, else his featured, else the game's order.
-const spPhoto = s => adultFirst(fishSpPhotos()[s.id]);
+// first: his species cover, else his featured, else the game's order. His species cover on a juvenile he confirmed (app.js
+// fishCurate's cj; Pierre's exception, 2026-11-15) is its one photo all the same.
+const spJCover = (s, P) => {
+  const c = ((FISH && FISH.covers) || {})[s.id];
+  return (c && c.cj && P && P[0] && P[0].f === c.f && P[0]) || null;
+};
+const spPhoto = s => spJCover(s, fishSpPhotos()[s.id]) || adultFirst(fishSpPhotos()[s.id]);
 // A genus's ★ Cover (Pierre, 2026-11-13): a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a
 // genus with no unit (FISH.covers); null when he picked none in play.
 const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
@@ -1220,9 +1225,10 @@ function fishGenus(g) {
 // Its photos on the sheet (P: fishSpPhotos' order, his species cover first, never a juvenile: app.js juvP): three adult
 // photos, the first its cover, then up to two juveniles apart (app.js juvP: the juvenile phase or flag); more: the other
 // adults, folded. A juvenile is never the sheet's first photo while the species has an adult one (Pierre, 2026-11-13).
-function spSheetPhotos(P) {
-  const main = P.filter(p => !juvP(p));
-  return {shown: [...main.slice(0, 3), ...P.filter(juvP).slice(0, 2)], more: main.slice(3)};
+// lead: his species cover when it is a juvenile he confirmed (spJCover): first all the same, not among the juveniles.
+function spSheetPhotos(P, lead = null) {
+  const main = P.filter(p => p === lead || !juvP(p));
+  return {shown: [...main.slice(0, 3), ...P.filter(p => p !== lead && juvP(p)).slice(0, 2)], more: main.slice(3)};
 }
 function fishSpecies(s) {
   const T = ftree(),
@@ -1230,7 +1236,7 @@ function fishSpecies(s) {
     g = T.gen[s.genus],
     P = fishSpPhotos()[s.id] || [],
     isJ = juvP,
-    {shown, more} = spSheetPhotos(P),
+    {shown, more} = spSheetPhotos(P, spJCover(s, P)),
     flat = [...shown, ...more],
     F = famSpecies(f),
     rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,
