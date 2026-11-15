@@ -30,8 +30,8 @@ import fish_short  # noqa: E402  (fish-game.json's short form)
 IMG = os.path.join(ROOT, 'img')
 SIZES = ((1600, 78, ''), (960, 72, '-m'), (480, 72, '-s'), (240, 70, '-t'))
 SUFFIXES = tuple(s for _, _, s in SIZES)
-# The files that hold photo records (dicts with f): the game and sheet photos, the candidates waiting, the fish photos (the
-# stopgap list, and the curated ones on R2: tools/fish_game.py).
+# The files that hold photo records (dicts with f): the game and sheet photos, the candidates waiting, the fish photos (on
+# R2: fish-game.json, and fish-photos.json's first and sheet-only photos, tools/fish_game.py).
 DATA = ('data.json', 'cand.json', 'fish-photos.json', 'fish-game.json')
 CACHE = os.path.join(ROOT, 'tools', '.cache', 'r2')  # gitignored
 UA = {'User-Agent': 'coral-id-imr/1.0'}  # R2's public address refuses Python's default user agent

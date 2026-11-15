@@ -58,16 +58,12 @@ test('an excluded photo appears nowhere (views, sheet, games, Coral ID Key)', ()
 
 // The fish game photos (admin plan PR 7; core.js fishPhotos, the same code the app runs, on the real fish-game.json,
 // fish-photos.json and curation.json): a photo Pierre rejected, excluded or sent to another species (Not this) never
-// plays for the species he took it from, curated or stopgap; a curated photo only while it is in play (core.js fishOn).
+// plays for the species he took it from; a curated photo only while it is in play (core.js fishOn).
 test('fish: rejected, excluded and Not this photos are never in the game; curated ones only while in play', () => {
   const {fishGen, fishPhotos, fishPid, fishIn, fishGone} = require('../core.js'),
     F = CUR.fish || {},
     PH = read('fish-photos.json'),
-    X = fishGen(
-      read('fish.json'),
-      fishPhotos(PH.photos, require('../core.js').fishGameRead(read('fish-game.json')).photos, CUR, read('fish.json')),
-      PH.sheet
-    ),
+    X = fishGen(read('fish.json'), fishPhotos(PH.photos, require('../core.js').fishGameRead(read('fish-game.json')).photos, CUR), PH.sheet),
     gone = fishGone(CUR), // once, not once per photo: it walks the whole curation (37 s over the ~9,600 photos)
     no = new Map();
   ['seen', 'exclude', 'out'].forEach(k => Object.keys(F[k] || {}).forEach(f => no.set(fishPid(f), f)));

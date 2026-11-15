@@ -18,7 +18,9 @@ mixes sources on purpose for variety.
   when he has picked none) is a photo of its leaf **most seen around the instance's centre by distinct observers**, that
   leaf's easiest reference photo, never a juvenile (`app.js` `seenCover`, `autosort.js` `fishCoverOf`). **One exception for his own photos:** every photo of his that is
   compatible, i.e. a species we show and passing the rules (presence, quality, licence, the judging rubric), must be
-  included in the fish photo pool. Never left out, never boosted (`tools/fish_photos.py` `his_ok`).
+  included in the fish photo pool. Never left out, never boosted (the candidates: `tools/fetch_fish.py` `select` takes his
+  observations first, within the species' room, then the judging puts them in play; the stopgap's `tools/fish_photos.py`
+  `his_ok` until 2026-11-15).
 - **Fish photos in play are hosted on R2, whatever their route in**: the photos Pierre adds in the admin, the candidates
   judged sure on the rubric and the reference photos judged sure on the same rubric, whatever their reference level, enter
   the same way (`tools/fish_game.py`,
@@ -57,7 +59,8 @@ Pierre's own; among equals, an open licence grows the stock a later commercial v
 source priority for fish, and every compatible photo of his in the fish pool, 2026-11-06 (Q148); subject-neutral wording, 2026-11-06; fish reference photos first and FishBase in automatically,
 2026-11-06; fish photos in play by themselves once judged, hosted on R2 whatever their route in, 2026-11-06 (Q180, Q199); reference photos in like candidates, whatever their
 level, 2026-11-08 (Q212); licence as the last tie-break, 2026-11-08 (Q270, Q283), the fish fetch's too, 2026-11-08 (Q284); a default cover from the
-leaf most seen around the instance's centre, 2026-11-13 (Q339).
+leaf most seen around the instance's centre, 2026-11-13 (Q339); his own photos through the candidates once the stopgap
+was retired, 2026-11-15 (#931).
 
 ### P2
 

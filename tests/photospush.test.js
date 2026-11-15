@@ -78,7 +78,15 @@ const fresh = () => path.join(TMP, `w${++n}`);
   const seed = fresh();
   git(TMP, 'init', '-q', '--bare', '-b', 'main', ORIGIN);
   git(TMP, 'init', '-q', '-b', 'main', seed);
-  for (const f of ['data.json', 'cand.json', 'excluded.json', 'fish-game.json', 'fish-cand.json', 'tools/fish_refill.json'])
+  for (const f of [
+    'data.json',
+    'cand.json',
+    'excluded.json',
+    'fish-game.json',
+    'fish-photos.json',
+    'fish-cand.json',
+    'tools/fish_refill.json'
+  ])
     write(seed, f, '{"a": 1}\n');
   write(seed, 'img/a.webp', BIN);
   write(seed, 'tools/x.py', 'print(1)\n');

@@ -1242,36 +1242,40 @@ print(json.dumps([rules, picks, p]))`
   assert.strictEqual(p.note, 'Filed under Fishus a on iNaturalist, which lumps the two species (as WoRMS does).');
 });
 
-// Pierre's own photos in the fish pool (Pierre, 2026-11-06, Q148): every compatible photo of his is in, never left out
-// and never boosted: they take none of the other observers' PER places; a photo he rejected, a near-duplicate, an
-// unclear subject, out of the water or out of the Indo-West Pacific box is not compatible.
-test('fish photo list: every compatible photo of Pierre’s own is in, beside the other observers’ PER', () => {
+// A rerun of tools/fish_photos.py keeps a sheet-only photo the Candidate photos workflow already put on R2 (no r, its
+// shape measured) instead of making it remote again; a photo it finds anew comes remote (r: 1) until the next run.
+test('fish_photos.py keep_done: a sheet photo already on R2 stays as it is, a new one comes remote', () => {
   const out = execFileSync(
     'python3',
     [
       '-c',
       `import sys, json; sys.path.insert(0, 'tools')
 import fish_photos as fp
-ph = lambda i, lic='cc-by': {'id': i, 'license_code': lic, 'attribution': f'(c) u{i}', 'url': f'https://inaturalist-open-data.s3.amazonaws.com/photos/{i}/square.jpg'}
-def ob(i, *P, u='x', ll='9.2,123.3', g='research'):
-    return {'id': i, 'quality_grade': g, 'taxon': {'id': 5, 'name': 'Fishus a', 'rank': 'species'}, 'location': ll, 'place_ids': [6873], 'captive': False, 'annotations': [], 'user': {'login': u}, 'photos': list(P)}
-his = [ob(1000 + k, ph(10 * k + 1, None), ph(10 * k + 2, None), u='ppericard', g='needs_id') for k in range(30)]
-his.append(ob(2000, ph(9001), u='ppericard', ll='26.99,33.91'))   # the Red Sea: out of the box
-others = [ob(k, ph(50000 + k)) for k in range(1, 41)]
-fp.obs = lambda taxa, q: his if 'user_login' in q else others
-fp.DECIDED.update(gone={'11'}, codes={'21': 'p1g0smx1'}, sug={'31': {'k': 'dup', 'jt': 'p1g0sm1', 'e': 3}})
-L = fp.entry({'species': ['s1']}, {'s1': {'id': 's1', 'inat': 5}})
-print(json.dumps([sorted(int(p['f'][2:]) for p in L if p.get('own')), sum(1 for p in L if not p.get('own'))]))`
+done = {'f': 'fi7', 'src': 'https://inaturalist-open-data.s3.amazonaws.com/photos/7/original.jpg', 'ar': 1.5, 'use': 'ref'}
+new = {'s1': [{**done, 'r': 1, 'ar': 1.333}], 's2': [{'f': 'fi8', 'src': 'https://inaturalist-open-data.s3.amazonaws.com/photos/8/original.jpg', 'r': 1}]}
+print(json.dumps(fp.keep_done(new, {'s1': [done]})))`
     ],
     {cwd: ROOT, encoding: 'utf8'}
   );
-  const [own, rest] = JSON.parse(out);
-  const want = [];
-  for (let k = 0; k < 30; k++) [10 * k + 1, 10 * k + 2].forEach(i => ![11, 21, 31].includes(i) && want.push(i));
+  const got = JSON.parse(out);
+  assert.deepStrictEqual(got.s1, [
+    {f: 'fi7', src: 'https://inaturalist-open-data.s3.amazonaws.com/photos/7/original.jpg', ar: 1.5, use: 'ref'}
+  ]);
+  assert.strictEqual(got.s2[0].r, 1);
+});
+
+// The refill counts the photos in play (fish-game.json) once the stopgap is retired (2026-11-15): its very easy photos and
+// the phases their judged tags record; fish-photos.json's first photos are the same records (counted once) and its sheet
+// photos count as before; a record's ph (maybe its source's label) is left to the source's own thresholds.
+test('fetch_fish.py game_photos: the photos in play and the sheet photos, each once, without ph', () => {
+  const g = {f: 'fish-s1-cand-1', sp: 's1', e: 5, jt: 'p1g0sl1j', ph: 'male', o: 'o1'},
+    fp = {photos: {t1: [g]}, sheet: {s2: [{f: 'fi9', sp: 's2'}]}},
+    gm = {photos: {t1: [g, {f: 'fi3', sp: 's1', e: 2}]}};
+  const got = J(`print(json.dumps(game_photos(json.loads(sys.argv[1]), json.loads(sys.argv[2]))))`, JSON.stringify(fp), JSON.stringify(gm));
+  assert.deepStrictEqual(Object.keys(got).sort(), ['s1', 's2']);
   assert.deepStrictEqual(
-    own,
-    want.sort((a, b) => a - b),
-    'all 57 compatible photos of his 30 observations, every photo of each'
+    got.s1.map(p => p.f),
+    ['fish-s1-cand-1', 'fi3']
   );
-  assert.strictEqual(rest, 24, 'the other observers keep their 24 places');
+  assert.ok(!('ph' in got.s1[0]) && got.s1[0].jt === g.jt);
 });

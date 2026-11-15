@@ -233,7 +233,7 @@ def run(args):
     sug = json.loads(Path(args.suggest).read_text(encoding="utf-8")) if Path(args.suggest).exists() else {}
     gone, _ = ff.state(cur, sug)
     sugf, moved = (sug or {}).get("fish") or {}, ff.moved_of(cur)
-    game = ff.game_photos(json.loads(Path(args.photos).read_text(encoding="utf-8")) if Path(args.photos).exists() else {})
+    game = ff.game_photos(*ff.game_files(args.photos))
     only = set(filter(None, (args.only or "").split(",")))
     plan, added = {}, Counter()
     for s, t in ff.species_list(fish, set(args.circle), only):
