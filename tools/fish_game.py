@@ -784,7 +784,7 @@ def juvenile(r):
 
 def watermarked(r):
     """A record judged with a visible watermark or text (the judging tags' w flag: judging/FISH.md "Watermark"; Pierre,
-    2026-11-15, Q373): never a default cover while its unit has an adult photo without one (Q379, app.js seenCover)."""
+    2026-11-15, Q373): never a default cover while its unit has an adult photo without one (Q379, app.js seenCover since #968)."""
     return 'w' in str(r.get('jt') or '')[7:]
 
 
@@ -814,8 +814,8 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
     """fish-photos.json "photos": {teaching id: [record]}, at most n of each entry's fish-game.json records (game: its
     photos, every record whole), the ones Home and the first questions want before the whole list is in: the adults first
     (a juvenile is never a cover: app.js juvP), Pierre's covers (curation.json fish.genera {id: {cover}}, by photo id),
-    then a watermarked photo (watermarked) after the adults without one of its unit (its genus, else its family: fish.json),
-    when the unit has one (Pierre, 2026-11-15, Q379: the default cover avoids them, app.js seenCover, which reads these
+    then a watermarked photo (watermarked) after the adults without one, when one of its units (its genus or its family:
+    fish.json) has one (Pierre, 2026-11-15, Q379: the default cover avoids them, app.js seenCover since #968, which reads these
     photos until fish-game.json is in; his watermarked covers stay first, his choice: rule A1), then in core.js easyRank's
     order: the reference-level photos (refLevel: ref_level), the easiest, the most
     reference-like (ref_score), an open licence (tools/rights.py rights_rank), then by name (Codex review #931: an order
@@ -832,15 +832,15 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
            if isinstance(k, dict) and k.get('cover') and k.get('coverJ') and pid(k['coverJ']) == pid(k['cover'])}
     fam = {sid: f['id'] for f in (fish or {}).get('families') or [] for sid in f.get('species') or []}
     gen = {s['id']: s['genus'] for s in (fish or {}).get('species') or [] if s.get('id') and s.get('genus')}
-    unit = lambda r: gen.get(r.get('sp')) or fam.get(r.get('sp'))  # noqa: E731
+    units = lambda r: {u for u in (gen.get(r.get('sp')), fam.get(r.get('sp'))) if u}  # noqa: E731  (its genus, its family)
     adult = lambda r: not juvenile(r) or pid(r['f']) in jok  # noqa: E731
 
     def key(r, clean=()):
-        return (not adult(r), pid(r['f']) not in covers, watermarked(r) and unit(r) in clean, not ref_level(r), -(r.get('e') or 3),
-                -ref_score(r.get('jt')), rights_rank(r), r['f'])
+        return (not adult(r), pid(r['f']) not in covers, watermarked(r) and bool(units(r) & clean), not ref_level(r),
+                -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r), r['f'])
 
     def pick(L):
-        clean = {unit(r) for r in L if adult(r) and not watermarked(r)}  # the units with an adult photo without a watermark
+        clean = {u for r in L if adult(r) and not watermarked(r) for u in units(r)}  # units with an adult without a watermark
         L, seen, lead = sorted(L, key=lambda r: key(r, clean)), set(), []
         for r in L:
             if fam.get(r.get('sp')) not in seen:

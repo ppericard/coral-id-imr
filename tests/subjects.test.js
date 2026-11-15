@@ -192,11 +192,12 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
         `${id}: no reference-level photo first`
       );
   });
-  // No default card watermarked before fish-game.json is in (Pierre, 2026-11-15, Q379; app.js seenCover reads these photos
-  // until then): a unit (a genus, else a family: fish.json) among an entry's first photos whose adults there all carry a
-  // watermark (judged flag w, Q373) has no adult without one in play, unless one of them is Pierre's ★ cover (his choice,
-  // rule A1: his watermarked covers stay first). On 2026-11-15 the genus units Gnathodentex, Neochirus and Dendrochirus
-  // had only watermarked first photos.
+  // No default card watermarked before fish-game.json is in (Pierre, 2026-11-15, Q379; app.js seenCover, since #968, reads
+  // these photos until then): a unit (a genus or a family: fish.json) among an entry's first photos whose adults there all
+  // carry a watermark (judged flag w, Q373) has no adult without one in play, unless one of them is Pierre's ★ cover (his
+  // choice, rule A1: his watermarked covers stay first). On 2026-11-15 the genus units Gnathodentex, Neochirus and
+  // Dendrochirus had only watermarked first photos; since, Dendrochirus has one without, and the other two none among the
+  // first photos (as 62 other genus units of 130), so their card waits for fish-game.json.
   const gen = new Map(F.species.filter(s => s.genus).map(s => [s.id, s.genus])),
     fam = new Map(F.families.flatMap(f => (f.species || []).map(s => [s, f.id]))),
     covers = new Set(
