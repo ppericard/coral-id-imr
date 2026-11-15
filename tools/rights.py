@@ -5,7 +5,7 @@ order between otherwise-equal photos, never above quality, ease or variety, neve
 (docs/rules/photos.md P1).
 
     licence(p)      the licence code: p's lic, else read from its credit a; None when neither says
-    rights_class(p) 'imr' (IMR lecture), 'book' (Coral Finder book), 'own' (Pierre's own, whatever its licence),
+    rights_class(p) 'imr' (IMR lecture, its source not traced; a traced one 'nc'), 'book' (Coral Finder book), 'own' (Pierre's own, whatever its licence),
                     'open' (CC0, CC BY) or 'nc' (the rest: CC BY-NC, or no licence read)
     rights_rank(p)  the tie-break key: 0 own or open, 1 the rest (own and open alike: his photos are never boosted over
                     another open one, P1 fish)
@@ -31,7 +31,8 @@ def rights_class(p):
     if not p:
         return "nc"
     if p.get("imr"):
-        return "imr"
+        # traced to its original source (data.json course pg, #925): its site's terms, non-commercial
+        return "nc" if p.get("pg") else "imr"
     if p.get("cf"):
         return "book"
     if p.get("own"):

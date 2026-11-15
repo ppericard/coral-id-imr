@@ -91,7 +91,10 @@ licence is granted. Much of the code was written with AI coding assistants under
   or no-derivatives photos are used. Some photos are cropped.
 - **FishBase** (fish only): © their authors, CC BY-NC 4.0 as FishBase states it.
 - **IMR Lecture 6 photos** (corals only): used for IMR's internal training. Their rights are uncertain, as many were
-  not taken by IMR; they are being traced to their original sources and will be credited or replaced. Not for reuse.
+  not taken by IMR. 86 of them come from [Corals of the World](https://www.coralsoftheworld.org/) and are credited to
+  their photographers with a link to the page that credits them, under its
+  [terms](https://www.coralsoftheworld.org/page/terms-of-use/) (personal, non-commercial or academic use with citation;
+  all other rights reserved). The sources of the others are not known yet. Not for reuse.
   The fish side uses no IMR lecture photos.
 - **Coral Finder 2022** (© Russell Kelley / BYOGUIDES): no photo of the book is used; its crops were removed on
   2026-11-08. The book stays a cited source (its pages, criteria and look-alikes); the Coral ID Key's boxes are our own
