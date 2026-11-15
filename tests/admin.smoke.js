@@ -6313,6 +6313,153 @@ const darkCards = (p, sel) =>
         if (ce.length) fails.push(`Cover proposals: ${ce.slice(0, 4).join(' | ')}`);
         await cc.close();
       }
+      // Photos › Tree, a node's sheet text (admin-content.js; Pierre, 2026-11-15, Q359 and Q366: the content editor's text
+      // slots, step 2 of docs/reviews/2026-11-14-sheet-overlay-design.md v2): in a context of its own, on a family with IMR
+      // tips and a look-alike line. Its Sheet box lists its rank's slots; ✎ on the tips, Save: one draft entry with the
+      // original in was; Undo and Redo; ↺ Restore keeps the node's map; the note filled with no source asks once, then
+      // saves with one; ⊘ Hide; a stale edit (the base changed since) shows its three texts and the bar's count, Keep mine
+      // takes the base now, Take the new removes it; a genus the app sends elsewhere has no box, a species has its note;
+      // Publish counts the edits per rank and the published fish part carries them, no empty map; dark theme; no overflow
+      // at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [],
+          dlg = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const F = FISHC.raw,
+            T = fishTree(F),
+            fam = F.families.find(f => !f.wink && (f.cues || []).length && (f.look || []).some(x => x[1]) && (f.life || []).length),
+            lone = F.genera.find(g => g.family === fam.id && T.go(g.id) !== g.id) || F.genera.find(g => T.go(g.id) !== g.id),
+            sp = fam.species.find(s => T.sp[s]);
+          return {fam: fam.id, cues: fam.cues, life: fam.life, lone: lone && lone.id, sp};
+        });
+        const FAM = ids.fam,
+          ent = slot => sq.evaluate(([id, s]) => ((((DRAFT.fish || {}).content || {}).nodes || {})[id] || {})[s] || null, [FAM, slot]),
+          row = slot => `#view .adm-csheet [data-cs="${slot}"]`,
+          act = (slot, a) => sq.click(`${row(slot)} [data-csa="${a}"]`);
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(FAM));
+        await swait(() => document.querySelector('#view .adm-csheet'));
+        if (!(await sq.evaluate(() => document.querySelector('#view .adm-csheet').open))) await sq.click('#view .adm-csheet > summary');
+        const slots = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-csheet [data-cs]')].map(x => x.dataset.cs));
+        if (!['cues', 'marks', 'life', 'juv.note', 'note'].every(s => slots.includes(s)) || !slots.some(s => s.startsWith('look/')))
+          se.push(`the slots ${JSON.stringify(slots)}`);
+        // ✎ the tips, Save: his text in force, the original in was.
+        await act('cues', 'edit');
+        await sq.fill(`${row('cues')} textarea`, 'Tip one\n\n  Tip two ');
+        await act('cues', 'save');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="cues"].is-fresh'));
+        let x = await ent('cues');
+        if (!x || JSON.stringify(x.v) !== '["Tip one","Tip two"]' || JSON.stringify(x.was) !== JSON.stringify(ids.cues) || !x.t)
+          se.push(`Save ${JSON.stringify(x)}`);
+        await sq.evaluate(() => undo());
+        if (await ent('cues')) se.push('Undo left the edit');
+        await sq.evaluate(() => redo());
+        if (!(await ent('cues'))) se.push('Redo lost the edit');
+        // ↺ Restore: the entry goes, the node's map stays in the draft (empty) for the merge.
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="cues"] [data-csa="drop"]'));
+        await act('cues', 'drop');
+        await swait(() => !document.querySelector('#view .adm-csheet [data-cs="cues"].is-fresh'));
+        const m = await sq.evaluate(id => JSON.stringify(DRAFT.fish.content.nodes[id]), FAM);
+        if (m !== '{}') se.push(`Restore left ${m}`);
+        // The note: filled with no source, Save asks once; with one, it saves.
+        await act('note', 'edit');
+        await sq.fill(`${row('note')} textarea`, 'A note of my own');
+        await act('note', 'save');
+        const ask = await sq.evaluate(
+          s => [!!document.querySelector(s + ' .adm-cssrcs.need'), (document.querySelector(s + ' [data-csa="save"]') || {}).textContent],
+          row('note')
+        );
+        if (!ask[0] || ask[1] !== 'Save without source' || (await ent('note'))) se.push(`source asked ${JSON.stringify(ask)}`);
+        await sq.fill(`${row('note')} [data-css]`, 'A made-up guide');
+        await sq.fill(`${row('note')} [data-csu]`, 'https://example.org/guide');
+        await act('note', 'save');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="note"].is-fresh'));
+        x = await ent('note');
+        if (
+          !x ||
+          x.v !== 'A note of my own' ||
+          x.was !== null ||
+          JSON.stringify(x.src) !== '{"t":"A made-up guide","u":"https://example.org/guide"}'
+        )
+          se.push(`note ${JSON.stringify(x)}`);
+        // ⊘ Hide the marks.
+        await act('marks', 'hide');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="marks"].is-fresh'));
+        if ((await ent('marks')).v !== null) se.push('Hide');
+        // A stale edit: his text against a base that changed since; the bar counts it; Keep mine takes the base now.
+        await sq.evaluate(id => {
+          DRAFT.fish = {...DRAFT.fish, content: contentSet(DRAFT.fish.content, id, 'life', ['Mine'], ['A base gone since'], null, 1)};
+          saveDraft();
+          render();
+        }, FAM);
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="life"].is-stale .adm-cs3'));
+        const bar = await sq.evaluate(() => (document.querySelector('#view .adm-csw') || {}).textContent || '');
+        if (bar !== '1 sheet edit to check') se.push(`the bar ${JSON.stringify(bar)}`);
+        await act('life', 'keep');
+        await swait(() => !document.querySelector('#view .adm-csheet [data-cs="life"].is-stale'));
+        x = await ent('life');
+        if (!x || JSON.stringify(x.was) !== JSON.stringify(ids.life) || JSON.stringify(x.v) !== '["Mine"]')
+          se.push(`Keep mine ${JSON.stringify(x)}`);
+        if (await sq.evaluate(() => !!document.querySelector('#view .adm-csw'))) se.push('the bar still counts');
+        // Stale again, Take the new: his entry goes.
+        await sq.evaluate(id => {
+          DRAFT.fish = {...DRAFT.fish, content: contentSet(DRAFT.fish.content, id, 'life', ['Mine'], ['Gone again'], null, 2)};
+          saveDraft();
+          render();
+        }, FAM);
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="life"].is-stale'));
+        await sq.click(`${row('life')} [data-csa="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-csheet [data-cs="life"].is-stale'));
+        if (await ent('life')) se.push('Take the new left the edit');
+        // Dark theme; no overflow at 1280, then at 390 with the editor open.
+        const dk = await darkCards(sq, '#view .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        await act('cues', 'edit');
+        for (const w of [1280, 390]) {
+          await sq.setViewportSize({width: w, height: 900});
+          const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+          if (wide > 0) se.push(`${w}px: ${wide}px too wide`);
+        }
+        await sq.setViewportSize({width: 1280, height: 900});
+        await sq.click(`${row('cues')} [data-csa="cancel"]`);
+        // A genus the app sends to its species or its family: no box. A species: its note.
+        if (ids.lone) {
+          await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.lone));
+          await swait(() => document.querySelector('#view .adm-sname'));
+          if (await sq.evaluate(() => !!document.querySelector('#view .adm-csheet'))) se.push(`a box on ${ids.lone}`);
+        }
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(ids.sp));
+        await swait(() => document.querySelector('#view .adm-csheet'));
+        const ss = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-csheet [data-cs]')].map(x => x.dataset.cs));
+        if (JSON.stringify(ss) !== '["note"]') se.push(`species slots ${JSON.stringify(ss)}`);
+        // Publish: counted per rank, the published fish part holds the two edits and no empty map.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^2 fish family sheet edits$/m.test(sum)) se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).content);
+        if (
+          JSON.stringify(Object.keys(pub || {})) !== '["nodes"]' ||
+          JSON.stringify(Object.keys(pub.nodes)) !== JSON.stringify([FAM]) ||
+          JSON.stringify(Object.keys(pub.nodes[FAM])) !== '["marks","note"]'
+        )
+          se.push(`published ${JSON.stringify(pub)}`);
+        if (!dlg.some(d => /sheet edits/.test(d))) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (se.length) fails.push(`Sheet text: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
       // good): the agreement line at the top; a click that keeps the dashed guess raises agreement, one that picks another
       // form lowers it, live; Guesses first puts the photos still on a guess first in each row, the unsure ones first.

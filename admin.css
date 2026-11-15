@@ -5956,3 +5956,122 @@ a.adm-fchip {
   background: var(--surface-2);
   outline-offset: -1.5px;
 }
+/* Photos › Tree, a node's sheet text (admin-content.js; Pierre, 2026-11-15, Q359): each slot, its text in force, its
+   state and its tools; a stale edit's three texts side by side (stacked on a phone). */
+.adm-csheet > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.adm-csheet > summary::-webkit-details-marker {
+  display: none;
+}
+.adm-csheet > summary h3::before {
+  content: '▸ ';
+}
+.adm-csheet[open] > summary h3::before {
+  content: '▾ ';
+}
+.adm-cslots {
+  display: grid;
+  gap: 8px;
+}
+.adm-cslot {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 10px 8px;
+  background: var(--surface);
+  min-width: 0;
+}
+.adm-cslot.is-fresh,
+.adm-cslot.is-absorbed {
+  border-color: var(--accent);
+}
+.adm-cslot.is-stale,
+.adm-cslot.is-orphan {
+  border-color: var(--bad);
+}
+.adm-cshd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.adm-cshd > b {
+  font-size: 0.85rem;
+}
+.adm-cshd .adm-acts {
+  margin: 0 0 0 auto;
+  padding: 0;
+}
+.adm-cschip.c-fresh,
+.adm-cschip.c-absorbed {
+  color: var(--accent);
+}
+.adm-cschip.c-stale {
+  color: var(--bad);
+}
+.adm-csv {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+ul.adm-csv {
+  padding-left: 18px;
+}
+.adm-csnone {
+  color: var(--muted);
+}
+.adm-cssrc,
+.adm-csorig summary {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.adm-csorig summary {
+  cursor: pointer;
+}
+.adm-cs3 {
+  display: grid;
+  gap: 8px;
+}
+.adm-cs3 small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.adm-csed {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+.adm-csed textarea,
+.adm-csed input {
+  font: inherit;
+  font-size: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.adm-cssrcs {
+  display: grid;
+  gap: 6px;
+}
+.adm-cssrcs.need input {
+  border-color: var(--warn);
+  box-shadow: 0 0 0 1px var(--warn);
+}
+.adm-csed .adm-acts {
+  margin: 0;
+  padding: 0;
+}
+@media (min-width: 600px) {
+  .adm-cs3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .adm-cssrcs {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
