@@ -11,7 +11,8 @@
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover), but his ★ Cover on one he confirmed
   // (cj: app.js fishCurate; Pierre's exception, 2026-11-15). Never a photo tagged with a visible watermark or text (its
-  // judged flag w; Pierre, 2026-11-15, Q373: Home skips them, the games keep them), his ★ Cover included: homeOk.
+  // judged flag w; Pierre, 2026-11-15, Q373: Home skips them, the games keep them), his ★ Cover included, one he kept as a
+  // cover in the admin too (autosort.js fishCoverW, Q379: his Keep holds the cover elsewhere, never on Home): homeOk.
   const homeOk = p => !!p && !/w/.test(String(p.jt || '').slice(7));
   const landOk = p => homeOk(p) && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);
   // A photo served from R2 (onR2), not one still remote (r: 1 with its online original: fish-photos.json, the stopgap's),

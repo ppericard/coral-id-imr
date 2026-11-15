@@ -652,10 +652,12 @@
   // finds his picks (app.js fishCurate); null when it is not there.
   const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => fishPid(p.f) === fishPid(f)))) || null;
   // The family's cover: this photo, or none again (his pick taken off, under either of its names). Either way a
-  // confirmation of a juvenile cover (coverJ, below) goes with the old pick: a new pick on a juvenile asks again.
+  // confirmation of a juvenile cover (coverJ, below) or of a watermarked one (coverW) goes with the old pick: a new pick on
+  // a juvenile asks again.
   const fishCover = (F, tid, f) =>
     fishPick(F, tid, k => {
       delete k.coverJ;
+      delete k.coverW;
       if (k.cover && fishPid(k.cover) === fishPid(f)) delete k.cover;
       else k.cover = f;
     });
@@ -681,6 +683,23 @@
     fishPick(F, tid, k => {
       if (k.cover) k.coverJ = k.cover;
     });
+  // A watermarked photo (fishWm) is never a default cover (Pierre, 2026-11-15, Q379: "Perhaps we should also avoid them
+  // for covers"), but his ★ cover on one stays his choice (rule A1): in force as he picked it, while the Tree page asks
+  // "Watermark: keep as cover?" (admin-covers.js WM_ASK) and Cover proposals propose a photo without one. His Keep records
+  // the answer as coverJ does, next to the cover: curation.json fish genera {node id: {cover: f, coverW: f}}, through the
+  // draft and Publish (rule A1); it holds while it names the cover's photo (fishPid: either of its names), and a new pick
+  // drops it (fishCover). It changes no photo: Home still skips the photo (home.js homeOk), and a node's default never
+  // takes his kept ★ cover of a leaf under it. fishCoverW: node tid's ★ cover is this photo and he kept it; fishCoverWOk:
+  // the Keep, on the cover already there (the Tree page's one click).
+  const fishCoverW = (F, tid, p) => {
+    const k = ((F || {}).genera || {})[tid] || {},
+      f = p && (p.f || p);
+    return !!(f && k.cover && k.coverW && fishPid(k.coverW) === fishPid(k.cover) && fishPid(f) === fishPid(k.cover));
+  };
+  const fishCoverWOk = (F, tid) =>
+    fishPick(F, tid, k => {
+      if (k.cover) k.coverW = k.cover;
+    });
   // Validated, or not.
   const fishOk = (F, tid) =>
     fishPick(F, tid, k => {
@@ -694,6 +713,7 @@
     const out = k => {
       if (k.cover === f) delete k.cover;
       if (k.coverJ === f) delete k.coverJ;
+      if (k.coverW === f) delete k.coverW;
       Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
     };
     let N = fishPick(F, tid, out);
@@ -748,6 +768,16 @@
     const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
     return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
+  // A photo with a visible watermark or text (its flag w; Pierre, 2026-11-15, Q373), its tags as the game reads them: his,
+  // with the pass's w where they are the auto-sort's copy (fishTagsMine), else the pass's (j: its judgment). The app's
+  // copy: app.js wmP on the game record's jt.
+  function fishWm(p, j, F) {
+    if (!p) return false;
+    const pass = (j || {}).jt || '';
+    return String(fishTagsMine(F, p.f, pass) || pass)
+      .slice(7)
+      .includes('w');
+  }
   // Without his pick, the default cover of a node with leaves (Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864): among its
   // leaves (species) with a reference-level photo that is not a juvenile (core.js refLevel), the one most seen around the
   // instance's centre by distinct observers (ties: observations, then the game's order), then his ★ cover of that leaf
@@ -768,21 +798,33 @@
   // A leaf's (a species') cover, as the app's sheets show it (learn.js fishSpPhotos, spPhoto): his ★ pick while in play
   // and not a juvenile, else its first photo that is not a juvenile in the page's order (L: featured first, then the game's
   // order: fishOrder), else its first; null for no photo. A leaf has no default rule of its own (Q339 (b) picks among a
-  // node's leaves). His pick on a juvenile holds once he confirmed it (fishCoverJ).
+  // node's leaves). His pick on a juvenile holds once he confirmed it (fishCoverJ). The default takes a watermarked photo
+  // only when the leaf has no adult photo without one (fishWm, Q379: app.js coverFirst); his pick on one holds.
   function fishLeafCover(L, F, tid, j = () => null) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
       adult = p => !fishJuv(p, j(p.f), F),
       c = fishAt(L, k);
     L = L || [];
-    return (c && (adult(c) || fishCoverJ(F, tid, c)) ? c : null) || L.find(adult) || L[0] || null;
+    return (
+      (c && (adult(c) || fishCoverJ(F, tid, c)) ? c : null) ||
+      L.find(p => adult(p) && !fishWm(p, j(p.f), F)) ||
+      L.find(adult) ||
+      L[0] ||
+      null
+    );
   }
   // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
   // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
   // whether the leaves competed on a reference photo, mine: p is his ★ cover of that leaf}; null for no photo.
+  // Never a watermarked photo while the node has an adult photo without one (fishWm; Pierre, 2026-11-15, Q379): the leaves
+  // then compete on those, and his ★ cover of the leaf chosen is taken only without one (kept with coverW or not).
   function fishCoverRule(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const juv = p => fishJuv(p, j(p.f), F),
+      wm = p => fishWm(p, j(p.f), F),
       R = fishOrder(L, F, tid, '', j).rest,
-      A = R.filter(p => !juv(p)),
+      A0 = R.filter(p => !juv(p)),
+      A1 = A0.filter(p => !wm(p)),
+      A = A1.length ? A1 : A0,
       Ref = A.filter(p => refLevel(fishRec(p, F, j))),
       leaf = p => ((F || {}).add || {})[p.f] || p.sp || p.sid;
     let best = null;
@@ -790,11 +832,16 @@
       const s = seen(leaf(p)) || [0, 0];
       if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
     });
-    if (!best) return R[0] ? {p: R[0], leaf: leaf(R[0]), seen: [0, 0], ref: false, mine: false} : null;
-    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (fishCoverJ); the leaves still compete on adults
+    if (!best) {
+      const q = R.find(p => !wm(p)) || R[0];
+      return q ? {p: q, leaf: leaf(q), seen: [0, 0], ref: false, mine: false} : null;
+    }
+    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (fishCoverJ); the leaves still compete on adults;
+    // without a watermark while the node has an adult photo without one (A)
     const lf = leaf(best.p),
       sk = (((F || {}).genera || {})[lf] || {}).cover,
-      m = fishAt(A, sk) || (fishCoverJ(F, lf, fishAt(R, sk)) ? fishAt(R, sk) : null);
+      sj = fishAt(R, sk),
+      m = fishAt(A, sk) || (fishCoverJ(F, lf, sj) && !(A1.length && wm(sj)) ? sj : null);
     return {p: m || best.p, leaf: lf, seen: best.s, ref: Ref.length > 0, mine: !!m};
   }
   // A leaf's presence around the instance's centre (Q339: "Il faudra rendre générique la localisation centrale de
@@ -1384,6 +1431,8 @@
     fishCoverJ,
     fishCoverYes,
     fishCoverJOk,
+    fishCoverW,
+    fishCoverWOk,
     fishOk,
     fishDrop,
     fishOrder,
@@ -1394,6 +1443,7 @@
     fishRec,
     fishSeenFrom,
     fishJuv,
+    fishWm,
     fishUnitPhases,
     FISHEASY,
     fishNeeds,
