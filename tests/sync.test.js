@@ -988,7 +988,9 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
     summary: {board: 1},
     answers: []
   });
-  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'the tree kept as sent');
+  // The tree as the board reads it back (Code.gs boardUnits_; kept in chunks from v143, tests/boardtree.test.js).
+  const kept = () => JSON.stringify(s.ctx.boardUnits_({id: 'fish'}));
+  assert.strictEqual(kept(), JSON.stringify(tree), 'the tree kept as sent');
   // Ana: the rare family only, √(0.25 × 1/4) = 25%. Ben: the common family and its genus, √(0.25 × 3/4 + 0.75 × 0.8 ×
   // 0.5 × 3/4) = √0.4125 = 64%.
   assert.deepStrictEqual(s.get({board: '1', s: 'fish'}).rows, [
@@ -1005,9 +1007,9 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
     summary: {board: 1, boards: {fish: {f: [['f:Gobiidae', 1, 1]], s: [[1, 'g:X', '', ['n:1', 'n:2', 'n:3', 'n:4'], 1]]}}},
     answers: []
   });
-  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
+  assert.strictEqual(kept(), JSON.stringify(tree), 'a formula-like unit or 4 common names: refused');
   s.post({name: 'Ana', pin: '1234', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae', 'f:Gobiidae']}}, answers: []});
-  assert.strictEqual(s.props.BOARD_UNITS_fish, JSON.stringify(tree), 'an older app list: the tree kept');
+  assert.strictEqual(kept(), JSON.stringify(tree), 'an older app list: the tree kept');
   // Before any tree, a list is kept and read as before (an app from before the score, sheet v95).
   const t = seed();
   t.post({name: 'Cy', pin: '2222', data: fish({}), summary: {board: 1, boards: {fish: ['f:Pomacentridae']}}, answers: []});

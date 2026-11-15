@@ -1031,6 +1031,18 @@ const spNamesLine = s => {
   const order = [...L.map((n, i) => [n, i]).filter(([n]) => n === first), ...L.map((n, i) => [n, i]).filter(([n]) => n !== first)];
   return `<p class="note refs"><b>Common names:</b> ${order.map(([n, i]) => tag(n, i)).join(' · ')}</p>`;
 };
+// Under its name on the species sheet: the other species that carry one of its listed names (app.js cnAlso; Pierre,
+// 2026-11-15, Q381: two species may share a common name, the sheet says so): "Also used for X" for the name the player
+// sees first, "“Name” is also used for X" for another listed name; X by its scientific name, linked to its sheet when
+// it has one.
+const spAlso = s => {
+  const first = spCommon(s),
+    T = ftree(),
+    sp = o => (T.spOf(o.id) ? `<a href="${esc(hr('g-s:' + o.name))}"><i>${esc(o.name)}</i></a>` : `<i>${esc(o.name)}</i>`);
+  return cnAlso(s, Object.values((FISH && FISH.sps) || {}))
+    .map(([n, L]) => `<p class="fn-g">${n === first ? 'Also used for' : `“${esc(n)}” is also used for`} ${L.map(sp).join(', ')}</p>`)
+    .join('');
+};
 const fishTile = s =>
   `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap"><i>${esc(s.name)}</i>${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
     s.now && s.now !== s.name ? `<small>now <i>${esc(s.now)}</i> in WoRMS</small>` : ''
@@ -1294,7 +1306,7 @@ function fishSpecies(s) {
   const links = `<a href="https://www.inaturalist.org/taxa/${encodeURIComponent(s.inat)}" target="_blank" rel="noopener">iNaturalist</a> · <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&amp;id=${encodeURIComponent(s.ref)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.fishbase.se/summary/${encodeURIComponent(fbName)}.html" target="_blank" rel="noopener">FishBase</a>`;
   $v.innerHTML = `<p class="lede">One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.${isPhone() ? '' : ' ← / → go to the previous / next species.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
+    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
     ${fishNote(s)}

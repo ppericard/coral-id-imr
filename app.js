@@ -838,8 +838,8 @@ const cnShow = (s, imr) => cnFirst(s, imr);
 // The names a player may type for the common names of the species L (fish.json species), for core.js typeMatchIn with
 // typeNormAll: [{k, g: the species id, old, alt}], each listed name and regional name with their recorded spellings
 // (old: the spelling typed, alt: 1), nothing else: no other name the references give, no short form without "fish"
-// (fishTypeNames' drop is the families'). A name two species list names both (typeMatchIn shared: right for each of
-// them, Q319).
+// (fishTypeNames' drop is the families'). A name two species list names both (typeMatchIn shared: right for the species
+// asked when it is one of its listed names, either of them; Q319, kept by Q381).
 // vn (fish.json vn, the name index's kind words: razorfish, toby): known names that are no species' own, read as such
 // ({known}: "a name some fish species go by", the nudge), never as a slip of a species' name (Pierre, 2026-11-09, Q319).
 function cnTypeNames(L, vn) {
@@ -857,6 +857,22 @@ function cnTypeNames(L, vn) {
     if (k.length >= 3 && !out.some(o => o.k === k)) out.push({k, g: '', old: x, alt: 1, known: 1, w: 1});
   });
   return out;
+}
+// Two species may carry the same common name (Pierre, 2026-11-15, Q381, replacing Q319's "dropped from the one that does
+// not own it": nothing is blocked; tools/fish_common.json shared lists them). cnAlso(s, R): for the species sheet's "Also
+// used for …", the other species of R (fish.json species) that list one of the names s lists, any spelling read as typed
+// (typeNormAll: Yellowtail / Yellow-tail wrasse): [[the name as s shows it, [the other species]]], [] when none. A
+// multiple-choice question never shows two of one label (model.js choiceApart); typed, the name is right for the species
+// asked (cnTypeNames, typeMatchIn shared).
+function cnAlso(s, R) {
+  const keys = n => n.map(typeNormAll).filter(Boolean),
+    mine = n => new Set(keys(n));
+  return ((s && s.cn) || [])
+    .map(n => {
+      const K = mine(n);
+      return [n[0], (R || []).filter(o => o && o.id !== s.id && (o.cn || []).some(m => keys(m).some(k => K.has(k))))];
+    })
+    .filter(([, L]) => L.length);
 }
 // A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
 // A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
