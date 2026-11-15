@@ -131,6 +131,22 @@
   "fish-s321-cand-587357044": {
    "code": "p1g1ss12",
    "keep": "best"
+  },
+  "fish-s321-cand-587359194": {
+   "code": "p1g1ss12",
+   "keep": "alt"
+  },
+  "fish-s321-cand-325946987": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s321-cand-582247206": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s321-cand-582247087": {
+   "code": "o1g0mm13",
+   "keep": "dup"
   }
  }
 }

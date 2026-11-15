@@ -335,6 +335,22 @@
   "fish-s410-cand-349858781": {
    "code": "p1g0sl14",
    "keep": "dup"
+  },
+  "fish-s410-cand-349858789": {
+   "code": "p1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s410-cand-349858120": {
+   "code": "o1g0sm13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-349858933": {
+   "code": "o1g0sm13",
+   "keep": "dup"
+  },
+  "fish-s410-cand-349858934": {
+   "code": "o1g0sl13",
+   "keep": "best"
   }
  }
 }
