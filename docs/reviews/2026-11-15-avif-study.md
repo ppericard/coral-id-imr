@@ -14,22 +14,23 @@ sent nothing to outside services); **[guess]** = a judgement.
 - **The saving is real but small, and smallest where it matters most.** At equal visual quality (SSIMULACRA2), AVIF is
   smaller than today's WebP by a median of **23 % at 1600 px, 20 % at 960 px, 16 % at 480 px and 12 % at 240 px**
   **[measured, 103 photos]**. Counted in bytes over the whole sample, the saving is 22 %, 19 %, 12 % and **-4 %** (bigger)
-  at 240 px. On the fish photos, which are 94 % of the bucket, it is 5 % at 480 px and -27 % at 240 px.
+  at 240 px. On the fish photos, which are 91 % of the bucket, it is 5 % at 480 px and -27 % at 240 px. At equal SSIM
+  the 480 and 240 px savings shrink to 9 % and 0 % (median), 5 % and -18 % byte-weighted.
 - **The sizes a slow Philippine line uses gain almost nothing.** A pipeline uses one fixed quality per size. The first
   AVIF quality on the grid that is at least as good as WebP for the median photo (q60) saves 5 % of the bytes at 480 px
   and costs 14 % more at 240 px. One step lower (q55) saves 21 % and 2 %, but leaves 50 % and 37 % of the photos worse by
   more than 2 points **[measured]**.
   A 480 px photo at 86 kbit/s, the field link of 2026-11-02, would load in 2.4 s instead of 2.6 s **[computed]**.
 - **Every player's browser supports AVIF.** The app's logs show 27 devices since 2026-11-02, all on Chrome 138 or later,
-  Edge 156-157, Samsung Internet 30, or iOS 26-27 **[read]**. AVIF has been supported since Chrome 85, Safari/iOS 16 and
-  Samsung Internet 14 **[recall]**.
+  Edge 156-157, Samsung Internet 30, Safari 26-27 on iOS, or Chrome 156-157 on iOS (whose iOS version the log does not
+  record) **[read]**. AVIF has been supported since Chrome 85, Safari/iOS 16 and Samsung Internet 14 **[recall]**.
 - **The cost is not small.** AVIF in four sizes would add **about 5.4 GB** to a bucket that already holds **about 6.3 GB**
   of R2's 10 GB free tier. The one-off encoding of the 25,091 photos on R2 would take about 14 CPU-hours at libaom's
   default speed, about 3.5 h on a 4-core runner. The app, the service worker, the tools and the smokes would each need
   changes, and every player would download their offline photos again once **[measured, computed]**.
 - **Recommendation: do not build AVIF now.** Keep WebP alone. If anything is built later, it should be AVIF for the 960
   and 1600 px files only, chosen once at start-up. That is question (a). The bucket's size is a finding in its own right:
-  the ROADMAP row "Hosting capacity (watch)" expected about 2 GB (question (b)).
+  the ROADMAP row "Hosting capacity (watch)" expected about 2 GB (section 4).
 - **JPEG XL is not worth it either.** Chrome, Edge and Firefox do not decode it by default **[recall]**, and those
   browsers made 80 % of the logged visits. At 240 px it is bigger than WebP **[measured]**.
 
@@ -43,8 +44,9 @@ sent nothing to outside services); **[guess]** = a judgement.
   `tools/photos.py` `turn`, then the image is scaled with `thumbnail` as `save()` does. The tile is cut with `square`.
   - Re-encoding that reference with today's settings (`photos.SIZES`: q78, 72, 72 and 70, method 5; tile q72)
     reproduces **321 of the 351 files on R2 byte for byte**.
-  - The 30 others are the 960 and 240 px files of older coral photos. `tools/photos.py` made those from the 1600 px
-    file on 2026-11-01. One more photo has a crop that differs from its record.
+  - Of the 30 others, 26 are the 960 and 240 px files of 13 older coral photos. They were made from the 1600 px file
+    (re-encoding that file reproduces all 26 byte for byte), as `tools/photos.py` filled those sizes on 2026-11-01. The
+    other 4 are one photo whose files do not follow its record's crop.
   - So "today's WebP" below means that re-encode: the WebP the tools write today.
   - The lecture photos have no original outside `img/`, so their reference is the 1600 px WebP. Their 1600 px
     comparison is second-generation and is reported apart.
@@ -53,12 +55,17 @@ sent nothing to outside services); **[guess]** = a judgement.
   - Pillow 13.0.0, the version `tools/requirements.txt` pins, with its own libwebp 1.6.0 and libavif 1.4.2 / libaom
     3.14.1.
   - AVIF at speed 6 (the default) with 4:2:0 colour, the same as WebP, on one thread.
-  - The quality grid ran from 30 to 90 in steps of 5 (steps of 10 at 1600 px).
+  - The quality grid ran from 30 to 90 in steps of 5 (steps of 10 at 1600 px, so a fixed 1600 px quality below lands
+    between 50, too low, and 60, above WebP).
   - Speeds 8 and 9, libaom's still-image tuning (`tune=iq`, on 42 photos) and JPEG XL (ffmpeg's libjxl, effort 7, on 42
     photos at 480 and 240 px) were tried as well.
 - **The metrics.**
-  - **SSIMULACRA2** (the `ssimulacra2` 0.3.0 Python package; 100 = identical; it scored 100 on identical pairs and rose
-    with quality on every photo checked) is the main metric. It was built to compare image codecs.
+  - **SSIMULACRA2** (the `ssimulacra2` 0.3.0 Python package; 100 = identical) is the main metric. It was built to
+    compare image codecs. It scored 100 on identical pairs, and rose with the AVIF quality in 4,499 of the 4,506 grid
+    steps **[measured]**.
+  - Thumbnails score lower than the other sizes (WebP's median 49 at 240 px, about 71 elsewhere). That is the
+    thumbnails' own density of detail, not the metric's handling of small images: a 240 px crop of the 480 px photo and
+    its WebP scores 71.8, like the whole 480 px photo (21 photos) **[measured]**.
   - **SSIM** on luma is reported as a cross-check. No butteraugli tool was available.
   - For each photo and size, the AVIF bytes that give the WebP's score are interpolated between the two grid points
     around it (log-bytes). No point fell outside the grid.
@@ -131,9 +138,14 @@ scaled to the counts in the data files:
 - The bucket also holds files no data file names any more (excluded photos, never deleted). The HEAD sample cannot see
   them, so 6.3 GB is a lower bound.
 - `fish-game.json` held 10,078 R2 photos on 2026-11-08, 15,471 on 11-09, 16,965 on 11-14 and 23,557 on 11-15 (git history
-  **[measured]**). The median species holds 34 against a cap of 30-60 (`cap_of`) **[read]**.
+  **[measured]**). The 662 species hold a median of 34 photos; the candidate cap is 30-60 per species (`cap_of`)
+  **[read]**.
+- **A finding for the integrator, not a question:** the "Hosting capacity (watch)" row expected about 2 GB with the fish
+  in play. If every species reached the highest cap (60), the bucket would hold about 10.2 GB, just past the free tier;
+  at today's median it is 6.3 GB **[computed]**. No cost today. This PR updates that row's figures.
 
-**AVIF copies [computed** from the byte ratios at the fixed qualities above and today's means**]:**
+**AVIF copies [computed]**, from today's means and the byte ratios at the fixed qualities above: q60 at 1600, 480 and
+240 px (0.86, 0.95 and 1.14 of WebP's bytes), q55 at 960 px and for the tile (0.78 and 0.86):
 
 | Option | Added to R2 | Bucket after | Files added |
 |---|---|---|---|
@@ -221,8 +233,8 @@ scaled to the counts in the data files:
   WebKit: 14 of the 27 logged devices. Chrome removed it in version 110 (2023), and Edge with it. Late in 2025 the
   Chromium team said it would accept a Rust decoder, but whether Chrome ships it by default today was not checked.
   Firefox has it only in Nightly. The Chromium browsers made 450 of the 564 logged loads.
-- **Measured on 42 photos [measured].** At 480 px, JPEG XL at equal SSIMULACRA2 saved a median 21 % (byte-weighted
-  18 %), against 15 % for AVIF on the same photos. A fixed distance of 3.0 saved 19 %, but a third of the photos came out
+- **Measured on 42 photos [measured]** (40 at 480 px and 37 at 240 px fell inside the distance grid). At 480 px, JPEG XL
+  at equal SSIMULACRA2 saved a median 21 % (byte-weighted 18 %), against 15 % for AVIF on the same photos. A fixed distance of 3.0 saved 19 %, but a third of the photos came out
   worse by more than 2 points. At 240 px it was bigger than WebP: median -11 %, byte-weighted -26 %.
 - **Verdict.** It would serve only the iOS players, need a WebP fallback for everyone else, and do nothing for
   thumbnails. Not worth it now. Look again if Chrome ships it by default.
@@ -233,23 +245,18 @@ scaled to the counts in the data files:
    R2, past the free tier with every size; a multi-hour backfill; changes across the app, the worker, the tools and the
    smokes; and one more download of every player's offline photos.
 2. **If it is ever built**, build AVIF at 960 and 1600 px only (q55-60, speed 8), next to WebP, with start-up detection
-   and the `.webp` twin lookup in the worker. That gains about 20 % on the larger files that fast lines and desktops
-   load. It needs the storage question settled first (question (a)).
-3. **Update the ROADMAP line** to point here (done in this PR). The "Hosting capacity (watch)" row's figures are out of
-   date (question (b)).
+   and the `.webp` twin lookup in the worker. At a fixed quality that gains about 14 % at 1600 px and 5-22 % at 960 px
+   (20 % and 23 % with per-photo tuning) on the larger files that fast lines and desktops load. It needs the storage
+   settled first (question (a)).
+3. **Point the ROADMAP line here and update the "Hosting capacity (watch)" figures** (both done in this PR).
 
 ## 8. Questions for Pierre
 
+One question, because building AVIF has a real cost.
+
 - **(a) AVIF: leave it parked, or build it for the large files?**
-  - Context: AVIF saves about 20 % on the 960 and 1600 px photos, but almost nothing on the 480 and 240 px ones that slow
-    lines load.
-  - Building it for the large files adds about 4.6 GB to R2 (bucket about 10.9 GB, past the 10 GB free tier: a few cents
-    a month, Q353) and a one-off encoding of about 1-3 h of CI.
+  - Context: at a fixed quality, AVIF saves about 14 % on the 1600 px photos and 5-22 % on the 960 px ones, but almost
+    nothing on the 480 and 240 px ones that slow lines load.
+  - Building it for the large files adds about 4.6 GB to R2. The bucket would be about 10.9 GB, past the 10 GB free tier:
+    a few cents a month, which needs IMR (Q353). The one-off encoding takes about 1-3 h of CI.
   - Recommendation: **leave it parked**.
-- **(b) The R2 bucket is already at about 6.3 GB of the 10 GB free tier.**
-  - Context: the "Hosting capacity (watch)" row expected about 2 GB with the fish in play. The fish photos on R2 went from
-    10,078 to 23,557 in a week, as species filled to their caps (median 34 per species, cap 30-60). The 1600 px files are
-    62 % of the bytes.
-  - Do you want a short study now of what keeps the bucket under 10 GB (for example, fewer 1600 px files for the fish),
-    or keep watching and pay the cents past 10 GB (Q353)?
-  - Recommendation: **a short study now**, before the next fish refills.

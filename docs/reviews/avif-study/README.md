@@ -19,4 +19,5 @@ environment outside the repository; `jxl.py` also needs ffmpeg with libjxl. Run 
 | 5 | `measure.py WT DATA` | WebP and the AVIF grid per photo and size, SSIMULACRA2 and SSIM, times (about 1 h on 3 workers) |
 | 6 | `analyse.py DATA` | The tables of the study |
 | 7 | `jxl.py WT DATA`, `tune.py WT DATA`, `extra.py DATA` | JPEG XL and AVIF `tune=iq` on 42 photos at 480 and 240 px |
+| 8 | `checks.py WT DATA` | The metric's monotony over the grid, a 240 px crop of the 480 px pair, the files not reproduced byte for byte |
 | - | `git show <commit>:fish-game.json \| python3 -I count_fish.py WT/tools` | The fish photos on R2 at a commit |
