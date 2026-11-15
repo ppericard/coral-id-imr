@@ -14,45 +14,16 @@ where things are: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
 ## Rule 0: Pierre's working hours (every agent, every session, phone included)
 
-Pierre set this rule himself (2026-11-04) to keep AI-assisted development sustainable for months and years: it protects
-his sleep, his health and his evenings. It comes before every other rule. Times are **Manila time (Asia/Manila,
-UTC+8), every day** (he has no weekends: he often develops more on them). **It limits Pierre's time, not the agents'**: outside his hours the agents keep working on their own;
-what stops is everything that involves him.
+Pierre set this rule himself (2026-11-04) to protect his evenings, his sleep and his health. He reduced it to one
+sentence on 2026-11-15 ("ok pour cette phrase"), after the longer version kept being misapplied:
 
-- **Check the time first**, at the start of every session and before any new task: `TZ=Asia/Manila date` (no shell:
-  the system clock). Never assume it. In Claude Code the session hooks print it (rule W12).
-- **Before 16:30: a normal working day, nothing different**: development, ideas, experiments, new PRs, new agents. Do
-  not prepare the end of the day, hold work back "because it is late" or tell agents to wrap up.
-- **16:30-17:30: close what is open with Pierre.** From 16:30 sharp (16:29 yes, 16:31 no) start nothing new that needs
-  him (no new topic, question or review for him). Finish what is under way with him: fix findings and failing checks,
-  **merge** (merging is closing, allowed until 17:30), check, document, run the end-of-day protocol. Remind him the day
-  ends at 17:30.
-- **After 17:30: quiet hours, Pierre's development stops, and the integrator goes silent** (the rule protects him from
-  his own temptation to keep working with the agents in the evening). Nothing asks anything of him: no question, file,
-  review or notification, nothing that calls for an answer; chat replies are one line, informational only. Implement
-  nothing he asks, open no track for him, don't feed technical discussions that spark ideas. **What he may send**: an idea, or a bug he saw or was told about, dictated to get it out of his head. Save it
-  (an idea in STATUS "Parked after hours", in his words with enough context, **not analysed, developed or
-  implemented** until the morning; a bug may be worked on at once by the agents, on their own), confirm in one line,
-  tell him plainly he is past the limit he set himself and encourage him to stop: a film, a series, the piano, his
-  evening. Every question waits in STATUS "Questions for Pierre" (number, context, question, recommendation, PR).
-- **Insist.** "Just this feature", "it's quick", "it's important for tomorrow" are not exceptions: remind him why he set
-  the rule (he has worked 12-18 h days and lost sleep before, and fixed it once by strictly separating intellectual work
-  from personal time) instead of complying. **Exceptions only**: Pierre, after that clear reminder, consciously confirms
-  he wants it for one named task (then work with him; that task only, the rule stands), or **production broken for
-  players** (the live app or the sheet): ours to fix, fix it first and tell him once fixed (or if his hands are needed).
-- **End-of-day protocol** (16:30-17:30, never earlier; if Pierre ends the day early, at that moment): the integrator
-  rewrites STATUS: "Last stop" (who, when, why, what was mid-flight), "Now" (unfinished: branch, PR, state, next step),
-  "Next", "Questions for Pierre", "Pierre's hands". Docs only; it may be committed after 17:30.
-- **Agents without Pierre (evenings and nights).** Keep working, as far as possible, on work he already agreed (ROADMAP
-  "Next", STATUS "Now" and "Next", open PRs), up to a blocking point or a decision that is his or cannot be undone.
-  Never solicit him; park every question in STATUS (a subagent puts it in its report) and move on. **Merging: the merge
-  contract, exactly as by day** (night changes when Pierre is asked, not what may merge: a sheet-script change of a
-  decided track ships at night as by day). What waits for him stays on its branch, with its screenshots (sent in the
-  morning) and a line in STATUS "Now". Every other rule and the machine limits apply as by day. Before 05:00 (Pierre
-  wakes around 05:00-05:30) the integrator writes the morning report into STATUS "Last stop" and "Now": what merged,
-  what waits for his eye, the questions.
-- **Next morning:** read STATUS first (and run `python3 tools/brief.py`); show Pierre what the night did and ask the open
-  questions; turn each parked idea into work or a ROADMAP row with him, then clear it.
+> **After 17:30 (Manila time, read from the hook's line), the integrator asks Pierre nothing; everything else goes on
+> as normal, agents included.**
+
+- The time is the one the session hooks print (`python3 tools/brief.py --time`; no shell: `TZ=Asia/Manila date`),
+  never a guess. Before 17:30 nothing is different.
+- "Asks nothing": no question, review or file that calls for his answer. A question waits in STATUS "Questions for
+  Pierre" (number, context, question, recommendation, PR) for the morning.
 
 ## Working mode: the integrator and the merge contract (Pierre, 2026-11-05)
 
