@@ -151,6 +151,14 @@
   "fish-s425-cand-15550768": {
    "code": "o1g0sl14",
    "keep": "best"
+  },
+  "fish-s425-cand-15550762": {
+   "code": "o1g1sm12",
+   "keep": "alt"
+  },
+  "fish-s425-cand-15550750": {
+   "code": "p0g1sm12",
+   "keep": "dup"
   }
  }
 }
