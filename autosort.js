@@ -21,6 +21,8 @@
 // polyps out, cropped; "r" rejected; "?aw3T" a Check of a sure add; "-r" a rejection Pierre undid; "?aw3T@t5a1kq" a
 // Check he answered at that time.
 (function (root) {
+  // core.js (a global in admin.html, loaded before this file): the look-alike pair key (contentPairKey).
+  const C = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   const AUTO = {
     // One sure candidate in `every` is a Check (deterministic per photo, autoCheck): about 1 in 20 (Pierre).
     every: 20,
@@ -1103,15 +1105,17 @@
   // ---- Fish Look-alikes (admin plan PR 10; docs/ROADMAP.md "Admin for every subject" row 10) ----
   // The pairs: two families the IMR course compares (fish.json families look: [other family id, IMR's words]), once each,
   // in the book's order, with every IMR line about them, each with its own source (fish.json families lsrc: the slide,
-  // and Pierre's additions; "IMR course" when none is recorded; rule C2, Codex review #667). [{k: 'f:A|f:B' (sorted), A,
-  // B (ids, in the book's order), cues: [[family id the line is on, words, source]]}].
+  // and Pierre's additions; "IMR course" when none is recorded; rule C2, Codex review #667). [{k: 'f:A|f:B' (core.js
+  // contentPairKey: the content editor's pair key too, so fish mont holds a pair he added as any), A, B (ids, in the
+  // book's order), cues: [[family id the line is on, words, source]]}]. The pairs in force (his withdrawn and added ones):
+  // admin-content.js montPairs, over the units of fish.json with them laid over it.
   function fishPairs(U) {
     const at = Object.fromEntries((U || []).map((u, i) => [u.id, i])),
       P = {};
     (U || []).forEach(u =>
       (u.look || []).forEach(([b, w]) => {
         if (!(b in at) || b === u.id) return;
-        const k = [u.id, b].sort().join('|');
+        const k = C.contentPairKey(u.id, b);
         P[k] = P[k] || {k, A: at[u.id] <= at[b] ? u.id : b, B: at[u.id] <= at[b] ? b : u.id, cues: []};
         if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w, (u.lsrc || {})[b] || 'IMR course']);
       })

@@ -8,7 +8,8 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const C = require('../core.js'),
-  {sheetSlots, sheetTodo, contentShells, sheetFile, circleRow, pairRows, structChanged} = require('../admin-content.js');
+  {sheetSlots, sheetTodo, contentShells, sheetFile, circleRow, pairRows, structChanged, montPairs} = require('../admin-content.js'),
+  AS = require('../autosort.js');
 const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')),
   S = C.subjectOf('fish'),
@@ -150,4 +151,45 @@ test('a structure change: a circle or a pair, as published (an emptied map or a 
   assert.ok(structChanged({pairs: {[K]: e(null, 1)}}, {}));
   assert.ok(structChanged({}, {pairs: {[K]: e(null, 1)}}));
   assert.ok(!structChanged({pairs: {[K]: e(null, 1)}}, {pairs: {[K]: e(null, 1)}}));
+});
+
+// Photos › Look-alikes (admin.js renderFishMont): one photo pair per pair in force, the base's less the withdrawn ones,
+// plus the added ones marked, keyed as the pair entries (fish mont); the circles do not take a pair out (as the Tree's
+// filter); the same pairs as pairRows says are in force.
+test('Look-alikes lists the pairs in force: a withdrawn pair gone, an added one marked, keyed as his entries', () => {
+  const U = AS.fishUnits(F),
+    base = AS.fishPairs(U),
+    K = C.contentPairKey(A.id, LK),
+    N = C.contentPairKey(A.id, NEW),
+    keys = L => L.map(p => p.k).sort();
+  assert.ok(base.length >= 5 && base.some(p => p.k === K));
+  // the base's keys are the pair entries' keys (core.js contentPairKey), so fish mont holds an added pair as any
+  base.forEach(p => assert.strictEqual(p.k, C.contentPairKey(p.A, p.B)));
+  // no edit: the base's pairs, the same list, none marked
+  assert.deepStrictEqual(montPairs(S, F, {}, U), base);
+  assert.deepStrictEqual(montPairs(S, F, {pairs: {}}, U), base);
+  const Cm = {pairs: {[K]: e(null, 1), [N]: e(1, null)}},
+    L = montPairs(S, F, Cm, U),
+    n = L.find(p => p.k === N);
+  assert.ok(!L.some(p => p.k === K), 'the withdrawn pair has no row');
+  assert.ok(n && n.added && [n.A, n.B].sort().join() === [A.id, NEW].sort().join(), 'the added pair, marked');
+  assert.deepStrictEqual(n.cues, [], 'no words of the base on an added pair');
+  assert.ok(L.filter(p => p.added).length === 1 && L.filter(p => p.k !== N).every(p => base.some(q => q.k === p.k && !p.added)));
+  assert.strictEqual(L.length, base.length);
+  // the pairs pairRows says are in force (v 1), no other
+  assert.deepStrictEqual(
+    keys(L),
+    pairRows(S, F, Cm)
+      .filter(r => r.v === 1)
+      .map(r => r.key)
+      .sort()
+  );
+  // made without the units given, the same
+  assert.deepStrictEqual(montPairs(S, F, {pairs: {[N]: e(1, null)}}).length, base.length + 1);
+  // a family taken off the game keeps its pairs here (the circles are left out, as the Tree's filter)
+  assert.ok(montPairs(S, F, {...Cm, nodes: {[A.id]: {circle: e(null, 1)}}}, U).some(p => p.k === N));
+  // an added pair the base now declares (absorbed): a base pair, not marked
+  const Fb = {...F, families: F.families.map(f => (f.id === A.id ? {...f, look: [...f.look, [NEW, 'made-up words']]} : f))},
+    ab = montPairs(S, Fb, {pairs: {[N]: e(1, null)}}).find(p => p.k === N);
+  assert.ok(ab && !ab.added);
 });
