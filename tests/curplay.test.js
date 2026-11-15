@@ -48,6 +48,9 @@ test('curation-play.json: curation.json without auto, fish tags and ease, and fi
   // An undone add (none in the real log today) is kept; a decision is not.
   const t = slim({v: 1, fish: {auto: {'2026-11-09': {a: '-a1x', b: 'ate', c: 'r'}, '2026-11-08': {d: 'ate'}}, tags: {a: 'x'}}});
   assert.deepStrictEqual(t, {v: 1, fish: {auto: {'2026-11-09': {a: '-a1x'}}}});
+  // His confirmation of a juvenile cover (coverJ beside the cover: autosort.js fishCoverJ, 2026-11-15) reaches the players.
+  const G = {'f:A': {cover: 'fi1', coverJ: 'fi1'}};
+  assert.deepStrictEqual(slim({fish: {genera: G, tags: {fi1: 'p1g0sl1j'}}}).fish.genera, G);
 });
 
 test('the coral games from the players copy: the same genera, views, covers and slots', () => {

@@ -38,10 +38,13 @@
   // The proposals still open in the fish draft F: not answered Keep mine for this very pair.
   const coverOpen = (X, F) => (X || []).filter(x => x && ((F || {}).kept || {})[x.id] !== coverKey(x));
   // Accept: the rule's photo as his cover of the node (set, never toggled off as ★ Cover's second click would).
+  // His confirmation of a juvenile cover goes with his old pick (autosort.js fishCoverJ); the rule's photo carries one when
+  // it is his confirmed juvenile ★ cover of its leaf (fishCoverRule's mine), so it stays in force on the node too.
   const coverAccept = (F, x) =>
     A.fishPick(F || {}, x.id, k => {
       k.cover = x.rule.f;
-      delete k.coverJ; // the confirmation of a juvenile cover goes with it (autosort.js fishCoverJ)
+      if (A.fishCoverJ(F, x.leaf, x.rule)) k.coverJ = x.rule.f;
+      else delete k.coverJ;
     });
   // Keep mine: his cover stays; the pair is recorded as answered (curation.json fish.kept).
   const coverKeep = (F, x) => {

@@ -213,7 +213,19 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
       j
     );
   };
-  const appCover = (F, id) => X.cover(X.run({f, ph: P, gm}, {...cu, fish: F}).gen[id]).f;
+  // The app reads a photo's tags from its game record (the players' copy drops fish.tags: tools/curplay.py), which the next
+  // build writes from his tags (tools/fish_game.py): the records of the photos in `follow` take the draft's tags, as built.
+  let follow = [];
+  const built = F => ({
+    ...gm,
+    photos: Object.fromEntries(
+      Object.entries(gm.photos).map(([t, R]) => [
+        t,
+        R.map(r => (follow.includes(r.f) && (F.tags || {})[r.f] ? {...r, jt: F.tags[r.f]} : r))
+      ])
+    )
+  });
+  const appCover = (F, id) => X.cover(X.run({f, ph: P, gm: built(F)}, {...cu, fish: F}).gen[id]).f;
   const mine = (F, id, what) => {
     const c = admin(F, id);
     assert.strictEqual(c.by, 'mine', `${id} ${what}: the admin's`);
@@ -230,6 +242,7 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
   const S = L.lightSets([[], read('judging/fish-one-judgement.json').curation]),
     x = L.lightJOf(S, F0, G0[BOX].cover);
   if (!x) return;
+  follow = [x.photo];
   assert.deepStrictEqual(L.lightCovers(F0, x), [BOX], 'the proposal makes his Boxfishes ★ a juvenile');
   // Accept, cover kept (the question answered yes): one step.
   const Fa = L.lightAccept(F0, x, L.lightCovers(F0, x));
@@ -243,6 +256,7 @@ test('real data: the two juvenile ★ covers, confirmed, hold in the admin and t
   // Accepted without keeping it: ignored, until the one click.
   const Fn = L.lightAccept(F0, x);
   assert.ok(admin(Fn, BOX).juv, 'accepted without: ignored');
+  assert.notStrictEqual(pid(appCover(Fn, BOX)), pid(G0[BOX].cover), "accepted without: ignored by the app's next build too");
   mine(A.fishCoverJOk(Fn, BOX), BOX, 'accepted, then confirmed');
   // Publish (core.js merge3) keeps the confirmation beside the cover, onto a published file changed elsewhere since.
   const base = {...cu, fish: F0},
