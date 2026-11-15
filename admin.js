@@ -1915,7 +1915,7 @@ const FU_TAGS = [
     x: 'subject not obvious'
   }
 ];
-const FU_FLAGS = {c: 'camouflage', a: 'out of water'};
+const FU_FLAGS = {c: 'camouflage', a: 'out of water', w: 'watermark'};
 const fuTags = jt =>
   !jt ? '' : [...FU_TAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FU_FLAGS[c])].filter(Boolean).map(esc).join(' · ');
 // A unit's IMR tag: "IMR", its IMR name in the tooltip; a family IMR teaches with another (the Soapfishes) says so.
@@ -2048,9 +2048,11 @@ const fishState = f => {
 };
 // A photo's tags as the game reads them: Pierre's, his legacy count m with the pass's o or k (core.js fishCount), else the
 // pass's.
+// The pass's watermark flag reaches tags the auto-sort copied, never his own (autosort.js fishTagsMine; Q373), as the game
+// reads them (tools/fish_game.py marked).
 const fuJt = (F, f) => {
-  const mine = (F.tags || {})[f],
-    pass = (fuJ(f) || {}).jt || '';
+  const pass = (fuJ(f) || {}).jt || '',
+    mine = fishTagsMine(F, f, pass);
   if (!mine) return pass;
   const c = fishCount(mine, pass);
   return c && c !== mine[6] ? mine.slice(0, 6) + c + mine.slice(7) : mine;
@@ -2222,7 +2224,7 @@ function bindFishTiles(scope, o = {}) {
     bindFishRows(
       R,
       f,
-      () => ((DRAFT.fish || {}).tags || {})[f] || (fuJ(f) || {}).jt || '',
+      () => fishTagsMine(DRAFT.fish || {}, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '',
       (fn, w) => {
         const off = play && w && w.pos === 6 && (w.v === 'k' || w.v === 'x');
         DRAFT.fish = off ? fishReject(fishDrop(fn(DRAFT.fish || {}), fam, f), f) : fn(DRAFT.fish || {});
@@ -3311,7 +3313,7 @@ function renderFishReview(kind) {
   $v.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
     const f = tl.dataset.f,
       p = L.find(x => x.f === f),
-      base = () => (DRAFT.fish.tags || {})[f] || (fuJ(f) || {}).jt || '';
+      base = () => fishTagsMine(DRAFT.fish, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '';
     tl.querySelector('[data-frz]').onclick = () =>
       zoomSet(
         L.map(fuP),

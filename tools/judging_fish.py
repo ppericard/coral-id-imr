@@ -26,6 +26,10 @@ the fish curation exists (admin plan PR 4); nothing here writes curation.json.
                                                    judgement of a photo that is also a reference photo onto its copy in
                                                    tools/fish_judge.json (code and keep); --check lists the divergences
                                                    and exits 1 on any (tests/onejudgement.test.js)
+    python3 tools/judging_fish.py watermark [--check]  the watermark pass (judging/fish-watermark.json, Q373): the flag w
+                                                   written into each listed photo's single judgement (its candidate file,
+                                                   else tools/fish_judge.json); then run codes and one. --check lists
+                                                   the listed photos whose code lacks it (exit 1 on any)
     python3 tools/judging_fish.py --check [id ...] check judging/fish/<species id>.json, write nothing (exit 1 on error)
     python3 tools/judging_fish.py [id ...]         check, then import every species that passes into suggest.json "fish"
 
@@ -409,6 +413,65 @@ def cmd_one(only_check, root=None):
     sys.exit(1 if twice else 0)
 
 
+WATERMARK = os.path.join("judging", "fish-watermark.json")
+
+
+def watermark_fix(root=None, only_check=False):
+    """The watermark pass (Pierre, 2026-11-15, Q373; judging/FISH.md "Watermark"): every photo of
+    judging/fish-watermark.json "photos" ({photo: what the judge saw}) gets the flag w in its single judgement (one
+    judgement per photo): its candidate file judging/fish/<species>.json when it has one, else its code in
+    tools/fish_judge.json "photos". The files keep their layout: only those codes change, in place. Returns [(photo,
+    file, old code, new code)] of the codes that lacked it (with only_check, nothing is written). A listed photo with no
+    judgement anywhere is an error."""
+    import re
+    from fish_judge import cand_judgements, with_flag
+    import fish_game as G
+    root = root or ROOT
+    marks = (json.load(open(os.path.join(root, WATERMARK), encoding="utf-8")).get("photos") or {})
+    cj = cand_judgements(root)
+    jpath = os.path.join(root, "tools", "fish_judge.json")
+    jtext = open(jpath, encoding="utf-8").read()
+    J = json.loads(jtext)
+    ref = {f: c for m in (J.get("photos") or {}).values() for f, c in m.items()}
+    out, texts = [], {}
+    for f in sorted(marks):
+        j = cj.get(G.pid(f))
+        if j:
+            path, old, key = os.path.join(root, "judging", "fish", j["sid"] + ".json"), j["code"], j["f"]
+            pat = r'("%s":\s*\{\s*"code":\s*)"%s"' % (re.escape(key), re.escape(old))
+        elif f in ref:
+            path, old, key = jpath, ref[f], f
+            pat = r'("%s":\s*)"%s"' % (re.escape(key), re.escape(old))
+        else:
+            raise SystemExit(f"{WATERMARK}: {f} has no judgement (judge it first)")
+        new = with_flag(old, "w")
+        if new == old:
+            continue
+        out.append((f, os.path.relpath(path, root), old, new))
+        if only_check:
+            continue
+        text = texts.get(path) or (jtext if path == jpath else open(path, encoding="utf-8").read())
+        text, n = re.subn(pat, lambda m: m.group(1) + json.dumps(new), text, count=1)
+        if n != 1:
+            raise SystemExit(f"{os.path.relpath(path, root)}: {key} {old!r} not found")
+        texts[path] = text
+    for path, text in texts.items():
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    return out
+
+
+def cmd_watermark(only_check):
+    D = watermark_fix(only_check=only_check)
+    for f, path, a, b in D:
+        print(f"{'LACKS w' if only_check else 'flagged'}: {f} in {path}: {a} -> {b}")
+    if only_check:
+        print(f"{len(D)} listed photo(s) whose judgement lacks the watermark flag"
+              + (": python3 tools/judging_fish.py watermark" if D else "."))
+        sys.exit(1 if D else 0)
+    print(f"{len(D)} code(s) flagged w; now python3 tools/judging_fish.py codes, then one.")
+
+
 def cmd_todo():
     Sf = (load("suggest.json", {}) or {}).get("fish", {})
     T = [(sid, sum(1 for p in cands(sid) if p["f"] not in Sf), len(cands(sid))) for sid in CAND]
@@ -438,5 +501,7 @@ if __name__ == "__main__":
         cmd_rep(("jt", "e", "k", "ph", "u", "n"))
     elif rest[:1] == ["one"]:
         cmd_one("--check" in a)
+    elif rest[:1] == ["watermark"]:
+        cmd_watermark("--check" in a)
     else:
         cmd_import(ids(rest) if rest else [], "--check" in a, BY)
