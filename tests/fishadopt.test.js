@@ -17,7 +17,8 @@ const ROOT = path.join(__dirname, '..'),
   DATA = require('../data.json'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   FJSON = fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'),
-  FGEN = C.fishReplayGen(JSON.parse(FJSON)),
+  CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
+  FGEN =C.fishReplayGen(JSON.parse(FJSON)),
   FS = C.subjectOf('fish'),
   SV = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools', 'sync', 'Code.gs'), 'utf8'))[1]);
 const withFiles = () => ({
@@ -26,7 +27,9 @@ const withFiles = () => ({
       ? {getResponseCode: () => 200, getContentText: () => DJSON}
       : /\/main\/fish\.json$/.test(url)
         ? {getResponseCode: () => 200, getContentText: () => FJSON}
-        : null
+        : /\/main\/curation\.json$/.test(url) // the structure the fish replay applies (Code.gs subjCur_)
+          ? {getResponseCode: () => 200, getContentText: () => CJSON}
+          : null
 });
 function storage(init = {}) {
   const m = new Map(Object.entries(init));

@@ -4893,7 +4893,7 @@
   // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
   // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
   // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
-  const STRUCT_SHEET = 145;
+  const STRUCT_SHEET = 146;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).

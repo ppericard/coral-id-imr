@@ -951,7 +951,6 @@ let FISH = null,
   FISHF = null,
   FISHST = '',
   FISHON = false;
-const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
 const fishBuild = () => {
   // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
   const S = SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
@@ -964,6 +963,7 @@ const fishBuild = () => {
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
 // A reply from the script that replays under the structure, the units made before it without the structure the curation
 // holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
 function structSeen() {

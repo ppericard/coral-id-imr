@@ -231,11 +231,16 @@ function doGet_(e){
   if (row[6] !== hash_(name, pin)) { failed_(name); return json_({ok: false, error: 'pin'}); }
   if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code (Codex review #373)
   // The other subjects' replays (replays_), each asked by its own rules version (rv_fish).
-  const rvs = {};
-  CORE_.replayedSubjects().forEach(id => { if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]); });
+  // vNEXT: and their structure stamps (st_fish, the one applied; sn_fish, the units' when another: replays_ sx).
+  const rvs = {}, sts = {}, stn = {};
+  CORE_.replayedSubjects().forEach(id => {
+    if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]);
+    if (e.parameter['st_' + id] !== undefined) sts[id] = String(e.parameter['st_' + id]);
+    if (e.parameter['sn_' + id] !== undefined) stn[id] = String(e.parameter['sn_' + id]);
+  });
   const have = e.parameter.have !== undefined && e.parameter.have !== '' ? Number(e.parameter.have) : NaN;
   TIM_.op = 'load';  // v130: timed (timEnd_)
-  return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, have: have, light: !!e.parameter.light}));
+  return json_(load_(name, row, {pt: Number(e.parameter.pt), rv: e.parameter.rv !== undefined ? Number(e.parameter.rv) : undefined, rvs: rvs, sts: sts, stn: stn, have: have, light: !!e.parameter.light}));
 }
 // The load of a player's saved copy (row: their RAs row, the code checked), as GET ?name=&pin= answers it, and from v116
 // as a light save answers 'stale' (doPost_). q: pt, rv (undefined: no replay asked), rvs, and from v116 have (the
@@ -261,7 +266,7 @@ function load_(name, row, q){
     const lock = LockService.getScriptLock();
     if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
-  const rps = replays_(name, data, q.rvs || {}, q.pt); if (rps) out.replays = rps;
+  const rps = replays_(name, data, q.rvs || {}, q.pt, undefined, undefined, {sts: q.sts, stn: q.stn}); if (rps) out.replays = rps;
   if (q.have === d.rev) { delete out.data; out.same = 1; }  // v116: the device holds this very copy (sync.js sdOf)
   else if (q.light) out.data = CORE_.keysIn(data);  // v116: under the new key names only, as the app reads it (sync.js syncGet)
   return out;
@@ -334,7 +339,7 @@ function doPost_(e){
       if (!r) return json_({ok: false, error: 'stale', rev: rev, found: false});
       const row = sh.getRange(r, 1, 1, HEAD.length).getValues()[0];
       lock.releaseLock(); held = false;
-      const ld = load_(name, row, {pt: p.pt, rv: typeof p.rv === 'number' ? p.rv : undefined, rvs: p.rvs && typeof p.rvs === 'object' ? p.rvs : {}, light: true});
+      const ld = load_(name, row, {pt: p.pt, rv: typeof p.rv === 'number' ? p.rv : undefined, rvs: p.rvs && typeof p.rvs === 'object' ? p.rvs : {}, sts: p.sts, stn: p.stn, light: true});
       return json_(Object.assign(ld, {ok: false, error: 'stale', rev: ld.rev}));
     }
     let old = {}; try { old = JSON.parse(saved.json || '{}') || {}; } catch (e) {}
@@ -420,7 +425,7 @@ function doPost_(e){
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
   if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
-  const rps = replays_(name, p.data, p.rvs, p.pt); if (rps) out.replays = rps;  // the other subjects' (replays_)
+  const rps = replays_(name, p.data, p.rvs, p.pt, undefined, undefined, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;  // the other subjects' (replays_)
   return json_(out);
 }
 
@@ -663,9 +668,17 @@ const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), St
 // v127: no floor any more (Pierre, 2026-11-09, Q330: the log is the only reference, a bar may go down); until then the
 // fish replay was floored here against the account's saved bars at its first replay (kept as {P: record, F: reference},
 // which rplRec_ still reads).
-function replay_(key, since, appRv, pt, start, sid){
+// vNEXT: appSt, the structure stamp the app applied (replays_ sts; undefined: an app that says none). A subject with a
+// structure (core.js SUBJECTS structure) is replayed under the one in force (subjRpl_: its units and stamp st), also when
+// the rules version is applied but the stamp is another; the stamp joins the cache's identity (rplSince_) and the reply
+// (st, when not ''). Its units cannot be made (the curation or fish.json unreadable): no replay.
+function replay_(key, since, appRv, pt, start, sid, appSt){
   const main = !sid || sid === CORE_.replaySubject(), top = rplTop_(sid);  // its own rules versions (core.js rvOf)
-  if (typeof appRv !== 'number' || !isFinite(appRv) || appRv >= top) return null;
+  if (typeof appRv !== 'number' || !isFinite(appRv)) return null;
+  const SX = !main && CORE_.subjectOf(sid).structure ? subjRpl_(sid) : null;
+  if (!main && CORE_.subjectOf(sid).structure && !SX) return null;
+  const stNow = SX ? SX.st : '';
+  if (appRv >= top && (appSt === undefined || appSt === stNow)) return null;
   const who = lc_(key), mine = rplMine_(key, since, sid);
   const n = mine.length;
   const byTime = mine.map(r => [new Date(r[1]).getTime() || 0, String(r[7])]).sort((a, b) => a[0] - b[0]);
@@ -673,25 +686,26 @@ function replay_(key, since, appRv, pt, start, sid){
   const ids = byTime.filter((r, i) => i >= byTime.length - HOLD.IDS || r[0] >= from).map(r => r[1]);
   // The cache's identity: the reset time, and the fingerprint of the first-launch history the replay applies (a replay
   // made with another history is not reused; Codex review #428). Without a history: the reset time alone, as before.
-  const fp = CORE_.startFp(start), sinceKey = rplSince_(since, start);
+  const fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stNow), st = stNow ? {st: stNow} : {};
   const sh = sheet_(main ? RPL.TAB : rplTab_(sid), RPL.HEAD), at = find_(sh, key);
   if (at) {
     const row = sh.getRange(at, 1, 1, sh.getLastColumn()).getValues()[0], prev = rplRead_(row);
     // Never reused for a player whose key is a member every plain object inherits ("constructor", "__proto__": lc_ keeps
     // no other): core.js replayProgress before v117 read that member as their record and replayed none of their answers
     // (Codex review #812), so a record kept for them may be wrong; made again instead, the same for every other player.
-    if (prev && !(who in Object.prototype) && rplFresh_(row, top, n, sinceKey)) return {rv: top, n: n, rec: rplRec_(prev.o), ids: ids, fp: fp};
+    if (prev && !(who in Object.prototype) && rplFresh_(row, top, n, sinceKey)) return Object.assign({rv: top, n: n, rec: rplRec_(prev.o), ids: ids, fp: fp}, st);
   }
-  const made = rplMake_(who, mine, since, start, sid);
+  const made = rplMake_(who, mine, since, start, sid, SX ? SX.gen : null);
   if (!made) return null;
-  rplPut_(sh, at, key, top, n, fp ? sinceKey : since, made.rec);
-  return {rv: top, n: n, rec: made.rec, ids: ids, fp: fp};  // fp: the first-launch history it applied (the app checks it)
+  rplPut_(sh, at, key, top, n, fp || stNow ? sinceKey : since, made.rec);
+  return Object.assign({rv: top, n: n, rec: made.rec, ids: ids, fp: fp}, st);  // fp: the first-launch history it applied (the app checks it)
 }
 // The pieces of replay_, shared with the leaderboard (board_, boardWarm_; v118). A subject's last rules version (core.js
 // rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs).
 const rplTop_ = sid => CORE_.rvOf(!sid ? CORE_.replaySubject() : sid);
-// The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one.
-const rplSince_ = (since, start) => (fp => (fp ? since + '#' + fp : String(since)))(CORE_.startFp(start));
+// The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one, and
+// (vNEXT) the structure stamp it was made under after a ~ when it is not '' (so a row kept from before reads the same).
+const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
 // The player's rows of the subject replayed since their reset (the Answers tab as read once per request).
 function rplMine_(key, since, sid){
   const main = !sid || sid === CORE_.replaySubject(), who = lc_(key);
@@ -699,7 +713,7 @@ function rplMine_(key, since, sid){
 }
 // A row of a Replayed tab read: its rules version, reset time, record kept ({P, F} for one floored before v127); null when broken.
 function rplRead_(row){
-  try { return {rv: Number(row[1]), since: String(row[3]).split('#')[0], o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) { return null; }
+  try { return {rv: Number(row[1]), since: String(row[3]).split(/[#~]/)[0], o: JSON.parse(row.slice(5).map(String).join('') || '{}')}; } catch (e) { return null; }
 }
 // Reused while the rules, the row count and the reset are the same.
 const rplFresh_ = (row, top, n, sinceKey) => Number(row[1]) === top && Number(row[2]) === n && String(row[3]) === sinceKey;
@@ -707,9 +721,10 @@ const rplFresh_ = (row, top, n, sinceKey) => Number(row[1]) === top && Number(ro
 const rplRec_ = o => (o && o.P && o.F ? o.P : o);
 // The replay itself (core.js replayProgress) over the player's rows (mine). {rec}, null without the units (gen_,
 // subjGen_: fetched when not cached, so never under the script lock for the leaderboard).
-function rplMake_(who, mine, since, start, sid){
+// g: the units when the caller has them already (replay_, under the stamp it keys the replay by).
+function rplMake_(who, mine, since, start, sid, g){
   const main = !sid || sid === CORE_.replaySubject(), rows = mine.map(r => rowOf_(who, r));
-  const gen = main ? gen_() : subjGen_(sid);
+  const gen = g || (main ? gen_() : subjGen_(sid));
   if (!gen) return null;
   // v145: the corals' pooled stats from the snapshot (statsServed_), else stats_ as before; other subjects replay without.
   const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}})[who];
@@ -730,8 +745,21 @@ function rplPut_(sh, at, key, top, n, sinceCell, rec){
 // data (signed in), or the device's (alt: {reset: {subject: ISO time}, start: {subject: record}}, an anonymous send).
 // Under a script lock of its own (held: the caller holds it already, anon_). Returns {subject: {rv, n, rec, ids, fp}}
 // or null when none was replayed; a subject that fails is left out (the app keeps its own and asks again).
-function replays_(key, data, rvs, pt, alt, held){
-  const ask = CORE_.replayedSubjects().filter(id => rvs && typeof rvs === 'object' && typeof rvs[id] === 'number' && isFinite(rvs[id]) && rvs[id] < CORE_.rvOf(id));
+// vNEXT: sx {sts, stn}, the structure stamps the app says for a subject with a structure (sync.js stsAsk, core.js
+// STRUCT_SHEET): the one its progress was replayed with (sts), the one of the units it holds when another (stn: the
+// curation read again at once, subjStSeen_). A subject whose stamp here is not the one applied there is replayed too, at
+// its rules version (Q363 h A), and its replay says the stamp (st, when not ''). An app that sends no sts: as before.
+function replays_(key, data, rvs, pt, alt, held, sx){
+  const sts = sx && sx.sts && typeof sx.sts === 'object' ? sx.sts : {}, stn = sx && sx.stn && typeof sx.stn === 'object' ? sx.stn : {},
+    stOf = id => (typeof sts[id] === 'string' ? sts[id] : undefined);
+  const ask = CORE_.replayedSubjects().filter(id => {
+    if (!(rvs && typeof rvs === 'object' && typeof rvs[id] === 'number' && isFinite(rvs[id]))) return false;
+    if (rvs[id] < CORE_.rvOf(id)) return true;
+    if (stOf(id) === undefined || !CORE_.subjectOf(id).structure) return false;
+    try { subjStSeen_(id, stn[id]); } catch (err) {}
+    const st = subjSt_(id);
+    return st !== null && st !== stOf(id);
+  });
   if (!ask.length) return null;
   const lock = held ? null : LockService.getScriptLock(), out = {};
   if (lock && !lock.tryLock(10000)) return null;
@@ -741,7 +769,7 @@ function replays_(key, data, rvs, pt, alt, held){
         const o = alt ? (x => (x && typeof x === 'object' ? x[id] : undefined)) : null,
           since = alt ? resetAt_(o(alt.reset)) : resetOf_(data, id),
           st = alt ? o(alt.start) : startOf_(data, id),
-          rp = replay_(key, since, rvs[id], typeof pt === 'number' ? pt : NaN, st && typeof st === 'object' ? st : null, id);
+          rp = replay_(key, since, rvs[id], typeof pt === 'number' ? pt : NaN, st && typeof st === 'object' ? st : null, id, stOf(id));
         if (rp) out[id] = rp;
       } catch (err) {}
     });
@@ -758,20 +786,91 @@ function rplDrop_(name){ return rplTabs_().reduce((n, t) => n + dropRows_(t, nam
 // fishReplayGen over fish.json from GitHub main (the pool's first file, SUBJECTS pool), cached 6 hours as data.json is.
 // null when it cannot be read (no replay then; the app keeps its own).
 function subjGen_(sid){
-  const S = CORE_.subjectOf(sid), c = CacheService.getScriptCache(), k = 'sgen1:' + S.id, hit = c.get(k);
+  const S = CORE_.subjectOf(sid);
+  if (S.structure) return (x => (x ? x.gen : null))(subjRpl_(sid));
+  const c = CacheService.getScriptCache(), k = 'sgen1:' + S.id, hit = c.get(k);
   if (hit) return JSON.parse(hit);
   if (!(S.replayed && typeof S.replayed.gen === 'function')) return null;
-  const file = ((S.pool || {}).files || [])[0];
-  let d;
-  try {
-    const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/' + REPO + '/main/' + file, {muteHttpExceptions: true});
-    if (!r || r.getResponseCode() !== 200) return null;
-    d = JSON.parse(r.getContentText());
-  } catch (e) { return null; }
+  const d = mainJson_(((S.pool || {}).files || [])[0]);
+  if (!d) return null;
   const gen = S.replayed.gen(d);
   if (!gen || !Object.keys(gen).length) return null;
   try { c.put(k, JSON.stringify(gen), 21600); } catch (e) {}
   return gen;
+}
+// A JSON file of GitHub main, null when it cannot be read.
+function mainJson_(file){
+  try {
+    const r = UrlFetchApp.fetch('https://raw.githubusercontent.com/' + REPO + '/main/' + file, {muteHttpExceptions: true});
+    if (!r || r.getResponseCode() !== 200) return null;
+    return JSON.parse(r.getContentText());
+  } catch (e) { return null; }
+}
+// vNEXT: the structure in force of a subject whose content editor may change its circles and look-alike pairs (core.js
+// SUBJECTS structure; docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A,
+// Q366): its replay's units are made from its first pool file (fish.json) with curation.json's circles and pairs laid over
+// it (core.js contentApply, the app's own function), and {gen, st} carries its structure stamp (core.js structStamp: ''
+// while nothing changes the base). curation.json is read from main, the full file (the players' copy is written only at
+// deploy); its structure entries alone are kept (scur1: {fp, c}, fp their fingerprint, core.js structFp), and the units
+// under that fingerprint (sgen2:<subject>:<fp>), so fish.json is read again only when they change, or after 6 hours.
+// The curation is read again by the 15-minute trigger (subjStRefresh_) and at once when a device says a stamp the sheet
+// does not hold (replays_ stn, at most once a minute), so a Publish reaches the replays within 15 minutes. null when the
+// curation or the file cannot be read: no replay then (never the base's structure in place of the editor's), the app
+// keeps its own progress and asks again.
+const SCUR_ = {TTL: 21600, AGAIN: 60};
+function subjCur_(sid, force){
+  const S = CORE_.subjectOf(sid), c = CacheService.getScriptCache(), k = 'scur1:' + S.id, hit = force ? null : c.get(k);
+  if (hit) return JSON.parse(hit);
+  const cur = mainJson_('curation.json');
+  if (!cur || typeof cur !== 'object') return null;
+  const Cm = CORE_.contentOf(cur, S), own = {}, nodes = {};
+  Object.keys(Cm.nodes && typeof Cm.nodes === 'object' ? Cm.nodes : {}).forEach(id => {
+    const m = Cm.nodes[id];
+    if (m && typeof m === 'object' && CORE_.CIRCLE_SLOT in m) nodes[id] = {[CORE_.CIRCLE_SLOT]: m[CORE_.CIRCLE_SLOT]};
+  });
+  if (Object.keys(nodes).length) own.nodes = nodes;
+  if (Cm.pairs && typeof Cm.pairs === 'object' && Object.keys(Cm.pairs).length) own.pairs = Cm.pairs;
+  const x = {fp: CORE_.structFp(S, cur), c: own};
+  try { c.put(k, JSON.stringify(x), SCUR_.TTL); } catch (e) {}
+  return x;
+}
+// {gen, st}: the replay's units under the structure in force and its stamp (subjCur_), null when they cannot be made.
+function subjRpl_(sid, force){
+  const S = CORE_.subjectOf(sid), X = subjCur_(sid, force);
+  if (!X || !(S.replayed && typeof S.replayed.gen === 'function')) return null;
+  const c = CacheService.getScriptCache(), k = 'sgen2:' + S.id + ':' + X.fp, hit = c.get(k);
+  if (hit) return JSON.parse(hit);
+  const d = mainJson_(((S.pool || {}).files || [])[0]);
+  if (!d) return null;
+  const cur = S.admin && S.admin.cur ? {[S.admin.cur]: {content: X.c}} : {content: X.c},
+    gen = S.replayed.gen(CORE_.contentApply(S, d, cur));
+  if (!gen || !Object.keys(gen).length) return null;
+  const out = {gen: gen, st: CORE_.structStamp(S, d, cur)};
+  try { c.put(k, JSON.stringify(out), 21600); } catch (e) {}
+  return out;
+}
+// A subject's structure stamp now ('' for a subject with none), null when it cannot be read.
+const subjSt_ = sid => (CORE_.subjectOf(sid).structure ? (x => (x ? x.st : null))(subjRpl_(sid)) : '');
+// The same from the cache alone (the public leaderboard, board_: never a fetch), null when it is not there.
+function subjStKept_(sid){
+  const S = CORE_.subjectOf(sid), c = CacheService.getScriptCache();
+  if (!S.structure) return '';
+  try {
+    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), Y = X ? JSON.parse(c.get('sgen2:' + S.id + ':' + X.fp) || 'null') : null;
+    return Y && typeof Y.st === 'string' ? Y.st : null;
+  } catch (e) { return null; }
+}
+// The 15-minute trigger: every subject's curation read again (subjCur_), before the leaderboard's replays (boardWarm_).
+function subjStRefresh_(){
+  CORE_.replayedSubjects().filter(id => CORE_.subjectOf(id).structure).forEach(id => { try { subjRpl_(id, true); } catch (e) {} });
+}
+// A device's units under a stamp the sheet does not hold (stn): the curation read again at once, at most once a minute.
+function subjStSeen_(sid, stn){
+  if (typeof stn !== 'string' || !CORE_.subjectOf(sid).structure || stn === subjSt_(sid)) return;
+  const c = CacheService.getScriptCache(), k = 'sre1:' + CORE_.subjectOf(sid).id;
+  if (c.get(k)) return;
+  try { c.put(k, '1', SCUR_.AGAIN); } catch (e) {}
+  subjRpl_(sid, true);
 }
 
 // Anonymous id of an RA: the same for the same name, no name in it. Its salt is secret (Script Properties, made on first
@@ -1912,23 +2011,32 @@ function datas_(ra){
 //   rules, row count and reset: rplFresh_) and the kept row (row, at);
 // - adopted(name, data, P): the progress P (the saved copy's) as the player's app will hold it once it adopts that
 //   replay (core.js replayAdopted), P itself when none is needed or kept.
-function boardRpl_(S){
+// vNEXT: a subject with a structure (core.js SUBJECTS structure): a player whose saved data applied another structure
+// stamp than the one in force (its st key, sync.js stKey; '' when none) is behind too (Q363 h A, rule D8), and the stamp
+// joins the cache's identity (rplSince_). warm (boardWarm_): the stamp read as replay_ reads it (subjSt_, fetched when not
+// cached); else (the public board_) from the cache only (subjStKept_), never a fetch: not there, the rules version alone.
+function boardRpl_(S, warm){
   const sid = S.id, top = CORE_.rvsOf(sid).length ? rplTop_(sid) : 0, main = sid === CORE_.replaySubject(), arg = main ? undefined : sid,
     tab = main ? RPL.TAB : rplTab_(sid);
-  let mine = null, kept = null;
+  let mine = null, kept = null, stIn;
   const rvOf = d => { try { const v = Number(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'rv')) || '0')); return isFinite(v) ? v : 0; } catch (e) { return 0; } };
+  const stOf = d => { try { return String(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'st')) || '""') || ''); } catch (e) { return ''; } };
+  // the stamp in force: '' with no structure, null when it cannot be read (then the rules version alone decides)
+  const stHere = () => (stIn !== undefined ? stIn : (stIn = main || !S.structure ? '' : warm ? subjSt_(sid) : subjStKept_(sid)));
   const need = (name, d) => {
-    if (!top || !d || rvOf(d) >= top) return null;
+    if (!top || !d) return null;
+    const st = stHere();
+    if (rvOf(d) >= top && (st === null || stOf(d) === st)) return null;
     if (!mine) { mine = Object.create(null); (main ? answerRows_() : subjRows_(sid)).forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); }); }
     if (!kept) {
       kept = Object.create(null);
       const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab);
       if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).getValues().forEach((r, i) => { const k = String(r[0]).toLowerCase(); if (r[0] !== '' && !(k in kept)) kept[k] = {at: i + 2, r: r}; });
     }
-    const since = resetOf_(d, arg), start = startOf_(d, arg), sinceKey = rplSince_(since, start),
+    const since = resetOf_(d, arg), start = startOf_(d, arg), sinceKey = rplSince_(since, start, st || ''),
       rows = (mine[lc_(name)] || []).filter(r => (new Date(r[1]).getTime() || 0) > since), c = kept[String(name).toLowerCase()] || null,
       prev = c ? rplRead_(c.r) : null;
-    return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) ? sinceKey : since, rows: rows, n: rows.length,
+    return {since: since, start: start, sinceKey: sinceKey, cell: CORE_.startFp(start) || st ? sinceKey : since, rows: rows, n: rows.length,
       row: c ? c.r : null, rec: prev && rplFresh_(c.r, top, rows.length, sinceKey) ? rplRec_(prev.o) : null};
   };
   const adopted = (name, d, P) => {
@@ -1957,7 +2065,7 @@ function boardWarm_(){
   if (!ra || ra.getLastRow() < 2) return 0;
   const rows = boardRows_(ra), D = datas_(ra), pend = [];
   CORE_.SUBJECTS.filter(S => S.board).forEach(S => {
-    const X = boardRpl_(S);
+    const X = boardRpl_(S, true);  // vNEXT: the structure stamp in force, read as a player's sync reads it
     if (!X.top) return;
     rows.forEach(r => {
       if (Date.now() - t0 > BOARD_WARM_MS) return;
@@ -2779,6 +2887,8 @@ const ONCE_ = {
 // code installed), after the one-shot migrations, even when one fails (it is tried again at the next run); the Deploy log says how many were made, only when some were, and a failure.
 function boardWarmRun_(log){
   const t0 = Date.now();
+  // vNEXT: the curation read again first (subjStRefresh_), so a structure Publish reaches every player within 15 minutes.
+  try { subjStRefresh_(); } catch (e) { log('structure read failed: ' + e.message); }
   try { const n = boardWarm_(); tim_('board warm', t0, '', ''); if (n) log('leaderboard: ' + n + ' replay' + (n === 1 ? '' : 's') + ' made for players behind the rules (v' + VERSION + ')'); }
   catch (e) { log('leaderboard replays failed: ' + e.message); }
 }
@@ -2815,7 +2925,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null); if (rp) out.replay = rp; } catch (err) {}
     // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
     // {subject: the device's reefid-sync-<subject>-reset and -start}), already under this lock.
-    const rps = replays_('~anon ' + id, null, p.rvs, p.pt, {reset: p.sreset, start: p.sstart}, true); if (rps) out.replays = rps;
+    const rps = replays_('~anon ' + id, null, p.rvs, p.pt, {reset: p.sreset, start: p.sstart}, true, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;
     return out;
   } finally { lock.releaseLock(); }
 }
@@ -3270,6 +3380,10 @@ const CORE_ = (function () { const module = {exports: {}};
       .sort()
       .map(k => JSON.stringify(k) + '=' + valCanon(d[k]))
       .join('\u0000');
+    return hash53(t) + '.' + t.length.toString(36);
+  }
+  // A 53-bit hash of text t (cyrb53), in base 36.
+  function hash53(t) {
     let h1 = 0xdeadbeef,
       h2 = 0x41c6ce57;
     for (let i = 0; i < t.length; i++) {
@@ -3279,7 +3393,7 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
     h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36) + '.' + t.length.toString(36);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
   }
   // What changed from base to now, key by key: null for a key gone, the new text for a key replaced, and for a key whose
   // value is an object on both sides (a subject's progress: one record per unit), {p: the entries changed, d: the ones
@@ -3675,6 +3789,18 @@ const CORE_ = (function () { const module = {exports: {}};
         },
         species: {at: 'species', slots: [{k: 'note', n: 'Note', t: 'text', f: 'enote'}]}
       },
+      // The structure its content editor may change (design note v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A, Q366),
+      // laid over fish.json by core.js structApply before the text slots: circle, the rank whose records carry a circle
+      // (of: the circles; the node slot circle in curation.json, null for in no circle: off the game, as the build leaves a
+      // family no teaching node holds) and pairs, the rank whose look-alikes are declared (the pair key a|b, v 1 or null),
+      // in its rows slot (look: [[other id, words]]). apply: the subject's own records written from the circles and pairs
+      // in force (fishStructure: a family's circle onto its teaching nodes, genera and species, start kept to circle 1).
+      // A change to them replays every player's progress (Q363 h A: structStamp).
+      structure: {
+        circle: {rank: 'family', of: [1, 2, 3]},
+        pairs: {rank: 'family', slot: 'look'},
+        apply: (F, X) => fishStructure(F, X)
+      },
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
@@ -4044,6 +4170,78 @@ const CORE_ = (function () { const module = {exports: {}};
             .map(G => G.id);
         ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
       });
+    return out;
+  }
+  // The fish structure in force (SUBJECTS fish structure apply; design note v2 sections 1 and 2, step 3): fish.json F with
+  // the content editor's circles and pairs X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null,
+  // src}]}, each a change from F: core.js structApply) written as the build writes them:
+  // - a family's circle onto the family, its genera, its species (Q214: a species takes its family's circle) and each
+  //   teaching node holding its species (its families' smallest circle in force, as the build's family takes its species'
+  //   best); start kept to the teaching nodes in circle 1;
+  // - in no circle (null): the family and its genera left out, its species out ('family in no circle', with no circle,
+  //   family or genus), as the build leaves a family no teaching node holds, and every look-alike line to it dropped (a
+  //   pair with one side gone is not applied); a teaching node left with no family in a circle, none;
+  // - a pair withdrawn: its line dropped on both sides; one added: a line with no words on both sides (its words: the text
+  //   slot look/<other id>), its source the one the editor gave, else EDITOR_PAIR (lsrc: never the IMR presentation's).
+  // A new object sharing every record it does not change; F itself when X changes nothing.
+  const EDITOR_PAIR = 'Added by the content editor';
+  function fishStructure(F, X) {
+    const C = (X && X.circle) || new Map(),
+      P = (X && X.pairs) || [],
+      fams = F.families || [],
+      base = new Map(fams.map(f => [f.id, f.circle])),
+      now = id => (C.has(id) ? C.get(id) : base.get(id)),
+      moved = new Set([...C.keys()].filter(id => base.has(id) && C.get(id) !== base.get(id))),
+      gone = new Set([...base.keys()].filter(id => now(id) == null));
+    if (!moved.size && !P.length) return F;
+    const out = {...F},
+      rows = f => (Array.isArray(f.look) ? f.look : []),
+      has = (f, o) => rows(f).some(y => Array.isArray(y) && y[0] === o),
+      add = new Map(),
+      drop = new Map(),
+      put = (m, k, v) => m.set(k, [...(m.get(k) || []), v]);
+    P.forEach(x => {
+      if (gone.has(x.a) || gone.has(x.b)) return;
+      if (x.v === 1) put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src]);
+      else put(drop, x.a, x.b), put(drop, x.b, x.a);
+    });
+    out.families = fams
+      .filter(f => !gone.has(f.id))
+      .map(f => {
+        const A = (add.get(f.id) || []).filter(([o]) => !has(f, o)),
+          D = new Set([...(drop.get(f.id) || []), ...gone]),
+          cut = rows(f).some(y => Array.isArray(y) && D.has(y[0]));
+        if (!moved.has(f.id) && !A.length && !cut) return f;
+        const r = {...f};
+        if (moved.has(f.id)) r.circle = now(f.id);
+        if (cut || A.length) r.look = [...rows(f).filter(y => !(Array.isArray(y) && D.has(y[0]))), ...A.map(([o]) => [o, ''])];
+        if (A.length)
+          r.lsrc = {...fishLookSrc({...f, esrc: null}), ...Object.fromEntries(A.map(([o, s]) => [o, s ? s.t : EDITOR_PAIR]))};
+        return r;
+      });
+    if (!moved.size) return out;
+    out.genera = (F.genera || []).filter(g => !gone.has(g.family)).map(g => (moved.has(g.family) ? {...g, circle: now(g.family)} : g));
+    out.species = (F.species || []).map(s => {
+      if (!moved.has(s.family)) return s;
+      if (!gone.has(s.family)) return {...s, circle: now(s.family)};
+      const r = {...s};
+      ['circle', 'family', 'genus', 'cmi'].forEach(k => delete r[k]);
+      return {...r, out: 'family in no circle'};
+    });
+    const famOf = new Map((F.species || []).filter(s => s.family).map(s => [s.id, s.family]));
+    out.teach = (F.teach || []).map(t => {
+      const fs = [...new Set((t.species || []).map(id => famOf.get(id)).filter(Boolean))];
+      if (!fs.some(id => moved.has(id))) return t;
+      const cs = fs.map(now).filter(c => c != null),
+        r = {...t};
+      if (cs.length) r.circle = Math.min(...cs);
+      else delete r.circle;
+      return r;
+    });
+    if (Array.isArray(F.start)) {
+      const tc = new Map(out.teach.map(t => [t.id, t.circle]));
+      out.start = F.start.filter(id => tc.get(id) === 1);
+    }
     return out;
   }
   // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
@@ -4521,6 +4719,8 @@ const CORE_ = (function () { const module = {exports: {}};
       taken = new Set();
     const L = Object.entries(isObj(C && C.nodes) ? C.nodes : {})
       .flatMap(([id, m]) => Object.entries(isObj(m) ? m : {}).map(([slot, e]) => ({id, node: renamedId(S, id), slot, e})))
+      // the circle slot is structure (structEntries), never a text slot
+      .filter(x => !(x.slot === CIRCLE_SLOT && S && S.structure && S.structure.circle))
       // the new id's own entries first, so an old id's entry is the one shadowed
       .sort(
         (a, b) =>
@@ -4558,7 +4758,11 @@ const CORE_ = (function () { const module = {exports: {}};
   // It reads v and src only (players get the curation without was, t and by: tools/curplay.py). An edited record carries
   // esrc {slot: {t, u}}, the sources given, shown with the slot (Q359 e). The app before the units are made (app.js
   // fishBuild) and the admin, to show what is in force.
-  function contentApply(S, R, cur) {
+  // The structure first (structApply: the circles and pairs, so the words of a pair added land on its line), unless o says
+  // structure: false (the app before the sheet script that replays under it: rule D4, STRUCT_SHEET); the text slots are
+  // then read against it (a pair withdrawn: its words' slot is orphaned, kept and not applied).
+  function contentApply(S, R, cur, o) {
+    if (!(o && o.structure === false)) R = structApply(S, R, cur);
     const Cm = contentOf(cur, S);
     if (!isObj(Cm.nodes) || !Object.keys(Cm.nodes).length) return R; // nothing edited: no node index to build
     const L = contentEntries(S, R, Cm).filter(x => x.state !== 'orphan');
@@ -4585,6 +4789,128 @@ const CORE_ = (function () { const module = {exports: {}};
       if (s) r.esrc = {...(r.esrc || {}), [x.slot]: s};
     });
     return out;
+  }
+
+  // ---- The structure: circles and look-alike pairs (design note v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A, Q366) ----
+  // Stored in the same content map (contentOf): a node's circle slot {v: a circle of SUBJECTS structure circle of, or null
+  // for in no circle, was, src, t, by} and pairs {"a|b": {v: 1 or null, was, src, t, by}}, a and b two node ids in
+  // code-point order. Read under the ids as stored (an old id is not read through SUBJECTS renamed: the editor writes the
+  // ids in force), so tools/fish_inforce.py reads them as this does.
+  const CIRCLE_SLOT = 'circle';
+  // Every structure entry of content map C against built file R: {circles: [{id, e, base, state}], pairs: [{key, a, b,
+  // e, base, state}]}, state fresh, stale or absorbed (contentState) when it applies, else orphan with why: node (no node
+  // of that id at the rank: an editor moves or removes a node of the base, never brings one in), value (not a declared
+  // circle or null; a pair's not 1 or null), key (a pair key not two ids in code-point order). base: the record's circle
+  // (null: none), a pair's 1 when either side's rows hold the other, else null. In id or key order.
+  function structEntries(S, R, C) {
+    const D = (S && S.structure) || {},
+      at = rank => (S.content && S.content[rank] ? contentRecs(R, S.content[rank]) : new Map()),
+      st = (e, base, why) => (why ? {state: 'orphan', why} : {state: contentState(e, base)}),
+      out = {circles: [], pairs: []};
+    if (D.circle) {
+      const N = at(D.circle.rank);
+      Object.keys(isObj(C && C.nodes) ? C.nodes : {})
+        .sort()
+        .forEach(id => {
+          const m = C.nodes[id];
+          if (!isObj(m) || !(CIRCLE_SLOT in m)) return;
+          const e = m[CIRCLE_SLOT],
+            n = N.get(id),
+            base = n && n.rec.circle != null ? n.rec.circle : null,
+            why = !n ? 'node' : !isObj(e) || !(e.v === null || D.circle.of.includes(e.v)) ? 'value' : '';
+          out.circles.push({id, e, base, ...st(e, base, why)});
+        });
+    }
+    if (D.pairs) {
+      const N = at(D.pairs.rank),
+        f = D.pairs.slot,
+        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => Array.isArray(y) && y[0] === o);
+      Object.keys(isObj(C && C.pairs) ? C.pairs : {})
+        .sort()
+        .forEach(key => {
+          const e = C.pairs[key],
+            p = key.split('|'),
+            [a, b] = p,
+            x = N.get(a),
+            y = N.get(b),
+            base = x && y && (has(x.rec, b) || has(y.rec, a)) ? 1 : null,
+            why =
+              p.length !== 2 || !a || !b || !(a < b)
+                ? 'key'
+                : !x || !y
+                  ? 'node'
+                  : !isObj(e) || !(e.v === 1 || e.v === null)
+                    ? 'value'
+                    : '';
+          out.pairs.push({key, a, b, e, base, ...st(e, base, why)});
+        });
+    }
+    return out;
+  }
+  // Whether content map Cm holds any structure entry (a circle slot, a pair).
+  const structHas = Cm =>
+    Object.values(isObj(Cm && Cm.nodes) ? Cm.nodes : {}).some(m => isObj(m) && CIRCLE_SLOT in m) ||
+    (isObj(Cm && Cm.pairs) && Object.keys(Cm.pairs).length > 0);
+  // Built file R with the structure in force (Q359 c: the editor's value, a stale one included, until he answers it): the
+  // entries that apply and change the base, handed to the subject's own SUBJECTS structure apply ({circle: Map id → v,
+  // pairs: [{a, b, v, src}]}); R itself when none does or the subject declares no structure.
+  function structApply(S, R, cur) {
+    const D = S && S.structure;
+    if (!D || typeof D.apply !== 'function') return R;
+    const Cm = contentOf(cur, S);
+    if (!structHas(Cm)) return R;
+    const E = structEntries(S, R, Cm),
+      live = x => x.state !== 'orphan' && x.e.v !== x.base,
+      circle = new Map(E.circles.filter(live).map(x => [x.id, x.e.v])),
+      pairs = E.pairs.filter(live).map(x => {
+        const s = contentSrc(x.e.src);
+        return {a: x.a, b: x.b, v: x.e.v, ...(s ? {src: s} : {})};
+      });
+    return circle.size || pairs.length ? D.apply(R, {circle, pairs}) : R;
+  }
+  // The structure of built file R in a canonical text: every node of the circle rank with its circle (null: none), every
+  // pair of the pair rank (either side's rows; a|b in code-point order), sorted.
+  function structCanon(S, R) {
+    const D = (S && S.structure) || {},
+      c = [],
+      p = new Set();
+    if (D.circle)
+      contentRecs(R, S.content[D.circle.rank]).forEach((x, id) => c.push([id, x.rec.circle != null ? x.rec.circle : null]));
+    if (D.pairs)
+      contentRecs(R, S.content[D.pairs.rank]).forEach((x, id) =>
+        (Array.isArray(x.rec[D.pairs.slot]) ? x.rec[D.pairs.slot] : []).forEach(y => {
+          const o = Array.isArray(y) ? String(y[0]) : '';
+          if (o && o !== id) p.add(id < o ? id + '|' + o : o + '|' + id);
+        })
+      );
+    c.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+    return JSON.stringify({c, p: [...p].sort()});
+  }
+  // The structure stamp (Q366; the design note's section 6, [format]): '' while the structure in force is the base's (no
+  // structure edit, or none that changes anything: nothing to replay, so a device or a saved copy that never held one
+  // agrees), else a short hash of the canonical structure in force (structCanon). Computed the same way by the app (its
+  // players' copy of the curation), the admin and the sheet (curation.json on main); never stored in curation.json. When
+  // the stamp a player's progress was replayed with differs from the sheet's, the sheet replays their log (Q363 h A).
+  function structStamp(S, R, cur) {
+    const A = structApply(S, R, cur);
+    if (A === R) return '';
+    const a = structCanon(S, A);
+    return a === structCanon(S, R) ? '' : hash53(a);
+  }
+  // The structure entries as stored, hashed ('' for none): the sheet's cache key for its replay units (Code.gs subjSt_),
+  // so it reads fish.json again only when they change; never the stamp itself (a base rebuilt can change the stamp).
+  function structFp(S, cur) {
+    if (!(S && S.structure)) return '';
+    const Cm = contentOf(cur, S),
+      v = e => (isObj(e) ? (e.v === undefined ? '~' : e.v) : '~'),
+      c = Object.keys(isObj(Cm.nodes) ? Cm.nodes : {})
+        .sort()
+        .filter(id => isObj(Cm.nodes[id]) && CIRCLE_SLOT in Cm.nodes[id])
+        .map(id => [id, v(Cm.nodes[id][CIRCLE_SLOT])]),
+      p = Object.keys(isObj(Cm.pairs) ? Cm.pairs : {})
+        .sort()
+        .map(k => [k, v(Cm.pairs[k])]);
+    return c.length || p.length ? hash53(JSON.stringify({c, p})) : '';
   }
   // The content map as published (admin.js output, fishOut): node ids, slots and pair keys sorted, each entry's keys in the
   // format's order (v, was, src, t, by, then any other), empty maps left out; {} when nothing is left. The draft keeps its
@@ -4936,8 +5262,9 @@ const CORE_ = (function () { const module = {exports: {}};
       // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
       // together, so it has none, and every device of the account asks for the replay of both histories in time order
       // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
-      // kept pg 0.96 for good).
+      // kept pg 0.96 for good). Nor the structure stamp it was replayed with (sync.js stKey), for the same reason.
       delete out[subjKey(S.id, 'rv')];
+      delete out[subjKey(S.id, 'st')];
     });
     // The one-time notices told on either account (TOLD): told once, never shown again for the merge.
     const ta = J(A, TOLD.KEY),
@@ -7722,6 +8049,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 112;
+  // The sync script version that replays a subject's progress under the content editor's structure (Code.gs vNEXT:
+  // subjGen_ applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not
+  // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
+  // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
+  // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
+  const STRUCT_SHEET = 146;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -8894,6 +9227,7 @@ const CORE_ = (function () { const module = {exports: {}};
     SCORE_SHEET,
     LOG_SHEET,
     REPLAYS_SHEET,
+    STRUCT_SHEET,
     WINK_SHEET,
     logOk,
     PA_SHEET,
@@ -9094,6 +9428,15 @@ const CORE_ = (function () { const module = {exports: {}};
     contentSrc,
     contentEntries,
     contentApply,
+    CIRCLE_SLOT,
+    structEntries,
+    structApply,
+    structCanon,
+    structStamp,
+    structFp,
+    fishStructure,
+    EDITOR_PAIR,
+    hash53,
     contentOut,
     contentSet,
     contentDrop,
