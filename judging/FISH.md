@@ -256,15 +256,26 @@ choices per family in the app" has the details.
       art takes one of these only if a re-sort puts 10 such photos ahead of every band-kind one (`adultFirst`).
   - Method, as #961's:
     - each R2 file (`-m`, Pierre's crop applied) on contact sheets of 12 at 380 px, local contrast raised;
-    - the top 12% and bottom 25% of each photo at 700 px (at most 80 and 160 px deep), beside #961's faint controls;
-    - the other photos by every author tagged in any pass (108) seen again: those in tier 1 on 510 px sheets, the
-      rest as their bottom corners at 2x.
-  - **146 tagged**: photographers' names, signatures and logos, date stamps and a dive caption. Among them are 23
-    David Rolla photos (most of them faint, bottom left) and 1 photo with faint text that could not be read. The 380 px
-    sheets missed 6 faint marks: the bands found 5 and the recheck 1.
-  - Tagging moved the first photos of 12 units in `fish-photos.json` (#972 puts a watermarked photo after its unit's
-    adults without one). The set was then computed again: nothing new to look at. No family is left without a clean
-    photo. Each family's tile and art in today's order is a clean landscape photo.
+    - the top 12% and bottom 25% of each photo at 700 px (at most 80 and 160 px deep). #961's faint controls were
+      seen in the same bands once, at the start;
+    - the 108 untagged photos of the 897 by authors tagged in any pass, seen again: 9 whole at 510 px, the other 99
+      as their bottom 14% (left and right thirds) at 2x.
+    - The side edges and the middle of the frame were seen at 380 px only.
+  - **146 tagged** among the 897: photographers' names, signatures and logos, date stamps and a dive caption. Among
+    them are 23 David Rolla photos (most of them faint, bottom left) and 1 photo with faint text that could not be
+    read. The 380 px sheets missed 6 faint marks: the bands found 5 and the recheck 1.
+  - As #961 did for its authors, the 98 photos Home can show by the authors this pass tagged, looked at by an earlier
+    pass, were seen again: their full-width top 10% and bottom 16% at 2x, local contrast raised, and the corners at 3x
+    for the David Rolla account. **12 more tagged**:
+    - 11 by that account: faint "(c) David Rolla" signatures at bottom right, 4 of them too faint to read (tagged).
+      One of them had been the Sweepers' tile and Identify art in today's order;
+    - 1 plain "(c) Dan Schofield", which is Pierre's ★ cover of Scorpionfishes (the admin asks him "Watermark: keep as
+      cover?").
+  - **158 tagged** in all.
+  - Tagging changed the first photos of 16 units in `fish-photos.json`: 24 tagged photos were swapped for others
+    (#972 puts a watermarked photo after its unit's adults without one). It also changed the default card photo of 3
+    families: Moorish Idol, Sweepers and Sea Moths (Q379). The set was then computed again: nothing new to look at.
+    No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
 - **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
   pools, or new code that lets Home show other photos.
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
