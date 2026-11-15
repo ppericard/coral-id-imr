@@ -300,3 +300,66 @@ test('population measures: the primary over the seeds, the rating error', () => 
   assert.strictEqual(up.primary.clear, false, 'against the declared direction: no claim');
   assert.match(L.report(R), /one value per seed/);
 });
+
+// After a break (learnsim --breaks; 2026-11-15, the comeback's tolerance, Q367): the break measures read per break name,
+// a primary on one of them, and the report's table of every break both files took.
+test('break measures: the comeback and the questions after it, per break, a primary on them', () => {
+  const brk = (b, len, ok) => ({
+    brk: b,
+    cbLen: len,
+    cbOk: ok,
+    held: Math.max(10, len),
+    after: 20,
+    afterOk: 16,
+    holdAfter: 0,
+    opens: [3, 20]
+  });
+  const mk = shorter => ({
+    subject: 'coral',
+    seeds: 5,
+    seed0: 0,
+    questions: 300,
+    checkpoints: [300],
+    learnerKind: 'item',
+    runs: ['beginner', 'expert'].flatMap(p =>
+      [1, 2, 3, 4, 5].map(s => ({
+        profile: p,
+        seed: s,
+        rows: [{q: 300, knowSlate: 0.5, met: 20}],
+        breaks: [brk('1d', shorter ? s : s + 2, shorter ? s : s + 1), brk('1w', 40 + s, 30)]
+      }))
+    )
+  });
+  const B = mk(false),
+    A = mk(true);
+  assert.deepStrictEqual(L.parseAt('cbLen@1d'), ['cbLen', '1d']);
+  assert.deepStrictEqual(L.parseAt('afterRight@1mo'), ['afterRight', '1mo']);
+  assert.throws(() => L.parseAt('cbLen@300'), /break's name/);
+  assert.throws(() => L.parseAt('know@1d'), /break's name/);
+  const run = B.runs[0];
+  assert.strictEqual(L.MEASURES.cbLen.get(run, '1d'), 3);
+  close(L.MEASURES.cbRight.get(run, '1d'), 200 / 3);
+  assert.strictEqual(L.MEASURES.cbLong.get(run, '1w'), 1);
+  assert.strictEqual(L.MEASURES.cbLong.get(run, '1d'), 0);
+  assert.strictEqual(L.MEASURES.open15.get(run, '1d'), 1);
+  close(L.MEASURES.afterRight.get(run, '1d'), 80);
+  assert.strictEqual(L.MEASURES.cbLen.get(run, '3d'), null, 'a break the run did not take');
+  assert.strictEqual(L.MEASURES.cbRight.get({breaks: [brk('1d', 0, 0)]}, '1d'), null, 'no comeback: no right %');
+  // 2 questions shorter in each of the 10 pairs: exact p 2 / 2^10.
+  const R = L.compare(B, A, {primary: {at: L.parseAt('cbLen@1d'), dir: 'down'}});
+  assert.ok(R.primary.clear);
+  close(R.primary.p, 2 / 1024, 1e-12);
+  assert.deepStrictEqual(
+    R.breaks.map(x => x.brk),
+    ['1d', '1w']
+  );
+  const len = R.breaks[0].ms.find(x => x.m === 'cbLen').per[0];
+  close(len.d, -2);
+  assert.ok(len.lo <= len.d && len.hi >= len.d);
+  assert.strictEqual(R.breaks[1].ms.find(x => x.m === 'cbLen').per[0].d, 0);
+  const out = L.report(R);
+  assert.match(out, /\*\*After a break\*\*/);
+  assert.match(out, /\| Comeback questions after the break \| 5\.0 -> 3\.0, -2\.0 \[/);
+  // The first session's guardrails are read as before.
+  assert.strictEqual(R.guardrails.find(g => g.m === 'know').at[0].per[0].verdict, 'held');
+});

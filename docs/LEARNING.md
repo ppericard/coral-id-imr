@@ -1875,6 +1875,75 @@ during it / in the 20 questions after it, same seeds:
 - After a month, the 20 questions after the comeback: beginner 78% (gentle restart 72%), lecture RA 76% (74%), strong RA
   84% (82%), expert 96% (98%); after shorter breaks within a few points of each other.
 
+#### The comeback's tolerance (Q367, 2026-11-15): the check plan, declared before running
+
+Pierre, 2026-11-15 (Q367, "ok pour A", from the comeback study's question (d),
+[2026-11-14-comeback-study.md](reviews/2026-11-14-comeback-study.md)): keep the comeback as it is (its length, how it
+picks genera, the forgetting estimate) and give its sum the opening hold's tolerance, `INTRO.SLACK` (0.1 an answer), so
+that a comeback can no longer hold a whole session. The study's case: P5, back after 1.03 days, answered 27 of 40
+comeback questions right at a mean expectation of 0.75 (0.075 an answer below it); the sum grew by about 3 and no genus
+opened in the whole visit. Points (b), (c) and (f) of the study stay as they are, to be measured again at about 20
+players back after 2 days or more (ROADMAP).
+
+**The change**: `model.js` `comebackStep` passes `INTRO.SLACK` on top of the rust the question repairs: rust ←
+max(0, rust + p − right − l − 0.1). Nothing else moves: the rust at the start (FSRS), the genera asked, the photos, the
+floor, the opening hold (its sum and the sheet's `hold_` keep their own tolerance, as before). The comeback's state lives
+on the device only and the sheet replays each answer from its logged `e` and `r`, so no rules version (`RVS`) and no
+sheet change.
+
+**Level 1** (rule L11): one situation, the questions after a break, and an existing constant reused. The integrator may
+raise it.
+
+**Primary** (one, declared before running): the comeback's length after a 1-day break, `cbLen@1d`, **down**; the
+corals, the app world, the four profiles × 5 seeds (20 pairs), 300 questions first, pooled by `tools/learncmp.js`'s
+stratified sign-flip (exact at 20 pairs). The simulated median after a day is 3 questions, so many pairs will tie.
+**Two looks**: seeds 1-5, then, only if the first is not clear, seeds 1-10 (each look's primary at 0.025, its bounds at
+95%). Still unclear after the second look: reported as unclear, with no switch to another measure.
+
+**Secondary** (exploratory, uncorrected): the same measures on the fish, its five profiles × 5 seeds; and the target
+"no session stays all comeback": comebacks of 40 questions or more (`cbLong`, the study's whole visit), or reaching the
+tool's cap of 200, after the 8 h and 1-day breaks, expected 0 after the change. After a week or a month a long
+comeback is real rust, so `cbLong` there is a cost (below), not evidence of the fix.
+
+**Commands** (the same seeds for both arms, both from this branch: the base is the commit of this plan, whose code is
+`main` at b5cb6d51; `main` is not merged in between):
+
+```
+node tests/slot.js -- node tools/learnsim.js --breaks 30m,8h,1d,3d,1w,1mo --after 20 --seeds 5 --out cb-before.json
+node tests/slot.js -- node tools/learnsim.js --subject fish --breaks 30m,8h,1d,3d,1w,1mo --after 20 --seeds 5 --out cbf-before.json
+(the change, then the same two with --out cb-after.json, cbf-after.json)
+node tools/learncmp.js cb-before.json cb-after.json --primary cbLen@1d:down --looks 2
+node tools/learncmp.js cbf-before.json cbf-after.json --looks 2
+```
+
+`tools/learncmp.js` reads the breaks since this change (measures of kind `break`: `cbLen`, `cbLong`, `cbRight`,
+`afterRight`, `held`, `holdAfter`, `open15`, each at a break's name).
+
+**Guardrails.** LEARNING.md's table, at the checkpoints of the first session (300 questions): the first session runs
+before any break, so every pair must be identical (difference 0); a difference there means the pairing broke, not a
+result. **The cost expected and declared**: the tolerance acts on every comeback answer, so comebacks get shorter after
+every break, the long ones too (3 days, a week, a month), against Q367's "keep its length". At the calibration the sum
+drifts by −l an answer today and by −(l + 0.1) after, with l about 0.02-0.05 after a day and 0.1-0.2 after a week or a
+month. Read per break and profile on the side of harm: the right % in the 20 questions after the comeback (lower),
+the answers with the opening hold on after it (higher), the genera opened in the first 15 answers after it (higher),
+and the comeback's length at 3 days, a week and a month (lower). LEARNING.md sets no margin for these: whatever they
+show, they go to Pierre with options, never shipped silently.
+
+**The rated world** has no breaks and no comeback (above, "The two worlds": "Not in it"): it is blind to this change.
+Run short (the corals, 5 seeds × 1,000 answers, both arms), its outputs are compared for identity, not read as "held".
+
+**The real log** (rule L12): replaying each real comeback's `|c` answers (their `e`, `r` and right or wrong, in order)
+under both rules needs the sheet's Answers tab, which this check does not read (the builder's limits). It is not done
+here; the integrator runs it or it waits. What is given instead is arithmetic on the study's published figures,
+labelled so.
+
+**Unit tests** (`tests/comeback.test.js`): the study's case rebuilt from its published figures (29 genera answered
+right, a 1.03-day break, the starting rust from `rustNow`, 40 comeback questions with 27 right spread evenly at a mean
+expectation of 0.75): under the old rule the comeback runs all 40, under the new one it ends within them; if it does not
+with an honest starting rust, that is a finding for Pierre, not a fixture to tune. A player 0.1 or more an answer below
+expectation still stays in the comeback: the tolerance does not guarantee an end. And the comeback reads `INTRO.SLACK`
+itself (a stub at 0 gives the old rule).
+
 ### Which genus comes next: the progressive path (2026-11-02)
 
 Pierre: rather than spamming a beginner with 40 genera, focus on the easiest ones, opening new ones as they go,
