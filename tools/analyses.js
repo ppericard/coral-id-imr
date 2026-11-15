@@ -33,11 +33,14 @@ const MAX = 2400000; // under the sheet's 2.5 MB cap (Code.gs AN_MAX)
 const SHEET_V = 35; // analysesGet / analysesPut
 
 // The photos' features from the public files of this checkout, for a subject whose analyses read them (core.js SUBJECTS
-// analyses photos: the corals'); none for another (the fish: What makes a photo hard is not among its pages).
-const metaOf = (subject = C.replaySubject()) =>
-  (C.subjectOf(subject).analyses || {}).photos
-    ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))}
-    : {ph: {}};
+// analyses photos): true, the corals' view, quality, sharpness and source (analysis.js photoMeta); 'judged', the fish
+// photos' judged ease, phase and framing from fish-game.json (photoMetaFish, kept apart in fph: the other analyses read
+// ph as the corals' views); none for another subject.
+const metaOf = (subject = C.replaySubject()) => {
+  const k = (C.subjectOf(subject).analyses || {}).photos;
+  if (k === 'judged') return {ph: {}, fph: A.photoMetaFish(rd('fish-game.json'))};
+  return k ? {ph: A.photoMeta(rd('data.json'), rd('curation.json'), rd('quality.json'), rd('metrics.json'))} : {ph: {}};
+};
 // The subjects with an Analyses report (core.js SUBJECTS analyses), the replayed one (the corals) first: one report per
 // subject (Pierre, 2026-11-08: each subject's analyses refitted every 1000 of its answers, "fish when the fish analyses
 // exist").

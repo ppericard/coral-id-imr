@@ -805,6 +805,7 @@
         FG = fishGen(fj, fp.photos).gen,
         E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
+      FANA_META = {ph: {}, fph: ANALYSIS.photoMetaFish(fp)};
       [
         ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
         ['Ana Demo', 0.8, 30, 4, NOW - 3 * DAY],
@@ -1309,7 +1310,10 @@
   }
   // The demo's Analyses report, as the GitHub Action would store it (tools/analyses.js): computed once, in a Web Worker,
   // on the demo's answers (no bootstrap, so it is quick), from the moment the demo is built.
-  let ANA_META = null;
+  let ANA_META = null,
+    // the fish report's photo features (tools/analyses.js metaOf: SUBJECTS analyses photos 'judged'): the judged ease,
+    // phase and framing of the photos its made-up answers show (fish-photos.json's, the game's own records)
+    FANA_META = {ph: {}};
   const ANA = {};
   // subject: the one asked (v113, ANALYSIS.AN_SUBJ_SHEET: one report per subject); an older script knows the corals' only
   // and answers with it whatever the subject asked (?demo&v=112).
@@ -1327,9 +1331,9 @@
           done(e.data && e.data.res ? JSON.stringify({...e.data.res, ...(V >= 105 ? {subject: sj} : {})}) : null);
         };
         // one subject's answers, as the Action reads them (tools/analyses.js: core.js subjRows): the corals' with their
-        // photo features; the fish report's made-up answers (S.fana), no photo features (core.js SUBJECTS analyses)
+        // photo features; the fish report's made-up answers (S.fana), with its judged features (FANA_META)
         const rows = own ? subjRows(answers().rows) : S.fana.map(r => [aid(r[0]), ...r.slice(1)]);
-        w.postMessage({id: 1, rows, meta: own ? ANA_META : {ph: {}}, B: 0, seed: 1});
+        w.postMessage({id: 1, rows, meta: own ? ANA_META : FANA_META, B: 0, seed: 1});
       });
     return ANA[sj].then(text => {
       // v105 (Code.gs analyses_): each subject's answers counted apart (counts) and answers the corals'; before it,
