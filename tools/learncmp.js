@@ -28,6 +28,7 @@
 const fs = require('fs');
 const {signFlip, tQuantile, tCdf} = require('./abilityeval.js');
 const {holm} = require('./fieldeval.js');
+const C = require('../core.js');
 
 const num = x => typeof x === 'number' && isFinite(x),
   mean = v => (v.length ? v.reduce((a, x) => a + x, 0) / v.length : NaN),
@@ -76,6 +77,27 @@ const genShare = (run, cp) => {
     E = (run.expo || []).slice(0, cp);
   return Object.values(K).includes('family') && E.length ? E.filter(e => K[e[0]] === 'genus').length / E.length : null;
 };
+// Juveniles and colour phases in stages (2026-11-15; core.js phaseStage, SUBJECTS calib phase N): learnsim preOW's third
+// and fourth fields, 1 if a photo shown had a judged phase and the answers its unit had before the question. phEarly:
+// the share of questions with a phase photo among those asked in a unit's first N answers (the stage that holds them
+// back); phLate: the same among those asked once the unit had 2N answers or more (the full weight); phAns: the questions
+// that showed one, 1..cp. None for a file written before these fields or with no phase photo anywhere in the run.
+const PHN = Math.max(0, ...C.SUBJECTS.map(s => C.calibOf(s).phase || 0)) || 10;
+const phRows = (run, cp) => {
+  const P = (run.preOW || []).slice(0, cp);
+  return P.length && P.every(x => x.length >= 4) ? P : null;
+};
+const phShare = (run, cp, inWin) => {
+  const P = phRows(run, cp),
+    W = P ? P.filter(x => inWin(x[3])) : [];
+  return W.length ? W.filter(x => x[2]).length / W.length : null;
+};
+const phEarly = (run, cp) => phShare(run, cp, m => m < PHN),
+  phLate = (run, cp) => phShare(run, cp, m => m >= 2 * PHN),
+  phAns = (run, cp) => {
+    const P = phRows(run, cp);
+    return P ? P.filter(x => x[2]).length : null;
+  };
 const hardShare = (run, cp) => {
   const P = (run.preOW || []).slice(0, cp);
   if (!P.length || !P.some(x => x[1] > 0)) return null;
@@ -113,6 +135,10 @@ const MEASURES = {
   hardAns: {label: 'Answers on photos under ease 4', kind: 'window', dg: 1, get: (r, cp) => hardAnswers(r, cp)},
   perPhoto: {label: 'Answers per photo shown', kind: 'window', dg: 3, get: (r, cp) => perPhoto(r, cp)},
   genShare: {label: 'Share of answers on the scientific genera (fish)', kind: 'window', dg: 3, get: (r, cp) => genShare(r, cp)},
+  // Juveniles and colour phases in stages (phEarly, phLate, phAns above).
+  phEarly: {label: `Share of phase photos in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEarly},
+  phLate: {label: `Share of phase photos once a unit has ${2 * PHN} answers`, kind: 'window', dg: 3, get: phLate},
+  phAns: {label: 'Answers on phase photos', kind: 'window', dg: 1, get: phAns},
   // The sheet's photo ratings in the rated world's population (--app sheet, tools/ratedworld.js runPop): one value per
   // seed (the population shares them), at the checkpoints of the players' answers; harm: +1 when higher is worse.
   rateErr: {label: 'Photo rating error against the truth (centred RMS, photos answered)', kind: 'pop', dg: 4, harm: 1, get: (p, cp) => popAt(p, cp, 'err')},
@@ -399,7 +425,7 @@ function list() {
   return L.join('\n');
 }
 
-module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf, levels, firstOW, hardAnswers, perPhoto, genShare};
+module.exports = {MEASURES, GUARDRAILS, marginOf, paired, verdict, stratSignFlip, parseAt, compare, report, hardShare, overOf, levels, firstOW, hardAnswers, perPhoto, genShare, PHN, phEarly, phLate, phAns};
 
 if (require.main === module) {
   const args = process.argv.slice(2),

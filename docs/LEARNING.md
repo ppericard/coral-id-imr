@@ -3591,6 +3591,100 @@ every answer came from players under Open Water: either way the pool is far larg
 photos get rated where players meet them, past Open Water. A separate exploration share before Open Water (1%) would
 add at most 1% of those answers, a tenth of what the cap already lets through, so none was added.
 
+### Juveniles and colour phases in stages (2026-11-15; ROADMAP "A progressive path for juveniles, colour phases and sexual dimorphism")
+
+Pierre, 2026-11-07: "we may have removed things (the very-easy-first wall), but we must put back a progressive path that
+presents juveniles and sexual dimorphism". His rules: juvenile and phase photos never at the very start of a unit; they
+come later, in stages, with the card that explains juveniles, colour phases and sexual dimorphism, at the right moment;
+built through the draw calibration (`SUBJECTS` `calib`); never a wall (2026-11-06, #660). Until now a juvenile was in
+the pool from the start, only its judged ease capped (FISH_PATH.md "Juveniles and colour phases"), and a sex or colour
+phase was not held back at all.
+
+**What it overrides.** Two decisions of 2026-11-04 stand beside the row of 2026-11-07, which is the later one and is
+built at face value: "the phase flag caps nothing" (a sex or colour phase is a species-level difficulty), and the class-A
+and show-early juveniles (Spadefish, Sweetlips, Boxfish; *Dascyllus*, *Pomacanthus*, *Macolor*, *Coris gaimard*,
+*Novaculichthys*, *Arothron stellatus*), whose juveniles "help learn the family early" and keep their judged ease
+uncapped. Both are now held back in a unit's first answers like every phase photo. Exempting the class-A and show-early
+juveniles is one option left to Pierre (the PR's "Choices I made").
+
+**A phase photo** (`core.js` `phaseOf`): its record's judged phase word `ph` (juvenile, male, female, intermediate:
+`fish-game.json`, as `autosort.js` `fishPhase` reads it), else a juvenile when its tags carry the juvenile flag `j`
+(judging/FISH.md "Tags"). The tags' phase flag `p`, which marks every photo of an entry whose sexes differ, is not one.
+In play on 2026-11-15: 4,748 of the 24,411 fish game photos (3,059 juveniles), from 64% of the Anthias' and 58% of the
+Parrotfishes' photos to none of the Soldierfishes'; every circle-1 family keeps at least 31 observations with no phase.
+No coral photo has one.
+
+**Where the draw chooses a unit's photos**: `model.js` `photoSet`, each observation's score from its photos' weights
+`w` (the Gaussian targeting around the aim, the never-seen and reference bonuses, the photo memory), then the variety
+lift, the floor and the cap under ease 4 before Open Water (`RARE`), then a weighted pick of the observation and of its
+photo. **The stage** (`core.js` `phaseStage`; `SUBJECTS` `calib` `phase`, N): a phase photo's weight is multiplied by
+0 during the unit's first N answers (its `ok` + `ko` before the question), then by (m − N + 1) / N after m answers, in
+full from answer 2N − 1 on. The fish take N = 10; `CALIB.phase` is 0, nothing held back, so the corals' draw is
+unchanged and a subject that tags phases one day sets its own N.
+
+- **Weights only, never the prior.** `photoDiff` feeds the answer's scoring (`d0`), the replay of the log, `genusDiff`
+  (the opening order) and `easyRank` (the covers): a phase offset there would move progress and need a rules version
+  (`RVS`). The stage multiplies the photo's draw weight in `w` (so an observation whose every photo has a phase scores 0
+  during the first stage, and a mixed observation shows its photo with no phase), and the variety lift and the floor
+  raise such an observation by the stage's factor only (`phMul`), so neither brings a held-back photo back. The cap
+  under ease 4 comes after it, so holding back easy phase photos (the Anthias') never lets the hard ones past its 10%.
+- **Never a wall.** Keyed on the unit's own answers, which only go up: a player who struggles on a unit reaches its
+  phase photos at the same answer as one who does not (the bar, the ability or Open Water could hold them back for
+  good). A unit with fewer than `PICKD.VARIETY` (3) observations showing a photo with no phase, after the draw's own
+  filters (a Find the X's tiles among them), holds nothing back: it would show the same one or two photos again and
+  again. No `Math.random` call added: the seeds pair the arms.
+- **Why N = 10.** A family's first 10 answers are about its time under Open Water (the fish smoke sets Open Water at 12
+  answers, 10 right: "The fish draw in big pools"), the stage in which the beginner needs the easy, reference-like
+  photos (`RARE`, Q271); the ramp over the next 10 brings them in one step an answer, in full from the unit's 20th. Not
+  calibrated (a sweep would be a level 3 check): the integrator's call, easy to correct (one number in `SUBJECTS`).
+- **Every unit**, families and scientific genera alike (the row's words: "the very start of a unit"); `RARE` is
+  families only (Q271), but a genus's first 10 answers cost little here, its family's phase photos having come long
+  before.
+
+**The card.** No in-quiz card explained juveniles or phases: the family sheet has its "Juveniles and phases" section
+(`learn.js`: the IMR presentation's phase lines, the juvenile note with its sources, juvenile photos), and the
+feedback's "More" lists the phase lines. Built (`quiz.js` `phaseArm`, `phaseShow`; `core.js` `phaseKind`,
+`phaseCardOf`, `phasePair`): the first question that shows a juvenile, and the first that shows a sex or colour phase,
+bring a card at the break at Next, once per kind and subject (on the device and in the account's synced `TOLD`). It
+shows the photo just answered beside one of the same species in another phase (a juvenile beside an adult; a male beside
+a female; FISH_PATH.md "Introduced with an explanation", Pierre 2026-11-04), each labelled, the photo's taxon line, and
+the unit's IMR phase lines when it has some; its title is Pierre's own wording ("Careful: this was a juvenile, it can
+look very different from the adult"; "Careful: this species' males and females can look very different"). Since the draw
+holds phase photos back for a unit's first 10 answers, the card comes at that stage, not at the start. It takes the
+break before the prompts and the tips, never over another card or a toast, nor when the next question brings a unit's
+card (it then waits for the next such photo). Two cards in all per subject, not one per unit or species: per-species
+cards are a ROADMAP row.
+
+**Check plan** (rule L11; declared in this commit, before any run). **Level 2**: it changes the fish draw on every unit
+during its first 20 answers.
+
+- **Arms**: before = this branch with `--calib '{"phase":0}'` (nothing held back: `tests/phasepath.test.js` shows the
+  draws are then those of a pool with no phase judged, and `phaseStage` is 1, so `photoSet` runs main's path); after =
+  this branch as it is. The same seeds in both.
+- **App world**: `node tests/slot.js -- node tools/learnsim.js --subject fish --seeds 5 --questions 300 --workers 2`
+  (the fish profiles of `tools/learnprof.js`, seeds 1-5).
+- **Rated world**: `node tests/slot.js -- node tools/learnsim.js --world rated --subject fish --seeds 10 --questions
+  3000`, normal photos and `--dist tail` (the app told the truth, the count learner, seeds 1-10).
+- **Primary**: `phEarly@300:down`, the app world: the share of questions showing a phase photo among those asked in a
+  unit's first 10 answers, questions 1-300, pooled over the profiles (stratified sign-flip). Expected to fall to 0 (by
+  construction: it checks the build in the real app, not a benefit).
+- **Looks**: 2 (the rated world from 10 to 20 seeds if a guardrail is unclear): the bounds at 95%, the primary at 0.025.
+- **Guardrails**: every one of the table above, at its checkpoints, margins unchanged (`know`, `over`, `score`,
+  `firstOW`, `unitsOW`, `plateau`, `hard`, `met`).
+- **No wall** (declared measures, not guardrails): `phLate` (the share of phase photos once a unit has 20 answers or
+  more) at 300 questions and 3,000 answers, expected unchanged within ±0.03; `phAns` (answers on phase photos) expected
+  to fall, and every run with phase photos before must show some after (at 300 in the app world, 3,000 in the rated).
+- **Costs expected** (exploratory, reported, no bound): `perPhoto` (repeats) up a little in the first stage, mostly on
+  the Anthias and the Parrotfishes (58-64% of their photos held back). `hard` may move either way: the juveniles, mostly
+  capped at ease 2, held back lower the share under ease 4 before Open Water; the easy phase photos held back leave the
+  cap to hold the hard ones at 10%; its margin (+0.05) stands.
+- **What the worlds cannot say**: neither learner knows phases (a juvenile is, to them, as recognisable as an adult at
+  its true difficulty), so the runs can show that the path costs nothing, not that it helps.
+- **The real log** (rule L12): a replay cannot judge a draw change (another draw asks other questions). What it can
+  measure, read-only and per player: how many of each player's fish answers were on a phase photo in that unit's first
+  10 answers (the answers this change moves later). The subagent that builds it has no access to the sheet (outside
+  services excluded from its task): the integrator, who holds the data, runs it or Pierre waives it.
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a

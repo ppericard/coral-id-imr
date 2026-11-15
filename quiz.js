@@ -964,7 +964,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // In the Duel tab, the relief card after the hold has just set in comes first (reliefArm); the others wait. In the
   // custom quiz, its once-ever reminder of the units waiting in the Quiz likewise (leftNote counts, leftArm).
   leftNote(cur);
-  if (!reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
+  // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
+  const phx = phaseArm(nb, cur, seenPh, target, exq && s.mx);
+  if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
   }
@@ -1292,6 +1294,72 @@ function allMetShow(r, brk) {
       if (how === 'route') return; // left unseen: it comes back
       store.set(subjDev(SUBJ.id, ALLMET.KEY + r.k), Date.now());
       toldAdd(allMetTok(r.k));
+      if (brk) route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+  return d;
+}
+// Juveniles and colour phases (Pierre, 2026-11-04: "when a juvenile, a colour phase or a strongly dimorphic species first
+// comes in, a card explains it, with photos side by side"; 2026-11-07: they come in stages, with the card, at the right
+// moment; docs/LEARNING.md "Juveniles and colour phases in stages"). The draw holds them back at the start of each unit
+// (model.js photoSet, core.js phaseStage); the first question that shows one (core.js phaseKind: a juvenile, or a sex or
+// colour phase) brings its card at the break at Next: the photo beside one of the same species in another phase (core.js
+// phasePair: a juvenile beside an adult, a male beside a female), the photo's taxon, and the unit's own phase lines (the
+// IMR presentation's, fishGen phase). Once per kind and subject: on this device (PHASEC.KEY) and, signed in, on the
+// account's other devices (core.js TOLD 'phase:<subject>-<kind>'), marked only when shown. It takes the break before the
+// prompts and the tips (it says what the photo just answered was), never with a card, the tour or a toast up, over a
+// mastery toast due, or when the next question brings a card: it then waits for the next such photo. Its button takes no
+// tap for its first moments, as a tip's. The photo quiz and the custom quiz (photoQuiz); a subject with no phase judged
+// (the corals) never shows it.
+const PHASEC = {KEY: 'phase-', WORD: {juvenile: 'Juvenile', male: 'Male', female: 'Female', intermediate: 'Intermediate'}};
+const phaseTok = k => `phase:${SUBJ.id}-${k}`;
+const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || toldHas(phaseTok(k));
+function phaseArm(nb, cur, ph, target, hold) {
+  if (!photoQuiz(cur) || hold || !phaseCardOf(ph, phaseSeen)) return false;
+  return breakArm(nb, () => {
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const c = phaseCardOf(ph, phaseSeen),
+      nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
+    if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    phaseShow(c, target, true);
+    return true;
+  });
+}
+// c: {p, k} (core.js phaseCardOf); n: the unit asked; brk: shown at the break, so its close goes on to the next question.
+function phaseShow({p, k}, n, brk) {
+  const g = GX(n),
+    q = phasePair(
+      p,
+      ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
+    ),
+    tx = photoTaxon([p], n),
+    lines = g.phase || [],
+    w = phaseOf(p),
+    word = x => PHASEC.WORD[phaseOf(x)] || 'Adult',
+    fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
+    title =
+      k === 'juvenile'
+        ? 'Careful: this was a juvenile, it can look very different from the adult'
+        : w === 'intermediate'
+          ? 'Careful: this species’ colour phases can look very different'
+          : 'Careful: this species’ males and females can look very different';
+  const d = cardShow({
+    kind: 'tip',
+    cls: 'tipcard phasecard',
+    kick: 'Juveniles and phases',
+    title: esc(title),
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>IMR</b>: ${lines.map(esc).join('; ')}</p>` : ''}`,
+    primary: {text: 'Got it', attr: 'disabled'},
+    esc: 1,
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      if (how === 'route') return; // left unseen: it comes back with the next such photo
+      store.set(subjDev(SUBJ.id, PHASEC.KEY + k), Date.now());
+      toldAdd(phaseTok(k));
       if (brk) route();
     }
   });

@@ -28,6 +28,8 @@ function engine(U, refused) {
     SUBJ: C.subjectOf('coral'),
     calibOf: C.calibOf,
     refLevel: C.refLevel,
+    phaseOf: C.phaseOf,
+    phaseStage: C.phaseStage,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
     DOM: C.DOM,

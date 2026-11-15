@@ -33,7 +33,8 @@ function engine(
     PMEM = [0, -0.45, -1.1, -1.7],
     PFMT = {},
     fmtOff = () => 0,
-    PSTAT = {}
+    PSTAT = {},
+    calib = {} // fields merged over the subject's draw calibration (core.js SUBJECTS calib), as learnsim --calib does
   } = {}
 ) {
   let s = 12345;
@@ -41,13 +42,15 @@ function engine(
     M = Object.create(Math);
   M.random = rnd;
   const SUBJ = C.subjectOf(subject),
-    cal = C.calibOf(SUBJ);
+    cal = {...C.calibOf(SUBJ), ...calib};
   const stubs = {
     Math: M,
     SUBJ,
     // The subject's calibration, built once: photoSet asks for it at every photo weight (a new object each time).
     calibOf: s => (s === SUBJ ? cal : C.calibOf(s)),
     refLevel: C.refLevel,
+    phaseOf: C.phaseOf,
+    phaseStage: C.phaseStage,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
     DOM: C.DOM,

@@ -185,6 +185,12 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     lean = cal.early * (PDIFF.W / (PDIFF.W + (s.ok || 0) + (s.ko || 0))),
     tgt = ability(n) + shift - aimOff(k, fmtOff(pfmt(), f)) - (single ? PICKD.SINGLE : 0) - lean,
     pm = pmem();
+  // Juveniles and colour phases in stages (Pierre, 2026-11-07: never at the very start of a unit, then in stages; no
+  // wall, 2026-11-06): a photo with a judged phase (core.js phaseOf) weighs phF, the unit's stage after its own answers
+  // (core.js phaseStage, the subject's calib phase): nothing in its first ones, then more at each answer, then in full.
+  // Weights only: its prior (photoDiff) and the answer's scoring are untouched. Never on a unit with fewer than
+  // PICKD.VARIETY observations showing a photo with no phase (below): it would show the same few photos again and again.
+  let phF = phaseStage(cal.phase, (s.ok || 0) + (s.ko || 0));
   const h = [...recent(n).slice(-5)],
     hot = h.length ? h.filter(x => x === '1').length / h.length : 0.5;
   // Before Open Water, the hard photos' factor (RARE, rareCap below; 1 otherwise).
@@ -205,6 +211,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     // for the corals): it comes first among the photos drawn, with no exclusive rule, whoever took it.
     if (!k) r *= (1 + 1.5 * hot) * (isCore(p) ? 1.3 : 1) * (refLevel(p) ? cal.ref : 1);
     else r *= Math.exp(pm[memBucket(k)]);
+    if (phF < 1 && phaseOf(p)) r *= phF;
     return hardF < 1 && hard(p) ? r * hardF : r;
   };
   const obs = {};
@@ -216,6 +223,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   );
   const keys = Object.keys(obs);
   if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
+  // The observations whose every photo has a phase (phF above): the variety and the floor below lift them only by phF, so
+  // neither brings a held-back photo back. Too few observations without one: nothing held back.
+  const phAll = phF < 1 ? Object.fromEntries(keys.map(k => [k, Object.values(obs[k]).every(L => L.every(p => phaseOf(p)))])) : null;
+  if (phAll && keys.filter(k => !phAll[k]).length < PICKD.VARIETY) phF = 1;
+  const phMul = k => (phF < 1 && phAll[k] ? phF : 1);
   // A colony counts as seen whatever view of it was shown (Pierre, 2026-11-06, Q190): every photo of an observation
   // takes the memory of its most remembered photo (memBucket, then the most shown), so a close-up never shown of a
   // colony already met is no new photo, and it loses the never-seen bonus. For fish, an observation's other photos of
@@ -275,11 +287,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     .sort((a, b) => sc[b] - sc[a])
     .slice(0, PICKD.VARIETY)
     .forEach(k => {
-      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top);
+      if (!ro.includes(k)) sc[k] = Math.max(sc[k], 0.5 * top * phMul(k));
     });
   const floor = drawFloor(keys.length);
   keys.forEach(k => {
-    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top);
+    if (sc[k] > 0) sc[k] = Math.max(sc[k], floor * top * phMul(k));
   });
   // Rarely under ease 4 before Open Water (RARE): last, so neither the variety nor the floor lifts the hard ones back.
   if (rare) {

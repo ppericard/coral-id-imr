@@ -3001,7 +3001,9 @@ const CORE_ = (function () { const module = {exports: {}};
   //           u, how unsure the difficulty of a photo nobody has answered is (variance, model.js calSd: the targeting is
   //           that much wider for it, narrowing as answers come); pool, the number of observations a unit's draw floor
   //           is shared over (model.js photoSet: each observation keeps PICKD.FLOOR of the best one's weight, times
-  //           pool / observations when a unit has more, so a big pool's floor weighs no more than a pool-sized one's).
+  //           pool / observations when a unit has more, so a big pool's floor weighs no more than a pool-sized one's);
+  //           phase, the answers on a unit during which its juveniles and sex or colour phases are held back from its
+  //           draw before they come in, step by step, over as many again (core.js phaseOf, phaseStage; 0: none held).
   //           The corals keep the defaults (their photos carry no judged ease; early 0: their target as before; no u,
   //           model.js CAL.U, and an unbounded pool: their draw as before)
   //   pages   the pages of the Learn and Practice sections it has (app.js MODES; sheet = a genus sheet, page key g-<Genus>); the others,
@@ -3268,8 +3270,10 @@ const CORE_ = (function () { const module = {exports: {}};
       // favoured whatever the pool size): u 0.25, an unanswered photo's prior trusted to one ease step's spread (0.5²,
       // CALIB.ease squared: every fish photo carries a judged ease); pool 30, the floor shared over 30 observations (a
       // species' candidate cap), so a pool of 1,000 photos favours its easy ones as a pool of 30 does
-      // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools").
-      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30},
+      // (tools/fish_draw_sim.js; docs/LEARNING.md "The fish draw in big pools"). phase 10: the juveniles and the sex or
+      // colour phases never in a family's or genus's first 10 answers, then in stages, at full weight from its 20th
+      // (Pierre, 2026-11-07; docs/LEARNING.md "Juveniles and colour phases in stages").
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 30, phase: 10},
       pages: ['genera', 'sheet', 'quiz'],
       // Its sheets (learn.js viewFishSheet; docs/reviews/2026-11-05-fish-sheets-study.md, option B): one per family of the
       // identification key, genus and species, each in its address's word with the prefix of its id (fish.json ids
@@ -3351,8 +3355,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // The difficulty engine's calibration (SUBJECTS calib): ease 0.5, one standard deviation of a photo's own difficulty
   // around its unit (the hierarchical photo Elo study, docs/LEARNING.md "Fish photos judged"); ref 1, no draw bonus;
   // early 0, no lean at the start; u unset, a photo nobody answered as unsure as model.js CAL.U says; pool unbounded,
-  // every observation keeps the whole floor (model.js PICKD.FLOOR).
-  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
+  // every observation keeps the whole floor (model.js PICKD.FLOOR); phase 0, no phase photo held back (core.js phaseStage).
+  const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity, phase: 0};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
@@ -3495,6 +3499,46 @@ const CORE_ = (function () { const module = {exports: {}};
     /^[1s]$/.test(String(p.jt || '').charAt(6)) &&
     (((p.e || 0) >= 4 && !!p.rep) || (p.e === 5 && REF_LOOK.test(String(p.jt || '').slice(0, 7)) && !/[jca]/.test(String(p.jt).slice(7))));
   const refFirst = p => (refLevel(p) ? 0 : 1);
+  // A photo's judged phase (Pierre, 2026-11-07: a progressive path that presents juveniles, colour phases and sexual
+  // dimorphism; docs/LEARNING.md "Juveniles and colour phases in stages"): its record's phase word ph (juvenile, male,
+  // female, intermediate: the judged one, tools/fish_game.py, as autosort.js fishPhase reads it), else 'juvenile' when its
+  // tags carry the juvenile flag (judging/FISH.md "Tags": a flag after the code's 7 letters); '' for none, every coral
+  // photo among them. The tags' phase flag p marks every photo of an entry whose sexes differ, not the photo's own phase.
+  const PHASE_JUV = 'juvenile';
+  const phaseOf = p => (!p ? '' : p.ph ? String(p.ph) : /j/.test(String(p.jt || '').slice(7)) ? PHASE_JUV : '');
+  // How much a phase photo weighs in a unit's draw (model.js photoSet) after m answers on that unit, N being its
+  // subject's calibration phase (SUBJECTS calib; 0, the default, holds nothing back: 1): nothing during the unit's first
+  // N answers (never at the very start of a unit), then one step more at each answer, (m - N + 1) / N, the full weight
+  // from its 2N-th question on (m = 2N - 1). Keyed on the unit's own answers, which only go up: a phase photo is never held back for good
+  // (no wall, Pierre 2026-11-06).
+  const phaseStage = (N, m) => (!(N > 0) ? 1 : m < N ? 0 : Math.min(1, (m - N + 1) / N));
+  // The explanation card a phase photo brings (quiz.js phaseArm): 'juvenile', 'phase' for a sex or colour phase, '' none.
+  const phaseKind = p => {
+    const w = phaseOf(p);
+    return !w ? '' : w === PHASE_JUV ? 'juvenile' : 'phase';
+  };
+  // The first photo of a question's photos L whose card has not been shown yet (seen(kind)), with its kind; null if none.
+  const phaseCardOf = (L, seen) => {
+    for (const p of L || []) {
+      const k = phaseKind(p);
+      if (k && !seen(k)) return {p, k};
+    }
+    return null;
+  };
+  // The photo shown beside phase photo p on its card (Pierre, 2026-11-04: "photos side by side (adult and juvenile; male
+  // and female, or the phases)"): among L, its unit's photos in their order (the easy order, core.js easyRank), one of
+  // the same species (sp, else the taxon t) in the first phase of PHASE_PAIR that has one ('' an adult with no phase
+  // judged); null when there is none.
+  const PHASE_PAIR = {juvenile: ['', 'male', 'female'], male: ['female', ''], female: ['male', ''], intermediate: ['male', 'female', '']};
+  function phasePair(p, L) {
+    const w = phaseOf(p),
+      S = (L || []).filter(q => q && q.f !== p.f && (p.sp ? q.sp === p.sp : !!p.t && q.t === p.t));
+    for (const want of PHASE_PAIR[w] || ['']) {
+      const q = S.find(x => phaseOf(x) === want);
+      if (q) return q;
+    }
+    return null;
+  }
   // Last before the hash, the rights (rightsRank, below): between otherwise-equal photos, an open licence or Pierre's own
   // first (Pierre, 2026-11-08, Q270). lic false leaves them out: the order the game's draw reads (views.wide), whose ties
   // decide model.js photoSet's variety cut, so the draw never reads a licence (Codex review #742); the card photo, the
@@ -8402,6 +8446,12 @@ const CORE_ = (function () { const module = {exports: {}};
     refFirst,
     refLevel,
     refScore,
+    PHASE_JUV,
+    phaseOf,
+    phaseStage,
+    phaseKind,
+    phaseCardOf,
+    phasePair,
     licOf,
     rightsClass,
     rightsRank,

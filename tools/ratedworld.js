@@ -197,7 +197,7 @@ const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 // The model.js bindings the planner reads.
 const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
-function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
+function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
   if (!U.slate) U = unitsOfX(U);
   const subject = U.subject,
     all = [...U.slate, ...U.extra],
@@ -210,7 +210,9 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   });
   const mem = new Map(),
     store = {get: (k, d) => (mem.has(k) ? JSON.parse(mem.get(k)) : d), set: (k, v) => mem.set(k, JSON.stringify(v))},
-    SUBJ = C.subjectOf(subject),
+    S0 = C.subjectOf(subject),
+    // --calib (learnsim): fields merged over the subject's draw calibration, as the app world does (an arm with a change off).
+    SUBJ = calib && Object.keys(calib).length ? {...S0, calib: {...(S0.calib || {}), ...calib}} : S0,
     slate = U.slate,
     ctx = {...C, console, Math: Object.create(Math), store, SUBJ, DATA: U.DATA, P: {}, Q: {}, PMEM: [0, -0.45, -1.1, -1.7], PFMT: {}, last: null};
   ctx.Math.random = gen((seed * 2246822519) ^ 0x85ebca6b);
@@ -321,11 +323,11 @@ const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (
 // 'item' (the gain depends on the answer, as learnsim's item learner: a miss teaches MISS times more, the unit wrongly
 // given PICKED, a card as one right answer).
 const ITEM = {MISS: 1.5, PICKED: 0.5};
-function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false}) {
+function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', beyond = '', learner = 'count', subject, coralSd, keep = false, calib = null}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
-    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep});
+    pl = playerOf(U, W, {profile, seed, N, cps, app, beyond, learner, keep, calib});
   for (let i = 0; i < N; i++) pl.step(i);
   return pl.result();
 }
@@ -333,8 +335,8 @@ function runOne(U, {profile, seed, N, cps, photos = 'normal', app = 'truth', bey
 // ok, k, typed, chs, ph: the files shown}); result() the run as runOne returns it. rseed seeds the app's and the learner's
 // generators (the world's seed by default), pi the player's ability offset (the world's by default); ctx the app's vm
 // (runPop serves it the sheet's statistics).
-function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi}) {
-  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond}),
+function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', learner = 'count', keep = false, rseed = seed, pi = W.pi, calib = null}) {
+  const {ctx, M, G} = engine(U, W, {app, seed: rseed, beyond, calib}),
     prof = LP.profOf(profile, U.subject),
     r = gen((rseed * 2654435761) ^ 0x9e3779b9),
     slate = U.slate,
@@ -421,7 +423,12 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     }
     const ok = c === t;
     expo.push([t, ph[0].o || ph[0].f, ...ph.map(p => p.f)]);
-    preOW.push([M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0, Math.min(...ph.map(p => p.e || 0))]);
+    preOW.push([
+      M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0,
+      Math.min(...ph.map(p => p.e || 0)),
+      ph.some(p => C.phaseOf(p)) ? 1 : 0,
+      ((P()[t] || {}).ok || 0) + ((P()[t] || {}).ko || 0)
+    ]);
     const q = C.scoreIn({
       t,
       c,
@@ -683,7 +690,7 @@ async function main(o) {
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
     if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0});
-    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd});
+    else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null});
   const runs = [];
   await Promise.all(
     Array.from({length: Math.max(1, Math.min(o.workers, jobs.length))}, () => {
@@ -758,6 +765,7 @@ async function main(o) {
           coralSd: o.subject === 'coral' ? o.coralSd || RATED.CORAL_GD : null,
           app: o.app,
           beyond: o.beyond || null,
+          calib: o.calib || {},
           ...(pop ? {times: o.times, every: o.every, gap: o.gap || 0, rt: RT, pop: POP} : {}),
           seconds: secs,
           runs
