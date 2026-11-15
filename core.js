@@ -4399,6 +4399,17 @@
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
   const WINK_SHEET = 98;
   const logOk = (a, v) => (winkEntry(a) ? Number(v) >= WINK_SHEET : ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET);
+  // The sync script version that stores the photo a Find the X answer tapped (Code.gs vNEXT: Answers Photo answered, the
+  // entry's pa; Pierre, 2026-11-15, Q371). An answer goes to the sheet with pa only once the script's replies say
+  // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
+  // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
+  const PA_SHEET = 140;
+  const logOut = (a, v) => {
+    if (!a || a.pa === undefined || Number(v) >= PA_SHEET) return a;
+    const o = {...a};
+    delete o.pa;
+    return o;
+  };
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
@@ -5557,6 +5568,8 @@
     REPLAYS_SHEET,
     WINK_SHEET,
     logOk,
+    PA_SHEET,
+    logOut,
     RTIME,
     rtMedian,
     rtWeight,

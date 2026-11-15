@@ -52,7 +52,13 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 // blank when the app sent none (an app before it, a row logged before). Logged only, served to no reader yet; blanked
 // when a deleted account's answers are kept as "~deleted <id>" (deleteAccount_, rule D7), so they never lead back to a
 // device.
-const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device'];
+// Photo answered (vNEXT, Pierre 2026-11-15, Q371: "ok pour A"): the photo the player tapped in a Find the X (mode |f,
+// quiz.js FIND: one name, four photos), its file stem (pa), so the species taken for another family can be read from it
+// (fish-game.json: the photo's species); Answered keeps that photo's unit, as before. The same characters and length cap
+// as Photos (PH, 400); anything else is blank. Blank for every other answer, an app before it and the rows logged
+// before. Logged only: nothing the script computes reads it, served to no reader yet; it names no one, so it travels
+// with its row (merge, delete, archive) as the other answer fields do.
+const LOG = ['Name', 'Time', 'Genus shown', 'Answered', 'Right', 'Mode', 'Photos', 'Id', 'Expected', 'Ability', 'New photos', 'Choices', 'Seconds', 'Enlarged', 'UTC offset', 'Typed', 'Retyped right', 'Subject', 'Rank', 'Taxon shown', 'Taxon answered', 'Species shown', 'Scoring', 'Rejected tries', 'Device', 'Photo answered'];
 const DEV_COL = LOG.indexOf('Device');
 const SC_COL = LOG.indexOf('Scoring');
 // The Activity tab (one formula over the Answers tab): answers, right and last answer per player. v98: a surprise
@@ -463,7 +469,7 @@ function logAnswers_(name, answers, seen0, dev){
   // its family (core.js renameLogEntry, the row's species shown deciding a split entry), so the log holds family ids only.
   const rows = answers.filter(a => a && a.id && ID.test(String(a.id)) && !seen.has(String(a.id))).slice(0, 2000)
     .map(a0 => { const a = CORE_.renameLogEntry(CORE_.subjectOf(subj(a0)), a0), sj = subj(a); return [safe_(name), new Date(a.t), word_(a.g, G, 40), word_(a.a, G, 40), a.ok ? 1 : 0, word_(a.m, M, 80), word_(a.ph, PH, 400), String(a.id).slice(0, 20), num_(a.e), num_(a.th), num_(a.nw), word_(a.ch, CH, 200), secs_(a.rt), flag_(a.zm), tz_(a.tz), typed_(a.ty), flag_(a.tr),
-      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv]; });
+      sj, rank(a, sj), word_(a.tn, TX, 80), word_(a.ta, TX, 80), word_(a.sp, SP, 300), scoring_(a.sc), rejected_(a.rj), dv, word_(a.pa, PH, 400)]; });  // vNEXT: Photo answered, as Photos
   if (!rows.length) return;
   const at = sh.getLastRow() + 1, extra = at + rows.length - 1 - sh.getMaxRows();
   if (extra > 0) sh.insertRowsAfter(sh.getMaxRows(), extra);  // getRange can't reach past the grid
@@ -7240,6 +7246,17 @@ const CORE_ = (function () { const module = {exports: {}};
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
   const WINK_SHEET = 98;
   const logOk = (a, v) => (winkEntry(a) ? Number(v) >= WINK_SHEET : ansSubject(a) === replaySubject() || Number(v) >= LOG_SHEET);
+  // The sync script version that stores the photo a Find the X answer tapped (Code.gs vNEXT: Answers Photo answered, the
+  // entry's pa; Pierre, 2026-11-15, Q371). An answer goes to the sheet with pa only once the script's replies say
+  // v >= PA_SHEET; before, the copy sent leaves it out (the queue keeps it), so an older script gets exactly what it got
+  // before (rule D4). sync.js sends every answer through it, a save's and an anonymous send's.
+  const PA_SHEET = 140;
+  const logOut = (a, v) => {
+    if (!a || a.pa === undefined || Number(v) >= PA_SHEET) return a;
+    const o = {...a};
+    delete o.pa;
+    return o;
+  };
   // The messages a device that last applied version `from` shows once it applied version `to`: one per version that
   // has one, oldest first; the same message (RV_CARD) once, at the last version that has it, so a device that skips
   // several versions sees one recalculation card with its progress before and after the whole jump. An apology (kind
@@ -8398,6 +8415,8 @@ const CORE_ = (function () { const module = {exports: {}};
     REPLAYS_SHEET,
     WINK_SHEET,
     logOk,
+    PA_SHEET,
+    logOut,
     RTIME,
     rtMedian,
     rtWeight,

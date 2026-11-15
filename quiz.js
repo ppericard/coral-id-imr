@@ -435,7 +435,9 @@ function question(cur, target, choices, prompt, set, kq) {
     reveal();
     answered = true;
     QOPEN = false;
-    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
+    // A Find the X: the photo tapped (its four units are distinct, so the tile of the unit given), logged with the answer.
+    const tp = fx ? (fx.find(x => x.n === c) || {}).p : null;
+    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tp);
     // Find the X: each tile now says its unit (the right one ticked, the one tapped crossed: never colour alone), its
     // source (rule P5) and opens the four photos whole.
     if (fx)
@@ -649,7 +651,8 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-function answer(cur, c, target, ph, cor, unseen, tm = {}) {
+// tp: a Find the X's photo tapped (question), logged as pa; null for any other question.
+function answer(cur, c, target, ph, cor, unseen, tm = {}, tp = null) {
   // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
   // a comeback question takes its genus's recall as it is now (Codex review #374).
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
@@ -708,9 +711,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
   // |d: a look-alike duel slipped into the photo quiz (CONTRAST), before |kN (the sheet reads |kN at the end).
   // |f: a Find the X (FIND): one name, four photos; the question's own photo (ph) is the unit's, its choices (ch) the
-  // units of the four photos in the order shown, its answer (a) the unit of the photo tapped. The other three photos are
-  // not logged: every reader of the log takes its photos as photos of the unit shown (the photo ratings, the memory,
-  // Code.gs photoAlert_).
+  // units of the four photos in the order shown, its answer (a) the unit of the photo tapped, and the photo tapped itself
+  // (pa, right answers too; Pierre, 2026-11-15, Q371: its species, through fish-game.json, for the species taken for
+  // another family). The other photos are not in ph: every reader of the log takes its photos as photos of the unit
+  // shown (the photo ratings, the memory, Code.gs photoAlert_).
   // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
   // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
   // the app and the sheet's hold_; old rows only.)
@@ -853,7 +857,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // shown (UNITS species: a fish photo's species; none for the corals' genus photos), for the sheet's readers.
     ...(unitName(target) ? {tn: unitName(target)} : {}),
     ...(unitName(c) ? {ta: unitName(c)} : {}),
-    ...(spShown ? {sp: spShown} : {})
+    ...(spShown ? {sp: spShown} : {}),
+    // A Find the X's photo tapped (Pierre, 2026-11-15, Q371): sheet vNEXT keeps it (Answers Photo answered); sent only
+    // from PA_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). Information only: no score,
+    // replay or rule reads it.
+    ...(tp && tp.f ? {pa: tp.f} : {})
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
