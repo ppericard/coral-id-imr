@@ -146,3 +146,13 @@ test('the committed files read through the fish engine: families, scientific gen
   // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead.
   assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...X.c1.map(n => X.gen[n].cm)));
 });
+
+// The licence refresh and each Publish rewrite seaslug-cand.json and suggest.json: the photos workflow builds the game
+// data again after them and commits it (Codex review #987), so a photo whose licence changed leaves the game too.
+test('the photos workflow builds the sea-slug game data again and commits it', () => {
+  const W = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'approved-photos.yml'), 'utf8'),
+    at = s => W.indexOf(s);
+  assert.ok(at('python tools/seaslug_game.py') > at('python tools/licences.py --others'), 'after the licence refresh');
+  assert.ok(/git add [^\n]*seaslug-cand\.json seaslug\.json seaslug-game\.json/.test(W), 'staged');
+  assert.ok(W.includes('seaslug\\.json|seaslug-game\\.json'), 'allowed in the commit job');
+});
