@@ -1742,7 +1742,9 @@ function signOutClear(all) {
       // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; Codex review #850, rule D7)
       ...['hold', 'comeback', 'custom-left'].map(k => subjDev(S.id, k)),
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; Codex review #851, D7)
-      ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k))
+      ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k)),
+      // and the juveniles and phases cards' marks, one per kind (quiz.js PHASEC; Codex review #953, D7)
+      ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k))
     ]),
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
     ACHK,

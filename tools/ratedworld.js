@@ -636,7 +636,7 @@ function rateErr(st, TW, W) {
 // seconds, gap their knowledge-gap term (secOf), every the rounds between two refreshes of the ratings served. Returns
 // {runs: one per player (runOne's), pop: {seed, times, gap, rho (beta against d), at: [{q, err, errW, corr, gdErr,
 // photos}]}}; keep: also the log, the world W and its seconds TW (an app world's stats and truth from a population).
-function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0}) {
+function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject, coralSd, profiles, times = 'rho25', every = 25, keep = false, beyond = '', gap = 0, calib = null}) {
   if (subject) U = unitsOf(subject);
   if (!U.slate) U = unitsOfX(U);
   // The corals only (Codex review #844): the sheet rates the replayed subject's photos (Code.gs stats_), and a fish photo
@@ -646,7 +646,7 @@ function runPop(U, {seed, N, cps, photos = 'normal', learner = 'count', subject,
   const W = world(U, seed, photos, coralSd ? {coralSd} : {}),
     TW = timeWorld(U, W, seed, times, {gap}),
     pls = profiles.map((profile, j) =>
-      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
+      playerOf(U, W, {profile, seed, N, cps, app: 'sheet', beyond, learner, calib, rseed: seed * 1009 + j + 1, pi: RATED.PI * normal(gen((seed * 2246822519) ^ (0x3c6ef372 + 7919 * (j + 1))))})
     ),
     log = [],
     at = [];
@@ -689,7 +689,7 @@ async function main(o) {
     POP = [];
   // --app sheet: one job per seed, the whole population (runPop); else one per (profile, seed).
   for (let s = o.seed0 + 1; s <= o.seed0 + o.seeds; s++)
-    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0});
+    if (pop) jobs.push({pop: 1, subject: o.subject, seed: s, N: o.N, cps, photos: o.dist, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, profiles: o.profiles, times: o.times, every: o.every, gap: o.gap || 0, calib: o.calib || null});
     else for (const profile of o.profiles) jobs.push({subject: o.subject, profile, seed: s, N: o.N, cps, photos: o.dist, app: o.app, beyond: o.beyond, learner: o.learner, coralSd: o.coralSd, calib: o.calib || null});
   const runs = [];
   await Promise.all(

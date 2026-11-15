@@ -62,6 +62,17 @@ test('the card trigger: the first photo whose kind has no card yet, once per kin
   assert.strictEqual(C.phaseCardOf([], none), null);
 });
 
+test('the card marks go with the account at sign-out (rule D7; Codex review #953)', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    rd = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+  assert.ok(rd('quiz.js').includes("const PHASEC = {KEY: 'phase-'"), 'the key prefix sync.js clears');
+  assert.ok(
+    rd('sync.js').includes("...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k))"),
+    'sync.js signOutClear clears both kinds'
+  );
+});
+
 test('the card pairs: a juvenile beside an adult of its species, a male beside a female, never another species', () => {
   const L = [
     {f: 'x', sp: 's2'},

@@ -965,7 +965,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // custom quiz, its once-ever reminder of the units waiting in the Quiz likewise (leftNote counts, leftArm).
   leftNote(cur);
   // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
-  const phx = phaseArm(nb, cur, seenPh, target, exq && s.mx);
+  // A Find the X showed four tiles, each of its own unit (Codex review #953).
+  const fxs = photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find,
+    phx = phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
   if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
@@ -1315,7 +1317,9 @@ function allMetShow(r, brk) {
 const PHASEC = {KEY: 'phase-', WORD: {juvenile: 'Juvenile', male: 'Male', female: 'Female', intermediate: 'Intermediate'}};
 const phaseTok = k => `phase:${SUBJ.id}-${k}`;
 const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || toldHas(phaseTok(k));
-function phaseArm(nb, cur, ph, target, hold) {
+// L: the photos shown, each with its unit ({n, p}).
+function phaseArm(nb, cur, L, hold) {
+  const ph = L.map(x => x.p).filter(Boolean);
   if (!photoQuiz(cur) || hold || !phaseCardOf(ph, phaseSeen)) return false;
   return breakArm(nb, () => {
     if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
@@ -1323,7 +1327,7 @@ function phaseArm(nb, cur, ph, target, hold) {
       nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
     if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
     promptMark();
-    phaseShow(c, target, true);
+    phaseShow(c, L.find(x => x.p === c.p).n, true);
     return true;
   });
 }
@@ -1339,6 +1343,8 @@ function phaseShow({p, k}, n, brk) {
     w = phaseOf(p),
     word = x => PHASEC.WORD[phaseOf(x)] || 'Adult',
     fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
+    // Each photo's credit under them, its author and its observation (rule P5; Codex review #953): the answer is out.
+    credits = [p, q].filter(Boolean).map(credit).join('<br>'),
     title =
       k === 'juvenile'
         ? 'Careful: this was a juvenile, it can look very different from the adult'
@@ -1350,7 +1356,7 @@ function phaseShow({p, k}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>IMR</b>: ${lines.map(esc).join('; ')}</p>` : ''}`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>IMR</b>: ${lines.map(esc).join('; ')}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',

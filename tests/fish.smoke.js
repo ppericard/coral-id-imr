@@ -478,6 +478,7 @@ async function freshPlayers(b, base, errs) {
         ok(!phaseSeen('juvenile'), 'the juvenile card not shown yet');
         const d = phaseShow({p: pJ, k: 'juvenile'}, nJ, false);
         ok(d.querySelectorAll('.phvis figure').length === 2, 'the card shows two photos side by side');
+        ok(d.querySelectorAll('.credit a').length === 2, 'each photo credited, with its observation (rule P5)');
         ok(/juvenile/i.test(d.querySelector('h3').textContent), `its title: ${d.querySelector('h3').textContent}`);
         const caps = [...d.querySelectorAll('.phvis figcaption')].map(x => x.textContent);
         ok(caps[0] === 'Juvenile' && caps[1] && caps[1] !== 'Juvenile', `labelled by phase: ${caps}`);
@@ -506,7 +507,7 @@ async function freshPlayers(b, base, errs) {
         smokeAnswer();
         const nb = document.getElementById('next');
         nb.onclick = route; // the break left free (a prompt or a tip this answer armed)
-        return {armed: phaseArm(nb, 'quiz', [p], n, false), seen: phaseSeen('phase')};
+        return {armed: phaseArm(nb, 'quiz', [{n, p}], false), seen: phaseSeen('phase')};
       });
       if (!a.armed || a.seen) fresh.push(`new player ${seed}: the phase card not armed (${JSON.stringify(a)})`);
       else {
