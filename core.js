@@ -496,10 +496,15 @@
       // pages it has (null = every page; a page covers the addresses under it).
       // For the one filter bar of every photo page (admin plan PR 3, admin.js fbar): origins, where its photos come
       // from, [key, name, short name] in the order of the chips (admin.js origin(p) gives a photo's key); csrc, the
-      // sources of its Candidates swiper.
+      // sources of its Candidates swiper. todo: the sections of its To do (admin.js renderTriage) besides the reports, the
+      // photos flagged on the site and the devices' errors, which every subject has: the corals' rule (out of the presence
+      // rule), sa (share-alike), poor (Featured but rated Poor) and sug (the judging agent's suggestions), on the corals'
+      // photos; photos, the photo work of a subject with its own part of curation.json as counts that open its pages
+      // (fish: candidates, cover and light proposals, Coverage's To do), in All only.
       admin: {
         cur: '',
         pages: null,
+        todo: ['rule', 'sa', 'poor', 'sug'],
         origins: [
           ['imr', 'IMR lecture', 'IMR'],
           ['own', 'Pierre', 'Pierre'],
@@ -606,12 +611,17 @@
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         cur: 'fish',
+        // To do › All and Points (fish admin at parity, Pierre 2026-11-08): All lists the reports, flags and errors with
+        // its photo work (todo), never the corals' photo sections; Points, the fish points of points.json.
+        todo: ['photos'],
         pages: [
+          'inbox/todo/all',
           'inbox/todo/reports',
           'inbox/todo/errors',
           // Health (fish admin at parity, 2026-11-08): the fish photos everyone misses, with the tools of their family's
           // page, and the fish units players are stuck on (admin.js statsHealth, healthBad, healthGenera)
           'inbox/todo/health',
+          'inbox/todo/points',
           'inbox/coverage/games',
           'players/list',
           'photos/tree',
