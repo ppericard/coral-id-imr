@@ -5306,6 +5306,20 @@
     "at": "2026-11-15",
     "n": 20
    }
+  },
+  "467977": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
+  },
+  "1475021": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 25
+   }
   }
  },
  "photo": {},
@@ -191375,6 +191389,132 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-1475021-cand-113200445": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-171475987": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-186453202": {
+   "jt": "o1g0ml1j",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-202816153": {
+   "jt": "o1g0sl1jw",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-247089226": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-250936719": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-259005160": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-268135957": {
+   "jt": "d1g0mm1j",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-277709344": {
+   "jt": "d1g0sm1f",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-295291573": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-313099884": {
+   "jt": "d1g0sm1j",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-34543522": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-348298805": {
+   "jt": "d1g0sm1j",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-375409301": {
+   "jt": "o1g0sl1jw",
+   "e": 2,
+   "k": "best",
+   "n": "Orange-brown with white patches and a violet edge: a young animal between the juvenile and adult looks."
+  },
+  "seaslug-1475021-cand-382717309": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-450476107": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-460642147": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-501234041": {
+   "jt": "h0g0sl1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-538491075": {
+   "jt": "o1g0sm1jw",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-549397537": {
+   "jt": "o1d0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-589567162": {
+   "jt": "o1d0sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-61738513": {
+   "jt": "p0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-656456970": {
+   "jt": "o1d0sm1f",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-661884608": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-1475021-cand-696279521": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
   "seaslug-199475-cand-175388690": {
    "jt": "p1g0sls",
    "e": 4,
@@ -191773,6 +191913,110 @@
   "seaslug-346881-cand-750371462": {
    "jt": "o1g2bsx",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-467977-cand-121864796": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467977-cand-178718350": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-257159190": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-257317080": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-277705523": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-33464791": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-393744452": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-461224010": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-47587147": {
+   "jt": "o1d0slk",
+   "e": 2,
+   "k": "best",
+   "u": [
+    "code"
+   ],
+   "n": "Two chromodorids side by side, one blue-violet, one striped: maybe two species, maybe two colour forms of one."
+  },
+  "seaslug-467977-cand-479024399": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-479236637": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467977-cand-500759038": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-467977-cand-503706850": {
+   "jt": "d1d0ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-467977-cand-548882181": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467977-cand-616348376": {
+   "jt": "d1g0ss1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-467977-cand-64967603": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467977-cand-669575022": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467977-cand-692710135": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-467977-cand-693807302": {
+   "jt": "d1d0sls",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-467977-cand-714368326": {
+   "jt": "d1g0ss1",
+   "e": 2,
    "k": "best"
   },
   "seaslug-468030-cand-203417953": {
