@@ -18,7 +18,7 @@ const ROOT = path.join(__dirname, '..'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   FJSON = fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'),
   CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
-  FGEN =C.fishReplayGen(JSON.parse(FJSON)),
+  FGEN = C.fishReplayGen(JSON.parse(FJSON)),
   FS = C.subjectOf('fish'),
   SV = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools', 'sync', 'Code.gs'), 'utf8'))[1]);
 const withFiles = () => ({
@@ -664,4 +664,68 @@ test("today's script with an empty Replayed Fish tab: a fish-only player's repla
     assert.strictEqual(a.cards.length, 1, nm + ': once');
     assert.strictEqual(JSON.parse(s.get({name: nm, pin: '1234'}).data['reefid-sync-fish-rv']), FRV, nm + ': saved');
   }
+});
+
+// The content editor's structure (sheet overlay step 3; Pierre, 2026-11-15, Q363 h A): from the script that replays under
+// it (core.js STRUCT_SHEET), the app says the stamp its progress was replayed with (sts) and the one of the units it holds
+// (stn), adopts the replay the sheet makes under a new stamp at the same rules version, and keeps that stamp with its
+// progress data; before that script, it sends neither and adopts no such replay (rule D4).
+test('a structure Publish: the replay made under the new stamp adopted at the same rules version, the stamp kept', async () => {
+  const cur = {
+      ...JSON.parse(CJSON),
+      fish: {...JSON.parse(CJSON).fish, content: {nodes: {'f:Butterflyfishes': {circle: {v: null, was: 1, t: 1}}}}}
+    },
+    st = C.structStamp(FS, JSON.parse(FJSON), cur),
+    files = {
+      fetch: url =>
+        /\/main\/fish\.json$/.test(url)
+          ? {getResponseCode: () => 200, getContentText: () => FJSON}
+          : /\/main\/curation\.json$/.test(url)
+            ? {getResponseCode: () => 200, getContentText: () => JSON.stringify(cur)}
+            : withFiles().fetch(url)
+    },
+    gen = C.fishReplayGen(C.contentApply(FS, JSON.parse(FJSON), cur)),
+    want = C.replayProgress(
+      F.map(x => C.logRow(x, 'ana')),
+      {gen}
+    ).ana.P,
+    ls = {
+      'reefid-sync-fish-progress': JSON.stringify(today),
+      'reefid-sync-coral-rv': String(C.RV),
+      'reefid-sync-fish-rv': String(FRV)
+    },
+    SYNC = () => ({name: 'Ana', pin: '1234', log: [], base: {}, fbase: JSON.parse(JSON.stringify(today)), srv: 1});
+  assert.ok(st);
+  // An older script: nothing said, nothing adopted.
+  const s0 = loadCodeGs(files);
+  seed(s0, {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-fish-rv': String(FRV)});
+  const a0 = app({sheet: atv(s0, C.STRUCT_SHEET - 1), ls, SYNC: SYNC()});
+  a0.ctx.UNITS.fish.st = () => st;
+  await a0.syncPush();
+  assert.ok(!a0.sent.some(b => 'sts' in b || 'st_fish' in b || 'stn' in b));
+  assert.strictEqual(a0.store.get('reefid-sync-fish-st', null), null);
+  // The script that replays under it: asked with the empty stamp, the replay adopted, the stamp kept and saved.
+  const s = loadCodeGs(files);
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(today), 'reefid-sync-fish-rv': String(FRV)});
+  const a = app({sheet: atv(s, C.STRUCT_SHEET), ls, SYNC: SYNC()});
+  a.ctx.UNITS.fish.gen = () => gen;
+  a.ctx.UNITS.fish.st = () => st;
+  await a.syncPush();
+  assert.ok(a.sent.some(b => b.sts && b.sts.fish === '' && b.stn && b.stn.fish === st));
+  assert.strictEqual(a.store.get('reefid-sync-fish-st', null), st);
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  const P = a.fish();
+  assert.deepStrictEqual([P['f:Damselfishes'].ok, P['f:Damselfishes'].ko], [want['f:Damselfishes'].ok, want['f:Damselfishes'].ko]);
+  assert.ok(!P['f:Butterflyfishes'], 'the unit out of the game is no longer counted as the one wrongly given');
+  // No card (rule D6): told as a replay at the same rules version, which has none.
+  assert.ok(a.cards.every(c => c[0] === 'fish' && c[1] === FRV && c[2] === FRV));
+  assert.deepStrictEqual(C.rvMsgs(FRV, FRV, false, 'fish'), []);
+  // Applied: the next sync says it, gets nothing more, and the stamp is saved with the progress (rule D8: the
+  // leaderboard's replays read it, Code.gs boardRpl_).
+  const n = a.sent.length;
+  await a.syncPush();
+  assert.ok(a.sent.slice(n).some(b => b.sts && b.sts.fish === st && !b.stn));
+  assert.ok(a.sent.slice(n).every(b => !b.sts || b.sts.fish === st));
+  assert.strictEqual(a.store.get('reefid-sync-fish-st', null), st);
+  assert.strictEqual(JSON.parse(s.get({name: 'Ana', pin: '1234'}).data['reefid-sync-fish-st']), st, 'saved with the progress');
 });

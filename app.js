@@ -968,7 +968,13 @@ const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
 // holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
 function structSeen() {
   if (!FISHRAW || FISHON === structOn() || CUR_NEW) return;
-  if (structFp(SUBJECTS.find(x => x.pool.files[0] === 'fish.json'), CUR)) CUR_NEW = CUR;
+  if (
+    structFp(
+      SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+      CUR
+    )
+  )
+    CUR_NEW = CUR;
 }
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the

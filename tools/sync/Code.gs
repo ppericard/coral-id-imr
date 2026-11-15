@@ -4202,8 +4202,8 @@ const CORE_ = (function () { const module = {exports: {}};
       put = (m, k, v) => m.set(k, [...(m.get(k) || []), v]);
     P.forEach(x => {
       if (gone.has(x.a) || gone.has(x.b)) return;
-      if (x.v === 1) put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src]);
-      else put(drop, x.a, x.b), put(drop, x.b, x.a);
+      if (x.v === 1) (put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src]));
+      else (put(drop, x.a, x.b), put(drop, x.b, x.a));
     });
     out.families = fams
       .filter(f => !gone.has(f.id))
@@ -4215,8 +4215,7 @@ const CORE_ = (function () { const module = {exports: {}};
         const r = {...f};
         if (moved.has(f.id)) r.circle = now(f.id);
         if (cut || A.length) r.look = [...rows(f).filter(y => !(Array.isArray(y) && D.has(y[0]))), ...A.map(([o]) => [o, ''])];
-        if (A.length)
-          r.lsrc = {...fishLookSrc({...f, esrc: null}), ...Object.fromEntries(A.map(([o, s]) => [o, s ? s.t : EDITOR_PAIR]))};
+        if (A.length) r.lsrc = {...fishLookSrc({...f, esrc: null}), ...Object.fromEntries(A.map(([o, s]) => [o, s ? s.t : EDITOR_PAIR]))};
         return r;
       });
     if (!moved.size) return out;
@@ -4835,13 +4834,7 @@ const CORE_ = (function () { const module = {exports: {}};
             y = N.get(b),
             base = x && y && (has(x.rec, b) || has(y.rec, a)) ? 1 : null,
             why =
-              p.length !== 2 || !a || !b || !(a < b)
-                ? 'key'
-                : !x || !y
-                  ? 'node'
-                  : !isObj(e) || !(e.v === 1 || e.v === null)
-                    ? 'value'
-                    : '';
+              p.length !== 2 || !a || !b || !(a < b) ? 'key' : !x || !y ? 'node' : !isObj(e) || !(e.v === 1 || e.v === null) ? 'value' : '';
           out.pairs.push({key, a, b, e, base, ...st(e, base, why)});
         });
     }
@@ -4874,8 +4867,7 @@ const CORE_ = (function () { const module = {exports: {}};
     const D = (S && S.structure) || {},
       c = [],
       p = new Set();
-    if (D.circle)
-      contentRecs(R, S.content[D.circle.rank]).forEach((x, id) => c.push([id, x.rec.circle != null ? x.rec.circle : null]));
+    if (D.circle) contentRecs(R, S.content[D.circle.rank]).forEach((x, id) => c.push([id, x.rec.circle != null ? x.rec.circle : null]));
     if (D.pairs)
       contentRecs(R, S.content[D.pairs.rank]).forEach((x, id) =>
         (Array.isArray(x.rec[D.pairs.slot]) ? x.rec[D.pairs.slot] : []).forEach(y => {

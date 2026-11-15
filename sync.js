@@ -360,10 +360,10 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
   if (!rp || typeof rp.rv !== 'number' || !rp.rec || typeof rp.rec !== 'object') return false;
   // The structure stamp it was made under (STRUCT_SHEET: '' for the base's structure, also when the reply has none), null
   // for a subject with no structure or an older script.
-  const st = stOn(S, v) ? String(rp.st || '') : null;
+  const stamp = stOn(S, v) ? String(rp.st || '') : null;
   // A newer version, the same one under another structure (stsAsk; Q363 h A), or the same one asked again for answers
   // logged from a refused save (rvAsk).
-  if (rp.rv < rvApplied(S) || (rp.rv === rvApplied(S) && !lgFor(S) && (st === null || st === stApplied(S)))) return false;
+  if (rp.rv < rvApplied(S) || (rp.rv === rvApplied(S) && !lgFor(S) && (stamp === null || stamp === stApplied(S)))) return false;
   // Never a version newer than this app's own rules (core.js rvOf): an app that does not know it cannot hold what it
   // brings (2026-11-09: devices still on an app from before rules version 9 adopted its replay without the domain-score
   // bar and marked it applied, so they never took it again once updated); the app takes it once it is updated.
@@ -437,7 +437,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     );
     store.set(rvKey(S), rp.rv);
     // the structure it was replayed under ('' for the base's: set only over a stamp held, so no edit adds no key)
-    if (st !== null && (st || stApplied(S))) store.set(stKey(S), st);
+    if (stamp !== null && (stamp || stApplied(S))) store.set(stKey(S), stamp);
     // The merge baseline (mergeSaved) becomes the shared history: the sheet's replay itself, never mixed with this
     // device's answers the sheet has not counted yet, which stay this device's own (P minus the base) and go on top at
     // the next merge (core.js replayBase). Left at the saved copy, another device saving its own adoption of the same log
