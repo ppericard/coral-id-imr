@@ -558,7 +558,8 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
 });
 // judging/FISH.md "Caps" and "Reference photos", the same rule as tools/fish_judge.py cap(): a reference photo (rep) gets
 // the flag r and one ease point (REP_BONUS), the caps applied after it.
-const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jca]*)([1-5])$/;
+// The typed flags j c a w (w, a visible watermark or text: Q373) in that order; w caps nothing.
+const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])(j?c?a?w?)([1-5])$/;
 const capOf = (code, phase, juvOk, rep) => {
   const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
     fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : '');
@@ -642,7 +643,7 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
   assert.ok(plan.some(p => p.auto === 'cand') && plan.some(p => p.auto === 'ref'), 'and the photos in play by themselves');
   plan.forEach(p => {
     // The judged tags with their flags (the phase p and reference r flags included), then the ease.
-    assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
+    assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
     const pass = !(p.f in (FC.ease || {})) || (S[p.f] && S[p.f].e === FC.ease[p.f] && S[p.f].jt === FC.tags[p.f]);
     if (!pass) return; // Pierre's own values stand (an ease he set is his choice)
     const tid = entry.get(p.sp),

@@ -762,7 +762,7 @@ def sure_out(j):
     return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] in "xk" or "a" in jt[7:]))
 
 
-FISH_TAGS = re.compile(r"^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$")  # autosort.js FISH_TAGS
+FISH_TAGS = re.compile(r"^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$")  # autosort.js FISH_TAGS
 
 
 def sure_add(j):

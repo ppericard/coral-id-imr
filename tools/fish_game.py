@@ -30,7 +30,7 @@ For each photo in play, from its fish-cand.json record (the original: iNaturalis
     {f, o (its observation, or the FishBase photo page; an iNaturalist observation by its id alone), src (the original;
     on iNaturalist, its extension alone when the photo is the record's own: tools/fish_short.py, core.js fishGameRow), a, lic, t, sp (the species it is in play for), loc, own,
     ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, his legacy m refined by the pass's o or k,
-    else the pass's jt), ph (its phase, as the
+    and, where they are the auto-sort's copy, the pass's watermark flag w: mine_tags; else the pass's jt), ph (its phase, as the
     admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
 The tile (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix): a photo in play whose tags pass the
@@ -285,6 +285,33 @@ def refined(mine, passed):
     return mine
 
 
+# autosort.js fishParse: a fish log code; its fields (t tags, e ease, p phase, c crop) are the ones the auto-sort wrote.
+LOG = re.compile(r'^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$')
+FLAGORD = 'jcawpr'  # autosort.js FFLAGORD: the flags in the rubric's order
+
+
+def tags_auto(F):
+    """autosort.js fishTagsAuto for every photo: {f} whose tags in Pierre's fish curation F are the auto-sort's copy of
+    the pass's (its latest valid log code lists t; his first edit of them takes the t off: fishOwn)."""
+    last = {}
+    for day in sorted((F or {}).get('auto') or {}):
+        for f, c in ((F['auto'][day]) or {}).items():
+            m = LOG.match(str(c))
+            if m and not (m.group(3) and (m.group(2) != 'a' or m.group(1) == '?')):
+                last[f] = m.group(3)
+    return {f for f, w in last.items() if 't' in w}
+
+
+def marked(mine, passed, auto):
+    """autosort.js fishMarked: the watermark flag w of the pass's code (passed) added to Pierre's tags (mine) when they are
+    the auto-sort's copy (auto), a judgement made after the copy (Pierre, 2026-11-15, Q373); tags he set himself stand,
+    so his Watermark off is his."""
+    if not auto or not TAGS.match(mine or '') or 'w' not in str(passed or '')[7:] or 'w' in mine[7:]:
+        return mine
+    fl = set(mine[7:]) | {'w'}
+    return mine[:7] + ''.join(x for x in FLAGORD if x in fl)
+
+
 def judged_sure(jt, e):
     """The rubric's part of a sure judgement, the same for a candidate and a reference photo: valid tags and ease (any
     ease 1-5: the judged ease is the photo's prior difficulty), never an unclear subject (count x) nor a fish out of the
@@ -309,7 +336,7 @@ def cand_sure(j):
     return judged_sure(j.get('jt'), j.get('e'))
 
 
-TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$')  # autosort.js FISH_TAGS
+TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$')  # autosort.js FISH_TAGS
 
 
 def ref_play(fish, refs, codes):
@@ -385,15 +412,29 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
 KEEP = ('f', 'o', 'src', 'a', 'lic', 't')
 
 
-def record(sid, p, F, sug, orig=None, species=None, route=None):
+def mine_tags(F, f, passed, auto=None):
+    """Pierre's tags of photo f as the game reads them: his legacy m refined (refined), the pass's watermark flag on the
+    auto-sort's copy (marked); None with none. auto: tags_auto(F), computed here only when needed (the pass's code carries
+    w)."""
+    mine = (F.get('tags') or {}).get(f)
+    if not mine:
+        return None
+    if 'w' in str(passed or '')[7:]:
+        mine = marked(mine, passed, f in (auto if auto is not None else tags_auto(F)))
+    return refined(mine, passed)
+
+
+def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
     with Not this (orig, its fish-cand.json species, is not sid) is named after its new species (fish.json species: the
     WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614). route (in_play):
     "cand" or "ref" for a photo that entered automatically, recorded as auto (core.js fishIn); a reference photo keeps its
-    judged e and jt, and from (cover, taxon, fishbase)."""
+    judged e and jt, and from (cover, taxon, fishbase), unless Pierre set its tags or ease in the admin (his values, as on
+    every route: the admin's tag rows on a photo in play; Q373, his Watermark off). auto: tags_auto(F) (mine_tags)."""
     if route == 'ref':
         r = {k: p[k] for k in KEEP if k in p}
-        r.update(sp=sid, loc=p.get('loc') or 'world', e=int(p['e']), jt=p['jt'], auto='ref')
+        jt = mine_tags(F, p['f'], p['jt'], auto) or p['jt']
+        r.update(sp=sid, loc=p.get('loc') or 'world', e=int((F.get('ease') or {}).get(p['f'], p['e'])), jt=jt, auto='ref')
         for k in ('via', 'rep', 'from', 'own'):
             if p.get(k):
                 r[k] = p[k]
@@ -407,7 +448,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None):
     if p.get('own'):
         r['own'] = True
     e = (F.get('ease') or {}).get(f, j.get('e'))
-    jt = refined((F.get('tags') or {}).get(f), j.get('jt')) if f in (F.get('tags') or {}) else j.get('jt')
+    jt = mine_tags(F, f, j.get('jt'), auto) if f in (F.get('tags') or {}) else j.get('jt')
     if e:
         r['e'] = int(e)
     if jt:
@@ -446,9 +487,9 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     F = (cur or {}).get('fish') or {}
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
     species = {s['id']: s for s in (fish or {}).get('species') or []}
-    todo, keep = [], {}
+    todo, keep, auto = [], {}, tags_auto(F)
     for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep):
-        r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
+        r, c, o = record(sid, p, F, sug, orig, species, route, auto), crop_of(F, p['f']), old.get(p['f'])
         mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
         if not mine and route == 'cand':
             c = ((sug or {}).get(p['f']) or {}).get('c')
