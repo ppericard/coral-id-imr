@@ -68,8 +68,8 @@ def checklist(kind):
     kind "fish" = FishBase Table 1, "coral" = Corals of the World. Each name is matched through tools/taxonomy.json
     (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49; its section for `kind`, a core.js SUBJECTS id): a name with a
     species row there brings the name WoRMS accepts now and iNaturalist's spelling of it, so a checklist written with
-    former names meets iNaturalist's current ones without a hand mapping; a subject the file does not hold yet (the
-    fish) is matched as written."""
+    former names meets iNaturalist's current ones without a hand mapping; a name with no row (or a subject the file
+    does not hold) is matched as written."""
     if kind not in _C:
         d = json.loads(CHECKLISTS.read_text(encoding="utf-8"))
         if kind == "fish":

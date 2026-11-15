@@ -1003,6 +1003,16 @@ const darkCards = (p, sel) =>
           x = await wp();
           if ((x.views.find(v => v[0] === 'WoRMS') || [])[1] !== '#' + wh(sid) || x.label !== 'Key' || x.cvk.join() !== sid)
             fails.push(`${w}px Tree WoRMS: back to the Key ${JSON.stringify(x)}`);
+          // A photo named as iNaturalist writes a species WoRMS writes otherwise (names.json fish, tools/taxonomy.py):
+          // the WoRMS tag on its tile (admin.js nameTag; s213 Cheilinus fasciatus, iNaturalist's Concholabrus fasciatus).
+          if (w === 1280) {
+            await go(other.hash + 'photos/tree/key/s213');
+            const tag = await p.evaluate(() =>
+              [...document.querySelectorAll('.adm-ftile .adm-worms')].map(e => e.textContent + ' | ' + e.title)
+            );
+            if (!tag.length || !tag.every(t => t === 'WoRMS: Cheilinus fasciatus | iNaturalist spelling'))
+              fails.push(`${w}px Tree: the WoRMS tag on a fish photo ${JSON.stringify(tag.slice(0, 3))}`);
+          }
         }
         // The tags as filters (docs/ROADMAP.md "The Tree tab", Q340: circles, look-alikes, what needs work, as tags and
         // filters), combined with All | IMR, in both views, read through the Key's leaves; on a phone (the tree hidden) the
