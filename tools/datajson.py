@@ -8,8 +8,18 @@ different genera no longer conflict, and writing an unchanged file gives the sam
     python3 tools/datajson.py             # rewrite data.json in this layout
     python3 tools/datajson.py --check     # exit 1 when data.json or cand.json is not in this layout (checks.yml)
     python3 tools/datajson.py --split     # move the candidates curation.json doesn't name from data.json to cand.json
+
+The instance's layer (tools/instance.py; design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5): the
+IMR instance's coral fields (imrg, and each genus's ig, imr and mn) live in the coral layer file tools/instance.json
+names (today tools/instances/imr/coral.json), and data.json carries a copy where it always had them. dump() to data.json
+lays the layer on, and stops when the data it is given changes one of those fields (an edit belongs in the layer file);
+the rewrite lays the layer on (after an edit of the layer file); --check fails when data.json is not as its layers give
+it, byte for byte.
 """
 import json, os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import instance  # noqa: E402  (the instance's coral layer)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH = os.path.join(ROOT, 'data.json')
@@ -92,7 +102,14 @@ def load(path=PATH):
         return json.load(fh)
 
 
+def is_data(path):
+    """path names the repository's data.json (the file the instance's coral layer is laid on)."""
+    return os.path.realpath(path) == os.path.realpath(PATH)
+
+
 def dump(d, path=PATH):
+    if is_data(path) and isinstance(d, dict) and 'gen' in d:
+        d = instance.coral_layered(d)
     with open(path, 'w', encoding='utf-8', newline='\n') as fh:
         fh.write(dumps(d))
 
@@ -107,16 +124,21 @@ if __name__ == '__main__':
         if not os.path.exists(path): continue
         with open(path, encoding='utf-8', newline='') as fh:
             s = fh.read()
-        good = dumps(json.loads(s))
+        d = json.loads(s)
+        if is_data(path):
+            d = instance.coral_compose(d, instance.load_layer('coral'))  # the layer wins: an edit of the layer file
+        good = dumps(d)
         name = os.path.basename(path)
         if '--check' in sys.argv[1:]:
             if s != good: bad.append(name)
-            else: print(name, 'layout OK')
+            else: print(name, 'layout OK' + (', as its layers give it' if is_data(path) else ''))
         elif s != good:
-            dump(json.loads(s), path)
+            with open(path, 'w', encoding='utf-8', newline='\n') as fh:
+                fh.write(good)
             print(name, 'rewritten')
         else:
             print(name, 'already in layout')
     if bad:
-        sys.exit(', '.join(bad) + ' not in the canonical layout: run python3 tools/datajson.py (and write it with '
-                 'tools/datajson.py dump(), never json.dump)')
+        sys.exit(', '.join(bad) + ' not in the canonical layout, or not as its layers give it (data.json: the coral '
+                 'layer, tools/instance.py): run python3 tools/datajson.py (and write it with tools/datajson.py dump(), '
+                 'never json.dump)')
