@@ -69,6 +69,10 @@ const GATES = {
   FROMHOME_SHEET: (v, N) =>
     fn('app.js', 'const fromHomeOn = ', '\n', 'fromHomeOn', {sheetV: () => (v === undefined ? 0 : v), FROMHOME_SHEET: N})(),
   LIGHT_SHEET: (v, N) => fn('sync.js', 'const lightOn = ', '\n', 'lightOn', {sheetV: () => v, LIGHT_SHEET: N})(),
+  // The leaderboard tree sent only when it changed, or the sheet holds another (sync.js treeOn, boardUnits, treesSeen;
+  // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
+  // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).
+  TREE_SHEET: (v, N) => fn('sync.js', 'const treeOn = ', '\n', 'treeOn', {sheetV: () => v, TREE_SHEET: N})(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
@@ -140,6 +144,19 @@ const GATES = {
     assert.strictEqual(logOk({s: 'coral', m: 'quiz'}, v), true, 'a coral answer is always sent');
     assert.strictEqual(logOk({s: 'fish', m: 'quiz'}, v), Number(v) >= 60, 'a fish answer from LOG_SHEET');
     return logOk({s: 'fish', m: 'wink'}, v) && logOk({m: 'wink'}, v);
+  },
+  // A Find the X's photo tapped (quiz.js answer pa; Q371): sent from the version that stores it (Code.gs Photo answered),
+  // through core.js logOut at both of sync.js's sends; before, the copy sent leaves it out and keeps the rest, the queue
+  // untouched (an older script gets exactly what it got before).
+  PA_SHEET: v => {
+    const {logOut} = require('../core.js'),
+      a = {id: 'a1', m: 'quiz|f', a: 'f:Damselfishes', ph: 'fi1', pa: 'fi2'},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz|f', a: 'f:Damselfishes', ph: 'fi1', pa: 'fi2'}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, pa: 'fi2'}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.pa === 'fi2';
   },
   // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
   // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).

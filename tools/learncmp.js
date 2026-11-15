@@ -19,6 +19,9 @@
 // --looks K: the looks declared before running (rule L11, progressive): each look reads the one-sided bound at
 // 1 - 0.10 / K and the primary at 0.05 / K (Bonferroni). Default 1: 90% bounds, the primary at 0.05.
 // --subject: only for files written before learnsim recorded it (the corals' units met keep their margin of 2 genera).
+// Breaks (learnsim --breaks, 2026-11-15): the measures of kind 'break' (cbLen, cbLong, cbRight, afterRight, held,
+// holdAfter, open15) are read after each break both files took, per profile, with their one-sided bounds either side
+// (no margin is set for them); one of them may be the primary (--primary cbLen@1d:down).
 //
 // Guardrails (GUARDRAILS below, LEARNING.md's table): per guardrail, checkpoint and profile, the paired difference after
 // - before over the seeds, its one-sided bound on the side of harm (paired t on n - 1 degrees of freedom), and the
@@ -104,8 +107,20 @@ const hardShare = (run, cp) => {
   const U = P.filter(x => x[0]);
   return U.length ? U.filter(x => x[1] > 0 && x[1] < 4).length / U.length : null;
 };
+// A run's record of one break (learnsim --breaks: per run, breaks [{brk, cbLen, cbOk, held, after, afterOk, holdAfter,
+// opens, ...}], each break from the same first session); none when the run did not take that break.
+const brkOf = (run, b) => (run.breaks || []).find(x => x.brk === b) || null;
+// learnsim's cap on the questions of one break, the comeback and the --after questions together (tools/learnsim.js,
+// "Breaks"): a break that reached it may have fewer --after questions than asked.
+const BRK_CAP = 200,
+  cut = x => (x.cbLen || 0) + (x.after || 0) >= BRK_CAP;
+const brkGet = f => (r, b) => {
+  const x = brkOf(r, b);
+  return x ? f(x) : null;
+};
 // Every measure learncmp reads, each a function of (run, checkpoint) giving a number or null. kind: 'row' at a learnsim
-// checkpoint, 'window' over the questions 1..checkpoint, 'run' over the whole run (checkpoint 'run'). dg: digits shown.
+// checkpoint, 'window' over the questions 1..checkpoint, 'run' over the whole run (checkpoint 'run'), 'break' after a
+// learnsim --breaks break (checkpoint its name: 1d, 3d, 1w...; 2026-11-15, the comeback's tolerance, Q367). dg: digits.
 const MEASURES = {
   know: {
     label: 'True knowledge (D*, or knowSlate in the app world)',
@@ -139,6 +154,21 @@ const MEASURES = {
   phEarly: {label: `Share of phase photos in a unit's first ${PHN} answers`, kind: 'window', dg: 3, get: phEarly},
   phLate: {label: `Share of phase photos once a unit has ${2 * PHN} answers`, kind: 'window', dg: 3, get: phLate},
   phAns: {label: 'Answers on phase photos', kind: 'window', dg: 1, get: phAns},
+  // After a break (learnsim --breaks, --after N): the comeback and the N questions after it.
+  cbLen: {label: 'Comeback questions after the break', kind: 'break', dg: 1, get: brkGet(x => x.cbLen)},
+  cbLong: {label: 'Comebacks of 40 questions or more (a whole visit)', kind: 'break', dg: 2, get: brkGet(x => (x.cbLen >= 40 ? 1 : 0))},
+  cbRight: {label: 'Right % during the comeback', kind: 'break', dg: 1, get: brkGet(x => (x.cbLen ? (100 * x.cbOk) / x.cbLen : null))},
+  afterRight: {label: 'Right % in the questions after the comeback', kind: 'break', dg: 1, get: brkGet(x => (x.after ? (100 * x.afterOk) / x.after : null))},
+  held: {label: 'Answers with no genus opening after the break (floor, comeback)', kind: 'break', dg: 1, get: brkGet(x => x.held)},
+  // Counts over a window after the comeback: none when the window was cut (Codex review #951: learnsim stops a break at
+  // BRK_CAP questions in all, so a long comeback can leave fewer answers after it, and a count over less time is no pair).
+  holdAfter: {label: 'Answers after the comeback with the opening hold on', kind: 'break', dg: 2, get: brkGet(x => (cut(x) ? null : x.holdAfter))},
+  open15: {
+    label: 'Genera opened on their cards in the first 15 answers after the comeback',
+    kind: 'break',
+    dg: 2,
+    get: brkGet(x => (x.after < 15 ? null : (x.opens || []).filter(q => q <= 15).length))
+  },
   // The sheet's photo ratings in the rated world's population (--app sheet, tools/ratedworld.js runPop): one value per
   // seed (the population shares them), at the checkpoints of the players' answers; harm: +1 when higher is worse.
   rateErr: {label: 'Photo rating error against the truth (centred RMS, photos answered)', kind: 'pop', dg: 4, harm: 1, get: (p, cp) => popAt(p, cp, 'err')},
@@ -203,11 +233,13 @@ function stratSignFlip(pairs, {exact = 20, draws = 100000, seed = 1} = {}) {
     sf = signFlip(z, {exact, draws, seed});
   return {n: z.length, T, p: sf.p, exact: sf.exact, draws: sf.draws};
 }
-// MEASURE@CHECKPOINT (checkpoint a number or 'run').
+// MEASURE@CHECKPOINT (checkpoint a number, 'run', or a break's name for a 'break' measure: 30m, 8h, 1d, 1w, 1mo).
+const BRK = /^\d+(?:\.\d+)?(?:mo|m|h|d|w)$/;
 function parseAt(s) {
-  const m = /^(\w+)@(\d+|run)$/.exec(s || '');
+  const m = /^(\w+)@(\d+|run|\d+(?:\.\d+)?(?:mo|m|h|d|w))$/.exec(s || '');
   if (!m || !MEASURES[m[1]]) throw new Error(`bad measure ${s}: MEASURE@CHECKPOINT, MEASURE one of ${Object.keys(MEASURES).join(', ')}`);
-  return [m[1], m[2] === 'run' ? 'run' : Number(m[2])];
+  if ((MEASURES[m[1]].kind === 'break') !== BRK.test(m[2])) throw new Error(`bad measure ${s}: a break measure takes a break's name (1d), the others a number or run`);
+  return [m[1], m[2] === 'run' ? 'run' : BRK.test(m[2]) ? m[2] : Number(m[2])];
 }
 const key = (m, cp) => `${m}@${cp}`;
 
@@ -230,6 +262,7 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
   const reach = (F, m, cp) => {
     const M = MEASURES[m];
     if (cp === 'run') return M.kind === 'run';
+    if (M.kind === 'break') return (F.runs || []).some(r => !!brkOf(r, cp));
     if (M.kind === 'window') return (F.questions || 0) >= cp;
     return M.kind === 'row' && (F.checkpoints || []).includes(cp);
   };
@@ -325,7 +358,24 @@ function compare(B, A, {primary = null, costs = {}, looks = 1, subject = null} =
     });
     prim = {m, cp, dir: primary.dir, label: MEASURES[m].label, alpha, ...sf, way: P.filter(x => dir * x.d > 0).length, clear, per};
   }
-  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds};
+  // After the breaks both files took (learnsim --breaks): every break measure per break and profile, the paired difference
+  // and its one-sided bounds at conf on either side (no margin: LEARNING.md sets none for them; a change declares which
+  // side is its cost before running, rule L11).
+  const brks = [...new Set(keys.flatMap(k => (IB.get(k).breaks || []).map(x => x.brk)))].filter(b => keys.some(k => brkOf(IA.get(k), b))),
+    breaks = brks.map(b => ({
+      brk: b,
+      ms: Object.entries(MEASURES)
+        .filter(([, M]) => M.kind === 'break')
+        .map(([m]) => ({
+          m,
+          per: profiles.map(prof => {
+            const lo = cell(m, b, -1, prof),
+              hi = cell(m, b, 1, prof);
+            return {profile: prof, ...lo, lo: lo.bound, hi: hi.bound, bound: undefined};
+          })
+        }))
+    }));
+  return {subject: subj, looks, conf, alpha, pairs: keys.length, profiles, only, differ, guardrails, primary: prim, pops, seeds, breaks};
 }
 
 // The report, Markdown ready for a PR.
@@ -399,6 +449,19 @@ function report(R, nameB = 'before', nameA = 'after') {
         : 'Every guardrail measured is held.'
   );
   if (none.length) L.push(`Not measured by these files: ${none.join('; ')}.`);
+  if (R.breaks && R.breaks.length) {
+    L.push('');
+    L.push(`**After a break** (cell: before -> after, paired difference [one-sided ${(100 * R.conf).toFixed(1)}% bounds either side]; no margin is set for these)`);
+    R.breaks.forEach(({brk, ms}) => {
+      L.push('');
+      L.push(`| ${brk} | ${R.profiles.join(' | ')} |`);
+      L.push(`|---|${R.profiles.map(() => '---|').join('')}`);
+      ms.forEach(({m, per}) => {
+        const dg = MEASURES[m].dg;
+        L.push(`| ${MEASURES[m].label} | ${per.map(x => (x.n ? `${v(x.before, dg)} -> ${v(x.after, dg)}, ${f(x.d, dg)} [${f(x.lo, dg)}, ${f(x.hi, dg)}]` : '-')).join(' | ')} |`);
+      });
+    });
+  }
   if (R.seeds && R.seeds.length) {
     L.push('');
     L.push(`**The sheet's photo ratings** (one value per seed, ${R.seeds.length} seeds; before -> after, paired difference [one-sided ${(100 * R.conf).toFixed(1)}% bound on the side of harm], exact sign-flip p two-sided)`);
@@ -414,7 +477,7 @@ function report(R, nameB = 'before', nameA = 'after') {
 }
 
 function list() {
-  const L = ['Measures (MEASURE for --primary and --cost; row: at a learnsim checkpoint, window: questions 1..N, run: the whole run):'];
+  const L = ['Measures (MEASURE for --primary and --cost; row: at a learnsim checkpoint, window: questions 1..N, run: the whole run, break: after a --breaks break, MEASURE@1d):'];
   Object.entries(MEASURES).forEach(([k, M]) => L.push(`  ${k.padEnd(8)} ${M.kind.padEnd(6)} ${M.label}${M.get ? '' : ' (not in the files yet)'}`));
   L.push('Guardrails (LEARNING.md "Guardrails and margins"):');
   GUARDRAILS.forEach(G =>

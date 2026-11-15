@@ -210,13 +210,55 @@ test('a name of part of the family counts only on a photo it designates (Q333): 
   const FAM = NAMES.filter(o => !rankOf(o.g)); // the names a family question reads
   let n = 0;
   for (const x of F.species.filter(y => y.circle && !y.out && y.family))
-    for (const t of [(G.get(x.genus) || {}).name, x.name, x.now, ...(x.cn || []).flat()].filter(Boolean)) {
+    for (const t of [(G.get(x.genus) || {}).name, x.name, x.now, ...(x.cn || []).flat(), ...(x.cnr || []).flat()].filter(Boolean)) {
       n++;
       assert.strictEqual(C.typeVerdict(C.typeMatchIn(FAM, t, C.typeNormAll), x.family, [x.id]), 'exact', `${t} on ${x.name}`);
     }
   assert.ok(n > 2000, String(n));
   // a name of another family stays that family's (rule L2), whatever the photo
   assert.strictEqual(family('Peacock razorfish', 'f:Pipefishes', NAMES, [sid('Dunckerocampus dactyliophorus')]).got.c, 'f:Wrasses');
+});
+
+// Pierre, 2026-11-15, Q376: a regional name (Swallowtail puller, Australian) and the genus names of (d) (Hinds, inferred;
+// Humbugs, Dwarf angelfishes, Zebra lionfishes, iNaturalist's) are read as their family on a photo they designate, and
+// are a mistake on another (Q333).
+test('regional names and the new genus names (Q376): right on a photo they designate, a mistake on another', () => {
+  const on = (text, fam, name) => family(text, fam, NAMES, [sid(name)]).got.c;
+  assert.strictEqual(on('Swallowtail puller', 'f:Damselfishes', 'Chromis ternatensis'), 'f:Damselfishes');
+  assert.strictEqual(family('Swallowtail puller', 'f:Damselfishes').read, '“Swallowtail puller” is one of the Damselfishes.');
+  assert.strictEqual(on('Swallowtail puller', 'f:Damselfishes', 'Chromis viridis'), '');
+  assert.strictEqual(on('Headband humbug', 'f:Damselfishes', 'Dascyllus reticulatus'), 'f:Damselfishes');
+  // Hinds and hind: every Cephalopholis; not a Plectropomus or an Epinephelus
+  for (const t of ['Hinds', 'hind']) {
+    assert.strictEqual(on(t, 'f:Groupers', 'Cephalopholis argus'), 'f:Groupers', t);
+    assert.strictEqual(on(t, 'f:Groupers', F.species.find(x => /^Epinephelus /.test(x.name) && x.circle).name), '', t);
+  }
+  // Humbugs (the genus, all four Dascyllus) and humbug (one species' word): any Dascyllus, not a Chromis
+  for (const t of ['Humbugs', 'humbug']) {
+    assert.strictEqual(on(t, 'f:Damselfishes', 'Dascyllus aruanus'), 'f:Damselfishes', t);
+    assert.strictEqual(on(t, 'f:Damselfishes', 'Dascyllus melanurus'), 'f:Damselfishes', t);
+    assert.strictEqual(on(t, 'f:Damselfishes', 'Chromis viridis'), '', t);
+  }
+  assert.strictEqual(on('Dwarf angelfishes', 'f:Angelfishes', 'Centropyge bicolor'), 'f:Angelfishes');
+  assert.strictEqual(on('Dwarf angelfish', 'f:Angelfishes', 'Pomacanthus imperator'), '');
+  // Zebra lionfishes (the genus) and Zebra lionfish (its one species): one name in two numbers, right on it
+  for (const t of ['Zebra lionfishes', 'Zebra lionfish'])
+    assert.strictEqual(on(t, 'f:Lionfishes', 'Dendrochirus zebra'), 'f:Lionfishes', t);
+});
+
+// Pierre, 2026-11-15, Q381: two species may carry the same common name. The four names #954 kept with their IMR species
+// are listed by both again: typed on a family question, each is right on a photo of either species, a mistake on another.
+test('a common name two species share (Q381): right as their family on a photo of either, a mistake on another', () => {
+  const on = (text, fam, name) => family(text, fam, NAMES, [sid(name)]).got.c;
+  [
+    ['Longnose butterflyfish', 'f:Butterflyfishes', ['Forcipiger longirostris', 'Forcipiger flavissimus'], 'Chaetodon auriga'],
+    ['Brown damsel', 'f:Damselfishes', ['Pomacentrus armillatus', 'Pomacentrus opisthostigma'], 'Chromis viridis'],
+    ['Blackspot snapper', 'f:Snappers', ['Lutjanus fulviflamma', 'Lutjanus ehrenbergii'], 'Lutjanus kasmira'],
+    ['Yellowtail wrasse', 'f:Wrasses', ['Diproctacanthus xanthurus', 'Anampses meleagrides'], 'Thalassoma lunare']
+  ].forEach(([t, fam, both, other]) => {
+    both.forEach(n => assert.strictEqual(on(t, fam, n), fam, `${t} on ${n}`));
+    assert.strictEqual(on(t, fam, other), '', `${t} on ${other}`);
+  });
 });
 
 test('razorfish: right on the Shrimpfishes and on the Wrasses, explained; on a pipefish wrong, no unit given (Q319)', () => {

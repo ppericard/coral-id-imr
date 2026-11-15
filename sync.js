@@ -77,16 +77,51 @@ function syncSummary() {
 // player's saved progress of the subject over it. A subject whose content is not loaded on this device sends none.
 // A subject with a global score (core.js SUBJECTS score: the fish) sends its tree instead (app.js UNITS tree), once the
 // sheet ranks by it (core.js SCORE_SHEET, v101: board_ ranks by core.js treeScore, the % My progress shows; rule D4).
+// From TREE_SHEET (Pierre, 2026-11-15, Q375: "ok"; the sheet keeps the tree in chunks, Code.gs boardTreePut_) the tree
+// goes only when it changed since a save that carried it was answered, or when the sheet has said since that it holds
+// another one (treesSeen); the subject is then left out of boards, never sent as a list. Before TREE_SHEET, with every
+// save, as before. Units that only fit in a chunked tree (the species, Q362) open only from TREE_SHEET too: the app
+// PR that adds them gates them on treeOn (rule D4).
 const boardUnits = () =>
   Object.fromEntries(
     SUBJECTS.filter((S, i, a) => S.board && S !== a.find(x => x.board))
       .map(S => {
         const U = typeof UNITS === 'object' ? UNITS[S.id] : null,
           T = U && S.score && U.tree && sheetV() >= SCORE_SHEET ? U.tree() : null;
+        if (T && treeOn() && treeKept(S.id, T)) return [S.id, null];
         return [S.id, T || (U ? U.slate() : [])];
       })
       .filter(([, u]) => u && (Array.isArray(u) ? u.length : (u.f || []).length))
   );
+// The leaderboard trees on the sheet (TREE_SHEET; Code.gs boardUnitsSave_ bt): {id: {h: this device's tree's checksum
+// when a save carried it, t: the sheet's checksum of the tree it held in that save's reply}}, on this device whatever the
+// account (one tree per subject for the whole sheet).
+const TREE_SHEET = 143;
+const treeOn = () => sheetV() >= TREE_SHEET;
+const TREES = 'reefid-board-trees';
+const treeSums = new WeakMap();
+const treeSum = T => {
+  if (!treeSums.has(T)) treeSums.set(T, dataSum({t: JSON.stringify({f: T.f, s: T.s})}));
+  return treeSums.get(T);
+};
+const treeKept = (id, T) => {
+  const k = (store.get(TREES, {}) || {})[id];
+  return !!k && k.h === treeSum(T);
+};
+// A save's reply (j.bt from TREE_SHEET), sent: {id: the checksum of each tree that save carried}. A tree carried is
+// kept as sent, whether the sheet took it or refused it (a refused one is in its Deploy log; it would only be refused
+// again); a subject whose tree the sheet now holds differs from the one it held when this device last sent (another
+// app sent its own) is sent again with the next save. A reply without bt changes nothing: what was carried goes again.
+function treesSeen(j, sent) {
+  if (!j || !(Number(j.v) >= TREE_SHEET) || !j.bt || typeof j.bt !== 'object') return;
+  const K = {...(store.get(TREES, {}) || {})};
+  Object.keys(j.bt).forEach(id => {
+    const t = String(j.bt[id]);
+    if (sent[id]) K[id] = {h: sent[id], t};
+    else if (K[id] && K[id].t !== t) delete K[id];
+  });
+  store.set(TREES, K);
+}
 // The saved data comes with the key names of the app that saved it (core.js keysIn: an app from before the rename to
 // IMR Reef ID, 2026-11-03, saves the old ones): read with the new names only.
 // rv: the rules version this device's progress was last replayed with (replayAdopt): the sheet (v28) answers with the
@@ -715,7 +750,7 @@ const archivedOf = (j, me) => !!(j && j.ok && ((!j.found && typeof me.srv === 'n
 function syncOnce(tries = 0, pulled = null) {
   const me = SYNC,
     info = {}; // what this try's requests did (sheetCall), for a failed save's report
-  let rev, sent, log, cut, cuts, rvs, light, X, sumX, base;
+  let rev, sent, log, cut, cuts, rvs, light, X, sumX, base, trees;
   const mine = !pulled && skipPull(me) ? {ok: true, found: true, rev: me.srv, data: {...sdOf(me)}, acct: me.acct, v: sheetV()} : null;
   // If the device is disconnected or switched to another account meanwhile, drop this sync.
   // Script v11: a name the admin removed or merged answers 'gone' (with the name it joined): recorded below, no send.
@@ -758,7 +793,7 @@ function syncOnce(tries = 0, pulled = null) {
           pin: me.pin,
           ...what,
           summary: syncSummary(),
-          answers: log,
+          answers: log.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
           av: appVer(), // the app's version (sheet v25: a request without it comes from an app before 2026-11-03)
           rv: rvAsk(), // the rules version applied here (sheet v28: an older one gets the full replay back)
           ...(Object.keys(rvs).length ? {rvs} : {}), // the other subjects' (Code.gs replays_)
@@ -772,6 +807,12 @@ function syncOnce(tries = 0, pulled = null) {
           ...(log.length ? devField() : {}), // the device of its answers (sheet DEV_SHEET)
           ...(light ? {light: 1} : {})
         };
+      // The leaderboard trees this save carries, by their checksums (treesSeen, from the reply).
+      trees = Object.fromEntries(
+        Object.entries(o.summary.boards || {})
+          .filter(([, u]) => u && !Array.isArray(u))
+          .map(([id, T]) => [id, treeSum(T)])
+      );
       return (light ? lightBody(me, o) : Promise.resolve(JSON.stringify(o))).then(body =>
         sheetCall(SYNC_URL, {method: 'POST', body}, info, 'save').catch(x => {
           fateUnknown(me);
@@ -841,6 +882,7 @@ function syncOnce(tries = 0, pulled = null) {
           me.log = (me.log || []).filter(x => !done.has(x.id));
         }
         groupsSeen(j, me.name); // the beta groups (v48), as the load's reply
+        treesSeen(j, trees); // the leaderboard trees the sheet now holds (TREE_SHEET)
         saveOk(me); // a run of failed tries ends here
         // The sheet's hold over every answer now logged, in time order (v23; Codex review #370), plus any answer given
         // while this send was on its way.
@@ -1232,7 +1274,7 @@ function sendAnon() {
     // gives it (v29); an older script ignores it.
     body: JSON.stringify({
       anon: who,
-      anonAnswers: batch,
+      anonAnswers: batch.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
       av: appVer(),
       rv: rvApplied(),
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),

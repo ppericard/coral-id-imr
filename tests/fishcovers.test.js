@@ -31,11 +31,13 @@ function app(photoDiff) {
     fishPid: C.fishPid,
     fishScoreTree: C.fishScoreTree,
     refLevel: C.refLevel,
+    contentApply: C.contentApply,
+    SUBJECTS: C.SUBJECTS,
     ...(photoDiff ? {photoDiff} : {})
   };
   vm.createContext(ctx);
   vm.runInContext(
-    'let FISH = null, FISHRAW = null, CUR = null;\n' +
+    'let FISH = null, FISHRAW = null, CUR = null, FISHF = null;\n' +
       block(src, 'const VIEWS = [', '];\n', {through: 1, file: 'app.js'}) +
       block(src, 'const allPhotos = g =>', '// applyCuration(d, c) and applySlots', {file: 'app.js'}) +
       block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +

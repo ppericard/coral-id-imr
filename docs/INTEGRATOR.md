@@ -17,7 +17,8 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
 - **Do not stretch a decision of his to cover a new point**: Q354's "IMR names on screen" was taken to cover the photo
   credit; he chose the other way (the credit keeps the iNaturalist name).
 - **An interruption to ask a question is not a stop**: answer, then carry on.
-- **Before 16:30 nothing winds down** (Rule 0): no "end-of-day update" talk before then.
+- **Rule 0 is one sentence since 2026-11-15**: after 17:30 (the hook's time, never a guess) ask Pierre nothing;
+  nothing else changes, no "closing" phase, no wind-down talk. He nearly dropped the rule over its misapplication.
 - **Every brief forbids sending anything to an outside service** (search engines, image search, APIs) without
   Pierre's go (AGENTS.md "Always ask first"): on 11-15 an agent sent R2 photo addresses to Yandex image search.
 - **Every brief says: a refused command is reported, never worked around** (another tool, `subprocess`, another
@@ -27,6 +28,11 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
   scratch scripts the guard does not see).
 - **Fish judging batches run `python3 tools/judging_fish.py one` before committing** (#942: one judgement per photo;
   `one --check` fails CI otherwise).
+- **Wait on trains with `pgrep -f "python3 tools/train.py"`**, never `ps aux | grep` on a word: a waiter's own command
+  line holds the word, so two waiters blocked each other for 45 minutes (11-15).
+- **After merging main into a PR, check for conflict markers** (`git diff --check`, `grep -n '^<<<<<<<'`) before the
+  commit, resolve per hunk (never `git checkout --ours` on a whole file: it reverted #959's and #960's docs, #964),
+  and commit the merge before `sheet_version.py --assign` (it now refuses otherwise, #960).
 - **A wait loop must end**: one keyed on "the latest Candidate photos run" among the last 10 runs of any workflow
   spun for an hour (none in the 10); check with `ps` that a queued train runs, and read its output.
 
@@ -58,7 +64,6 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   the scope to a branch of its own with a short design note (findings that keep coming are a structural problem: we find
   and decide the model; Pierre gets options with benefits, risks and a recommendation only when he would see the
   difference); simulations capped at what is read (Q208's look 2 took 37 s, a full tier-2 run 3 h); one train at a time.
-- **Rule 0 read right**: from 16:30 open nothing new; questions that close a topic under way are fine until 17:30.
 - **Ask back a short or ambiguous request** before any work (the 🌱 was built twice: a drawn badge, then a rename,
   before "the name unchanged, 🌱 added on its own"; a "razorfish" sentence was misread as a rename request).
 - **Names**: real names only in the chat, pseudonyms (P1…) in every committed file and PR (rule D2; a slip in this
@@ -114,9 +119,7 @@ integrator starts on another account from 11-11 morning. What the day taught, no
 - **Merge continuously**; keep few PRs open. He dislikes a long open list.
 - **Never ask him to click** anything the integrator can do: resolving Codex threads, marking PRs ready, retargeting,
   dispatching a workflow (`gh api -X POST …/actions/workflows/approved-photos.yml/dispatches -f ref=main`).
-- **Rule 0** (AGENTS.md): after 17:30 Manila, start nothing new he asks for; park it in STATUS "Parked after hours".
-  He can override for one evening only after being reminded of his own limit (he did on 11-06 at 19:48, "launch them,
-  I won't look"). Finishing already-decided merges after 17:30 is closing, not new work.
+- **Rule 0** (AGENTS.md, one sentence since 2026-11-15): after 17:30 Manila, ask him nothing; questions wait in STATUS.
 - **Quota**: on 2026-11-06 ~17:03 he flagged the quota at 7% and asked to save it; stopped agents' work stayed on branches.
   The daily 04:31 Manila morning-report scheduled task is **disabled** (Q202): find it with list_triggers and re-enable
   it once the quota is back and he agrees.
@@ -169,8 +172,10 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   `core.js`, through `python3 tools/sync_core.py --fix`) carries one `tools/sync/changes/<branch>.md` and leaves
   `VERSION` and the header line alone, so parallel PRs no longer collide. To merge it: in its worktree, merge
   `origin/main` into the branch, run `python3 tools/sheet_version.py --assign --dry-run`, then `--assign` (VERSION + 1,
-  the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds or changes and
-  every bare `vNEXT` set to the new number, the file removed), run the fast tier, commit "Sheet script vN assigned at merge",
+  the entry folded into the header line and ARCHITECTURE.md's version history, every gate the PR adds and every bare
+  `vNEXT` set to the new number, main's gates left alone, the file removed; a merge stopped on a conflict may stay
+  uncommitted until then, the tool reads its `MERGE_HEAD`, and it refuses a branch that does not hold `origin/main`
+  yet, unresolved conflicts, or a PR that moves one of main's gates), run the fast tier, commit "Sheet script vN assigned at merge",
   push, `@codex review`, wait for green and Codex, then merge alone or as the one Code.gs PR of a train. A PR built under
   the old rule (its own VERSION bump) passes the check only if its number is still main+1 and ARCHITECTURE.md names it:
   otherwise move its header entry into a changes file and restore main's VERSION and header line. Rules versions (RVS)

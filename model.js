@@ -1041,7 +1041,8 @@ const introHold = () => HOLDS >= INTRO.HOLD;
 // back. No new constant: h is already in success units, the scale the Elo steps the ability on. Never on an exam
 // question (as hard as the game gets).
 const holdEase = () => Math.min(0, INTRO.HOLD - HOLDS);
-// slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs).
+// slack: the allowance an answer (INTRO.SLACK for the hold; the comeback's CUSUM passes the rust a question repairs
+// plus INTRO.SLACK, Q367).
 const holdNext = (h, e, good, slack = INTRO.SLACK) =>
   Math.max(0, Math.round((h + (Number(e) || 0) - (good ? 1 : 0) - slack) * 1000) / 1000);
 function holdStep(e, good) {
@@ -1097,9 +1098,10 @@ function holdSync(h, log, ids) {
 //   at least -ln R: a little easier, never more than the rust explains), no card, duel or exam. Logged |c and counted in
 //   the opening hold with the chance they really had (the plausible choices k as for any question, and the rust: a
 //   miss the rust explains adds less).
-// - It ends by the answers: a CUSUM like the opening hold's (holdNext), rust <- max(0, rust + p - right - l), p the
-//   recall-adjusted chance of the question, l the rust the question itself repairs (its genus is reviewed): doing better
-//   than expected melts it fast, worse keeps it going; it ends at 0. A break during a comeback adds to it.
+// - It ends by the answers: a CUSUM like the opening hold's (holdNext), rust <- max(0, rust + p - right - l - SLACK), p
+//   the recall-adjusted chance of the question, l the rust the question itself repairs (its genus is reviewed), SLACK the
+//   opening hold's tolerance, INTRO.SLACK 0.1 (Q367, 2026-11-15): doing better than expected melts it fast, more than 0.1
+//   an answer worse keeps it going; it ends at 0. A break during a comeback adds to it.
 // - SESSION.GAP: a new visit starts after 30 minutes without an answer (Pierre, 2026-11-02: the standard session timeout
 //   of web analytics, Google Analytics, also commonly used to cut learning logs into sessions), never at a page
 //   load (a reload or an update is no new visit). From a new visit, and from the start of a comeback, the first
@@ -1205,12 +1207,15 @@ function comebackOf(met) {
   return CB.ok ? L.slice(-h) : L.slice(0, h);
 }
 // A comeback answer: right or wrong against the recall-adjusted chance p (R the genus's recall, th its ability, d the
-// photo's difficulty, k the plausible choices); l = the rust it repairs.
+// photo's difficulty, k the plausible choices); l = the rust it repairs. The allowance an answer is l plus the opening
+// hold's tolerance, INTRO.SLACK (Pierre, 2026-11-15, Q367: without it a player 0.075 an answer below expectation stayed in
+// a comeback for a whole 40-question visit and no genus opened; docs/LEARNING.md "The comeback's tolerance"). A player
+// more than 0.1 an answer below expectation still stays in it.
 function comebackStep(R, th, d, k, good) {
   const x = (1 - 1 / k) * sig(th - d),
     p = 1 / k + x * R;
   if (good) CB.ok++;
-  CB.r = holdNext(CB.r, p, good, x * (1 - R));
+  CB.r = holdNext(CB.r, p, good, x * (1 - R) + INTRO.SLACK);
   cbSave();
 }
 // The times an answer leaves in the progress: the genus's last answer and days answered right, the player's last answer.
@@ -1677,13 +1682,30 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
     .map(k => k.split('|'))
     .filter(([a, b]) => L.includes(a) && L.includes(b) && isDataLook(a, b))
     .map(p => p.sort());
+// A choice's label as its button shows it (app.js unameT: the unit's name), compared as typed (letters only, core.js
+// typeNormAll: Yellowtail / Yellow-tail wrasse read as one). Two units may carry the same name (Pierre, 2026-11-15, Q381:
+// two fish species may share a common name), but a question never shows two choices of one label (distractors).
+const choiceKey = n =>
+  String((GX(n) || {}).name || n)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[^a-z]/g, '');
+// The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
+const choiceApart = (L, taken = []) => {
+  const seen = new Set(taken.map(choiceKey));
+  return L.filter(n => !seen.has(choiceKey(n)) && seen.add(choiceKey(n)));
+};
 function distractors(t, list, traps = trapsFor(t), known = introduced) {
   // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (Codex review #526: a family with one genus at Advanced had one choice).
-  const rk = rankOf(t);
+  // Never a choice of the target's label, nor two of one label (choiceApart, Q381): of two units of one label, the one
+  // the rules below rank first is kept and the next one takes the other's place.
+  const rk = rankOf(t),
+    tk = choiceKey(t);
   list = list.filter(n => rankOf(n) === rk);
   if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
+  list = list.filter(n => n === t || choiceKey(n) !== tk);
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])
@@ -1697,15 +1719,17 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
     pooled = list
       .filter(n => n !== t && known(n) && !mine.includes(n) && pooledConf(t, n) >= CONF.TRAP)
       .sort((a, b) => pooledConf(t, b) - pooledConf(t, a)),
-    look = [...mine, ...pooled],
+    look = choiceApart([...mine, ...pooled]),
     out = look.slice(0, traps),
     left = list.filter(n => n !== t && !look.includes(n));
   // Exactly `traps` traps when other genera met exist; genera never met only to make up the three.
   if (traps >= 2)
-    return [...out, ...ranked.filter(n => known(n) && !look.includes(n)), ...look.slice(traps), ...ranked.filter(n => !known(n))].slice(
-      0,
-      3
-    );
+    return choiceApart([
+      ...out,
+      ...ranked.filter(n => known(n) && !look.includes(n)),
+      ...look.slice(traps),
+      ...ranked.filter(n => !known(n))
+    ]).slice(0, 3);
   const T = GX(t);
   const tf = imrFormsOf(t),
     apart = n => !imrFormsOf(n).some(f => tf.includes(f));
@@ -1727,7 +1751,7 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
     res = [...out];
   const add = (L, spread) =>
     L.forEach(n => {
-      if (res.length >= 3 || res.includes(n) || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
+      if (res.length >= 3 || !choiceApart([n], res).length || (spread && imrFormsOf(n).some(f => used.has(f)))) return;
       res.push(n);
       imrFormsOf(n).forEach(f => used.add(f));
     });
@@ -1770,15 +1794,16 @@ function customChoices(t, sel, play, traps, known) {
   const own = distractors(t, sel, traps, known);
   if (own.length >= 3) return own;
   const got = own.filter(n => known(n) && confusable(t, n)).length;
-  return [
+  // Never a label twice across the two (choiceApart, Q381).
+  return choiceApart([
     ...own,
     ...distractors(
       t,
-      play.filter(n => !sel.includes(n)),
+      play.filter(n => !sel.includes(n) && choiceApart([n], own).length),
       Math.max(0, traps - got),
       known
     )
-  ].slice(0, 3);
+  ]).slice(0, 3);
 }
 // The custom quiz's "My mix-ups" view (Pierre, 2026-11-03: "you usually know you make mistakes around these kinds of
 // genera, so you go there"): the genera in play grouped by the player's own confusions, most confused first.
