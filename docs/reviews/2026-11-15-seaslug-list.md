@@ -1,4 +1,4 @@
-# Sea slugs, step 1: the species list, the stars and a proposed circle 1 (2026-11-15)
+# Sea slugs, step 1: the species list, the stars and circle 1 (2026-11-15)
 
 This is the first step of the sea-slug subject, after the [nudibranch study](2026-11-15-nudibranch-mode-study.md) (§9,
 steps 1 and 3 started) and Pierre's answers to its questions (Q369, 2026-11-15). **It changes no app code.** It adds:
@@ -21,6 +21,22 @@ judgement.
 - **(d)** Scientific names only. English names and diver nicknames are shown on the sheets as information.
 - Later the same day, on photos: "We probably won't need as many photos per species as for the fish. I'll let you make
   proposals. There can still be variations with age." (§5)
+
+## Pierre's answers to this note (Q377, 2026-11-15 16:08 Manila: "oui à tout")
+
+He accepted the six recommendations of §6, now applied in `tools/seaslug_source.json` and `tools/seaslugs.json`:
+1. **20 stars by the score, without** *Janolus savinkini*, *Thorunna florens* and *Dendrodoris guttata* (they rested on
+   one long list). The next three scores replace them: *Phyllidia varicosa*, *Hypselodoris apolegma*, *Chromodoris
+   magnifica*.
+2. ***Hexabranchus lacer* added as a star**, beside *H. sanguineus*, and the pair recorded as look-alikes in the source
+   (`lookalikes`), for the subject's build. **21 stars** in all.
+3. **Later circles by commonness alone**: 60, then 100, then the rest.
+4. **Circle 1 of 45.**
+5. **The photo target**: start 6, game cap 12, 20 candidates, +5 for a documented juvenile form, 30 at most. To revisit
+   after the first judging pass. Recorded in the source (`photos`) and copied into the output (`photoTarget`).
+6. **`tools/seaslugs.json` stays the tool's output.** The subject's build will write the app's own file from it.
+
+The sections below give the numbers as decided. §6 keeps the questions as they were asked.
 
 ## 1. Method
 
@@ -125,8 +141,9 @@ judgement.
   - **stars score = (W + M) / 2**: the two signals weigh the same.
   - Log scales, because both are heavy-tailed: the most viewed species has 191,665 views, the median species with an
     article 242.
-- **The stars set** is the `stars.size` best scores, then Pierre's `add` and `remove`. Its own field (`star`), never an
-  order: the opening order stays commonness (Q369 c).
+- **The stars set** is the `stars.size` best scores among the species Pierre has not removed (`stars.remove`: the next
+  scores replace them), then the species he adds (`stars.add`). It is its own field (`star`), never an order: the
+  opening order stays commonness (Q369 c).
 - **A stability check**: the set is recomputed without each site in turn. The file lists the sites whose removal changes
   it, with how many species change (`leaveOneSiteOut`), and the stars that every such set keeps (`starsCore`).
 
@@ -134,8 +151,9 @@ judgement.
 
 - **Circle 1** = the stars, plus the most common species (all groups together) up to `circles.one`.
 - **Later circles** = the rest, by commonness, in blocks of `circles.next`, and the remainder last.
-- Written into the file as `proposal` with the status "proposal for Pierre's review (Q369); not used by the app", and
-  per species as `circle`, `star` and `rank` (commonness rank over all groups).
+- Written into the file as `proposal`, with the status "decided by Pierre (Q377, 2026-11-15); not used by the app yet",
+  and per species as `circle`, `star` and `rank` (commonness rank over all groups). The key keeps its name: it is what
+  the subject's build will read.
 
 ## 2. The species list: counts, and the study's numbers
 
@@ -166,7 +184,7 @@ judgement.
   - These discrepancies go to `points.json` once the subject exists (rule C5): the file's points are per subject, and the
     subject does not exist yet. Listed here so they are not lost.
 - **Names, as information for the sheets** (Q369 d):
-  - iNaturalist's English name (`en`): 38 of the 45 species of the proposed circle 1;
+  - iNaturalist's English name (`en`): 39 of the 45 species of circle 1;
   - WoRMS's English vernaculars (`wormsEn`): 22 of the 45;
   - the nicknames (`nick`), where the source ties one;
   - 675 WoRMS species synonyms (`syn`), used to find the species on the pages. Four synonyms claimed by two species were
@@ -225,34 +243,38 @@ whichever single site is left out (§3.4).
 | 5 | *Chromodoris willani* | Nudibranchia | 0.717 | 0.75 (9,237) | 0.68 (2) | 3 | ★ (core) |
 | 6 | *Jorunna parva* | Nudibranchia | 0.699 | 0.97 (128,474) | 0.43 (1) | 334 | ★ |
 | 7 | *Nembrotha kubaryana* | Nudibranchia | 0.692 | 0.70 (5,046) | 0.68 (2) | 2 | ★ (core) |
-| 8 | *Nembrotha lineolata* | Nudibranchia | 0.646 | 0.61 (1,673) | 0.68 (2) | 5 | ★ |
+| 8 | *Nembrotha lineolata* | Nudibranchia | 0.646 | 0.61 (1,673) | 0.68 (2) | 5 | ★ (core) |
 | 9 | *Goniobranchus kuniei* | Nudibranchia | 0.640 | 0.60 (1,428) | 0.68 (2) | 21 | ★ (core) |
 | 10 | *Nembrotha chamberlaini* | Nudibranchia | 0.640 | 0.60 (1,422) | 0.68 (2) | 4 | ★ (core) |
 | 11 | *Nembrotha milleri* | Nudibranchia | 0.616 | 0.55 (788) | 0.68 (2) | 19 | ★ |
 | 12 | *Halgerda batangas* | Nudibranchia | 0.612 | 0.54 (730) | 0.68 (2) | 8 | ★ |
 | 13 | *Phestilla melanobrachia* | Nudibranchia | 0.585 | 0.49 (376) | 0.68 (2) | 92 | ★ |
-| 14 | *Janolus savinkini* | Nudibranchia | 0.581 | 0.48 (337) | 0.68 (2) | 140 | ★ |
+| 14 | *Janolus savinkini* | Nudibranchia | 0.581 | 0.48 (337) | 0.68 (2) | 140 | removed (Q377) |
 | 15 | *Jorunna funebris* | Nudibranchia | 0.577 | 0.72 (6,682) | 0.43 (1) | 16 | ★ |
 | 16 | *Nembrotha cristata* | Nudibranchia | 0.563 | 0.69 (4,685) | 0.43 (1) | 18 | ★ |
-| 17 | *Thorunna florens* | Nudibranchia | 0.561 | 0.44 (207) | 0.68 (2) | 220 | ★ |
+| 17 | *Thorunna florens* | Nudibranchia | 0.561 | 0.44 (207) | 0.68 (2) | 220 | removed (Q377) |
 | 18 | *Chelidonura varians* | Cephalaspidea | 0.558 | 0.69 (4,181) | 0.43 (1) | 30 | ★ |
 | 19 | *Melibe colemani* | Nudibranchia | 0.555 | 0.68 (3,851) | 0.43 (1) | 96 | ★ |
-| 20 | *Dendrodoris guttata* | Nudibranchia | 0.551 | 0.42 (164) | 0.68 (2) | 223 | ★ |
-| 21 | *Phyllidia varicosa* | Nudibranchia | 0.535 | 0.64 (2,376) | 0.43 (1) | 7 | — |
-| 22 | *Hypselodoris apolegma* | Nudibranchia | 0.531 | 0.63 (2,162) | 0.43 (1) | 28 | — |
-| 23 | *Chromodoris magnifica* | Nudibranchia | 0.515 | 0.60 (1,460) | 0.43 (1) | 11 | — |
+| 20 | *Dendrodoris guttata* | Nudibranchia | 0.551 | 0.42 (164) | 0.68 (2) | 223 | removed (Q377) |
+| 21 | *Phyllidia varicosa* | Nudibranchia | 0.535 | 0.64 (2,376) | 0.43 (1) | 7 | ★ (replaces one) |
+| 22 | *Hypselodoris apolegma* | Nudibranchia | 0.531 | 0.63 (2,162) | 0.43 (1) | 28 | ★ (replaces one) |
+| 23 | *Chromodoris magnifica* | Nudibranchia | 0.515 | 0.60 (1,460) | 0.43 (1) | 11 | ★ (replaces one) |
 | 24 | *Hypselodoris variobranchia* | Nudibranchia | 0.509 | 0.59 (1,257) | 0.43 (1) | 39 | — |
 
 ### 3.4 The stars set, and how stable it is
 
-- **Proposed: the 20 best scores** (`stars.size`). 18 nudibranchs, 1 sacoglossan, 1 headshield slug **[measured]**.
-- **Stable core.** 8 of the 20 stay in the set whichever single site is left out: *Costasiella kuroshimae*,
-  *Hexabranchus sanguineus*, *Doriprismatica atromarginata*, *Thecacera pacifica*, *Chromodoris willani*, *Nembrotha
-  kubaryana*, *Goniobranchus kuniei*, *N. chamberlaini*.
-- **The other 12 depend on one site.**
-  - Leaving out color-meanings.com changes 7 of the 20. *Janolus savinkini*, *Thorunna florens* and *Dendrodoris
-    guttata* (few views, rarely met) are stars only through that list plus one other page.
-  - Leaving out xray-mag.com changes 4, padi.com 2, and each other site at most 1.
+- **Decided (Q377): 21 stars.** The 20 best scores without the 3 Pierre removed, plus *Hexabranchus lacer*. That makes
+  20 nudibranchs and 1 sacoglossan **[measured]**. The 20 best by the rule alone held 18 nudibranchs, 1 sacoglossan and
+  1 headshield slug.
+- **Before Q377** (the rule alone, 20 stars): 8 stayed in the set whichever single site was left out. Leaving out
+  color-meanings.com changed 7 of the 20: *Janolus savinkini*, *Thorunna florens* and *Dendrodoris guttata* (few views,
+  rarely met) were stars only through that list plus one other page. Those three are the ones Pierre removed.
+- **Stable core, as decided.** 9 stars by the rule stay in the set whichever single site is left out: *Costasiella
+  kuroshimae*, *Hexabranchus sanguineus*, *Doriprismatica atromarginata*, *Thecacera pacifica*, *Chromodoris willani*,
+  *Nembrotha kubaryana*, *N. lineolata*, *Goniobranchus kuniei* and *N. chamberlaini*. *H. lacer* is fixed by Pierre's
+  add, so the file's `starsCore` lists it too.
+- **The other 11 depend on one site.** Leaving out color-meanings.com still changes 6 of them, xray-mag.com 3, padi.com
+  2, and each other site at most 1. That edge is Pierre's to adjust (`stars.add`, `stars.remove`).
 - **What a mention does.** A single site lifts a species' score by 0.22, the gap between the 5th and the 25th scores.
   So the web signal decides most of the set's edge, and the edge moves with the pages read.
   - Variants were tried on the same data **[measured]**:
@@ -266,27 +288,28 @@ whichever single site is left out (§3.4).
   *C. lochi*, *Dolabella auricularia*, *Cyerce elegans*. *E. marginata* and *C. annae* are in circle 1 anyway, by
   commonness.
 
-## 4. The proposed circle 1
+## 4. Circle 1 (decided, Q377)
 
-### 4.1 Size: 45 species (the 20 stars + the 25 most common other species)
+### 4.1 Size: 45 species (the 21 stars + the 24 most common other species)
 
-**[measured, then judged]**:
-- **Coverage.** The 25 most common species hold 32% of the country's observer-species records; the proposed 45 hold 42%.
+**[measured, then judged]**; the size was proposed for these reasons and decided by Pierre (Q377):
+- **Coverage.** The 25 most common species hold 32% of the country's observer-species records; the decided 45 hold 43%.
   The 45 most common would hold 45%, the 60 most common 53%. Around rank 45 each further species adds about 0.5%, and
   the curve keeps flattening.
-- **Every star is in**, as Q369 (a) asks. 10 of the 20 stars are common species anyway (common rank 25 or better).
-  Circle 1 is the 20 stars plus the 25 most common other species, so its common part runs to rank 36.
-- **Breadth.** 16 families, 27 genera: enough families for a family level, and far smaller than the fish's circle 1 (28
+- **Every star is in**, as Q369 (a) asks. 12 of the 21 stars are common species anyway (common rank 25 or better).
+  Circle 1 is the 21 stars plus the 24 most common other species, so its common part runs to rank 38.
+- **Breadth.** 14 families, 24 genera: enough families for a family level, and far smaller than the fish's circle 1 (28
   families, 98 genera, 469 species). A new subject starts small.
 - **Photos.** 45 species × about 20 candidates is about 900 photos to judge, against the study's 1,500 estimate for 50
   species × 30 (§5).
 - **Groups.** 39 nudibranchs, 3 sacoglossans (*Costasiella kuroshimae*, *Elysia marginata*, *Thuridilla lineolata*), 2
   headshield slugs (*Chelidonura amoena*, *C. varians*) and 1 sidegill slug (*Pleurobranchus forskalii*). No sea hare:
   the most common, *Dolabella auricularia*, opens in circle 2.
-- **Near Dauin.** 40 of the 45 are seen near Dauin. The 5 that are not are all stars: *Jorunna parva*, *Phestilla
-  melanobrachia*, *Janolus savinkini*, *Thorunna florens*, *Melibe colemani*.
-- **Later circles** (`circles.next`): circle 2 holds the next 60 by commonness, circle 3 the next 100, circle 4 the last
-  247. Each by commonness only, the rule this PR proposes (§6, question 3).
+- **Near Dauin.** 42 of the 45 are seen near Dauin. The 3 that are not are all stars: *Jorunna parva*, *Phestilla
+  melanobrachia*, *Melibe colemani*.
+- **Later circles** (`circles.next`, decided Q377): circle 2 holds the next 60 by commonness, circle 3 the next 100,
+  circle 4 the last 247. Each by commonness only. The 3 removed stars fall back to their commonness: *Janolus savinkini*
+  in circle 3, *Thorunna florens* and *Dendrodoris guttata* in circle 4.
 
 ### 4.2 The table
 
@@ -310,64 +333,64 @@ observations annotated "Life Stage: Juvenile". All **[measured]**.
 | 11 | *Nembrotha milleri* | Nudibranchia | Polyceridae | 19 | 130 | yes (45) | ★ 0.616 | 26 / 244 | 31 / 417 | 1 / 2 |
 | 12 | *Halgerda batangas* | Nudibranchia | Discodorididae | 8 | 163 | yes (17) | ★ 0.612 | 16 / 212 | 109 / 607 | 1 / 1 |
 | 13 | *Phestilla melanobrachia* | Nudibranchia | Trinchesiidae | 92 | 39 | no (0) | ★ 0.585 | 4 / 63 | 19 / 262 | 0 / 0 |
-| 14 | *Janolus savinkini* | Nudibranchia | Janolidae | 140 | 26 | no (1) | ★ 0.581 | 1 / 35 | 2 / 85 | 0 / 0 |
-| 15 | *Jorunna funebris* | Nudibranchia | Discodorididae | 16 | 153 | yes (42) | ★ 0.577 | 15 / 223 | 177 / 1,375 | 1 / 10 |
-| 16 | *Nembrotha cristata* | Nudibranchia | Polyceridae | 18 | 143 | yes (53) | ★ 0.563 | 25 / 224 | 65 / 675 | 0 / 0 |
-| 17 | *Thorunna florens* | Nudibranchia | Chromodorididae | 220 | 13 | no (0) | ★ 0.561 | 0 / 6 | 8 / 93 | 0 / 1 |
-| 18 | *Chelidonura varians* | Cephalaspidea | Aglajidae | 30 | 98 | yes (12) | ★ 0.558 | 13 / 88 | 29 / 260 | 0 / 1 |
-| 19 | *Melibe colemani* | Nudibranchia | Tethydidae | 96 | 38 | no (0) | ★ 0.555 | 2 / 80 | 7 / 102 | 0 / 0 |
-| 20 | *Dendrodoris guttata* | Nudibranchia | Dendrodorididae | 223 | 12 | yes (2) | ★ 0.551 | 0 / 13 | 4 / 155 | 0 / 0 |
-| 21 | *Chromodoris annae* | Nudibranchia | Chromodorididae | 1 | 262 | yes (51) | — | 69 / 823 | 213 / 1,612 | 0 / 0 |
-| 22 | *Hypselodoris tryoni* | Nudibranchia | Chromodorididae | 6 | 169 | yes (28) | — | 16 / 272 | 138 / 1,748 | 1 / 1 |
-| 23 | *Phyllidia varicosa* | Nudibranchia | Phyllidiidae | 7 | 165 | yes (31) | — | 18 / 311 | 286 / 2,685 | 0 / 0 |
+| 14 | *Jorunna funebris* | Nudibranchia | Discodorididae | 16 | 153 | yes (42) | ★ 0.577 | 15 / 223 | 177 / 1,375 | 1 / 10 |
+| 15 | *Nembrotha cristata* | Nudibranchia | Polyceridae | 18 | 143 | yes (53) | ★ 0.563 | 25 / 224 | 65 / 675 | 0 / 0 |
+| 16 | *Chelidonura varians* | Cephalaspidea | Aglajidae | 30 | 98 | yes (12) | ★ 0.558 | 13 / 88 | 29 / 260 | 0 / 1 |
+| 17 | *Melibe colemani* | Nudibranchia | Tethydidae | 96 | 38 | no (0) | ★ 0.555 | 2 / 80 | 7 / 102 | 0 / 0 |
+| 18 | *Phyllidia varicosa* | Nudibranchia | Phyllidiidae | 7 | 165 | yes (31) | ★ 0.535 | 18 / 311 | 286 / 2,685 | 0 / 0 |
+| 19 | *Hypselodoris apolegma* | Nudibranchia | Chromodorididae | 28 | 105 | yes (4) | ★ 0.531 | 11 / 118 | 46 / 287 | 0 / 1 |
+| 20 | *Chromodoris magnifica* | Nudibranchia | Chromodorididae | 11 | 157 | yes (26) | ★ 0.515 | 21 / 268 | 52 / 742 | 0 / 0 |
+| 21 | *Hexabranchus lacer* | Nudibranchia | Hexabranchidae | 48 | 64 | yes (9) | ★ added (Q377) | 0 / 89 | 26 / 901 | 6 / 43 |
+| 22 | *Chromodoris annae* | Nudibranchia | Chromodorididae | 1 | 262 | yes (51) | — | 69 / 823 | 213 / 1,612 | 0 / 0 |
+| 23 | *Hypselodoris tryoni* | Nudibranchia | Chromodorididae | 6 | 169 | yes (28) | — | 16 / 272 | 138 / 1,748 | 1 / 1 |
 | 24 | *Pteraeolidia semperi* | Nudibranchia | Facelinidae | 9 | 162 | yes (38) | — | 30 / 312 | 267 / 3,283 | 0 / 10 |
 | 25 | *Chromodoris lochi* | Nudibranchia | Chromodorididae | 10 | 158 | yes (12) | — | 11 / 301 | 178 / 1,324 | 0 / 0 |
-| 26 | *Chromodoris magnifica* | Nudibranchia | Chromodorididae | 11 | 157 | yes (26) | — | 21 / 268 | 52 / 742 | 0 / 0 |
-| 27 | *Phyllidia ocellata* | Nudibranchia | Phyllidiidae | 12 | 155 | yes (20) | — | 21 / 230 | 204 / 1,781 | 0 / 0 |
-| 28 | *Goniobranchus geometricus* | Nudibranchia | Chromodorididae | 13 | 155 | yes (30) | — | 22 / 289 | 81 / 1,379 | 0 / 1 |
-| 29 | *Phyllidia coelestis* | Nudibranchia | Phyllidiidae | 14 | 154 | yes (17) | — | 30 / 243 | 100 / 1,054 | 0 / 0 |
-| 30 | *Phyllodesmium briareum* | Nudibranchia | Myrrhinidae | 15 | 154 | yes (25) | — | 16 / 234 | 37 / 384 | 0 / 0 |
-| 31 | *Phyllidia elegans* | Nudibranchia | Phyllidiidae | 17 | 149 | yes (17) | — | 17 / 201 | 166 / 1,063 | 0 / 0 |
-| 32 | *Ardeadoris egretta* | Nudibranchia | Chromodorididae | 20 | 126 | yes (15) | — | 9 / 115 | 13 / 226 | 0 / 0 |
-| 33 | *Chelidonura amoena* | Cephalaspidea | Aglajidae | 22 | 120 | yes (13) | — | 14 / 176 | 48 / 466 | 0 / 0 |
-| 34 | *Elysia marginata* | Sacoglossa | Plakobranchidae | 23 | 120 | yes (24) | — | 22 / 213 | 61 / 904 | 0 / 1 |
-| 35 | *Caloria indica* | Nudibranchia | Facelinidae | 25 | 113 | yes (37) | — | 18 / 184 | 144 / 1,079 | 0 / 1 |
-| 36 | *Thecacera picta* | Nudibranchia | Polyceridae | 26 | 112 | yes (35) | — | 25 / 203 | 30 / 339 | 0 / 0 |
-| 37 | *Goniobranchus coi* | Nudibranchia | Chromodorididae | 27 | 111 | yes (24) | — | 10 / 120 | 46 / 551 | 0 / 1 |
-| 38 | *Hypselodoris apolegma* | Nudibranchia | Chromodorididae | 28 | 105 | yes (4) | — | 11 / 118 | 46 / 287 | 0 / 1 |
-| 39 | *Tambja morosa* | Nudibranchia | Polyceridae | 29 | 100 | yes (14) | — | 9 / 137 | 70 / 944 | 0 / 1 |
-| 40 | *Phyllidia picta* | Nudibranchia | Phyllidiidae | 31 | 96 | yes (14) | — | 13 / 133 | 92 / 809 | 0 / 0 |
-| 41 | *Pleurobranchus forskalii* | Pleurobranchida | Pleurobranchidae | 32 | 95 | yes (22) | — | 3 / 130 | 53 / 666 | 5 / 15 |
-| 42 | *Coryphellina exoptata* | Nudibranchia | Flabellinidae | 33 | 92 | yes (5) | — | 10 / 109 | 119 / 1,073 | 0 / 0 |
-| 43 | *Hypselodoris bullockii* | Nudibranchia | Chromodorididae | 34 | 90 | yes (4) | — | 7 / 117 | 60 / 661 | 0 / 0 |
-| 44 | *Thuridilla lineolata* | Sacoglossa | Plakobranchidae | 35 | 85 | yes (30) | — | 8 / 165 | 21 / 285 | 0 / 0 |
-| 45 | *Reticulidia halgerda* | Nudibranchia | Phyllidiidae | 36 | 84 | yes (8) | — | 4 / 95 | 11 / 208 | 0 / 0 |
+| 26 | *Phyllidia ocellata* | Nudibranchia | Phyllidiidae | 12 | 155 | yes (20) | — | 21 / 230 | 204 / 1,781 | 0 / 0 |
+| 27 | *Goniobranchus geometricus* | Nudibranchia | Chromodorididae | 13 | 155 | yes (30) | — | 22 / 289 | 81 / 1,379 | 0 / 1 |
+| 28 | *Phyllidia coelestis* | Nudibranchia | Phyllidiidae | 14 | 154 | yes (17) | — | 30 / 243 | 100 / 1,054 | 0 / 0 |
+| 29 | *Phyllodesmium briareum* | Nudibranchia | Myrrhinidae | 15 | 154 | yes (25) | — | 16 / 234 | 37 / 384 | 0 / 0 |
+| 30 | *Phyllidia elegans* | Nudibranchia | Phyllidiidae | 17 | 149 | yes (17) | — | 17 / 201 | 166 / 1,063 | 0 / 0 |
+| 31 | *Ardeadoris egretta* | Nudibranchia | Chromodorididae | 20 | 126 | yes (15) | — | 9 / 115 | 13 / 226 | 0 / 0 |
+| 32 | *Chelidonura amoena* | Cephalaspidea | Aglajidae | 22 | 120 | yes (13) | — | 14 / 176 | 48 / 466 | 0 / 0 |
+| 33 | *Elysia marginata* | Sacoglossa | Plakobranchidae | 23 | 120 | yes (24) | — | 22 / 213 | 61 / 904 | 0 / 1 |
+| 34 | *Caloria indica* | Nudibranchia | Facelinidae | 25 | 113 | yes (37) | — | 18 / 184 | 144 / 1,079 | 0 / 1 |
+| 35 | *Thecacera picta* | Nudibranchia | Polyceridae | 26 | 112 | yes (35) | — | 25 / 203 | 30 / 339 | 0 / 0 |
+| 36 | *Goniobranchus coi* | Nudibranchia | Chromodorididae | 27 | 111 | yes (24) | — | 10 / 120 | 46 / 551 | 0 / 1 |
+| 37 | *Tambja morosa* | Nudibranchia | Polyceridae | 29 | 100 | yes (14) | — | 9 / 137 | 70 / 944 | 0 / 1 |
+| 38 | *Phyllidia picta* | Nudibranchia | Phyllidiidae | 31 | 96 | yes (14) | — | 13 / 133 | 92 / 809 | 0 / 0 |
+| 39 | *Pleurobranchus forskalii* | Pleurobranchida | Pleurobranchidae | 32 | 95 | yes (22) | — | 3 / 130 | 53 / 666 | 5 / 15 |
+| 40 | *Coryphellina exoptata* | Nudibranchia | Flabellinidae | 33 | 92 | yes (5) | — | 10 / 109 | 119 / 1,073 | 0 / 0 |
+| 41 | *Hypselodoris bullockii* | Nudibranchia | Chromodorididae | 34 | 90 | yes (4) | — | 7 / 117 | 60 / 661 | 0 / 0 |
+| 42 | *Thuridilla lineolata* | Sacoglossa | Plakobranchidae | 35 | 85 | yes (30) | — | 8 / 165 | 21 / 285 | 0 / 0 |
+| 43 | *Reticulidia halgerda* | Nudibranchia | Phyllidiidae | 36 | 84 | yes (8) | — | 4 / 95 | 11 / 208 | 0 / 0 |
+| 44 | *Goniobranchus fidelis* | Nudibranchia | Chromodorididae | 37 | 81 | yes (9) | — | 8 / 124 | 50 / 858 | 0 / 2 |
+| 45 | *Chromodoris colemani* | Nudibranchia | Chromodorididae | 38 | 77 | yes (5) | — | 4 / 100 | 19 / 233 | 0 / 0 |
 
 ## 5. Photos: can each species be played?
 
-### 5.1 Supply for the proposed circle 1
+### 5.1 Supply for circle 1
 
 **[measured]**, Research Grade observations with a CC0, CC BY or CC BY-NC photo (rule P4: the photos of one question come
 from one observation). The world counts add the open and the NC columns, an upper bound since one observation can hold
 both:
-- **Every one of the 45 has 20 or more worldwide**; the fewest are *Janolus savinkini* (2 open, 85 NC), *Thorunna florens*
-  (8, 93), *Melibe colemani* (7, 102). Abroad is allowed: every species here is confirmed in the Philippines (rule C8).
-- **From the Philippines alone** (each observation counted once): 43 of 45 have 12 or more, 40 of 45 have 20 or more.
-  Below 20: *Jorunna parva* (5), *Thorunna florens* (6), *Hexabranchus sanguineus* (13), *Dendrodoris guttata* (13),
-  *Thecacera pacifica* (15).
-- **Open licences only (CC0 / CC BY)**, worldwide: 38 of 45 have 12 or more. Below 12: *Janolus savinkini* (2),
-  *Dendrodoris guttata* (4), *Melibe colemani* (7), *Jorunna parva*, *Thecacera pacifica*, *Thorunna florens* (8 each),
-  *Reticulidia halgerda* (11). Six of the seven are stars: the sought-after species lean on CC BY-NC, as the study found.
-- **So every species of circle 1 can be played** with CC BY-NC photos, the fish's licence set. With open licences only, 7
+- **Every one of the 45 has 20 or more worldwide**; the fewest are *Melibe colemani* (7 open, 102 NC), *Jorunna parva*
+  (8, 135) and *Reticulidia halgerda* (11, 208). Abroad is allowed: every species here is confirmed in the Philippines
+  (rule C8).
+- **From the Philippines alone** (each observation counted once): 44 of 45 have 12 or more, 42 of 45 have 20 or more.
+  Below 20: *Jorunna parva* (5), *Hexabranchus sanguineus* (13), *Thecacera pacifica* (15).
+- **Open licences only (CC0 / CC BY)**, worldwide: 41 of 45 have 12 or more. Below 12: *Melibe colemani* (7), *Jorunna
+  parva*, *Thecacera pacifica* (8 each), *Reticulidia halgerda* (11). Three of the four are stars: the sought-after
+  species lean on CC BY-NC, as the study found.
+- **So every species of circle 1 can be played** with CC BY-NC photos, the fish's licence set. With open licences only, 4
   would be thin (ROADMAP "The app as a generic product": NC photos cannot go into a paid product).
 
 ### 5.2 Age variation
 
 - **iNaturalist's annotations are sparse.** Worldwide, only 225 Research Grade observations of the 452 species are
   annotated "Juvenile", out of about 147,000 **[measured]**.
-  - In circle 1: 18 of the 45 species have at least one juvenile-annotated observation, and 3 have 10 or more:
-    *Pleurobranchus forskalii* (15), *Pteraeolidia semperi* (10), *Jorunna funebris* (10).
-  - In the Philippines, 6 of the 45 have one or more (*P. forskalii* 5).
+  - In circle 1: 19 of the 45 species have at least one juvenile-annotated observation, and 4 have 10 or more:
+    *Hexabranchus lacer* (43), *Pleurobranchus forskalii* (15), *Pteraeolidia semperi* (10), *Jorunna funebris* (10).
+  - In the Philippines, 7 of the 45 have one or more (*H. lacer* 6, *P. forskalii* 5).
   - An annotation says a juvenile was photographed, not that it looks different.
 - **Public sources for a juvenile that looks different**: two leads, **neither verified** (one search; the papers were
   not read):
@@ -379,17 +402,19 @@ both:
     precocious, a distinct phenotype or a new species" (Sheffield Hallam University repository). The title itself asks
     whether that form is a juvenile at all **[read: the title only]**.
   - Nothing was found for the other 43. That is not evidence that they have no distinct juvenile.
-- **So today: 0 species with a verified distinct juvenile, 2 leads** (*Hexabranchus sanguineus*, *Jorunna funebris*),
-  and *Pleurobranchus forskalii* worth a look (the most juvenile annotations).
+- **So today: 0 species with a verified distinct juvenile, 2 leads** (*Hexabranchus*, *Jorunna funebris*).
+  *Hexabranchus lacer*, the star added by Q377, has the most juvenile annotations of the 452 species (43), which fits
+  the *Hexabranchus* lead. *Pleurobranchus forskalii* (15) is worth a look too.
 
-### 5.3 A photo target per species (a proposal)
+### 5.3 The photo target per species (decided, Q377; to revisit after the first judging pass)
 
 The fish today (docs/FISH_PATH.md "Photos per species"): start at 8 observations a species (12 for the PDF's 24 most
 sighted), game cap 20; candidates capped at 30 for a stable species, +10 per extra phase, at most 60.
 
-**Proposed for sea slugs** **[guess, from the counts above]**:
+**For sea slugs**: proposed from the counts above **[guess]**, decided by Pierre (Q377). Recorded in
+`tools/seaslug_source.json` `photos`:
 
-| | Fish (today) | Sea slugs (proposed) |
+| | Fish (today) | Sea slugs (Q377) |
 |---|---|---|
 | Start (a species can be played) | 8 | **6** |
 | Game cap | 20 | **12** |
@@ -402,17 +427,17 @@ Why fewer than the fish:
   from the front, turning, partly hidden.
 - **No sex phases.** Sea slugs are simultaneous hermaphrodites **[guess: textbook biology, not checked against a source
   here]**, so there are no male, female or terminal phases to fill. Juveniles are rarely photographed (§5.2).
-- **The supply fits.** At 20 candidates, 40 of the 45 have enough from the Philippines alone, and all 45 with photos from
+- **The supply fits.** At 20 candidates, 42 of the 45 have enough from the Philippines alone, and all 45 with photos from
   abroad.
 
 Why not lower: colour varies within some species. Layton et al. (2018) found stable colour patterns in only 5 of 39
 *Chromodoris* taxa, and Stoffels et al. (2016) report "high intra-specific colour variation" in Phyllidiidae (both cited
-in the study, §5.2 and §6.3). Those two genera hold 9 of the 45 (*Chromodoris* 4, *Phyllidia* 5), hence the higher cap
+in the study, §5.2 and §6.3). Those two genera hold 10 of the 45 (*Chromodoris* 5, *Phyllidia* 5), hence the higher cap
 for them.
 
-## 6. Open questions for Pierre
+## 6. Questions for Pierre (all answered "oui", Q377, 2026-11-15)
 
-Only what is his; each with a recommendation.
+As asked, each with the recommendation he accepted. What was applied is at the top of this note.
 
 1. **The stars set.**
    - Is 20 the right size?

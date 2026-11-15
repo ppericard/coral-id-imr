@@ -182,7 +182,7 @@ print(json.dumps({'sc': sc, 'st': st, 'st2': st2, 'c': c, 'p': p, 'again': b.der
   assert.deepStrictEqual(o.sc.Bb, [0.25, 0.5, 0, 0]);
   assert.deepStrictEqual(o.sc.Ee, [0.125, 0.25, 0, 0], 'an out page and an unreadable page do not count');
   assert.deepStrictEqual(o.st, ['Aa', 'Dd']);
-  assert.deepStrictEqual(o.st2, ['Aa', 'Ff'], 'Pierre removes Dd and adds Ff');
+  assert.deepStrictEqual(o.st2, ['Aa', 'Bb', 'Ff'], 'Pierre removes Dd (the next score, Bb, replaces it) and adds Ff (Q377)');
   assert.deepStrictEqual(o.c, {Aa: 1, Dd: 1, Bb: 1, Cc: 1, Ee: 2, Ff: 3}, 'circle 1: the stars, then the most common to 4');
   assert.deepStrictEqual(o.p.stars, ['Aa', 'Dd']);
   assert.deepStrictEqual(o.p.sizes, {1: 4, 2: 1, 3: 1});

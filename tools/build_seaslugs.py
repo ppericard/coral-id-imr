@@ -42,8 +42,11 @@ Stars rule (`stars_scores`): W = log10(1 + views) / log10(1 + the best views), c
 or an article of its own under another name (not a genus or family article, not one shared by two species); M =
 log(1 + sites) / log(1 + the best sites), sites = distinct web sites among the readable ph and general pages that name
 it (scientific name, a WoRMS synonym, or a nickname whose Wikipedia redirect lands on its article); score = (W + M) / 2.
-The stars = the `stars.size` best scores, then Pierre's add / remove. Circles (`circles`): circle 1 = the stars plus the
-most common species up to `circles.one`; then the rest by commonness in blocks of `circles.next`, the remainder last.
+The stars = the `stars.size` best scores among the species Pierre did not remove (`stars.remove`: the next scores replace
+them), then the species he adds (`stars.add`). Circles (`circles`): circle 1 = the stars plus the most common species up
+to `circles.one`; then the rest by commonness in blocks of `circles.next`, the remainder last. All decided by Pierre,
+2026-11-15 (Q377). The source's `lookalikes` (decided pairs) and `photos` (the per-species photo target) are copied into
+the output for the subject's build; the tool does not use them.
 
 Usage: python3 tools/build_seaslugs.py [--offline | --refresh] [--seed DIR] [--dry]
        python3 tools/build_seaslugs.py --check     (derive again from tools/seaslugs.json, offline; exit 1 on a difference)
@@ -457,9 +460,12 @@ def stars_scores(species, pages, use_sites=None):
 
 
 def stars_set(scores, size, add=(), remove=()):
-    """The `size` best scores (ties: the larger W, then the name), above 0; then Pierre's add and remove."""
-    best = sorted((n for n, v in scores.items() if v[0] > 0), key=lambda n: (-scores[n][0], -scores[n][1], n))[:size]
-    return [n for n in best if n not in set(remove)] + [n for n in add if n not in best and n in scores]
+    """The `size` best scores (ties: the larger W, then the name), above 0, among the species Pierre did not remove (the
+    next scores replace them); then the species he adds (Q377)."""
+    out = set(remove)
+    best = sorted((n for n, v in scores.items() if v[0] > 0 and n not in out),
+                  key=lambda n: (-scores[n][0], -scores[n][1], n))[:size]
+    return best + [n for n in add if n not in best and n in scores]
 
 
 def circles(species, stars, one, nxt):
@@ -500,7 +506,7 @@ def derive(species, pages, src):
     by = Counter(circ.values())
     tot = sum(s["observers"] for s in species)
     c1 = [s for s in sorted(species, key=common_key) if s["circle"] == 1]
-    return {"status": "proposal for Pierre's review (Q369); not used by the app",
+    return {"status": "decided by Pierre (Q377, 2026-11-15); not used by the app yet",
             "stars": stars, "starsCore": [n for n in stars if n in core], "circle1": [s["name"] for s in c1], "sizes": {str(k): by[k] for k in sorted(by)},
             "circle1ObserverShare": round(sum(s["observers"] for s in c1) / tot, 3) if tot else 0,
             "leaveOneSiteOut": {k: v for k, v in sorted(flips.items()) if v}}
@@ -610,6 +616,7 @@ def build(net, src, log=print):
                    "wikiArticles": sum(1 for s in species if s["wiki"]),
                    "pagesReadable": sum(p["readable"] for p in pages if p["scope"] != "out")},
         "ambiguousNames": ambiguous, "nicknames": nick_out,
+        "lookalikes": src.get("lookalikes") or [], "photoTarget": src.get("photos"),
         "unconfirmedMentioned": dict(sorted(unconf.items())),
     }
     return species, pages, meta, proposal
