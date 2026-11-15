@@ -3844,6 +3844,11 @@ list for Pierre's options). Each arm is a variant of this branch, held in a scra
 - **(3) cap 20%**: in the draw (`model.js` `weighted`), the species of families below Divemaster take at most 20% of the
   draw's weight together; the others keep their share.
 - **(1)+(2)**, **(1)+(3)**, **(2)+(3)**.
+- Added before counting them, after the six arms above all left `famAdv` at 600 breached for the RAs and the expert:
+  - **(4) from Divemaster**: a family's species join at its Divemaster (`LV_AT[2]`, 85%: its exam's entry) instead of
+    Advanced. This changes Pierre's threshold of 2026-11-03.
+  - **(5) families first**: no species opens while a family in play is still below Advanced. This is Q208 A's rule for
+    the genera, raised to the families' Advanced.
 
 How they are run and read:
 - **World**: the app world only, fish, the default profiles, 5 seeds, 600 questions. Every arm is run locally through the
