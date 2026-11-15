@@ -187,6 +187,14 @@
   "fish-s370-cand-686401382": {
    "code": "o1g0sl13",
    "keep": "dup"
+  },
+  "fish-s370-cand-183875805": {
+   "code": "o1g0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s370-cand-183875869": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
   }
  }
 }
