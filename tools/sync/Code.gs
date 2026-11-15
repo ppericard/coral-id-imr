@@ -232,9 +232,10 @@ function doGet_(e){
   if (!e.parameter.av) oldApp_('load', name);  // only for a real account with its code (Codex review #373)
   // The other subjects' replays (replays_), each asked by its own rules version (rv_fish).
   // v146: and their structure stamps (st_fish, the one applied; sn_fish, the units' when another: replays_ sx).
+  // vNEXT: the subject replayed here says its stamps the same way (st_coral, sn_coral: stMain_), its rules version as rv.
   const rvs = {}, sts = {}, stn = {};
-  CORE_.replayedSubjects().forEach(id => {
-    if (e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]);
+  [CORE_.replaySubject()].concat(CORE_.replayedSubjects()).forEach(id => {
+    if (id !== CORE_.replaySubject() && e.parameter['rv_' + id] !== undefined) rvs[id] = Number(e.parameter['rv_' + id]);
     if (e.parameter['st_' + id] !== undefined) sts[id] = String(e.parameter['st_' + id]);
     if (e.parameter['sn_' + id] !== undefined) stn[id] = String(e.parameter['sn_' + id]);
   });
@@ -264,7 +265,7 @@ function load_(name, row, q){
   // it out (the app keeps its own progress and asks again next time).
   if (q.rv !== undefined) {
     const lock = LockService.getScriptLock();
-    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
+    if (lock.tryLock(10000)) try { const rp = replay_(name, resetOf_(data), q.rv, q.pt, startOf_(data), undefined, stMain_(q)); if (rp) out.replay = rp; } catch (err) {} finally { lock.releaseLock(); }
   }
   const rps = replays_(name, data, q.rvs || {}, q.pt, undefined, undefined, {sts: q.sts, stn: q.stn}); if (rps) out.replays = rps;
   if (q.have === d.rev) { delete out.data; out.same = 1; }  // v116: the device holds this very copy (sync.js sdOf)
@@ -424,7 +425,7 @@ function doPost_(e){
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
   // not had in time, the reply goes without it and the app asks again at its next sync.
   const lock2 = LockService.getScriptLock();
-  if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
+  if (lock2.tryLock(10000)) try { const rp = replay_(name, resetOf_(p.data), typeof p.rv === 'number' ? p.rv : NaN, p.pt, startOf_(p.data), undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {} finally { lock2.releaseLock(); }
   const rps = replays_(name, p.data, p.rvs, p.pt, undefined, undefined, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;  // the other subjects' (replays_)
   return json_(out);
 }
@@ -615,7 +616,13 @@ function logRows_(sh, k){
 const RPL = {TAB: 'Replayed', HEAD: ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']};
 // The genera's look-alikes and families (data.json gen and x.gen, as the app's GX), what the replay's look-alike test
 // needs: from GitHub main, cached 6 hours. null when it cannot be read (no replay then; the app keeps its own).
+// vNEXT: under the content editor's look-alike pairs (core.js SUBJECTS coral structure; design note v2, step 8): the
+// subject replayed here has a structure, so its units are made as another subject's are, from data.json with
+// curation.json's pairs laid over it (subjRpl_, the same cache and the same 15-minute refresh), and null when the
+// curation cannot be read (never the base's pairs in place of the editor's).
 function gen_(){
+  const S = CORE_.subjectOf(CORE_.replaySubject());
+  if (S.structure) return (x => (x ? x.gen : null))(subjRpl_(S.id));
   const hit = CacheService.getScriptCache().get('gen1');
   return hit ? JSON.parse(hit) : dataJson_().gen;
 }
@@ -645,10 +652,7 @@ function dataJson_(){
     if (!r || r.getResponseCode() !== 200) return none;
     d = JSON.parse(r.getContentText());
   } catch (e) { return none; }
-  const out = {}, slate = CORE_.slateOf(d);
-  [d.gen || {}, (d.x || {}).gen || {}].forEach(G => Object.keys(G).forEach(n => {
-    if (!out[n]) out[n] = {look: (G[n].look || []).filter(x => typeof x === 'string'), fam: String(G[n].fam || '')};
-  }));
+  const out = CORE_.genLooks(d), slate = CORE_.slateOf(d);
   if (!Object.keys(out).length) return none;
   try { c.put('gen1', JSON.stringify(out), 21600); c.put('slate1', JSON.stringify(slate), 21600); } catch (e) {}
   return {gen: out, slate: slate.length ? slate : null};
@@ -672,11 +676,13 @@ const rowOf_ = (who, r) => [who, new Date(r[1]).getTime() || 0, String(r[2]), St
 // structure (core.js SUBJECTS structure) is replayed under the one in force (subjRpl_: its units and stamp st), also when
 // the rules version is applied but the stamp is another; the stamp joins the cache's identity (rplSince_) and the reply
 // (st, when not ''). Its units cannot be made (the curation or fish.json unreadable): no replay.
+// vNEXT: the subject replayed here too (the corals' look-alike pairs, design note v2 step 8): its stamp is the one the app
+// says for it (load_, the save, the anonymous send: stMain_).
 function replay_(key, since, appRv, pt, start, sid, appSt){
   const main = !sid || sid === CORE_.replaySubject(), top = rplTop_(sid);  // its own rules versions (core.js rvOf)
   if (typeof appRv !== 'number' || !isFinite(appRv)) return null;
-  const SX = !main && CORE_.subjectOf(sid).structure ? subjRpl_(sid) : null;
-  if (!main && CORE_.subjectOf(sid).structure && !SX) return null;
+  const S = CORE_.subjectOf(main ? CORE_.replaySubject() : sid), SX = S.structure ? subjRpl_(S.id) : null;
+  if (S.structure && !SX) return null;
   const stNow = SX ? SX.st : '';
   if (appRv >= top && (appSt === undefined || appSt === stNow)) return null;
   const who = lc_(key), mine = rplMine_(key, since, sid);
@@ -703,6 +709,16 @@ function replay_(key, since, appRv, pt, start, sid, appSt){
 // The pieces of replay_, shared with the leaderboard (board_, boardWarm_; v118). A subject's last rules version (core.js
 // rvOf: the corals' RVS, another subject's SUBJECTS replayed rvs).
 const rplTop_ = sid => CORE_.rvOf(!sid ? CORE_.replaySubject() : sid);
+// vNEXT: the structure stamp an app says for the subject replayed here (q: a load's or a save's fields, sts {coral:
+// stamp}, sync.js stsAsk), undefined when it says none (an older app, or one before core.js REPLAY_STRUCT_SHEET: replayed
+// by its rules version alone, as before); with the stamp of the units it holds when another (stn), the curation is read
+// again at once (subjStSeen_), as for another subject (replays_).
+function stMain_(q){
+  const id = CORE_.replaySubject(), sts = q && q.sts && typeof q.sts === 'object' ? q.sts : {}, stn = q && q.stn && typeof q.stn === 'object' ? q.stn : {};
+  if (typeof sts[id] !== 'string') return undefined;
+  try { subjStSeen_(id, stn[id]); } catch (e) {}
+  return sts[id];
+}
 // The cache's identity of a replay: the reset time, with the first-launch history's fingerprint when there is one, and
 // (v146) the structure stamp it was made under after a ~ when it is not '' (so a row kept from before reads the same).
 const rplSince_ = (since, start, st) => (fp => (fp ? since + '#' + fp : String(since)) + (st ? '~' + st : ''))(CORE_.startFp(start));
@@ -888,8 +904,9 @@ function subjStKept_(sid){
   } catch (e) { return null; }
 }
 // The 15-minute trigger: every subject's curation read again (subjCur_), before the leaderboard's replays (boardWarm_).
+// vNEXT: the subject replayed here too, when it has a structure (the corals' pairs).
 function subjStRefresh_(){
-  CORE_.replayedSubjects().filter(id => CORE_.subjectOf(id).structure).forEach(id => { try { subjRpl_(id, true); } catch (e) {} });
+  [CORE_.replaySubject()].concat(CORE_.replayedSubjects()).filter(id => CORE_.subjectOf(id).structure).forEach(id => { try { subjRpl_(id, true); } catch (e) {} });
 }
 // A device's units under a stamp the sheet does not hold (stn): the curation read again at once, at most once a minute.
 function subjStSeen_(sid, stn){
@@ -2052,7 +2069,8 @@ function boardRpl_(S, warm){
   const rvOf = d => { try { const v = Number(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'rv')) || '0')); return isFinite(v) ? v : 0; } catch (e) { return 0; } };
   const stOf = d => { try { return String(JSON.parse(subjData_(d, CORE_.subjKey(sid, 'st')) || '""') || ''); } catch (e) { return ''; } };
   // the stamp in force: '' with no structure, null when it cannot be read (then the rules version alone decides)
-  const stHere = () => (stIn !== undefined ? stIn : (stIn = main || !S.structure ? '' : warm ? subjSt_(sid) : subjStKept_(sid)));
+  // vNEXT: the subject replayed here too, when it has a structure (the corals' pairs)
+  const stHere = () => (stIn !== undefined ? stIn : (stIn = !S.structure ? '' : warm ? subjSt_(sid) : subjStKept_(sid)));
   const need = (name, d) => {
     if (!top || !d) return null;
     const st = stHere();
@@ -2712,8 +2730,8 @@ function photoAlert_(name, rows){
 // Replayed tab keeps (replay_), reused while the rules, the player's row count and reset are the same, made and stored
 // otherwise. No rp without data.json (gen_) or for a broken saved copy: the admin then reads that player's copy itself.
 function replayedAll_(users, dcol){
-  const gen = gen_(), list = slate_();
-  if (!gen || !list || !users.length) return;
+  const gen = gen_(), list = slate_(), stM = subjSt_(CORE_.replaySubject());  // vNEXT: its structure stamp ('' none)
+  if (!gen || !list || !users.length || stM === null) return;
   // v145: the pooled stats from the snapshot (statsServed_), else stats_ as before.
   const ss = SpreadsheetApp.getActiveSpreadsheet(), st = statsServed_() || stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // v119: by player, no prototype
   const dt = ss.getSheetByName(DATA_TAB);
@@ -2730,7 +2748,8 @@ function replayedAll_(users, dcol){
       P = JSON.parse(dataKey_(data, 'progress') || '{}');
     } catch (e) { return; }
     if (!P || typeof P !== 'object') return;
-    const since = resetOf_(data), start = startOf_(data), fp = CORE_.startFp(start), sinceKey = fp ? since + '#' + fp : String(since),
+    // vNEXT: under the structure stamp in force (the Replayed tab's cache identity, rplSince_, as replay_ keys it)
+    const since = resetOf_(data), start = startOf_(data), fp = CORE_.startFp(start), sinceKey = rplSince_(since, start, stM),
       rows = (mine[k] || []).filter(r => (new Date(r[1]).getTime() || 0) > since).map(r => rowOf_(k, r)), n = rows.length, c = cached[k];
     let rec = null;
     if (c && Number(c.r[1]) === CORE_.RV && Number(c.r[2]) === n && String(c.r[3]) === sinceKey) {
@@ -2743,7 +2762,7 @@ function replayedAll_(users, dcol){
       rec = rep ? rep.P : {};
       const json = JSON.stringify(rec), parts = [];
       for (let i = 0; i < json.length; i += CHUNK) parts.push(safe_(json.slice(i, i + CHUNK)));
-      const at = c ? c.at : sh.getLastRow() + 1, old = c ? c.r.length : 0, row = [safe_(u.name), CORE_.RV, n, fp ? sinceKey : since, new Date()].concat(parts);
+      const at = c ? c.at : sh.getLastRow() + 1, old = c ? c.r.length : 0, row = [safe_(u.name), CORE_.RV, n, fp || stM ? sinceKey : since, new Date()].concat(parts);
       while (row.length < old) row.push('');
       sh.getRange(at, 1, 1, row.length).setValues([row]);
       if (!c) cached[k] = {at: at, r: row};
@@ -2952,7 +2971,7 @@ function anon_(p){  // also p.pt (replay_) and p.reset: the device's progress re
     const out = {ok: true, log: true};
     TIM_.op = 'anon save';  // v130: timed as a whole, to its reply (timEnd_)
     // Only the answers after the device's progress reset (p.reset, as resetOf_ reads a signed-in player's; Codex review #399).
-    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null); if (rp) out.replay = rp; } catch (err) {}
+    try { const rp = replay_('~anon ' + id, resetAt_(p.reset), typeof p.rv === 'number' ? p.rv : NaN, p.pt, p.start && typeof p.start === 'object' ? p.start : null, undefined, stMain_(p)); if (rp) out.replay = rp; } catch (err) {}
     // the other subjects' (replays_), each since its own reset with its own first-launch answer (sreset, sstart:
     // {subject: the device's reefid-sync-<subject>-reset and -start}), already under this lock.
     const rps = replays_('~anon ' + id, null, p.rvs, p.pt, {reset: p.sreset, start: p.sstart}, true, {sts: p.sts, stn: p.stn}); if (rps) out.replays = rps;
@@ -3676,6 +3695,42 @@ const CORE_ = (function () { const module = {exports: {}};
       analyses: {photos: true},
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      // The text slots its content editor may edit on a genus sheet (docs/reviews/2026-11-14-sheet-overlay-design.md v2,
+      // step 8; Pierre, 2026-11-15, Q359 and Q366), laid over data.json by core.js contentApply as the fish's (SUBJECTS fish
+      // content): one rank, the genus, its records in data.json gen and x.gen (Millepora, the bonus and Coral ID Key
+      // genera), by name. lsrc/<other genus> is one look-alike line (the words under it on the sheet's Don't confuse with,
+      // and its source), at the pairs the base holds only (a new one is a new pair: structure).
+      content: {
+        genus: {
+          at: ['gen', 'x.gen'],
+          slots: [
+            {k: 'plain', n: 'Plain words', t: 'text'},
+            {k: 'qt', n: 'ID tips', t: 'list'},
+            {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
+            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1},
+            {k: 'sum', n: 'Summary', t: 'text'},
+            {k: 'crit', n: 'Coral ID Key criteria', t: 'list'},
+            {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
+            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'info', n: 'Other sources', t: 'list'}
+          ]
+        }
+      },
+      // The structure its content editor may change (design note v2, step 8; Q359, Q363 h A, Q366): its look-alike pairs
+      // between genera (look: a list of genus names; the pair key a|b, v 1 or null), laid over data.json by core.js
+      // structApply (genStructure); no circles (the slate is not the editor's: design note section 6, "Not in this
+      // design"). hold: the withdrawals the ★ rule refuses (starHold, rule L5: a starred genus keeps a surveyed look-alike
+      // to open after), never applied, held their word for it on the admin's pages. sheet: the sync script that replays
+      // the progress under it (rule D4). A change to them replays every player's progress (Q363 h A: structStamp).
+      structure: {
+        pairs: {rank: 'genus', slot: 'look', hold: (R, P) => starHold(R, P), held: '★ rule'},
+        apply: (R, X) => genStructure(R, X),
+        sheet: () => REPLAY_STRUCT_SHEET
+      },
+      // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
+      // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
+      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
+      replayed: {gen: d => genLooks(d)},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
@@ -4286,6 +4341,109 @@ const CORE_ = (function () { const module = {exports: {}};
     }
     return out;
   }
+  // ---- Genera by name: the structure of a subject whose units are data.json's genus records (design note v2, step 8) ----
+  // Where its genus records sit: gen (the slate) and x.gen (Millepora, the bonus and Coral ID Key genera), by name.
+  const GEN_AT = ['gen', 'x.gen'];
+  // The units its replay reads (Code.gs dataJson_ and subjRpl_, core.js replayProgress gen): each genus of d's gen and
+  // x.gen (gen's first) with its look-alikes (look, names only) and its family (fam).
+  function genLooks(d) {
+    const out = {};
+    GEN_AT.forEach(at => {
+      const G = atPath(d || {}, at);
+      Object.keys(isObj(G) ? G : {}).forEach(n => {
+        if (!out[n] && isObj(G[n]))
+          out[n] = {look: (Array.isArray(G[n].look) ? G[n].look : []).filter(x => typeof x === 'string'), fam: String(G[n].fam || '')};
+      });
+    });
+    return out;
+  }
+  // The pairs in force written into data.json R (SUBJECTS structure apply; design note v2, step 8; Q359, Q366): the
+  // content editor's pairs X ({pairs: [{a, b, v: 1 or null, src}]}, each a change from R: structApply) on the genus
+  // records, both sides, as the build writes a pair: one withdrawn leaves both records' look and their lsrc lines (its
+  // words: their text slots lsrc/<other genus> are then orphaned, kept and not applied); one added joins both looks after
+  // the base's look-alikes, with an lsrc line on each side, the source the editor gave, else EDITOR_PAIR (never IMR's or
+  // the Coral Finder's words). A record held in both gen and x.gen (the admin's merged data) changes in both. A new object
+  // sharing every record it does not change; R itself when X changes nothing.
+  function genStructure(R, X) {
+    const P = (X && X.pairs) || [];
+    if (!P.length) return R;
+    const add = new Map(),
+      drop = new Map(),
+      put = (m, k, v) => m.set(k, [...(m.get(k) || []), v]);
+    P.forEach(x => (x.v === 1 ? (put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src])) : (put(drop, x.a, x.b), put(drop, x.b, x.a))));
+    const made = new Map(),
+      one = (id, g) => {
+        if (made.has(g)) return made.get(g);
+        const look = Array.isArray(g.look) ? g.look : [],
+          ls = isObj(g.lsrc) ? g.lsrc : {},
+          D = new Set(drop.get(id) || []),
+          A = (add.get(id) || []).filter(([o], i, L) => !look.includes(o) && L.findIndex(y => y[0] === o) === i);
+        let r = g;
+        if (A.length || look.some(o => D.has(o)) || Object.keys(ls).some(o => D.has(o))) {
+          const l2 = Object.fromEntries(Object.entries(ls).filter(([o]) => !D.has(o)));
+          A.forEach(([o, s]) => !l2[o] && (l2[o] = s ? s.t : EDITOR_PAIR));
+          r = {...g, look: [...look.filter(o => !D.has(o)), ...A.map(([o]) => o)], lsrc: l2};
+        }
+        made.set(g, r);
+        return r;
+      },
+      out = {...R},
+      done = new Set();
+    GEN_AT.forEach(at => {
+      const G = atPath(R, at);
+      Object.keys(isObj(G) ? G : {}).forEach(n => {
+        if (!isObj(G[n]) || (!add.has(n) && !drop.has(n))) return;
+        const r = one(n, G[n]);
+        if (r !== G[n]) contentBox(out, R, at, done)[n] = r;
+      });
+    });
+    return done.size ? out : R;
+  }
+  // The ★ rule under the content editor's pairs (rule L5; design note v2, step 8): a starred genus is on the slate because
+  // it looks like surveyed genera, and opens only after the ones its card names (starRefs: its own look-alikes that are
+  // surveyed genera of the lecture group it is shown in). Every starred genus of the base has some; a withdrawn pair could
+  // leave one with none (Alveopora and Halomitra have one look-alike each), and it would then open at any time and be
+  // shown in no group. Of the pair changes P that apply ([{key, a, b, v}]: structEntries), the withdrawals refused: every
+  // addition first (they only add references), then the withdrawals in key order, each refused when it leaves a starred
+  // genus of either side with no reference, so two devices' withdrawals merged keep the first and hold the other,
+  // whatever order they were made in. A Set of their keys (structEntries: orphaned, why hold; never applied).
+  function starHold(R, P) {
+    const held = new Set(),
+      W = (P || []).filter(x => x.v !== 1).sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
+    if (!W.length) return held;
+    const G = (R && R.gen) || {},
+      X = xGen(R),
+      d = {gen: {}, x: {gen: {}}},
+      copy = g => ({...g, look: Array.isArray(g.look) ? g.look.slice() : []});
+    Object.keys(X).forEach(n => isObj(X[n]) && (d.x.gen[n] = copy(X[n])));
+    Object.keys(G).forEach(n => isObj(G[n]) && (d.gen[n] = G[n] === X[n] ? d.x.gen[n] : copy(G[n])));
+    const rec = n => d.gen[n] || d.x.gen[n],
+      star = n => !!d.gen[n] && !d.gen[n].n && !d.x.gen[n] && starRefs(R, n).length > 0;
+    (P || [])
+      .filter(x => x.v === 1)
+      .forEach(x => {
+        const a = rec(x.a),
+          b = rec(x.b);
+        if (!a || !b) return;
+        if (!a.look.includes(x.b)) a.look.push(x.b);
+        if (!b.look.includes(x.a)) b.look.push(x.a);
+      });
+    W.forEach(x => {
+      const a = rec(x.a),
+        b = rec(x.b);
+      if (!a || !b) return;
+      const la = a.look,
+        lb = b.look;
+      a.look = la.filter(o => o !== x.b);
+      b.look = lb.filter(o => o !== x.a);
+      if ([x.a, x.b].some(n => star(n) && !starRefs(d, n).length)) {
+        a.look = la;
+        b.look = lb;
+        held.add(x.key);
+      }
+    });
+    return held;
+  }
   // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
   // sure), downloaded to R2 (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish).
   // The stopgap list of remote iNaturalist photos they replaced entry by entry was retired on 2026-11-15 (Pierre): no fish
@@ -4674,15 +4832,41 @@ const CORE_ = (function () { const module = {exports: {}};
       c = P && P.content;
     return isObj(c) ? c : {};
   };
-  // A rank's records by id ({id: {rec, i}}: i its place in the list, or its key in a map), from its declaration D.
+  // A rank's records by id ({id: {rec, i, at}}: i its place in the list, or its key in a map; at the path of the list or
+  // map), from its declaration D. D.at is a path (a.b: a field inside one) or a list of them, read in order: an id met
+  // again in a later one is the first one's (the admin's coral data holds the x genera in gen too, the same records).
+  const atPath = (R, at) =>
+    String(at)
+      .split('.')
+      .reduce((o, k) => (isObj(o) ? o[k] : undefined), R);
   const contentRecs = (R, D) => {
-    const L = (R || {})[D.at],
-      out = new Map();
-    if (Array.isArray(L)) L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i}));
-    else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && out.set(id, {rec: r, i: id}));
+    const out = new Map();
+    (Array.isArray(D.at) ? D.at : [D.at]).forEach(at => {
+      const L = atPath(R || {}, at);
+      if (Array.isArray(L))
+        L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i, at}));
+      else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && !out.has(id) && out.set(id, {rec: r, i: id, at}));
+    });
     return out;
   };
-  // Every node a subject's slots reach in built file R: {id: {rank, rec, i}}.
+  // The list or map at path at of out (a copy of built file R, sharing what is not copied yet), copied from R's the first
+  // time (each level of the path once: done, the paths copied), so a record can be put in it without touching R.
+  function contentBox(out, R, at, done) {
+    const P = String(at).split('.');
+    let o = out,
+      r = R;
+    P.forEach((k, j) => {
+      r = isObj(r) ? r[k] : undefined;
+      const p = P.slice(0, j + 1).join('.');
+      if (!done.has(p)) {
+        o[k] = Array.isArray(r) ? r.slice() : {...(isObj(r) ? r : {})};
+        done.add(p);
+      }
+      o = o[k];
+    });
+    return o;
+  }
+  // Every node a subject's slots reach in built file R: {id: {rank, rec, i, at}}.
   function contentNodes(S, R) {
     const out = new Map();
     Object.entries((S && S.content) || {}).forEach(([rank, D]) =>
@@ -4816,15 +5000,14 @@ const CORE_ = (function () { const module = {exports: {}};
     L.forEach(x => {
       const n = N.get(x.node),
         at = S.content[n.rank].at;
-      if (!done.has(at)) {
-        out[at] = Array.isArray(R[at]) ? R[at].slice() : {...R[at]};
-        done.add(at);
-      }
       let r = recs.get(x.node);
       if (!r) {
         r = JSON.parse(JSON.stringify(n.rec));
         recs.set(x.node, r);
-        out[at][n.i] = r;
+        // in its list or map, and in any other of its rank's that holds the same record (the admin's merged coral gen)
+        (Array.isArray(at) ? at : [at]).forEach(a => {
+          if (a === n.at || (atPath(R, a) || {})[n.i] === n.rec) contentBox(out, R, a, done)[n.i] = r;
+        });
       }
       contentPut(x.sp, r, x.key, x.e.v);
       const s = contentSrc(x.e.src);
@@ -4866,7 +5049,7 @@ const CORE_ = (function () { const module = {exports: {}};
     if (D.pairs) {
       const N = at(D.pairs.rank),
         f = D.pairs.slot,
-        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => Array.isArray(y) && y[0] === o);
+        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => pairIdOf(y) === o);
       Object.keys(isObj(C && C.pairs) ? C.pairs : {})
         .sort()
         .forEach(key => {
@@ -4880,9 +5063,20 @@ const CORE_ = (function () { const module = {exports: {}};
               p.length !== 2 || !a || !b || !(a < b) ? 'key' : !x || !y ? 'node' : !isObj(e) || !(e.v === 1 || e.v === null) ? 'value' : '';
           out.pairs.push({key, a, b, e, base, ...st(e, base, why)});
         });
+      // The subject's own guard (SUBJECTS structure pairs hold: the corals' ★ rule, starHold): the changes it refuses among
+      // those that apply are never applied, orphaned with why hold, so the apply, the stamp, the admin and the sheet agree.
+      if (typeof D.pairs.hold === 'function') {
+        const H = D.pairs.hold(
+          R,
+          out.pairs.filter(x => x.state !== 'orphan' && x.e.v !== x.base).map(x => ({key: x.key, a: x.a, b: x.b, v: x.e.v}))
+        );
+        if (H && H.size) out.pairs = out.pairs.map(x => (H.has(x.key) ? {key: x.key, a: x.a, b: x.b, e: x.e, base: x.base, state: 'orphan', why: 'hold'} : x));
+      }
     }
     return out;
   }
+  // A look-alike row's other node id: a row [id, words] (fish.json look) or the id itself (data.json look: genus names).
+  const pairIdOf = y => (Array.isArray(y) ? (y[0] == null ? '' : String(y[0])) : typeof y === 'string' ? y : '');
   // Whether content map Cm holds any structure entry (a circle slot, a pair).
   const structHas = Cm =>
     Object.values(isObj(Cm && Cm.nodes) ? Cm.nodes : {}).some(m => isObj(m) && CIRCLE_SLOT in m) ||
@@ -4914,7 +5108,7 @@ const CORE_ = (function () { const module = {exports: {}};
     if (D.pairs)
       contentRecs(R, S.content[D.pairs.rank]).forEach((x, id) =>
         (Array.isArray(x.rec[D.pairs.slot]) ? x.rec[D.pairs.slot] : []).forEach(y => {
-          const o = Array.isArray(y) ? String(y[0]) : '';
+          const o = pairIdOf(y);
           if (o && o !== id) p.add(id < o ? id + '|' + o : o + '|' + id);
         })
       );
@@ -8116,6 +8310,12 @@ const CORE_ = (function () { const module = {exports: {}};
   // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
   // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
   const STRUCT_SHEET = 146;
+  // The sync script version that replays the subject it rates photos for (SUBJECTS replay: the corals) under its content
+  // editor's structure (Code.gs vNEXT: gen_ and replay_ under curation.json's look-alike pairs, keyed by the structure
+  // stamp; design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
+  const REPLAY_STRUCT_SHEET = 148;
+  const structSheet = S =>
+    S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -9289,6 +9489,8 @@ const CORE_ = (function () { const module = {exports: {}};
     LOG_SHEET,
     REPLAYS_SHEET,
     STRUCT_SHEET,
+    REPLAY_STRUCT_SHEET,
+    structSheet,
     WINK_SHEET,
     logOk,
     PA_SHEET,
@@ -9497,6 +9699,10 @@ const CORE_ = (function () { const module = {exports: {}};
     structStamp,
     structFp,
     fishStructure,
+    genStructure,
+    genLooks,
+    starHold,
+    pairIdOf,
     EDITOR_PAIR,
     hash53,
     contentOut,

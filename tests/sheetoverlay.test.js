@@ -47,8 +47,7 @@ test('the slots: declared per rank of the fish sheets, on records fish.json hold
         assert.ok(v === null || (sp.t === 'list' ? Array.isArray(v) : typeof v === 'string'), `${f.id} ${sp.k}`);
       })
   );
-  // The corals declare none yet (their step comes with the Tree's corals): their part applies nothing.
-  assert.ok(!C.SUBJECTS[0].content);
+  // The corals declare theirs since step 8 (tests/coralcontent.test.js).
 });
 
 test('nothing edited: the built file itself, for the app and for every subject (players see no change)', () => {
