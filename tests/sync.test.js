@@ -988,7 +988,7 @@ test('board (v101): a subject with a global score ranks by core.js treeScore ove
     summary: {board: 1},
     answers: []
   });
-  // The tree as the board reads it back (Code.gs boardUnits_; kept in chunks from vNEXT, tests/boardtree.test.js).
+  // The tree as the board reads it back (Code.gs boardUnits_; kept in chunks from v143, tests/boardtree.test.js).
   const kept = () => JSON.stringify(s.ctx.boardUnits_({id: 'fish'}));
   assert.strictEqual(kept(), JSON.stringify(tree), 'the tree kept as sent');
   // Ana: the rare family only, √(0.25 × 1/4) = 25%. Ben: the common family and its genus, √(0.25 × 3/4 + 0.75 × 0.8 ×
