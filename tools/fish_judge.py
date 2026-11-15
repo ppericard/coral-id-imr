@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
-"""Fish photo judging (judging/FISH.md): writes the judged ease of every fish game photo into fish-photos.json.
+"""Fish photo judging (judging/FISH.md): the rubric's code and caps, and the material of a judging pass.
 
-Fish answers are not logged to the sheet yet, so no player answer rates a fish photo. Until they are, an agent (or a
-person) looks at every game photo and judges it on the rubric of judging/FISH.md; the judgements live in
-tools/fish_judge.json (one code per photo, e.g. "p1g0sm14": view, whole, light, colour loss, clarity, size, count, flags,
-ease 1-5) and, for some photos, a proposed crop [l, t, r, b] (fractions, curation.json's crop format).
+The judgements live in tools/fish_judge.json (one code per photo, e.g. "p1g0sm14": view, whole, light, colour loss,
+clarity, size, count, flags, ease 1-5; for some photos a proposed crop [l, t, r, b], curation.json's crop format; the
+fish's box; keep, a reference photo judged against its observation's photos). tools/fish_game.py reads them for the
+reference photos it puts in play (ref_play: cap, then its judged_sure), tools/judging_fish.py for the candidates (cap,
+juv_early). Until 2026-11-15 this script also wrote them into the stopgap list of fish-photos.json (retired: every fish
+photo in play is on R2, fish-game.json).
 This script:
-  - applies them to fish-photos.json: each judged photo gets `e` (its ease after the rubric's caps) and `jt` (its tags,
-    with the phase flag `p` added for the entries fish.json marks `dimorph`), and `c` its proposed crop when it has one
-    (a proposal for the admin, like a coral candidate's suggest.json `c`: the app never applies it); a photo no longer
-    judged loses all three;
-  - adds the photos the judging pass picked for entries short of very easy photos (`add`: research-grade iNaturalist
-    candidates of fish-cand.json, same licence rules), each once (one photo per observation), at the end of its list;
-  - prints the summary: counts per tag, very easy photos (ease 4-5) per entry, entries short of them;
-  - with --sheets DIR: downloads every game photo at iNaturalist's medium size into DIR/img and draws contact sheets of
-    12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after); --only t28,t47
-    limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid for the crops.
-tools/fish_photos.py calls apply() whenever it rebuilds the photo list, so a rebuild keeps the judgements.
-  - adds the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) to their entries once judged; --sheets
-    DIR --refs draws the sheets of those photos (with --todo: the ones not judged yet).
+  - prints the summary of the photos in play (fish-game.json): counts per tag, very easy photos (ease 4-5) per entry,
+    circle-1 entries short of them;
+  - with --sheets DIR: downloads the photos in play at iNaturalist's medium size (FishBase's whole) into DIR/img and draws
+    contact sheets of 12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after);
+    --only t28,t47 limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid
+    for the crops; --refs: the units' reference photos (tools/fish_refs.json, tools/fish_refs.py) instead;
   - with --boxes DIR: the box pass (judging/FISH.md "The fish's box"): the photos in play (fish-game.json) whose tags pass
     the tile rule (tools/fish_game.py tile_tags) and that have no box yet, the easiest first, one per observation, at most
     --n per entry (--only limits the entries), on sheets of 9 at 420 x 315 px with a 10 x 10 grid; the judge writes each
     fish's box into tools/fish_judge.json boxes. DIR outside the repository; delete it after.
-Usage: python3 tools/fish_judge.py [--check] [--sheets DIR [--only t28,t47] [--todo] [--refs]] [--boxes DIR [--only ..] [--n N]]
+Usage: python3 tools/fish_judge.py [--sheets DIR [--only t28,t47] [--todo] [--refs]] [--boxes DIR [--only ..] [--n N]]
 """
 import argparse
 import json
 import re
-import sys
 from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools" / "fish_judge.json"
 REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/fish_refs.py)
-PHOTOS = ROOT / "fish-photos.json"
 # The count (7th letter): 1, s, o (other species, no risk of confusion), k (other species one could take for the subject),
 # x; m, the code for other species before Pierre's split (2026-11-09, Q323), stays readable as "not sorted yet" (core.js
 # FISH_COUNT), never typed in a new judgement (NEW_COUNT, tools/judging_fish.py --check).
@@ -108,122 +101,17 @@ def load_refs(fish=None):
     return out
 
 
-def load_keep():
-    """tools/fish_judge.json "keep": {reference photo id: best | alt | dup}, judged against the photos of its observation
-    in play (Pierre, 2026-11-08, Q218; tools/fish_game.py in_play)."""
-    return json.loads(SRC.read_text(encoding="utf-8")).get("keep") or {}
-
-
-def add_refs(photos, J, added=(), fish=None, dup=frozenset(), level=None):
-    """The reference photos (tools/fish_refs.json) into their entries' game photos, in place. A photo already in the game
-    takes the rep tag only (rtag marks a tag set here), and stays whatever its level (Codex review #660: a game photo is
-    never removed for being a reference photo). A new one joins at the end once judged (J; apply then keeps it only at the
-    reference level, ref_level), unless its observation is already in the game (one photo per observation, rule P4: the
-    game photo stays). core.js easyRank orders the list. A rerun gives the same file: a joined photo tools/fish_refs.json
-    no longer lists leaves, a tag it no longer lists goes. dup: the reference photos judged duplicates of their
-    observation's photos (load_keep): never joined, and one that joined leaves (Codex review #715); a game photo of its own
-    stays. level(tid, p): whether reference photo p reaches the reference level once judged (apply passes it). Of two
-    reference photos of one observation, the one at the reference level holds the observation's place, whichever comes
-    first in tools/fish_refs.json: one below it would hold the place, then leave in apply, and keep the other out."""
-    R = load_refs(fish)
-    want = {r["f"]: r for L in R.values() for r in L}
-    for tid in list(photos):
-        photos[tid] = [p for p in photos[tid] if not p.get("from") or (p["f"] in want and p["f"] not in dup)]
-        for p in photos[tid]:
-            if p.get("rtag") and p["f"] not in want:
-                p.pop("rep", None)
-                p.pop("rtag", None)
-    for tid, L0 in R.items():
-        L = photos.setdefault(tid, [])
-        for r in L0:
-            have = next((p for p in L if p["f"] == r["f"]), None)
-            if have:
-                if have.get("from"):
-                    have.update({k: v for k, v in r.items() if k != "for"})
-                elif r.get("rep") and have.get("rep") != r["rep"]:
-                    have.update(rep=r["rep"], rtag=1)
-            elif r["f"] in J and r["f"] not in dup:
-                other = next((p for p in L if p["o"] == r["o"]), None)
-                if other is None:
-                    L.append({k: v for k, v in r.items() if k != "for"})
-                elif level and other.get("from") and not level(tid, other) and level(tid, r):
-                    # another reference photo of this observation, below the reference level: this one takes its place
-                    L[L.index(other)] = {k: v for k, v in r.items() if k != "for"}
-
-
-LOOK = re.compile(r"^p1g0s[lm][1s]$")
-
-
-def ref_level(p):
-    """core.js refLevel: a reference source's photo (rep) judged very easy (4-5), or any photo judged 5 with the reference
-    look (profile, whole, good light, true colours, sharp, large or medium, one fish or a school; no j, c or a); in both
-    cases one kind of fish (count 1 or s)."""
-    e, jt = p.get("e") or 0, p.get("jt") or ""
-    # Never a photo with other species in view (count o, k, the legacy m) or an unclear subject (x), whatever its source
-    # (rule P3: one species per reference photo; Codex review #660; o is in play, not a reference: Q323).
-    if len(jt) < 7 or jt[6] not in "1s":
-        return False
-    return (e >= EARLY and bool(p.get("rep"))) or (e == 5 and bool(LOOK.match(jt[:7])) and not set(jt[7:]) & set("jca"))
-
-
-def apply(photos, fish=None):
-    """Writes e / jt into the photo objects of photos (teaching id -> list), in place; returns the count judged."""
-    fish = fish or json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
-    dim = {t["id"] for t in fish["teach"] if t.get("dimorph")}
-    juv = {t["id"]: t.get("juv") for t in fish["teach"]}
-    sp = {s["id"]: (s.get("name"), s.get("now")) for s in fish.get("species", [])}
-    J, C, A = load_src()
-    for tid, extra in A.items():
-        L = photos.setdefault(tid, [])
-        have = {p["o"] for p in L}
-        L.extend(dict(p) for p in extra if p["o"] not in have)
-
-    def level(tid, p):  # the reference level p reaches once judged: ref_level after the caps, as below
-        if p["f"] not in J:
-            return False
-        e, jt = cap(J[p["f"]], tid in dim, juv_early(juv.get(tid), sp.get(p.get("sp"), ())), p.get("rep"))
-        return ref_level({**p, "e": e, "jt": jt})
-
-    dup = {f for f, k in load_keep().items() if k == "dup"}
-    add_refs(photos, J, {p["f"] for L in A.values() for p in L}, fish, dup, level)
-    k = 0
-    for tid, L in photos.items():
-        for p in L:
-            for x in ("e", "jt", "c"):
-                p.pop(x, None)
-            if p["f"] in J:
-                p["e"], p["jt"] = cap(J[p["f"]], tid in dim, juv_early(juv.get(tid), sp.get(p.get("sp"), ())), p.get("rep"))
-                if p["f"] in C:
-                    p["c"] = C[p["f"]]
-                k += 1
-    # In this stopgap list a reference photo plays only at the reference level (Pierre, 2026-11-06: "take every photo that
-    # passes the rules and is judged reference-level"); one judged lower stays out of it. On R2 (fish-game.json) every
-    # reference photo judged sure like a candidate is in play, whatever its level (Pierre, 2026-11-08, Q212; tools/
-    # fish_game.py ref_play).
-    for tid in photos:
-        photos[tid] = [p for p in photos[tid] if not p.get("from") or ref_level(p)]
-    return k
-
-
-def write(doc):
-    """fish-photos.json, the one writer (tools/fish_photos.py uses it too): one entry per line under "photos" (the game
-    photos), then one species per line under "sheet" (the sheet-only photos, tools/fish_photos.py SHEET), kept as they are."""
-    dump = lambda v: json.dumps(v, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
-    sheet = doc.get("sheet") or {}
-    lines = ["{", f'"v":{doc["v"]},', f'"built":{json.dumps(doc["built"])},', f'"stopgap":{json.dumps(doc["stopgap"])},', '"photos":{']
-    lines.append(",\n".join(f'"{k}":{dump(v)}' for k, v in doc["photos"].items()))
-    lines.append("}," if sheet else "}")
-    if sheet:
-        lines += ['"sheet":{', ",\n".join(f'"{k}":{dump(v)}' for k, v in sheet.items()), "}"]
-    lines.append("}")
-    PHOTOS.write_text("\n".join(lines) + "\n", encoding="utf-8")
+def game():
+    """fish-game.json, the photos in play, every record whole (tools/fish_game.py load)."""
+    import fish_game as G
+    return G.load(str(ROOT), G.OUT_FILE, {"photos": {}})
 
 
 def summary(doc, fish):
     names = {t["id"]: (t["name"], t.get("circle"), bool(t.get("wink"))) for t in fish["teach"] if t.get("level") == 1}
     allp = [p for L in doc["photos"].values() for p in L]
-    judged = [p for p in allp if "e" in p]
-    print(f"judged: {len(judged)} of {len(allp)} game photos")
+    judged = [p for p in allp if "e" in p and p.get("jt")]
+    print(f"judged: {len(judged)} of {len(allp)} photos in play")
     pos = ["view", "whole", "light", "colour loss", "clarity", "size", "count"]
     for i, t in enumerate(pos):
         print(f"  {t}: " + ", ".join(f"{k} {v}" for k, v in sorted(Counter(p['jt'][i] for p in judged).items())))
@@ -252,7 +140,7 @@ def sheets(out, only=(), todo=False, refs=False):
     import time
     import urllib.request
     from PIL import Image, ImageDraw, ImageFont
-    doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
+    doc = game()
     J = load_src()[0] if todo else {}
     if refs:  # the reference photos of tools/fish_refs.json instead of the game photos
         doc["photos"] = load_refs()
@@ -272,7 +160,7 @@ def sheets(out, only=(), todo=False, refs=False):
             for i, p in enumerate(L[s:s + COLS * ROWS]):
                 f = out / "img" / f"{p['f']}.jpg"
                 if not f.exists():
-                    req = urllib.request.Request(p["src"].replace("/original.", "/medium."), headers={"User-Agent": "coral-id-imr/1.0"})
+                    req = urllib.request.Request(p["src"].replace("/original.", "/medium."), headers={"User-Agent": "coral-id-imr/1.0"})  # FishBase's: whole
                     with urllib.request.urlopen(req, timeout=60) as r:
                         f.write_bytes(r.read())
                     time.sleep(0.5)  # gentle on iNaturalist's photo host
@@ -363,7 +251,6 @@ def box_sheets(out, only=(), n=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true", help="exit 1 when fish-photos.json is not up to date")
     ap.add_argument("--sheets", type=Path, help="download the photos and draw contact sheets into this folder")
     ap.add_argument("--only", default="", help="with --sheets: these entries only (comma-separated teaching ids)")
     ap.add_argument("--todo", action="store_true", help="with --sheets: only the photos not judged yet")
@@ -381,17 +268,7 @@ def main():
 
         slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
         return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo, a.refs)
-    fish = json.loads((ROOT / "fish.json").read_text(encoding="utf-8"))
-    doc = json.loads(PHOTOS.read_text(encoding="utf-8"))
-    before = json.dumps(doc, sort_keys=True)
-    apply(doc["photos"], fish)
-    if a.check:
-        if json.dumps(doc, sort_keys=True) != before:
-            sys.exit("fish-photos.json does not hold the current judgements: run python3 tools/fish_judge.py")
-        print("fish-photos.json holds the current judgements")
-    else:
-        write(doc)
-    summary(doc, fish)
+    summary(game(), json.loads((ROOT / "fish.json").read_text(encoding="utf-8")))
 
 
 if __name__ == "__main__":

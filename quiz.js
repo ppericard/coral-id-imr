@@ -1077,7 +1077,7 @@ function winkDue() {
 }
 // The wink's photo (Pierre, 2026-11-07: a surprise card never shows a bad photo, each draws from 2 or 3 really beautiful
 // ones): one of the photos chosen for it (wink.photos: tools/fish_wink_photos.json) that are still among the unit's game
-// photos, matched by photo id (fishPid: a candidate and its stopgap copy are one photo), so one Pierre's curation takes
+// photos, matched by photo id (fishPid: a candidate and its reference copy are one photo), so one Pierre's curation takes
 // out is never drawn; none left, the unit's best by ease and reference look (easyRank's first). Pierre's ★ Cover of the
 // unit comes first while it is in play (coverP, app.js fishCurate; Pierre, 2026-11-08, Q290, of the Thresher sharks'
 // card: "we can use my cover for the card").
@@ -1649,7 +1649,7 @@ const pfUrls = q => {
       // Find the X: its four tiles (app.js tileSrc), in the order shown.
       ...(set.find || []).map(x => tileSrc(x.p))
     ])
-  ].filter(u => ownPhoto(u) || SUBJ.remote || AWAY); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown; a subject on iNaturalist photos, core.js SUBJECTS remote, has them all fetched ahead; once R2 failed, the online originals that stand in for the site's files)
+  ].filter(u => ownPhoto(u) || AWAY); // the site's own files, on R2 or the site (an iNaturalist photo waiting to be downloaded loads when shown; once R2 failed, the online originals that stand in for the site's files)
 };
 const pump = () => {
   const kept = new Set([ONQ]);

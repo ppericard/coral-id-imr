@@ -1197,7 +1197,7 @@ function memRecalcAll() {
 // (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
 // it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
 function domRecalcAll() {
-  // Nor while the subject's data is still partial (app.js dataPartial: the fish units on the stopgap's photos only, before
+  // Nor while the subject's data is still partial (app.js dataPartial: the fish units on their first photos only, before
   // fish-game.json): the rebuild reads the units' photo difficulties, and runs once the whole data is in (fishLoad).
   if (SUBJ.replay || !domRules() || !DATA || (typeof dataPartial === 'function' && dataPartial())) return false;
   const L = Object.keys(P).filter(
