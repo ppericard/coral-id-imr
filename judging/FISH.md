@@ -46,6 +46,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **out of water** (a fish on a net, in a hand, dead) |
+| | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing, only Home skips it (below, "Watermark") |
 | | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
@@ -184,6 +185,37 @@ Pierre, 2026-11-15: a photo has a single judgement. One photo can be met twice: 
   reference record carries for 423 of these photos (`fish-cand.json` tags only the taxon's cover; `tools/fish_refs.json`
   every photo of the taxon page). The same code can then give the photo one ease point more as a reference photo than as a
   candidate: a separate question, left as it is.
+
+## Watermark (2026-11-15)
+
+Pierre, 2026-11-15 (Q373): some reference photos carry a visible watermark or text, such as a photographer's name. The
+judged flag `w` marks them, in the typed flags' order (`j c a w`, then the tool's `p r`: `p1g0sl1jw4`). It changes nothing
+in the games: no cap, no ease, no reference level, no order, no tile, no sure decision (`tests/watermark.test.js`), so a
+watermark is never a reason to leave play. **Home skips it** (`home.js` `homeOk`): the Learn band's pool, a tile's own pick and
+the Identify door's art, his ★ Cover included; a family whose photos all carry it is not drawn there. Pierre takes the flag
+off (or sets it) in the admin like any tag (Tags › Watermark). His tags win as on every route, a reference photo's included
+since then (`tools/fish_game.py` `record`). The pass's `w` also reaches tags the auto-sort copied into his curation (its log code
+still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/fish_game.py` `marked`).
+
+- **The pass of 2026-11-15** judged each photo on its R2 file (Pierre's crop applied), on contact sheets of 6 at 560 px,
+  with the top and bottom bands enlarged for faint text. 844 photos were looked at and 224 were tagged: iNaturalist
+  photographers' names and logos, and 1 FishBase photo. It covered three groups:
+  - the photos Home can show: each family's cover and the reference photos its band rotates through, up to 10 per
+    family in the game's order. Once the first ones were tagged, the next photos in each pool were looked at too, until
+    every photo the pools can draw had been judged. That holds with the judged order and on a first launch (the first
+    photos of `fish-photos.json`);
+  - every reference-level landscape photo (the band's kind) by an author already tagged once: 342 photos, 134 of them
+    tagged.
+  
+  **Not covered**: the players' ratings re-sort a family's photos (`app.js` `rankPhotos`), so the band can later reach
+  reference photos by other authors that nobody has looked at yet (about 1,900 photos are of the band's kind).
+  ROADMAP "Watermark pass, the rest" holds that work.
+- `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
+  writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
+  `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
+- When a later pass adds photos to the Home pools (new reference photos, other ratings), look at them the same way and add
+  them to the list. A photo seen at full size whose text cannot be settled is tagged: a wrong tag costs one Home photo and
+  one tap, while a missed watermark stays on Home.
 
 ## A proposed crop
 

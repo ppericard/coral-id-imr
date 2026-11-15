@@ -10,8 +10,10 @@
   // A photo that suits a landscape tile: its shape (ar, width / height) within LAND_AR and the whole fish shown (its
   // judged tag, judging/FISH.md).
   // Never a juvenile (app.js juvP; Pierre, 2026-11-13: a juvenile is never a cover), but his ★ Cover on one he confirmed
-  // (cj: app.js fishCurate; Pierre's exception, 2026-11-15).
-  const landOk = p => !!p && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);
+  // (cj: app.js fishCurate; Pierre's exception, 2026-11-15). Never a photo tagged with a visible watermark or text (its
+  // judged flag w; Pierre, 2026-11-15, Q373: Home skips them, the games keep them), his ★ Cover included: homeOk.
+  const homeOk = p => !!p && !/w/.test(String(p.jt || '').slice(7));
+  const landOk = p => homeOk(p) && p.ar >= LAND_AR[0] && p.ar <= LAND_AR[1] && String(p.jt || '').charAt(1) === '1' && (!juvP(p) || !!p.cj);
   // A photo served from R2 (onR2), not one still remote (r: 1 with its online original: fish-photos.json, the stopgap's),
   // which app.js thumb takes from iNaturalist or FishBase at ~500 px, without R2's sizes, srcset or Saver.
   const onR2 = p => !(p.r && p.src),
@@ -20,11 +22,13 @@
   // suits the tile (Pierre, 2026-11-08, Q291: "the covers can go before the mosaic, but in landscape, it must fit well"),
   // else the first of its easiest, most reference-like photos (core.js easyRank, already in that order) that suits it, one
   // on R2 first (before fish-game.json is in, app.js fishHome, every photo is remote: then one that suits it all the same),
-  // else its first that is not a juvenile (app.js adultFirst). Other tiles: the unit's card photo (cover()).
+  // else its first that is not a juvenile (app.js adultFirst), never one with a watermark (homeOk). Other tiles: the
+  // unit's card photo (cover()). A unit whose photos all carry a watermark is not drawn on Home (homeUnit).
   const tilePhoto = (g, land) => {
     const L = g.views.wide.slice(0, 10);
-    return land ? (landOk(g.coverP) ? g.coverP : L.find(landR2) || L.find(landOk) || adultFirst(g.views.wide)) : cover(g);
+    return land ? (landOk(g.coverP) ? g.coverP : L.find(landR2) || L.find(landOk) || adultFirst(g.views.wide.filter(homeOk))) : cover(g);
   };
+  const homeUnit = n => GX(n).views.wide.some(homeOk);
   // The Learn band rotates (ROADMAP "Fish Home mosaic: rotate the photos"; Pierre, 2026-11-08: for variety, instead of
   // always the same photo per family): a landscape tile shows, each day, one of its unit's photos on R2 that suit it
   // (landR2), picked from landPool: Pierre's ★ Cover first (Q291), then its reference photos (core.js refLevel) in the
@@ -83,7 +87,7 @@
     // tile; none, tilePhoto: the first of its easiest that does).
     const land = !!UNITS[SUBJ.id].land;
     const tiles = fish
-      ? shuffle(slateGenera().filter(n => GX(n).views.wide.length))
+      ? shuffle(slateGenera().filter(homeUnit))
           .slice(0, 12)
           .map(
             n =>
@@ -101,7 +105,7 @@
     const key = UNITS[SUBJ.id].identify,
       // Its fish art, a landscape box too (home.css .hdart.rc.land, near 3:2 at every size, so the whole fish shows): the
       // same photo a tile would show (tilePhoto, Q291).
-      fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(n => GX(n).views.wide.length))[0]) || null),
+      fp = fish && ((n => n && tilePhoto(GX(n), land))(shuffle(slateGenera().filter(homeUnit))[0]) || null),
       fishArt = fp
         ? `<img ${thumb(fp, land ? '(max-width:599.98px) 184px, 520px' : '(max-width:599.98px) 96px, 520px')} alt="" loading="lazy">`
         : '';

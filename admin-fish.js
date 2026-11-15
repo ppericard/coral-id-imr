@@ -44,7 +44,7 @@ const FTAGS = [
     x: 'subject not obvious'
   }
 ];
-const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', p: 'phase entry', r: 'reference photo'};
+const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', w: 'watermark', p: 'phase entry', r: 'reference photo'};
 const fishTagText = jt =>
   !jt ? '' : [...FTAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FFLAGS[c])].filter(Boolean).map(esc).join(' · ');
 // The rows Pierre sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
@@ -126,9 +126,12 @@ const FROWS = [
     ]
   ]
 ];
+// Watermark (w: a visible watermark or text on the photo; Pierre, 2026-11-15, Q373): Home skips the photo, the games
+// keep it; his tap sets it or takes it off like any tag.
 const FFLAGS_MINE = [
   ['j', 'Juvenile'],
-  ['c', 'Camouflage']
+  ['c', 'Camouflage'],
+  ['w', 'Watermark']
 ];
 const FPHASE_ROW = [
   ['', 'No phase'],
@@ -148,8 +151,9 @@ const fRow = (name, at, opts, v, auto) =>
     )
     .join('')}</span>`;
 // Pierre's values on a photo (the draft's fish part) and the pass's (j), for the rows: {mine, pass} per field.
+// His tags with the pass's watermark flag where they are the auto-sort's copy (autosort.js fishTagsMine; Q373).
 const fVals = (F, f, j) => ({
-  tags: {mine: (F.tags || {})[f], pass: j && j.jt},
+  tags: {mine: fishTagsMine(F, f, j && j.jt), pass: j && j.jt},
   ease: {mine: (F.ease || {})[f], pass: j && j.e},
   phase: {mine: f in (F.phase || {}) ? F.phase[f] : undefined, pass: (j && j.ph) || ''}
 });
@@ -475,7 +479,7 @@ function renderFishCand() {
       FPIN = f;
       fishEdit(fn);
     };
-    bindFishRows(S, f, () => (DRAFT.fish.tags || {})[f] || (!chk && j && j.jt) || '', fishPin);
+    bindFishRows(S, f, () => fishTagsMine(DRAFT.fish, f, j && j.jt) || (!chk && j && j.jt) || '', fishPin);
     S.querySelector('[data-ftags]').onclick = () => {
       FTAGS_OPEN = !FTAGS_OPEN;
       store.set('reefid-admin-ftags', FTAGS_OPEN);

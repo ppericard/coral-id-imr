@@ -136,7 +136,7 @@ function proposalsFile(s) {
   const J = JSON.parse(fs.readFileSync(path.join(__dirname, '..', s.file), 'utf8')),
     C = J.curation;
   assert.ok(Array.isArray(C) && C.length > 0);
-  const code = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$/;
+  const code = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$/;
   C.forEach(x => {
     assert.match(x.photo, /^fish-s\d+-/);
     [x.curated, x.rejudged].forEach(([t, e]) => {
