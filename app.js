@@ -1017,6 +1017,17 @@ function treeAt(id) {
     treePush();
   }
 }
+// fn() with subject id's tree in force, then the one before: what reads a tree subject's units outside its own context
+// (sync.js boardUnits: each leaderboard's tree, whatever the subject on screen; Codex review #987).
+function treeWith(id, fn) {
+  const was = TREE_AT;
+  treeAt(id);
+  try {
+    return fn();
+  } finally {
+    if (was) treeAt(was);
+  }
+}
 // The units of every tree subject loaded made again (build: a new curation): the one in force at once, the others when
 // they come back in force (treeAt).
 function treeBuildAll() {
@@ -1152,12 +1163,17 @@ const treeLoad = id => {
       'FISHP',
       Promise.all([treeHome(id), UNITS[id].get.gm()])
         .then(([raw, gm]) => {
+          // A subject with no first photos (the sea slugs) has nothing to play without its game file: refused, so the
+          // next try fetches it again and start-up falls back on the corals (Codex review #987), as fishHome refuses fish.json.
+          if (!UNITS[id].get.ph && !(gm && gm.photos)) throw new Error('tree data not loaded');
           // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
           treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true});
           // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
           // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
           // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
-          // not in force makes its units when it comes in force (treeAt).
+          // not in force makes its units again, on its whole data, when it comes back in force (treeAt: stale; Codex review
+          // #987: units made on its first photos alone were kept).
+          if (id !== TREE_AT) T.stale = true;
           if (!DATA || id !== TREE_AT) return T.FISH;
           T.stale = false;
           const F = fishBuild();

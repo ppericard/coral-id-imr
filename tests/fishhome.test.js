@@ -32,7 +32,7 @@ function app({cached = false} = {}) {
       'const fishBuild = () => (FISH = {at: TREE_AT, gm: Object.keys(FISHRAW.gm.photos).length}, this.builds.push(FISH.gm), FISH);\n' +
       block(src, 'const treeOf = id =>', "// The fish units' photos in easyRank order", {file: 'app.js'}) +
       "\nthis.home = () => treeHome('fish').then(() => fishCached().then(c => c && treeLoad('fish')));" +
-      "\nthis.M = {fishHome: () => treeHome('fish'), fishLoad: () => treeLoad('fish'), treeLoad, treeAt, treeOf, get FISHRAW() { return FISHRAW; }, get FISH() { return FISH; }, get AT() { return TREE_AT; }, setData: d => (DATA = d)};",
+      "\nthis.M = {fishHome: () => treeHome('fish'), fishLoad: () => treeLoad('fish'), treeLoad, treeAt, treeOf, treeWith, get FISHRAW() { return FISHRAW; }, get FISH() { return FISH; }, get AT() { return TREE_AT; }, setData: d => (DATA = d)};",
     Object.assign(ctx, {builds})
   );
   const send = (f, body) => waits[f](body);
@@ -141,9 +141,51 @@ test('a second tree subject loads into its own state; treeAt swaps the trees in 
   assert.deepStrictEqual(J(A.M.FISHRAW.f), {families: [{id: 'f:B'}]});
   A.M.treeAt('coral');
   assert.strictEqual(A.M.AT, 'two', 'a subject with no tree leaves the one in force');
+  // A tree read outside its subject (sync.js boardUnits: the fish leaderboard's tree with the sea slugs on screen).
+  assert.strictEqual(
+    A.M.treeWith('fish', () => A.M.FISH.at),
+    'fish'
+  );
+  assert.strictEqual(A.M.AT, 'two', 'and the one on screen back');
   A.M.treeAt('fish');
   assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 1}, "the fish's back, not made again");
   assert.deepStrictEqual(J(A.builds), [1, 'recalc', 1], "the fish's load, its one-time rebuild, then the second's on coming in");
+});
+
+// Codex review #987: the fish's game file coming while another tree is in force (fish Home on its first photos, then the
+// sea slugs, then back) remakes the fish units on coming back; a subject with no first photos refuses a game file that did
+// not come, so the next try asks again.
+test('a game file that comes off screen remakes the units on coming back; one with no fallback refuses a missing file', async () => {
+  const A = app();
+  A.M.setData({gen: {}});
+  A.M.fishHome();
+  await tick();
+  A.send('fish.json', FJ);
+  A.send('fish-photos.json', PH);
+  await tick();
+  await tick();
+  A.M.treeAt('two');
+  A.M.treeAt('fish');
+  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 0}, 'made on its first photos');
+  A.M.treeAt('two');
+  A.M.fishLoad();
+  await tick();
+  A.send('fish-game.json', GM);
+  await tick();
+  await tick();
+  A.M.treeAt('fish');
+  assert.deepStrictEqual(J(A.M.FISH), {at: 'fish', gm: 1}, 'made again on its whole data');
+  let err = null;
+  A.M.treeLoad('two').catch(e => (err = e));
+  await tick();
+  A.send('two.json', {families: [{id: 'f:B'}]});
+  A.send('two-game.json', {});
+  await tick();
+  await tick();
+  assert.ok(err && /not loaded/.test(err.message), 'no photos to fall back on: refused');
+  A.M.treeLoad('two').catch(() => {});
+  await tick();
+  assert.strictEqual(A.asked.filter(u => u === 'two-game.json').length, 2, 'the next try asks again');
 });
 
 // Codex review #820: model.js runs domRecalcAll when it loads, which can be while the fish units are on the stopgap's

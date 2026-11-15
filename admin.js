@@ -2308,7 +2308,9 @@ function fuTreeOf(U) {
   if (TT && TT.units === U) return TT.T;
   const sp = FISHC.species,
     ok = s => sp[s] && !sp[s].out,
-    R = Object.keys(ASUBJ.sheets || {}),
+    // the ranks of the subject whose units these are (FISHS: FISHC's), never the page's (the tree is kept per units, and
+    // another subject's page may build it first: Covers, a third subject)
+    R = Object.keys((FISHS || ASUBJ).sheets || {}),
     N = [],
     K = new Set();
   U.forEach(u => {
