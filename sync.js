@@ -279,14 +279,20 @@ const rvsAsk = () =>
 // slots alone (app.js fishBuild).
 const stKey = S => subjKey(S.id, 'st');
 const stApplied = S => String(store.get(stKey(S), '') || '');
-const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= STRUCT_SHEET;
+// Each subject from its own script version (core.js structSheet: the fish's STRUCT_SHEET, the corals' PAIRS_SHEET, design
+// note v2 step 8).
+const stOn = (S, v) => !!S && !!S.structure && rpOn(S, v) && Number(v) >= structSheet(S);
 const stNow = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].st ? String(UNITS[S.id].st() || '') : '');
 // {sts: {subject: stamp applied}, stn: {subject: stamp of the units here, when another}}, for the subjects asked (rvsAsk).
 // The stamp applied is then held as a key ('' when none yet), so this device's saves always say it: a whole copy saved
 // without it would keep another device's stamp beside this device's progress (core.js keepSubjectKeys), and the merge
 // guard (mergeSubject stOff) could not tell the two structures apart (Codex review #977).
+// The subject the sheet replays (SUBJECTS replay: the corals, its rules version the request's rv) says its stamp too
+// (Code.gs stMain_; design note v2, step 8), once its units are made (DATA).
 const stsAsk = rv => {
-  const L = rpSubjects().filter(S => S.id in rv && stOn(S, sheetV()));
+  const L = [...SUBJECTS.filter(S => S.replay && typeof DATA !== 'undefined' && DATA), ...rpSubjects().filter(S => S.id in rv)].filter(S =>
+    stOn(S, sheetV())
+  );
   L.forEach(S => store.get(stKey(S), null) === null && store.set(stKey(S), ''));
   const stn = Object.fromEntries(L.filter(S => stNow(S) !== stApplied(S)).map(S => [S.id, stNow(S)]));
   return L.length ? {sts: Object.fromEntries(L.map(S => [S.id, stApplied(S)])), ...(Object.keys(stn).length ? {stn} : {})} : {};
@@ -1325,6 +1331,7 @@ function sendAnon() {
       anonAnswers: batch.map(a => logOut(a, sheetV())), // a Find the X's photo tapped only from PA_SHEET (core.js logOut)
       av: appVer(),
       rv: rvApplied(),
+      ...stsAsk({}), // its structure stamp (Code.gs stMain_; design note v2, step 8)
       ...(pendingFrom(q) === null ? {} : {pt: pendingFrom(q)}),
       ...(cut ? {reset: cut} : {}),
       ...(store.get(sk, null) ? {start: store.get(sk, null)} : {}),
@@ -1708,7 +1715,7 @@ function signIn(name, pin, j) {
   // here) would tell the sheet that the account's log was replayed, and its replay would never come (Codex review #399).
   try {
     // and its structure stamps likewise (stKey)
-    [RVK, ...rpSubjects().map(rvKey), ...rpSubjects().map(stKey)].forEach(k => localStorage.removeItem(k));
+    [RVK, ...rpSubjects().map(rvKey), ...SUBJECTS.filter(S => S.structure).map(stKey)].forEach(k => localStorage.removeItem(k));
   } catch (e) {}
   loadData(Object.fromEntries(Object.entries(j.data || {}).filter(([k]) => !(k in M))));
   // Answers played here without an account (queued in the log, or already sent under the anonymous id, moved to the name

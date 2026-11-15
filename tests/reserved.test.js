@@ -15,8 +15,15 @@ const {loadCodeGs, madeBefore} = require('./gas.js');
 const {page} = require('./syncpage.js');
 
 const TOK = 'ghp_write000000000000000000';
-const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8');
-const fetch = url => (/\/main\/data\.json$/.test(url) ? {getResponseCode: () => 200, getContentText: () => DJSON} : null);
+const DJSON = fs.readFileSync(path.join(__dirname, '..', 'data.json'), 'utf8'),
+  CJSON = fs.readFileSync(path.join(__dirname, '..', 'curation.json'), 'utf8');
+// data.json, and curation.json whose look-alike pairs the coral replay lays over it (Code.gs subjRpl_, design note v2 step 8)
+const fetch = url =>
+  /\/main\/data\.json$/.test(url)
+    ? {getResponseCode: () => 200, getContentText: () => DJSON}
+    : /\/main\/curation\.json$/.test(url)
+      ? {getResponseCode: () => 200, getContentText: () => CJSON}
+      : null;
 const prog = n => ({'reefid-sync-coral-progress': JSON.stringify({Acropora: {ok: n, ko: 0}})});
 const qa = (id, i) => ({
   id,

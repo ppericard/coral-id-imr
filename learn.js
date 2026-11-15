@@ -339,11 +339,12 @@ function viewGenus(name) {
     })
     .join('');
   // The Coral ID Key criteria (the Coral Finder book's text, cited by page): visible for genera the lecture skips, otherwise folded under "More details" with sources and key.
-  const cfList = `<h3>Coral ID Key criteria <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>`;
+  // The sources the content editor gave with his edits show with their slot (esrcIn, esrcP; design note v2, step 8, Q359 e).
+  const cfList = `<h3>Coral ID Key criteria <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><ul class="crit">${g.crit.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'crit')}`;
   // Name, slate number and family sit in the sticky header bar (ctxBar), not here.
   $v.innerHTML = `<p class="lede">One genus on one page. The highlighted <b>ID tips (IMR)</b> are what to remember; the <b>IMR lecture notes</b> give the full lecture cues. Its <b>IMR group</b> is the lecture's confusion group: genera in the same group are the ones to tell apart. Photos at three distances: <b>colony</b>, <b>close-up</b> (10-30 cm) and <b>corallites</b> (macro); tap one to enlarge it. <b>Don't confuse with</b>, at the bottom, shows its look-alikes in the same view. Dotted words show their definition when tapped.${isPhone() ? '' : ' ← / → go to the previous / next genus.'}</p>
   <article class="sheet">
-    ${imr.length || g.x ? '' : `<p class="lede keyid">${esc(g.sum)}</p>`}
+    ${imr.length || g.x || !g.sum ? '' : `<p class="lede keyid">${esc(g.sum)}${esrcIn(g, 'sum')}</p>`}
     ${
       isBenthic(name)
         ? `<p class="warn">${BENTHIC_NOTE}</p>`
@@ -352,7 +353,7 @@ function viewGenus(name) {
           : g.n
             ? ''
             : `<p class="warn"><b>★ Not surveyed by IMR.</b> It is on the slate so you don't mistake it for ${g.look
-                .filter(n => DATA.gen[n].n)
+                .filter(n => (DATA.gen[n] || {}).n)
                 .map(n => '<i>' + esc(n) + '</i>')
                 .join(', ')}, so you need to recognise it and set it aside.</p>`
     }
@@ -360,16 +361,16 @@ function viewGenus(name) {
     <div class="hero">
       ${cv ? `<button type="button" class="zoom hero-ph" data-z="${ci}" aria-label="Enlarge photo: ${esc(name)}"><img src="${img(cv, fit(Math.min(innerWidth, 640)))}" data-fit alt="${esc(name)}">${ZOOMI}</button>` : ''}
       <div class="idbox">
-        ${plainLine(g)}
+        ${plainLine(g)}${esrcP(g, 'plain')}
         ${g.x ? `<div class="tipbox"><h3>ID tips <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3>${tipsList(g)}</div>` : ''}
-        ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR) <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span></h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}</p>` : ''}</div>` : ''}
+        ${imr.length || g.mn ? `<div class="tipbox">${imr.length ? `<h3>ID tips (IMR)${(DATA.imrg || [])[g.ig - 1] ? ` <span class="pg">group ${g.ig}: ${esc(DATA.imrg[g.ig - 1].t)}</span>` : ''}</h3>${tipsList(g)}` : ''}${g.mn ? `<p class="mn"><b>Mnemonic:</b> ${esc(g.mn)}${esrcIn(g, 'mn')}</p>` : ''}</div>` : ''}
         ${rootLine(g, slateOf(DATA))}
-        ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}</div>` : ''}
+        ${imr.length ? `<div class="lnotes"><h3>IMR lecture notes</h3>${notesList(g)}${esrcP(g, 'imr')}</div>` : ''}
         ${imr.length ? '' : cfList}
         <details class="more sheetmore"><summary>More details</summary>
         ${imr.length ? cfList : ''}
-        ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}</p>` : ''}
-        ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
+        ${g.check ? `<p class="note check"><b>To check with an IMR trainer:</b> ${esc(g.check)}${esrcIn(g, 'check')}</p>` : ''}
+        ${g.info ? `<div class="note osrc"><b>Other sources:</b><ul class="srcs">${g.info.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${esrcP(g, 'info')}</div>` : ''}
         <h3>In the key <span class="pg">Coral Finder p. ${g.pages.join(', ')}</span></h3><div class="kpick">${paths.map(({k, l}) => `<a class="c-${k.color}" href="${esc(hr('idkey|form=' + l.id[0] + ';box=' + l.id))}">${esc(k.name)} › ${esc(leafLabel(l))}</a>`).join('')}</div>
         <p class="note refs"><b>References:</b> ${imr.length ? 'IMR Lecture 6 · ' : ''}Coral Finder 2022 (R. Kelley) p. ${g.pages.join(', ')} · <a href="https://www.marinespecies.org/aphia.php?p=taxlist&amp;tName=${encodeURIComponent(name)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.inaturalist.org/taxa/search?q=${encodeURIComponent(name)}" target="_blank" rel="noopener">iNaturalist</a></p>
         </details>
@@ -470,7 +471,7 @@ function lookHub(name) {
     ${L.map(n => {
       const m = mixedUp(name, n),
         side = DATA.gen[name] && DATA.gen[n];
-      return `<a class="lt" href="${esc(hr(side ? `cmp-${name}|${n}` : `g-${n}`))}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n])}</small>` : D.has(n) ? '<small class="lsrc">Often mixed up by players</small>' : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
+      return `<a class="lt" href="${esc(hr(side ? `cmp-${name}|${n}` : `g-${n}`))}">${m ? `<span class="pmix">you mixed them up ×${m}</span>` : ''}${viewShot(n, cmpView)}<span><i>${esc(n)}</i><span class="psum">${esc(tipsText(GX(n)))}</span>${(GX(name).lsrc || {})[n] ? `<small class="lsrc">${esc(GX(name).lsrc[n] + esrcT(GX(name), 'lsrc/' + n))}</small>` : D.has(n) ? '<small class="lsrc">Often mixed up by players</small>' : ''}<b class="cmpgo">${side ? 'Compare side by side →' : 'Open the sheet →'}</b></span></a>`;
     }).join('')}</div>
     ${cmpShots([name])}`;
 }

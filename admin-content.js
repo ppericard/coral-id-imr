@@ -82,9 +82,12 @@
   }
   // Whether node id of fish file R has a sheet of its own in the app (core.js fishTree go, learn.js viewFishSheet): a family
   // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
-  // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species).
+  // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species). A subject with
+  // one sheet per unit (no SUBJECTS sheets: the corals, every genus of data.json gen and x.gen its sheet, learn.js
+  // viewGenus; design note v2, step 8): every node its slots reach.
   let OWN = null;
-  function sheetOwn(R, id) {
+  function sheetOwn(R, id, S) {
+    if (S && S.content && !S.sheets) return C.contentNodes(S, R).has(id);
     if (!OWN || OWN.R !== R) OWN = {R, T: C.fishTree(R)};
     const T = OWN.T,
       wink = fid => !T.fam[fid] || !!T.fam[fid].wink;
@@ -142,7 +145,7 @@
       rows = new Map();
     N.forEach((n, a) =>
       (Array.isArray(n.rec[D.slot]) ? n.rec[D.slot] : []).forEach(y => {
-        const b = Array.isArray(y) && y[0] != null ? String(y[0]) : '',
+        const b = C.pairIdOf(y),
           k = b && b !== a && N.has(b) ? C.contentPairKey(a, b) : '';
         if (k && !rows.has(k)) rows.set(k, {key: k, a: k.split('|')[0], b: k.split('|')[1], base: 1, e: null, state: ''});
       })
@@ -273,7 +276,7 @@
   }
   // The box on node id's page (R: fish.json as built; nameOf: a node's name), '' for a node with no sheet in the app.
   function sheetBox(S, R, id, nameOf) {
-    if (!R || !S.content || !sheetOwn(R, id)) return '';
+    if (!R || !S.content || !sheetOwn(R, id, S)) return '';
     const rows = sheetSlots(S, R, shGet(S), id, nameOf),
       can = mayContent(),
       ne = rows.filter(r => r.e).length,
@@ -351,7 +354,7 @@
     const L = sheetTodo(S, R, shGet(S));
     if (!L.length) return '';
     const at = L.find(x => x.why !== 'node') || null;
-    return `<${at ? `a href="${esc(href(at.node))}"` : 'b'} class="warnc adm-csw" title="${esc(L.map(x => `${x.id} ${x.slot}: ${x.why ? WHY[x.why] || x.why : STATE[x.state]}`).join('\n'))}">${L.length} sheet edit${L.length > 1 ? 's' : ''} to check</${at ? 'a' : 'b'}>`;
+    return `<${at ? `a href="${esc(href(at.node))}"` : 'b'} class="warnc adm-csw" title="${esc(L.map(x => `${x.id} ${x.slot}: ${x.why ? whyOf(S, x.why) : STATE[x.state]}`).join('\n'))}">${L.length} sheet edit${L.length > 1 ? 's' : ''} to check</${at ? 'a' : 'b'}>`;
   }
   // ---- The structure editor (design note v2, step 4; Pierre, 2026-11-15, Q359: circles and look-alike pairs are the
   // instance's, set by its content editor; Q363 h A: a change replays every player's progress) ----
@@ -369,33 +372,46 @@
   // look-alike, the pair's state and tools under one pair.
   const ST_STATE = {fresh: 'Edited', stale: 'Base changed', absorbed: 'In the base'};
   const stLab = c => (c == null ? 'None' : String(c));
-  const stChip = (r, t) =>
+  // Why an entry is never applied, in words: a held one (the subject's own guard, SUBJECTS structure pairs hold: the
+  // corals' ★ rule) in the subject's word for it (held).
+  const whyOf = (S, w) => (w === 'hold' && S && S.structure && S.structure.pairs && S.structure.pairs.held) || WHY[w] || w;
+  const stChip = (r, t, S) =>
     r.state === 'orphan'
-      ? `<b class="warnc adm-cschip">${esc(WHY[r.why] || r.why)}</b>`
+      ? `<b class="warnc adm-cschip">${esc(whyOf(S, r.why))}</b>`
       : r.state
         ? `<span class="adm-src adm-cschip c-${r.state}">${esc(t || ST_STATE[r.state])}</span>`
         : '';
   // A pair's word for its state: Withdrawn or Added while his entry applies, else the state's.
   const pairWord = r => (r.state === 'fresh' || r.state === 'stale' ? (r.v === 1 ? 'Added' : 'Withdrawn') : '');
-  // A pair's tools: Withdraw one in force from the base, ↺ his own, Remove one absorbed or never applied.
-  const pairActs = r =>
+  // Whether withdrawing pair k (a pair of the base, in force) would be held by the subject's own guard (core.js
+  // structEntries hold: the corals' ★ rule, a starred genus keeping a surveyed look-alike), so its Withdraw is off.
+  const wouldHold = (S, R, Cm, k) =>
+    !!(S.structure.pairs && typeof S.structure.pairs.hold === 'function') &&
+    C.structEntries(S, R, C.contentPairSet(Cm, k, null, 1, null, 0)).pairs.some(x => x.key === k && x.why === 'hold');
+  // A pair's tools: Withdraw one in force from the base (off, with why, when the subject's guard would hold it), ↺ his
+  // own, Remove one absorbed or never applied.
+  const pairActs = (r, held, S) =>
     r.state === 'orphan' || r.state === 'absorbed'
       ? `<button type="button" data-sta="drop" title="Remove">Remove</button>`
       : r.e
         ? `<button type="button" data-sta="drop" title="Restore">↺</button>`
-        : `<button type="button" data-sta="withdraw">Withdraw</button>`;
-  // The families a pair may join (the pair rank's nodes with a sheet in the app), by name.
+        : held
+          ? `<button type="button" data-sta="withdraw" disabled title="${esc(whyOf(S, 'hold'))}">Withdraw</button>`
+          : `<button type="button" data-sta="withdraw">Withdraw</button>`;
+  // The nodes a pair may join (the pair rank's nodes with a sheet in the app), by name.
   const pairNodes = (S, R, nameOf) =>
     [...C.contentNodes(S, R)]
-      .filter(([id, n]) => n.rank === S.structure.pairs.rank && sheetOwn(R, id))
+      .filter(([id, n]) => n.rank === S.structure.pairs.rank && sheetOwn(R, id, S))
       .map(([id]) => [id, nameOf(id)])
       .sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
-  // The add box (ST_ADD): the other family (at a page: a's fixed) or both (the filter), Source and Link, Save, Cancel.
+  // The add box (ST_ADD): the other node (at a page: a's fixed) or both (the filter), Source and Link, Save, Cancel; the
+  // first select named by the subject's unit (SUBJECTS one: Family, Genus).
   function stAddBox(S, R, nameOf) {
     const A = ST_ADD,
       L = pairNodes(S, R, nameOf),
+      one = (s => s.charAt(0).toUpperCase() + s.slice(1))(String(S.one || 'node')),
       sel = (k, v) =>
-        `<select class="adm-fgsel" data-st-${k} aria-label="${k === 'a' ? 'Family' : 'Look-alike'}"><option value="">${k === 'a' ? 'Family…' : 'Look-alike…'}</option>${L.filter(
+        `<select class="adm-fgsel" data-st-${k} aria-label="${k === 'a' ? one : 'Look-alike'}"><option value="">${k === 'a' ? one + '…' : 'Look-alike…'}</option>${L.filter(
           ([id]) => id !== (k === 'a' ? A.b : A.a)
         )
           .map(([id, n]) => `<option value="${esc(id)}"${id === v ? ' selected' : ''}>${esc(n)}</option>`)
@@ -404,42 +420,53 @@
       <span class="adm-cssrcs${A.ask ? ' need' : ''}"><input type="text" data-sts value="${esc(A.t || '')}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-stu value="${esc(A.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>
       <span class="adm-acts"><button type="button" data-sta="save" class="on">${A.ask ? 'Save without source' : 'Save'}</button><button type="button" data-sta="cancel">Cancel</button></span></div>`;
   }
-  // The box on node id's page (R: fish.json as built; nameOf a node's name, href its page), '' for a node of no circle
-  // rank or with no sheet in the app.
+  // The box on node id's page (R: the built file, fish.json or data.json; nameOf a node's name, href its page), '' for a
+  // node with no sheet in the app, or of no circle rank and no pair rank. A subject with pairs and no circles (the corals,
+  // design note v2 step 8: their slate is not the editor's) gets the look-alikes alone.
   function structBox(S, R, id, nameOf, href) {
-    if (!R || !S.structure || !sheetOwn(R, id)) return '';
+    if (!R || !S.structure || !sheetOwn(R, id, S)) return '';
     const Cm = shGet(S),
-      cr = circleRow(S, R, Cm, id);
-    if (!cr) return '';
+      D = S.structure,
+      cr = D.circle ? circleRow(S, R, Cm, id) : null,
+      pn = D.pairs ? C.contentNodes(S, R).get(id) : null,
+      pr = !!pn && pn.rank === D.pairs.rank;
+    if (!cr && !(D.circle ? false : pr)) return '';
     const can = mayContent(),
-      P = pairRows(S, R, Cm, id),
-      seg = `<span class="adm-qseg adm-lvseg adm-stseg" role="group" aria-label="Circle">${[...cr.of, null]
-        .map(
-          c =>
-            `<button type="button" data-stc="${c == null ? '' : c}" aria-pressed="${cr.v === c}"${can ? '' : ' disabled'}>${stLab(c)}</button>`
-        )
-        .join('')}</span>`,
-      cActs = !can
+      P = pr ? pairRows(S, R, Cm, id) : [],
+      seg = !cr
         ? ''
-        : cr.state === 'orphan' || cr.state === 'absorbed'
-          ? `<button type="button" data-sta="drop" title="Remove">Remove</button>`
-          : cr.state === 'stale'
-            ? `<button type="button" data-sta="keep">Keep mine</button><button type="button" data-sta="drop">Take the new</button>`
-            : cr.e
-              ? `<button type="button" data-sta="drop" title="Restore">↺</button>`
-              : '',
-      cBody =
-        cr.state === 'stale'
+        : `<span class="adm-qseg adm-lvseg adm-stseg" role="group" aria-label="Circle">${[...cr.of, null]
+            .map(
+              c =>
+                `<button type="button" data-stc="${c == null ? '' : c}" aria-pressed="${cr.v === c}"${can ? '' : ' disabled'}>${stLab(c)}</button>`
+            )
+            .join('')}</span>`,
+      cActs =
+        !can || !cr
+          ? ''
+          : cr.state === 'orphan' || cr.state === 'absorbed'
+            ? `<button type="button" data-sta="drop" title="Remove">Remove</button>`
+            : cr.state === 'stale'
+              ? `<button type="button" data-sta="keep">Keep mine</button><button type="button" data-sta="drop">Take the new</button>`
+              : cr.e
+                ? `<button type="button" data-sta="drop" title="Restore">↺</button>`
+                : '',
+      cBody = !cr
+        ? ''
+        : cr.state === 'stale'
           ? `<div class="adm-cs3"><div><small>When edited</small><p class="adm-csv">${stLab(cr.e.was)}</p></div><div><small>Now</small><p class="adm-csv">${stLab(cr.base)}</p></div><div><small>Mine</small><p class="adm-csv">${stLab(cr.e.v)}</p></div></div>`
           : cr.state === 'fresh'
             ? `<p class="adm-cssrc">Original: ${stLab(cr.base)}</p>`
             : '',
-      circle = `<div class="adm-cslot${cr.state ? ' is-' + cr.state : ''}" data-stcid="${esc(id)}"><div class="adm-cshd"><b>Circle</b>${seg}${stChip(cr)}${cActs ? `<span class="adm-acts">${cActs}</span>` : ''}</div>${cBody}</div>`,
+      circle = !cr
+        ? ''
+        : `<div class="adm-cslot${cr.state ? ' is-' + cr.state : ''}" data-stcid="${esc(id)}"><div class="adm-cshd"><b>Circle</b>${seg}${stChip(cr, '', S)}${cActs ? `<span class="adm-acts">${cActs}</span>` : ''}</div>${cBody}</div>`,
       other = r => (r.a === id ? r.b : r.a),
       pairs = P.map(r => {
         const o = other(r),
-          own = o && sheetOwn(R, o);
-        return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}${r.v === 1 ? '' : ' is-out'}" data-stp="${esc(r.key)}"><div class="adm-cshd">${own ? `<a href="${esc(href(o))}">${esc(nameOf(o))}</a>` : `<b>${esc(o ? nameOf(o) : r.key)}</b>`}${stChip(r, pairWord(r))}${can ? `<span class="adm-acts">${pairActs(r)}</span>` : ''}</div>${r.e && r.v === 1 ? shSrc(r.e.src) : ''}</div>`;
+          own = o && sheetOwn(R, o, S),
+          held = can && !r.e && r.v === 1 && wouldHold(S, R, Cm, r.key);
+        return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}${r.v === 1 ? '' : ' is-out'}" data-stp="${esc(r.key)}"><div class="adm-cshd">${own ? `<a href="${esc(href(o))}">${esc(nameOf(o))}</a>` : `<b>${esc(o ? nameOf(o) : r.key)}</b>`}${stChip(r, pairWord(r), S)}${can ? `<span class="adm-acts">${pairActs(r, held, S)}</span>` : ''}</div>${r.e && r.v === 1 ? shSrc(r.e.src) : ''}</div>`;
       }).join(''),
       inForce = new Set(P.filter(r => r.v === 1).map(other)),
       add =
@@ -464,8 +491,11 @@
     if (tag === 'look')
       return `<button type="button" class="adm-chip" data-stnew aria-pressed="${!!ST_ADD && ST_ADD.at === ''}">+ Pair</button>`;
     if (!tag.startsWith('look:')) return '';
-    const r = pairRows(S, R, shGet(S)).find(x => x.key === tag.slice(5));
-    return r ? `<span class="adm-stbar adm-acts" data-stp="${esc(r.key)}">${stChip(r, pairWord(r))}${pairActs(r)}</span>` : '';
+    const Cm = shGet(S),
+      r = pairRows(S, R, Cm).find(x => x.key === tag.slice(5));
+    return r
+      ? `<span class="adm-stbar adm-acts" data-stp="${esc(r.key)}">${stChip(r, pairWord(r), S)}${pairActs(r, !r.e && r.v === 1 && wouldHold(S, R, Cm, r.key), S)}</span>`
+      : '';
   }
   // The filter's add box (ST_ADD from + Pair), '' when none is open.
   const structAdd = (S, R, nameOf) =>

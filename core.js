@@ -489,7 +489,8 @@
       // step 8; Pierre, 2026-11-15, Q359 and Q366), laid over data.json by core.js contentApply as the fish's (SUBJECTS fish
       // content): one rank, the genus, its records in data.json gen and x.gen (Millepora, the bonus and Coral ID Key
       // genera), by name. lsrc/<other genus> is one look-alike line (the words under it on the sheet's Don't confuse with,
-      // and its source), at the pairs the base holds only (a new one is a new pair: structure).
+      // and its source), at the pairs the base holds only (a new one is a new pair: structure). keep: hidden, the field
+      // stays empty ([] or ''), as every genus record holds it and its readers read it (contentPut).
       content: {
         genus: {
           at: ['gen', 'x.gen'],
@@ -497,9 +498,9 @@
             {k: 'plain', n: 'Plain words', t: 'text'},
             {k: 'qt', n: 'ID tips', t: 'list'},
             {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
-            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1},
-            {k: 'sum', n: 'Summary', t: 'text'},
-            {k: 'crit', n: 'Coral ID Key criteria', t: 'list'},
+            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'sum', n: 'Summary', t: 'text', keep: 1},
+            {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
             {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
             {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
             {k: 'info', n: 'Other sources', t: 'list'}
@@ -515,7 +516,7 @@
       structure: {
         pairs: {rank: 'genus', slot: 'look', hold: (R, P) => starHold(R, P), held: '★ rule'},
         apply: (R, X) => genStructure(R, X),
-        sheet: () => REPLAY_STRUCT_SHEET
+        sheet: () => PAIRS_SHEET
       },
       // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
       // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
@@ -1716,7 +1717,10 @@
         last = P.pop();
       let o = r;
       P.forEach(x => (o = o[x] = isObj(o[x]) ? {...o[x]} : {}));
-      if (val == null) delete o[last];
+      // keep: a field every record holds and its readers read as such (a coral genus's crit, imr, sum): hidden, it stays,
+      // empty ([] or ''), which reads as no value (contentVal) and shows nothing
+      if (val == null && sp.keep) o[last] = sp.t === 'list' ? [] : '';
+      else if (val == null) delete o[last];
       else o[last] = val;
     }
   }
@@ -1860,7 +1864,10 @@
           R,
           out.pairs.filter(x => x.state !== 'orphan' && x.e.v !== x.base).map(x => ({key: x.key, a: x.a, b: x.b, v: x.e.v}))
         );
-        if (H && H.size) out.pairs = out.pairs.map(x => (H.has(x.key) ? {key: x.key, a: x.a, b: x.b, e: x.e, base: x.base, state: 'orphan', why: 'hold'} : x));
+        if (H && H.size)
+          out.pairs = out.pairs.map(x =>
+            H.has(x.key) ? {key: x.key, a: x.a, b: x.b, e: x.e, base: x.base, state: 'orphan', why: 'hold'} : x
+          );
       }
     }
     return out;
@@ -5101,11 +5108,10 @@
   // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
   const STRUCT_SHEET = 146;
   // The sync script version that replays the subject it rates photos for (SUBJECTS replay: the corals) under its content
-  // editor's structure (Code.gs vNEXT: gen_ and replay_ under curation.json's look-alike pairs, keyed by the structure
-  // stamp; design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
-  const REPLAY_STRUCT_SHEET = 148;
-  const structSheet = S =>
-    S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET;
+  // editor's look-alike pairs (Code.gs vNEXT: gen_ and replay_ under curation.json's pairs, keyed by the structure stamp;
+  // design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
+  const PAIRS_SHEET = 148;
+  const structSheet = S => (S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET);
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -6279,7 +6285,7 @@
     LOG_SHEET,
     REPLAYS_SHEET,
     STRUCT_SHEET,
-    REPLAY_STRUCT_SHEET,
+    PAIRS_SHEET,
     structSheet,
     WINK_SHEET,
     logOk,
