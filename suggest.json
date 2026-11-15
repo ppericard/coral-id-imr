@@ -5236,6 +5236,20 @@
     "at": "2026-11-15",
     "n": 20
    }
+  },
+  "54667": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
+  },
+  "120948": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-15",
+    "n": 20
+   }
   }
  },
  "photo": {},
@@ -190301,6 +190315,106 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-120948-cand-171304210": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120948-cand-249847713": {
+   "jt": "o0d0mm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-120948-cand-2667354": {
+   "jt": "p1d0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-30866730": {
+   "jt": "p1d0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-364353531": {
+   "jt": "p1d0ss1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-120948-cand-442924476": {
+   "jt": "h0g0sl1w",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-120948-cand-444825868": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120948-cand-46851195": {
+   "jt": "o1g2mm1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-120948-cand-502589815": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-520613651": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-552611933": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-58681253": {
+   "jt": "o1d0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-62899016": {
+   "jt": "h1g0ms1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-120948-cand-629515641": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120948-cand-654101801": {
+   "jt": "o1d0ms1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-120948-cand-70217025": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-120948-cand-715412604": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120948-cand-739812698": {
+   "jt": "d1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-120948-cand-751842186": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-120948-cand-95977048": {
+   "jt": "o0d0sl1",
+   "e": 2,
+   "k": "best"
+  },
   "seaslug-121048-cand-163942563": {
    "jt": "p1g0ml1",
    "e": 4,
@@ -192307,6 +192421,107 @@
   "seaslug-546397-cand-727705917": {
    "jt": "h1g0sl1",
    "e": 3,
+   "k": "best"
+  },
+  "seaslug-54667-cand-178797204": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-54667-cand-202599812": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "The animal with its yellow egg ribbon: the eggs are background (the egg rule)."
+  },
+  "seaslug-54667-cand-256104598": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-54667-cand-310851103": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-331871112": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-443321162": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-452582795": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-458045593": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-54667-cand-490758686": {
+   "jt": "o1g0sls",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-520018270": {
+   "jt": "d1g0sls",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-540108223": {
+   "jt": "h1g0sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-54667-cand-552606177": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-54667-cand-588267751": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-54667-cand-598761747": {
+   "jt": "o1g0mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-54667-cand-638444095": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-639447891": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-54667-cand-65787089": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-675737891": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-693417524": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-54667-cand-723806862": {
+   "jt": "d1g0sls",
+   "e": 4,
    "k": "best"
   },
   "seaslug-54892-cand-181312982": {
