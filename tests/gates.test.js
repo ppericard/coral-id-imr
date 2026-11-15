@@ -141,6 +141,19 @@ const GATES = {
     assert.strictEqual(logOk({s: 'fish', m: 'quiz'}, v), Number(v) >= 60, 'a fish answer from LOG_SHEET');
     return logOk({s: 'fish', m: 'wink'}, v) && logOk({m: 'wink'}, v);
   },
+  // A Find the X's photo tapped (quiz.js answer pa; Q371): sent from the version that stores it (Code.gs Photo answered),
+  // through core.js logOut at both of sync.js's sends; before, the copy sent leaves it out and keeps the rest, the queue
+  // untouched (an older script gets exactly what it got before).
+  PA_SHEET: v => {
+    const {logOut} = require('../core.js'),
+      a = {id: 'a1', m: 'quiz|f', a: 'f:Damselfishes', ph: 'fi1', pa: 'fi2'},
+      out = logOut(a, v);
+    assert.deepStrictEqual(a, {id: 'a1', m: 'quiz|f', a: 'f:Damselfishes', ph: 'fi1', pa: 'fi2'}, 'the queued entry untouched');
+    assert.deepStrictEqual({...out, pa: 'fi2'}, a, 'every other field sent as it is');
+    const plain = {id: 'a2', m: 'quiz'};
+    assert.strictEqual(logOut(plain, v), plain, 'an answer without it is sent as it is');
+    return out.pa === 'fi2';
+  },
   // The domain-score bar (core.js DOM, rules version 9) for a genus first answered in the game (model.js domRules): from
   // v87, which replays it; before, the moving average s.pg. On the corals, the subject the sheet replays (fish: at once).
   DOM_SHEET: (v, N) => fn('model.js', 'const domRules = ', '\n', 'domRules', {sheetV: () => v, DOM_SHEET: N, SUBJ: {replay: true}})(),

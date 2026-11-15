@@ -13,7 +13,10 @@ Left out (none of them read by any script index.html loads, nor by the Lab):
   game reads a photo's ease and tags from fish-game.json);
 - fish.kept: the proposals Pierre answered Keep mine (the re-judge's, by photo: admin-light.js, the admin's Light
   proposals; the default cover rule's, by node: admin-covers.js, Cover proposals);
-- fish.auto, except its undone automatic adds (log code '-a…'), the one part the app reads (core.js fishGone).
+- fish.auto, except its undone automatic adds (log code '-a…'), the one part the app reads (core.js fishGone);
+- in each subject's content map (content at the top for the corals, fish.content; the content editor's edits, Pierre,
+  2026-11-15, Q359, Q366), every entry's was, t and by: the app applies v and shows src (core.js contentApply), the
+  admin alone compares was with the base.
 
   python3 tools/curplay.py [DIR]   reads DIR/curation.json, writes DIR/curation-play.json (DIR: the repository)
 """
@@ -23,13 +26,36 @@ import sys
 
 DROP = ('auto',)
 FISH_DROP = ('tags', 'ease', 'kept')
+ENTRY_KEEP = ('v', 'src')
+
+
+def slim_entry(e):
+    return {k: e[k] for k in ENTRY_KEEP if k in e} if isinstance(e, dict) else e
+
+
+def slim_content(c):
+    """A content map with each node and pair entry cut to v and src."""
+    if not isinstance(c, dict):
+        return c
+    out = dict(c)
+    if isinstance(c.get('nodes'), dict):
+        out['nodes'] = {
+            i: ({s: slim_entry(e) for s, e in m.items()} if isinstance(m, dict) else m) for i, m in c['nodes'].items()
+        }
+    if isinstance(c.get('pairs'), dict):
+        out['pairs'] = {p: slim_entry(e) for p, e in c['pairs'].items()}
+    return out
 
 
 def slim(cur):
     out = {k: v for k, v in cur.items() if k not in DROP}
+    if 'content' in out:
+        out['content'] = slim_content(out['content'])
     fish = cur.get('fish')
     if isinstance(fish, dict):
         f = {k: v for k, v in fish.items() if k not in FISH_DROP and k != 'auto'}
+        if 'content' in f:
+            f['content'] = slim_content(f['content'])
         auto = {}
         for day, log in (fish.get('auto') or {}).items():
             undone = {p: c for p, c in (log or {}).items() if str(c).startswith('-a')}

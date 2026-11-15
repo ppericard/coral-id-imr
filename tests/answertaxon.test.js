@@ -22,15 +22,16 @@ const ROOT = path.join(__dirname, '..'),
 const ctx = {esc: s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c])};
 vm.createContext(ctx);
 vm.runInContext(
-  block(app, 'const cnList = s =>', '\n', {file: 'app.js', through: 1}) +
+  block(app, 'const cnList = s =>', '\n};\n', {file: 'app.js', through: 1}) +
     block(app, "// The photo's own taxon, said in one short line", '// Every unit of a rank in', {file: 'app.js'}) +
     '\nthis.M = {photoTaxon, taxonLine, fishTaxon, coralTaxon};\n' +
-    // The two subjects' UNITS taxon, as app.js has them; SUBJ switched by the tests.
-    'var SUBJ = {id: "f"}; var UNITS = {f: {taxon: p => fishTaxon(this.R, p)}, c: {taxon: (p, n) => coralTaxon(p, n)}};\n' +
+    // The two subjects' UNITS taxon, as app.js has them (this.imr: the player at IMR, imrNow); SUBJ switched by the tests.
+    'var SUBJ = {id: "f"}; var UNITS = {f: {taxon: p => fishTaxon(this.R, p, this.imr)}, c: {taxon: (p, n) => coralTaxon(p, n)}};\n' +
     'this.use = k => (SUBJ = {id: k});',
   ctx
 );
 ctx.R = R;
+ctx.imr = false;
 const {photoTaxon, taxonLine, fishTaxon, coralTaxon} = ctx.M,
   line = (L, n) => taxonLine(photoTaxon(L, n)),
   fish = (L, n) => (ctx.use('f'), line(L, n)),
@@ -49,11 +50,31 @@ test('a fish photo named to the species: its first curated common name, then its
     '<p class="fbsp">This photo: Blackbar chromis · <i>Chromis retrofasciata</i> <small>(now <i>Pycnochromis retrofasciatus</i> in WoRMS)</small></p>'
   );
   // A PDF spelling shown another way by Pierre's decision (s278, the PDF's "Neoniphon argentus"; 2026-11-14): the name
-  // shown, no "now" beside it.
+  // shown, no "now" beside it; its common name the player's first (Q376 (a)): iNaturalist's default for most players,
+  // the IMR name for a player at IMR.
   assert.strictEqual(
     fish([{f: 'x', sp: 's278'}], 'f:Squirrelfishes'),
-    '<p class="fbsp">This photo: Clearfin squirrelfish · <i>Neoniphon argenteus</i></p>'
+    '<p class="fbsp">This photo: Silver squirrelfish · <i>Neoniphon argenteus</i></p>'
   );
+  ctx.imr = true;
+  try {
+    assert.strictEqual(
+      fish([{f: 'x', sp: 's278'}], 'f:Squirrelfishes'),
+      '<p class="fbsp">This photo: Clearfin squirrelfish · <i>Neoniphon argenteus</i></p>'
+    );
+    assert.strictEqual(
+      fish([{f: 'x', sp: 's256'}], 'f:Wrasses'),
+      '<p class="fbsp">This photo: Crescent wrasse · <i>Thalassoma lunare</i></p>'
+    );
+    // The same name for both when the IMR name is the main name.
+    assert.strictEqual(
+      fish([{f: 'x', sp: 's240'}], 'f:Wrasses'),
+      '<p class="fbsp">This photo: Zigzag wrasse · <i>Halichoeres scapularis</i></p>'
+    );
+  } finally {
+    ctx.imr = false;
+  }
+  assert.strictEqual(fish([{f: 'x', sp: 's256'}], 'f:Wrasses'), '<p class="fbsp">This photo: Moon wrasse · <i>Thalassoma lunare</i></p>');
   // A species no reference names (Q247): the scientific name alone.
   assert.strictEqual(fish([{f: 'x', sp: 's679'}], 'f:Bigeyes'), '<p class="fbsp">This photo: <i>Priacanthus starnesi</i></p>');
 });

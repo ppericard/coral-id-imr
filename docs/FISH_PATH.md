@@ -86,38 +86,66 @@ is the design's shorthand, and internal identifiers may keep it.
 
 - Per species, a curated list of **1 to 3 well-used common names, never more**, never a full reference list.
 - **A species no reference names has none** (Pierre, 2026-11-08, Q247: "some species have no common name ... they will not take part in the common-name branch"; nudibranchs will be the same): the build and the proposal accept it with no name, none is invented (rule C2), and it simply has no common-name unit (3 near-Dauin species on 2026-11-08: *Priacanthus starnesi*, *Hazeus profusus*, *H. maculipinna*).
-- **Common-name mastery of a species needs all its listed names**: a multiple-choice question shows one listed name at a time, rotating;
-  free text accepts only the listed names.
+- **One progress unit per species, filled by its main name** (Pierre, 2026-11-15, Q362: one unit per species; Q376 (b) A:
+  "the main name fills the species' unit; any other listed name is accepted and credits the same unit"; replaces "mastery
+  needs all its listed names", which made the player learn where the references disagree): a multiple-choice question
+  shows the player's first name (below), always the same one; free text accepts every listed name and every regional name.
+- **The main name** (Q376 (a) B, on the 2026-11-15 study,
+  [reviews/2026-11-15-common-name-sources-study.md](reviews/2026-11-15-common-name-sources-study.md), which found that no
+  reference ranks names by usage): **iNaturalist's default English name**, FishBase's main English name where iNaturalist has
+  none. It is shown first to every player **except a player at IMR** (anyone who ever answered "I'm at IMR", `model.js`
+  `imrSaid`), who sees **the IMR name** first (the reference PDF's or the IMR presentation's, rule C1). Both are always
+  listed and accepted. A Dauin or wink source's name is no IMR name: listed, never first for anyone unless it is the main
+  name.
+- **Regional standard names** (Q376 (c)): the Australian ones (AS 5300 / Fishes of Australia: "Swallowtail puller",
+  "Headband humbug"; iNaturalist's name under the Australia place) are **accepted when typed, never shown**.
 - **Selection**: the names that recur across public sources (the iNaturalist default English name, the FishBase main
   English name, other public references), at most 3. **Published without his prior check** (Pierre, 2026-11-08, Q313:
   "Publie, je corrige à l'usage"): he corrects a list in use (the admin has no place for it yet: below).
 - **The lists** (`tools/fish_common.json`, written by `tools/fish_common.py`, every name with its sources; `tools/build_fish.py`
-  writes them into `fish.json`, species `cn`: one list per name, the name shown first, then its other spellings): the PDF name
-  first (rule C1, kept as written, a likely slip flagged), then the FishBase main English name and the iNaturalist default
-  English name when each is found in both references; at most 3; then **the most shared first** (in the most references, then
+  writes them into `fish.json`, species `cn`: one list per name, the name shown first, then its other spellings; `cni`: the
+  place of the IMR name in `cn`; `cnr`: the regional names, the same shape, accepted when typed; `cni` and `cnr` are
+  additive, so an older app reads `cn` as before and shows `cn[0]`, the main name): the main name first, then the species'
+  own name (the IMR name, kept as written, a likely slip flagged; or its Dauin or wink source's), then the FishBase main English
+  name and the iNaturalist default English name when each is found in both references; at most 3; then **the most shared first** (in the most references, then
   the main name of the most, then the most FishBase records, then FishBase's main name before iNaturalist's, then by name).
   Spellings of one name count once (Pearl-scaled / Pearlscale angelfish; Neon damsel / damselfish), the others kept to accept
-  when typed. A name two game species share is dropped from the one that does not own it; a PDF name shared stays, flagged
+  when typed; the form shown is the IMR name's when the main name is a spelling of it. A name two game species share is dropped from the one that does not own it; a PDF name shared stays, flagged
   (4 pairs on 2026-11-08: "Twospot wrasse", "Seagrass wrasse", Twotone / Two-tone wrasse, Blackstripe(d) cardinalfish:
-  each accepted for both species, "Also used for…", Pierre, 2026-11-09, Q319). A species with no name of its own and none found in both references gets the main
-  name of one (`single`: *Nudiantennarius subteres*, Deep-water frogfish; *Cryptocentrus nigrocellatus*). Pierre, 2026-11-05: no
-  third rule, and a PDF slip shows FishBase's spelling, the PDF form accepted when typed. **664 game species (2026-11-08)**: 3
-  with no name (Q247), 392 with 1, 248 with 2, 21 with 3 (circle 1: 271 / 180 / 20). Since every listed name is needed, more
-  names make the common-name branch longer: in the score simulation (`tools/fishscore.js --names tools/fish_common.json`, retired since, on
-  the 442 species of 2026-11-05) a common-names-only player reaches 80% after about 2.6 times as many answers as with one name each.
-- **In the game** (`app.js`, for the species level, which asks them): `cnShow`, the listed name a multiple-choice question shows,
-  the one asked least so far, the list's order on a tie (so every name comes round); `cnTypeNames`, the typed names: only the
-  listed names and their recorded spellings (the usual spelling tolerance applies, `core.js` `typeMatchIn`), no other name the
-  references give, no short form; a name two species list is right for each, "Also used for…" (Q319); a kind word of
-  the name index (razorfish) is known, the nudge. On a genus question, a listed name typed gets the "common
-  name" nudge (Q237, `typeOther`). Still to build with the species level: one common-name unit per listed name in the score
-  tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null` without one, so the two `single` species
-  read as nameless until then).
+  each accepted for both species, "Also used for…", Pierre, 2026-11-09, Q319). **A main name goes through the same rule**
+  (the study §7.1): an iNaturalist default that is another game species' IMR name stays that species' alone, and the
+  species' main name is the next of the rule (FishBase's main name, else its own). 4 such names on 2026-11-15, each kept by
+  its IMR owner: "Longnose butterflyfish" (*Forcipiger longirostris* → *F. flavissimus*'s; *F. longirostris* shows "Big
+  longnose butterflyfish"), "Brown damsel" (*Pomacentrus armillatus* → *P. opisthostigma*'s; "Bracelet damselfish"),
+  "Blackspot snapper" (*Lutjanus fulviflamma* → *L. ehrenbergii*'s; "Dory snapper"), "Yellowtail wrasse" (*Diproctacanthus
+  xanthurus* → *Anampses meleagrides*'s; "Yellowtail tubelip"). A regional name is dropped where another game species has
+  it or a spelling of it (5: "Painted sweetlips" is *Diagramma pictum*'s). A species with no name of its own whose main name is in one reference only is flagged
+  (`single`: *Nudiantennarius subteres*, Deep-water frogfish; *Cryptocentrus nigrocellatus*). Pierre, 2026-11-05: no
+  third rule, and a PDF slip shows FishBase's spelling, the PDF form accepted when typed. **664 game species (2026-11-15)**: 3
+  with no name (Q247), 385 with 1, 251 with 2, 25 with 3; the IMR name is not the main name for 105 of the 367 IMR-named
+  species (the study's 107, less two whose iNaturalist default is another species' name), 11 names newly listed (the main
+  names not listed before), 118 species with a regional name. `tools/fish_common.py`'s summary lists every main name that
+  changed and every name newly listed, so a refetch that moves one is looked at before it ships.
+- **Where the player's first name shows** (`app.js` `cnFirst`, `imrNow`; the species level, which will ask them, is not built
+  yet): the species tiles and the one-species genus rows of the family and genus sheets, the species sheet's title (its
+  other listed names under More details, the IMR one marked), the "This photo: …" line under every fish verdict
+  (`fishTaxon`), and a scientific genus's species line ("Most met here: …", read when shown). The admin keeps the IMR
+  name (`common`).
+- **In the game** (`app.js`): `cnShow`, the name a multiple-choice question shows, the player's first; `cnTypeNames`, the typed
+  names: the listed names, the regional names and their recorded spellings (the usual spelling tolerance applies, `core.js`
+  `typeMatchIn`), no other name the references give, no short form; a name two species list is right for each, "Also used
+  for…" (Q319); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`
+  `fishNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
+  regional name typed gets the "common name" nudge (Q237, `typeOther`). Still to build with the species level: the species'
+  one common-name unit in the score tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null`
+  without one, so the two `single` species read as nameless until then).
 - **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
-- **Which name comes first, and later languages**: the 2026-11-15 study
-  ([reviews/2026-11-15-common-name-sources-study.md](reviews/2026-11-15-common-name-sources-study.md)) compares the
-  references (none ranks names by usage), proposes a main-name rule and names as a per-language layer over the
-  taxon-keyed progress (Q362); its questions (a)-(d) wait for Pierre, the rules above stand until then.
+- **Later languages**: names as a per-language layer over the taxon-keyed progress (Q362; the study §7.2); not built.
+- **Genus common names** (`tools/fish_genus_names.json`, `fish.json` genera `common`, `csrc`): the IMR sub-entry's name,
+  a reference's, or one inferred from its species' names when no reference names the genus (Q376 (d): *Cephalopholis*
+  "Hinds", from its species' listed FishBase names, as Tobies and Rabbitfishes before); an inferred name is flagged
+  (`cinf`) and the genus sheet says so beside it ("inferred from its species' names"). *Centropyge*, *Dendrochirus* and
+  *Dascyllus* take iNaturalist's names (Dwarf angelfishes, Zebra lionfishes, Humbugs).
 
 ## Typed family names (fish beta QA, 2026-11-06)
 
@@ -469,7 +497,8 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
 5. **"Find the X"** (one name, 4 photos), **fish only**, slipped into the quiz like duels (a small share, spaced, never on a unit not met),
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
    **Built** (2026-11-14, Q321 D1) on the families, with the square tiles: 5% of the questions that could be one (`quiz.js` `FIND`,
-   `planFind`), logged `quiz|f` (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
+   `planFind`), logged `quiz|f` with the photo tapped (sheet v141 Photo answered, Q371: the species-to-family view reads its species)
+   (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
 both show the square fish tiles (`judging/FISH.md` "The fish's box"). Later, not agreed yet: photo-to-trait (needs per-photo

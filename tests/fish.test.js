@@ -326,7 +326,9 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   assert.strictEqual(s.now, undefined);
   assert.strictEqual(s.check, undefined);
   // Its data, all found by id: common names, size and depth, presence, iNaturalist taxon, family and genus.
-  assert.deepStrictEqual(s.cn, [['Clearfin squirrelfish'], ['Silver squirrelfish']]);
+  // iNaturalist's default first, the PDF's (its IMR name) second and marked (Q376 (a)).
+  assert.deepStrictEqual(s.cn, [['Silver squirrelfish'], ['Clearfin squirrelfish']]);
+  assert.strictEqual(s.cni, 1);
   assert.strictEqual(s.common, 'Clearfin squirrelfish');
   assert.deepStrictEqual([s.size.len, s.depth.m], [24, [1, 20]]);
   assert.strictEqual(s.inat, 194741);
@@ -558,7 +560,8 @@ test('start: the starter core, four easy circle-1 entries from Pierre’s fish-I
 });
 // judging/FISH.md "Caps" and "Reference photos", the same rule as tools/fish_judge.py cap(): a reference photo (rep) gets
 // the flag r and one ease point (REP_BONUS), the caps applied after it.
-const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jca]*)([1-5])$/;
+// The typed flags j c a w (w, a visible watermark or text: Q373), as tools/fish_judge.py CODE; w caps nothing.
+const CODE = /^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$/;
 const capOf = (code, phase, juvOk, rep) => {
   const [, v, w, l, k, , , n, fl0, e0] = code.match(CODE),
     fl = fl0 + (phase ? 'p' : '') + (rep ? 'r' : '');
@@ -633,16 +636,21 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
     ),
     entry = new Map(F.teach.flatMap(t => (t.species || []).map(s => [s, t.id])));
   // Pierre's adds in play, then the photos that entered by themselves (Q180, Q199: candidates judged sure, reference-level
-  // photos; tests/fishgame.test.js checks the routes on a fixture).
+  // photos; tests/fishgame.test.js checks the routes on a fixture). A species met only on the surprise cards keeps its 5
+  // best (Q372: tools/fish_game.py wink_trim, tests/winkstock.test.js), the auto-sort's adds among the others.
+  const wink = new Set(F.teach.filter(t => t.wink).flatMap(t => t.species || []));
   assert.strictEqual(
-    plan.filter(p => !p.auto).length,
-    Object.keys(FC.add || {}).filter(f => C.fishOn(FC, f, FC.add[f]) && !C.fishOther((FC.tags || {})[f], (S[f] || {}).jt)).length,
+    plan.filter(p => !p.auto && !wink.has(p.sp)).length,
+    Object.keys(FC.add || {}).filter(
+      f => !wink.has(FC.add[f]) && C.fishOn(FC, f, FC.add[f]) && !C.fishOther((FC.tags || {})[f], (S[f] || {}).jt)
+    ).length,
     'every photo Pierre has in play is listed, but other species one could take for the subject (Q323)'
   );
+  wink.forEach(s => assert.ok(plan.filter(p => p.sp === s).length <= 5, `${s}: a surprise-only species keeps 5 photos`));
   assert.ok(plan.some(p => p.auto === 'cand') && plan.some(p => p.auto === 'ref'), 'and the photos in play by themselves');
   plan.forEach(p => {
     // The judged tags with their flags (the phase p and reference r flags included), then the ease.
-    assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
+    assert.match(p.jt + String(p.e), /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*[1-5]$/, `${p.f}: code ${p.jt} ease ${p.e}`);
     const pass = !(p.f in (FC.ease || {})) || (S[p.f] && S[p.f].e === FC.ease[p.f] && S[p.f].jt === FC.tags[p.f]);
     if (!pass) return; // Pierre's own values stand (an ease he set is his choice)
     const tid = entry.get(p.sp),
@@ -696,10 +704,11 @@ test('juvenile classes: every circle-1 entry classed, with sources, as in the so
 // selection's own rules.
 test('common names: a PDF slip shows the FishBase spelling, the PDF form accepted; no third rule', () => {
   const P = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'fish_common.json'), 'utf8')).species;
-  assert.strictEqual(P.s132.names[0].name, "Russell's snapper");
-  assert.ok(P.s132.names[0].alt.includes('Russelss’s snapper'));
-  assert.strictEqual(P.s008.names[0].name, 'Eastern triangular butterflyfish');
-  assert.ok(P.s008.names[0].alt.includes('Eastern triangular'));
+  // The IMR name (imr: its place; iNaturalist's default comes first since Q376 (a)).
+  assert.strictEqual(P.s132.names[P.s132.imr].name, "Russell's snapper");
+  assert.ok(P.s132.names[P.s132.imr].alt.includes('Russelss’s snapper'));
+  assert.strictEqual(P.s008.names[P.s008.imr].name, 'Eastern triangular butterflyfish');
+  assert.ok(P.s008.names[P.s008.imr].alt.includes('Eastern triangular'));
 });
 
 // Codex review #522: FishBase's main name counts as FishBase evidence even with no comnames record (Chromis agilis); a

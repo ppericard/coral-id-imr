@@ -12,16 +12,21 @@ files, rule D4) takes main's VERSION + 1. So two open PRs never collide on the n
 
 --assign (the integrator, on the PR branch once it is up to date with main, right before the merge): VERSION + 1; the
 entry goes at the head of the header line (under the day's Manila date) and of ARCHITECTURE.md's version history;
-every gate the PR adds or changes against the base (and any above the old VERSION) becomes the new one; every bare placeholder (outside a `code span`) becomes vN; the
-changes file is removed. It prints what it changed; the integrator commits it ("Sheet script vN assigned at merge"),
-pushes, waits for green and Codex as for any head, and merges.
+every gate the PR adds against REF (and any above the old VERSION) becomes the new one, main's gates stay as they are;
+every bare placeholder (outside a `code span`) becomes vN; the changes file is removed. The base is REF itself (default
+origin/main), which the branch must hold: merged in, committed or not (a merge stopped on a conflict, resolved, holds it
+through MERGE_HEAD), or rebased on. It writes nothing when the branch does not hold REF, a conflict is unresolved, a
+rebase or cherry-pick is paused, or the PR changes a gate main already has. It prints what it changed; the integrator
+commits it ("Sheet script vN assigned at merge"), pushes, waits for green and Codex as for any head, and merges.
 
 --check, against the merge-base of HEAD and REF (default origin/main; skipped when git cannot find it):
 - always: the header says VERSION N, its first entry is vN, and `const VERSION = N`; each changes file is one entry;
+- against a base, in every state: no gate the base already has (at or below its VERSION) changed: a PR adds a gate of
+  its own, it never moves main's;
 - a PR waiting for its version: exactly one changes file, a Code.gs change, VERSION and the header line as on the base,
-  every gate it adds or changes above the base's VERSION (so the feature stays off until the assign);
+  every gate it adds above the base's VERSION (so the feature stays off until the assign);
 - a PR assigned: no changes file, VERSION one above the base's, the header line the base's with one entry folded in,
-  ARCHITECTURE.md naming vN, every gate it adds or changes at vN, none above, no bare placeholder;
+  ARCHITECTURE.md naming vN, every gate it adds at vN, none above, no bare placeholder;
 - a PR with no Code.gs change: no changes file, VERSION and the header line untouched, no gate above VERSION;
 - --main (main itself, or a merge train about to become main): no changes file left, no gate above VERSION and no bare
   placeholder, whatever the base.
@@ -121,11 +126,21 @@ def gates_at(ref, root='.'):
 
 
 def own(root='.', base=None):
-    """The gates this branch adds or changes against base: {name: (N, file)}."""
+    """The gates this branch adds or changes against base: {name: (N, file, base's N or None when it adds it)}."""
     if base is None:
         return {}
     was = {k: n for k, (n, _) in gates_at(base, root).items()}
-    return {k: (n, f) for k, (n, f) in gates(root).items() if was.get(k) != n}
+    return {k: (n, f, was.get(k)) for k, (n, f) in gates(root).items() if was.get(k) != n}
+
+
+def added(mine):
+    """The gates of own() the branch adds (main has no such gate): {name: (N, file)}."""
+    return {k: (n, f) for k, (n, f, w) in mine.items() if w is None}
+
+
+def changed(mine, bv):
+    """The gates of own() main already has at or below its VERSION bv, which the branch changes: sorted lines."""
+    return sorted('%s = %d (%s; main: %d)' % (k, n, f, w) for k, (n, f, w) in mine.items() if w is not None and w <= bv)
 
 
 def bare(root='.'):
@@ -145,6 +160,30 @@ def base_of(ref, root='.'):
         return None
     mb = git('merge-base', 'HEAD', ref, root=root)
     return mb.strip() if mb else None
+
+
+def assign_base(ref, root='.'):
+    """The base --assign compares with: ref itself, once the tree being assigned holds it. That tree is HEAD, or HEAD with
+    MERGE_HEAD when a merge waits for its commit (a conflict resolved): HEAD alone is then still the branch's old tip, and
+    its merge-base with ref an old main, whose missing gates looked added by the PR (#952). Exits when ref is not held,
+    a conflict is unresolved, or a rebase or cherry-pick is paused."""
+    tip = git('rev-parse', '--verify', '-q', ref + '^{commit}', root=root)
+    if not tip:
+        sys.exit('✗ --assign needs the base (%s) to find the gates this PR adds: git fetch origin main' % ref)
+    tip = tip.strip()
+    for p in ('rebase-merge', 'rebase-apply', 'CHERRY_PICK_HEAD', 'REVERT_HEAD'):
+        where = (git('rev-parse', '--git-path', p, root=root) or '').strip()
+        if where and os.path.exists(os.path.join(root, where)):
+            sys.exit('✗ --assign: a rebase, cherry-pick or revert is paused (%s): finish it first' % p)
+    unmerged = sorted(set(line.split('\t', 1)[1] for line in (git('ls-files', '-u', root=root) or '').splitlines() if '\t' in line))
+    if unmerged:
+        sys.exit('✗ --assign: unresolved conflicts (%s): resolve them first' % ', '.join(unmerged))
+    heads = ['HEAD']
+    if git('rev-parse', '--verify', '-q', 'MERGE_HEAD', root=root):
+        heads.append('MERGE_HEAD')
+    if not any(git('merge-base', '--is-ancestor', tip, h, root=root) is not None for h in heads):
+        sys.exit('✗ --assign: the branch does not hold %s yet: merge %s into the branch first (git merge %s)' % (ref, ref, ref))
+    return tip
 
 
 def problems(root='.', base=None, main=False):
@@ -184,23 +223,28 @@ def problems(root='.', base=None, main=False):
     if bsrc is None:
         return errs + ['%s is not in the base %s' % (GS, base[:10])], 'broken'
     bh, bv = header(bsrc), version(bsrc)
-    changed = bsrc != src
+    edited = bsrc != src
+    mine = own(root, base)
+    moved = changed(mine, bv)
+    if moved:
+        errs.append('gates main already has, at or below its VERSION %d, changed by this PR: %s: put main\'s number back; a feature'
+                    ' that needs a newer script adds a gate of its own (rule D4)' % (bv, ', '.join(moved)))
     if len(files) > 1:
         errs.append('%d changes files (%s): one per PR (one PR = one sheet version)' % (len(files), ', '.join(files)))
     if files:
         state = 'waiting for its version at merge (%s)' % files[0]
-        if not changed:
+        if not edited:
             errs.append('%s/%s but no change to %s: remove the changes file' % (CHANGES, files[0], GS))
         if v != bv or h[2] != bh[2]:
             errs.append('%s: VERSION %d and the header line are assigned at merge: keep the base\'s (VERSION %d)' % (GS, v, bv))
-        low = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in own(root, base).items() if n <= bv)
+        low = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in added(mine).items() if n <= bv)
         if low:
-            errs.append('gates this PR adds or changes at or below main\'s VERSION %d: %s: write %d (--assign sets the real one; rule D4)' % (bv, ', '.join(low), bv + 1))
+            errs.append('gates this PR adds at or below main\'s VERSION %d: %s: write %d (--assign sets the real one; rule D4)' % (bv, ', '.join(low), bv + 1))
         return errs, state
     if v == bv:
         if h[2] != bh[2]:
             errs.append('%s: the header\'s history line changed: leave it to --assign and write tools/sync/changes/<branch>.md' % GS)
-        if changed:
+        if edited:
             errs.append('%s changed: write its history entry in tools/sync/changes/<branch>.md and leave VERSION alone (assigned at merge, rule D3)' % GS)
         if high and not main:
             errs.append('gates above VERSION %d: %s: a gate waits for a Code.gs change (rule D4)' % (v, ', '.join(high)))
@@ -214,9 +258,9 @@ def problems(root='.', base=None, main=False):
             errs.append('%s: its version history does not name v%d: use --assign' % (ARCH, v))
         if high and not main:
             errs.append('gates above VERSION %d: %s' % (v, ', '.join(high)))
-        off = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in own(root, base).items() if n != v)
+        off = sorted('%s = %d (%s)' % (k, n, f) for k, (n, f) in added(mine).items() if n != v)
         if off:
-            errs.append('gates this PR adds or changes not at its VERSION %d: %s: use --assign' % (v, ', '.join(off)))
+            errs.append('gates this PR adds not at its VERSION %d: %s: use --assign' % (v, ', '.join(off)))
         if left and not main:
             errs.append('the placeholder %s left in %s' % (TOKEN, ', '.join(sorted(left))))
         return errs, 'assigned: v%d' % v
@@ -248,7 +292,12 @@ def assign(root='.', date=None, dry=False, base=None):
     arch = arch.replace(HISTORY, '%sv%d (%s) %s; ' % (HISTORY, n, date, flat(entry)), 1)
     edits = {GS: new, ARCH: arch}
     said = ['%s: VERSION %d -> %d, header entry v%d (%s)' % (GS, old, n, n, date), '%s: version history v%d' % (ARCH, n)]
-    mine = own(root, base)  # what the PR adds or changes, even at a number main has reached since (Codex review #757)
+    every = own(root, base)
+    moved = changed(every, old)
+    if moved:
+        sys.exit('✗ gates main already has, changed by this PR: %s: put main\'s number back, a feature that needs a newer'
+                 ' script adds a gate of its own (rule D4)' % ', '.join(moved))
+    mine = added(every)  # what the PR adds, even at a number main has reached since (Codex review #757)
     for k, (gn, f) in sorted(gates(root).items()):
         if gn > old or (k in mine and gn != n):
             body = edits.get(f, read(f, root))
@@ -288,15 +337,13 @@ def main():
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument('--check', action='store_true', help='check the rules (tools/check_versions.py runs it)')
     g.add_argument('--assign', action='store_true', help='the integrator, at merge: assign the next VERSION')
-    ap.add_argument('--base', default='origin/main', help='compare with the merge-base of HEAD and this ref')
+    ap.add_argument('--base', default='origin/main', help='--check: compare with the merge-base of HEAD and this ref; --assign: with this ref, which the branch must hold')
     ap.add_argument('--main', action='store_true', help='--check: this tree is main or a merge train: no changes file left')
     ap.add_argument('--date', type=day, help='--assign: the day of the header entry, YYYY-MM-DD (default: today in Manila)')
     ap.add_argument('--dry-run', action='store_true', help='--assign: say what would change, write nothing')
     a = ap.parse_args()
     if a.assign:
-        base = base_of(a.base)
-        if base is None:
-            sys.exit('✗ --assign needs the base (%s) to find the gates this PR adds: git fetch origin main' % a.base)
+        base = assign_base(a.base)
         n, said = assign(date=a.date, dry=a.dry_run, base=base)
         for s in said:
             print(('would change ' if a.dry_run else '') + s)

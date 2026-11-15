@@ -14,6 +14,9 @@ In play (Pierre, 2026-11-06, Q180 and Q199: one notion of "in play", every fish 
   - the units' reference photos (tools/fish_refs.json) judged sure on the same rubric as a candidate, whatever their
     reference level (tools/fish_judge.json codes after the caps; judged_sure: one kind of fish, in the water; Pierre,
     2026-11-08, Q212: "we bring them in like candidates"), auto: "ref", unless their observation is already in play (rule P4).
+  A species met only on the surprise cards (whale shark, thresher sharks: fish.json wink) keeps only its WINK_KEEP (5) best
+  photos of these (Pierre, 2026-11-15, Q372; wink_trim): his covers and featured photos, his own adds and the surprise
+  card's photos always, then the best in core.js easyRank's order; the rest leaves fish-game.json.
   A photo in play by itself leaves play once Pierre rejects, excludes or moves it (by photo id: core.js fishIn, fish_in).
   The top-level "exclude" (photos excluded for good everywhere) is honoured too, by name and by photo id. At most MAX
   downloads a run (--max), the reference photos and the starter entries first; the rest at the next runs.
@@ -30,7 +33,7 @@ For each photo in play, from its fish-cand.json record (the original: iNaturalis
     {f, o (its observation, or the FishBase photo page; an iNaturalist observation by its id alone), src (the original;
     on iNaturalist, its extension alone when the photo is the record's own: tools/fish_short.py, core.js fishGameRow), a, lic, t, sp (the species it is in play for), loc, own,
     ar, e (fish.ease, else the pass's suggest.json fish e), jt (fish.tags, his legacy m refined by the pass's o or k,
-    else the pass's jt), ph (its phase, as the
+    and, where they are the auto-sort's copy, the pass's watermark flag w: mine_tags; else the pass's jt), ph (its phase, as the
     admin's autosort.js fishPhase: Pierre's phase and tags first), cr, ro, iv, via, rep}: no r, so the app reads it from R2
     (app.js img) and falls back on src when R2 fails (core.js photoAway).
 The tile (Pierre, 2026-11-09, Q321 D4: the square photos of "Find the X" and Matrix): a photo in play whose tags pass the
@@ -81,7 +84,7 @@ from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-from fetch_fish import PHASE_WORD, PHASES  # noqa: E402  (the phase words, as autosort.js FPHW)
+from fetch_fish import PHASE_WORD, PHASES, is_wink  # noqa: E402  (the phase words, as autosort.js FPHW; a wink entry)
 import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
 import fish_short  # noqa: E402  (the file's short form: o and src)
 
@@ -285,6 +288,33 @@ def refined(mine, passed):
     return mine
 
 
+# autosort.js fishParse: a fish log code; its fields (t tags, e ease, p phase, c crop) are the ones the auto-sort wrote.
+LOG = re.compile(r'^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$')
+FLAGORD = 'jcawpr'  # autosort.js FFLAGORD: the flags in the rubric's order
+
+
+def tags_auto(F):
+    """autosort.js fishTagsAuto for every photo: {f} whose tags in Pierre's fish curation F are the auto-sort's copy of
+    the pass's (its latest valid log code lists t; his first edit of them takes the t off: fishOwn)."""
+    last = {}
+    for day in sorted((F or {}).get('auto') or {}):
+        for f, c in ((F['auto'][day]) or {}).items():
+            m = LOG.match(str(c))
+            if m and not (m.group(3) and (m.group(2) != 'a' or m.group(1) == '?')):
+                last[f] = m.group(3)
+    return {f for f, w in last.items() if 't' in w}
+
+
+def marked(mine, passed, auto):
+    """autosort.js fishMarked: the watermark flag w of the pass's code (passed) added to Pierre's tags (mine) when they are
+    the auto-sort's copy (auto), a judgement made after the copy (Pierre, 2026-11-15, Q373); tags he set himself stand,
+    so his Watermark off is his."""
+    if not auto or not TAGS.match(mine or '') or 'w' not in str(passed or '')[7:] or 'w' in mine[7:]:
+        return mine
+    fl = set(mine[7:]) | {'w'}
+    return mine[:7] + ''.join(x for x in FLAGORD if x in fl)
+
+
 def judged_sure(jt, e):
     """The rubric's part of a sure judgement, the same for a candidate and a reference photo: valid tags and ease (any
     ease 1-5: the judged ease is the photo's prior difficulty), never an unclear subject (count x) nor a fish out of the
@@ -309,7 +339,7 @@ def cand_sure(j):
     return judged_sure(j.get('jt'), j.get('e'))
 
 
-TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcapr]*$')  # autosort.js FISH_TAGS
+TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$')  # autosort.js FISH_TAGS
 
 
 def ref_play(fish, refs, codes):
@@ -385,15 +415,29 @@ def in_play(cur, cand, sug=None, fish=None, refs=None, codes=None, rkeep=None):
 KEEP = ('f', 'o', 'src', 'a', 'lic', 't')
 
 
-def record(sid, p, F, sug, orig=None, species=None, route=None):
+def mine_tags(F, f, passed, auto=None):
+    """Pierre's tags of photo f as the game reads them: his legacy m refined (refined), the pass's watermark flag on the
+    auto-sort's copy (marked); None with none. auto: tags_auto(F), computed here only when needed (the pass's code carries
+    w)."""
+    mine = (F.get('tags') or {}).get(f)
+    if not mine:
+        return None
+    if 'w' in str(passed or '')[7:]:
+        mine = marked(mine, passed, f in (auto if auto is not None else tags_auto(F)))
+    return refined(mine, passed)
+
+
+def record(sid, p, F, sug, orig=None, species=None, route=None, auto=None):
     """The game record of candidate p in play for species sid (no ar, cr, iv: the download sets them). A photo Pierre moved
     with Not this (orig, its fish-cand.json species, is not sid) is named after its new species (fish.json species: the
     WoRMS accepted name, else the PDF's), never the identification he corrected (Codex review #614). route (in_play):
     "cand" or "ref" for a photo that entered automatically, recorded as auto (core.js fishIn); a reference photo keeps its
-    judged e and jt, and from (cover, taxon, fishbase)."""
+    judged e and jt, and from (cover, taxon, fishbase), unless Pierre set its tags or ease in the admin (his values, as on
+    every route: the admin's tag rows on a photo in play; Q373, his Watermark off). auto: tags_auto(F) (mine_tags)."""
     if route == 'ref':
         r = {k: p[k] for k in KEEP if k in p}
-        r.update(sp=sid, loc=p.get('loc') or 'world', e=int(p['e']), jt=p['jt'], auto='ref')
+        jt = mine_tags(F, p['f'], p['jt'], auto) or p['jt']
+        r.update(sp=sid, loc=p.get('loc') or 'world', e=int((F.get('ease') or {}).get(p['f'], p['e'])), jt=jt, auto='ref')
         for k in ('via', 'rep', 'from', 'own'):
             if p.get(k):
                 r[k] = p[k]
@@ -407,7 +451,7 @@ def record(sid, p, F, sug, orig=None, species=None, route=None):
     if p.get('own'):
         r['own'] = True
     e = (F.get('ease') or {}).get(f, j.get('e'))
-    jt = refined((F.get('tags') or {}).get(f), j.get('jt')) if f in (F.get('tags') or {}) else j.get('jt')
+    jt = mine_tags(F, f, j.get('jt'), auto) if f in (F.get('tags') or {}) else j.get('jt')
     if e:
         r['e'] = int(e)
     if jt:
@@ -433,6 +477,70 @@ def tier(fish):
     return lambda r, route: (0 if route == 'ref' else 1 if of.get(r['sp']) in start else 2 if circle.get(of.get(r['sp'])) == 1 else 3)
 
 
+# A species met only on the surprise cards (a wink entry's: fish.json families and teach wink) keeps at most WINK_KEEP
+# photos in play (Pierre, 2026-11-08: "4-5 very good reference photos"; 2026-11-15, Q372: the game data too, not only the
+# admin's Tree): autosort.js FISHT.wink, the admin's target for them.
+WINK_KEEP = 5
+AUTO_ADD = re.compile(r'^a')  # autosort.js fish log code: an add the auto-sort applied itself (never a Check, ?a, nor undone, -a)
+
+
+def wink_species(fish):
+    """{species id: its wink ({choices, photos...})} of the species met only on the surprise cards (fish.json families and
+    teaching entries marked wink: whale shark, thresher sharks)."""
+    out = {}
+    for x in [*((fish or {}).get('families') or []), *((fish or {}).get('teach') or [])]:
+        if isinstance(x, dict) and is_wink(x):
+            for s in x.get('species') or []:
+                out.setdefault(s, x['wink'] if isinstance(x['wink'], dict) else {})
+    return out
+
+
+def wink_key(r):
+    """core.js easyRank's order, the licence included (the card photo's order): the reference-level photos first, the
+    easiest, the most reference-like (ref_score), an open licence, then by name."""
+    from rights import rights_rank
+    return (not ref_level(r), -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r), r['f'])
+
+
+def wink_trim(recs, fish, cur, n=WINK_KEEP):
+    """The photos in play kept (Pierre, 2026-11-15, Q372): recs [record] (record: f, sp, o, e, jt, rep...) less, for each
+    species met only on the surprise cards, all but its n best. Always kept, whatever their number, by photo id (pid):
+    Pierre's own picks (curation.json fish genera covers and featured photos, at any rank; an add he made himself, not one
+    the auto-sort applied), and the surprise card's own photos (fish.json wink photos, which quiz.js winkPhoto draws from).
+    Then, up to n, the best by wink_key, a new observation first (the admin counts observations in play against FISHT.wink:
+    with fewer, its Candidates queue and auto-sort would open again), then any. Other species: unchanged."""
+    W = wink_species(fish)
+    if not W:
+        return list(recs)
+    F = (cur or {}).get('fish') or {}
+    mine = set()
+    for k in (F.get('genera') or {}).values():
+        if isinstance(k, dict):
+            if k.get('cover'):
+                mine.add(pid(k['cover']))
+            mine |= {pid(f) for L in (k.get('feat') or {}).values() for f in (L or [])}
+    auto = {pid(f) for day in (F.get('auto') or {}).values() for f, c in (day or {}).items() if AUTO_ADD.match(str(c))}
+    mine |= {pid(f) for f in (F.get('add') or {}) if pid(f) not in auto}
+    by, kept = {}, set()
+    for r in recs:
+        if r.get('sp') in W:
+            by.setdefault(r['sp'], []).append(r)
+    for sid, L in by.items():
+        card = {pid(f) for f in (W[sid].get('photos') or [])}
+        keep = [r for r in L if pid(r['f']) in mine or pid(r['f']) in card]
+        rest = sorted((r for r in L if pid(r['f']) not in mine and pid(r['f']) not in card), key=wink_key)
+        obs = {r.get('o') or r['f'] for r in keep}
+        for new in (True, False):  # a new observation first, then any
+            for r in rest:
+                if len(keep) >= n:
+                    break
+                if id(r) not in {id(x) for x in keep} and (not new or (r.get('o') or r['f']) not in obs):
+                    keep.append(r)
+                    obs.add(r.get('o') or r['f'])
+        kept |= {id(r) for r in keep}
+    return [r for r in recs if r.get('sp') not in W or id(r) in kept]
+
+
 def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=None, rkeep=None, boxes=None):
     """(todo, keep, wait): the records to download [(record, crop, iv)], the ones already downloaded with the right crop
     {f: record}, and how many more are in play than this run takes (limit: at most that many downloads, tier order).
@@ -447,8 +555,12 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
     old = {p['f']: p for L in ((prev or {}).get('photos') or {}).values() for p in L if p.get('f')}
     species = {s['id']: s for s in (fish or {}).get('species') or []}
     todo, keep = [], {}
-    for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep):
-        r, c, o = record(sid, p, F, sug, orig, species, route), crop_of(F, p['f']), old.get(p['f'])
+    rows = [(sid, p, route, record(sid, p, F, sug, orig, species, route)) for sid, p, orig, route in in_play(cur, cand, sug, fish, refs, codes, rkeep)]
+    kept = {id(r) for r in wink_trim([x[3] for x in rows], fish, cur)}  # the surprise-only species: their WINK_KEEP best (Q372)
+    for sid, p, route, r in rows:
+        if id(r) not in kept:
+            continue
+        c, o = crop_of(F, p['f']), old.get(p['f'])
         mine = p['f'] in (F.get('crop') or {})  # Pierre's crop, his full-photo [0, 0, 1, 1] included (Codex review #674)
         if not mine and route == 'cand':
             c = ((sug or {}).get(p['f']) or {}).get('c')

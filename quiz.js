@@ -435,7 +435,9 @@ function question(cur, target, choices, prompt, set, kq) {
     reveal();
     answered = true;
     QOPEN = false;
-    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm);
+    // A Find the X: the photo tapped (its four units are distinct, so the tile of the unit given), logged with the answer.
+    const tap = fx ? (fx.find(x => x.n === c) || {}).p : null;
+    answer(cur, c, target, set.hint ? [...ph, set.hint] : ph, cor, hintShown || !set.hint ? null : set.hint, tm, tap);
     // Find the X: each tile now says its unit (the right one ticked, the one tapped crossed: never colour alone), its
     // source (rule P5) and opens the four photos whole.
     if (fx)
@@ -649,7 +651,8 @@ function fitTiles(grid, gap, dims) {
   grid.classList.add('fit');
 }
 addEventListener('resize', () => document.querySelectorAll('.pgrid.fit').forEach(g => fitTiles(g)));
-function answer(cur, c, target, ph, cor, unseen, tm = {}) {
+// tap: a Find the X's photo tapped (question), logged as pa; null for any other question.
+function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // A break while the question was on screen (model.js rustNow): the next question knows it, before this answer's time;
   // a comeback question takes its genus's recall as it is now (Codex review #374).
   if (rustNow() && SHOWNQ && SHOWNQ.warm) SHOWNQ.cb = Math.round(recallAt(target) * 1000) / 1000;
@@ -708,9 +711,10 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
   // the sheet rated it as a 4-choice one (a 1 in 4 guess instead of 1 in 2; 59 of the first 552 answers, 2026-11-02).
   // |d: a look-alike duel slipped into the photo quiz (CONTRAST), before |kN (the sheet reads |kN at the end).
   // |f: a Find the X (FIND): one name, four photos; the question's own photo (ph) is the unit's, its choices (ch) the
-  // units of the four photos in the order shown, its answer (a) the unit of the photo tapped. The other three photos are
-  // not logged: every reader of the log takes its photos as photos of the unit shown (the photo ratings, the memory,
-  // Code.gs photoAlert_).
+  // units of the four photos in the order shown, its answer (a) the unit of the photo tapped, and the photo tapped itself
+  // (pa, right answers too; Pierre, 2026-11-15, Q371: its species, through fish-game.json, for the species taken for
+  // another family). The other photos are not in ph: every reader of the log takes its photos as photos of the unit
+  // shown (the photo ratings, the memory, Code.gs photoAlert_).
   // |c: a comeback question after a break (model.js comebackOf), before |kN too; counted in the opening hold like any
   // answer, with its own expectation e. (|w, 2026-11-02 until the comeback: the gentle restart, left out of the hold by
   // the app and the sheet's hold_; old rows only.)
@@ -853,7 +857,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}) {
     // shown (UNITS species: a fish photo's species; none for the corals' genus photos), for the sheet's readers.
     ...(unitName(target) ? {tn: unitName(target)} : {}),
     ...(unitName(c) ? {ta: unitName(c)} : {}),
-    ...(spShown ? {sp: spShown} : {})
+    ...(spShown ? {sp: spShown} : {}),
+    // A Find the X's photo tapped (Pierre, 2026-11-15, Q371): sheet v141 keeps it (Answers Photo answered); sent only
+    // from PA_SHEET (core.js logOut, sync.js), the queue keeps it until then (rule D4). Information only: no score,
+    // replay or rule reads it.
+    ...(tap && tap.f ? {pa: tap.f} : {})
   };
   // The opening hold's record (model.js holdStep), every answer with the expectation it really had: the comeback's
   // questions too (Pierre, 2026-11-02: the hold gets the full information; e allows for the plausible choices k, as for
@@ -987,10 +995,14 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
   const g = GX(target),
     fish = !!g.name,
     C = !good && GX(c) ? GX(c) : null,
-    apart = C && fish ? ((g.lk || []).find(([o]) => o === c) || (C.lk || []).find(([o]) => o === target) || [])[1] : '';
+    own = C && fish ? (g.lk || []).find(([o]) => o === c) : null,
+    apart = C && fish ? (own || (C.lk || []).find(([o]) => o === target) || [])[1] : '',
+    // the source the content editor gave when he reworded that line (app.js fishGenera lksrc; Q359 e, rule C2): said after
+    // the IMR label, which stays (Q359 a)
+    asrc = apart ? ((own ? g.lksrc : C.lksrc) || {})[own ? c : target] : null;
   const vs = C
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
-      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
+      `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt && C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : ''}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
   // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
   const named = inner =>
@@ -1009,7 +1021,7 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
           : `<b>${esc(step.oft[0])}</b> (often called ${esc(step.oft[1].toLowerCase())}): it's ${name}`
         : `but not quite: it's spelled ${step.plain ? `<b>${step.spelled}</b>` : step.old ? `${step.spelled}, ${step.alt ? 'read as' : 'the old name of'} ${name}` : named(step.spelled)}`,
     more = fish
-      ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
+      ? `<details class="more"><summary>More</summary>${g.sub.length ? `<p class="vs">IMR names inside it: ${g.sub.map(esc).join(', ')}</p>` : ''}${g.phase.length ? `<ul>${g.phase.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${g.psrc && g.psrc.t ? `<p class="vs esrc">Source: ${esc(g.psrc.t)}</p>` : ''}` : ''}<p class="credit">${ph.map(credit).join('<br>')}</p></details>`
       : `<details class="more"><summary>Coral ID Key criteria</summary>${(g.imr || []).length ? `<p class="vs">${esc(g.sum)}</p>` : ''}<ul>${g.crit.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="tref">Coral Finder p. ${g.pages.join(', ')}</p><p class="credit">${ph.map(credit).join('<br>')}</p></details>`;
   // No tips box at all for a unit with no cue, summary or mnemonic (a fish family of circles 2-3 with no IMR cue: an
   // empty box drew a bare rounded bar, Pierre 2026-11-07, Barracudas).

@@ -150,8 +150,8 @@ async function coldHome(b, base, errs) {
 // (11) Find the X (quiz.js FIND, planFind; Pierre, 2026-11-03, Q321 D1): one name, four photos, slipped into the fish quiz.
 // Every circle-1 family met but three, FIND.P set to 1 for the run so it comes at once: never on a family not met, nor with
 // one; four square tiles (fish-game.json xc), the families' buttons, no name buttons; the right tile and the wrong one
-// marked once answered; logged quiz|f with the unit's own photo, the four units as choices and the unit of the photo
-// tapped; scored as a 4-choice answer (its expectation over 1 in 4). With FIND.P back at 0 none comes.
+// marked once answered; logged quiz|f with the unit's own photo, the four units as choices, the unit of the photo
+// tapped and that photo (pa); scored as a 4-choice answer (its expectation over 1 in 4). With FIND.P back at 0 none comes.
 async function findTheX(b, base, errs) {
   const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
   await c.route(
@@ -240,6 +240,8 @@ async function findTheX(b, base, errs) {
         ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
         ok(a.ph === set.shown[0].f && a.ph === set.find.find(x => x.n === t).p.f, `its photo: ${a.ph}`);
         ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
+        // the photo tapped (Q371; the queue keeps it whatever the sheet's version: core.js logOut strips it at the send)
+        ok(a.pa === set.find.find(x => x.n === pick).p.f, `the photo tapped: ${a.pa}`);
         ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
         // timed from its gate (smokeAnswer counted the four tiles in, then tapped): a few tenths at most
         ok(typeof a.rt === 'number' && a.rt < 5, `its seconds from the four tiles: ${a.rt}`);
@@ -1302,13 +1304,15 @@ async function freshPlayers(b, base, errs) {
           !!u &&
           !!p &&
           (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
-        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
+        // never a photo with a watermark (its judged flag w: home.js homeOk; Q373)
+        clean = p => !!p && !/w/.test(String(p.jt || '').slice(7)),
+        suits = p => clean(p) && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
         // on R2: not a photo still remote (r: 1), which comes from iNaturalist
         suitsR2 = p => suits(p) && !(p.r && p.src),
         want = n => {
           const g = GX(n),
             L = g.views.wide;
-          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suitsR2) || L.slice(0, 10).find(suits) || adultFirst(L);
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suitsR2) || L.slice(0, 10).find(suits) || adultFirst(L.filter(clean));
         },
         // the photos a tile may draw: the cover that suits it, then the reference photos that do, on R2, at most 6
         pool = n => {
@@ -1319,7 +1323,7 @@ async function freshPlayers(b, base, errs) {
             );
           return P.length ? P : [want(n)];
         },
-        N = slateGenera().filter(n => GX(n).views.wide.length),
+        N = slateGenera().filter(n => GX(n).views.wide.some(clean)),
         W = N.map(want),
         tiles = () => [...document.querySelectorAll('#view .hdoor.learn .hdtiles img')].map(i => i.getAttribute('src')),
         art = [...document.querySelectorAll('#view .hdoor.identify .hdart img')].map(i => i.getAttribute('src')),
@@ -1709,7 +1713,7 @@ async function freshPlayers(b, base, errs) {
         s = FISH.sps[p.sp] || {};
       return {
         sci: s.name || '',
-        common: cnList(s)[0] || '',
+        common: cnFirst(s, imrNow()), // the player's first name (Q376 (a): the IMR name at IMR, the main name otherwise)
         now: s.now && s.now !== s.name ? s.now : '',
         line: !!document.querySelector('.fbsp')
       };
