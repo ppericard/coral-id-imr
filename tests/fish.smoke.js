@@ -1302,13 +1302,15 @@ async function freshPlayers(b, base, errs) {
           !!u &&
           !!p &&
           (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
-        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
+        // never a photo with a watermark (its judged flag w: home.js homeOk; Q373)
+        clean = p => !!p && !/w/.test(String(p.jt || '').slice(7)),
+        suits = p => clean(p) && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
         // on R2: not a photo still remote (r: 1), which comes from iNaturalist
         suitsR2 = p => suits(p) && !(p.r && p.src),
         want = n => {
           const g = GX(n),
             L = g.views.wide;
-          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suitsR2) || L.slice(0, 10).find(suits) || adultFirst(L);
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suitsR2) || L.slice(0, 10).find(suits) || adultFirst(L.filter(clean));
         },
         // the photos a tile may draw: the cover that suits it, then the reference photos that do, on R2, at most 6
         pool = n => {
@@ -1319,7 +1321,7 @@ async function freshPlayers(b, base, errs) {
             );
           return P.length ? P : [want(n)];
         },
-        N = slateGenera().filter(n => GX(n).views.wide.length),
+        N = slateGenera().filter(n => GX(n).views.wide.some(clean)),
         W = N.map(want),
         tiles = () => [...document.querySelectorAll('#view .hdoor.learn .hdtiles img')].map(i => i.getAttribute('src')),
         art = [...document.querySelectorAll('#view .hdoor.identify .hdart img')].map(i => i.getAttribute('src')),
