@@ -262,7 +262,8 @@ let SHOWN_COVER = null,
   PICKS = {},
   PHOTOS = {},
   PRES = {}, // presence.json sp: each photo species confirmed in the Philippines or not (tools/coral_presence.py)
-  NAMES = {}, // names.json, the coral section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
+  NAMES = {}, // names.json, the first subject's section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
+  NAMEJ = {}, // names.json by subject id: every subject's section (nameTag)
   FISHA = null, // the fish entries and their photos, for the fish beta's reports (fishAdmin)
   KNOWN = new Set(),
   DATA,
@@ -1102,10 +1103,11 @@ const saList = () => saQueue(Object.keys(DATA.gen), photos, hidden, saKept);
 const saKeptList = () => saQueue(Object.keys(DATA.gen), photos, hidden).filter(p => saKept(p.f));
 // A photo or candidate whose name is a former combination, a moved genus or iNaturalist's spelling of a name WoRMS writes
 // otherwise (ROADMAP "Taxonomy reference", Pierre 2026-11-05, Q49; presence.js nameFlag, names.json): a neutral tag with
-// the name WoRMS accepts now. Information only, no action: nothing is renamed (rule C1).
+// the name WoRMS accepts now. Information only, no action: nothing is renamed (rule C1). S: the photo's subject (the
+// fish pages pass theirs; names.json holds one section per subject).
 const NAME_KIND = {spelling: 'iNaturalist spelling', former: 'Former name', genus: 'Former genus'};
-const nameTag = p => {
-  const k = nameFlag(p, NAMES);
+const nameTag = (p, S = ADM0) => {
+  const k = nameFlag(p, NAMEJ[S && S.id]);
   if (!k) return '';
   const t = [NAME_KIND[k.kind], k.iname ? 'iNaturalist: ' + k.iname : '', k.inat === false ? 'not on iNaturalist' : '']
     .filter(Boolean)
@@ -2120,7 +2122,7 @@ function fishTile(p, o) {
     <button type="button" class="adm-ph" data-fu="zoom" aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>${out ? '' : '<button type="button" class="adm-x" data-fu="exclude" title="Exclude" aria-label="Exclude for good">×</button>'}
     ${num ? `<span class="adm-num">${num}</span>` : ''}
     ${isCover || more ? `<span class="adm-covermark">${cvMark}</span>` : ''}
-    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
+    <figcaption>${o.lead || ''}<span class="adm-src o-${origin(p)}">${esc((FISHS.admin.origins.find(y => y[0] === origin(p)) || [, origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, FISHS)}${x && x.d.kind === 'a' && !x.d.check && !x.d.undone ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ease ? `<span class="adm-src adm-fease" title="Ease 1-5 (5 very easy)">ease ${ease}</span>` : ''}${ph ? `<span class="adm-src view">${esc(ph)}</span>` : ''}${ignored ? '<span class="adm-src rej adm-fjcv" title="A juvenile you have not confirmed as the cover: this pick is ignored">cover ignored</span>' : ''}${p.rep || jt.slice(7).includes('r') ? '<span class="adm-src view" title="Reference photo">reference</span>' : ''}<span class="adm-t">${fuTags(jt)}</span>${o.cap || ''}</figcaption>
     <div class="adm-acts">${acts}${o.open && o.fam ? `<a class="chip" data-fu-open href="${esc(famHref(o.fam))}">Open in Tree</a>` : ''}${o.extra || ''}${rows ? `<div class="adm-ftrows">${fishRows(F, p, J, false, sid && FISHC.entry[sid], true)}</div>` : ''}</div></figure>`;
 }
 // A node page's tile (renderFishUnits): st {num} for a featured photo; cover: the page node's cover in force; path: the
@@ -3263,7 +3265,7 @@ function renderFishReview(kind) {
           )
         : `${frevRow('Juvenile', 'data-frj', [['j', 'Juvenile']], phOf(p)[0] === 'juvenile' ? 'j' : null, tAuto && phMine === undefined)}${(u.phase || []).length || u.dimorph ? frevRow('Phase', 'data-frp', FREV_PH, ph === 'juvenile' ? '' : ph, phMine === undefined) : ''}${frevRow('View', 'data-frv', FREV_VIEW, code ? code[0] : null, tAuto)}`;
     return `<figure class="adm-tile${guess(p) ? ' adm-guess' : ''}" data-f="${esc(p.f)}" data-sid="${esc(p.sid)}"><button type="button" class="adm-ph" data-frz aria-label="Enlarge">${p.src ? `<img ${crSrc(fuP(p), 1)} alt="" loading="lazy" draggable="false">` : ''}</button>
-      <figcaption><span class="adm-src o-${origin(p)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span></figcaption>
+      <figcaption><span class="adm-src o-${origin(p)}">${esc((ASUBJ.admin.origins.find(y => y[0] === origin(p)) || [, origin(p), origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, ASUBJ)}<span class="adm-t">${esc(s.common || s.name || '')} <i>${esc(s.name || '')}</i></span></figcaption>
       <div class="adm-acts adm-frev">${ctl}</div></figure>`;
   };
   const shownL = L.filter(shown),
@@ -7449,7 +7451,7 @@ async function start() {
   let CJ;
   try {
     let PJ;
-    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS, PRES, NAMES, PJ] = await Promise.all([
+    [DATA, AUTOQ, AUTOF, FU0, PICKS, SUG, , DUPS, CJ, METRICS, PRES, NAMEJ, PJ] = await Promise.all([
       fetch('data.json', {cache: 'no-cache'}).then(r => r.json()),
       side('quality.json', 'q'),
       side('forms.json', 'gf'),
@@ -7467,8 +7469,9 @@ async function start() {
       side('metrics.json', 'm'),
       // The presence rule per photo species (tools/coral_presence.py; rule C8): the "out of rule" flag.
       side('presence.json', 'sp'),
-      // Former names and iNaturalist spellings (the extract tools/taxonomy.py writes of its reference file): the name tag.
-      side('names.json', ADM0.id),
+      // Former names and iNaturalist spellings (the extract tools/taxonomy.py writes of its reference file): the name tag,
+      // one section per subject (one fetch: side keeps the reply).
+      Promise.all(SUBJECTS.map(S => side('names.json', S.id).then(x => [S.id, x]))).then(Object.fromEntries),
       // The points to handle (To do › Points), written by agents; a point with a shape problem is left out.
       fetch('points.json?v=1', {cache: 'no-cache'})
         .then(r => (r.ok ? r.json() : null))
@@ -7485,6 +7488,7 @@ async function start() {
             ).length
         )
       };
+    NAMES = NAMEJ[ADM0.id] || {};
     DATA.cand = DATA.cand || {};
     Object.entries(CJ || {}).forEach(([g, L]) => {
       const have = new Set((DATA.cand[g] || []).map(p => p.f));
