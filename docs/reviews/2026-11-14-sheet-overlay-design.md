@@ -485,6 +485,11 @@ Points until it is settled there. An edit may be how its answer is applied, and 
 | | the Look-alikes pages and their photo pairs (`mont`) |
 | | corals: the ★ rule, under which a starred genus opens after its look-alike reference (rule L5); a coral pair edit may change which genus that is (a guess, not read; to check in step 8) |
 
+**Species units (Q362, 2026-11-15: one progress unit per fish species, not built yet).** A species takes its family's
+circle (Q214), so a circle edit will move its species' units with the family, under the same replay. Pairs stay between
+families here (the only rank `fish.json` declares them at); pairs between species, if an instance wants them, wait for
+that build.
+
 **Why a structure change needs a replay.** A player's bars are their answer log replayed under the rules (rule D9). If
 the pairs or circles change and nothing is replayed:
 - each device keeps bars built under the old structure, while its new answers count under the new one;
