@@ -166,14 +166,16 @@ test('the fish units from the players copy: the same photos in play, covers and 
   // With the content editor's edits (made up: none on main today), one of them stale (was differs from the base), the
   // same units from the copy without was, t and by: the app reads v and src only (core.js contentApply).
   const fam = raw.f.families.find(f => (f.cues || []).length && (f.look || []).length),
-    lk = fam.look[0][0];
+    lk = fam.look[0][0],
+    ph = raw.f.families.find(f => f.id !== fam.id && (f.phase || []).length);
   U.fish.content = {
     nodes: {
       [fam.id]: {
         cues: {v: ['An edited tip'], was: ['Not the base any more'], src: {t: 'A made-up source'}, t: 1, by: 'p1'},
         note: {v: 'A note', was: null, t: 2},
         ['look/' + lk]: {v: 'Edited words', was: fam.look[0][1], src: {t: 'A look source'}, t: 3}
-      }
+      },
+      [ph.id]: {phase: {v: ['An edited phase line'], was: ph.phase, src: {t: 'A phase source'}, t: 4}}
     }
   };
   const E1 = ctx.run(raw, U);
@@ -183,8 +185,13 @@ test('the fish units from the players copy: the same photos in play, covers and 
     JSON.stringify([E1.gen[fam.id].qsrc, E1.gen[fam.id].lksrc]),
     JSON.stringify([{t: 'A made-up source'}, {[lk]: {t: 'A look source'}}])
   );
+  // and the phase lines' (quiz.js fbBody's More)
+  assert.strictEqual(
+    JSON.stringify([E1.gen[ph.id].phase, E1.gen[ph.id].psrc]),
+    JSON.stringify([['An edited phase line'], {t: 'A phase source'}])
+  );
   assert.ok(
-    Object.values(ctx.run(raw, FULL).gen).every(g => !g.lksrc && !g.qsrc),
+    Object.values(ctx.run(raw, FULL).gen).every(g => !g.lksrc && !g.qsrc && !g.psrc),
     'none while nothing is edited'
   );
   assert.deepStrictEqual(JSON.stringify(ctx.run(raw, slim(U))), JSON.stringify(E1));

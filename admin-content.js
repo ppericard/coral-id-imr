@@ -64,14 +64,16 @@
     return rows;
   }
   // Whether node id of fish file R has a sheet of its own in the app (core.js fishTree go, learn.js viewFishSheet): a family
-  // that is not a wink, a genus the app opens as itself, a species of a family.
+  // that is not a wink, a genus the app opens as itself, a species of a family; never anything in a wink family, which
+  // viewFishSheet sends to the families list (Codex review #957: the whale and thresher sharks' species).
   let OWN = null;
   function sheetOwn(R, id) {
     if (!OWN || OWN.R !== R) OWN = {R, T: C.fishTree(R)};
-    const T = OWN.T;
+    const T = OWN.T,
+      wink = fid => !T.fam[fid] || !!T.fam[fid].wink;
     if (T.fam[id]) return !T.fam[id].wink;
-    if (T.gen[id]) return T.go(id) === id;
-    return !!T.sp[id];
+    if (T.gen[id]) return T.go(id) === id && !wink(T.gen[id].family);
+    return !!T.sp[id] && !wink(T.sp[id].family);
   }
   // The text of the editor's box as the slot's value: a list one item per non-empty line; a text its words on one line;
   // null when nothing is left (the slot hidden).

@@ -96,7 +96,11 @@ test('which nodes have a sheet in the app: families but the winks, genera the ap
     lone = F.genera.find(g => T.go(g.id) !== g.id),
     own = F.genera.find(g => T.go(g.id) === g.id);
   assert.ok(sheetOwn(F, BF.id));
-  if (wink) assert.ok(!sheetOwn(F, wink.id));
+  assert.ok(wink, 'a wink family in fish.json');
+  assert.ok(!sheetOwn(F, wink.id));
+  // nor its species or genera: the app sends them to the families list (Codex review #957)
+  assert.ok(wink.species.length && wink.species.every(s => !sheetOwn(F, s)), wink.species.join(' '));
+  assert.ok(wink.genera.every(g => !sheetOwn(F, g)));
   assert.ok(lone && !sheetOwn(F, lone.id), 'a genus sent to its species or family');
   assert.ok(own && sheetOwn(F, own.id));
   assert.ok(sheetOwn(F, Object.keys(T.sp)[0]));
