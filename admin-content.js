@@ -15,6 +15,9 @@
 // - Who may edit: mayContent, the one place the content right is asked (today the token that can publish, phase 0 of the
 //   design; roles step 1 puts can_(account, 'content', instance) there, Q364), for the controls and for every write.
 // The bar of every Tree page counts the edits to check (stale and orphaned: sheetWarn), linking to the first one's page.
+// The same code serves every subject's Tree (S: its SUBJECTS entry): the fish's (admin.js renderFishUnits, over fish.json)
+// and the corals' (admin-coraltree.js renderCoralTree, over data.json as the admin holds it; design note v2, step 8: a
+// genus's sheet, its look-alike pairs and no circle, a withdrawal the ★ rule would hold turned off).
 //
 // The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells) runs in Node too: tests/sheeteditor.test.js.
 (function (root) {
@@ -430,7 +433,8 @@
       cr = D.circle ? circleRow(S, R, Cm, id) : null,
       pn = D.pairs ? C.contentNodes(S, R).get(id) : null,
       pr = !!pn && pn.rank === D.pairs.rank;
-    if (!cr && !(D.circle ? false : pr)) return '';
+    // a subject with circles: the box on its circle rank's pages (as before); without: on its pair rank's
+    if (D.circle ? !cr : !pr) return '';
     const can = mayContent(),
       P = pr ? pairRows(S, R, Cm, id) : [],
       seg = !cr
