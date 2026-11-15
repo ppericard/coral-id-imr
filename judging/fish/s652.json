@@ -207,6 +207,26 @@
   "fish-s652-cand-238067537": {
    "code": "p1g0ml14",
    "keep": "best"
+  },
+  "fish-s652-cand-553584625": {
+   "code": "p1g0ss12",
+   "keep": "best"
+  },
+  "fish-s652-cand-332990268": {
+   "code": "p1g0ss1c1",
+   "keep": "best"
+  },
+  "fish-s652-cand-725752876": {
+   "code": "o1g0ss12",
+   "keep": "best"
+  },
+  "fish-s652-cand-258088198": {
+   "code": "o1g0sl14",
+   "keep": "alt"
+  },
+  "fish-s652-cand-258089302": {
+   "code": "p1g0sl15",
+   "keep": "best"
   }
  }
 }

@@ -199,6 +199,14 @@
   "fish-s454-cand-361275001": {
    "code": "o0g2sss1",
    "keep": "dup"
+  },
+  "fish-s454-cand-257875021": {
+   "code": "p0g1sss2",
+   "keep": "dup"
+  },
+  "fish-s454-cand-249344883": {
+   "code": "p0g0sl13",
+   "keep": "best"
   }
  }
 }

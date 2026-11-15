@@ -147,6 +147,42 @@
   "fish-s661-cand-378158895": {
    "code": "o1g0sl14",
    "keep": "best"
+  },
+  "fish-s661-cand-149987454": {
+   "code": "p1g0mm13",
+   "keep": "best"
+  },
+  "fish-s661-cand-149987450": {
+   "code": "o1g0ss12",
+   "keep": "dup"
+  },
+  "fish-s661-cand-149983882": {
+   "code": "o1g0sss2",
+   "keep": "dup"
+  },
+  "fish-s661-cand-343261545": {
+   "code": "o1g1ms12",
+   "keep": "best"
+  },
+  "fish-s661-cand-60780718": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s661-cand-725061651": {
+   "code": "p1g0smk3",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a yellow-and-black fish of another family about half the goby's size, sharp, beside it: confusion possible, not certain"
+  },
+  "fish-s661-cand-441659153": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s661-cand-85589528": {
+   "code": "p1g0slo4",
+   "keep": "best"
   }
  }
 }

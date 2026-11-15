@@ -203,6 +203,22 @@
   "fish-s647-cand-712234190": {
    "code": "p1g0ss1c2",
    "keep": "best"
+  },
+  "fish-s647-cand-461775489": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s647-cand-461775491": {
+   "code": "p1g0sm14",
+   "keep": "dup"
+  },
+  "fish-s647-cand-309084069": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s647-cand-282584802": {
+   "code": "o1g1sl13",
+   "keep": "best"
   }
  }
 }

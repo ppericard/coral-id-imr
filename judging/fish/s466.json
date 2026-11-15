@@ -195,6 +195,18 @@
   "fish-s466-cand-558200020": {
    "code": "p1g2bl12",
    "keep": "best"
+  },
+  "fish-s466-cand-174984334": {
+   "code": "t0g0sl12",
+   "keep": "dup"
+  },
+  "fish-s466-cand-174984348": {
+   "code": "o1g0sl13",
+   "keep": "alt"
+  },
+  "fish-s466-cand-312102982": {
+   "code": "d1g1ms12",
+   "keep": "best"
   }
  }
 }
