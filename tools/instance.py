@@ -152,8 +152,10 @@ def _put(rec, k, v, after):
 
 def coral_compose(d, lay):
     """data.json (d) with the instance's coral layer laid on, its fields where data.json has always had them (a genus's
-    ig, imr and mn after n; imrg after key). A new copy; a layer genus data.json does not hold stops."""
-    d = copy.deepcopy(d)
+    ig, imr and mn after n; imrg after key). The fields the layer owns are taken off first, so one the layer no longer
+    gives (or no layer at all) leaves data.json too (Codex review #984). A new copy; a layer genus data.json does not
+    hold stops."""
+    d = coral_strip(d)
     gen = d.get("gen") or {}
     lost = [g for g in (lay.get("gen") or {}) if g not in gen]
     if lost:

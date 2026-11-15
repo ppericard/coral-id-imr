@@ -129,13 +129,22 @@ s = open('data.json', encoding='utf-8').read()
 d, lay = load(), load_layer('coral')
 bare = coral_strip(d)
 other = json.loads(json.dumps(lay)); other['gen']['Acropora']['mn'] = 'Another instance'
+fewer = json.loads(json.dumps(lay)); del fewer['gen']['Acropora']['mn']; del fewer['imrg']
+gone = coral_compose(d, fewer)
 print(json.dumps([
   'imrg' in bare or any(k in r for r in bare['gen'].values() for k in ('ig', 'imr', 'mn')),
   dumps(coral_compose(bare, lay)) == s,
   dumps(coral_compose(bare, other)) == s,
+  dumps(coral_compose(d, lay)) == s,
+  ['mn' in gone['gen']['Acropora'], 'imrg' in gone, 'mn' in coral_compose(d, {})['gen']['Pocillopora']],
 ]))`)
   );
-  assert.deepStrictEqual(out, [false, true, false], '[the sources hold none of them, sources + layer = data.json, another layer differs]');
+  // A field the layer no longer gives (or no layer at all) leaves data.json too (Codex review #984).
+  assert.deepStrictEqual(
+    out,
+    [false, true, false, true, [false, false, false]],
+    '[the sources hold none of them, sources + layer = data.json, another layer differs, data.json + layer = data.json, fields left out of the layer go]'
+  );
   const r = run(['tools/datajson.py', '--check']);
   assert.strictEqual(r.status, 0, r.out);
   assert.match(r.out, /data\.json layout OK, as its layers give it/);
