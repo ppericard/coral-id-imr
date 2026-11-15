@@ -189873,8 +189873,8 @@
    "k": "best"
   },
   "seaslug-119425-cand-527402919": {
-   "jt": "p1g0sl1",
-   "e": 5,
+   "jt": "o0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-119425-cand-596710945": {
@@ -191063,8 +191063,8 @@
    "k": "best"
   },
   "seaslug-126108-cand-467362803": {
-   "jt": "o1g0sl1",
-   "e": 5,
+   "jt": "o1g0ml1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-126108-cand-478930078": {
@@ -192001,8 +192001,9 @@
   },
   "seaslug-244849-cand-314864198": {
    "jt": "p1g0sl1",
-   "e": 5,
-   "k": "best"
+   "e": 4,
+   "k": "best",
+   "n": "Draped over a stone: the outline partly bent."
   },
   "seaslug-244849-cand-34739149": {
    "jt": "d1g0sl1",
@@ -192724,8 +192725,8 @@
    "k": "best"
   },
   "seaslug-469421-cand-594974795": {
-   "jt": "o1g0sl1",
-   "e": 5,
+   "jt": "o1g0ml1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-469421-cand-601635166": {
@@ -193238,8 +193239,8 @@
    "k": "best"
   },
   "seaslug-49904-cand-642297168": {
-   "jt": "d1g0sl1",
-   "e": 5,
+   "jt": "d1d0sl1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-49904-cand-644944881": {
@@ -194227,8 +194228,8 @@
    "n": "Curled up: the shape reads less well."
   },
   "seaslug-56646-cand-596086052": {
-   "jt": "o1g0sl1",
-   "e": 5,
+   "jt": "o0g0sl1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-56646-cand-601645327": {
