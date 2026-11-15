@@ -230,6 +230,7 @@ def run(args):
     cand_path = Path(args.cand)
     have = json.loads(cand_path.read_text(encoding="utf-8")).get("cand", {}) if cand_path.exists() else {}
     cur = json.loads(Path(args.cur).read_text(encoding="utf-8")) if Path(args.cur).exists() else {}
+    fish = ff.in_force(fish, cur)  # the circles in force (the content editor's, tools/fish_inforce.py; read, never written)
     sug = json.loads(Path(args.suggest).read_text(encoding="utf-8")) if Path(args.suggest).exists() else {}
     gone, _ = ff.state(cur, sug)
     sugf, moved = (sug or {}).get("fish") or {}, ff.moved_of(cur)
