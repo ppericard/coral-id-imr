@@ -122,6 +122,9 @@ test('the genus card: its marks under a label naming their sources, its presenta
   assert.deepStrictEqual([...g.qt], FG.Cheilinus.marks);
   assert.strictEqual(g.plain, FG.Cheilinus.plain);
   assert.match(g.tl, /^ID marks \(FAO species guide\)$/);
+  // The label names the marks' sources only: Labropsis's presentation is FishBase's, its marks the FAO guide's.
+  assert.ok(FG.Labropsis.msrc.some(s => s.t.startsWith('FishBase')));
+  assert.strictEqual(X.gen['g:Labropsis'].tl, 'ID marks (FAO species guide)');
   for (const n of X.sci) {
     const x = X.gen[n];
     assert.doesNotMatch(x.tl, /[<>&"]/, `${n}: the label is shown as HTML, plain words only`);

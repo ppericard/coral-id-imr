@@ -737,11 +737,14 @@ function fishGenera(X, F) {
           set = new Set(L.map(s => s.id)),
           cues = G.cues && G.cues.length ? G.cues : null,
           // Its own ID marks when IMR gives no cues (fish.json marks, tools/fish_genus_marks.json; Pierre, 2026-11-08),
-          // under a label naming their sources, never as IMR's (rule C1); their source per line is on the sheet (genMarks).
+          // under a label naming the marks' own sources (mby.marks: not the presentation's), never as IMR's (rule C1);
+          // their source per line is on the sheet (genMarks).
           marks = !cues && G.marks && G.marks.length ? G.marks : null,
           mby = [
             ...new Set(
-              (G.msrc || [])
+              ((G.mby || {}).marks || [])
+                .flat()
+                .map(i => (G.msrc || [])[i] || {})
                 .map(s =>
                   String(s.t || '')
                     .split(',')[0]

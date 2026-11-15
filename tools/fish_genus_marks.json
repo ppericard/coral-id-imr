@@ -57,6 +57,18 @@
       "t": "FishBase, Pteragogus enneacanthus",
       "u": "https://www.fishbase.se/summary/Pteragogus-enneacanthus.html"
     },
+    "fb-cymolutes-torquatus": {
+      "t": "FishBase, Cymolutes torquatus",
+      "u": "https://www.fishbase.se/summary/Cymolutes-torquatus.html"
+    },
+    "fb-novaculoides-macrolepidotus": {
+      "t": "FishBase, Novaculoides macrolepidotus",
+      "u": "https://www.fishbase.se/summary/Novaculoides-macrolepidotus.html"
+    },
+    "fb-wetmorella-albofasciata": {
+      "t": "FishBase, Wetmorella albofasciata",
+      "u": "https://www.fishbase.se/summary/Wetmorella-albofasciata.html"
+    },
     "fao-sca": {
       "t": "FAO species guide, Scaridae (Bellwood 2001)",
       "u": "https://www.fao.org/4/y0870e/y0870e11.pdf"
@@ -248,7 +260,7 @@
     },
     "Pseudocheilinus": {
       "plain": [
-        "Small, shy wrasses that keep among coral branches on seaward reefs and eat small crustaceans.",
+        "Small wrasses; the shy P. hexataenia keeps among coral branches on seaward reefs and eats small crustaceans.",
         [["fb-pseudocheilinus-hexataenia", "Biology"]]
       ],
       "marks": [
@@ -258,7 +270,7 @@
     },
     "Paracheilinus": {
       "plain": [
-        "Small wrasses, about 8 cm, that school above coral or rubble at the foot of steep outer reef slopes; males are larger and more colourful than females.",
+        "Small wrasses; P. carpenteri, about 8 cm, schools above coral or rubble at the foot of steep outer reef slopes, its males larger and more colourful.",
         [["fb-paracheilinus-carpenteri", "Size, Morphology, Biology"]]
       ],
       "marks": [
@@ -303,7 +315,7 @@
         [["fb-pteragogus-enneacanthus", "Biology"]]
       ],
       "marks": [
-        ["Lips not thick (Hemigymnus: very thick)", [["fao-lab", "couplet 22, p. 3385"]]],
+        ["Lips much thinner than in Hemigymnus", [["fao-lab", "couplet 22, p. 3385"]]],
         ["Adults brown to dark red with blotches", [["fao-lab", "couplet 22, p. 3385"]]]
       ]
     },
@@ -316,7 +328,7 @@
     },
     "Macropharyngodon": {
       "plain": [
-        "Small wrasses with a deep, flattened body and a striking pattern of spots or bands.",
+        "Wrasses with a deep, flattened body and a striking pattern of spots or bands.",
         [["fao-lab", "couplet 31, p. 3386"], ["fao-lab07", "Macropharyngodon meleagris, p. 3446"]]
       ],
       "marks": [
@@ -335,7 +347,7 @@
     },
     "Stethojulis": {
       "plain": [
-        "Small wrasses that swim fast in small groups over shallow reefs and reef flats, beating their pectoral fins.",
+        "Wrasses of shallow reefs and reef flats; S. bandanensis swims fast in small groups, beating its pectoral fins.",
         [["fao-lab09", "Stethojulis bandanensis, p. 3459"]]
       ],
       "marks": [
@@ -369,8 +381,7 @@
         [["fao-lab05", "Coris gaimard, p. 3428"]]
       ],
       "marks": [
-        ["Short snout (Hologymnosus: long)", [["fao-lab", "couplet 34, p. 3387"]]],
-        ["Body fairly deep", [["fao-lab", "couplet 35, p. 3387"]]]
+        ["Short snout (Hologymnosus: long)", [["fao-lab", "couplet 34, p. 3387"]]]
       ]
     },
     "Cirrhilabrus": {
@@ -403,6 +414,24 @@
       "plain": [
         "Solitary wrasses of shallow coral reefs and seagrass beds that eat crustaceans, molluscs and sea urchins.",
         [["fao-lab04", "Choerodon anchorago, p. 3418"]]
+      ]
+    },
+    "Cymolutes": {
+      "plain": [
+        "Solitary wrasses, about 20 cm, of sandy reef flats and shallow sandy lagoons, often in tidal channels; they dive into the sand when threatened.",
+        [["fb-cymolutes-torquatus", "Size, Biology"]]
+      ]
+    },
+    "Novaculoides": {
+      "plain": [
+        "Slender wrasses, about 16 cm, usually bright green, hiding well camouflaged in seagrass beds and sandy algal flats of lagoons.",
+        [["fb-novaculoides-macrolepidotus", "Size, Morphology, Biology"]]
+      ]
+    },
+    "Wetmorella": {
+      "plain": [
+        "Tiny, secretive wrasses, about 6 cm, of caves and crevices on lagoon and seaward reefs, mostly found below 30 m.",
+        [["fb-wetmorella-albofasciata", "Size, Biology"]]
       ]
     },
     "Scarus": {
@@ -441,8 +470,7 @@
         [["fb-cetoscarus-ocellatus", "Biology"]]
       ],
       "marks": [
-        ["Separate teeth visible on the beak, not a smooth plate", [["fao-sca", "key to the genera, couplet 3, p. 3469"]]],
-        ["Head evenly rounded, without a hump", [["fao-sca", "key to the genera, couplet 4, p. 3470"]]]
+        ["Separate teeth visible on the beak, not a smooth plate", [["fao-sca", "key to the genera, couplet 3, p. 3469"]]]
       ]
     },
     "Calotomus": {
@@ -560,22 +588,22 @@
     },
     "Pervagor": {
       "plain": [
-        "Secretive filefishes of clear reefs rich in invertebrate growth, usually in pairs.",
+        "Secretive filefishes; P. melanocephalus lives on clear reefs rich in invertebrate growth, usually in pairs.",
         [["fb-pervagor-melanocephalus", "Biology"]]
       ],
       "marks": [
         ["Tail fin rounded", [["fao-mon", "key to the genera, couplet 11, p. 3931"]]],
-        ["Deep tail base (Acreichthys: short and shallow)", [["fao-mon", "key to the genera, couplet 12, p. 3932"]]]
+        ["Deep tail base (Acreichthys: shallower)", [["fao-mon", "key to the genera, couplet 12, p. 3932"]]]
       ]
     },
     "Acreichthys": {
       "plain": [
-        "Small filefishes, about 12 cm, of weed and rubble areas on shallow coral reefs.",
+        "Small filefishes; A. tomentosus, about 12 cm, lives among weed and rubble on shallow coral reefs.",
         [["fao-mon", "Acreichthys tomentosus, p. 3936"]]
       ],
       "marks": [
         ["Tail fin rounded", [["fao-mon", "key to the genera, couplet 11, p. 3931"]]],
-        ["Short, shallow tail base; males with an oblong patch of bristles on it", [["fao-mon", "key to the genera, couplet 12, p. 3932"]]]
+        ["Shallower tail base than Pervagor; males with an oblong patch of bristles on it", [["fao-mon", "key to the genera, couplet 12, p. 3932"]]]
       ]
     },
     "Paramonacanthus": {
@@ -600,21 +628,24 @@
       "marks": [["Very large belly flap", [["fao-mon", "key to the genera, couplet 17, p. 3933"]]]]
     },
     "Cantherhines": {
-      "plain": ["Filefishes, about 20 cm, of shallow rocky and coral reefs.", [["fao-mon", "Cantherhines pardalis, p. 3939"]]],
+      "plain": [
+        "Filefishes of reefs; C. pardalis, about 20 cm, lives on shallow rocky and coral reefs.",
+        [["fao-mon", "Cantherhines pardalis, p. 3939"]]
+      ],
       "marks": [
         ["Second dorsal and anal fins evenly rounded, not raised at the front", [["fao-mon", "key to the genera, couplet 20, p. 3933"]]]
       ]
     },
     "Ostracion": {
       "plain": [
-        "Boxfishes of coral and rocky reefs, down to 50 m, that feed on small animals of the bottom.",
-        [["fao-ost", "Ostracion cubicus, p. 3950"]]
+        "Boxfishes of coral reefs that feed on small animals of the bottom; O. cubicus lives down to 50 m.",
+        [["fao-ost", "Ostracion cubicus, p. 3950"], ["fao-ost", "Ostracion rhinorhynchus, p. 3951"]]
       ],
       "marks": [["No spines on the box", [["fao-ost", "Ostraciidae, key to the genera, couplet 1, p. 3949"]]]]
     },
     "Lactoria": {
       "plain": [
-        "Horned boxfishes of coral and rocky reefs, down to 100 m, that feed on small animals of the bottom.",
+        "Horned boxfishes; L. cornuta lives on coral and rocky reefs down to 100 m and feeds on small animals of the bottom.",
         [["fao-ost", "Lactoria cornuta, p. 3950"], ["fao-ost", "Ostraciidae, key to the genera, couplet 2, p. 3949"]]
       ],
       "marks": [
@@ -624,14 +655,14 @@
     },
     "Canthigaster": {
       "plain": [
-        "Puffers of coral heads and rocks on lagoon and seaward reefs; the males hold territories and are often seen fighting.",
+        "Puffers; C. valentini lives among coral heads and rocks on lagoon and seaward reefs, its males holding territories and often fighting.",
         [["fb-canthigaster-valentini", "Biology"]]
       ],
       "marks": [["A ridge along the back behind the eyes", [["fao-ost", "Tetraodontidae, key to the genera, couplet 1, p. 3955"]]]]
     },
     "Arothron": {
       "plain": [
-        "Puffers of reef crests and slopes rich in invertebrates, often in pairs; A. nigropunctatus nibbles the tips of Acropora corals.",
+        "Puffers; A. nigropunctatus lives on reef crests and slopes rich in invertebrates, often in pairs, and nibbles the tips of Acropora corals.",
         [["fb-arothron-nigropunctatus", "Biology"]]
       ],
       "marks": [
@@ -642,8 +673,7 @@
     "Torquigener": {
       "plain": ["Puffers of deep sandy coastal slopes, usually below 20 m.", [["fb-torquigener-brevipinnis", "Biology"]]],
       "marks": [
-        ["No ridge on the back behind the eyes (Canthigaster: a ridge)", [["fao-ost", "Tetraodontidae, key to the genera, couplet 1, p. 3955"]]],
-        ["A distinct chin", [["fao-ost", "Tetraodontidae, key to the genera, couplet 7, p. 3955"]]]
+        ["No ridge on the back behind the eyes (Canthigaster: a ridge)", [["fao-ost", "Tetraodontidae, key to the genera, couplet 1, p. 3955"]]]
       ]
     },
     "Siganus": {
@@ -654,7 +684,7 @@
     },
     "Platax": {
       "plain": [
-        "Batfishes of sheltered reefs, mangroves and wrecks, alone, in pairs or in large schools, and unafraid of divers; the young have very long fins.",
+        "Batfishes; P. teira lives on sheltered reefs, in mangroves and on wrecks, alone, in pairs or in large schools, and like most spadefishes is unafraid of divers.",
         [["fao-eph", "Platax teira, p. 3619"]]
       ]
     },
@@ -675,7 +705,7 @@
     "Bodianus": "the FAO key (couplets 2, 4, 5) sets it apart by spine, ray and scale counts and the scales of the cheek and fins only: nothing seen on a photo",
     "Choerodon": "the FAO key (couplets 2, 4) sets it apart by spine counts, canine teeth and small cheek scales only: nothing seen on a photo",
     "Cymolutes": "the FAO key (couplet 14) sets it apart by anal spines and scale counts only: nothing seen on a photo",
-    "Novaculoides": "the FAO key (2001) puts its species in Novaculichthys, whose colour there fits N. taeniourus only: no source of its own read",
+    "Novaculoides": "the FAO key (2001) puts its species in Novaculichthys, whose colour there fits N. taeniourus only; FishBase describes its look, not what tells it from the other genera",
     "Wetmorella": "the FAO key (couplet 10) sets it apart by the scales of the cheek and gill cover only: nothing seen on a photo",
     "Pseudobalistes": "the FAO key (couplet 5) sets it apart by a bare patch at the front of the cheek only, hard to see on a photo",
     "Siganus": "the only genus of its family here: the family's IMR cues and ID marks tell it",
