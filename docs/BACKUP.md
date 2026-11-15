@@ -1,7 +1,7 @@
 # Backup of the sheet to pCloud
 
 The sync sheet ("IMR Coral ID – RA progress": accounts, the answer log, reports, events) has one copy, in Pierre's Google
-account. Since sheet vNEXT the sheet script saves a second copy once a week in **Pierre's own pCloud**, server to server:
+account. Since sheet v139 the sheet script saves a second copy once a week in **Pierre's own pCloud**, server to server:
 the data never passes through an agent, GitHub or this repository (Pierre, 2026-11-15: "OK, launch the pCloud backup
 PR"; the professionalise study's question f, [reviews/2026-11-14-professionalise-study.md](reviews/2026-11-14-professionalise-study.md)
 §3.6, with pCloud in place of R2).
