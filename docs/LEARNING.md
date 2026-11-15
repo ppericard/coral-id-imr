@@ -1332,7 +1332,7 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
 
 **The variables, all of the existing model** (`CHOICE.opts[i][1]`):
 
-| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337) | Coral basics first |
+| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337; removed 2026-11-15) | Coral basics first |
 | --- | --- | --- | --- |
 | I'm new to corals | 0 (as before: a new player is a beginner) | 50 (as before, `INTRO.OFFER.AT`) | yes (tour's last button, the card's follow-up) |
 | I had the IMR coral course | 0.5 | 30 | no |
@@ -1348,8 +1348,8 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
   p 0 is 0.08 (beginner), 0.52 (lecture RA), 0.78 (strong RA), 2.0 (expert) (`tools/learnsim.js`, below); "I know
   corals well" covers both a strong RA and an expert, so 1.25 (start 1.0), between them, and a wrong answer must stay
   cheap. 0.3 / 0.8 and 0.8 / 1.875 were tried (table).
-- **`at`** (not read since the offer card went, 2026-11-12, Q337; it stays in `core.js` `CHOICE` until the next change
-  to that file, ROADMAP): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
+- **`at`** (not read since the offer card went, 2026-11-12, Q337; removed from `core.js` `CHOICE` on 2026-11-15, the
+  record below kept): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
   offered it sooner. The offer still needs 10 slate genera met and a global level of 0.5 (`introOffer`), so the answers
   decide; `at` only lets it come earlier. Simulated with the offer accepted (`--openall offer`): opened at answer 30-56
   (lecture RA) and 30-36 (strong RA, expert) instead of 50-58 and 50-51; true knowledge at 300 unchanged (0.76, 0.84-0.85,

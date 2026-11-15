@@ -2,7 +2,6 @@
 // First, the storage keys from before the rename (2026-11-03) move to their new names (core.js migrateKeys): the admin's
 // token, draft and Undo history included. Before anything reads them.
 migrateStorage();
-migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
 migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
 // Edits curation.json: per genus, the cover photo, the featured photos of each view (in order),
 // hidden photos and photos moved to another view. app.js applies it on top of data.json (applyCuration).
