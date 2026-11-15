@@ -961,6 +961,12 @@ def relay(o, src):
             by[u["id"]] = u
     moved = [f"{t['id']} {t['name']}: {t.get('circle')} in fish.json, {by[t['id']].get('circle', 1)} in the layer"
              for t in o["teach"] if t["id"] in by and t.get("circle") != by[t["id"]].get("circle", 1)]
+    # A node fish.json leaves out (every species out: build() keeps such a node only in circle 1) is checked only in
+    # circle 3: in circle 1 the build would keep it, in circle 2 its species no longer all need near (needs_near), and
+    # fish.json does not say which circle it was built in (Codex review #984).
+    kept = {t["id"] for t in o["teach"]}
+    moved += [f"{t['id']} {t['name']}: not in fish.json (every species out), circle {t.get('circle', 1)} in the layer"
+              for t in src["teach"] if t["id"] not in kept and t.get("circle", 1) != 3]
     if moved:
         sys.exit("circles changed in the instance's layer: run the full build (python3 tools/build_fish.py)\n  "
                  + "\n  ".join(moved))

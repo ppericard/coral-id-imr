@@ -97,6 +97,13 @@ test('fish.json byte for byte: the layer laid again offline (cues, look, phase t
   r = regroup(circ);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /circles changed in the instance's layer.*\n.*t28/);
+  // A node fish.json leaves out (every species out) moved below circle 3: the full build might keep it (Codex review #984).
+  assert.ok(!F.teach.some(t => t.id === 't75') && FL.nodes.t75.circle === 3, 't75 Eagle rays: out of fish.json, circle 3');
+  const out = clone(FL);
+  out.nodes.t75.circle = 1;
+  r = regroup(out);
+  assert.notStrictEqual(r.status, 0);
+  assert.match(r.out, /t75 Eagle rays: not in fish\.json \(every species out\), circle 1 in the layer/);
 });
 
 test('fish: a base that still carries a field of the layer, or a layer node the base does not hold, stops the build', () => {
