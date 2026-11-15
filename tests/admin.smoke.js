@@ -505,8 +505,8 @@ const darkCards = (p, sel) =>
           }));
           if (cv.hash !== '#' + other.hash + 'inbox/coverage/games' || JSON.stringify(cv.on) !== JSON.stringify([fa.cov[0]]))
             fails.push(`${w}px Subjects: ${other.id} To do › All's Coverage count ${JSON.stringify({cv, from: fa.cov[0]})}`);
-          // the chip set back, as it was
-          await p.click(`#view [data-fishtodo="${fa.cov[0][0]}"]`);
+          // back to the families' level and no chip, Coverage's default (the level switch clears the chip)
+          await p.click('#view [data-fishlv="fam"]');
           await settle();
         }
       }
