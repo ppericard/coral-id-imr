@@ -458,7 +458,7 @@ const darkCards = (p, sel) =>
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
-      // Its To do (fish admin at parity): the views All, Reports, Errors, Health and Points; Reports and All never show the
+      // Its To do (fish admin at parity): the views All, Reports, Errors, Alerts (every subject's), Health and Points; Reports and All never show the
       // corals' photo sections (core.js SUBJECTS admin todo: they showed on the fish Reports before); All ends with its photo
       // work, counts that open its pages under its prefix, a Coverage count landing on Coverage › Games with that chip
       // pressed and the same count.
@@ -483,7 +483,7 @@ const darkCards = (p, sel) =>
           .catch(() => fails.push(`${w}px Subjects: ${other.id} To do › All, no photo work drawn`));
         const fa = await secs();
         if (
-          fa.views.join() !== ['all', 'reports', 'errors', 'health', 'points'].map(v => 'inbox/todo/' + v).join() ||
+          fa.views.join() !== ['all', 'reports', 'errors', 'alerts', 'health', 'points'].map(v => 'inbox/todo/' + v).join() ||
           fa.h2.some(coralSec) ||
           fa.coral ||
           !fa.h2.includes('Reports and feedback') ||
@@ -4290,7 +4290,9 @@ const darkCards = (p, sel) =>
               .then(() =>
                 q.evaluate(() => ({
                   rows: [...document.querySelectorAll('.adm-alerts tbody tr')].map(tr => tr.cells[1].textContent),
-                  kpis: [...document.querySelectorAll('#view .adm-kpis > div')].map(d => d.innerText.replace(/\s+/g, ' ').trim()),
+                  kpis: [...document.querySelectorAll('#view .adm-kpis > div')].map(
+                    d => d.firstChild.textContent + ' ' + d.lastChild.textContent
+                  ),
                   wide: document.documentElement.scrollWidth > innerWidth + 1
                 }))
               );
