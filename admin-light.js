@@ -16,7 +16,8 @@
 // The pure part (lightOpen, lightAccept, lightKeep, lightDiff, lightCounts, lightSets) runs in Node too:
 // tests/fishlight.test.js.
 (function (root) {
-  const A = typeof module !== 'undefined' && module.exports ? require('./autosort.js') : root;
+  const A = typeof module !== 'undefined' && module.exports ? require('./autosort.js') : root,
+    pid = (typeof module !== 'undefined' && module.exports ? require('./core.js') : root).fishPid;
   // The proposal sets, oldest first: the file the admin reads from the repository (GitHub contents API, as curation.json;
   // judging/ is not on the site), the name a Keep mine records, and the heading of its proposals (the light re-judge's
   // are grouped by light change instead).
@@ -76,9 +77,25 @@
     });
   }
   // Accept: the re-judged tags and ease as his (fishSet each, so an auto-sort log entry gives the fields up: fishOwn).
-  function lightAccept(F, x) {
-    return A.fishSet(A.fishSet(F || {}, x.photo, 'tags', x.rejudged[0]), x.photo, 'ease', x.rejudged[1]);
+  // keep: the node ids whose ★ cover the photo is and that he keeps as their cover although the proposal makes it a
+  // juvenile (lightCovers; Pierre's exception, 2026-11-15: autosort.js fishCoverJ), confirmed in the same Undo step.
+  function lightAccept(F, x, keep) {
+    let N = A.fishSet(A.fishSet(F || {}, x.photo, 'tags', x.rejudged[0]), x.photo, 'ease', x.rejudged[1]);
+    (Array.isArray(keep) ? keep : []).forEach(id => (N = A.fishCoverJOk(N, id))); // not reduce's index
+    return N;
   }
+  // Whether a proposal makes its photo a juvenile (the j flag added: judging/FISH.md "Tags").
+  const lightJ = x => !!x && x.rejudged[0].slice(7).includes('j') && !x.curated[0].slice(7).includes('j');
+  // The nodes (curation.json fish genera ids) whose ★ cover is proposal x's photo, under either of its names (core.js
+  // fishPid), that x would make a juvenile and that he has not confirmed as such yet (autosort.js fishCoverJ): a juvenile
+  // is never a cover unless he confirms it, so Accept asks him first (the view) and the Tree page offers the confirmation.
+  function lightCovers(F, x) {
+    if (!lightJ(x)) return [];
+    const G = (F || {}).genera || {};
+    return Object.keys(G).filter(id => G[id] && G[id].cover && pid(G[id].cover) === pid(x.photo) && !A.fishCoverJ(F, id, x.photo));
+  }
+  // An open proposal in the fish draft F that would make photo f a juvenile (lightJ), or null.
+  const lightJOf = (P, F, f) => lightOpen(P, F).find(x => lightJ(x) && pid(x.photo) === pid(f)) || null;
   // Keep mine: his values stay; the photo is recorded as answered for its set (curation.json fish.kept).
   function lightKeep(F, x, set = (x && x.set) || LIGHT_SET.id) {
     F = F || {};
@@ -120,6 +137,9 @@
     lightRetired,
     lightOpen,
     lightAccept,
+    lightJ,
+    lightCovers,
+    lightJOf,
     lightKeep,
     lightDiff,
     lightCounts
@@ -214,13 +234,34 @@ function renderLight() {
     render();
     window.scrollTo(0, y);
   };
+  // A proposal that makes one of his ★ covers a juvenile (lightCovers): Pierre's question first (admin-covers.js JUV_Q,
+  // 2026-11-15), the cover's node named; yes keeps it as the cover, confirmed in the same Undo step; no accepts the tags
+  // all the same, and the cover is then ignored as any juvenile's (the default applies; the Tree page asks again).
+  const keepOf = (F, x) => {
+    const ids = lightCovers(F, x);
+    if (!ids.length) return [];
+    const nm = id => {
+        for (const u of FISHC.units || []) {
+          const g = u.id === id ? u : (u.genera || []).find(z => z.id === id);
+          if (g) return g.name;
+        }
+        return fuName(id);
+      },
+      names = ids.map(nm).join(', ');
+    return confirm(`${names}: ${JUV_Q}`) ? ids : [];
+  };
   $v.querySelector('[data-lpall]').onclick = () => {
     if (!confirm(`Accept all ${O.length} light proposals into your draft? Undo steps back.`)) return;
-    fx(F => O.reduce(lightAccept, F));
+    const D = DRAFT.fish || {},
+      K = new Map(O.map(x => [x, keepOf(D, x)]));
+    fx(F => O.reduce((N, x) => lightAccept(N, x, K.get(x)), F));
   };
   $v.querySelectorAll('.adm-lprop[data-f]').forEach(tl => {
     const x = O.find(y => y.photo === tl.dataset.f);
-    tl.querySelector('[data-lpa]').onclick = () => fx(F => lightAccept(F, x));
+    tl.querySelector('[data-lpa]').onclick = () => {
+      const keep = keepOf(DRAFT.fish || {}, x);
+      fx(F => lightAccept(F, x, keep));
+    };
     tl.querySelector('[data-lpk]').onclick = () => fx(F => lightKeep(F, x));
     tl.querySelector('[data-lpz]').onclick = () =>
       zoomSet(

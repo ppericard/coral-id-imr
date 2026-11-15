@@ -114,6 +114,10 @@ is the design's shorthand, and internal identifiers may keep it.
   tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null` without one, so the two `single` species
   read as nameless until then).
 - **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
+- **Which name comes first, and later languages**: the 2026-11-15 study
+  ([reviews/2026-11-15-common-name-sources-study.md](reviews/2026-11-15-common-name-sources-study.md)) compares the
+  references (none ranks names by usage), proposes a main-name rule and names as a per-language layer over the
+  taxon-keyed progress (Q362); its questions (a)-(d) wait for Pierre, the rules above stand until then.
 
 ## Typed family names (fish beta QA, 2026-11-06)
 
