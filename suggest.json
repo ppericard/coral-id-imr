@@ -197913,8 +197913,8 @@
    "k": "best"
   },
   "seaslug-50552-cand-174228888": {
-   "jt": "d1g0ss1",
-   "e": 2,
+   "jt": "d1g0ml1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-50552-cand-254609400": {
@@ -199407,7 +199407,8 @@
   "seaslug-696622-cand-712231135": {
    "jt": "d1g0sl1",
    "e": 5,
-   "k": "best"
+   "k": "best",
+   "n": "flash on a plain black field, no surface seen: judged in the water (unlike 778296-cand-596909427, on black fabric)"
   },
   "seaslug-715017-cand-106157556": {
    "jt": "p1g0ml1",
@@ -199706,8 +199707,8 @@
    "k": "best"
   },
   "seaslug-778294-cand-81523386": {
-   "jt": "o1g0ml1",
-   "e": 4,
+   "jt": "o0g0ml1",
+   "e": 2,
    "k": "best"
   },
   "seaslug-778296-cand-10231110": {
@@ -199766,7 +199767,7 @@
    "k": "best"
   },
   "seaslug-778296-cand-445571919": {
-   "jt": "o1g0ml1w",
+   "jt": "o1g0mlsw",
    "e": 4,
    "k": "best"
   },
@@ -200333,8 +200334,8 @@
    "k": "best"
   },
   "seaslug-841162-cand-264439405": {
-   "jt": "o1g0ml1w",
-   "e": 4,
+   "jt": "h1g0ml1w",
+   "e": 2,
    "k": "best"
   },
   "seaslug-841162-cand-290235007": {
