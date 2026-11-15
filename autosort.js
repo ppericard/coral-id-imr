@@ -93,7 +93,10 @@
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
   // The flags after the seven tags: j c a w typed by the judge (w: a visible watermark or text, which only Home skips;
   // Pierre, 2026-11-15, Q373), p (phase) and r (a reference photo, its `rep`) added by the tool.
-  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$/;
+  // The sea slugs' rubric (judging/SEASLUG.md, the fish's code shape; tools/fish_judge.py RUBRICS) adds the view v
+  // (ventral) and the flag f (rhinophores or gills hidden): accepted too, so a sure sea-slug judgement is never set aside
+  // for its code (#987). The fish's rubric never writes either, so the fish are read as before (tests/autosort.test.js).
+  const FISH_TAGS = /^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$/;
   // The doubts that weigh on the photo itself: every unsure field but the fish's box (bb), whose doubt only withholds the
   // photo's tile (tools/fish_game.py unsure, box_of; Codex review #826).
   const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');

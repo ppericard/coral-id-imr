@@ -147,6 +147,34 @@ test('the committed files read through the fish engine: families, scientific gen
   assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...X.c1.map(n => X.gen[n].cm)));
 });
 
+// The fish tools' sure rule (autosort.js fishSure, FISH_TAGS; its copies tools/fetch_fish.py sure_add, tools/fish_game.py
+// TAGS) reads the sea slugs' codes too: their view v and flag f (judging/SEASLUG.md) never set a sure photo aside (#987,
+// the integrator's review). The fish's rubric never writes v or f, so no fish judgement is read differently.
+test('a sure sea-slug code with f or v is kept by the sure rule; the fish judgements never carry either', () => {
+  const {fishSure} = require('../autosort.js');
+  ['d1g0sl1f', 'v1g0sl1', 'p1g0sm1jf', 'o1g0slo'].forEach(jt =>
+    assert.strictEqual((fishSure({jt, e: 3, k: 'best'}) || {}).keep, 'add', jt)
+  );
+  const py2 = body => {
+    const r = spawnSync('python3', ['-c', `import json, sys\nsys.path.insert(0, ${JSON.stringify(TOOLS)})\n${body}`], {encoding: 'utf8'});
+    assert.strictEqual(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout);
+  };
+  assert.deepStrictEqual(
+    py2(`import fetch_fish as a, fish_game as b
+print(json.dumps([[a.sure_add({'jt': x, 'e': 3, 'k': 'best'}), b.cand_sure({'jt': x, 'e': 3, 'k': 'best'})] for x in ['d1g0sl1f', 'v1g0sl1']]))`),
+    [
+      [true, true],
+      [true, true]
+    ]
+  );
+  // Every fish judgement: the fish rubric's views and flags only, so the wider pattern changes no fish decision.
+  const fish = Object.values(json('suggest.json').fish || {}).filter(j => j && j.jt);
+  assert.ok(fish.length > 1000, String(fish.length));
+  const bad = fish.filter(j => j.jt[0] === 'v' || j.jt.slice(7).includes('f')).map(j => j.jt);
+  assert.deepStrictEqual(bad, []);
+});
+
 // The licence refresh and each Publish rewrite seaslug-cand.json and suggest.json: the photos workflow builds the game
 // data again after them and commits it (Codex review #987), so a photo whose licence changed leaves the game too.
 test('the photos workflow builds the sea-slug game data again and commits it', () => {
