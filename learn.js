@@ -1008,8 +1008,23 @@ const spPic = s => {
   const p = spPhoto(s);
   return p ? `<img ${thumb(p, '(max-width: 599.98px) 50vw, 240px')} alt="" loading="lazy">` : noFish();
 };
+// A species' common name as this player sees it first (app.js cnFirst; Pierre, 2026-11-15, Q376 (a)): the IMR name for a
+// player at IMR, the main name (iNaturalist's default) for the others; its own name (fish.json common) for a species out
+// of the game, which has no list; '' for none.
+const spCommon = s => cnFirst(s, imrNow()) || s.common || '';
+// Its listed common names on the species sheet (More details), when it has more than one: the player's first, then the
+// others in their order, the IMR name marked (fish.json cni). Any of them is right when typed (Q376 (b)); the regional
+// names (cnr) are not shown (Q376 (c)).
+const spNamesLine = s => {
+  const L = cnList(s),
+    first = spCommon(s);
+  if (L.length < 2) return '';
+  const tag = (n, i) => esc(n) + (i === s.cni ? ' (IMR)' : '');
+  const order = [...L.map((n, i) => [n, i]).filter(([n]) => n === first), ...L.map((n, i) => [n, i]).filter(([n]) => n !== first)];
+  return `<p class="note refs"><b>Common names:</b> ${order.map(([n, i]) => tag(n, i)).join(' · ')}</p>`;
+};
 const fishTile = s =>
-  `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap"><i>${esc(s.name)}</i>${s.common ? `<span>${esc(s.common)}</span>` : ''}${
+  `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap"><i>${esc(s.name)}</i>${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
     s.now && s.now !== s.name ? `<small>now <i>${esc(s.now)}</i> in WoRMS</small>` : ''
   }${s.cs ? `<small><b class="star">★</b> IMR most sighted #${s.cs}</small>` : ''}</span></a>`;
 // Every species of a list, the "Opened for me" filter first (on by default; Pierre, Q5).
@@ -1028,7 +1043,7 @@ function fishGenusRow(g, flat) {
   if (L.length === 1) {
     const s = L[0],
       p = spPhoto(s);
-    return `<a class="frow" href="${esc(hr('g-s:' + s.name))}"><span class="fstack one">${p ? `<img ${thumb(p, '120px')} alt="" loading="lazy">` : noFish()}</span><span class="ftxt"><i>${esc(s.name)}</i>${s.common ? `<span>${esc(s.common)}</span>` : ''}<small><i>${esc(g.name)}</i>: its only species here${g.imr ? ` · IMR entry: ${esc(g.imr)}` : ''}</small></span><span class="fgo" aria-hidden="true">›</span></a>`;
+    return `<a class="frow" href="${esc(hr('g-s:' + s.name))}"><span class="fstack one">${p ? `<img ${thumb(p, '120px')} alt="" loading="lazy">` : noFish()}</span><span class="ftxt"><i>${esc(s.name)}</i>${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}<small><i>${esc(g.name)}</i>: its only species here${g.imr ? ` · IMR entry: ${esc(g.imr)}` : ''}</small></span><span class="fgo" aria-hidden="true">›</span></a>`;
   }
   // His genus cover leads the stack, then the first photo of its other species.
   const gc = genCover(g),
@@ -1184,7 +1199,8 @@ function fishFamily(f) {
   fishBind(flat, () => fishFamily(f));
 }
 // The short genus page (study §4.2, option B), opened from its row on the family sheet: the genus, its common name under it
-// (its source under More details), its family and its IMR entry name; my progress on it once met (the Scientific names set); the IMR sub-entry's cues; the species WoRMS now puts
+// (its source under More details; a name inferred from its species' names, no reference naming the genus, says so beside
+// it: fish.json genera cinf, Pierre, 2026-11-15, Q376 (d)), its family and its IMR entry name; my progress on it once met (the Scientific names set); the IMR sub-entry's cues; the species WoRMS now puts
 // in another genus; every species, one photo each, most common first, with the "Opened for me" filter; its sibling genera
 // IMR tells apart with its own cues (the data's contrast; the drafted genus marks come with the writing, study §8).
 function fishGenus(g) {
@@ -1203,7 +1219,7 @@ function fishGenus(g) {
   };
   $v.innerHTML = `<p class="lede">One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
+    <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
     ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div></div>` : ''}
     ${fishRoot(g, g.id)}
@@ -1248,7 +1264,7 @@ function fishSpecies(s) {
   const links = `<a href="https://www.inaturalist.org/taxa/${encodeURIComponent(s.inat)}" target="_blank" rel="noopener">iNaturalist</a> · <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&amp;id=${encodeURIComponent(s.ref)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.fishbase.se/summary/${encodeURIComponent(fbName)}.html" target="_blank" rel="noopener">FishBase</a>`;
   $v.innerHTML = `<p class="lede">One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.${isPhone() ? '' : ' ← / → go to the previous / next species.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${s.common ? `<p class="fn-s">${esc(s.common)}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
+    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
     ${fishRoot(g, 's:' + s.name)}
@@ -1270,7 +1286,7 @@ function fishSpecies(s) {
         : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
     }
     ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(fishTile).join('')}</div>` : ''}
-    <details class="more sheetmore"><summary>More details</summary><p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${links}</p></details>
+    <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${links}</p></details>
     <p class="repline">${repBtn({k: 'sheet', g: s.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
   fishBind(flat, () => fishSpecies(s));

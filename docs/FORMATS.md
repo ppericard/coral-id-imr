@@ -112,7 +112,9 @@ grids of small photos work for corals only with colony views of distinctive gene
   more and never a full reference list. Common-name mastery of a species needs all of them: a multiple-choice question shows one listed
   name at a time, rotating, and a typed answer is accepted only if it is a listed name. The proposed selection is the names that recur
   across public sources, at most 3, the most shared first, published as selected and corrected by Pierre in use (2026-11-08, Q313; FISH_PATH "Common names"). The reference name stays the scientific
-  name shown (rule S2).
+  name shown (rule S2). **Changed on 2026-11-15** (Pierre, Q376): the main name (iNaturalist's default English name) is shown
+  first, the IMR name first for a player at IMR; the main name fills the species' one unit and any listed name is accepted and
+  credits it (no rotation); the Australian standard names are accepted when typed, never shown (FISH_PATH "Common names").
 - **No two choices with the same name**: the duplicate "Twospot wrasse" is settled before species questions ship (FISH_PATH).
 - **The held-out photo set** and the **starter families** (section 1).
 
