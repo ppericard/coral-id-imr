@@ -177,9 +177,12 @@ function loadCodeGs(opts = {}) {
     PropertiesService: {
       getScriptProperties: () => ({
         getProperty: k => props[k] ?? null,
+        // A value over 9 kB throws, as Apps Script's (the leaderboard tree's chunks, Code.gs boardTreePut_).
         setProperty: (k, v) => {
+          if (String(v).length > 9000) throw new Error('Exception: Argument too large: value');
           props[k] = v;
         },
+        getKeys: () => Object.keys(props),
         deleteProperty: k => {
           delete props[k];
         }
