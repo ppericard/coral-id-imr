@@ -87,6 +87,7 @@ sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from fetch_fish import PHASE_WORD, PHASES, is_wink  # noqa: E402  (the phase words, as autosort.js FPHW; a wink entry)
 import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
 import fish_short  # noqa: E402  (the file's short form: o and src)
+from fish_inforce import in_force  # noqa: E402  (the circles in force: the content editor's, design note v2 step 3)
 
 OUT_FILE = 'fish-game.json'
 V = 1
@@ -585,7 +586,9 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
             keep[p['f']] = r
         else:
             todo.append((r, c, (o.get('iv', 0) + 1) if o else 0, route))
-    key = tier(fish or {})
+    # The download order under the circles in force (the content editor's moves in curation.json, tools/fish_inforce.py:
+    # read, never written); what is in play stays as fish.json and the curation have it.
+    key = tier(in_force(fish or {}, cur))
     todo.sort(key=lambda x: key(x[0], x[3]))
     wait = max(0, len(todo) - limit) if limit is not None else 0
     tiles = sorted((r for r in keep.values() if r.get('bb') and not ('xc' in r or 'xn' in r)), key=lambda r: (key(r, r.get('auto')), r['f']))

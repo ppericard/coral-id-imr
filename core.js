@@ -219,6 +219,10 @@
       .sort()
       .map(k => JSON.stringify(k) + '=' + valCanon(d[k]))
       .join('\u0000');
+    return hash53(t) + '.' + t.length.toString(36);
+  }
+  // A 53-bit hash of text t (cyrb53), in base 36.
+  function hash53(t) {
     let h1 = 0xdeadbeef,
       h2 = 0x41c6ce57;
     for (let i = 0; i < t.length; i++) {
@@ -228,7 +232,7 @@
     }
     h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
     h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36) + '.' + t.length.toString(36);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
   }
   // What changed from base to now, key by key: null for a key gone, the new text for a key replaced, and for a key whose
   // value is an object on both sides (a subject's progress: one record per unit), {p: the entries changed, d: the ones
@@ -624,6 +628,18 @@
         },
         species: {at: 'species', slots: [{k: 'note', n: 'Note', t: 'text', f: 'enote'}]}
       },
+      // The structure its content editor may change (design note v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A, Q366),
+      // laid over fish.json by core.js structApply before the text slots: circle, the rank whose records carry a circle
+      // (of: the circles; the node slot circle in curation.json, null for in no circle: off the game, as the build leaves a
+      // family no teaching node holds) and pairs, the rank whose look-alikes are declared (the pair key a|b, v 1 or null),
+      // in its rows slot (look: [[other id, words]]). apply: the subject's own records written from the circles and pairs
+      // in force (fishStructure: a family's circle onto its teaching nodes, genera and species, start kept to circle 1).
+      // A change to them replays every player's progress (Q363 h A: structStamp).
+      structure: {
+        circle: {rank: 'family', of: [1, 2, 3]},
+        pairs: {rank: 'family', slot: 'look'},
+        apply: (F, X) => fishStructure(F, X)
+      },
       progress: ['photos'],
       // The fish welcome question (Pierre, 2026-11-04, docs/FISH_PATH.md "The fish welcome question and the IMR answer"):
       // the coral question's twin, the same three answers' variables for now (CHOICE.opts; fish values from learnsim fish
@@ -993,6 +1009,78 @@
             .map(G => G.id);
         ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
       });
+    return out;
+  }
+  // The fish structure in force (SUBJECTS fish structure apply; design note v2 sections 1 and 2, step 3): fish.json F with
+  // the content editor's circles and pairs X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null,
+  // src}]}, each a change from F: core.js structApply) written as the build writes them:
+  // - a family's circle onto the family, its genera, its species (Q214: a species takes its family's circle) and each
+  //   teaching node holding its species (its families' smallest circle in force, as the build's family takes its species'
+  //   best); start kept to the teaching nodes in circle 1;
+  // - in no circle (null): the family and its genera left out, its species out ('family in no circle', with no circle,
+  //   family or genus), as the build leaves a family no teaching node holds, and every look-alike line to it dropped (a
+  //   pair with one side gone is not applied); a teaching node left with no family in a circle, none;
+  // - a pair withdrawn: its line dropped on both sides; one added: a line with no words on both sides (its words: the text
+  //   slot look/<other id>), its source the one the editor gave, else EDITOR_PAIR (lsrc: never the IMR presentation's).
+  // A new object sharing every record it does not change; F itself when X changes nothing.
+  const EDITOR_PAIR = 'Added by the content editor';
+  function fishStructure(F, X) {
+    const C = (X && X.circle) || new Map(),
+      P = (X && X.pairs) || [],
+      fams = F.families || [],
+      base = new Map(fams.map(f => [f.id, f.circle])),
+      now = id => (C.has(id) ? C.get(id) : base.get(id)),
+      moved = new Set([...C.keys()].filter(id => base.has(id) && C.get(id) !== base.get(id))),
+      gone = new Set([...base.keys()].filter(id => now(id) == null));
+    if (!moved.size && !P.length) return F;
+    const out = {...F},
+      rows = f => (Array.isArray(f.look) ? f.look : []),
+      has = (f, o) => rows(f).some(y => Array.isArray(y) && y[0] === o),
+      add = new Map(),
+      drop = new Map(),
+      put = (m, k, v) => m.set(k, [...(m.get(k) || []), v]);
+    P.forEach(x => {
+      if (gone.has(x.a) || gone.has(x.b)) return;
+      if (x.v === 1) put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src]);
+      else put(drop, x.a, x.b), put(drop, x.b, x.a);
+    });
+    out.families = fams
+      .filter(f => !gone.has(f.id))
+      .map(f => {
+        const A = (add.get(f.id) || []).filter(([o]) => !has(f, o)),
+          D = new Set([...(drop.get(f.id) || []), ...gone]),
+          cut = rows(f).some(y => Array.isArray(y) && D.has(y[0]));
+        if (!moved.has(f.id) && !A.length && !cut) return f;
+        const r = {...f};
+        if (moved.has(f.id)) r.circle = now(f.id);
+        if (cut || A.length) r.look = [...rows(f).filter(y => !(Array.isArray(y) && D.has(y[0]))), ...A.map(([o]) => [o, ''])];
+        if (A.length)
+          r.lsrc = {...fishLookSrc({...f, esrc: null}), ...Object.fromEntries(A.map(([o, s]) => [o, s ? s.t : EDITOR_PAIR]))};
+        return r;
+      });
+    if (!moved.size) return out;
+    out.genera = (F.genera || []).filter(g => !gone.has(g.family)).map(g => (moved.has(g.family) ? {...g, circle: now(g.family)} : g));
+    out.species = (F.species || []).map(s => {
+      if (!moved.has(s.family)) return s;
+      if (!gone.has(s.family)) return {...s, circle: now(s.family)};
+      const r = {...s};
+      ['circle', 'family', 'genus', 'cmi'].forEach(k => delete r[k]);
+      return {...r, out: 'family in no circle'};
+    });
+    const famOf = new Map((F.species || []).filter(s => s.family).map(s => [s.id, s.family]));
+    out.teach = (F.teach || []).map(t => {
+      const fs = [...new Set((t.species || []).map(id => famOf.get(id)).filter(Boolean))];
+      if (!fs.some(id => moved.has(id))) return t;
+      const cs = fs.map(now).filter(c => c != null),
+        r = {...t};
+      if (cs.length) r.circle = Math.min(...cs);
+      else delete r.circle;
+      return r;
+    });
+    if (Array.isArray(F.start)) {
+      const tc = new Map(out.teach.map(t => [t.id, t.circle]));
+      out.start = F.start.filter(id => tc.get(id) === 1);
+    }
     return out;
   }
   // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
@@ -1470,6 +1558,8 @@
       taken = new Set();
     const L = Object.entries(isObj(C && C.nodes) ? C.nodes : {})
       .flatMap(([id, m]) => Object.entries(isObj(m) ? m : {}).map(([slot, e]) => ({id, node: renamedId(S, id), slot, e})))
+      // the circle slot is structure (structEntries), never a text slot
+      .filter(x => !(x.slot === CIRCLE_SLOT && S && S.structure && S.structure.circle))
       // the new id's own entries first, so an old id's entry is the one shadowed
       .sort(
         (a, b) =>
@@ -1507,7 +1597,11 @@
   // It reads v and src only (players get the curation without was, t and by: tools/curplay.py). An edited record carries
   // esrc {slot: {t, u}}, the sources given, shown with the slot (Q359 e). The app before the units are made (app.js
   // fishBuild) and the admin, to show what is in force.
-  function contentApply(S, R, cur) {
+  // The structure first (structApply: the circles and pairs, so the words of a pair added land on its line), unless o says
+  // structure: false (the app before the sheet script that replays under it: rule D4, STRUCT_SHEET); the text slots are
+  // then read against it (a pair withdrawn: its words' slot is orphaned, kept and not applied).
+  function contentApply(S, R, cur, o) {
+    if (!(o && o.structure === false)) R = structApply(S, R, cur);
     const Cm = contentOf(cur, S);
     if (!isObj(Cm.nodes) || !Object.keys(Cm.nodes).length) return R; // nothing edited: no node index to build
     const L = contentEntries(S, R, Cm).filter(x => x.state !== 'orphan');
@@ -1534,6 +1628,128 @@
       if (s) r.esrc = {...(r.esrc || {}), [x.slot]: s};
     });
     return out;
+  }
+
+  // ---- The structure: circles and look-alike pairs (design note v2, step 3; Pierre, 2026-11-15, Q359, Q363 h A, Q366) ----
+  // Stored in the same content map (contentOf): a node's circle slot {v: a circle of SUBJECTS structure circle of, or null
+  // for in no circle, was, src, t, by} and pairs {"a|b": {v: 1 or null, was, src, t, by}}, a and b two node ids in
+  // code-point order. Read under the ids as stored (an old id is not read through SUBJECTS renamed: the editor writes the
+  // ids in force), so tools/fish_inforce.py reads them as this does.
+  const CIRCLE_SLOT = 'circle';
+  // Every structure entry of content map C against built file R: {circles: [{id, e, base, state}], pairs: [{key, a, b,
+  // e, base, state}]}, state fresh, stale or absorbed (contentState) when it applies, else orphan with why: node (no node
+  // of that id at the rank: an editor moves or removes a node of the base, never brings one in), value (not a declared
+  // circle or null; a pair's not 1 or null), key (a pair key not two ids in code-point order). base: the record's circle
+  // (null: none), a pair's 1 when either side's rows hold the other, else null. In id or key order.
+  function structEntries(S, R, C) {
+    const D = (S && S.structure) || {},
+      at = rank => (S.content && S.content[rank] ? contentRecs(R, S.content[rank]) : new Map()),
+      st = (e, base, why) => (why ? {state: 'orphan', why} : {state: contentState(e, base)}),
+      out = {circles: [], pairs: []};
+    if (D.circle) {
+      const N = at(D.circle.rank);
+      Object.keys(isObj(C && C.nodes) ? C.nodes : {})
+        .sort()
+        .forEach(id => {
+          const m = C.nodes[id];
+          if (!isObj(m) || !(CIRCLE_SLOT in m)) return;
+          const e = m[CIRCLE_SLOT],
+            n = N.get(id),
+            base = n && n.rec.circle != null ? n.rec.circle : null,
+            why = !n ? 'node' : !isObj(e) || !(e.v === null || D.circle.of.includes(e.v)) ? 'value' : '';
+          out.circles.push({id, e, base, ...st(e, base, why)});
+        });
+    }
+    if (D.pairs) {
+      const N = at(D.pairs.rank),
+        f = D.pairs.slot,
+        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => Array.isArray(y) && y[0] === o);
+      Object.keys(isObj(C && C.pairs) ? C.pairs : {})
+        .sort()
+        .forEach(key => {
+          const e = C.pairs[key],
+            p = key.split('|'),
+            [a, b] = p,
+            x = N.get(a),
+            y = N.get(b),
+            base = x && y && (has(x.rec, b) || has(y.rec, a)) ? 1 : null,
+            why =
+              p.length !== 2 || !a || !b || !(a < b)
+                ? 'key'
+                : !x || !y
+                  ? 'node'
+                  : !isObj(e) || !(e.v === 1 || e.v === null)
+                    ? 'value'
+                    : '';
+          out.pairs.push({key, a, b, e, base, ...st(e, base, why)});
+        });
+    }
+    return out;
+  }
+  // Whether content map Cm holds any structure entry (a circle slot, a pair).
+  const structHas = Cm =>
+    Object.values(isObj(Cm && Cm.nodes) ? Cm.nodes : {}).some(m => isObj(m) && CIRCLE_SLOT in m) ||
+    (isObj(Cm && Cm.pairs) && Object.keys(Cm.pairs).length > 0);
+  // Built file R with the structure in force (Q359 c: the editor's value, a stale one included, until he answers it): the
+  // entries that apply and change the base, handed to the subject's own SUBJECTS structure apply ({circle: Map id → v,
+  // pairs: [{a, b, v, src}]}); R itself when none does or the subject declares no structure.
+  function structApply(S, R, cur) {
+    const D = S && S.structure;
+    if (!D || typeof D.apply !== 'function') return R;
+    const Cm = contentOf(cur, S);
+    if (!structHas(Cm)) return R;
+    const E = structEntries(S, R, Cm),
+      live = x => x.state !== 'orphan' && x.e.v !== x.base,
+      circle = new Map(E.circles.filter(live).map(x => [x.id, x.e.v])),
+      pairs = E.pairs.filter(live).map(x => {
+        const s = contentSrc(x.e.src);
+        return {a: x.a, b: x.b, v: x.e.v, ...(s ? {src: s} : {})};
+      });
+    return circle.size || pairs.length ? D.apply(R, {circle, pairs}) : R;
+  }
+  // The structure of built file R in a canonical text: every node of the circle rank with its circle (null: none), every
+  // pair of the pair rank (either side's rows; a|b in code-point order), sorted.
+  function structCanon(S, R) {
+    const D = (S && S.structure) || {},
+      c = [],
+      p = new Set();
+    if (D.circle)
+      contentRecs(R, S.content[D.circle.rank]).forEach((x, id) => c.push([id, x.rec.circle != null ? x.rec.circle : null]));
+    if (D.pairs)
+      contentRecs(R, S.content[D.pairs.rank]).forEach((x, id) =>
+        (Array.isArray(x.rec[D.pairs.slot]) ? x.rec[D.pairs.slot] : []).forEach(y => {
+          const o = Array.isArray(y) ? String(y[0]) : '';
+          if (o && o !== id) p.add(id < o ? id + '|' + o : o + '|' + id);
+        })
+      );
+    c.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+    return JSON.stringify({c, p: [...p].sort()});
+  }
+  // The structure stamp (Q366; the design note's section 6, [format]): '' while the structure in force is the base's (no
+  // structure edit, or none that changes anything: nothing to replay, so a device or a saved copy that never held one
+  // agrees), else a short hash of the canonical structure in force (structCanon). Computed the same way by the app (its
+  // players' copy of the curation), the admin and the sheet (curation.json on main); never stored in curation.json. When
+  // the stamp a player's progress was replayed with differs from the sheet's, the sheet replays their log (Q363 h A).
+  function structStamp(S, R, cur) {
+    const A = structApply(S, R, cur);
+    if (A === R) return '';
+    const a = structCanon(S, A);
+    return a === structCanon(S, R) ? '' : hash53(a);
+  }
+  // The structure entries as stored, hashed ('' for none): the sheet's cache key for its replay units (Code.gs subjSt_),
+  // so it reads fish.json again only when they change; never the stamp itself (a base rebuilt can change the stamp).
+  function structFp(S, cur) {
+    if (!(S && S.structure)) return '';
+    const Cm = contentOf(cur, S),
+      v = e => (isObj(e) ? (e.v === undefined ? '~' : e.v) : '~'),
+      c = Object.keys(isObj(Cm.nodes) ? Cm.nodes : {})
+        .sort()
+        .filter(id => isObj(Cm.nodes[id]) && CIRCLE_SLOT in Cm.nodes[id])
+        .map(id => [id, v(Cm.nodes[id][CIRCLE_SLOT])]),
+      p = Object.keys(isObj(Cm.pairs) ? Cm.pairs : {})
+        .sort()
+        .map(k => [k, v(Cm.pairs[k])]);
+    return c.length || p.length ? hash53(JSON.stringify({c, p})) : '';
   }
   // The content map as published (admin.js output, fishOut): node ids, slots and pair keys sorted, each entry's keys in the
   // format's order (v, was, src, t, by, then any other), empty maps left out; {} when nothing is left. The draft keeps its
@@ -1885,8 +2101,9 @@
       // The rules version the progress was replayed with (sync.js RVK): the merged record is no replay of the two logs
       // together, so it has none, and every device of the account asks for the replay of both histories in time order
       // (the sheet relabels the answers; Codex review #399: the merged model of 20 older right answers and 10 newer misses
-      // kept pg 0.96 for good).
+      // kept pg 0.96 for good). Nor the structure stamp it was replayed with (sync.js stKey), for the same reason.
       delete out[subjKey(S.id, 'rv')];
+      delete out[subjKey(S.id, 'st')];
     });
     // The one-time notices told on either account (TOLD): told once, never shown again for the merge.
     const ta = J(A, TOLD.KEY),
@@ -4671,6 +4888,12 @@
   // (rule D4); before,
   // that subject does exactly what it did (no rules version, the plain merge).
   const REPLAYS_SHEET = 112;
+  // The sync script version that replays a subject's progress under the content editor's structure (Code.gs vNEXT:
+  // subjGen_ applies curation.json's circles and pairs, replays_ replays when the structure stamp a device applied is not
+  // its own; Pierre, 2026-11-15, Q363 h A). The app lays the structure over its units, sends its stamps and adopts a
+  // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
+  // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
+  const STRUCT_SHEET = 145;
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -5843,6 +6066,7 @@
     SCORE_SHEET,
     LOG_SHEET,
     REPLAYS_SHEET,
+    STRUCT_SHEET,
     WINK_SHEET,
     logOk,
     PA_SHEET,
@@ -6043,6 +6267,15 @@
     contentSrc,
     contentEntries,
     contentApply,
+    CIRCLE_SLOT,
+    structEntries,
+    structApply,
+    structCanon,
+    structStamp,
+    structFp,
+    fishStructure,
+    EDITOR_PAIR,
+    hash53,
     contentOut,
     contentSet,
     contentDrop,
