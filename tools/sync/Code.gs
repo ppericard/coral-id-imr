@@ -296,6 +296,7 @@ function doPost_(e){
   if (Array.isArray(p.events)) return json_(events_(p));  // v19: error reports and one-tap answers (see events_)
   if (p.analysesPut || p.analysesGet) return json_(analyses_(p));  // admin (v35): the Analyses report, see analyses_
   if (p.readEvents) return json_(readEvents_(p.token, p.pages));  // admin: POST {readEvents: 1, token}; v30 pages: 1 for the Pages tab
+  if (p.readAlerts) return json_(readAlerts_(p.token));  // admin (vNEXT): POST {readAlerts: 1, token}, the Alerts tab (see readAlerts_)
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
     if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // v130: timed (timEnd_)
@@ -1765,6 +1766,22 @@ function readEvents_(token, pages){
   const out = {ok: true, rows: all.filter(x => !(pages && arch.has(x[4]))).reverse()};
   if (pages) out.arch = all.filter(x => arch.has(x[4])).reverse();
   return out;
+}
+// POST {readAlerts: 1, token} (vNEXT; ROADMAP "Security follow-ups", Pierre 2026-11-01: show the Alerts tab in the admin)
+// → {ok, rows: [[time ms, event]]}, newest first, the last 3000, as readEvents. Admins only (isAdmin_). The tab's writers:
+// over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id).
+// One over_ key names a player, the per-name answer cap ("n:<name>"): served as the name's admin id (aid_, the id admin
+// Players shows beside the name), so the page shows no name; a deleted account's "~deleted <id>" (redact_) stays as it is.
+// The tab itself is never changed here.
+function readAlerts_(token){
+  if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Alerts');
+  if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
+  const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_();
+  const hide = s => s.replace(/^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/, (m, a, name, b) => /^~/.test(name) ? m : a + aid_(name, salt) + ' ' + b);
+  const rows = sh.getRange(from, 1, n - from + 2, 2).getValues().filter(x => String(x[1]))
+    .map(x => [new Date(x[0]).getTime() || 0, hide(String(x[1]))]);
+  return {ok: true, rows: rows.reverse()};
 }
 
 // Progress % of a saved progress over a list of genera: core.js pctOf itself (v87; a copy until v86: the coherence

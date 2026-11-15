@@ -4271,6 +4271,50 @@ const darkCards = (p, sel) =>
         if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
           fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
 
+        // To do › Alerts (the sheet's Alerts tab, Code.gs readAlerts_ from admin.js ALERTS_SHEET; ROADMAP "Security
+        // follow-ups"): on the demo's default script (older), the version it waits for and no line (rule D4); from
+        // ALERTS_SHEET, the demo's lines of the last 30 days, newest first, counted by kind, the older one left out; the same
+        // page on the fish side (every subject's).
+        {
+          const AV = await p.evaluate(() => ALERTS_SHEET);
+          await go('inbox/todo/alerts');
+          const a0 = await text();
+          if (!a0.includes(`v${AV} not running yet`) || /limit reached/.test(a0))
+            fails.push(`${w}px Alerts before v${AV}: ${JSON.stringify(a0.slice(0, 160))}`);
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px Alerts page error: ${e.message}`));
+          const seen = () =>
+            q
+              .waitForSelector('.adm-alerts tbody tr', {timeout: 20000})
+              .catch(() => {})
+              .then(() =>
+                q.evaluate(() => ({
+                  rows: [...document.querySelectorAll('.adm-alerts tbody tr')].map(tr => tr.cells[1].textContent),
+                  kpis: [...document.querySelectorAll('#view .adm-kpis > div')].map(d => d.innerText.replace(/\s+/g, ' ').trim()),
+                  wide: document.documentElement.scrollWidth > innerWidth + 1
+                }))
+              );
+          const want = [
+            'limit reached: a:demoanon07 (600 per 6 h)',
+            'limit reached: n:Dm0Ab3Xy (3000 per 6 h)',
+            'photos not of the unit shown: Dm9Zq2Lk (4 of 10 answers)',
+            'limit reached: newacct (40 per 6 h)',
+            'left out of the statistics: device Dm1Wc8Rt signed in as Dm0Ab3Xy, left out too'
+          ];
+          await q.goto(base + `admin.html?demo&v=${AV}#inbox/todo/alerts`);
+          let a1 = await seen();
+          if (
+            JSON.stringify(a1.rows) !== JSON.stringify(want) ||
+            JSON.stringify(a1.kpis) !== JSON.stringify(['3 Limits reached', '1 Photos of another unit', '1 Left out, signed in']) ||
+            a1.wide
+          )
+            fails.push(`${w}px Alerts from v${AV}: ${JSON.stringify(a1)}`);
+          await q.evaluate(() => (location.hash = '#fish/inbox/todo/alerts'));
+          await q.waitForFunction(() => location.hash === '#fish/inbox/todo/alerts', null, {timeout: 5000}).catch(() => {});
+          a1 = await seen();
+          if (JSON.stringify(a1.rows) !== JSON.stringify(want)) fails.push(`${w}px fish Alerts from v${AV}: ${JSON.stringify(a1)}`);
+          await q.close();
+        }
         // To do › Reports lists the demo reports; Activity shows the demo players' answers.
         // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
         await go('inbox/todo/errors');

@@ -838,6 +838,48 @@ test('floods are capped: per anonymous id, and the first refusal goes to the Ale
   assert.strictEqual(s.post({anon: 'someoneelse', anonAnswers: many(5)}).ok, true, 'other players are not blocked');
 });
 
+// readAlerts (vNEXT; ROADMAP "Security follow-ups", Pierre 2026-11-01): the admin's To do › Alerts reads the Alerts tab,
+// admin token only, newest first, the last 3000 lines, as readEvents; a capped name is served as its admin id, never the
+// name, and the tab itself is never changed by the read.
+test('readAlerts: admin only, newest first, the last 3000, a capped name served as its admin id', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000',
+    run = c => require('vm').runInContext(c, s.ctx),
+    add = (t, x) => s.sheets.Alerts.appendRow([new Date(t), x]);
+  assert.strictEqual(s.post({readAlerts: 1}).error, 'token');
+  assert.strictEqual(s.post({readAlerts: 1, token: 'ghp_read0000000000000000000'}).error, 'token', 'a read-only token is refused');
+  assert.deepStrictEqual(s.post({readAlerts: 1, token: T}), {ok: true, rows: [], v: SV}, 'no Alerts tab yet: no line');
+  // A flood writes its line (over_), then lines as the other writers and redact_ leave them.
+  const many = n => Array.from({length: n}, (_, i) => ans('al' + n + 'x' + i));
+  for (let i = 0; i < 6; i++) s.post({anon: 'flooder002', anonAnswers: many(100 + i)});
+  assert.strictEqual(s.post({anon: 'flooder002', anonAnswers: many(10)}).error, 'busy');
+  const t0 = Date.now() + 1000;
+  add(t0, 'limit reached: n:ana demo (3000 per 6 h)');
+  add(t0 + 1000, 'limit reached: n:~deleted Ab12Cd34 (3000 per 6 h)');
+  add(t0 + 2000, 'photos not of the unit shown: Zz99Yy88 (3 of 10 answers)');
+  const before = JSON.stringify(s.sheets.Alerts.rows),
+    r = s.post({readAlerts: 1, token: T});
+  assert.strictEqual(JSON.stringify(s.sheets.Alerts.rows), before, 'the read changes nothing in the tab');
+  assert.strictEqual(r.ok, true);
+  assert.deepStrictEqual(
+    r.rows.map(x => x[1]),
+    [
+      'photos not of the unit shown: Zz99Yy88 (3 of 10 answers)',
+      'limit reached: n:~deleted Ab12Cd34 (3000 per 6 h)',
+      `limit reached: n:${run("aid_('Ana Demo')")} (3000 per 6 h)`,
+      'limit reached: a:flooder002 (600 per 6 h)'
+    ],
+    'newest first; the name as the id admin Players shows (aid_ is case-blind); a deleted account kept as redact_ left it'
+  );
+  assert.ok(!/ana demo/i.test(JSON.stringify(r)), 'no name in the reply');
+  assert.strictEqual(r.rows[0][0], t0 + 2000, 'the time in ms');
+  // The window: the last 3000 lines, as readEvents.
+  for (let i = 0; i < 3000; i++) add(t0 + 3000 + i, 'limit reached: anon (6000 per 6 h)');
+  const w = s.post({readAlerts: 1, token: T}).rows;
+  assert.strictEqual(w.length, 3000);
+  assert.strictEqual(w[2999][0], t0 + 3000, 'the oldest lines fall out of the window');
+});
+
 test('new accounts are capped per 6 hours', () => {
   const s = loadCodeGs();
   for (let i = 0; i < 40; i++) assert.strictEqual(s.post({name: 'P' + i, pin: '1234', data: prog(1), summary: {}}).ok, true);
@@ -2624,6 +2666,9 @@ test('v58 (Codex review #603): archiving moves the name mentions in the log tabs
   s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK});
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')) && /\(Ben-old\)/.test(tabText(s, 'Events')), 'Events names the archive');
   assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/);
+  // The admin's To do › Alerts (readAlerts, vNEXT) shows the archive by its admin id, never its name.
+  const al = s.post({readAlerts: 1, token: TOK}).rows.map(r => r[1]);
+  assert.deepStrictEqual(al, [`limit reached: n:${require('vm').runInContext("aid_('Ben-old')", s.ctx)} (3000 per 6 h)`]);
   s.post({userDelete: 'Ben-old', answers: true, token: TOK});
   ['Events', 'Alerts'].forEach(t => assert.ok(!/\bben\b/i.test(tabText(s, t)), `no "Ben" left in ${t}`));
 });
