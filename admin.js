@@ -4810,7 +4810,7 @@ function loadEvents(force) {
 // 6-hour window), answers with photos of another unit (photoCheck_) and a device left out of the statistics that signed
 // in. Rows [time ms, text], newest first, the last 3000, a name served as its admin id (Code.gs readAlerts_). Admin token
 // only; from sheet ALERTS_SHEET (rule D4): an older script answers 'input', and the page says which version it waits for.
-const ALERTS_SHEET = 149;
+const ALERTS_SHEET = 150;
 const alertsOn = j => !!j && Number(j.v) >= ALERTS_SHEET;
 let ALS = null,
   alsAt = 0;
