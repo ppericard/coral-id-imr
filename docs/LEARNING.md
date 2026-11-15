@@ -3849,6 +3849,10 @@ list for Pierre's options). Each arm is a variant of this branch, held in a scra
     Advanced. This changes Pierre's threshold of 2026-11-03.
   - **(5) families first**: no species opens while a family in play is still below Advanced. This is Q208 A's rule for
     the genera, raised to the families' Advanced.
+- Added before counting it, after the readings showed the species met by 600 at about 4 answers each and almost none at
+  Open Water:
+  - **(6) next after Open Water**: a family's next species opens only once each of its species met is at Open Water
+    (`LV_AT[0]`), an existing level, so "one at a time" waits for the previous one to be known a little.
 
 How they are run and read:
 - **World**: the app world only, fish, the default profiles, 5 seeds, 600 questions. Every arm is run locally through the
