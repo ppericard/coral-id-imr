@@ -23,9 +23,10 @@ species); corals later (few photos per genus, so holding some out costs practice
     players. Its "never seen" would then hold for one player only. It also cannot become the Trainer's set.
   - The per-player guarantee still holds in a fixed set. A probe only ever shows a held-out photo that the player was
     never shown (below).
-- **Never Pierre's ★ covers.** `curation.json` `fish.genera` holds 28 ★ covers today (27 of them in play). His
-  "featured" picks for fish: none exist today (`fish.genera` holds `cover` only). If some are added later, they are
-  excluded the same way.
+- **Never Pierre's ★ covers or featured picks.** `curation.json` `fish.genera` holds 28 ★ covers today (27 found in
+  play by file name; step 2 matches them by photo id, as `tools/fish_game.py` `wink_trim` does). His featured picks
+  (`fish.genera` `feat`, at any rank, which `wink_trim` also keeps): none exist today. Any added later are excluded
+  the same way, and a photo he picks after it was held out leaves the set.
 - **A whole observation is held out or not** (rule P4; photo exposure, rule L3: a fish observation counts as seen
   whatever photo of it was shown). 23,337 observations carry the 24,323 photos in play.
 
@@ -79,14 +80,14 @@ floor when needed. The species inherit theirs from the genus draw. **Question (a
 | Butterflyfishes (starter) | 1,182 | 110 | 1,072 | 9% |
 | Surgeonfishes (starter) | 1,122 | 99 | 1,023 | 9% |
 | Angelfishes (starter) | 498 | 49 | 449 | 10% |
-| Emperors (median family) | 297 | 28 | 269 | 9% |
+| Garden Eels (the median family) | 171 | 15 | 156 | 9% |
 | Bigeyes | 64 | 6 | 58 | 9% |
 | Moorish Idol | 41 | 5 | 36 | 12% |
 | Sweepers | 30 | 5 | 25 | 17% |
 | Stargazers (smallest) | 27 | 5 | 22 | 19% |
 
 With a floor of 8 instead of 5, the set is 2,608 observations (12.7% of the eligible) and the smallest families lose
-up to 25%. With no floor, it is 2,074 observations (10.1%), but 121 genera would hold fewer than 5, so no clean exam.
+up to a quarter of their eligible observations (the cap). With no floor, it is 2,074 observations (10.1%), but 121 genera would hold fewer than 5, so no clean exam.
 
 ### How they are chosen: one systematic sample per unit
 
@@ -97,9 +98,10 @@ keys. That gives each species its share of the genus's set, and within the genus
 its share.
 
 - **Where the stratification holds.** It cannot hold inside one species: 3 photos cannot cover 3 ease bands × 3 phases
-  × 3 views. It holds at the genus and family level, and for the whole set. Step 2 (section 5) tests it: each family with 50 or
-  more held out is within 3 points of its eligible pool on each ease band, phase and view, and the whole set is within
-  1 point.
+  × 3 views. It holds at the genus and family level, and for the whole set. The first sort keys (species, ease band)
+  are held tightly; the later ones (phase, view) only roughly. Step 2 (section 5) tests the whole set: within 1 point of
+  the eligible pool on each ease band, phase and view. Per family with 50 or more held out, 3 points on the ease bands
+  is a target: the PR reports each family's shares, and a miss is shown, not a failed test.
 - **The judged ease** is the curated one where Pierre set it (`fish.ease`), else the pass's, the same `e` the game
   reads.
 - **No source, licence or observer** enters the choice (rule P1: fish have no source priority).
@@ -148,8 +150,8 @@ and traps. It is unannounced, like the exam questions (rule L9), and its answer 
 
 The mastery exam (rule L9; `model.js` `examSet`) takes its photo from the unit's held-out photos the player has never
 been shown: the hardest of them, as today. When none is left (small units, or exams failed and retaken), it falls back
-to today's rule: practice photos never shown, then never answered right, then the least seen. Logged `|x|h` when the
-photo is held out.
+to today's rule: practice photos never shown, then never answered right, then the least seen. Logged with `|h` as well
+as `|x` when the photo is held out (`…|h|x`: `|h` sits before `|kN`, `|t` and `|x`, section 3).
 
 - Today's exam already prefers photos never shown in a quiz. But "never shown" there means never in a quiz question.
   The same photo may have been seen on a fish sheet, Home, a card, Memory or among Find the X's four photos. A held-out
@@ -185,10 +187,27 @@ never-seen photos. The bar is the share of a unit's photos the player would name
 directly: observed success on typed probes against the bar at that moment, per player, by bar band.
 
 **How much data.** A rough calculation, labelled as one (rule W11). Assume one probe's outcome (right 1, wrong 0) has a
-standard deviation of about 0.4 (success near 80%), and players differ in their true gap by about 5 points. Then detecting a 5-point gap
-one-sided at 5% with about 80% power needs about 20 players with 30 probes each. A 10-point gap needs about 6. At π =
-0.1, 30 probes take a player about 300 fish answers. **Stop rule for the primary test** (declared now): it runs once
-20 players each have 20 probes or more. Before that, the table is shown with its counts and read as descriptive only.
+standard deviation of about 0.4 (success near 80%), and players differ in their true gap by about 5 points. A
+one-sided test at 5% then has:
+
+| Players × probes each | Power for a 5-point gap | Power for a 10-point gap |
+| --- | --- | --- |
+| 20 × 20 | about 70% | about 99% |
+| 20 × 30 | about 80% | about 99% |
+| 6 × 20 | about 33% | about 78% |
+
+At π = 0.1, 20 probes take a player about 200 fish answers on the families that give probes.
+
+**Stop rule for the primary test** (declared now): it runs once 20 players each have 20 probes or more. Before that,
+the table is shown with its counts and read as descriptive only.
+
+**What the player base allows.** On 2026-11-09 nine accounts had fish answers in the log, two of them above 300
+(LEARNING.md "The log, the only reference for progress"). This note read no newer data. At that size, a few players
+with 20 probes each, only a gap of about 10 points or more could show. A 5-point gap waits for about twenty regular
+fish players. A probe costs no learning: it is an ordinary question on a photo the player has never seen, with its
+answer shown. So the real limit on π is the size of the set, which is why it bears on question (a). At π = 0.2, the
+large families still last a long time (Damselfishes: 208 held out, about 1,000 Damselfish answers per player), and the
+data comes twice as fast.
 
 ## 3. Where the set lives, and what changes
 
@@ -203,6 +222,19 @@ one-sided at 5% with about 80% power needs about 20 players with 30 probes each.
 - The other option, a flag `ho: 1` on records in `fish-game.json`, keeps one file. But every reader must filter it,
   and an old app copy shows the held-out photos in practice until it updates. **Question (e)** (a stored format other
   code will follow: costly to undo, AGENTS.md "Working mode").
+- **Who reads `fish-game.json` today** (grep at 1908b33d), and what each option costs:
+  - *Readers that show photos* (option B must filter each one): the app through `core.js` `fishPhotos` (the games,
+    the cards, the sheets, Find the X, Memory), `tools/fish_game.py` `first_photos` (Home's first photos in
+    `fish-photos.json`), `tools/ratedworld.js` (the rated world's pools), the admin's fish pages (`admin.js`
+    `withGame`, `admin-fish.js`).
+  - *Readers that look a logged photo up by its name* (its species, ease, phase, tags; option A must read
+    `fish-held.json` too, or a held-out photo in the log reads as unknown): the sheet's photo pools (`core.js`
+    `SUBJECTS` fish `pool` files, which the sheet runs from its embedded copy), What makes a photo hard (`analysis.js` `photoMetaFish`, through
+    `admin-analyses.js` and `tools/analyses.js`), the app's species shown after the answer (`app.js`, the photo's
+    taxon), the studies' scripts (`tools/studies/`). The Photo answered column (Find the X) never holds a held-out
+    photo.
+  - So A costs about five lookup readers a second file; B costs every reader that shows photos a filter, now and in
+    every future game.
 
 ### `core.js`
 
@@ -219,15 +251,21 @@ one-sided at 5% with about 80% power needs about 20 players with 30 probes each.
 
 - The probe draw (`photoSet` on the held-out list, with the reserve filter) and `examSet` taking the held-out photos
   first.
-- `quiz.js` logs `|h` **before** `|kN`. The sheet's `guess_` reads `|kN` only at the end of the mode
-  (`/\|k(\d)$/`), as for `|d` and `|c`. Placed there, an older sheet script rates a probe exactly as today. No
-  version gate is needed (rule D4), and a test checks `guess_` on a mode with `|h`.
+- `quiz.js` logs `|h` right after `|c`, so **before** `|kN`, `|t` and `|x`. The sheet's `guess_` reads `|kN` only
+  at the end of the mode (`/\|k(\d)$/`), which is why `|d` and `|c` sit before it. Placed there, an older sheet script
+  rates a probe exactly as today. No version gate is needed (rule D4), and a test checks `guess_` on a mode with `|h`.
 
 ### The sheet
 
-- **No `Code.gs` change** in steps 1-3. The Mode column stores `|h` as text. The photo ratings (`stats_`, the fish's
-  Stats Fish snapshot) rate held-out photos from probe and exam answers like any photo. The replay replays a probe as
-  any answer.
+- **What changes in `Code.gs`, step by step** (section 5). `Code.gs` embeds a copy of `core.js` (`CORE_`, copied by
+  `tools/sync_core.py`). So every step that changes `core.js` changes `Code.gs` too: one `tools/sync/changes/` file,
+  and `VERSION` assigned at merge (rule D3).
+  - Step 2: the embedded copy (`fishPhotos`, `fishGen`). With option (e) A, the fish `SUBJECTS` `pool` files (in
+    `core.js`, so in the copy) also list `fish-held.json`, so the sheet knows a held-out photo by name.
+  - Steps 3 and 4: the embedded copy (`heldOf`). Nothing in the sheet's own functions.
+  - The Mode column stores `|h` as text. The photo ratings (`stats_`, the fish's Stats Fish snapshot) rate held-out
+    photos from probe and exam answers like any photo. The replay replays a probe as any answer.
+  - The app needs no gate on the sheet's version (rule D4): an older script reads a probe's row as today's (below).
 - **The exams and the replay.** The replay does not decide the exam: a passed exam (`s.mx`) and an exam in course
   (`s.ex`) come from the saved copy (`core.js` `replayedOf`). The replay takes a learned mark away, or ends an exam in
   course, when the log shows a later miss on the unit (`lx`, `lm`). An exam answer (`|x`) moves the bar and the
@@ -266,11 +304,23 @@ Integrator's call.
 | --- | --- | --- | --- |
 | 2. Withhold the set | **1**: one subject, the practice pools 10% smaller with the same mix, the draw's rules unchanged | the app world, fish profiles × 5 seeds × 300 questions, before and after on the same seeds; `tools/fish_draw_sim.js --photos` on the practice pool (share under ease 4 by stage) | a replay cannot judge a pool change (a different draw). Measured instead: the share of logged fish answers whose photo is held out, and each unit's practice pool after |
 | 3. Probes | **2**: a share of all fish questions drawn from another pool | both worlds: the app world as level 1; the rated world 10 seeds per profile, 3,000 answers (its planner runs `model.js` `photoSet`, so the probe is the app's own) | read-only replay of the `\|h` rows once logged: next-answer log-loss and calibration, probes against the rest, by level band and format |
-| 4. Exam from held-out | **1**: the exam only, a rare situation | the app world, 600 questions (the exam is reached), fish profiles × 5 seeds | the exam's pass rate before and after, per player, descriptive |
+| 4. Exam from held-out | **1**: the exam only, a rare situation | the app world, 600 questions, fish profiles × 5 seeds | the exam's pass rate before and after, per player, descriptive |
 | 5. The analyses | read-only | the analysis run on simulated logs (below) | the declared plan, its stop rule |
 
-The steps are numbered as in section 5. **Declared for steps 2-4:** primary none (no effect intended). Every guardrail of LEARNING.md's table is held under its
-margin, read as non-inferiority (the one-sided 90% bound). The ones most at risk:
+The steps are numbered as in section 5. **Declared for steps 2-4** (each PR declares it again before running, rule
+L11). None of them is meant to move learning, so each primary is named with "none expected", as LEARNING.md's leak fix
+of 2026-11-08 did (`know@300:up`, none expected), and read with the guardrails as non-inferiority:
+
+| Step | Primary (`tools/learncmp.js`) | World and checkpoint | Looks |
+| --- | --- | --- | --- |
+| 2 | `know@300:up`, none expected | the app world, fish, 300 questions | one look at 5 seeds; unclear goes to level 2 |
+| 3 | `score@3000:up`, none expected | the rated world, fish, 3,000 answers (the app world beside it at 300 questions) | two looks, 10 then 20 seeds: each bound read at 95%, the primary at 0.025 |
+| 4 | `know@600:up`, none expected | the app world, fish, 600 questions | one look at 5 seeds |
+
+Step 4's 600 questions is a guess that the strong profiles reach the exam there. The run reports the exams started,
+and the horizon goes up if too few start.
+
+Every guardrail of LEARNING.md's table must hold under its margin (the one-sided 90% bound). The ones most at risk:
 - the share under ease 4 before Open Water (+0.05), from probes drawn from a pool with fewer very easy photos;
 - true knowledge (−0.02);
 - answers to the first unit at Open Water (+20% or +10);
@@ -314,7 +364,8 @@ photo is one players never practise on.
 - **C**: 5 per unit, flat: an honest exam only, no transfer check on most units.
 
 *Recommendation: A.* The large families, where most answers are, keep about 90% of their photos and give enough probes
-for a result within a few hundred answers per player.
+for a result within a few hundred answers per player. With today's few fish players, only a large gap (about 10
+points) could show for some time (section 2, "How much data"). A smaller set would push even that further away.
 
 **(b) Two kinds of photos never held out, from rule P1.**
 - **A**: neither the reference photos (`rep`, about 2,100) nor Pierre's own photos (752).
@@ -346,8 +397,9 @@ before-and-after for each player, but it is a new screen, and for a beginner a s
   future reader can show it.
 - **B**: a flag on the records in `fish-game.json`, which every reader must filter.
 
-*Recommendation: A.* A held-out photo shown once is spoiled for that player for good. A is the only way that
-guarantees it.
+*Recommendation: A.* A held-out photo shown once is spoiled for that player for good, and A is the only way that
+guarantees it. Its cost is about five readers that look a logged photo up by name and must read the second file
+(section 3).
 
 ## Integrator's calls (easy to correct, stated, not asked)
 
