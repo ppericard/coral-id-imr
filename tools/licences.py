@@ -71,8 +71,9 @@ FILES = (('fish-cand.json', 'fish', 'cand'), (os.path.join('tools', 'fish_refs.j
          ('fish-game.json', 'fish', 'play'), ('data.json', 'coral', 'play'), ('cand.json', 'coral', 'cand'),
          ('excluded.json', 'coral', 'gone'))
 PHOTOS_FILE = 'fish-photos.json'
-OBS_RE = re.compile(r'^(?:https://www\.inaturalist\.org/observations/)?(\d+)$')
-SRC_RE = re.compile(r'^https://(?:inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)/photos/(\d+)/')
+# http as well: a few old coral records name their observation so (Codex review #936).
+OBS_RE = re.compile(r'^(?:https?://(?:www\.)?inaturalist\.org/observations/)?(\d+)$')
+SRC_RE = re.compile(r'^https?://(?:inaturalist-open-data\.s3\.amazonaws\.com|static\.inaturalist\.org)/photos/(\d+)/')
 NAME_RE = re.compile(r'(?:^fi|-)(\d+)[cd]?$')  # fi<id> (a reference photo), <genus or species>-<view or cand>-<id>[c|d]
 
 

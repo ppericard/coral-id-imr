@@ -349,6 +349,18 @@ print(json.dumps(calls))`);
   assert.deepStrictEqual(r, [200, 200, 50]);
 });
 
+test("a record's observation and photo: every address form the files hold, http included; none for IMR or FishBase", () => {
+  const r = py(`print(json.dumps([L.ids(p) for p in [
+    {'f': 'pocillopora-wide-2237523', 'a': 'x', 'o': 'http://www.inaturalist.org/observations/1841398',
+     'src': 'http://static.inaturalist.org/photos/2237523/original.jpg'},
+    {'f': 'fish-s084-cand-527402743', 'a': 'x', 'o': '293039135', 'src': 'jpg'},
+    {'f': 'fi296664069', 'a': 'x', 'o': 'https://www.inaturalist.org/observations/170993320', 'src': 'jpeg'},
+    {'f': 'acropora-wide-12c', 'a': 'x', 'o': 'https://www.inaturalist.org/observations/9', 'src': ''},
+    {'f': 'imrl-p1_i1', 'a': 'IMR', 'imr': 1},
+    {'f': 'fbAbc_u0', 'a': 'x', 'o': 'https://www.fishbase.se/photos/x', 'src': 'https://www.fishbase.se/images/species/Abc_u0.jpg'}]]))`);
+  assert.deepStrictEqual(r, [['1841398', '2237523'], ['293039135', '527402743'], ['170993320', '296664069'], ['9', '12'], null, null]);
+});
+
 test("every fish game record left carries its source's credit and licence (tools/fish_game.py record: the next run agrees)", () => {
   const dir = fixture();
   run(dir);
