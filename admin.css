@@ -6072,6 +6072,46 @@ ul.adm-csv {
   margin: 0;
   padding: 0;
 }
+/* Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, design note v2 step 4), and the
+   Look-alikes filter's pair tools in the bar (structBar, structAdd). */
+.adm-cstruct .adm-stseg {
+  flex: none;
+}
+.adm-cstruct .adm-stseg button:disabled {
+  cursor: default;
+}
+.adm-stpairs > .adm-cslots {
+  margin-top: 6px;
+  gap: 6px;
+}
+.adm-stpairs .adm-cslot {
+  padding: 4px 8px;
+}
+.adm-stpairs .adm-cslot.is-out > .adm-cshd > a,
+.adm-stpairs .adm-cslot.is-out > .adm-cshd > b {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.adm-stpairs > .adm-fgsel,
+.adm-stpairs > .adm-stadd {
+  margin-top: 8px;
+}
+.adm-stab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.adm-stab .adm-fgsel {
+  min-width: 0;
+  max-width: 100%;
+}
+.adm-stbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
 @media (min-width: 600px) {
   .adm-cs3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));

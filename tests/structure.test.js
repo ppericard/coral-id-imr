@@ -503,3 +503,81 @@ test('rule D8: the trigger replays under the new structure a player who never re
   });
   assert.strictEqual(s.ctx.boardWarm_(), 0);
 });
+
+// ---- The leaderboard's score tree under the structure (design note v2, step 4; Codex review #977) ----
+
+test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
+  const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    ctx
+  );
+  [CUR, cur(MOVES), PAIRS].forEach(c => {
+    const A = C.contentApply(S, F, c);
+    assert.deepStrictEqual(C.fishBoardTree(A), ctx.fishGenera(C.fishGen(A, {}), A).tree);
+  });
+  // the subject's own declaration, which the sheet reads (no subject named there: rule S1)
+  assert.deepStrictEqual(S.replayed.tree(F), C.fishBoardTree(F));
+  // a circle Publish moves the tree: the family taken off the game leaves it, the one moved changes circle
+  const T0 = C.fishBoardTree(F),
+    T1 = C.fishBoardTree(C.contentApply(S, F, cur(MOVES)));
+  assert.ok(T0.f.some(x => x[0] === OUT) && !T1.f.some(x => x[0] === OUT));
+  assert.deepStrictEqual([T0.f.find(x => x[0] === C3)[2], T1.f.find(x => x[0] === C3)[2]], [1, 3]);
+});
+
+test('rule D8: the board ranks by the tree the sheet makes under the structure in force, with no device saving', () => {
+  const m = mainFiles(),
+    s = loadCodeGs({fetch: m.fetch}),
+    K = S.score,
+    T0 = C.fishBoardTree(F),
+    T1 = C.fishBoardTree(C.contentApply(S, F, cur(MOVES))),
+    // the Spadefishes mastered (taken off the game by the Publish), a little on two other families
+    P = {[OUT]: {ok: 9, ko: 0, mx: 1}, 'f:Damselfishes': {ok: 3, ko: 1}, [C3]: {ok: 4, ko: 0}, '~level': {ok: 220, ko: 30, th: 1}},
+    data = {...savedUpToDate, 'reefid-sync-fish-progress': JSON.stringify(P)},
+    save = T => s.post({name: 'Ana', pin: '1234', data, summary: {board: 1, boards: {fish: T}}, answers: [], rv: C.RV}),
+    board = () => {
+      Object.keys(s.cache)
+        .filter(k => k.startsWith('board14'))
+        .forEach(k => delete s.cache[k]);
+      return s.get({board: '1', s: 'fish'}).rows.find(r => r[0] === 'Ana')[1];
+    },
+    p0 = C.treeScore(P, T0, K).pct,
+    p1 = C.treeScore(P, T1, K).pct;
+  assert.notStrictEqual(p0, p1, 'the Publish moves her %');
+  // The tree an app sent, as before, until the sheet holds its own (nothing read yet: the board never fetches).
+  assert.strictEqual(save(T0).ok, true);
+  assert.strictEqual(board(), p0);
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(board(), p0, "the base's structure: the same tree");
+  // The Publish, read by the 15-minute trigger: the board moves with no device saving.
+  m.cur = cur(MOVES);
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(board(), p1);
+  // A device still on the old units sends its tree: the board keeps the structure in force.
+  save(T0);
+  assert.strictEqual(board(), p1);
+  // The undo: back to the base's tree.
+  m.cur = CUR;
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(board(), p0);
+  // The sheet's tree not cached (evicted): the apps' tree, as before; made again at the next read.
+  Object.keys(s.cache)
+    .filter(k => k.startsWith('stree1:'))
+    .forEach(k => delete s.cache[k]);
+  save(T1);
+  assert.strictEqual(board(), p1, 'the tree the app sent last');
+  const n1 = m.n.fish;
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(board(), p0);
+  assert.strictEqual(m.n.fish, n1 + 1, 'fish.json read once to make it again');
+  // A tree the sheet could not make or refused is kept as 0: no tree of its own (the apps'), and fish.json is not read
+  // again at every call for it.
+  Object.keys(s.cache)
+    .filter(k => k.startsWith('stree1:'))
+    .forEach(k => (s.cache[k] = '0'));
+  s.ctx.subjStRefresh_();
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(m.n.fish, n1 + 1);
+  assert.strictEqual(board(), p1, 'the tree the app sent last');
+});

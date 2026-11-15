@@ -6563,7 +6563,194 @@ const darkCards = (p, sel) =>
         )
           se.push(`published ${JSON.stringify(pub)}`);
         if (!dlg.some(d => /sheet edits/.test(d))) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (dlg.some(d => /every player's path and progress/.test(d))) se.push('a text Publish confirmed the structure');
         if (se.length) fails.push(`Sheet text: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
+      // Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, structBar; the structure editor,
+      // step 4 of docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A, Q366): in a
+      // context of its own, on a family with a look-alike line. The circle segments set the circle slot (one draft step,
+      // Undo), ↺ Restore; Withdraw a pair (v null, was 1), ↺; Add a look-alike… asks for a source once, then saves with one
+      // (v 1, was null, src); its words' line shows at once in the Sheet box; the Look-alikes filter's + Pair adds one
+      // between two families chosen there, and its pair tag withdraws it again (his entry goes); the row and the Circle
+      // filter follow the circle in force; a stale circle shows its three values, Keep mine takes the base now; Publish
+      // confirms once, saying it changes every player's path and progress, counts circles and pairs, and publishes them;
+      // dark theme; no overflow at 1280 and 390 with each box open and with a pair's tools in the bar.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [],
+          dlg = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const F = FISHC.raw,
+            T = fishTree(F),
+            fam = F.families.find(f => !f.wink && f.circle === 1 && (f.look || []).some(x => T.fam[x[0]] && !T.fam[x[0]].wink)),
+            lk = fam.look.find(x => T.fam[x[0]] && !T.fam[x[0]].wink)[0],
+            near = new Set([
+              fam.id,
+              ...F.families.filter(f => (f.look || []).some(x => x[0] === fam.id)).map(f => f.id),
+              ...fam.look.map(x => x[0])
+            ]),
+            free = F.families.filter(f => !f.wink && !near.has(f.id)).map(f => f.id);
+          return {fam: fam.id, lk, add: free[0], x: free[1], y: free[2]};
+        });
+        const FAM = ids.fam,
+          key = (a, b) => (a < b ? a + '|' + b : b + '|' + a),
+          cont = () => sq.evaluate(() => (DRAFT.fish || {}).content || {}),
+          pair = async k => ((await cont()).pairs || {})[k] || null,
+          circ = async () => (((await cont()).nodes || {})[FAM] || {}).circle || null,
+          box = '#view .adm-cstruct[data-stid]';
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(FAM));
+        await swait(() => document.querySelector('#view .adm-cstruct [data-stc]'));
+        const segs = await sq.evaluate(
+          b => [...document.querySelectorAll(b + ' [data-stc]')].map(x => [x.textContent, x.getAttribute('aria-pressed')]),
+          box
+        );
+        if (JSON.stringify(segs) !== '[["1","true"],["2","false"],["3","false"],["None","false"]]')
+          se.push(`the circle segments ${JSON.stringify(segs)}`);
+        // Circle 2: one draft entry over the base, Undo and Redo, then ↺ Restore.
+        await sq.click(`${box} [data-stc="2"]`);
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        let c = await circ();
+        if (!c || c.v !== 2 || c.was !== 1 || !c.t) se.push(`circle ${JSON.stringify(c)}`);
+        const rowTxt = () =>
+          sq.evaluate(id => (document.querySelector(`#view .adm-tree [data-tt="${CSS.escape(id)}"]`) || {}).textContent || '', FAM);
+        if (!/circle 2/.test(await rowTxt())) se.push(`the tree row ${JSON.stringify(await rowTxt())}`);
+        await sq.evaluate(() => undo());
+        if (await circ()) se.push('Undo left the circle');
+        await sq.evaluate(() => redo());
+        if (!(await circ())) se.push('Redo lost the circle');
+        await swait(() => document.querySelector('#view [data-stcid] [data-sta="drop"]'));
+        await sq.click('#view [data-stcid] [data-sta="drop"]');
+        await swait(() => !document.querySelector('#view [data-stcid].is-fresh'));
+        if (await circ()) se.push('Restore left the circle');
+        // None: off the game; the Circle filter offers No circle.
+        await sq.click(`${box} [data-stc=""]`);
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        if ((await circ()).v !== null) se.push('None');
+        const tags = await sq.evaluate(() => [...document.querySelectorAll('#view [data-tttag] option')].map(o => o.value));
+        if (!tags.includes('cnone')) se.push(`no No circle tag ${JSON.stringify(tags)}`);
+        // Withdraw the pair: v null, was 1; the row says so; ↺ brings it back.
+        const K = key(FAM, ids.lk),
+          prow = k => `${box} [data-stp="${k}"]`;
+        await sq.click(`${prow(K)} [data-sta="withdraw"]`);
+        await swait(() => document.querySelector('#view .adm-cstruct .is-fresh.is-out'));
+        let x = await pair(K);
+        if (!x || x.v !== null || x.was !== 1) se.push(`withdraw ${JSON.stringify(x)}`);
+        // its words are no longer in force: the Sheet box lists them as never applied, kept
+        if (await sq.evaluate(s => !!document.querySelector(s), `#view .adm-csheet [data-cs="look/${ids.lk}"]:not(.is-orphan)`))
+          se.push('a withdrawn pair keeps its line');
+        await sq.click(`${prow(K)} [data-sta="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-cstruct .is-out'));
+        if (await pair(K)) se.push('↺ left the withdrawal');
+        // Add a look-alike: the source asked once, then saved with one; its line shows in the Sheet box at once.
+        await sq.selectOption(`${box} [data-stadd]`, ids.add);
+        await swait(() => document.querySelector('#view [data-stbox]'));
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
+        const ask = await sq.evaluate(() => document.querySelector('#view [data-stbox] [data-sta="save"]').textContent);
+        if (ask !== 'Save without source' || (await pair(key(FAM, ids.add)))) se.push(`source asked ${ask}`);
+        await sq.fill('#view [data-stbox] [data-sts]', 'A made-up guide');
+        await sq.fill('#view [data-stbox] [data-stu]', 'https://example.org/pairs');
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => !document.querySelector('#view [data-stbox]'));
+        x = await pair(key(FAM, ids.add));
+        if (!x || x.v !== 1 || x.was !== null || JSON.stringify(x.src) !== '{"t":"A made-up guide","u":"https://example.org/pairs"}')
+          se.push(`add ${JSON.stringify(x)}`);
+        if (!(await sq.evaluate(s => !!document.querySelector(s), `#view .adm-csheet [data-cs="look/${ids.add}"]`)))
+          se.push("the added pair's line in the Sheet box");
+        // The Look-alikes filter: Any look-alike, + Pair between two families chosen there, saved without a source.
+        await sq.selectOption('#view [data-tttag]', 'look');
+        await swait(() => document.querySelector('#view [data-stnew]'));
+        await sq.click('#view [data-stnew]');
+        await swait(() => document.querySelector('#view [data-stbox] [data-st-a]'));
+        await sq.selectOption('#view [data-stbox] [data-st-a]', ids.x);
+        await swait(() => document.querySelector('#view [data-stbox] [data-st-b]'));
+        await sq.selectOption('#view [data-stbox] [data-st-b]', ids.y);
+        // no overflow with the filter's box open, at 1280 and 390, nor with a pair's tools in the bar (below)
+        const wideAt = async what => {
+          for (const w of [1280, 390]) {
+            await sq.setViewportSize({width: w, height: 900});
+            const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+            if (wide > 0) se.push(`${w}px, ${what}: ${wide}px too wide`);
+          }
+          await sq.setViewportSize({width: 1280, height: 900});
+        };
+        await wideAt('the + Pair box');
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => !document.querySelector('#view [data-stbox]'));
+        const KXY = key(ids.x, ids.y);
+        x = await pair(KXY);
+        if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`+ Pair ${JSON.stringify(x)}`);
+        // Its own tag says it was added, and its tools there take it out again (his entry goes).
+        await sq.selectOption('#view [data-tttag]', 'look:' + KXY);
+        const bar = `#view .adm-stbar[data-stp="${KXY}"]`,
+          hasSel = (sel, want) =>
+            sq
+              .waitForFunction(([s, w]) => !!document.querySelector(s) === w, [sel, want], {timeout: 90000})
+              .catch(() => se.push(`timed out: ${sel}`));
+        await hasSel(`${bar} [data-sta="drop"]`, true);
+        const lab = await sq.evaluate(k => document.querySelector(`#view [data-tttag] option[value="look:${k}"]`).textContent, KXY);
+        if (!/\(added\)/.test(lab)) se.push(`the pair tag ${JSON.stringify(lab)}`);
+        await wideAt("a pair's tools in the bar");
+        await sq.click(`${bar} [data-sta="drop"]`);
+        await hasSel(bar, false);
+        if (await pair(KXY)) se.push('the filter left the pair');
+        await sq.evaluate(() => {
+          store.set(subjK('reefid-admin-tree-tag'), '');
+          render();
+        });
+        // Dark theme; no overflow with the page's add box open.
+        const dk = await darkCards(sq, '#view .adm-cstruct .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        await sq.selectOption(`${box} [data-stadd]`, ids.x);
+        await swait(() => document.querySelector('#view [data-stbox]'));
+        await wideAt("the page's add box");
+        await sq.click('#view [data-stbox] [data-sta="cancel"]');
+        // A stale circle (the base changed since his edit): its three values, Keep mine takes the base now; no overflow.
+        await sq.evaluate(id => {
+          DRAFT.fish = {...DRAFT.fish, content: contentSet(DRAFT.fish.content, id, 'circle', null, 3, null, 7)};
+          saveDraft();
+          render();
+        }, FAM);
+        await swait(() => document.querySelector('#view [data-stcid].is-stale .adm-cs3'));
+        await wideAt('a stale circle');
+        await sq.click('#view [data-stcid] [data-sta="keep"]');
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        c = await circ();
+        if (!c || c.v !== null || c.was !== 1 || c.t === 7) se.push(`Keep mine ${JSON.stringify(c)}`);
+        // Publish: one confirmation saying it changes every player's path and progress; circles and pairs counted; published.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 fish circle edit$/m.test(sum) || !/^1 fish look-alike pair edit$/m.test(sum))
+          se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).content);
+        if (
+          !pub ||
+          JSON.stringify(Object.keys(pub)) !== '["nodes","pairs"]' ||
+          JSON.stringify(Object.keys(pub.nodes)) !== JSON.stringify([FAM]) ||
+          JSON.stringify(Object.keys(pub.nodes[FAM])) !== '["circle"]' ||
+          pub.nodes[FAM].circle.v !== null ||
+          pub.nodes[FAM].circle.was !== 1 ||
+          JSON.stringify(Object.keys(pub.pairs)) !== JSON.stringify([key(FAM, ids.add)])
+        )
+          se.push(`published ${JSON.stringify(pub)}`);
+        if (dlg.length !== 1 || !/every player's path and progress/.test(dlg[0])) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (se.length) fails.push(`Structure: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
