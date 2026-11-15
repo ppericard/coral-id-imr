@@ -60,7 +60,9 @@ is the design's shorthand, and internal identifiers may keep it.
   said yes) is still not met; exempt the IMR genera of an IMR player, the set turned on by hand early (Q240) and Open all
   (docs/LEARNING.md "Fish: scientific genera"); a photo, then 4 genus names (other identification groups first, then the sibling genera of the
   same entry as traps), typed genus names from the usual typed share; the genus card shows the IMR sub-entry's cues when the genus is
-  one (Chromis, Dascyllus, Pomacentrus), else its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
+  one (Chromis, Dascyllus, Pomacentrus), else its own sourced presentation and ID marks once written (Pierre, 2026-11-08;
+  `tools/fish_genus_marks.json`, "ID marks (FAO species guide, FishBase)", never IMR's: ARCHITECTURE "Fish sheets"), else
+  its most met species; counted in the fish global score since 2026-11-08 (half a genus's bar is the scientific credit of each of its species: "My progress (fish)").
   Photos: its species' photos in play (`fish-game.json`; when built, the stopgap entry photos left 18 of the 94 genera without any).
   Its choices made without Pierre were put to him and confirmed on 2026-11-05 (#526 merged with his yes).
 - **The IMR genera for an IMR player** (Pierre, 2026-11-08: "pour des gens qui sont à IMR, dans la première phase de jeu, la phase

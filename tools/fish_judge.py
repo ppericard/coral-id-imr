@@ -6,10 +6,12 @@ clarity, size, count, flags, ease 1-5; for some photos a proposed crop [l, t, r,
 fish's box; keep, a reference photo judged against its observation's photos). tools/fish_game.py reads them for the
 reference photos it puts in play (ref_play: cap, then its judged_sure), tools/judging_fish.py for the candidates (cap,
 juv_early). Until 2026-11-15 this script also wrote them into the stopgap list of fish-photos.json (retired: every fish
-photo in play is on R2, fish-game.json).
+photo in play is on R2, fish-game.json). The sea slugs' rubric (judging/SEASLUG.md) is the same code with its own
+differences (RUBRICS; cap and with_flag take the subject): tools/judging_fish.py --subject seaslug judges their candidates.
 This script:
   - prints the summary of the photos in play (fish-game.json): counts per tag, very easy photos (ease 4-5) per entry,
-    circle-1 entries short of them;
+    circle-1 entries short of them (the circles in force: the content editor's moves in curation.json laid over
+    fish.json, tools/fish_inforce.py);
   - with --sheets DIR: downloads the photos in play at iNaturalist's medium size (FishBase's whole) into DIR/img and draws
     contact sheets of 12 into DIR/sheets, the material of a judging pass (DIR outside the repository; delete it after);
     --only t28,t47 limits them to some entries, --todo to the photos not judged yet, and each tile carries a 5 x 5 grid
@@ -38,16 +40,27 @@ REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/f
 # Home skips it; it caps nothing), in that order.
 CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$")
 FLAGS = "jcaw"
+NEW_COUNT = "1sokx"
+# The sea slugs' rubric (judging/SEASLUG.md, Pierre, 2026-11-15, Q369, Q377): the fish's seven positions, flags and ease, so
+# a code reads the same way wherever the fish's is read (core.js refScore, autosort.js), with these differences: a dorsal
+# view (d) is a good view, never capped, and a ventral one (v, the foot) is theirs, capped like head-on and rear; light g
+# or d only (no night livery); the count never m; the typed flag f (the rhinophores or the gills shown withdrawn or
+# hidden), which caps nothing.
+RUBRICS = {
+    "fish": {"code": CODE, "flags": FLAGS, "count": NEW_COUNT, "views3": "htd"},
+    "seaslug": {"code": re.compile(r"^([pohtdv])([01])([gd])([0-3])([smb])([lms])([1sokx])([jcawf]*)([1-5])$"),
+                "flags": "jcawf", "count": NEW_COUNT, "views3": "htv"},
+}
 
 
-def with_flag(code, x):
-    """A judged code (CODE) with typed flag x added in the rubric's order, the ease unchanged."""
-    m = CODE.match(code)
+def with_flag(code, x, subject="fish"):
+    """A judged code (the subject's rubric code) with typed flag x added in the rubric's order, the ease unchanged."""
+    R = RUBRICS[subject]
+    m = R["code"].match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
     fl = set(m.group(8)) | {x}
-    return code[:7] + "".join(c for c in FLAGS if c in fl) + m.group(9)
-NEW_COUNT = "1sokx"
+    return code[:7] + "".join(c for c in R["flags"] if c in fl) + m.group(9)
 EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
 WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos per circle-1 entry
@@ -58,12 +71,14 @@ WANT = 5  # Pierre (2026-11-04, admin decisions): at least 5 very easy photos pe
 REP_BONUS = 1
 
 
-def cap(code, phase, juv_ok=False, rep=None):
+def cap(code, phase, juv_ok=False, rep=None, subject="fish"):
     """(ease after the caps, tags with the phase and reference flags): judging/FISH.md "Caps" and "Reference photos".
     juv_ok: the photo's juveniles show early (juv_early: its entry's class A, or its species in the entry's early list), so
     the juvenile flag caps nothing. rep: the photo's `rep` (a reference source shows it for the species: FishBase's main
-    picture, iNaturalist's taxon photo), which adds the flag r and REP_BONUS to the ease, the caps applied after it."""
-    m = CODE.match(code)
+    picture, iNaturalist's taxon photo), which adds the flag r and REP_BONUS to the ease, the caps applied after it.
+    subject: the rubric (RUBRICS), "seaslug" for judging/SEASLUG.md "Caps": the same caps, but a dorsal view caps nothing."""
+    R = RUBRICS[subject]
+    m = R["code"].match(code)
     if not m:
         raise ValueError(f"bad code {code!r}")
     v, w, light, loss, _c, _z, n, fl, e = m.groups()
@@ -75,7 +90,7 @@ def cap(code, phase, juv_ok=False, rep=None):
     # or a parrotfish is easy to call one at the family level), kept for the species questions and explanation cards.
     # light n is the night livery only (rubric 6, Pierre, 2026-11-08, Q308: a night or resting colour pattern unlike the
     # day one); a fish lit by a flash or a lamp on a dark background is good light (g) and caps nothing.
-    if set(fl) & set("ca") or light == "n" or loss == "2" or v in "htd" or w == "0":
+    if set(fl) & set("ca") or light == "n" or loss == "2" or v in R["views3"] or w == "0":
         e = min(e, 3)
     return e, code[:7] + fl
 
@@ -360,7 +375,15 @@ def main():
 
         slot.guard("tools/fish_judge.py")  # one heavy run at a time on the machine (rule W24)
         return sheets(a.sheets, set(filter(None, a.only.split(","))), a.todo, a.refs)
-    summary(game(), json.loads((ROOT / "fish.json").read_text(encoding="utf-8")))
+    summary(game(), fish_now())
+
+
+def fish_now():
+    """fish.json with the circles in force (the content editor's moves in curation.json: tools/fish_inforce.py)."""
+    from fish_inforce import in_force
+    cur = ROOT / "curation.json"
+    return in_force(json.loads((ROOT / "fish.json").read_text(encoding="utf-8")),
+                    json.loads(cur.read_text(encoding="utf-8")) if cur.exists() else {})
 
 
 if __name__ == "__main__":

@@ -45,7 +45,8 @@ function app(photoDiff) {
       block(src, 'const fishBuild = () => {', 'const fishLoad = () =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
       '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); }; this.cover = cover;' +
-      '\nthis.juvP = juvP; this.adultFirst = adultFirst; this.seenCover = seenCover; this.nearSeen = nearSeen;',
+      '\nthis.juvP = juvP; this.adultFirst = adultFirst; this.seenCover = seenCover; this.nearSeen = nearSeen;' +
+      ' this.wmP = wmP; this.coverFirst = coverFirst;',
     ctx
   );
   return ctx;
@@ -522,6 +523,7 @@ function sheets(B) {
       FISH: B,
       juvP: X.juvP,
       adultFirst: X.adultFirst,
+      coverFirst: X.coverFirst,
       easyRank: C.easyRank,
       GX: n => B.gen[n],
       hr: k => k,
@@ -635,6 +637,65 @@ test('a juvenile cover he confirmed holds everywhere; the default still never ta
   assert.strictEqual(sheets(X.run(R(), cur2({s2: {cover: 'fi3'}}))).spPhoto({id: 's2'}).f, 'fi6', 'not confirmed: the adult');
 });
 
+// A watermarked photo is never a default cover, at any level (Pierre, 2026-11-15, Q379: "Perhaps we should also avoid them
+// for covers"; its flag w: app.js wmP): the card's default, rankPhotos, the default's species pick, a species' one photo
+// and its sheet's first photo skip it while the node has another adult photo. His ★ cover on one stays his choice (rule
+// A1) at every rank, kept in the admin (coverW: autosort.js fishCoverW) or not: the app never reads coverW. Home skips
+// it all the same, kept or not (home.js homeOk: Q373 and #956, "his ★ Cover included").
+test('a watermarked photo is never a default cover; his ★ cover on one stays his, and Home skips it, kept or not', () => {
+  const X = app(),
+    R = () => {
+      const r = raw2();
+      r.f = seenF({s1: {dauinU: 9}}); // s1 the most seen: the default's species
+      Object.values(r.ph.photos)
+        .flat()
+        .forEach(p => Object.assign(p, {jt: 'p1g0sm0', ar: 1.5}));
+      r.ph.photos.t1[0].jt = 'p1g0sm0w'; // fi1 (s1, the easiest): watermarked
+      r.ph.photos.t2[0].jt = 'p1g0sm0w'; // fi4 (s3, the easiest)
+      r.ph.photos.t2[1].jt = 'p1g0sm0w'; // fi5: s3 has only watermarked photos
+      return r;
+    };
+  assert.ok(X.wmP({jt: 'p1g0sl1w'}) && X.wmP({jt: 'p1g0sl1jwr'}) && !X.wmP({jt: 'p1g0sl1'}) && !X.wmP({f: 'coral'}) && !X.wmP(null));
+  assert.ok(!X.wmP({jt: 'w1g0sl1'}), 'the flags only, after the seven tags');
+  let B = X.run(R(), cur2({}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2', 'the family default skips the watermarked first photo');
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi2', 'a genus unit too');
+  assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1', "the games' order is unchanged");
+  assert.strictEqual(X.cover(B.gen['f:B']).f, 'fi4', 'only watermarked photos: it keeps one');
+  // rankPhotos (the players' ratings) skips it too.
+  const Y = app((n, p) => ({fi1: -9})[p.f] || 0);
+  assert.strictEqual(Y.cover(Y.run(R(), cur2({})).gen['f:A']).f, 'fi2');
+  // His ★ cover on one: his choice at every rank, kept (coverW) or not.
+  for (const k of [{cover: 'fi1'}, {cover: 'fi1', coverW: 'fi1'}]) {
+    B = X.run(R(), cur2({'f:A': k, 'g:Xus': k, s1: k}));
+    assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi1', `the family: his ★ ${JSON.stringify(k)}`);
+    assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi1', 'the genus');
+    assert.strictEqual(B.covers.s1.f, 'fi1', 'the species');
+    assert.ok(!B.gen['f:A'].coverP.cj, 'no mark: the app never reads coverW');
+  }
+  // His ★ cover of the species the default chooses, watermarked: the default takes its photo without one instead, kept
+  // or not; a node whose adult photos all carry one takes it as before.
+  B = X.run(R(), cur2({s1: {cover: 'fi1', coverW: 'fi1'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2', 'the default never takes his watermarked species ★');
+  B = X.run(R(), cur2({s3: {cover: 'fi5'}}));
+  assert.strictEqual(X.cover(B.gen['f:B']).f, 'fi5', 'only watermarked photos: his species ★ as before');
+  // The sheets: a species' one photo and its sheet's first; the family hero (learn.js nodeCover).
+  let L = sheets(X.run(R(), cur2({})));
+  assert.strictEqual(L.spPhoto({id: 's1'}).f, 'fi2', "a species' one photo skips it");
+  assert.strictEqual(L.spPhoto({id: 's3'}).f, 'fi4', 'only watermarked photos: it keeps one');
+  assert.strictEqual(L.nodeCover(F2.species.slice(0, 2)).f, 'fi2');
+  L = sheets(X.run(R(), cur2({s1: {cover: 'fi1'}})));
+  assert.strictEqual(L.spPhoto({id: 's1'}).f, 'fi1', 'his species ★ with a watermark: its one photo, his choice');
+  L = sheets(X.run(R(), cur2({'f:A': {feat: {s1: ['fi1']}}})));
+  assert.strictEqual(L.spPhoto({id: 's1'}).f, 'fi2', 'a featured photo is not his cover: skipped as the default');
+  // Home: his kept ★ cover with a watermark is skipped all the same (the band's pool and a tile's pick).
+  const {ctx} = homeBand();
+  B = X.run(R(), cur2({'f:A': {cover: 'fi1', coverW: 'fi1'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi1');
+  assert.ok(!Array.from(ctx.pool(B.gen['f:A']), p => p.f).includes('fi1'), 'not in the band');
+  assert.notStrictEqual(ctx.tile(B.gen['f:A'], true).f, 'fi1', 'not its tile');
+});
+
 // The species sheet's photos (learn.js spSheetPhotos): three adult photos, the first its cover (fishSpPhotos' order),
 // then up to two juveniles apart; a juvenile is never its first photo while it has an adult one (Pierre, 2026-11-13;
 // Codex review #858's "juvenile cover first" reverted with it).
@@ -659,6 +720,11 @@ test('species sheet: the adults first, then the juveniles apart', () => {
   const P = [j(1), a(1), a(2), j(2), a(3)],
     r = ctx.sp(P, P[0]);
   assert.deepStrictEqual([r.shown.map(p => p.f).join(), r.more.map(p => p.f).join()], ['j1,a1,a2,j2', 'a3']);
+  // The default's photo without a watermark (lead: learn.js spPhoto, Q379) first, before a watermarked one ahead of it.
+  const w = {f: 'w1', jt: 'p1g0sl1w'},
+    Q = [w, a(1), j(1), a(2), a(3)],
+    s = ctx.sp(Q, Q[1]);
+  assert.deepStrictEqual([s.shown.map(p => p.f).join(), s.more.map(p => p.f).join()], ['a1,w1,a2,j1', 'a3']);
 });
 
 // The admin's ★ Cover at the genus or species level (autosort.js fishCover under that id) and the app agree on the real
@@ -732,7 +798,9 @@ test('the cover ranks come from the subject: SUBJECTS sheets, else its unit alon
 // unless a case makes it one (side profile, sharp, a reference source: core.js refLevel).
 const seenF = pres => ({...F2, species: F2.species.map(s => (pres[s.id] ? {...s, present: pres[s.id]} : s))});
 const REFJT = 'p1g0sl1';
-const seenRaw = (pres, juv = [], ref = []) => {
+// wm: the photos with a watermark (their flag w, Q379); in such a case every other photo carries a plain code too (no
+// reference look), so the easy order stays the ease's.
+const seenRaw = (pres, juv = [], ref = [], wm = []) => {
   const r = raw2();
   r.f = seenF(pres);
   Object.values(r.ph.photos)
@@ -740,6 +808,7 @@ const seenRaw = (pres, juv = [], ref = []) => {
     .forEach(p => {
       if (juv.includes(p.f)) p.ph = 'juvenile';
       if (ref.includes(p.f)) Object.assign(p, {jt: REFJT, rep: 'inaturalist', e: Math.max(p.e, 4)});
+      if (wm.length) p.jt = (p.jt || 'p1g0sm0') + (wm.includes(p.f) ? 'w' : '');
     });
   return r;
 };
@@ -763,12 +832,19 @@ const CASES = [
   ['(b): only the species with a reference photo compete', {s1: {dauinU: 9, dauin: 9}, s2: {dauinU: 2, dauin: 2}}, [], ['fi6'], 'fi6'],
   ['(b): its reference photo, not its easiest photo', {s2: {dauinU: 9, dauin: 9}}, [], ['fi6', 'fi1'], 'fi6'],
   ['(b): among several with one, the most seen', {s1: {dauinU: 9}, s2: {dauinU: 2}}, [], ['fi6', 'fi2'], 'fi2'],
-  ['(b): a juvenile reference photo does not count', {s1: {dauinU: 9}, s2: {dauinU: 2}}, ['fi6'], ['fi6'], 'fi1']
+  ['(b): a juvenile reference photo does not count', {s1: {dauinU: 9}, s2: {dauinU: 2}}, ['fi6'], ['fi6'], 'fi1'],
+  // [..., the photos with a watermark] (Pierre, 2026-11-15, Q379: never a default cover while the node has another adult photo)
+  ['its easiest photo watermarked: its next', {s2: {dauinU: 9, dauin: 9}}, [], [], 'fi6', ['fi3']],
+  ['every photo of it watermarked: the next species', {s2: {dauinU: 9, dauin: 9}}, [], [], 'fi1', ['fi3', 'fi6']],
+  ['every adult photo watermarked: the rule as before', {s2: {dauinU: 9, dauin: 9}}, [], [], 'fi3', ['fi1', 'fi2', 'fi3', 'fi6']],
+  ['a juvenile without one and adults with: an adult all the same', {s2: {dauinU: 9}}, ['fi6'], [], 'fi3', ['fi1', 'fi2', 'fi3']],
+  ['(b): a watermarked reference photo does not count', {s1: {dauinU: 9}, s2: {dauinU: 2}}, [], ['fi6', 'fi2'], 'fi6', ['fi2']],
+  ['(b): a photo without one before a watermarked reference photo', {s2: {dauinU: 9}}, [], ['fi3'], 'fi6', ['fi3']]
 ];
 test('default cover (Q339 (b)): the most seen species with a reference photo, then its reference photo; ties, juveniles', () => {
   const X = app();
-  CASES.forEach(([what, pres, juv, ref, want]) => {
-    const B = X.run(seenRaw(pres, juv, ref), cur2({}));
+  CASES.forEach(([what, pres, juv, ref, want, wm]) => {
+    const B = X.run(seenRaw(pres, juv, ref, wm), cur2({}));
     assert.strictEqual(X.cover(B.gen['f:A']).f, want, `family: ${what}`);
     assert.strictEqual(X.cover(B.gen['g:Xus']).f, want, `genus unit: ${what}`);
   });
@@ -802,8 +878,8 @@ test('default cover (Q339 (b)): the most seen species with a reference photo, th
 test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's seenCover", () => {
   const X = app(),
     E = {fi1: 5, fi2: 3, fi3: 4, fi6: 2};
-  CASES.forEach(([what, pres, juv, ref, want]) => {
-    const r = seenRaw(pres, juv, ref),
+  CASES.forEach(([what, pres, juv, ref, want, wm]) => {
+    const r = seenRaw(pres, juv, ref, wm),
       sp = Object.fromEntries(r.f.species.map(s => [s.id, s])),
       rec = Object.fromEntries(r.ph.photos.t1.map(p => [p.f, p])),
       // the judgment the admin reads (fuJ): the record's ease and tags
@@ -860,6 +936,43 @@ test("default cover (Q339 (b)): the admin's fishCoverOf agrees with the app's se
   }
 });
 
+// On the real files (Q379): each of his ★ covers of a family or a genus on a watermarked photo stays his card in the app
+// (rule A1), and in the admin either he kept it (coverW) or its node page asks and Cover proposals hold an open proposal of
+// a photo without a watermark (unless the node has no adult photo without one). Whatever he answers and publishes, and
+// whatever a later watermark pass tags, this holds; the cases are printed, not counted.
+test('real data: his watermarked ★ covers stay his; each is kept or has an open proposal without a watermark (Q379)', t => {
+  const {coverProposal, coverOpen, nodeCover} = require('../admin-covers.js');
+  const f = read('fish.json'),
+    gm = C.fishGameRead(read('fish-game.json')),
+    cu = read('curation.json'),
+    B = app().run({f, ph: read('fish-photos.json'), gm}, cu),
+    sp = Object.fromEntries(f.species.map(s => [s.id, s])),
+    seen = sid => A.fishNear(sp[sid]),
+    play = A.fishGameIn(Object.values(gm.photos || {}).flat(), cu),
+    rec = Object.fromEntries(play.map(p => [p.f, p])),
+    j = fid => rec[fid] || null,
+    F = cu.fish || {},
+    nodes = Object.fromEntries([...f.families, ...f.genera].map(u => [u.id, new Set(u.species)])),
+    out = [];
+  Object.entries(F.genera || {}).forEach(([id, k]) => {
+    if (!k || !k.cover || !nodes[id]) return;
+    const L = play.filter(p => nodes[id].has(p.sp)),
+      c = nodeCover(id, L, F, j, false, seen);
+    if (c.by !== 'mine' || !A.fishWm(c.p, j(c.p.f), F)) return;
+    const g = B.gen[id];
+    if (g) assert.strictEqual(g.coverP && C.fishPid(g.coverP.f), C.fishPid(k.cover), `${id}: his ★ stays the app's card`);
+    if (c.wok) return out.push(`${id} kept`);
+    assert.ok(c.wm, `${id}: the page asks`);
+    const clean = L.some(p => !A.fishJuv(p, j(p.f), F) && !A.fishWm(p, j(p.f), F)),
+      x = coverProposal(id, L, F, j, seen);
+    if (!clean) return out.push(`${id} no photo without a watermark`);
+    assert.ok(x && x.wm && !A.fishWm(x.rule, j(x.rule.f), F), `${id}: a proposal without a watermark`);
+    assert.strictEqual(coverOpen([x], F).length, 1, `${id}: open`);
+    out.push(`${id} → ${x.rule.f}`);
+  });
+  t.diagnostic(`his watermarked ★ covers: ${out.join(', ') || 'none'}`);
+});
+
 // On the real files: every fish unit Pierre has not picked a cover for shows a photo of its species most seen around the
 // centre among those with a reference-level adult photo in play (else among those with an adult photo), his ★ cover of
 // that species when he has one, in the app and in the admin, each over its own pool (the admin's: the game photos read
@@ -882,20 +995,26 @@ test('real data: the default covers are of the most seen species with a referenc
   let n = 0;
   Object.entries(B.gen).forEach(([id, g]) => {
     if (g.coverP || !g.views.wide.length || !nodes[id]) return;
-    const A0 = g.views.wide.filter(p => !X.juvP(p)),
+    // the adult photos without a watermark when it has any (Q379), else its adult photos
+    const W0 = g.views.wide.filter(p => !X.juvP(p)),
+      A0 = W0.some(p => !X.wmP(p)) ? W0.filter(p => !X.wmP(p)) : W0,
       R0 = A0.filter(C.refLevel),
       c = g.views.wide.find(p => p.f === g.cover);
     if (!A0.length) return;
     n++;
     assert.ok(!X.juvP(c), `${id}: never a juvenile`);
+    assert.ok(A0.includes(c), `${id}: never a watermarked photo while it has another adult one`);
     assert.strictEqual(key(c.sp), Math.max(...(R0.length ? R0 : A0).map(p => key(p.sp))), `${id}: ${sp[c.sp].name} is not its species`);
-    if (B.covers[c.sp]) assert.strictEqual(c.f, B.covers[c.sp].f, `${id}: his ★ cover of ${sp[c.sp].name}`);
+    if (B.covers[c.sp] && (!X.wmP(B.covers[c.sp]) || A0 === W0))
+      assert.strictEqual(c.f, B.covers[c.sp].f, `${id}: his ★ cover of ${sp[c.sp].name}`);
     else if (R0.some(p => p.sp === c.sp)) assert.ok(C.refLevel(c), `${id}: its reference photo`);
     const L = play.filter(p => nodes[id].has(p.sp)),
       adm = A.fishCoverOf(L, cu.fish, id, j, sid => A.fishNear(sp[sid])),
-      ad = L.filter(p => !A.fishJuv(p, j(p.f), cu.fish)),
+      ad0 = L.filter(p => !A.fishJuv(p, j(p.f), cu.fish)),
+      ad = ad0.some(p => !A.fishWm(p, j(p.f), cu.fish)) ? ad0.filter(p => !A.fishWm(p, j(p.f), cu.fish)) : ad0,
       ar = ad.filter(p => C.refLevel(A.fishRec(p, cu.fish, j)));
     if (!adm || !ad.length) return;
+    assert.ok(ad.includes(adm), `${id}: the admin's default never takes a watermarked photo while it has another adult one`);
     assert.strictEqual(key(adm.sp), Math.max(...(ar.length ? ar : ad).map(p => key(p.sp))), `${id}: the admin shows ${sp[adm.sp].name}`);
     const k = (picks[adm.sp] || {}).cover;
     if (k && ad.some(p => p.f === k)) assert.strictEqual(adm.f, k, `${id}: the admin shows his ★ cover of ${sp[adm.sp].name}`);

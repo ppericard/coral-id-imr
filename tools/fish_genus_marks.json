@@ -1,0 +1,1257 @@
+{
+  "about": "The fish genera's own presentation and ID marks, for the circle-1 genera the IMR fish presentation gives no cues for (Pierre, 2026-11-08: each genus needs a short presentation and its ID cues, sourced, rules C2, C3, C6, before the genera open to more players). Our own words, never copied, written from public sources: src, each {t, u}, t starting with the source's short name before its first comma. families: the families done (every circle-1 genus of these without IMR cues is in genera with marks, or in none with its reason). genera, by genus name: plain, [one or two sentences on what the genus looks like and how it lives, its refs]; marks, 1 to 3 [visible feature that tells it from the other genera of its family, its refs], a ref being [src key, where in it (key couplet or species account, page)]. Only features seen on a photo: never a fin-ray, spine or scale count, nor a feature seen only in the hand; a species named is one of the genus's game species (rule C6). Most lines come from the FAO species identification guide for the Western Central Pacific (Carpenter and Niem, eds, vols 3 and 4, 1999, vols 5 and 6, 2001: each family's key to the genera, or its key to the species where it has none, and its species accounts), the rest from FishBase species pages; a genus the guide names otherwise says so (as Xyrichtys, as Pseudaluteres, as Dendrochirus brachypterus, as Apogon cyanosoma, as Trachinocephalus myops). The only genus of its family here gets a presentation only: the family's IMR cues and ID marks tell it. none: a genus left without marks and why (no visible feature in the sources read): never a mark guessed. A genus with IMR cues is never here: the IMR cues stay apart (rule C1). tools/build_fish.py add_families puts plain, marks, msrc and mby on fish.json genera; app.js fishGenera shows them on the genus card, learn.js genMarks on the sheet the genus opens.",
+  "src": {
+    "fao-lab": {
+      "t": "FAO species guide, Labridae (Westneat 2001), key to the genera",
+      "u": "https://www.fao.org/4/y0870e/y0870e02.pdf"
+    },
+    "fao-lab03": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e03.pdf"
+    },
+    "fao-lab04": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e04.pdf"
+    },
+    "fao-lab05": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e05.pdf"
+    },
+    "fao-lab06": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e06.pdf"
+    },
+    "fao-lab07": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e07.pdf"
+    },
+    "fao-lab08": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e08.pdf"
+    },
+    "fao-lab09": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e09.pdf"
+    },
+    "fao-lab10": {
+      "t": "FAO species guide, Labridae (Westneat 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e10.pdf"
+    },
+    "fb-anampses-meleagrides": {
+      "t": "FishBase, Anampses meleagrides",
+      "u": "https://www.fishbase.se/summary/Anampses-meleagrides.html"
+    },
+    "fb-labropsis-manabei": {
+      "t": "FishBase, Labropsis manabei",
+      "u": "https://www.fishbase.se/summary/Labropsis-manabei.html"
+    },
+    "fb-paracheilinus-carpenteri": {
+      "t": "FishBase, Paracheilinus carpenteri",
+      "u": "https://www.fishbase.se/summary/Paracheilinus-carpenteri.html"
+    },
+    "fb-pseudocheilinus-hexataenia": {
+      "t": "FishBase, Pseudocheilinus hexataenia",
+      "u": "https://www.fishbase.se/summary/Pseudocheilinus-hexataenia.html"
+    },
+    "fb-pteragogus-enneacanthus": {
+      "t": "FishBase, Pteragogus enneacanthus",
+      "u": "https://www.fishbase.se/summary/Pteragogus-enneacanthus.html"
+    },
+    "fb-cymolutes-torquatus": {
+      "t": "FishBase, Cymolutes torquatus",
+      "u": "https://www.fishbase.se/summary/Cymolutes-torquatus.html"
+    },
+    "fb-novaculoides-macrolepidotus": {
+      "t": "FishBase, Novaculoides macrolepidotus",
+      "u": "https://www.fishbase.se/summary/Novaculoides-macrolepidotus.html"
+    },
+    "fb-wetmorella-albofasciata": {
+      "t": "FishBase, Wetmorella albofasciata",
+      "u": "https://www.fishbase.se/summary/Wetmorella-albofasciata.html"
+    },
+    "fao-sca": {
+      "t": "FAO species guide, Scaridae (Bellwood 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e11.pdf"
+    },
+    "fao-sca12": {
+      "t": "FAO species guide, Scaridae (Bellwood 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e12.pdf"
+    },
+    "fao-bal": {
+      "t": "FAO species guide, Balistidae (Matsuura 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e54.pdf"
+    },
+    "fao-bal55": {
+      "t": "FAO species guide, Balistidae (Matsuura 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e55.pdf"
+    },
+    "fao-bal56": {
+      "t": "FAO species guide, Balistidae (Matsuura 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e56.pdf"
+    },
+    "fao-mon": {
+      "t": "FAO species guide, Monacanthidae (Hutchins 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e57.pdf"
+    },
+    "fao-mon58": {
+      "t": "FAO species guide, Monacanthidae (Hutchins 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e58.pdf"
+    },
+    "fao-mon59": {
+      "t": "FAO species guide, Monacanthidae (Hutchins 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e59.pdf"
+    },
+    "fao-ost": {
+      "t": "FAO species guide, Ostraciidae and Tetraodontidae (Matsuura 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e60.pdf"
+    },
+    "fao-eph": {
+      "t": "FAO species guide, Ephippidae (Heemstra 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e26.pdf"
+    },
+    "fao-sig": {
+      "t": "FAO species guide, Siganidae (Woodland 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e27.pdf"
+    },
+    "fao-zan": {
+      "t": "FAO species guide, Zanclidae (Randall 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e29.pdf"
+    },
+    "fao-pin": {
+      "t": "FAO species guide, Pinguipedidae (Randall 2001)",
+      "u": "https://www.fao.org/4/y0870e/y0870e17.pdf"
+    },
+    "fb-cetoscarus-ocellatus": {
+      "t": "FishBase, Cetoscarus ocellatus",
+      "u": "https://www.fishbase.se/summary/Cetoscarus-ocellatus.html"
+    },
+    "fb-abalistes-stellatus": {
+      "t": "FishBase, Abalistes stellatus",
+      "u": "https://www.fishbase.se/summary/Abalistes-stellatus.html"
+    },
+    "fb-paraluteres-prionurus": {
+      "t": "FishBase, Paraluteres prionurus",
+      "u": "https://www.fishbase.se/summary/Paraluteres-prionurus.html"
+    },
+    "fb-pervagor-melanocephalus": {
+      "t": "FishBase, Pervagor melanocephalus",
+      "u": "https://www.fishbase.se/summary/Pervagor-melanocephalus.html"
+    },
+    "fb-paramonacanthus-curtorhynchos": {
+      "t": "FishBase, Paramonacanthus curtorhynchos",
+      "u": "https://www.fishbase.se/summary/Paramonacanthus-curtorhynchos.html"
+    },
+    "fb-pseudomonacanthus-macrurus": {
+      "t": "FishBase, Pseudomonacanthus macrurus",
+      "u": "https://www.fishbase.se/summary/Pseudomonacanthus-macrurus.html"
+    },
+    "fb-canthigaster-valentini": {
+      "t": "FishBase, Canthigaster valentini",
+      "u": "https://www.fishbase.se/summary/Canthigaster-valentini.html"
+    },
+    "fb-arothron-nigropunctatus": {
+      "t": "FishBase, Arothron nigropunctatus",
+      "u": "https://www.fishbase.se/summary/Arothron-nigropunctatus.html"
+    },
+    "fb-torquigener-brevipinnis": {
+      "t": "FishBase, Torquigener brevipinnis",
+      "u": "https://www.fishbase.se/summary/Torquigener-brevipinnis.html"
+    },
+    "fao-pom": {"t": "FAO species guide, Pomacentridae (Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e56.pdf"},
+    "fao-pom57": {"t": "FAO species guide, Pomacentridae (Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e57.pdf"},
+    "fao-cha": {"t": "FAO species guide, Chaetodontidae (Pyle 2001)", "u": "https://www.fao.org/4/y0770e/y0770e43.pdf"},
+    "fao-cha44": {"t": "FAO species guide, Chaetodontidae (Pyle 2001)", "u": "https://www.fao.org/4/y0770e/y0770e44.pdf"},
+    "fao-cha47": {"t": "FAO species guide, Chaetodontidae (Pyle 2001)", "u": "https://www.fao.org/4/y0770e/y0770e47.pdf"},
+    "fao-pmc": {"t": "FAO species guide, Pomacanthidae (Pyle 2001)", "u": "https://www.fao.org/4/y0770e/y0770e48.pdf"},
+    "fao-pmc49": {"t": "FAO species guide, Pomacanthidae (Pyle 2001)", "u": "https://www.fao.org/4/y0770e/y0770e49.pdf"},
+    "fao-pmc50": {"t": "FAO species guide, Pomacanthidae (Pyle 2001)", "u": "https://www.fao.org/4/y0770e/y0770e50.pdf"},
+    "fao-ser": {"t": "FAO species guide, Serranidae (Heemstra and Randall 1999)", "u": "https://www.fao.org/4/x2400e/x2400e34.pdf"},
+    "fao-ser35": {"t": "FAO species guide, Serranidae (Heemstra and Randall 1999)", "u": "https://www.fao.org/4/x2400e/x2400e35.pdf"},
+    "fao-ser37": {"t": "FAO species guide, Serranidae (Heemstra and Randall 1999)", "u": "https://www.fao.org/4/x2400e/x2400e37.pdf"},
+    "fao-ser38": {"t": "FAO species guide, Serranidae (Heemstra and Randall 1999)", "u": "https://www.fao.org/4/x2400e/x2400e38.pdf"},
+    "fao-ser40": {"t": "FAO species guide, Serranidae (Heemstra and Randall 1999)", "u": "https://www.fao.org/4/x2400e/x2400e40.pdf"},
+    "fao-ser41": {"t": "FAO species guide, Serranidae (Heemstra and Randall 1999)", "u": "https://www.fao.org/4/x2400e/x2400e41.pdf"},
+    "fao-apo": {"t": "FAO species guide, Apogonidae (Allen 1999)", "u": "https://www.fao.org/4/x2400e/x2400e47.pdf"},
+    "fao-sco": {"t": "FAO species guide, Scorpaenidae (Poss 1999)", "u": "https://www.fao.org/4/x2400e/x2400e20.pdf"},
+    "fao-sco22": {"t": "FAO species guide, Scorpaenidae (Poss 1999)", "u": "https://www.fao.org/4/x2400e/x2400e22.pdf"},
+    "fao-let": {"t": "FAO species guide, Lethrinidae (Carpenter 2001)", "u": "https://www.fao.org/4/y0770e/y0770e24.pdf"},
+    "fao-let25": {"t": "FAO species guide, Lethrinidae (Carpenter 2001)", "u": "https://www.fao.org/4/y0770e/y0770e25.pdf"},
+    "fao-let26": {"t": "FAO species guide, Lethrinidae (Carpenter 2001)", "u": "https://www.fao.org/4/y0770e/y0770e26.pdf"},
+    "fao-let27": {"t": "FAO species guide, Lethrinidae (Carpenter 2001)", "u": "https://www.fao.org/4/y0770e/y0770e27.pdf"},
+    "fao-mul": {"t": "FAO species guide, Mullidae (Randall 2001)", "u": "https://www.fao.org/4/y0770e/y0770e39.pdf"},
+    "fao-mul40": {"t": "FAO species guide, Mullidae (Randall 2001)", "u": "https://www.fao.org/4/y0770e/y0770e40.pdf"},
+    "fao-syn": {"t": "FAO species guide, Synodontidae (Russell 1999)", "u": "https://www.fao.org/4/x2401e/x2401e40.pdf"},
+    "fao-syn41": {"t": "FAO species guide, Synodontidae (Russell 1999)", "u": "https://www.fao.org/4/x2401e/x2401e41.pdf"},
+    "fao-lut": {"t": "FAO species guide, Lutjanidae (Anderson and Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e08.pdf"},
+    "fao-lut11": {"t": "FAO species guide, Lutjanidae (Anderson and Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e11.pdf"},
+    "fao-lut12": {"t": "FAO species guide, Lutjanidae (Anderson and Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e12.pdf"},
+    "fao-lut13": {"t": "FAO species guide, Lutjanidae (Anderson and Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e13.pdf"},
+    "fao-lut14": {"t": "FAO species guide, Lutjanidae (Anderson and Allen 2001)", "u": "https://www.fao.org/4/y0770e/y0770e14.pdf"},
+    "fao-hae": {"t": "FAO species guide, Haemulidae (McKay 2001)", "u": "https://www.fao.org/4/y0770e/y0770e21.pdf"},
+    "fao-hae22": {"t": "FAO species guide, Haemulidae (McKay 2001)", "u": "https://www.fao.org/4/y0770e/y0770e22.pdf"},
+    "fao-cae": {"t": "FAO species guide, Caesionidae (Carpenter 2001)", "u": "https://www.fao.org/4/y0770e/y0770e16.pdf"},
+    "fao-cae17": {"t": "FAO species guide, Caesionidae (Carpenter 2001)", "u": "https://www.fao.org/4/y0770e/y0770e17.pdf"},
+    "fao-hol": {"t": "FAO species guide, Holocentridae (Randall and Greenfield 1999)", "u": "https://www.fao.org/4/x2400e/x2400e15.pdf"},
+    "fao-hol16": {"t": "FAO species guide, Holocentridae (Randall and Greenfield 1999)", "u": "https://www.fao.org/4/x2400e/x2400e16.pdf"},
+    "fao-nem": {"t": "FAO species guide, Nemipteridae (Russell 2001)", "u": "https://www.fao.org/4/y0770e/y0770e28.pdf"},
+    "fb-chrysiptera-rollandi": {"t": "FishBase, Chrysiptera rollandi", "u": "https://www.fishbase.se/summary/Chrysiptera-rollandi.html"},
+    "fb-abudefduf-vaigiensis": {"t": "FishBase, Abudefduf vaigiensis", "u": "https://www.fishbase.se/summary/Abudefduf-vaigiensis.html"},
+    "fb-amblyglyphidodon-curacao": {"t": "FishBase, Amblyglyphidodon curacao", "u": "https://www.fishbase.se/summary/Amblyglyphidodon-curacao.html"},
+    "fb-neoglyphidodon-melas": {"t": "FishBase, Neoglyphidodon melas", "u": "https://www.fishbase.se/summary/Neoglyphidodon-melas.html"},
+    "fb-plectroglyphidodon-lacrymatus": {"t": "FishBase, Plectroglyphidodon lacrymatus", "u": "https://www.fishbase.se/summary/Plectroglyphidodon-lacrymatus.html"},
+    "fb-dischistodus-perspicillatus": {"t": "FishBase, Dischistodus perspicillatus", "u": "https://www.fishbase.se/summary/Dischistodus-perspicillatus.html"},
+    "fb-neopomacentrus-azysron": {"t": "FishBase, Neopomacentrus azysron", "u": "https://www.fishbase.se/summary/Neopomacentrus-azysron.html"},
+    "fb-amblypomacentrus-breviceps": {"t": "FishBase, Amblypomacentrus breviceps", "u": "https://www.fishbase.se/summary/Amblypomacentrus-breviceps.html"},
+    "fb-cheilodipterus-quinquelineatus": {"t": "FishBase, Cheilodipterus quinquelineatus", "u": "https://www.fishbase.se/summary/Cheilodipterus-quinquelineatus.html"},
+    "fb-pristiapogon-fraenatus": {"t": "FishBase, Pristiapogon fraenatus", "u": "https://www.fishbase.se/summary/Pristiapogon-fraenatus.html"},
+    "fb-foa-fo": {"t": "FishBase, Foa fo", "u": "https://www.fishbase.se/summary/Foa-fo.html"},
+    "fb-taeniamia-melasma": {"t": "FishBase, Taeniamia melasma", "u": "https://www.fishbase.se/summary/Taeniamia-melasma.html"},
+    "fb-pteropterus-paucispinula": {"t": "FishBase, Pteropterus paucispinula", "u": "https://www.fishbase.se/summary/Pteropterus-paucispinula.html"},
+    "fb-grammistes-sexlineatus": {"t": "FishBase, Grammistes sexlineatus", "u": "https://www.fishbase.se/summary/Grammistes-sexlineatus.html"},
+    "fb-pogonoperca-punctata": {"t": "FishBase, Pogonoperca punctata", "u": "https://www.fishbase.se/summary/Pogonoperca-punctata.html"},
+    "fb-diploprion-bifasciatum": {"t": "FishBase, Diploprion bifasciatum", "u": "https://www.fishbase.se/summary/Diploprion-bifasciatum.html"},
+    "fb-pseudanthias-squamipinnis": {"t": "FishBase, Pseudanthias squamipinnis", "u": "https://www.fishbase.se/summary/Pseudanthias-squamipinnis.html"}
+  },
+  "families": [
+    "f:Damselfishes",
+    "f:Butterflyfishes",
+    "f:Angelfishes",
+    "f:Groupers",
+    "f:Cardinalfishes",
+    "f:Lionfishes",
+    "f:Emperors",
+    "f:Soapfishes",
+    "f:Goatfishes",
+    "f:Lizardfishes",
+    "f:Snappers",
+    "f:Sweetlips",
+    "f:Fusiliers",
+    "f:Squirrelfishes",
+    "f:CoralBreams",
+    "f:Anthias",
+    "f:Soldierfishes",
+    "f:Wrasses",
+    "f:Parrotfishes",
+    "f:Triggerfishes",
+    "f:Filefishes",
+    "f:Boxfishes",
+    "f:Puffers",
+    "f:Rabbitfishes",
+    "f:Spadefishes",
+    "f:MoorishIdol",
+    "f:Sandperches"
+  ],
+  "genera": {
+    "Thalassoma": {
+      "plain": [
+        "Bold wrasses of shallow coral and rocky reefs; some, such as T. amblycephalum, gather above the reef to feed on plankton.",
+        [["fao-lab09", "Thalassoma lunare, p. 3462"], ["fao-lab09", "Thalassoma amblycephalum, p. 3461"]]
+      ],
+      "marks": [["Short, blunt snout, never drawn out into a tube (Gomphosus)", [["fao-lab", "couplet 27, p. 3386"]]]]
+    },
+    "Gomphosus": {
+      "plain": [
+        "Wrasses whose long, thin jaws pick small animals out of cracks in coral and rock, from 1 to 15 m.",
+        [["fao-lab06", "Gomphosus varius, p. 3432"]]
+      ],
+      "marks": [["Snout drawn out into a long, thin tube made by both jaws", [["fao-lab", "couplet 27, p. 3386"]]]]
+    },
+    "Labroides": {
+      "plain": [
+        "Small, slender wrasses; L. dimidiatus keeps cleaning stations where other fishes come to have their parasites picked off, even inside the mouth and gills.",
+        [["fao-lab07", "Labroides dimidiatus, p. 3443"]]
+      ],
+      "marks": [
+        ["Slender body", [["fao-lab", "couplet 17, p. 3385"]]],
+        ["Lower lip split in two by a deep notch", [["fao-lab", "couplet 17, p. 3385"]]]
+      ]
+    },
+    "Labrichthys": {
+      "plain": [
+        "Wrasses of shallow lagoon reefs rich in coral, where they eat coral polyps, above all of staghorn Acropora.",
+        [["fao-lab07", "Labrichthys unilineatus, p. 3442"]]
+      ],
+      "marks": [
+        ["Lips that close into a short tube", [["fao-lab", "couplet 16, p. 3385"]]],
+        ["Body deeper than Labroides, the lower lip not split", [["fao-lab", "couplet 17, p. 3385"]]]
+      ]
+    },
+    "Diproctacanthus": {
+      "plain": [
+        "Small wrasses, about 10 cm, of sheltered lagoons rich in coral: adults eat coral polyps, juveniles clean other fishes.",
+        [["fao-lab06", "Diproctacanthus xanthurus, p. 3430"]]
+      ],
+      "marks": [
+        ["Lips that close into a short tube", [["fao-lab", "couplet 16, p. 3385"]]],
+        ["Straight snout profile (Labropsis: rounded)", [["fao-lab", "couplet 19, p. 3385"]]],
+        ["Long, slim tail base", [["fao-lab", "couplet 19, p. 3385"]]]
+      ]
+    },
+    "Labropsis": {
+      "plain": [
+        "Small wrasses of rich coral reefs, alone or in small groups; adults eat coral polyps and may also clean other fishes.",
+        [["fb-labropsis-manabei", "Biology"]]
+      ],
+      "marks": [
+        ["Lips that close into a short tube", [["fao-lab", "couplet 16, p. 3385"]]],
+        ["Rounded snout profile in adults (Diproctacanthus: straight)", [["fao-lab", "couplet 19, p. 3385"]]],
+        ["Short, deep tail base", [["fao-lab", "couplet 19, p. 3385"]]]
+      ]
+    },
+    "Cheilinus": {
+      "plain": [
+        "Deep-bodied wrasses of coral reefs and the sand or seagrass nearby; they feed mostly on hard-shelled animals such as molluscs and crustaceans.",
+        [["fao-lab04", "Cheilinus chlorourus, p. 3413"], ["fao-lab04", "Cheilinus fasciatus, p. 3414"], ["fao-lab04", "Cheilinus trilobatus, p. 3415"]]
+      ],
+      "marks": [
+        ["Body as deep as the head is long, or deeper", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Jaws end level at the front", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Often vertical bars, or pale spots on a dark body", [["fao-lab", "couplet 11, p. 3384"]]]
+      ]
+    },
+    "Oxycheilinus": {
+      "plain": [
+        "Slimmer cousins of Cheilinus that hunt small fishes, shrimps and other crustaceans on coral reefs.",
+        [["fao-lab08", "Oxycheilinus digrammus, p. 3449"], ["fao-lab08", "Oxycheilinus orientalis, p. 3450"], ["fao-lab", "couplet 11, p. 3384"]]
+      ],
+      "marks": [
+        ["Body less deep than the head is long", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Lower jaw juts out beyond the upper", [["fao-lab", "couplet 11, p. 3384"]]],
+        ["Often a stripe along the body, or a black spot at the front of the dorsal fin", [["fao-lab", "couplet 11, p. 3384"]]]
+      ]
+    },
+    "Epibulus": {
+      "plain": [
+        "Wrasses whose jaws can shoot far forward, as a long tube.",
+        [["fao-lab", "couplet 9, p. 3383"]]
+      ],
+      "marks": [
+        ["Mouth closed, the long lower jaw reaches back under the head to the gill cover", [["fao-lab", "couplet 9, p. 3383"]]]
+      ]
+    },
+    "Pseudocheilinus": {
+      "plain": [
+        "Small wrasses; the shy P. hexataenia keeps among coral branches on seaward reefs and eats small crustaceans.",
+        [["fb-pseudocheilinus-hexataenia", "Biology"]]
+      ],
+      "marks": [
+        ["Snout fairly long and pointed", [["fao-lab", "couplet 13, p. 3384"]]],
+        ["Dorsal and anal fins low (Paracheilinus: tall, often with filaments)", [["fao-lab", "couplet 13, p. 3384"]]]
+      ]
+    },
+    "Paracheilinus": {
+      "plain": [
+        "Small wrasses; P. carpenteri, about 8 cm, schools above coral or rubble at the foot of steep outer reef slopes, its males larger and more colourful.",
+        [["fb-paracheilinus-carpenteri", "Size, Morphology, Biology"]]
+      ],
+      "marks": [
+        ["Dorsal and anal fins tall and colourful, often with trailing filaments", [["fao-lab", "couplet 13, p. 3384"]]],
+        ["Short, blunt snout", [["fao-lab", "couplet 13, p. 3384"]]]
+      ]
+    },
+    "Novaculichthys": {
+      "plain": [
+        "Wrasses of the sand and rubble around reefs that turn over rocks to find the animals beneath; the juveniles look like drifting seaweed.",
+        [["fao-lab08", "Novaculichthys taeniourus, p. 3447"]]
+      ],
+      "marks": [
+        ["Head sloping gently to the snout (Iniistius: almost vertical)", [["fao-lab", "couplet 15 (Iniistius as Xyrichtys), p. 3384"]]],
+        ["Dark bands radiating from the eye across a pale head", [["fao-lab", "couplet 15, p. 3384"]]],
+        ["Dark body with a white spot on each scale", [["fao-lab", "couplet 15, p. 3384"]]]
+      ]
+    },
+    "Iniistius": {
+      "plain": [
+        "Razorfishes of open sand: they hover just above the bottom and dive head first into the sand when danger comes.",
+        [["fao-lab10", "as Xyrichtys pavo, p. 3466"], ["fao-lab10", "as Xyrichtys pentadactylus, p. 3467"]]
+      ],
+      "marks": [
+        ["Blunt head, dropping almost vertically to the snout", [["fao-lab", "couplet 15 (as Xyrichtys), p. 3384"]]],
+        ["Body mostly pale", [["fao-lab", "couplet 15 (as Xyrichtys), p. 3384"]]]
+      ]
+    },
+    "Hemigymnus": {
+      "plain": [
+        "Large wrasses, up to about 50 cm, of coral reefs and reef flats; H. melapterus takes in mouthfuls of sand, sorts out the small animals and blows the sand out.",
+        [["fao-lab07", "Hemigymnus melapterus, p. 3439"]]
+      ],
+      "marks": [
+        ["Very thick, fleshy lips, the upper one jutting beyond the lower", [["fao-lab", "couplet 22, p. 3385"]]],
+        ["Adults: pink and blue-green bands on the head", [["fao-lab", "couplet 22, p. 3385"]]]
+      ]
+    },
+    "Pteragogus": {
+      "plain": [
+        "Small, secretive wrasses that hide among dense weed, from shallow reefs with algae to deeper soft bottoms.",
+        [["fb-pteragogus-enneacanthus", "Biology"]]
+      ],
+      "marks": [
+        ["Lips much thinner than in Hemigymnus", [["fao-lab", "couplet 22, p. 3385"]]],
+        ["Adults brown to dark red with blotches", [["fao-lab", "couplet 22, p. 3385"]]]
+      ]
+    },
+    "Anampses": {
+      "plain": [
+        "Wrasses of mixed coral, rubble and sand on seaward reefs; in A. meleagrides males and females are coloured very differently.",
+        [["fb-anampses-meleagrides", "Morphology, Biology"]]
+      ],
+      "marks": [["In most species a coloured spot or bar on each scale", [["fao-lab", "couplet 24, p. 3386"]]]]
+    },
+    "Macropharyngodon": {
+      "plain": [
+        "Wrasses with a deep, flattened body and a striking pattern of spots or bands.",
+        [["fao-lab", "couplet 31, p. 3386"], ["fao-lab07", "Macropharyngodon meleagris, p. 3446"]]
+      ],
+      "marks": [
+        ["Deep, flattened body", [["fao-lab", "couplet 31, p. 3386"]]],
+        ["Bright bands on head and body, or bright blotches, or a spot on each scale", [["fao-lab", "couplet 31, p. 3386"]]]
+      ]
+    },
+    "Halichoeres": {
+      "plain": [
+        "A large genus of mostly small wrasses of coral reefs, rocky shores and the sand nearby.",
+        [["fao-lab06", "Halichoeres hortulanus, p. 3434"], ["fao-lab06", "Halichoeres chloropterus, p. 3433"], ["fao-lab06", "Halichoeres melanurus, p. 3436"]]
+      ],
+      "marks": [
+        ["Body less deep than Macropharyngodon, the dorsal fin starting further back", [["fao-lab", "couplet 31, p. 3386"]]]
+      ]
+    },
+    "Stethojulis": {
+      "plain": [
+        "Wrasses of shallow reefs and reef flats; S. bandanensis swims fast in small groups, beating its pectoral fins.",
+        [["fao-lab09", "Stethojulis bandanensis, p. 3459"]]
+      ],
+      "marks": [
+        ["Pectoral fins set high, just behind the gill cover", [["fao-lab", "couplet 32, p. 3387"]]],
+        ["Narrow tail base", [["fao-lab", "couplet 32, p. 3387"]]]
+      ]
+    },
+    "Cheilio": {
+      "plain": [
+        "Long, slim wrasses, up to about 50 cm, of shallow back reefs and weedy areas; they eat crustaceans and small fishes.",
+        [["fao-lab04", "Cheilio inermis, p. 3417"]]
+      ],
+      "marks": [
+        ["Very long, slim body", [["fao-lab", "couplet 33, p. 3387"]]],
+        ["Long snout", [["fao-lab", "couplet 33, p. 3387"]]]
+      ]
+    },
+    "Hologymnosus": {
+      "plain": [
+        "Long-bodied wrasses of coral reefs and rocky bottoms that hunt small fishes and crustaceans.",
+        [["fao-lab07", "Hologymnosus annulatus, p. 3440"], ["fao-lab07", "Hologymnosus doliatus, p. 3441"]]
+      ],
+      "marks": [
+        ["Long snout with fleshy lips (Coris: short snout)", [["fao-lab", "couplet 34, p. 3387"]]],
+        ["Very small, numerous scales", [["fao-lab", "couplet 34, p. 3387"]]]
+      ]
+    },
+    "Coris": {
+      "plain": [
+        "Wrasses of coral reefs and lagoons that eat hard-shelled prey; the young can look nothing like the adults, as in C. gaimard.",
+        [["fao-lab05", "Coris gaimard, p. 3428"]]
+      ],
+      "marks": [
+        ["Short snout (Hologymnosus: long)", [["fao-lab", "couplet 34, p. 3387"]]]
+      ]
+    },
+    "Cirrhilabrus": {
+      "plain": [
+        "Small wrasses, C. lubbocki about 7 cm, that feed on plankton just above coral rubble and small branching corals on outer reefs.",
+        [["fao-lab05", "Cirrhilabrus lubbocki, p. 3425"]]
+      ],
+      "marks": [
+        ["Small mouth", [["fao-lab", "couplet 3, p. 3382"]]],
+        ["Males often brilliant red, purple or blue", [["fao-lab", "couplet 3, p. 3382"]]]
+      ]
+    },
+    "Pseudodax": {
+      "plain": [
+        "Solitary wrasses of rock and coral reefs, to about 60 m, that scrape small animals off the bottom; the juveniles pick parasites from other fishes.",
+        [["fao-lab09", "Pseudodax moluccanus, p. 3456"]]
+      ],
+      "marks": [
+        ["Grey to purplish, with a reddish spot on each scale", [["fao-lab", "couplet 3, p. 3382"]]],
+        ["Orange-red nape", [["fao-lab", "couplet 3, p. 3382"]]]
+      ]
+    },
+    "Bodianus": {
+      "plain": [
+        "Wrasses of coral reefs; B. axillaris eats molluscs and crustaceans, and its young live in coral caves and sometimes clean other fishes.",
+        [["fao-lab03", "Bodianus axillaris, p. 3408"]]
+      ]
+    },
+    "Choerodon": {
+      "plain": [
+        "Solitary wrasses of shallow coral reefs and seagrass beds that eat crustaceans, molluscs and sea urchins.",
+        [["fao-lab04", "Choerodon anchorago, p. 3418"]]
+      ]
+    },
+    "Cymolutes": {
+      "plain": [
+        "Solitary wrasses, about 20 cm, of sandy reef flats and shallow sandy lagoons, often in tidal channels; they dive into the sand when threatened.",
+        [["fb-cymolutes-torquatus", "Size, Biology"]]
+      ]
+    },
+    "Novaculoides": {
+      "plain": [
+        "Slender wrasses, about 16 cm, usually bright green, hiding well camouflaged in seagrass beds and sandy algal flats of lagoons.",
+        [["fb-novaculoides-macrolepidotus", "Size, Morphology, Biology"]]
+      ]
+    },
+    "Wetmorella": {
+      "plain": [
+        "Tiny, secretive wrasses, about 6 cm, of caves and crevices on lagoon and seaward reefs, mostly found below 30 m.",
+        [["fb-wetmorella-albofasciata", "Size, Biology"]]
+      ]
+    },
+    "Scarus": {
+      "plain": [
+        "Parrotfishes told apart mostly by colour, which changes from the young to the initial phase and to the colourful terminal phase.",
+        [["fao-sca", "key to the genera, introduction, p. 3469"]]
+      ],
+      "marks": [
+        ["Beak mostly hidden by the lips (Chlorurus: widely exposed)", [["fao-sca", "key to the genera, couplet 6, p. 3471"]]],
+        ["Head rounded or angular, never bullet-shaped", [["fao-sca", "key to the genera, couplet 6, p. 3471"]]]
+      ]
+    },
+    "Chlorurus": {
+      "plain": [
+        "Blunt-headed parrotfishes; C. bleekeri, the most common Chlorurus in the Philippines, lives mostly at 5 to 25 m, alone or in small harems.",
+        [["fao-sca", "key to the genera, couplet 6, p. 3471"], ["fao-sca", "Chlorurus bleekeri, p. 3475"]]
+      ],
+      "marks": [
+        ["Beak widely exposed, not hidden by the lips", [["fao-sca", "key to the genera, couplet 6, p. 3471"]]],
+        ["Blunt head, bullet-shaped or steep", [["fao-sca", "key to the genera, couplet 6, p. 3471"]]]
+      ]
+    },
+    "Hipposcarus": {
+      "plain": [
+        "Pale parrotfishes with a long, pointed head, common in groups over sand near seaward reefs and in lagoons.",
+        [["fao-sca12", "Hipposcarus longiceps, p. 3480"], ["fao-sca", "key to the genera, couplet 5, p. 3470"]]
+      ],
+      "marks": [
+        ["Pointed head with an angular snout, the eye high on the head", [["fao-sca", "key to the genera, couplet 5, p. 3470"]]],
+        ["Body plain and pale, the tail often yellowish", [["fao-sca", "key to the genera, couplet 5, p. 3470"]]]
+      ]
+    },
+    "Cetoscarus": {
+      "plain": [
+        "Parrotfishes of seaward reefs and clear lagoons, 1 to 30 m; a male keeps a harem of females, and large females turn into the bright males.",
+        [["fb-cetoscarus-ocellatus", "Biology"]]
+      ],
+      "marks": [
+        ["Separate teeth visible on the beak, not a smooth plate", [["fao-sca", "key to the genera, couplet 3, p. 3469"]]]
+      ]
+    },
+    "Calotomus": {
+      "plain": [
+        "Small parrotfishes, often common in seagrass beds and dense algae, feeding in small groups on seagrasses.",
+        [["fao-sca", "Calotomus spinidens, p. 3474"]]
+      ],
+      "marks": [["A single row of scales on the cheek below the eye", [["fao-sca", "key to the genera, couplet 1, p. 3469"]]]]
+    },
+    "Abalistes": {
+      "plain": [
+        "Triggerfishes of sand and mud bottoms near reefs; the adults often swim high above the bottom on deep coastal slopes.",
+        [["fb-abalistes-stellatus", "Biology"]]
+      ],
+      "marks": [["Tail base flattened, wider than deep", [["fao-bal", "key to the genera, couplet 1, p. 3912"]]]]
+    },
+    "Odonus": {
+      "plain": [
+        "Triggerfishes of current-swept seaward reefs that gather in groups to feed on plankton and sponges.",
+        [["fao-bal56", "Odonus niger, p. 3925"]]
+      ],
+      "marks": [["Red teeth, the two upper ones sticking out like fangs", [["fao-bal", "key to the genera, couplet 4, p. 3912"]]]]
+    },
+    "Pseudobalistes": {
+      "plain": [
+        "Large triggerfishes, up to 60 cm, living alone on coral reefs and eating sea urchins, crabs and molluscs; nest-guarding females are aggressive.",
+        [["fao-bal55", "Pseudobalistes flavimarginatus, p. 3922"]]
+      ]
+    },
+    "Melichthys": {
+      "plain": [
+        "Triggerfishes of coral reefs, down to 60 to 75 m; M. niger feeds largely on algae.",
+        [["fao-bal55", "Melichthys niger and M. vidua, p. 3924"], ["fao-bal", "introduction, p. 3911"]]
+      ],
+      "marks": [
+        ["Egg-shaped: the head curved both above and below", [["fao-bal", "key to the genera, couplet 6, p. 3912"]]],
+        ["Body all black or deep indigo", [["fao-bal", "key to the genera, couplet 6, p. 3912"]]]
+      ]
+    },
+    "Balistoides": {
+      "plain": [
+        "Large triggerfishes, up to 80 cm, of coral reefs; they eat sea urchins, crabs and molluscs, and nest-guarding females are very aggressive.",
+        [["fao-bal55", "Balistoides viridescens, p. 3921"]]
+      ],
+      "marks": [
+        ["A groove on the snout in front of the eye", [["fao-bal", "key to the genera, couplet 3, p. 3912"]]],
+        ["Ridges of scales along the body only near the tail (Sufflamen: to mid-body)", [["fao-bal", "key to the genera, couplet 7, p. 3913"]]]
+      ]
+    },
+    "Sufflamen": {
+      "plain": [
+        "Smaller triggerfishes, up to 22 to 25 cm, usually alone, from sheltered lagoons to seaward reefs below the surge zone.",
+        [["fao-bal56", "Sufflamen chrysopterum, p. 3926"], ["fao-bal56", "Sufflamen bursa, p. 3926"]]
+      ],
+      "marks": [
+        ["A groove on the snout in front of the eye", [["fao-bal", "key to the genera, couplet 3, p. 3912"]]],
+        ["Ridges of scales along the body reach mid-body or beyond", [["fao-bal", "key to the genera, couplet 7, p. 3913"]]]
+      ]
+    },
+    "Xanthichthys": {
+      "plain": [
+        "Triggerfishes of the upper edges of current-swept seaward drop-offs and ledges, from 8 to 150 m.",
+        [["fao-bal56", "Xanthichthys auromarginatus, p. 3927"]]
+      ],
+      "marks": [
+        ["Several bare, slanting grooves on the cheek", [["fao-bal", "key to the genera, couplet 8, p. 3912"]]],
+        ["Mouth slightly upturned", [["fao-bal", "key to the genera, couplet 8, p. 3912"]]]
+      ]
+    },
+    "Balistapus": {
+      "plain": [
+        "Triggerfishes of coral reefs to 30 m that eat almost anything: coral, algae, sea urchins, crabs, molluscs and fishes.",
+        [["fao-bal55", "Balistapus undulatus, p. 3919"]]
+      ],
+      "marks": [
+        ["Two rows of large spines on the tail base", [["fao-bal", "key to the genera, couplet 9, p. 3913"]]],
+        ["Third dorsal spine standing up above the back", [["fao-bal", "key to the genera, couplet 9, p. 3913"]]]
+      ]
+    },
+    "Rhinecanthus": {
+      "plain": [
+        "Triggerfishes of shallow reef flats and sheltered lagoons, to 20 m.",
+        [["fao-bal56", "Rhinecanthus verrucosus, p. 3926"]]
+      ],
+      "marks": [
+        ["No groove on the snout in front of the eye", [["fao-bal", "key to the genera, couplet 3, p. 3912"]]],
+        ["Several rows of small spines on the tail base", [["fao-bal", "key to the genera, couplet 9, p. 3913"]]],
+        ["Third dorsal spine tiny", [["fao-bal", "key to the genera, couplet 9, p. 3913"]]]
+      ]
+    },
+    "Paraluteres": {
+      "plain": [
+        "Small filefishes of clear lagoons and seaward reefs that mimic the poisonous puffer Canthigaster valentini.",
+        [["fb-paraluteres-prionurus", "Biology"], ["fao-mon58", "Paraluteres prionurus, p. 3941"]]
+      ],
+      "marks": [["First dorsal spine low, wrapped in a loose flap of skin on the back", [["fao-mon", "key to the genera, couplet 2, p. 3930"]]]]
+    },
+    "Oxymonacanthus": {
+      "plain": ["Small filefishes, about 9 cm, of shallow coral reefs.", [["fao-mon58", "Oxymonacanthus longirostris, p. 3941"]]],
+      "marks": [["Snout drawn out into a tube, turned up at the mouth", [["fao-mon", "key to the genera, couplet 3, p. 3930"]]]]
+    },
+    "Aluterus": {
+      "plain": [
+        "Large filefishes, up to about 1 m, of warm seas around the world, mostly inshore near coral reefs.",
+        [["fao-mon", "Aluterus scriptus, p. 3936"]]
+      ],
+      "marks": [["First dorsal spine above the eye (Pseudalutarius: well in front of it)", [["fao-mon", "key to the genera, couplet 5, p. 3930"]]]]
+    },
+    "Pseudalutarius": {
+      "plain": [
+        "Filefishes, up to about 18 cm, of open bottoms down to 75 m and of shallow weedy areas.",
+        [["fao-mon59", "as Pseudaluteres nasicornis, p. 3944"]]
+      ],
+      "marks": [["First dorsal spine well in front of the eye", [["fao-mon", "key to the genera, couplet 5 (as Pseudaluteres), p. 3930"]]]]
+    },
+    "Pervagor": {
+      "plain": [
+        "Secretive filefishes; P. melanocephalus lives on clear reefs rich in invertebrate growth, usually in pairs.",
+        [["fb-pervagor-melanocephalus", "Biology"]]
+      ],
+      "marks": [
+        ["Tail fin rounded", [["fao-mon", "key to the genera, couplet 11, p. 3931"]]],
+        ["Deep tail base (Acreichthys: shallower)", [["fao-mon", "key to the genera, couplet 12, p. 3932"]]]
+      ]
+    },
+    "Acreichthys": {
+      "plain": [
+        "Small filefishes; A. tomentosus, about 12 cm, lives among weed and rubble on shallow coral reefs.",
+        [["fao-mon", "Acreichthys tomentosus, p. 3936"]]
+      ],
+      "marks": [
+        ["Tail fin rounded", [["fao-mon", "key to the genera, couplet 11, p. 3931"]]],
+        ["Shallower tail base than Pervagor; males with an oblong patch of bristles on it", [["fao-mon", "key to the genera, couplet 12, p. 3932"]]]
+      ]
+    },
+    "Paramonacanthus": {
+      "plain": ["Filefishes of open, silty sand bottoms in sheltered areas.", [["fb-paramonacanthus-curtorhynchos", "Biology"]]],
+      "marks": [
+        ["Rear edge of the belly flap curved inward", [["fao-mon", "key to the genera, couplet 13, p. 3932"]]],
+        ["Males without bristles or spines on the tail base", [["fao-mon", "key to the genera, couplet 13, p. 3932"]]]
+      ]
+    },
+    "Amanses": {
+      "plain": ["Filefishes, about 20 cm, of coral reefs.", [["fao-mon", "Amanses scopas, p. 3937"]]],
+      "marks": [
+        ["Adults: a toothbrush-like patch of bristles or long spines on the side", [["fao-mon", "key to the genera, couplet 16, p. 3933"]]],
+        ["Teeth showing when the mouth is closed", [["fao-mon", "key to the genera, couplet 16, p. 3933"]]]
+      ]
+    },
+    "Pseudomonacanthus": {
+      "plain": [
+        "Filefishes of shallow coastal algal reefs and estuaries, often in pairs.",
+        [["fb-pseudomonacanthus-macrurus", "Biology"]]
+      ],
+      "marks": [["Very large belly flap", [["fao-mon", "key to the genera, couplet 17, p. 3933"]]]]
+    },
+    "Cantherhines": {
+      "plain": [
+        "Filefishes of reefs; C. pardalis, about 20 cm, lives on shallow rocky and coral reefs.",
+        [["fao-mon", "Cantherhines pardalis, p. 3939"]]
+      ],
+      "marks": [
+        ["Second dorsal and anal fins evenly rounded, not raised at the front", [["fao-mon", "key to the genera, couplet 20, p. 3933"]]]
+      ]
+    },
+    "Ostracion": {
+      "plain": [
+        "Boxfishes of coral reefs that feed on small animals of the bottom; O. cubicus lives down to 50 m.",
+        [["fao-ost", "Ostracion cubicus, p. 3950"], ["fao-ost", "Ostracion rhinorhynchus, p. 3951"]]
+      ],
+      "marks": [["No spines on the box", [["fao-ost", "Ostraciidae, key to the genera, couplet 1, p. 3949"]]]]
+    },
+    "Lactoria": {
+      "plain": [
+        "Horned boxfishes; L. cornuta lives on coral and rocky reefs down to 100 m and feeds on small animals of the bottom.",
+        [["fao-ost", "Lactoria cornuta, p. 3950"], ["fao-ost", "Ostraciidae, key to the genera, couplet 2, p. 3949"]]
+      ],
+      "marks": [
+        ["A sharp horn pointing forward from each eye", [["fao-ost", "Ostraciidae, key to the genera, couplet 2, p. 3949"]]],
+        ["A stout spine pointing back at the rear of each belly ridge", [["fao-ost", "Ostraciidae, key to the genera, couplet 2, p. 3949"]]]
+      ]
+    },
+    "Canthigaster": {
+      "plain": [
+        "Puffers; C. valentini lives among coral heads and rocks on lagoon and seaward reefs, its males holding territories and often fighting.",
+        [["fb-canthigaster-valentini", "Biology"]]
+      ],
+      "marks": [["A ridge along the back behind the eyes", [["fao-ost", "Tetraodontidae, key to the genera, couplet 1, p. 3955"]]]]
+    },
+    "Arothron": {
+      "plain": [
+        "Puffers; A. nigropunctatus lives on reef crests and slopes rich in invertebrates, often in pairs, and nibbles the tips of Acropora corals.",
+        [["fb-arothron-nigropunctatus", "Biology"]]
+      ],
+      "marks": [
+        ["No ridge on the back behind the eyes (Canthigaster: a ridge)", [["fao-ost", "Tetraodontidae, key to the genera, couplet 1, p. 3955"]]],
+        ["A pair of small forked tentacles at each nostril", [["fao-ost", "Tetraodontidae, key to the genera, couplet 10, p. 3956"]]]
+      ]
+    },
+    "Torquigener": {
+      "plain": ["Puffers of deep sandy coastal slopes, usually below 20 m.", [["fb-torquigener-brevipinnis", "Biology"]]],
+      "marks": [
+        ["No ridge on the back behind the eyes (Canthigaster: a ridge)", [["fao-ost", "Tetraodontidae, key to the genera, couplet 1, p. 3955"]]]
+      ]
+    },
+    "Siganus": {
+      "plain": [
+        "Rabbitfishes live near the bottom in shallow coastal waters, some in pairs among corals, others in schools, and mostly graze on algae.",
+        [["fao-sig", "Habitat, biology, and fisheries, p. 3627"]]
+      ]
+    },
+    "Platax": {
+      "plain": [
+        "Batfishes; P. teira lives on sheltered reefs, in mangroves and on wrecks, alone, in pairs or in large schools, and like most spadefishes is unafraid of divers.",
+        [["fao-eph", "Platax teira, p. 3619"]]
+      ]
+    },
+    "Zanclus": {
+      "plain": [
+        "Lives on coral and rocky reefs from the shallows to 180 m, alone, in pairs or in groups, and eats mostly small animals, above all sponges.",
+        [["fao-zan", "Zanclus cornutus, p. 3651"]]
+      ]
+    },
+    "Parapercis": {
+      "plain": [
+        "Sandperches rest on open sand or rubble near reefs, propped on their pelvic fins, and eat crabs, shrimps and small fishes; males keep harems.",
+        [["fao-pin", "Habitat, biology, and fisheries, p. 3501"]]
+      ]
+    },
+    "Chrysiptera": {
+      "plain": [
+        "Small damselfishes; C. rollandi, about 7.5 cm, lives alone or in small groups among corals and rubble and feeds mainly on plankton.",
+        [["fb-chrysiptera-rollandi", "Size, Biology"]]
+      ],
+      "marks": [["Oval to slender body, less deep than Neoglyphidodon", [["fao-pom", "key to the genera, couplet 24, p. 3341"]]]]
+    },
+    "Abudefduf": {
+      "plain": [
+        "Damselfishes of outer reef slopes and rocky inshore reefs; A. vaigiensis often feeds in groups in midwater, and its young drift with floating seaweed.",
+        [["fb-abudefduf-vaigiensis", "Biology"]]
+      ]
+    },
+    "Amphiprion": {
+      "plain": [
+        "Anemonefishes live with large sea anemones, often an adult pair and several smaller fish to each; in A. frenatus the male is much smaller than the female.",
+        [["fao-pom", "Amphiprion frenatus, p. 3348"], ["fao-pom57", "Amphiprion ocellaris, p. 3350"], ["fao-pom57", "Amphiprion perideraion, p. 3351"]]
+      ]
+    },
+    "Amblyglyphidodon": {
+      "plain": [
+        "Damselfishes of lagoons, bays and reefs; A. curacao feeds in groups over staghorn coral, its young among soft corals.",
+        [["fb-amblyglyphidodon-curacao", "Biology"]]
+      ],
+      "marks": [
+        ["Deep, almost round body", [["fao-pom", "key to the genera, couplet 23, p. 3341"]]],
+        ["Long dorsal spines (Neoglyphidodon, Chrysiptera: much shorter)", [["fao-pom", "key to the genera, couplet 23, p. 3341"]]]
+      ]
+    },
+    "Neoglyphidodon": {
+      "plain": [
+        "Damselfishes of coral-rich reefs; adult N. melas live alone or in pairs near the soft corals they eat, the young around staghorn coral.",
+        [["fb-neoglyphidodon-melas", "Biology"]]
+      ],
+      "marks": [
+        ["Body fairly deep, deeper than Chrysiptera, less round than Amblyglyphidodon", [["fao-pom", "key to the genera, couplets 23 and 24, p. 3341"]]]
+      ]
+    },
+    "Plectroglyphidodon": {
+      "plain": [
+        "Damselfishes of clear lagoon and seaward reefs; P. lacrymatus lives among mixed coral and rubble and feeds mainly on algae.",
+        [["fb-plectroglyphidodon-lacrymatus", "Biology"]]
+      ]
+    },
+    "Dischistodus": {
+      "plain": [
+        "Damselfishes of shallow lagoons; D. perspicillatus lives on small patch reefs with algae or seagrass and feeds mainly on algae.",
+        [["fb-dischistodus-perspicillatus", "Biology"]]
+      ]
+    },
+    "Neopomacentrus": {
+      "plain": [
+        "Damselfishes; N. azysron forms small groups on outer reef slopes, often in deep surge channels.",
+        [["fb-neopomacentrus-azysron", "Biology"]]
+      ],
+      "marks": [
+        ["Fairly slender body", [["fao-pom", "key to the genera, couplet 17, p. 3340"]]],
+        ["Tail crescent-shaped or deeply notched", [["fao-pom", "key to the genera, couplet 17, p. 3340"]]],
+        ["Rear of the dorsal and anal fins and outer tail rays often drawn into filaments",[["fao-pom", "key to the genera, couplet 17, p. 3340"]]]
+      ]
+    },
+    "Amblypomacentrus": {
+      "plain": [
+        "Small damselfishes of sandy or silty lagoons, around rubble or sponges; the young often shelter with anemones, and old shells or bottles serve as nests.",
+        [["fb-amblypomacentrus-breviceps", "Size, Biology"]]
+      ]
+    },
+    "Chaetodon": {
+      "plain": [
+        "Butterflyfishes of coral reefs; many, such as C. baronessa, feed on coral and live in pairs, while C. kleinii gathers in midwater to feed on plankton.",
+        [["fao-cha", "Chaetodon baronessa, p. 3237"], ["fao-cha44", "Chaetodon kleinii, p. 3242"]]
+      ],
+      "marks": [
+        ["Dorsal spines about equal, none drawn out (Heniochus: a long filament)", [["fao-cha", "key to the genera, couplets 3 and 5, p. 3226"]]]
+      ]
+    },
+    "Forcipiger": {
+      "plain": [
+        "Butterflyfishes that pick crabs, worms and other small animals from the reef, in pairs or small groups.",
+        [["fao-cha47", "Forcipiger flavissimus and F. longirostris, p. 3260"]]
+      ],
+      "marks": [
+        ["Long, tube-like snout (Hemitaurichthys: short)", [["fao-cha", "key to the genera, couplet 7, p. 3226"]]],
+        ["Long, sickle-shaped pectoral fins", [["fao-cha", "key to the genera, couplet 6, p. 3226"]]]
+      ]
+    },
+    "Hemitaurichthys": {
+      "plain": [
+        "Butterflyfishes that gather in midwater above the reef, in small to large groups, to feed on plankton.",
+        [["fao-cha47", "Hemitaurichthys polylepis, p. 3261"]]
+      ],
+      "marks": [
+        ["Short snout, not a tube (Forcipiger: long)", [["fao-cha", "key to the genera, couplet 7, p. 3226"]]],
+        ["Long, sickle-shaped pectoral fins", [["fao-cha", "key to the genera, couplet 6, p. 3226"]]]
+      ]
+    },
+    "Coradion": {
+      "plain": [
+        "Butterflyfishes of lagoons, outer reef slopes and drop-offs, at 3 to 15 m, usually in pairs.",
+        [["fao-cha47", "Coradion altivelis, C. chrysozonus and C. melanopus, pp. 3258-3259"]]
+      ],
+      "marks": [
+        ["No long dorsal filament and no hump on the nape (Heniochus)", [["fao-cha", "key to the genera, couplet 5, p. 3226"]]],
+        ["Rounded pectoral fins (Forcipiger, Hemitaurichthys: long, sickle-shaped)", [["fao-cha", "key to the genera, couplet 6, p. 3226"]]]
+      ]
+    },
+    "Parachaetodon": {
+      "plain": ["Butterflyfishes of lagoons and coral reefs, at 3 to 50 m.", [["fao-cha47", "Parachaetodon ocellatus, p. 3265"]]]
+    },
+    "Centropyge": {
+      "plain": [
+        "Small angelfishes, up to 8 to 18 cm; most feed on algae and live in harems of 3 to 7 fish.",
+        [["fao-pmc", "Centropyge bicolor and C. bispinosa, p. 3273"], ["fao-pmc49", "Centropyge nox and C. tibicen, p. 3278"], ["fao-pmc49", "Centropyge vroliki, p. 3279"]]
+      ]
+    },
+    "Pygoplites": {
+      "plain": [
+        "Angelfishes of coral reefs, at 3 to 30 m, that feed on sponges and tunicates, alone, in pairs or in small groups.",
+        [["fao-pmc50", "Pygoplites diacanthus, p. 3286"]]
+      ]
+    },
+    "Pomacanthus": {
+      "plain": [
+        "Large angelfishes, up to 25 to 40 cm, that feed on sponges and tunicates, alone or in pairs.",
+        [["fao-pmc50", "Pomacanthus imperator, P. navarchus and P. semicirculatus, p. 3285"]]
+      ]
+    },
+    "Chaetodontoplus": {
+      "plain": [
+        "Angelfishes of lagoons and coral reefs, at 5 to 25 m; C. mesoleucus feeds on sponges and tunicates in small groups.",
+        [["fao-pmc49", "Chaetodontoplus mesoleucus, p. 3281"]]
+      ]
+    },
+    "Apolemichthys": {
+      "plain": [
+        "Angelfishes of outer reef slopes and drop-offs, at 10 to 35 m, that feed on sponges and tunicates.",
+        [["fao-pmc", "Apolemichthys trimaculatus, p. 3272"]]
+      ]
+    },
+    "Genicanthus": {
+      "plain": [
+        "Angelfishes of outer reef slopes and drop-offs that feed on plankton, in harems of 3 to 7 fish.",
+        [["fao-pmc50", "Genicanthus lamarck, p. 3283"]]
+      ],
+      "marks": [["Crescent-shaped tail, often with long filaments on both lobes", [["fao-pmc", "key to the genera, couplet 3, p. 3267"]]]]
+    },
+    "Cephalopholis": {
+      "plain": [
+        "Groupers of coral reefs that feed mainly on fishes; C. argus and C. miniata live in groups of one male and several females.",
+        [["fao-ser35", "Cephalopholis argus, p. 2476"], ["fao-ser35", "Cephalopholis miniata, p. 2480"], ["fao-ser35", "Cephalopholis urodeta, p. 2483"]]
+      ],
+      "marks": [
+        ["Rounded tail (Gracila: square-cut)", [["fao-ser", "key to the genera, couplet 19, p. 2447"]]],
+        ["Dorsal fin membranes notched between the spines", [["fao-ser", "key to the genera, couplet 19, p. 2447"]]]
+      ]
+    },
+    "Epinephelus": {
+      "plain": [
+        "Groupers of coral reefs and rocky bottoms that eat fishes, crabs and octopuses; E. merra, about 32 cm, is common in shallow water, E. fuscoguttatus reaches 1 m.",
+        [["fao-ser37", "Epinephelus fasciatus, p. 2499"], ["fao-ser37", "Epinephelus fuscoguttatus, p. 2501"], ["fao-ser38", "Epinephelus merra, p. 2512"], ["fao-ser38", "Epinephelus maculatus, p. 2509"]]
+      ]
+    },
+    "Plectropomus": {
+      "plain": ["Large groupers: P. laevis reaches about 125 cm.", [["fao-ser40", "Plectropomus laevis, p. 2532"]]]
+    },
+    "Variola": {
+      "plain": [
+        "Groupers of coral reefs, from 4 to 200 m, that feed on fishes; V. albimarginata reaches about 50 cm.",
+        [["fao-ser41", "Variola albimarginata, p. 2538"]]
+      ],
+      "marks": [["Tail deeply crescent-shaped or forked", [["fao-ser", "key to the genera, couplet 14, p. 2446"]]]]
+    },
+    "Anyperodon": {
+      "plain": [
+        "Groupers of sheltered reefs, from 5 to 80 m, that hunt fishes; the blue and gold striped young mimic a wrasse.",
+        [["fao-ser35", "Anyperodon leucogrammicus, p. 2475"]]
+      ],
+      "marks": [["Long head and body, very flattened from side to side", [["fao-ser", "key to the genera, couplet 15, p. 2446"]]]]
+    },
+    "Gracila": {
+      "plain": [
+        "Groupers of outer reef slopes, from 15 to 120 m, that swim actively over the reef by day.",
+        [["fao-ser40", "Gracila albomarginata, p. 2530"]]
+      ],
+      "marks": [
+        ["Square-cut tail (Cephalopholis: rounded)", [["fao-ser", "key to the genera, couplet 19, p. 2447"]]],
+        ["Small head", [["fao-ser", "key to the genera, couplet 19, p. 2447"]]],
+        ["Dorsal fin membranes not notched between the spines", [["fao-ser", "key to the genera, couplet 19, p. 2447"]]]
+      ]
+    },
+    "Ostorhinchus": {
+      "plain": [
+        "Small cardinalfishes; O. cyanosoma, about 6 cm, gathers in groups that shelter among live coral by day and eat small shrimps and crabs.",
+        [["fao-apo", "as Apogon cyanosoma, p. 2608"]]
+      ]
+    },
+    "Cheilodipterus": {
+      "plain": [
+        "Cardinalfishes of reef flats, lagoons and seaward reefs; C. quinquelineatus shelters by day in crevices, branching coral or among sea urchin spines and feeds at night.",
+        [["fb-cheilodipterus-quinquelineatus", "Biology"]]
+      ],
+      "marks": [
+        ["Bold dark stripes on a pale body", [["fao-apo", "key to the genera, couplet 14, p. 2605"]]],
+        ["Large canine teeth in the jaws", [["fao-apo", "key to the genera, couplet 1, p. 2603"]]]
+      ]
+    },
+    "Pristiapogon": {
+      "plain": [
+        "Cardinalfishes of clear reef flats, lagoons and seaward reefs; P. fraenatus hides under ledges and at the base of coral heads by day.",
+        [["fb-pristiapogon-fraenatus", "Biology"]]
+      ]
+    },
+    "Foa": {
+      "plain": [
+        "Tiny cardinalfishes, about 3.5 cm, of quiet coastal bays on mud or silt with algae-covered rocks or soft corals; active at night.",
+        [["fb-foa-fo", "Size, Biology"]]
+      ]
+    },
+    "Sphaeramia": {
+      "plain": [
+        "Cardinalfishes of sheltered lagoon reefs, to 12 m, in small groups among live coral by day.",
+        [["fao-apo", "Sphaeramia nematoptera, p. 2610"]]
+      ]
+    },
+    "Taeniamia": {
+      "plain": [
+        "Cardinalfishes of sheltered coastal reefs, often silty, in small groups among branching Acropora corals.",
+        [["fb-taeniamia-melasma", "Biology"]]
+      ]
+    },
+    "Pterois": {
+      "plain": [
+        "Lionfishes that hide in crevices by day and come out at night to hunt shrimps and crabs; their spines are dangerous.",
+        [["fao-sco22", "Pterois antennata, p. 2329"], ["fao-sco22", "Pterois volitans, p. 2332"]]
+      ],
+      "marks": [["Pectoral fin rays unbranched (Dendrochirus: branched)", [["fao-sco", "key to the species, couplet 54, p. 2298"]]]]
+    },
+    "Dendrochirus": {
+      "plain": [
+        "Lionfishes of lagoons, outer reef slopes and rocky areas, down to about 73 m; D. zebra is about 20 cm.",
+        [["fao-sco", "Dendrochirus zebra, p. 2314"]]
+      ],
+      "marks": [
+        ["Pectoral fin rays branched (Pterois: unbranched)", [["fao-sco", "key to the species, couplet 54, p. 2298"]]],
+        ["A tentacle above the eye, usually longer than the eye", [["fao-sco", "key to the species, couplet 60, p. 2299"]]]
+      ]
+    },
+    "Neochirus": {
+      "plain": [
+        "Highly venomous lionfishes, mostly at 32 to 80 m, that rest by day and are active at dusk or at night.",
+        [["fao-sco", "as Dendrochirus brachypterus, p. 2313"]]
+      ],
+      "marks": [
+        ["Pectoral fin rays branched (Pterois: unbranched)", [["fao-sco", "key to the species, couplet 54 (as Dendrochirus), p. 2298"]]],
+        ["Tentacle above the eye short or absent (Dendrochirus: long)", [["fao-sco", "key to the species, couplet 60 (as Dendrochirus brachypterus), p. 2299"]]]
+      ]
+    },
+    "Parapterois": {
+      "plain": ["Lionfishes of soft bottoms, from 40 to 300 m, sometimes caught in trawls.", [["fao-sco22", "Parapterois heterurus, p. 2326"]]],
+      "marks": [["Outer tail rays drawn into long filaments in larger fish", [["fao-sco", "key to the species, couplet 56, p. 2299"]]]]
+    },
+    "Pteropterus": {
+      "plain": [
+        "Lionfishes; P. paucispinula, up to about 14 cm, was described from the western Pacific in 2015.",
+        [["fb-pteropterus-paucispinula", "Size, main reference"]]
+      ]
+    },
+    "Lethrinus": {
+      "plain": [
+        "Emperors of sand, rubble, seagrass and reef slopes that eat crustaceans, molluscs, sea urchins and small fishes.",
+        [["fao-let25", "Lethrinus atkinsoni, p. 3027"], ["fao-let26", "Lethrinus harak, p. 3032"], ["fao-let26", "Lethrinus obsoletus, p. 3038"]]
+      ],
+      "marks": [["Cheek bare, without scales (Monotaxis, Gnathodentex: scaly)", [["fao-let", "key to the genera, couplet 1, p. 3006"]]]]
+    },
+    "Monotaxis": {
+      "plain": [
+        "Emperors of coral reefs and the sand around them, at 3 to 60 m; big adults often gather in groups of up to about 50.",
+        [["fao-let27", "Monotaxis grandoculis, p. 3049"]]
+      ],
+      "marks": [["Scales on the cheek (Lethrinus: bare)", [["fao-let", "key to the genera, couplet 1, p. 3006"]]]]
+    },
+    "Gnathodentex": {
+      "plain": [
+        "Emperors of coral reefs, at 3 to 20 m, sometimes in groups of 100 or more, that eat small animals of the bottom.",
+        [["fao-let25", "Gnathodentex aurolineatus, p. 3017"]]
+      ],
+      "marks": [
+        ["Scales on the cheek (Lethrinus: bare)", [["fao-let", "key to the genera, couplet 1, p. 3006"]]],
+        ["Pointed tail lobes", [["fao-let", "key to the genera, couplet 4, p. 3007"]]]
+      ]
+    },
+    "Grammistes": {
+      "plain": [
+        "Soapfishes that hide under ledges and in small caves by day; the two white stripes of the young split into many lines, which break into dashes in adults.",
+        [["fb-grammistes-sexlineatus", "Biology"]]
+      ],
+      "marks": [
+        ["A small flap on the chin (Pogonoperca: as big as the eye)", [["fao-ser", "key to the genera, couplet 11, p. 2445"]]],
+        ["Dark brown or black with yellow stripes, breaking into dashes in big adults", [["fao-ser", "key to the genera, couplet 11, p. 2445"]]]
+      ]
+    },
+    "Pogonoperca": {
+      "plain": [
+        "Soapfishes of large coral heads on slopes with some current; adults usually below 20 m, the young in shallow lagoons and bays.",
+        [["fb-pogonoperca-punctata", "Biology"]]
+      ],
+      "marks": [
+        ["A large flap on the chin, about as big as the eye", [["fao-ser", "key to the genera, couplet 11, p. 2445"]]],
+        ["Brown with many small white spots and black saddles on the back", [["fao-ser", "key to the genera, couplet 11, p. 2445"]]]
+      ]
+    },
+    "Diploprion": {
+      "plain": [
+        "Soapfishes of silty coastal reefs, caves and crevices that swallow surprisingly large fishes whole and release a skin toxin when stressed.",
+        [["fb-diploprion-bifasciatum", "Biology"]]
+      ],
+      "marks": [
+        ["Body deeper than the head is long (Grammistes, Pogonoperca: about equal)", [["fao-ser", "key to the genera, couplets 5 and 10, p. 2445"]]]
+      ]
+    },
+    "Parupeneus": {
+      "plain": [
+        "Goatfishes of coral reefs and the sand nearby; P. multifasciatus, the most common on reefs, feeds alone by day on crabs and shrimps.",
+        [["fao-mul40", "Parupeneus multifasciatus, p. 3192"], ["fao-mul", "Parupeneus barberinus, p. 3185"]]
+      ]
+    },
+    "Mulloidichthys": {
+      "plain": [
+        "Goatfishes of lagoons and bays that gather over reefs by day and spread out at night to feed on sand flats.",
+        [["fao-mul", "Mulloidichthys flavolineatus, p. 3181"], ["fao-mul", "Mulloidichthys vanicolensis, p. 3183"]]
+      ]
+    },
+    "Upeneus": {
+      "plain": [
+        "Goatfishes of sheltered bays and lagoons, on sand or silty sand near reefs; also common in estuaries.",
+        [["fao-mul40", "Upeneus tragula, p. 3199"]]
+      ]
+    },
+    "Synodus": {
+      "plain": [
+        "Lizardfishes of sand near rocks and coral; S. dermatogenys often buries itself in the sand to ambush prey.",
+        [["fao-syn41", "Synodus dermatogenys, p. 1941"], ["fao-syn41", "Synodus variegatus, p. 1945"]]
+      ],
+      "marks": [
+        ["Inner pelvic fin rays much longer than the outer (Saurida: about equal)",[["fao-syn", "key to the species, couplet 1, p. 1930"]]],
+        ["Anal fin base shorter than the dorsal's (Trachinocephalus: longer)", [["fao-syn", "key to the species, couplet 2, p. 1930"]]]
+      ]
+    },
+    "Saurida": {
+      "plain": [
+        "Lizardfishes of soft sand and mud bottoms, from the shallows to about 60 m.",
+        [["fao-syn", "Saurida gracilis, p. 1938"], ["fao-syn", "Saurida nebulosa, p. 1939"]]
+      ],
+      "marks": [["Pelvic fin rays about equal in length (Synodus: inner rays much longer)", [["fao-syn", "key to the species, couplet 1, p. 1930"]]]]
+    },
+    "Trachinocephalus": {
+      "plain": [
+        "Lizardfishes of soft bottoms in bays, estuaries and coastal waters, down to 200 m.",
+        [["fao-syn41", "as Trachinocephalus myops, p. 1945"]]
+      ],
+      "marks": [["Anal fin base longer than the dorsal fin base", [["fao-syn", "key to the species, couplet 2 (as T. myops), p. 1930"]]]]
+    },
+    "Lutjanus": {
+      "plain": [
+        "Snappers of coral reefs; many, such as L. kasmira and L. quinquelineatus, gather in large groups by day, and most feed on fishes and crustaceans.",
+        [["fao-lut11", "Lutjanus kasmira, p. 2879"], ["fao-lut12", "Lutjanus quinquelineatus, p. 2888"]]
+      ],
+      "marks": [["Head flat below, the eye nearer the top of the head", [["fao-lut", "key to the genera, couplet 13, p. 2843"]]]]
+    },
+    "Macolor": {
+      "plain": [
+        "Snappers of coastal reefs, from 2 to 90 m, that feed on fishes and crustaceans; M. niger can gather in large schools.",
+        [["fao-lut13", "Macolor macularis, p. 2897"], ["fao-lut14", "Macolor niger, p. 2898"]]
+      ]
+    },
+    "Plectorhinchus": {
+      "plain": [
+        "Large sweetlips, up to 40 to 85 cm, of coastal waters near reefs; their fleshy lips swell with age.",
+        [["fao-hae", "Plectorhinchus chaetodonoides, p. 2971"], ["fao-hae", "Plectorhinchus lineatus, p. 2976"], ["fao-hae22", "Plectorhinchus picus, p. 2979"], ["fao-hae22", "Plectorhinchus polytaenia, p. 2980"]]
+      ]
+    },
+    "Diagramma": {
+      "plain": [
+        "Sweetlips of inshore reefs and open sand to 80 m that feed on bottom invertebrates and small fishes; D. pictum reaches about 1 m.",
+        [["fao-hae", "Diagramma pictum, p. 2967"]]
+      ],
+      "marks": [
+        ["Young: black stripes along the body, the lower head and body yellowish", [["fao-hae", "key to the species, couplet 3, p. 2962"]]]
+      ]
+    },
+    "Caesio": {
+      "plain": [
+        "Fusiliers that school in midwater around coral reefs to feed on plankton, often mixed with other fusiliers.",
+        [["fao-cae", "Caesio caerulaurea, p. 2926"], ["fao-cae", "Caesio teres, p. 2929"]]
+      ]
+    },
+    "Pterocaesio": {
+      "plain": [
+        "Fusiliers, up to about 21 to 35 cm, that school around coral reefs to feed on plankton, often with other species.",
+        [["fao-cae17", "Pterocaesio chrysozona, p. 2933"], ["fao-cae17", "Pterocaesio pisang, p. 2937"], ["fao-cae17", "Pterocaesio tile, p. 2940"]]
+      ]
+    },
+    "Sargocentron": {
+      "plain": [
+        "Squirrelfishes of shallow reefs, active at night, that feed on crustaceans near the bottom; the gill-cover spine of some is venomous.",
+        [["fao-hol", "Habitat, biology, and fisheries, p. 2225"], ["fao-hol16", "Sargocentron rubrum, p. 2251"]]
+      ],
+      "marks": [
+        ["Red ground colour (Neoniphon: silvery to silvery pink)", [["fao-hol", "key to the genera, couplet 5, p. 2226"]]],
+        ["Lower jaw not jutting out", [["fao-hol", "key to the genera, couplet 5, p. 2226"]]]
+      ]
+    },
+    "Neoniphon": {
+      "plain": [
+        "Squirrelfishes of protected bays and lagoons near coral; N. sammara is among the first out at dusk and eats mostly crabs.",
+        [["fao-hol16", "Neoniphon sammara, p. 2245"]]
+      ],
+      "marks": [
+        ["Silvery to silvery-pink ground colour", [["fao-hol", "key to the genera, couplet 5, p. 2226"]]],
+        ["Lower jaw jutting out", [["fao-hol", "key to the genera, couplet 5, p. 2226"]]],
+        ["Last dorsal spine long, close to the soft dorsal fin", [["fao-hol", "key to the genera, couplet 5, p. 2226"]]]
+      ]
+    },
+    "Scolopsis": {
+      "plain": [
+        "Coral breams live on coral reefs or on sand and mud close to them, down to about 60 m, alone or in groups.",
+        [["fao-nem", "Habitat, biology, and fisheries, p. 3051"]]
+      ]
+    },
+    "Pseudanthias": {
+      "plain": [
+        "Anthias gather in large groups above coral outcrops to feed on plankton; in P. squamipinnis, females turn into males, which keep harems.",
+        [["fb-pseudanthias-squamipinnis", "Biology"]]
+      ]
+    },
+    "Myripristis": {
+      "plain": [
+        "Soldierfishes rest in caves and under ledges by day and come out at night to feed on the larger zooplankton.",
+        [["fao-hol", "Habitat, biology, and fisheries, p. 2225"], ["fao-hol", "Myripristis amaena, p. 2237"], ["fao-hol", "Myripristis murdjan, p. 2242"]]
+      ]
+    }
+  },
+  "none": {
+    "Bodianus": "the FAO key (couplets 2, 4, 5) sets it apart by spine, ray and scale counts and the scales of the cheek and fins only: nothing seen on a photo",
+    "Choerodon": "the FAO key (couplets 2, 4) sets it apart by spine counts, canine teeth and small cheek scales only: nothing seen on a photo",
+    "Cymolutes": "the FAO key (couplet 14) sets it apart by anal spines and scale counts only: nothing seen on a photo",
+    "Novaculoides": "the FAO key (2001) puts its species in Novaculichthys, whose colour there fits N. taeniourus only; FishBase describes its look, not what tells it from the other genera",
+    "Wetmorella": "the FAO key (couplet 10) sets it apart by the scales of the cheek and gill cover only: nothing seen on a photo",
+    "Pseudobalistes": "the FAO key (couplet 5) sets it apart by a bare patch at the front of the cheek only, hard to see on a photo",
+    "Siganus": "the only genus of its family here: the family's IMR cues and ID marks tell it",
+    "Platax": "the only genus of its family here: the family's IMR cues and ID marks tell it",
+    "Zanclus": "the only genus of its family: the family's IMR cues and ID marks tell it",
+    "Parapercis": "the only genus of its family here: the family's IMR cues and ID marks tell it",
+    "Abudefduf": "the FAO key (couplets 19, 20) sets it apart by scale rows only: nothing seen on a photo",
+    "Amphiprion": "the FAO key (couplets 1, 2) sets it apart by scale counts and serrate gill covers only: nothing seen on a photo (its life with sea anemones is in its presentation)",
+    "Plectroglyphidodon": "the FAO key (couplets 21, 22) sets it apart by gill-raker and spine counts only: nothing seen on a photo",
+    "Dischistodus": "the FAO key (couplet 16) sets it apart by the scales of the snout and a notch under the eye only: nothing seen on a photo",
+    "Amblypomacentrus": "the FAO key (couplet 14) sets it apart from Pomachromis only, by body depth and spine count: no game genus",
+    "Parachaetodon": "the FAO key (couplet 2) sets it apart by its lateral line and spine count only: nothing seen on a photo",
+    "Centropyge": "the FAO key (couplets 1, 4, 5) sets the angelfish genera apart by scale structure and gill-cover bones only: nothing seen on a photo",
+    "Pygoplites": "the FAO key (couplets 1, 4, 5) sets the angelfish genera apart by scale structure and gill-cover bones only: nothing seen on a photo",
+    "Pomacanthus": "the FAO key (couplets 1, 2) sets it apart by scale structure and size only: nothing seen on a photo",
+    "Chaetodontoplus": "the FAO key (couplets 1, 2) sets it apart by scale structure and size only: nothing seen on a photo",
+    "Apolemichthys": "the FAO key (couplet 4) sets it apart by gill-cover bones only: nothing seen on a photo",
+    "Epinephelus": "the FAO key (couplets 12, 18, 20) sets it apart from Cephalopholis by spine counts only: nothing seen on a photo",
+    "Plectropomus": "the FAO key (couplets 12, 13) sets it apart by spine counts and hidden spines only: nothing seen on a photo",
+    "Ostorhinchus": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo",
+    "Pristiapogon": "the FAO key (2001) puts its species in Apogon, set apart by a serrate gill-cover edge only: nothing seen on a photo",
+    "Foa": "the FAO key (couplets 11, 12) sets it apart by its lateral line and palate teeth only: nothing seen on a photo",
+    "Sphaeramia": "the FAO key (couplet 9) sets it apart by small spiny rays on the tail edges only, hard to see on a photo",
+    "Taeniamia": "the FAO key (2001) puts its species in Archamia, set apart by fin-ray counts only: nothing seen on a photo",
+    "Pteropterus": "not a genus in the FAO key (2001), and FishBase gives no comparison: no source read",
+    "Parupeneus": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo",
+    "Mulloidichthys": "the FAO key (couplets 1, 2) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo",
+    "Upeneus": "the FAO key (couplets 1, 3) sets the goatfish genera apart by teeth and scale counts only: nothing seen on a photo",
+    "Macolor": "the FAO key (couplet 12) sets it apart by gill-raker counts only: nothing seen on a photo",
+    "Plectorhinchus": "the FAO key (couplet 3) sets it apart from Diagramma by fin and scale counts only: nothing seen on a photo",
+    "Caesio": "the FAO key (couplet 1) sets the fusilier genera apart by the bones at the end of the upper jaw only: nothing seen on a photo",
+    "Pterocaesio": "the FAO key (couplet 1) sets the fusilier genera apart by the bones at the end of the upper jaw only: nothing seen on a photo",
+    "Scolopsis": "the only genus of its family here: the family's IMR cues and ID marks tell it",
+    "Pseudanthias": "the only genus of its family here: the family's IMR cues and ID marks tell it",
+    "Myripristis": "the only genus of its family here: the family's IMR cues and ID marks tell it"
+  }
+}

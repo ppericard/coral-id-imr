@@ -836,14 +836,15 @@ const fishSpPhotos = () => {
   });
   return ((FSPH = by), (FSPH_OF = FISH), by);
 };
-// A species' one photo (its tile, its row): the first of its photos that is not a juvenile (app.js adultFirst), else its
-// first: his species cover, else his featured, else the game's order. His species cover on a juvenile he confirmed (app.js
-// fishCurate's cj; Pierre's exception, 2026-11-15) is its one photo all the same.
-const spJCover = (s, P) => {
+// A species' one photo (its tile, its row, its sheet's first photo): his species ★ cover (app.js fishCurate's covers,
+// first in fishSpPhotos: an adult, or a juvenile he confirmed, cj; Pierre's exception, 2026-11-15), watermarked or not
+// (his choice, rule A1); else the first of its photos, his featured then the game's order, that is neither a juvenile nor
+// watermarked (app.js coverFirst; Pierre, 2026-11-15, Q379), else its first adult, else its first.
+const spCover = (s, P) => {
   const c = ((FISH && FISH.covers) || {})[s.id];
-  return (c && c.cj && P && P[0] && P[0].f === c.f && P[0]) || null;
+  return (c && P && P[0] && P[0].f === c.f && P[0]) || null;
 };
-const spPhoto = s => spJCover(s, fishSpPhotos()[s.id]) || adultFirst(fishSpPhotos()[s.id]);
+const spPhoto = s => spCover(s, fishSpPhotos()[s.id]) || coverFirst(fishSpPhotos()[s.id]);
 // A genus's ★ Cover (Pierre, 2026-11-13): a genus unit's coverP (app.js fishCurate, as a family's), else the pick of a
 // genus with no unit (FISH.covers); null when he picked none in play.
 const genCover = g => (g && ((GX(g.id) || {}).coverP || ((FISH && FISH.covers) || {})[g.id])) || null;
@@ -990,6 +991,26 @@ const fishRoot = (g, at) =>
         'among the fish'
       )
     : '';
+// A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json; Pierre,
+// 2026-11-08), on the sheet the genus opens, as its name roots (fishRoot): its page, the species sheet of a one-species
+// genus, the family sheet of a family's only genus. Each line with its sources' numbers, the sources listed below, never
+// as IMR's (rule C1: the IMR cues show in their own box).
+const genMarks = (g, at) => {
+  if (!g || !(g.plain || (g.marks || []).length) || fishGo(g.id) !== at) return '';
+  const S = g.msrc || [],
+    by = g.mby || {},
+    n = ix =>
+      (ix || [])
+        .map(i =>
+          S[i] ? ` <a class="srcn" href="${esc(safeUrl(S[i].u))}" target="_blank" rel="noopener" title="${esc(S[i].t)}">[${i + 1}]</a>` : ''
+        )
+        .join('');
+  return `<div class="fmarks gmarks">${g.plain ? `<p class="plainw">${esc(g.plain)}${n(by.plain)}</p>` : ''}${
+    (g.marks || []).length
+      ? `<h3>ID marks of <i>${esc(g.name)}</i></h3><ul class="crit">${g.marks.map((x, i) => `<li>${esc(x)}${n((by.marks || [])[i])}</li>`).join('')}</ul>`
+      : ''
+  }<p class="note msrc">Sources: ${S.map((x, i) => `[${i + 1}] <a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join('; ')} · ${repBtn({k: 'sheet', g: g.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`;
+};
 // The photos enlarge, the species filter redraws the page where it was.
 const fishBind = (flat, redraw) => {
   $v.querySelectorAll('[data-z]').forEach(b => (b.onclick = () => zoom(flat, Number(b.dataset.z))));
@@ -1217,6 +1238,7 @@ function fishFamily(f) {
         ${(f.cues || []).length ? `<div class="tipbox"><h3>ID tips (IMR) <span class="pg">${esc(slideLine(f.sl))}</span></h3><ul class="crit idtips">${f.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(f, 'cues')}</div>` : ''}
         ${fishMarks(f)}
         ${fishNote(f)}
+        ${G.map(g => genMarks(g, f.id)).join('')}
         ${G.map(g => fishRoot(g, f.id)).join('')}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
         <details class="more sheetmore"><summary>More details</summary>
@@ -1262,6 +1284,7 @@ function fishGenus(g) {
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
     ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'cues')}</div></div>` : ''}
+    ${genMarks(g, g.id)}
     ${fishNote(g)}
     ${fishRoot(g, g.id)}
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
@@ -1282,9 +1305,10 @@ function fishGenus(g) {
 // Its photos on the sheet (P: fishSpPhotos' order, his species cover first, never a juvenile: app.js juvP): three adult
 // photos, the first its cover, then up to two juveniles apart (app.js juvP: the juvenile phase or flag); more: the other
 // adults, folded. A juvenile is never the sheet's first photo while the species has an adult one (Pierre, 2026-11-13).
-// lead: his species cover when it is a juvenile he confirmed (spJCover): first all the same, not among the juveniles.
+// lead: its one photo (spPhoto): first, not among the juveniles when it is his confirmed juvenile cover; the default's
+// photo without a watermark before a watermarked one ahead of it (Q379).
 function spSheetPhotos(P, lead = null) {
-  const main = P.filter(p => p === lead || !juvP(p));
+  const main = [...(lead ? [lead] : []), ...P.filter(p => p !== lead && !juvP(p))];
   return {shown: [...main.slice(0, 3), ...P.filter(p => p !== lead && juvP(p)).slice(0, 2)], more: main.slice(3)};
 }
 function fishSpecies(s) {
@@ -1293,7 +1317,7 @@ function fishSpecies(s) {
     g = T.gen[s.genus],
     P = fishSpPhotos()[s.id] || [],
     isJ = juvP,
-    {shown, more} = spSheetPhotos(P, spJCover(s, P)),
+    {shown, more} = spSheetPhotos(P, P.length ? spPhoto(s) : null),
     flat = [...shown, ...more],
     F = famSpecies(f),
     rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,
@@ -1309,6 +1333,7 @@ function fishSpecies(s) {
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
     ${fishNote(s)}
+    ${genMarks(g, 's:' + s.name)}
     ${fishRoot(g, 's:' + s.name)}
     ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
     ${

@@ -374,12 +374,15 @@ async function freshPlayers(b, base, errs) {
       // then observations), the first of that species' adult photos by reference level (core.js refFirst), never a juvenile.
       const seenK = p => fishSeen(p.sp)[0] * 1e6 + fishSeen(p.sp)[1],
         // among the species with a reference-level adult photo (else with an adult photo), the most seen; his ★ cover of it
-        // when he picked one (Pierre, 2026-11-14 on #864), else its reference photo
+        // when he picked one (Pierre, 2026-11-14 on #864), else its reference photo; never a watermarked photo while the
+        // unit has an adult one without (app.js wmP; Q379), his ★ cover of the species included
         mostSeen = (L, c) => {
-          const A = L.filter(p => !juvP(p)),
+          const A0 = L.filter(p => !juvP(p)),
+            A1 = A0.filter(p => !wmP(p)),
+            A = A1.length ? A1 : A0,
             R = A.filter(refLevel);
           if (!A.length) return !!c;
-          if (!c || juvP(c) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
+          if (!c || juvP(c) || (A1.length && wmP(c)) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
           const pk = fishSpPick(c.sp);
           if (pk && A.some(p => p.f === pk.f)) return c.f === pk.f;
           return R.length ? refLevel(c) : refFirst(c) === Math.min(...A.filter(p => p.sp === c.sp).map(refFirst));
@@ -1073,9 +1076,13 @@ async function freshPlayers(b, base, errs) {
         // easiest; an open licence breaking ties among equals (core.js easyCover, Q270), so the cover may be another of the
         // order's equal leaders; never a juvenile while it has another photo (app.js juvP; Pierre, 2026-11-13)
         if (!w.length || GX(n).coverP) return true;
-        const A = w.filter(p => !juvP(p)),
+        // nor a watermarked photo while it has an adult one without (app.js wmP; Q379)
+        const A0 = w.filter(p => !juvP(p)),
+          A1 = A0.filter(p => !wmP(p)),
+          A = A1.length ? A1 : A0,
           c = w.find(p => p.f === GX(n).cover);
         if (!A.length) return !!c;
+        if (A1.length && wmP(c)) return false;
         // (Pierre, 2026-11-14 on #864: among the species with a reference photo; his ★ cover of that species when he has one)
         const k = p => fishSeen(p.sp)[0] * 1e6 + fishSeen(p.sp)[1],
           R = A.filter(refLevel),

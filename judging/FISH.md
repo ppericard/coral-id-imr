@@ -12,7 +12,8 @@ Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `to
 into `suggest.json`, and `python3 tools/fish_judge.py` prints the summary of the photos in play (`fish-game.json`).
 Until 2026-11-15 it also wrote them into the stopgap list of `fish-photos.json` (remote iNaturalist photos, retired).
 `tests/fish.test.js` checks that every code is valid, that the caps below hold and that every circle-1 entry has 5 very
-easy photos in play.
+easy photos in play. The sea slugs' rubric, [SEASLUG.md](SEASLUG.md), adapts this one on the same tools (`--subject
+seaslug`).
 
 ## How to look
 
@@ -46,7 +47,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **out of water** (a fish on a net, in a hand, dead) |
-| | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing, only Home skips it (below, "Watermark") |
+| | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing and leaves the games as they are; Home skips it and the default covers avoid it (below, "Watermark") |
 | | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
@@ -196,6 +197,14 @@ the Identify door's art, his ★ Cover included; a family whose photos all carry
 off (or sets it) in the admin like any tag (Tags › Watermark). His tags win as on every route, a reference photo's included
 since then (`tools/fish_game.py` `record`). The pass's `w` also reaches tags the auto-sort copied into his curation (its log code
 still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/fish_game.py` `marked`).
+
+**Covers** (Pierre, 2026-11-15, Q379, on 4 of his ★ covers tagged watermarked: "Perhaps we should also avoid them for
+covers"): the default cover never takes a watermarked photo, at any level, while the node has an adult photo without one
+(`app.js` `wmP`, `seenCover`, `coverFirst`; the admin's `autosort.js` `fishWm`, `fishCoverRule`, `fishLeafCover`). His ★
+cover on one stays his choice (rule A1): the Tree page asks "Watermark: keep as cover?", Keep records `coverW` beside the
+cover (`curation.json` `fish` `genera` `{node id: {cover, coverW}}`, as the juvenile cover's `coverJ`), Choose another
+opens its Cover proposal (a photo without one). Home skips it all the same, kept or not. docs/ARCHITECTURE.md "Pierre's
+choices per family in the app" has the details.
 
 - **The pass of 2026-11-15** judged each photo on its R2 file (Pierre's crop applied), on contact sheets of 6 at 560 px,
   with the top and bottom bands enlarged for faint text. 844 photos were looked at and 224 were tagged: iNaturalist

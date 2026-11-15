@@ -604,6 +604,13 @@ const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7
 const coverOk = (k, p) =>
   !!p && (!juvP(p) || !!(k && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(p.f) === fishPid(k.cover)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
+// A photo with a visible watermark or text (its judged flag w: judging/FISH.md "Watermark"; Pierre, 2026-11-15, Q373)
+// is never a default cover, at any level (Pierre, 2026-11-15, Q379: "Perhaps we should also avoid them for covers"): the
+// defaults take one only when the node has no other adult photo. His ★ cover on one stays his choice (rule A1: the admin
+// asks him whether to keep it, autosort.js fishCoverW); Home skips it all the same (home.js homeOk). The games keep it.
+// coverFirst(L): the first of L that is neither a juvenile nor watermarked, else adultFirst(L).
+const wmP = p => !!p && /w/.test(String(p.jt || '').slice(7));
+const coverFirst = L => (L || []).find(p => !juvP(p) && !wmP(p)) || adultFirst(L);
 // A leaf's presence around the instance's centre (Pierre, 2026-11-13, Q339: "Il faudra rendre générique la localisation
 // centrale de l'instance"; the centre: tools/instance.json, fish.json centre): [its distinct Research Grade observers,
 // its observations] within the centre's radius, from its record's present: nearU and nearN, else their first names
@@ -618,23 +625,28 @@ const nearSeen = r => {
 // he picked one in play ("mon choix était le meilleur au moment avec ce que j'avais sous les yeux"), else that leaf's
 // easiest such reference photo (easyRank: the licence breaking ties). With no reference photo under the node: the most
 // seen leaf among those with an adult photo, then his ★ cover of it, else its easiest adult photo. Never a juvenile while
-// the node has another photo (juvP); a node with no presence keeps the easy order's first. L: the node's photos in play
+// the node has another photo (juvP); never a watermarked photo while it has another adult one (wmP, Q379: the leaves then
+// compete on their adult photos without one, and his ★ cover of the leaf chosen is taken only without one, kept or not);
+// a node with no presence keeps the easy order's first. L: the node's photos in play
 // (p.sp: its leaf), seen(leaf id): [observers, observations] (nearSeen), d: easyRank's difficulty, pick(leaf id): his ★
 // cover of that leaf, or null. autosort.js fishCoverOf is the admin's copy (tests/fishcovers.test.js holds them together).
 function seenCover(L, seen, d, pick = () => null) {
   const R = easyRank(L, d),
-    A = R.filter(p => !juvP(p)),
+    A0 = R.filter(p => !juvP(p)),
+    A1 = A0.filter(p => !wmP(p)),
+    A = A1.length ? A1 : A0,
     Ref = A.filter(refLevel);
   let best = null;
   (Ref.length ? Ref : A).forEach(p => {
     const s = seen(p.sp) || [0, 0];
     if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
   });
-  if (!best) return R[0] || null;
-  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers)
+  if (!best) return R.find(p => !wmP(p)) || R[0] || null;
+  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers); without a
+  // watermark while the node has an adult photo without one
   const k = pick(best.p.sp),
     c = k && R.find(p => p.f === k.f);
-  return (c && (!juvP(c) || k.cj) && c) || best.p;
+  return (c && (!juvP(c) || k.cj) && (!wmP(c) || !A1.length) && c) || best.p;
 }
 // A fish species' presence (FISH.sps: fish.json species by id) and his ★ cover of it (FISH.covers: app.js fishCurate).
 const fishSeen = sid => nearSeen(((FISH && FISH.sps) || {})[sid]);
@@ -724,6 +736,23 @@ function fishGenera(X, F) {
           g = G.name,
           set = new Set(L.map(s => s.id)),
           cues = G.cues && G.cues.length ? G.cues : null,
+          // Its own ID marks when IMR gives no cues (fish.json marks, tools/fish_genus_marks.json; Pierre, 2026-11-08),
+          // under a label naming the marks' own sources (mby.marks: not the presentation's), never as IMR's (rule C1);
+          // their source per line is on the sheet (genMarks).
+          marks = !cues && G.marks && G.marks.length ? G.marks : null,
+          mby = [
+            ...new Set(
+              ((G.mby || {}).marks || [])
+                .flat()
+                .map(i => (G.msrc || [])[i] || {})
+                .map(s =>
+                  String(s.t || '')
+                    .split(',')[0]
+                    .trim()
+                )
+                .filter(Boolean)
+            )
+          ].join(', '),
           sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
           wide = E.views.wide.filter(p => set.has(p.sp));
         X.gen[id] = {
@@ -747,9 +776,15 @@ function fishGenera(X, F) {
           decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
           lk: [],
           lsrc: {},
-          qt: cues,
+          qt: cues || marks,
           ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
-          tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+          tl: cues
+            ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
+            : marks
+              ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
+              : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+          // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
+          ...(G.plain ? {plain: G.plain} : {}),
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
           // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
           // then the count.
@@ -1014,23 +1049,41 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // FISHF: fish.json with the content editor's edits laid over it (core.js contentApply; Pierre, 2026-11-15, Q359): what
 // the units and the sheets read (learn.js ftree), made again with the units whenever the curation is; fish.json itself
 // (FISHRAW.f) when nothing is edited.
+// The editor's circles and pairs (core.js structApply; Q359, Q363 h A) only once the sync script replays the progress
+// under them (rule D4: structOn, core.js STRUCT_SHEET); before, the text slots alone, as before. FISHST: the structure
+// stamp of the units made (core.js structStamp, '' without the structure), FISHON: whether they were made under it.
 let FISH = null,
   FISHP = null,
   FISHH = null,
   FISHRAW = null,
-  FISHF = null;
+  FISHF = null,
+  FISHST = '',
+  FISHON = false;
 const fishBuild = () => {
-  const {ph, gm} = FISHRAW,
-    // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
-    f = (FISHF = contentApply(
-      SUBJECTS.find(S => S.pool.files[0] === 'fish.json'),
-      FISHRAW.f,
-      CUR
-    ));
+  // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
+  const S = SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+    {ph, gm} = FISHRAW,
+    on = structOn(),
+    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
+  FISHON = on;
+  FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
   FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
+// A reply from the script that replays under the structure, the units made before it without the structure the curation
+// holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
+function structSeen() {
+  if (!FISHRAW || FISHON === structOn() || CUR_NEW) return;
+  if (
+    structFp(
+      SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+      CUR
+    )
+  )
+    CUR_NEW = CUR;
+}
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
 // card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
@@ -1075,7 +1128,8 @@ function fishCurate(X, cur, F) {
     if (fe.length) g.featP = Object.fromEntries(fe);
   });
   // Every unit's card photo without his pick (Q339 (b), seenCover): its species with a reference photo most seen around
-  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile.
+  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile,
+  // nor a watermarked photo while the unit has another adult one (wmP, Q379).
   const spr = new Map(((F && F.species) || []).map(s => [s.id, s])),
     seen = sid => nearSeen(spr.get(sid));
   Object.values(X.gen).forEach(g => {
@@ -2105,6 +2159,9 @@ const UNITS = {
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
+    // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
+    st: () => (FISH ? FISHST : ''),
     core: () => (FISH ? FISH.c1 : []),
     // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
     // families, those that open right after them, those beyond the course.

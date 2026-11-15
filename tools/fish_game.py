@@ -54,7 +54,8 @@ species order, then the easiest, then by name (never Pierre's own by priority: Q
 fish-photos.json (written here too, the same run; the stopgap list of remote iNaturalist photos it held until 2026-11-15
 is retired):
   - "photos": the first photos, a few of fish-game.json's records per entry (first_photos: the adults, Pierre's covers in
-    play first, then core.js easyRank's order: reference level, the easiest; FIRST at most), already on R2, read only while fish-game.json is
+    play first, a watermarked photo after its unit's adults without one, then core.js easyRank's order: reference level,
+    the easiest; FIRST at most), already on R2, read only while fish-game.json is
     not in (app.js fishHome: Home before the biggest file; core.js fishPhotos);
   - "sheet": the sheet-only photos (tools/fish_photos.py --sheet writes them, remote, r: 1): a species with no photo in
     play keeps its own, downloaded here like a game photo (its four files into DIR, uploaded with them) and then listed
@@ -87,6 +88,7 @@ sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from fetch_fish import PHASE_WORD, PHASES, is_wink  # noqa: E402  (the phase words, as autosort.js FPHW; a wink entry)
 import photos  # noqa: E402  (the four sizes; Pierre's crop and rotation: turn, stale, mark)
 import fish_short  # noqa: E402  (the file's short form: o and src)
+from fish_inforce import in_force  # noqa: E402  (the circles in force: the content editor's, design note v2 step 3)
 
 OUT_FILE = 'fish-game.json'
 V = 1
@@ -585,7 +587,9 @@ def plan(fish, cur, cand, sug, prev, refs=None, codes=None, crops=None, limit=No
             keep[p['f']] = r
         else:
             todo.append((r, c, (o.get('iv', 0) + 1) if o else 0, route))
-    key = tier(fish or {})
+    # The download order under the circles in force (the content editor's moves in curation.json, tools/fish_inforce.py:
+    # read, never written); what is in play stays as fish.json and the curation have it.
+    key = tier(in_force(fish or {}, cur))
     todo.sort(key=lambda x: key(x[0], x[3]))
     wait = max(0, len(todo) - limit) if limit is not None else 0
     tiles = sorted((r for r in keep.values() if r.get('bb') and not ('xc' in r or 'xn' in r)), key=lambda r: (key(r, r.get('auto')), r['f']))
@@ -781,6 +785,12 @@ def juvenile(r):
     return r.get('ph') == 'juvenile' or 'j' in (r.get('jt') or '')[7:]
 
 
+def watermarked(r):
+    """A record judged with a visible watermark or text (the judging tags' w flag: judging/FISH.md "Watermark"; Pierre,
+    2026-11-15, Q373): never a default cover while its unit has an adult photo without one (Q379, app.js seenCover since #968)."""
+    return 'w' in str(r.get('jt') or '')[7:]
+
+
 # core.js refLevel's and refScore's copies (the reference level and the reference look of a judged photo).
 REF_LOOK = re.compile(r'^p1g0s[lm][1s]$')
 REF_GOOD, REF_REP = 'p1g0sl1', 8
@@ -807,7 +817,10 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
     """fish-photos.json "photos": {teaching id: [record]}, at most n of each entry's fish-game.json records (game: its
     photos, every record whole), the ones Home and the first questions want before the whole list is in: the adults first
     (a juvenile is never a cover: app.js juvP), Pierre's covers (curation.json fish.genera {id: {cover}}, by photo id),
-    then in core.js easyRank's order: the reference-level photos (refLevel: ref_level), the easiest, the most
+    then a watermarked photo (watermarked) after the adults without one, when one of its units (its genus or its family:
+    fish.json) has one (Pierre, 2026-11-15, Q379: the default cover avoids them, app.js seenCover since #968, which reads these
+    photos until fish-game.json is in; his watermarked covers stay first, his choice: rule A1), then in core.js easyRank's
+    order: the reference-level photos (refLevel: ref_level), the easiest, the most
     reference-like (ref_score), an open licence (tools/rights.py rights_rank), then by name (Codex review #931: an order
     by the rep flag alone kept eight ease-3 photos of t52 and left out both its ease-5 reference-level Waspfish photos);
     the best of each family of the entry's species before any second one (fish: fish.json families; core.js fishGen gives
@@ -821,13 +834,17 @@ def first_photos(game, cur=None, fish=None, n=FIRST):
     jok = {pid(k['cover']) for k in G.values()
            if isinstance(k, dict) and k.get('cover') and k.get('coverJ') and pid(k['coverJ']) == pid(k['cover'])}
     fam = {sid: f['id'] for f in (fish or {}).get('families') or [] for sid in f.get('species') or []}
+    gen = {s['id']: s['genus'] for s in (fish or {}).get('species') or [] if s.get('id') and s.get('genus')}
+    units = lambda r: {u for u in (gen.get(r.get('sp')), fam.get(r.get('sp'))) if u}  # noqa: E731  (its genus, its family)
+    adult = lambda r: not juvenile(r) or pid(r['f']) in jok  # noqa: E731
 
-    def key(r):
-        return (juvenile(r) and pid(r['f']) not in jok, pid(r['f']) not in covers, not ref_level(r), -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r),
-                r['f'])
+    def key(r, clean=()):
+        return (not adult(r), pid(r['f']) not in covers, watermarked(r) and bool(units(r) & clean), not ref_level(r),
+                -(r.get('e') or 3), -ref_score(r.get('jt')), rights_rank(r), r['f'])
 
     def pick(L):
-        L, seen, lead = sorted(L, key=key), set(), []
+        clean = {u for r in L if adult(r) and not watermarked(r) for u in units(r)}  # units with an adult without a watermark
+        L, seen, lead = sorted(L, key=lambda r: key(r, clean)), set(), []
         for r in L:
             if fam.get(r.get('sp')) not in seen:
                 seen.add(fam.get(r.get('sp')))

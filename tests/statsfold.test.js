@@ -440,3 +440,221 @@ test('a delete just before the fold writes: nothing written, the account stays g
   s.lock.busy = false;
   assert.ok(!fold(s, now).stale);
 });
+
+// v145 (the step #882 and #940 left next; Pierre, 2026-11-15, Q357): the other readers of stats_ read the snapshot too,
+// with exactly the numbers of the whole log, and make stats_ only when the snapshot is not served.
+// What readStats sends (the admin's reply, with ras, skip and chk), as it goes on the wire.
+const wire = o => JSON.parse(JSON.stringify(o));
+const fullAdmin = (s, sid) => {
+  delete s.cache[run(s, `statsKey17_(${JSON.stringify(sid)})`)];
+  run(s, 'ROWS_ = null');
+  return wire(s.ctx.stats_(true, sid));
+};
+// The reply less v, the script version every reply carries (json_).
+const readStats = (s, sid) => {
+  const {v, ...r} = s.post(Object.assign({readStats: 1, token: TOK}, sid ? {s: sid} : {}));
+  assert.strictEqual(v, run(s, 'VERSION'));
+  return r;
+};
+// How many times fn makes the whole log (stats_): none when it reads the snapshot.
+const fullReads = (s, fn) => {
+  const real = s.ctx.stats_;
+  let n = 0;
+  s.ctx.stats_ = (...a) => (n++, real(...a));
+  try {
+    fn();
+  } finally {
+    s.ctx.stats_ = real;
+  }
+  return n;
+};
+// A log with every case the admin's abilities leave out or count apart: a deleted account's answers kept ("~deleted"),
+// an archived player, a player left out of the statistics, an infinite guess rate (quiz|k0).
+const adminLog = seed => {
+  const s = load(),
+    posts = fixture(seed),
+    now = Math.max(...posts.map(p => p.at)) + 20 * H;
+  posts.forEach(p => post(s, p));
+  assert.ok(s.post({userDelete: 'Dee', token: TOK}).ok);
+  assert.ok(s.post({userArchive: {from: 'Cal', into: 'Cal-old'}, token: TOK}).ok);
+  assert.ok(s.post({statsExclude: s.ctx.aid_('Eve'), on: true, token: TOK}).ok);
+  const k0 = {anon: 'device0009', p: () => 1};
+  post(s, {
+    w: k0,
+    answers: [{id: 'k0', t: new Date(now - H).toISOString(), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz|k0', ph: 'acropora-1', ch: ''}]
+  });
+  post(s, {w: k0, answers: session(rng(4), k0, now - H, 4, 'coral')});
+  return {s, now};
+};
+
+test("readStats serves the snapshot: the whole log's reply, abilities included, for each subject", () => {
+  const {s, now} = adminLog(29);
+  foldAll(s, now);
+  const salt = run(s, 'anonSalt_()'),
+    dee = run(s, `Object.keys(statsLoad_(SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Stats')).D)`);
+  assert.strictEqual(dee.length, 1, 'the deleted account marked in the fold');
+  for (const sid of [undefined, ...SUBJ]) {
+    let got;
+    assert.strictEqual(
+      fullReads(s, () => (got = readStats(s, sid))),
+      0,
+      sid + ': read from the snapshot'
+    );
+    const want = fullAdmin(s, sid);
+    assert.deepStrictEqual(got, want, String(sid));
+    assert.ok(Object.keys(want.ras).length >= 4 && want.skip.excluded > 0 && want.chk === 1, JSON.stringify(want.skip));
+    // Neither a deleted account's answers nor an archived player get an ability; the archive is in the fold, left out.
+    assert.ok(!dee.some(x => x in got.ras));
+    assert.ok(!(s.ctx.aid_('Cal-old', salt) in got.ras));
+    if (sid !== 'fish') assert.ok(s.sheets.Stats.rows[3].join('').includes(s.ctx.aid_('Cal-old', salt)));
+  }
+  // The infinite guess rate's ability goes as the whole log sends it (null on the wire).
+  assert.ok(Object.values(readStats(s).ras).some(r => r[0] === null));
+  // Archived after the fold: nothing served until it is rebuilt, then the same again.
+  assert.ok(s.post({userArchive: {from: 'Ana', into: 'Ana-old'}, token: TOK}).ok);
+  assert.strictEqual(s.ctx.statsAdmin_(), null);
+  assert.deepStrictEqual(readStats(s), fullAdmin(s));
+  foldAll(s, now);
+  assert.strictEqual(
+    fullReads(s, () => readStats(s)),
+    0
+  );
+  assert.deepStrictEqual(readStats(s), fullAdmin(s));
+  assert.ok(!(s.ctx.aid_('Ana-old', salt) in readStats(s).ras));
+});
+
+test('readStats makes the whole log when the snapshot is missing, stale, of another version or run, or removed', () => {
+  const {s, now} = adminLog(31);
+  const both = (msg, act, undo) => {
+    act();
+    assert.strictEqual(s.ctx.statsAdmin_(), null, msg);
+    let got;
+    assert.strictEqual(
+      fullReads(s, () => (got = readStats(s))),
+      1,
+      msg + ': the whole log'
+    );
+    assert.deepStrictEqual(got, fullAdmin(s), msg);
+    undo();
+    assert.ok(s.ctx.statsAdmin_(), msg + ': served again');
+  };
+  assert.strictEqual(s.ctx.statsAdmin_(), null, 'no snapshot yet');
+  assert.deepStrictEqual(readStats(s), fullAdmin(s));
+  fold(s, now);
+  const tab = s.sheets.Stats;
+  assert.ok(s.ctx.statsAdmin_());
+  for (const r of [1, 3]) {
+    const keep = tab.rows[r].slice(),
+      back = () => (tab.rows[r] = keep.slice());
+    both('row ' + (r + 1) + ' older than STATS.AGE', () => (tab.rows[r][2] = new Date(Date.now() - 2 * H)), back);
+    both('row ' + (r + 1) + ' of another version', () => (tab.rows[r][1] = 1), back);
+    both('row ' + (r + 1) + ' of another run', () => (tab.rows[r][5] = 'run 1'), back);
+    both('row ' + (r + 1) + ' older than the last removal', () => (tab.rows[r][4] = 0), back);
+  }
+  const keep4 = tab.rows[3];
+  both(
+    'no admin part',
+    () => (tab.rows[3] = []),
+    () => (tab.rows[3] = keep4)
+  );
+  both(
+    'the switch off',
+    () => run(s, 'STATS.ON = false'),
+    () => run(s, 'STATS.ON = true')
+  );
+  // A delete blanks the admin part at once (rule D7), then the fold builds it again without the account.
+  const aid = s.ctx.aid_('Ana');
+  assert.ok(tab.rows[3].join('').includes(aid));
+  assert.ok(s.post({userDelete: 'Ana', answers: true, token: TOK}).ok);
+  assert.ok(!JSON.stringify(tab.rows).includes(aid), 'blanked by the delete itself');
+  assert.strictEqual(s.ctx.statsAdmin_(), null);
+  fold(s, now);
+  assert.ok(!JSON.stringify(tab.rows).includes(aid), 'rebuilt without them');
+  assert.deepStrictEqual(readStats(s), fullAdmin(s));
+  assert.strictEqual(
+    fullReads(s, () => readStats(s)),
+    0
+  );
+});
+
+test("the replays read the snapshot: each player's record and the admin's list are the whole log's", () => {
+  const {s, now} = adminLog(37);
+  // The replay's units and the slate (data.json, cached as gen_ and slate_ read them).
+  s.cache.gen1 = JSON.stringify({
+    Acropora: {look: ['Porites'], fam: 'Acroporidae'},
+    Porites: {look: ['Acropora']},
+    Favia: {fam: 'Merulinidae'}
+  });
+  s.cache.slate1 = JSON.stringify(G);
+  // Answers the replay rates with the pooled stats: logged with the expectation and the ability (e, th), as the app does.
+  const R = rng(41);
+  for (const w of [WHO[0], WHO[1], WHO[5]])
+    for (let d = 0; d < 3; d++)
+      post(s, {w, answers: session(R, w, now - (30 - 6 * d) * H, 4, 'coral').map(a => Object.assign(a, {e: 0.6, th: 0.2 * d}))});
+  foldAll(s, now);
+  const who = ['ana', 'ben', 'cal-old', '~anon device0001', 'nobody'];
+  const recs = () => wire(who.map(w => s.ctx.rplMake_(w, s.ctx.rplMine_(w, 0), 0, null)));
+  const list = () => {
+    s.sheets.Replayed && s.sheets.Replayed.rows.splice(1); // made again, never reused
+    const users = ['Ana', 'Ben', 'Eve'].map(name => ({name}));
+    s.ctx.replayedAll_(users, {});
+    return users.map(u => u.rp);
+  };
+  // Both with the whole log (the switch off, as before), each read counted.
+  const whole = () => {
+    run(s, 'STATS.ON = false');
+    delete s.cache.stats17;
+    run(s, 'ROWS_ = null');
+    let B, M;
+    assert.ok(
+      fullReads(s, () => {
+        B = recs();
+        M = list();
+      }) > 0
+    );
+    run(s, 'STATS.ON = true');
+    return [B, M];
+  };
+  let A, L;
+  assert.strictEqual(
+    fullReads(s, () => {
+      A = recs();
+      L = list();
+    }),
+    0,
+    'no whole-log read'
+  );
+  assert.ok(A.some(r => Object.keys(r.rec).length > 3) && L.every(Array.isArray), JSON.stringify(L));
+  const [B, M] = whole();
+  assert.deepStrictEqual(A, B, 'rplMake_');
+  assert.deepStrictEqual(L, M, 'replayedAll_');
+  // The records depend on the pooled stats: other offsets in the snapshot give other records.
+  const tab = s.sheets.Stats,
+    keep = tab.rows[1].slice(),
+    st = JSON.parse(keep.slice(6).join(''));
+  Object.keys(st.gd).forEach(g => (st.gd[g][0] += 1));
+  st.mem = st.mem.map((x, i) => x - i);
+  tab.rows[1] = keep.slice(0, 6).concat([JSON.stringify(st)]);
+  delete s.cache[run(s, 'statsCacheKey_()')];
+  assert.notDeepStrictEqual(recs(), A, 'the replay reads the snapshot');
+  tab.rows[1] = keep;
+  delete s.cache[run(s, 'statsCacheKey_()')];
+  assert.deepStrictEqual(recs(), A);
+  // Another subject replays without pooled stats, as before.
+  assert.strictEqual(
+    fullReads(s, () => s.ctx.rplMake_('ana', s.ctx.rplMine_('ana', 0, 'fish'), 0, null, 'fish')),
+    0
+  );
+  // A delete blanks the snapshot: the replays make the whole log, the same as with the switch off.
+  assert.ok(s.post({userDelete: 'Eve', token: TOK}).ok);
+  let C, N;
+  assert.ok(
+    fullReads(s, () => {
+      C = recs();
+      N = list();
+    }) > 0
+  );
+  const [D, O] = whole();
+  assert.deepStrictEqual(C, D);
+  assert.deepStrictEqual(N, O);
+});
