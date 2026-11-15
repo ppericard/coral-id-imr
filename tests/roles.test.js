@@ -182,6 +182,59 @@ test('can_: the token passes every right; an account only what its grants give, 
   assert.ok(!can(s, null, 'content', IMR));
 });
 
+// The right each endpoint asks for, seen through an account caller: caller_ stubbed in the script's context so the
+// token 'acct:<name>' is that account (no endpoint takes an account's name and code in production yet).
+const asAccounts = s =>
+  run(
+    s,
+    `caller_ = t => { const m = /^acct:(.+)$/.exec(String(t || '')); return m ? {name: m[1], h: hash_(m[1], '1234'), id: aid_(m[1])} : null; }`
+  );
+test('every privileged endpoint asks the right Q342 gives: the owner passes, an editor, a trainer or the platform admin alone do not', () => {
+  const ROLES_EP = new Set(['roles', 'roleGrant', 'roleRevoke']);
+  for (const [name, body] of ENDPOINTS) {
+    const verdict = {};
+    for (const who of ['Owen', 'Eda', 'Tia', 'Pat', 'Ana']) {
+      const s = loadCodeGs();
+      ['Owen', 'Eda', 'Tia', 'Pat', 'Ana', 'Ben'].forEach(n => save(s, n));
+      grant(s, 'Owen', 'owner', IMR);
+      grant(s, 'Eda', 'editor', IMR);
+      grant(s, 'Tia', 'trainer', IMR);
+      grant(s, 'Pat', 'admin', 'platform');
+      asAccounts(s);
+      verdict[who] = s.post({...body(), token: 'acct:' + who}).error !== 'token';
+    }
+    // The players endpoints: the owner only. The roles: whoever may grant at the instance (its owner, the platform admin).
+    const want = ROLES_EP.has(name)
+      ? {Owen: true, Eda: false, Tia: false, Pat: true, Ana: false}
+      : {Owen: true, Eda: false, Tia: false, Pat: false, Ana: false};
+    assert.deepStrictEqual(verdict, want, name);
+  }
+});
+
+test('an account granting or revoking its own role writes (self); a platform admin may grant himself (Q364)', () => {
+  const s = loadCodeGs();
+  ['Owen', 'Pat'].forEach(n => save(s, n));
+  grant(s, 'Owen', 'owner', IMR);
+  grant(s, 'Pat', 'admin', 'platform');
+  asAccounts(s);
+  assert.strictEqual(grant(s, 'Owen', 'editor', IMR, 'acct:Owen').result, 'ok');
+  assert.strictEqual(grant(s, 'Pat', 'editor', IMR, 'acct:Pat').result, 'ok');
+  assert.strictEqual(grant(s, 'Owen', 'admin', 'platform', 'acct:Owen').error, 'token', 'an owner grants nothing outside its instance');
+  assert.strictEqual(revoke(s, 'Owen', 'editor', IMR, 'acct:Owen').result, 'ok');
+  assert.deepStrictEqual(
+    audit(s)
+      .slice(-4)
+      .map(x => [x.id, x.action, x.result, x.target]),
+    [
+      [aid(s, 'Owen'), 'grant editor (self)', 'ok', aid(s, 'Owen')],
+      [aid(s, 'Pat'), 'grant editor (self)', 'ok', aid(s, 'Pat')],
+      [aid(s, 'Owen'), 'grant admin', 'denied', ''],
+      [aid(s, 'Owen'), 'revoke editor (self)', 'ok', aid(s, 'Owen')]
+    ]
+  );
+  noName(s, 'Owen', 'Pat');
+});
+
 test('roleGrant and roleRevoke: checked input, live accounts only, held once, each audited', () => {
   const s = loadCodeGs();
   save(s, 'Ana');
@@ -189,6 +242,11 @@ test('roleGrant and roleRevoke: checked input, live accounts only, held once, ea
   assert.strictEqual(grant(s, 'Ana', 'admin', IMR).error, 'input', 'the platform admin at an instance');
   assert.strictEqual(grant(s, 'Ana', 'editor', 'platform').error, 'input', 'an editor of the platform');
   assert.strictEqual(grant(s, 'Ana', 'editor', 'instance:other').error, 'input', 'an instance this sheet does not serve');
+  // Names Object.prototype has are no role (Code.gs roleDef_), wherever they are asked.
+  ['constructor', 'toString', '__proto__', 'hasOwnProperty'].forEach(r => {
+    assert.strictEqual(grant(s, 'Ana', r, IMR).error, 'input', r);
+    assert.strictEqual(grant(s, 'Ana', r, 'platform').error, 'input', r);
+  });
   assert.strictEqual(grant(s, 'Nobody', 'editor', IMR).error, 'user');
   assert.deepStrictEqual(grant(s, 'ana', 'editor', IMR), {ok: true, result: 'ok', v: grant(s, 'Ana', 'editor', IMR).v});
   assert.strictEqual(grant(s, 'Ana', 'editor', IMR).result, 'held');

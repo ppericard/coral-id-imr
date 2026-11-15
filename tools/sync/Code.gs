@@ -1533,7 +1533,9 @@ const ROLES = {TAB: 'Roles', HEAD: ['Account', 'Role', 'Scope', 'Since', 'Code h
   // Pierre today (the task of 2026-11-15): platform admin, and owner and content editor of the IMR instance. Given once
   // to the admin's account (ADMIN_ACCT, the account the admin page is signed in to with the token: rolesSeed_).
   SEEDS: [['admin', 'platform'], ['owner', INST_SCOPE_], ['editor', INST_SCOPE_]]};
-const scopeOk_ = (role, scope) => !!ROLES.DEF[role] && (ROLES.DEF[role].at === 'platform' ? scope === 'platform' : scope === INST_SCOPE_);
+// A role's definition, own entries only: a role named like Object.prototype's members (constructor, __proto__) is none.
+const roleDef_ = role => (Object.prototype.hasOwnProperty.call(ROLES.DEF, String(role)) ? ROLES.DEF[String(role)] : null);
+const scopeOk_ = (role, scope) => !!roleDef_(role) && (roleDef_(role).at === 'platform' ? scope === 'platform' : scope === INST_SCOPE_);
 // The grants the Roles tab holds, as {name (lower case), role, scope, h}.
 function grants_(){
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB);
@@ -1549,7 +1551,7 @@ function can_(who, right, scope){
   const k = lc_(who.name);
   if (!k || !who.h) return false;
   return grants_().some(g => {
-    const d = g.name === k && g.h === String(who.h) && ROLES.DEF[g.role];
+    const d = g.name === k && g.h === String(who.h) && roleDef_(g.role);
     if (!d || d.rights.indexOf(right) < 0 || g.scope !== d.at && g.scope.indexOf(d.at + ':') !== 0) return false;
     return g.role === 'admin' && right === 'grant' ? true : g.scope === scope;
   });
@@ -1588,7 +1590,7 @@ function rolesDrop_(name, by){
   let n = 0;
   for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k) {
     sh.deleteRow(i + 2); n++;
-    audit_(by, 'revoke ' + (ROLES.DEF[v[i][1]] ? v[i][1] : '?') + ' (account removed)', /^(platform|instance:[a-z0-9]+)$/.test(String(v[i][2])) ? String(v[i][2]) : '?', 'ok', id);
+    audit_(by, 'revoke ' + (roleDef_(v[i][1]) ? v[i][1] : '?') + ' (account removed)', /^(platform|instance:[a-z0-9]+)$/.test(String(v[i][2])) ? String(v[i][2]) : '?', 'ok', id);
   }
   return n;
 }
