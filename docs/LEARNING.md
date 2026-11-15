@@ -3630,9 +3630,12 @@ unchanged and a subject that tags phases one day sets its own N.
   under ease 4 comes after it, so holding back easy phase photos (the Anthias') never lets the hard ones past its 10%.
 - **Never a wall.** Keyed on the unit's own answers, which only go up: a player who struggles on a unit reaches its
   phase photos at the same answer as one who does not (the bar, the ability or Open Water could hold them back for
-  good). A unit with fewer than `PICKD.VARIETY` (3) observations showing a photo with no phase, after the draw's own
-  filters (a Find the X's tiles among them), holds nothing back: it would show the same one or two photos again and
-  again. No `Math.random` call added: the seeds pair the arms.
+  good). A unit with fewer than `PICKD.VARIETY` (3) observations showing a photo with no phase holds nothing back: it
+  would show the same one or two photos again and again. Counted over all the unit's photos, not only those a draw may
+  show (a Find the X draws among its tiles: the Anthias have one tile with no phase and six with one, and counted on
+  the tiles they came back in its first answers, 6 times in the first app-world run of the check below); such a draw
+  then shows its tiles with no phase, or, when it has none, a phase tile all the same. No `Math.random` call added: the
+  seeds pair the arms.
 - **Why N = 10.** A family's first 10 answers are about its time under Open Water (the fish smoke sets Open Water at 12
   answers, 10 right: "The fish draw in big pools"), the stage in which the beginner needs the easy, reference-like
   photos (`RARE`, Q271); the ramp over the next 10 brings them in one step an answer, in full from the unit's 20th. Not

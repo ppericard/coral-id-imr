@@ -134,6 +134,21 @@ test('never a wall: a unit with fewer than 3 observations without a phase draws 
   assert.ok(ph > 150, `phase photos drawn ${ph} times in 300`);
 });
 
+test('a draw among some photos only (a Find the X, among its tiles): the count without a phase is the whole unit’s', () => {
+  // The unit has many photos without a phase, but one tile only (as the Anthias): the tile drawn at the start is that
+  // one; a unit whose whole pool has too few photos without a phase draws its phase tiles.
+  const L = pool().map(p => ({...p, xc: C.phaseOf(p) ? 1 : 0}));
+  L[0].xc = 1;
+  const tile = p => !!p.xc,
+    E = engine('fish', L, {ok: 0, score: 0.9});
+  for (let i = 0; i < 200; i++) assert.strictEqual(E.photoSet('u', null, 0, 4, 'find', tile).shown[0].f, L[0].f);
+  const few = L.filter(p => C.phaseOf(p) || p.f === 'a0' || p.f === 'a1'),
+    F = engine('fish', few, {ok: 0, score: 0.9});
+  let ph = 0;
+  for (let i = 0; i < 200; i++) ph += C.phaseOf(few.find(p => p.f === F.photoSet('u', null, 0, 4, 'find', tile).shown[0].f)) ? 1 : 0;
+  assert.ok(ph > 100, `phase tiles drawn ${ph} times in 200`);
+});
+
 test('an observation with an adult and a juvenile photo shows its adult one at the start', () => {
   const L = pool().slice(0, 40);
   L.push({f: 'mixA', o: 'mix', e: 5, jt: 'p1g0sl15'}, {f: 'mixJ', o: 'mix', e: 5, jt: 'p1g0sl1j5'});

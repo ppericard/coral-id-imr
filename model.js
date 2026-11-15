@@ -164,11 +164,12 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   // Bonus genera: Research Grade only. A two-level genus's close-ups may still sit in "medium" (extra genera from
   // tools/build_extra.py, e.g. Sandalolitha): they count as its close-up level, so its corallites milestone is reachable.
   const gameOk = p => gamePhotoOk(n, p);
-  const pics = v =>
+  // all: every photo the unit may show, before keep (the phase stage's count of observations without a phase, below).
+  const pics = (v, all = false) =>
     [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
       .filter(ok(v))
       .filter(gameOk)
-      .filter(p => p.f !== skip && (!keep || keep(p)));
+      .filter(p => p.f !== skip && (all || !keep || keep(p)));
   // Only on a genus the player already holds (met, not shaky): a genus still being learned keeps whole colonies.
   // No calibration question in a comeback (shift): one unusual photo alone is not a restart.
   const calQ = !shift && level(n)[0] !== 'new' && !shaky(n) && Math.random() < CAL.RATE,
@@ -224,9 +225,11 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const keys = Object.keys(obs);
   if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
   // The observations whose every photo has a phase (phF above): the variety and the floor below lift them only by phF, so
-  // neither brings a held-back photo back. Too few observations without one: nothing held back.
+  // neither brings a held-back photo back. Too few observations without one among all the unit's photos (keep aside: a
+  // Find the X draws among its tiles only, and the Anthias have one tile without a phase): nothing held back.
   const phAll = phF < 1 ? Object.fromEntries(keys.map(k => [k, Object.values(obs[k]).every(L => L.every(p => phaseOf(p)))])) : null;
-  if (phAll && keys.filter(k => !phAll[k]).length < PICKD.VARIETY) phF = 1;
+  const plainObs = v => pics(v, true).flatMap(p => (phaseOf(p) ? [] : [p.o || p.f]));
+  if (phAll && new Set(need.flatMap(plainObs)).size < PICKD.VARIETY) phF = 1;
   const phMul = k => (phF < 1 && phAll[k] ? phF : 1);
   // A colony counts as seen whatever view of it was shown (Pierre, 2026-11-06, Q190): every photo of an observation
   // takes the memory of its most remembered photo (memBucket, then the most shown), so a close-up never shown of a
