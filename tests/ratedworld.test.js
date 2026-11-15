@@ -43,6 +43,31 @@ test('the world of a seed: the distributions LEARNING.md states, the same world 
   assert.ok(Math.abs(sd(pi) - RW.RATED.PI) < 0.15, String(sd(pi)));
 });
 
+// The species level (2026-11-15): the species units as the app builds them, drawn after everything else so a world
+// without them is the same; a species opens only once its family is at Advanced, in its family's order; its record names
+// the family it starts from (core.js abilityOf from, passed to scoreAnswer as quiz.js answer does).
+test('the species units: the worlds of before unchanged, opened from their family’s Advanced, in its order', () => {
+  const U = RW.unitsOf('fish'),
+    W = RW.world(U, 4),
+    W0 = RW.world({...U, sp: []}, 4);
+  assert.ok(U.sp.length > 600);
+  assert.deepStrictEqual(W.eps, W0.eps);
+  Object.keys(W0.mu).forEach(n => assert.strictEqual(W.mu[n], W0.mu[n], n));
+  U.sp.forEach(n => assert.ok(n in W.mu && X.gen[n].from === X.gen[n].parent, n));
+  const r = RW.runOne(X, {profile: 'expert', seed: 1, N: 400, cps: [400]}),
+    first = {};
+  r.expo.forEach((e, i) => r.kinds[e[0]] === 'species' && !(e[0] in first) && (first[e[0]] = i + 1));
+  assert.ok(Object.keys(first).length >= 1, 'no species asked in 400 answers');
+  Object.entries(first).forEach(([n, i]) => {
+    const p = X.gen[n].parent,
+      own = U.sp.filter(o => X.gen[o].parent === p && X.gen[o].views.wide.length);
+    assert.ok(r.advAt[p] && r.advAt[p] < i, `${n} at ${i}, its family at Advanced at ${r.advAt[p]}`);
+    // the earlier species of its family (with a photo) were met before it
+    own.slice(0, own.indexOf(n)).forEach(o => assert.ok(o in first && first[o] < i, `${o} before ${n}`));
+  });
+  assert.strictEqual(r.kinds[U.sp[0]], 'species');
+});
+
 test('told the truth, the app reads every photo and unit as the world has them; on its own, the judged ease alone', () => {
   const W = RW.world(X, 2),
     {ctx, M, G} = RW.engine(X, W, {app: 'truth'}),

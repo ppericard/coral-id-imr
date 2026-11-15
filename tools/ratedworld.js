@@ -461,7 +461,10 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       dt: 0,
       dom: true,
       mu: M.genusDiff(t),
-      ...(!ok && G[c] ? {muc: M.genusDiff(c)} : {})
+      ...(!ok && G[c] ? {muc: M.genusDiff(c)} : {}),
+      // a unit never answered starts from the unit its record names (a species: its family), as quiz.js answer passes it
+      ...(G[t].from ? {from: G[t].from} : {}),
+      ...(!ok && G[c] && G[c].from ? {cfrom: G[c].from} : {})
     });
     const res = C.scoreAnswer(P(), q);
     if (typeof res.e === 'number') M.holdStep(res.e, ok); // the opening hold (quiz.js answer)
