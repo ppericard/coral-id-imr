@@ -25,8 +25,11 @@
 #   F. irregularis accepted (new combination: Kishi, Johnson & Fukami 2025, Zoologica Scripta 55: 349-367); the family
 #   Diploastraeidae Thiel, 1932 (no record "Diploastreidae").
 # - IMR Lecture 6, slide 65 (Google Slides copy): "ambiguous wall structure ... (e.g. F. rotundata, F. magnistellata)".
+# The IMR lecture line (imr) lives in the IMR instance's coral layer (tools/instances/imr/coral.json, since step 5 of
+# docs/reviews/2026-11-14-sheet-overlay-design.md): written there, then laid on data.json.
 import json, os
 from datajson import dump  # the one data.json layout (one genus per line)
+from instance import CORAL_AFTER, coral_compose, load_layer, write_layer  # the IMR instance's coral layer
 
 P = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data.json')
 
@@ -76,12 +79,14 @@ SPELL = {'Diploastreidae': ['Diploastraeidae', 'WoRMS']}
 
 
 def main():
-    d = json.load(open(P, encoding='utf-8'))
+    lay = load_layer('coral')
+    d = coral_compose(json.load(open(P, encoding='utf-8')), lay)
     G = d['gen']
     for g, fields in FIX.items():
         for f, pairs in fields.items():
+            rec = lay['gen'][g] if f in CORAL_AFTER else G[g]
             for old, new in pairs:
-                v = G[g][f]
+                v = rec[f]
                 if isinstance(v, list):
                     if any(new in x for x in v):
                         continue
@@ -92,7 +97,10 @@ def main():
                     if new in v:
                         continue
                     assert old in v, (g, f, old)
-                    G[g][f] = v.replace(old, new)
+                    rec[f] = v.replace(old, new)
+    write_layer('coral', lay)
+    d = coral_compose(d, lay)
+    G = d['gen']
     for g, notes in INFO.items():
         info = G[g].get('info') or []
         G[g]['info'] = info + [n for n in notes if n not in info]

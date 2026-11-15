@@ -3433,7 +3433,7 @@ first photos were too hard. Fish answers were not logged to the sheet then (logg
 rating and no entry a difficulty: every fish photo sat at 0, and the opening order was commonness and chance. Three
 changes, all data the engine reads generically (the corals have none of these fields, so nothing moves for them):
 
-- **The starter core** (`fish.json` `start`, from `tools/fish_source.json`; Pierre's fish-ID design: four easy, readable
+- **The starter core** (`fish.json` `start`, from the IMR instance's layer `tools/instances/imr/fish.json`; Pierre's fish-ID design: four easy, readable
   families first): Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish. `fishGen` marks their records
   `first`; `openPick` opens a `first` unit before any other while one is left, so the `INTRO.START` (4) first cards are
   exactly these four. The rest then opens by the existing rule, easiest and most common first: an entry's difficulty
