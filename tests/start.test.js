@@ -13,7 +13,7 @@ const {CHOICE, START, LEVEL, playerStart, startVars, startCheck, startNext, star
 let CLOCK = 1.8e12;
 function model({P = {}, slate = ['A', 'B', 'C', 'D', 'E', 'F'], basics = false} = {}) {
   const src = fs.readFileSync(path.join(__dirname, '..', 'model.js'), 'utf8'),
-    block = cut(src, '// First meeting with a genus (Pierre', 'const introSince');
+    block = cut(src, '// First meeting with a genus (Pierre', '// Comeback after a break (Pierre');
   const saved = {},
     ctx = {
       ...require('./subj.stub.js')(), // the corals as the current subject
