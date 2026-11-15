@@ -3639,13 +3639,30 @@ async function credits(b, base) {
         privacy: !!(a && a.querySelector('a[href="privacy.html"]')),
         feedback: !!(a && a.querySelector('[data-rep]')),
         licences: !!a && /CC BY/.test(a.textContent),
+        // the lecture photos traced to Corals of the World (Pierre, 2026-11-15, #925): the site and its terms named
+        cotw: !!(a && a.querySelector('a[href="https://www.coralsoftheworld.org/page/terms-of-use/"]')),
         // The book may be cited under References only, never in the credits around it.
         credited: secs.filter(s => s !== refs).some(s => /Coral Finder|Kelley|BYOGUIDES/i.test(s.textContent)),
         bar: document.querySelector('#modes.ctx .ctx-t')?.textContent || ''
       };
     });
-    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || r.credited || !/About/.test(r.bar))
+    if (!r.about || !r.who || !r.privacy || !r.feedback || !r.licences || !r.cotw || r.credited || !/About/.test(r.bar))
       fails.push(`About and credits page: ${JSON.stringify(r)}`);
+    // A genus sheet's lecture photos: a traced one credits its photographer with the link to the page that credits it
+    // (data.json course a, pg), after the lecture and slide; one not traced, the lecture and slide only.
+    {
+      await p.evaluate(() => (location.hash = 'learn/genus/Stylophora'));
+      await drawn(p);
+      const lc = await p.evaluate(() => {
+        const F = [...document.querySelectorAll('#view figure figcaption')].filter(x => /IMR lecture/.test(x.textContent));
+        return F.map(x => {
+          const a = x.querySelector('a[href^="https://www.coralsoftheworld.org/"]');
+          return {t: x.textContent.trim(), link: a ? a.textContent : ''};
+        });
+      });
+      if (!lc.some(x => / \/ Corals of the World$/.test(x.link) && /slide \d+ · /.test(x.t)))
+        fails.push(`Stylophora sheet: no lecture photo credited to its photographer and page ${JSON.stringify(lc)}`);
+    }
     await p.evaluate(() => (location.hash = 'learn/genus/Acropora'));
     await drawn(p);
     await p.click('#help');

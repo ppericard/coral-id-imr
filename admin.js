@@ -1116,16 +1116,30 @@ const nameTag = p => {
 // badge on every photo tile, corals and fish: own, open (CC0, CC BY), NC, IMR (lecture), book; its licence in the title.
 // Information only: Inbox › Coverage › Rights counts them.
 const RIGHTS_L = {own: 'own', open: 'open', nc: 'NC', imr: 'IMR', book: 'book'};
+// The terms of the sites an IMR lecture photo was traced to (tools/imr_sources.json terms), by the host of its pg.
+const LECT_TERMS = {
+  'www.coralsoftheworld.org': 'Corals of the World terms: personal, non-commercial or academic use with citation; all other rights reserved'
+};
+const lectTerms = p => {
+  try {
+    return LECT_TERMS[new URL(p.pg).host] || 'no open licence stated';
+  } catch (e) {
+    return 'no open licence stated';
+  }
+};
 const rightsTag = p => {
   const c = rightsClass(p),
     l = licOf(p);
-  return `<span class="adm-src adm-rt rt-${c}" title="Rights: ${esc(c === 'imr' ? 'IMR lecture' : c === 'book' ? 'Coral Finder book' : (c === 'own' ? 'your own · ' : '') + (l ? l.toUpperCase().replace(/^CC-/, 'CC ') : 'no licence read'))}">${RIGHTS_L[c]}</span>`;
+  return `<span class="adm-src adm-rt rt-${c}" title="Rights: ${esc(c === 'imr' ? 'IMR lecture' : c === 'book' ? 'Coral Finder book' : p.imr && p.pg ? 'IMR lecture photo by ' + (p.a || '?') + ' · ' + lectTerms(p) : (c === 'own' ? 'your own · ' : '') + (l ? l.toUpperCase().replace(/^CC-/, 'CC ') : 'no licence read'))}">${RIGHTS_L[c]}</span>`;
 };
+// An IMR lecture photo whose original source was not found (the study of 2026-11-15, #925: no pg): marked in the admin
+// only (Pierre, 2026-11-15: kept as they are).
+const unkTag = p => (p.imr && !p.pg ? '<span class="adm-src adm-unk" title="Original source not found">source unknown</span>' : '');
 // A photo the auto-sort added carries an "auto" tag next to its source (undo it in Candidates › Auto › Details).
 const srcTag = p => {
   const o = origin(p),
     a = aApplied(p.f);
-  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}${a && a.kind === 'a' ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ruleTag(p)}${saTag(p)}${nameTag(p)}`;
+  return `<span class="adm-src o-${o}">${ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}${unkTag(p)}${a && a.kind === 'a' ? '<span class="adm-src adm-autot" title="Auto-sort">auto</span>' : ''}${ruleTag(p)}${saTag(p)}${nameTag(p)}`;
 };
 
 /* ---------- Edits ---------- */
@@ -3789,11 +3803,15 @@ function pointerDrag(tiles, hover, drop, cancel) {
 // The enlarged photo's caption (zoom, zoomOne: every admin view): genus (opens its sheet, draft applied), what the photo
 // is, the iNat taxon, its credit and its source, as in the games (app.js photoSrc / credit, rule P5). An iNat
 // photo links to its observation (Pierre, 2026-11-03: he opened his own photo that everyone misses, to check on iNaturalist
-// who identified it, and the caption had no link); IMR lecture photos have no public page: their credit line only.
+// who identified it, and the caption had no link); an IMR lecture photo its lecture and slide, then, once traced to its
+// original source (data.json course a and pg: #925), its photographer and the page that credits it; one not traced says
+// "source unknown".
 const inatObs = p => /^https:\/\/(www\.)?inaturalist\.org\/observations\//.test(p.o || '');
 const lbCap = (n, p, what) =>
   `${DATA.gen[n] ? `<a href="./?draft#${routeOut('g-' + n)}" target="_blank" rel="noopener" title="Genus sheet"><i>${esc(n)}</i></a>` : `<i>${esc(n || '')}</i>`}${what ? ` · ${esc(what)}` : ''} · ${
-    p.imr ? `IMR Lecture 6, slide ${esc(p.slide)}` : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
+    p.imr
+      ? `IMR Lecture 6, slide ${esc(p.slide)} · ${p.pg ? `<a class="lb-src" href="${esc(p.pg)}" target="_blank" rel="noopener" title="Open the page that credits it">${esc(p.a || '')} ↗</a>` : 'source unknown'}`
+      : `${inatObs(p) && p.t ? `<i>${esc(p.t)}</i> · ` : ''}${esc(p.a || '')}`
   }${inatObs(p) ? ` · <a class="lb-src" href="${esc(p.o)}" target="_blank" rel="noopener" title="Open the iNaturalist observation">iNat observation ↗</a>` : ''} · <code>${esc(p.f)}</code>`;
 function zoom(n, f) {
   const L = [...photos(n), ...pending(n).map(p => ({...p, base: 'cand'})), ...outOf(n).map(p => ({...p, base: 'out'}))];
