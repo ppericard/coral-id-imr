@@ -490,7 +490,7 @@ Decided from the admin pooling study:
   the hierarchical photo Elo already do), so a species becomes a cross-family look-alike only when its rate is clearly above its
   family's.
 - Pairs inside a family (same genus, same IMR sub-entry) come later from species questions, seeded from the data (genus, `sub`).
-- **Declared family groups** (Pierre, 2026-11-06, from experience; `tools/fish_source.json` `look`, ARCHITECTURE.md "Fish
+- **Declared family groups** (Pierre, 2026-11-06, from experience; the IMR instance's layer `look`, ARCHITECTURE.md "Fish
   content"): Butterflyfishes ↔ Angelfishes; Snappers ↔ Coral Breams ↔ Emperors; Parrotfishes ↔ Wrasses (some wrasse
   species only: at species level the pair will hold only for those); Soldierfishes ↔ Squirrelfishes ↔ Cardinalfishes;
   Triggerfishes ↔ Filefishes. The seeds of the traps and the confusion groups until pooled fish answers exist.
