@@ -699,6 +699,25 @@ them before it merges.
    a replay under an edited structure, which stays #977's fixture test.
 4. **The admin's structure editor:** a circle on each family page, pairs added and withdrawn on the node pages and in
    the Look-alikes filter, and the Publish confirmation. *Needs:* step 3.
+   *Built (2026-11-15):* a Structure box above the Sheet on each family page the app gives a sheet (not a wink family):
+   the Circle (one segment per declared circle and None, the circle slot in the node's map) and its Look-alikes (the
+   base's pairs and his: Withdraw, ↺ Restore, Remove; Add a look-alike…, which asks for a source once and never requires
+   one, Q359 e), with step 2's three states (a stale circle: Keep mine, Take the new), Undo and Restore. The Look-alikes
+   filter lists the pairs he withdrew or added and carries the same tools (+ Pair under Any look-alike, a pair's tools
+   under its tag); the Circle filter and the tree's rows follow the circle in force. The Sheet reads the look-alike lines
+   with the pairs in force, so an added pair's words are its look/<id> line, to fill there (an empty slot: the source is
+   asked once). A Publish that changes the structure confirms once, in its one dialog, that it changes every player's
+   path and progress, and counts circle and pair edits apart (docs/ARCHITECTURE.md "Admin back-office", "The content
+   editor's edits"). **The leaderboard's score tree** (step 3's open point, Codex review #977): the sheet makes it with
+   its replay's units, from the same fish.json and curation (`SUBJECTS` `replayed` `tree`, `core.js` `fishBoardTree`, the
+   app's own `UNITS` tree), and the board ranks by it, from the cache, so a circle Publish moves the board within the
+   trigger's 15 minutes whether a device saves or not, and a device on the old units cannot send the old tree back into
+   force; the tree the apps send stays the fallback when the sheet's is not cached (docs/ARCHITECTURE.md "Other
+   subjects' replays"). Set aside: the Publish sending the tree (the admin holds no app units and the sheet has no
+   admin call that keeps a board tree, so it needs a new script call anyway, and stays wrong after an undo published
+   from another device). Left: the admin's Photos › Look-alikes page lists the base's pairs only (`fishPairs` over
+   fish.json as built), so an added pair has no row there to pick its photo pair (`fish.mont`) until that page reads the
+   pairs in force.
 5. **The IMR instance's layer as its own files:** the IMR parts of `tools/fish_source.json` (circles, `look` groups and
    words, cues, phase lines, `start`) and the coral IMR fields move to the files that `tools/instance.json` names (an
    `id` and a `name` join its `centre`). The build composes them, and `fish.json` and `data.json` stay byte for byte
