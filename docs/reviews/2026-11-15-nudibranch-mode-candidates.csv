@@ -1,0 +1,453 @@
+group,family,genus,species,worms_status,worms_valid,inat_en,worms_en,rank_common_in_group,ph_rg_obs,ph_observers,provinces,cells_half_degree,main_provinces_of_6,balanced_share,top_observer_share,near_dauin_obs,near_dauin_observers,c8_ph_3_observers,c8_near_2_observers,faved_obs,faves_per_obs,wiki_views_12m,web_mentions,ph_obs_open_photo,ph_obs_nc_photo,world_rg_obs,world_rg_obs_open_photo,world_rg_obs_nc_photo,egg_annot,juv_annot
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris annae,accepted,,Anna's Chromodoris,,1,1175,262,19,38,6,0.3804,0.063,144,51,1,1,34,0.032,7271,,69,823,2425,213,1612,0,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha kubaryana,accepted,,Dusky Nembrotha,Trance Wrinkle Dorid,2,646,251,18,29,6,0.37,0.043,174,79,1,1,22,0.039,5046,P4,48,446,1601,103,1121,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris willani,accepted,,Willan's Chromodoris,,3,788,203,18,33,6,0.2712,0.034,11,6,1,1,20,0.029,9237,P4 P8,24,539,1421,73,966,0,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha chamberlaini,accepted,,Chamberlain's Nembrotha,,4,585,180,12,18,5,0.216,0.038,26,15,1,1,25,0.07,1422,,34,413,842,45,583,1,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha lineolata,accepted,,Lined Nembrotha,Ivory Wrinkle Dorid,5,434,173,17,27,6,0.2204,0.053,113,62,1,1,10,0.025,1673,,28,283,747,44,514,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris tryoni,accepted,,Tryon's Hypselodoris,,6,396,169,14,22,6,0.2146,0.068,56,28,1,1,4,0.013,1088,,16,272,2448,138,1748,0,1
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia varicosa,accepted,,Varicose Wart Slug,Variable Wart Slug,7,432,165,21,35,6,0.2173,0.079,92,31,1,1,5,0.012,2376,,18,311,3982,286,2685,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda batangas,accepted,,Batangas Halgerda,,8,320,163,15,21,6,0.1922,0.081,30,17,1,1,8,0.025,730,P1,16,212,918,109,607,0,1
+Nudibranchia,Facelinidae,Pteraeolidia,Pteraeolidia semperi,accepted,,Blue Dragon,,9,474,162,18,31,6,0.2029,0.063,81,38,1,1,5,0.011,,,30,312,4483,267,3283,1,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris lochi,accepted,,Loch's Chromodoris,Pyjama Rainbow Dorid,10,442,158,14,25,6,0.1989,0.043,16,12,1,1,8,0.018,5401,,11,301,1914,178,1324,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris magnifica,accepted,,Magnificent Chromodoris,,11,413,157,15,25,6,0.2178,0.036,43,26,1,1,4,0.01,1460,,21,268,1094,52,742,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia ocellata,accepted,,Ocellate Phyllidia,Ocellated Wart Slug,12,345,155,19,30,6,0.1938,0.052,43,20,1,1,3,0.009,773,,21,230,2468,204,1781,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus geometricus,accepted,,Geometric Goniobranchus,Geometric Rainbow Dorid,13,435,155,14,24,6,0.1997,0.074,58,30,1,1,3,0.007,566,P9,22,289,1954,81,1379,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia coelestis,accepted,,Sky Blue Phyllidia,Heavenly Wart Slug,14,357,154,18,30,6,0.1867,0.053,36,17,1,1,6,0.017,554,,30,243,1499,100,1054,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium briareum,accepted,,Yellow-tipped Phyllodesmium,,15,339,154,15,21,6,0.2233,0.05,31,25,1,1,5,0.015,792,P9,16,234,554,37,384,0,0
+Nudibranchia,Discodorididae,Jorunna,Jorunna funebris,accepted,,Mourning Dorid,Ringed Velvet Dorid,16,334,153,15,33,6,0.1531,0.081,89,42,1,1,8,0.024,6682,,15,223,2125,177,1375,1,1
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia elegans,accepted,,Elegant Phyllidia,,17,309,149,18,32,6,0.1914,0.052,24,17,1,1,1,0.003,356,,17,201,1562,166,1063,0,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha cristata,accepted,,Crested Nembrotha,,18,308,143,10,16,6,0.2083,0.127,117,53,1,1,5,0.019,4685,,25,224,933,65,675,0,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha milleri,accepted,,Miller's Nembrotha,Shadowy Wrinkle Dorid,19,356,130,10,16,6,0.1815,0.081,118,45,1,1,20,0.138,788,P7,26,244,615,31,417,0,1
+Nudibranchia,Chromodorididae,Ardeadoris,Ardeadoris egretta,accepted,,,,20,195,126,15,23,6,0.1512,0.113,20,15,1,1,3,0.015,533,P4,9,115,350,13,226,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus kuniei,accepted,,,,21,247,124,15,23,6,0.1528,0.061,19,16,1,1,7,0.028,1428,,13,162,1035,61,755,0,0
+Nudibranchia,Chromodorididae,Doriprismatica,Doriprismatica atromarginata,accepted,,Black-margined Nudibranch,,22,265,118,12,21,6,0.1326,0.057,25,11,1,1,7,0.034,1524,,6,178,4815,146,3703,0,0
+Nudibranchia,Facelinidae,Caloria,Caloria indica,accepted,,Indian Caloria,Sunrise Tentacle Aeolid,23,276,113,14,18,6,0.1407,0.062,92,37,1,1,7,0.025,557,,18,184,1611,144,1079,0,0
+Nudibranchia,Polyceridae,Thecacera,Thecacera picta,accepted,,,,24,319,112,12,17,6,0.1891,0.069,53,35,1,1,9,0.028,352,,25,203,521,30,339,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus coi,accepted,,Coi's Goniobranchus,,25,186,111,15,20,6,0.1358,0.075,25,24,1,1,6,0.038,1014,,10,120,816,46,551,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris apolegma,accepted,,Giant Hypselodoris,,26,195,105,13,18,6,0.0954,0.051,4,4,1,1,8,0.041,2162,,11,118,475,46,287,0,0
+Nudibranchia,Polyceridae,Tambja,Tambja morosa,accepted,,Gloomy Nudibranch,Blue-spotted Wrinkle Dorid,27,193,100,12,19,6,0.1231,0.057,29,14,1,1,4,0.021,858,,9,137,1325,70,944,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia picta,accepted,,Painted Phyllidia,black-rayed phyllidia; painted phyllidia,28,206,96,13,20,6,0.123,0.083,29,14,1,1,2,0.01,255,,13,133,1097,92,809,0,0
+Nudibranchia,Flabellinidae,Coryphellina,Coryphellina exoptata,accepted,,Desirable Flabellina,,29,177,92,13,17,6,0.1097,0.062,6,5,1,1,7,0.056,634,,10,109,1493,119,1073,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris bullockii,accepted,,Bullock's Hypselodoris,Lavender Split-tooth Dorid,30,183,90,14,19,6,0.0869,0.148,4,4,1,1,8,0.049,1516,,7,117,947,60,661,1,0
+Nudibranchia,Phyllidiidae,Reticulidia,Reticulidia halgerda,accepted,,Chocolate Mango Nudibranch,,31,135,84,11,14,6,0.102,0.044,8,8,1,1,4,0.03,355,,4,95,279,11,208,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus fidelis,accepted,,Faithful Sea Slug,Fiesta Rainbow Dorid,32,205,81,12,18,6,0.1177,0.112,13,9,1,1,2,0.02,530,,8,124,1154,50,858,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris colemani,accepted,,,,33,156,77,12,17,6,0.0926,0.083,5,5,1,1,5,0.032,471,,4,100,349,19,233,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris variobranchia,accepted,,,,34,146,76,8,15,4,0.0632,0.075,0,0,1,0,5,0.041,1257,,7,87,256,26,148,0,0
+Nudibranchia,Facelinidae,Favorinus,Favorinus tsuruganus,accepted,,,Black-horned Egg-eater,35,243,76,10,11,5,0.1095,0.14,8,7,1,1,5,0.021,519,,2,149,621,8,404,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris strigata,accepted,,Streaked Chromodoris,Broken-line Rainbow Dorid,36,175,74,11,14,6,0.088,0.12,4,4,1,1,3,0.017,413,,0,123,485,31,332,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris decorata,accepted,,,Triple-banded Split-tooth Dorid,37,156,73,12,15,6,0.11,0.115,10,8,1,1,1,0.006,267,,9,92,498,22,351,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus hintuanensis,accepted,,Bus Stop Nudibranch,,38,181,72,10,11,5,0.0964,0.061,1,1,1,0,3,0.017,383,,1,124,710,30,491,0,3
+Nudibranchia,Chromodorididae,Diversidoris,Diversidoris crocea,accepted,,,Tulip Longtail Dorid,39,151,69,10,16,6,0.0655,0.152,3,3,1,1,4,0.033,339,,1,93,231,6,155,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris alcalai,accepted,,Alcala's Chromodoris,,40,113,66,8,15,6,0.0675,0.062,1,1,1,0,2,0.027,,,2,74,551,38,384,0,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis shireenae,accepted,,Shireen's Phyllidiopsis,Crested Wart Slug,41,103,65,14,19,6,0.0761,0.049,6,4,1,1,2,0.019,304,,4,75,379,21,245,0,0
+Nudibranchia,Hexabranchidae,Hexabranchus,Hexabranchus lacer,accepted,,Decumbent Spanish Dancer,Mottled Spanish Dancer,42,129,64,13,15,6,0.0677,0.116,13,9,1,1,3,0.023,,,0,89,1268,26,901,0,6
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis xishaensis,accepted,,Striped Phyllidiopsis,,43,98,63,13,17,6,0.0826,0.092,12,10,1,1,0,0.0,232,,5,64,538,23,413,0,0
+Nudibranchia,Aegiridae,Aegires,Aegires villosus,accepted,,,Sunset Knobbed Dorid,44,188,63,9,13,5,0.0927,0.154,2,2,1,1,6,0.032,341,,6,99,618,18,392,0,0
+Nudibranchia,Chromodorididae,Ceratosoma,Ceratosoma gracillimum,accepted,,Slender ceratosoma nudibranch,,45,149,63,8,13,5,0.063,0.141,4,2,1,1,3,0.02,211,,4,87,731,53,467,0,0
+Nudibranchia,Phyllidiidae,Phyllidiella,Phyllidiella pustulosa,accepted,,Pustulose Wart Slug,pustular phyllidia; pustule nudibranch; pustulose wart slug; Warty Wart Slug,46,123,61,13,18,6,0.0827,0.106,27,10,1,1,2,0.024,1188,,15,86,1927,163,1409,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris emma,accepted,,Emma's Hypselodoris,Triple-striped Split-tooth Dorid,47,96,60,9,10,5,0.0635,0.094,4,4,1,1,1,0.01,286,,4,55,489,33,320,0,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis krempfi,accepted,,Krempf's Phyllidiopsis,,48,89,59,13,17,6,0.0727,0.067,3,3,1,1,2,0.022,178,,0,62,303,11,215,0,0
+Nudibranchia,Chromodorididae,Glossodoris,Glossodoris rufomarginata,accepted,,Caramel Nudibranch,,49,109,59,10,12,6,0.0803,0.119,15,12,1,1,4,0.037,518,,6,62,1273,49,947,0,1
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus verrieri,accepted,,,Pink-eared Rainbow Dorid,50,127,57,11,15,6,0.0638,0.126,6,6,1,1,0,0.0,366,,4,92,508,18,392,0,0
+Nudibranchia,Flabellinidae,Coryphellina,Coryphellina flamma,accepted,,,,51,136,57,6,8,5,0.0802,0.088,8,7,1,1,6,0.044,,,3,79,467,17,331,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus preciosus,accepted,,Precious Nudibranch,,52,105,56,10,10,5,0.0613,0.095,4,3,1,1,2,0.019,228,,4,61,413,9,302,0,0
+Nudibranchia,Discodorididae,Jorunna,Jorunna rubescens,accepted,,Red-lined Jorunna,Turret Velvet Dorid,53,91,55,12,14,5,0.0512,0.077,15,15,1,1,1,0.011,750,,1,57,484,11,319,5,0
+Nudibranchia,Chromodorididae,Thorunna,Thorunna furtiva,accepted,,,,54,160,55,8,9,5,0.0957,0.169,4,3,1,1,1,0.006,166,,5,106,372,15,257,0,0
+Nudibranchia,Trinchesiidae,Phestilla,Phestilla sibogae,accepted,,Porites-eating Nudibranch,,55,110,54,10,12,5,0.0835,0.182,1,1,1,0,1,0.018,329,,3,59,1209,24,882,0,0
+Nudibranchia,Discodorididae,Discodoris,Discodoris boholiensis,accepted,,Flatworm Discodoris,,56,103,52,11,15,6,0.0647,0.107,5,4,1,1,1,0.01,547,,4,65,562,26,401,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris dianae,accepted,,Diana's Chromodoris,,57,104,52,9,13,5,0.057,0.144,1,1,1,0,4,0.038,1228,,2,63,171,6,106,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris whitei,accepted,,White's Hypselodoris,Bumpy Split-tooth Dorid,58,96,51,9,11,5,0.0681,0.115,6,3,1,1,0,0.0,303,,2,58,675,26,485,0,0
+Nudibranchia,Chromodorididae,Mexichromis,Mexichromis multituberculata,accepted,,Bumpy Mexichromis,,59,104,51,10,10,6,0.0523,0.087,11,7,1,1,3,0.029,607,,2,65,562,21,405,0,0
+Nudibranchia,Cadlinellidae,Cadlinella,Cadlinella ornatissima,accepted,,,Sunburst Ray Dorid,60,116,51,6,9,4,0.0523,0.19,0,0,1,0,1,0.009,282,,4,72,569,15,423,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris roo,accepted,,,,61,115,51,9,8,5,0.0618,0.078,24,13,1,1,3,0.026,384,,7,78,508,38,355,0,0
+Nudibranchia,Chromodorididae,Glossodoris,Glossodoris acosti,accepted,,,,62,114,50,10,14,6,0.0749,0.132,28,11,1,1,2,0.018,280,,3,85,275,23,185,0,0
+Nudibranchia,Samlidae,Samla,Samla bicolor,accepted,,Bicolor nudibranch,Two-tone Bluntnose,63,115,49,12,15,6,0.0697,0.183,19,12,1,1,1,0.009,273,,0,77,1550,50,1223,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris krakatoa,accepted,,,,64,125,49,10,11,6,0.0944,0.112,5,3,1,1,1,0.008,191,,3,73,240,11,135,0,1
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris purpureomaculosa,accepted,,,,65,88,49,8,9,6,0.0633,0.17,20,11,1,1,0,0.0,201,,0,62,147,6,100,0,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis annae,accepted,,Anne's Phyllidiopsis,,66,95,48,8,9,5,0.0693,0.168,17,8,1,1,0,0.0,146,,0,72,320,22,230,0,0
+Nudibranchia,Chromodorididae,Mexichromis,Mexichromis trilineata,accepted,,Three-lines Purple Doris,,67,129,48,6,6,4,0.0585,0.155,0,0,1,0,2,0.023,267,,4,75,513,20,370,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus leopardus,accepted,,Leopard Nudibranch,,68,66,47,12,14,6,0.0447,0.091,21,15,1,1,2,0.03,488,,2,49,515,15,390,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris joshi,accepted,,Josh's Chromodoris,,69,80,47,6,6,5,0.063,0.087,2,2,1,1,3,0.037,358,,0,58,89,1,63,0,0
+Nudibranchia,Chromodorididae,Glossodoris,Glossodoris buko,accepted,,White Mantle Glossodoris,,70,105,46,7,8,5,0.0635,0.162,0,0,1,0,2,0.019,220,,1,63,282,11,193,0,0
+Nudibranchia,Chromodorididae,Miamira,Miamira alleni,accepted,,,,71,69,46,4,4,4,0.0386,0.101,0,0,1,0,14,0.232,363,P8,1,45,80,1,54,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium rudmani,accepted,,Mimic Nudibranch,,72,88,44,7,8,4,0.0826,0.136,0,0,1,0,9,0.102,354,,3,49,111,7,64,0,0
+Nudibranchia,Arminidae,Armina,Armina occulta,accepted,,,,73,64,42,7,9,4,0.0385,0.094,43,33,1,1,3,0.047,,,10,29,96,11,50,0,0
+Nudibranchia,Chromodorididae,Ceratosoma,Ceratosoma tenue,accepted,,Many-lobed Ceratosoma,Elongate Pantechnicon Dorid,74,76,41,10,12,6,0.0434,0.145,20,8,1,1,1,0.013,354,,6,46,921,49,657,0,2
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha mullineri,accepted,,,,75,79,41,8,9,5,0.0515,0.139,12,11,1,1,0,0.0,284,,4,48,101,4,61,0,0
+Nudibranchia,Samlidae,Samla,Samla bilas,accepted,,,Red-ringed Bluntnose,76,82,41,5,5,3,0.0427,0.085,0,0,1,0,0,0.0,182,,3,51,211,10,145,0,0
+Nudibranchia,Polyceridae,Roboastra,Roboastra gracilis,accepted,,Slender Roboastra,Graceful Wrinkle Dorid,77,67,40,10,18,6,0.0359,0.179,3,3,1,1,3,0.045,434,,4,43,410,16,290,0,0
+Nudibranchia,Arminidae,Armina,Armina scotti,accepted,,,,78,61,40,7,8,5,0.0368,0.098,10,10,1,1,2,0.033,186,,2,38,151,5,100,0,1
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium jakobsenae,accepted,,,,79,106,40,5,6,4,0.093,0.179,0,0,1,0,6,0.057,236,,1,57,115,1,65,0,0
+Nudibranchia,Trinchesiidae,Phestilla,Phestilla melanobrachia,accepted,,Cup Coral Nudibranch,,80,110,39,6,8,5,0.0915,0.136,0,0,1,0,0,0.0,376,P9,4,63,445,19,262,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium crypticum,accepted,,,Beaded Soft Coral Eater,81,91,39,7,7,5,0.0489,0.132,12,1,1,0,1,0.011,269,,0,54,302,8,212,0,0
+Nudibranchia,Phyllidiidae,Phyllidiella,Phyllidiella nigra,accepted,,,,82,47,38,14,19,6,0.0395,0.128,5,4,1,1,0,0.0,285,,2,35,502,45,327,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe colemani,accepted,,,,83,160,38,3,5,3,0.1174,0.294,0,0,1,0,12,0.087,3851,P6 P9,2,80,196,7,102,0,0
+Nudibranchia,Phyllidiidae,Reticulidia,Reticulidia fungia,accepted,,Mushroom Coral Reticulida,,84,56,37,10,12,5,0.0483,0.089,0,0,1,0,4,0.071,528,,0,37,299,8,214,0,0
+Nudibranchia,Eubranchidae,Longibranchus,Longibranchus putnami,accepted,,,,85,104,37,6,7,4,0.0626,0.144,14,7,1,1,0,0.0,,,1,75,351,3,247,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium koehleri,accepted,,,,86,122,36,7,7,4,0.0878,0.27,0,0,1,0,1,0.008,186,,2,64,162,2,95,0,0
+Nudibranchia,Goniodorididae,Bermudella,Bermudella brunneomaculata,accepted,,Brown-blotched okenia,,87,118,36,4,5,3,0.0619,0.169,0,0,1,0,1,0.008,22,,4,59,356,6,261,0,0
+Nudibranchia,Samlidae,Samla,Samla riwo,accepted,,,Purple-ringed Bluntnose,88,73,35,6,7,3,0.0355,0.123,0,0,1,0,1,0.014,175,,2,43,229,10,141,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe viridis,accepted,,Green Melibe,Giant Monkdragon,89,77,34,10,13,6,0.0386,0.13,5,4,1,1,3,0.052,4015,,0,36,344,14,221,0,0
+Nudibranchia,Bornellidae,Bornella,Bornella anguilla,accepted,,Eel Bornella,Paisley Eeldragon,90,51,34,8,11,5,0.0477,0.137,7,5,1,1,1,0.02,647,,1,34,489,12,340,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris crocea,accepted,,Ridged Gymnodoris,,91,64,34,2,2,2,0.0351,0.188,63,33,1,1,2,0.031,,,7,47,80,8,55,1,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis fissurata,accepted,,,Compound Wart Slug,92,58,32,7,12,5,0.0474,0.138,0,0,1,0,0,0.0,206,,0,27,103,0,65,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris reidi,accepted,,,,93,47,32,9,9,5,0.0491,0.106,1,1,1,0,1,0.021,189,,1,28,63,1,36,0,0
+Nudibranchia,Discodorididae,Taringa,Taringa halgerda,accepted,,Tagalog Dorid,,94,49,32,3,3,2,0.027,0.122,0,0,1,0,3,0.122,182,,0,30,96,3,59,0,0
+Nudibranchia,Chromodorididae,Ceratosoma,Ceratosoma trilobatum,accepted,,Three-lobed T-bar Nudibranch,T-bar Pantechnicon Dorid,95,70,31,8,9,5,0.0318,0.171,3,3,1,1,2,0.043,556,,1,44,823,24,468,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium colemani,accepted,,Coleman's Phyllodesmium,,96,54,31,6,8,6,0.0528,0.148,6,5,1,1,1,0.019,228,,1,33,115,1,84,0,0
+Nudibranchia,Polyceridae,Thecacera,Thecacera pikachu,accepted,,,,97,54,31,7,6,4,0.0266,0.111,1,1,1,0,2,0.037,,,3,31,314,14,220,0,0
+Nudibranchia,Dotidae,Doto,Doto ussi,accepted,,,Yellow-beaded Grapedragon,98,83,30,8,11,5,0.0832,0.193,0,0,1,0,2,0.024,311,P6,6,39,251,10,162,0,0
+Nudibranchia,Trinchesiidae,Tenellia,Tenellia bughaw,accepted,,,,99,49,30,7,10,4,0.0299,0.082,10,9,1,1,6,0.122,,,7,19,108,9,57,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium tuberculatum,accepted,,,Warty Soft Coral Eater,100,68,30,4,5,4,0.061,0.206,0,0,1,0,1,0.015,152,,0,37,86,0,49,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium poindimiei,accepted,,Poindimie's Phyllodesmium,Branched Soft Coral Eater,101,76,29,6,8,4,0.0345,0.237,4,4,1,1,3,0.039,858,,2,44,744,13,488,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris infucata,accepted,,Painted Hypselodoris,Black-spotted Split-tooth Dorid; mottled dorid,102,46,29,7,8,4,0.0241,0.065,2,2,1,1,1,0.13,606,,0,28,1015,29,802,0,0
+Nudibranchia,Dendronotidae,Cabangus,Cabangus regius,accepted,,,,103,62,29,2,3,2,0.0356,0.129,0,0,1,0,1,0.016,215,,1,41,140,1,99,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda tessellata,accepted,,,,104,45,28,7,9,4,0.0249,0.156,0,0,1,0,1,0.022,288,,1,26,234,11,160,0,0
+Nudibranchia,Chromodorididae,Miamira,Miamira miamirana,accepted,,,Pancake Lobe-margin Dorid,105,64,28,7,7,5,0.0421,0.203,2,2,1,1,5,0.078,221,,1,41,155,3,105,0,3
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium opalescens,accepted,,,,106,65,28,5,6,3,0.0242,0.138,0,0,1,0,1,0.077,294,,2,30,241,2,149,0,0
+Nudibranchia,Chromodorididae,Miamira,Miamira sinuata,accepted,,Jolly Green Giant,Jolly Green Giant; Wavy Lobe-margin Dorid,107,58,28,5,6,4,0.0501,0.103,12,4,1,1,0,0.0,409,,4,33,318,14,203,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris paradisa,accepted,,,,108,67,28,3,4,3,0.028,0.179,0,0,1,0,1,0.015,292,,2,36,292,16,192,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda willeyi,accepted,,Willey’s Nudibranch,,109,58,28,3,3,3,0.0227,0.207,0,0,1,0,2,0.034,259,,0,34,513,16,409,0,0
+Nudibranchia,Trinchesiidae,Tenellia,Tenellia nakapila,accepted,,,,110,53,27,6,10,4,0.035,0.094,23,14,1,1,0,0.0,,,7,28,227,12,118,0,0
+Nudibranchia,Discodorididae,Asteronotus,Asteronotus cespitosus,accepted,,Clumpy Nudibranch,Starback Tentacled Dorid,111,49,27,6,10,5,0.0358,0.143,1,1,1,0,2,0.041,362,,0,30,375,12,243,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania vitta,accepted,,,Orange-edged Pump Dorid,112,74,27,7,9,4,0.0412,0.23,2,2,1,1,0,0.0,163,,2,35,198,3,124,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia exquisita,accepted,,,Yellow-edged Wart Slug,113,37,26,8,10,5,0.0249,0.162,0,0,1,0,1,0.027,242,,1,19,247,10,188,0,0
+Nudibranchia,Polyceridae,Tambja,Tambja olivaria,accepted,,Olive Dorid,,114,34,26,5,8,3,0.0231,0.088,2,1,1,0,2,0.059,168,,3,24,62,4,45,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris maculosa,accepted,,Spotted Hypselodoris,Double-banded Split-tooth Dorid,115,44,26,6,7,5,0.041,0.114,2,1,1,0,1,0.023,378,,1,25,319,14,229,0,0
+Nudibranchia,Chromodorididae,Mexichromis,Mexichromis pusilla,accepted,,,Twinspot Rainbow Dorid,116,40,26,7,7,4,0.0385,0.15,0,0,1,0,1,0.025,201,,0,27,144,8,97,0,0
+Nudibranchia,Janolidae,Janolus,Janolus savinkini,accepted,,,Harlequin Flame,117,47,26,3,4,2,0.0192,0.149,1,1,1,0,3,0.106,337,,1,35,133,2,85,0,0
+Nudibranchia,Janolidae,Janolus,Janolus flavoanulatus,accepted,,,,118,45,26,3,3,3,0.0209,0.111,2,2,1,1,3,0.067,441,,0,26,241,6,190,0,0
+Nudibranchia,Phyllidiidae,Phyllidiella,Phyllidiella rudmani,accepted,,Rudman's Phyllidiella,Peaked Wart Slug,119,31,25,10,14,6,0.0297,0.097,2,2,1,1,2,0.065,214,,1,21,246,9,181,0,0
+Nudibranchia,Facelinidae,Favorinus,Favorinus mirabilis,accepted,,,Miraculous Egg-eater,120,90,25,5,6,4,0.0518,0.222,0,0,1,0,0,0.0,,,1,45,270,8,168,0,0
+Nudibranchia,Aegiridae,Notodoris,Notodoris minor,accepted,,Banana Nudibranch,,121,34,24,10,15,4,0.0264,0.147,1,1,1,0,0,0.0,1597,,1,21,307,11,202,0,0
+Nudibranchia,Chromodorididae,Ardeadoris,Ardeadoris angustolutea,accepted,,Yellow-margin Nudibranch,White-centred Rainbow Dorid,122,49,24,4,4,4,0.0247,0.245,0,0,1,0,0,0.0,244,,0,26,414,5,331,0,0
+Nudibranchia,Chromodorididae,Ardeadoris,Ardeadoris averni,accepted,,,,123,27,24,3,3,3,0.0219,0.111,0,0,1,0,3,0.111,295,,0,13,127,4,87,0,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha livingstonei,accepted,,,Crucifix Wrinkle Dorid,124,35,23,10,11,6,0.0296,0.171,6,4,1,1,2,0.114,299,,2,22,69,3,39,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus albopunctatus,accepted,,,Magic Carpet Rainbow Dorid,125,29,23,7,7,5,0.0221,0.103,1,1,1,0,2,0.103,263,,0,16,149,4,101,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris zephyra,accepted,,Zephyr Hypselodoris,,126,44,23,4,5,3,0.0217,0.114,10,7,1,1,2,0.045,341,,2,25,801,66,573,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe digitata,accepted,,,,127,56,23,2,4,2,0.0606,0.375,0,0,1,0,3,0.054,,,0,26,58,0,27,0,0
+Nudibranchia,Chromodorididae,Verconia,Verconia alboannulata,accepted,,,,128,37,23,5,4,4,0.0212,0.135,0,0,1,0,0,0.0,173,,0,21,67,1,43,0,0
+Nudibranchia,Aeolidiidae,Baeolidia,Baeolidia moebii,accepted,,Moebius' Big Aeolid,Multicoloured Anemone Eater,129,47,22,5,7,3,0.0372,0.149,5,3,1,1,1,0.064,253,,1,25,178,11,122,0,0
+Nudibranchia,Discodorididae,Sclerodoris,Sclerodoris tuberculata,accepted,,,Variable Granulated Dorid,130,41,22,8,6,5,0.0184,0.171,1,1,1,0,2,0.049,139,,0,23,149,0,104,0,0
+Nudibranchia,Flabellinidae,Coryphellina,Coryphellina lotos,accepted,,,,131,35,22,5,6,4,0.0183,0.171,1,1,1,0,2,0.086,,,0,28,75,3,62,0,0
+Nudibranchia,Goniodorididae,Murphydoris,Murphydoris adusta,accepted,,,,132,63,22,6,5,4,0.024,0.238,2,2,1,1,1,0.016,,,1,31,192,4,91,0,0
+Nudibranchia,Facelinidae,Cratena,Cratena simba,accepted,,,Lion Tentacle Aeolid,133,55,21,7,7,4,0.0271,0.182,7,5,1,1,1,0.018,163,,1,27,279,9,164,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium pinnatum,accepted,,,,134,53,21,3,5,3,0.0515,0.283,0,0,1,0,3,0.057,133,,0,29,62,1,33,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania palmula,accepted,,,Blue-banded Pump Dorid,135,44,20,5,7,3,0.0317,0.25,7,5,1,1,0,0.0,132,,0,23,147,6,90,0,0
+Nudibranchia,Trinchesiidae,Tenellia,Tenellia puti,accepted,,,,136,29,20,5,6,4,0.0217,0.138,2,2,1,1,4,0.138,,,0,17,295,2,160,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris skyleri,accepted,,,,137,42,20,2,3,2,0.0318,0.262,0,0,1,0,2,0.048,188,,1,22,70,2,44,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris tuberculosa,accepted,,,Warty Sucking Dorid,138,30,19,8,10,5,0.02,0.133,5,4,1,1,2,0.067,,,0,19,184,6,133,0,0
+Nudibranchia,Chromodorididae,Thorunna,Thorunna daniellae,accepted,,Danielle's Nudibranch,,139,43,19,6,5,3,0.0204,0.302,0,0,1,0,0,0.0,181,,0,30,607,3,514,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris bollandi,accepted,,,,140,28,19,5,4,3,0.0193,0.179,0,0,1,0,1,0.036,195,,0,16,39,0,24,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium kabiranum,accepted,,,,141,25,19,4,4,4,0.0167,0.12,1,1,1,0,2,0.16,233,,0,15,47,3,27,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus funiculus,accepted,,,,142,43,19,3,3,2,0.0167,0.186,0,0,1,0,1,0.023,109,,1,25,87,2,58,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus caeruleomaculatus,accepted,,,,143,34,18,5,7,3,0.0136,0.235,0,0,1,0,0,0.0,147,,0,21,68,4,44,0,0
+Nudibranchia,Hexabranchidae,Hexabranchus,Hexabranchus sanguineus,accepted,,Spanish Dancer,Bloody Spanish Dancer; Spanish dancer,144,25,18,6,7,5,0.0175,0.2,2,2,1,1,0,0.0,18433,P1 P4,2,11,544,36,360,6,0
+Nudibranchia,Tritoniidae,Marioniopsis,Marioniopsis arborescens,accepted,,,Bushy Lacedragon,145,49,18,5,6,5,0.0251,0.163,8,1,1,0,0,0.0,,,0,29,66,3,38,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus setoensis,accepted,,,,146,36,18,5,5,5,0.0235,0.222,1,1,1,0,0,0.0,157,,1,22,598,14,405,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania miltabrancha,accepted,,,,147,25,18,4,5,3,0.027,0.16,9,7,1,1,0,0.0,157,,3,16,139,4,108,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus fabulus,accepted,,,,148,28,18,5,4,4,0.0166,0.143,0,0,1,0,0,0.0,,,0,20,418,1,399,0,0
+Nudibranchia,Polyceridae,Tyrannodoris,Tyrannodoris luteolineata,accepted,,,,149,25,17,9,9,4,0.019,0.16,0,0,1,0,0,0.0,344,,0,13,337,19,237,0,0
+Nudibranchia,Facelinidae,Favorinus,Favorinus japonicus,accepted,,Egg-eating Nudibranch,White-diamond Egg-eater,150,37,17,5,7,4,0.0241,0.243,2,2,1,1,1,0.027,,,0,21,338,5,250,0,0
+Nudibranchia,Chromodorididae,Glossodoris,Glossodoris hikuerensis,accepted,,Brown-edge Glossodorid,Pastel Rainbow Dorid,151,20,17,7,7,5,0.0281,0.15,3,3,1,1,1,0.05,289,,0,14,322,16,225,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris michaeli,accepted,,Michael's Chromodoris,,152,20,17,6,7,5,0.0152,0.1,1,1,1,0,1,0.05,318,,0,13,40,1,24,0,0
+Nudibranchia,Chromodorididae,Thorunna,Thorunna halourga,accepted,,,Wide-margined Rainbow Dorid,153,33,17,5,4,3,0.0165,0.212,0,0,1,0,0,0.0,226,,0,19,232,4,168,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia polkadotsa,accepted,,Polka-dotted Nudibranch,,154,44,17,3,3,3,0.0164,0.273,0,0,1,0,2,0.045,103,,0,26,142,6,107,0,0
+Nudibranchia,Scyllaeidae,Notobryon,Notobryon wardi,accepted,,,iridescent nudibranch; Sandy Grassdragon,155,30,17,3,3,3,0.0179,0.167,8,7,1,1,1,0.033,189,,1,12,207,4,137,0,0
+Nudibranchia,Aegiridae,Notodoris,Notodoris serenae,accepted,,,,156,30,16,7,9,4,0.0257,0.4,2,2,1,1,1,0.033,255,,1,11,131,7,78,0,0
+Nudibranchia,Chromodorididae,Verconia,Verconia norba,accepted,,,White-stripe Rainbow Dorid,157,23,16,5,6,4,0.018,0.348,2,2,1,1,0,0.0,249,,0,17,188,1,155,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania scurra,accepted,,Jester Trapania Nudibranch,,158,23,16,4,6,3,0.017,0.174,1,1,1,0,1,0.043,149,,2,6,113,7,59,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris kalawakan,accepted,,,,159,40,16,4,4,3,0.0545,0.25,0,0,1,0,1,0.025,,,1,21,54,3,27,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus albonares,accepted,,,Alabaster Rainbow Dorid,160,25,16,2,3,2,0.0182,0.16,0,0,1,0,0,0.0,233,,0,13,245,2,144,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe engeli,accepted,,,Hairy Monkdragon,161,36,15,6,6,4,0.037,0.139,0,0,1,0,2,0.056,,P9,0,20,109,2,83,0,0
+Nudibranchia,Discodorididae,Atagema,Atagema intecta,accepted,,,Ridged Granulated Dorid,162,24,15,4,6,4,0.018,0.167,3,2,1,1,1,0.042,213,,0,15,425,15,294,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris violacea,accepted,,,,163,42,15,3,5,1,0.0303,0.405,0,0,1,0,0,0.0,655,P9,0,16,101,2,43,0,0
+Nudibranchia,Aeolidiidae,Bulbaeolidia,Bulbaeolidia alba,accepted,,White Aeolidiella,White Anemone Eater,164,39,15,5,5,3,0.0272,0.179,0,0,1,0,0,0.0,185,,1,16,571,5,381,0,0
+Nudibranchia,Discodorididae,Platydoris,Platydoris sanguinea,accepted,,,,165,28,15,5,5,5,0.016,0.214,1,1,1,0,1,0.036,137,,0,17,105,5,69,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris katherinae,accepted,,,,166,23,15,5,5,4,0.015,0.174,0,0,1,0,2,0.087,134,,2,7,295,18,231,0,0
+Nudibranchia,Goniodorididae,Pelagella,Pelagella longicornis,accepted,,,Burnt-edged Pump Dorid,167,35,15,3,4,2,0.0136,0.343,0,0,1,0,1,0.029,,,0,22,94,1,66,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris maritima,accepted,,Maritime Nudibranch,,168,23,15,3,3,3,0.0142,0.174,0,0,1,0,2,0.13,275,,0,15,436,7,324,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia haegeli,accepted,,,,169,17,15,4,3,4,0.014,0.118,2,2,1,1,0,0.0,212,,0,11,36,1,26,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris nigra,accepted,,Black Doris,White-spotted Sucking Dorid,170,28,14,6,8,5,0.0255,0.179,2,2,1,1,1,0.036,942,,1,18,1773,111,1303,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia willani,accepted,,,,171,17,14,7,7,5,0.0156,0.235,0,0,1,0,1,0.059,96,,0,9,44,1,24,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus collingwoodi,accepted,,Collingwood's Goniobranchus,,172,31,14,6,6,4,0.0137,0.194,3,3,1,1,0,0.0,219,,0,17,417,5,271,0,1
+Nudibranchia,Facelinidae,Pruvotfolia,Pruvotfolia rhodopos,accepted,,,Spitfire Tentacle Aeolid,173,21,14,3,5,3,0.0272,0.19,0,0,1,0,0,0.0,0,,0,9,75,1,58,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania lemnalioides,accepted,,,,174,31,14,4,4,4,0.0348,0.355,0,0,1,0,1,0.065,,,0,10,34,0,13,0,0
+Nudibranchia,Chromodorididae,Verconia,Verconia simplex,accepted,,,Simple Rainbow Dorid,175,26,14,3,4,2,0.0129,0.192,0,0,1,0,0,0.0,200,,0,15,369,6,258,0,0
+Nudibranchia,Polyceridae,Thecacera,Thecacera pacifica,accepted,,Pikachu Nudibranch,Pikachu Longhorn Dorid,176,24,14,3,4,3,0.0159,0.125,14,8,1,1,2,0.083,10983,,0,15,326,8,259,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium magnum,accepted,,,Magnificent Soft Coral Eater,177,20,13,8,8,5,0.0155,0.15,5,4,1,1,1,0.05,352,,0,11,215,9,161,0,0
+Nudibranchia,Goniodorididae,Murphydoris,Murphydoris cobbi,accepted,,Cobb's winged murphydoris,Brown-coloured Pump Dorid,178,31,13,4,6,3,0.0132,0.258,1,1,1,0,1,0.032,,,0,9,274,0,109,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris impudica,accepted,,,Orange-bobble Gobble Dorid,179,27,13,7,6,5,0.0153,0.185,1,1,1,0,1,0.037,100,,0,14,240,13,161,0,0
+Nudibranchia,Discodorididae,Asteronotus,Asteronotus mimeticus,accepted,,,,180,35,13,2,4,2,0.0356,0.257,0,0,1,0,1,0.029,115,,0,23,44,0,26,0,0
+Nudibranchia,Chromodorididae,Thorunna,Thorunna florens,accepted,,Flowering Thorunna,,181,18,13,2,4,2,0.0227,0.278,0,0,1,0,0,0.0,207,,0,6,145,8,93,0,0
+Nudibranchia,Chromodorididae,Doriprismatica,Doriprismatica balut,accepted,,,,182,38,13,2,3,2,0.0439,0.5,0,0,1,0,3,0.079,168,,0,12,91,2,50,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda carlsoni,accepted,,,,183,17,12,5,8,4,0.015,0.353,2,2,1,1,0,0.0,294,,1,7,150,15,94,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris guttata,accepted,,,Polka-dot Sucking Dorid,184,23,12,6,7,5,0.0133,0.217,2,2,1,1,2,0.087,164,,0,13,207,4,155,0,0
+Nudibranchia,Chromodorididae,Verconia,Verconia romeri,accepted,,,,185,26,12,4,5,4,0.0138,0.346,1,1,1,0,0,0.0,227,,0,16,130,3,93,0,0
+Nudibranchia,Discodorididae,Platydoris,Platydoris cinereobranchiata,accepted,,,,186,20,12,4,5,4,0.0165,0.25,3,2,1,1,0,0.0,138,,0,9,76,16,45,0,0
+Nudibranchia,Discodorididae,Carminodoris,Carminodoris estrelyado,accepted,,,,187,19,12,6,5,4,0.012,0.211,0,0,1,0,1,0.053,120,,0,11,242,5,173,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium longicirrum,accepted,,,,188,19,12,5,5,4,0.0212,0.421,0,0,1,0,1,0.053,724,,0,11,161,15,101,0,0
+Nudibranchia,Chromodorididae,Diversidoris,Diversidoris flava,accepted,,Yellow Noumea,Lemon-drop Longtail Dorid,189,17,12,5,5,4,0.012,0.176,0,0,1,0,0,0.0,322,,0,10,112,3,79,0,0
+Nudibranchia,Polyceridae,Kaloplocamus,Kaloplocamus acutus,accepted,,,,190,23,12,3,4,2,0.0114,0.174,0,0,1,0,0,0.0,246,,0,12,298,2,235,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris iba,accepted,,,,191,24,12,1,1,1,0.0091,0.333,0,0,1,0,2,0.542,428,,0,14,150,4,106,0,0
+Nudibranchia,Aegiridae,Notodoris,Notodoris gardineri,accepted,,Gardiner's Banana Nudibranch,,192,12,11,7,8,3,0.0056,0.167,1,1,1,0,0,0.0,298,,1,8,285,9,207,0,0
+Nudibranchia,Aeolidiidae,Limenandra,Limenandra confusa,accepted,,Confusing Aeolid,Beaded Anemone Eater,193,24,11,5,6,4,0.018,0.292,2,2,1,1,0,0.0,,,0,9,127,2,83,0,0
+Nudibranchia,Discodorididae,Discodoris,Discodoris cebuensis,accepted,,,Lilac-spotted Tentacled Dorid,194,18,11,4,6,3,0.017,0.222,1,1,1,0,0,0.0,314,,0,9,99,0,63,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium macphersonae,accepted,,,Freckled Soft Coral Eater,195,20,11,5,5,4,0.0127,0.2,3,2,1,1,0,0.0,295,,0,15,490,15,363,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris lacuna,accepted,,,Holey Split-tooth Dorid,196,24,11,4,4,3,0.0151,0.25,0,0,1,0,0,0.0,136,,0,17,81,1,54,0,0
+Nudibranchia,Chromodorididae,Mexichromis,Mexichromis mariei,accepted,,Marie's Mexichromis,,197,18,11,4,4,3,0.012,0.222,0,0,1,0,0,0.0,388,,0,8,283,14,198,0,0
+Nudibranchia,Aeolidiidae,Limenandra,Limenandra barnosii,accepted,,Neon Nudibranch,,198,26,11,2,3,2,0.0235,0.346,0,0,1,0,7,0.308,,,0,9,32,0,15,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium lizardense,accepted,,,,199,25,11,2,3,2,0.0205,0.24,0,0,1,0,1,0.04,159,,0,10,61,1,42,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris inornata,accepted,,,,200,19,11,3,3,3,0.012,0.211,0,0,1,0,0,0.0,,,0,9,259,0,200,0,0
+Nudibranchia,Flabellinidae,Coryphellina,Coryphellina delicata,accepted,,,,201,23,11,3,2,3,0.0226,0.348,0,0,1,0,0,0.0,287,,1,13,60,3,35,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe coralophilia,accepted,,,,202,20,11,1,1,1,0.0083,0.2,0,0,1,0,2,0.1,,,0,15,28,0,22,0,0
+Nudibranchia,Facelinidae,Noumeaella,Noumeaella rehderi,accepted,,,Sandy Bead-nose,203,16,10,6,7,4,0.0135,0.188,2,2,1,1,0,0.0,,,0,10,120,0,92,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus pustulosus,accepted,,,Warty Pinstripe,204,17,10,7,6,5,0.0146,0.176,1,1,1,0,0,0.0,130,,0,9,21,0,12,0,0
+Nudibranchia,Goniodorididae,Goniodoridella,Goniodoridella geminae,accepted,,,,205,24,10,4,5,3,0.012,0.292,0,0,1,0,0,0.0,,,0,15,47,0,27,0,0
+Nudibranchia,Polyceridae,Plocamopherus,Plocamopherus pecoso,accepted,,,,206,27,10,3,4,3,0.0207,0.296,1,1,1,0,0,0.0,106,,0,12,163,0,144,0,0
+Nudibranchia,Polyceridae,Plocamopherus,Plocamopherus ceylonicus,accepted,,Hairy leopard nudibranch,Filigreed Lightbulb Dorid,207,23,10,3,4,2,0.0129,0.217,0,0,1,0,0,0.0,176,,0,10,298,8,160,0,0
+Nudibranchia,Trinchesiidae,Phestilla,Phestilla lugubris,accepted,,,,208,23,10,4,4,4,0.0146,0.261,1,1,1,0,0,0.0,201,,0,11,229,3,162,0,0
+Nudibranchia,Eubranchidae,Produnga,Produnga rubropunctata,accepted,,Red-tipped Eubranchus,,209,22,10,3,4,2,0.0167,0.545,0,0,1,0,1,0.091,111,,0,7,219,2,161,0,0
+Nudibranchia,Actinocyclidae,Hallaxa,Hallaxa iju,accepted,,,,210,22,10,4,4,3,0.0101,0.318,1,1,1,0,0,0.0,147,,0,10,63,0,42,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris ceylonica,accepted,,,Polka-dot Gobble Dorid,211,22,10,3,4,2,0.0098,0.455,0,0,1,0,0,0.0,360,,0,5,229,8,158,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania gibbera,accepted,,,,212,20,10,3,4,2,0.0189,0.3,0,0,1,0,0,0.0,88,,0,4,56,1,26,0,0
+Nudibranchia,Aeolidiidae,Cerberilla,Cerberilla affinis,accepted,,,Pale-banded Scimitar,213,19,10,5,4,4,0.0099,0.211,1,1,1,0,2,0.158,202,,0,10,45,0,27,0,0
+Nudibranchia,Fionidae,Tergiposacca,Tergiposacca longicerata,accepted,,,,214,19,10,3,4,2,0.0129,0.263,0,0,1,0,0,0.0,,,0,5,46,0,23,0,0
+Nudibranchia,Goniodorididae,Naisdoris,Naisdoris vitiligata,accepted,,,,215,18,10,4,4,4,0.0184,0.278,1,1,1,0,2,0.111,,,0,9,37,0,20,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus rubrocornutus,accepted,,,,216,13,10,4,4,4,0.0121,0.231,0,0,1,0,1,0.077,260,P6,0,6,184,0,171,0,0
+Nudibranchia,Abronicidae,Abronica,Abronica payaso,accepted,,,,217,19,10,4,3,3,0.0105,0.316,0,0,1,0,0,0.0,,,0,12,37,0,23,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium parangatum,accepted,,,,218,27,10,3,2,3,0.012,0.222,0,0,1,0,0,0.0,198,,0,12,33,0,18,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus fortunatus,accepted,,,Lucky Pinstripe,219,16,10,2,2,2,0.0076,0.312,0,0,1,0,1,0.062,171,,0,10,98,7,65,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris kaname,accepted,,,,220,18,10,1,1,1,0.0076,0.222,0,0,1,0,0,0.0,215,,0,7,29,2,12,0,0
+Nudibranchia,Trinchesiidae,Tenellia,Tenellia yamasui,accepted,,,,221,18,9,4,6,3,0.0106,0.556,0,0,1,0,0,0.0,282,,0,3,44,1,19,0,0
+Nudibranchia,Discodorididae,Asteronotus,Asteronotus hepaticus,accepted,,,,222,13,9,6,6,6,0.0186,0.231,2,2,1,1,0,0.0,173,,1,6,46,1,27,0,0
+Nudibranchia,Discodorididae,Sebadoris,Sebadoris fragilis,accepted,,Fragile dorid,,223,11,9,6,6,5,0.0091,0.273,1,1,1,0,0,0.0,181,,0,9,343,6,235,0,0
+Nudibranchia,Trinchesiidae,Tenellia,Tenellia viei,alternative representation,Phestilla viei,,,224,16,9,4,5,3,0.025,0.312,0,0,1,0,1,0.062,,,0,6,72,1,15,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris tuberculosa,accepted,,,,225,16,9,2,4,2,0.0189,0.25,0,0,1,0,0,0.0,,,0,8,30,0,18,0,0
+Nudibranchia,Discodorididae,Paradoris,Paradoris liturata,accepted,,Bumpy Paradoris,,226,12,9,4,4,4,0.0108,0.167,1,1,1,0,0,0.0,142,,0,6,45,4,26,0,0
+Nudibranchia,Tritoniidae,Marionia,Marionia distincta,accepted,,,,227,11,9,3,3,3,0.0234,0.182,0,0,1,0,0,0.0,121,,0,7,15,0,10,0,0
+Nudibranchia,Janolidae,Janolus,Janolus tricellariodes,accepted,,,,228,16,9,2,2,2,0.0083,0.312,0,0,1,0,0,0.0,,,0,4,26,1,11,0,0
+Nudibranchia,Goniodorididae,Goniodoridella,Goniodoridella savignyi,accepted,,,Longhorn Pump Dorid,229,15,9,2,1,2,0.0083,0.333,0,0,1,0,0,0.0,169,,1,3,186,6,141,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris feyae,accepted,,,,230,9,8,4,6,3,0.0079,0.222,1,1,1,0,0,0.0,,,0,5,25,1,15,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus phyllodes,accepted,,,,231,15,8,4,5,4,0.0154,0.333,2,1,1,0,0,0.0,75,,0,8,18,0,10,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris krusensternii,accepted,,Gem Doris,,232,25,8,4,4,2,0.0076,0.4,0,0,1,0,2,0.16,,,0,13,2188,153,1553,0,0
+Nudibranchia,Chromodorididae,Mexichromis,Mexichromis aurora,accepted,,,,233,17,8,3,4,3,0.0159,0.235,0,0,1,0,0,0.0,186,,0,9,50,1,28,0,0
+Nudibranchia,Janolidae,Janolus,Janolus incrustans,accepted,,,,234,11,8,4,4,4,0.0099,0.182,4,3,1,1,0,0.0,,,0,7,73,0,43,0,0
+Nudibranchia,Doridomorphidae,Doridomorpha,Doridomorpha gardineri,accepted,,,,235,24,8,2,3,2,0.028,0.417,0,0,1,0,2,0.125,203,,0,11,54,0,34,0,0
+Nudibranchia,Facelinidae,Sakuraeolis,Sakuraeolis nungunoides,accepted,,,,236,9,8,2,2,2,0.0061,0.222,0,0,1,0,0,0.0,,,0,5,119,0,82,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris elongata,accepted,,,Starburst Sucking Dorid,237,8,8,3,2,2,0.006,0.125,0,0,1,0,0,0.0,,,0,7,66,1,53,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda dalanghita,accepted,,,Golden Waffle Dorid,238,16,8,2,1,2,0.0082,0.25,0,0,1,0,2,0.125,119,,0,9,25,0,18,0,0
+Nudibranchia,Discodorididae,Carminodoris,Carminodoris bifurcata,accepted,,,Small Bubble Dorid,239,11,7,4,5,3,0.0136,0.182,0,0,1,0,0,0.0,114,,0,6,67,1,43,0,0
+Nudibranchia,Eubranchidae,Annulorhina,Annulorhina mandapamensis,accepted,,Mandapam eubranchus,,240,9,7,4,5,3,0.0106,0.333,0,0,1,0,0,0.0,67,,0,4,49,1,23,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus tuberculatus,accepted,,,,241,10,7,4,4,3,0.0113,0.3,0,0,1,0,1,0.1,113,,0,7,39,1,30,0,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis cardinalis,accepted,,Cardinal Phyllidiopsis,Gorgeous Wart Slug,242,14,7,3,3,3,0.0083,0.357,0,0,1,0,0,0.0,280,,0,9,131,0,88,0,0
+Nudibranchia,Goniodorididae,Murphydoris,Murphydoris maracabranchia,accepted,,,,243,13,7,2,3,2,0.0273,0.385,0,0,1,0,2,0.154,,,0,2,41,0,27,0,0
+Nudibranchia,Chromodorididae,Thorunna,Thorunna australis,accepted,,,Southern Rainbow Dorid,244,10,7,3,3,3,0.0056,0.2,1,1,1,0,1,0.1,235,,0,8,112,1,92,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania darvelli,accepted,,,,245,8,7,3,3,3,0.0083,0.25,0,0,1,0,1,0.125,138,,0,3,22,2,12,0,0
+Nudibranchia,Unidentiidae,Unidentia,Unidentia sandramillenae,accepted,,,,246,7,7,3,3,1,0.0038,0.143,0,0,1,0,0,0.0,,,1,4,386,14,291,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania kahel,accepted,,,,247,11,7,2,2,2,0.0083,0.455,0,0,1,0,1,0.091,,,0,4,18,0,8,0,0
+Nudibranchia,Discodorididae,Atagema,Atagema spongiosa,accepted,,,,248,9,6,6,6,3,0.006,0.333,1,1,1,0,0,0.0,154,,0,3,150,5,112,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe papillosa,accepted,,,Wedge-lobed Monkdragon,249,11,6,4,5,2,0.0061,0.273,0,0,1,0,0,0.0,491,,0,5,39,0,30,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus fasciatus,accepted,,,,250,9,6,5,5,3,0.0053,0.333,1,1,1,0,0,0.0,156,,0,6,18,0,15,0,0
+Nudibranchia,Phyllidiidae,Phyllidia,Phyllidia babai,accepted,,Baba's Phyllidia,,251,8,6,4,5,3,0.0099,0.25,0,0,1,0,0,0.0,246,,0,3,65,7,31,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus rodmani,accepted,,,,252,8,6,3,4,2,0.0106,0.25,0,0,1,0,0,0.0,139,,1,4,38,2,23,0,0
+Nudibranchia,Goniodorididae,Ceratodoris,Ceratodoris nakamotoensis,accepted,,,,253,6,6,2,4,1,0.0074,0.167,0,0,1,0,1,0.167,4,,0,4,42,0,26,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus albus,accepted,,,Dark-nosed Pinstripe,254,18,6,3,3,3,0.0074,0.5,0,0,1,0,1,0.056,155,,0,9,42,3,16,0,0
+Nudibranchia,Polyceridae,Plocamopherus,Plocamopherus tilesii,accepted,,Tile's Sea Slug,,255,16,6,2,3,2,0.0076,0.438,0,0,1,0,0,0.0,192,,0,5,158,2,100,0,0
+Nudibranchia,Discodorididae,Tayuva,Tayuva lilacina,accepted,,Spotted Foot Nudibranch,,256,13,6,3,3,3,0.0079,0.462,1,1,1,0,0,0.0,242,,0,9,501,32,265,0,0
+Nudibranchia,Goniodorididae,Pelagella,Pelagella joubini,accepted,,Joubin's sea slug,Garland Pump Dorid,257,12,6,3,3,3,0.0048,0.5,1,1,1,0,0,0.0,2,,1,3,215,1,196,0,0
+Nudibranchia,Tritoniidae,Marioniopsis,Marioniopsis elongoreticulata,accepted,,,,258,12,6,2,3,2,0.0197,0.417,0,0,1,0,0,0.0,,,0,6,32,0,15,0,0
+Nudibranchia,Discodorididae,Carminodoris,Carminodoris flammea,accepted,,,,259,11,6,3,3,2,0.0076,0.364,0,0,1,0,0,0.0,71,,0,8,21,0,14,0,0
+Nudibranchia,Polyceridae,Kaloplocamus,Kaloplocamus peludo,accepted,,,,260,10,6,2,3,2,0.0197,0.4,0,0,1,0,0,0.0,147,,1,3,43,1,29,0,0
+Nudibranchia,Pinufiidae,Pinufius,Pinufius rebus,accepted,,,,261,10,6,2,3,2,0.0167,0.4,0,0,1,0,0,0.0,310,,0,3,39,0,23,0,0
+Nudibranchia,Discodorididae,Jorunna,Jorunna parva,accepted,,Sea Bunny,Peppercorn Velvet Dorid,262,9,6,2,3,2,0.0048,0.333,1,1,1,0,1,0.111,128474,,0,5,181,8,135,0,0
+Nudibranchia,Myrrhinidae,Phyllodesmium,Phyllodesmium undulatum,accepted,,,Squiggly Soft Coral Eater,263,9,6,2,3,2,0.0167,0.222,0,0,1,0,1,0.333,180,,0,4,40,0,22,0,0
+Nudibranchia,Chromodorididae,Ardeadoris,Ardeadoris cruenta,accepted,,Bloody Glossodoris,,264,8,6,3,3,2,0.0068,0.25,0,0,1,0,3,0.375,445,,0,2,79,3,54,0,0
+Nudibranchia,Scyllaeidae,Scyllaea,Scyllaea fulva,accepted,,,Frilled Grassdragon,265,7,6,3,3,2,0.0098,0.286,0,0,1,0,2,0.286,,,0,5,28,1,22,0,0
+Nudibranchia,Polyceridae,Plocamopherus,Plocamopherus maculapodium,accepted,,,,266,15,6,2,2,1,0.0038,0.4,0,0,1,0,1,0.067,83,,0,9,25,0,17,0,0
+Nudibranchia,Actinocyclidae,Hallaxa,Hallaxa hileenae,accepted,,,,267,14,6,1,1,1,0.0045,0.286,0,0,1,0,0,0.0,131,,0,7,18,0,9,0,0
+Nudibranchia,Tritoniidae,Marianina,Marianina rosea,accepted,,,Forked Lacedragon,268,9,6,1,1,1,0.0045,0.333,0,0,1,0,0,0.0,115,,0,4,117,3,91,0,0
+Nudibranchia,Goniodorididae,Ceratodoris,Ceratodoris kendi,accepted,,,,269,8,6,1,1,1,0.0045,0.25,0,0,1,0,0,0.0,3,,0,2,16,0,8,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris aurita,accepted,,Strawberry Nudibranch,Toadstool Gobble Dorid,270,13,5,4,4,3,0.0099,0.462,0,0,1,0,1,0.154,,,0,5,69,2,31,0,0
+Nudibranchia,Goniodorididae,Murphydoris,Murphydoris puncticulata,accepted,,,,271,11,5,3,4,2,0.0129,0.273,0,0,1,0,0,0.0,,,0,4,98,0,36,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus semilunus,accepted,,,Halfmoon Pinstripe,272,7,5,5,4,3,0.0037,0.429,0,0,1,0,0,0.0,111,,0,5,10,0,6,0,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis sphingis,accepted,,Blue Sphinx Phyllidiopsis,,273,6,5,5,4,4,0.0082,0.333,0,0,1,0,2,0.333,130,,1,2,82,1,63,0,0
+Nudibranchia,Goniodorididae,Okenia,Okenia rhinorma,accepted,,,,274,6,5,4,4,1,0.0015,0.333,0,0,1,0,1,0.167,91,,0,3,11,0,7,0,0
+Nudibranchia,Aegiridae,Notodoris,Notodoris citrina,accepted,,,,275,5,5,4,4,3,0.003,0.2,0,0,1,0,0,0.0,234,,1,2,120,1,91,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris carbunculosa,accepted,,,Carbuncle Sucking Dorid,276,11,5,3,3,1,0.0023,0.545,0,0,1,0,2,0.182,,,0,3,93,3,59,0,0
+Nudibranchia,Dotidae,Kabeiro,Kabeiro christianae,accepted,,,,277,10,5,2,3,2,0.0098,0.3,0,0,1,0,1,0.1,155,,0,4,27,0,8,0,0
+Nudibranchia,Polyceridae,Polycera,Polycera risbeci,accepted,,,,278,9,5,2,3,2,0.0098,0.333,0,0,1,0,0,0.0,101,,0,3,24,0,14,0,0
+Nudibranchia,Dotidae,Kabeiro,Kabeiro phasmida,accepted,,,,279,9,5,3,3,3,0.0075,0.333,0,0,1,0,0,0.0,135,,0,3,11,0,3,0,0
+Nudibranchia,Facelinidae,Moridilla,Moridilla brockii,accepted,,,Orange-maned Bead-nose,280,5,5,4,3,4,0.0081,0.2,2,2,1,1,0,0.0,167,,0,3,16,1,11,0,0
+Nudibranchia,Actinocyclidae,Hallaxa,Hallaxa fuscescens,accepted,,,,281,5,5,3,3,2,0.0061,0.2,0,0,1,0,0,0.0,178,,0,2,33,0,22,0,0
+Nudibranchia,Facelinidae,Sakuraeolis,Sakuraeolis marhe,accepted,,,,282,5,5,3,3,2,0.0061,0.2,0,0,1,0,0,0.0,,,0,4,16,0,8,0,0
+Nudibranchia,Polyceridae,Kalinga,Kalinga ornata,accepted,,Parade-Float Sea Slug,,283,16,5,2,2,1,0.003,0.688,0,0,1,0,8,1.062,524,,0,13,58,1,38,1,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus ornatus,accepted,,,Ornate Pinstripe,284,10,5,3,2,3,0.0067,0.4,0,0,1,0,2,0.2,210,,0,3,294,4,247,0,0
+Nudibranchia,Aegiridae,Aegires,Aegires flores,accepted,,,,285,8,5,2,2,2,0.0068,0.5,0,0,1,0,0,0.0,117,,0,7,57,0,44,0,0
+Nudibranchia,Discodorididae,Platydoris,Platydoris cruenta,accepted,,,Lined Pancake Dorid,286,8,5,2,2,2,0.0041,0.25,2,1,1,0,1,0.125,144,,0,5,72,2,51,0,0
+Nudibranchia,Goniodorididae,Pelagella,Pelagella albopunctata,accepted,,,,287,8,5,2,2,2,0.0068,0.375,0,0,1,0,0,0.0,,,0,2,22,0,11,0,0
+Nudibranchia,Chromodorididae,Thorunna,Thorunna purpuropedis,accepted,,,,288,7,5,2,2,2,0.0038,0.429,0,0,1,0,0,0.0,134,,0,3,26,1,17,0,0
+Nudibranchia,Goniodorididae,Ceratodoris,Ceratodoris kondoi,accepted,,,,289,5,5,2,2,2,0.0067,0.2,0,0,1,0,0,0.0,3,,0,3,12,0,9,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania tamaraw,accepted,,,,290,5,5,2,2,2,0.006,0.2,3,3,1,1,0,0.0,,,0,3,33,1,23,0,0
+Nudibranchia,Trinchesiidae,Tenellia,Tenellia goniophaga,alternative representation,Phestilla goniophaga,,,291,5,5,2,2,1,0.003,0.2,0,0,1,0,0,0.0,,,0,3,109,1,85,0,0
+Nudibranchia,Discodorididae,Hoplodoris,Hoplodoris rosans,accepted,,,,292,13,5,1,1,1,0.0038,0.538,0,0,1,0,1,0.077,,,0,2,15,0,4,0,0
+Nudibranchia,Babakinidae,Babakina,Babakina indopacifica,accepted,,,Pom-pom Single-stalk,293,8,5,1,1,1,0.0038,0.375,0,0,1,0,0,0.0,,,0,3,81,2,64,0,0
+Nudibranchia,Arminidae,Armina,Armina rubida,accepted,,,Shield Pinstripe,294,6,5,1,1,1,0.0038,0.333,0,0,1,0,1,0.167,147,,0,4,24,1,19,0,0
+Nudibranchia,Polyceridae,Tambja,Tambja gabrielae,accepted,,Gabriela's Tambja,,295,5,5,2,1,2,0.0045,0.2,0,0,1,0,1,0.2,269,,0,3,152,20,90,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania euryeia,accepted,,,Dappled Pump Dorid,296,7,4,3,5,3,0.0063,0.429,1,1,1,0,0,0.0,172,,0,2,58,3,33,0,0
+Nudibranchia,Discodorididae,Thordisa,Thordisa villosa,accepted,,,,297,4,4,4,4,4,0.0063,0.25,1,1,1,0,0,0.0,103,,0,3,48,5,31,0,0
+Nudibranchia,Unidentiidae,Unidentia,Unidentia aliciae,accepted,,,,298,8,4,4,3,4,0.0075,0.5,0,0,1,0,0,0.0,,,2,5,122,16,75,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus rufomaculatus,accepted,,,,299,7,4,2,3,2,0.0061,0.286,0,0,1,0,0,0.0,301,,0,2,43,1,24,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris fumata,accepted,,,Smoky Sucking Dorid,300,7,4,3,3,3,0.0041,0.571,1,1,1,0,0,0.0,,,0,5,533,8,346,0,0
+Nudibranchia,Embletoniidae,Embletonia,Embletonia gracilis,accepted,,,,301,6,4,4,3,4,0.0082,0.5,0,0,1,0,1,0.167,175,,0,2,84,3,71,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus kalyptos,accepted,,,,302,6,4,2,3,2,0.0061,0.5,0,0,1,0,0,0.0,98,,0,1,16,1,8,0,0
+Nudibranchia,Polyceridae,Martadoris,Martadoris limaciformis,accepted,,,,303,5,4,2,3,2,0.0098,0.4,0,0,1,0,0,0.0,154,,0,2,38,0,33,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania kamagong,accepted,,,,304,5,4,4,3,3,0.003,0.4,0,0,1,0,1,0.2,,,0,3,29,1,23,0,0
+Nudibranchia,Dendrodorididae,Dendrodoris,Dendrodoris coronata,accepted,,,Diamond-backed Sucking Dorid,305,5,4,2,3,2,0.0091,0.4,0,0,1,0,0,0.0,,,0,3,45,0,31,0,0
+Nudibranchia,Hexabranchidae,Hexabranchus,Hexabranchus giganteus,accepted,,Giant Spanish Dancer,Giant Spanish Dancer,306,4,4,2,3,2,0.0033,0.25,1,1,1,0,0,0.0,,,0,4,31,0,13,0,0
+Nudibranchia,Chromodorididae,Doriprismatica,Doriprismatica paladentata,accepted,,,Meringue Rainbow Dorid,307,4,4,3,3,2,0.0053,0.25,0,0,1,0,0,0.0,187,,0,2,17,0,12,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris lineolata,accepted,,Many-lined Nudibranch,,308,4,4,2,3,2,0.0038,0.25,0,0,1,0,0,0.0,370,,1,2,106,5,78,0,0
+Nudibranchia,Dorididae,Doriopsis,Doriopsis pecten,accepted,,,,309,9,4,2,2,2,0.0061,0.556,0,0,1,0,2,0.667,,,0,6,147,1,107,0,0
+Nudibranchia,Aeolidiidae,Novaeolidiella,Novaeolidiella janae,accepted,,,,310,6,4,2,2,2,0.0061,0.5,0,0,1,0,0,0.0,,,0,4,10,0,7,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda indotessellata,accepted,,,Starry Waffle Dorid,311,6,4,1,2,1,0.003,0.333,0,0,1,0,0,0.0,169,,0,3,212,5,122,0,0
+Nudibranchia,Facelinidae,Caloria,Caloria militaris,accepted,,military phidiana,Military Tentacle Aeolid,312,5,4,2,2,2,0.0061,0.4,0,0,1,0,2,0.4,0,,0,1,350,6,225,0,0
+Nudibranchia,Chromodorididae,Doriprismatica,Doriprismatica stellata,accepted,,Starry Doriprismatica,,313,5,4,2,2,2,0.0061,0.4,0,0,1,0,1,0.2,159,,0,2,72,6,48,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris confetti,accepted,,,,314,5,4,2,2,2,0.0036,0.4,2,2,1,1,0,0.0,460,,0,5,161,3,113,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania squama,accepted,,,,315,6,4,1,1,1,0.003,0.5,0,0,1,0,2,0.5,101,,0,2,16,0,12,0,0
+Nudibranchia,Arminidae,Dermatobranchus,Dermatobranchus gonatophorus,accepted,,,Orange-margin Pinstripe,316,5,4,1,1,1,0.003,0.4,0,0,1,0,0,0.0,120,,0,3,27,0,15,0,0
+Nudibranchia,Dotidae,Doto,Doto racemosa,accepted,,,Dark-tipped Grapedragon,317,5,4,1,1,1,0.003,0.4,0,0,1,0,0,0.0,,,0,2,19,1,10,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris iacula,accepted,,,,318,4,4,2,1,2,0.0044,0.25,0,0,1,0,0,0.0,273,,0,1,56,9,27,0,0
+Nudibranchia,Aeolidiidae,Baeolidia,Baeolidia variabilis,accepted,,,Variable Anemone Eater,319,8,3,2,4,2,0.0053,0.5,0,0,1,0,0,0.0,178,,0,0,18,0,8,0,0
+Nudibranchia,Tethydidae,Melibe,Melibe megaceras,accepted,,,,320,8,3,3,4,1,0.0038,0.5,1,1,1,0,2,0.25,,,0,3,20,1,12,0,0
+Nudibranchia,Tritoniidae,Tritoniopsis,Tritoniopsis elegans,accepted,,,Snow Queen Lacedragon,321,7,3,4,4,4,0.0067,0.571,0,0,1,0,2,0.286,899,,0,1,238,1,203,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania aurata,accepted,,,,322,5,3,3,4,2,0.0045,0.4,0,0,1,0,0,0.0,89,,0,2,19,0,12,0,0
+Nudibranchia,Chromodorididae,Chromodoris,Chromodoris balat,accepted,,,,323,7,3,3,3,2,0.0015,0.714,0,0,1,0,1,0.143,,,0,5,33,2,22,0,0
+Nudibranchia,Actinocyclidae,Hallaxa,Hallaxa indecora,accepted,,,,324,6,3,2,3,2,0.0053,0.5,0,0,1,0,0,0.0,179,,0,2,36,0,20,0,0
+Nudibranchia,Aegiridae,Aegires,Aegires citrinus,accepted,,,,325,5,3,4,3,4,0.0075,0.6,0,0,1,0,0,0.0,364,,0,5,79,1,60,0,0
+Nudibranchia,Abronicidae,Abronica,Abronica purpureoanulata,accepted,,,,326,5,3,2,3,2,0.0053,0.4,0,0,1,0,0,0.0,153,,0,1,21,0,10,0,0
+Nudibranchia,Dotidae,Kabeiro,Kabeiro rubroreticulata,accepted,,,,327,5,3,2,3,2,0.0053,0.6,0,0,1,0,0,0.0,129,,0,0,85,0,24,0,0
+Nudibranchia,Aeolidiidae,Limenandra,Limenandra fusiformis,accepted,,,,328,4,3,3,3,1,0.0015,0.5,1,1,1,0,0,0.0,,,0,2,22,0,15,0,0
+Nudibranchia,Aegiridae,Aegires,Aegires exeches,accepted,,,,329,4,3,2,3,2,0.0083,0.5,0,0,1,0,0,0.0,156,,0,1,55,4,43,0,0
+Nudibranchia,Phyllidiidae,Phyllidiopsis,Phyllidiopsis burni,accepted,,,,330,3,3,3,3,2,0.0053,0.333,0,0,1,0,1,0.333,135,,0,1,21,1,14,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris nigricolor,accepted,,,,331,3,3,3,3,2,0.0053,0.333,0,0,1,0,0,0.0,,,0,1,39,3,29,0,0
+Nudibranchia,Phylliroidae,Cephalopyge,Cephalopyge trematoides,accepted,,,,332,3,3,2,3,2,0.0026,0.333,1,1,1,0,3,3.0,309,,0,2,5,0,3,0,0
+Nudibranchia,Polyceridae,Tambja,Tambja kava,accepted,,,Purple-tipped Wrinkle Dorid,333,3,3,2,3,2,0.0083,0.333,0,0,1,0,0,0.0,101,,0,2,18,0,14,0,0
+Nudibranchia,Aeolidiidae,Cerberilla,Cerberilla annulata,accepted,,,,334,3,3,3,3,2,0.0052,0.333,0,0,1,0,0,0.0,141,,0,1,37,1,25,0,0
+Nudibranchia,Goniodorididae,Trapania,Trapania toddi,accepted,,,,335,3,3,3,3,3,0.006,0.333,0,0,1,0,0,0.0,106,,0,3,53,0,46,0,0
+Nudibranchia,Aeolidiidae,Aeolidiopsis,Aeolidiopsis ransoni,accepted,,,,336,4,3,2,2,2,0.0053,0.5,0,0,1,0,0,0.0,38,,0,0,77,1,13,0,0
+Nudibranchia,Arminidae,Armina,Armina semperi,accepted,,,,337,4,3,2,2,1,0.0021,0.5,2,2,1,1,0,0.0,240,,0,1,6,0,1,0,0
+Nudibranchia,Aegiridae,Aegires,Aegires malinus,accepted,,,,338,4,3,2,2,1,0.0015,0.5,0,0,1,0,0,0.0,173,,0,0,6,0,2,0,0
+Nudibranchia,Chromodorididae,Goniobranchus,Goniobranchus alius,accepted,,,Starry Rainbow Dorid,339,4,3,2,2,1,0.0015,0.5,0,0,1,0,0,0.0,209,,0,2,72,2,29,0,0
+Nudibranchia,Discodorididae,Avaldesia,Avaldesia tahala,accepted,,,,340,4,3,3,2,3,0.006,0.5,0,0,1,0,0,0.0,,,0,1,14,0,9,0,0
+Nudibranchia,Polyceridae,Nembrotha,Nembrotha lorosae,accepted,,,,341,3,3,3,2,3,0.0026,0.333,2,2,1,1,1,0.667,,,0,2,159,3,103,0,0
+Nudibranchia,Phyllidiidae,Phyllidiella,Phyllidiella albonigra,accepted,,,,342,3,3,2,2,2,0.003,0.333,0,0,1,0,0,0.0,,,0,1,5,0,2,0,0
+Nudibranchia,Janolidae,Janolus,Janolus mirabilis,accepted,,,Gap-toothed Flame,343,3,3,2,2,2,0.0053,0.333,0,0,1,0,0,0.0,,,0,0,14,1,8,0,0
+Nudibranchia,Chromodorididae,Miamira,Miamira moloch,accepted,,,Yellow Dragon Lobe-margin Dorid,344,8,3,1,1,1,0.0023,0.75,0,0,1,0,0,0.0,138,,0,2,25,1,13,0,0
+Nudibranchia,Chromodorididae,Hypselodoris,Hypselodoris perii,accepted,,,,345,7,3,1,1,1,0.0023,0.714,0,0,1,0,0,0.0,130,,0,1,7,0,1,0,0
+Nudibranchia,Dorididae,Doris,Doris nucleola,accepted,,,,346,5,3,1,1,1,0.0023,0.6,0,0,1,0,0,0.0,128,,0,4,13,1,8,0,0
+Nudibranchia,Discodorididae,Platydoris,Platydoris sabulosa,accepted,,,,347,5,3,1,1,1,0.0023,0.4,0,0,1,0,0,0.0,119,,0,2,22,0,15,0,0
+Nudibranchia,Samlidae,Samla,Samla macassarana,accepted,,Orange-tipped Flabellina,Orange-tipped Bluntnose,348,4,3,2,1,2,0.0037,0.5,0,0,1,0,2,0.5,111,,0,2,7,0,5,0,0
+Nudibranchia,Goniodorididae,Naisdoris,Naisdoris liklik,accepted,,,,349,3,3,2,1,2,0.003,0.333,0,0,1,0,0,0.0,7,,0,1,5,1,1,0,0
+Nudibranchia,Discodorididae,Halgerda,Halgerda okinawa,accepted,,,,350,3,3,2,1,1,0.0008,0.333,0,0,1,0,0,0.0,279,,0,1,9,0,5,0,0
+Nudibranchia,Polyceridae,Gymnodoris,Gymnodoris brunnea,accepted,,,,351,3,3,1,1,1,0.0023,0.333,0,0,1,0,0,0.0,,,0,2,4,0,2,0,0
+Nudibranchia,Chromodorididae,Verconia,Verconia laboutei,accepted,,,,352,3,3,1,1,1,0.0023,0.333,0,0,1,0,0,0.0,185,,0,2,17,0,12,0,0
+Aplysiida,Aplysiidae,Dolabella,Dolabella auricularia,accepted,,Blunt-end Seahare,Anvil Sea Hare; blunt-end seahare; donsol; shoulderblade sea cat; wedge sea hare,1,126,71,19,27,6,0.4739,0.111,12,10,1,1,1,0.008,5152,,4,84,2114,119,1481,0,0
+Aplysiida,Aplysiidae,Aplysia,Aplysia nigrocincta,accepted,,,Black-edged Sea Hare,2,97,35,8,9,5,0.2989,0.165,12,5,1,1,0,0.0,213,,3,60,422,6,314,0,0
+Aplysiida,Aplysiidae,Aplysia,Aplysia argus,accepted,,White-speckled Seahare,Ocellate Sea Hare,3,40,27,11,13,6,0.2159,0.175,8,5,1,1,0,0.0,853,,0,21,4154,331,2808,0,0
+Aplysiida,Aplysiidae,Stylocheilus,Stylocheilus striatus,accepted,,Lined Seahare,Spiky Sea Hare,4,43,21,9,9,5,0.1595,0.279,1,1,1,0,1,0.023,703,,0,22,1167,101,776,0,0
+Aplysiida,Aplysiidae,Aplysia,Aplysia reticulata,accepted,,Reticulated sea hare,,5,32,15,5,4,3,0.0857,0.188,8,5,1,1,0,0.0,205,,0,29,501,13,330,0,0
+Aplysiida,Aplysiidae,Notarchus,Notarchus indicus,accepted,,,Whirligig Sea Hare,6,22,13,5,5,4,0.0785,0.182,2,2,1,1,0,0.0,,,0,13,115,4,79,0,0
+Aplysiida,Aplysiidae,Petalifera,Petalifera ramosa,accepted,,,Ornate Sea Hare,7,13,11,7,7,4,0.0511,0.154,1,1,1,0,1,0.077,,,1,7,215,2,181,0,0
+Aplysiida,Aplysiidae,Stylocheilus,Stylocheilus longicauda,accepted,,,Flotsam Sea Hare,8,8,6,4,5,3,0.0325,0.25,3,2,1,1,2,0.25,188,,0,3,88,5,57,0,0
+Aplysiida,Aplysiidae,Bursatella,Bursatella ocelligera,accepted,,Weedy Seahare,,9,11,6,3,4,2,0.0361,0.364,0,0,1,0,1,0.091,,,0,7,40,2,28,0,1
+Aplysiida,Aplysiidae,Dolabrifera,Dolabrifera dolabrifera,accepted,,Warty Seacat,Dappled Sea Hare,10,6,5,3,2,3,0.0401,0.333,0,0,1,0,0,0.0,981,,0,4,579,53,390,0,0
+Aplysiida,Aplysiidae,Aplysia,Aplysia oculifera,accepted,,Eyed Seahare,spotted sea hare; Spotted Sea Hare,11,8,4,4,5,2,0.0137,0.375,0,0,1,0,0,0.0,459,,0,4,663,50,462,0,0
+Cephalaspidea,Aglajidae,Chelidonura,Chelidonura amoena,accepted,,Lovely Headshield Slug,,1,279,120,14,25,6,0.4323,0.082,19,13,1,1,2,0.007,293,,14,176,700,48,466,0,0
+Cephalaspidea,Aglajidae,Chelidonura,Chelidonura varians,accepted,,Blue Velvet Headshield Slug,blue velvet headshield slug,2,162,98,15,27,6,0.3565,0.099,14,12,1,1,3,0.019,4181,,13,88,417,29,260,0,0
+Cephalaspidea,Gastropteridae,Sagaminopteron,Sagaminopteron psychedelicum,accepted,,,Psychedelic Batwing,3,176,56,10,11,4,0.2008,0.153,4,4,1,1,6,0.034,,,5,103,578,18,364,0,0
+Cephalaspidea,Aglajidae,Tubulophilinopsis,Tubulophilinopsis pilsbryi,accepted,,Pilsbry's Head Shield Slug,,4,92,50,9,10,6,0.1706,0.098,21,11,1,1,1,0.011,,,5,51,415,19,273,0,0
+Cephalaspidea,Aglajidae,Chelidonura,Chelidonura hirundinina,accepted,,Swallowtail Headshield Slug,T-bar Swallowtail,5,73,38,13,14,5,0.1302,0.205,7,6,1,1,1,0.014,760,,2,42,1206,122,875,0,0
+Cephalaspidea,Aglajidae,Tubulophilinopsis,Tubulophilinopsis gardineri,accepted,,Gardiner's Headshield Slug,,6,54,33,11,11,6,0.0971,0.111,8,6,1,1,1,0.019,268,,0,28,344,13,238,0,0
+Cephalaspidea,Colpodaspididae,Colpodaspis,Colpodaspis thompsoni,accepted,,,Fried Egg Bubble Snail,7,63,29,6,6,3,0.0925,0.19,0,0,1,0,4,0.063,,,1,33,477,6,397,0,0
+Cephalaspidea,Aglajidae,Philinopsis,Philinopsis speciosa,accepted,,Blue-margin Headshield Slug,Beautiful Swallowtail,8,47,22,6,7,4,0.0802,0.17,2,2,1,1,0,0.0,314,,2,20,570,28,389,0,0
+Cephalaspidea,Gastropteridae,Sagaminopteron,Sagaminopteron nigropunctatum,accepted,,,,9,54,22,4,6,4,0.0999,0.167,1,1,1,0,0,0.0,,,0,22,145,2,43,0,0
+Cephalaspidea,Aglajidae,Mariaglaja,Mariaglaja tsurugensis,accepted,,,Variable Swallowtail,10,29,18,7,9,6,0.0819,0.207,3,3,1,1,0,0.0,179,,1,12,180,12,112,0,0
+Cephalaspidea,Aglajidae,Odontoglaja,Odontoglaja guamensis,accepted,,,,11,55,17,6,7,5,0.0707,0.182,0,0,1,0,0,0.0,,,0,25,91,0,53,0,0
+Cephalaspidea,Aglajidae,Chelidonura,Chelidonura pallida,accepted,,,,12,31,13,7,9,4,0.0518,0.419,1,1,1,0,1,0.032,366,,3,11,115,3,80,0,0
+Cephalaspidea,Gastropteridae,Siphopteron,Siphopteron makisig,accepted,,,,13,25,12,7,6,4,0.0337,0.16,6,3,1,1,0,0.0,,,4,10,81,5,39,0,0
+Cephalaspidea,Haminoeidae,Lamprohaminoea,Lamprohaminoea evelinae,accepted,,,,14,24,12,4,5,3,0.0593,0.375,2,2,1,1,11,0.542,,,0,11,54,1,28,0,0
+Cephalaspidea,Gastropteridae,Sagaminopteron,Sagaminopteron ornatum,accepted,,Bat-wing Seaslug,,15,17,12,2,2,2,0.0272,0.176,0,0,1,0,1,0.059,,,0,9,120,6,73,0,0
+Cephalaspidea,Aglajidae,Mariaglaja,Mariaglaja inornata,accepted,,Headband Headshield Slug,Headlight Swallowtail,16,21,11,10,11,6,0.0348,0.286,1,1,1,0,0,0.0,48,,0,5,574,14,399,0,0
+Cephalaspidea,Gastropteridae,Siphopteron,Siphopteron nakakatuwa,accepted,,,,17,16,10,6,6,4,0.0376,0.188,2,2,1,1,0,0.0,,,0,6,21,0,10,0,0
+Cephalaspidea,Haminoeidae,Aliculastrum,Aliculastrum cylindricum,accepted,,,Ghost Paper Bubble Snail,18,19,9,4,5,3,0.0263,0.211,1,1,1,0,2,0.105,333,,0,12,84,10,54,0,0
+Cephalaspidea,Haminoeidae,Atys,Atys naucum,accepted,,,white Pacific glassy-bubble,19,15,9,4,5,3,0.0317,0.267,2,2,1,1,1,0.067,376,,0,6,58,0,37,0,1
+Cephalaspidea,Aglajidae,Tubulophilinopsis,Tubulophilinopsis reticulata,accepted,,,,20,17,9,4,4,3,0.0246,0.235,1,1,1,0,0,0.0,,,0,12,60,1,48,0,0
+Cephalaspidea,Gastropteridae,Siphopteron,Siphopteron tigrinum,accepted,,,,21,23,8,4,4,4,0.0437,0.348,1,1,1,0,0,0.0,,,1,12,66,1,34,0,0
+Cephalaspidea,Haminoeidae,Diniatys,Diniatys dubius,accepted,,,,22,16,8,4,4,3,0.0324,0.375,0,0,1,0,0,0.0,,,0,7,72,0,53,0,0
+Cephalaspidea,Gastropteridae,Siphopteron,Siphopteron flavolineatum,accepted,,,,23,17,8,3,3,3,0.0383,0.353,0,0,1,0,1,0.235,,,0,3,24,0,7,0,0
+Cephalaspidea,Haminoeidae,Lamprohaminoea,Lamprohaminoea ovalis,accepted,,,,24,16,7,3,4,2,0.0243,0.562,0,0,1,0,1,0.062,,,0,3,389,11,288,0,0
+Cephalaspidea,Haminoeidae,Phanerophthalmus,Phanerophthalmus anettae,accepted,,,,25,11,7,3,3,2,0.0166,0.273,0,0,1,0,2,0.182,,,0,3,17,0,7,0,0
+Cephalaspidea,Gastropteridae,Sagaminopteron,Sagaminopteron bilealbum,accepted,,,,26,10,7,2,2,2,0.0181,0.3,2,2,1,1,0,0.0,,,0,6,15,0,8,0,0
+Cephalaspidea,Haminoeidae,Atys,Atys semistriatus,accepted,,,,27,8,7,2,2,2,0.0188,0.25,0,0,1,0,0,0.0,118,,0,5,239,6,175,0,0
+Cephalaspidea,Bullidae,Bulla,Bulla ampulla,accepted,,Bottle Bulla,ampulle bubble; ampulle bulla; flask bubble snail; Mottled Bubble Snail,28,12,6,4,5,2,0.0124,0.417,0,0,1,0,1,0.083,513,,1,3,197,30,100,0,0
+Cephalaspidea,Aglajidae,Spinoaglaja,Spinoaglaja orientalis,accepted,,,,29,10,6,4,4,3,0.013,0.3,1,1,1,0,1,0.1,,,1,6,44,1,35,0,0
+Cephalaspidea,Gastropteridae,Gastropteron,Gastropteron minutum,accepted,,,,30,9,6,2,3,2,0.0302,0.333,0,0,1,0,0,0.0,,,0,3,29,0,22,0,0
+Cephalaspidea,Aglajidae,Philinopsis,Philinopsis ctenophoraphaga,accepted,,,,31,9,6,2,2,1,0.0107,0.333,0,0,1,0,1,0.111,,,1,4,15,1,9,0,0
+Cephalaspidea,Bullidae,Bulla,Bulla vernicosa,accepted,,,,32,6,6,2,2,1,0.0107,0.167,0,0,1,0,0,0.0,,,0,4,132,24,94,0,0
+Cephalaspidea,Gastropteridae,Sagaminopteron,Sagaminopteron pohnpei,accepted,,,,33,11,5,4,4,2,0.014,0.364,0,0,1,0,0,0.0,,,0,4,29,0,14,0,0
+Cephalaspidea,Aglajidae,Mariaglaja,Mariaglaja alexisi,accepted,,,,34,8,5,4,3,3,0.0237,0.5,1,1,1,0,0,0.0,,,0,3,10,0,4,0,0
+Cephalaspidea,Aglajidae,Spinophallus,Spinophallus falciphallus,accepted,,,,35,8,5,3,3,2,0.0093,0.375,0,0,1,0,0,0.0,,,0,4,106,1,71,0,0
+Cephalaspidea,Aglajidae,Tubulophilinopsis,Tubulophilinopsis lineolata,accepted,,,,36,5,5,3,3,2,0.0124,0.2,0,0,1,0,1,0.2,,,0,3,284,14,204,0,0
+Cephalaspidea,Gastropteridae,Gastropteron,Gastropteron bicornutum,accepted,,Doublehorned Batwing Slug,,37,7,4,3,4,2,0.0102,0.429,0,0,1,0,0,0.0,,,0,4,20,1,13,0,0
+Cephalaspidea,Philinidae,Hermania,Hermania orca,accepted,,,Orca Folded Bubble Snail,38,6,4,3,4,2,0.014,0.5,0,0,1,0,1,0.167,0,,0,2,90,0,79,0,0
+Cephalaspidea,Haminoeidae,Diniatys,Diniatys dentifer,accepted,,,,39,5,4,3,4,3,0.017,0.4,0,0,1,0,1,0.2,,,0,3,50,0,32,0,0
+Cephalaspidea,Aglajidae,Biuve,Biuve fulvipunctata,accepted,,White-speckled Headshield Slug,,40,6,4,3,3,2,0.0102,0.333,0,0,1,0,0,0.0,1050,,0,3,411,10,247,0,0
+Cephalaspidea,Haminoeidae,Atys,Atys kuhnsi,accepted,,,,41,6,4,3,3,2,0.0102,0.5,0,0,1,0,2,0.333,80,,0,5,26,1,19,0,0
+Cephalaspidea,Gastropteridae,Sagaminopteron,Sagaminopteron multimaculatum,accepted,,,,42,4,4,2,3,2,0.02,0.25,0,0,1,0,1,0.25,,,0,0,4,0,0,0,0
+Cephalaspidea,Haminoeidae,Lamprohaminoea,Lamprohaminoea mikkelsenae,accepted,,,,43,4,4,2,2,2,0.0208,0.25,0,0,1,0,0,0.0,,,0,4,49,0,35,0,0
+Cephalaspidea,Haminoeidae,Liloa,Liloa mongii,accepted,,,,44,4,3,2,2,1,0.0043,0.5,0,0,1,0,0,0.0,,,0,1,32,0,21,0,0
+Cephalaspidea,Haminoeidae,Lamprohaminoea,Lamprohaminoea cymbalum,accepted,,,Springbok Paper Bubble Snail,45,3,3,2,1,2,0.0102,0.333,0,0,1,0,1,0.333,383,,0,2,295,16,160,0,0
+Pleurobranchida,Pleurobranchidae,Pleurobranchus,Pleurobranchus forskalii,accepted,,Forsskål's Pleurobranch,Forskal's sidegill slug; Forskal's side-gilled sea slug; Forskal's sidegilled slug,1,198,95,17,25,6,0.716,0.121,47,22,1,1,3,0.015,740,,3,130,968,53,666,0,5
+Pleurobranchida,Pleurobranchidae,Tomoberthella,Tomoberthella martensi,accepted,,Marten's Sidegill Slug,,2,45,29,9,13,5,0.1722,0.178,1,1,1,0,1,0.022,587,,2,18,311,8,238,0,0
+Pleurobranchida,Pleurobranchidae,Pleurobranchus,Pleurobranchus grandis,accepted,,Grand Pleurobranch,,3,37,24,8,9,6,0.1864,0.135,6,4,1,1,6,0.189,392,,0,25,228,19,153,0,1
+Pleurobranchida,Pleurobranchidae,Pleurobranchus,Pleurobranchus weberi,accepted,,,,4,35,22,5,3,4,0.1204,0.171,6,3,1,1,1,0.086,,,2,24,108,5,69,0,0
+Pleurobranchida,Pleurobranchidae,Pleurobranchus,Pleurobranchus peronii,accepted,,Peron's Pleurobranch,,5,65,21,5,7,5,0.1464,0.2,5,3,1,1,2,0.031,,,0,44,1318,31,954,0,0
+Pleurobranchida,Pleurobranchaeidae,Euselenops,Euselenops luniceps,accepted,,Moon-headed Sidegill Slug,Leopard Pleurobranch,6,39,20,5,7,3,0.095,0.154,1,1,1,0,0,0.0,688,,0,21,192,17,118,0,0
+Pleurobranchida,Pleurobranchidae,Pleurobranchus,Pleurobranchus albiguttatus,accepted,,,,7,21,11,5,4,4,0.0773,0.381,5,5,1,1,0,0.0,162,,0,10,134,0,97,0,0
+Pleurobranchida,Pleurobranchaeidae,Pleurobranchaea,Pleurobranchaea brockii,accepted,,,Spotted Pleurobranch,8,19,9,4,5,3,0.0811,0.211,1,1,1,0,0,0.0,,,0,13,63,4,45,0,0
+Pleurobranchida,Pleurobranchidae,Berthellina,Berthellina delicata,accepted,,Orange Gumdrop,,9,17,9,3,2,3,0.0552,0.412,0,0,1,0,1,0.059,,,0,10,305,22,217,0,0
+Sacoglossa,Plakobranchidae,Elysia,Elysia marginata,accepted,,,Tri-banded Taco Slug,1,300,120,15,20,6,0.3996,0.153,45,24,1,1,3,0.01,21998,,22,213,1245,61,904,0,0
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla lineolata,accepted,,Orange-edged Sapsucking Slug,,2,197,85,8,17,4,0.2483,0.386,47,30,1,1,3,0.03,295,,8,165,384,21,285,0,0
+Sacoglossa,Costasiellidae,Costasiella,Costasiella usagi,accepted,,Rabbit Sapsucking Slug,,3,114,62,10,13,5,0.1973,0.07,25,17,1,1,4,0.035,,,5,74,470,12,333,0,0
+Sacoglossa,Costasiellidae,Costasiella,Costasiella kuroshimae,accepted,,little leaf-sheep,Diamond-mask Sap-sucker,4,120,53,10,13,6,0.181,0.167,30,13,1,1,13,0.242,191665,P2 P9,9,74,351,20,229,2,1
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla albopustulosa,accepted,,White-bump Sapsucking Slug,White-marked Taco Slug,5,97,44,8,9,4,0.1153,0.216,5,4,1,1,1,0.01,,,5,59,303,21,200,0,0
+Sacoglossa,Plakobranchidae,Plakobranchus,Plakobranchus papua,accepted,,,,6,76,39,9,14,5,0.1359,0.132,3,2,1,1,1,0.013,,,0,43,254,10,164,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce nigra,accepted,,Tiger Butterfly Sea Slug,,7,130,33,3,4,3,0.1491,0.415,0,0,1,0,13,0.123,,P6 P9,2,51,300,3,205,0,1
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla gracilis,accepted,,Slender Sap Sucking Slug,,8,47,31,10,12,6,0.1006,0.085,4,4,1,1,1,0.021,292,,1,36,217,4,182,0,0
+Sacoglossa,Plakobranchidae,Plakobranchus,Plakobranchus ocellatus,accepted,,Ringed Sap-sucking Slug,,9,47,30,10,12,6,0.1001,0.128,4,4,1,1,0,0.0,1310,,1,33,1041,48,765,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce blackburnae,accepted,,,,10,100,27,6,6,5,0.1246,0.38,2,2,1,1,2,0.02,,P6,1,37,170,3,89,0,0
+Sacoglossa,Plakobranchidae,Elysia,Elysia pusilla,accepted,,,Halimeda Taco Slug,11,76,26,7,8,5,0.1062,0.224,13,5,1,1,0,0.0,924,,2,49,566,22,465,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce katiae,accepted,,,,12,70,25,3,4,3,0.1069,0.4,0,0,1,0,2,0.029,,P6,1,25,95,1,47,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce elegans,accepted,,Elegant Sapsucking Slug,,13,41,17,5,5,4,0.0594,0.317,4,3,1,1,4,0.122,4921,,0,16,149,0,106,0,0
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla carlsoni,accepted,,,,14,19,16,5,7,2,0.0264,0.105,1,1,1,0,0,0.0,186,,0,14,401,7,334,0,0
+Sacoglossa,Oxynoidae,Oxynoe,Oxynoe viridis,accepted,,,Green Leafsnail,15,20,14,5,5,4,0.0362,0.15,11,8,1,1,0,0.0,715,,3,8,518,30,398,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce basi,accepted,,,,16,35,11,5,6,4,0.0372,0.571,4,3,1,1,0,0.0,,P6,0,11,112,1,69,0,0
+Sacoglossa,Limapontiidae,Sacoproteus,Sacoproteus smaragdinus,accepted,,,,17,26,11,4,5,2,0.0371,0.423,0,0,1,0,1,0.038,,,1,8,181,23,115,0,0
+Sacoglossa,Limapontiidae,Ercolania,Ercolania endophytophaga,accepted,,,,18,23,11,4,5,3,0.0429,0.261,0,0,1,0,2,0.087,,,0,14,28,0,17,0,0
+Sacoglossa,Costasiellidae,Costasiella,Costasiella fridae,accepted,,,Eyebrow Sap-sucker,19,14,10,5,6,4,0.0232,0.143,1,1,1,0,2,0.143,,,0,8,135,3,103,0,0
+Sacoglossa,Caliphyllidae,Polybranchia,Polybranchia jannae,accepted,,,,20,10,9,4,5,3,0.0192,0.2,1,1,1,0,1,0.1,,,0,6,38,0,29,0,0
+Sacoglossa,Plakobranchidae,Elysia,Elysia tomentosa,accepted,,Hairy elysia,Furry Taco Slug,21,12,8,4,5,4,0.0217,0.25,2,2,1,1,0,0.0,243,,1,7,131,6,70,0,0
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla flavomaculata,accepted,,,,22,14,6,3,4,2,0.0193,0.286,0,0,1,0,0,0.0,,,0,5,74,3,56,0,0
+Sacoglossa,Oxynoidae,Oxynoe,Oxynoe kylei,accepted,,,,23,8,6,4,4,3,0.0138,0.25,3,3,1,1,2,0.25,,,0,6,132,1,110,0,0
+Sacoglossa,Oxynoidae,Lobiger,Lobiger viridis,accepted,,,Blue-striped Leafsnail,24,11,6,3,3,3,0.0174,0.455,2,1,1,0,0,0.0,332,,0,5,77,4,49,0,0
+Sacoglossa,Limapontiidae,Placida,Placida kevinleei,accepted,,,,25,7,5,4,5,3,0.0152,0.429,0,0,1,0,0,0.0,,,0,3,63,1,27,0,0
+Sacoglossa,Oxynoidae,Oxynoe,Oxynoe jordani,accepted,,,,26,7,5,3,4,1,0.0175,0.286,0,0,1,0,1,0.143,,,0,1,52,0,38,0,0
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla undula,accepted,,,,27,7,5,3,3,2,0.0106,0.286,0,0,1,0,4,0.571,,,0,3,62,6,39,0,0
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla ratna,accepted,,,,28,19,4,3,3,2,0.0082,0.789,0,0,1,0,0,0.0,,,0,19,102,1,96,0,0
+Sacoglossa,Costasiellidae,Costasiella,Costasiella formicaria,accepted,,,,29,7,4,1,2,1,0.0175,0.429,0,0,1,0,0,0.0,,,0,0,54,0,37,0,0
+Sacoglossa,Plakobranchidae,Elysia,Elysia aowthai,accepted,,,,30,5,4,2,2,1,0.0074,0.4,3,3,1,1,0,0.0,,,0,3,35,0,23,0,0
+Sacoglossa,Plakobranchidae,Thuridilla,Thuridilla bayeri,accepted,,,,31,4,3,3,3,2,0.0108,0.5,0,0,1,0,0,0.0,,,0,1,111,3,89,0,0
+Sacoglossa,Limapontiidae,Stiliger,Stiliger ornatus,accepted,,,Ornate Mop Sap-sucker,32,3,3,3,3,2,0.004,0.333,0,0,1,0,0,0.0,,,0,2,10,0,5,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce goodheartae,accepted,,,,33,3,3,3,3,2,0.0068,0.333,1,1,1,0,0,0.0,,,0,1,9,0,3,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce pavonina,accepted,,,Warty Split-nose Sap-sucker,34,4,3,2,2,1,0.0041,0.5,0,0,1,0,1,0.25,,,0,2,23,0,19,0,0
+Sacoglossa,Caliphyllidae,Cyerce,Cyerce bourbonica,accepted,,,Multi-spotted Split-nose Sap-sucker,35,3,3,2,2,1,0.0041,0.333,0,0,1,0,0,0.0,,,0,1,32,1,20,0,0
