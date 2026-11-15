@@ -1772,16 +1772,19 @@ function readEvents_(token, pages){
 // over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id).
 // One over_ key names a player, the per-name answer cap ("n:<name>"): served as the name's admin id (aid_, the id admin
 // Players shows beside the name), so the page shows no name; a deleted account's "~deleted <id>" (redact_) stays as it is.
-// The tab itself is never changed here.
+// Rule D7 (Codex review #996): an archived account's line (redact_ moves it to the archive's name) is left out, as
+// readEvents_ leaves out an archive's page summaries. The tab itself is never changed here.
 function readAlerts_(token){
   if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Alerts');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
-  const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_();
-  // Only redact_'s exact "~deleted <admin id>" is kept: a player's own name may start with ~ too.
-  const hide = s => s.replace(/^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/, (m, a, name, b) => /^~deleted [A-Za-z0-9+/]{8}$/.test(name) ? m : a + aid_(name, salt) + ' ' + b);
+  const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_(), arch = archivedSet_();
+  // [line shown, the capped name or '']. Only redact_'s exact "~deleted <admin id>" is kept: a name may start with ~ too.
+  const NAMED = /^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/;
+  const see = s => { const m = NAMED.exec(s); return !m || /^~deleted [A-Za-z0-9+/]{8}$/.test(m[2]) ? [s, ''] : [m[1] + aid_(m[2], salt) + ' ' + m[3], m[2]]; };
   const rows = sh.getRange(from, 1, n - from + 2, 2).getValues().filter(x => String(x[1]))
-    .map(x => [new Date(x[0]).getTime() || 0, hide(String(x[1]))]);
+    .map(x => [new Date(x[0]).getTime() || 0, see(String(x[1]))]).filter(x => !(x[1][1] && arch.has(lc_(x[1][1]))))
+    .map(x => [x[0], x[1][0]]);
   return {ok: true, rows: rows.reverse()};
 }
 

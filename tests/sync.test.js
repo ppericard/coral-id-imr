@@ -2668,9 +2668,12 @@ test('v58 (Codex review #603): archiving moves the name mentions in the log tabs
   s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK});
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')) && /\(Ben-old\)/.test(tabText(s, 'Events')), 'Events names the archive');
   assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/);
-  // The admin's To do › Alerts (readAlerts, vNEXT) shows the archive by its admin id, never its name.
+  // The admin's To do › Alerts (readAlerts, vNEXT; rule D7, Codex review #996) leaves the archive's line out, as a normal
+  // view; a live account's line stays, under its admin id.
+  require('vm').runInContext("sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ana (3000 per 6 h)'])", s.ctx);
   const al = s.post({readAlerts: 1, token: TOK}).rows.map(r => r[1]);
-  assert.deepStrictEqual(al, [`limit reached: n:${require('vm').runInContext("aid_('Ben-old')", s.ctx)} (3000 per 6 h)`]);
+  assert.deepStrictEqual(al, [`limit reached: n:${require('vm').runInContext("aid_('Ana')", s.ctx)} (3000 per 6 h)`]);
+  assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/, 'the tab keeps it');
   s.post({userDelete: 'Ben-old', answers: true, token: TOK});
   ['Events', 'Alerts'].forEach(t => assert.ok(!/\bben\b/i.test(tabText(s, t)), `no "Ben" left in ${t}`));
 });

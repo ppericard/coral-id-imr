@@ -165,8 +165,9 @@ script writes there itself, never what a player sends:
 The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves it as the name's admin id (`aid_`, the
 id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name
 the player in brackets; the tab itself keeps the name, as before. A delete or a merge rewrites that mention in the tab
-(`redact_`: `~deleted <id>`, shown as it is, or the name it joined); an archive moves it to the archive's name, shown as
-its admin id.
+(`redact_`: `~deleted <id>`, shown as it is, or the name it joined); an archive moves it to the archive's name, and the
+page leaves that line out (rule D7: an archive is in no normal view; the tab keeps it). Lines written by admin id before
+an archive (photos of another unit, a left-out device) stay under the old name's id, as in the tab.
 
 ## If it happens
 
