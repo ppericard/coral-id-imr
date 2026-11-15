@@ -3696,9 +3696,10 @@ during its first 20 answers.
   services excluded from its task): the integrator, who holds the data, runs it or Pierre waives it.
 
 **The app world, results** (5 profiles × 5 seeds, then the second look on seeds 1-20; before = `--calib '{"phase":0}'`,
-after = this branch; learncmp with 2 looks: bounds at 95%). The first look's after arm (commit 3417f88f) drew 6 phase
-tiles on the Anthias in their first answers (the Find the X count above), fixed before both looks' after arms were
-read (32a2bd7d). Primary, `phEarly@300`, down in 100 of 100 pairs (p 10⁻⁵): 0.10-0.12 → 0.000 in every profile.
+after = this branch; learncmp with 2 looks: bounds at 95%). The first look's after arm, as first run (commit 3417f88f),
+drew 6 phase tiles on the Anthias in their first answers (the Find the X count above); reading it found the leak, fixed
+in 32a2bd7d, and that arm was run again: the tables are the re-run's. The draw (`model.js`, `core.js` `phaseOf`,
+`phaseStage`, the fish data) is the same from 32a2bd7d to the PR's head in every after arm here and in the rated world. Primary, `phEarly@300`, down in 100 of 100 pairs (p 10⁻⁵): 0.10-0.12 → 0.000 in every profile.
 Guardrails at the second look, paired difference [one-sided 95% bound]:
 
 | Guardrail | beginner | casual diver | lecture RA | strong RA | expert |
