@@ -197,11 +197,19 @@ off (or sets it) in the admin like any tag (Tags › Watermark). His tags win as
 since then (`tools/fish_game.py` `record`). The pass's `w` also reaches tags the auto-sort copied into his curation (its log code
 still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/fish_game.py` `marked`).
 
-- **The pass of 2026-11-15** looked at the photos Home can show: each family's cover and the reference photos its band
-  rotates through, up to 10 per family in the game's order, on their R2 file (Pierre's crop applied). Contact sheets of 6
-  at 560 px were used, with the top and bottom bands enlarged for faint text. Once the first ones were tagged, the next
-  photos in each pool were looked at too, until every photo a Home pool can draw had been judged. 584 photos were looked
-  at and 90 were tagged: mostly iNaturalist photographers' names or logos, and 1 FishBase photo.
+- **The pass of 2026-11-15** judged each photo on its R2 file (Pierre's crop applied), on contact sheets of 6 at 560 px,
+  with the top and bottom bands enlarged for faint text. 844 photos were looked at and 224 were tagged: iNaturalist
+  photographers' names and logos, and 1 FishBase photo. It covered three groups:
+  - the photos Home can show: each family's cover and the reference photos its band rotates through, up to 10 per
+    family in the game's order. Once the first ones were tagged, the next photos in each pool were looked at too, until
+    every photo the pools can draw had been judged. That holds with the judged order and on a first launch (the first
+    photos of `fish-photos.json`);
+  - every reference-level landscape photo (the band's kind) by an author already tagged once: 342 photos, 134 of them
+    tagged.
+  
+  **Not covered**: the players' ratings re-sort a family's photos (`app.js` `rankPhotos`), so the band can later reach
+  reference photos by other authors that nobody has looked at yet (about 1,900 photos are of the band's kind).
+  ROADMAP "Watermark pass, the rest" holds that work.
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
