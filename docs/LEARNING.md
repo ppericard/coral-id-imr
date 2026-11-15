@@ -1812,10 +1812,12 @@ and only widens its uncertainty after inactivity).
   multiplies the chance of recognising by R, which lowers its log-odds by at least −ln R, so the photos are a little
   easier, never more than the rust explains (R 0.9: 0.1 easier; 0.6: 0.5).
 - **When it ends**: by the answers, a CUSUM like the opening hold's (`holdNext`, Page 1954): rust ← max(0, rust + p −
-  right − l), p = 1/k + (1 − 1/k)·R·sig(ability − difficulty) the recall-adjusted chance of the question, l = (1 −
-  1/k)(1 − R)·sig(ability − difficulty) the rust the question itself repairs (its genus is reviewed, its R back to 1). A
-  player doing better than expected melts it fast, worse keeps it going; it ends at 0. A long break while the app stays
-  open counts the same: the gap is checked whenever a question is planned or answered.
+  right − l − `INTRO.SLACK`), p = 1/k + (1 − 1/k)·R·sig(ability − difficulty) the recall-adjusted chance of the
+  question, l = (1 − 1/k)(1 − R)·sig(ability − difficulty) the rust the question itself repairs (its genus is reviewed,
+  its R back to 1), and the opening hold's tolerance, 0.1 an answer (Q367, 2026-11-15, below: "The comeback's
+  tolerance"). A player doing better than expected melts it fast, more than 0.1 an answer worse keeps it going; it ends
+  at 0. A long break while the app stays open counts the same: the gap is checked whenever a question is planned or
+  answered.
 - **Fairness**: a miss in the comeback weighs what it proves with the recall-adjusted chance (`pgMissW(th, d, k, R)`): a
   miss the rust explains costs less progress. Its logged expectation `e` is the same recall-adjusted chance.
 - **A new visit opens no genus at first** (Pierre, 2026-11-02: "reopening a new genus straight away would be a
@@ -1877,6 +1879,124 @@ during it / in the 20 questions after it, same seeds:
   in 0-4 runs of 10, about as often as after the gentle restart (after a month 1-4 against 3-6).
 - After a month, the 20 questions after the comeback: beginner 78% (gentle restart 72%), lecture RA 76% (74%), strong RA
   84% (82%), expert 96% (98%); after shorter breaks within a few points of each other.
+
+#### The comeback's tolerance (Q367, 2026-11-15): the check plan, declared before running
+
+Pierre, 2026-11-15 (Q367, "ok pour A", from the comeback study's question (d),
+[2026-11-14-comeback-study.md](reviews/2026-11-14-comeback-study.md)): keep the comeback as it is (its length, how it
+picks genera, the forgetting estimate) and give its sum the opening hold's tolerance, `INTRO.SLACK` (0.1 an answer), so
+that a comeback can no longer hold a whole session. The study's case: P5, back after 1.03 days, answered 27 of 40
+comeback questions right at a mean expectation of 0.75 (0.075 an answer below it); the sum grew by about 3 and no genus
+opened in the whole visit. Points (b), (c) and (f) of the study stay as they are, to be measured again at about 20
+players back after 2 days or more (ROADMAP).
+
+**The change**: `model.js` `comebackStep` passes `INTRO.SLACK` on top of the rust the question repairs: rust ←
+max(0, rust + p − right − l − 0.1). Nothing else moves: the rust at the start (FSRS), the genera asked, the photos, the
+floor, the opening hold (its sum and the sheet's `hold_` keep their own tolerance, as before). The comeback's state lives
+on the device only and the sheet replays each answer from its logged `e` and `r`, so no rules version (`RVS`) and no
+sheet change.
+
+**Level 1** (rule L11): one situation, the questions after a break, and an existing constant reused. The integrator may
+raise it.
+
+**Primary** (one, declared before running): the comeback's length after a 1-day break, `cbLen@1d`, **down**; the
+corals, the app world, the four profiles × 5 seeds (20 pairs), 300 questions first, pooled by `tools/learncmp.js`'s
+stratified sign-flip (exact at 20 pairs). The simulated median after a day is 3 questions, so many pairs will tie.
+**Two looks**: seeds 1-5, then, only if the first is not clear, seeds 1-10 (each look's primary at 0.025, its bounds at
+95%). Still unclear after the second look: reported as unclear, with no switch to another measure.
+
+**Secondary** (exploratory, uncorrected): the same measures on the fish, its five profiles × 5 seeds; and the target
+"no session stays all comeback": comebacks of 40 questions or more (`cbLong`, the study's whole visit), or reaching the
+tool's cap of 200, after the 8 h and 1-day breaks, expected 0 after the change. After a week or a month a long
+comeback is real rust, so `cbLong` there is a cost (below), not evidence of the fix.
+
+**Commands** (the same seeds for both arms, both from this branch: the base is the commit of this plan, whose code is
+`main` at b5cb6d51; `main` is not merged in between):
+
+```
+node tests/slot.js -- node tools/learnsim.js --breaks 30m,8h,1d,3d,1w,1mo --after 20 --seeds 5 --out cb-before.json
+node tests/slot.js -- node tools/learnsim.js --subject fish --breaks 30m,8h,1d,3d,1w,1mo --after 20 --seeds 5 --out cbf-before.json
+(the change, then the same two with --out cb-after.json, cbf-after.json)
+node tools/learncmp.js cb-before.json cb-after.json --primary cbLen@1d:down --looks 2
+node tools/learncmp.js cbf-before.json cbf-after.json --looks 2
+```
+
+`tools/learncmp.js` reads the breaks since this change (measures of kind `break`: `cbLen`, `cbLong`, `cbRight`,
+`afterRight`, `held`, `holdAfter`, `open15`, each at a break's name).
+
+**Guardrails.** LEARNING.md's table, at the checkpoints of the first session (300 questions): the first session runs
+before any break, so every pair must be identical (difference 0); a difference there means the pairing broke, not a
+result. **The cost expected and declared**: the tolerance acts on every comeback answer, so comebacks get shorter after
+every break, the long ones too (3 days, a week, a month), against Q367's "keep its length". At the calibration the sum
+drifts by −l an answer today and by −(l + 0.1) after, with l about 0.02-0.05 after a day and 0.1-0.2 after a week or a
+month. Read per break and profile on the side of harm: the right % in the 20 questions after the comeback (lower),
+the answers with the opening hold on after it (higher), the genera opened in the first 15 answers after it (higher),
+and the comeback's length at 3 days, a week and a month (lower). LEARNING.md sets no margin for these: whatever they
+show, they go to Pierre with options, never shipped silently.
+
+**The rated world** has no breaks and no comeback (above, "The two worlds": "Not in it"): it is blind to this change.
+Run short (the corals, 5 seeds × 1,000 answers, both arms), its outputs are compared for identity, not read as "held".
+
+**The real log** (rule L12): replaying each real comeback's `|c` answers (their `e`, `r` and right or wrong, in order)
+under both rules needs the sheet's Answers tab, which this check does not read (the builder's limits). It is not done
+here; the integrator runs it or it waits. What is given instead is arithmetic on the study's published figures,
+labelled so.
+
+**Unit tests** (`tests/comeback.test.js`): the study's case rebuilt from its published figures (29 genera answered
+right, a 1.03-day break, the starting rust from `rustNow`, 40 comeback questions with 27 right spread evenly at a mean
+expectation of 0.75): under the old rule the comeback runs all 40, under the new one it ends within them; if it does not
+with an honest starting rust, that is a finding for Pierre, not a fixture to tune. A player 0.1 or more an answer below
+expectation still stays in the comeback: the tolerance does not guarantee an end. And the comeback reads `INTRO.SLACK`
+itself (a stub at 0 gives the old rule).
+
+**Results** (2026-11-15; both arms from frozen copies of this branch, the base at the plan's commit, the same seeds 1-5;
+the machine shared with other runs, so no timing is read).
+
+- **Primary, clear at the first look**: comeback questions after a day, corals, 18 of 20 pairs shorter, stratified
+  sign-flip p 7.6·10⁻⁶ (exact; the look's threshold 0.025). Mean per profile: beginner 14.8 → 4.8, lecture RA 9.4 →
+  5.8, strong RA 9.8 → 5.6, expert 5.6 → 2.8 (no single profile clear under Holm at 5 seeds); pooled median 6 → 2. The
+  second look was not needed.
+- **Fish** (secondary, exploratory): after a day, 21 of 25 pairs shorter (p 1.0·10⁻⁵, 100,000 draws); pooled median 2
+  → 1; the beginner's mean 13.4 → 3.0.
+- **No visit all comeback**: comebacks of 40 questions or more after 8 h and a day: 1 of 20 coral runs before (the
+  beginner, 60 questions after a day), none after; fish none either way. After 3 days and a week, the coral runs of
+  40 or more went from 4 to 0, the fish from 1 to 0. The unit test of the study's case (above): the old rule runs all
+  40 questions (its sum 0.73 → 2.77), the new one ends at the 18th.
+- **The first session is identical** in both arms (every guardrail of the table: difference 0 in every pair, corals and
+  fish), so the pairing holds; every guardrail held.
+- **The rated world**: both arms' outputs identical (corals, 5 seeds × 1,000 answers, the date and run time aside), as
+  expected of a world without breaks.
+- **The cost declared, as large as feared at the long breaks** (median comeback questions [range], before → after):
+
+  | Break | Corals: beginner | lecture RA | strong RA | expert | Fish: beginner | casual diver | lecture RA | strong RA | expert |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 d | 3 [2-60] → 2 [2-13] | 6 [3-21] → 5 [2-13] | 7 [3-23] → 4 [2-14] | 4 [2-10] → 2 [2-6] | 13 [1-34] → 4 [1-5] | 5 [2-6] → 4 [1-5] | 2 [1-7] → 1 [1-5] | 2 → 1 | 2 [2-10] → 1 [1-6] |
+  | 3 d | 10 [8-43] → 10 [7-32] | 8 [5-19] → 6 [4-15] | 12 [8-27] → 6 [4-15] | 6 [5-16] → 4 [4-7] | 7 [5-24] → 6 [4-18] | 5 [3-14] → 4 [2-10] | 11 [4-13] → 6 [2-10] | 5 [3-10] → 3 [2-6] | 4 [3-9] → 3 [2-6] |
+  | 1 w | 14 [10-103] → 16 [9-22] | 21 [14-69] → 11 [9-13] | 11 [8-71] → 7 [6-11] | 8 → 6 | 8 [6-76] → 6 [5-17] | 7 [6-18] → 5 [5-14] | 6 [6-13] → 5 [5-10] | 6 [5-10] → 4 | 6 [6-7] → 4 [4-5] |
+  | 1 mo | 88 [67-133] → 50 [34-75] | 35 [23-64] → 20 [17-32] | 33 [24-38] → 18 [14-27] | 14 [13-16] → 11 [11-13] | 68 [9-109] → 37 [8-41] | 28 [21-34] → 16 [13-26] | 17 [10-23] → 14 [8-16] | 12 [10-15] → 10 [9-12] | 10 [10-12] → 8 [8-10] |
+
+  On the side of harm, after a month (corals; mean paired difference [one-sided 95% bound on the side of harm]): the
+  answers with the opening hold on in the 20 after the comeback rose, beginner +3.6 [+6.9] (its other bound +0.3: the
+  rise is clear), lecture RA +3.6 [+7.8], strong RA +2.2 [+5.5]; the right % in those 20 fell 2-5 points, none clear
+  (beginner −5.0 [−14.5], lecture RA −2.0 [−14.4], strong RA −5.0 [−13.9]). At 5 seeds "not clear" means a wide
+  interval, not no effect. After a week no harm-side measure moved clearly; on the fish the right % after a week's
+  comeback rose (casual diver +7, strong RA +5). The genera opened in the 15 answers after a comeback did not rise
+  anywhere. Against the 2026-11-02 table above (medians after a month: beginner 36.5, lecture RA 37, strong RA 29,
+  expert 15), today's base runs are about the same for the lecture RA, strong RA and expert (35, 33, 14) and over
+  twice for the beginner (88); with the tolerance the beginner comes back near that table (50, its range 19-62), while
+  the lecture RA and strong RA fall to about half of it (20 and 18, under its ranges 22-63 and 20-39). Against Q367's
+  "keep its length", the cost is real for three of the four profiles. No margin exists for these: they go to Pierre
+  with options (the PR).
+- The base's pooled median after a day, 6, differs from the study's 3: learnsim seeds each break by its index in
+  `--breaks`, and the study ran `--breaks 1d,3d,1w` (1 day first) where this check ran it third (inferred, not
+  checked).
+- The study's case in the unit test depends on the order: with the 27 right answers first, three right answers pay
+  about 0.82 against a starting sum of 0.73, so the rule before Q367 also ends by the third answer. The order with a
+  miss first, then every third answer, is the one that keeps the old rule on for all 40, as P5's was.
+- **The real log** (rule L12): not replayed (above). Arithmetic on the study's published figures only: P5's 40 comeback
+  answers, 27 right at a mean expectation of 0.75, moved the sum by about +3 less the rust the questions repaired; the
+  tolerance takes 4 more off over 40 answers, so her sum falls over the visit instead of growing. Whether it would have
+  ended, and when, depends on her starting rust and the order of her misses, which the study does not publish.
 
 ### Which genus comes next: the progressive path (2026-11-02)
 
