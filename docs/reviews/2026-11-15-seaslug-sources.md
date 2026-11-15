@@ -22,7 +22,8 @@ from a page; **[search]** = only a search result's excerpt, the page not read; *
   22 "Evidence of Presence" has a value 30 "Egg" too.
 - **Every observation, not a sample.** All 97 Research Grade observations of circle 1 annotated Life Stage: Juvenile
   (one request, the 45 taxa together; rule C7), the same 97 as the list's per-species sums. All their 144 photos were
-  downloaded at medium size (one a second, a generic User-Agent) and looked at one by one, a doubtful one at full size.
+  downloaded at medium size (about one a second, a generic User-Agent) and looked at on contact sheets of 12, each
+  doubtful one again alone at medium size.
   Each observation was classed: animal only, egg mass only, animal with eggs, or cannot tell.
 - **The egg annotations too.** The 181 circle-1 observations annotated Life Stage: Egg were counted, and the first photo
   of 32 of them looked at (all 20 that are not *H. sanguineus*, and 12 *H. sanguineus* drawn at random).
@@ -47,8 +48,8 @@ from a page; **[search]** = only a search result's excerpt, the page not read; *
 
 - ***Hexabranchus lacer*: the 43 are small Spanish dancers in their juvenile colours.** A translucent white to pale
   pink body with a violet-blue edge and magenta or purple spots, orange rhinophores and gills: nothing like the large red
-  or mottled adult **[measured: the photos]**. Several descriptions give the size: "6mm", "Still from video, juvenile ?",
-  "Juvenile. Probably." (the last one from Zamboanguita, next to Dauin). Two photos are poor (179191175: a small pale
+  or mottled adult **[measured: the photos]**. The observers' descriptions say so too: one gives "6mm", others "Still
+  from video, juvenile ?" or "Juvenile. Probably." (the last one from Zamboanguita, next to Dauin). Two photos are poor (179191175: a small pale
   animal far off; 395170217: the first photo hard to read, the next two show the animal), neither is an egg mass.
 - **The other 54** are small animals of their species (*P. forskalii* whitish or brown with the adult's raised polygonal
   pattern, *J. funebris* white with black rings, *P. semperi* small blue-purple aeolids).
@@ -63,9 +64,9 @@ from a page; **[search]** = only a search result's excerpt, the page not read; *
 - **181 circle-1 observations are annotated Life Stage: Egg**, worldwide: *Hexabranchus sanguineus* 161, *H. lacer* 7,
   *Jorunna funebris* 3, *Nembrotha chamberlaini*, *Coryphellina exoptata*, *Pteraeolidia semperi* and *Costasiella
   kuroshimae* 2 each, *Hypselodoris bullockii* and *Tambja morosa* 1 each.
-- **The annotation is used as meant.** Of the 32 first photos looked at, all show an egg mass. In 4 the animal is in the
-  frame too (*H. lacer* beside its red rosette, *Hypselodoris bullockii* beside its yellow coil, *Costasiella* twice), 1
-  cannot be told.
+- **The annotation is used as meant.** Of the 32 first photos looked at, 31 show an egg mass and 1 cannot be told. In 4
+  of the 31 the animal is in the frame too (*H. lacer* beside its red rosette, *Hypselodoris bullockii* beside its yellow
+  coil, *Costasiella* twice).
 - **For both Spanish dancers, "Evidence of Presence: Egg"** is on 43 observations, 39 of them also Life Stage: Egg: 172
   observations carry one egg annotation or the other.
 - ***H. sanguineus* is where the eggs weigh.** About 30% of its Research Grade observations are its egg rosettes:
@@ -118,14 +119,19 @@ Pierre (2026-11-15): egg ribbons and egg masses are never candidate photos. Reco
   Spanish dancer was called *H. sanguineus*; WoRMS now accepts *H. lacer* beside it (Tibiriçá et al. 2023), and the
   juveniles of §1.2 are identified *H. lacer*. Which name the Dauin animal takes today is a point for `points.json`
   once the subject exists (rule C5), not settled here.
-- **Tibiriçá et al. 2023** (the *Hexabranchus* revision): its text is behind a login on the publisher's site and was not
-  read. Its Plazi treatments are public (CC0) but the ones read hold the synonymy and figure captions, not the
-  description of the juveniles. A search excerpt says the paper groups "a typical light morphotype ..., a darker
-  morphotype ... and a juvenile" under *H. lacer* **[search]**.
-- **So *H. lacer* has a documented, different-looking juvenile**: the source (§1.5, first bullet) plus the 43
-  photographed juveniles. Under the decided rule ("+5 only where a source documents a different-looking juvenile",
-  Q377) it would get 5 more candidates: proposed in the report, not applied (`tools/seaslug_source.json` holds the rule,
-  no per-species list yet).
+- **Tibiriçá et al. 2023** (the *Hexabranchus* revision): its full text is behind a login on the publisher's site and
+  was not read. Its Plazi treatments are public (CC0) and hold the synonymy and the figure captions **[read]**:
+  - "Fig. 3 Ontogeny, color, and variation in *Hexabranchus lacer* (morphotype 1: Pacific) ... A early juvenile, B
+    juvenile, C early transitional, D mild-transitional, E late transitional, F mature"; Fig. 4 the same for its
+    morphotype 2 ("Eastern and Western Pacific");
+  - under *H. marginatus* var. *moebii*: "they are all variations of *H. lacer*: a typical light morphotype with a
+    mottled notum, a darker morphotype ... and a juvenile".
+  - The description of the juvenile colours themselves is in the paper's text, not in the treatments read.
+- **So *Hexabranchus* has a documented juvenile that looks different from the adult**: Rudman's answer on a Dauin
+  animal (named *H. sanguineus* in 1999) and the revision's ontogeny figures for *H. lacer*. The 43 juveniles of §1.2
+  are *H. lacer* by their iNaturalist identifications. Under the decided rule ("+5 only where a source documents a
+  different-looking juvenile", Q377), *H. lacer* would get 5 more candidates: proposed, not applied
+  (`tools/seaslug_source.json` holds the rule, no per-species list yet).
 
 ## 2. Reference sources for sea slugs
 
@@ -138,16 +144,16 @@ citing a fact is not copying a text).
 
 | Source | What it is | Philippines / Indo-Pacific | Facts | Photos and their terms | Reuse | API or bulk |
 |---|---|---|---|---|---|---|
-| **Gosliner, Valdés & Behrens 2018**, *Nudibranch & Sea Slug Identification: Indo-Pacific*, 2nd ed., New World Publications | The regional field guide **[read: the REEF shop page, Scuba Diving's announcement]**: "illustrates 2,138 Indo-Pacific nudibranchs and sea slugs, including many undescribed species"; 185 new species since the first edition, an identification key, an up-to-date classification | The whole Indo-Pacific, "from the Indian Ocean coast of southern Africa and the Red Sea to ... Hawaii, Easter Island and the Marquesas"; its Philippine coverage was not checked (the book was not read) | ID features per species, as a field guide gives them; what else each entry holds (size, depth, food) was not checked | The authors' and contributors' photos, in a copyrighted book | **Cite only** (a page or species number per cue) | None; also sold as an e-book |
+| **Gosliner, Valdés & Behrens 2018**, *Nudibranch & Sea Slug Identification: Indo-Pacific*, 2nd ed., New World Publications | The regional field guide **[read: the REEF shop page, Scuba Diving's announcement]**: "illustrates 2,138 Indo-Pacific nudibranchs and sea slugs, including many undescribed species"; "185 new species, additional photos and an up-to-date classification"; an identification key **[search]** | The whole Indo-Pacific, "from the Indian Ocean coast of southern Africa and the Red Sea to ... Hawaii, Easter Island and the Marquesas"; its Philippine coverage was not checked (the book was not read) | ID features per species, as a field guide gives them; what else each entry holds (size, depth, food) was not checked | The authors' and contributors' photos, in a copyrighted book | **Cite only** (a page or species number per cue) | None; also sold as an e-book |
 | **Sea Slug Forum** (Bill Rudman, Australian Museum) | Species fact sheets and dated questions answered by Rudman and other specialists, footer "1998-2010" **[read]** | Indo-West Pacific; messages from the Philippines, one from Dauin (§1.5) | ID remarks, look-alikes, juveniles and egg masses in the answers (the Spanish dancer's: "a large frilly pink egg mass"); distribution in broad terms ("Tropical Indo-West Pacific") and sizes ("recorded at over 40cm") on the fact sheets | By the named contributors; footer "Copyright © Australian Museum, 1998-2010"; no open licence | **Cite only** (author, date, message URL, as the site asks) | None. Its names predate the revisions (§1.5). The home page now carries an unrelated word ("strattera"), a sign the domain may no longer be the Museum's: no link followed, read only |
-| **SeaLifeBase** | FishBase's sister database for non-fish **[read: the *H. sanguineus* page]** | Indo-Pacific; its *H. sanguineus* is the broad, pre-2023 species ("from East Africa to Red Sea, east to French Polynesia") | Depth ("1 - 50 m ..., usually 10 - 20 m"), maximum length ("25.0 cm TL", Marshall Islands), food ("a sponge that it eats", *Halichondria*), eggs ("coiled rosettes on rocks and coral rubble"), each with its reference number | "The copyright remains with the photographers/institutes. Click on the image to see individual license"; the two picture pages opened say "© ALL RIGHTS RESERVED" | **Cite the facts with their reference**; a photo only if its own page gives an open licence (none found) | No API checked; its citation page answered 404 on the mirror read |
+| **SeaLifeBase** | A species database built like FishBase, for life other than fish **[read: the *H. sanguineus* page]** | Indo-Pacific; its *H. sanguineus* is the broad, pre-2023 species ("from East Africa to Red Sea, east to French Polynesia") | Depth ("1 - 50 m ..., usually 10 - 20 m"), maximum length ("25.0 cm TL", Marshall Islands), food ("a sponge that it eats", *Halichondria*), eggs ("coiled rosettes on rocks and coral rubble"), each with its reference number | "The copyright remains with the photographers/institutes. Click on the image to see individual license"; for *H. sanguineus* all 20 picture pages of its own pictures (15 of the animal, 5 of early life, Philippine ones among them) say "© ALL RIGHTS RESERVED"; the 3 photos uploaded by users were not opened | **Cite the facts with their reference**; a photo only if its own page gives an open licence (none for this species; other species not checked) | No API checked; its citation page answered 404 on the mirror read |
 | **WoRMS** | The world register of marine species names **[read: Terms of use]** | Global | Accepted names, synonyms, status and the source of each; distribution records sparse (*H. lacer*: two, Hawaii and South Africa) | "Images are by default open-access under the terms of the CC BY-NC-SA license": share-alike, out of rule P1 | **Reuse the names** (text CC BY: "The text on the WoRMS pages is open-access under ... (CC-BY)"); no photos | REST API, already used by `tools/build_seaslugs.py` |
 | **iNaturalist** | Observations with photos, identified by the community | 28,045 species-level Research Grade sea-slug observations in the Philippines (list §2) | Presence, place, date, life stage (§1); no ID text | Each observation and photo carries its own licence; "By default ... CC BY-NC"; or "all rights reserved" **[read: iNaturalist Help, "What are licenses?"]**. The terms page answered 403 | **Photos: CC0, CC BY, CC BY-NC** (rule P1), as for the fish; presence by rule C8 | API v1/v2 through `tools/inat.py` (rule C7); also on GBIF as the dataset "iNaturalist Research-grade Observations" (CC BY-NC) |
 | **Wikimedia Commons** and **Wikipedia** | Free media and the encyclopedia | Mixed; the category *Hexabranchus sanguineus* likely holds both dancers, as it predates the split **[guess]** | Wikipedia: summaries with references, e.g. the egg ribbons "range in color from bright red to pink" | Commons, category *Hexabranchus sanguineus*, 95 files **[measured]**: 53 share-alike (out), 32 CC0 or CC BY (22 CC BY 4.0, 4 CC BY 3.0, 3 CC BY 2.0, 3 CC0), 10 "Public domain" | **Commons: CC0 / CC BY files only**, each file's licence and author checked; **Wikipedia text: cite only** (CC BY-SA 4.0, share-alike) | MediaWiki API (it answered 429 to a second request here; pace it like the list's Wikipedia client) |
-| **seaslug.world** (世界のウミウシ) | A Japanese contributed atlas: "648 contributors, 2,224 species, 60,061 photos" on its home page, search by colour, place, contributor or paper **[read]** | Mostly Japan; its GBIF dataset holds 43,770 records, 1,467 in the Philippines **[measured]** | Presence records with a photo voucher | Footer: "All Rights Reserved", reproduction of its images without permission "strictly prohibited" | **Cite only**; its records are on GBIF under CC BY 4.0 (records, not photos) | GBIF dataset "A photographically-vouchered global citizen science dataset of sea slugs ... from the SEASLUG.WORLD platform since 2015" (CC BY 4.0) |
+| **seaslug.world** (世界のウミウシ) | A Japanese contributed atlas: 648 contributors, 2,224 species and 60,061 photos on its home page; search by colour, place, contributor or paper **[read; translated from Japanese]** | Mostly Japan; its GBIF dataset holds 43,770 records, 1,467 in the Philippines **[measured]** | Presence records with a photo voucher | Footer: "All Rights Reserved" (in English), and in Japanese that reproducing its images or other content without permission is strictly prohibited **[translated]** | **Cite only**; its records are on GBIF under CC BY 4.0 (records, not photos) | GBIF dataset "A photographically-vouchered global citizen science dataset of sea slugs ... from the SEASLUG.WORLD platform since 2015" (CC BY 4.0) |
 | **Sea Slugs of Hawaii** | "The culmination of 47 years of our study", first meant as a book **[read]** | Hawaii only | Species pages, maps, references, a glossary | "All photos are copyright of the credited photographer" | **Cite only**, and only for species also confirmed in the Philippines (rule C6) | None |
 | **Nudi Pixel** | A photo identification site, Indonesia-based, 2007, relaunched in August 2024 as a community platform with expert votes **[read: About]** | Indo-Pacific; its GBIF dataset holds 45,272 records, 8,118 in the Philippines **[measured]** | Species, place, date per photo | "Copyright © 2007-2026 by Nudi Pixel. All materials may not be reproduced ... without written permission ... All photographs ... copyrighted to the respective photographers" | **Cite only**; its records are on GBIF under CC BY 4.0 (the media there carry no licence) | GBIF dataset "Nudi Pixel Nudibranch and Sea Slug Observations" (CC BY 4.0), shared through OBIS |
-| **California Academy of Sciences, Verde Island Passage** | Expeditions (2011 Hearst, 2014, 2015) **[read: the Academy's 2015 expedition page]**: in spring 2015 "nearly 50 scientists", seven weeks, "more than 100 species that are completely new to science" | Batangas and Mindoro, the Philippines | The specimens are in the CAS Invertebrate Zoology collection, on GBIF (CC0): e.g. 5 preserved *H. lacer* from the Philippines **[measured]** | The Academy's own photos, "© California Academy of Sciences" | **Cite**; specimen records CC0 | GBIF API |
+| **California Academy of Sciences, Verde Island Passage** | Expeditions; the 2015 one "the third such Academy-led expedition to the Philippines since 2011" **[read: the Academy's 2015 expedition page]**: in spring 2015 "nearly 50 scientists", seven weeks, "more than 100 species that are completely new to science" | Batangas and Mindoro, the Philippines | The specimens are in the CAS Invertebrate Zoology collection, on GBIF (CC0): e.g. 5 preserved *H. lacer* from the Philippines **[measured]** | The Academy's own photos, "© California Academy of Sciences" | **Cite**; specimen records CC0 | GBIF API |
 | **Gosliner and colleagues on Philippine sea slugs** | Papers from those expeditions **[search: titles only]**: new Aglajidae from Anilao and Tingloy (Proceedings of the CAS); the bat-winged slugs (Gastropteridae) of the Verde Island Passage (Ong, Hallas & Gosliner); "Sleuthing cryptic Chromodorids ... adding to Philippine marine biodiversity" (Philippine Journal of Systematic Biology 2020, its DOI resolver answered 503) | The Philippines | Descriptions, diagnostic features, distribution of the species they treat | Each paper's own terms (not checked) | **Cite**, one cue per paper and page | None. Gosliner, in a 2016 Rappler interview: "about 6,000 known species of sea slugs worldwide. About 1,000 of them could be found in the Philippines" **[read]** |
 | **Other: Plazi, GBIF** | Plazi: treatments extracted from papers (the *Hexabranchus* revision's among them); GBIF: the occurrence aggregator behind the rows above | Global | Plazi: the treatment text and figure captions; GBIF: occurrences per dataset | Plazi: "No known copyright restrictions apply", the site CC0; GBIF: each dataset's licence | Plazi: **reuse with the citation**; GBIF: per dataset | Both have public APIs (GBIF's used here) |
 
@@ -173,8 +179,10 @@ Proposals **[guess]**, to settle when the sheets are written (study §9):
 - **Wikimedia Commons as a complement for thin species** **[guess]**: only CC0 and CC BY files, each checked for its
   licence, author and species, never share-alike. Its "Public domain" files are not in rule P1's list: Pierre's to
   decide.
-- **No photos from** the book, the Sea Slug Forum, SeaLifeBase (the pictures checked are all rights reserved), Nudi
-  Pixel, seaslug.world or Sea Slugs of Hawaii: all are the photographers' own, with no open licence.
+- **SeaLifeBase only where a picture page gives an open licence**, as the FishBase route does for the fish (rule P1);
+  none of *H. sanguineus*'s 20 does, other species not checked.
+- **No photos from** the book, the Sea Slug Forum, Nudi Pixel, seaslug.world or Sea Slugs of Hawaii: all are the
+  photographers' own, with no open licence.
 
 ## Appendix A. The circle-1 observations annotated "Life Stage: Juvenile" (pulled 2026-11-15)
 
@@ -206,7 +214,7 @@ The 6 *H. sanguineus* observations from the Philippines that show only an egg ri
 | Source | Page | Read |
 |---|---|---|
 | Sea Slug Forum | <http://www.seaslugforum.net/>, `/factsheet/hexasang`, `/find/1013`, `/find/2976` | yes; `/about` HTTP 404 |
-| SeaLifeBase | <https://www.sealifebase.se/summary/Hexabranchus-sanguineus.html>, its thumbnails page and two picture pages | yes; `/summary/citation.php` HTTP 404 |
+| SeaLifeBase | <https://www.sealifebase.se/summary/Hexabranchus-sanguineus.html>, its thumbnails page and its 20 picture pages | yes; `/summary/citation.php` HTTP 404 |
 | WoRMS | <https://www.marinespecies.org/about.php>; REST `AphiaDistributionsByAphiaID` for 220381 and 1571927 | yes |
 | iNaturalist | API v1 `observations`, `controlled_terms`, `taxa`; <https://help.inaturalist.org/en/support/solutions/articles/151000175695> | yes; `/pages/terms` HTTP 403 |
 | Wikimedia | Commons API, category *Hexabranchus sanguineus*; <https://en.wikipedia.org/wiki/Spanish_dancer> | yes; a second Commons category HTTP 429, not retried |
@@ -217,6 +225,6 @@ The 6 *H. sanguineus* observations from the Philippines that show only an egg ri
 | The guide | <https://www.reef.org/products/nudibranch-sea-slug-identification-indo-pacific-2nd-edition>, <https://www.scubadiving.com/new-nudibranch-id-book-released-by-new-world-publications> | yes |
 | CAS | <https://docent.calacademy.org/learn-explore/scientific-expeditions/2015-philippine-biodiversity-expedition> | yes |
 | Rappler | <https://www.rappler.com/environment/141040-nudibrachs-sea-slugs-new-discoveries/> (2016-07-31) | yes |
-| Plazi | the *H. lacer* treatment, <https://tb.plazi.org/GgServer/xhtml/706C87DEFFF1C23119D5695B4FA9F394> | yes |
+| Plazi | three treatments of Tibiriçá et al. 2023: `706C87DEFFF1C23119D5695B4FA9F394` and `706C87DEFFF3C2301A6D6A244839F138` (*H. lacer*), `706C87DEFFD3C21319D569104891F724` (*H. marginatus* var. *moebii*), each at <https://tb.plazi.org/GgServer/xhtml/ID> | yes |
 | Springer | the Tibiriçá et al. 2023 PDF | no: redirected to a login, not fetched another way |
 | PJSB | <https://doi.org/10.26757/pjsb2020b14014> | no: HTTP 503 |

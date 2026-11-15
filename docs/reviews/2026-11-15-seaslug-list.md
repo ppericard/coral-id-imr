@@ -388,7 +388,7 @@ both:
 - **Egg ribbons, counted afterwards** ([sources note](2026-11-15-seaslug-sources.md) §1.3): 5 of *H. sanguineus*'s 13
   Philippine observations, both open ones among them, are egg ribbons only (annotated "Life Stage: Egg"). Without them
   it has **8** (all CC BY-NC), so 43 of the 45 have 12 or more from the Philippines alone; and 24 open and 251 NC worldwide (36 and 360 above). 161 of its 544
-  Research Grade observations worldwide are its egg rosettes. The other 44 species lose at most 3 worldwide.
+  Research Grade observations worldwide are its egg rosettes. *H. lacer* loses 7 of 1,269 worldwide (0 in the Philippines), the other 43 species at most 3.
 - **Open licences only (CC0 / CC BY)**, worldwide: 41 of 45 have 12 or more. Below 12: *Melibe colemani* (7), *Jorunna
   parva*, *Thecacera pacifica* (8 each), *Reticulidia halgerda* (11). Three of the four are stars: the sought-after
   species lean on CC BY-NC, as the study found.
