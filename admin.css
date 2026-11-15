@@ -5540,6 +5540,10 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
 .adm-ftodo {
   flex-wrap: wrap;
 }
+/* To do › All on the fish side: its photo work's counts, links among buttons, styled alike (no underline). */
+a.adm-fchip {
+  text-decoration: none;
+}
 .adm-fishcovw {
   overflow-x: auto;
   max-width: 100%;
