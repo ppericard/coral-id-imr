@@ -320,6 +320,56 @@ test('fishCov and fishLook: per family, genus and species, the photos in play, t
   );
 });
 
+test('fishCovTodo and fishCandTodo: the counts of Coverage’s To do and of the candidates, To do › All’s fish lines', () => {
+  const U = [
+      {
+        id: 'f:A',
+        name: 'As',
+        species: ['s1', 's2'],
+        phase: [],
+        genera: [
+          {id: 'g:X', name: 'X', species: ['s1']},
+          {id: 'g:Y', name: 'Y', species: ['s2']}
+        ],
+        imr: 'A'
+      },
+      {id: 'f:B', name: 'Bs', species: ['s3'], phase: [], genera: [{id: 'g:Z', name: 'Z', species: ['s3']}]}
+    ],
+    species = {s1: {name: 'X one', circle: 1}, s2: {name: 'Y two', circle: 1}, s3: {name: 'Z three', circle: 3}},
+    play = {s1: Array.from({length: 8}, (_, i) => ({f: `a${i}`, o: `o${i}`})), s2: [{f: 'b0', o: 'p0'}]},
+    cand = {s2: [{f: 'w1'}], s3: [{f: 'w3'}]},
+    F = {genera: {'f:A': {ok: 1}}},
+    C = A.fishCov(U, play, species, cand, F);
+  // s2 and s3 under target with a candidate waiting, s3 with no photo; f:A validated but short of easy photos, f:B not ready
+  assert.deepStrictEqual(A.fishCovTodo(C, F), [
+    ['spwait', 'sp', 'species under target with candidates waiting', 2],
+    ['spnone', 'sp', 'species with no photo in play', 1],
+    ['famv', 'fam', 'families validated but incomplete', 1],
+    ['famnr', 'fam', 'families not ready to validate', 2]
+  ]);
+  // the rows a filter keeps (the IMR families only, as Coverage's All | IMR): a count of 0 is left out
+  assert.deepStrictEqual(
+    A.fishCovTodo(C, F, r => r.fam === 'f:A').map(x => [x[0], x[3]]),
+    [
+      ['spwait', 1],
+      ['famv', 1],
+      ['famnr', 1]
+    ]
+  );
+  assert.deepStrictEqual(
+    A.fishCovTodo(C, {}).map(x => x[0]),
+    ['spwait', 'spnone', 'famnr'],
+    'no family validated'
+  );
+  // the same row tests as Coverage's chips filter its rows with (admin.js renderFishCov)
+  A.FISHCOV_TODO.forEach(([k, lv, , fn]) =>
+    assert.strictEqual(C[lv].filter(r => fn(r, F)).length, (A.fishCovTodo(C, F).find(x => x[0] === k) || [0, 0, 0, 0])[3], k)
+  );
+  // the candidates: those the swiper shows by default, never a Check (Pierre, 2026-11-09), one at target or set aside
+  assert.strictEqual(A.fishCandTodo([{}, {chk: true}, {full: true}, {aside: true}, {nph: true}]), 2);
+  assert.strictEqual(A.fishCandTodo(null), 0);
+});
+
 test('fishCov counts a candidate sent with Not this as waiting in its new species (Codex review #659)', () => {
   const U = [{id: 'f:A', name: 'As', species: ['s1', 's2'], phase: [], genera: [{id: 'g:X', name: 'X', species: ['s1', 's2']}]}],
     species = {s1: {name: 'X one'}, s2: {name: 'X two'}},
