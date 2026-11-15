@@ -501,8 +501,9 @@ to 102, the circle-1 stars left out). Its candidate photos were fetched into `se
 
 Nothing was judged, downloaded or uploaded. Circle 1's 905 candidates are unchanged (compared record by record).
 
-**Result [measured]** (pulled 2026-11-15, 20:00-20:03 Manila; 85 requests through `tools/inat.py`, rule C7; a rerun with
-`--offline` writes the same bytes):
+**Result [measured]** (pulled 2026-11-15, 20:02-20:03 Manila; 26 requests through `tools/inat.py`, rule C7: 59 species
+asked together in 24 pages of 200, *Favorinus tsuruganus* on its own, one `species_counts`; a rerun with `--offline`
+writes the same bytes):
 - **1,200 candidates, 20 for each of the 60 species, all from the Philippines** (128 of them within 40 km of Dauin), none
   from abroad. **No species is short**: none below the 20 candidates, so none below the start of 6.
 - Licences: 1,090 CC BY-NC, 82 CC BY, 28 CC0. 15 are Pierre's own, taken like anyone's (no priority, Research Grade only).
