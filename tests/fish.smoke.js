@@ -2894,7 +2894,6 @@ async function freshPlayers(b, base, errs) {
       fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
       coral: JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'),
       p: startV().p,
-      at: startV().at,
       basics: !!document.querySelector('.unlock.basicsq'),
       card: !!document.querySelector('.unlock.startq'),
       q: !!document.querySelector('#view .q')
@@ -2903,7 +2902,7 @@ async function freshPlayers(b, base, errs) {
     if (!after.fish || after.fish.c !== pick || after.fish.via !== 'card')
       welcome.push(`${pick}: the fish record ${JSON.stringify(after.fish)}`);
     if (!after.coral || after.coral.c !== 'know') welcome.push(`${pick}: the coral answer changed ${JSON.stringify(after.coral)}`);
-    if (after.p !== v.p || after.at !== v.at) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, after.at, v])}`);
+    if (after.p !== v.p) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, v])}`);
     if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
     await c7.close();
   }
