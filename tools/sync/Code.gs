@@ -2817,23 +2817,6 @@ function autoUpdate_(){
 // date, so by the new code itself, within 15 minutes of its install; a Script Property (ONCE_<name>) marks each one done,
 // the Deploy log says what it changed. A failed one is tried again at the next run.
 const ONCE_ = {
-  // idkey-migration: begin
-  // v38: the Coral Finder tool became the Coral ID Key (#finder → #idkey, #lab-finder → #lab-idkey; the book keeps its
-  // name). The page names in the logged rows: Pages and Events (Page; Detail: a visit summary's page names, the load
-  // times' first and next page) and Reports (Where).
-  idkey: () => {
-    const ss = SpreadsheetApp.getActiveSpreadsheet(), out = [];
-    const ren = x => typeof x === 'string' ? x.replace(/(^|")(lab-)?finder(?=$|["|;])/g, '$1$2idkey') : x;
-    [[PAGES_TAB, 6, 2], ['Events', 6, 2], ['Reports', REP.indexOf('Where') + 1, 1]].forEach(([tab, col, w]) => {
-      const sh = ss.getSheetByName(tab); if (!sh || sh.getLastRow() < 2) return;
-      const rg = sh.getRange(2, col, sh.getLastRow() - 1, w), v = rg.getValues(); let n = 0;
-      const nv = v.map(r => r.map(x => { const y = ren(x); if (y !== x) n++; return y; }));
-      if (n) rg.setValues(nv);
-      out.push(tab + ' ' + n);
-    });
-    return 'page names finder → idkey: ' + out.join(', ') + ' cells';
-  },
-  // idkey-migration: end
   // tz-migration: begin
   // v44: every answer logged before the UTC offset column came from players on Philippine time (Pierre, 2026-11-04):
   // the empty UTC offset cells of the rows there now get +480; a cell that holds a value is never touched.
@@ -3294,69 +3277,6 @@ const CORE_ = (function () { const module = {exports: {}};
       return [];
     }
   }
-  // idkey-migration: begin
-  // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
-  // Key; the book keeps its name). Alpha (rule W3): no old name is read anywhere else; this moves the data
-  // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
-  // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
-  // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
-  // -sub). Idempotent: once nothing is left under an old name it changes nothing (a value the sheet sends back from
-  // before is moved at the next start). app.js and admin.js run it at start-up, after migrateStorage. Delete it (and
-  // its test, tests/idkey.test.js) once every device has started the renamed app. Returns the keys it wrote.
-  const IDKEY_OLD = {finder: 'idkey', 'lab-finder': 'lab-idkey', '~fcov': '~kcov'};
-  function migrateIdKey(s) {
-    try {
-      s = s || localStorage; // storage blocked: nothing to move
-    } catch (e) {
-      return [];
-    }
-    const done = [],
-      move = (o, n) => {
-        const v = s.getItem(o);
-        if (v === null) return;
-        if (s.getItem(n) === null) s.setItem(n, v);
-        s.removeItem(o);
-        done.push(n);
-      },
-      edit = (k, f) => {
-        const v = s.getItem(k);
-        let o;
-        try {
-          o = JSON.parse(v);
-        } catch (e) {}
-        if (!isObj(o)) return;
-        const w = JSON.stringify(f(o));
-        if (w !== v) (s.setItem(k, w), done.push(k));
-      },
-      // An object keyed by page or tool name: the old name's entry under the new one, unless the new one is set.
-      names = o => {
-        Object.keys(IDKEY_OLD).forEach(a => {
-          if (!Object.prototype.hasOwnProperty.call(o, a)) return;
-          if (!Object.prototype.hasOwnProperty.call(o, IDKEY_OLD[a])) o[IDKEY_OLD[a]] = o[a];
-          delete o[a];
-        });
-        return o;
-      },
-      // An object whose values are page names.
-      values = o => {
-        Object.keys(o).forEach(
-          k => typeof o[k] === 'string' && Object.prototype.hasOwnProperty.call(IDKEY_OLD, o[k]) && (o[k] = IDKEY_OLD[o[k]])
-        );
-        return o;
-      };
-    try {
-      const keys = [];
-      for (let i = 0; i < s.length; i++) keys.push(s.key(i));
-      keys.filter(k => k.startsWith('reefid-finder-')).forEach(k => move(k, 'reefid-idkey-' + k.slice(14)));
-      move('reefid-admin-fcov', 'reefid-admin-kcov');
-      edit('reefid-sync-size', names);
-      edit('reefid-lab-votes', names);
-      edit('reefid-admin-view', values);
-      edit('reefid-admin-sub', values);
-    } catch (e) {}
-    return done;
-  }
-  // idkey-migration: end
   // A player's data from the sheet or a progress file, which may hold the old names (an app from before the rename
   // saved it), the new ones, or both (withLegacy): with the new names only, the new one winning.
   function keysIn(d) {
@@ -6259,8 +6179,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
   // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
   // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
-  // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
-  // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
+  // the shaky signal that paces the opening of genera); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
   // launch question". Each subject asks its own (SUBJECTS start: its words; the fish welcome question, Pierre 2026-11-04),
   // with these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the
@@ -6289,9 +6208,9 @@ const CORE_ = (function () { const module = {exports: {}};
     MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
     // [id, variables], in order from the lowest level to the highest (startBand); their words per subject: SUBJECTS start.
     opts: [
-      ['new', {p: 0, at: 50, basics: 1}],
-      ['imr', {p: 0.5, at: 30, basics: 0}],
-      ['know', {p: 1.25, at: 20, basics: 0}]
+      ['new', {p: 0, basics: 1}],
+      ['imr', {p: 0.5, basics: 0}],
+      ['know', {p: 1.25, basics: 0}]
     ]
   };
   const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
@@ -8877,7 +8796,7 @@ const CORE_ = (function () { const module = {exports: {}};
       m = pageName(k, pre);
     return m === pre + 'other' ? s : m;
   }
-  // This device's data under the old names (app.js and admin.js at start-up, after migrateIdKey): the photo size per page
+  // This device's data under the old names (app.js and admin.js at start-up, after migrateStorage): the photo size per page
   // (reefid-sync-size, keyed by page name: genera, genus, pair, idkey, lab-gallery, lab-elim; tips dropped), the events
   // still queued (reefid-evq: each one's address, a visit summary's page names), the photos flagged (reefid-photo-flags:
   // where they were seen). Idempotent (a value the sheet sends back from an older device is moved at the next start).
@@ -9521,7 +9440,6 @@ const CORE_ = (function () { const module = {exports: {}};
     withOldNames,
     migrateKeys,
     migrateStorage,
-    migrateIdKey,
     keysIn,
     LEGACY_SEND,
     withLegacy,

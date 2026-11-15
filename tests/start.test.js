@@ -60,13 +60,13 @@ test('the question: three answers, in order, each with its variables; "new" is t
     CHOICE.opts.map(o => o[0]),
     ['new', 'imr', 'know']
   );
-  CHOICE.opts.forEach(o => assert.ok(typeof o[1].p === 'number' && typeof o[1].at === 'number', o[0]));
+  // Two variables only: the open-all offer's at went with that card (Pierre, 2026-11-12, Q337).
+  CHOICE.opts.forEach(o => assert.deepStrictEqual(Object.keys(o[1]).sort(), ['basics', 'p'], o[0]));
+  CHOICE.opts.forEach(o => assert.ok(typeof o[1].p === 'number', o[0]));
   assert.deepStrictEqual(startVars(), startVars('new'), 'no answer: the default player');
   assert.strictEqual(startVars('new').p, 0, 'new: the level of before');
-  assert.strictEqual(startVars('new').at, 50, 'new: the offer when it came before');
   assert.ok(startVars('new').basics && !startVars('imr').basics && !startVars('know').basics, 'Coral basics first for new only');
   assert.ok(startVars('new').p < startVars('imr').p && startVars('imr').p < startVars('know').p);
-  assert.ok(startVars('new').at >= startVars('imr').at && startVars('imr').at >= startVars('know').at);
 });
 
 test('playerStart: the answers are shrunk towards the level said, not towards 0; p 0 is the rule of before', () => {
@@ -292,7 +292,7 @@ test('Coral basics on the "lower" card: the start variables one band down, silen
   );
   assert.deepStrictEqual(o.h[o.h.length - 1].slice(3), ['ease', 'know', o.t], 'an ease event in the history, bound to the choice it eased');
   assert.strictEqual(o.ease[0], 'imr');
-  assert.deepStrictEqual(M.startV(), startVars('imr'), "the IMR course's prior and open-all offer");
+  assert.deepStrictEqual(M.startV(), startVars('imr'), "the IMR course's prior");
   // The replay (core.js startPriorAt) takes the band below from its time on.
   assert.strictEqual(C.startPriorAt(o, o.ease[2] - 1), startVars('know').p);
   assert.strictEqual(C.startPriorAt(o, o.ease[2]), startVars('imr').p);
