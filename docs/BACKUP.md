@@ -27,7 +27,7 @@ It reaches pCloud one of two ways, set in the script's properties:
 - **When**: every Sunday at about 02:00 Manila time (a weekly trigger, `backupWeekly`), and whenever Pierre clicks
   **Reef ID > Back up to pCloud now** in the sheet's menu.
 - **Kept**: with an upload link, **everything**: the script cannot delete through the link, so Pierre deletes old
-  backups by hand (keep the 12 newest, about three months, as the privacy page says). With a token, the **12 newest**
+  backups by hand (for example keeping the 12 newest, about three months). With a token, the **12 newest**
   backups of that folder; older ones are deleted, only files named as above, only in that folder, and only after the
   new file was uploaded. pCloud keeps a deleted file in its trash for a while (its own retention), then it is gone.
 - **Log**: one line per run in the sheet's **Deploy log** tab, starting `pCloud backup:`. It gives the file name, or why

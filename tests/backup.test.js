@@ -398,9 +398,10 @@ test('upload link: one uploadtolink request to eapi.pcloud.com, the file as mult
   assert.ok(!shown(s3, m3).includes(CODE));
 });
 
-test('upload link: the code as pasted (spaces, or the whole link) and a malformed one', () => {
+test('upload link: the code as pasted (spaces, code=, or the whole link) and a malformed one', () => {
   for (const v of [
     '  ' + CODE + '\n',
+    'code=' + CODE,
     'https://e.pcloud.link/publink/show?code=' + CODE,
     'https://u.pcloud.link/x?a=1&code=' + CODE + '#y'
   ]) {

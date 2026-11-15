@@ -2800,7 +2800,7 @@ function backup_(){
 // characters: letters, digits, - and _ are accepted).
 function backupCode_(v){
   v = String(v || '').trim();
-  const m = /[?&#]code=([^&#\s]+)/.exec(v);
+  const m = /(?:^|[?&#])code=([^&#\s]+)/.exec(v);
   if (m) v = m[1];
   return /^[A-Za-z0-9_-]{4,200}$/.test(v) ? v : '';
 }
