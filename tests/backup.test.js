@@ -2,7 +2,8 @@
 // in-memory sheet (tests/gas.js) with UrlFetchApp stubbed, so nothing reaches Google or pCloud (rule D1). Checks the file's
 // name, the requests' shape (the token only in the Authorization header, only to pCloud's two hosts), that the token is
 // never logged or returned, the paths without a token or an authorisation, the region fallback, the retention, and the
-// .xlsx's parts.
+// .xlsx's parts. The upload-link path (sheet vNEXT, PCLOUD_UPLOAD_CODE; Pierre, 2026-11-15): its one uploadtolink
+// request, the host's default and allow-list, the code never logged or returned, the token path first when both are set.
 const test = require('node:test'),
   assert = require('node:assert');
 const {loadCodeGs} = require('./gas.js');
@@ -46,7 +47,7 @@ const extend = more => ctx => {
 };
 const ok = o => ({getResponseCode: () => 200, getContentText: () => JSON.stringify(o)});
 // A pCloud stand-in: answers each method, records every request (url, options).
-function pcloud({hostOk = ['api.pcloud.com'], contents = [], upload = null, list = null, del = () => 0} = {}) {
+function pcloud({hostOk = ['api.pcloud.com'], contents = [], upload = null, list = null, del = () => 0, link = null} = {}) {
   const calls = [];
   const fetch = (url, o) => {
     const u = new URL(url),
@@ -54,6 +55,8 @@ function pcloud({hostOk = ['api.pcloud.com'], contents = [], upload = null, list
       q = Object.fromEntries(u.searchParams);
     calls.push({url, host: u.host, method: m, q, o});
     if (!/pcloud\.com$/.test(u.host)) return null;
+    // An upload link needs no login: it answers on either host (pCloud's docs: "Auth no").
+    if (m === 'uploadtolink') return typeof link === 'function' ? link(q) : ok(link || {result: 0});
     if (!hostOk.includes(u.host)) return ok({result: 2000, error: 'Log in failed.'});
     if (m === 'createfolderifnotexists') return ok({result: 0, metadata: {folderid: q.name === 'IMR' ? 111 : 222, name: q.name}});
     if (m === 'uploadfile') return ok(upload || {result: 0, fileids: [999], metadata: [{fileid: 999, name: q.filename, size: 1887437}]});
@@ -347,6 +350,189 @@ test('scale: 20,000 answer rows, one time zone lookup per hour of the log, each 
   // The last row (no header here: row 20000 is answer 19999): its time in Manila (UTC+8) as a serial day.
   const last = +/<c r="B20000" s="1"><v>([\d.]+)<\/v><\/c>/.exec(z.parts['xl/worksheets/sheet1.xml'])[1];
   assert.ok(Math.abs(last - ((t0 + 19999 * 9e3 + 8 * 36e5) / 864e5 + 25569)) < 1e-9, String(last));
+});
+
+// The upload-link path (vNEXT; Pierre, 2026-11-15: an upload link instead of a pCloud OAuth app). A made-up code.
+const CODE = 'kZfakeUploadLinkCode0123456789Xy';
+// What the script showed or kept, without the request URLs (the code is in the upload's URL, the only form pCloud's docs give).
+const shown = (s, ret) => JSON.stringify(Object.values(s.sheets).map(sh => sh.rows)) + String(ret) + JSON.stringify(s.toasts);
+// The code only ever goes to a pCloud API host, in an uploadtolink request.
+const codeOnlyToLink = calls =>
+  calls.forEach(c => {
+    if (c.url.includes(CODE)) {
+      assert.ok(['api.pcloud.com', 'eapi.pcloud.com'].includes(c.host), c.url);
+      assert.strictEqual(c.method, 'uploadtolink');
+    }
+  });
+
+test('upload link: one uploadtolink request to eapi.pcloud.com, the file as multipart, no token, no retention', () => {
+  const pc = pcloud();
+  const s = load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: CODE}});
+  const m = run(s);
+  const name = s.ctx.backupName_(new Date());
+  assert.strictEqual(m, 'pCloud backup: saved ' + name + ' (upload link; old backups are not pruned)');
+  assert.deepStrictEqual(
+    pc.calls.map(c => [c.host, c.method, c.q]),
+    [['eapi.pcloud.com', 'uploadtolink', {code: CODE, names: 'Reef ID backup', nopartial: '1'}]]
+  );
+  const o = pc.calls[0].o;
+  assert.ok(pc.calls[0].url.startsWith('https://eapi.pcloud.com/uploadtolink?'));
+  assert.strictEqual(o.method, 'post');
+  assert.strictEqual(o.headers, undefined, 'no Authorization header on this path');
+  assert.strictEqual(o.muteHttpExceptions, true);
+  assert.deepStrictEqual(Object.keys(o.payload), ['file']);
+  assert.strictEqual(o.payload.file.name, name);
+  assert.strictEqual(o.payload.file.type, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  assert.ok(o.payload.file.parts['xl/worksheets/sheet1.xml'].includes('<c r="A2" t="s">'), 'the RAs tab is in the file');
+  assert.ok(!shown(s, m).includes(CODE));
+  assert.deepStrictEqual(deployLog(s), [m]);
+  // A reply that gives the file's size: it is shown.
+  const pc2 = pcloud({link: {result: 0, metadata: [{name, size: 2097152}]}});
+  assert.match(run(load({fetch: pc2.fetch, props: {PCLOUD_UPLOAD_CODE: CODE}})), /saved reef-id-sheet-\S+ \(2\.0 MB\) \(upload link; old/);
+  // Back up now from the menu: the toast holds the line, not the code.
+  const pc3 = pcloud();
+  const s3 = load({fetch: pc3.fetch, props: {PCLOUD_UPLOAD_CODE: CODE}});
+  const m3 = s3.ctx.backupNow();
+  assert.match(m3, /upload link; old backups are not pruned/);
+  assert.strictEqual(s3.toasts[0].msg, m3);
+  assert.ok(!shown(s3, m3).includes(CODE));
+});
+
+test('upload link: the code as pasted (spaces, or the whole link) and a malformed one', () => {
+  for (const v of [
+    '  ' + CODE + '\n',
+    'https://e.pcloud.link/publink/show?code=' + CODE,
+    'https://u.pcloud.link/x?a=1&code=' + CODE + '#y'
+  ]) {
+    const pc = pcloud();
+    const s = load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: v}});
+    assert.match(run(s), /saved .* \(upload link;/, v);
+    assert.strictEqual(pc.calls[0].q.code, CODE);
+  }
+  for (const v of ['abc', 'has space inside', CODE + '"><', 'x'.repeat(201)]) {
+    const pc = pcloud();
+    const s = load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: v}});
+    const m = run(s);
+    assert.match(m, /not configured \(PCLOUD_UPLOAD_CODE must be the code= value/);
+    assert.ok(!m.includes(v), 'the value is never echoed');
+    assert.strictEqual(pc.calls.length, 0);
+  }
+  // Blank: neither path configured.
+  const pc = pcloud();
+  const m = run(load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: '   '}}));
+  assert.match(m, /not configured \(no PCLOUD_TOKEN nor PCLOUD_UPLOAD_CODE/);
+  assert.strictEqual(pc.calls.length, 0);
+});
+
+test('upload link: PCLOUD_HOST picks the host, only one of pCloud API hosts; the code is sent nowhere else', () => {
+  for (const [host, to] of [
+    ['api.pcloud.com', 'api.pcloud.com'],
+    [' EAPI.pcloud.com ', 'eapi.pcloud.com']
+  ]) {
+    const pc = pcloud();
+    run(load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: CODE, PCLOUD_HOST: host}}));
+    assert.deepStrictEqual(
+      pc.calls.map(c => c.host),
+      [to]
+    );
+  }
+  for (const host of ['evil.example.com', 'eapi.pcloud.com.evil.com', 'u.pcloud.link', 'my.pcloud.com']) {
+    const pc = pcloud();
+    const s = load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: CODE, PCLOUD_HOST: host}});
+    assert.match(run(s), /not configured \(PCLOUD_HOST must be/);
+    assert.strictEqual(pc.calls.length, 0, host);
+  }
+  // backupLink_ checks the host itself too.
+  const pc = pcloud();
+  const s = load({fetch: pc.fetch});
+  assert.match(
+    s.ctx.backupLink_(CODE, 'evil.example.com', x => x),
+    /PCLOUD_HOST must be/
+  );
+  assert.strictEqual(pc.calls.length, 0);
+  // PCLOUD_FOLDER_ID does not apply here (the link decides the folder): ignored, even malformed.
+  const pc2 = pcloud();
+  assert.match(run(load({fetch: pc2.fetch, props: {PCLOUD_UPLOAD_CODE: CODE, PCLOUD_FOLDER_ID: 'x'}})), /saved/);
+});
+
+test('upload link: a refused upload logs pCloud numeric result in plain words, never its text nor the code', () => {
+  const cases = [
+    [{result: 7004, error: 'This link has expired. ' + CODE}, /failed \(result 7004: the link has expired\); check PCLOUD_UPLOAD_CODE/],
+    [{result: 7002, error: 'x'}, /result 7002: the link was deleted\)/],
+    [{result: 7007, error: 'x'}, /result 7007: the link is full/],
+    [{result: 7008, error: 'x'}, /result 7008: the link has reached its file limit\)/],
+    [{result: 5001, error: 'Internal upload error.'}, /failed \(result 5001\); check/]
+  ];
+  for (const [link, re] of cases) {
+    const pc = pcloud({link});
+    const s = load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: CODE}});
+    const m = run(s);
+    assert.match(m, re);
+    assert.ok(!/expired\.|Internal upload/.test(m), 'never pCloud error text');
+    assert.ok(!shown(s, m).includes(CODE));
+  }
+  // Not pCloud's JSON (an HTTP error page): the status as a negative number.
+  const pc = pcloud({link: () => ({getResponseCode: () => 502, getContentText: () => '<html>Bad gateway ' + CODE + '</html>'})});
+  const s = load({fetch: pc.fetch, props: {PCLOUD_UPLOAD_CODE: CODE}});
+  const m = run(s);
+  assert.match(m, /failed \(result -502\)/);
+  assert.ok(!shown(s, m).includes(CODE));
+});
+
+test('upload link: an exception that echoes the request URL is logged without the code', () => {
+  for (const [msg, re] of [
+    [
+      'Address unavailable: https://eapi.pcloud.com/uploadtolink?code=' + CODE + '&names=Reef%20ID%20backup',
+      /^pCloud backup: failed: Address unavailable: .*code=\[code\]&names/
+    ],
+    [
+      'You do not have permission to call UrlFetchApp.fetch (' + CODE + ')',
+      /^pCloud backup: needs authorisation \(docs\/BACKUP\.md\): .*\(\[code\]\)/
+    ]
+  ]) {
+    const s = load({
+      props: {PCLOUD_UPLOAD_CODE: CODE},
+      fetch: url => {
+        if (/pcloud/.test(url)) throw new Error(msg);
+      }
+    });
+    const m = run(s);
+    assert.match(m, re);
+    assert.ok(!shown(s, m).includes(CODE));
+  }
+});
+
+test('both set: the token path runs, says so, and never sends the code', () => {
+  const pc = pcloud();
+  const s = load({fetch: pc.fetch, props: {PCLOUD_TOKEN: TOKEN, PCLOUD_UPLOAD_CODE: CODE}});
+  const m = run(s);
+  assert.match(m, /^pCloud backup: saved reef-id-sheet-\S+ \(1\.8 MB\) \[token path; PCLOUD_UPLOAD_CODE not used\]$/);
+  assert.deepStrictEqual(
+    pc.calls.map(c => c.method),
+    ['createfolderifnotexists', 'createfolderifnotexists', 'uploadfile', 'listfolder']
+  );
+  assert.ok(!pc.calls.some(c => c.url.includes(CODE) || JSON.stringify(c.o.headers).includes(CODE)));
+  pc.calls.forEach(c => assert.deepStrictEqual({...c.o.headers}, {Authorization: 'Bearer ' + TOKEN}));
+  assert.ok(!everywhere(s, m, pc.calls).includes(TOKEN));
+  assert.ok(!shown(s, m).includes(CODE));
+  // The token refused: no fallback to the link (Pierre's precedence), the line says which path ran.
+  const pc2 = pcloud({hostOk: []});
+  const m2 = run(load({fetch: pc2.fetch, props: {PCLOUD_TOKEN: TOKEN, PCLOUD_UPLOAD_CODE: CODE}}));
+  assert.match(m2, /result 2000\); check PCLOUD_TOKEN .*\[token path; PCLOUD_UPLOAD_CODE not used\]$/);
+  assert.ok(!pc2.calls.some(c => c.method === 'uploadtolink'));
+  codeOnlyToLink(pc2.calls);
+  // Without PCLOUD_HOST the token path still tries the US host first (the EU default is the link path's only).
+  assert.strictEqual(pc2.calls[0].host, 'api.pcloud.com');
+  // An exception names both: both scrubbed.
+  const s3 = load({
+    props: {PCLOUD_TOKEN: TOKEN, PCLOUD_UPLOAD_CODE: CODE},
+    fetch: url => {
+      if (/pcloud/.test(url)) throw new Error('boom ' + TOKEN + ' ' + CODE);
+    }
+  });
+  const m3 = run(s3);
+  assert.match(m3, /failed: boom \[token\] \[code\] \[token path/);
+  assert.ok(!shown(s3, m3).includes(CODE) && !shown(s3, m3).includes(TOKEN));
 });
 
 test('the menu, the weekly trigger made once, and Back up now', () => {

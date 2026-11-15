@@ -2696,8 +2696,10 @@ function over_(key, limit, n){
 // logged, stored or returned. PCLOUD_HOST (api.pcloud.com, US accounts, or eapi.pcloud.com, EU accounts) is optional:
 // without it the first call tries both. No token, a refused token or a missing authorisation only writes one line to the
 // Deploy log and returns: nothing here runs in a request, under the script lock or in autoUpdate's path.
+// vNEXT: without PCLOUD_TOKEN, the Script Property PCLOUD_UPLOAD_CODE (the code of a pCloud upload link) sends the file
+// through that link instead (backupLink_: no folder made, no retention); with both set, the token path runs and says so.
 const BACKUP = {HOSTS: ['api.pcloud.com', 'eapi.pcloud.com'], PARENT: 'IMR', FOLDER: 'reef-id-sheet-backups', KEEP: 12,
-  NAME: /^reef-id-sheet-\d{4}-\d{2}-\d{2}\.xlsx$/, HANDLER: 'backupWeekly'};
+  NAME: /^reef-id-sheet-\d{4}-\d{2}-\d{2}\.xlsx$/, HANDLER: 'backupWeekly', LINK_HOST: 'eapi.pcloud.com', UPLOADER: 'Reef ID backup'};
 // The sheet's menu (a simple trigger: no authorisation needed to show it; addMenu needs only this spreadsheet's scope).
 function onOpen(){
   try { SpreadsheetApp.getActiveSpreadsheet().addMenu('Reef ID', [{name: 'Back up to pCloud now', functionName: 'backupNow'}]); } catch (e) {}
@@ -2727,16 +2729,32 @@ function backupName_(d){
   return 'reef-id-sheet-' + Utilities.formatDate(d, tz, 'yyyy-MM-dd') + '.xlsx';
 }
 function backup_(){
-  let token = '';
-  const scrub = s => { s = String(s); return token ? s.split(token).join('[token]') : s; };
+  let token = '', raw = '', code = '';
+  // Every secret out of a text that could be logged, as typed and URL-encoded (a fetch error can echo the request's URL).
+  const scrub = s => {
+    s = String(s);
+    [[token, '[token]'], [raw, '[code]'], [code, '[code]']].forEach(([x, r]) => {
+      if (x) [x, encodeURIComponent(x)].forEach(v => { s = s.split(v).join(r); });
+    });
+    return s;
+  };
+  let log = backupLog_;
   try {
     const pr = PropertiesService.getScriptProperties();
     token = String(pr.getProperty('PCLOUD_TOKEN') || '').trim();
-    if (!token) return backupLog_('not configured (no PCLOUD_TOKEN in the Script Properties)');
+    raw = String(pr.getProperty('PCLOUD_UPLOAD_CODE') || '').trim();
+    code = backupCode_(raw);
+    if (!token && !raw) return log('not configured (no PCLOUD_TOKEN nor PCLOUD_UPLOAD_CODE in the Script Properties)');
     const host = String(pr.getProperty('PCLOUD_HOST') || '').trim().toLowerCase();
-    if (host && BACKUP.HOSTS.indexOf(host) < 0) return backupLog_('not configured (PCLOUD_HOST must be api.pcloud.com or eapi.pcloud.com)');
+    if (host && BACKUP.HOSTS.indexOf(host) < 0) return log('not configured (PCLOUD_HOST must be api.pcloud.com or eapi.pcloud.com)');
+    if (!token) {
+      if (!code) return log('not configured (PCLOUD_UPLOAD_CODE must be the code= value of the pCloud upload link: letters, digits, - or _)');
+      return backupLink_(code, host || BACKUP.LINK_HOST, scrub);
+    }
+    // Both set: the token path runs (it keeps the retention) and every line says so; the code is sent nowhere.
+    if (raw) log = m => backupLog_(m + ' [token path; PCLOUD_UPLOAD_CODE not used]');
     const parent = String(pr.getProperty('PCLOUD_FOLDER_ID') || '').trim();
-    if (parent && !/^\d{1,20}$/.test(parent)) return backupLog_('not configured (PCLOUD_FOLDER_ID must be a pCloud folder id, digits only)');
+    if (parent && !/^\d{1,20}$/.test(parent)) return log('not configured (PCLOUD_FOLDER_ID must be a pCloud folder id, digits only)');
     const name = backupName_(new Date()), file = xlsx_(name);
     // One pCloud call: parameters in the URL (never the token), the token in the header; the reply's numeric result
     // (0 = done), or the HTTP status as a negative number when the reply is not pCloud's JSON.
@@ -2755,27 +2773,62 @@ function backup_(){
       if (j.result === 0 && j.metadata) { h = x; top = String(j.metadata.folderid); break; }
       res = j.result;
     }
-    if (!h) return backupLog_('pCloud refused the token or the folder (result ' + res + '); check PCLOUD_TOKEN' + (parent ? ' and PCLOUD_FOLDER_ID' : '') + ' (docs/BACKUP.md)');
+    if (!h) return log('pCloud refused the token or the folder (result ' + res + '); check PCLOUD_TOKEN' + (parent ? ' and PCLOUD_FOLDER_ID' : '') + ' (docs/BACKUP.md)');
     const dir = parent ? top : folder(h, top, BACKUP.FOLDER);
-    if (!/^\d+$/.test(dir)) return backupLog_('the folder ' + BACKUP.FOLDER + ' could not be made in pCloud');
+    if (!/^\d+$/.test(dir)) return log('the folder ' + BACKUP.FOLDER + ' could not be made in pCloud');
     const up = call(h, 'uploadfile', {folderid: dir, filename: name, nopartial: 1}, {file: file});
     const meta = up.result === 0 && up.metadata && up.metadata[0];
-    if (!meta || !(Number(meta.size) > 0)) return backupLog_('upload of ' + name + ' failed (result ' + up.result + ')');
+    if (!meta || !(Number(meta.size) > 0)) return log('upload of ' + name + ' failed (result ' + up.result + ')');
     const mb = (Number(meta.size) / 1048576).toFixed(1) + ' MB';
     // Retention: only after the upload succeeded, only this folder, only files named as backups, newest names kept.
     const ls = call(h, 'listfolder', {folderid: dir});
     if (ls.result !== 0 || !ls.metadata || !Array.isArray(ls.metadata.contents))
-      return backupLog_('saved ' + name + ' (' + mb + '); old backups not checked (result ' + ls.result + ')');
+      return log('saved ' + name + ' (' + mb + '); old backups not checked (result ' + ls.result + ')');
     const old = ls.metadata.contents.filter(f => f && !f.isfolder && f.fileid && BACKUP.NAME.test(String(f.name)) && String(f.fileid) !== String(meta.fileid))
       .sort((a, b) => (a.name < b.name ? 1 : a.name > b.name ? -1 : 0)).slice(BACKUP.KEEP - 1);
     const gone = old.filter(f => call(h, 'deletefile', {fileid: f.fileid}).result === 0).length;
-    return backupLog_('saved ' + name + ' (' + mb + ')' + (gone ? ', ' + gone + ' older backup' + (gone === 1 ? '' : 's') + ' deleted' : '') +
+    return log('saved ' + name + ' (' + mb + ')' + (gone ? ', ' + gone + ' older backup' + (gone === 1 ? '' : 's') + ' deleted' : '') +
       (gone < old.length ? ', ' + (old.length - gone) + ' could not be deleted' : ''));
   } catch (e) {
     const m = scrub(e && e.message || e);
-    if (/authori[sz]|permission|scope/i.test(m)) return backupLog_('needs authorisation (docs/BACKUP.md): ' + m.slice(0, 200));
-    return backupLog_('failed: ' + m.slice(0, 300));
+    if (/authori[sz]|permission|scope/i.test(m)) return log('needs authorisation (docs/BACKUP.md): ' + m.slice(0, 200));
+    return log('failed: ' + m.slice(0, 300));
   }
+}
+// The code of a pCloud upload link (the Script Property PCLOUD_UPLOAD_CODE): the part after code= of the link; a whole
+// link pasted by mistake gives its code= value. '' when it is not a plausible code (pCloud's docs do not give the code's
+// characters: letters, digits, - and _ are accepted).
+function backupCode_(v){
+  v = String(v || '').trim();
+  const m = /[?&#]code=([^&#\s]+)/.exec(v);
+  if (m) v = m[1];
+  return /^[A-Za-z0-9_-]{4,200}$/.test(v) ? v : '';
+}
+// The upload-link path (vNEXT; Pierre, 2026-11-15: no pCloud OAuth app, an upload link instead, docs/BACKUP.md): one
+// uploadtolink call (pCloud: "Auth no", required code; nopartial optional) with the .xlsx as multipart/form-data, as
+// uploadfile takes it, to the host PCLOUD_HOST or eapi.pcloud.com (Pierre's account is on pCloud's EU servers). The
+// code is a write-only credential: an upload link can neither list nor delete, so this path keeps every backup (Pierre
+// prunes old ones by hand). The code goes in the URL, the only form pCloud documents for it, so every error text is
+// scrubbed (backup_'s scrub, raw and URL-encoded) and only pCloud's numeric result is logged, never its error text; no
+// Authorization header. names (a neutral uploader name) is not in pCloud's API docs, which list code, nopartial and
+// progresshash only; it is sent in case the link asks for an uploader's name (not checked against pCloud: the first
+// run's Deploy log line says). pCloud renames a file whose name is already in the link's folder (its docs), so a second
+// run on one day adds a copy.
+function backupLink_(code, host, scrub){
+  if (BACKUP.HOSTS.indexOf(host) < 0) return backupLog_('not configured (PCLOUD_HOST must be api.pcloud.com or eapi.pcloud.com)');
+  const name = backupName_(new Date()), file = xlsx_(name);
+  const q = {code: code, names: BACKUP.UPLOADER, nopartial: 1};
+  const r = UrlFetchApp.fetch('https://' + host + '/uploadtolink?' + Object.keys(q).map(k => k + '=' + encodeURIComponent(q[k])).join('&'),
+    {method: 'post', payload: {file: file}, muteHttpExceptions: true});
+  let j = null; try { j = JSON.parse(r.getContentText()); } catch (e) {}
+  const res = j && typeof j.result === 'number' ? j.result : -r.getResponseCode();
+  if (res !== 0) {
+    const why = {7002: ': the link was deleted', 7004: ': the link has expired', 7007: ': the link is full (its space limit)',
+      7008: ': the link has reached its file limit'}[res] || '';
+    return backupLog_(scrub('upload of ' + name + ' to the upload link failed (result ' + res + why + '); check PCLOUD_UPLOAD_CODE (docs/BACKUP.md)'));
+  }
+  const meta = Array.isArray(j.metadata) && j.metadata[0], size = meta && Number(meta.size) > 0 ? ' (' + (Number(meta.size) / 1048576).toFixed(1) + ' MB)' : '';
+  return backupLog_('saved ' + name + size + ' (upload link; old backups are not pruned)');
 }
 // The whole spreadsheet as one .xlsx (Office Open XML): one worksheet per tab, every value as the sheet holds it
 // (numbers, true/false, dates as dates, text as text: a text cell is never read as a formula on import). Formulas,
