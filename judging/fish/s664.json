@@ -135,6 +135,34 @@
   "fish-s664-cand-88367471": {
    "code": "p1d1sm1c2",
    "keep": "best"
+  },
+  "fish-s664-cand-111446728": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s664-cand-640206454": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s664-cand-194991147": {
+   "code": "p1g0sm1c3",
+   "keep": "best"
+  },
+  "fish-s664-cand-440440906": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s664-cand-462069221": {
+   "code": "p1g0mm1c2",
+   "keep": "best"
+  },
+  "fish-s664-cand-429957165": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s664-cand-429957343": {
+   "code": "o1g0sl1c2",
+   "keep": "dup"
   }
  }
 }

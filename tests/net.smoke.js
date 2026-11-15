@@ -637,12 +637,10 @@ const server = http.createServer((req, res) => {
     // what is checked is that it listens while start() still waits for its files (here cand.json never answers).
     // The reloaded page's own files are in first (its quiet): only the new page's cand.json is the one that never answers.
     await qQuiet();
-    // No version waiting or installing: the last page opens on one worker, not in the middle of a swap (above).
-    await q
-      .waitForFunction(() => navigator.serviceWorker.getRegistration().then(g => !!g && !g.installing && !g.waiting), null, {
-        timeout: 30000
-      })
-      .catch(() => fails.push('Admin: a new version still waiting before the last page opens'));
+    // The last page may open while a version still waits (2026-11-14, train 20261114-165225: the check here that there
+    // was none passed a Promise to waitForFunction, which takes it as truthy, and so never waited; the page then opened in
+    // the middle of a swap and never loaded). sw.js now leaves such a page to the network, and has a swap held by Chromium
+    // asked again to end (tests/swcache.test.js).
     HOLD = /cand\.json$/;
     // Printed if the new page never reaches DOMContentLoaded: every request of the context still pending (the worker's
     // included), and each worker version's state as Chromium reports it (running/stopping/stopped, installed/activated),
@@ -676,7 +674,7 @@ const server = http.createServer((req, res) => {
           ADMIN_HITS.filter(h => h.at >= q2At)
             .map(h => `${h.url} at +${h.at - q2At} ms, ${h.done ? `answered at +${h.done - q2At} ms` : 'never answered'}`)
             .join('; ') || 'none'
-        }. Worker versions: ${[...new Set(vers)].join('; ') || 'none'}.`
+        }. Worker versions: ${[...new Set(vers)].join('; ') || 'none'}. Failed before: ${fails.join(' | ') || 'nothing'}.`
       );
       throw e;
     });

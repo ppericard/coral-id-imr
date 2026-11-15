@@ -1,0 +1,192 @@
+{
+ "photos": {
+  "fish-s626-cand-467755799": {
+   "code": "p1g0sl15",
+   "keep": "best",
+   "bb": [
+    0.1,
+    0.3,
+    0.83,
+    0.76
+   ]
+  },
+  "fish-s626-cand-607694492": {
+   "code": "p1d2bl12",
+   "keep": "best"
+  },
+  "fish-s626-cand-545645941": {
+   "code": "p1g1sms3",
+   "keep": "best"
+  },
+  "fish-s626-cand-622362741": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s626-cand-622362780": {
+   "code": "p1g2mm11",
+   "keep": "dup"
+  },
+  "fish-s626-cand-622362829": {
+   "code": "p1g2mm12",
+   "keep": "dup"
+  },
+  "fish-s626-cand-407658750": {
+   "code": "p1g1bm1c1",
+   "keep": "best"
+  },
+  "fish-s626-cand-420032912": {
+   "code": "p1d1slo3",
+   "keep": "best"
+  },
+  "fish-s626-cand-411723558": {
+   "code": "p1g1sls3",
+   "keep": "best"
+  },
+  "fish-s626-cand-411723552": {
+   "code": "p1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s626-cand-679549149": {
+   "code": "t1d2bms1",
+   "keep": "best"
+  },
+  "fish-s626-cand-557917388": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s626-cand-495168080": {
+   "code": "p1d2bm12",
+   "keep": "best"
+  },
+  "fish-s626-cand-604313051": {
+   "code": "p1g1sl14",
+   "keep": "best",
+   "bb": [
+    0.15,
+    0.33,
+    0.75,
+    0.77
+   ]
+  },
+  "fish-s626-cand-618043241": {
+   "code": "p1d2mss1",
+   "keep": "best"
+  },
+  "fish-s626-cand-664352002": {
+   "code": "p1d1sls3",
+   "keep": "best"
+  },
+  "fish-s626-cand-664352183": {
+   "code": "o1d1slo3",
+   "keep": "alt"
+  },
+  "fish-s626-cand-66798442": {
+   "code": "o1g1ml13",
+   "keep": "best"
+  },
+  "fish-s626-cand-679549150": {
+   "code": "o1d2ml12",
+   "keep": "best"
+  },
+  "fish-s626-cand-670802895": {
+   "code": "p1d2mss2",
+   "keep": "best"
+  },
+  "fish-s626-cand-545645937": {
+   "code": "p1d2bl12",
+   "keep": "best"
+  },
+  "fish-s626-cand-411723497": {
+   "code": "o1g1slo3",
+   "keep": "best"
+  },
+  "fish-s626-cand-411723491": {
+   "code": "o1g1sl13",
+   "keep": "alt"
+  },
+  "fish-s626-cand-411723493": {
+   "code": "p1g1mms2",
+   "keep": "dup"
+  },
+  "fish-s626-cand-673856981": {
+   "code": "o1g1sms3",
+   "keep": "best"
+  },
+  "fish-s626-cand-480038280": {
+   "code": "o1d1mms2",
+   "keep": "best"
+  },
+  "fish-s626-cand-382816604": {
+   "code": "p1g0sl1ja2",
+   "keep": "best"
+  },
+  "fish-s626-cand-382817078": {
+   "code": "p1g0sl1ja2",
+   "keep": "dup"
+  },
+  "fish-s626-cand-526346358": {
+   "code": "d1d2ms11",
+   "keep": "best"
+  },
+  "fish-s626-cand-526349487": {
+   "code": "d1d2bss1",
+   "keep": "dup"
+  },
+  "fish-s626-cand-526349486": {
+   "code": "d1d2bss1",
+   "keep": "dup"
+  },
+  "fish-s626-cand-526349492": {
+   "code": "d1d2bs11",
+   "keep": "dup"
+  },
+  "fish-s626-cand-526349496": {
+   "code": "d1d2bs11",
+   "keep": "dup"
+  },
+  "fish-s626-cand-526349499": {
+   "code": "d1d2ms11",
+   "keep": "dup"
+  },
+  "fish-s626-cand-402406148": {
+   "code": "o1g2sls3",
+   "keep": "best"
+  },
+  "fish-s626-cand-465677582": {
+   "code": "p1g1smk2",
+   "keep": "best"
+  },
+  "fish-s626-cand-569390338": {
+   "code": "p1g1sss2",
+   "keep": "best"
+  },
+  "fish-s626-cand-569390343": {
+   "code": "p1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s626-cand-437891088": {
+   "code": "p1g2mms2",
+   "keep": "best"
+  },
+  "fish-s626-cand-565255980": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s626-cand-470818535": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s626-cand-470818540": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s626-cand-643028928": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s626-cand-470683006": {
+   "code": "p1g2mms2",
+   "keep": "best"
+  }
+ }
+}

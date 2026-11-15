@@ -91,6 +91,122 @@
   "fish-s131-cand-165704493": {
    "code": "p1g1sl14",
    "keep": "best"
+  },
+  "fish-s131-cand-473850164": {
+   "code": "p1g1sl1j2",
+   "keep": "best"
+  },
+  "fish-s131-cand-239605076": {
+   "code": "o1g2mm12",
+   "keep": "dup"
+  },
+  "fish-s131-cand-239605103": {
+   "code": "p1g2mm12",
+   "keep": "best"
+  },
+  "fish-s131-cand-435398244": {
+   "code": "o0g1slk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a yellow butterflyfish close behind the snapper, large and sharp: confusion possible, not certain"
+  },
+  "fish-s131-cand-2990387": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s131-cand-592940536": {
+   "code": "p1d2bsx1",
+   "keep": "best"
+  },
+  "fish-s131-cand-592272020": {
+   "code": "p1g1smo3",
+   "keep": "best"
+  },
+  "fish-s131-cand-391032196": {
+   "code": "p0g2mls2",
+   "keep": "best"
+  },
+  "fish-s131-cand-472036945": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s131-cand-688901629": {
+   "code": "p1g0sl1ja2",
+   "keep": "best"
+  },
+  "fish-s131-cand-531125633": {
+   "code": "p1g2msk2",
+   "keep": "best"
+  },
+  "fish-s131-cand-607332604": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s131-cand-205263501": {
+   "code": "p1g2mlo2",
+   "keep": "best"
+  },
+  "fish-s131-cand-707594727": {
+   "code": "o1d1ml12",
+   "keep": "best"
+  },
+  "fish-s131-cand-516166704": {
+   "code": "p1g1ms12",
+   "keep": "best"
+  },
+  "fish-s131-cand-399606726": {
+   "code": "p1g0slo4",
+   "keep": "best"
+  },
+  "fish-s131-cand-32560864": {
+   "code": "p1g1smo3",
+   "keep": "best"
+  },
+  "fish-s131-cand-637601824": {
+   "code": "o1g2mmo2",
+   "keep": "best"
+  },
+  "fish-s131-cand-466514199": {
+   "code": "o1g1ml1j2",
+   "keep": "best"
+  },
+  "fish-s131-cand-466514203": {
+   "code": "p1g1ml1j2",
+   "keep": "alt"
+  },
+  "fish-s131-cand-466514207": {
+   "code": "p1g1ml1j2",
+   "keep": "dup"
+  },
+  "fish-s131-cand-251629169": {
+   "code": "p1g2ml12",
+   "keep": "best"
+  },
+  "fish-s131-cand-251629179": {
+   "code": "o1g2mm12",
+   "keep": "dup"
+  },
+  "fish-s131-cand-587251188": {
+   "code": "p1d2ml12",
+   "keep": "best"
+  },
+  "fish-s131-cand-429964063": {
+   "code": "o1g1mss2",
+   "keep": "best"
+  },
+  "fish-s131-cand-259880504": {
+   "code": "p1g2sls3",
+   "keep": "best"
+  },
+  "fish-s131-cand-535730589": {
+   "code": "p1d2bm11",
+   "keep": "best"
+  },
+  "fish-s131-cand-240935004": {
+   "code": "p1g2ml12",
+   "keep": "best"
   }
  }
 }

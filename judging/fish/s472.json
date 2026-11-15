@@ -143,6 +143,50 @@
   "fish-s472-cand-102004444": {
    "code": "p1g2mss2",
    "keep": "best"
+  },
+  "fish-s472-cand-292587514": {
+   "code": "o1g2mlk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a small cleaner fish on the runner's side and a blurred fish above: confusion possible, not certain"
+  },
+  "fish-s472-cand-612038407": {
+   "code": "p1g0sl1a3",
+   "keep": "best"
+  },
+  "fish-s472-cand-625999467": {
+   "code": "p1g2sls3",
+   "keep": "best"
+  },
+  "fish-s472-cand-390137773": {
+   "code": "p1g2msx1",
+   "keep": "best"
+  },
+  "fish-s472-cand-176546286": {
+   "code": "p1g3mms2",
+   "keep": "best"
+  },
+  "fish-s472-cand-176546293": {
+   "code": "p1g3mms2",
+   "keep": "dup"
+  },
+  "fish-s472-cand-176546301": {
+   "code": "p1g3bms1",
+   "keep": "dup"
+  },
+  "fish-s472-cand-451093186": {
+   "code": "p1g0slsa2",
+   "keep": "best"
+  },
+  "fish-s472-cand-103848181": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s472-cand-281253637": {
+   "code": "o1g2ms12",
+   "keep": "best"
   }
  }
 }

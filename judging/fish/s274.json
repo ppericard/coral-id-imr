@@ -107,6 +107,38 @@
   "fish-s274-cand-fb-Mybot_u3": {
    "code": "p1g0sms3",
    "keep": "best"
+  },
+  "fish-s274-cand-468296518": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s274-cand-468296527": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s274-cand-468296524": {
+   "code": "p1g0slo4",
+   "keep": "alt"
+  },
+  "fish-s274-cand-468296530": {
+   "code": "p1g0slo4",
+   "keep": "dup"
+  },
+  "fish-s274-cand-468296535": {
+   "code": "o1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s274-cand-38513854": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s274-cand-286827416": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s274-cand-915684": {
+   "code": "p1g0sl15",
+   "keep": "best"
   }
  }
 }

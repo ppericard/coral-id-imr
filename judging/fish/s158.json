@@ -143,6 +143,18 @@
   "fish-s158-cand-597402121": {
    "code": "o1g2mss2",
    "keep": "best"
+  },
+  "fish-s158-cand-591501752": {
+   "code": "p1g3mss1",
+   "keep": "best"
+  },
+  "fish-s158-cand-627566085": {
+   "code": "p1g2mms2",
+   "keep": "dup"
+  },
+  "fish-s158-cand-627566113": {
+   "code": "p1g2sms3",
+   "keep": "best"
   }
  }
 }

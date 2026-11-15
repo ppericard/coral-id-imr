@@ -99,6 +99,130 @@
   "fish-s235-cand-746490820": {
    "code": "p1d1sm13",
    "keep": "best"
+  },
+  "fish-s235-cand-753899097": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s235-cand-457051573": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s235-cand-256058056": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-256676118": {
+   "code": "o1g0smo3",
+   "keep": "best"
+  },
+  "fish-s235-cand-455324602": {
+   "code": "o1d1smk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a large barred fish of another genus behind it, half hidden and cut by the frame: confusion possible"
+  },
+  "fish-s235-cand-455324618": {
+   "code": "o1d1smo2",
+   "keep": "dup"
+  },
+  "fish-s235-cand-332120907": {
+   "code": "p1g1mmo3",
+   "keep": "dup"
+  },
+  "fish-s235-cand-332120908": {
+   "code": "p1g1mm13",
+   "keep": "best"
+  },
+  "fish-s235-cand-450071301": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-535199096": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s235-cand-650461889": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s235-cand-19605980": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-354513054": {
+   "code": "o1g2ss12",
+   "keep": "best"
+  },
+  "fish-s235-cand-354512796": {
+   "code": "o1g2ss12",
+   "keep": "dup"
+  },
+  "fish-s235-cand-336078584": {
+   "code": "o1g0sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-608567370": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-608567366": {
+   "code": "o1g1mm12",
+   "keep": "dup"
+  },
+  "fish-s235-cand-500940875": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-358743921": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s235-cand-432682644": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s235-cand-600653540": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-410134843": {
+   "code": "p1d1sl13",
+   "keep": "best"
+  },
+  "fish-s235-cand-410134858": {
+   "code": "p1d1ss12",
+   "keep": "dup"
+  },
+  "fish-s235-cand-244211310": {
+   "code": "o1g1sl13",
+   "keep": "dup"
+  },
+  "fish-s235-cand-743743611": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s235-cand-594962331": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s235-cand-78307698": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s235-cand-410134882": {
+   "code": "p1g0smk2",
+   "keep": "dup"
+  },
+  "fish-s235-cand-468470049": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s235-cand-38298630": {
+   "code": "p1g0sl14",
+   "keep": "best"
   }
  }
 }

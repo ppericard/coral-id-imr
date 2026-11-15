@@ -336,13 +336,14 @@ test('a name shown another way (s278 Neoniphon argenteus): no now, no spelling p
   assert.strictEqual(common.sp, 'Neoniphon argenteus');
   assert.strictEqual(common.check, undefined);
   // Its photos, by species id: the game's, the sheet's and the candidates'.
-  // Not how many (curation moves that without a PR): at least one in each file, each under the teaching node that holds
-  // s278, and no photo of the species keyed to another id or to none.
+  // Not how many (curation moves that without a PR): at least one in play (fish-game.json), each under the teaching node
+  // that holds s278 (fish-photos.json's first photos too, which need not hold one), and no photo of the species keyed to
+  // another id or to none.
   const node = F.teach.find(t => t.species.includes('s278')).id;
   ['fish-game.json', 'fish-photos.json'].forEach(f => {
     const all = Object.entries(read(f).photos).flatMap(([k, L]) => L.map(p => [k, p])),
       mine = all.filter(([, p]) => p.sp === 's278');
-    assert.ok(mine.length >= 1, `${f}: no photo of s278`);
+    assert.ok(f !== 'fish-game.json' || mine.length >= 1, `${f}: no photo of s278`);
     mine.forEach(([k, p]) => assert.strictEqual(k, node, `${f} ${p.f}: s278 under ${k}, not ${node}`));
     all
       .filter(([, p]) => /^Neoniphon argent/.test(p.t || ''))
@@ -529,6 +530,7 @@ print(json.dumps(out))
 // The starter core and the judged photos (Pierre, 2026-11-04: the fish beta opened on the wrong families and on photos
 // too hard for a beginner; judging/FISH.md, tools/fish_judge.py).
 const PH = read('fish-photos.json').photos,
+  GM = require('../core.js').fishGameRead(read('fish-game.json')).photos,
   JUDGE = read('tools/fish_judge.json');
 test('start: the starter core, four easy circle-1 entries from Pierre’s fish-ID design, in fish.json and its source', () => {
   const byId = new Map(F.teach.map(t => [t.id, t]));
@@ -575,9 +577,8 @@ const juvEarly = (tid, p) => {
   if (j.cls === 'A') return true;
   return (j.early || []).some(x => (SPN.get(p.sp) || []).some(n => n === x || n.startsWith(x + ' ')));
 };
-test('judged photos: every fish game photo judged with a valid code, written into fish-photos.json with its caps', () => {
-  const dim = new Set(F.teach.filter(t => t.dimorph).map(t => t.id)),
-    c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
+test('judged photos: every code valid and once, crops inside the photo, 5 very easy photos in play per circle-1 entry', () => {
+  const c1 = F.teach.filter(t => t.level === 1 && t.circle === 1 && !t.wink).map(t => t.id),
     codes = {};
   Object.entries(JUDGE.photos).forEach(([tid, m]) =>
     Object.entries(m).forEach(([f, c]) => {
@@ -586,79 +587,29 @@ test('judged photos: every fish game photo judged with a valid code, written int
       codes[f] = [tid, c];
     })
   );
-  // Every circle since 2026-11-04 (circle 1 first, then circles 2 and 3 and the winks: ROADMAP "Fish photo judging").
-  Object.entries(PH).forEach(([tid, L]) => L.forEach(p => assert.ok(p.f in codes, `${tid} ${p.f}: not judged`)));
-  Object.entries(PH).forEach(([tid, L]) =>
-    L.forEach(p => {
-      if (!(p.f in codes)) return assert.ok(p.e === undefined && p.jt === undefined && !p.c, `${p.f}: e without a judgement`);
-      assert.strictEqual(codes[p.f][0], tid, `${p.f}: judged under another entry`);
-      assert.deepStrictEqual(
-        {e: p.e, jt: p.jt},
-        capOf(codes[p.f][1], dim.has(tid), juvEarly(tid, p), p.rep),
-        `${p.f}: run python3 tools/fish_judge.py`
-      );
-      assert.deepStrictEqual(p.c, JUDGE.crops[p.f], `${p.f}: its proposed crop`);
-      // Never among the very easy photos of the first questions: juveniles, the night livery, partial, head / tail / top views,
-      // camouflage, out of water, an unclear subject.
-      if (
-        (/j/.test(p.jt.slice(7)) && !juvEarly(tid, p)) ||
-        /[ca]/.test(p.jt.slice(7)) ||
-        /[htd]/.test(p.jt[0]) ||
-        p.jt[1] === '0' ||
-        p.jt[2] === 'n' ||
-        p.jt[3] >= '2' ||
-        p.jt[6] === 'x'
-      )
-        assert.ok(p.e <= 3, `${p.f}: ${p.jt} at ease ${p.e}`);
-    })
-  );
   // Crops: proposals in curation.json's format, inside the photo, for judged photos only.
   Object.entries(JUDGE.crops).forEach(([f, c]) => {
     assert.ok(f in codes, `${f}: a crop without a judgement`);
     assert.ok(c.length === 4 && c[0] >= 0 && c[1] >= 0 && c[2] <= 1 && c[3] <= 1 && c[0] < c[2] && c[1] < c[3], `${f}: crop ${c}`);
   });
-  // Every circle-1 entry has at least 5 very easy photos (Pierre, 2026-11-04), so its first questions take turns among
-  // them (the draw strongly favours them at the start); the photos the pass added are judged and appear once, one per observation.
-  c1.forEach(id => assert.ok(PH[id].filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos`));
-  Object.entries(JUDGE.add || {}).forEach(([tid, L]) =>
-    L.forEach(a => {
-      const p = PH[tid].find(x => x.o === a.o);
-      assert.ok(p && p.f === a.f && p.e >= 4, `${tid} ${a.f}: an added photo missing or not very easy`);
-      assert.ok(['cc0', 'cc-by', 'cc-by-nc'].includes(a.lic), `${a.f}: licence ${a.lic}`);
-    })
-  );
-  // Juveniles: a show-early genus's (or a class-A entry's) can be very easy; a capped one cannot.
-  const juvs = Object.entries(PH).flatMap(([tid, L]) => L.filter(p => p.jt && /j/.test(p.jt.slice(7))).map(p => [tid, p]));
-  ['t04', 't14', 't17'].forEach(id =>
-    assert.ok(
-      PH[id].some(p => /j/.test(p.jt.slice(7)) && p.e >= 4),
-      `${id}: no very easy juvenile`
-    )
-  );
-  assert.ok(
-    juvs.some(([tid, p]) => JUV[tid].cls === 'mixed' && juvEarly(tid, p) && p.e >= 4),
-    'a juvenile of a show-early genus (mixed entry) can be very easy'
-  );
-  const capped = juvs.filter(([tid, p]) => !juvEarly(tid, p));
-  assert.ok(capped.length && capped.every(([, p]) => p.e <= 2), 'a capped juvenile is at most 2');
-  assert.ok(
-    capped.some(([tid, p]) => (JUV[tid].late || []).some(x => SPN.get(p.sp).some(n => n === x || n.startsWith(x + ' ')))),
-    'a juvenile of a late (look-alike) species is capped'
-  );
-  // The phase flag (sex or colour phase: a species-level difficulty) caps nothing at the family level.
-  assert.ok(
-    Object.values(PH)
-      .flat()
-      .some(p => /p/.test((p.jt || '').slice(7)) && p.e >= 4),
-    'a phase photo can be very easy'
-  );
+  // Every circle-1 entry has at least 5 very easy photos in play (Pierre, 2026-11-04), so its first questions take turns
+  // among them (the draw strongly favours them at the start). Until 2026-11-15 the stopgap list (fish-photos.json, remote
+  // iNaturalist photos judged here) joined an entry short of them; it is retired, so fish-game.json alone must hold them.
+  c1.forEach(id => assert.ok((GM[id] || []).filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in play`));
+  // The rubric's caps on the judged codes (juveniles, the night livery, partial, head / tail / top views, camouflage, out
+  // of water, an unclear subject): never among the very easy photos.
+  Object.values(codes).forEach(([tid, c]) => {
+    const {e, jt} = capOf(c, false, true, null);
+    if (/[ca]/.test(jt.slice(7)) || /[htd]/.test(jt[0]) || jt[1] === '0' || jt[2] === 'n' || jt[3] >= '2' || jt[6] === 'x')
+      assert.ok(e <= 3, `${tid} ${c}: ease ${e}`);
+  });
 });
 
 // The curated photos (admin plan PR 7, tools/fish_game.py): every photo Pierre put in play carries the rubric's code and
 // an ease; where that ease is the pass's (Pierre did not change it in the admin), the caps hold, so no juvenile, night
 // livery, partial fish or camouflage reaches the very easy photos of the first questions. Checked on the list a run would
-// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js fishPhotos: fish-game.json and the
-// stopgap): every circle-1 entry keeps at least 5 very easy photos (Pierre, 2026-11-04).
+// write (fish_game.py plan, nothing downloaded) and on the game as it plays (core.js fishPhotos: fish-game.json alone):
+// every circle-1 entry keeps at least 5 very easy photos (Pierre, 2026-11-04).
 test('curated photos: a valid code and ease for each, the caps where the ease is the pass’s; 5 very easy per circle-1 entry', () => {
   const {execFileSync} = require('child_process'),
     C = require('../core.js'),
@@ -702,9 +653,9 @@ print(json.dumps([r for r, _, _ in todo] + list(keep.values())))`
   });
   // The game once the workflow has downloaded the plan (fish-game.json is filled after a Publish): by teaching entry, as
   // tools/fish_game.py lays it out; fishGen gives each photo to its species' family.
-  const GM = {};
-  plan.forEach(p => (GM[entry.get(p.sp)] = GM[entry.get(p.sp)] || []).push(p));
-  const X = C.fishGen(F, C.fishPhotos(PH, GM, CUR, F));
+  const G = {};
+  plan.forEach(p => (G[entry.get(p.sp)] = G[entry.get(p.sp)] || []).push(p));
+  const X = C.fishGen(F, C.fishPhotos(PH, G, CUR));
   X.c1.forEach(id => assert.ok(X.gen[id].views.wide.filter(p => p.e >= 4).length >= 5, `${id}: fewer than 5 very easy photos in the game`));
 });
 
@@ -900,40 +851,23 @@ test('reference photos: game photo rules, in play once judged, the cover where o
       }
     })
   );
-  // One photo per observation: a game photo is never replaced nor removed by a reference photo.
-  refs.forEach(([tid, p], f) => {
-    const L = PH[tid],
-      g = L.find(x => x.f === f);
-    // In play once judged at the reference level (core.js refLevel on the judged ease and tags), never below it.
-    const lvl = f in codes && capOf(codes[f], false, false, p.rep);
-    // (unless its observation is already in the game with another photo: that one stays, rule P4; Codex review #660)
-    if (lvl && C.refLevel({...p, ...lvl}) && !L.some(x => x.o === p.o && x.f !== f))
-      assert.ok(g && g.rep === p.rep, `${tid} ${f}: not in play`);
-    if (g && g.from) assert.ok(C.refLevel(g), `${tid} ${f}: in play below the reference level`);
-    if (g && g.from) assert.ok(/^[1s]$/.test(g.jt[6]), `${tid} ${f}: other kinds of fish in a reference photo (rule P3)`);
-    if (!(f in codes) && g) assert.ok(!g.from, `${f}: a reference photo in play without a judgement`);
-  });
-  Object.entries(PH).forEach(([tid, L]) =>
-    L.forEach(p => {
-      if (p.rep || p.from) assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
+  // In play through fish-game.json (tools/fish_game.py ref_play, auto "ref"; the stopgap list that took them until
+  // 2026-11-15 is retired): each one is listed in tools/fish_refs.json for a species of its entry, judged, and of one kind
+  // of fish (rule P3).
+  const CUR = read('curation.json'),
+    played = C.fishPhotos(PH, GM, CUR);
+  Object.entries(GM).forEach(([tid, L]) =>
+    L.filter(p => p.auto === 'ref').forEach(p => {
+      assert.ok(refs.has(p.f) && refs.get(p.f)[0] === tid, `${tid} ${p.f}: not in tools/fish_refs.json`);
+      assert.ok(p.f in codes, `${p.f}: a reference photo in play without a judgement`);
+      assert.ok(/^[1so]$/.test(p.jt[6]), `${tid} ${p.f}: other species one could take for the subject (rule P3)`);
     })
   );
-  // On the stopgap list, and on the game as it plays (core.js fishPhotos: Pierre's curated photos beside it; the reference
-  // photos stay even on an entry that plays on its curated photos).
-  const CUR = read('curation.json'),
-    GM = C.fishGameRead(read('fish-game.json')).photos,
-    played = C.fishPhotos(PH, GM, CUR, F),
-    // a photo Pierre rejected, excluded or moved as a candidate stays out (core.js fishPhotos)
-    gone = new Set(
-      [CUR.exclude || {}, ...['seen', 'exclude', 'out'].map(k => (CUR.fish || {})[k] || {})].flatMap(m => Object.keys(m).map(C.fishPid))
-    );
-  Object.entries(PH).forEach(([tid, L]) =>
-    L.filter(p => p.from).forEach(p =>
-      assert.ok(
-        (played[tid] || []).some(x => x.f === p.f || (p.o && x.o === p.o)) || gone.has(C.fishPid(p.f)),
-        `${tid} ${p.f}: dropped from play`
-      )
-    )
+  assert.ok(
+    Object.values(played)
+      .flat()
+      .some(p => p.auto === 'ref'),
+    'reference photos in play'
   );
   [C.fishGen(F, PH), C.fishGen(F, played)].forEach(X =>
     Object.values(X.gen).forEach(g => {

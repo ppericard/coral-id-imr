@@ -205,7 +205,7 @@ function loadCodeGs(opts = {}) {
   // The Timings tab (Code.gs TIM) stays off unless a test asks for it (opts.timings), so no other test meets a tab that
   // sampling made at random; a test that turns it on sets TIM.EVERY, TIM.SLOW… itself.
   if (!opts.timings) vm.runInContext('TIM.ON = false', ctx);
-  // The pooled stats' snapshot (Code.gs STATS, sheet vNEXT) likewise: off unless a test asks for it (opts.stats), so ?stats=1
+  // The pooled stats' snapshot (Code.gs STATS, sheet v134) likewise: off unless a test asks for it (opts.stats), so ?stats=1
   // makes stats_ and the trigger folds nothing (it would fetch the game pools) in every other test.
   if (!opts.stats) vm.runInContext('STATS.ON = false', ctx);
   const get = q => ctx.doGet({parameter: q});

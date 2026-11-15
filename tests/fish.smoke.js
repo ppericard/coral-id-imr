@@ -18,6 +18,8 @@
 //   admin token.
 // - load order: a fish record under the former moving average, opened by a link straight to a quiz page with data.json
 //   late (and fish.json in between), rebuilt once the data is in, with no page error, Fish kept, as on a plain load;
+// - a cold first launch (no fish-game.json cached): Home drawn from fish-photos.json's first photos, nothing asked of
+//   iNaturalist or FishBase (coldHome; 2026-11-15, the stopgap retired);
 // iNaturalist photos are not fetched (every other host is aborted): the logic only. Needs Playwright, like
 // draw.smoke.js. Locally: node tests/fish.smoke.js
 // A page key's address (core.js routeOut), for the corals.
@@ -87,6 +89,232 @@ async function settle(q, keep = '') {
     await q.click(`${sel} [data-b="1"]`);
   }
   return 'start-up cards kept coming';
+}
+// (12) A cold first launch on fish (no service worker, so no fish-game.json cached: app.js fishCached false): Home is drawn
+// from fish-photos.json's first photos while fish-game.json is held back, and nothing is asked of iNaturalist or FishBase
+// (2026-11-15: the stopgap of remote photos retired; before, the whole band came from iNaturalist at that moment, after
+// every change to fish-game.json). R2 is answered by a stub image, so no fallback to an original (core.js photoAway) can
+// hide behind a failed R2; every other host is refused and recorded.
+async function coldHome(b, base, errs) {
+  const fails = [],
+    away = [],
+    c = await b.newContext({viewport: {width: 1280, height: 800}, serviceWorkers: 'block'}),
+    R2 = /const PHOTO_BASE = '([^']*)'/.exec(fs.readFileSync(path.join(ROOT, 'core.js'), 'utf8'))[1], // the bucket's address
+    PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64'),
+    held = [];
+  c.on('request', r => /inaturalist|fishbase/.test(new URL(r.url()).hostname) && away.push(r.url()));
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => (r.request().url().startsWith(R2) ? r.fulfill({status: 200, contentType: 'image/png', body: PNG}) : r.abort())
+  );
+  await c.route(
+    u => u.href.startsWith(base) && u.pathname === '/fish-game.json',
+    r => void held.push(r)
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-cold')) {
+        sessionStorage.setItem('fish-cold', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`cold Home: ${e.message}`));
+  await q.goto(base + '#home');
+  const drawn = await q
+    // Not APP_READY: start-up is not over while fish-game.json is held (tier 2); Home is drawn before.
+    .waitForFunction(() => typeof FISHRAW === 'object' && FISHRAW && document.querySelectorAll('#view .hdtiles img').length, null, {
+      timeout: 30000
+    })
+    .then(
+      () => true,
+      () => false
+    );
+  if (!drawn) fails.push('cold Home: no fish photo on the band before fish-game.json');
+  await q.waitForTimeout(1500); // the lazy images in view load
+  const r = await q.evaluate(() => ({
+    partial: !!(FISHRAW && !Object.keys(FISHRAW.gm.photos).length),
+    srcs: [...document.querySelectorAll('img')].flatMap(i => [i.getAttribute('src') || '', i.getAttribute('srcset') || ''])
+  }));
+  if (!r.partial) fails.push('cold Home: fish-game.json was not held back');
+  const bad = r.srcs.filter(s => /inaturalist|fishbase/.test(s));
+  if (bad.length) fails.push(`cold Home: ${bad.length} photo address(es) on iNaturalist or FishBase, e.g. ${bad[0].slice(0, 120)}`);
+  if (away.length) fails.push(`cold Home: ${away.length} request(s) to iNaturalist or FishBase, e.g. ${away[0].slice(0, 120)}`);
+  held.forEach(x => x.abort().catch(() => {}));
+  await c.close();
+  return fails;
+}
+// (11) Find the X (quiz.js FIND, planFind; Pierre, 2026-11-03, Q321 D1): one name, four photos, slipped into the fish quiz.
+// Every circle-1 family met but three, FIND.P set to 1 for the run so it comes at once: never on a family not met, nor with
+// one; four square tiles (fish-game.json xc), the families' buttons, no name buttons; the right tile and the wrong one
+// marked once answered; logged quiz|f with the unit's own photo, the four units as choices and the unit of the photo
+// tapped; scored as a 4-choice answer (its expectation over 1 in 4). With FIND.P back at 0 none comes.
+async function findTheX(b, base, errs) {
+  const c = await b.newContext({viewport: {width: 390, height: 844}, serviceWorkers: 'block'});
+  await c.route(
+    u => !u.href.startsWith(base),
+    r => r.abort()
+  );
+  await c.addInitScript(() => {
+    try {
+      if (!sessionStorage.getItem('fish-fx')) {
+        sessionStorage.setItem('fish-fx', '1');
+        localStorage.setItem('reefid-tour', '"done"');
+        localStorage.setItem('reefid-sync-subject', '"fish"');
+        localStorage.setItem('reefid-sync-fish-start', '{"c":"imr","t":1}');
+      }
+    } catch (e) {}
+    let s = 4242;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  });
+  const q = await c.newPage();
+  q.on('pageerror', e => errs.push(`find the X: ${e.message}`));
+  await q.goto(base + '#practice/quiz');
+  await q.waitForFunction(() => window.APP_READY && typeof FISH === 'object' && FISH && document.querySelector('#view .q'), null, {
+    timeout: 30000
+  });
+  await qa.install(q);
+  const r = await q.evaluate(async () => {
+    const fails = [],
+      ok = (x, m) => x || fails.push(m),
+      closeCards = () => document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
+    const tiled = FISH.c1.filter(n => UNITS.fish.tiles(n).length),
+      unmet = tiled.slice(-3);
+    ok(tiled.length >= 8, `families with a tile: ${tiled.length}`);
+    ok(!UNITS.coral.tiles('Acropora').length, 'no tiles for the corals');
+    FISH.c1
+      .filter(n => !unmet.includes(n))
+      .forEach(n => {
+        introAdd([n], false);
+        Object.assign(st(n), {ok: 4, ko: 0, h: '1111', th: 1});
+      });
+    closeCards();
+    FIND.P = 1;
+    let seen = 0,
+      wrong = null;
+    for (let i = 0; i < 80 && seen < 12; i++) {
+      // the families not met before this question (the path opens some as the other questions go)
+      const notMet = slateGenera().filter(n => !introReady(n));
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      const Q = SHOWNQ;
+      if (!Q || !Q.findx) {
+        smokeAnswer();
+        continue;
+      }
+      seen++;
+      const [, t, ch, prompt, set] = Q,
+        // answer.js: a read of a Find the X's tiles (the question checked here is that format; smokeAnswer answers it)
+        tiles = [...document.querySelectorAll('#view .qstage.qfx .fxt [data-c]')];
+      ok(prompt === `Find the ${unameT(t)}`, `the prompt: ${prompt}`);
+      ok(ch.length === 4 && new Set(ch).size === 4 && ch.includes(t), `four units: ${ch}`);
+      ok(
+        ch.every(n => introReady(n) && !notMet.includes(n) && !rankOf(n)),
+        `only families met: ${ch}`
+      );
+      ok(tiles.map(x => x.dataset.c).join() === ch.join(), 'the tiles are the choices, in their order');
+      ok(!document.querySelector('#view .ans'), 'no name buttons'); // answer.js: the format has none
+      ok(
+        set.find.every(x => x.p.xc && GX(x.n).views.wide.some(y => y.f === x.p.f)),
+        'each photo a tile of its own unit'
+      );
+      ok(
+        [...document.querySelectorAll('#view .fxt img')].every(im => /-x\.webp\?x=/.test(im.getAttribute('src'))),
+        'the tile files'
+      );
+      // Its clock waits for the four tiles (none has come here: the photos' host is out of reach).
+      ok(QCLOCK.t0 === null, 'the clock waits for the four tiles');
+      // A wrong tap the first time, right after.
+      const pick = wrong ? t : ch.find(n => n !== t),
+        before = (SYNC ? SYNC.log : store.get(LOG0, [])).length;
+      smokeAnswer(pick);
+      const log = SYNC ? SYNC.log : store.get(LOG0, []),
+        a = log[log.length - 1];
+      ok(log.length === before + 1 || !SYNC_URL, 'one answer logged');
+      if (a) {
+        ok(a.m === 'quiz|f', `mode ${a.m}`);
+        ok(a.g === t && a.a === pick && a.ok === (pick === t ? 1 : 0), 'unit shown, unit of the photo tapped');
+        ok(a.ph === set.shown[0].f && a.ph === set.find.find(x => x.n === t).p.f, `its photo: ${a.ph}`);
+        ok(a.ch === ch.join(' '), `the four units: ${a.ch}`);
+        ok(a.e > 0.25 && a.e < 1, `expected ${a.e} over 1 in 4`);
+        // timed from its gate (smokeAnswer counted the four tiles in, then tapped): a few tenths at most
+        ok(typeof a.rt === 'number' && a.rt < 5, `its seconds from the four tiles: ${a.rt}`);
+      }
+      // answer.js: the tiles marked once answered (a read, after smokeAnswer)
+      const ok1 = document.querySelector('#view .fxt.fok [data-c]'),
+        // answer.js: the same read, the tile tapped
+        ko1 = document.querySelector('#view .fxt.fko [data-c]');
+      ok(ok1 && ok1.dataset.c === t, 'the right tile marked');
+      ok(pick === t ? !ko1 : ko1 && ko1.dataset.c === pick, 'the tile tapped marked');
+      ok(document.querySelectorAll('#view .fxt figcaption').length === 4, 'every tile named once answered');
+      if (!wrong) wrong = pick;
+    }
+    ok(seen >= 3, `Find the X questions: ${seen}`);
+    // Its photos are its choices (Codex review #885): no answer is taken while a tile is still loading; a distractor tile
+    // that never loads (its retries and its 480 px step spent) keeps the answers closed, with the usual way out, nothing
+    // scored or logged; another tile coming in later does not open them again.
+    let fx = null;
+    for (let i = 0; i < 80 && !fx; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) fx = SHOWNQ;
+      else smokeAnswer();
+    }
+    ok(fx, 'a Find the X for the failed tile');
+    if (fx) {
+      const ims = [...document.querySelectorAll('#view .fxt img')],
+        // a distractor's tile
+        bad = ims[fx[2].findIndex(n => n !== fx[1])],
+        good = ims.filter(im => im !== bad),
+        logN = () => (SYNC ? SYNC.log : store.get(LOG0, [])).length,
+        n0 = logN(),
+        // answer.js: a tap on the right tile, as a player's (whether it is taken is what this checks)
+        tapRight = () => document.querySelector(`#view .fxt [data-c="${CSS.escape(fx[1])}"]`).click(),
+        // the other three in (a file of the site: the photos' host is out of reach in the smokes), so the stage has photos
+        come = im =>
+          new Promise(
+            res => (
+              im.addEventListener('load', res, {once: true}),
+              im.setAttribute('src', 'icon-192.png?' + ims.indexOf(im) + '-' + Date.now())
+            )
+          );
+      await Promise.all(good.map(come));
+      ok(QCLOCK.t0 === null, 'three tiles in, one loading: the clock still waits');
+      tapRight();
+      ok(logN() === n0 && !document.querySelector('#view .q.done'), 'no answer taken while a tile is still loading');
+      // as at the end of its way: R2 asked again (r2try), its 480 px step spent (low, no data-lo left), retried twice
+      Object.assign(bad.dataset, {retry: '2', low: '1', r2try: '1'});
+      bad.removeAttribute('data-lo');
+      bad.setAttribute('src', 'data:image/gif;base64,');
+      bad.dispatchEvent(new Event('error'));
+      // answer.js: the answers' state after a tile failed (none can be answered: nothing to smokeAnswer)
+      const shut = () => [...document.querySelectorAll('#view .fxt [data-c]')].every(b => b.disabled);
+      ok(shut() && document.querySelector('#view .q.qnone') && document.getElementById('qfail'), 'a missing tile closes the answers');
+      await come(good[0]);
+      ok(shut(), 'another tile loading does not open them again');
+      tapRight();
+      ok(logN() === n0 && !document.querySelector('#view .q.done'), 'nothing scored or logged on a set with a tile missing');
+    }
+    // Back to 0: none.
+    FIND.P = 0;
+    let none = 0;
+    for (let i = 0; i < 30; i++) {
+      NEXTQ = null;
+      quizPhoto();
+      closeCards();
+      if (SHOWNQ && SHOWNQ.findx) none++;
+      smokeAnswer();
+    }
+    ok(!none, `${none} Find the X with FIND.P 0`);
+    return fails;
+  });
+  await c.close();
+  return r.map(m => `find the X: ${m}`);
 }
 // (9) as a function: its own CI shard (SMOKE_PART=fresh), the longest block of this smoke. Its failures, and its page
 // errors in errs.
@@ -1061,7 +1289,10 @@ async function freshPlayers(b, base, errs) {
     await q.click('#view .hsubj [data-subj="fish"]');
     await q.waitForFunction(() => SUBJ.id === 'fish' && document.querySelector('#view .hsubj'), null, {timeout: 30000});
     // The Learn door's landscape tiles: a family's ★ Cover where it suits the tile (whole fish, 4:3 to 16:9), else the
-    // mosaic's own pick (Pierre, 2026-11-08, Q291); every tile, and the Identify door's art, one of those.
+    // mosaic's own pick (Pierre, 2026-11-08, Q291), the Identify door's art one of those. The band rotates (ROADMAP "Fish
+    // Home mosaic: rotate the photos", home.js landPool): each tile one of its family's photos that suit it, the cover or
+    // a reference photo (refLevel), never a remote one, at most 6, or the pick above when it has none; the same all day,
+    // another on some later day.
     // By photo, not by address (as the family sheet's hero below): every R2 photo fails in this smoke, so R2 goes off
     // mid-run (app.js photoFail, r2Out) and a photo shown under its R2 address may be read under its online original
     // (core.js photoAway), or the reverse, depending on when the failure lands (the train of #778 caught it on CI).
@@ -1071,32 +1302,56 @@ async function freshPlayers(b, base, errs) {
           !!u &&
           !!p &&
           (u === srcOf(p) || (photoFileOf(u) || {}).f === p.f || (!!p.src && ['t', 's', 'm', ''].some(z => u === photoOnline(p.src, z)))),
-        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1',
+        suits = p => !!p && p.ar >= 1.3 && p.ar <= 1.8 && String(p.jt || '').charAt(1) === '1' && !juvP(p),
+        // on R2: not a photo still remote (r: 1), which comes from iNaturalist
+        suitsR2 = p => suits(p) && !(p.r && p.src),
         want = n => {
           const g = GX(n),
             L = g.views.wide;
-          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suits) || L[0];
+          return suits(g.coverP) ? g.coverP : L.slice(0, 10).find(suitsR2) || L.slice(0, 10).find(suits) || adultFirst(L);
         },
-        W = slateGenera()
-          .filter(n => GX(n).views.wide.length)
-          .map(n => want(n)),
-        Cn = slateGenera().filter(n => suits(GX(n).coverP)),
-        C = Cn.map(n => GX(n).coverP),
-        T = [...document.querySelectorAll('#view .hdoor.learn .hdtiles img, #view .hdoor.identify .hdart img')].map(i =>
-          i.getAttribute('src')
-        );
-      return {
-        n: T.length,
-        covers: T.filter(x => C.some(p => shows(x, p))).length,
-        // the tiles of a family whose cover fits: Home draws 12 families at random, so none may come (#785's CI run),
-        // and each that comes must show its cover
-        ofC: T.filter(x => Cn.some(n => shows(x, GX(n).coverP) || GX(n).views.wide.some(p => shows(x, p)))).length,
-        fits: C.length,
-        bad: T.filter(x => !W.some(p => shows(x, p)))
-      };
+        // the photos a tile may draw: the cover that suits it, then the reference photos that do, on R2, at most 6
+        pool = n => {
+          const g = GX(n),
+            P = [...(suitsR2(g.coverP) ? [g.coverP] : []), ...g.views.wide.filter(p => p !== g.coverP && suitsR2(p) && refLevel(p))].slice(
+              0,
+              6
+            );
+          return P.length ? P : [want(n)];
+        },
+        N = slateGenera().filter(n => GX(n).views.wide.length),
+        W = N.map(want),
+        tiles = () => [...document.querySelectorAll('#view .hdoor.learn .hdtiles img')].map(i => i.getAttribute('src')),
+        art = [...document.querySelectorAll('#view .hdoor.identify .hdart img')].map(i => i.getAttribute('src')),
+        PO = new Map(N.map(n => [n, pool(n)])),
+        famsOf = u => N.filter(n => PO.get(n).some(p => shows(u, p))),
+        seen = new Map(),
+        // a photo of one family only (a genus unit's photos are its family's too) tells which family drew it
+        draw = () =>
+          tiles().forEach(u => {
+            const F = famsOf(u);
+            // by photo, not by address: one photo may show under its R2 address, then its online original (above)
+            if (F.length === 1) seen.set(F[0], new Set([...(seen.get(F[0]) || []), PO.get(F[0]).find(p => shows(u, p))]));
+          });
+      const T = tiles(),
+        bad = [...T.filter(u => !famsOf(u).length), ...art.filter(u => !W.some(p => shows(u, p)))];
+      // The day's pick (home.js dayPick): over 20 drawings of one day, each family shows one photo; with the clock moved a
+      // day at a time, some family shows another.
+      draw();
+      for (let i = 0; i < 20; i++) (viewHome(), draw());
+      const sameDay = ![...seen.values()].some(S => S.size > 1),
+        now = Date.now;
+      try {
+        for (let k = 1; k <= 20 && ![...seen.values()].some(S => S.size > 1); k++)
+          ((Date.now = () => now() + k * 864e5), viewHome(), draw());
+      } finally {
+        Date.now = now;
+      }
+      viewHome();
+      return {n: T.length, art: art.length, bad, sameDay, rotates: [...seen.values()].some(S => S.size > 1)};
     });
-    if (!ht.n || ht.bad.length || ht.covers !== ht.ofC)
-      ui.push(`${width}px Home, Fish on: the tiles are not the covers that fit ${JSON.stringify(ht)}`);
+    if (!ht.n || !ht.art || ht.bad.length || !ht.sameDay || !ht.rotates)
+      ui.push(`${width}px Home, Fish on: the tiles are not the photos that fit, change within a day or never rotate ${JSON.stringify(ht)}`);
     await wide('Home, Fish on');
     // Tools: no subject tile and no emoji on the links to Tools any more; the header switch is there, on every page but
     // Home, in its place, the header as on Home.
@@ -1356,6 +1611,29 @@ async function freshPlayers(b, base, errs) {
     await q.waitForFunction(() => location.hash === '#fish/learn/species/Zanclus%20cornutus', null, {timeout: 15000}).catch(() => {});
     const zh = await q.evaluate(() => location.hash);
     if (zh !== '#fish/learn/species/Zanclus%20cornutus') ui.push(`${width}px a one-species genus: ${zh}`);
+    // The name roots (Q124 d, learn.js fishRoot, fish.json root from The ETYFish Project): a one-species genus's line on
+    // its species' sheet, the one sheet the genus opens; a genus page's below, on Amphiprion's.
+    const nameRoot = () =>
+      q.evaluate(() => {
+        const L = [...document.querySelectorAll('#view .fsheet .nameroot')];
+        return L.map(r => ({
+          t: r.textContent,
+          box: !!r.closest('.tipbox'),
+          vis: r.offsetHeight > 0,
+          links: [...r.querySelectorAll('a')].map(a => a.href)
+        }));
+      });
+    const rootOk = (L, re) =>
+      L.length === 1 &&
+      re.test(L[0].t) &&
+      !L[0].box &&
+      L[0].vis &&
+      L[0].links.length &&
+      L[0].links.every(u => /^https:\/\/etyfish\.org\//.test(u));
+    await q.waitForFunction(() => document.querySelector('#view .fbadges'), null, {timeout: 15000}).catch(() => {});
+    const zr = await nameRoot();
+    if (!rootOk(zr, /^Name roots: Zancl·us: “sickle” \(zanklon\)\. The ETYFish Project \(Zanclus\)$/))
+      ui.push(`${width}px Zanclus name roots: ${JSON.stringify(zr)}`);
     // A genus common name (fish.json genera common): under the genus page's scientific name, on its family sheet's row and
     // on its species' genus chip.
     await q.evaluate(() => (location.hash = '#fish/learn/genus/Amphiprion'));
@@ -1368,6 +1646,9 @@ async function freshPlayers(b, base, errs) {
       sub: (document.querySelector('#view .fsheet .fn-s') || {}).textContent || '',
       src: (document.querySelector('#view .fsheet .sheetmore .refs') || {}).textContent || ''
     }));
+    const ar = await nameRoot();
+    if (!rootOk(ar, /^Name roots: Amphi·prion: “around” \(amphi-\) \+ “saw” \(prion\)\./))
+      ui.push(`${width}px Amphiprion name roots: ${JSON.stringify(ar)}`);
     await q.evaluate(() => (location.hash = '#fish/learn/family/Damselfishes'));
     await q
       .waitForFunction(() => document.querySelector('#view .fsheet a.frow[href$="/genus/Amphiprion"]'), null, {timeout: 15000})
@@ -1397,6 +1678,8 @@ async function freshPlayers(b, base, errs) {
     // already behind ? (fish beta QA, 2026-11-06: measured under it, before its observer ran, Q1 got the minimum height,
     // a small letterboxed photo): the stage takes the window below the header, measured at once.
     const fit1 = await q.evaluate(() => {
+      // A photo-to-name question from here on (its stage, its enlarged photo): no Find the X (quiz.js FIND; (11) checks it).
+      FIND.P = 0;
       quizPhoto();
       const Q = $v.querySelector('.q'),
         want = innerHeight - Q.getBoundingClientRect().top - window.scrollY - 16 - tabH();
@@ -1531,6 +1814,23 @@ async function freshPlayers(b, base, errs) {
     // The bar's note names the subject's unit (SUBJECTS one), never "genus" on fish (fish beta QA, 2026-11-06).
     const pnote = await q.evaluate(() => (document.querySelector('#view .plvlnote') || {}).textContent || '');
     if (!pnote.includes('each family is')) ui.push(`${width}px My progress note: ${JSON.stringify(pnote)}`);
+    // "Mystery" tiles for every fish player (Pierre, 2026-11-04; progress.js mysteryOf): each family never met is a "?"
+    // with no link, cover or name; each family met keeps its tile.
+    const my = await q.evaluate(() => {
+      const L = [...slateGenera(), ...bonusList()],
+        met = L.filter(n => asked(n) || n in introMap()),
+        M = [...document.querySelectorAll('#view .pwall .myst')];
+      return {
+        n: L.length,
+        met: met.length,
+        myst: M.length,
+        bad: M.filter(a => a.hasAttribute('href') || a.querySelector('img') || L.some(n => (a.title + a.textContent).includes(GX(n).name)))
+          .length,
+        shown: document.querySelectorAll('#view .pwall .pw[href]:not(.myst)').length
+      };
+    });
+    if (!my.met || !my.myst || my.met + my.myst !== my.n || my.shown !== my.met || my.bad)
+      ui.push(`${width}px My progress mystery tiles: ${JSON.stringify(my)}`);
     // The leaderboard's toast is never said on a subject without one (fish beta QA, 2026-11-06: it covered fish Home):
     // it stays due. Every subject has a leaderboard since sheet v95, so this one is made one without for the check. The
     // sync stubbed in memory only (sent14 set: no call to the sheet, rule D1).
@@ -2165,9 +2465,17 @@ async function freshPlayers(b, base, errs) {
       return o;
     });
     if (other) grp.push("another account: in the first one's group");
-    // Taken out of the group: the next load's reply closes Fish, the app reloads on the corals.
-    await q.evaluate(() => localStorage.setItem('fish-groups', '[]'));
-    await Promise.all([q.waitForNavigation({timeout: 15000}).catch(() => {}), q.evaluate(() => syncPull())]);
+    // Taken out of the group: the next load's reply closes Fish, the app reloads on the corals. One evaluate that awaits
+    // nothing: the reload is waitForNavigation's to wait for (an evaluate still awaiting syncPull when the page goes loses
+    // its context), and the switch to Fish above left a save planned 3 s on (syncSoon), which, landing between a group
+    // change and a pull sent apart, would start the reload on its own under the next evaluate.
+    await Promise.all([
+      q.waitForNavigation({timeout: 15000}).catch(() => {}),
+      q.evaluate(() => {
+        localStorage.setItem('fish-groups', '[]');
+        void syncPull();
+      })
+    ]);
     await q.waitForFunction(() => window.APP_READY, null, {timeout: 30000});
     const t2 = await q.evaluate(() => ({
       subj: SUBJ.id,
@@ -2240,7 +2548,8 @@ async function freshPlayers(b, base, errs) {
       for (let i = 0; i < 12 && answersSoFar() < 3; i++) {
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
         if (!document.querySelector('#view .q:not(.done)')) quizPhoto();
-        if (!(await until(() => document.querySelector(SEL)))) break;
+        // a Find the X's tiles counted in first (tests/answer.js smokeTiles: the photos' host is out of reach here)
+        if (!(await until(() => (window.smokeTiles && smokeTiles(), document.querySelector(SEL))))) break;
         smokeAnswer();
         await until(() => document.querySelector('#view .q.done') && document.getElementById('next'));
         document.querySelectorAll('.unlock').forEach(d => (d.ulClose ? d.ulClose() : d.remove()));
@@ -2517,6 +2826,10 @@ async function freshPlayers(b, base, errs) {
   }
   // (9) A brand-new fish player: freshPlayers, above (its own CI shard).
   const fresh = run.has('fresh') ? await freshPlayers(b, base, errs) : [];
+  // (11) Find the X: findTheX, above.
+  const fx = await findTheX(b, base, errs);
+  // (12) A cold first launch: coldHome, above.
+  const cold = await coldHome(b, base, errs);
   // (10) The fish welcome question (Pierre, 2026-11-04; docs/FISH_PATH.md, core.js SUBJECTS start): a fish player who has
   // not answered it is asked on a card before the first fish question, in the fish words, the three answers forced; the
   // answer goes in the fish record only (reefid-sync-fish-start), the coral answer stays the corals'; "I'm new" offers no
@@ -2830,7 +3143,7 @@ async function freshPlayers(b, base, errs) {
         );
     }
   }
-  const fails = [...out, ...ui, ...rv, ...fresh, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
+  const fails = [...out, ...ui, ...rv, ...fresh, ...fx, ...cold, ...grp, ...all, ...welcome, ...hello, ...flag, ...early];
   if (back.subj !== 'coral' || back.slate < 39 || back.ac !== 3 || back.fish !== '"coral"')
     fails.push('switch back to corals: ' + JSON.stringify(back));
   if (errs.length) fails.push('page errors: ' + errs.join(' | '));

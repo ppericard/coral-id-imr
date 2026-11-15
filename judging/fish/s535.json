@@ -263,6 +263,198 @@
   "fish-s535-cand-760053555": {
    "code": "o1g0sm13",
    "keep": "dup"
+  },
+  "fish-s535-cand-760053549": {
+   "code": "h1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-14818083": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s535-cand-13037186": {
+   "code": "p1g1sso2",
+   "keep": "best"
+  },
+  "fish-s535-cand-42774503": {
+   "code": "p1d1mm12",
+   "keep": "best"
+  },
+  "fish-s535-cand-753665064": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s535-cand-753665074": {
+   "code": "p1g0sms3",
+   "keep": "alt"
+  },
+  "fish-s535-cand-754946220": {
+   "code": "p1g1sso2",
+   "keep": "best"
+  },
+  "fish-s535-cand-757887634": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s535-cand-757887627": {
+   "code": "o1g0sms3",
+   "keep": "alt"
+  },
+  "fish-s535-cand-761085690": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s535-cand-597801294": {
+   "code": "o1g0ss12",
+   "keep": "dup"
+  },
+  "fish-s535-cand-597801295": {
+   "code": "o1g0sm13",
+   "keep": "best"
+  },
+  "fish-s535-cand-691970650": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s535-cand-642799769": {
+   "code": "p1g0sss2",
+   "keep": "best"
+  },
+  "fish-s535-cand-458656450": {
+   "code": "o1g1smk2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "a pale damselfish of another genus, half its size, sharp beside the anemone: confusion possible"
+  },
+  "fish-s535-cand-458656463": {
+   "code": "o1g1smk2",
+   "keep": "dup",
+   "unsure": [
+    "code"
+   ],
+   "note": "the same pale damselfish of another genus as the observation's best: confusion possible"
+  },
+  "fish-s535-cand-691192858": {
+   "code": "p1g0sms3",
+   "keep": "best"
+  },
+  "fish-s535-cand-678108151": {
+   "code": "o1g0sms3",
+   "keep": "best"
+  },
+  "fish-s535-cand-678108171": {
+   "code": "o1g0sms3",
+   "keep": "alt"
+  },
+  "fish-s535-cand-758867936": {
+   "code": "p1g0sl15",
+   "keep": "best"
+  },
+  "fish-s535-cand-758867938": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867939": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867955": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867954": {
+   "code": "p1g0sl15",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867956": {
+   "code": "h1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867969": {
+   "code": "o1g0sl14",
+   "keep": "alt"
+  },
+  "fish-s535-cand-758867971": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867976": {
+   "code": "p1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867989": {
+   "code": "t1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867992": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758867998": {
+   "code": "d1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758868006": {
+   "code": "d1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758868009": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758868010": {
+   "code": "h1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758868026": {
+   "code": "h1g0sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758868028": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-758868031": {
+   "code": "o1g0sl14",
+   "keep": "dup"
+  },
+  "fish-s535-cand-fb-Prbia_u0": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s535-cand-571897165": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s535-cand-571897546": {
+   "code": "o1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s535-cand-255726284": {
+   "code": "o1g0sm14",
+   "keep": "best"
+  },
+  "fish-s535-cand-55536646": {
+   "code": "p1g1sms4",
+   "keep": "best"
+  },
+  "fish-s535-cand-753664784": {
+   "code": "o0g1sl13",
+   "keep": "alt"
+  },
+  "fish-s535-cand-753664801": {
+   "code": "o0g1sl13",
+   "keep": "dup"
+  },
+  "fish-s535-cand-753664988": {
+   "code": "p1g1sl13",
+   "keep": "best"
+  },
+  "fish-s535-cand-339462056": {
+   "code": "o1g1ms12",
+   "keep": "best"
   }
  }
 }

@@ -167,6 +167,18 @@
   "fish-s175-cand-580853220": {
    "code": "p1g2ml12",
    "keep": "best"
+  },
+  "fish-s175-cand-501740609": {
+   "code": "p0g1sm1c1",
+   "keep": "dup"
+  },
+  "fish-s175-cand-501740617": {
+   "code": "p0g1sl1c2",
+   "keep": "best"
+  },
+  "fish-s175-cand-501740614": {
+   "code": "p0g1sl1c2",
+   "keep": "dup"
   }
  }
 }

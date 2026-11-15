@@ -1,6 +1,7 @@
 # Fish naming path: design spec
 
-Status: design agreed with Pierre on 2026-11-03; the species level not built. Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
+Status: design agreed with Pierre on 2026-11-03; the species level not built (its step 1, common names, waits on four
+questions: [docs/reviews/2026-11-14-species-step1.md](reviews/2026-11-14-species-step1.md)). Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
 "Subjects", docs/LEARNING.md "Fish on the same model"). This file says what comes next: species names, common then Latin, and the IMR
 shortcut (since 2026-11-04 the fish welcome question and the open-all card). It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
 track: every unlock is a performance threshold or a share that rises with progress (docs/LEARNING.md "Considered and not adopted").
@@ -374,7 +375,7 @@ Decided from the admin pooling study:
 
 - **One subject switch** in the admin for everything, with each side's to-do count on it, and subject-neutral pages (ROADMAP "Admin: one
   subject switch, subject-neutral pages").
-- **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20. That is enough at entry
+- **Photos per species**: start at 8 observations per circle-1 species, 12 for the PDF's 24 most sighted, cap 20 (5 for a species met only on the surprise cards: Pierre, 2026-11-08, ROADMAP "Surprise-only species"). That is enough at entry
   (family) level; at species level Pierre expects **30 to 40 photos per species** soon, so players learn the species and not the photos,
   and to cover their variability (quality, individuals, profile or front, colour, partly hidden). The candidate cap since 2026-11-05
   (Pierre, Q36): 30 photos for a stable species, +10 per extra phase (juvenile, intermediate, male or terminal, female), at most 60, the
@@ -463,6 +464,8 @@ The study behind these formats, and which ideas were adopted and why: [FORMATS.m
 4. Typed Latin species name (the schedule's last step and the exam).
 5. **"Find the X"** (one name, 4 photos), **fish only**, slipped into the quiz like duels (a small share, spaced, never on a unit not met),
    **once the species photos are curated** (Pierre, 2026-11-03). Fish photos stay identifiable as small thumbnails; coral photos do not.
+   **Built** (2026-11-14, Q321 D1) on the families, with the square tiles: 5% of the questions that could be one (`quiz.js` `FIND`,
+   `planFind`), logged `quiz|f` (docs/LEARNING.md "Find the X slipped into the fish quiz"); the species once they are units.
 
 Then (Pierre, 2026-11-09, Q321): Matrix (4 photos, 5 names), a separate fish game, families before species, after Find the X;
 both show the square fish tiles (`judging/FISH.md` "The fish's box"). Later, not agreed yet: photo-to-trait (needs per-photo
@@ -559,9 +562,11 @@ on families only to an IMR RA with every species open:
   bottom as the coral page's views.
 - Shared by all three: the card (its ring shows the global score; levels, a one-line species summary), the "Open all" box while entries or
   species are still unopened, and a drill-down per entry (review and latest first, the rest capped; species not open counted, not listed).
-- **"Mystery" tiles for units not met yet** (Pierre, 2026-11-04; ROADMAP): an entry or species the player has not met shows as a masked
-  tile, for everyone on fish. On corals only for beginners (the first-launch answer "I'm new to corals"); RAs who had the IMR course and
-  players who know corals well see the genera as today.
+- **"Mystery" tiles for units not met yet** (Pierre, 2026-11-04; built 2026-11-15): a unit the player has not met shows as a masked
+  tile ("?", no name, photo or link), for everyone on fish. On corals only for beginners (the first-launch answer "I'm new to corals");
+  RAs who had the IMR course and players who know corals well see the genera as today (`progress.js` `mysteryOf`, `app.js` `UNITS`
+  `mystery`; docs/ARCHITECTURE.md "Pages and routing"). Built for the families and scientific genera on the photo wall; the species
+  tiles get the same mask when the species level brings them.
 
 ## Both subjects in one app (Pierre, 2026-11-04, answering the fish UX study)
 

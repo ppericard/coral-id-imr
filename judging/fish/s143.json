@@ -191,6 +191,22 @@
   "fish-s143-cand-525978677": {
    "code": "o1g2sm13",
    "keep": "alt"
+  },
+  "fish-s143-cand-519690934": {
+   "code": "o1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-923901": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s143-cand-690180728": {
+   "code": "o1g1sm13",
+   "keep": "best"
+  },
+  "fish-s143-cand-704870296": {
+   "code": "p1g1ssoj1",
+   "keep": "best"
   }
  }
 }

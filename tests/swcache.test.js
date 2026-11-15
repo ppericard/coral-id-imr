@@ -41,9 +41,11 @@ function storage() {
 }
 
 // A worker of sw.js whose shell cache is named V: its handlers, and the requests it sent to the network.
-// opts.fetch replaces the network (e.g. offline: it fails).
+// opts.fetch replaces the network (e.g. offline: it fails); opts.waiting: a newer version waits (registration.waiting).
 function worker(V, store, net, opts = {}) {
-  const on = {};
+  const on = {},
+    sent = [], // messages to the waiting version
+    skips = []; // skipWaiting() calls
   const res = url => ({
     ok: true,
     status: 200,
@@ -55,8 +57,9 @@ function worker(V, store, net, opts = {}) {
   const ctx = {
     self: {
       addEventListener: (t, f) => (on[t] = f),
-      skipWaiting: async () => {},
-      clients: {claim: async () => {}, matchAll: async () => []}
+      skipWaiting: async () => void skips.push(1),
+      clients: {claim: async () => {}, matchAll: async () => []},
+      registration: {waiting: opts.waiting ? {state: 'installed', postMessage: m => sent.push(m)} : null}
     },
     caches: store.api,
     fetch: opts.fetch || (async r => (net.push(String(r.url || r)), res(String(r.url || r)))),
@@ -76,12 +79,15 @@ function worker(V, store, net, opts = {}) {
     return Promise.all(L);
   };
   return {
+    sent,
+    skips,
+    message: data => wait({type: 'message', data}),
     // One fetch event as the browser sends it: its reply (respondWith) and its lifetime (waitUntil), apart.
-    dispatch: url => {
+    dispatch: (url, mode = 'navigate') => {
       const L = {};
       on.fetch({
         type: 'fetch',
-        request: {url, method: 'GET', mode: 'navigate'},
+        request: {url, method: 'GET', mode},
         waitUntil: p => (L.lifetime = p),
         respondWith: p => (L.reply = p)
       });
@@ -222,4 +228,42 @@ test('activation deletes the Coral Finder book crops from the photo cache, and n
   for (const u of [...keep, ...gone]) await ph.put(u, {body: u});
   await worker('reefid-shell-v2', store, net).activate();
   assert.deepStrictEqual([...store.all.get('imr-photos-v1').keys()].sort(), keep.sort());
+});
+
+// A page opened while a newer version waits (2026-11-14, net.smoke check 9 on a merge train): in Chromium that navigation
+// takes the waiting version over and stops this worker with the navigation in it, and a page the worker was answering
+// never loaded. Such a navigation is left to the browser (no respondWith); the page's other requests are answered as
+// always, and a navigation with no version waiting too.
+test('a navigation while a newer version waits is left to the browser; other requests and other times are answered', async () => {
+  const net = [];
+  const waiting = worker('reefid-shell-v1', storage(), net, {waiting: true});
+  for (const page of ['admin.html?demo', 'index.html', ''])
+    assert.deepStrictEqual(waiting.dispatch(SITE + page), {}, `${page || 'the root'}: not answered, nothing kept alive`);
+  assert.deepStrictEqual(net, [], 'the worker fetched nothing for them');
+  assert.ok(waiting.dispatch(SITE + 'curation-play.json', 'cors').reply, 'a request of the page is still answered');
+  assert.ok(waiting.dispatch(SITE + 'app.js?v=1', 'no-cors').reply, 'a versioned file too');
+  const calm = worker('reefid-shell-v1', storage(), []);
+  assert.ok(calm.dispatch(SITE + 'admin.html?demo').reply, 'no version waiting: the page is answered by the worker');
+});
+
+// A swap held by Chromium (2026-11-14: a request that came in the instant the old worker was stopped for the swap started
+// it again, and the new version then waited over 90 s): the old worker asks the waiting version, at each request, to take
+// over again, and the waiting version calls skipWaiting() again on that message, and on no other.
+test('a worker with a newer version waiting asks it to take over; the waiting version calls skipWaiting() again', async () => {
+  const old = worker('reefid-shell-v1', storage(), [], {waiting: true});
+  old.dispatch(SITE + 'manifest.webmanifest', 'cors');
+  old.dispatch(SITE + 'index.html');
+  // (made in the sandbox's realm: compared as JSON)
+  assert.strictEqual(
+    JSON.stringify(old.sent),
+    JSON.stringify([{t: 'reefid-skip'}, {t: 'reefid-skip'}]),
+    'one ask per request, navigations included'
+  );
+  const calm = worker('reefid-shell-v1', storage(), []);
+  calm.dispatch(SITE + 'manifest.webmanifest', 'cors');
+  const next = worker('reefid-shell-v2', storage(), []);
+  await next.message({t: 'other'});
+  assert.deepStrictEqual(next.skips, [], 'another message changes nothing');
+  await next.message({t: 'reefid-skip'});
+  assert.deepStrictEqual(next.skips, [1]);
 });

@@ -1,4 +1,4 @@
-// The pooled stats built incrementally (sheet vNEXT; Q123 j, Pierre 2026-11-14): the trigger's fold (Code.gs statsFold_)
+// The pooled stats built incrementally (sheet v134; Q123 j, Pierre 2026-11-14): the trigger's fold (Code.gs statsFold_)
 // serves exactly what the whole log gives (stats_), run after run, at any number of rows a run, through every rebuild.
 // Against the in-memory sheet of tests/gas.js only: nothing leaves this process (rule D1).
 const test = require('node:test'),
@@ -96,7 +96,7 @@ const post = (s, p) =>
     ? s.post({anon: p.w.anon, anonAnswers: p.answers})
     : s.post({name: p.w.name, pin: p.w.pin, data: {}, summary: {}, answers: p.answers});
 
-// What ?stats=1 sends, from the whole log (stats_ as before vNEXT), and from the snapshot.
+// What ?stats=1 sends, from the whole log (stats_ as before v134), and from the snapshot.
 const PUB = ['ok', 'photos', 'conf', 'mem', 'memn', 'gd', 'fmt'];
 const pub = o => JSON.parse(JSON.stringify(Object.fromEntries(PUB.map(k => [k, o[k]]))));
 const full = s => {

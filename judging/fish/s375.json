@@ -207,6 +207,122 @@
   "fish-s375-cand-46797955": {
    "code": "o1g1sl13",
    "keep": "best"
+  },
+  "fish-s375-cand-734173571": {
+   "code": "p0d1sm1c2",
+   "keep": "dup"
+  },
+  "fish-s375-cand-734173610": {
+   "code": "h1g0sm1c2",
+   "keep": "dup"
+  },
+  "fish-s375-cand-734173636": {
+   "code": "p0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-46797959": {
+   "code": "p1g1sl13",
+   "keep": "alt"
+  },
+  "fish-s375-cand-46797958": {
+   "code": "p1g1sm13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-112418476": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s375-cand-112418490": {
+   "code": "p0g1sl12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-168486218": {
+   "code": "p1d1sm12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-168486230": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s375-cand-121770224": {
+   "code": "p1g1sm14",
+   "keep": "best"
+  },
+  "fish-s375-cand-111260779": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s375-cand-250910090": {
+   "code": "p1d1sl1c2",
+   "keep": "best"
+  },
+  "fish-s375-cand-115623790": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-115623860": {
+   "code": "p1g0sl14",
+   "keep": "alt"
+  },
+  "fish-s375-cand-80024222": {
+   "code": "o1g0sm13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-80024250": {
+   "code": "p1g0sm13",
+   "keep": "best"
+  },
+  "fish-s375-cand-80024260": {
+   "code": "o0g0sl13",
+   "keep": "dup"
+  },
+  "fish-s375-cand-80024323": {
+   "code": "p1g1ss12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-749874772": {
+   "code": "o0g1sm12",
+   "keep": "best"
+  },
+  "fish-s375-cand-636403116": {
+   "code": "p0g1sl13",
+   "keep": "best"
+  },
+  "fish-s375-cand-636403124": {
+   "code": "p1g1sl1c2",
+   "keep": "dup"
+  },
+  "fish-s375-cand-715069732": {
+   "code": "p1g1ms12",
+   "keep": "best"
+  },
+  "fish-s375-cand-712479054": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-461499249": {
+   "code": "p1g0sl1c3",
+   "keep": "best"
+  },
+  "fish-s375-cand-80628138": {
+   "code": "p1g1ms12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-80628151": {
+   "code": "p0g1ml12",
+   "keep": "dup"
+  },
+  "fish-s375-cand-80628192": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s375-cand-683518871": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s375-cand-658987880": {
+   "code": "p1g1ss12",
+   "keep": "best"
   }
  }
 }

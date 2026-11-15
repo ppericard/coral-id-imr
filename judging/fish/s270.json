@@ -220,6 +220,138 @@
    "code": "p1g1bsx1",
    "keep": "best",
    "note": "A large yellow fish fills the frame; the cleaner wrasse is a small shape below it."
+  },
+  "fish-s270-cand-623318317": {
+   "code": "o1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s270-cand-456026717": {
+   "code": "p1g0smkj1",
+   "keep": "alt"
+  },
+  "fish-s270-cand-456026719": {
+   "code": "p1g0smkj1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-456026723": {
+   "code": "p1g0sl1j2",
+   "keep": "alt"
+  },
+  "fish-s270-cand-456026729": {
+   "code": "o1g0sl1j2",
+   "keep": "dup"
+  },
+  "fish-s270-cand-439326472": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-350151": {
+   "code": "o1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-330076956": {
+   "code": "p1g1ssk1",
+   "keep": "best"
+  },
+  "fish-s270-cand-729414607": {
+   "code": "p1g1smk2",
+   "keep": "best"
+  },
+  "fish-s270-cand-472233646": {
+   "code": "p1g2ss11",
+   "keep": "best"
+  },
+  "fish-s270-cand-472233643": {
+   "code": "p1g2ss11",
+   "keep": "dup"
+  },
+  "fish-s270-cand-566538996": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s270-cand-606878129": {
+   "code": "o1g0ss12",
+   "keep": "best"
+  },
+  "fish-s270-cand-585325369": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-64586726": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-666265069": {
+   "code": "o1g1smo3",
+   "keep": "best"
+  },
+  "fish-s270-cand-656500349": {
+   "code": "o1g1smk1",
+   "keep": "best"
+  },
+  "fish-s270-cand-430595743": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s270-cand-480450135": {
+   "code": "p1g0sm13",
+   "keep": "best"
+  },
+  "fish-s270-cand-547467045": {
+   "code": "o1g2mm12",
+   "keep": "best"
+  },
+  "fish-s270-cand-747834131": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s270-cand-720615267": {
+   "code": "p1g0sl14",
+   "keep": "best"
+  },
+  "fish-s270-cand-755901073": {
+   "code": "p1g1ml13",
+   "keep": "best"
+  },
+  "fish-s270-cand-581660823": {
+   "code": "p1g0sl1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-430595676": {
+   "code": "o1g1sm14",
+   "keep": "best"
+  },
+  "fish-s270-cand-593262082": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-456027125": {
+   "code": "p1g0sm1j2",
+   "keep": "best"
+  },
+  "fish-s270-cand-476255385": {
+   "code": "p1g2ms1j1",
+   "keep": "best"
+  },
+  "fish-s270-cand-476255402": {
+   "code": "o1g2ms1j1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-762955353": {
+   "code": "p1g2bsx1",
+   "keep": "best"
+  },
+  "fish-s270-cand-762955357": {
+   "code": "p1g2bsx1",
+   "keep": "dup"
+  },
+  "fish-s270-cand-428109835": {
+   "code": "p1g3bs11",
+   "keep": "best"
+  },
+  "fish-s270-cand-570866738": {
+   "code": "p1g0ml14",
+   "keep": "best"
   }
  }
 }

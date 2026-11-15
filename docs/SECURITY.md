@@ -10,7 +10,7 @@ or a protection changes.
 |---|---|---|---|
 | The site (GitHub Pages: HTML, JS, CSS, photos, `data.json`, `curation.json`) | Anyone | Nothing: static files, read-only; GitHub absorbs the traffic. | — |
 | Admin (`admin.html`) | Anyone can open the page, only a GitHub token with write access to the repo can change anything | Someone with Pierre's token rewrites `curation.json`. | Fine-grained token, this repo only, 90-day expiry, stored encrypted in Pierre's browser (password). Every Publish is a commit: reversible. |
-| Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (10 million cells per spreadsheet, script run quotas) and sync slows or stops for real players. | See below. |
+| Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (20 million cells per spreadsheet, script run quotas) and sync slows or stops for real players. | See below. |
 | Leaderboard (`GET ?board=1`, v14) | Anyone | Shows each signed-in player's chosen name, progress % and Elo unless they opted out (⚙ Leaderboard: Off, a `reefid-sync` setting so it holds on every device; privacy.html says so). The progress % is computed by the script from the saved progress (v16), like the Elo from the answers; a tampered app could still save inflated progress, as it could fake answers. | Cached 5 minutes; nothing else about a player is returned. Per-player numbers (the anonymous answer log, each id's ability) are admin-only from v14 (POST with the token), so a public leaderboard row can't be matched to an anonymous id and its answer history. |
 | Names, reports, user management | Only with the admin GitHub token (checked by the script with GitHub) | — | `isAdmin_`. |
 | Self-update of the script | Whoever can push to `main` | Arbitrary script code. | Same trust as the site itself: only Pierre, his agents and the Candidate photos workflow's bot push to `main` (its credentials: below). |
@@ -22,20 +22,34 @@ leak of the Sheet would expose little.
 
 `.github/workflows/approved-photos.yml` downloads and decodes files from the internet (photos and JSON from iNaturalist
 and FishBase, decoded by Pillow installed from PyPI) and pushes its results to `main`, which the sync script updates
-itself from. Since the security check of 2026-11-13:
-- the workflow's token is read-only by default; only the two jobs that push (`photos`, `fish`) get `contents: write`,
-  the `r2` job reads only (R2 has its own keys);
+itself from. Since the security check of 2026-11-13 and its follow-ups:
+- the workflow's token is read-only by default. The jobs that download and decode (`photos`, `fish`) and the `r2` job
+  read only; each of the first two hands its result to a push job as an artifact: the staged diff of its own files
+  (binary, renames off) and the commit of `main` it applies to;
+- only the two push jobs (`photos-push`, `fish-push`) get `contents: write`. They run no repository code and nothing
+  downloaded (a checkout of `main`, the artifact, their own shell), and treat the artifact as hostile: the base must be a
+  commit of `main` (else `git pull --rebase` would carry foreign commits onto it); before anything is written, every
+  path the diff changes must be one of their job's files (`git apply --numstat`: `data.json`, `cand.json`,
+  `excluded.json`, `fish-game.json`, `fish-photos.json`, `img/<name>`; `fish-cand.json`, `tools/fish_refill.json`) and its only extended
+  headers a regular file created or deleted (`git apply --summary`: a rename, a copy, a mode change, a symlink are
+  refused); once applied, the staged files are checked again (paths, mode 100644 or deleted, nothing else changed).
+  Then they commit under the bot's name and the same message as before, rebase on today's `main` and push
+  (`tests/photospush.test.js` runs their shell on crafted patches);
 - every checkout has `persist-credentials: false`: no token is written to `.git/config`, and the git reads after it
   (the blobs fetched on demand, `git pull --rebase`) go without one, the repository being public;
-- the write token is given only to the `Commit` steps, in their own environment, and handed to `git push` alone as an
-  HTTP header for that one process (`GIT_CONFIG_*`), its base64 form masked in the log.
+- the write token is given only to the push jobs' `Commit` steps, in their own environment, and handed to `git push`
+  alone as an HTTP header for that one process (`GIT_CONFIG_*`), its base64 form masked in the log;
+- Python packages are installed by hash (`pip install --require-hashes -r tools/requirements.txt`, here and in Checks):
+  a Pillow file swapped on PyPI or on the way is refused.
 
-So a file-read bug or a leak in a download or decode step finds no write credential on disk or in its environment.
-**Not covered**: code that takes over a step of a job that pushes (a decoder exploit, a compromised package) runs in the
-same job as the `Commit` step and could still reach the token (a git hook, `$GITHUB_ENV`, the runner's memory). Closing
-that needs the work split in two jobs: one without write access makes the commit, a second one, running no downloaded
-code, checks it touches only its own files and pushes it. Pillow is pinned by version, not by hash (`pip install
---require-hashes`): both are follow-ups.
+So code that takes over a download or decode step (a decoder exploit, a compromised package) runs in a job with a
+read-only token and no write credential anywhere; the most it can do is hand over a diff of its own job's files, which
+the push job commits as it would the real result (that is the trust the workflow needs: it writes those files).
+**Not covered**: the `photos` job still holds the R2 keys for its upload of the new photos (`tools/r2_sync.sh
+r2-upload`, before the commit marks them downloaded): such code could write to the photo bucket (never to `main`).
+Like any job, a read-only one also holds the runner's own token for artifacts and the Actions cache: such code could
+save a cache entry under `main` that a later run restores (the Smokes' Playwright Chromium cache, when `main` has none
+of that key yet); those runs hold read-only tokens too.
 
 ## Protections in the sync script (v12)
 
@@ -118,7 +132,7 @@ The admin's account (v125, the 🌱 after its name) is kept by its code hash in 
 only by a read with the admin's token from the admin page signed in to that account (its code checked), never from what a
 player sends; a delete, a merge (its from) and an archive clear it, and no player can type the seedling or a look-alike
 in a new name (`core.js` `reservedName`).
-The pooled stats' snapshot (sheet vNEXT, the `Stats` tab, ARCHITECTURE.md "Progress sync"): its fold keeps, by admin
+The pooled stats' snapshot (sheet v134, the `Stats` tab, ARCHITECTURE.md "Progress sync"): its fold keeps, by admin
 id and never by name, each player's trust counts, ability, photo memory and the last day's answers (unit, answer, mode,
 photos, choices, expectation), never served. A delete, a merge or an archive (`rosterChanged_`), a change to who is left
 out of the statistics and `anonDelete` blank it at once and drop the reply served (`statsDirty_`), and the next run of

@@ -40,9 +40,9 @@ jobs:
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js tools/*.js tools/og/*.js; do node --check "$f" || exit 1; done
-      # Pillow (tools/requirements.txt): tests/fishgame.test.js runs the fish photo download on a fixture.
+      # Pillow (tools/requirements.txt, by hash): tests/fishgame.test.js runs the fish photo download on a fixture.
       - name: Python packages
-        run: pip install -r tools/requirements.txt
+        run: pip install --require-hashes -r tools/requirements.txt
       - name: Unit tests
         run: |
           node --test tests/*.test.js

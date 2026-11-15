@@ -223,6 +223,50 @@
   "fish-s479-cand-617979174": {
    "code": "p1g1sl1j3",
    "keep": "dup"
+  },
+  "fish-s479-cand-504743391": {
+   "code": "p1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s479-cand-504743428": {
+   "code": "o1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s479-cand-504743452": {
+   "code": "o1g1smsj2",
+   "keep": "dup"
+  },
+  "fish-s479-cand-520379148": {
+   "code": "p1d1sm1j2",
+   "keep": "alt"
+  },
+  "fish-s479-cand-520379180": {
+   "code": "o1d1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s479-cand-554020353": {
+   "code": "p1g1sl1jc3",
+   "keep": "best"
+  },
+  "fish-s479-cand-498499101": {
+   "code": "p1g0sl1j4",
+   "keep": "best"
+  },
+  "fish-s479-cand-605319145": {
+   "code": "o1g0sm1j3",
+   "keep": "best"
+  },
+  "fish-s479-cand-763005894": {
+   "code": "p1g1ss1j1",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "in a tank or tub (plain green walls), not on the reef"
+  },
+  "fish-s479-cand-763005896": {
+   "code": "p1g1ss1j1",
+   "keep": "dup"
   }
  }
 }

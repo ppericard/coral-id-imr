@@ -159,6 +159,86 @@
   "fish-s092-cand-660327428": {
    "code": "o1g1mss2",
    "keep": "best"
+  },
+  "fish-s092-cand-750768819": {
+   "code": "p1g0slsj2",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "two fish that seem to be in a tank or container, not on the reef"
+  },
+  "fish-s092-cand-598682189": {
+   "code": "p1g1sl14",
+   "keep": "best"
+  },
+  "fish-s092-cand-627756095": {
+   "code": "p1g1mms3",
+   "keep": "best"
+  },
+  "fish-s092-cand-660327453": {
+   "code": "p1g1sss2",
+   "keep": "dup"
+  },
+  "fish-s092-cand-627756157": {
+   "code": "p1g1sss1",
+   "keep": "dup"
+  },
+  "fish-s092-cand-267505638": {
+   "code": "p1g1sss1",
+   "keep": "best"
+  },
+  "fish-s092-cand-420275138": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s092-cand-359656534": {
+   "code": "p1g1ssx1",
+   "keep": "best"
+  },
+  "fish-s092-cand-303460445": {
+   "code": "p1g2ssx1",
+   "keep": "best"
+  },
+  "fish-s092-cand-369564439": {
+   "code": "p1g1ssx1",
+   "keep": "alt"
+  },
+  "fish-s092-cand-369564450": {
+   "code": "p1g1sssj1",
+   "keep": "best"
+  },
+  "fish-s092-cand-475988587": {
+   "code": "o1g1sss2",
+   "keep": "best"
+  },
+  "fish-s092-cand-509094610": {
+   "code": "p1g0smsj2",
+   "keep": "best"
+  },
+  "fish-s092-cand-464907718": {
+   "code": "p1g1sss1",
+   "keep": "best"
+  },
+  "fish-s092-cand-464907725": {
+   "code": "p1g1sss1",
+   "keep": "dup"
+  },
+  "fish-s092-cand-381363646": {
+   "code": "o1g0sss2",
+   "keep": "best"
+  },
+  "fish-s092-cand-505148173": {
+   "code": "p1g1mms2",
+   "keep": "best"
+  },
+  "fish-s092-cand-490462450": {
+   "code": "p1g1sss1",
+   "keep": "best"
+  },
+  "fish-s092-cand-617155971": {
+   "code": "p1g1ss12",
+   "keep": "best"
   }
  }
 }

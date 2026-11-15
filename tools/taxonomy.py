@@ -44,7 +44,9 @@ C7). Every reply is cached in tools/.cache/taxonomy.json (git-ignored): a rerun 
 
 names.json (the admin's extract, written with the file, never edited by hand): {"v", "doc", "<subject>": {"date",
   "sp": {species name: {now, iname?, inat?}}: the species rows; "gen": {former genus: the genus WoRMS (else iNaturalist)
-  accepts now}: the `old` names that are no longer a genus of their own}}.
+  accepts now}: the `old` names that are no longer a genus of their own; "worms": {app genus: {id, fam}}: each genus's
+  WoRMS AphiaID and the family WoRMS files it under (gen.<genus>.worms), for the WoRMS view of the admin's Photos › Tree
+  (admin-tree.js ctWormsOf)}}.
 
 Usage: python3 tools/taxonomy.py [--offline | --refresh] [--dry]   (--dry: print the report, leave the files as they are)
        python3 tools/taxonomy.py --names   (offline: write names.json again from taxonomy.json)
@@ -650,13 +652,16 @@ def check(path=OUT, names_path=NAMES):
 
 NAMES_DOC = ("The admin's extract of tools/taxonomy.json, written by tools/taxonomy.py (never by hand): the admin flags a "
              "photo or candidate whose name is a former combination, a moved genus or an iNaturalist spelling WoRMS "
-             "writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (rule C1).")
+             "writes otherwise (presence.js nameFlag). Flags only: nothing is renamed (rule C1). worms: each genus's "
+             "WoRMS id and family, for the WoRMS view of Photos › Tree.")
 
 
 def names_extract(o):
     """names.json from taxonomy.json: per subject, its species rows ({now, iname?, inat?}) and its former genus names
     that are no longer a genus of their own ({name: the genus accepted now}: WoRMS's, else iNaturalist's single current
-    taxon; Favia or Montastraea, still accepted genera that lost species, are left out)."""
+    taxon; Favia or Montastraea, still accepted genera that lost species, are left out), and each genus's WoRMS AphiaID
+    and family ({genus: {id, fam}}, the Tree's WoRMS view; a genus with no WoRMS record or family is left out, and the
+    view reports it)."""
     out = {"v": 1, "doc": NAMES_DOC}
     for s in (k for k in o if k not in ("v", "doc", "refs")):
         sec = o[s]
@@ -668,7 +673,9 @@ def names_extract(o):
                 gen[n] = now
         out[s] = {"date": max((d for d in (sec.get("refreshed") or {}).values() if d), default=None),
                   "sp": {k: {f: r[f] for f in ("now", "iname", "inat") if f in r} for k, r in sec.get("spp", {}).items()},
-                  "gen": gen}
+                  "gen": gen,
+                  "worms": {n: {"id": w["id"], "fam": w["fam"]} for n, w in
+                            ((n, r.get("worms") or {}) for n, r in sec.get("gen", {}).items()) if w.get("id") and w.get("fam")}}
     return out
 
 
@@ -682,6 +689,8 @@ def render_names(o):
         L.append(",\n".join(f"{dumps(k)}:{dumps(v)}" for k, v in sec["sp"].items()))
         L += ["},", '"gen":{']
         L.append(",\n".join(f"{dumps(k)}:{dumps(v)}" for k, v in sec["gen"].items()))
+        L += ["},", '"worms":{']
+        L.append(",\n".join(f"{dumps(k)}:{dumps(v)}" for k, v in sec["worms"].items()))
         L += ["}", "}" + ("," if j < len(subs) - 1 else "")]
     L.append("}")
     return "\n".join(x for x in L if x != "") + "\n"

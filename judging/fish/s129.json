@@ -111,6 +111,54 @@
   "fish-s129-cand-fb-Luful_u3": {
    "code": "p1g0sl15",
    "keep": "best"
+  },
+  "fish-s129-cand-614105373": {
+   "code": "o1g1smk2",
+   "keep": "best"
+  },
+  "fish-s129-cand-759565872": {
+   "code": "p1g1bm12",
+   "keep": "best"
+  },
+  "fish-s129-cand-618773286": {
+   "code": "p1g1sm13",
+   "keep": "best"
+  },
+  "fish-s129-cand-596668528": {
+   "code": "o1g2mm12",
+   "keep": "best"
+  },
+  "fish-s129-cand-760315295": {
+   "code": "p1g0sm1a3",
+   "keep": "best"
+  },
+  "fish-s129-cand-556829922": {
+   "code": "p1g0slo4",
+   "keep": "best"
+  },
+  "fish-s129-cand-567130377": {
+   "code": "p1g2bms1",
+   "keep": "best"
+  },
+  "fish-s129-cand-747337017": {
+   "code": "p1g0sm1a3",
+   "keep": "best"
+  },
+  "fish-s129-cand-555852516": {
+   "code": "p1g0sm14",
+   "keep": "best"
+  },
+  "fish-s129-cand-702976587": {
+   "code": "p1g2mmo2",
+   "keep": "best"
+  },
+  "fish-s129-cand-591268557": {
+   "code": "p1g0sl14",
+   "keep": "best",
+   "unsure": [
+    "code"
+   ],
+   "note": "in a tank (glass and plain background), not on the reef"
   }
  }
 }

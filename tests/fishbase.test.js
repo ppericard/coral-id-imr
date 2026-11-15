@@ -361,17 +361,20 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
     refs = new Set(Object.values(read('tools/fish_refs.json').photos).flatMap(L => L.filter(p => p.via === 'fishbase').map(p => p.f))),
     isFb = p => p.via === 'fishbase' || /fishbase\./.test(p.src || '');
   // Pierre, 2026-11-06 14:02: FishBase photos enter automatically when their licence allows (until then only through his
-  // curation): every FishBase game photo is his addition or a reference photo of tools/fish_refs.json judged at the
-  // reference level (tools/fish_judge.py ref_level, core.js refLevel); on R2 (fish-game.json), also a photo in play by
-  // itself (auto: a candidate judged sure, a reference-level photo; Q180, Q199; tools/fish_game.py in_play).
-  Object.values(PH.photos)
-    .flat()
-    .filter(isFb)
-    .forEach(p => assert.ok(added.has(p.f) || (refs.has(p.f) && C.refLevel(p)), `${p.f}: a FishBase game photo outside the rules`));
-  // The game as it plays (admin plan PR 7: the curated photos of fish-game.json, downloaded to R2, beside the stopgap):
-  // a FishBase photo only while Pierre has it in play for that species (core.js fishOn), or a judged reference photo.
+  // curation): every FishBase game photo is his addition, a reference photo of tools/fish_refs.json judged at the
+  // reference level (core.js refLevel), or a photo in play by itself (auto: a candidate judged sure, a reference photo
+  // judged sure; Q180, Q199, Q212; tools/fish_game.py in_play), all on R2 (fish-game.json; fish-photos.json's first photos
+  // are the same records: the stopgap of remote photos is retired, 2026-11-15).
+  // The game as it plays: a FishBase photo only while Pierre has it in play for that species (core.js fishOn), or a
+  // judged reference photo, or one in play by itself he did not take out.
   const GM = C.fishGameRead(read('fish-game.json')).photos,
-    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR, F), PH.sheet);
+    X = C.fishGen(F, C.fishPhotos(PH.photos, GM, CUR), PH.sheet);
+  [X, C.fishGen(F, C.fishPhotos(PH.photos, {}, CUR), PH.sheet)].forEach(Y =>
+    assert.ok(
+      Object.values(Y.gen).some(g => g.views.wide.some(isFb)),
+      'FishBase photos in play, the first photos too'
+    )
+  );
   Object.values(X.gen).forEach(g =>
     g.views.wide
       .filter(isFb)
@@ -400,19 +403,23 @@ test('FishBase in a game: Pierre added it, or tools/fish_refs.py took it under t
   cur.fish.seen[fb.f] = 1;
   assert.ok(!C.fishPhotos({}, {t01: [fb]}, cur).t01.some(p => p.f === fb.f), 'rejected: out of the game at once');
   assert.ok(!C.fishPhotos({}, {t01: [fb]}, {...CUR, fish: {...CUR.fish, add: {}}}).t01.length, 'never added: never in the game');
-  // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, as its
-  // sheet-only photo (Pierre, 2026-11-05), never a game photo nor a cover.
-  const h = (PH.sheet.s238 || [])[0];
-  assert.ok(h, 's238 has its sheet photo');
-  assert.deepStrictEqual(
-    [h.f, h.src, h.lic, h.use, h.from, h.via, h.rep, h.sp],
-    ['fbHachl_m0', 'https://www.fishbase.se/images/species/Hachl_m0.jpg', 'cc-by-nc', 'ref', 'fishbase', 'fishbase', 'fishbase', 's238']
-  );
-  assert.match(h.a, /J\.E\. Randall, via FishBase/);
-  assert.match(h.o, /PicturesSummary\.php\?ID=58178&what=species&pic=Hachl_m0\.jpg$/);
-  assert.match(h.note, /holotype/);
-  assert.ok((X.sheet.s238 || []).some(p => p.f === 'fbHachl_m0'));
-  Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.f === 'fbHachl_m0') && g.cover !== 'fbHachl_m0', g.id));
+  // Halichoeres chlorocephalus: J. E. Randall's FishBase photo of the holotype, alive underwater at Madang, was its
+  // sheet-only photo (Pierre, 2026-11-05: a species with no game photo); the same photo is in play now as a FishBase
+  // candidate of s238 (2026-11-15), so the sheet-only copy left (tools/fish_game.py sheet_of) and the sheet shows the
+  // game's. Pierre's curation may take it out of play again: then the species shows its other photos in play, or the
+  // workflow's next run brings no sheet-only copy back by itself (tools/fish_photos.py finds it again on request).
+  const inPlay = Object.values(X.gen).flatMap(g => g.views.wide),
+    h = inPlay.find(p => C.fishPid(p.f) === 'bHachl_m0');
+  assert.ok(!PH.sheet.s238 || !inPlay.some(p => p.sp === 's238'), 's238: a sheet-only photo only with no photo in play');
+  if (h) {
+    assert.deepStrictEqual(
+      [h.src, h.lic, h.via, h.sp],
+      ['https://www.fishbase.se/images/species/Hachl_m0.jpg', 'cc-by-nc', 'fishbase', 's238']
+    );
+    assert.match(h.a, /J\.E\. Randall, via FishBase/);
+    assert.match(h.o, /PicturesSummary\.php\?ID=58178&what=species&pic=Hachl_m0\.jpg$/);
+  }
+  Object.values(X.gen).forEach(g => assert.ok(!g.views.wide.some(p => p.use === 'ref'), g.id));
 });
 
 test('fetch_fish.py --rep: --plan writes nothing, and a cover not known keeps the tag (Codex review #562)', () => {
