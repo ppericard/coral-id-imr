@@ -586,14 +586,34 @@ test("the replays read the snapshot: each player's record and the admin's list a
     Favia: {fam: 'Merulinidae'}
   });
   s.cache.slate1 = JSON.stringify(G);
+  // Answers the replay rates with the pooled stats: logged with the expectation and the ability (e, th), as the app does.
+  const R = rng(41);
+  for (const w of [WHO[0], WHO[1], WHO[5]])
+    for (let d = 0; d < 3; d++)
+      post(s, {w, answers: session(R, w, now - (30 - 6 * d) * H, 4, 'coral').map(a => Object.assign(a, {e: 0.6, th: 0.2 * d}))});
   foldAll(s, now);
   const who = ['ana', 'ben', 'cal-old', '~anon device0001', 'nobody'];
-  const recs = () => who.map(w => s.ctx.rplMake_(w, s.ctx.rplMine_(w, 0), 0, null));
+  const recs = () => wire(who.map(w => s.ctx.rplMake_(w, s.ctx.rplMine_(w, 0), 0, null)));
   const list = () => {
     s.sheets.Replayed && s.sheets.Replayed.rows.splice(1); // made again, never reused
     const users = ['Ana', 'Ben', 'Eve'].map(name => ({name}));
     s.ctx.replayedAll_(users, {});
     return users.map(u => u.rp);
+  };
+  // Both with the whole log (the switch off, as before), each read counted.
+  const whole = () => {
+    run(s, 'STATS.ON = false');
+    delete s.cache.stats17;
+    run(s, 'ROWS_ = null');
+    let B, M;
+    assert.ok(
+      fullReads(s, () => {
+        B = recs();
+        M = list();
+      }) > 0
+    );
+    run(s, 'STATS.ON = true');
+    return [B, M];
   };
   let A, L;
   assert.strictEqual(
@@ -605,22 +625,36 @@ test("the replays read the snapshot: each player's record and the admin's list a
     'no whole-log read'
   );
   assert.ok(A.some(r => Object.keys(r.rec).length > 3) && L.every(Array.isArray), JSON.stringify(L));
-  run(s, 'STATS.ON = false');
-  s.cache.stats17 && delete s.cache.stats17;
-  run(s, 'ROWS_ = null');
-  let B, M;
-  assert.ok(
-    fullReads(s, () => {
-      B = recs();
-      M = list();
-    }) > 0
-  );
-  assert.deepStrictEqual(wire(A), wire(B), 'rplMake_');
+  const [B, M] = whole();
+  assert.deepStrictEqual(A, B, 'rplMake_');
   assert.deepStrictEqual(L, M, 'replayedAll_');
+  // The records depend on the pooled stats: other offsets in the snapshot give other records.
+  const tab = s.sheets.Stats,
+    keep = tab.rows[1].slice(),
+    st = JSON.parse(keep.slice(6).join(''));
+  Object.keys(st.gd).forEach(g => (st.gd[g][0] += 1));
+  st.mem = st.mem.map((x, i) => x - i);
+  tab.rows[1] = keep.slice(0, 6).concat([JSON.stringify(st)]);
+  delete s.cache[run(s, 'statsCacheKey_()')];
+  assert.notDeepStrictEqual(recs(), A, 'the replay reads the snapshot');
+  tab.rows[1] = keep;
+  delete s.cache[run(s, 'statsCacheKey_()')];
+  assert.deepStrictEqual(recs(), A);
   // Another subject replays without pooled stats, as before.
-  run(s, 'STATS.ON = true');
   assert.strictEqual(
     fullReads(s, () => s.ctx.rplMake_('ana', s.ctx.rplMine_('ana', 0, 'fish'), 0, null, 'fish')),
     0
   );
+  // A delete blanks the snapshot: the replays make the whole log, the same as with the switch off.
+  assert.ok(s.post({userDelete: 'Eve', token: TOK}).ok);
+  let C, N;
+  assert.ok(
+    fullReads(s, () => {
+      C = recs();
+      N = list();
+    }) > 0
+  );
+  const [D, O] = whole();
+  assert.deepStrictEqual(C, D);
+  assert.deepStrictEqual(N, O);
 });

@@ -1940,7 +1940,8 @@ function boardRpl_(S){
 // The leaderboard's replays made ahead (v118, rule D8), by autoUpdate every 15 minutes (the existing trigger), so the
 // public board_ only reads them: for every subject with a leaderboard and rules versions, each player it lists whose
 // saved copy is behind today's rules and whose replay is not kept for today's rules, row count and reset gets it made
-// (rplMake_, outside the script lock: data.json, fish.json and the photo stats are fetched here if not cached), the same
+// (rplMake_, outside the script lock: data.json and fish.json are fetched here if not cached, and the photo stats read
+// from their snapshot, vNEXT, or made from the whole log while there is none), the same
 // record that player's next sync reuses (replay_). New replays start only within BOARD_WARM_MS of the run's start (Apps
 // Script's 6-minute limit), the rest at the next run. Then every one is written to its subject's Replayed tab under one
 // short lock, each only if, read again under the lock, nothing it was made from changed meanwhile (Codex review #810,
