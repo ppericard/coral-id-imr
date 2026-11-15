@@ -161,24 +161,28 @@ as `|x` when the photo is held out (`…|h|x`: `|h` sits before `|kN`, `|t` and 
 
 ### What the analyses measure
 
-Three contrasts, per player (players are the unit, rules L11, L12), declared before the log is read (as in the photo
-memory lag study, [2026-11-15-photo-memory-lag-table.md](2026-11-15-photo-memory-lag-table.md), #944):
+The check itself, then two contrasts, per player (players are the unit, rules L11, L12), declared before the log is
+read (as in the photo memory lag study, [2026-11-15-photo-memory-lag-table.md](2026-11-15-photo-memory-lag-table.md),
+#944). **Matched** below means: compared raw (right %) within each cell of ease band × the unit's stage (bar under
+50%, 50-80%, over 80%, learned) × format (4 choices, 3 or 2 plausible, typed), the cells weighted by the probe counts
+(direct standardisation to the probes' mix). Why raw and matched, not right − expected: a held-out photo has only
+first-exposure answers and its judged-ease prior, while a practice photo has an answer-based rating. Right − expected
+between the two would mix the model's calibration with transfer.
 
-1. **Transfer (primary): held-out probes against practice photos at their first exposure.** Both are photos the player
-   meets for the first time in a quiz. They are compared raw (right %), matched within each cell of ease band ×
-   the unit's stage (bar under 50%, 50-80%, over 80%, learned) × format (4 choices, 3 or 2 plausible, typed). The cells
-   are weighted by the probe counts (direct standardisation to the probes' mix). The test is a sign-flip over players.
-   Why raw and matched, not right − expected: a held-out photo has only first-exposure answers and its judged-ease prior,
-   while a practice photo has an answer-based rating. Right − expected between the two would mix the model's
-   calibration with transfer.
-2. **Hidden exposure: practice "new" against held-out.** Today's photo memory counts a photo as new (bucket 0) when it
-   was never shown in a quiz question (`core.js` `memBucket`). If held-out probes do worse than bucket-0 practice
-   photos in the same cells, practice "new" photos are not new: players met them on sheets, cards, Home, Memory or Find
-   the X. Then today's memory offsets, measured against bucket 0, understate memory. This is contrast 1 read from the
-   memory side. The #944 table's next run (at each subject's next 1,000-answer milestone) gets the held-out row as its
-   clean reference.
-3. **Photo memory against a clean reference: seen photos (buckets 1-3) against held-out**, same matching. This is what
-   Pierre's photo-memory concern of 2026-11-03 asks: do players learn the photos or the unit?
+- **The transfer check (descriptive):** each player's right % on probes by the unit's stage, from its first questions
+  to after Learned. This is the row's "recognition of photos never seen, at the start and later", shown as a table with
+  its counts.
+1. **Transfer to photos seen nowhere (primary): probes against practice photos at their first quiz exposure**, matched.
+   Both are photos the player meets for the first time in a quiz question. The test is a sign-flip over players.
+   - Today's photo memory counts a photo as new (bucket 0) when it was never shown in a quiz question (`core.js`
+     `memBucket`). If probes do worse than those, then practice "new" photos are not new: players met them on sheets,
+     cards, Home, Memory or among Find the X's photos. In that case the bar, the exam and the memory offsets (all
+     measured against bucket 0) over-state what players can do on a photo they have never seen.
+   - The #944 table's next run (at each subject's next 1,000-answer milestone) gets the probes as its clean "new" row.
+2. **Photo memory against a clean reference: seen photos (buckets 1-3) against probes**, matched. This is Pierre's
+   photo-memory concern of 2026-11-03: do players learn the photos or the unit? Memory is already known to help (#944,
+   LEARNING.md "Photo memory"), so this contrast measures its size against a photo seen nowhere. It is not a test of
+   whether memory exists.
 
 Secondary (model-based, exploratory until the held-out photos are rated): right − expected on each side, and a
 mixed-effects logistic model (player and photo random effects; fixed: source, ease band, stage, format) with its
@@ -334,9 +338,10 @@ guardrail's own margin. An unclear result goes one level up. A breach goes to Pi
   photo. So held-out and practice photos at first exposure are alike, and contrast 1 must come out null. Run over the
   simulated players, it must reject at no more than its nominal rate.
 - **Power.** The exemplar learner (`--learner exemplar`) stores every photo shown, so seen photos are recognised better
-  than new ones: contrast 3 must find that.
-- Neither world shows photos outside the quiz, so contrast 2 (hidden exposure) can only be checked on the real log.
-  That is said, not hidden.
+  than new ones: contrast 2 must find that.
+- Neither world shows photos outside the quiz, so the effect contrast 1 looks for (exposure outside the quiz) cannot be
+  simulated: the simulation checks its size only, and its power is known only from the calculation above. That is said,
+  not hidden.
 
 ## 5. Step plan (one PR each, in order)
 
@@ -348,7 +353,7 @@ guardrail's own margin. An unclear result goes one level up. A breach goes to Pi
    step 2 checks (section 4). Players see slightly fewer photos per unit, nothing else.
 3. **Probes** (after (c), (d)): the probe draw, `HELD.p`, the reserve, `|h` in the log, `heldOf`, the `guess_` test,
    the rated world's planner. Level 2 checks.
-4. **Exam from held-out:** `examSet`, `|x|h`. Level 1 checks.
+4. **Exam from held-out:** `examSet`, logged `…|h|x`. Level 1 checks.
 5. **The analyses:** the admin's Analyses gets a Transfer page that says what it can conclude (rule A5). A read-only
    study on the real log once the stop rule is met; the #944 table's next run with the held-out row.
 6. **Later:** species quotas when species open; the Trainer's set (ROADMAP) on top of this set; the corals' note.
