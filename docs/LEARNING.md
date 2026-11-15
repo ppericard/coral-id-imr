@@ -3835,6 +3835,24 @@ fish player past a family's Advanced; this commit, before any run):
 - **Real log (rule L12)**: no species row exists yet (the species are never asked before this), so no replay can judge
   it. Measured instead: a log with no species row replays exactly as before (`tests/species.test.js`).
 
+**Exploratory arms, declared before counting** (2026-11-15, after the app world breached `famAdv` at 600; the integrator's
+list for Pierre's options). Each arm is a variant of this branch, held in a scratch copy and not committed:
+- **(after)**: this branch as it is.
+- **(1) no family start**: a species never answered starts from the global level, as any unit (no `from`).
+- **(2) shaky until 10**: a species counts as shaky in `openChance` until it has `OPEN.STUCK` (10) answers of its own, so
+  `OPEN.K` holds the openings while new species are many.
+- **(3) cap 20%**: in the draw (`model.js` `weighted`), the species of families below Divemaster take at most 20% of the
+  draw's weight together; the others keep their share.
+- **(1)+(2)**, **(1)+(3)**, **(2)+(3)**.
+
+How they are run and read:
+- **World**: the app world only, fish, the default profiles, 5 seeds, 600 questions. Every arm is run locally through the
+  slot on the same seeds as `main` at 219354c.
+- **Cells, each against main**, paired per profile: families at Advanced at 600 (`famAdv`), the longest plateau, the right %
+  at 300 and 600, and the species' share at 600, with the other guardrails as learncmp prints them.
+- **Reading**: exploratory and uncorrected. These are options with numbers for Pierre, not a verdict. The arm he picks is
+  then checked in full, both worlds, as declared above.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
