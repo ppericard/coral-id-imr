@@ -546,6 +546,10 @@ elsewhere is a question for an IMR trainer (rule C5), not a conclusion. No one w
 
 ## 9. Step plan (PR-sized, reusing the fish tooling)
 
+**Since then** (2026-11-15): Pierre answered (a)-(d) (Q369). Step 1 and the photo counts of step 3 are done in
+[2026-11-15-seaslug-list.md](2026-11-15-seaslug-list.md): `tools/build_seaslugs.py` → `tools/seaslugs.json`, the
+stars set and a proposed circle 1.
+
 Sizes are rough, for one agent **[guess]**.
 
 1. **Species list and presence**: about 1 day.
