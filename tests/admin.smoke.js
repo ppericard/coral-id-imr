@@ -6425,6 +6425,11 @@ const darkCards = (p, sel) =>
         const dk = await darkCards(sq, '#view .adm-cslot');
         if (dk) se.push(`dark theme: still light ${dk}`);
         await act('cues', 'edit');
+        // What he typed survives a redraw of the page meanwhile (another tab's draft, a request coming back).
+        await sq.fill(`${row('cues')} textarea`, 'Typed, not saved yet');
+        await sq.evaluate(() => render());
+        const kept = await sq.evaluate(s => (document.querySelector(s + ' textarea') || {}).value, row('cues'));
+        if (kept !== 'Typed, not saved yet') se.push(`typed text after a redraw ${JSON.stringify(kept)}`);
         for (const w of [1280, 390]) {
           await sq.setViewportSize({width: w, height: 900});
           const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
@@ -6442,6 +6447,23 @@ const darkCards = (p, sel) =>
         await swait(() => document.querySelector('#view .adm-csheet'));
         const ss = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-csheet [data-cs]')].map(x => x.dataset.cs));
         if (JSON.stringify(ss) !== '["note"]') se.push(`species slots ${JSON.stringify(ss)}`);
+        // An entry stored under an old id (SUBJECTS renamed: t01 is f:Damselfishes) shows on the new id's page, and Hide takes
+        // it out too (it never stays in force under the old id).
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/f:Damselfishes');
+        await swait(() => document.querySelector('#view .adm-csheet'));
+        await sq.evaluate(() => {
+          DRAFT.fish = {...DRAFT.fish, content: contentSet(DRAFT.fish.content, 't01', 'note', 'Under the old id', null, null, 3)};
+          saveDraft();
+          render();
+        });
+        await swait(() => document.querySelector('#view .adm-csheet [data-ck="note"].is-fresh [data-csa="hide"]'));
+        await sq.click('#view .adm-csheet [data-ck="note"] [data-csa="hide"]');
+        await swait(() => !document.querySelector('#view .adm-csheet [data-ck="note"].is-fresh'));
+        const old = await sq.evaluate(() => [
+          contentOut(DRAFT.fish.content).nodes || {},
+          !!contentApply(FISHS, FISHC.raw, DRAFT).families.find(f => f.id === 'f:Damselfishes').enote
+        ]);
+        if (old[0].t01 || old[0]['f:Damselfishes'] || old[1]) se.push(`Hide of an old id's entry ${JSON.stringify(old)}`);
         // Publish: counted per rank, the published fish part holds the two edits and no empty map.
         const sum = await sq.evaluate(() => pubSummary());
         if (!/^2 fish family sheet edits$/m.test(sum)) se.push(`Publish summary ${JSON.stringify(sum)}`);

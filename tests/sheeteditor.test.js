@@ -7,7 +7,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const C = require('../core.js'),
-  {sheetSlots, sheetOwn, sheetVal, sheetTodo} = require('../admin-content.js');
+  {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey} = require('../admin-content.js');
 const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')),
   S = C.SUBJECTS.find(x => x.content && x.pool.files[0] === 'fish.json'),
@@ -77,6 +77,18 @@ test('his entries on the rows: fresh, hidden, stale, absorbed, and what is never
   // An entry under a renamed id (t01 → f:Damselfishes) shows on the new id's page, its stored id kept for Restore.
   const D = sheetSlots(S, F, {nodes: {t01: {note: e('From the old id', null)}}}, 'f:Damselfishes').find(r => r.slot === 'note');
   assert.deepStrictEqual([D.v, D.eid, D.state], ['From the old id', 't01', 'fresh']);
+  // Its new id's own entry too: the old one is shadowed, listed after, and each row has a key of its own on the page (Codex
+  // review #957: one map by slot sent the live row's Restore to the orphan).
+  const R2 = sheetSlots(S, F, {nodes: {t01: {note: e('old', null)}, 'f:Damselfishes': {note: e('new', null)}}}, 'f:Damselfishes'),
+    N2 = R2.filter(r => r.slot === 'note');
+  assert.deepStrictEqual(
+    N2.map(r => [r.v === undefined ? r.e.v : r.v, r.eid, r.state]),
+    [
+      ['new', 'f:Damselfishes', 'fresh'],
+      ['old', 't01', 'orphan']
+    ]
+  );
+  assert.strictEqual(new Set(R2.map(rowKey)).size, R2.length);
 });
 
 test('which nodes have a sheet in the app: families but the winks, genera the app opens as themselves, species', () => {

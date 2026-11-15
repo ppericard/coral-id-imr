@@ -16,7 +16,7 @@
 //   design; roles step 1 puts can_(account, 'content', instance) there, Q364), for the controls and for every write.
 // The bar of every Tree page counts the edits to check (stale and orphaned: sheetWarn), linking to the first one's page.
 //
-// The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo) runs in Node too: tests/sheeteditor.test.js.
+// The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey) runs in Node too: tests/sheeteditor.test.js.
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     C = node ? require('./core.js') : root,
@@ -91,16 +91,21 @@
     C.contentEntries(S, R, Cm)
       .filter(x => x.state === 'stale' || x.state === 'orphan')
       .map(x => ({id: x.id, node: x.node, slot: x.slot, state: x.state, ...(x.why ? {why: x.why} : {})}));
+  // A row's key on the page: its slot, or for an entry never applied its stored id and slot too (an old id's entry shadowed
+  // by its node's own has the same slot as the live row: Codex review #957).
+  const rowKey = r => (r.state === 'orphan' ? `o\n${r.eid}\n${r.slot}` : r.slot);
   if (node) {
-    module.exports = {sheetSlots, sheetOwn, sheetVal, sheetTodo};
+    module.exports = {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey};
     return;
   }
 
   // ---- The page (admin.js renderFishUnits) ----
   // The content right (Q342, Q364): today the token that can publish (phase 0); roles step 1 asks the sheet here.
   const mayContent = () => !!TOKEN;
-  let SH_ED = null, // this tab: the slot open in the editor, {id, slot}
-    SH_ASK = null; // this tab: the slot whose Save already asked for a source
+  // SH_ED, this tab: the row open in the editor, {id, ck} (its node and row key), with what was typed in it so far (text,
+  // t, u), so a redraw meanwhile (another tab's draft, a request coming back) keeps it (Codex review #957).
+  let SH_ED = null,
+    SH_ASK = null; // this tab: the row whose Save already asked for a source
   const SH_KEY = 'reefid-admin-csheet'; // the box open or folded (this browser)
   // The subject's content map in the draft, and one write: one Save, one Undo step (saveDraft), a new map each time.
   const shGet = S => C.contentOf(DRAFT, S);
@@ -127,16 +132,18 @@
     return x ? `<p class="adm-cssrc">${x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)}</p>` : '';
   };
   const shBox = r => {
-    const text = r.v == null ? '' : Array.isArray(r.v) ? r.v.join('\n') : r.v,
-      s = C.contentSrc(r.e && r.e.src) || {t: '', u: ''},
-      ask = SH_ASK === r.slot;
+    const s0 = C.contentSrc(r.e && r.e.src) || {t: '', u: ''},
+      // what was typed so far, else the text in force and its source
+      text = SH_ED.text != null ? SH_ED.text : r.v == null ? '' : Array.isArray(r.v) ? r.v.join('\n') : r.v,
+      s = {t: SH_ED.t != null ? SH_ED.t : s0.t, u: SH_ED.u != null ? SH_ED.u : s0.u || ''},
+      ask = SH_ASK === rowKey(r);
     return `<div class="adm-csed"><textarea data-cst rows="${r.sp.t === 'list' ? Math.max(3, (r.v || []).length + 1) : 2}" aria-label="${esc(r.name)}">${esc(text)}</textarea>
       <span class="adm-cssrcs${ask ? ' need' : ''}"><input type="text" data-css value="${esc(s.t)}" placeholder="Source" aria-label="Source" autocomplete="off"><input type="url" data-csu value="${esc(s.u || '')}" placeholder="Link" aria-label="Link" autocomplete="off"></span>
       <span class="adm-acts"><button type="button" data-csa="save" class="on">${ask ? 'Save without source' : 'Save'}</button><button type="button" data-csa="cancel">Cancel</button></span></div>`;
   };
   function shRow(r, id, can) {
-    const ed = can && SH_ED && SH_ED.id === id && SH_ED.slot === r.slot,
-      orphan = r.state === 'orphan',
+    const orphan = r.state === 'orphan',
+      ed = can && !orphan && !!SH_ED && SH_ED.id === id && SH_ED.ck === rowKey(r),
       chip = orphan
         ? `<b class="warnc adm-cschip">${esc(WHY[r.why] || r.why)}</b>`
         : r.state
@@ -157,7 +164,7 @@
         : orphan
           ? shVal(isObj(r.e) && (Array.isArray(r.e.v) || typeof r.e.v === 'string') ? r.e.v : null)
           : `${shVal(r.v)}${r.e ? shSrc(r.e.src) : ''}${r.e && r.state === 'fresh' ? `<details class="adm-csorig"><summary>Original</summary>${shVal(r.base)}</details>` : ''}`;
-    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? '<span class="adm-src adm-imrt">IMR</span>' : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
+    return `<div class="adm-cslot${r.state ? ' is-' + r.state : ''}" data-cs="${esc(r.slot)}" data-ck="${esc(rowKey(r))}"><div class="adm-cshd"><b>${esc(r.name)}</b>${r.sp && r.sp.imr ? '<span class="adm-src adm-imrt">IMR</span>' : ''}${chip}${acts ? `<span class="adm-acts">${acts}</span>` : ''}</div>${body}</div>`;
   }
   // The box on node id's page (R: fish.json as built; nameOf: a node's name), '' for a node with no sheet in the app.
   function sheetBox(S, R, id, nameOf) {
@@ -175,20 +182,28 @@
     // remembered when he folds or opens it (a box opened by the page, an edit to check, is not his choice)
     const sm = box.querySelector('summary');
     if (sm) sm.addEventListener('click', () => store.set(SH_KEY, !box.open));
-    const rows = new Map(sheetSlots(S, R, shGet(S), id).map(r => [r.slot, r]));
+    const rows = new Map(sheetSlots(S, R, shGet(S), id).map(r => [rowKey(r), r]));
+    // What he types is kept with the open row (SH_ED), so a redraw never loses it.
+    box.querySelectorAll('[data-cst], [data-css], [data-csu]').forEach(
+      x =>
+        (x.oninput = () => {
+          if (!SH_ED || SH_ED.id !== id) return;
+          SH_ED[x.matches('[data-cst]') ? 'text' : x.matches('[data-css]') ? 't' : 'u'] = x.value;
+        })
+    );
     box.querySelectorAll('[data-csa]').forEach(
       b =>
         (b.onclick = () => {
-          const el = b.closest('[data-cs]'),
-            r = rows.get(el.dataset.cs),
+          const el = b.closest('[data-ck]'),
+            r = rows.get(el.dataset.ck),
             a = b.dataset.csa,
             now = Date.now();
           if (!r) return;
           if (a === 'edit') {
-            SH_ED = {id, slot: r.slot};
+            SH_ED = {id, ck: rowKey(r)};
             SH_ASK = null;
             render();
-            const t = scope.querySelector(`.adm-csheet [data-cs="${CSS.escape(r.slot)}"] textarea`);
+            const t = scope.querySelector(`.adm-csheet [data-ck="${CSS.escape(rowKey(r))}"] textarea`);
             if (t) t.focus();
             return;
           }
@@ -197,17 +212,20 @@
             return render();
           }
           if (a === 'drop') return shPut(S, c => C.contentDrop(c, r.eid, r.slot));
-          if (a === 'hide') return shPut(S, c => C.contentSet(c, id, r.slot, null, r.base, null, now));
-          // Keep mine: his text against the base now (no longer stale), under the id it is stored at.
-          if (a === 'keep') return shPut(S, c => C.contentSet(c, r.eid, r.slot, r.e.v, r.base, r.e.src, now));
+          // An entry stored under an old id (SUBJECTS renamed) moves to the node's id in the same step, whatever the click
+          // writes (Codex review #957: a Hide left the old id's entry in force).
+          const mv = c => (r.eid !== id ? C.contentDrop(c, r.eid, r.slot) : c);
+          if (a === 'hide') return shPut(S, c => C.contentSet(mv(c), id, r.slot, null, r.base, null, now));
+          // Keep mine: his text against the base now (no longer stale).
+          if (a === 'keep') return shPut(S, c => C.contentSet(mv(c), id, r.slot, r.e.v, r.base, r.e.src, now));
           if (a === 'save') {
             const v = sheetVal(r.sp, el.querySelector('[data-cst]').value),
               t = el.querySelector('[data-css]').value.trim(),
               u = el.querySelector('[data-csu]').value.trim(),
               src = t || u ? {t: t || u, u} : null;
             // A slot the base leaves empty, filled with no source: asked once (Q359 e: encouraged, never required).
-            if (r.base == null && v != null && !src && SH_ASK !== r.slot) {
-              SH_ASK = r.slot;
+            if (r.base == null && v != null && !src && SH_ASK !== rowKey(r)) {
+              SH_ASK = rowKey(r);
               const k = el.querySelector('.adm-cssrcs'),
                 sv = el.querySelector('[data-csa="save"]');
               if (k) k.classList.add('need');
@@ -216,8 +234,7 @@
               if (si) si.focus();
               return;
             }
-            // An old id's entry (SUBJECTS renamed) is moved to the node's id: the old one goes in the same step.
-            return shPut(S, c => C.contentSet(r.eid !== id ? C.contentDrop(c, r.eid, r.slot) : c, id, r.slot, v, r.base, src, now));
+            return shPut(S, c => C.contentSet(mv(c), id, r.slot, v, r.base, src, now));
           }
         })
     );
