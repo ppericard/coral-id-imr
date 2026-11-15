@@ -135,11 +135,30 @@ test('genus common names (tools/fish_genus_names.json): genera of fish.json, eac
   assert.ok(Object.keys(X).length >= 15, 'the genera named so far');
   for (const [id, x] of Object.entries(X)) {
     assert.ok(by[id], `${id}: not a genus of fish.json`);
-    assert.ok(['imr', 'species'].includes(x.from) && x.common && x.common !== by[id].name, `${id}: ${x.common}`);
+    assert.ok(['imr', 'species', 'inat'].includes(x.from) && x.common && x.common !== by[id].name, `${id}: ${x.common}`);
     assert.ok(x.from !== 'imr' || (by[id].imr && x.common.toLowerCase().startsWith(by[id].imr.toLowerCase())), `${id}: IMR's name`);
     assert.strictEqual(by[id].common, x.common, `${id} common in fish.json`);
-    assert.ok(by[id].csrc && (x.from === 'imr' ? /^IMR fish presentation/ : /^Inferred from its species/).test(by[id].csrc), `${id} csrc`);
+    const src = {
+      imr: /^IMR fish presentation/,
+      species: /^Inferred from its species/,
+      inat: /^iNaturalist's English name of the genus \(“.+”, taxon \d+, read \d{4}-\d\d-\d\d\)$/
+    };
+    assert.ok(by[id].csrc && src[x.from].test(by[id].csrc), `${id} csrc`);
+    // An inferred name is flagged (cinf: the genus sheet says so; Pierre, 2026-11-15, Q376 (d)); a reference's is not.
+    assert.strictEqual(by[id].cinf, x.from === 'species' ? 1 : undefined, `${id} cinf`);
   }
+  // Q376 (d): Cephalopholis inferred from its species' listed names (FishBase's "hind"), flagged; Centropyge, Dendrochirus
+  // and Dascyllus take iNaturalist's names.
+  assert.deepStrictEqual([by['g:Cephalopholis'].common, by['g:Cephalopholis'].cinf], ['Hinds', 1]);
+  assert.match(by['g:Cephalopholis'].csrc, /listed common names .*all 10 here have one ending in “hind”/);
+  assert.deepStrictEqual(
+    ['g:Centropyge', 'g:Dendrochirus', 'g:Dascyllus'].map(g => [by[g].common, by[g].cinf]),
+    [
+      ['Dwarf angelfishes', undefined],
+      ['Zebra lionfishes', undefined],
+      ['Humbugs', undefined]
+    ]
+  );
   // A name IMR gives to several genera is no genus's own (Surgeonfish: Zebrasoma, Ctenochaetus, Acanthurus).
   assert.ok(!by['g:Acanthurus'].common && !by['g:Zebrasoma'].common, 'Surgeonfish names no genus');
   F.genera.filter(g => g.common).forEach(g => assert.ok(X[g.id], `${g.id}: a common name not from the table`));
