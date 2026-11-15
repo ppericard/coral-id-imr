@@ -598,7 +598,7 @@ const server = http.createServer((req, res) => {
     }
     // First meetings (INTRO, Pierre 2026-11-02): from zero, INTRO.START cards then questions among them; every genus
     // asked was met on a card before; one met on a card alone is not asked before INTRO.GAP answers; at least
-    // INTRO.EVERY answers between two cards; with enough genera met, the choices are all genera met.
+    // INTRO.GAP answers between two cards (the pace waits for each card's question, INTRO.GAP answers on at the soonest); with enough genera met, the choices are all genera met.
     {
       P = {};
       INTROS = {};
@@ -700,20 +700,34 @@ const server = http.createServer((req, res) => {
         const early = star.filter(n => seen.has(n));
         if (early.length) fails.push(`opening draw: ★ ${early.join(', ')} drawn before their references`);
         if (!refs.some(r => seen.has(r))) fails.push('opening draw: no reference drawn');
+        // Once nothing holds them back, every ★ genus opens: drawn one after the other (each marked met, as a card does),
+        // until none is left; which comes first follows the confusion groups (model.js openPick tiers), so one draw
+        // from a fixed state need not reach every one of them.
+        const openAllOf = (L, why) => {
+          const was = {...INTROS};
+          for (let k = 0; k < 20; k++) {
+            for (let left = star.length; left-- > 0 && L.some(n => !introduced(n));) {
+              const n = openFrom(L);
+              if (!star.includes(n)) fails.push(`opening draw (${why}): ${n} drawn, not a ★ genus`);
+              INTROS[n] = [0, 1, 0, 'c'];
+            }
+            const never = star.filter(n => L.includes(n) && !introduced(n));
+            if (never.length) fails.push(`opening draw (${why}): ★ ${never.join(', ')} never drawn`);
+            INTROS = {...was};
+          }
+        };
         refs.forEach(r => (INTROS[r] = [0, 1, 0, 's']));
-        seen.clear();
-        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool()));
-        if (!star.every(n => seen.has(n)))
-          fails.push(`opening draw: references met, ★ ${star.filter(n => !seen.has(n)).join(', ')} never drawn`);
+        openAllOf(pool(), 'references met');
         refs.forEach(r => delete INTROS[r]);
-        seen.clear();
-        for (let i = 0; i < 2000; i++) seen.add(openFrom(pool().filter(n => !refs.includes(n))));
-        if (!star.every(n => seen.has(n))) fails.push('opening draw: ★ genera held back by references out of the list');
+        openAllOf(
+          pool().filter(n => !refs.includes(n)),
+          'references out of the list'
+        );
         P = {};
         INTROS = {};
       }
       cardsAt.forEach(([a, k], i) => {
-        if (i && a - cardsAt[i - 1][0] < INTRO.EVERY) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
+        if (i && a - cardsAt[i - 1][0] < INTRO.GAP) fails.push(`two cards ${a - cardsAt[i - 1][0]} answer(s) apart`);
         if (i && k !== 1) fails.push(`${k} cards at once after the first ones`);
       });
       if (cardsAt.length < 3) fails.push(`only ${cardsAt.length} card showing(s) in 120 questions`);
@@ -1184,7 +1198,7 @@ const server = http.createServer((req, res) => {
       }
       if (boffers !== 1 || Q.bon !== false || pool().some(isBonus))
         fails.push(`bonus offer after every slate genus met: shown ${boffers} time(s), Q.bon ${Q.bon}`);
-      // On (⚙): they join the genera not met yet and open one card at a time, at least INTRO.EVERY answers apart, each
+      // On (⚙): they join the genera not met yet and open one card at a time, at least INTRO.GAP answers apart, each
       // asked only after its card; their answers never move the progress; Off takes them out again, progress kept.
       bonusSet(true);
       {
@@ -1206,7 +1220,7 @@ const server = http.createServer((req, res) => {
         }
         cards.forEach(([a, L], i) => {
           if (L.length !== 1 || !isBonus(L[0])) fails.push(`bonus cards: ${L.join(', ')} at ${a} answers`);
-          if (i && a - cards[i - 1][0] < INTRO.EVERY) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
+          if (i && a - cards[i - 1][0] < INTRO.GAP) fails.push(`two bonus cards ${a - cards[i - 1][0]} answer(s) apart`);
         });
         if (cards.length < 2) fails.push(`only ${cards.length} bonus genus card(s) in 150 questions`);
         // Their own progress grows, the slate's % does not count it.
