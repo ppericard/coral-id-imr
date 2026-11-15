@@ -3871,6 +3871,9 @@ const CORE_ = (function () { const module = {exports: {}};
           // sheet rates the corals' photos only)
           'photos/review/by-difficulty',
           'photos/look-alikes',
+          // Photo stats › Overview (fish admin at parity): its photos in play in its words, the answers per photo from the
+          // answers alone (admin.js pstatsFish). No Difficulty: its numbers are the sheet's photo ratings, the corals' only.
+          'photos/stats/overview',
           // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report, and
           // the views drawn from the live answer log (admin.js
           // LIVE_STATS), from the fish answers (fish admin at parity, 2026-11-08): Stops (admin.js statsHealth,

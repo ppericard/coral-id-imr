@@ -4329,6 +4329,9 @@ const HELP = {
   pstats: `<p>General numbers on every photo, from data.json and your draft (unpublished changes included) and the sheet's photo ratings. <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (field and IMR lecture photos of the game genera: the IMR slate, Millepora, the bonus genera; no several-corals, removed or sheet-only photo, no Colony photo whose form is not visible). <b>Colonies</b> = distinct iNaturalist observations (or lecture photos), as a question shows one colony. <b>Genera in play</b> = game genera with at least one photo in play (out of all of them when some have none).</p>
     <p><b>All photos</b>: every photo the admin knows, each in one row, so the rows add up to the total. <b>Not in games</b>: on the genus sheets and the Coral ID Key only, with the first reason that applies (the line under the table). <b>Comparison only</b>: photos (or candidates) you sent to Not this genus › Look-alike comparison: they left their genus and are shown only in the site's look-alike comparisons. <b>Removed</b>: taken off the site (Genera › Hidden), back with the candidates. <b>Candidates</b> = waiting for a decision: not added and not rejected. <b>Rejected</b> = candidates you rejected (they stay candidates). <b>Excluded</b> = excluded for good (Genera › Excluded).</p>
     <p><b>Median [middle half]</b>: half the genera have fewer, half more; the brackets hold the middle half of the genera (25th to 75th percentile), a spread that a few very rich or very poor genera do not pull. <b>Per genus</b> counts every game genus (the IMR slate, Millepora, the bonus genera), a genus without any counting 0. The bars: how many genera have each band of photos in play, from 0 (hover a bar for its genera). <b>Views</b> counts only the genera that have the view (a 2-level genus has no Close-up view); <b>None</b> = genera without a single photo in that view, out of those that have it. <b>Sources</b>: the photos in play by where they come from; <b>Genera</b> = genera with at least one photo in play from that source. <b>Answers per photo</b>: answers that rated each photo in play (sheet v18, as Difficulty; everyone's answers, yours included); under the table, the median of every photo in play, then of those rated at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per genus</b> (Pierre, 2026-11-06, Q192): the goal is 3 to 5 answers per photo, enough to flag the photos far harder than their genus (their count in the last column, the list on Difficulty); the least covered genera first. Nothing here changes anything.</p>`,
+  fishpstats: `<p>General numbers on every fish photo, from the fish data and your draft (unpublished changes included) and the answers alone (the sheet rates the corals' photos only, so there is no photo difficulty here yet). <b>In play</b> = the photos the games can draw now, as Coverage › Games counts them (your adds, the sure candidates and the reference photos that enter by themselves). <b>Observations</b> = distinct iNaturalist observations, counted per species as on Coverage. <b>Families in play</b> = families with at least one photo in play (out of all of them when some have none).</p>
+    <p><b>All photos</b>: every photo the fish data hold, each in one row (a photo added from its candidate and played under its game id counts once), so the rows add up to the total. <b>Not in games</b>: added for a species out of the game, or a game record no family plays. <b>Other species</b>: added, but tagged with another species one could take for it, or not sorted yet: never in play. <b>Removed</b>: taken out with Remove (candidates you turned down included). <b>Candidates</b> = waiting for a decision. <b>Not this</b>: sent to no species or to a species that has not taken it. <b>Excluded</b> = excluded for good.</p>
+    <p><b>Median [middle half]</b>: half the families have fewer, half more; the brackets hold the middle half (25th to 75th percentile). <b>Per family</b> counts every family, one without any counting 0, then the photos in play per genus and per species over every genus and species of the game. The bars: how many families have each band of photos in play, from 0 (hover a bar for its families). <b>Circles</b>: the photos in play of each circle's families; <b>None</b> = its families without a photo in play, out of its families. <b>Sources</b>: the photos in play by where they come from; <b>Families</b> = families with at least one photo in play from that source. <b>Answers per photo</b>: every answer that showed the photo, family and genus questions alike, as Health and By difficulty count them (everyone's answers, yours included); under the table, the median of every photo in play, then of those answered at least once, and how many have ${RATE.MIN} answers or more. <b>${RATE.MIN}+ answers per family</b>: its photos in play, those with ${RATE.MIN} answers or more, the least covered families first; <b>Missed</b>: its photos everyone misses, as Health counts them (open on Health). Nothing here changes anything.</p>`,
   statsph: `<p>Photo difficulty (Elo) from the answers of players clearly above chance, signed in or not (sheet v18), each weighed by the player's experience, read as <b>recognised by N%</b> (below). The coloured line under the distribution and the genera shows the bands along the axis, easier on the left. ≥1 / ≥3 / ≥10 keeps photos with at least that many answers (from sheet v18; before, weighed answers, so a photo answered once was hidden); few answers = rough. Genera: one lane per view (colony, close-up, corallites), a dot per photo (bigger and stronger with more answers), the lane's median as a bar, and from 5 photos a box (middle half of the photos) with whiskers; each genus reads for a typical photo of it, its genus offset (sheet v31; the median of its photos shown when the sheet has none), hardest first. Click a dot to see the photo. <b>Far harder than their genus</b> (Pierre, 2026-11-06, Q192; the photo exposure study): the photos in play whose own part of the difficulty (the photo's difficulty minus its genus's offset) is ${FAR.D} logits or more after ${FAR.N} answers or more, the farthest first: where a typical photo of the genus is recognised 4 times in 5, such a photo is about 1 time in 2. Look at each: unclear, mislabelled, or the wrong view (Photo review). Per-photo ratings stay rough at this traffic (the study: about 50 answers rate one photo to ±0.5), so the goal is the first 3 to 5 answers per photo, enough for this flag; a photo shown with other views shares each answer with them, so it needs more answers to stand out.</p>
     <p>The quiz shows the colony, close-up and corallite photos together, so they share each answer: view differences only appear as different photos get mixed over many answers.</p>`,
   statsneeds: `<p>Where looking for more photos would help most, per genus and view, ranked by how many reasons add up. Reasons: <b>few colonies</b> (fewer than 3 distinct colonies in the game pool, as on Coverage); <b>few good colonies</b> (fewer than 3 colonies with a photo that is not Poor, so a struggling player has little easy variety); <b>too easy</b> (the players' Elo on the genus, its top quarter, is above what the hardest photo of the view can challenge, read as how many starting players recognise it: harder, realistic photos needed, Poor included); <b>repeats</b> (players see the same photos of the view 4 or more times each on average); <b>mix-ups</b> (the genus is often taken for another and its corallites view has fewer than 5 colonies); <b>few multi-zoom</b> (one row per genus, "Several zooms": fewer than 3 colonies photographed at 2 or more zoom levels; a game question only shows views of one colony, so these give the several-view questions beginners need). Levels need answers logged by sheet script v5; repeats and mix-ups work from any answers. Click a reason card to show only its rows (click again for all); the view switch and the genus box narrow the table; click a column header to sort (again to reverse). Click a row to open the genus.</p>`,
@@ -4381,7 +4384,7 @@ function toggleHelp() {
         : {
             'players/list': 'users',
             'photos/stats/difficulty': 'statsph',
-            'photos/stats/overview': 'pstats',
+            'photos/stats/overview': ASUBJ.sheets ? 'fishpstats' : 'pstats',
             'analyses/difficulty/pairs': 'statsconf',
             'analyses/difficulty/heatmap': 'statsheat',
             'analyses/learning/answer-log': 'statslog',
@@ -8088,7 +8091,8 @@ function renderFishDiff() {
 // can draw, as Coverage › Games), the candidates (cands, rejected marks, exclusions) and the sheet's photo ratings
 // (?stats=1, as Difficulty) for the answers per photo. A spread is "median [p25–p75]" (core.js distOf): the middle half
 // of the genera lies in the brackets. Per genus = over every game genus (the IMR slate, Millepora, the bonus genera),
-// zeros included; per view, over the genera that have the view (a 2-level genus has no Close-up view).
+// zeros included; per view, over the genera that have the view (a 2-level genus has no Close-up view). The fish side (fish
+// admin at parity, 2026-11-15): the same page in its words, from its photos in play and its answers alone (pstatsFish).
 // Why a photo of the site is not in the games (first reason that applies), as on Coverage (covOff) plus the genera the
 // games never ask and the Research Grade rule of the extra genera.
 const POOL_OFF = [
@@ -8162,77 +8166,37 @@ function poolStats() {
 const numTxt = x => (x == null ? '–' : Math.abs(x - Math.round(x)) < 1e-9 ? String(Math.round(x)) : x.toFixed(1));
 // "median [p25–p75]" of a distOf result.
 const iqrTxt = d => (d.n ? `${numTxt(d.med)} <span class="note">[${numTxt(d.p25)}–${numTxt(d.p75)}]</span>` : '–');
+// The page, one renderer for every subject (fish admin at parity): each subject's numbers (pstatsCoral, pstatsFish) in one
+// shape, drawn by pstatsHtml. null while what it reads is on its way (the page says Loading… and draws again once in, if
+// still on screen on that side).
 function renderPstats() {
   status();
+  const S = ASUBJ,
+    here = () => cur === 'photos/stats/overview' && ASUBJ === S,
+    M = S.sheets ? pstatsFish(S, here) : pstatsCoral(here);
+  if (M) $v.innerHTML = pstatsHtml(M);
+}
+// Answers per photo in bands (Answers per photo): [[band, photos]]. A: the answers of each photo in play. Pure:
+// tests/fishpstats.test.js.
+const PSTATS_BANDS = [
+  ['None', 0, 0],
+  ['1–2', 1, 2],
+  ['3–9', 3, 9],
+  ['10–29', 10, 29],
+  ['30+', 30, Infinity]
+];
+const pstatsBands = A => PSTATS_BANDS.map(([t, a, b]) => [t, A.filter(x => x >= a && x <= b).length]);
+// The corals' numbers: poolStats (the games' pool by genus and view) and the sheet's photo ratings (?stats=1, as
+// Difficulty) for the answers per photo.
+function pstatsCoral(here) {
   if (!STATS) {
     $v.innerHTML = '<p class="note">Loading…</p>';
-    loadStats(true).then(() => {
-      if (cur === 'photos/stats/overview') render();
-    });
-    return;
+    loadStats(true).then(() => here() && render());
+    return null;
   }
   const {G, per, play, st, off} = poolStats(),
     R = G.map(n => per[n]),
-    gk = distOf(R.map(r => r.k)),
-    go = distOf(R.map(r => r.obs.size)),
-    colonies = R.reduce((t, r) => t + r.obs.size, 0),
-    withAny = R.filter(r => r.k).length,
     gen = n => `<a class="adm-gen" href="${esc(genusHref(n))}"><i>${esc(n)}</i></a>`;
-  // Every photo the admin knows, by state, each counted once (what each row means: the ? help).
-  const total = st.play + st.off + st.cmp + st.removed + st.wait + st.rej + st.excl,
-    S = [
-      ['In play', st.play],
-      ['Not in games', st.off],
-      ['Comparison only', st.cmp],
-      ['Removed', st.removed],
-      ['Candidates', st.wait],
-      ['Rejected', st.rej],
-      ['Excluded', st.excl]
-    ],
-    sm = Math.max(1, ...S.map(x => x[1]));
-  const offLine = POOL_OFF.filter(([k]) => off[k])
-    .map(([k, t]) => `${off[k]} ${t}`)
-    .join(' · ');
-  // Genera by photos in play: bars of a round width, about 10 of them.
-  const top = gk.max || 0,
-    bw = [1, 2, 5, 10, 20, 25, 50, 100, 200].find(w => top / w <= 12) || 500,
-    H = Array.from({length: Math.floor(top / bw) + 1}, (_, i) => ({lo: i * bw, hi: i * bw + bw - 1, L: []}));
-  R.forEach(r => H[Math.floor(r.k / bw)].L.push(r.n));
-  const hm = Math.max(1, ...H.map(h => h.L.length)),
-    byK = R.slice().sort((a, b) => a.k - b.k || a.obs.size - b.obs.size || a.n.localeCompare(b.n)),
-    gtab = (t, L) =>
-      `<table class="adm-tbl"><thead><tr><th>${t}</th><th class="n">Photos</th><th class="n">Colonies</th></tr></thead><tbody>${L.map(
-        r => `<tr><td>${gen(r.n)}</td><td class="n">${r.k}</td><td class="n">${r.obs.size}</td></tr>`
-      ).join('')}</tbody></table>`;
-  // Per view and per source: total, share, per genus spread, genera without (views) or with (sources).
-  const V = VIEWS.map(([v, t]) => {
-      const has = R.filter(r => r.views.includes(v));
-      return {
-        t,
-        k: play.filter(p => p.view === v).length,
-        d: distOf(has.map(r => r.v[v] || 0)),
-        none: has.filter(r => !r.v[v]).length,
-        of: has.length
-      };
-    }),
-    O = ORIGINS.map(([o, t]) => ({
-      t,
-      k: play.filter(p => origin(p) === o).length,
-      d: distOf(R.map(r => r.s[o] || 0)),
-      with: R.filter(r => r.s[o]).length
-    }));
-  // Answers that rated each photo in play (sheet ?stats=1, as Difficulty), in bands.
-  const A = play.map(p => nAns(STATS[p.f])),
-    da = distOf(A),
-    dr = distOf(A.filter(x => x > 0)),
-    B = [
-      ['None', 0, 0],
-      ['1–2', 1, 2],
-      ['3–9', 3, 9],
-      ['10–29', 10, 29],
-      ['30+', 30, Infinity]
-    ].map(([t, a, b]) => [t, A.filter(x => x >= a && x <= b).length]),
-    bm = Math.max(1, ...B.map(b => b[1]));
   // Per genus: its photos in play, how many have the goal's first answers (RATE.MIN), and how many are far harder than the
   // genus (farHarder); the least covered first.
   const far = farHarder(play),
@@ -8242,50 +8206,277 @@ function renderPstats() {
     r.k++;
     if (nAns(STATS[p.f]) >= RATE.MIN) r.a++;
   });
-  CG.sort((a, b) => (a.k ? a.a / a.k : 2) - (b.k ? b.a / b.k : 2) || b.k - a.k || a.n.localeCompare(b.n));
-  const covered = A.filter(x => x >= RATE.MIN).length;
-  $v.innerHTML =
+  return {
+    one: 'genus',
+    many: 'genera',
+    obs: 'Colonies',
+    units: R.map(r => ({n: r.n, k: r.k, obs: r.obs.size, html: gen(r.n)})),
+    spread: [],
+    kpis: [['Candidates', st.wait]],
+    // Every photo the admin knows, by state, each counted once (what each row means: the ? help).
+    pool: [
+      ['In play', st.play],
+      ['Not in games', st.off],
+      ['Comparison only', st.cmp],
+      ['Removed', st.removed],
+      ['Candidates', st.wait],
+      ['Rejected', st.rej],
+      ['Excluded', st.excl]
+    ],
+    offLine: POOL_OFF.filter(([k]) => off[k])
+      .map(([k, t]) => `${off[k]} ${t}`)
+      .join(' · '),
+    // Per view: total, share, per genus spread over the genera that have the view, genera without.
+    parts: {
+      h: 'Views',
+      col: 'View',
+      rows: VIEWS.map(([v, t]) => {
+        const has = R.filter(r => r.views.includes(v));
+        return {
+          t,
+          k: play.filter(p => p.view === v).length,
+          d: distOf(has.map(r => r.v[v] || 0)),
+          none: has.filter(r => !r.v[v]).length,
+          of: has.length
+        };
+      })
+    },
+    sources: ORIGINS.map(([o, t]) => ({
+      t,
+      k: play.filter(p => origin(p) === o).length,
+      d: distOf(R.map(r => r.s[o] || 0)),
+      with: R.filter(r => r.s[o]).length
+    })),
+    // Answers that rated each photo in play (sheet ?stats=1, as Difficulty).
+    A: play.map(p => nAns(STATS[p.f])),
+    answered: 'rated',
+    rated: CG.map(r => ({k: r.k, a: r.a, f: r.f, key: r.n, html: gen(r.n)})),
+    flag: {
+      t: 'Far harder',
+      title: `Far harder than their genus: ${FAR.D} logits or more after ${FAR.N}+ answers (Difficulty)`,
+      href: '#photos/stats/difficulty'
+    }
+  };
+}
+// photoAnswers' {f: {n, ok, by}} merged under key(f): a fish photo is one photo under its candidate id (Pierre's add) and
+// its game id (core.js fishPid), whichever the answer logged. Pure: tests/fishpstats.test.js.
+function answersBy(PH, key) {
+  const O = Object.create(null);
+  Object.entries(PH || {}).forEach(([f, o]) => {
+    const x = (O[key(f)] = O[key(f)] || {n: 0, ok: 0, by: Object.create(null)});
+    x.n += o.n;
+    x.ok += o.ok;
+    Object.entries(o.by || {}).forEach(([id, [n, ok]]) => {
+      const b = (x.by[id] = x.by[id] || [0, 0]);
+      b[0] += n;
+      b[1] += ok;
+    });
+  });
+  return O;
+}
+// A subject the sheet does not rate (fish admin at parity; the sheet's photo ratings, stats_, are the replayed subject's
+// only): its photos in play as Coverage › Games counts them (autosort.js fishCov over fuData: per family, genus and
+// species), its words from its data (SUBJECTS one, many, admin obs and origins, the circles of structure), and the
+// answers per photo from the answer log alone, as By difficulty and Health count them (photoAnswers over rowsOf, joined
+// by fishPid). The family pages' data (fishLoad) and the answer log are read behind the page.
+function pstatsFish(S, here) {
+  if (!ANS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadStats().then(() => here() && render());
+    return null;
+  }
+  if (ANS.old) {
+    $v.innerHTML = `<p class="warn">${ANS.err === 'token' ? "Needs this page's GitHub token: per-player answers are admin-only (sheet v14)." : `Sheet script v${esc(ANS.v || '?')}: needs v4.`}</p>`;
+    return null;
+  }
+  if (!FISHC || !FISHC.plays) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    fishLoad(true).then(() => here() && render());
+    return null;
+  }
+  const D = fuDataM().D,
+    F = D.F,
+    sp = FISHC.species,
+    C = fishCov(FISHC.units, D.play, sp, FISHC.cand, F, fuJ),
+    // its photos in play, each with its family (as fishCov's rows count them: the species of the family not out)
+    play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => (D.play[s] || []).map(p => ({p, u})))),
+    PA = answersBy(photoAnswers(rowsOf(S)), fishPid),
+    ans = x => PA[fishPid(x.p.f)];
+  // Every photo the fish data hold, by state, each counted once (by fishPid), in play first; then, the first that applies:
+  // excluded, not this, removed (fishState), another species one could take for it (out of play: fuData other), a
+  // candidate waiting, else not in the games.
+  const st = {play: play.length, off: 0, other: 0, removed: 0, wait: 0, not: 0, excl: 0},
+    seen = new Set(play.map(x => fishPid(x.p.f))),
+    other = new Set(D.other.map(p => fishPid(p.f))),
+    one = (f, cand) => {
+      const k = fishPid(f);
+      if (seen.has(k)) return;
+      seen.add(k);
+      const s = fishState(f);
+      if (s === 'excluded') st.excl++;
+      else if (s === 'not this') st.not++;
+      else if (s === 'removed') st.removed++;
+      else if (other.has(k)) st.other++;
+      else if (cand && !(F.add || {})[f]) st.wait++;
+      else st.off++;
+    };
+  // his decisions first (they name the photo by the id he acted on), then the candidates, then the game's own records
+  ['exclude', 'out', 'seen', 'add'].forEach(k => Object.keys(F[k] || {}).forEach(f => one(f, !!FISHC.byF[f])));
+  Object.values(FISHC.cand).forEach(L => (L || []).forEach(p => one(p.f, true)));
+  (FISHC.plays || []).forEach(p => p && p.f && one(p.f, false));
+  const famRows = C.fam,
+    by = Object.fromEntries(famRows.map(r => [r.id, {r, s: {}}])),
+    far = Object.fromEntries(famRows.map(r => [r.id, {k: 0, a: 0, f: 0}])),
+    fam = r => `<a class="adm-gen" href="${esc(fuHref(r.id))}">${esc(r.name)}</a>`,
+    circles = (S.structure && S.structure.circle && S.structure.circle.of) || [];
+  play.forEach(x => {
+    const o = origin(x.p),
+      b = by[x.u.id],
+      c = far[x.u.id],
+      a = ans(x);
+    if (b) b.s[o] = (b.s[o] || 0) + 1;
+    if (!c) return;
+    c.k++;
+    if (a && a.n >= RATE.MIN) c.a++;
+    if (a && everyoneMisses(a)) c.f++;
+  });
+  return {
+    one: S.one,
+    many: S.many,
+    obs: S.admin.obs || 'Observations',
+    units: famRows.map(r => ({n: r.name, k: r.n, obs: r.obs, html: fam(r)})),
+    // the ranks under the family, each one's photos in play (fishCov's genus and species rows)
+    spread: [
+      ['Photos per genus', distOf(C.gen.map(r => r.n))],
+      ['Photos per species', distOf(C.sp.map(r => r.n))]
+    ],
+    kpis: [['Candidates', st.wait]],
+    pool: [
+      ['In play', st.play],
+      ['Not in games', st.off],
+      ['Other species', st.other],
+      ['Removed', st.removed],
+      ['Candidates', st.wait],
+      ['Not this', st.not],
+      ['Excluded', st.excl]
+    ],
+    offLine: '',
+    // Per circle: total, share, per family spread over the circle's families, families without.
+    parts: {
+      h: 'Circles',
+      col: 'Circle',
+      rows: circles.map(c => {
+        const R = famRows.filter(r => r.circle === c);
+        return {
+          t: `Circle ${c}`,
+          k: R.reduce((t, r) => t + r.n, 0),
+          d: distOf(R.map(r => r.n)),
+          none: R.filter(r => !r.n).length,
+          of: R.length
+        };
+      })
+    },
+    sources: (S.admin.origins || []).map(([o, t]) => ({
+      t,
+      k: play.filter(x => origin(x.p) === o).length,
+      d: distOf(famRows.map(r => by[r.id].s[o] || 0)),
+      with: famRows.filter(r => by[r.id].s[o]).length
+    })),
+    A: play.map(x => (ans(x) || {}).n || 0),
+    answered: 'answered',
+    rated: famRows.map(r => ({...far[r.id], key: r.name, html: fam(r)})),
+    // the photos everyone misses (Health's rule, everyoneMisses), counted on each family's row, open on Health
+    flag: {
+      t: 'Missed',
+      title: `Photos everyone misses (as Health counts them: ${HEALTH.PL_MIN}+ players, most of whom miss it, under ${Math.round(HEALTH.PH_LOW * 100)}% right after ${HEALTH.PH_MIN}+ answers)`,
+      href: '#' + S.hash + 'inbox/todo/health'
+    }
+  };
+}
+// The page from a subject's numbers M: {one, many (its unit's words), obs (its word for observations), units [{n, k, obs,
+// html}] (each unit's photos and observations in play, its link), spread (more [row, distOf] on Per <unit>), kpis (after
+// photos, observations and units in play), pool [[state, photos]] (each photo once) and offLine (why some are not in
+// games), parts {h, col, rows [{t, k, d, none, of}]} (the corals' views, the fish circles), sources [{t, k, d, with}], A
+// (answers of each photo in play) and answered (the word for a photo with answers), rated [{k, a, f, key, html}] (per unit:
+// photos in play, with RATE.MIN+ answers, flagged) and flag {t, title, href} (the flag's column and where it opens)}.
+function pstatsHtml(M) {
+  const R = M.units,
+    gk = distOf(R.map(r => r.k)),
+    go = distOf(R.map(r => r.obs)),
+    obsN = R.reduce((t, r) => t + r.obs, 0),
+    withAny = R.filter(r => r.k).length,
+    play = M.pool[0][1],
+    one = M.one,
+    many = M.many,
+    Many = many[0].toUpperCase() + many.slice(1),
+    One = one[0].toUpperCase() + one.slice(1),
+    total = M.pool.reduce((t, x) => t + x[1], 0),
+    sm = Math.max(1, ...M.pool.map(x => x[1]));
+  // Units by photos in play: bars of a round width, about 10 of them.
+  const top = gk.max || 0,
+    bw = [1, 2, 5, 10, 20, 25, 50, 100, 200].find(w => top / w <= 12) || 500,
+    H = Array.from({length: Math.floor(top / bw) + 1}, (_, i) => ({lo: i * bw, hi: i * bw + bw - 1, L: []}));
+  R.forEach(r => H[Math.floor(r.k / bw)].L.push(r.n));
+  const hm = Math.max(1, ...H.map(h => h.L.length)),
+    byK = R.slice().sort((a, b) => a.k - b.k || a.obs - b.obs || a.n.localeCompare(b.n)),
+    gtab = (t, L) =>
+      `<table class="adm-tbl"><thead><tr><th>${t}</th><th class="n">Photos</th><th class="n">${M.obs}</th></tr></thead><tbody>${L.map(
+        r => `<tr><td>${r.html}</td><td class="n">${r.k}</td><td class="n">${r.obs}</td></tr>`
+      ).join('')}</tbody></table>`,
+    srow = (t, d) =>
+      `<tr><td>${t}</td><td>${iqrTxt(d)}</td><td>${numTxt(d.min)}–${numTxt(d.max)}</td><td class="n">${numTxt(d.mean)}</td></tr>`;
+  const A = M.A,
+    da = distOf(A),
+    dr = distOf(A.filter(x => x > 0)),
+    B = pstatsBands(A),
+    bm = Math.max(1, ...B.map(b => b[1])),
+    covered = A.filter(x => x >= RATE.MIN).length,
+    CG = M.rated.slice().sort((a, b) => (a.k ? a.a / a.k : 2) - (b.k ? b.a / b.k : 2) || b.k - a.k || a.key.localeCompare(b.key));
+  return (
     `<section class="adm-pov">` +
     kpis([
-      ['Photos in play', st.play],
-      ['Colonies in play', colonies],
-      ['Genera in play', withAny === G.length ? withAny : `${withAny} / ${G.length}`],
-      ['Candidates', st.wait]
+      ['Photos in play', play],
+      [`${M.obs} in play`, obsN],
+      [`${Many} in play`, withAny === R.length ? withAny : `${withAny} / ${R.length}`],
+      ...M.kpis
     ]) +
     `<div class="adm-sgrid">
-    <section class="adm-scard" data-pov="pool"><h3>All photos</h3><table class="adm-tbl"><tbody>${S.map(
-      ([t, k, d]) =>
-        `<tr${d ? ` title="${esc(d)}"` : ''}><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, total)}</td><td>${sbar(k, sm)}</td></tr>`
-    ).join('')}<tr><td><b>Total</b></td><td class="n"><b>${total}</b></td><td></td><td></td></tr></tbody></table>${
-      offLine ? `<p class="note">Not in games: ${offLine}.</p>` : ''
+    <section class="adm-scard" data-pov="pool"><h3>All photos</h3><table class="adm-tbl"><tbody>${M.pool
+      .map(([t, k]) => `<tr><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, total)}</td><td>${sbar(k, sm)}</td></tr>`)
+      .join('')}<tr><td><b>Total</b></td><td class="n"><b>${total}</b></td><td></td><td></td></tr></tbody></table>${
+      M.offLine ? `<p class="note">Not in games: ${M.offLine}.</p>` : ''
     }</section>
-    <section class="adm-scard" data-pov="genus"><h3>Per genus</h3><table class="adm-tbl"><thead><tr><th></th><th>Median [middle half]</th><th>Range</th><th class="n">Mean</th></tr></thead><tbody>
-      <tr><td>Photos</td><td>${iqrTxt(gk)}</td><td>${numTxt(gk.min)}–${numTxt(gk.max)}</td><td class="n">${numTxt(gk.mean)}</td></tr>
-      <tr><td>Colonies</td><td>${iqrTxt(go)}</td><td>${numTxt(go.min)}–${numTxt(go.max)}</td><td class="n">${numTxt(go.mean)}</td></tr></tbody></table>
+    <section class="adm-scard" data-pov="genus"><h3>Per ${one}</h3><table class="adm-tbl"><thead><tr><th></th><th>Median [middle half]</th><th>Range</th><th class="n">Mean</th></tr></thead><tbody>
+      ${srow('Photos', gk)}${srow(M.obs, go)}${M.spread.map(([t, d]) => srow(t, d)).join('')}</tbody></table>
       <div class="adm-cols adm-povh">${H.map(
         h =>
-          `<div title="${h.lo === h.hi ? h.lo : `${h.lo}–${h.hi}`} photos: ${h.L.length} genus${h.L.length === 1 ? '' : 'es'}${h.L.length ? ' (' + esc(h.L.join(', ')) + ')' : ''}"><i style="height:${(100 * h.L.length) / hm}%"></i></div>`
+          `<div title="${h.lo === h.hi ? h.lo : `${h.lo}–${h.hi}`} photos: ${h.L.length} ${h.L.length === 1 ? one : many}${h.L.length ? ' (' + esc(h.L.join(', ')) + ')' : ''}"><i style="height:${(100 * h.L.length) / hm}%"></i></div>`
       ).join('')}</div>
-      <p class="adm-axis"><span>0</span><span>genera by photos in play, ${bw} per bar</span><span>${H.length * bw}</span></p></section>
+      <p class="adm-axis"><span>0</span><span>${many} by photos in play, ${bw} per bar</span><span>${H.length * bw}</span></p></section>
     <section class="adm-scard" data-pov="ends"><h3>Fewest and most</h3>${gtab('Fewest', byK.slice(0, 5))}${gtab('Most', byK.slice(-5).reverse())}</section>
-    <section class="adm-scard" data-pov="views"><h3>Views</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>View</th><th class="n">Photos</th><th class="n">Share</th><th>Per genus</th><th class="n">None</th></tr></thead><tbody>${V.map(
-      r =>
-        `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, st.play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.none} / ${r.of}</td></tr>`
-    ).join('')}</tbody></table></div></section>
-    <section class="adm-scard" data-pov="sources"><h3>Sources</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Source</th><th class="n">Photos</th><th class="n">Share</th><th>Per genus</th><th class="n">Genera</th></tr></thead><tbody>${O.map(
-      r =>
-        `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, st.play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.with}</td></tr>`
-    ).join('')}</tbody></table></div></section>
+    <section class="adm-scard" data-pov="views"><h3>${M.parts.h}</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>${M.parts.col}</th><th class="n">Photos</th><th class="n">Share</th><th>Per ${one}</th><th class="n">None</th></tr></thead><tbody>${M.parts.rows
+      .map(
+        r =>
+          `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.none} / ${r.of}</td></tr>`
+      )
+      .join('')}</tbody></table></div></section>
+    <section class="adm-scard" data-pov="sources"><h3>Sources</h3><div class="adm-tscroll"><table class="adm-tbl"><thead><tr><th>Source</th><th class="n">Photos</th><th class="n">Share</th><th>Per ${one}</th><th class="n">${Many}</th></tr></thead><tbody>${M.sources
+      .map(
+        r =>
+          `<tr><td>${r.t}</td><td class="n">${r.k}</td><td class="n">${pct(r.k, play)}</td><td>${iqrTxt(r.d)}</td><td class="n">${r.with}</td></tr>`
+      )
+      .join('')}</tbody></table></div></section>
     <section class="adm-scard" data-pov="answers"><h3>Answers per photo</h3><table class="adm-tbl"><thead><tr><th>Answers</th><th class="n">Photos</th><th class="n">Share</th><th></th></tr></thead><tbody>${B.map(
       ([t, k]) => `<tr><td>${t}</td><td class="n">${k}</td><td class="n">${pct(k, A.length)}</td><td>${sbar(k, bm)}</td></tr>`
     ).join(
       ''
-    )}</tbody></table><p class="note">Median ${iqrTxt(da)}, mean ${numTxt(da.mean)}${dr.n ? `; the ${dr.n} rated: median ${iqrTxt(dr)}` : ''}. ${RATE.MIN}+ answers: ${covered} (${pct(covered, A.length)}).</p></section>
-    <section class="adm-scard wide" data-pov="rated"><h3>${RATE.MIN}+ answers per genus</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>Genus</th><th class="n">Photos</th><th class="n">${RATE.MIN}+ answers</th><th class="n">Share</th><th></th><th class="n" title="Far harder than their genus: ${FAR.D} logits or more after ${FAR.N}+ answers (Difficulty)">Far harder</th></tr></thead><tbody>${CG.map(
+    )}</tbody></table><p class="note">Median ${iqrTxt(da)}, mean ${numTxt(da.mean)}${dr.n ? `; the ${dr.n} ${M.answered}: median ${iqrTxt(dr)}` : ''}. ${RATE.MIN}+ answers: ${covered} (${pct(covered, A.length)}).</p></section>
+    <section class="adm-scard wide" data-pov="rated"><h3>${RATE.MIN}+ answers per ${one}</h3><div class="adm-tscroll tall"><table class="adm-tbl"><thead><tr><th>${One}</th><th class="n">Photos</th><th class="n">${RATE.MIN}+ answers</th><th class="n">Share</th><th></th><th class="n" title="${esc(M.flag.title)}">${M.flag.t}</th></tr></thead><tbody>${CG.map(
       r =>
-        `<tr><td>${gen(r.n)}</td><td class="n">${r.k}</td><td class="n">${r.a}</td><td class="n">${pct(r.a, r.k)}</td><td>${sbar(r.a, r.k || 1)}</td><td class="n">${r.f ? `<a href="#photos/stats/difficulty">${r.f}</a>` : ''}</td></tr>`
+        `<tr><td>${r.html}</td><td class="n">${r.k}</td><td class="n">${r.a}</td><td class="n">${pct(r.a, r.k)}</td><td>${sbar(r.a, r.k || 1)}</td><td class="n">${r.f ? `<a href="${esc(M.flag.href)}">${r.f}</a>` : ''}</td></tr>`
     ).join('')}</tbody></table></div></section>
-    </div></section>`;
+    </div></section>`
+  );
 }
 
 /* ---------- Photo coverage ---------- */
