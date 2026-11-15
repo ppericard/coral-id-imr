@@ -100,13 +100,13 @@
     if (ea !== eb) out.push(['Ease', String(ea), String(eb)]);
     return out;
   }
-  // What Publish sends of the proposals: accepted (the draft carries the re-judged values, the published file does not)
-  // and kept (Keep mine answered since the published file).
+  // What Publish sends of the proposals: accepted (open in the published file S, the re-judged values in the draft D: a
+  // photo the draft took from another route with the same values is no answer) and kept (Keep mine answered since S).
   function lightCounts(P, D, S, set = LIGHT_SET.id) {
     D = D || {};
     S = S || {};
     return {
-      accepted: (P || []).filter(x => same(D, x.photo, x.rejudged) && !same(S, x.photo, x.rejudged)).length,
+      accepted: (P || []).filter(x => same(D, x.photo, x.rejudged) && same(S, x.photo, x.curated)).length,
       kept: (P || []).filter(x => (D.kept || {})[x.photo] === (x.set || set) && (S.kept || {})[x.photo] !== (x.set || set)).length
     };
   }

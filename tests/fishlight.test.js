@@ -168,4 +168,8 @@ test('several proposal sets: each proposal answered in its own set, a photo prop
   assert.strictEqual(lightOpen(L, lightKeep(F, L[1], LIGHT_SET.id)).length, 3);
   // Publish's counts, each in its own set.
   assert.deepStrictEqual(lightCounts(L, lightAccept(K, L[0]), F), {accepted: 1, kept: 1});
+  // A photo the draft holds with the re-judged values from another route (the auto-sort's add of a photo not in the
+  // published file) is no answer to its proposal.
+  const G = {add: {'fish-s9-cand-9': 's9'}, tags: {'fish-s9-cand-9': 'p1g0sl1'}, ease: {'fish-s9-cand-9': 5}};
+  assert.deepStrictEqual(lightCounts(L, G, {}), {accepted: 0, kept: 0});
 });
