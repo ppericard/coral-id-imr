@@ -166,6 +166,7 @@ def fish_inputs():
 SUBJECTS = {
     "coral": {
         "inputs": coral_inputs,
+        "src": "data.json / core.js",  # where its units come from, named by --check
         "unit": "genus",
         "phylum": "Cnidaria",  # WoRMS: records of another phylum are homonyms (Astrea the snail)
         "roots": [47532],  # iNaturalist taxa whose genera and species are listed in bulk (Scleractinia)
@@ -173,6 +174,7 @@ SUBJECTS = {
     },
     "fish": {
         "inputs": fish_inputs,
+        "src": "fish.json",
         "unit": "species",
         "phylum": "Chordata",
         # No bulk roots and no fixed guard: the species' iNaturalist taxa are those fish.json names, and the homonym
@@ -999,24 +1001,27 @@ def check(path=OUT, names_path=NAMES):
             errs.append(f"no section {s}")
             continue
         inp = sub["inputs"]()
-        G, F = inp["genera"], o[s]["gen"]
+        G, F, src = inp["genera"], o[s]["gen"], sub["src"]
+        n0 = len(errs)
         for n in sorted(set(G) - set(F)):
-            errs.append(f"{s}: {n} is in data.json, not in taxonomy.json")
+            errs.append(f"{s}: {n} is in {src}, not in taxonomy.json")
         for n in sorted(set(F) - set(G)):
-            errs.append(f"{s}: {n} is in taxonomy.json, no longer in data.json")
+            errs.append(f"{s}: {n} is in taxonomy.json, no longer in {src}")
         for n in sorted(set(G) & set(F)):
             for k in ("role", "app"):
                 if F[n].get(k) != G[n][k]:
-                    errs.append(f"{s}: {n} {k}: taxonomy.json {F[n].get(k)}, data.json / core.js {G[n][k]}")
+                    errs.append(f"{s}: {n} {k}: taxonomy.json {F[n].get(k)}, {src} {G[n][k]}")
         if "species" in inp:  # every species of the subject's file, under its id (the rest is the refresh's snapshot)
             A, B = inp["species"], o[s].get("species") or {}
             for n in sorted(set(A) - set(B)):
-                errs.append(f"{s}: species {n} is in the subject's file, not in taxonomy.json")
+                errs.append(f"{s}: species {n} is in {src}, not in taxonomy.json")
             for n in sorted(set(B) - set(A)):
-                errs.append(f"{s}: species {n} is in taxonomy.json, no longer in the subject's file")
+                errs.append(f"{s}: species {n} is in taxonomy.json, no longer in {src}")
             for n in sorted(set(A) & set(B)):
                 if (B[n].get("app") or {}).get("id") != A[n]["app"].get("id"):
-                    errs.append(f"{s}: species {n} id: taxonomy.json {(B[n].get('app') or {}).get('id')}, the file {A[n]['app'].get('id')}")
+                    errs.append(f"{s}: species {n} id: taxonomy.json {(B[n].get('app') or {}).get('id')}, {src} {A[n]['app'].get('id')}")
+        if len(errs) > n0:
+            errs.append(f"{s}: run python3 tools/taxonomy.py --subject {s} (it asks WoRMS and iNaturalist for what is new)")
     return errs
 
 

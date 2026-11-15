@@ -76,11 +76,9 @@ test('taxonomy.json fish: every fish.json genus and species with its WoRMS and i
     assert.ok(acc.has(r.now) && r.src.length, k);
     if (r.iname) assert.notStrictEqual(r.iname, r.now, k);
   }
-  assert.deepStrictEqual(F.spp['Apogon moluccensis'], {
-    now: 'Ostorhinchus moluccensis',
-    id: F.spp['Apogon moluccensis'].id,
-    src: ['photo']
-  });
+  // fish.json's own former combination is a row (src app), so photos named so are flagged too.
+  assert.strictEqual(F.spp['Chromis agilis'].now, 'Pycnochromis agilis');
+  assert.ok(F.spp['Chromis agilis'].src.includes('app'));
   assert.strictEqual(F.old.Concholabrus.worms.now, 'Cheilinus');
 });
 
@@ -297,7 +295,7 @@ test('names.json: the admin extract, in step with taxonomy.json; the admin reads
   // The fish section: its rows and former genera, no WoRMS map (the fish Tree reads fish.json ref).
   assert.deepStrictEqual(Object.keys(N.fish.sp), Object.keys(T.fish.spp));
   assert.ok(!('worms' in N.fish));
-  assert.strictEqual(N.fish.gen.Premnas, 'Amphiprion');
+  assert.strictEqual(N.fish.gen.Concholabrus, 'Cheilinus');
   const kb = fs.statSync(path.join(ROOT, 'names.json')).size / 1024;
   assert.ok(kb < 40, `names.json is ${Math.round(kb)} KB`);
 });
@@ -308,7 +306,7 @@ test('nameFlag on the fish photos: a former combination or an iNaturalist spelli
   const flagged = photos.filter(p => nameFlag(p, N));
   assert.ok(flagged.length > 0, 'no fish photo flagged');
   flagged.forEach(p => assert.ok(N.sp[p.t.split(' ').slice(0, 2).join(' ')] || N.gen[p.t.split(' ')[0]], p.f));
-  assert.deepStrictEqual(nameFlag({t: 'Apogon moluccensis'}, N), {kind: 'former', now: 'Ostorhinchus moluccensis'});
+  assert.deepStrictEqual(nameFlag({t: 'Chromis agilis'}, N), {kind: 'former', now: 'Pycnochromis agilis'});
   assert.deepStrictEqual(nameFlag({t: 'Concholabrus fasciatus'}, N), {kind: 'spelling', now: 'Cheilinus fasciatus'});
   assert.strictEqual(nameFlag({t: 'Pycnochromis retrofasciatus'}, N), null, "WoRMS's own name");
 });
