@@ -34,7 +34,19 @@ REFS = ROOT / "tools" / "fish_refs.json"  # the units' reference photos (tools/f
 # The count (7th letter): 1, s, o (other species, no risk of confusion), k (other species one could take for the subject),
 # x; m, the code for other species before Pierre's split (2026-11-09, Q323), stays readable as "not sorted yet" (core.js
 # FISH_COUNT), never typed in a new judgement (NEW_COUNT, tools/judging_fish.py --check).
-CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jca]*)([1-5])$")
+# The typed flags: j juvenile, c camouflage, a out of the water, w a visible watermark or text (Pierre, 2026-11-15, Q373:
+# Home skips it; it caps nothing), in that order.
+CODE = re.compile(r"^([pohtd])([01])([gdn])([0-3])([smb])([lms])([1smxok])([jcaw]*)([1-5])$")
+FLAGS = "jcaw"
+
+
+def with_flag(code, x):
+    """A judged code (CODE) with typed flag x added in the rubric's order, the ease unchanged."""
+    m = CODE.match(code)
+    if not m:
+        raise ValueError(f"bad code {code!r}")
+    fl = set(m.group(8)) | {x}
+    return code[:7] + "".join(c for c in FLAGS if c in fl) + m.group(9)
 NEW_COUNT = "1sokx"
 EARLY = 4  # very easy (judging/FISH.md): the photos the draw favours at an entry's start (model.js photoSet)
 VARIETY = 3  # model.js PICKD.VARIETY: an entry with fewer very easy photos shows its 3 easiest instead
