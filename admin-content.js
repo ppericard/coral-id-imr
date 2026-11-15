@@ -20,6 +20,8 @@
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     C = node ? require('./core.js') : root,
+    // autosort.js: the fish units and their look-alike pairs (fishUnits, fishPairs), for Photos › Look-alikes (montPairs)
+    A = node ? require('./autosort.js') : root,
     isObj = o => !!o && typeof o === 'object' && !Array.isArray(o);
   // The lines a keyed slot holds in record r (its other node ids, in the base's order).
   const keysOf = (sp, r) => {
@@ -193,8 +195,39 @@
     });
     return out;
   }
+  // ---- Photos › Look-alikes: the pairs in force (design note v2, after step 4) ----
+  // The look-alike pairs of fish file R under content map Cm, one photo pair each (admin.js renderFishMont, curation.json
+  // fish mont): autosort.js fishPairs over the units of R with the pairs in force (sheetFile, core.js structApply: the
+  // base's less those he withdrew, plus those he added; the circles left out, as the Tree's Look-alikes filter), each one
+  // the base does not declare marked added. A withdrawn pair has no row and keeps its photo pair in fish mont (nothing is
+  // deleted on his behalf, rule A1), shown again when the pair is back (Undo, ↺). Keys as his pair entries' (core.js
+  // contentPairKey), so an added pair's photo pair is stored as a base pair's. Its lines and sources are the base's (an
+  // added pair has none there: its words are the Sheet's look/<id> line). U0: the units of R when made already
+  // (FISHC.units). One computation per pairs map.
+  let MP = null;
+  function montPairs(S, R, Cm, U0) {
+    const P = sheetFile(S, R, Cm);
+    if (!MP || MP.R !== R || MP.P !== P) {
+      const L = A.fishPairs(U0 || A.fishUnits(R)),
+        base = new Set(L.map(p => p.k));
+      MP = {R, P, L: P === R ? L : A.fishPairs(A.fishUnits(P)).map(p => (base.has(p.k) ? p : {...p, added: true}))};
+    }
+    return MP.L;
+  }
   if (node) {
-    module.exports = {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells, sheetFile, circleRow, pairRows, structChanged};
+    module.exports = {
+      sheetSlots,
+      sheetOwn,
+      sheetVal,
+      sheetTodo,
+      rowKey,
+      contentShells,
+      sheetFile,
+      circleRow,
+      pairRows,
+      structChanged,
+      montPairs
+    };
     return;
   }
 
@@ -578,6 +611,7 @@
     circleRow,
     pairRows,
     structChanged,
+    montPairs,
     structBox,
     structBar,
     structAdd,
