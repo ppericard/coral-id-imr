@@ -207,9 +207,21 @@ still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/
   - every reference-level landscape photo (the band's kind) by an author already tagged once: 342 photos, 134 of them
     tagged.
   
-  **Not covered**: the players' ratings re-sort a family's photos (`app.js` `rankPhotos`), so the band can later reach
-  reference photos by other authors that nobody has looked at yet (about 1,900 photos are of the band's kind).
-  ROADMAP "Watermark pass, the rest" holds that work.
+  Not covered then: the players' ratings re-sort a family's photos (`app.js` `rankPhotos`), so the band could later
+  reach reference photos by other authors that nobody had looked at (1,888 photos are of the band's kind).
+- **The second pass, the same day** (ROADMAP "Watermark pass, the rest") took the rest of the band's kind: every
+  band-kind photo (`home.js` `landR2` and `core.js` `refLevel`, from `fish-game.json`) beyond each family's first 10 in
+  the game's order (`core.js` `easyRank`) and not by an author the first pass had tagged. That is 1,153 photos. The
+  first pass's band-kind tags sit near the top of that order (81 of 83 within the first 16; the other 2 are a ★ cover
+  and one photo 43 deep), which confirms its first 10 per family had been looked at. Each R2 file (`-m`, Pierre's crop applied) was seen on
+  contact sheets of 12 at 380 px with local contrast raised; 32 were tagged. Then every other photo by a tagged author
+  (60) was seen again at 510 px: 2 faint signatures the sheets had missed were found (Karen Willshaw, David Rolla).
+  So the top 12% and bottom 25% of each of the other 1,119 photos were seen at 700 px, local contrast raised, sorted
+  by author. A control sheet of known faint marks showed them all. No new tag. **34 tagged** in all: photographers'
+  names, signatures and logos, one caption, 1 FishBase photo. None is one of Pierre's ★ covers, and none has tags he
+  set himself.
+- **Every band-kind photo has now been looked at.** Any photo a new refill or reference run brings into the pools
+  still needs the same look (ROADMAP "Watermark pass, the rest").
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.
