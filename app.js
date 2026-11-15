@@ -604,6 +604,13 @@ const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7
 const coverOk = (k, p) =>
   !!p && (!juvP(p) || !!(k && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(p.f) === fishPid(k.cover)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
+// A photo with a visible watermark or text (its judged flag w: judging/FISH.md "Watermark"; Pierre, 2026-11-15, Q373)
+// is never a default cover, at any level (Pierre, 2026-11-15, Q379: "Perhaps we should also avoid them for covers"): the
+// defaults take one only when the node has no other adult photo. His ★ cover on one stays his choice (rule A1: the admin
+// asks him whether to keep it, autosort.js fishCoverW); Home skips it all the same (home.js homeOk). The games keep it.
+// coverFirst(L): the first of L that is neither a juvenile nor watermarked, else adultFirst(L).
+const wmP = p => !!p && /w/.test(String(p.jt || '').slice(7));
+const coverFirst = L => (L || []).find(p => !juvP(p) && !wmP(p)) || adultFirst(L);
 // A leaf's presence around the instance's centre (Pierre, 2026-11-13, Q339: "Il faudra rendre générique la localisation
 // centrale de l'instance"; the centre: tools/instance.json, fish.json centre): [its distinct Research Grade observers,
 // its observations] within the centre's radius, from its record's present: nearU and nearN, else their first names
@@ -618,23 +625,28 @@ const nearSeen = r => {
 // he picked one in play ("mon choix était le meilleur au moment avec ce que j'avais sous les yeux"), else that leaf's
 // easiest such reference photo (easyRank: the licence breaking ties). With no reference photo under the node: the most
 // seen leaf among those with an adult photo, then his ★ cover of it, else its easiest adult photo. Never a juvenile while
-// the node has another photo (juvP); a node with no presence keeps the easy order's first. L: the node's photos in play
+// the node has another photo (juvP); never a watermarked photo while it has another adult one (wmP, Q379: the leaves then
+// compete on their adult photos without one, and his ★ cover of the leaf chosen is taken only without one, kept or not);
+// a node with no presence keeps the easy order's first. L: the node's photos in play
 // (p.sp: its leaf), seen(leaf id): [observers, observations] (nearSeen), d: easyRank's difficulty, pick(leaf id): his ★
 // cover of that leaf, or null. autosort.js fishCoverOf is the admin's copy (tests/fishcovers.test.js holds them together).
 function seenCover(L, seen, d, pick = () => null) {
   const R = easyRank(L, d),
-    A = R.filter(p => !juvP(p)),
+    A0 = R.filter(p => !juvP(p)),
+    A1 = A0.filter(p => !wmP(p)),
+    A = A1.length ? A1 : A0,
     Ref = A.filter(refLevel);
   let best = null;
   (Ref.length ? Ref : A).forEach(p => {
     const s = seen(p.sp) || [0, 0];
     if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
   });
-  if (!best) return R[0] || null;
-  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers)
+  if (!best) return R.find(p => !wmP(p)) || R[0] || null;
+  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers); without a
+  // watermark while the node has an adult photo without one
   const k = pick(best.p.sp),
     c = k && R.find(p => p.f === k.f);
-  return (c && (!juvP(c) || k.cj) && c) || best.p;
+  return (c && (!juvP(c) || k.cj) && (!wmP(c) || !A1.length) && c) || best.p;
 }
 // A fish species' presence (FISH.sps: fish.json species by id) and his ★ cover of it (FISH.covers: app.js fishCurate).
 const fishSeen = sid => nearSeen(((FISH && FISH.sps) || {})[sid]);
@@ -974,7 +986,8 @@ function fishCurate(X, cur, F) {
     if (fe.length) g.featP = Object.fromEntries(fe);
   });
   // Every unit's card photo without his pick (Q339 (b), seenCover): its species with a reference photo most seen around
-  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile.
+  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile,
+  // nor a watermarked photo while the unit has another adult one (wmP, Q379).
   const spr = new Map(((F && F.species) || []).map(s => [s.id, s])),
     seen = sid => nearSeen(spr.get(sid));
   Object.values(X.gen).forEach(g => {
