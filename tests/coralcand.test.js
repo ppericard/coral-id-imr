@@ -211,7 +211,7 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
   assert.match(y, /\n {2}schedule:\n {4}- cron: '[^']+'\n/);
   const lic = job.indexOf('python tools/licences.py');
   assert.ok(lic > 0 && lic < job.indexOf('python tools/fetch_approved.py'), 'the licences before the fish photos');
-  assert.match(job, /- if: github\.event_name != 'push'\n\s+run: python tools\/licences\.py --summary "\$GITHUB_STEP_SUMMARY"\n/);
+  assert.match(job, /- if: github\.event_name != 'push'\n\s+run: python tools\/licences\.py --others --summary "\$GITHUB_STEP_SUMMARY"\n/);
 });
 
 // One full refill for genus A, near Dauin only (the other tiers answer nothing), against a stubbed iNaturalist.

@@ -218,13 +218,13 @@ def get(url, missing=False, timeout=None):
     return {'total_results': len(ids), 'results': [{'id': int(i), 'user': {'login': WORLD[i][0]},
             'photos': [{'id': p, 'license_code': c, 'attribution': a} for p, c, a in WORLD[i][1]]} for i in ids if i in WORLD]}
 `;
-const run = (dir, {fail = false, write = true, summary = null} = {}) =>
+const run = (dir, {fail = false, write = true, summary = null, own = true} = {}) =>
   py(`FAIL = ${fail ? 'True' : 'False'}
 ${STUB}
 LOG = []
 try:
     r = L.run(root=${JSON.stringify(dir)}, get=get, write=${write ? 'True' : 'False'}, summary=${summary ? JSON.stringify(summary) : 'None'},
-              log=LOG.append)
+              log=LOG.append, own=${own ? 'True' : 'False'})
     out = {k: (dict(v) if hasattr(v, 'items') else v) for k, v in r.items()}
 except OSError as e:
     out = {'error': str(e)}
@@ -268,6 +268,15 @@ test('a photo made more open, or stricter but still accepted: its credit and lic
   assert.deepStrictEqual(r.nc[0]['fish-game.json'], 1);
   assert.deepStrictEqual(r.nc[1]['fish-game.json'], 0);
   assert.deepStrictEqual(r.nc[1]['fish-photos.json'], 0);
+});
+
+test("the weekly run (--others) leaves Pierre's own photos out: not asked, not changed; the others still follow", () => {
+  const dir = fixture(),
+    r = run(dir, {own: false});
+  const by = Object.fromEntries(read(dir, 'fish-cand.json').cand.s001.map(p => [p.f, p]));
+  assert.strictEqual(by['fish-s001-cand-11'].lic, 'cc-by-nc', 'his own photo is left as it is');
+  assert.strictEqual(by['fish-s001-cand-12'].lic, 'cc-by-nc', "another author's change still follows");
+  assert.ok(!r.asked.flat().includes('101'), 'his observation is not asked');
 });
 
 test('a fish photo whose licence the rules refuse leaves every fish list and is reported; his own without a licence stays', () => {

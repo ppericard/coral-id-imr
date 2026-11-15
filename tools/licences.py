@@ -38,10 +38,13 @@ What a new licence does (the existing licence rules, nothing new):
     the accepted licences only);
   - an observation or a photo iNaturalist no longer returns (deleted, hidden, made private) is reported and left as it
     is: no answer is not a licence.
-Pierre's own photos (own, or his login on iNaturalist) follow the same rules, as the candidate searches do.
+Pierre's own photos (own, or his login on iNaturalist) follow the same rules, as the candidate searches do, but the
+weekly run leaves them out (--others; Pierre, 2026-11-15: "je ne vais pas les changer toutes les semaines. Par contre,
+pour les autres photographes, oui"): a run by hand reads them too.
 
     python3 tools/licences.py                 ask iNaturalist, update the files, print the report
     python3 tools/licences.py --dry           ask, print the report, write nothing
+    python3 tools/licences.py --others        leave Pierre's own photos out (the weekly run): not asked, not changed
     python3 tools/licences.py --summary FILE  also append the report to FILE in Markdown (the workflow's step summary),
                                               and print each photo that left play as a GitHub warning
 Run weekly by the Candidate photos workflow (.github/workflows/approved-photos.yml), and by hand when needed.
@@ -179,7 +182,12 @@ def load(root, f):
     return fish_short.full_doc(d) if f == 'fish-game.json' else d
 
 
-def refresh(docs, found, seen, subject_of, role_of):
+def mine(p):
+    """Pierre's own photo, as the files tell it before asking iNaturalist: flagged own, or credited to him."""
+    return bool(p.get('own')) or 'Pierre Pericard' in (p.get('a') or '')
+
+
+def refresh(docs, found, seen, subject_of, role_of, with_own=True):
     """Applies what iNaturalist said (found, seen: fetch) to the loaded files docs {file: doc}, in place. Returns the
     report: {changed, opener, stricter, credit: Counters by file (credit: the credit alone, an author renamed), left:
     [(file, f, old lic, new code)], sa: [(file, f, new code)], missing: [(file, f, why)]}."""
@@ -189,7 +197,7 @@ def refresh(docs, found, seen, subject_of, role_of):
     def one(f, p, subject, role):
         """Brings record p up to date; False when it leaves play."""
         k = ids(p)
-        if not k:
+        if not k or (not with_own and mine(p)):
             return True
         o, ph = k
         if ph not in found:
@@ -281,7 +289,7 @@ def report_text(rep, nc_before, nc_after, md=False):
     return '\n'.join(lines)
 
 
-def run(root=ROOT, get=None, write=True, summary=None, log=print):
+def run(root=ROOT, get=None, write=True, summary=None, log=print, own=True):
     """Loads the files, asks iNaturalist, applies, writes (unless write is False); returns the report."""
     names = [f for f, _, _ in FILES] + [PHOTOS_FILE]
     docs = {f: load(root, f) for f in names}
@@ -293,10 +301,10 @@ def run(root=ROOT, get=None, write=True, summary=None, log=print):
     work = {f: d for f, d in docs.items() if f != PHOTOS_FILE}
     if docs.get(PHOTOS_FILE) is not None:
         work[PHOTOS_FILE] = {'sheet': docs[PHOTOS_FILE].get('sheet') or {}}
-    obs = {k[0] for d in work.values() if d is not None for p in records(d) for k in [ids(p)] if k}
+    obs = {k[0] for d in work.values() if d is not None for p in records(d) for k in [ids(p)] if k and (own or not mine(p))}
     found, seen = fetch(obs, get)
     nc_before = pierre_nc({f: d for f, d in docs.items() if d is not None})
-    rep = refresh(work, found, seen, subject_of, role_of)
+    rep = refresh(work, found, seen, subject_of, role_of, own)
     if docs.get(PHOTOS_FILE) is not None:
         docs[PHOTOS_FILE]['sheet'] = work[PHOTOS_FILE]['sheet']
     if write:
@@ -320,9 +328,10 @@ def run(root=ROOT, get=None, write=True, summary=None, log=print):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--dry', action='store_true', help='ask and report, write nothing')
+    ap.add_argument('--others', action='store_true', help="leave Pierre's own photos out (the weekly run)")
     ap.add_argument('--summary', help='append the report in Markdown to this file; warn for each photo that left play')
     a = ap.parse_args()
-    run(write=not a.dry, summary=a.summary)
+    run(write=not a.dry, summary=a.summary, own=not a.others)
 
 
 if __name__ == '__main__':
