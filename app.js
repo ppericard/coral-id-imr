@@ -677,7 +677,7 @@ function build() {
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
   DATA = d;
-  if (FISHRAW) fishBuild(); // the fish photos under the same curation
+  treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of fish.json genera holding
@@ -806,7 +806,8 @@ function fishGenera(X, F) {
           species: L.map(s => s.id),
           phase: [],
           sub: [],
-          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
+          // how common near Dauin, or over the subject's area where its tree gives one (core.js fishGen)
+          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {})[F.area ? 'area' : 'dauin'] || 0), 0))),
           levels: 1,
           views: {wide},
           // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
@@ -967,6 +968,10 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // The editor's circles and pairs (core.js structApply; Q359, Q363 h A) only once the sync script replays the progress
 // under them (rule D4: structOn, core.js STRUCT_SHEET); before, the text slots alone, as before. FISHST: the structure
 // stamp of the units made (core.js structStamp, '' without the structure), FISHON: whether they were made under it.
+// Every subject read through this fish engine (a tree subject: UNITS get, its files; the fish, the sea slugs) has its own
+// copy of them (TREE_OF, treeOf); these globals are the copy of the tree subject in force (TREE_AT: the subject on screen's,
+// subjectLoad and inSubject bring it, treeAt), so everything that reads FISH reads the subject on screen. The corals have
+// none: on them the globals stay the last tree subject's, as they stayed the fish's.
 let FISH = null,
   FISHP = null,
   FISHH = null,
@@ -974,18 +979,53 @@ let FISH = null,
   FISHF = null,
   FISHST = '',
   FISHON = false;
+let TREE_AT = null;
+const TREE_OF = {};
 const fishBuild = () => {
-  // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
-  const S = SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+  // the tree subject in force (TREE_AT): its content slots apply to it, and its part of the curation (core.js treeCur)
+  const S = SUBJECTS.find(x => x.id === TREE_AT),
     {ph, gm} = FISHRAW,
     on = structOn(),
+    C = treeCur(S, CUR),
     f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C), ph.sheet), f), C, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+// A tree subject's own state (the globals' names), made on first use; the globals from the state in force and back.
+const treeOf = id =>
+  TREE_OF[id] || (TREE_OF[id] = {id, FISH: null, FISHP: null, FISHH: null, FISHRAW: null, FISHF: null, FISHST: '', FISHON: false});
+function treePull() {
+  if (TREE_AT) ({FISH, FISHP, FISHH, FISHRAW, FISHF, FISHST, FISHON} = treeOf(TREE_AT));
+}
+function treePush() {
+  if (TREE_AT) Object.assign(treeOf(TREE_AT), {FISH, FISHP, FISHH, FISHRAW, FISHF, FISHST, FISHON});
+}
+// Subject id's tree in force (subjectLoad, inSubject): nothing for a subject with none (the corals). Its units are made
+// here when its data came while another was in force, or a curation came since (stale).
+function treeAt(id) {
+  if (!UNITS[id] || !UNITS[id].get || id === TREE_AT) return;
+  treePush();
+  TREE_AT = id;
+  treePull();
+  const T = treeOf(id);
+  if (FISHRAW && DATA && (!FISH || T.stale)) {
+    T.stale = false;
+    fishBuild();
+    treePush();
+  }
+}
+// The units of every tree subject loaded made again (build: a new curation): the one in force at once, the others when
+// they come back in force (treeAt).
+function treeBuildAll() {
+  Object.values(TREE_OF).forEach(T => {
+    if (T.id === TREE_AT) {
+      if (FISHRAW) (fishBuild(), treePush());
+    } else if (T.FISHRAW) T.stale = true;
+  });
+}
 const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
 // A reply from the script that replays under the structure, the units made before it without the structure the curation
 // holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
@@ -993,7 +1033,7 @@ function structSeen() {
   if (!FISHRAW || FISHON === structOn() || CUR_NEW) return;
   if (
     structFp(
-      SUBJECTS.find(x => x.pool.files[0] === 'fish.json'),
+      SUBJECTS.find(x => x.id === TREE_AT),
       CUR
     )
   )
@@ -1011,7 +1051,8 @@ function structSeen() {
 // unit (fishGenera) takes it as its coverP like a family; a genus with no unit (not in circle 1) and a species, which
 // have no record in X.gen, get it in X.covers {id: photo} while it is in play as a photo of that genus or species (the
 // family's views.wide, every photo of its species in play): the genus rows and cards and the species' first photo on
-// the sheets (learn.js genCover, fishSpPhotos). F: fish.json.
+// the sheets (learn.js genCover, fishSpPhotos). F: fish.json. cur: the curation as the engine reads it (core.js treeCur:
+// the subject's own part under the fish's key).
 function fishCurate(X, cur, F) {
   const G = (cur && cur.fish && cur.fish.genera) || {},
     sps = new Map(((F && F.species) || []).map(s => [s.id, [s.id]])),
@@ -1053,26 +1094,43 @@ function fishCurate(X, cur, F) {
   });
   return X;
 }
-// In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): fishHome,
+// In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): treeHome,
 // fish.json and fish-photos.json (the families and their first photos), enough for Home, which start-up waits for; then
-// fishLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
+// treeLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
 // 2: need). Until it is in, the units play on the first photos only, as when it cannot come; then they are built
 // again with it. A launch that finds it in the service worker's cache waits for it at start-up, as before (fishCached).
-const fishHome = () =>
-  FISHH ||
-  (FISHH = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6')])
-    .then(([f, ph]) => {
-      // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
-      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
-      // whole list is not required: without it every family plays on its first photos.
-      if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      if (!FISHRAW) FISHRAW = {f, ph, gm: {photos: {}}};
-      return FISHRAW;
-    })
-    .catch(e => {
-      FISHH = null;
-      throw e;
-    }));
+// Per tree subject id, its files (UNITS get: f its tree, ph its first photos, none for a subject whose game file is small,
+// gm its game photos), its state written into its own copy (treeOf) and into the globals only while it is in force
+// (TREE_AT): a subject's files may come while another is on screen (setSubject loads before it switches).
+const treeSet = (id, k, v) => {
+  treeOf(id)[k] = v;
+  if (id === TREE_AT) treePull();
+  return v;
+};
+const treeHome = id => {
+  const T = treeOf(id),
+    G = UNITS[id].get;
+  return (
+    T.FISHH ||
+    treeSet(
+      id,
+      'FISHH',
+      Promise.all([G.f(), G.ph ? G.ph() : {photos: {}}])
+        .then(([f, ph]) => {
+          // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
+          // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
+          // whole list is not required: without it every family plays on its first photos.
+          if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
+          if (!T.FISHRAW) treeSet(id, 'FISHRAW', {f, ph, gm: {photos: {}}});
+          return T.FISHRAW;
+        })
+        .catch(e => {
+          treeSet(id, 'FISHH', null);
+          throw e;
+        })
+    )
+  );
+};
 // The subject's data still partial (the fish units on their first photos only, until fish-game.json is in): what reads
 // the units' photos once for good waits (model.js domRecalcAll, the one-time rebuild of an old record's bar).
 const dataPartial = () => !!(UNITS[SUBJ.id].partial && UNITS[SUBJ.id].partial());
@@ -1085,28 +1143,39 @@ const fishCached = () =>
         () => false
       )
     : Promise.resolve(false);
-const fishLoad = () =>
-  FISHP ||
-  (FISHP = Promise.all([fishHome(), json('fish-game.json?v=1')])
-    .then(([raw, gm]) => {
-      // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
-      FISHRAW = {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true};
-      // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
-      // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
-      // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.
-      if (!DATA) return FISH;
-      const F = fishBuild();
-      if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
-      // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
-      try {
-        if (typeof achPending === 'function') achPending();
-      } catch (e) {}
-      return F;
-    })
-    .catch(e => {
-      FISHP = null;
-      throw e;
-    }));
+const treeLoad = id => {
+  const T = treeOf(id);
+  return (
+    T.FISHP ||
+    treeSet(
+      id,
+      'FISHP',
+      Promise.all([treeHome(id), UNITS[id].get.gm()])
+        .then(([raw, gm]) => {
+          // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
+          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true});
+          // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
+          // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
+          // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
+          // not in force makes its units when it comes in force (treeAt).
+          if (!DATA || id !== TREE_AT) return T.FISH;
+          T.stale = false;
+          const F = fishBuild();
+          treePush();
+          if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
+          // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
+          try {
+            if (typeof achPending === 'function') achPending();
+          } catch (e) {}
+          return F;
+        })
+        .catch(e => {
+          treeSet(id, 'FISHP', null);
+          throw e;
+        })
+    )
+  );
+};
 // The fish units' photos in easyRank order on their difficulty as the game sees it (model.js photoDiff: the judged ease,
 // then the players' answers once fish answers are logged and rated), so the card's photo and each list's first photo stay
 // the easiest, most reference-like ones as the ratings come (Pierre, 2026-11-06). Run when the fish data or the photo
@@ -1129,6 +1198,7 @@ function rankPhotos() {
 const SUBJ_HOOKS = [];
 function subjectLoad(S, keep) {
   SUBJ = S;
+  treeAt(S.id); // its tree in force (FISH: the fish's, the sea slugs'), none for the corals
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
@@ -1139,7 +1209,7 @@ function subjectLoad(S, keep) {
 let SUBJ_VISIT = 0;
 function inSubject(id, fn) {
   const S = subjectOf(id),
-    was = {S: SUBJ, P, Q};
+    was = {S: SUBJ, P, Q, T: TREE_AT};
   if (S === SUBJ) return fn();
   SUBJ_VISIT++;
   subjectLoad(S, true);
@@ -1148,6 +1218,7 @@ function inSubject(id, fn) {
   } finally {
     SUBJ_VISIT--;
     SUBJ = was.S;
+    if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
@@ -1163,7 +1234,7 @@ function inSubject(id, fn) {
 function setSubject(id) {
   const S = subjAt(id);
   if (S === SUBJ) return Promise.resolve();
-  return UNITS[S.id].load().then(() => {
+  return UNITS[S.id].load(S).then(() => {
     store.set(SUBJECT_KEY, S.id);
     if (typeof toastsOff === 'function') toastsOff(); // progress.js: a note about the subject left
     subjectLoad(S);
@@ -1833,7 +1904,9 @@ let session = {ok: 0, n: 0, h: []},
 // BENTHIC and BONUS (below) are defined once in core.js, with slateOf / gameOf, which the admin and tools share.
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
-//   load()   its data, before its pages open (corals: data.json, always loaded; fish: fishLoad)
+//   load(S)  its data, before its pages open (corals: data.json, always loaded; a tree subject, the fish and the sea
+//            slugs: treeLoad over its files, get)
+//   get      a tree subject's files ({f, ph, gm}: treeHome, treeLoad), read through the fish engine (FISH in force: treeAt)
 //   doorsFirst  Home's doors may be drawn before data.json, their band empty until it comes (beforeData): the doors' words
 //            are the corals' (home.js viewHome without DATA)
 //   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
@@ -2009,9 +2082,12 @@ const UNITS = {
     // Home's Learn band in landscape tiles (home.js, home.css .hdtiles.land; Pierre, 2026-11-08: most fish are horizontal,
     // square tiles cut them); the corals keep their square-ish close-ups.
     land: true,
-    load: () => fishLoad(),
-    // What start-up waits for: the files of Home (fishHome), and the curated photos too when this device holds them.
-    home: () => fishHome().then(() => fishCached().then(c => c && fishLoad())),
+    // Its files (a tree subject, read through the fish engine: treeHome, treeLoad): f its tree, ph its first photos
+    // (Home before the biggest file), gm its game photos.
+    get: {f: () => json('fish.json?v=6'), ph: () => json('fish-photos.json?v=6'), gm: () => json('fish-game.json?v=1')},
+    load: S => treeLoad(S.id),
+    // What start-up waits for: the files of Home (treeHome), and the curated photos too when this device holds them.
+    home: S => treeHome(S.id).then(() => fishCached().then(c => c && treeLoad(S.id))),
     // Between the two: the units on their first photos only (dataPartial).
     partial: () => !!FISHRAW && !FISHRAW.full,
     pick: 'The reef fish families, as on the IMR survey videos.',
@@ -2234,6 +2310,7 @@ const UNITS = {
     ]
   }
 };
+treeAt(SUBJ.id); // the tree of the subject opened on (fish.json for the fish) in force before its files come
 const SETS = () => UNITS[SUBJ.id].sets;
 // The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
 const slateGenera = () => UNITS[SUBJ.id].slate();
@@ -3488,7 +3565,7 @@ function need(n) {
       window.loadTier ? loadTier(n) : null,
       n === 2 ? tier2json() : null,
       // The subject's whole data (fish: fish-game.json, after Home's files): the quiz and the Learn pages wait for it.
-      n === 2 ? UNITS[SUBJ.id].load().catch(() => null) : null
+      n === 2 ? UNITS[SUBJ.id].load(SUBJ).catch(() => null) : null
     ])
       .then(a => SETUP[n] && SETUP[n](a[2]))
       .then(() => (HAVE = Math.max(HAVE, n)));
@@ -3561,7 +3638,7 @@ Promise.all([
   draftCand(),
   domReady,
   // The subject's own data (fish: fish.json): if it cannot come, the app opens on the first subject (corals).
-  (UNITS[SUBJ.id].home || UNITS[SUBJ.id].load)().catch(() => subjectLoad(SUBJECTS[0]))
+  (UNITS[SUBJ.id].home || UNITS[SUBJ.id].load)(SUBJ).catch(() => subjectLoad(SUBJECTS[0]))
 ])
   .then(([d, c, dc]) => {
     Object.entries(dc).forEach(([g, L]) => {

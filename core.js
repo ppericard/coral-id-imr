@@ -911,7 +911,12 @@
       })
     );
     (F.families || []).forEach(t => {
-      const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0),
+      // how common its species are: near Dauin for the fish, over the subject's own area where its tree gives one
+      // (present.area: the sea slugs' distinct observers in the Philippines; Pierre, 2026-11-15, Q369 (b))
+      const dauin = (t.species || []).reduce((a, id) => {
+          const p = (sp.get(id) || {}).present || {};
+          return a + ((F.area ? p.area : p.dauin) || 0);
+        }, 0),
         imrGen = (t.genera || []).map(id => gens.get(id)).filter(g => g && g.imr);
       gen[t.id] = {
         id: t.id,
@@ -1176,6 +1181,14 @@
   // that entered by itself he did not reject, exclude or move) and not excluded for good (curation exclude, by name or
   // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2 (2026-11-15: the stopgap of
   // remote iNaturalist photos, which joined an entry short of 5 very easy curated photos, is retired).
+  // treeCur(S, cur): the curation as the fish engine reads it for tree subject S (fishPhotos, fishGone, app.js fishCurate:
+  // its fish part): S's own part (SUBJECTS admin.cur) under the fish's key, the rest as it is; the same content for the
+  // fish, whose part it is. A subject with no part yet (the sea slugs: Pierre has curated none) gets none: its photos in
+  // play are its judged ones, as fish photos are before he decides. null stays null (not loaded).
+  const treeCur = (S, cur) => {
+    const k = S && S.admin && S.admin.cur;
+    return cur && k ? {...cur, fish: cur[k]} : cur;
+  };
   function fishPhotos(first, game, cur) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
@@ -6239,6 +6252,7 @@
     fishGone,
     fishPid,
     fishPhotos,
+    treeCur,
     unitPool,
     exposureOf,
     keepSubjectKeys,
