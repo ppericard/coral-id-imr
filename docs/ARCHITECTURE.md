@@ -286,10 +286,10 @@ circles and pairs come with the next steps).
   a slot its rank does not declare or a line the base lacks, a value not of the slot's type, an old id's entry shadowed
   by its new id's.
 - **Draft and Publish**: one Save is one draft step (`contentSet`; `contentDrop` for ↺ Restore keeps the node's map, `{}`,
-  so the next merge keeps a slot another device published on that node meanwhile. `merge3` leaves an emptied map out of
-  its result, as for every key but `genera`, so once a rebase has run the guard is gone, and a second publish from
-  elsewhere adding a slot to that node before this draft is published loses that slot: the same as an emptied `crop` or
-  `rot` today); Publish writes the map sorted with no empty map (`contentOut`, from
+  so a merge keeps a slot another device published on that node meanwhile. `merge3` leaves an emptied map out of its
+  result, so the admin puts the draft's emptied node maps back after every merge (`admin-content.js` `contentShells`, in
+  `admin.js` `mergeCur` and the two-tab merge): the guard outlives every rebase before Publish, two included, as Publish's
+  retry after a SHA conflict runs); Publish writes the map sorted with no empty map (`contentOut`, from
   `admin.js` `output` and `fishOut`), merges node by node and slot by slot (`merge3`), each entry whole (`wholeAt`: a
   hide on one device and a rewording on another conflict, mine wins, never mixed), and counts the edits per rank ("2 fish
   family sheet edits").

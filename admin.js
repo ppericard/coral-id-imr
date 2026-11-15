@@ -210,8 +210,13 @@ const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 // merge3 (three-way merge of a draft onto the latest published curation) and mergeOld live in core.js.
 // Re-base the draft (and every Undo/Redo step) onto a newer published curation.
 // Returns the paths where the draft replaced a choice published from elsewhere (see merge3).
-// merge3, then each report's status kept whole (reports.js repsReconcile: Done and Stand-by / Dismissed live in two maps).
-const mergeCur = (base, mine, theirs, conf) => repsReconcile(base, mine, merge3(base, mine, theirs, conf));
+// merge3, then each report's status kept whole (reports.js repsReconcile: Done and Stand-by / Dismissed live in two maps),
+// then the draft's emptied content node maps put back (admin-content.js contentShells: a Restore's {} outlives every
+// merge before Publish).
+const mergeCur = (base, mine, theirs, conf) => {
+  const m = repsReconcile(base, mine, merge3(base, mine, theirs, conf));
+  return typeof contentShells === 'function' ? contentShells(mine, m) : m;
+};
 function rebase(next) {
   const base = SAVED,
     f = d => mergeCur(base, d, next),
@@ -387,7 +392,8 @@ function takeOther() {
   if (!m) return null;
   if (v._tab) SEEN = v._tab.rev;
   if (!m.changed) return null;
-  DRAFT = repsReconcile(shared, DRAFT, m.draft);
+  const merged = repsReconcile(shared, DRAFT, m.draft);
+  DRAFT = typeof contentShells === 'function' ? contentShells(DRAFT, merged) : merged; // a Restore's {} kept (mergeCur)
   snap = JSON.stringify(DRAFT);
   memoReset();
   return m;

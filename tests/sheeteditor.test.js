@@ -7,7 +7,7 @@ const test = require('node:test'),
   fs = require('fs'),
   path = require('path');
 const C = require('../core.js'),
-  {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey} = require('../admin-content.js');
+  {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells} = require('../admin-content.js');
 const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8')),
   S = C.SUBJECTS.find(x => x.content && x.pool.files[0] === 'fish.json'),
@@ -125,4 +125,30 @@ test('the edits to check: the stale and the orphaned, never the fresh or absorbe
     {id: 'f:Nope', node: 'f:Nope', slot: 'note', state: 'orphan', why: 'node'}
   ]);
   assert.deepStrictEqual(sheetTodo(S, F, {}), []);
+});
+
+test('a Restore outlives two merges before Publish: the emptied node map put back after each (Codex review #957)', () => {
+  // admin.js mergeCur: merge3 then contentShells. Published: BF's tips edited; here, Restore; elsewhere, first an edit of
+  // another node, then a note added to BF (two rebases, as Publish's retry after a SHA conflict runs).
+  const put = (c0, f) => ({...c0, fish: {...(c0.fish || {}), content: f((c0.fish || {}).content || {})}}),
+    merge = (b, m, t) => contentShells(m, C.merge3(b, m, t)),
+    other = F.families.find(f => f.id !== BF.id).id,
+    base = {v: 1, genera: {}, fish: {content: {nodes: {[BF.id]: {cues: e(['Mine'], BF.cues)}}}}},
+    draft = put(base, c => C.contentDrop(c, BF.id, 'cues')),
+    P1 = put(base, c => C.contentSet(c, other, 'note', 'elsewhere', null, null, 2)),
+    D1 = merge(base, draft, P1);
+  assert.deepStrictEqual(D1.fish.content.nodes[BF.id], {}, 'kept, empty, in the draft');
+  assert.deepStrictEqual(C.merge3(base, draft, P1).fish.content.nodes[BF.id], undefined, 'merge3 alone drops it');
+  const P2 = put(P1, c => C.contentSet(c, BF.id, 'note', 'Theirs later', null, null, 3)),
+    D2 = merge(P1, D1, P2);
+  assert.strictEqual(D2.fish.content.nodes[BF.id].note.v, 'Theirs later');
+  assert.ok(!('cues' in D2.fish.content.nodes[BF.id]), 'the restore stands');
+  // The published file leaves it out (contentOut); a draft with no emptied map comes back as merge3 gave it.
+  assert.deepStrictEqual(Object.keys(C.contentOut(D1.fish.content).nodes), [other]);
+  const plain = C.merge3(base, base, P1);
+  assert.strictEqual(contentShells(base, plain), plain);
+  // The corals' part is the top level (SUBJECTS admin.cur ''), the same way.
+  const cb = {content: {nodes: {Acropora: {imr: e('x', 'y')}}}},
+    cd = {content: C.contentDrop(cb.content, 'Acropora', 'imr')};
+  assert.deepStrictEqual(contentShells(cd, C.merge3(cb, cd, cb)).content.nodes, {Acropora: {}});
 });

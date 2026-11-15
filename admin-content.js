@@ -16,7 +16,7 @@
 //   design; roles step 1 puts can_(account, 'content', instance) there, Q364), for the controls and for every write.
 // The bar of every Tree page counts the edits to check (stale and orphaned: sheetWarn), linking to the first one's page.
 //
-// The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey) runs in Node too: tests/sheeteditor.test.js.
+// The pure part (sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells) runs in Node too: tests/sheeteditor.test.js.
 (function (root) {
   const node = typeof module !== 'undefined' && module.exports,
     C = node ? require('./core.js') : root,
@@ -94,8 +94,27 @@
   // A row's key on the page: its slot, or for an entry never applied its stored id and slot too (an old id's entry shadowed
   // by its node's own has the same slot as the live row: Codex review #957).
   const rowKey = r => (r.state === 'orphan' ? `o\n${r.eid}\n${r.slot}` : r.slot);
+  // merged (a merge of the draft mine onto a newer published curation: admin.js mergeCur) with the draft's emptied node
+  // maps put back. A Restore leaves its node's map {} so the next merge keeps a slot another device published on it, but
+  // merge3 leaves an emptied map out of its result: without this, a second merge before Publish (another rebase, Publish's
+  // own retry after a SHA conflict) reads the node as deleted and drops that slot (Codex review #957). Published files
+  // never hold them (core.js contentOut). Each subject's content, through SUBJECTS admin.cur.
+  function contentShells(mine, merged, Ss = C.SUBJECTS) {
+    if (!isObj(merged)) return merged;
+    let out = merged;
+    Ss.forEach(S => {
+      const m = C.contentOf(mine, S),
+        empty = Object.keys(isObj(m.nodes) ? m.nodes : {}).filter(id => isObj(m.nodes[id]) && !Object.keys(m.nodes[id]).length),
+        cur = C.contentOf(out, S),
+        miss = empty.filter(id => !isObj((cur.nodes || {})[id]));
+      if (!miss.length) return;
+      const c = {...cur, nodes: {...(isObj(cur.nodes) ? cur.nodes : {}), ...Object.fromEntries(miss.map(id => [id, {}]))}};
+      out = S.admin.cur ? {...out, [S.admin.cur]: {...(out[S.admin.cur] || {}), content: c}} : {...out, content: c};
+    });
+    return out;
+  }
   if (node) {
-    module.exports = {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey};
+    module.exports = {sheetSlots, sheetOwn, sheetVal, sheetTodo, rowKey, contentShells};
     return;
   }
 
@@ -251,5 +270,5 @@
     const at = L.find(x => x.why !== 'node') || null;
     return `<${at ? `a href="${esc(href(at.node))}"` : 'b'} class="warnc adm-csw" title="${esc(L.map(x => `${x.id} ${x.slot}: ${x.why ? WHY[x.why] || x.why : STATE[x.state]}`).join('\n'))}">${L.length} sheet edit${L.length > 1 ? 's' : ''} to check</${at ? 'a' : 'b'}>`;
   }
-  Object.assign(root, {sheetBox, sheetBind, sheetWarn, sheetSlots, sheetOwn, sheetVal, sheetTodo, mayContent});
+  Object.assign(root, {sheetBox, sheetBind, sheetWarn, sheetSlots, sheetOwn, sheetVal, sheetTodo, mayContent, contentShells});
 })(this);
