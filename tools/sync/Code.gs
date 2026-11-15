@@ -294,7 +294,8 @@ function doPost_(e){
   if (p.readStats || p.readAnswers || p.readLive) {  // admin (v14): per-player numbers, see doGet; v110 readLive (live_)
     if (!isAdmin_(String(p.token || ''))) return json_({ok: false, error: 'token'});
     if (p.readAnswers && !p.readLive && !p.readStats) TIM_.op = 'admin answers';  // v130: timed (timEnd_)
-    return json_(p.readLive ? live_() : p.readStats ? stats_(true) : answers_({name: p.aname, pin: p.apin}));
+    // vNEXT: readStats from the snapshot (statsAdmin_), else the whole log as before; s: the subject (statsSid_: the corals without it)
+    return json_(p.readLive ? live_() : p.readStats ? statsAdmin_(p.s) || stats_(true, p.s) : answers_({name: p.aname, pin: p.apin}));
   }
   if (p.users || p.userData || p.userDelete || p.userMerge || p.anonDelete || p.userBoard || p.userArchive || p.userGroup || p.userStart || p.statsExclude) return json_(users_(p));  // admin user management (v11, see users_; v48 userGroup; v98 userStart; v115 statsExclude)
   const {name, pin} = clean_(p);
@@ -604,7 +605,8 @@ function logRows_(sh, k){
 // margin for the sheet's dates), at least the last HOLD.IDS rows (an app that sends no pt). Until Codex review #399 only
 // the last HOLD.IDS, while a lost reply can leave up to 2,000 answers already logged in the device's queue.
 // Cost per player: the Answers tab is read once per request anyway (hold_), the replay of a few hundred rows takes
-// milliseconds, data.json is fetched once every 6 hours (cached), stats_ is the cached ?stats=1 computation.
+// milliseconds, data.json is fetched once every 6 hours (cached), the pooled stats are the ?stats=1 snapshot (vNEXT:
+// statsServed_; stats_, cached, while there is none).
 const RPL = {TAB: 'Replayed', HEAD: ['Name', 'Rules', 'Rows', 'Since', 'Updated', 'Record']};
 // The genera's look-alikes and families (data.json gen and x.gen, as the app's GX), what the replay's look-alike test
 // needs: from GitHub main, cached 6 hours. null when it cannot be read (no replay then; the app keeps its own).
@@ -709,7 +711,8 @@ function rplMake_(who, mine, since, start, sid){
   const main = !sid || sid === CORE_.replaySubject(), rows = mine.map(r => rowOf_(who, r));
   const gen = main ? gen_() : subjGen_(sid);
   if (!gen) return null;
-  const st = main ? stats_() : {}, rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}})[who];
+  // vNEXT: the corals' pooled stats from the snapshot (statsServed_), else stats_ as before; other subjects replay without.
+  const st = main ? statsServed_() || stats_() : {}, rep = CORE_.replayProgress(rows, {gen: gen, mem: st.mem, conf: st.conf, fmt: st.fmt || {}, gd: st.gd, starts: start ? {[who]: start} : {}})[who];
   return {rec: rep ? rep.P : {}};
 }
 // Writes the record at row at (0: a new row) of tab sh, in CHUNK-character parts.
@@ -952,11 +955,13 @@ const nul_ = () => Object.create(null);
 // An empty fold. at: when its last run started; dirty: the mark of the last rewrite of the log it saw (statsDirty_);
 // roster, sx: the roster time (rosterAt_) and the ids left out of the
 // statistics (sxSet_) it is built with; cause: why it was (re)built, built: when; why: the same until it is caught up,
-// then ''; runs: the runs since. sid (v137): the subject whose answers it folds (statsSid_).
+// then ''; runs: the runs since. sid (v137): the subject whose answers it folds (statsSid_). D (vNEXT): the admin ids of
+// the answers a deleted account left ("~deleted <id>"), which rate the photos but get no ability in the admin's reply
+// (stats_ ras, statsAdmin_).
 function statsNew_(roster, sx, at, why, sid){
   return {f: STATS.FMT, v: VERSION, sid: statsSid_(sid), at: at, dirty: '', built: at, cause: why, why: why, runs: 0, roster: roster, sx: sx, c: 0, id: '', h: null, pf: '',
     T: nul_(), U: nul_(), P: nul_(), PG: nul_(), G: nul_(), R: nul_(), H: nul_(), conf: nul_(), mem: MEM.PRIOR.slice(), I: [0, 0, 0, 0], N: [0, 0, 0, 0],
-    skip: {excluded: 0, photos: 0}, L: nul_(), pend: []};
+    skip: {excluded: 0, photos: 0}, L: nul_(), D: nul_(), pend: []};
 }
 // One answer folded into S (m: a mini row, in time order). tr: its player rates the photos (trusted, not left out);
 // ex: its player is left out of the statistics; idx: the game photos (photoIdx_). The rules are stats_'s (above):
@@ -1078,7 +1083,13 @@ function stats_(read, sid){
 // cursor (statsProp_), its cache (statsCacheKey_), served by ?stats=1&s=<subject> (the corals without s, as before).
 // One mark of a rewrite of the log (STATS.DIRTY) for all of them, and every subject's fold blanked by a delete, merge or
 // archive. The app reads only the corals' reply so far (the fish's, at most an hour old, waits for a change of its own).
-const STATS = {TAB: 'Stats', HEAD: ['Part', 'Version', 'Updated', 'Rows', 'Roster', 'Note', 'Data'], FMT: 2, LAG: 864e5, ROWS: 2000, RUN_ROWS: 30000, BUDGET: 60000, UNTIL: 240000, AGE: 36e5, TTL: 1200, LOCK_MS: 10000, PROP: 'STATS_FOLD', DIRTY: 'STATS_DIRTY', ON: true};
+// vNEXT (the step #882 and #940 left next; Pierre, 2026-11-15, Q357: "numbers over all the data, stored, never
+// simplified"): the other readers of stats_ read the snapshot too, and make stats_ only when it is not served (missing,
+// stale, another version, older than the last delete, merge or archive): the admin's readStats (statsAdmin_: row 2 and
+// row 4, the admin part, each player's ability by admin id and the answers left out, written by the same run), the
+// replays (rplMake_, replayedAll_: statsServed_, the corals' photo memory, pairs, formats and genus offsets as before).
+// Row 4 holds admin ids only, never a name (rule D2), and is blanked with rows 2 and 3 (statsDirty_, rule D7).
+const STATS = {TAB: 'Stats', HEAD: ['Part', 'Version', 'Updated', 'Rows', 'Roster', 'Note', 'Data'], FMT: 3, LAG: 864e5, ROWS: 2000, RUN_ROWS: 30000, BUDGET: 60000, UNTIL: 240000, AGE: 36e5, TTL: 1200, LOCK_MS: 10000, PROP: 'STATS_FOLD', DIRTY: 'STATS_DIRTY', ON: true};
 const STATS_DATA = STATS.HEAD.length - 1;  // the first chunk's index (column G)
 // The subjects with pooled stats (those with game photos), and the one a request or a call names: the corals when it
 // names none or one without photos.
@@ -1125,7 +1136,7 @@ function statsLoad_(sh){
     const S = JSON.parse(g.json, (k, v) => (typeof v === 'string' && Object.prototype.hasOwnProperty.call(STATS_NUM, v) ? STATS_NUM[v] : v));
     if (!S || typeof S !== 'object' || !Array.isArray(S.pend) || typeof S.c !== 'number') return null;
     const re = o => { const x = nul_(); Object.keys(o || {}).forEach(k => { x[k] = o[k]; }); return x; };
-    ['T', 'U', 'P', 'PG', 'G', 'R', 'H', 'conf', 'L'].forEach(k => { S[k] = re(S[k]); });
+    ['T', 'U', 'P', 'PG', 'G', 'R', 'H', 'conf', 'L', 'D'].forEach(k => { S[k] = re(S[k]); });
     Object.keys(S.H).forEach(w => { S.H[w] = re(S.H[w]); });
     return S;
   } catch (e) { return null; }
@@ -1139,34 +1150,56 @@ function statsPoolFp_(S, idx){
 // The Answers tab was rewritten (relabel_, dropRows_, a one-shot migration): the fold starts again at the next run.
 // all (rosterChanged_: an account left normal operation, or who is left out of the statistics changed; anonDelete):
 // the fold's player data is blanked now (rule D7) and the snapshot served goes too, so ?stats=1 makes stats_ until the
-// fold is rebuilt. v137: every subject's.
+// fold is rebuilt. v137: every subject's. vNEXT: the admin part (row 4) too.
 function statsDirty_(all){
   try { PropertiesService.getScriptProperties().setProperty(STATS.DIRTY, Date.now() + ':' + Math.random()); } catch (e) {}  // a new mark each time
   if (!all) return;
   statsSubjects_().forEach(sid => {
     try {
       const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(statsTab_(sid)), w = sh ? sh.getLastColumn() : 0;
-      [2, 3].forEach(r => { if (w && sh.getLastRow() >= r) sh.getRange(r, 1, 1, w).setValues([new Array(w).fill('')]); });
+      [2, 3, 4].forEach(r => { if (w && sh.getLastRow() >= r) sh.getRange(r, 1, 1, w).setValues([new Array(w).fill('')]); });
     } catch (e) {}
     try { CacheService.getScriptCache().remove(statsCacheKey_(sid)); } catch (e) {}
   });
 }
+// A part of the snapshot that may be served (g: statsGet_; part: its first cell): made by this version, at most
+// STATS.AGE ago (the trigger runs every 15 minutes) and after the last delete, merge or archive (rosterAt_).
+const statsOk_ = (g, part) => !!g && String(g.meta[0]) === part && Number(g.meta[1]) === VERSION &&
+  Date.now() - (new Date(g.meta[2]).getTime() || 0) <= STATS.AGE && Number(g.meta[4]) >= rosterAt_();
 // The public stats from the snapshot: cached (statsCacheKey_, in parts: cacheBigPut_), else row 2 of the tab when it
-// was made by this version, at most STATS.AGE ago (the trigger runs every 15 minutes) and after the last delete, merge
-// or archive (rosterAt_). null otherwise: the caller makes stats_ as before. sid (v137): the subject (statsSid_).
+// may be served (statsOk_). null otherwise: the caller makes stats_ as before. sid (v137): the subject (statsSid_).
+// vNEXT: also what the replays read (rplMake_, replayedAll_): it reads no pool and takes no lock.
 function statsServed_(sid){
   if (!STATS.ON) return null;
   const c = CacheService.getScriptCache(), key = statsCacheKey_(sid);
   try { const hit = cacheBigGet_(c, key); if (hit) return JSON.parse(hit); } catch (e) {}
   try {
     const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(statsTab_(sid)), g = statsGet_(sh, 2);
-    if (!g || String(g.meta[0]) !== 'served' || Number(g.meta[1]) !== VERSION) return null;
-    if (Date.now() - (new Date(g.meta[2]).getTime() || 0) > STATS.AGE || Number(g.meta[4]) < rosterAt_()) return null;
+    if (!statsOk_(g, 'served')) return null;
     const o = JSON.parse(g.json);
     if (!o || typeof o !== 'object' || !o.photos) return null;
     tim_('read Stats', t0, Number(g.meta[3]) || '', '');
     try { cacheBigPut_(c, key, g.json, STATS.TTL); } catch (e) {}
     return o;
+  } catch (e) { return null; }
+}
+// vNEXT: the admin's readStats from the snapshot, exactly what stats_(true, sid) sends (tests/statsfold.test.js): the
+// reply served (row 2) with the admin part the same run wrote (row 4; both carry the run's start in Note): each player's
+// ability by admin id less those of a deleted account's answers (the fold's D) and less the players archived now (stats_
+// leaves both out by name: archivedSet_), and the answers left out (skip). Read from the tab, never cached (the admin
+// asks rarely, and a delete has no cache to drop). null when either part may not be served (statsOk_), they are from two
+// runs, or the log is empty (stats_ then sends no skip): the caller makes stats_(true, sid) as before.
+function statsAdmin_(sid){
+  if (!STATS.ON) return null;
+  try {
+    const t0 = Date.now(), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(statsTab_(sid)), g = statsGet_(sh, 2), a = statsGet_(sh, 4);
+    if (!statsOk_(g, 'served') || !statsOk_(a, 'admin') || !String(g.meta[5]) || String(a.meta[5]) !== String(g.meta[5]) || !Number(g.meta[3])) return null;
+    const o = JSON.parse(g.json), x = JSON.parse(a.json);
+    if (!o || typeof o !== 'object' || !o.photos || !x || typeof x.ras !== 'object' || !x.ras || !x.skip) return null;
+    const salt = anonSalt_(), arch = new Set([...archivedSet_()].map(n => aid_(n, salt))), ras = {};
+    Object.keys(x.ras).forEach(k => { if (!arch.has(k)) ras[k] = x.ras[k]; });
+    tim_('read Stats', t0, Number(g.meta[3]) || '', '');
+    return Object.assign(o, {ras: ras, chk: 1, skip: x.skip});
   } catch (e) { return null; }
 }
 // One run of the fold (the 15-minute trigger: statsFoldRun_). Reads the rows after the cursor, STATS.ROWS at a time,
@@ -1204,7 +1237,7 @@ function statsFold_(o){
   const salt = anonSalt_(), K = nul_(), key = n => K[n] = K[n] || aid_(n, salt);
   const width = an && an.getMaxColumns ? Math.min(LOG.length, an.getMaxColumns()) : LOG.length;
   const more = () => S.c < last && read < cap && (!read || Date.now() - t0 < budget);
-  let read = 0, settled = 0, caught = false, served = null, tr = null;
+  let read = 0, settled = 0, caught = false, served = null, admin = null, tr = null;
   for (;;) {
     while (more()) {
       const k = Math.min(B, last - S.c);
@@ -1213,7 +1246,8 @@ function statsFold_(o){
       read += k;
       const fresh = [];
       let late = false;
-      v.forEach((r, i) => { if (!mine(r)) return; const m = statsMini_(r, S.c + 2 + i, key(lc_(r[0]))); if (S.h !== null && m[1] < S.h) late = true; fresh.push(m); });
+      // vNEXT: a deleted account's answers marked on this fold (D), not in K, which outlives a reset.
+      v.forEach((r, i) => { if (!mine(r)) return; const w = lc_(r[0]), m = statsMini_(r, S.c + 2 + i, key(w)); if (w.indexOf('~deleted ') === 0) S.D[m[2]] = 1; if (S.h !== null && m[1] < S.h) late = true; fresh.push(m); });
       if (late) { S = reset('late answer'); continue; }
       fresh.forEach(m => S.pend.push(m));
       S.c += k;
@@ -1244,7 +1278,14 @@ function statsFold_(o){
   const built = S.why;
   if (caught) S.why = '';
   const json = statsJson_(S);
-  if (caught) { S.pend.forEach(m => statsStep_(S, m, tr(m[2]), sx.has(m[2]), idx)); served = JSON.stringify(statsOut_(S)); }
+  if (caught) {
+    S.pend.forEach(m => statsStep_(S, m, tr(m[2]), sx.has(m[2]), idx));
+    served = JSON.stringify(statsOut_(S));
+    // vNEXT: the admin part (statsAdmin_): the abilities as stats_ rounds them, and skip, with the pending answers too.
+    const ras = {};
+    Object.keys(S.R).forEach(x => { if (!(x in S.D)) ras[x] = [Math.round(S.R[x][0] * 100) / 100, S.R[x][1]]; });
+    admin = JSON.stringify({ras: ras, skip: S.skip});
+  }
   // Written under the script lock (Codex review #882), which every rewrite of the log and every delete, merge or archive
   // holds: one of them while this run read the log, or now, and nothing is written (what this run folded is stale; the
   // next run rebuilds), so a fold never puts back what a delete just blanked (rule D7). The lock busy: the next run.
@@ -1257,7 +1298,10 @@ function statsFold_(o){
     statsPut_(tab, 3, ['state', VERSION, new Date(), S.c, S.roster, note], json);
     props.setProperty(PROP, JSON.stringify({c: S.c, at: S.at, v: VERSION}));
     if (served !== null) {
-      statsPut_(tab, 2, ['served', VERSION, new Date(), S.c, S.roster, ''], served);
+      // vNEXT: both parts stamped with the run (Note), so the admin's reader never mixes two runs.
+      const at = new Date(), stamp = 'run ' + t0;
+      statsPut_(tab, 4, ['admin', VERSION, at, S.c, S.roster, stamp], admin);
+      statsPut_(tab, 2, ['served', VERSION, at, S.c, S.roster, stamp], served);
       try { cacheBigPut_(CacheService.getScriptCache(), KEY, served, STATS.TTL); } catch (e) {}
     }
   } finally { lock.releaseLock(); }
@@ -2531,7 +2575,8 @@ function photoAlert_(name, rows){
 function replayedAll_(users, dcol){
   const gen = gen_(), list = slate_();
   if (!gen || !list || !users.length) return;
-  const ss = SpreadsheetApp.getActiveSpreadsheet(), st = stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // v119: by player, no prototype
+  // vNEXT: the pooled stats from the snapshot (statsServed_), else stats_ as before.
+  const ss = SpreadsheetApp.getActiveSpreadsheet(), st = statsServed_() || stats_(), big = Object.create(null), mine = Object.create(null), cached = Object.create(null);  // v119: by player, no prototype
   const dt = ss.getSheetByName(DATA_TAB);
   if (dt && dt.getLastRow() > 1) dt.getRange(2, 1, dt.getLastRow() - 1, dt.getLastColumn()).getValues().forEach(r => { big[lc_(r[0])] = r.slice(2).map(String).join(''); });
   answerRows_().forEach(r => { const k = lc_(r[0]); if (k) (mine[k] = mine[k] || []).push(r); });
