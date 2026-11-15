@@ -51,8 +51,8 @@ reference photos sit:
 | Every photo in play | 13.0% | 29.9% | 28.3% | 20.3% | 8.5% | 12.0% | 6.8% | 59.2% | 33.3% |
 | Eligible | 14.5% | 32.6% | 28.9% | 20.4% | 3.6% | 13.5% | 7.6% | 57.7% | 34.5% |
 
-So the held-out set has fewer very easy photos than the practice pool. The analyses match on the ease band for that
-reason (section 2).
+So the held-out set has fewer very easy photos than the practice pool. The analyses compare like with like for that
+reason: practice photos of the eligible kind only, matched on each judged ease value (section 2).
 
 ### How many
 
@@ -91,17 +91,17 @@ up to a quarter of their eligible observations (the cap). With no floor, it is 2
 
 ### How they are chosen: one systematic sample per unit
 
-Within a genus, sort its eligible observations by species, then ease band (1-2, 3, 4-5), then phase (adult, juvenile,
+Within a genus, sort its eligible observations by species, then judged ease (1 to 5), then phase (adult, juvenile,
 male or female), then view (profile, oblique, other), then a fixed hash of the observation id. Take every k-th, k =
 n / h, starting from a fixed hash of the genus id. A systematic sample from a sorted list is proportional on the sort
-keys. That gives each species its share of the genus's set, and within the genus each ease band, phase and view about
+keys. That gives each species its share of the genus's set, and within the genus each ease value, phase and view about
 its share.
 
-- **Where the stratification holds.** It cannot hold inside one species: 3 photos cannot cover 3 ease bands × 3 phases
-  × 3 views. It holds at the genus and family level, and for the whole set. The first sort keys (species, ease band)
+- **Where the stratification holds.** It cannot hold inside one species: 3 photos cannot cover 5 ease values × 3
+  phases × 3 views. It holds at the genus and family level, and for the whole set. The first sort keys (species, ease)
   are held tightly; the later ones (phase, view) only roughly. Step 2 (section 5) tests the whole set: within 1 point of
-  the eligible pool on each ease band, phase and view. Per family with 50 or more held out, 3 points on the ease bands
-  is a target: the PR reports each family's shares, and a miss is shown, not a failed test.
+  the eligible pool on each ease value, phase and view. Per family with 50 or more held out, 3 points on each ease
+  value is a target: the PR reports each family's shares, and a miss is shown, not a failed test.
 - **The judged ease** is the curated one where Pierre set it (`fish.ease`), else the pass's, the same `e` the game
   reads.
 - **No source, licence or observer** enters the choice (rule P1: fish have no source priority).
@@ -116,7 +116,8 @@ move). Then it leaves the set and play together.
 - **The first draw** (step 2) has to take observations already in play. It prefers those no fish answer has ever shown:
   the Photos column of the fish rows of the Answers tab, read once by an agent with read access, as a list of file
   names used as an input and never committed (rules D2, L12). The step 2 PR reports how many observations that list
-  excluded.
+  excluded. That list cannot cover the sheets, Home, the cards or Memory, which log no exposure. So for the players
+  who played fish before step 2, the first draw's photos are never clean probes (section 2, "Clean probes only").
 - **Never re-drawn.** A re-draw after players have answered probes would mix two sets in the analyses. Each logged probe
   carries its own flag (section 3), so the log says what was held out at the time whatever the files say later.
 
@@ -163,11 +164,25 @@ as `|x` when the photo is held out (`…|h|x`: `|h` sits before `|kN`, `|t` and 
 
 The check itself, then two contrasts, per player (players are the unit, rules L11, L12), declared before the log is
 read (as in the photo memory lag study, [2026-11-15-photo-memory-lag-table.md](2026-11-15-photo-memory-lag-table.md),
-#944). **Matched** below means: compared raw (right %) within each cell of ease band × the unit's stage (bar under
-50%, 50-80%, over 80%, learned) × format (4 choices, 3 or 2 plausible, typed), the cells weighted by the probe counts
-(direct standardisation to the probes' mix). Why raw and matched, not right − expected: a held-out photo has only
-first-exposure answers and its judged-ease prior, while a practice photo has an answer-based rating. Right − expected
-between the two would mix the model's calibration with transfer.
+#944). **Matched** below means:
+- **The same kind of photo on both sides.** The practice side keeps only photos of the eligible kind: no reference
+  photo, no photo of Pierre's, no cover. The held-out set has none of these, and `model.js` `photoSet` favours the
+  unseen reference photos.
+- **Compared raw** (right %) within each cell of the judged ease value (1 to 5, never banded: `photoDiff` gives each
+  value its own prior, and the excluded reference photos sit mostly at 5) × the unit's stage (bar under 50%, 50-80%,
+  over 80%, learned) × format (4 choices, 3 or 2 plausible, typed). The cells are weighted by the probe counts (direct
+  standardisation to the probes' mix).
+- **The balance is checked before any reading:** within each cell, the two sides' mean prior difficulty (judged ease)
+  and their phase and view shares. A cell out of balance is reported and left out of the primary.
+- **Why raw and matched, not right − expected:** a held-out photo has only first-exposure answers and its judged-ease
+  prior, while a practice photo has an answer-based rating. Right − expected between the two would mix the model's
+  calibration with transfer.
+- **Clean probes only.** A probe is clean when its photo was never available to that player anywhere. That holds for a
+  photo topped up from new photos (it was never in practice), and for a photo of the first draw only when the player's
+  first fish answer came after the withholding began. Before that, the photo was on the sheets, Home, the cards and
+  Memory, where no exposure is logged. So each held-out record carries the date it was held out and whether it was in
+  practice before (`since`, `was`; section 3). Probes that are not clean still run and still count as answers. They are
+  reported apart, as a sensitivity row, and they never enter the primary or the stop rule.
 
 - **The transfer check (descriptive):** each player's right % on probes by the unit's stage, from its first questions
   to after Learned. This is the row's "recognition of photos never seen, at the start and later", shown as a table with
@@ -185,7 +200,7 @@ between the two would mix the model's calibration with transfer.
    whether memory exists.
 
 Secondary (model-based, exploratory until the held-out photos are rated): right − expected on each side, and a
-mixed-effects logistic model (player and photo random effects; fixed: source, ease band, stage, format) with its
+mixed-effects logistic model (player and photo random effects; fixed: source, judged ease, stage, format) with its
 assumptions checked (rule L11, "Multifactor analyses"). Also exploratory: the domain-score bar's claim checked on
 never-seen photos. The bar is the share of a unit's photos the player would name alone and typed. Typed probes test it
 directly: observed success on typed probes against the bar at that moment, per player, by bar band.
@@ -202,8 +217,10 @@ one-sided test at 5% then has:
 
 At π = 0.1, 20 probes take a player about 200 fish answers on the families that give probes.
 
-**Stop rule for the primary test** (declared now): it runs once 20 players each have 20 probes or more. Before that,
-the table is shown with its counts and read as descriptive only.
+**Stop rule for the primary test** (declared now): it runs once 20 players each have 20 clean probes or more. Before
+that, the table is shown with its counts and read as descriptive only. Clean probes come from players who start fish
+after step 2 ships, and from the photos topped up as new ones enter play. So the existing players add little to the
+primary, and the stop rule is further away than the raw probe counts suggest.
 
 **What the player base allows.** On 2026-11-09 nine accounts had fish answers in the log, two of them above 300
 (LEARNING.md "The log, the only reference for progress"). This note read no newer data. At that size, a few players
@@ -223,6 +240,8 @@ data comes twice as fast.
     every game, the sheets, Home, the Lab tools, a future game (rule L4) and an old app copy still cached on a phone.
     Only code that loads the second file on purpose (the probe and the exam) reaches them.
   - Its header: `v`, `built`, the rule's constants (rate, floor, cap), the salt of the hash.
+  - Each record also carries `since` (the date it was held out) and `was` (1 when it was in practice before: the first
+    draw), which tell a clean probe from one that is not (section 2).
 - The other option, a flag `ho: 1` on records in `fish-game.json`, keeps one file. But every reader must filter it,
   and an old app copy shows the held-out photos in practice until it updates. **Question (e)** (a stored format other
   code will follow: costly to undo, AGENTS.md "Working mode").
@@ -412,5 +431,5 @@ guarantees it. Its cost is about five readers that look a logged photo up by nam
 - π = 0.1 as a starting point, set by the step 3 simulation.
 - The exam's fallback to today's rule.
 - The admin showing held-out photos marked, and the sensitivity row without the admin's accounts.
-- The stop rule (20 players × 20 probes) and the matched contrast as the primary.
+- The stop rule (20 players × 20 clean probes), the clean-probe rule and the matched contrast as the primary.
 - Pierre's ★ covers excluded and the surprise-only species left out.
