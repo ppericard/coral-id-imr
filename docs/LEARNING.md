@@ -2344,6 +2344,13 @@ picks the first unit only, so the first 10 units are a little less easy (mean `g
   | rated, lecture RA's units met at 100 | 501-510 | 19.8 → 18.8 unclear | 19.8 → 17.6 **breached** | 19.8 → 18.8 unclear |
   | same | 511-520 | (as B') | 18.1 → 16.8 unclear | 18.1 → 16.8 unclear | **The rated world, corals under B**: the beginner's shown score at 1,000 41.2 → 39.9 (−1.3, margin −1),
   breached as first built; the other cells held or unclear.
+- **Pierre's choice: B for every subject** (2026-11-15, after B' was shown: "j'aurais préféré qu'on fasse la même
+  chose pour les poissons et les coraux ... quelque chose qui soit cohérent entre tous les modes de jeu"). The B'
+  commit is reverted: every subject draws its first cards unit by unit. For the fish, B and B' differ only in the
+  order of the four starter-core cards; across the two seed sets above neither is consistently better (B worse on
+  501-510, as good or better on 511-520), and the rated world's two fish breaches (the lecture RA's first unit at Open
+  Water later, the expert's units at Open Water at 1,000 about 3 lower) come with the groups under every variant:
+  accepted with the choice.
 - **The real log** (the Answers tab as read on 2026-11-12, 2,047 + 983 coral answers of 12 players with 50 or more;
   read-only, players pseudonymised): under today's rule, the 10 players on the path met the two genera of a pair of the
   new groups a median 51 answers apart (213 pairs, 23% within 15), the declared pairs 48 (378 pairs, 22%); in 92 of the
