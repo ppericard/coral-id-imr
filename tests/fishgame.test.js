@@ -845,15 +845,22 @@ test('fish_game.py first_photos: the reference-level photos first, as core.js ea
       ]
     },
     cur = {fish: {genera: {'f:A': {cover: 'fish-s1-cand-300'}}}};
-  const got = JSON.parse(
-    py(
-      `import fish_game as G
+  const first = (L, cur) =>
+    JSON.parse(
+      py(
+        `import fish_game as G
 print(json.dumps(G.first_photos({'t52': json.loads(sys.argv[1])}, json.loads(sys.argv[2]), json.loads(sys.argv[3]))['t52']))`
-        .replace('sys.argv[1]', JSON.stringify(JSON.stringify(L)))
-        .replace('sys.argv[2]', JSON.stringify(JSON.stringify(cur)))
-        .replace('sys.argv[3]', JSON.stringify(JSON.stringify(fish)))
-    )
-  ).map(p => p.f);
+          .replace('sys.argv[1]', JSON.stringify(JSON.stringify(L)))
+          .replace('sys.argv[2]', JSON.stringify(JSON.stringify(cur)))
+          .replace('sys.argv[3]', JSON.stringify(JSON.stringify(fish)))
+      )
+    ).map(p => p.f);
+  const got = first(L, cur);
+  // His cover on a juvenile: after the adults, unless he confirmed it (coverJ: autosort.js fishCoverJ; Pierre, 2026-11-15).
+  const LJ = L.map(p => (p.f === 'fish-s1-cand-300' ? {...p, jt: 'p1g0sm1j'} : p));
+  assert.notStrictEqual(first(LJ, cur)[0], 'fish-s1-cand-300', 'a juvenile cover not confirmed: not first');
+  const curJ = {fish: {genera: {'f:A': {cover: 'fish-s1-cand-300', coverJ: 'fi300'}}}};
+  assert.strictEqual(first(LJ, curJ)[0], 'fish-s1-cand-300', 'confirmed (under either name): first');
   assert.strictEqual(got.length, 8);
   assert.deepStrictEqual(got.slice(0, 2), ['fish-s1-cand-300', 'fish-s3-cand-400'], 'his cover, then the other family');
   assert.deepStrictEqual(got.slice(2, 4), ['fish-s2-cand-201', 'fish-s2-cand-202'], 'the reference-level photos next');

@@ -13,6 +13,9 @@ const test = require('node:test'),
     lightRetired,
     lightOpen,
     lightAccept,
+    lightJ,
+    lightCovers,
+    lightJOf,
     lightKeep,
     lightDiff,
     lightCounts
@@ -43,6 +46,24 @@ test('a proposal accepted into the draft sets its re-judged tags and ease, and i
   assert.deepStrictEqual(open(N), ['fish-s1-cand-2', 'fish-s2-cand-3']);
   // Accept all: every open one, in one draft
   assert.deepStrictEqual(open(lightOpen(P, F).reduce(lightAccept, F)), []);
+});
+
+// A proposal that tags one of his ★ covers juvenile (#942's Boxfishes): Accept asks whether to keep it as the cover
+// (lightCovers names its nodes); kept, the confirmation goes with the tags in one step (Pierre's exception, 2026-11-15:
+// autosort.js fishCoverJ); a cover he confirmed already is not asked about again.
+test('a proposal that makes his ★ cover a juvenile: its nodes named, the cover kept with the Accept', () => {
+  const x = {photo: 'fish-s1-cand-1', curated: ['p1g0sl1', 3], rejudged: ['o1g0sl1j', 4]},
+    F = {...draft(), tags: {...draft().tags, 'fish-s1-cand-1': 'p1g0sl1'}, genera: {'f:A': {cover: 'fi1'}, 'g:B': {cover: 'fi2'}}};
+  assert.ok(lightJ(x) && !lightJ(P[0]) && !lightJ(P[2]), 'only a proposal that adds the juvenile flag');
+  assert.deepStrictEqual(lightCovers(F, x), ['f:A'], 'his cover under the photo’s other name');
+  assert.strictEqual(lightJOf([x, ...P], F, 'fi1'), x);
+  assert.strictEqual(lightJOf([x, ...P], F, 'fi2'), null);
+  const K = lightAccept(F, x, lightCovers(F, x));
+  assert.strictEqual(K.tags['fish-s1-cand-1'], 'o1g0sl1j');
+  assert.deepStrictEqual(K.genera, {'f:A': {cover: 'fi1', coverJ: 'fi1'}, 'g:B': {cover: 'fi2'}});
+  assert.deepStrictEqual(lightAccept(F, x).genera, F.genera, 'not kept: the cover is left as it is (then ignored)');
+  assert.deepStrictEqual(lightCovers(K, x), [], 'confirmed: nothing to ask');
+  assert.deepStrictEqual(lightCovers({}, x), []);
 });
 
 test('Keep mine records the answer in fish.kept: his values stay, the proposal no longer shows', () => {

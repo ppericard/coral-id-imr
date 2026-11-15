@@ -617,11 +617,35 @@
   // photo fi<id> and its candidate copy fish-<species>-cand-<id> are one photo, and the game plays one copy), as the app
   // finds his picks (app.js fishCurate); null when it is not there.
   const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => fishPid(p.f) === fishPid(f)))) || null;
-  // The family's cover: this photo, or none again (his pick taken off, under either of its names).
+  // The family's cover: this photo, or none again (his pick taken off, under either of its names). Either way a
+  // confirmation of a juvenile cover (coverJ, below) goes with the old pick: a new pick on a juvenile asks again.
   const fishCover = (F, tid, f) =>
     fishPick(F, tid, k => {
+      delete k.coverJ;
       if (k.cover && fishPid(k.cover) === fishPid(f)) delete k.cover;
       else k.cover = f;
+    });
+  // A juvenile is never a cover, with one exception Pierre makes himself (2026-11-15, the Boxfishes' yellow juvenile: "the
+  // juvenile is far more popular and recognisable than the adults"): his ★ cover on a photo judged a juvenile, once he
+  // confirmed it ("This photo is a juvenile. Use it as the cover anyway?"). The confirmation sits next to the cover, the
+  // photo's name: curation.json fish genera {node id: {cover: f, coverJ: f}}, through the draft and Publish (rule A1). It
+  // holds while it names the cover's photo (core.js fishPid: either of its names), whatever the photo's tags say since,
+  // so it can be given before a judgement tags the photo juvenile. The default cover rule never takes a juvenile.
+  // fishCoverJ: node tid's ★ cover is this photo and he confirmed it; fishCoverYes: photo f as tid's cover, confirmed
+  // (set, never toggled off); fishCoverJOk: the confirmation alone, on the cover already there (the Tree page's one click).
+  const fishCoverJ = (F, tid, p) => {
+    const k = ((F || {}).genera || {})[tid] || {},
+      f = p && (p.f || p);
+    return !!(f && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(f) === fishPid(k.cover));
+  };
+  const fishCoverYes = (F, tid, f) =>
+    fishPick(F, tid, k => {
+      k.cover = f;
+      k.coverJ = f;
+    });
+  const fishCoverJOk = (F, tid) =>
+    fishPick(F, tid, k => {
+      if (k.cover) k.coverJ = k.cover;
     });
   // Validated, or not.
   const fishOk = (F, tid) =>
@@ -635,6 +659,7 @@
   const fishDrop = (F, tid, f) => {
     const out = k => {
       if (k.cover === f) delete k.cover;
+      if (k.coverJ === f) delete k.coverJ;
       Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
     };
     let N = fishPick(F, tid, out);
@@ -679,7 +704,8 @@
   // order across all its species (fishOrder, core.js easyRank, as the game's card cover: reference-level first, whatever
   // the species; Codex review #655), else null.
   // A juvenile photo is never a cover, at any rank, picked or not (Pierre, 2026-11-13: "Un juvénile ne devrait probablement
-  // jamais finir en couverture"): his pick on one is ignored, the order's first photo that is not one is taken, and a unit
+  // jamais finir en couverture"): his pick on one is ignored unless he confirmed it (fishCoverJ: his exception,
+  // 2026-11-15), the order's first photo that is not one is taken, and a unit
   // whose photos are all juveniles keeps its first. Juvenile: its phase word (fishPhase, FPHASES: his phase and tags,
   // else the pass's, else the source's life stage; a game record's ph, which tools/fish_game.py writes the same way).
   const FJUV = FPHASES[0];
@@ -698,23 +724,23 @@
   // registers (fishSeenFrom, admin-fish.js). A photo's leaf: the species his curation adds it to (F.add: a photo sent
   // elsewhere with Not this and added there keeps its candidate's first species in sid), else its game record's (sp), else
   // its candidate's (sid). The app's copy: app.js seenCover (tests/fishcovers.test.js holds them together).
-  // His pick is found under either of its names (fishAt).
+  // His pick is found under either of its names (fishAt); a pick on a juvenile holds once he confirmed it (fishCoverJ).
   function fishCoverOf(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
       c = fishAt(L, k);
-    if (c && !fishJuv(c, j(c.f), F)) return c;
+    if (c && (!fishJuv(c, j(c.f), F) || fishCoverJ(F, tid, c))) return c;
     return (fishCoverRule(L, F, tid, j, seen) || {}).p || null;
   }
   // A leaf's (a species') cover, as the app's sheets show it (learn.js fishSpPhotos, spPhoto): his ★ pick while in play
   // and not a juvenile, else its first photo that is not a juvenile in the page's order (L: featured first, then the game's
   // order: fishOrder), else its first; null for no photo. A leaf has no default rule of its own (Q339 (b) picks among a
-  // node's leaves).
+  // node's leaves). His pick on a juvenile holds once he confirmed it (fishCoverJ).
   function fishLeafCover(L, F, tid, j = () => null) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
       adult = p => !fishJuv(p, j(p.f), F),
       c = fishAt(L, k);
     L = L || [];
-    return (c && adult(c) ? c : null) || L.find(adult) || L[0] || null;
+    return (c && (adult(c) || fishCoverJ(F, tid, c)) ? c : null) || L.find(adult) || L[0] || null;
   }
   // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
   // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
@@ -731,9 +757,11 @@
       if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
     });
     if (!best) return R[0] ? {p: R[0], leaf: leaf(R[0]), seen: [0, 0], ref: false, mine: false} : null;
-    const sk = (((F || {}).genera || {})[leaf(best.p)] || {}).cover,
-      m = fishAt(A, sk);
-    return {p: m || best.p, leaf: leaf(best.p), seen: best.s, ref: Ref.length > 0, mine: !!m};
+    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (fishCoverJ); the leaves still compete on adults
+    const lf = leaf(best.p),
+      sk = (((F || {}).genera || {})[lf] || {}).cover,
+      m = fishAt(A, sk) || (fishCoverJ(F, lf, fishAt(R, sk)) ? fishAt(R, sk) : null);
+    return {p: m || best.p, leaf: lf, seen: best.s, ref: Ref.length > 0, mine: !!m};
   }
   // A leaf's presence around the instance's centre (Q339: "Il faudra rendre générique la localisation centrale de
   // l'instance"; the centre: tools/instance.json, fish.json centre): [distinct Research Grade observers, observations]
@@ -1316,6 +1344,9 @@
     fishFeat,
     fishAt,
     fishCover,
+    fishCoverJ,
+    fishCoverYes,
+    fishCoverJOk,
     fishOk,
     fishDrop,
     fishOrder,

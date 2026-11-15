@@ -141,7 +141,7 @@ test("real data: every curated fish cover in play is the card's photo, the admin
       u = units.find(x => x.id === id);
     if (!k.cover || !g || !u) return;
     const rec = g.views.wide.find(p => pid(p.f) === pid(k.cover)),
-      why = !rec ? 'gone' : X.juvP(rec) ? 'juv' : 'mine',
+      why = !rec ? 'gone' : X.juvP(rec) && !A.fishCoverJ(cu.fish, id, rec) ? 'juv' : 'mine',
       c = nodeCover(
         id,
         play.filter(p => u.species.includes(p.sp)),
@@ -157,7 +157,8 @@ test("real data: every curated fish cover in play is the card's photo, the admin
     const rec = g.views.wide.find(p => C.fishPid(p.f) === C.fishPid(k.cover));
     // A pick on a juvenile is ignored, by the app and the admin alike (Pierre, 2026-11-13: "Un juvénile ne devrait
     // probablement jamais finir en couverture"; the next test): a judging pass can tag his pick juvenile after he made it.
-    if (rec && X.juvP(rec)) {
+    // Unless he confirmed it (his exception, 2026-11-15: autosort.js fishCoverJ).
+    if (rec && X.juvP(rec) && !A.fishCoverJ(cu.fish, id, rec)) {
       assert.notStrictEqual(C.fishPid(X.cover(g).f), C.fishPid(k.cover), `${id}: a juvenile pick is ignored`);
       return;
     }
@@ -177,6 +178,77 @@ test("real data: every curated fish cover in play is the card's photo, the admin
       assert.strictEqual(pid(X.cover(g).f), pid(k.cover), `${id}: the admin shows it, the app must too`);
   });
   if (Object.values(G).some(k => k.cover)) assert.ok(n, 'at least one curated cover is in play');
+});
+
+// On the real files, Pierre's two juvenile ★ covers (2026-11-15): the Damselfishes' (judged a juvenile, ignored today) and
+// the Boxfishes' (the yellow juvenile Ostracion cubicus, which the one-judgement set of #942 proposes to tag juvenile).
+// The Tree page's one click (autosort.js fishCoverJOk) makes each his cover in force, the admin's and the app's; the
+// Boxfishes' holds whichever comes first, the confirmation or the Accept of the proposal (admin-light.js lightAccept with
+// the cover kept), and an Accept without it leaves the cover ignored until he confirms. Publish keeps the field (merge3).
+// In memory only: curation.json is never written (rule A1).
+test('real data: the two juvenile ★ covers, confirmed, hold in the admin and the app, whatever the order with #942', t => {
+  const L = require('../admin-light.js'),
+    cu = read('curation.json'),
+    G0 = (cu.fish || {}).genera || {},
+    BOX = 'f:Boxfishes',
+    DAM = 'f:Damselfishes';
+  if (!(G0[BOX] || {}).cover || !(G0[DAM] || {}).cover) return t.skip('the two covers are no longer his');
+  const f = read('fish.json'),
+    gm = C.fishGameRead(read('fish-game.json')),
+    P = read('fish-photos.json'),
+    all = Object.values(gm.photos || {}).flat(),
+    gj = new Map(all.map(p => [p.f, {e: p.e, jt: p.jt}])),
+    j = x => gj.get(x) || null,
+    units = A.fishUnits(f),
+    pid = C.fishPid,
+    X = app();
+  // The admin's reason and the app's cover, for a fish part F.
+  const admin = (F, id) => {
+    const u = units.find(x => x.id === id),
+      play = A.fishGameIn(all, {...cu, fish: F});
+    return nodeCover(
+      id,
+      play.filter(p => u.species.includes(p.sp)),
+      F,
+      j
+    );
+  };
+  const appCover = (F, id) => X.cover(X.run({f, ph: P, gm}, {...cu, fish: F}).gen[id]).f;
+  const mine = (F, id, what) => {
+    const c = admin(F, id);
+    assert.strictEqual(c.by, 'mine', `${id} ${what}: the admin's`);
+    assert.ok(!c.juv, `${id} ${what}: not ignored`);
+    assert.strictEqual(pid(appCover(F, id)), pid(G0[id].cover), `${id} ${what}: the app's`);
+  };
+  const F0 = cu.fish;
+  // Damselfishes: ignored today, confirmed in one click.
+  if (admin(F0, DAM).juv) {
+    assert.notStrictEqual(pid(appCover(F0, DAM)), pid(G0[DAM].cover), 'ignored before');
+    mine(A.fishCoverJOk(F0, DAM), DAM, 'confirmed');
+  }
+  // Boxfishes: the proposal that tags it juvenile, if still open.
+  const S = L.lightSets([[], read('judging/fish-one-judgement.json').curation]),
+    x = L.lightJOf(S, F0, G0[BOX].cover);
+  if (!x) return;
+  assert.deepStrictEqual(L.lightCovers(F0, x), [BOX], 'the proposal makes his Boxfishes ★ a juvenile');
+  // Accept, cover kept (the question answered yes): one step.
+  const Fa = L.lightAccept(F0, x, L.lightCovers(F0, x));
+  assert.ok(A.fishJuv(A.fishAt(all, x.photo), j(x.photo), Fa), 'now a juvenile');
+  mine(Fa, BOX, 'accepted, kept');
+  // Confirmed first (the Tree page's button, offered while the proposal is open), then a plain Accept.
+  const Fc = A.fishCoverJOk(F0, BOX);
+  mine(Fc, BOX, 'confirmed before the tag');
+  assert.deepStrictEqual(L.lightCovers(Fc, x), [], 'Accept has nothing left to ask');
+  mine(L.lightAccept(Fc, x), BOX, 'confirmed, then accepted');
+  // Accepted without keeping it: ignored, until the one click.
+  const Fn = L.lightAccept(F0, x);
+  assert.ok(admin(Fn, BOX).juv, 'accepted without: ignored');
+  mine(A.fishCoverJOk(Fn, BOX), BOX, 'accepted, then confirmed');
+  // Publish (core.js merge3) keeps the confirmation beside the cover, onto a published file changed elsewhere since.
+  const base = {...cu, fish: F0},
+    theirs = {...cu, fish: {...F0, genera: {...G0, [BOX]: {...G0[BOX], ok: true}}}},
+    out = C.merge3(base, {...cu, fish: Fa}, theirs);
+  assert.deepStrictEqual(out.fish.genera[BOX], {...G0[BOX], ok: true, coverJ: G0[BOX].cover});
 });
 
 // The first-meeting card (quiz.js introCard: cover()) shows his ★ Cover even when it is not what the automatic choice
@@ -228,6 +300,9 @@ test('Home tiles: his cover when it suits a landscape tile, else the mosaic pick
   assert.strictEqual(ctx.tile({views: {wide: [jl, jp, land]}}, true).f, 'land');
   assert.strictEqual(ctx.tile({views: {wide: [jl, sq]}}, true).f, 'sq', 'nothing suits: the first that is not a juvenile');
   assert.strictEqual(ctx.tile({views: {wide: [jl, jp]}}, true).f, 'jl', 'juveniles only: the first');
+  // His ★ cover on a juvenile he confirmed (cj: app.js fishCurate; Pierre, 2026-11-15) leads like any cover that suits.
+  assert.strictEqual(ctx.tile({views: {wide: [land]}, coverP: {...jl, cj: 1}}, true).f, 'jl');
+  assert.strictEqual(ctx.tile({views: {wide: [land]}, coverP: jl}, true).f, 'land', 'not confirmed: passed over');
 });
 
 // The Learn band rotates (home.js landPool, bandPhoto; ROADMAP "Fish Home mosaic: rotate the photos", Pierre,
@@ -505,6 +580,44 @@ test('a juvenile is never a cover: his pick ignored, the defaults skip it, a uni
   assert.strictEqual(L.spPhoto({id: 's3'}).f, 'fi4', 'juveniles only: it keeps one');
 });
 
+// Pierre's exception (2026-11-15, the Boxfishes' yellow juvenile: "the juvenile is far more popular and recognisable than
+// the adults"): his ★ cover on a juvenile holds once he confirmed it (curation.json fish genera {id: {cover, coverJ}},
+// coverJ naming the cover's photo under either name: app.js coverOk), at every rank, in the card, the default's species
+// pick (seenCover), a species' one photo and its sheet. A confirmation naming another photo is none; the default alone
+// never takes a juvenile.
+test('a juvenile cover he confirmed holds everywhere; the default still never takes one', () => {
+  const X = app(),
+    R = () => {
+      const r = raw2();
+      Object.assign(r.ph.photos.t1[0], {ph: 'juvenile'}); // fi1 (s1): juvenile by its phase
+      Object.assign(r.ph.photos.t1[2], {jt: 'p1g0sl1j'}); // fi3 (s2): juvenile by its tags
+      return r;
+    };
+  let B = X.run(
+    R(),
+    cur2({'f:A': {cover: 'fi1', coverJ: 'fi1'}, 'g:Xus': {cover: 'fi3', coverJ: 'fish-s2-cand-3'}, s2: {cover: 'fi3', coverJ: 'fi3'}})
+  );
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi1', 'the family card: his confirmed juvenile');
+  assert.ok(B.gen['f:A'].coverP.cj && X.juvP(B.gen['f:A'].coverP), 'marked as confirmed, still a juvenile');
+  assert.strictEqual(X.cover(B.gen['g:Xus']).f, 'fi3', 'a genus: confirmed under the other name of the photo');
+  assert.strictEqual(B.covers.s2.f, 'fi3', 'a species');
+  assert.strictEqual(B.gen['f:A'].views.wide[0].f, 'fi1', "the games' order is unchanged");
+  // A confirmation of another photo, or none: ignored as before.
+  B = X.run(R(), cur2({'f:A': {cover: 'fi1', coverJ: 'fi2'}, s2: {cover: 'fi3'}}));
+  assert.strictEqual(B.gen['f:A'].coverP, undefined);
+  assert.strictEqual(B.covers.s2, undefined);
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2', 'the default skips the juvenile');
+  // The default's species pick: s1 is the leaf chosen (on its adult photo); his confirmed ★ cover of s1 is taken.
+  B = X.run(R(), cur2({s1: {cover: 'fi1', coverJ: 'fi1'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi1', 'the default: his confirmed ★ cover of the most seen species');
+  B = X.run(R(), cur2({s1: {cover: 'fi1'}}));
+  assert.strictEqual(X.cover(B.gen['f:A']).f, 'fi2', 'not confirmed: the species ★ is ignored');
+  // The sheets: a species' one photo and its sheet's first.
+  const L = sheets(X.run(R(), cur2({s2: {cover: 'fi3', coverJ: 'fi3'}})));
+  assert.strictEqual(L.spPhoto({id: 's2'}).f, 'fi3', "the species' one photo: his confirmed juvenile");
+  assert.strictEqual(sheets(X.run(R(), cur2({s2: {cover: 'fi3'}}))).spPhoto({id: 's2'}).f, 'fi6', 'not confirmed: the adult');
+});
+
 // The species sheet's photos (learn.js spSheetPhotos): three adult photos, the first its cover (fishSpPhotos' order),
 // then up to two juveniles apart; a juvenile is never its first photo while it has an adult one (Pierre, 2026-11-13;
 // Codex review #858's "juvenile cover first" reverted with it).
@@ -515,13 +628,20 @@ test('species sheet: the adults first, then the juveniles apart', () => {
     j = k => ({f: 'j' + k, jt: 'p1g0sl1j'}),
     ctx = {juvP: X.juvP};
   vm.createContext(ctx);
-  vm.runInContext(block(ls, 'function spSheetPhotos(P) {', '\n}\n', {through: 1, file: 'learn.js'}) + '\nthis.sp = spSheetPhotos;', ctx);
+  vm.runInContext(
+    block(ls, 'function spSheetPhotos(P, lead = null) {', '\n}\n', {through: 1, file: 'learn.js'}) + '\nthis.sp = spSheetPhotos;',
+    ctx
+  );
   const run = P => {
     const r = ctx.sp(P);
     return [r.shown.map(p => p.f).join(), r.more.map(p => p.f).join()];
   };
   assert.deepStrictEqual(run([j(1), a(1), a(2), j(2), a(3), a(4), {f: 'p', ph: 'juvenile'}]), ['a1,a2,a3,j1,j2', 'a4']);
   assert.deepStrictEqual(run([j(1), j(2), j(3)]), ['j1,j2', '']);
+  // His confirmed juvenile species cover (lead: learn.js spJCover) stays first, and is not shown again among the juveniles.
+  const P = [j(1), a(1), a(2), j(2), a(3)],
+    r = ctx.sp(P, P[0]);
+  assert.deepStrictEqual([r.shown.map(p => p.f).join(), r.more.map(p => p.f).join()], ['j1,a1,a2,j2', 'a3']);
 });
 
 // The admin's ★ Cover at the genus or species level (autosort.js fishCover under that id) and the app agree on the real

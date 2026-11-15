@@ -41,6 +41,7 @@
   const coverAccept = (F, x) =>
     A.fishPick(F || {}, x.id, k => {
       k.cover = x.rule.f;
+      delete k.coverJ; // the confirmation of a juvenile cover goes with it (autosort.js fishCoverJ)
     });
   // Keep mine: his cover stays; the pair is recorded as answered (curation.json fish.kept).
   const coverKeep = (F, x) => {
@@ -66,7 +67,8 @@
   // A node page's cover (Photos › Tree, admin.js renderFishUnits): the photo in force on node id among its photos in play
   // L, in its page's order, and how it was chosen. by: 'mine' (his ★ pick, in play, not a juvenile), 'rule' (a node with
   // leaves under it: the default cover rule, fishCoverRule, its result in rule) or 'first' (a leaf: its first adult photo,
-  // fishLeafCover); juv: his pick is a juvenile (ignored), gone: his pick is not among L (out of play). His pick is found
+  // fishLeafCover); juv: his pick is a juvenile he has not confirmed as the cover (ignored), jok: one he confirmed (in
+  // force: autosort.js fishCoverJ, Pierre's exception of 2026-11-15), gone: his pick is not among L (out of play). His pick is found
   // under either of its names (autosort.js fishAt: a reference photo and its candidate copy are one photo, as the app finds
   // it), so a pick made on one copy and judged again on the other says why it is ignored. leaf: id is a leaf of its tree.
   // seen(leaf id) as fishCoverRule's.
@@ -75,26 +77,34 @@
     L = L || [];
     const k = ((F.genera || {})[id] || {}).cover,
       q = A.fishAt(L, k),
-      juv = !!q && A.fishJuv(q, j(q.f), F),
+      young = !!q && A.fishJuv(q, j(q.f), F),
+      jok = young && A.fishCoverJ(F, id, q),
+      juv = young && !jok,
       gone = !!k && !q,
       p = leaf ? A.fishLeafCover(L, F, id, j) : A.fishCoverOf(L, F, id, j, seen),
       by = !p ? '' : q && p === q && !juv ? 'mine' : leaf ? 'first' : 'rule';
-    return {p: p || null, by, rule: by === 'rule' ? A.fishCoverRule(L, F, id, j, seen) : null, juv, gone};
+    return {p: p || null, by, rule: by === 'rule' ? A.fishCoverRule(L, F, id, j, seen) : null, juv, jok, gone};
   }
   // Why that photo, in a line (the page's bar): his ★, else the default and its reason (coverWhy for the rule's, with the
-  // centre's name), with his pick ignored or out of play said. A pick on a juvenile can only be one judged a juvenile after
-  // he made it (★ Cover is off on a juvenile): JUV_WHY says so and what he can do.
+  // centre's name), with his pick ignored or out of play said. A pick on a juvenile he has not confirmed (one judged a
+  // juvenile after he made it): JUV_WHY says so; the page's bar adds the one-click confirmation (JUV_ASK).
   function nodeCoverWhy(c, centre) {
     if (!c || !c.p) return 'No photo in play';
     const why =
       c.by === 'mine'
-        ? 'Your ★ cover'
+        ? c.jok
+          ? 'Your ★ cover, a juvenile you confirmed'
+          : 'Your ★ cover'
         : c.by === 'rule'
           ? `Default: ${coverWhy(c.rule || {}, centre)}`
           : 'Default: its first photo (featured, then the easiest)';
     return [why, c.juv ? JUV_WHY : '', c.gone ? 'your ★ is out of play' : ''].filter(Boolean).join(' · ');
   }
-  const JUV_WHY = 'your ★ cover is now judged a juvenile: pick another or retag';
+  const JUV_WHY = 'your ★ cover is now judged a juvenile: ignored until you confirm it';
+  // The question ★ Cover asks on a juvenile (Pierre's words for the exception, 2026-11-15), and the Tree page's one-click
+  // confirmation of a ★ cover that is a juvenile, or that an open proposal would make one (admin-light.js lightJ).
+  const JUV_Q = 'This photo is a juvenile. Use it as the cover anyway?';
+  const JUV_ASK = 'Juvenile: confirm as cover?';
   // The nodes whose ★ cover is ignored as a juvenile (the Tree's sticky bar warns of them on every page): nodeCover on
   // each node's own photos in play, P(node id) (admin.js fuNodePhotos, the node pages' own), so the warning and the
   // node's page agree. ids: the node ids with a cover of his, in the Tree's order; leaf(id): id is a leaf.
@@ -102,6 +112,8 @@
   const API = {
     COVER_KEPT,
     JUV_WHY,
+    JUV_Q,
+    JUV_ASK,
     coverKey,
     coverProposal,
     coverOpen,

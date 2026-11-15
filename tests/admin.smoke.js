@@ -1765,8 +1765,10 @@ const darkCards = (p, sel) =>
           await settle();
           d = await cvs();
           if (d.s || d.g !== gc.t[1] || d.sh) fails.push(`${w}px Families: Undo of the species cover ${JSON.stringify(d)}`);
-          // A juvenile is never a cover (Pierre, 2026-11-13): a photo tagged juvenile has ★ Cover off on every node's page;
-          // a pick already on one is ignored (the species heading shows another photo) and flagged, on the tile and in the bar.
+          // A juvenile is never a cover unless Pierre confirms it (2026-11-13; his exception, 2026-11-15): ★ Cover on a photo
+          // tagged juvenile asks first on every node's page (data-juv); a pick on one he has not confirmed is ignored (the
+          // species heading shows another photo) and flagged, on the tile and in the bar, beside the one-click confirmation
+          // (Juvenile: confirm as cover?), which makes it the cover in force, one Undo step.
           const jf = gc.t[3] || gc.t[0];
           await p.evaluate(f => {
             DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', fishTag(fuJt(DRAFT.fish, f) || 'p1g0sl1', 'j'));
@@ -1783,9 +1785,10 @@ const darkCards = (p, sel) =>
                   ([sec, f]) => {
                     const b = document.querySelector(`${sec} [data-f="${f}"] [data-fu="cover"]`);
                     return {
-                      dis: !!(b && b.disabled),
+                      juv: !!(b && b.hasAttribute('data-juv') && !b.disabled),
                       flag: !!document.querySelector(`${sec} [data-f="${f}"] .adm-fjcv`),
                       bar: !!document.querySelector('.adm-fjign'),
+                      ask: !!document.querySelector('[data-fjok]'),
                       head: ((document.querySelector(`${sec} > h3 .adm-hthumb`) || {}).dataset || {}).f
                     };
                   },
@@ -1796,7 +1799,8 @@ const darkCards = (p, sel) =>
             return out;
           };
           d = await jv();
-          if (!d.every(x => x.dis && !x.flag && !x.bar)) fails.push(`${w}px Families: ★ Cover on a juvenile ${JSON.stringify(d)}`);
+          if (!d.every(x => x.juv && !x.flag && !x.bar && !x.ask))
+            fails.push(`${w}px Families: ★ Cover on a juvenile ${JSON.stringify(d)}`);
           await p.evaluate(
             ([f, sid]) => {
               DRAFT.fish = fishCover(DRAFT.fish, sid, f);
@@ -1807,8 +1811,32 @@ const darkCards = (p, sel) =>
           );
           await settle();
           d = await jv();
-          if (!d[2] || d[2].dis || !d[2].flag || !d[2].bar || d[2].head === jf || d[0].dis !== true)
+          if (!d[2] || !d[2].juv || !d[2].flag || !d[2].bar || !d[2].ask || d[2].head === jf || d[0].juv !== true || d[0].ask)
             fails.push(`${w}px Families: a species cover on a juvenile ignored and flagged ${JSON.stringify(d)}`);
+          // The one click on the species' page (jv's last): his pick in force, nothing flagged; Undo takes it back.
+          const jsp = other.hash + 'photos/tree/key/' + encodeURIComponent(order.sid);
+          await p.click('[data-fjok]');
+          await settle();
+          d = await jv();
+          const jc = await p.evaluate(sid => (DRAFT.fish.genera || {})[sid], order.sid);
+          if (d[2].flag || d[2].bar || d[2].ask || d[2].head !== jf || !jc || jc.coverJ !== jf)
+            fails.push(`${w}px Families: a juvenile species cover confirmed ${JSON.stringify({d, jc})}`);
+          await p.evaluate(() => undo());
+          await settle();
+          await go(jsp);
+          if (!(await p.evaluate(() => !!document.querySelector('[data-fjok]')))) fails.push(`${w}px Families: Undo of the confirmation`);
+          // ★ Cover on the juvenile on the genus's page asks Pierre's question (the page's handler accepts): the genus's
+          // cover, confirmed, in force; Undo takes it back.
+          const jq = [];
+          p.once('dialog', x => jq.push(x.message()));
+          await go(other.hash + 'photos/tree/key/' + encodeURIComponent(gc.gid));
+          await p.click(`${sec} [data-f="${jf}"] [data-fu="cover"]`);
+          await settle();
+          const jg = await p.evaluate(g => (DRAFT.fish.genera || {})[g], gc.gid);
+          if (jq[0] !== 'This photo is a juvenile. Use it as the cover anyway?' || !jg || jg.cover !== jf || jg.coverJ !== jf)
+            fails.push(`${w}px Families: ★ Cover on a juvenile asks, then holds ${JSON.stringify({jq, jg})}`);
+          await p.evaluate(() => undo());
+          await settle();
           await go(famHash);
           // Other species in view (Q323): an add whose count is k (confusion possible) or the legacy m with no pass to sort
           // it is out of play, listed apart with Keep in play (count o) and Remove; Keep in play puts it back, one Undo step.
