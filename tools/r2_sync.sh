@@ -32,8 +32,8 @@ fi
 # FBF737ECE9F8AB18604BD2AC93935E02FF3B54FA; the GitHub release carries the same file), check its signature, read the
 # changelog's S3 and core entries since this version for anything that changes `copy`, `check`, `lsf` or `size` to R2,
 # then change both lines and run "Photos to R2" by hand after the merge.
-RCLONE_VERSION=1.75.2
-RCLONE_SHA256=349ac8fba6ff65d6247043f1750cdcb518ec5d500ef91463a10d37c0ccdf3702 # rclone-v1.75.2-linux-amd64.zip
+RCLONE_VERSION=1.76.0
+RCLONE_SHA256=b00f00b3266c3764413afe599d3ec316f6f43b3e0ea8a0bc1d186d2133e46df7 # rclone-v1.76.0-linux-amd64.zip
 [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ] || { echo "the pinned rclone is the linux-amd64 build, not $(uname -sm)" >&2; exit 1; }
 rc=$(mktemp -d)
 curl -fsSL --proto '=https' --tlsv1.2 --retry 3 -o "$rc/rclone.zip" \
