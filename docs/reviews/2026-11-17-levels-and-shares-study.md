@@ -274,3 +274,46 @@ C0_VARIANTS
   other juveniles, the sexes and the phases as 975, which holds nothing (0.09-0.12 and 0.13-0.17). The late-class
   juveniles are the exception under B, C and C0, whose ramp for them ends at 0.9, above the exam's 0.85: 0.00-0.06
   against 0.04-0.07. Their full weight should come by Advanced (a = b = 0.8), a data value.
+
+ARMS_LINES
+
+## 8. The choice
+
+CHOICE_TEXT
+
+## 9. What #975 keeps or changes, and how #953 is rebuilt
+
+**#975 as it stands, under the recommendation (C0)**: it **keeps everything** and ships as it is. C0's rank part is
+#975's cap exactly (m² of the parent level at Advanced: `SHARE`, `sharesNow`, `shareW`, `shareRoom` in the opening's
+candidates), with `spPlay`'s commonness order, the species units, the score and the `SPECIES_SHEET` gate; so its own
+measurements and costs (Q388) stand as they are, and this study's arm "975" reproduces them. Two things change later,
+in the #953 rebuild, not in #975:
+
+- the threshold reader becomes the general one: a [from, full] pair per kind with a default, read from a family's,
+  genus's or species' record (#975's `shareAt` is that reader with one value and no data behind it yet), so the ranks
+  and the variants read their thresholds one way;
+- `shareFree` (an IMR player's IMR genera, Q219; the genera turned on by hand early, Q240) stays what Pierre decided:
+  the units his decisions put in the families' phase are not counted as children under the cap. It is data (the sets'
+  `auto` and the hand-on flag), never a unit named in code; it is the one place where the rule is not "the parent's
+  mastery", and the decision is his.
+
+**#953 rebuilt on it** (a new PR from `main` once #975 is in):
+
+- **Goes**: the stage on the unit's answer count (`core.js` `phaseStage`, `SUBJECTS` `calib` `phase`, the N = 10 that
+  held back the early-class juveniles too; its "Choices I made" 1 and 2 are answered by the rule).
+- **Stays**: `phaseOf`, the explanation card (`phaseArm`, `phaseShow`, `phasePair`, its two kinds, the `dimorph`
+  condition, `TOLD`, the sign-out clear), the fallback (fewer than 3 observations at full weight: nothing held back),
+  the variety and floor lifts limited to the factor (`phMul`), learnsim's phase fields and learncmp's `phEarly`,
+  `phLate`, `phAns`.
+- **New**: in `photoSet`, each photo's weight times g of the unit asked for its kind (the prototype's `varKind`, `varF`,
+  `lvRamp`: about 30 lines once A, B and C are dropped); the kinds from the juvenile classes already in the data
+  (`fish.json` `juv`: class A and `early` → from 0; class B and `late` → by Advanced; the rest → Open Water to
+  Advanced) and the sexes and colour phases from `ph`; the defaults in one table, the per-taxon overrides in
+  `tools/fish_source.json` next to `juv`, carried to the records by `fishGen` (one line, as the prototype does). The
+  card then comes with the first held-back photo, as it does now.
+- **Its own check** (rule L11, level 2): this study's C0 runs are its first look; the real-log measure #953 left to the
+  integrator (each player's answers on a variant photo in a unit's first answers) still applies.
+
+## 10. Question for Pierre
+
+QUESTION_TEXT
