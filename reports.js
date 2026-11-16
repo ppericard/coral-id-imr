@@ -143,7 +143,9 @@
   // app's UNITS slate), fam: each family, genus and species sheet id (s:<name>) to its family, spid: each species sheet id
   // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach: Q309),
   // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
-  // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks)}; null
+  // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
+  // where its tree has them, the taxonomic groups its families sit in (core.js fishGen taxa, each family's tg; the
+  // Heatmap's column of the families' groups)}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
   // slugs), each photo then shown by its genus.
   function repReg(f, first, gm, unit) {
@@ -171,7 +173,17 @@
       if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
     });
     (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
-    return {gen: F.gen, ph, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg, imr, groups: F.groups || []};
+    return {
+      gen: F.gen,
+      ph,
+      slate: [...F.c1, ...F.c2, ...F.c3],
+      fam,
+      spid,
+      spg,
+      imr,
+      groups: F.groups || [],
+      ...(F.taxa ? {taxa: F.taxa} : {})
+    };
   }
   const API = {
     REP_STATUS,

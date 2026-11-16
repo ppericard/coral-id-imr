@@ -4121,7 +4121,16 @@ const CORE_ = (function () { const module = {exports: {}};
         files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
         todo: [],
         // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
-        pages: ['inbox/todo/all', 'inbox/todo/reports', 'inbox/todo/errors', 'inbox/todo/points', 'players/list'],
+        // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus, live from its answers,
+        // the genera in their family's block, the families in their taxonomic group (seaslug.json taxa).
+        pages: [
+          'inbox/todo/all',
+          'inbox/todo/reports',
+          'inbox/todo/errors',
+          'inbox/todo/points',
+          'players/list',
+          'analyses/difficulty/heatmap'
+        ],
         obs: 'Observations',
         origins: [
           ['dauin', 'iNat Dauin', 'Dauin'],
