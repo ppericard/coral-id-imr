@@ -31,6 +31,13 @@ on:
 # no credential: the repository is public (docs/SECURITY.md).
 permissions:
   contents: read
+# The sea slugs' R2 step (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9 step 6; tools/seaslug_game.py --r2):
+# 'off' until Pierre's go for the first upload; then 'on' (the integrator's one-line change). Off, the photos job builds the
+# sea-slug game data offline (its new photos read from iNaturalist, r: 1); on, it downloads the sea-slug photos in play
+# that R2 lacks into r2-upload/ with the fish's, uploaded by the same step before the commit. Its first run: what
+# python3 tools/seaslug_game.py --plan prints.
+env:
+  SEASLUG_R2: 'off'
 concurrency:
   group: candidate-photos
   cancel-in-progress: false
@@ -70,9 +77,13 @@ jobs:
       # the sheet-only photos, downloaded like the others). The files go to r2-upload/ (gitignored), uploaded below before
       # anything is committed.
       - run: python tools/fetch_approved.py --games --fish --out r2-upload
-      # The sea slugs' game data (seaslug.json, seaslug-game.json) from the refreshed seaslug-cand.json and suggest.json,
-      # offline: a photo whose licence changed or that left the candidates leaves their game too (Codex review #987).
-      - run: python tools/seaslug_game.py
+      # The sea slugs' game data (seaslug.json, seaslug-game.json) from the refreshed seaslug-cand.json and suggest.json:
+      # a photo whose licence changed or that left the candidates leaves their game too (Codex review #987). Offline while
+      # SEASLUG_R2 is off (above); on, the photos in play R2 lacks are downloaded into r2-upload/ (uploaded below).
+      - if: env.SEASLUG_R2 != 'on'
+        run: python tools/seaslug_game.py
+      - if: env.SEASLUG_R2 == 'on'
+        run: python tools/seaslug_game.py --r2 --out r2-upload
       - run: python tools/fetch_local.py
         working-directory: .
       # Photo shapes for the quiz layout (designer re-review 2026-11-01) of the photos in img/; the new photos got theirs

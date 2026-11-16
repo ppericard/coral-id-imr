@@ -2355,7 +2355,7 @@ const UNITS = {
     ]
   },
   // The sea slugs (core.js SUBJECTS; Pierre, 2026-11-15, Q369, Q377; study §9 step 5): a tree subject on the fish engine,
-  // circle 1 only (the 45 species of tools/seaslugs.json), families then genera, scientific names only, no IMR content.
+  // circles 1 to 3 (205 species of tools/seaslugs.json), families then genera, scientific names only, no IMR content.
   seaslug: {
     // No key of its own: the "coming soon" key page, in its words (door).
     identify: 'fishkey',
@@ -2399,10 +2399,14 @@ const UNITS = {
     },
     // No level-change card until the subject is calibrated (as the fish, Pierre, 2026-11-08).
     startFb: false,
-    slate: () => (FISH ? FISH.c1 : []),
+    // Its three circles (tools/seaslug_game.py CIRCLES), all on the path and in the progress as the fish's (Q175, Q204);
+    // circles 2 and 3 open at the fish's thresholds (fishGate: circle 2 once every circle-1 family has been asked, circle
+    // 3 once circle 1 reaches FISH_C3), circle 3 by itself: no offer card (the fish's speaks of the IMR course).
+    slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
     mystery: () => true,
     core: () => (FISH ? FISH.c1 : []),
-    circles: () => (FISH ? [FISH.c1] : []),
+    circles: () => (FISH ? [FISH.c1, FISH.c2, FISH.c3] : []),
+    gate: fishGate,
     species: p => (p && p.sp && FISH && FISH.spn && FISH.spn[p.sp]) || '',
     // The photo's species under the verdict: its scientific name, the WoRMS name beside it (no common name: Q369 (d)).
     taxon: p => fishTaxon(FISH && FISH.sps, p, false),

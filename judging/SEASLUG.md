@@ -158,8 +158,11 @@ No `phase` (no presentation names a sea-slug phase; rule C2) and no `bb` (the fi
 --subject seaslug [id ...]` imports every passing species into `suggest.json` `"seaslug"`: `{jt, e, k, c, u, n}` (`jt`
 and `e` after the caps), or `{egg: 1, n}` for an egg-mass photo; `"by"` `{taxon id: {seaslug: {by, at, n}}}`.
 `... --subject seaslug codes` re-applies a re-judge of some photos (codes, keep, unsure, notes, the egg rule) to the ones
-already imported. Commit only `judging/seaslug/*.json` and `suggest.json`.
+already imported. Commit only `judging/seaslug/*.json` and `suggest.json` for species judged for the first time: the
+Candidate photos workflow builds them into `seaslug-game.json` after the merge (`tools/seaslug_game.py --check` lets them
+wait). A re-judge of a species already in play also commits `python3 tools/seaslug_game.py`'s two files.
 
 **What a judgement does**: `tools/seaslug_game.py` puts a sure `best` or `alt` in play by itself (no unsure field, never
-an egg mass, a count of `1`, `s` or `o`, never out of the water), the easiest first up to the game cap, as for the fish;
-its auto-sort and its R2 photos come later. Add `unsure` at the least doubt.
+an egg mass, a count of `1`, `s` or `o`, never out of the water), the easiest first up to the game cap, as for the fish,
+in every circle (1 to 3); a proposed crop is applied when the photo is downloaded for R2 (`--r2`, study §9 step 6: off in
+the workflow until Pierre's go, `SEASLUG_R2`). Its auto-sort comes later. Add `unsure` at the least doubt.
