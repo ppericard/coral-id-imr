@@ -4573,7 +4573,8 @@ const darkCards = (p, sel) =>
                 id: c.dataset.rep,
                 f: t.dataset.f,
                 src: im.getAttribute('src'),
-                want: ph && ph.r && ph.src ? ph.src.replace('/original.', '/medium.') : '',
+                // The admin's tile keeps the photo's online source, on R2 or not (#1006; the R2 step is on since Q387).
+                want: ph && ph.src ? ph.src.replace('/original.', '/medium.') : '',
                 fam: ph && UNITA[S.id].gen[ph.entry].name,
                 t: ph && ph.t,
                 a: ph && ph.a,
