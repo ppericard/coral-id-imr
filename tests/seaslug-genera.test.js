@@ -231,6 +231,15 @@ test('the admin registry: the sea slugs’ slate is their genera, the fish’s t
     F0 = R.repReg(FJ, json('fish-photos.json'), json('fish-game.json'));
   assert.deepStrictEqual(Fi.slate, F0.slate);
   assert.ok(Fi.slate.every(n => n.startsWith('f:')));
+  // the taxonomic groups the Heatmap's families sit in (admin-heatmap.js supOf): every genus's family has one; the fish none
+  assert.deepStrictEqual(S.taxa.groups, F.taxa.groups);
+  S.slate.forEach(g =>
+    assert.ok(
+      S.taxa.groups.some(x => x.n === S.gen[S.fam[g]].tg),
+      g
+    )
+  );
+  assert.strictEqual(Fi.taxa, undefined);
 });
 
 // The Journey's rank steps (admin-journey.js jSteps): a question below the units' rank, never the units themselves.
