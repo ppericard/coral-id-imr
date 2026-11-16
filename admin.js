@@ -1482,8 +1482,8 @@ const under = (p, x) => p === x || p.startsWith(x + '/');
 const SHARED = ['players/list', 'players/visits'];
 const shared = p => SHARED.includes(p);
 // The pages every subject has whatever its SUBJECTS admin pages say, drawn from what any subject holds (its photos):
-// Coverage › Rights (renderRights).
-const EVERY = ['inbox/coverage/rights'];
+// Coverage › Rights (renderRights); To do › Alerts (renderAlerts: the sheet's Alerts tab, about no subject).
+const EVERY = ['inbox/coverage/rights', 'inbox/todo/alerts'];
 // A view with work of its own (options.live): had by a subject of its rank while live() says it has work, whatever
 // SUBJECTS admin pages lists; drawn by options.draw once on screen, work or not (render), so its last answer never
 // lands on "Not for … yet" (Photo review › Light proposals, admin-light.js; Cover proposals, admin-covers.js). draw()
@@ -1546,6 +1546,9 @@ const GROUPS = [
           ['all', 'All'],
           ['reports', 'Reports'],
           ['errors', 'Errors'],
+          // The sheet's Alerts tab (ROADMAP "Security follow-ups", Pierre 2026-11-01): caps reached, photos of another unit,
+          // a left-out device signed in (renderAlerts); every subject's (EVERY), as the lines are about no subject.
+          ['alerts', 'Alerts'],
           ['health', 'Health'],
           // The points to handle (Pierre, 2026-11-05): trainer questions, names, sources, content (renderPoints).
           ['points', 'Points']
@@ -1905,6 +1908,7 @@ const modeKey = () =>
                 'inbox/todo/all': ASUBJ.admin.cur ? 'fishtodo' : 'todo',
                 'inbox/todo/reports': 'triage',
                 'inbox/todo/errors': 'events',
+                'inbox/todo/alerts': 'alerts',
                 'inbox/todo/health': 'health',
                 'inbox/todo/points': 'points',
                 'inbox/coverage/games': 'cov',
@@ -3607,6 +3611,7 @@ function render() {
   if (cur === 'photos/genera/hidden') return renderHidden();
   if (cur === 'inbox/todo/all' || cur === 'inbox/todo/reports') return renderTriage();
   if (cur === 'inbox/todo/errors') return renderEvents();
+  if (cur === 'inbox/todo/alerts') return renderAlerts();
   if (cur === 'inbox/todo/health') return renderStats();
   if (cur === 'inbox/todo/points') return renderPoints();
   if (cur.startsWith(POINT_R)) return renderPoint(cur.slice(POINT_R.length));
@@ -4300,6 +4305,10 @@ const HELP = {
     return `<p>One player's path, from their answers in the sheet (signed in), <b>in one subject</b>: the Corals | Fish at the top shows how many answers they gave in each and opens the other (the header switch keeps the player too); from the list of players it opens on the subject they played last. Every subject's progress is replayed here from its answers with today's rules (the corals' as the sheet does, the other subjects' in this page, without the sheet's photo memory and confusion numbers it does not compute for them yet), with the cards and mastery exams of the player's saved copy; <b>↻ saved</b> beside a number = what that copy says when it differs. The Elo, the genus sheets table and To review are the corals' only. <b>On the Fish side</b>: families and genera by name (a genus in italics, one the IMR course names otherwise with its IMR name), each opening its family in Tree; <b>Cards and steps</b> adds the genus cards and the steps of the path, also marked on the chart: <b>Circle 2</b> and <b>Circle 3</b> (the first family asked of each: circle 2 opens by itself after the IMR course's families, circle 3 once the player says yes), <b>Genus</b> (the first scientific genus asked); <b>Games</b> also counts Find the X and the family and genus questions (no Custom quiz or Duel tab on the fish side); the family, genus and species sheets are logged as one page, so their card gives the times and the time only. Progress and Learned are the families' bars over every circle, not the fish % players see (which also counts genera and species). <b>Sessions</b>: the player's last ${RECENT.OWN} sessions in this subject, as on Activity (tap one to unfold its summary). <b>Quiz right</b> and <b>Last 50</b> count the Quiz only (the Custom quiz and the look-alike duels slipped into them included); <b>Duels</b> = answers in the Duel tab (2 choices, often on one chosen pair), apart so a burst of them does not read as the player's level. <b>Progress</b>: their right answers over the last ${JOURNEY.WIN} (solid) against the chance the game expected of them (dashed: from the photo's difficulty and their level on the genus at that moment); above the dashed line, they do better than the game thought. <b>Progress</b> and <b>Learned</b> (numbers and the Genera table's Progress column): replayed from every answer in the log with the current rules, as on Players; ↻ saved = what their saved copy still says. Below: the genera met, one dot per genus at its first question (hover a dot for the genus and the time); a vertical line marks a new day, a dashed orange one when they opened all the genera at once. The green curve counts the genera learned (mastery exam passed, still held), each at the answer that passed its mastery exam (★: its last right exam question); genera learned before exam questions were logged (2 Nov 2026) have no such answer and are not on it (the legend says how many). <b>Cards</b> (from their saved progress, read with this page's token): their answer to the first-launch question (new to corals, IMR coral course, know corals well; from 3 Nov 2026), after which answer and how (in the welcome tour, on the card before the quiz, from the fallback card, or <b>inferred</b> from their level for a player who already had 50 answers or more and was never asked), each change, and the fallback cards shown; the first cards and when, how many single cards, and whether they opened all the genera at once (after which answer, when, and from where: the first cards, My progress or the offer card) or declined the offer; times are kept from 2 Nov 2026 (before, the time of that answer). The times of <b>Cards and steps</b> are the player's own local time: the UTC offset their device logged with their answer nearest in time (hover or tap a time for it); your clock when none is logged. <b>Easiest / Hardest for them</b>: genera with ${JOURNEY.MIN} answers or more, ranked by <b>vs expected</b> (right answers minus the expected chance, in points): +20 pts = 20 more right answers in 100 than expected. Raw right rates mislead because the game hands harder photos to whoever does well. <b>Mix-ups</b>: genus shown → genus answered. <b>Genera</b>: every genus they were asked, in the order met; Card = when its card showed (first cards, opened all, or after which answer; hover for how many questions later it was asked), First asked = answer number and date of its first question, or sorted by ease or by answers; Last 10 = their last 10 answers on it, oldest first; Answered instead = their most frequent wrong answers. <b>When they played</b>: one row a day, from their first day to their last (days without an answer included), one cell an hour, in this device's time zone; the darker, the more answers that hour, relative to their busiest hour (hover for the answers and the right share); the total of the day on the right. A session = answers less than ${HEALTH.GAP} minutes apart. <b>Median time</b> and <b>Enlarged</b> (answers from sheet v23 on): median seconds from the photos in view to the answer, and the share of answers where they enlarged a photo first; logged to see later whether they tell a hard photo, not used by the game.</p><p><b>Genus sheets opened</b> (sheet v30): the sheets they opened, from the summary each visit sends under their anonymous id: times, time spent, whether the first opening came before or after the genus was first asked to them, and from where (the quiz feedback, a Learn page, My progress, other); then the pages they spent most time on.</p>`;
   },
   events: `<p>What the players' devices report by themselves, without a name (sheet v19, a random id per device): app errors (with where in the code and on which page), photos that still did not load after their retries, saves that failed while online, and the answers to the one-tap questions, with the player's level and their right rate when they answered. Grouped, the most devices first: a photo that fails on many devices may be missing or broken, on one device only it is most likely its connection. <b>Saves that failed</b> (app from 5 Nov 2026): a save that fails is tried again by itself (5 s, 10 s, 20 s… apart, while the app is in view); <b>save failed</b> = it still failed after 3 tries and a minute, so the player saw "Not saved"; <b>save recovered</b> = it failed, then came through on a retry (the player saw nothing). <b>Last try</b>: the step (load = the pull before the send, save = the send), the HTTP status if the sheet answered (none: no reply reached the app), its seconds, the tries, the seconds since the first failure, and the tries cut by the app going to the background. <b>Old app versions</b>: a request with no app version (an app from before 3 Nov 2026), or a device on a replaced version (sheet v50: its page stayed open 30 min on a version replaced an hour before, or it started one replaced a day before), with its device id (match it to a player in Pages) and its version. <b>One-tap questions</b>: a "Quick question" block before Next, after an answer in the photo quiz (custom quiz too) and duels, after 35 answers, then every 40 (80 after a "Not now"), never early in a session (only once the player's current session has 15 answers or more and has lasted 5 minutes or more, a session = answers less than ${HEALTH.GAP} minutes apart, as on Activity; one due sooner waits for that, so none opens a session), one of ${PULSEQ.length} questions in turn, never the same twice in a row: ${PULSEQ.map(x => `"${esc(x.q)}" (${x.a.map(a => esc(a[1])).join(' · ')})`).join(', ')}. The first table puts every answer on two scales: <b>Difficulty</b> (−1 too easy, 0 right, +1 too hard: the difficulty questions, "Frustrating?" towards hard, "Getting boring?" towards easy) and <b>Feel</b> (−1 bad, +1 good: fun, frustration, boredom), averaged by player level band (their overall level when they answered) and by mode; the small number is how many answers. Compare the bands: the target that depends on the level is right when every band sits near 0 on Difficulty. <b>Shown</b> and <b>Answered</b> (% of shown): each prompt logs its showing, so the response rate is known; prompts from before 3 Nov 2026 did not and are left out of it. The second table counts each question's answers by band and mode (% of that column's answers), then its <b>Not now</b> (×), <b>No answer</b> (shown − answered − Not now: Next or another page without a tap, or the app closed) and <b>Shown</b> with the % answered. <b>Did you know? tips</b>: a card at Next for a player who seems not to know a feature (so far: enlarging a photo, for players with at most 2 photos enlarged in 20 questions or more; twice at most; at most one a session, never in its first 10 answers), logged with the one-tap questions but counted apart: per tip, the devices it showed on, <b>Shown</b>, <b>Show me</b> (they tried it), <b>Got it</b> (or Escape) and <b>Left</b> (another page opened with it up); shown − the rest = the app closed with it up. Last 30 days. Nothing here changes the app by itself.</p>`,
+  // A getter: EV_DAYS is declared further down this file.
+  get alerts() {
+    return `<p>The sync sheet's <b>Alerts</b> tab, written by the sheet script itself (docs/SECURITY.md), newest first, the last ${EV_DAYS} days. <b>Limits reached</b>: the first request of a 6-hour window refused by a flood cap, by its key: <code>a:</code> a device not signed in (600 answers), <code>anon</code> all of them (6000), <code>n:</code> a player's account (3000 answers; shown as the player's admin id, as Players shows it beside the name), <code>newacct</code> new accounts (40), <code>reports</code> (300 report requests), <code>ev:</code> a device's events (200), <code>events</code> all events (3000), <code>old</code> old-app notes (300), <code>selfdel</code> / <code>sd:</code> self-deletes. The refused requests are not logged; the app keeps its answers and sends them later. <b>Photos of another unit</b>: answers whose photos are another unit's (logged, never rating a photo), by the sender's admin id. <b>Left out, signed in</b>: a device left out of the statistics signed in, so its account is left out too. A line that names a deleted, merged or archived account, or a device that has since signed in or was deleted, is not shown (rule D7; the tab keeps it). A burst of <code>a:</code> or <code>newacct</code> lines is the sign of a bot: docs/SECURITY.md "If it happens". Read-only: nothing here changes the sheet.</p>`;
+  },
   // "Start here" (Pierre, 2026-11-01, admin review rec. 1): the workflow for anyone new to the admin, one tab of the help.
   start: `<p><b>Four groups</b>. <b>Inbox</b>: <b>To do</b> (All, Reports, Errors, Health, Points: players' reports, your flags, the errors their devices send, the photos and genera that need a look, the points to settle) and <b>Coverage</b> (Games, Sheets & ID Key: where photos are missing, with Where to look above the Games grid). <b>Photos</b>: <b>Genera</b> (Live, Hidden, Excluded), <b>Candidates</b>, <b>Photo review</b> (Quality, Growth form, By difficulty), <b>Look-alikes</b>, <b>Photo stats</b> (Overview, Difficulty). <b>Players</b>: <b>Activity</b> (opened first) and <b>List</b> (who plays, merge or delete names); Activity (who plays and how much: recent sessions, activity over time). <b>Analyses</b>: what we learn from the answer log, refitted every 1000 answers: <b>Overview</b>, <b>Speed</b> (Answer time, Enlarging), <b>Difficulty</b> (Photos, Formats, Mix-ups, Time), <b>Learning</b> (Practice, After a break, Sessions); and read live from the log: Difficulty › Pairs (the genera, photos and species mixed up), Difficulty › Heatmap (every genus against every genus), Learning › Answer log (learning curve, calibration, conditions, genera, mix-ups) and Learning › Stops (where players stop, genus sheets opened). The tabs of a group are in the row under the header, the views of a tab in the switch at its right; each group reopens the tab you used last (Players always Activity), each tab the view you used last. The address says where you are, in the same words: <code>#group/tab/view</code> (<code>#photos/review/quality</code>), a genus or a player after it.</p><p><b>Work in this order</b> (all under Photos, then To do)</p>
     <ol class="adm-steps"><li><b>Candidates</b>: add new photos to a view, or reject them. You never need to empty the queue: it favours the genera and views with the fewest photos, so stop whenever Where to look looks better.</li><li><b>Photo review</b>: check the quality and growth form guesses.</li><li><b>Genera</b>: per genus, cover and the first 3 photos of each view, then ✓ Validated.</li><li><b>Coverage › Games</b>: Where to look, above the grid, says which genus and view still lack photos; look for more there.</li><li><b>Publish</b>: sends your changes to the site.</li></ol>
@@ -4798,6 +4807,39 @@ function loadEvents(force) {
       .catch(() => (fresh() ? (EVS = {err: 'Offline'}) : EVS))
   );
 }
+// The sheet's Alerts tab (ROADMAP "Security follow-ups", Pierre 2026-11-01: "show the Alerts tab in the admin";
+// docs/SECURITY.md): what the sync script wrote there by itself, a cap reached (Code.gs over_, the first refusal of each
+// 6-hour window), answers with photos of another unit (photoCheck_) and a device left out of the statistics that signed
+// in. Rows [time ms, text], newest first, the last 3000, a name served as its admin id (Code.gs readAlerts_). Admin token
+// only; from sheet ALERTS_SHEET (rule D4): an older script answers 'input', and the page says which version it waits for.
+const ALERTS_SHEET = 152;
+const alertsOn = j => !!j && Number(j.v) >= ALERTS_SHEET;
+let ALS = null,
+  alsAt = 0;
+function loadAlerts(force) {
+  if (!force && ALS && Date.now() - alsAt < 300000) return Promise.resolve(ALS);
+  if (!TOKEN) return Promise.resolve((ALS = {err: 'Needs the GitHub token'}));
+  if (force) sheetDrop('alerts');
+  return sheetRead('alerts', fresh =>
+    fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({readAlerts: 1, token: TOKEN})})
+      .then(r => r.json())
+      .then(j => {
+        if (!fresh()) return ALS;
+        alsAt = Date.now();
+        return (ALS =
+          alertsOn(j) && j.ok && j.rows
+            ? {rows: j.rows}
+            : {
+                err: !alertsOn(j)
+                  ? `Sheet script v${ALERTS_SHEET} not running yet (it updates itself within 15 minutes)`
+                  : j.error === 'token'
+                    ? 'Token refused'
+                    : 'Not available'
+              });
+      })
+      .catch(() => (fresh() ? (ALS = {err: 'Offline'}) : ALS))
+  );
+}
 // Pages opened (sheet v30 'pages', app sync.js pagesSend, core.js PAGES): one summary a visit (or a part of one: the app
 // sends what it has each time it is left, same visit id), read from the sheet's Pages tab (readEvents with pages: 1,
 // the last 10,000), apart from the other events. Each as {t, dev, id: the admin's id of the player ('' unknown: a wrong
@@ -5238,6 +5280,43 @@ function bindEv() {
   const r = $v.querySelector('[data-evr]');
   if (r) r.onclick = () => loadEvents(true).then(() => cur === 'inbox/todo/errors' && renderEvents());
   $v.querySelectorAll('[data-zf]').forEach(b => (b.onclick = () => zoom(b.dataset.g, b.dataset.zf)));
+}
+// To do › Alerts: the Alerts tab's lines of the last EV_DAYS days, newest first, as Errors reads the Events tab, counted
+// by kind (the start of each line, as Code.gs writes it). Read-only: nothing here changes the sheet.
+const ALERT_KINDS = [
+  ['Limits reached', /^limit reached: /],
+  ['Photos of another unit', /^photos not of the unit shown: /],
+  ['Left out, signed in', /^left out of the statistics: /]
+];
+function renderAlerts() {
+  status();
+  if (!ALS) {
+    $v.innerHTML = '<p class="note">Loading…</p>';
+    loadAlerts().then(() => cur === 'inbox/todo/alerts' && renderAlerts());
+    return;
+  }
+  const head = `<div class="adm-shead"><button type="button" class="adm-link" data-alr>Refresh</button></div>`;
+  if (ALS.err) {
+    $v.innerHTML = head + `<p class="note">${esc(ALS.err)}</p>`;
+    return bindAlerts();
+  }
+  const since = Date.now() - EV_DAYS * 864e5,
+    R = ALS.rows.filter(r => r[0] >= since),
+    kind = r => ALERT_KINDS.findIndex(([, re]) => re.test(r[1])),
+    other = R.filter(r => kind(r) < 0).length;
+  $v.innerHTML =
+    head +
+    kpis([...ALERT_KINDS.map(([t], i) => [t, R.filter(r => kind(r) === i).length]), ...(other ? [['Other', other]] : [])]) +
+    (R.length
+      ? `<div class="adm-tscroll"><table class="adm-tbl adm-alerts"><thead><tr><th>When</th><th>Alert · ${EV_DAYS} days</th></tr></thead><tbody>${R.map(
+          r => `<tr><td>${clock(r[0])}</td><td><code>${esc(r[1])}</code></td></tr>`
+        ).join('')}</tbody></table></div>`
+      : `<p class="note">No alert in ${EV_DAYS} days.</p>`);
+  bindAlerts();
+}
+function bindAlerts() {
+  const r = $v.querySelector('[data-alr]');
+  if (r) r.onclick = () => loadAlerts(true).then(() => cur === 'inbox/todo/alerts' && renderAlerts());
 }
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
@@ -7908,7 +7987,7 @@ function signOut() {
 }
 // The landing page's sheet reads leave with the token (sheetEarly), after this script has run (a microtask: its let
 // names exist then). A token refused drops them all, so nothing read with it is kept.
-const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'reports'];
+const EARLY_ALL = ['ans', 'stats', 'users', 'pages', 'events', 'alerts', 'reports'];
 const early = () => queueMicrotask(() => TOKEN && sheetEarly((([S, p]) => admRoute(p, S))(subjOfHash(hashNow()))));
 (async () => {
   if (DEMO) {
@@ -8884,7 +8963,7 @@ const ofAns = (k, fn) => {
 // read k on its way, or starts it with go(fresh), whose reply is used only while fresh() (the read was not dropped since).
 // sheetAgain(...kinds) is ↻ and the account actions: what they name is forgotten and read again, a read of it still on
 // its way dropped (its late reply ignored). Kinds: ans (the answer log), stats (photo ratings, levels), users (the player
-// list), pages (pages opened), events, reports.
+// list), pages (pages opened), events, alerts (the Alerts tab), reports.
 const SHEET_READS = {},
   SHEET_GEN = {};
 function sheetRead(k, go) {
@@ -8910,6 +8989,7 @@ function sheetAgain(...kinds) {
     else if (k === 'users') USERS = null;
     else if (k === 'pages') PGS = null;
     else if (k === 'events') EVS = null;
+    else if (k === 'alerts') ALS = null;
     else if (k === 'reports') REPS = null;
   });
 }
@@ -8934,17 +9014,20 @@ function sheetEarly(h) {
                   ? ['reports']
                   : h === 'inbox/todo/errors'
                     ? ['events']
-                    : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
-                      ? ['ans']
-                      : h === 'photos/stats/overview'
-                        ? ['ratings']
-                        : [];
+                    : h === 'inbox/todo/alerts'
+                      ? ['alerts']
+                      : LIVE_STATS.includes(h) || ['inbox/coverage/games', 'inbox/todo/health'].includes(h)
+                        ? ['ans']
+                        : h === 'photos/stats/overview'
+                          ? ['ratings']
+                          : [];
   const go = {
     ans: () => loadStats(),
     ratings: () => loadStats(true),
     users: loadUsers,
     pages: loadPages,
     events: loadEvents,
+    alerts: loadAlerts,
     reports: loadReports
   };
   need.forEach(k => Promise.resolve(go[k]()).catch(() => {}));
@@ -9859,7 +9942,7 @@ function bindUsers() {
       toast(msg);
       // answers moved to another name or deleted: the levels and counts change; v55: a merge or delete also moves or
       // removes reports, page summaries and log mentions (Codex review #600)
-      sheetAgain('users', 'ans', 'stats', 'reports', 'pages', 'events');
+      sheetAgain('users', 'ans', 'stats', 'reports', 'pages', 'events', 'alerts');
       savedClear(); // progress merged, renamed or deleted
       uOpen = null;
       render();
