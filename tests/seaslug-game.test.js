@@ -393,12 +393,12 @@ test('the photos workflow builds the sea-slug game data again and commits it', (
   assert.ok(W.includes('seaslug\\.json|seaslug-game\\.json'), 'allowed in the commit job');
 });
 
-// The R2 step waits for Pierre's go: off in the workflow until the integrator flips SEASLUG_R2; on, its downloads go
-// into the folder the upload step sends to R2, before the commit that lists them.
-test('the photos workflow: the sea slugs R2 step off by default, wired before the upload', () => {
+// The R2 step is on since Pierre's go (2026-11-16, Q387; off before it): its downloads go into the folder the upload
+// step sends to R2, before the commit that lists them; off, the build stays offline.
+test('the photos workflow: the sea slugs R2 step on, wired before the upload', () => {
   const W = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'approved-photos.yml'), 'utf8'),
     at = s => W.indexOf(s);
-  assert.match(W, /^env:\n {2}SEASLUG_R2: 'off'$/m, 'off');
+  assert.match(W, /^env:\n {2}SEASLUG_R2: 'on'$/m, 'on');
   assert.ok(W.includes("- if: env.SEASLUG_R2 != 'on'\n        run: python tools/seaslug_game.py\n"), 'offline while off');
   assert.ok(W.includes("- if: env.SEASLUG_R2 == 'on'\n        run: python tools/seaslug_game.py --r2 --out r2-upload\n"), 'R2 once on');
   assert.ok(at('seaslug_game.py --r2 --out r2-upload') < at('run: tools/r2_sync.sh r2-upload'), 'uploaded by the same step');
