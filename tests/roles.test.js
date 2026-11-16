@@ -330,6 +330,97 @@ test("Pierre's grants: once, to the admin's account, as self-grants by the token
   noName(s, 'Pat', 'Ana');
 });
 
+// The Audit tab's next n row writes fail, as a Sheets service error does (the seed of 2026-11-16 on the real sheet wrote
+// the admin grant, then failed before its Audit row, and the error was swallowed).
+const failAudit = (s, n = 1) => {
+  run(s, 'sheet_(AUDIT.TAB, AUDIT.HEAD)');
+  const sh = s.sheets.Audit,
+    append = sh.appendRow;
+  sh.appendRow = v => {
+    if (n-- > 0) throw new Error('Service Spreadsheets timed out while accessing document');
+    return append(v);
+  };
+};
+const deployLog = s => rows(s, 'Deploy log').map(r => String(r[1]));
+
+test('a seed that fails after a grant is written is finished by its retry: the grant, one ok Audit row each, the failure logged', () => {
+  const s = loadCodeGs();
+  save(s, 'Pat');
+  failAudit(s);
+  assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok, "never the reader's error");
+  assert.deepStrictEqual(
+    rows(s, 'Roles').map(r => r.slice(0, 3)),
+    [['Pat', 'admin', 'platform']],
+    'the first grant written, then the seed stopped'
+  );
+  assert.deepStrictEqual(audit(s), []);
+  assert.strictEqual(s.props.ROLES_SEED, undefined, 'not marked done');
+  const log = deployLog(s);
+  assert.ok(
+    log.some(l => /^Roles: Audit row not written \(grant admin \(self\), platform, ok\): Service Spreadsheets/.test(l)),
+    log.join('\n')
+  );
+  assert.ok(
+    log.some(l => /^Roles: seed failed, tried again at the next read: grant admin: its Audit row was not written/.test(l)),
+    log.join('\n')
+  );
+  // The next read: the admin grant held without its row gets its "ok" (never "held"), the others are written.
+  assert.ok(s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'}).ok);
+  s.post({readAnswers: 1, token: TOK, aname: 'Pat', apin: '1234'});
+  assert.deepStrictEqual(
+    rows(s, 'Roles').map(r => r.slice(0, 3)),
+    [
+      ['Pat', 'admin', 'platform'],
+      ['Pat', 'owner', IMR],
+      ['Pat', 'editor', IMR]
+    ]
+  );
+  assert.deepStrictEqual(
+    audit(s).map(x => [x.action, x.scope, x.result, x.target]),
+    [
+      ['grant admin (self)', 'platform', 'ok', aid(s, 'Pat')],
+      ['grant owner (self)', IMR, 'ok', aid(s, 'Pat')],
+      ['grant editor (self)', IMR, 'ok', aid(s, 'Pat')]
+    ]
+  );
+  assert.ok(s.props.ROLES_SEED, 'marked done once every grant has its row');
+  noName(s, 'Pat');
+  assert.ok(!deployLog(s).some(l => /pat/i.test(l)), 'no name in the Deploy log');
+});
+
+test('an Audit row that cannot be written is logged; a grant without its row answers an error and its retry audits it', () => {
+  const s = loadCodeGs();
+  save(s, 'Ana');
+  failAudit(s);
+  const r = grant(s, 'Ana', 'editor', IMR);
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.error, 'server');
+  assert.deepStrictEqual(audit(s), []);
+  assert.ok(deployLog(s).some(l => /^Roles: Audit row not written \(grant editor, instance:imr, ok\)/.test(l)));
+  assert.strictEqual(grant(s, 'Ana', 'editor', IMR).result, 'ok', 'the retry writes the row the first try left out');
+  assert.strictEqual(grant(s, 'Ana', 'editor', IMR).result, 'held');
+  // Granted again after a revoke: its last ok row is the revoke, so a held grant with no row since gets its ok.
+  assert.strictEqual(revoke(s, 'Ana', 'editor', IMR).result, 'ok');
+  failAudit(s);
+  assert.strictEqual(grant(s, 'Ana', 'editor', IMR).ok, false);
+  assert.strictEqual(grant(s, 'Ana', 'editor', IMR).result, 'ok');
+  assert.deepStrictEqual(
+    audit(s).map(x => [x.action, x.result]),
+    [
+      ['grant editor', 'ok'],
+      ['grant editor', 'held'],
+      ['revoke editor', 'ok'],
+      ['grant editor', 'ok']
+    ]
+  );
+  assert.strictEqual(rows(s, 'Roles').length, 1);
+  // A refusal whose row fails is logged too, never thrown: the request answers as before.
+  failAudit(s);
+  assert.strictEqual(s.post({readReports: 1, token: READ}).error, 'token');
+  assert.ok(deployLog(s).some(l => /^Roles: Audit row not written \(readReports, instance:imr, denied\)/.test(l)));
+  noName(s, 'Ana');
+});
+
 test("rule D7: a deleted, self-deleted, merged or archived account's grants go; its Audit rows keep only its id", () => {
   const cases = [
     ['delete', s => s.post({userDelete: 'Eda', answers: false, token: TOK})],
