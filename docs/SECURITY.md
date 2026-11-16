@@ -176,7 +176,7 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
 - **Pierre's grants**: platform admin, and owner and content editor of `instance:imr`. Given once, as self-grants by
   the token, to the admin's account (`ADMIN_ACCT`) the first time the admin page reads the answer log signed in to it
   (`rolesSeed_`). A property marks it done, so a revoke or a delete is never silently granted again. It is marked done
-  only once every grant has its Audit row (vNEXT): a try that fails part way (a Sheets error) writes a Deploy log line,
+  only once every grant has its Audit row (v159): a try that fails part way (a Sheets error) writes a Deploy log line,
   and the admin page's next read finishes it.
 - **The Audit tab**: Time, Admin id, Action, Scope, Result, Target id. One row per change (the players' management, the
   Analyses report's put, each grant and revoke, a self-grant marked `(self)`), and per refusal at most 20 every 6 hours
@@ -184,7 +184,7 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
   minute. Every id is an anonymous id: `aid_` for an account, `gh:` and 8 characters for a token (a salted hash, never
   the token; blank for a refusal, whose caller is nobody known), never a name; the target of a request is written as
   its id, never the name it carries.
-  A grant is never without its row (vNEXT, `grantPut_`): a row that cannot be written fails the grant (the request
+  A grant is never without its row (v159, `grantPut_`): a row that cannot be written fails the grant (the request
   answers an error), and the next try of a grant held with no `ok` row since its last revoke (`grantAudited_`) writes
   that `ok` row instead of `held`. A row that cannot be written is a line in the Deploy log (`roleLog_`, the same line
   at most once an hour), never silent.
