@@ -706,12 +706,7 @@ const gh = (path, opts = {}) =>
   fetch(API + path, {
     cache: 'no-store',
     ...opts,
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2026-03-10',
-      Authorization: `Bearer ${TOKEN}`,
-      ...(opts.headers || {})
-    }
+    headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`, ...(opts.headers || {})}
   }).then(async r => {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.message || `GitHub error ${r.status}`);
@@ -7503,9 +7498,7 @@ const author = async () =>
   AUTHOR !== undefined
     ? AUTHOR
     : (AUTHOR =
-        (await fetch('https://api.github.com/user', {
-          headers: {Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10', Authorization: `Bearer ${TOKEN}`}
-        })
+        (await fetch('https://api.github.com/user', {headers: {Accept: 'application/vnd.github+json', Authorization: `Bearer ${TOKEN}`}})
           .then(r => (r.ok ? r.json() : {}))
           .then(j => j.login || '')
           .catch(() => '')) || ((store.get('reefid-account', null) || {}).name || '').trim());

@@ -107,10 +107,10 @@
       "id": "github_api",
       "name": "GitHub REST API version",
       "version": "2026-03-10",
-      "pins": [{"files": ["admin.js", "tools/sync/Code.gs"], "pattern": "'X-GitHub-Api-Version': '{v}'", "min": 3}],
+      "pins": [{"files": ["tools/sync/Code.gs"], "pattern": "'X-GitHub-Api-Version': '{v}'", "min": 1}],
       "latest": {"kind": "github-api", "compare": "exact"},
       "lookup": "https://docs.github.com/en/rest/about-the-rest-api/api-versions",
-      "why": "Sent by admin.js and Code.gs isAdmin_ (checked 2026-11-16: none of the 2026-03-10 breaking changes touches the endpoints they or the repo's other GitHub calls use). The `gh api` calls (workflows clean.yml, pages.yml, pages-cancel.yml; tools/brief.py, tools/train.py, whose tests match gh's exact arguments) send no header and get GitHub's default, 2022-11-28 (supported to 2028-03-10). To move: change the value in both files above."
+      "why": "Sent by Code.gs isAdmin_ (checked 2026-11-16: none of the 2026-03-10 breaking changes touches the endpoints it or the repo's other GitHub calls use). admin.js sends no header yet: the browser's CORS preflight must allow it, which could not be checked from the agents' machine (its proxy refuses OPTIONS), and a refusal would break the admin's Publish; add it after a check in a real browser. The `gh api` calls (workflows clean.yml, pages.yml, pages-cancel.yml; tools/brief.py, tools/train.py, whose tests match gh's exact arguments) and admin.js get GitHub's default, 2022-11-28 (supported to 2028-03-10). To move: change the value in the file above."
     },
     {
       "id": "apps_script",
