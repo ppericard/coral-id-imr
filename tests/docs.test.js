@@ -453,7 +453,7 @@ test('the code identifiers the docs cite in backticks still exist', () => {
     for (const m of src.matchAll(/`([\w./-]+\.(?:js|py|gs|html|css|yml))`\s+`([A-Za-z_$][\w$]*)(?:[.(\[][^`\n]*)?`/g)) {
       const files = idFiles(doc, m[1]);
       if (!files.length) continue; // the missing file is the path check's finding
-      const word = new RegExp('(^|[^\\w$])' + m[2].replace(/\$/g, '\\$') + '(?![\\w$])');
+      const word = new RegExp('(^|[^\\w$])' + m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w$])');
       if (!files.some(f => word.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) && !allowed(m[1] + ' ' + m[2]))
         seen.add('`' + m[1] + '` has no `' + m[2] + '`');
     }
