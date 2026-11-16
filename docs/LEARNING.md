@@ -1332,7 +1332,7 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
 
 **The variables, all of the existing model** (`CHOICE.opts[i][1]`):
 
-| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337) | Coral basics first |
+| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337; removed 2026-11-15) | Coral basics first |
 | --- | --- | --- | --- |
 | I'm new to corals | 0 (as before: a new player is a beginner) | 50 (as before, `INTRO.OFFER.AT`) | yes (tour's last button, the card's follow-up) |
 | I had the IMR coral course | 0.5 | 30 | no |
@@ -1348,8 +1348,8 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
   p 0 is 0.08 (beginner), 0.52 (lecture RA), 0.78 (strong RA), 2.0 (expert) (`tools/learnsim.js`, below); "I know
   corals well" covers both a strong RA and an expert, so 1.25 (start 1.0), between them, and a wrong answer must stay
   cheap. 0.3 / 0.8 and 0.8 / 1.875 were tried (table).
-- **`at`** (not read since the offer card went, 2026-11-12, Q337; it stays in `core.js` `CHOICE` until the next change
-  to that file, ROADMAP): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
+- **`at`** (not read since the offer card went, 2026-11-12, Q337; removed from `core.js` `CHOICE` on 2026-11-15, the
+  record below kept): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
   offered it sooner. The offer still needs 10 slate genera met and a global level of 0.5 (`introOffer`), so the answers
   decide; `at` only lets it come earlier. Simulated with the offer accepted (`--openall offer`): opened at answer 30-56
   (lecture RA) and 30-36 (strong RA, expert) instead of 50-58 and 50-51; true knowledge at 300 unchanged (0.76, 0.84-0.85,
@@ -5681,6 +5681,18 @@ The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo
 `treeScore`); its learnsim mode loads `model.js` `photoSet` in Node as `tests/rareease.js` does, so the draw is the
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
+
+**Long rated runs: the false-alarm table** (2026-11-15, after #975's 10,000-answer check could not end in the workflow's
+6 hours: 34 minutes a run with the species in). Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which
+scanned every record of the player's progress, and the planner reads the bars of every unit in play several times an
+answer: the cost grew with the units met times the units read, and the scan was the largest single part of a profile
+(23-29% of the time on their own, 36-45% with the bar around them; fish, `main` and #975, 1,000-3,000 answers). The
+rated world now arms a table for each answer (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds
+every unit's false alarms and chances in one pass over the records, in the scan's own order, so each value is the
+scan's to the last bit, and `scoreAnswer` empties it. The app and the sheet never arm it and scan as before. The same
+seeds give byte-identical `--out` files (the date, commit and run time aside) and reports, and every read of a run can
+be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared machine a 3,000-answer fish run of the
+expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`

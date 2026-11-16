@@ -971,20 +971,29 @@
   // words), imr}.
   // The candidates waiting (cand: fish-cand.json's, by their first species), by the species they wait in now: one Pierre
   // sent elsewhere with Not this waits there (fishState; Codex review #659); one in play, rejected or gone does not wait.
-  // {species id: [photo]}. Read by Coverage and the Tree's node pages.
-  function fishWaiting(cand, F) {
-    const waiting = {};
+  // play: the photos in play ({species id: [photo]}, admin.js fuData: his adds and the photos the game plays by
+  // themselves, the sure candidates and the reference photos, fishGameIn): a candidate among them, by its photo id (core.js
+  // fishPid, in any species), is in play, not waiting, whether or not he added it (a blind Check of the auto-sort on it
+  // included: the Candidates swiper shows it, fishQueue). {species id: [photo]}. Read by Coverage and the Tree's node
+  // pages.
+  function fishWaiting(cand, F, play) {
+    const waiting = {},
+      inPlay = new Set(
+        Object.values(play || {})
+          .flat()
+          .map(p => p && p.f && fishPid(p.f))
+      );
     Object.entries(cand || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
         const x = fishState(F || {}, p.f, orig);
-        if (x.st === null) (waiting[x.sid] = waiting[x.sid] || []).push(p);
+        if (x.st === null && !inPlay.has(fishPid(p.f))) (waiting[x.sid] = waiting[x.sid] || []).push(p);
       })
     );
     return waiting;
   }
   function fishCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
-    const waiting = fishWaiting(cand, F);
+    const waiting = fishWaiting(cand, F, play);
     const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
       isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
       spRow = (sid, fam) => {

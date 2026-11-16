@@ -103,69 +103,6 @@
       return [];
     }
   }
-  // idkey-migration: begin
-  // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
-  // Key; the book keeps its name). Alpha (rule W3): no old name is read anywhere else; this moves the data
-  // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
-  // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
-  // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
-  // -sub). Idempotent: once nothing is left under an old name it changes nothing (a value the sheet sends back from
-  // before is moved at the next start). app.js and admin.js run it at start-up, after migrateStorage. Delete it (and
-  // its test, tests/idkey.test.js) once every device has started the renamed app. Returns the keys it wrote.
-  const IDKEY_OLD = {finder: 'idkey', 'lab-finder': 'lab-idkey', '~fcov': '~kcov'};
-  function migrateIdKey(s) {
-    try {
-      s = s || localStorage; // storage blocked: nothing to move
-    } catch (e) {
-      return [];
-    }
-    const done = [],
-      move = (o, n) => {
-        const v = s.getItem(o);
-        if (v === null) return;
-        if (s.getItem(n) === null) s.setItem(n, v);
-        s.removeItem(o);
-        done.push(n);
-      },
-      edit = (k, f) => {
-        const v = s.getItem(k);
-        let o;
-        try {
-          o = JSON.parse(v);
-        } catch (e) {}
-        if (!isObj(o)) return;
-        const w = JSON.stringify(f(o));
-        if (w !== v) (s.setItem(k, w), done.push(k));
-      },
-      // An object keyed by page or tool name: the old name's entry under the new one, unless the new one is set.
-      names = o => {
-        Object.keys(IDKEY_OLD).forEach(a => {
-          if (!Object.prototype.hasOwnProperty.call(o, a)) return;
-          if (!Object.prototype.hasOwnProperty.call(o, IDKEY_OLD[a])) o[IDKEY_OLD[a]] = o[a];
-          delete o[a];
-        });
-        return o;
-      },
-      // An object whose values are page names.
-      values = o => {
-        Object.keys(o).forEach(
-          k => typeof o[k] === 'string' && Object.prototype.hasOwnProperty.call(IDKEY_OLD, o[k]) && (o[k] = IDKEY_OLD[o[k]])
-        );
-        return o;
-      };
-    try {
-      const keys = [];
-      for (let i = 0; i < s.length; i++) keys.push(s.key(i));
-      keys.filter(k => k.startsWith('reefid-finder-')).forEach(k => move(k, 'reefid-idkey-' + k.slice(14)));
-      move('reefid-admin-fcov', 'reefid-admin-kcov');
-      edit('reefid-sync-size', names);
-      edit('reefid-lab-votes', names);
-      edit('reefid-admin-view', values);
-      edit('reefid-admin-sub', values);
-    } catch (e) {}
-    return done;
-  }
-  // idkey-migration: end
   // A player's data from the sheet or a progress file, which may hold the old names (an app from before the rename
   // saved it), the new ones, or both (withLegacy): with the new names only, the new one winning.
   function keysIn(d) {
@@ -683,6 +620,9 @@
           // sheet rates the corals' photos only)
           'photos/review/by-difficulty',
           'photos/look-alikes',
+          // Photo stats › Overview (fish admin at parity): its photos in play in its words, the answers per photo from the
+          // answers alone (admin.js pstatsFish). No Difficulty: its numbers are the sheet's photo ratings, the corals' only.
+          'photos/stats/overview',
           // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report, and
           // the views drawn from the live answer log (admin.js
           // LIVE_STATS), from the fish answers (fish admin at parity, 2026-11-08): Stops (admin.js statsHealth,
@@ -3144,8 +3084,7 @@
   // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
   // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
   // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
-  // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
-  // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
+  // the shaky signal that paces the opening of genera); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
   // launch question". Each subject asks its own (SUBJECTS start: its words; the fish welcome question, Pierre 2026-11-04),
   // with these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the
@@ -3174,9 +3113,9 @@
     MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
     // [id, variables], in order from the lowest level to the highest (startBand); their words per subject: SUBJECTS start.
     opts: [
-      ['new', {p: 0, at: 50, basics: 1}],
-      ['imr', {p: 0.5, at: 30, basics: 0}],
-      ['know', {p: 1.25, at: 20, basics: 0}]
+      ['new', {p: 0, basics: 1}],
+      ['imr', {p: 0.5, basics: 0}],
+      ['know', {p: 1.25, basics: 0}]
     ]
   };
   const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
@@ -3895,16 +3834,68 @@
   // the ability are untouched.
   // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
   const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
-  function faOf(P, n) {
-    if (!P || !n) return 0;
+  // The typed questions on other units of n's rank, where the chances to give n start (above).
+  const faTyped = (P, n) => Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+  // The scan: every other record of P read for n.
+  function faScan(P, n) {
     let fa = 0,
-      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+      op = faTyped(P, n);
     for (const t in P) {
       if (t === n || t === LEVEL || !P[t]) continue;
       fa += (P[t].conf || {})[n] || 0;
       op += (P[t].off || {})[n] || 0;
     }
     return op > 0 ? Math.min(1, fa / op) : 0;
+  }
+  // The false-alarm table (2026-11-15; speed only, every value the same to the last bit). The scan reads every record of
+  // P for one unit, and a caller that reads every unit's bar after each answer pays it once per unit: the rated world
+  // (tools/ratedworld.js) spent most of a 10,000-answer fish run there. faArm(P) lets the next faOf build one table of
+  // every unit's false alarms and chances in a single pass over P, in the scan's own order (the records in P's order, the
+  // typed questions first: each unit's sums take the same numbers in the same order, so the same floats), and answer the
+  // later calls from it until scoreAnswer writes P (it disarms the table while it runs and arms it again, empty, after) or
+  // faDisarm(P). Opt-in: the caller arms P only while nothing but scoreAnswer writes the records' conf, off, ty or the
+  // level's tyk (the rated world, one answer at a time); the app and the sheet never arm, so they scan as before. A P
+  // whose conf or off is not a plain object of numbers, or a unit id that is not a string or that Object.prototype holds,
+  // is scanned. FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
+  const FA_CHECK = {on: false},
+    FAT = new WeakMap(),
+    faArm = P => void (P && typeof P === 'object' && FAT.set(P, null)),
+    faDisarm = P => void (P && typeof P === 'object' && FAT.delete(P)),
+    faPlain = c => {
+      if (typeof c !== 'object' || Array.isArray(c)) return false;
+      const p = Object.getPrototypeOf(c);
+      return p === null || Object.getPrototypeOf(p) === null; // a plain object, of this realm or of a vm's
+    };
+  function faTable(P) {
+    const u = new Map(),
+      // Record t's conf or off (c) added to every other unit's false alarms or chances (key); false when c is not a plain
+      // object of numbers. A unit's chances start at its typed questions, as the scan's do.
+      add = (c, t, key) => {
+        if (!c) return true;
+        if (!faPlain(c)) return false;
+        for (const k of Object.keys(c)) {
+          const v = c[k];
+          if (v && typeof v !== 'number') return false;
+          if (k === t) continue;
+          if (!u.has(k)) u.set(k, {fa: 0, op: faTyped(P, k)});
+          u.get(k)[key] += v || 0;
+        }
+        return true;
+      };
+    for (const t in P) if (t !== LEVEL && P[t] && !(add(P[t].conf, t, 'fa') && add(P[t].off, t, 'op'))) return {ok: false};
+    return {ok: true, u};
+  }
+  function faOf(P, n) {
+    if (!P || !n) return 0;
+    if (!FAT.has(P) || typeof n !== 'string' || n in Object.prototype) return faScan(P, n);
+    let T = FAT.get(P);
+    if (!T) FAT.set(P, (T = faTable(P)));
+    if (!T.ok) return faScan(P, n);
+    // A unit no other record names nor offers: no false alarm, 0 as the scan gives it.
+    const x = T.u.get(n),
+      v = x ? (x.op > 0 ? Math.min(1, x.fa / x.op) : 0) : 0;
+    if (FA_CHECK.on && !Object.is(v, faScan(P, n))) throw new Error(`faOf: the table gives ${v} for ${n}, the scan ${faScan(P, n)}`);
+    return v;
   }
   // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.
   const domVal = (s, P, n) => Math.max(0, s.ds - faOf(P, n));
@@ -4651,7 +4642,19 @@
   // the question counts as that much easier: a 2-choice right answer, more often right than a 1 in 2 guess explains,
   // proves less, and a 2-choice miss weighs less; 0 until the game passes the sheet's offsets).
   const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
+  // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
+  // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty
+  // after it.
   function scoreAnswer(P, q) {
+    if (!FAT.has(P)) return scoreStep(P, q);
+    FAT.delete(P);
+    try {
+      return scoreStep(P, q);
+    } finally {
+      FAT.set(P, null);
+    }
+  }
+  function scoreStep(P, q) {
     const t = q.t,
       ok = !!q.ok,
       k = q.k,
@@ -5762,7 +5765,7 @@
       m = pageName(k, pre);
     return m === pre + 'other' ? s : m;
   }
-  // This device's data under the old names (app.js and admin.js at start-up, after migrateIdKey): the photo size per page
+  // This device's data under the old names (app.js and admin.js at start-up, after migrateStorage): the photo size per page
   // (reefid-sync-size, keyed by page name: genera, genus, pair, idkey, lab-gallery, lab-elim; tips dropped), the events
   // still queued (reefid-evq: each one's address, a visit summary's page names), the photos flagged (reefid-photo-flags:
   // where they were seen). Idempotent (a value the sheet sends back from an older device is moved at the next start).
@@ -6131,6 +6134,9 @@
     keepsMark,
     domFromCounts,
     faOf,
+    FA_CHECK,
+    faArm,
+    faDisarm,
     looksLeft,
     afterBkt,
     TARGET_P,
@@ -6407,7 +6413,6 @@
     withOldNames,
     migrateKeys,
     migrateStorage,
-    migrateIdKey,
     keysIn,
     LEGACY_SEND,
     withLegacy,

@@ -1248,6 +1248,38 @@ const darkCards = (p, sel) =>
         // Its views: Games and Rights (every subject's, admin.js EVERY).
         if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
+        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js fishPid), the
+        // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
+        // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
+        // admin.js has its own fishState, of a photo's words) and not in play.
+        const pw = await p.evaluate(() => {
+          const D = fuData(),
+            F = D.F,
+            inPlay = new Set(
+              Object.values(D.play)
+                .flat()
+                .map(x => fishPid(x.f))
+            ),
+            sp = new Set(FISHC.units.flatMap(u => u.species).filter(s => FISHC.species[s] && !FISHC.species[s].out));
+          let n = 0,
+            all = 0;
+          Object.entries(FISHC.cand).forEach(([orig, L]) =>
+            L.forEach(x => {
+              const s = window.fishState(F, x.f, orig);
+              if (s.st !== null || !sp.has(s.sid)) return;
+              all++;
+              if (!inPlay.has(fishPid(x.f))) n++;
+            })
+          );
+          const col = [...document.querySelectorAll('.adm-fishcovt thead th')].findIndex(t => t.textContent === '+'),
+            plus = [...document.querySelectorAll('.adm-fishcovt tbody tr')].reduce(
+              (a, tr) => a + (parseInt(tr.children[col].textContent, 10) || 0),
+              0
+            );
+          return {plus, n, all, col, rows: document.querySelectorAll('.adm-fishcovt tbody tr').length, plays: (FISHC.plays || []).length};
+        });
+        if (pw.col < 0 || pw.plus !== pw.n || !(pw.n < pw.all))
+          fails.push(`${w}px Fish Coverage, "+" (candidates waiting, none in play): ${JSON.stringify(pw)}`);
         if (once) {
           await p.click('[data-fishlv="sp"][aria-pressed]');
           c = await cv();
@@ -5365,6 +5397,77 @@ const darkCards = (p, sel) =>
       );
       if (ps !== '#photos/stats/overview') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
     }
+    // Photo stats › Overview on the fish side (fish admin at parity): the corals' cards in the fish words (families,
+    // observations, circles, the fish sources), every photo of the fish data in one row of All photos, the circles adding
+    // up to the photos in play and the families, the answers per photo from the answer log alone (the demo's script here
+    // logs no fish answer: every photo in play in None; with answers, the fresh fish session below), Fewest and most
+    // opening the families' Tree pages, no coral genus, no photo difficulty, no sideways scroll, dark in the dark theme;
+    // the corals' Difficulty is not a fish page. At 390 and 1280.
+    {
+      await go('fish/photos/stats/overview');
+      await p.waitForFunction(() => document.querySelector('#view .adm-pov [data-pov="rated"]'), null, {timeout: 90000}).catch(() => {});
+      const fo = await p.evaluate(() => {
+        const V = document.getElementById('view'),
+          cells = sel => [...V.querySelectorAll(sel)].map(r => [...r.children].map(c => c.innerText.trim())),
+          pool = Object.fromEntries(cells('[data-pov="pool"] tbody tr').map(r => [r[0], Number(r[1])])),
+          circ = cells('[data-pov="views"] tbody tr'),
+          ans = cells('[data-pov="answers"] tbody tr');
+        return {
+          heads: [...V.querySelectorAll('.adm-scard h3')].map(h => h.textContent.trim()),
+          kpi: [...V.querySelectorAll('.adm-pov .adm-kpis span')].map(b => b.textContent.trim()),
+          kv: [...V.querySelectorAll('.adm-pov .adm-kpis b')].map(b => b.innerText.trim()),
+          pool,
+          sum: Object.entries(pool).reduce((t, [k, n]) => t + (k === 'Total' ? 0 : n), 0),
+          circ: circ.map(r => r[0]),
+          circK: circ.reduce((t, r) => t + Number(r[1]), 0),
+          circOf: circ.reduce((t, r) => t + Number(r[4].split(' / ')[1]), 0),
+          want: {
+            fams: FISHC.units.length,
+            circles: ASUBJ.structure.circle.of.map(c => `Circle ${c}`),
+            src: ASUBJ.admin.origins.map(o => o[1])
+          },
+          src: cells('[data-pov="sources"] tbody tr').map(r => r[0]),
+          ans: ans.map(r => [r[0], Number(r[1])]),
+          fams: cells('[data-pov="rated"] tbody tr').length,
+          ends: [...V.querySelectorAll('[data-pov="ends"] a.adm-gen')].filter(a =>
+            a.getAttribute('href').startsWith('#fish/photos/tree/key/')
+          ).length,
+          coral: Object.keys(DATA.gen)
+            .filter(g => new RegExp(`\\b${g}\\b`).test(V.textContent))
+            .slice(0, 3),
+          words: /Colon|recognised by|Far harder/.test(V.textContent),
+          // Coverage › Games' "+" total (autosort.js fishWaiting through fishCov): the same candidates waiting
+          cov: fishCov(FISHC.units, fuData().play, FISHC.species, FISHC.cand, DRAFT.fish || {}, fuJ).fam.reduce((t, r) => t + r.wait, 0),
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (
+        fo.heads.join() !== 'All photos,Per family,Fewest and most,Circles,Sources,Answers per photo,3+ answers per family' ||
+        fo.pool.Candidates !== fo.cov ||
+        fo.kpi.join() !== 'Photos in play,Observations in play,Families in play,Candidates' ||
+        Number(fo.kv[0]) !== fo.pool['In play'] ||
+        !fo.pool['In play'] ||
+        fo.pool.Total !== fo.sum ||
+        Number(fo.kv[3]) !== fo.pool.Candidates ||
+        fo.circ.join() !== fo.want.circles.join() ||
+        fo.circK !== fo.pool['In play'] ||
+        fo.circOf !== fo.want.fams ||
+        fo.fams !== fo.want.fams ||
+        fo.src.join() !== fo.want.src.join() ||
+        fo.ans.reduce((t, r) => t + r[1], 0) !== fo.pool['In play'] ||
+        fo.ans[0][1] !== fo.pool['In play'] ||
+        fo.ends !== 10 ||
+        fo.coral.length ||
+        fo.words ||
+        fo.wide > 0
+      )
+        fails.push(`${w}px Fish Photo stats › Overview: ${JSON.stringify(fo)}`);
+      const dkF = await darkCards(p, '#view .adm-kpis > div, #view .adm-scard');
+      if (dkF) fails.push(`${w}px Fish Photo stats › Overview, dark theme: still light ${dkF}`);
+      await go('fish/photos/stats/difficulty');
+      const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
+      if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
+    }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
     // admin page): each from the demo answers, no sideways page scroll; a photo everyone misses opens in the lightbox.
@@ -5900,6 +6003,68 @@ const darkCards = (p, sel) =>
           if (await fq.$('#admhelp [data-ht="page"]')) await fq.click('#admhelp [data-ht="page"]');
           const ht = await fq.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
           if (!/from the answers alone/.test(ht) || /Elo/.test(ht)) fe.push(`By difficulty, help ${ht.slice(0, 80)}`);
+          await fq.click('#help');
+        }
+        // Photo stats › Overview on the fish side, on the same answers: the answers per photo in play counted here from the
+        // fish answer log (every answer that showed it, its candidate id and its game id one photo: fishPid), the bands
+        // and the 3+ count as counted here; the candidate photo missed 9 times by 3 players counted Missed on its family's
+        // row, opening Health; its own help (the answers alone, no Elo).
+        if (!fe.length && pre.f) {
+          await fq.evaluate(() => (location.hash = '#fish/photos/stats/overview'));
+          await fq
+            .waitForFunction(() => cur === 'photos/stats/overview' && document.querySelector('#view [data-pov="rated"]'), null, {
+              timeout: 60000
+            })
+            .catch(() => fe.push('Photo stats › Overview not drawn'));
+          const po = await fq.evaluate(f => {
+            const N = {};
+            rowsOf().forEach(r =>
+              new Set(
+                String(r[6] || '')
+                  .split(' ')
+                  .filter(Boolean)
+              ).forEach(x => (N[fishPid(x)] = (N[fishPid(x)] || 0) + 1))
+            );
+            const D = fuDataM().D,
+              sp = FISHC.species,
+              play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => D.play[s] || [])),
+              A = play.map(p => N[fishPid(p.f)] || 0),
+              fam = fishFamOf(FISHA.ph[f].sp),
+              name = (FISHC.units.find(u => u.id === fam) || {}).name,
+              row = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(r => r.children[0].innerText.trim() === name),
+              a = row && row.children[5].querySelector('a');
+            return {
+              bands: [...document.querySelectorAll('[data-pov="answers"] tbody tr')].map(r => Number(r.children[1].innerText)),
+              want: [
+                [0, 0],
+                [1, 2],
+                [3, 9],
+                [10, 29],
+                [30, Infinity]
+              ].map(([lo, hi]) => A.filter(x => x >= lo && x <= hi).length),
+              three: Number((/(\d+) \(/.exec((document.querySelector('[data-pov="answers"] .note') || {}).textContent || '') || [])[1]),
+              wantThree: A.filter(x => x >= 3).length,
+              inPlay: play.some(p => fishPid(p.f) === fishPid(f)),
+              name,
+              missed: a ? Number(a.textContent) : 0,
+              href: a ? a.getAttribute('href') : '',
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          }, pre.f);
+          if (
+            po.bands.join() !== po.want.join() ||
+            !po.want.slice(1).some(Boolean) ||
+            po.three !== po.wantThree ||
+            !po.inPlay ||
+            po.missed < 1 ||
+            po.href !== '#fish/inbox/todo/health' ||
+            po.wide > 0
+          )
+            fe.push(`Photo stats › Overview ${JSON.stringify(po)}`);
+          await fq.click('#help');
+          if (await fq.$('#admhelp [data-ht="page"]')) await fq.click('#admhelp [data-ht="page"]');
+          const ph = await fq.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
+          if (!/the answers alone/.test(ph) || /Elo|Colon/.test(ph)) fe.push(`Photo stats › Overview, help ${ph.slice(0, 80)}`);
           await fq.click('#help');
         }
         if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
