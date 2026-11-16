@@ -579,6 +579,12 @@ Sizes are rough, for one agent **[guess]**.
      sheets but no game unit yet (the fish species level, #975, comes first). Not replayed by the sheet, no leaderboard,
      no achievements. The photos are still read from iNaturalist (`r: 1`) until step 6. ARCHITECTURE.md "Subjects".
 6. **The R2 game photos**: about 1 day. `tools/fish_game.py` generalised (paths, prefixes) for a second photo subject.
+   - **Built, off until Pierre's go** (2026-11-16, PR "Sea slugs: R2 game photos (off), circles 2 and 3 in the game"):
+     `tools/seaslug_game.py --r2` downloads the sea-slug photos in play with the fish's pipeline (`tools/fish_game.py`
+     `download`: the four sizes, the judge's crop) into `r2-upload/` and lists them without `r`, the original kept as the
+     fallback; `--plan` says what a run would upload. The Candidate photos workflow runs it once its `SEASLUG_R2` is
+     `on`; until then the photos stay read from iNaturalist (`r: 1`). Circles 2 and 3 joined circle 1 in the game data in
+     the same PR (33 families, 205 species), opening at the fish's thresholds. ARCHITECTURE.md "Tools".
 7. **Tree and sheets**: about 1 day, then content as it comes.
    - The build writes the generic tree section; the admin's Tree shows the subject.
    - Family and genus sheets with sourced cues.
