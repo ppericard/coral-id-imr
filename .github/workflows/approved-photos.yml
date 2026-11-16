@@ -32,12 +32,12 @@ on:
 permissions:
   contents: read
 # The sea slugs' R2 step (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9 step 6; tools/seaslug_game.py --r2):
-# 'off' until Pierre's go for the first upload; then 'on' (the integrator's one-line change). Off, the photos job builds the
+# 'on' since Pierre's go for the first upload (2026-11-16, Q387; 'off' before it). Off, the photos job builds the
 # sea-slug game data offline (its new photos read from iNaturalist, r: 1); on, it downloads the sea-slug photos in play
 # that R2 lacks into r2-upload/ with the fish's, uploaded by the same step before the commit. Its first run: what
 # python3 tools/seaslug_game.py --plan prints.
 env:
-  SEASLUG_R2: 'off'
+  SEASLUG_R2: 'on'
 concurrency:
   group: candidate-photos
   cancel-in-progress: false
