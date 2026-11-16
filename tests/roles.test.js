@@ -14,8 +14,13 @@ const TOK = 'ghp_write000000000000000000', // can push: the admin token
   READ = 'ghp_read0000000000000000000'; // a GitHub token that can only read the repository: no admin
 const IMR = 'instance:imr';
 const save = (s, name, pin = '1234') => s.post({name, pin, data: {}, summary: {}, answers: []});
-// A copy out of the script's realm, so deepStrictEqual compares values only.
-const rows = (s, tab) => JSON.parse(JSON.stringify(s.sheets[tab] ? s.sheets[tab].rows.slice(1).filter(r => r && r[0]) : []));
+// A copy out of the script's realm, so deepStrictEqual compares values only. Each cell as Sheets holds it: an id that
+// starts with + or - (aid_ is base64) is written through safe_ as '+…, and Sheets keeps the leading apostrophe as a text
+// mark, not as the value; the in-memory sheet's appendRow keeps it, so it is taken off here (a CI run's salt hit it).
+const rows = (s, tab) =>
+  JSON.parse(JSON.stringify(s.sheets[tab] ? s.sheets[tab].rows.slice(1).filter(r => r && r[0]) : [])).map(r =>
+    r.map(c => (typeof c === 'string' && c[0] === "'" ? c.slice(1) : c))
+  );
 const audit = s => rows(s, 'Audit').map(r => ({id: r[1], action: r[2], scope: r[3], result: r[4], target: r[5]}));
 const aid = (s, n) => vm.runInContext(`aid_(${JSON.stringify(n)})`, s.ctx);
 const run = (s, js) => vm.runInContext(js, s.ctx);
