@@ -142,7 +142,9 @@
   // remote original stays remote: src, r). {gen: unit id -> record (core.js fishGen), ph: photo id -> its record, slate (the
   // app's UNITS slate), fam: each family, genus and species sheet id (s:<name>) to its family, spid: each species sheet id
   // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach: Q309),
-  // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log)}; null without a tree.
+  // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
+  // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks)}; null
+  // without a tree.
   function repReg(f, first, gm) {
     if (!f || typeof f !== 'object') return null;
     const G = (C.fishGameRead(gm) || {}).photos || {},
@@ -168,7 +170,7 @@
       if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
     });
     (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
-    return {gen: F.gen, ph, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg, imr};
+    return {gen: F.gen, ph, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg, imr, groups: F.groups || []};
   }
   const API = {
     REP_STATUS,
