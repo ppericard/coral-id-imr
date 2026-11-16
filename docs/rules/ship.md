@@ -147,8 +147,8 @@ overlays smoke on #855).
 
 ### W13
 
-**Format JS and CSS with Prettier 3.9.10** and `.prettierrc.json` (print width 140): app, admin, Lab, tests; not
-`tools/`, HTML or JSON. Before pushing: `npx --yes prettier@3.9.10 --write "*.js" "*.css" "proto/*.js" "proto/*.css"
+**Format JS and CSS with Prettier 3.10.1** and `.prettierrc.json` (print width 140): app, admin, Lab, tests; not
+`tools/`, HTML or JSON. Before pushing: `npx --yes prettier@3.10.1 --write "*.js" "*.css" "proto/*.js" "proto/*.css"
 "tests/*.js"` (no package.json); the PR check fails otherwise. After a formatter upgrade, compare the syntax trees before
 and after, and run it until the files stop changing (Prettier 3.3.3, picked from memory, dropped array elements inside
 a template literal in `proto/anatomy.js`, found by an AST comparison on 2026-11-01). `.git-blame-ignore-revs` lists the
@@ -160,7 +160,7 @@ reformatting commits (`git config blame.ignoreRevsFile .git-blame-ignore-revs` o
 **The fast tier before each push, the full tier on CI.** Several agent sessions share one machine, and running every
 smoke on every push loaded it until fixed timeouts failed; CI runs everything on each PR, each smoke on its own runner,
 and reports every failing one. Locally, run what your change can break, once:
-- **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.9.10 --check` on the changed `.js`/`.css`;
+- **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.10.1 --check` on the changed `.js`/`.css`;
   `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency, and the sheet's changes file: never
   bump a number, rules W15 and D3);
   `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24); then **the
