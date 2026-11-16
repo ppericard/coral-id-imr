@@ -150,7 +150,7 @@ Its row 4 (sheet v145) holds what the admin's `readStats` adds, each player's ab
 is read only with the admin token; the same deletes blank it with the fold, and the archived players are left out
 when it is read.
 
-## The Alerts tab in the admin (vNEXT)
+## The Alerts tab in the admin (v152)
 
 Pierre, 2026-11-01 (ROADMAP "Security follow-ups"): admin **To do › Alerts** (`#inbox/todo/alerts`, the same page on
 every subject's side) shows the tab's lines of the last 30 days, newest first, counted by kind, read-only. The script

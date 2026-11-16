@@ -838,7 +838,7 @@ test('floods are capped: per anonymous id, and the first refusal goes to the Ale
   assert.strictEqual(s.post({anon: 'someoneelse', anonAnswers: many(5)}).ok, true, 'other players are not blocked');
 });
 
-// readAlerts (vNEXT; ROADMAP "Security follow-ups", Pierre 2026-11-01): the admin's To do › Alerts reads the Alerts tab,
+// readAlerts (v152; ROADMAP "Security follow-ups", Pierre 2026-11-01): the admin's To do › Alerts reads the Alerts tab,
 // admin token only, newest first, the last 3000 lines, as readEvents; a capped name is served as its admin id, never the
 // name, and the tab itself is never changed by the read.
 test('readAlerts: admin only, newest first, the last 3000, a capped name served as its admin id', () => {
@@ -2720,7 +2720,7 @@ test('v58 (Codex review #603): archiving moves the name mentions in the log tabs
   s.post({userArchive: {from: 'Ben', into: 'Ben-old'}, token: TOK});
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')) && /\(Ben-old\)/.test(tabText(s, 'Events')), 'Events names the archive');
   assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/);
-  // The admin's To do › Alerts (readAlerts, vNEXT; rule D7, Codex review #996) leaves the archive's line out, as a normal
+  // The admin's To do › Alerts (readAlerts, v152; rule D7, Codex review #996) leaves the archive's line out, as a normal
   // view; a live account's line stays, under its admin id (every case: the readAlerts rule D7 test).
   require('vm').runInContext("sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ana (3000 per 6 h)'])", s.ctx);
   const al = s.post({readAlerts: 1, token: TOK}).rows.map(r => r[1]);
