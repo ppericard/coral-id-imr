@@ -6009,7 +6009,8 @@ const darkCards = (p, sel) =>
         if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
-      // Difficulty › Heatmap of a subject played at the genus (core.js unitRankOf: the sea slugs; Q123 m, after #1020):
+      // Difficulty › Heatmap of a subject with units at several ranks played at the genus (SUBJECTS sheets, core.js
+      // unitRankOf: the sea slugs; the corals' one rank is the genus too; Q123 m, after #1020):
       // its one Analyses view; every genus of its game on the map in italics, by name, in its family's block, the families
       // in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
       // line over its few made-up answers (admin-demo.js: Ana's count, Mara's not yet: her map says why); with no answer
@@ -6026,18 +6027,25 @@ const darkCards = (p, sel) =>
         gq.on('pageerror', e => ge.push(e.message));
         await gq.goto(base + `admin.html?demo&v=${VER}`);
         const at = await gq
-          .waitForFunction(() => typeof SUBJECTS !== 'undefined' && (SUBJECTS.find(S => unitRankOf(S) === 'genus') || {}).hash, null, {
-            timeout: 60000
-          })
+          .waitForFunction(
+            () => typeof SUBJECTS !== 'undefined' && (SUBJECTS.find(S => S.sheets && unitRankOf(S) === 'genus') || {}).hash,
+            null,
+            {
+              timeout: 60000
+            }
+          )
           .then(h => h.jsonValue())
           .catch(() => null);
         if (!at) ge.push('no subject played at the genus');
         else {
           await gq.evaluate(h => (location.hash = '#' + h + 'analyses/difficulty/heatmap'), at);
           await gq
-            .waitForFunction(() => cur === 'analyses/difficulty/heatmap' && document.querySelector('#view .adm-hmt'), null, {
-              timeout: 90000
-            })
+            // drawn once its tree is read (unitAdmin: the units' names, blocks and groups)
+            .waitForFunction(
+              () => cur === 'analyses/difficulty/heatmap' && unitRegOf(ASUBJ) && document.querySelector('#view .adm-hmt .hm-sup'),
+              null,
+              {timeout: 90000}
+            )
             .catch(() => ge.push('Heatmap not drawn'));
           const hs = await gq.evaluate(() => {
             const V = document.getElementById('view'),
