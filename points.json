@@ -740,7 +740,7 @@
       "subj": "seaslug",
       "at": "2026-11-17",
       "title": "\"Pikachu nudibranch\": Thecacera pacifica or T. pikachu?",
-      "q": "\"Pikachu nudibranch\" is Thecacera pacifica's nickname in iNaturalist and Wikipedia (\"sometimes also nicknamed the Pikachu nudibranch\"), and \"Pikachu\" its nickname among Japanese divers (SEASLUG.WORLD); SEASLUG.WORLD's species page also calls Thecacera pikachu, described in 2026 and named after the nickname, \"Pikachu Nudibranch\". Both species are in the game. Keep the name on both?",
+      "q": "\"Pikachu nudibranch\" is Thecacera pacifica's nickname in iNaturalist and Wikipedia (\"sometimes also nicknamed the Pikachu nudibranch\"), and \"Pikachu\" its nickname among Japanese divers (SEASLUG.WORLD, whose table of viral nicknames gives \"Pikachu\" to both species); SEASLUG.WORLD's species page also calls Thecacera pikachu, described in 2026 and named after the nickname, \"Pikachu Nudibranch\". Both species are in the game. Keep the name on both?",
       "ctx": [
         "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5); the game's choices stay scientific names.",
         "SEASLUG.WORLD's article: \"When a Japanese diver says \"Pikachu,\" this is the animal\" (T. pacifica); \"The internet nickname went straight into the scientific name\" (T. pikachu)."
