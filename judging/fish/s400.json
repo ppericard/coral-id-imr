@@ -1,5 +1,118 @@
 {
  "photos": {
+  "fish-s400-cand-151591862": {
+   "code": "p1g1sloj2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151591866": {
+   "code": "o1g1sloj2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151591875": {
+   "code": "h1g1sloj2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151591881": {
+   "code": "p1g1sloj2",
+   "keep": "alt"
+  },
+  "fish-s400-cand-152375112": {
+   "code": "o0d2slo1",
+   "keep": "best"
+  },
+  "fish-s400-cand-151574262": {
+   "code": "o1g1sloj2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151593961": {
+   "code": "p1g2bs1j1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151593962": {
+   "code": "p1d2sloj2",
+   "keep": "alt"
+  },
+  "fish-s400-cand-151593976": {
+   "code": "p1d3ss1j1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151593979": {
+   "code": "d1d3ss1j1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151593986": {
+   "code": "o1g1sloj2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151593991": {
+   "code": "o1g1sloj2",
+   "keep": "alt",
+   "note": "Also reference photo fi151593991, alt since #937: kept alt; j as its observation's other photos (iNat: juvenile)."
+  },
+  "fish-s400-cand-151593998": {
+   "code": "p1g1sloj2",
+   "keep": "alt"
+  },
+  "fish-s400-cand-151590146": {
+   "code": "d0g2mloj2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151565139": {
+   "code": "o1g1sm1j2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-151590111": {
+   "code": "o0g2sloj2",
+   "keep": "best"
+  },
+  "fish-s400-cand-354833695": {
+   "code": "p0g3mlo2",
+   "keep": "best"
+  },
+  "fish-s400-cand-354833805": {
+   "code": "p0g3mlo2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-354833816": {
+   "code": "p0g3mlo2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-354833839": {
+   "code": "p0g3bl11",
+   "keep": "dup"
+  },
+  "fish-s400-cand-354833844": {
+   "code": "t0g3bm11",
+   "keep": "dup"
+  },
+  "fish-s400-cand-563455617": {
+   "code": "p1g1sm1a3",
+   "keep": "dup"
+  },
+  "fish-s400-cand-563455618": {
+   "code": "o1g1mlsa3",
+   "keep": "dup"
+  },
+  "fish-s400-cand-563455639": {
+   "code": "o1g1sm1a2",
+   "keep": "dup"
+  },
+  "fish-s400-cand-676617326": {
+   "code": "d0g1ml12",
+   "keep": "alt"
+  },
+  "fish-s400-cand-676617341": {
+   "code": "d0g1mls1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-676618632": {
+   "code": "t0g1mls1",
+   "keep": "dup"
+  },
+  "fish-s400-cand-676618644": {
+   "code": "d0g1ml12",
+   "keep": "dup"
+  },
   "fish-s400-cand-676378491": {
    "code": "h0g2sl12",
    "keep": "best"
