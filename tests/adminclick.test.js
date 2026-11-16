@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The admin's cost per click (performance pass, 2026-11-09): admin.js autoWhen skips the fish part's keeps when a click
 // left that part as it was (the same object), and putDraft stores the draft's text joined from snap (draftJson). Checked
 // here: no admin script writes into the fish part of the draft in place (each change makes a new one, so the same object

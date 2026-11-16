@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish global score as built (Pierre, 2026-11-04 the formula, 2026-11-08 Q242 the commonness weights and the
 // square-root display; docs/FISH_PATH.md "My progress (fish)"): core.js rankWeights, treeScore and fishScoreTree, and the
 // subject's constants (SUBJECTS fish score).

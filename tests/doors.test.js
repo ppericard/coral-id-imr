@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Home's doors before the data (Pierre, 2026-11-02, ROADMAP "Load order, further steps" (a), reopened 2026-11-09):
 // app.js beforeData draws the doors once Home's scripts have run, for a subject whose doors need none of its own files
 // (UNITS doorsFirst), and the loading bar for any other page, which asks for its tier at once; homeAgain draws Home again

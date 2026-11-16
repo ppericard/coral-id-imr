@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Every account counts in the admin's stats (Pierre, 2026-11-04: his account is a real player's, the "Without me",
 // "Others / Me" and "This is also me" exceptions are gone; the leaderboard's "hidden" filters nothing either). The admin's
 // answer rows are the whole log (playerRows; rowsOf, a subject's), the photo ratings the sheet's (photoStats), and no code path drops answers by

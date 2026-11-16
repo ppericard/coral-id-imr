@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The genus wrongly given in the Elo (2026-11-03, docs/LEARNING.md "The genus wrongly given in the Elo"): the app's
 // own Elo (core.js eloStep, as model.js abilityStep runs it, replayed by tools/abilityeval.js) replayed on a made-up answer log of a strong
 // player whose misses fall on look-alikes. The old rule (a: a full miss step on the genus given, at difficulty 0,

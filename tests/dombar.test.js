@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The domain-score bar (Pierre, 2026-11-06, Q127-Q129, Q135; core.js DOM, domStep; docs/LEARNING.md "The domain-score
 // bar"): a genus's bar is the share of all its possible photos the player would name alone and typed, the posterior
 // expectation on a grid of abilities from a fixed population prior and the player's own answers on that genus only.

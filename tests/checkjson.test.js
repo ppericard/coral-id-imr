@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // tools/check_json.py (repo hygiene audit, 2026-11-08): every JSON file git tracks parses, checked on every pull request
 // and by Deploy Pages before it publishes, so a broken bot or Publish commit to main fails the deploy and the last good
 // site stays live.

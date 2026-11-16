@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Analyses › Difficulty › Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): the matrix built from the answer log,
 // as Pairs reads it (core.js confusionOf, admin.js pairPrior and noChoiceMixups between `// answerlog: begin` / `end`).
 // Made-up rows, the sheet's readAnswers shape: [id, time, shown, answered, right, mode, photos, expected, ability, new

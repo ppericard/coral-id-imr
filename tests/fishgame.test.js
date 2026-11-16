@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The curated fish game photos (admin plan PR 7): tools/fish_game.py, run by the Candidate photos workflow, downloads the
 // photos Pierre put in play (curation.json fish, core.js fishOn) into the R2 upload folder and writes fish-game.json;
 // core.js fishPhotos plays them (the stopgap list it once put them in place of, entry by entry, retired on 2026-11-15). Offline: a made-up fixture,

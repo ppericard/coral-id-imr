@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The app icon (C1, Pierre 2026-11-06; docs/ARCHITECTURE.md "App icon"): the manifest's icons exist at the size they
 // declare, the maskable and iOS icons are full bleed (opaque), every page names the same favicon, and only the SVG is in
 // the offline shell (the PNGs are read by the system at install time).

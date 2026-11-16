@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // The false-alarm table (core.js faArm, faOf; 2026-11-15): a speed-up only. With the table armed, faOf answers every unit
 // from one pass over the records instead of a scan per unit, and must give exactly what the scan gave: the same number to
 // the last bit (Object.is), on logs made up here and on rated-world runs. The reference is a copy of faOf as it was before

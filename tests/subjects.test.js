@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The subject registry (core.js SUBJECTS, the taxon model: corals and fish on one engine) and the fish adapter
 // (fishGen, fishTypeNames) on the real fish.json and fish-photos.json; each subject's progress kept apart when two
 // accounts merge (mergeUsers).

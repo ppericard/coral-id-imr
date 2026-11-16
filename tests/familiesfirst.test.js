@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Families met first (Pierre, 2026-11-09, Q208 A; docs/FISH_PATH.md "Levels", docs/LEARNING.md "Fish: scientific
 // genera"): once the "Scientific names" offer is accepted, no new scientific-genus card opens while a family in play is
 // still not met (model.js openPick, laterWaits; app.js setLater). Exempt: an IMR player's IMR genera (the set's auto

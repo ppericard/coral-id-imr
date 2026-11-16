@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // fish-game.json's short form (Pierre, 2026-11-09: "observation id + extension instead of full URLs"): tools/fish_short.py
 // writes a record's iNaturalist observation as its id and its original as its extension when the photo is the record's
 // own; core.js fishGameRead (the app, the admin, the sheet's photo pools, the tools) and tools/fish_short.py full_doc

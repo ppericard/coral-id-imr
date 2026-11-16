@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The admin's "Bad photo" flag, one brick for every subject (flag.js; app.js UNITS photo; admin.js importFlags):
 // - a photo's name: the data-f its page puts on its <img> (remote photos: an iNaturalist URL names no photo), else its
 //   file under img/;

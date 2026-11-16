@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Journey (admin-journey.js): the Cards list in time order (Pierre, 2026-11-05: rows of Nov 4 came before rows of Nov 2),
 // the untimed ones after; the start rows say "inferred" once and "Answered again" for the same answer given again; and
 // the word beside a unit outside the slate (Pierre, 2026-11-08: the fish genera were labelled "bonus", a coral word,

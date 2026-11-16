@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06): their addresses in the
 // words on screen (core.js SUBJECTS sheets, routeOut, routeIn), a sheet id in its one spelling (sheetIdOf: an old unit id
 // renamed since), and the sheet each family, genus or species opens (fishTree go) on the real fish.json.

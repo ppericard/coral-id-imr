@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The units unlocked on My progress (Pierre, 2026-11-05: "30/40 genera unlocked"): progress.js unlockN / unlockText run in
 // Node on stubs, as tests/achrun.test.js runs achAfter. The count is the subject's units opened on the path (model.js
 // introduced: a card, an answer, Open all; a unit closed again by "One at a time" does not count) out of every unit its

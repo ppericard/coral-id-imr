@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The sea-slug subject's game data (tools/seaslug_game.py; study docs/reviews/2026-11-15-nudibranch-mode-study.md §9,
 // step 5): the tree in fish.json's shape, scientific names only (Q369 d), its commonness over the Philippines (Q369 b),
 // the photos in play from the judged candidates under the photo target (Q377), and the committed files as the tool

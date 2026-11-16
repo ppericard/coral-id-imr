@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // A live Players › Activity (Pierre, 2026-11-08: "Les deux"): (1) the sheet's light read (Code.gs live_, POST readLive:
 // the Answers tab's last rows and each player's last answer time), which the admin re-reads every minute while Activity
 // is open and in view (admin.js liveArm, liveRead, liveMerge); (2) a device not signed in sends its answers about 3 s
