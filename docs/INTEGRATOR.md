@@ -198,7 +198,7 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   assign are new heads, so `@codex review` and wait. The train adds no head.
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex
   caught this on #701).
-- **Prettier**: CI uses 3.9.10; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
+- **Prettier**: CI uses 3.10.1; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
   diff after `--write` and revert unrelated hunks.
 - **Stacked PRs**: merging a PR whose base is another PR's branch merges into that branch, not main (it happened with
   #667 into #663; harmless, but check `base.ref` before merging).

@@ -34,9 +34,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
-      - name: Formatting (Prettier 3.9.10; .prettierrc.json, .prettierignore)
+      - name: Formatting (Prettier 3.10.1; .prettierrc.json, .prettierignore)
         run: |
-          npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
+          npx --yes prettier@3.10.1 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js tools/*.js tools/og/*.js; do node --check "$f" || exit 1; done
