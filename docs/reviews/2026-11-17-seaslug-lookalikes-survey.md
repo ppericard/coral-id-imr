@@ -51,7 +51,7 @@ Labels (rule W11): **[measured]** = counted by the tool from the replies; **[rea
   identified as the other, from either side: the same count from both ends. Asked for a genus, it returns genera
   **[measured]**.
   - Asked for each of the 205 species and 78 genera, **in the Philippines** (`place_id=6873`) **and worldwide**: the
-    Philippine counts are small (a common species has 1 to 10 confusions there), so the world's counts give the
+    Philippine counts are small (1,409 confusions in all, against 11,179 worldwide: §2), so the world's counts give the
     strength, the Philippine ones the local relevance.
   - With each taxon's observations in both scopes (every quality grade, as the counts), for the rates: the species
     batched 100 a request (`observations/species_counts`, `tools/inat.py` `leaf_counts`), each genus alone
@@ -89,9 +89,10 @@ Labels (rule W11): **[measured]** = counted by the tool from the replies; **[rea
 
 ## 2. What came back [measured]
 
-- **Requests** (2026-11-17, 06:36-07:05 Manila): iNaturalist 738 (similar species 566; taxa and observations 172),
-  WoRMS 285, Wikipedia 5 (169 articles), GBIF 401 (205 species); one request a second to each host at most (`tools/inat.py`: Wikipedia
-  answered HTTP 429 and was retried after its Retry-After). Besides the tool, to read the replies' shape: iNaturalist 6
+- **Requests** (2026-11-17, 06:36-07:00 Manila): iNaturalist 738 (similar species 566; taxa and observations 172),
+  WoRMS 285, Wikipedia 5 (169 articles), GBIF 401 (205 species); one request a second to each host at most
+  (`tools/inat.py`: Wikipedia answered HTTP 429 and was retried after its Retry-After). Besides the tool, to read the
+  replies' shape: iNaturalist 6
   requests (one of them its API description), WoRMS 3, GBIF 4, Wikipedia 3, each paced by hand or by `tools/inat.py`,
   with the project's User-Agent; and Crossref 4 (§7).
 - **iNaturalist**: 216 of the 283 taxa have at least one partner in the Philippines (582 partner rows, 1,409
@@ -227,8 +228,8 @@ confirmed", which is then context only (rule C6).
 - **The juvenile Spanish dancer.** Rudman 1999, on a juvenile from Dauin: "a remarkable resemblance to some purple
   spotted chromodorids such as Hypselodoris maculosa, Thorunna australis and Chromodoris decora". *H. maculosa* and
   *T. australis* are confirmed, *C. decora* not. iNaturalist: *H. lacer* / *H. maculosa* world 1; the genus pair
-  *Goniobranchus* / *Hexabranchus* PH 5, world 15. This one is about the juvenile only: a photo-level pair, for its
-  juvenile photos (`ph` "juvenile" in `seaslug-game.json`).
+  *Goniobranchus* / *Hexabranchus* PH 5, world 15 (whether those observations are juveniles was not checked). This one
+  is about the juvenile only: a photo-level pair, for its juvenile photos (`ph` "juvenile" in `seaslug-game.json`).
 - ***Chromodoris balat* / *Nembrotha lineolata***: PH 2, world 2. No source read names it.
 - **Not sea slugs** (never in iNaturalist's counts, §1.2): a polyclad flatworm, *Pseudoceros imitatus*, beside
   *Phyllidiella pustulosa* (Rudman's "Mimicry" page; Newman, Cannon & Brunckhorst 1994, cited by Wikipedia, not read),
@@ -249,7 +250,8 @@ confirmed", which is then context only (rule C6).
   savinkini*, *N. kubaryana* / *N. milleri*. Strong counts, no source read.
 - **Literature only**: the mimics (§4), *C. dianae* / *C. lochi* (Rudman, Nudi Pixel, Wikipedia: "the broken black
   lines"), *C. joshi* / *C. magnifica*, *H. bullockii* / *H. iba*.
-- **Not usable here** (rule C6): Nudi Pixel's Californian, South African and Japanese pairs, the red-spotted
+- **Not usable here** (rule C6): Nudi Pixel's pairs of species not confirmed here (11 of its 42 keep no member, such as
+  its Californian and South African pairs), the red-spotted
   Australian mimicry ring of Rudman's pages, and every pair whose partner is not confirmed in the Philippines (§2).
 - **The guide** (Gosliner, Valdés & Behrens 2018) would likely settle many of the "data only" pairs **[guess]**; it is
   not online.
@@ -304,8 +306,9 @@ confirmed", which is then context only (rule C6).
     African pairs, the Forum stops in 2010).
 - **(d) Both, by kind (recommended).** The literature pairs of (c) enter on their own as **declared** seeds (they stay
   grouped whatever the data says, as a teacher's pair does under Q350). The iNaturalist-only pairs that pass a threshold
-  enter as **data** seeds, which the players' pooled confusions may drop (rule L7; data pairs under Q350). Cross-family genus pairs
-  of either kind are added beside the family seeds. The admin page of (b) comes later, only if Pierre wants to edit them.
+  enter as **data** seeds, which the players' pooled confusions may drop (rule L7; data pairs under Q350).
+  Cross-family genus pairs of either kind are added beside the family seeds. The admin page of (b) comes later, only if
+  Pierre wants to edit them.
   - For: every pair carries its source (rule C2), species confirmed in the Philippines only (rule C6), nothing for
     Pierre to tick one by one, and the players' answers keep the last word as for every subject.
   - Against: it treats the specialists' word like a teacher's, which is Pierre's to decide; and it needs the small
