@@ -11,7 +11,7 @@ const test = require('node:test'),
   block = require('./block');
 const ROOT = path.join(__dirname, '..'),
   C = require('../core.js'),
-  {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed} = require('../admin-heatmap.js');
+  {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed, heatPlayers} = require('../admin-heatmap.js');
 const {pairPrior, noChoiceMixups} = new Function(
   'fmtOf',
   'trustOf',
@@ -286,4 +286,63 @@ test('heatMatrix: every unit of the roster on the map, an unanswered one with em
   // a unit met outside the roster (a bonus genus once played) joins it
   R.push(row('a', 'Acropora', 'Acropora', 1, 'Acropora Anacropora'));
   assert.ok(heatMatrix(C.confusionOf(R), {}, rec, prior, Object.keys(G)).units.includes('Anacropora'));
+});
+
+test("heatPlayers: one player's map is drawn for the players with answers, named when signed in, else by their device's id", () => {
+  // made-up ids and names (rule D2); rows as admin.js rowsOf gives them, a deleted or archived account's already out
+  const R = [
+    ['id-b', 5, 'Favia', 'Favia', 1],
+    ['id-a', 3, 'Favia', 'Favia', 1],
+    ['dev-1', 9, 'Favia', 'Favia', 1],
+    ['dev-2', 12, 'Favia', 'Favia', 1],
+    ['dev-1', 2, 'Favia', 'Favia', 1],
+    ['', 4, 'Favia', 'Favia', 1]
+  ];
+  const users = [
+    {name: 'Zoe Demo', id: 'id-a'},
+    {name: 'Ana Demo', id: 'id-b'},
+    // signed in, but no answer in this subject (or a merged account, its answers moved to the name kept): not listed
+    {name: 'Ben Demo', id: 'id-c'},
+    {name: 'No Id', id: ''}
+  ];
+  assert.deepStrictEqual(heatPlayers(R, users), [
+    ['id-b', 'Ana Demo', 1],
+    ['id-a', 'Zoe Demo', 1],
+    // never signed in: by id, the latest to answer first
+    ['dev-2', 'dev-2', 0],
+    ['dev-1', 'dev-1', 0]
+  ]);
+  // the player list not read yet: every player by their id
+  assert.deepStrictEqual(
+    heatPlayers(R, null).map(p => p[0]),
+    ['dev-2', 'dev-1', 'id-b', 'id-a']
+  );
+  assert.deepStrictEqual(heatPlayers([], users), []);
+});
+
+test("one player's map: their part of every cell, by the same rules (their answers count once trusted)", () => {
+  const R = warm('a', warm('b', []));
+  R.push(
+    row('a', 'Favia', 'Favites', 0, 'Favia Favites Porites Fungia'),
+    row('b', 'Favia', 'Favites', 0, 'Favia Favites Porites Fungia'),
+    row('b', 'Favia', 'Favia', 1, 'Favia Favites Porites Fungia'),
+    // c: two answers, not above chance yet (core.js trustOf): no cell of theirs, as in the pooled map
+    row('c', 'Favia', 'Favites', 0, 'Favia Favites Porites Fungia'),
+    row('c', 'Favia', 'Favites', 0, 'Favia Favites Porites Fungia')
+  );
+  const all = build(R),
+    of = id => build(R.filter(r => r[0] === id)),
+    A = of('a'),
+    B = of('b');
+  assert.deepStrictEqual([A.cell['Favia|Favites'].off, A.cell['Favia|Favites'].mix], [1, 1]);
+  assert.deepStrictEqual([B.cell['Favia|Favites'].off, B.cell['Favia|Favites'].mix], [2, 1]);
+  // the players' cells add up to the pooled one
+  Object.keys(all.cell).forEach(k =>
+    assert.deepStrictEqual(
+      [(A.cell[k] || {off: 0}).off + (B.cell[k] || {off: 0}).off, (A.cell[k] || {mix: 0}).mix + (B.cell[k] || {mix: 0}).mix],
+      [all.cell[k].off, all.cell[k].mix]
+    )
+  );
+  assert.deepStrictEqual(of('c').cell, {});
+  assert.strictEqual(C.trustOf(R.filter(r => r[0] === 'c')).c, false);
 });
