@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Every unit in play met and none may open now (Pierre, 2026-11-12: "on lui dit qu'il a tout vu et ce qui vient ensuite";
 // quiz.js allMetDue, allMetNone; app.js UNITS fish done, fishNextOf): the condition on the opening's own candidates, and
 // the card's reason and words for each state of the fish path. The card itself, at the break at Next, once per reason, is

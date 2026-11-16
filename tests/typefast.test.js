@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The faster typed-answer reading (performance pass, 2026-11-09): core.js typeDist keeps three rows of its matrix
 // instead of the whole one, typeMatchIn skips a name whose length is further from the text's than its tolerance, and
 // typeElse reads its lists' names once per norm. Each gives exactly the answers of the code before, kept here as the

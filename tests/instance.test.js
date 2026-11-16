@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The instance's layer as its own files (design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5;
 // tools/instance.py): tools/instance.json names the instance and its layer files; the build lays them on the sources,
 // and fish.json and data.json are exactly what the two layers give, byte for byte. Needs python3, like the other checks.

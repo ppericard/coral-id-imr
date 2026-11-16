@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Rarely under ease 4 before Open Water (Pierre, 2026-11-06 14:17: "No wall: before Open Water a photo under ease 4 may
 // come, but rarely"; model.js RARE, rareCap): model.js photoSet runs in Node on a unit whose pool is dominated by hard
 // photos, as the fish starter families are (about two thirds of their photos under ease 4, and many more observations

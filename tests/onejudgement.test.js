@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // One judgement per photo (Pierre, 2026-11-15): a fish photo met both as a reference photo (tools/fish_refs.json fi<id>,
 // its code in tools/fish_judge.json) and as a candidate (fish-cand.json fish-<species>-cand-<id>, judged in
 // judging/fish/<species>.json) is one photo (tools/fish_game.py pid) with one judgement, the candidate's judging file

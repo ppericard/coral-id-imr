@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The watermark flag (Pierre, 2026-11-15, Q373; judging/FISH.md "Watermark"): a fish photo with a visible watermark or
 // text (a photographer's name, a logo) carries the judged flag w. Home skips it (home.js homeOk: the band, its tiles and
 // the Identify door's art); the games keep it as it is (no cap, no ease, no reference level, no order changes), so a

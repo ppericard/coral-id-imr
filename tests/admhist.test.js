@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The admin's Undo steps kept across a reload (admin.js keepHist, histJson; performance pass, 2026-11-09): as many of
 // the latest steps as the tab's sessionStorage holds (HIST_ROOM characters), joined from each step encoded once. A
 // draft of 1.3 million characters made 60 steps 80 million, encoded at every click and always refused by the storage.

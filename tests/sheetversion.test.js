@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The sheet script's VERSION is assigned at merge (Pierre, 2026-11-08, Q305 a; rule D3): tools/sheet_version.py checks a
 // PR (one changes file, VERSION and the header line left alone) and main (no changes file left), and --assign folds the
 // entry in. Each case runs on a throwaway git repository: main, then a PR branch.

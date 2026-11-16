@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Surprise-only species at 5 photos in the game data (Pierre, 2026-11-15, Q372; 2026-11-08: "4-5 very good reference
 // photos"): the whale shark and the thresher sharks, met only on the surprise cards, keep their 5 best photos in
 // fish-game.json (tools/fish_game.py wink_trim), Pierre's covers, featured photos and own adds and the surprise card's

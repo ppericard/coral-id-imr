@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tests/block.js: the slice of a browser file a unit test runs fails by name when a marker moved or was reworded.
 const test = require('node:test'),
   assert = require('node:assert'),

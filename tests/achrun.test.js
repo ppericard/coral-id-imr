@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Runs of right answers and Sharp eye only in the normal photo quiz (Pierre, 2026-11-05, Q82: "only in the normal Quiz"):
 // progress.js achAfter run in Node on stubs, as tests/pulse.test.js runs quiz.js. An answer in the custom quiz or the Duel
 // tab neither extends nor breaks the run and sets no hard photo; the photo quiz counts (its slipped-in duels are asked

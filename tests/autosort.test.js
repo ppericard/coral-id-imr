@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // autosort.js: the sure rule per field, the 1-in-20 Check sampling, the log codes, agreement and auto-off, retests,
 // metric flags (Pierre, 2026-11-03; docs/ARCHITECTURE.md "Auto-sort").
 const test = require('node:test'),

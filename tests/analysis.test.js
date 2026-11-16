@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Analyses module (analysis.js): the model code recovers known effects from synthetic data, the answer log is read
 // as the app logs it, milestones and verdicts, and the workflow script (tools/analyses.js) end to end on a stub sheet.
 // In three files that node --test runs in parallel (one held the run's critical path: test-suite audit, 2026-11-09):

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Players › Activity, "who plays and how much" (Pierre, 2026-11-04): admin.js activityOver (answers, active players and
 // new players per day, ISO week or month, gaps filled) and playHours (answers by hour of the day), on fixed rows.
 const test = require('node:test'),

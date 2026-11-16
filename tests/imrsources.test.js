@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tools/imr_sources.json records where each IMR lecture photo was found online (ROADMAP "Trace IMR lecture photos to
 // their original source"; study docs/reviews/2026-11-15-imr-lecture-photo-sources-study.md). Each record must name a
 // lecture photo the data files know, and never give an author or a licence without the page that states it.

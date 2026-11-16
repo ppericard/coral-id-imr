@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tips.js: the "Did you know?" tips' state, targeting and caps (the owner, 2026-11-04; docs/ARCHITECTURE.md "Did you
 // know? tips"). The card and the break at Next are checked in Chromium by tests/pages.smoke.js.
 const test = require('node:test'),

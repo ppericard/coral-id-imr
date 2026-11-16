@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The content editor's edits laid over the built file (docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 1; Pierre,
 // 2026-11-15, Q359 and Q366): curation.json content in each subject's part, {nodes: {node id: {slot: {v, was, src, t,
 // by}}}}, applied by one core.js function (contentApply) for the app and the admin. Checked here: the slots each subject

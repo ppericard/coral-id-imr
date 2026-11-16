@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Full replay of the answer log (core.js replayProgress, replayedOf; docs/LEARNING.md "Full replay"): the app's progress
 // rules (pgRightW, pgMissW, pgMemW, pgStep) run over the sheet's log, in time order. Also tools/memreplay.js on a sample.
 const test = require('node:test');

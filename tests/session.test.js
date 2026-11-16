@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Players › Activity › Recent sessions: a session unfolded (Pierre, 2026-11-05: "what the player made of the session").
 // admin-journey.js sessionFacts, the facts the summary is drawn from, on made-up rows: [id, time, genus shown, answered,
 // right, mode, photos, expected].

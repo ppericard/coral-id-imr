@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The comeback after a break (model.js, docs/LEARNING.md "Comeback after a break"): model.js's own code run in Node on
 // stubs (the player's record P, the ability and genus difficulty, the store).
 const test = require('node:test');

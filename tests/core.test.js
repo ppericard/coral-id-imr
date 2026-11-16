@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // core.js: curation merge (admin Publish), progress merge (two devices), photo Elo (same as Code.gs stats_).
 const test = require('node:test'),
   assert = require('node:assert');

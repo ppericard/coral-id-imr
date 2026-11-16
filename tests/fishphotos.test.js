@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Fish candidate photos (tools/fetch_fish.py, fish-cand.json, tools/judging_fish.py, autosort.js fishSure; Pierre,
 // 2026-11-03, settled 2026-11-04): sources nearest first and abroad only when the Philippines are exhausted, free licences
 // first, Pierre's own species-level observations confirmed (rule S2), the pre-sort's sure decisions, the

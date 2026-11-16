@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // learn.js photoPair: the photo of the other genus shown side by side (the quiz's mix-up montage "Your answer, same view",
 // quiz.js; the Look-alikes montages). Same growth form first, then nearest the front, then nearest zoom level. A player's
 // report (2026-11-04): a plate Turbinaria answered Echinopora was shown a branching Echinopora, because only the first 6

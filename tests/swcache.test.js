@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // sw.js caches (admin speed, 2026-11-04): the admin's own files outlive a new app version. Before, they went into the
 // shell cache, which every deploy replaces, so the first admin visit after each deploy downloaded them all again (about
 // 240 kB gzipped). sw.js runs here in a sandbox with an in-memory Cache Storage, two versions one after the other.

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The units' reference photos from iNaturalist's taxon page (tools/fish_refs.py; judging/FISH.md "Reference photos").
 // Pierre, 2026-11-08 (Q229): every photo of the taxon page, the cover and each taxon photo, for every species, not only
 // those whose observation is among the 200 most faved in the box; Q231: never a licence with "no derivatives" (ND), nor

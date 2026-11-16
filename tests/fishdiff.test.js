@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo review › By difficulty on the fish side (fish admin at parity): the fish photos ranked by their answers alone
 // (admin.js diffByAnswers over photoAnswers, as fish Health counts them), since the sheet rates the corals' photos only;
 // the page among the fish admin's pages, after the fish review views.

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The first-launch question (Pierre, 2026-11-03; core.js CHOICE, playerStart's prior, startCheck, startNext,
 // startInfer; model.js startSet, startStep, startDue, startShown, startMerge, startRestart; docs/LEARNING.md "The
 // first-launch question"): the core rules, then model.js's own code run in Node on stubs (as tests/intro.test.js).

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Coral Finder tool became the Coral ID Key (Pierre, 2026-11-04): the name Coral Finder is the book's (R. Kelley,
 // BYOGUIDES, 2022; copyrighted), and the app's tool must not look like it. Alpha (rule W3): renamed
 // everywhere, no old name kept for old links or old app versions. The stored data moved once (the devices' one-shot and

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Content-Security-Policy of index.html and admin.html allows inline scripts only by hash: editing an inline
 // script without updating its hash would silently block it (e.g. the theme would stop applying before paint).
 const test = require('node:test'),

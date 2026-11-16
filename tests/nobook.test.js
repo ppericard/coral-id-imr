@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // No Coral Finder book crop anywhere (Pierre, 2026-11-08: the crops of the Coral Finder 2022 book, (c) R. Kelley /
 // BYOGUIDES, left the app and the repository; tools/apply_no_book.py). Its page citations ("Coral Finder p. N"), facts
 // and look-alike sources stay. curation.json is never rewritten (rule A1): its old references to crops match no photo

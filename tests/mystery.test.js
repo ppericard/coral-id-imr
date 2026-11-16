@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // "Mystery" tiles on My progress (Pierre, 2026-11-04; docs/ROADMAP.md row built 2026-11-15): a unit the player has never
 // met is a masked tile. Who sees them is the subject's (app.js UNITS mystery, from the first-launch answer: every fish
 // player, the corals for "I'm new to corals" only); which units, progress.js mysteryOf: never answered and never in the

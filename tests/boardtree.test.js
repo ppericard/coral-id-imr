@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The leaderboard tree kept in chunks, sent only when it changed (Pierre, 2026-11-15, Q375: "ok";
 // docs/reviews/2026-11-14-species-step1.md (c) A): Code.gs boardTreePut_, boardTreeGet_, boardUnitsSave_'s bt, boardLog_;
 // sync.js TREE_SHEET, boardUnits, treesSeen. The sync script runs on an in-memory sheet (tests/gas.js, whose script

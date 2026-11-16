@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick) reach the app (2026-11-08: his ★ Cover choices, published several times, never showed: the
 // app's fish build set every card's photo to the first of the game's order). app.js fishBuild → fishCurate gives the
