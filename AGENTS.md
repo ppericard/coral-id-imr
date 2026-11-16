@@ -63,8 +63,11 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   reverted, content the IMR owns) goes to him as a question (below); the integrator merges once he has answered, his
   answer pasted into the PR. A PR that holds only decided things merges under the contract, whatever it touches.
 - **Always ask first**, even when it looks decided: anything destructive or irreversible (history rewrite, deleting
-  data, bulk changes to his curation, the sheet's column layout), anything about money, accounts or access, anything
-  sent outside the project.
+  data, bulk changes to his curation, the sheet's column layout), anything about money, accounts or access, any of the
+  project's data sent outside it (photo addresses, names, the sheet's data).
+- **Research uses every useful source without asking** (Pierre, 2026-11-17): web search engines, guides, forums,
+  publishers, databases and their APIs (paced, rule C7); a query holds only public terms (scientific names, general
+  words), never the project's data, and every source used is cited (rule C2).
 - **One writer for `docs/STATUS.md`**: the integrator (overwritten at each stop, never appended); subagents never edit
   it and put their questions and state in their report.
 - **In French, Pierre is "tu"**, never "vous"; call him Pierre (2026-11-05).
