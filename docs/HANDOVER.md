@@ -24,7 +24,7 @@ Written 2026-11-01 when Pierre moved development to another Claude Code account.
 | The progress sheet | `tools/sync/Code.gs` (self-updating Apps Script; "Code.gs" below), its tests `tests/sync.test.js` on an in-memory sheet (`tests/gas.js`) |
 | Photos | `data.json` photo lists, `curation.json` (Pierre's choices), `img/` mirrored to Cloudflare R2 (`core.js` `PHOTO_BASE`), the tools in `tools/` (ARCHITECTURE.md "Photos") |
 | Tests and CI | `tests/*.test.js` (Node), `tests/*.smoke.js` (Playwright, one CI job each), `.github/workflows/checks.yml` and `smokes.yml` (skipped for a docs-only PR); rules W12, W14 ([`rules/ship.md`](rules/ship.md)) |
-| Merging several PRs at once | the merge train, `python3 tools/train.py` (rule W26; [INTEGRATOR.md](INTEGRATOR.md) "The merge mechanics") |
+| Merging a PR, or several at once | the merge train, `python3 tools/train.py` (rule W26; [INTEGRATOR.md](INTEGRATOR.md) "The merge mechanics") |
 | Deploy | `.github/workflows/pages.yml` (stamps the version numbers, then publishes), [`PAGES.md`](PAGES.md) |
 | Where things stand, what waits on Pierre | [`STATUS.md`](STATUS.md) (the integrator's only); `python3 tools/brief.py` |
 | What is next, what was declined | [`ROADMAP.md`](ROADMAP.md): ideas discussed but not built yet, declined ideas; points to settle (content questions, IMR trainer questions): [`points.json`](../points.json), admin To do › Points |
