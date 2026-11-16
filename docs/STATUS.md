@@ -5,56 +5,64 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-15, about 17:00 Manila, by the integrator. **A new integrator starts here, then reads
-[INTEGRATOR.md](INTEGRATOR.md)** (how the work is run, its handovers, what bites, the open work).
+Written 2026-11-16, about 07:40 Manila, by the integrator (handover: the night session hit its quota at 00:07 and
+stopped mid-work). **A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
 
 Last checked: reports and events: 2026-11-12 ~09:45 Manila
 
 ## Now
 
-Main: sheet script **v143** (#963). Rule 0 is one sentence since #965 (after 17:30 ask Pierre nothing).
+Main: sheet script **v149** (#995). No agent is running.
 
-- **Merged 11-15** (about 40 PRs, #929-#965): no fish photo hot-linked (#931); fish judging done (#930 #932 #937), one
-  judgement per photo (#942); watermark tag and its passes (#956 #961); sharks at 5 photos (#955); IMR lecture credits
-  (#939); licence refresh, others only (#936); pCloud backup code (#946); coral and fish stats folded (#882 #940);
-  confusion groups B everywhere (#871); fish To do, By difficulty, photo factors (#934 #938 #943); juvenile cover
-  exception (#948); common-name rule (#954); Find the X tapped photo (#958); sheet overlay v2 design and steps 1-2, the
-  editor (#945 #952 #957); leaderboard tree in chunks (#963); comeback tolerance (#951); fish taxonomy (#959); sea slug
-  list and circle 1 (#950); studies: AVIF #933, nudibranchs #935, common names #947, photo memory #944, held-out set #962;
-  `sheet_version.py` gate fix (#960); #964 restored docs an integrator merge had reverted.
-- **Agents running**: the juvenile progressive path (simulations, long); pCloud backup by upload link (Q380, opens its
-  PR now #963 is in); covers avoid watermarked photos (Q379); shared common names (Q381).
-- **Queued**: sea slug reference sources and the egg-ribbon fix (Pierre: the Spanish dancer's "juveniles" are egg
-  ribbons); the species level app PR (after #963, Q362/Q375/Q376/Q381).
-- **Rows 9 and 10** (Q322): still doubled; corrected at their next sync; no hand correction (D8).
-- **Kept on branches, no PR (W27)**: admin-signout-seal, level-count-from-log, fish-todo-wip (moot since #934: delete
-  when Pierre says), photo-genus-ability, time-weighted-steps.
+- **Merged in the night of 11-15** (16 PRs): genus marks part 2 (#980); sea slugs judged, circles 1 and 2, all 105
+  species playable (#978 #982 #989 #991), circle 2 and 3 candidates (#985 #990); fish answers all carry a scoring
+  record (#979); sheet overlay step 4, the structure editor, the sheet makes the board tree (#983, v147), step 5, the
+  IMR layer as its own files (#984), Photos › Look-alikes lists added pairs (#986); fish Photo stats › Overview (#992,
+  v148); Coverage's "+" no longer counts candidates already in play, 17,275 → 824 (#994); watermark pass on the Home
+  fallbacks, 158 tagged (#993); Coral ID Key one-shots and `CHOICE` `at` removed (#995, v149).
+- **Open, ready, not merged (stopped by the quota; each needs a check, then the train)**:
+  - #999 and #997: sea slug circle 3 judging, parts 1 (species 1-34) and 2 (35-67). Check CI, Codex and the body's
+    "Choices I made" (move easy ones to integrator's calls, as #989 and #991), then train.
+  - #998: `faOf` speed-up for the rated world, same values (core.js: `--assign` v150 at merge). Check the identity
+    proof in its body before merging; its agent stopped before reporting.
+  - Circle 3 part 3 (species 68-100) was never started (its agent hit the limit at once): relaunch it as #999's brief.
+- **Held for Pierre** (`needs-pierre`, green): #975, #981, #987, #988, #996, #953 (questions below).
+- **Kept on branches, no PR (W27)**: admin-signout-seal, level-count-from-log, fish-todo-wip (moot: delete when Pierre
+  says), photo-genus-ability, time-weighted-steps.
 
 ## Next
 
-Four agents at a time (W27); what is easy to correct afterwards ships:
-
-1. `Code.gs` logic, one PR at a time: the pCloud upload link, then the Analyses machine key, roles step 1, `readStats`
-   and the replays reading the stats snapshot.
-2. The species level (one unit per species; the tree gate `TREE_SHEET` 143 is in).
-3. The sheet overlay's step 3 (circles and pairs per instance, the structure stamp and the replay, Q363).
-4. Sea slugs: reference sources, then candidate photos and judging for circle 1 (Q377 targets).
+1. Merge #997, #999, #998 (above); relaunch circle 3 part 3.
+2. Pierre's answers on the held PRs, then merge them one at a time (`--assign` for each `Code.gs`/`core.js` one).
+3. Once #975's option is chosen: the rated-world check at 10,000 answers (needs #998).
+4. Sea slugs after #987: step 6 (R2 game photos, `fish_game.py` generalised; the upload waits for Pierre's go),
+   circle 2 into the game data, the admin Reports page for sea slug photos.
 5. The other ROADMAP "Next" rows. Deadline: the domain and repository rename before December 2026 (#886).
 
 ## Questions for Pierre
 
-- **Held-out fish photo set (#962), (a)-(e)**: (a) size: 10% per family and genus, min 5, max a quarter (rec.); (b)
-  never hold out reference photos nor his own (rec.); (c) probes count like any answer (rec.); (d) silent probes from a
-  unit's first questions (rec.); (e) a separate `fish-held.json` (rec.). Details in the note.
-- **The reference bonus** (#942): a photo's reference flag and +1 ease belong to its record, not the photo; 423 photos
-  judged both ways get one point more when they play as a reference. Align (moves hundreds of eases) or leave.
-- **In admin Points** (#959): Diploprion among the Soapfishes or WoRMS's Liopropomatidae; Ferdauia kept as is.
-- **Rule D3's wording** (`docs/rules/sheet.md`): "every gate the PR adds or changes" → "adds" since #960.
-- Not now (Pierre): the domain, the accounts, the IMR agreement, a second person (brief points 1, 2, 6, 8).
-- Decided 11-15: Q356-Q381 (STATUS of 11-15 noon for Q356-Q374; Q375 the board tree in chunks; Q376 common names:
-  IMR name first for IMR players, any listed name credits the species, regional names typed, inferred genus names;
-  Q377 sea slugs yes to all six; Q378 comeback option D; Q379 covers avoid watermarks; Q380 pCloud by upload link;
-  Q381 shared common names allowed, iNat default for non-IMR players).
+- **#975 species level**: as built it breaches rule L11 in both worlds (rated, 3,000 answers: families at Advanced −8 to
+  −22, fish right % −1.3 to −6.7: a loss, not a delay). Options (families at Advanced at 600, lecture/strong/expert;
+  main 4.4/9.6/11.2): **B** next species only once each one met is at Open Water, 3.8/6.8/8.0 (rec.); C shaky 10 +
+  20% cap; D from the family's Divemaster; E no species while a family is below Advanced. Agent's calls to confirm: the
+  `famAdv` guardrail, ±3 / +0.05 bounds.
+- **#981 roles step 1**: the Roles and Audit tabs' format; the admin token passes every right (against Q364 B?); reads
+  not audited; his three grants seeded at the first admin read. Q: may a role holder call the endpoints by name + code?
+  (agent: not before the trainer or relay step).
+- **#988 overlay step 8, corals**: [format] coral slot names = `data.json` fields, a pair's words = its `lsrc` lines;
+  whose are the 14 "Same IMR lecture group" and 2 joint lines (the IMR / Coral Finder pairs split)?
+- **#987 sea slugs in the app**: choice 11 turns his one-click admin subject switch (his ask, 11-08) into the chip menu
+  with three subjects. Group empty, photos from iNaturalist until step 6.
+- **#996 Alerts page**: Codex P1, alert lines keep a deleted or merged account's admin id (D7): (a) as built plus a
+  ROADMAP row, or (b) `readAlerts_` withholds those lines. The second of #981/#996 to merge adds `readAlerts` to `gate_`.
+- **#953 juveniles**: N=5? exempt class-A juveniles? the heavy-tail breach.
+- **Sea slug rubric**: "busy background" has no tag: add a flag or drop it. Pierre's own photos first (as fish P1)?
+- **Held-out fish set (#962)** (a)-(e), all as recommended? **Reference bonus** (#942): align 423 photos or leave.
+  **Points** (#959): Diploprion; Ferdauia. **Rule D3 wording**: "adds or changes" → "adds".
+- **To read, easy to undo** (integrator's calls in the PR bodies): #976 #980 genus marks; #983 (5), #984 (7), #986,
+  #989, #991, #992 (5), #993 (5), #994 (3); #995 changed W3's example (`migrateIdKey` → `migrateRoutes`).
+- Possible misidentifications listed in #982 (5), #989 (11), #991 (24): for his "Not this" when he wants.
+- Not now (Pierre): the domain, the accounts, the IMR agreement, a second person.
 
 Last question number: Q381
 
@@ -62,19 +70,16 @@ Last question number: Q381
 
 Actions only Pierre can do.
 
-- **pCloud backup, once the upload-link PR is merged**: Extensions › Apps Script › Project settings › Script
-  properties › add `PCLOUD_UPLOAD_CODE` (the part after `code=` of his upload link); reload the sheet; Reef ID › Back up
-  to pCloud now. Steps in `docs/BACKUP.md`.
-- **In the admin, when he wants**: Photo review › Light proposals (incl. 38 "One judgement per photo") and › Cover
-  proposals, then Publish; "Juvenile: confirm as cover?" on Damselfishes and Boxfishes (#948).
+- **pCloud backup**: Apps Script › Project settings › Script properties › add `PCLOUD_UPLOAD_CODE` (the part after
+  `code=` of his upload link); reload the sheet; Reef ID › Back up to pCloud now (`docs/BACKUP.md`).
+- **In the admin**: Light proposals (incl. 38 "One judgement per photo"), Cover proposals, then Publish; "Juvenile:
+  confirm as cover?" on Damselfishes and Boxfishes; "Watermark: keep as cover?" for the 4 ★ covers and the
+  Scorpionfishes one (`fish-s372-cand-57834053`, "(c) Dan Schofield", found by #993).
 - **For an IMR trainer**: the three Q354 points in `points.json` (admin Points).
-- Check the "Coral ID analyses" token's type and the R2 token's scope; **delete his rewrite backup** when he says so;
-  restrict the Coral Finder PDF's sharing on his Drive.
-- From before: "CF book: off" + Publish; one player's starting answer back to "I'm at IMR" with #726 (Q228); delete the
-  morning report scheduled task from claude.ai; the 8 unsure fish candidates and the expert analyses' photos (11-06);
-  covers for the 11 fish entries with no reference-level photo.
-- **Astrea and Anacropora** photo hunt (links: `git show 4c8251a:docs/STATUS.md`); **protect `main`**; renew the admin
-  GitHub token before late January 2027; look for the IMR benthic deck.
+- Check the "Coral ID analyses" token's type and the R2 token's scope; restrict the Coral Finder PDF's sharing.
+- From before: "CF book: off" + Publish; one player's start back to "I'm at IMR" (Q228); the 8 unsure fish candidates;
+  covers for the 11 fish entries with no reference-level photo; Astrea and Anacropora photos; **protect `main`**; renew
+  the admin GitHub token before late January 2027; the IMR benthic deck.
 
 ## Parked after hours
 
@@ -84,5 +89,5 @@ Ideas Pierre dictated after 17:30, kept for the morning.
 
 ## Last stop
 
-2026-11-15 ~17:00 Manila, integrator, with Pierre through the day: the brief's questions walked one by one (Q356-Q381),
-about 40 merges; four agents work on into the night.
+2026-11-16 ~07:40 Manila: handover after the night run (16 merges, 6 PRs held, 3 ready) stopped on the quota at
+00:07. Old player-data extracts may remain in the session scratchpad (`data/`): delete them, never commit them.
