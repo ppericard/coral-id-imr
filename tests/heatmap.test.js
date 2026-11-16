@@ -188,11 +188,17 @@ test('the admin loads the heatmap module after admin.js, and the view sits next 
   assert.ok(html.indexOf('src="admin.js?') < html.indexOf('src="admin-heatmap.js?'), 'admin-heatmap.js after admin.js');
   assert.match(js, /\['pairs', 'Pairs'\],\n\s*\/\/[^\n]*\n\s*\['heatmap', 'Heatmap'\]/);
   assert.match(block(js, 'const LIVE_STATS = [', '];', {file: 'admin.js'}), /'analyses\/difficulty\/heatmap'/);
-  // the corals' admin pages are every page; a subject with units at several ranks names it beside Pairs (Pierre,
-  // 2026-11-14, Q123 m: the fish once the corals' was built)
+  // the corals' admin pages are every page; a subject with units at several ranks names it (Pierre, 2026-11-14, Q123 m:
+  // the fish once the corals' was built; the sea slugs once their genera were their units, #1020), and has the tree its
+  // map reads its units' names and blocks from (admin.js unitRegOf: its SUBJECTS admin files f)
   const on = C.SUBJECTS.filter(S => S.sheets && S.admin.pages && S.admin.pages.includes('analyses/difficulty/heatmap'));
-  assert.ok(on.length, 'a subject at several ranks has the heatmap');
-  on.forEach(S => assert.ok(S.admin.pages.includes('analyses/difficulty/pairs'), S.id));
+  assert.ok(on.length >= 2, 'the subjects at several ranks have the heatmap');
+  on.forEach(S => assert.ok(S.admin.files && S.admin.files.f, S.id));
+  // a subject whose units are its genera (core.js unitRankOf) among them
+  assert.ok(
+    on.some(S => C.unitRankOf(S) === 'genus'),
+    'a subject played at the genus'
+  );
   // its help in its words (a subject with sheets: fishheat)
   assert.match(js, /'analyses\/difficulty\/heatmap': ASUBJ\.sheets \? 'fishheat' : 'statsheat'/);
 });
@@ -260,6 +266,68 @@ test('heatMatrix: blockOf puts a lower rank in blocks of the rank above (a genus
   assert.deepStrictEqual(
     heatMatrix(P.C, P.typed, recF, pr).groups.map(g => g[0]),
     ['']
+  );
+});
+
+test('heatMatrix: supOf puts the families in their taxonomic group, each group in one run, the biggest first', () => {
+  // made-up genera of the sea slugs' kind: the family above each genus, the families' groups (seaslug.json taxa)
+  const FAM = {
+      'g:Chromodoris': 'Chromodorididae',
+      'g:Hypselodoris': 'Chromodorididae',
+      'g:Nembrotha': 'Polyceridae',
+      'g:Flabellina': 'Flabellinidae',
+      'g:Phyllodesmium': 'Facelinidae',
+      'g:Pteraeolidia': 'Facelinidae',
+      'g:Elysia': 'Plakobranchidae',
+      'g:Odd': ''
+    },
+    GRP = {
+      Chromodorididae: 'Doridina',
+      Polyceridae: 'Doridina',
+      Flabellinidae: 'Cladobranchia',
+      Facelinidae: 'Cladobranchia',
+      Plakobranchidae: 'Sacoglossa'
+    },
+    recF = () => ({look: [], fam: ''}),
+    pr = (a, b) => pairPrior(a, b, recF(a), recF(b)),
+    M = heatMatrix(
+      {},
+      {},
+      recF,
+      pr,
+      Object.keys(FAM),
+      u => FAM[u],
+      u => GRP[FAM[u]]
+    );
+  // Doridina and Cladobranchia (3 genera each: by name), then Sacoglossa (1); the genus with no family last, in no group
+  assert.deepStrictEqual(
+    M.sups.map(g => [g[0], g[2] - g[1] + 1]),
+    [
+      ['Cladobranchia', 3],
+      ['Doridina', 3],
+      ['Sacoglossa', 1],
+      ['', 1]
+    ]
+  );
+  // inside a group, its families the biggest first, each family's genera in one run
+  assert.deepStrictEqual(
+    M.groups.map(g => g[0]),
+    ['Facelinidae', 'Flabellinidae', 'Chromodorididae', 'Polyceridae', 'Plakobranchidae', '']
+  );
+  M.sups.forEach(([s, a, b]) =>
+    assert.ok(
+      M.units.slice(a, b + 1).every(u => (GRP[FAM[u]] || '') === s),
+      s
+    )
+  );
+  // the groups cover the families' runs exactly
+  M.groups.forEach(([, a, b]) => assert.ok(M.sups.some(([, x, y]) => x <= a && b <= y)));
+  // without supOf: no groups, the blocks as before (the biggest first)
+  const B = heatMatrix({}, {}, recF, pr, Object.keys(FAM), u => FAM[u]);
+  assert.deepStrictEqual(B.sups, []);
+  assert.deepStrictEqual(
+    B.groups.map(g => g[0]),
+    ['Chromodorididae', 'Facelinidae', 'Flabellinidae', 'Plakobranchidae', 'Polyceridae', '']
   );
 });
 

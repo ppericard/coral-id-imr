@@ -9,12 +9,14 @@
 // pairs mixed up most sit side by side (heatOrder). Typed mix-ups (no choices, so no rate) apart, as Pairs keeps them
 // (#876). A cell opens the pair on the site's compare page when the subject has one. Only the subjects whose admin pages
 // name it (core.js SUBJECTS admin pages): the corals first, then the fish (Pierre, 2026-11-14, Q123 m: "the fish, once
-// their admin pages name the view").
+// their admin pages name the view"), then the sea slugs (their genera, in their family's block, the families in their
+// taxonomic group: supOf, the tree's taxa).
 // A subject with units at several ranks (SUBJECTS sheets: the fish's families, genera, species) has one matrix per rank
 // the log asked (heatRanks: a rank switch, a rank on it once one of its questions is logged; the choices of a question
 // are of the rank asked, so no pair crosses two ranks: heatRank keeps a rank's pairs), its units in blocks of the rank
 // above (a genus in its family's, a species in its genus's; the top rank in its group of the identification key in force,
-// rule S3, where the subject has one).
+// rule S3, where the subject has one); below the top rank, where the subject's tree sorts its families into taxonomic
+// groups (seaslug.json taxa), a column of the groups beside the families' (heatMatrix supOf).
 // Every view says what it can conclude (rule A5): under CONF.N offers a cell is hatched, and while most cells offered are
 // (heatNeed), a line says not enough data yet, with about the answers it would take.
 //
@@ -53,11 +55,14 @@
   // The matrix: C, confusionOf's {pair, dir}; typed, noChoiceMixups' typed {"shown|answered": n}; rec(n), a unit's record
   // ({fam}); prior(a, b), the pair's start [name, rate] (admin.js pairPrior); roster, the subject's units, each on the map
   // even with no answer yet (its row and column empty: missing data shows; Codex review #889); blockOf(u), the block a unit
-  // sits in, its record's fam by default (another subject's lower ranks: the unit of the rank above). Returns {units in display order, groups
-  // [[family, first, last index]], cell {"shown|answered": {off, mix, sc, pt, pv, look, dl}}, typed (as given), mix (the
-  // mix-ups from choices), nt (the typed ones)}. A cell's dl: the pair (both ways) is a look-alike from the data (core.js
-  // dataLook on the pair's own score), the same reading as Pairs'.
-  function heatMatrix(C, typed, rec, prior, roster, blockOf) {
+  // sits in, its record's fam by default (another subject's lower ranks: the unit of the rank above); supOf(u), the group
+  // a unit's block sits in, when the subject sorts its blocks into groups (the families in their taxonomic group: the
+  // tree's taxa), the blocks of one group then in one run, the biggest group first, as the blocks. Returns {units in display
+  // order, groups [[family, first, last index]], sups [[group, first, last index]] (none without supOf), cell
+  // {"shown|answered": {off, mix, sc, pt, pv, look, dl}}, typed (as given), mix (the mix-ups from choices), nt (the typed
+  // ones)}. A cell's dl: the pair (both ways) is a look-alike from the data (core.js dataLook on the pair's own score), the
+  // same reading as Pairs'.
+  function heatMatrix(C, typed, rec, prior, roster, blockOf, supOf) {
     C = C || {};
     typed = typed || {};
     const pair = C.pair || {},
@@ -69,18 +74,35 @@
     const pv = (a, b) => prior(a, b)[1],
       psc = (a, b) => K.confScore(pair[key(a, b)], pv(a, b)),
       pmix = (a, b) => (pair[key(a, b)] || [0, 0])[1];
-    // the blocks: one per family, the biggest first (then by name); units with no family in one block, last
-    const F = {};
+    // the blocks: one per family, the biggest first (then by name); units with no family in one block, last; with supOf,
+    // first by their group (the biggest first, then by name; blocks in no group last)
+    const F = {},
+      cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
     [...U].forEach(u => {
       const f = blk(u) || '';
       (F[f] = F[f] || []).push(u);
     });
-    const fams = Object.keys(F).sort((a, b) => !a - !b || F[b].length - F[a].length || (a < b ? -1 : a > b ? 1 : 0)),
+    const sup = f => (supOf && f && supOf(F[f][0])) || '',
+      SN = {};
+    Object.keys(F).forEach(f => (SN[sup(f)] = (SN[sup(f)] || 0) + F[f].length));
+    const bySup = (a, b) => {
+        const x = sup(a),
+          y = sup(b);
+        return x === y ? 0 : !x - !y || SN[y] - SN[x] || cmp(x, y);
+      },
+      fams = Object.keys(F).sort((a, b) => bySup(a, b) || !a - !b || F[b].length - F[a].length || cmp(a, b)),
       units = [],
-      groups = [];
+      groups = [],
+      sups = [];
     fams.forEach(f => {
-      const L = heatOrder(F[f], psc, pmix);
+      const L = heatOrder(F[f], psc, pmix),
+        s = sup(f),
+        last = sups[sups.length - 1];
       groups.push([f, units.length, units.length + L.length - 1]);
+      if (supOf) {
+        if (last && last[0] === s) last[2] += L.length;
+        else sups.push([s, units.length, units.length + L.length - 1]);
+      }
       units.push(...L);
     });
     const cell = {};
@@ -102,7 +124,7 @@
       mix += c[1];
     });
     const nt = Object.values(typed).reduce((t, n) => t + n, 0);
-    return {units, groups, cell, typed, mix, nt};
+    return {units, groups, sups, cell, typed, mix, nt};
   }
   // The ranks a matrix is drawn at: of a subject with units at several ranks (sheets: {rank: its ids' prefix}, core.js
   // SUBJECTS sheets), the ranks one of R's questions asked (a row's unit shown, r[2], carries its rank's prefix), in the
@@ -227,7 +249,8 @@ function statsHeat() {
     if (w) w.onchange = () => (location.hash = '#' + S.hash + HEAT_PAGE + (w.value ? '?player=' + encodeURIComponent(w.value) : ''));
   };
   if (!R.length) {
-    $v.innerHTML = head + `<p class="note">${who ? 'No answers from this player here.' : 'No answers yet.'}</p>`;
+    // nothing logged in this subject yet (a subject just opened to its group): what the map can conclude (rule A5)
+    $v.innerHTML = head + `<p class="note">${who ? 'No answers from this player here.' : 'Not enough data yet: no answers yet.'}</p>`;
     bind();
     return;
   }
@@ -251,11 +274,25 @@ function statsHeat() {
     },
     up = n => FA && ((FA.spid[n] && FA.spg[FA.spid[n]]) || FA.fam[n]),
     blockOf = many ? (ri ? n => (up(n) ? lab(up(n)) : '') : grp) : undefined,
+    // below its top rank, the families' blocks in their taxonomic group where its tree sorts them so (its taxa: a family's
+    // tg, the Learn page's headings), the group of the nearest unit above that has one
+    tx = many && ri && FA && FA.taxa ? FA.taxa.groups || [] : null,
+    supOf = tx
+      ? n => {
+          for (let x = n, i = 0; x && i < 4; x = up(x), i++) {
+            const t = FA.gen[x] && FA.gen[x].tg;
+            if (t) return (tx.find(g => g.n === t) || {}).title || '';
+          }
+          return '';
+        }
+      : undefined,
     // the roster: the corals' slate (core.js slateOf: the games' and the progress's genera), the bonus genera once met;
     // another subject's slate at the rank on screen (the fish: every family in the game at their top rank; the sea slugs:
     // every genus at theirs, their units' rank, core.js unitRankOf), its other ranks as met
     roster = many ? (FA ? FA.slate.filter(u => (rk ? String(u).startsWith(rk[1]) : !ri)) : []) : slateOf(DATA),
-    M = ofAns('heat:' + S.id + ':' + !!FA + ':' + (rk ? rk[0] : '') + pk, () => heatMatrix(P.C, P.typed, rec, prior, roster, blockOf)),
+    M = ofAns('heat:' + S.id + ':' + !!FA + ':' + (rk ? rk[0] : '') + pk, () =>
+      heatMatrix(P.C, P.typed, rec, prior, roster, blockOf, supOf)
+    ),
     U = M.units,
     cmpOn = (S.pages || []).includes('cmp'),
     href = (a, b) => (cmpOn ? `./#${routeOut(`cmp-${a < b ? a + '|' + b : b + '|' + a}`, S)}` : ''),
@@ -280,8 +317,16 @@ function statsHeat() {
     return;
   }
   const fams = M.groups.some(g => g[0]),
+    // the families' groups in a column of their own, left of the families (supOf)
+    sp = fams && M.sups.some(g => g[0]),
     gStart = new Set(M.groups.map(g => g[1])),
     gOf = i => M.groups.find(g => g[1] <= i && i <= g[2]),
+    sOf = i => M.sups.find(g => g[1] <= i && i <= g[2]),
+    // a block's name where its rows hold it (about 7 px a letter, 22 px a row at the least), else its title only
+    bth = (cls, g) =>
+      `<th class="${cls}" rowspan="${g[2] - g[1] + 1}" title="${esc(g[0])}">${
+        g[0].length * 7 <= (g[2] - g[1] + 1) * 22 ? `<span>${esc(g[0])}</span>` : ''
+      }</th>`,
     // scientific names in italics: the corals' genera, another subject's units below its top rank (genera, species)
     it = many && !ri ? '' : ' hm-it',
     pc = (a, b) => Math.round((100 * a) / b) + '%';
@@ -318,13 +363,8 @@ function statsHeat() {
     ).join(''),
     body = U.map((a, i) => {
       const g = gOf(i),
-        fam =
-          fams && g[1] === i
-            ? `<th class="hm-fam" rowspan="${g[2] - g[1] + 1}" title="${esc(g[0])}">${
-                // the family's name where its rows hold it (about 7 px a letter, 22 px a row at the least), else its title only
-                g[0].length * 7 <= (g[2] - g[1] + 1) * 22 ? `<span>${esc(g[0])}</span>` : ''
-              }</th>`
-            : '';
+        s = sp && sOf(i),
+        fam = (s && s[1] === i ? bth('hm-fam hm-sup', s) : '') + (fams && g[1] === i ? bth('hm-fam', g) : '');
       return `<tr>${fam}<th scope="row" class="hm-row${it}${gStart.has(i) && i ? ' hm-fr' : ''}" title="${esc(lab(a))}">${esc(lab(a))}</th>${U.map((_, j) => td(i, j)).join('')}</tr>`;
     }).join('');
   const sw = (c, t) => `<span><i class="hm-sw ${c}"></i>${t}</span>`,
@@ -345,7 +385,10 @@ function statsHeat() {
       ? `<p class="note">Not enough data yet: their answers count in the mix-ups once they are ${TRUST.N} or more and clearly above chance, as everyone's.</p>`
       : nd.thin && !typedOn
         ? `<p class="note">Not enough data yet: ${nd.lo} of the ${nd.n} cells offered are under ${CONF.N} offers; about ${nd.need} more ${me ? 'of their ' : ''}answers with choices${rk && ranks.length > 1 ? ' at this rank' : ''} to bring them there.</p>`
-        : '') +
-    `<div class="adm-sgrid"><section class="adm-scard wide"><h3>${typedOn ? 'Typed mix-ups' : 'Mix-ups'}</h3>${leg}<div class="adm-hm" tabindex="0" role="region" aria-label="Shown (rows) against answered (columns)"><table class="adm-hmt${fams ? '' : ' nofam'}"><thead><tr><th class="hm-corner" colspan="${fams ? 2 : 1}"><span>Shown ↓</span><span>${typedOn ? 'Typed' : 'Answered'} →</span></th>${colTh}</tr></thead><tbody>${body}</tbody></table></div></section></div>`;
+        : // answers, but no cell yet (a subject's first few answers): none with choices counts yet, the same rule as everyone's
+          !nd.n && !typedOn
+          ? `<p class="note">Not enough data yet: no answer with choices counts yet (a player's count once they are ${TRUST.N} or more and clearly above chance).</p>`
+          : '') +
+    `<div class="adm-sgrid"><section class="adm-scard wide"><h3>${typedOn ? 'Typed mix-ups' : 'Mix-ups'}</h3>${leg}<div class="adm-hm" tabindex="0" role="region" aria-label="Shown (rows) against answered (columns)"><table class="adm-hmt${fams ? '' : ' nofam'}${sp ? ' sup' : ''}"><thead><tr><th class="hm-corner" colspan="${1 + fams + sp}"><span>Shown ↓</span><span>${typedOn ? 'Typed' : 'Answered'} →</span></th>${colTh}</tr></thead><tbody>${body}</tbody></table></div></section></div>`;
   bind();
 }
