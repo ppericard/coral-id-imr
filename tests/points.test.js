@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The points to handle (Pierre, 2026-11-05): points.json's shape (written by agents, read by the admin's To do › Points)
 // and the list's order (points.js, shared with admin.js).
 const test = require('node:test'),

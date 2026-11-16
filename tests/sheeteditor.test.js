@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photos › Tree, a node's sheet text (admin-content.js; docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 2;
 // Pierre, 2026-11-15, Q359 and Q366): the pure part. Each node's rows (every declared slot of its rank, a keyed slot once
 // per line the base holds, his entry and its state, then what is never applied), which nodes have a sheet in the app, the

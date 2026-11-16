@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Coral Finder texts in the app's own words (Pierre, 2026-11-08): the criteria, summaries, ID tips, look-alike
 // sources and Coral ID Key box labels that followed the book too closely were reworded (tools/apply_book_rewrite.py).
 // tools/book_rewrite.json keeps only hashes: of each old wording, and of its 5-word runs ("old5"). No text of these

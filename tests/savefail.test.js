@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // A save that fails (sync.js SAVE, saveFailed, saveRetry; Pierre, 2026-11-05: the red "Not saved" came up "a bit too
 // often"): sync.js runs here in Node with app.js's globals stubbed, a clock and timers of its own, the page's visibility
 // in the test's hands, and a sheet that fails as the test says, else answers from the sync script on an in-memory sheet

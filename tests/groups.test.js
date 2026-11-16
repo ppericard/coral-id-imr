@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Confusion groups (Pierre, 2026-11-14, Q350; docs/LEARNING.md "Confusion groups"; model.js GROUP, groupsOfRank,
 // openPick, examOn): look-alike units grouped (declared pairs first and never split by the data, then average linkage on
 // the pooled score at CONF.TRAP, at most GROUP.MAX), a group's other members the next openings once one is met, a

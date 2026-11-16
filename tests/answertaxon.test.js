@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The photo's own species under the verdict, after every answer, right or wrong (Pierre, 2026-11-07 and 2026-11-08, go on
 // 2026-11-09): "This photo: Zigzag wrasse · Halichoeres scapularis". app.js photoTaxon (the one taxon of the photos shown,
 // finer than the unit asked), taxonLine (the line), fishTaxon and coralTaxon (UNITS taxon), run in a vm on the real

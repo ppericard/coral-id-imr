@@ -601,6 +601,12 @@ function renderJourney(name, anonId = '') {
             .join('')}</table>`
         : '<p class="note">None</p>'
     }${
+      // their own heatmap (admin-heatmap.js, Q123 m per player): every unit against every unit from their answers; an
+      // archive's answers are out of every view (rule D7), so none for it
+      !u.arch && hasPage(ASUBJ, 'analyses/difficulty/heatmap')
+        ? `<p><a class="adm-link" data-own href="#${esc(ASUBJ.hash)}analyses/difficulty/heatmap?player=${esc(encodeURIComponent(u.id))}">Heatmap ›</a></p>`
+        : ''
+    }${
       own && u.review
         ? `<h3>To review</h3><p>${u.review
             .split(', ')

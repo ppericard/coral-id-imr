@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // FishBase as a fish photo source (Pierre, 2026-11-05: "the reference platform for fish ... if their licence is
 // compatible, integrate it, fully"), and the reference-photo tag (rep). tools/fetch_fishbase.py, tools/fish_photos.py
 // sheet_fishbase, tools/fetch_fish.py tag_rep, tools/fish_judge.py cap, tools/judging_fish.py entry. The same game photo

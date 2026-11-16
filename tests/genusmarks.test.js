@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish genera's own presentation and ID marks (Pierre, 2026-11-08: each genus needs a short presentation and its ID
 // cues, sourced, rules C2, C3, C6, before the genera open to more players): tools/fish_genus_marks.json, built into
 // fish.json genera plain, marks, msrc, mby by tools/build_fish.py add_families (genus_marks), shown on the genus card

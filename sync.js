@@ -87,9 +87,11 @@ const boardUnits = () =>
     SUBJECTS.filter((S, i, a) => S.board && S !== a.find(x => x.board))
       .map(S => {
         const U = typeof UNITS === 'object' ? UNITS[S.id] : null,
-          T = U && S.score && U.tree && sheetV() >= SCORE_SHEET ? U.tree() : null;
+          // its own units, whichever tree subject is on screen (app.js treeWith: the sea slugs' in force would give theirs)
+          own = f => (typeof treeWith === 'function' ? treeWith(S.id, f) : f()),
+          T = U && S.score && U.tree && sheetV() >= SCORE_SHEET ? own(() => U.tree()) : null;
         if (T && treeOn() && treeKept(S.id, T)) return [S.id, null];
-        return [S.id, T || (U ? U.slate() : [])];
+        return [S.id, T || (U ? own(() => U.slate()) : [])];
       })
       .filter(([, u]) => u && (Array.isArray(u) ? u.length : (u.f || []).length))
   );
@@ -103,7 +105,7 @@ const treeOn = () => sheetV() >= TREE_SHEET;
 // chunks (treeOn) and replays the species units as the game scores them (SPECIES_SHEET: core.js fishReplayGen lists them,
 // with the family they start from); before, the species are not opened and the tree is the one of before (rule D4).
 // The one predicate every species rule reads.
-const SPECIES_SHEET = 147;
+const SPECIES_SHEET = 156;
 const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();

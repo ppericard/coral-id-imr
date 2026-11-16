@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // A new version reaching an open page (app.js UPDATED, QOPEN; 2026-11-05: never in the middle of a question): app.js's
 // block run in a sandbox, with the page and its service worker stubbed. A page no service worker controls reads the
 // deployed page's build number instead (newBuild, buildCheck).

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Analyses module (analysis.js): Can we trust this model? (the multifactor visualisation study §5 item 8): each
 // player left out in turn, the calibration of the predictions, the quantile residuals, the paired log-loss against the
 // app's expectation with the players as the unit (tests/analysis.test.js says why the module's tests are split).

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo exposure per player (Pierre, 2026-11-06, Q191; docs/reviews/2026-11-06-photo-exposure-study.md §5): Seen % and
 // Spread % per subject, computed by the sync sheet (Code.gs exposure_, pools_) with core.js unitPool and exposureOf, shown
 // on the admin's player list. The sheet runs against tests/gas.js: nothing reaches the real sheet (rule D1).

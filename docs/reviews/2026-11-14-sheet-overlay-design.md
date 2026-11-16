@@ -305,7 +305,7 @@ list that changes.
 | Layer | What it holds | Where it is stored | Who writes it |
 |---|---|---|---|
 | **Sources** | The tree (WoRMS, the identification key in force), the names (rule S2), the key's groups (rule S3), presence near the instance's centre (rule C8), our own sourced sheet lines (fish `marks`, `life`, `apart`, `juv`; coral `crit`, `info`, `plain`…), and pairs from a published reference any instance may use (the Coral Finder's, with its rights tag) | `tools/fish_source.json` (its reference parts), `tools/fish_sheets.json`, the coral tools; built into `fish.json` and `data.json` | Agents, through PRs (rules C2, C5) |
-| **The instance** | Its circles, its declared look-alike pairs and their words, its course texts (fish `cues` and `phase`, coral `imr` and `mn`), its tag (`imr`, `imrWith`, the sub-entries), its starter core (`start`), its reference list (the IMR PDF, a presence input), its centre | Today, mixed into the source files above, and `tools/instance.json` for the centre; later, the instance's own files that `tools/instance.json` names (step 5) | Agents, from the organisation's documents, through PRs |
+| **The instance** | Its circles, its declared look-alike pairs and their words, its course texts (fish `cues` and `phase`, coral `imr` and `mn`), its tag (`imr`, `imrWith`, the sub-entries), its starter core (`start`), its reference list (the IMR PDF, a presence input), its centre | Until step 5, mixed into the source files above, and `tools/instance.json` for the centre; since step 5 (built 2026-11-15), the instance's own files that `tools/instance.json` names (`tools/instances/imr/`), for the fields step 5 lists | Agents, from the organisation's documents, through PRs |
 | **The editor's edits** | Every change the instance's content editor makes: text slots, circles, pairs | The instance's curation, in each subject's part (call (i)) | The content editor, through the draft and Publish only (rule A1) |
 
 - **What today's IMR content becomes: the IMR instance's layer.** That means the IMR presentation's circles, cues,
@@ -699,10 +699,42 @@ them before it merges.
    a replay under an edited structure, which stays #977's fixture test.
 4. **The admin's structure editor:** a circle on each family page, pairs added and withdrawn on the node pages and in
    the Look-alikes filter, and the Publish confirmation. *Needs:* step 3.
+   *Built (2026-11-15):* a Structure box above the Sheet on each family page the app gives a sheet (not a wink family):
+   the Circle (one segment per declared circle and None, the circle slot in the node's map) and its Look-alikes (the
+   base's pairs and his: Withdraw, ↺ Restore, Remove; Add a look-alike…, which asks for a source once and never requires
+   one, Q359 e), with step 2's three states (a stale circle: Keep mine, Take the new), Undo and Restore. The Look-alikes
+   filter lists the pairs he withdrew or added and carries the same tools (+ Pair under Any look-alike, a pair's tools
+   under its tag); the Circle filter and the tree's rows follow the circle in force. The Sheet reads the look-alike lines
+   with the pairs in force, so an added pair's words are its look/<id> line, to fill there (an empty slot: the source is
+   asked once). A Publish that changes the structure confirms once, in its one dialog, that it changes every player's
+   path and progress, and counts circle and pair edits apart (docs/ARCHITECTURE.md "Admin back-office", "The content
+   editor's edits"). **The leaderboard's score tree** (step 3's open point, Codex review #977): the sheet makes it with
+   its replay's units, from the same fish.json and curation (`SUBJECTS` `replayed` `tree`, `core.js` `fishBoardTree`, the
+   app's own `UNITS` tree), and the board ranks by it, from the cache, so a circle Publish moves the board within the
+   trigger's 15 minutes whether a device saves or not, and a device on the old units cannot send the old tree back into
+   force; the tree the apps send stays the fallback when the sheet's is not cached (docs/ARCHITECTURE.md "Other
+   subjects' replays"). Set aside: the Publish sending the tree (the admin holds no app units and the sheet has no
+   admin call that keeps a board tree, so it needs a new script call anyway, and stays wrong after an undo published
+   from another device). *Then:* the admin's Photos › Look-alikes page reads the pairs in force on the draft
+   (`admin-content.js` `montPairs`: `fishPairs` over fish.json with the pairs laid over it, `sheetFile`; the circles left
+   out, as in the Tree's filter): an added pair has its row, marked "(added)", its photo pair stored in `fish.mont` under
+   its pair key as a base pair's (`fishPairs` keys by `contentPairKey`); a withdrawn pair has none, and its photo pair
+   stays in `fish.mont`, unused, back with the pair (section 2).
 5. **The IMR instance's layer as its own files:** the IMR parts of `tools/fish_source.json` (circles, `look` groups and
    words, cues, phase lines, `start`) and the coral IMR fields move to the files that `tools/instance.json` names (an
    `id` and a `name` join its `centre`). The build composes them, and `fish.json` and `data.json` stay byte for byte
    (a test). *Needs:* nothing. It is easy to undo, and needed before a second instance.
+   *Built (2026-11-15):* `tools/instance.json` gains `id` `imr`, `name` and `layer`, which names
+   `tools/instances/imr/fish.json` (every teaching node's circle, cues, look lines and phase lines, the sub-entries'
+   cues, `start`, the declared `look` groups) and `tools/instances/imr/coral.json` (`imrg`, each genus's `ig`, `imr`
+   and `mn`). `tools/instance.py` composes them: `tools/build_fish.py` reads `tools/fish_source.json` with the fish
+   layer laid on, and stops on a base that still carries a layer field; `data.json` keeps a copy of the coral fields,
+   laid on by `tools/datajson.py`, which refuses a `data.json` edit of them (docs/ARCHITECTURE.md "The instance's
+   layer"). The byte-for-byte test (`tests/instance.test.js`) takes the layer's fields off `fish.json` and `data.json`,
+   lays them again from the layer files and compares with the committed files; a changed layer fails it. Left in the
+   sources for now, each easy to move later: the coral pairs from the IMR lecture (mixed with the Coral Finder's in
+   `look` and `lsrc`; with step 8), the slide references (`sl`, `rsl`), the IMR tag (`src: imr`, `sign`, the entries'
+   IMR names), the coral slate and `deploy`.
 6. **Roles step 1** (the roles plan): `can_()`, the roles table, the Audit tab, and the content audit row of the
    admin's Publish. *Needs:* question (j).
 7. **The editors' relay** (roles step 4): Publish with no token for content editors, validation from the slot lists,

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // core.js: curation merge (admin Publish), progress merge (two devices), photo Elo (same as Code.gs stats_).
 const test = require('node:test'),
   assert = require('node:assert');
@@ -474,7 +475,7 @@ test('fish achievements: ids apart from the corals, each reachable, none for not
     'every learned-based id exists'
   );
   assert.deepStrictEqual(
-    SUBJECTS.map(S => S.achs()),
+    SUBJECTS.filter(S => S.ach).map(S => S.achs()),
     [ACH, FISH_ACH]
   );
   assert.ok(ACH_CONTRIB.length && ACH_CONTRIB.every(a => a.kind === 'contrib'));

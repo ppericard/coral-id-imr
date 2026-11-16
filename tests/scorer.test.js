@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // One scorer (Pierre, 2026-11-06, Q132; docs/reviews/2026-11-06-engine-coherence-review.md F1, F6; docs/LEARNING.md "One
 // scorer"): quiz.js answer and the full replay of the answer log (core.js replayProgress: the sheet's, the admin's, this
 // device's own) score an answer through core.js scoreAnswer, and every answer logs what the game scored it with (its

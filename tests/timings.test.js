@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The sheet script's Timings tab (Code.gs TIM, timStart_, tim_, timEnd_, timTrim_; the storage study of 2026-11-14, step
 // 1; Pierre, 2026-11-14, Q352) and its summary (tools/timings.js). Against the in-memory sheet of tests/gas.js only:
 // nothing leaves this process (rule D1).

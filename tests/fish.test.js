@@ -1,12 +1,23 @@
-// Structure of fish.json, the fish mode's content (built by tools/build_fish.py from tools/fish_source.json; see its
-// header). Two trees: `ref` (WoRMS reference tree) and `teach` (what the game asks: the 27 IMR entries first).
+require('./slot.js').testGuard();
+// Structure of fish.json, the fish mode's content (built by tools/build_fish.py from tools/fish_source.json with the
+// instance's layer laid on, tools/instance.py; see its header). Two trees: `ref` (WoRMS reference tree) and `teach`
+// (what the game asks: the 27 IMR entries first).
 const test = require('node:test'),
   assert = require('node:assert'),
   fs = require('fs'),
   path = require('path');
 const read = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'));
+// SRC: the source as the build reads it (the base, tools/fish_source.json, with the instance's layer: Python composes
+// it, the one place that does); BASE and LAYER: the two files, for the tests that change one of them.
 const F = read('fish.json'),
-  SRC = read('tools/fish_source.json');
+  SRC = JSON.parse(
+    require('child_process').execFileSync('python3', [path.join(__dirname, '..', 'tools', 'instance.py'), '--fish-source'], {
+      encoding: 'utf8',
+      maxBuffer: 1 << 26
+    })
+  ),
+  BASE = read('tools/fish_source.json'),
+  LAYER = read(read('tools/instance.json').layer.fish);
 const REF = F.ref,
   SP = new Map(F.species.map(s => [s.id, s])),
   GAME = F.species.filter(s => !s.out);
@@ -83,16 +94,22 @@ test('the 27 IMR entries are level 1, circle 1, in the order of the IMR presenta
 // as waiting (keyGroup null with keyWhy); fish.json is as `build_fish.py --regroup` gives it.
 const KEY = SRC.keys.find(k => k.id === SRC.deploy.key);
 const BUILD = path.join(__dirname, '..', 'tools', 'build_fish.py');
-const regroupCheck = src => {
-  const args = [BUILD, '--regroup', '--check'];
-  let tmp = null;
-  if (src) {
-    tmp = path.join(require('os').tmpdir(), `fish_source.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
-    fs.writeFileSync(tmp, JSON.stringify(src));
-    args.push('--src', tmp);
+// src: another base (tools/fish_source.json); layer: another layer file of the instance.
+const regroupCheck = (src, layer) => {
+  const args = [BUILD, '--regroup', '--check'],
+    tmps = [];
+  for (const [flag, o] of [
+    ['--src', src],
+    ['--layer', layer]
+  ]) {
+    if (!o) continue;
+    const tmp = path.join(require('os').tmpdir(), `fish${flag.slice(1)}.${process.pid}.${Math.random().toString(36).slice(2)}.json`);
+    fs.writeFileSync(tmp, JSON.stringify(o));
+    tmps.push(tmp);
+    args.push(flag, tmp);
   }
   const r = require('child_process').spawnSync('python3', args, {encoding: 'utf8'});
-  if (tmp) fs.unlinkSync(tmp);
+  tmps.forEach(t => fs.unlinkSync(t));
   return {status: r.status, out: (r.stdout || '') + (r.stderr || '')};
 };
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -135,7 +152,7 @@ test('the clingfishes are out of circle 3 (Pierre, 2026-11-04: not in the key); 
 
 test('identification groups: the build fails, naming the node, on a node in the game with no group or two', () => {
   // No group: the jawfishes once their label is gone from the key.
-  const a = clone(SRC);
+  const a = clone(BASE);
   a.keys.find(k => k.id === a.deploy.key).groups.find(x => x.n === 13).labels = a.keys
     .find(k => k.id === a.deploy.key)
     .groups.find(x => x.n === 13)
@@ -148,7 +165,7 @@ test('identification groups: the build fails, naming the node, on a node in the 
   r = regroupCheck(a);
   assert.match(r.out, /t58 Jawfishes: keyGroup null needs a keyWhy/);
   // Two groups: the soapfish genus of Groupers (Diploprion) moved to another group of the key.
-  const b = clone(SRC),
+  const b = clone(BASE),
     K = b.keys.find(k => k.id === b.deploy.key);
   K.groups.find(x => x.n === 7).labels.find(l => l[0] === 'Soapfishes')[1] = ['Grammistidae'];
   K.groups.find(x => x.n === 12).labels.push(['test', ['Diploprioninae']]);
@@ -161,13 +178,13 @@ test('identification groups: the build fails, naming the node, on a node in the 
   assert.doesNotMatch(r.out, /identification groups \(rule S3/);
   assert.match(r.out, /is not as key .* gives it/);
   // A label in two groups of a key is refused.
-  const c = clone(SRC);
+  const c = clone(BASE);
   c.keys.find(k => k.id === c.deploy.key).groups[0].labels.push(['test', ['Labridae']]);
   r = regroupCheck(c);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /Labridae is under groups/);
   // A region with no key has no group rule.
-  const d = clone(SRC);
+  const d = clone(BASE);
   delete d.deploy.key;
   r = regroupCheck(d);
   assert.doesNotMatch(r.out, /identification groups \(rule S3/);
@@ -789,7 +806,7 @@ test('the IMR tag: IMR’s name on the 27 families and the genera IMR names; the
   });
 });
 
-// Pierre's declared look-alike groups of families (2026-11-06, from experience: tools/fish_source.json look): every pair
+// Pierre's declared look-alike groups of families (2026-11-06, from experience: the instance's layer, look): every pair
 // of a group a look-alike both ways, its source beside IMR's in lsrc; they seed the traps and the confusion groups until
 // pooled fish answers exist (rule L7). An id that is not a family stops the build.
 test('declared look-alikes: Pierre’s family groups both ways, sourced; an unknown family stops the build', () => {
@@ -819,9 +836,9 @@ test('declared look-alikes: Pierre’s family groups both ways, sourced; an unkn
   assert.match(by['f:Wrasses'].lsrc['f:Parrotfishes'], /some wrasse species only/);
   assert.strictEqual(by['f:Lizardfishes'].lsrc['f:Sandperches'], 'IMR fish presentation, slide 48', 'an IMR-only pair keeps IMR alone');
   F.families.forEach(f => (f.look || []).forEach(([b]) => assert.ok(by[b] && f.lsrc && f.lsrc[b], `${f.id} → ${b} has a source`)));
-  const bad = clone(SRC);
+  const bad = clone(LAYER);
   bad.look[0].groups.push(['f:Butterflyfishes', 'f:Nofishes']);
-  const r = regroupCheck(bad);
+  const r = regroupCheck(null, bad);
   assert.notStrictEqual(r.status, 0);
   assert.match(r.out, /f:Nofishes is not a family/);
 });

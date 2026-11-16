@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Surprise-only species in the admin (Pierre, 2026-11-08, docs/ROADMAP.md "Surprise-only species: a few photos in the
 // admin"): a species of a wink family (fish.json families wink: met only on the surprise cards) keeps a few really good
 // photos, not a whole stock. Its target is FISHT.wink (autosort.js fishTarget, through fishSpecies' wink mark), so the

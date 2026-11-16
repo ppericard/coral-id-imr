@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Candidate photos workflow's push (.github/workflows/approved-photos.yml; docs/SECURITY.md): the jobs that download
 // and decode photos and JSON (photos, fish) are read-only and hand a patch to a push job (photos-push, fish-push) that
 // runs no repository code, checks the patch and pushes it. Here the push jobs' own shell, taken from the workflow, runs
@@ -87,7 +88,9 @@ const fresh = () => path.join(TMP, `w${++n}`);
     'fish-cand.json',
     'tools/fish_refill.json',
     'tools/fish_refs.json',
-    'seaslug-cand.json'
+    'seaslug-cand.json',
+    'seaslug.json',
+    'seaslug-game.json'
   ])
     write(seed, f, '{"a": 1}\n');
   write(seed, 'img/a.webp', BIN);

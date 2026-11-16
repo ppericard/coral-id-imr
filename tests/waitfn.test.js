@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // page.waitForFunction never awaits a Promise its predicate returns: a Promise is truthy, so the wait ends at once,
 // whatever it resolves to. A smoke's "no version waiting" check in net.smoke.js test 9 (getRegistration().then(...))
 // guarded nothing that way until 2026-11-14 (a hang on a merge train). A check that needs an async read polls

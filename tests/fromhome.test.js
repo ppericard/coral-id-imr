@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The first page opened from Home in a visit (ROADMAP "Load order, further steps" (c)): app.js fromHome, called by
 // route() before it draws a page, sends one 'fromhome' event a visit, the first time a Home it drew is left for another
 // page, only once the sheet script has the kind (rule D4); the welcome tour's own steps are not the player's choice.

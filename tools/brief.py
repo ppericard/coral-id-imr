@@ -73,10 +73,26 @@ class Soft(Exception):
 
 
 def gh(path, lines=False):
-    """One REST call through gh; lines=True: every page, one JSON object per array item."""
-    args = ['gh', 'api', path] + (['--paginate', '--jq', '.[]'] if lines else [])
+    """One REST call through gh; lines=True: every page of an array, `path` carrying per_page=N.
+
+    Paged by hand on the original path (&page=N until a short page), never `gh api --paginate`: its page 2 follows the
+    Link header to repositories/{id}/..., which this environment's proxy refuses."""
+    if not lines:
+        return gh_call(path)
+    per = int(re.search(r'per_page=(\d+)', path).group(1))
+    out, page = [], 1
+    while True:
+        got = gh_call('%s&page=%d' % (path, page))
+        out += got
+        if len(got) < per:
+            return out
+        page += 1
+
+
+def gh_call(path):
+    """One REST call through gh: the parsed JSON body."""
     try:
-        r = subprocess.run(args, capture_output=True, text=True, timeout=left())
+        r = subprocess.run(['gh', 'api', path], capture_output=True, text=True, timeout=left())
     except subprocess.TimeoutExpired:
         raise Soft('no answer in time')
     if r.returncode:
@@ -86,8 +102,6 @@ def gh(path, lines=False):
         if 'https://' in msg or 'dial ' in msg or 'connect' in msg:
             raise Soft('no network')
         raise Soft(msg.splitlines()[0][:80] if msg else 'gh failed')
-    if lines:
-        return [json.loads(l) for l in r.stdout.splitlines() if l.strip()]
     return json.loads(r.stdout or 'null')
 
 

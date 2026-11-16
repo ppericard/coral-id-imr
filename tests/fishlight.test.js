@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo review › Light proposals (admin-light.js; Pierre, 2026-11-14: "ok pour (a)"): the light re-judge's proposals
 // (judging/fish-light-q308.json curation) go into Pierre's fish draft only through Accept (the re-judged tags and ease,
 // fishSet) or Keep mine (fish.kept), and a proposal is open only while his tags and ease are still the ones it was made

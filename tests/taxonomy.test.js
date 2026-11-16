@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tools/taxonomy.json, the build-time reference of names (Pierre, 2026-11-05, Q49: built from the taxonomy study's
 // section 5, small form; "it must not weigh on the app": the app never loads it), refreshed by tools/taxonomy.py; the
 // Corals of the World mapping of Plesiastrea versipora to P. peroni (Q50); the watch list (Q51). Needs python3, like

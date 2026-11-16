@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish progress replayed by the sheet (ROADMAP "Fish progress replayed from the answer log"; Pierre, 2026-11-08):
 // the units the replay reads (core.js fishReplayGen, built by Code.gs from fish.json alone) are the app's (core.js
 // fishGen and app.js fishGenera over fish.json and its photos): the same units, look-alikes and family lines.

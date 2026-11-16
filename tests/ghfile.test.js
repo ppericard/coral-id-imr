@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // The admin reads curation.json through the GitHub contents API, which sends a file's text only up to 1 MB; above that
 // the text must come from the blob (2026-11-04: curation.json passed 1 MB and the admin stopped loading).
 const test = require('node:test'),

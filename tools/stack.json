@@ -42,7 +42,7 @@
     {
       "id": "prettier",
       "name": "Prettier",
-      "version": "3.9.10",
+      "version": "3.10.1",
       "pins": [
         {"files": [".github/workflows/*.yml", "AGENTS.md", "docs/*.md", "docs/rules/*.md", "tools/*.py"], "pattern": "prettier@{v}", "min": 4},
         {"files": [".github/workflows/checks.yml"], "pattern": "(Prettier {v};"},
@@ -55,10 +55,10 @@
     {
       "id": "playwright",
       "name": "Playwright (smoke tests, Chromium)",
-      "version": "1.64.1",
+      "version": "1.65.1",
       "pins": [
-        {"files": [".github/workflows/smokes.yml"], "pattern": "playwright@{v}"},
-        {"files": [".github/workflows/smokes.yml"], "pattern": "ms-playwright-${{ runner.os }}-{v}"}
+        {"files": [".github/workflows/smokes.yml", ".github/workflows/learncheck.yml"], "pattern": "playwright@{v}", "min": 2},
+        {"files": [".github/workflows/smokes.yml", ".github/workflows/learncheck.yml"], "pattern": "ms-playwright-${{ runner.os }}-{v}", "min": 2}
       ],
       "latest": {"kind": "npm", "package": "playwright", "compare": "exact"},
       "lookup": "https://playwright.dev/docs/release-notes",
@@ -76,7 +76,7 @@
     {
       "id": "rclone",
       "name": "rclone (photos to R2)",
-      "version": "1.75.2",
+      "version": "1.76.0",
       "pins": [
         {"files": ["tools/r2_sync.sh"], "pattern": "RCLONE_VERSION={v}"},
         {"files": ["tools/r2_sync.sh"], "pattern": "# rclone-v{v}-linux-amd64.zip"}
@@ -106,11 +106,11 @@
     {
       "id": "github_api",
       "name": "GitHub REST API version",
-      "version": "2022-11-28",
-      "pins": [{"files": ["admin.js", "tools/sync/Code.gs"], "lacks": "X-GitHub-Api-Version"}],
+      "version": "2026-03-10",
+      "pins": [{"files": ["tools/sync/Code.gs"], "pattern": "'X-GitHub-Api-Version': '{v}'", "min": 1}],
       "latest": {"kind": "github-api", "compare": "exact"},
       "lookup": "https://docs.github.com/en/rest/about-the-rest-api/api-versions",
-      "why": "No X-GitHub-Api-Version header is sent (admin.js, Code.gs isAdmin_), so GitHub applies its default, 2022-11-28 (supported to 2028-03-10). To move: send the header and turn this pin into a pattern."
+      "why": "Sent by Code.gs isAdmin_ (checked 2026-11-16: none of the 2026-03-10 breaking changes touches the endpoints it or the repo's other GitHub calls use). admin.js sends no header yet: the browser's CORS preflight must allow it, which could not be checked from the agents' machine (its proxy refuses OPTIONS), and a refusal would break the admin's Publish; add it after a check in a real browser. The `gh api` calls (workflows clean.yml, pages.yml, pages-cancel.yml; tools/brief.py, tools/train.py, whose tests match gh's exact arguments) and admin.js get GitHub's default, 2022-11-28 (supported to 2028-03-10). To move: change the value in the file above."
     },
     {
       "id": "apps_script",

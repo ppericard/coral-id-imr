@@ -236,10 +236,48 @@ choices per family in the app" has the details.
 
   **35 tagged** in all: photographers' names, signatures and logos, one caption, 1 FishBase photo. None is one of
   Pierre's ★ covers, and none has tags he set himself.
-- **Every band-kind photo has now been looked at.** Still to look at the same way (ROADMAP "Watermark pass, the
-  rest"): the photos a new refill or reference run brings into the pools. Also the photos the Identify art and a tile
-  can fall back on (`home.js` `tilePhoto`), for a family with few band-kind photos once the ratings re-sort it: the
-  first `landR2` photo in its first 10, which need not be reference-level, else its first adult photo.
+- **Every band-kind photo has now been looked at.**
+- **The third pass, the same day** (ROADMAP "Watermark pass, the rest") took the rest of what Home can show.
+  - The set was computed with the app's own code. `fishBuild` and `home.js` `tilePhoto` and `landPool` were run in a vm,
+    with `fish-game.json` in and on a first launch (`fish-photos.json` alone). The ratings re-sort only within each of
+    `easyRank`'s two groups (reference-level photos first, then the others). So for each photo, an order favouring it
+    was built (it first in its group, the photos that would beat it last), and `tilePhoto` was run on that order.
+  - What Home can show is every photo `tilePhoto` returns that way, plus every band-kind photo (`landPool`). From that
+    were taken out the photos the first two passes looked at (by `core.js` `fishPid`): the tagged ones, every band-kind
+    photo of `fish-game.json` at #961's merge, and #956's Home draws (cover, card photo, `tilePhoto`, `landPool`)
+    rebuilt at its merge in both orders.
+  - New photos since #961: none. No photo entered `fish-game.json` since then, and `fish_game.py --plan` has none
+    waiting. The refills only added 2 candidates, not yet judged.
+  - The fallback photos: **897**.
+    - 682 are in the 9 families with no band-kind photo (Moorish Idol, Sea Moths, Scorpionfishes, Stonefishes,
+      Flying Gurnards, Stargazers, Garden Eels, Soles, Cornetfishes). Their tile and art take `tilePhoto` every day:
+      any landscape photo on R2, else any adult photo once a re-sort pushes those out of the first 10.
+    - 215 are reference-level photos of 14 large families that are not landscape or not the whole fish. The Identify
+      art takes one of these only if a re-sort puts 10 such photos ahead of every band-kind one (`adultFirst`).
+  - Method, as #961's:
+    - each R2 file (`-m`, Pierre's crop applied) on contact sheets of 12 at 380 px, local contrast raised;
+    - the top 12% and bottom 25% of each photo at 700 px (at most 80 and 160 px deep). #961's faint controls were
+      seen in the same bands once, at the start;
+    - the 108 untagged photos of the 897 by authors tagged in any pass, seen again: 9 whole at 510 px, the other 99
+      as their bottom 14% (left and right thirds) at 2x.
+    - The side edges and the middle of the frame were seen at 380 px only.
+  - **146 tagged** among the 897: photographers' names, signatures and logos, date stamps and a dive caption. Among
+    them are 23 David Rolla photos (most of them faint, bottom left) and 1 photo with faint text that could not be
+    read. The 380 px sheets missed 6 faint marks: the bands found 5 and the recheck 1.
+  - As #961 did for its authors, the 98 photos Home can show by the authors this pass tagged, looked at by an earlier
+    pass, were seen again: their full-width top 10% and bottom 16% at 2x, local contrast raised, and the corners at 3x
+    for the David Rolla account. **12 more tagged**:
+    - 11 by that account: faint "(c) David Rolla" signatures at bottom right, 4 of them too faint to read (tagged).
+      One of them had been the Sweepers' tile and Identify art in today's order;
+    - 1 plain "(c) Dan Schofield", which is Pierre's ★ cover of Scorpionfishes (the admin asks him "Watermark: keep as
+      cover?").
+  - **158 tagged** in all.
+  - Tagging changed the first photos of 16 units in `fish-photos.json`: 24 tagged photos were swapped for others
+    (#972 puts a watermarked photo after its unit's adults without one). It also changed the default card photo of 3
+    families: Moorish Idol, Sweepers and Sea Moths (Q379). The set was then computed again: nothing new to look at.
+    No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
+- **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
+  pools, or new code that lets Home show other photos.
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.

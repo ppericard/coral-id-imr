@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // tools/ratedworld.js (rule L11; docs/LEARNING.md "Validating a learning change", "The two worlds"): the rated world's
 // distributions, the app told the truth, and a short run in the shape tools/learncmp.js reads.
 const test = require('node:test'),

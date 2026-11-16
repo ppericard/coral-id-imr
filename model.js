@@ -869,8 +869,7 @@ const introReset = at => {
 // the choice, up to the last of CHOICE.AT, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
 // time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
 // the model uses them: the level a genus never answered starts from (ability, core.js playerStart). Nothing else is coded
-// per choice: the variable at (core.js CHOICE), the answer from which the open-all offer could come, is no longer read
-// since that card went (Pierre, 2026-11-12, Q337).
+// per choice.
 const startS = () => SUBJ || SUBJECTS[0]; // the subject on screen
 const startK = () => startKey(startS().id); // its record (core.js startKey)
 const startOf = () => {

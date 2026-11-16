@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """Builds fish.json, the content of the fish mode, from tools/fish_source.json plus WoRMS and iNaturalist lookups.
 
+The source it reads is two layers (design note docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 5;
+tools/instance.py fish_source): tools/fish_source.json, the sources' part, with the instance's layer laid on (the file
+tools/instance.json names, today tools/instances/imr/fish.json): each teaching node's circle, cues, look and phase, each
+sub-entry's cues, look and phase, the starter core (start) and the declared look-alike groups (look). Below, "the
+source" is that composed source.
+
 Decided with Pierre, 2026-11-03: one engine for corals and fish, with a taxonomy made of two trees.
 1. Reference tree (`ref`), from WoRMS (World Register of Marine Species, https://www.marinespecies.org/rest/). No fixed
    ranks: each node keeps its WoRMS rank as given (Order, Suborder, Family, Subfamily, Tribe, Genus, Species...), unranked
@@ -82,6 +88,11 @@ Usage: python3 tools/build_fish.py [--offline | --refresh] [--dry]   (--dry: pri
        from its own reference tree; after an edit of `keys`, `deploy` or `keyGroup`, or to settle a merge of fish.json)
        python3 tools/build_fish.py --commonness   (offline: re-applies the commonness index and order to fish.json as it is,
        after an edit of tools/fish_commonness.json or a fish_commonness.py --fetch; --check: fail when fish.json differs)
+Every offline mode (--regroup, --commonness, --near) also lays the instance's layer again on fish.json as it is (relay):
+the teaching nodes' and sub-entries' cues, look and phase are taken off and put back from the layer in the build's
+layout, start is taken from it, and the families follow (add_families); so an edit of those in the layer file needs no
+WoRMS call, and --regroup --check proves fish.json is what the layer gives, byte for byte. A circle the layer changes
+stops these modes (the species' circles and their presence test follow it): run the full build.
 Check: node --test tests/fish.test.js
 """
 import argparse
@@ -96,9 +107,10 @@ from pathlib import Path
 
 import fish_commonness
 import fish_names
+from instance import fish_source  # the source as the build reads it: fish_source.json with the instance's layer
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "tools" / "fish_source.json"
+SRC = ROOT / "tools" / "fish_source.json"  # the sources' part (fish_source() lays the instance's layer on it)
 SHEETS = ROOT / "tools" / "fish_sheets.json"  # the family sheets' own lines (add_families)
 FACTS = ROOT / "tools" / "fish_facts.json"  # the species' size and depth (add_families; tools/fish_facts.py)
 GNAMES = ROOT / "tools" / "fish_genus_names.json"  # the genus common names and their sources (add_families)
@@ -123,6 +135,10 @@ DAUIN = NEAR_AREA  # the instance's centre and radius (tools/instance.json; "lat
 import inat  # noqa: E402  (the one paced, retried client: WoRMS 0.3 s, iNaturalist 1 s between requests; rule C7)
 
 LOW = {"Subspecies", "Variety", "Forma", "Natio", "Mutatio"}  # synonyms below the species: not kept
+# A teaching node's fields after its species, in fish.json's order (teach_out); LAYER_TEXT: those of the instance's
+# layer that the offline modes lay again (relay).
+TAIL = ("aka", "often", "sl", "cues", "look", "phase", "dimorph", "juv", "why", "note")
+LAYER_TEXT = ("cues", "look", "phase")
 
 
 class Net:
@@ -529,7 +545,7 @@ def add_families(o, key, declared=()):
     (IMR's, verbatim), look ([[family id, IMR's words]]), lsrc ({family id: where the pair comes from}, as data.json
     gen lsrc), phase, dimorph, juv, why, note, wink (the IMR entry's, or the teaching node's for circles 2-3), genera,
     species (in their teaching nodes' order: commonness)}.
-    declared: fish_source.json "look", look-alike groups of families declared beyond the IMR course, each {src, key (the
+    declared: the source's "look" (the instance's layer, tools/instances/imr/fish.json), look-alike groups of families declared beyond the IMR course, each {src, key (the
     key whose family labels the ids name; applied only while that key is in force), groups [[family id, ...]], note
     {"a|b": words}} (Pierre, 2026-11-06: "Butterflyfishes and Angelfishes..."). Every pair of a
     group is a look-alike both ways; its source joins the IMR one in lsrc, or starts the pair (IMR words "") when IMR
@@ -637,7 +653,7 @@ def add_families(o, key, declared=()):
         for grp in d["groups"]:
             for a in grp:
                 if a not in by:
-                    sys.exit(f"tools/fish_source.json look: {a} is not a family of fish.json")
+                    sys.exit(f"the instance's layer, look: {a} is not a family of fish.json")
             for a in grp:
                 r = by[a]
                 for b in grp:
@@ -917,11 +933,59 @@ def genus_marks(name, x, r, none, src, used, mine):
     return out
 
 
-def regroup(src_path, check):
-    """--regroup: the key in force applied again to fish.json as it is, from its own reference tree (no network).
-    --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
-    src = json.loads(src_path.read_text(encoding="utf-8"))
+def start_of(src, teach):
+    """start: the starter core (the layer's start), the circle-1 entries met first; kept entries of circle 1 only."""
+    return [t for t in src.get("start", []) if any(o["id"] == t and o["circle"] == 1 for o in teach)]
+
+
+def relay_node(rec, s):
+    """A teaching node or sub-entry of fish.json (rec) with its cues, look and phase taken off and put back from the
+    source node s, where teach_out writes them (TAIL, after species)."""
+    items = [(k, v) for k, v in rec.items() if k not in LAYER_TEXT]
+    for k in LAYER_TEXT:
+        if s.get(k):
+            before = set(TAIL[:TAIL.index(k)]) | {"species"}
+            at = max(i for i, (x, _) in enumerate(items) if x in before) + 1
+            items.insert(at, (k, s[k]))
+    rec.clear()
+    rec.update(items)
+
+
+def relay(o, src):
+    """The offline modes: the instance's layer laid again on fish.json as it is (o), from the composed source (see the
+    top). A circle that differs stops: the full build moves the species' circles and their presence test with it."""
+    by = {}
+    for t in src["teach"]:
+        by[t["id"]] = t
+        for u in t.get("sub", []):
+            by[u["id"]] = u
+    moved = [f"{t['id']} {t['name']}: {t.get('circle')} in fish.json, {by[t['id']].get('circle', 1)} in the layer"
+             for t in o["teach"] if t["id"] in by and t.get("circle") != by[t["id"]].get("circle", 1)]
+    # A node fish.json leaves out (every species out: build() keeps such a node only in circle 1) is checked only in
+    # circle 3: in circle 1 the build would keep it, in circle 2 its species no longer all need near (needs_near), and
+    # fish.json does not say which circle it was built in (Codex review #984).
+    kept = {t["id"] for t in o["teach"]}
+    moved += [f"{t['id']} {t['name']}: not in fish.json (every species out), circle {t.get('circle', 1)} in the layer"
+              for t in src["teach"] if t["id"] not in kept and t.get("circle", 1) != 3]
+    if moved:
+        sys.exit("circles changed in the instance's layer: run the full build (python3 tools/build_fish.py)\n  "
+                 + "\n  ".join(moved))
+    for t in o["teach"]:
+        if t["id"] not in by:
+            sys.exit(f"fish.json teach {t['id']}: no such teaching node in the source: run the full build")
+        relay_node(t, by[t["id"]])
+        for u in t.get("sub", []):
+            relay_node(u, by[u["id"]])
+    o["start"] = start_of(src, o["teach"])
+
+
+def regroup(src_path, check, lay_path=None):
+    """--regroup: the key in force applied again to fish.json as it is, from its own reference tree (no network), with
+    the instance's layer laid again (relay). --check: write nothing, fail when fish.json differs (tests/fish.test.js
+    runs it). src_path, lay_path: the tests' own base and layer files."""
+    src = fish_source(src_path, lay_path)
     o = json.loads(OUT.read_text(encoding="utf-8"))
+    relay(o, src)
     key = key_in_force(src)
     tree = {int(a): {"name": n["name"], "parent": n["parent"]} for a, n in o["ref"].items()}
     by = {t["id"]: t for t in src["teach"]}
@@ -940,8 +1004,9 @@ def regroup(src_path, check):
     if check:
         if render(o) != OUT.read_text(encoding="utf-8"):
             kid = key["id"] if key else "(none)"
-            sys.exit(f"{OUT.relative_to(ROOT)} is not as key {kid} gives it: run python3 tools/build_fish.py --regroup")
-        print("fish.json groups: as the key gives them")
+            sys.exit(f"{OUT.relative_to(ROOT)} is not as key {kid} gives it, with the instance's layer: run python3 "
+                     "tools/build_fish.py --regroup")
+        print("fish.json groups and the instance's layer: as the key and the layer give them")
         return
     write(o)
     print(f"regrouped {OUT.relative_to(ROOT)} with key {key['id'] if key else '(none)'}")
@@ -953,8 +1018,9 @@ def commonness(check):
     """--commonness: the commonness index (species cmi) and the order of every teaching node's species re-applied to
     fish.json as it is (offline). --check: write nothing, fail when fish.json differs (tests/fish.test.js runs it)."""
     o = json.loads(OUT.read_text(encoding="utf-8"))
+    src = fish_source()
+    relay(o, src)
     missing = fish_commonness.apply(o)
-    src = json.loads(SRC.read_text(encoding="utf-8"))
     add_families(o, key_in_force(src), src.get("look", []))
     if check:
         if render(o) != OUT.read_text(encoding="utf-8"):
@@ -1009,14 +1075,16 @@ def main():
     ap.add_argument("--regroup", action="store_true")
     ap.add_argument("--commonness", action="store_true", help="only re-apply the commonness index and order to fish.json")
     ap.add_argument("--check", action="store_true", help="with --regroup / --commonness: fail when fish.json differs")
-    ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another source file
+    ap.add_argument("--src", help=argparse.SUPPRESS)  # tests: another base (fish_source.json) file
+    ap.add_argument("--layer", help=argparse.SUPPRESS)  # tests: another layer file
     a = ap.parse_args()
     if a.regroup:
-        regroup(Path(a.src) if a.src else SRC, a.check)
+        regroup(Path(a.src) if a.src else SRC, a.check, Path(a.layer) if a.layer else None)
         return
     if a.commonness:
         commonness(a.check)
         return
+    src = fish_source()  # before any network: a stale base or an unknown layer node stops here
     NET = Net(a.offline, a.refresh)
     if a.near:
         try:
@@ -1029,14 +1097,13 @@ def main():
         print(f"taken out of the game (not confirmed near Dauin, or in the Philippines): {len(left)}")
         for x in left:
             print("  " + x)
+        relay(o, src)
         show_missing(fish_commonness.apply(o))
-        src = json.loads(SRC.read_text(encoding="utf-8"))
         add_families(o, key_in_force(src), src.get("look", []))
         if not a.dry:
             write(o)
             print(f"wrote {OUT.relative_to(ROOT)}")
         return
-    src = json.loads(SRC.read_text(encoding="utf-8"))
     report = {"waiting": [], "refnames": [], "renamed": [], "shown": [], "typo": [], "lumped": [], "empty": [], "pierre": [], "out": [], "drop": [], "mismatch": [], "noinat": [], "pdf": [], "unplaced": []}
     try:
         out = build(src, report)
@@ -1254,7 +1321,7 @@ def build(src, report):
         if u["_not"]:
             o["not"] = u["_not"]
         o["species"] = [x["s"]["id"] for x in sorted(members, key=lambda x: x["r"])]
-        for k in ("aka", "often", "sl", "cues", "look", "phase", "dimorph", "juv", "why", "note"):
+        for k in TAIL:
             if u.get(k):
                 o[k] = u[k]
         return o
@@ -1292,8 +1359,8 @@ def build(src, report):
     groups, report["waiting"] = key_groups(key, units, tree)
     for o in out_t:
         put_group(o, groups.get(o["id"]))
-    # start: the starter core (fish_source.json _doc), circle-1 entries met first; checked to be kept entries.
-    start = [t for t in src.get("start", []) if any(o["id"] == t and o["circle"] == 1 for o in out_t)]
+    # start: the starter core (the instance's layer), circle-1 entries met first; checked to be kept entries.
+    start = start_of(src, out_t)
     return {"v": V, "start": start, "key": key_out(key), "teach": out_t, "species": out_sp, "ref": ref}
 
 

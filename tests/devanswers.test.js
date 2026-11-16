@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The device on every answer (Pierre, 2026-11-08, Q312: "Oui, cette nuit"): the Answers tab's last column, Device, holds
 // the anonymous id of the device that sent the answer (sync.js devId, the Device of its Events and Pages rows), for a
 // signed-in player's save and an anonymous send alike; an app before it sends none and its rows are logged as before; no

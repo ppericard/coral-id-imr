@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Typed fish names, the names study (Pierre, 2026-11-09: the three plain fixes, Q319, Q320): on the real fish.json,
 // through quiz.js's own typeBind, typeUnit, typeRead and typeStep on stubs, as the game reads a typed answer.
 // - singular and plural are one name ("Grouper" is the Groupers, exactly: no "So close!" step);

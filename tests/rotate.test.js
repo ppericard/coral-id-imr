@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo rotation (Pierre, 2026-11-08): curation.json rot {f: 90 | 180 | 270} (fish.rot for the fish), degrees clockwise,
 // set in the admin's crop editor, through the draft and Publish (rule A1), applied to the files by the photo workflow
 // after the crop (tools/photos.py turn). The curation key (autosort.js rotNorm, rotStep, rotSet), its merge (core.js

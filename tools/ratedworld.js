@@ -403,7 +403,18 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   };
   const P = () => ctx.P,
     shown = () => (U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score).pct : M.progPct(slate));
+  // One answer with the false-alarm table armed (core.js faArm: the same values, read from one pass over the records
+  // instead of a scan per unit): within it only scoreAnswer writes the records' offers, mix-ups and typed counts.
   const step = i => {
+    const P0 = ctx.P;
+    C.faArm(P0);
+    try {
+      return play(i);
+    } finally {
+      C.faDisarm(P0);
+    }
+  };
+  const play = i => {
     const at = M.answersSoFar(),
       list = ctx.pool();
     // The opt-in set's offer (app.js UNITS sets): the fish scientific names once a family is at Advanced, accepted or

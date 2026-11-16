@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The licence refresh (tools/licences.py): the licence and the credit of every iNaturalist photo listed, read again from
 // iNaturalist (an author can change them, in either direction: Pierre moved all his photos to CC BY on 2026-11-15) and
 // brought up to date in place, no field added; a photo whose new licence the rules refuse leaves play and is reported

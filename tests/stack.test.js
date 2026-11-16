@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tools/stack_check.py (the stack's pins in tools/stack.json, Pierre 2026-11-05: the whole stack on the latest stable) and
 // the brief's once-a-day stack line (tools/brief.py). --check runs on fixtures in a throwaway folder; --latest offline.
 const test = require('node:test'),
@@ -158,6 +159,40 @@ test('versions compared by major, minor or exactly', () => {
   ];
   const got = py('import stack_check as s\nprint(json.dumps([s.compare(*c) for c in json.loads(sys.argv[1])]))', JSON.stringify(pairs));
   assert.deepStrictEqual(got, ['current', 'outdated', 'outdated', 'current', 'current', 'outdated', 'ahead', 'outdated', 'outdated']);
+});
+
+// The brief's gh(lines=True) pages by hand on the original path (page=1, 2, … until a short page), never `gh api
+// --paginate` (its page-2 Link points at repositories/{id}/…, which the proxy refuses).
+test('the brief pages a list by hand: page=N on the same path until a short page, no --paginate', () => {
+  const out = py(`
+import brief, subprocess
+calls = []
+def fake(path):
+    calls.append(path)
+    n = int(path.rsplit('page=', 1)[1])
+    return [{'n': n, 'i': i} for i in range(3 if n < 3 else 1)]
+call = brief.gh_call
+brief.gh_call = fake
+full = brief.gh('repos/o/r/branches?per_page=3', lines=True)
+calls_full = list(calls); calls[:] = []
+# An exactly full last page costs one more (empty) request.
+brief.gh_call = lambda p: (calls.append(p), [] if p.endswith('page=2') else [1, 2])[1]
+exact = brief.gh('repos/o/r/x?per_page=2', lines=True)
+seen = []
+real = subprocess.run
+subprocess.run = lambda args, **k: (seen.append(args), real(['true'], capture_output=True, text=True))[1]
+single = call('repos/o/r')
+print(json.dumps({'n': len(full), 'calls': calls_full, 'exact': exact, 'exact_calls': calls, 'args': seen, 'single': single}))
+`);
+  assert.strictEqual(out.n, 7);
+  assert.deepStrictEqual(out.calls, [
+    'repos/o/r/branches?per_page=3&page=1',
+    'repos/o/r/branches?per_page=3&page=2',
+    'repos/o/r/branches?per_page=3&page=3'
+  ]);
+  assert.deepStrictEqual(out.exact, [1, 2]);
+  assert.deepStrictEqual(out.exact_calls, ['repos/o/r/x?per_page=2&page=1', 'repos/o/r/x?per_page=2&page=2']);
+  assert.deepStrictEqual(out.args, [['gh', 'api', 'repos/o/r']]);
 });
 
 test("the brief's stack line: today's cached result, retried when stale; silent until the tool is on main; never raises", () => {

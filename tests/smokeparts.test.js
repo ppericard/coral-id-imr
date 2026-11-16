@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Every smoke runs on CI (.github/workflows/smokes.yml, the smoke matrix): a smoke split into groups (tests/slot.js parts,
 // SMOKE_PART) runs each of its groups at each width its jobs run (SMOKE_W; none: every width): a job without a group
 // runs them all, otherwise a job per group. No job names a group the smoke does not have. tests/slot.js parts

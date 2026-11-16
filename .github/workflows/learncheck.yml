@@ -107,11 +107,11 @@ jobs:
         if: inputs.world != 'rated'
         with:
           path: ~/.cache/ms-playwright
-          key: ms-playwright-${{ runner.os }}-1.64.1
+          key: ms-playwright-${{ runner.os }}-1.65.1
       - name: Install Playwright (temporary folder, nothing added to the repo)
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
-          npm install --no-save --no-audit --no-fund playwright@1.64.1
+          npm install --no-save --no-audit --no-fund playwright@1.65.1
           if [ "$WORLD" != rated ]; then npx playwright install --with-deps chromium; fi
       - name: Both arms, the same seeds
         run: |

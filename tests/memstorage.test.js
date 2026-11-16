@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tools/memstorage.js: the in-memory localStorage that tools/learnsim.js installs in its pages (#734: the browser's own
 // storage queued about 1.5 MB an answer in the renderer during learnsim's one long evaluate, until "Target crashed").
 // It must behave as the browser's for everything the app and the tool do, and run alone once serialized, as

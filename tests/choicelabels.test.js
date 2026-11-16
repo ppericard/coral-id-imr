@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // A multiple-choice question never shows two choices of one label (Pierre, 2026-11-15, Q381: two fish species may carry
 // the same common name; nothing is blocked, but the game avoids the ambiguity): model.js distractors and customChoices
 // keep the first of each label (choiceKey, choiceApart) and take the next distractor in place of the other. model.js's

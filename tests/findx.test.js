@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Find the X (ROADMAP "Game modes"; Pierre, 2026-11-03, Q321 D1, 2026-11-09): one name, four photos, fish only, slipped
 // into the photo quiz like the duels (quiz.js FIND, planFind, planPhoto), logged with its own mode |f and scored as a
 // 4-choice quiz answer. quiz.js planFind runs in a vm with model.js distractors (its own code) and the game around them
