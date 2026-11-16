@@ -76,6 +76,10 @@ const GATES = {
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
+  // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
+  // serves it; before, an older script answers 'input' and the page names the version it waits for.
+  ALERTS_SHEET: (v, N) =>
+    fn('admin.js', 'const alertsOn = ', '\n', 'alertsOn', {ALERTS_SHEET: N})({ok: true, rows: [], ...(v === undefined ? {} : {v})}),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
