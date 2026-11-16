@@ -58,12 +58,35 @@ tools/.cache/seaslug_photos.json (git-ignored): a rerun is offline and gives the
 --offline never asks. --own asks Pierre's own search only (a few requests for every species together) and adds his
 observations, nothing else.
 
+Two more kinds of candidate (Pierre, 2026-11-17, Q389; study docs/reviews/2026-11-17-seaslug-undescribed-species-study.md
+§4 (c) and (d)), asked with --informal and --genus-level (--informal first: an observation is never taken twice):
+- **A species with no name yet** (tools/seaslug_informal.json, Q389 (2): Goniobranchus sp. 5 of Soong et al. 2020): its
+  presence measured (the distinct observers of the observations carrying its label, the Philippines and near Dauin:
+  tools/presence.py label_confirmed, written into the file's `presence`), then its candidates as a species' (the photo
+  target, the order, one photo per observation, eggs and Dead out), from the observations in the Philippines carrying
+  its label (the observation field), at its genus and agreed there (`agreed`, below). Keyed by its `key`; never asked
+  for a species that fails the presence rule.
+- **Genus-level photos of the genus units** (Q389 (1): "les observations au genre bien identifiées ... deviennent des
+  photos des genres du jeu"): for each genus of the game (the genera of the circles' species, tools/seaslug_game.py
+  CIRCLES), the observations in the Philippines identified at that genus (rank genus, Research Grade or Needs ID) and
+  `agreed`: Research Grade at the genus, or at least AGREE (2) current identifications at the genus or below it and none
+  that disagrees (a current identification off the genus's line; a coarser one on its line, the observer's "Nudibranchs",
+  does not disagree, as rule P1's trusted identifications read). The species' photo target per genus (photoTarget
+  `candidates`, 20, never above `max`, 30: Q377), the same order, licences, egg and Dead filters, one photo per
+  observation. Keyed by the genus's name ("Goniobranchus"; the species are keyed by taxon id), each record marked
+  `gl: 1`: a photo of the genus, never counted for a species (tools/seaslug_game.py puts it in play for its genus unit,
+  sp "g:<genus>"). Pierre's own observations follow the same rule (no own search: the species' Q386 rule is about photos
+  named to the species). The genus ids are read from iNaturalist (one species of each genus, its ancestors, batched).
+
     python3 tools/fetch_seaslugs.py [--circle 1] [--only "Jorunna parva,119434"] [--own] [--refresh | --offline]
+    python3 tools/fetch_seaslugs.py --informal [--genus-level] [--refresh | --offline]
+    python3 tools/fetch_seaslugs.py --genus-level [--only "Goniobranchus,Phyllidiella"] [--refresh | --offline]
 Tests: node --test tests/seaslugcand.test.js (stubbed network).
 """
 import argparse
 import json
 import sys
+import urllib.parse
 from collections import Counter
 from pathlib import Path
 
@@ -71,12 +94,21 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line
 from rights import rights_rank  # noqa: E402  0 own or open, 1 NC (Q270)
-from fetch_fish import LOC, Net, obs_url, pages, phase_obs, prefetch, queries, usable_obs  # noqa: E402
+from fetch_fish import (API, DEAD, FIELDS, LICENCES, LOC, PH, STAGE, TAXA, Net, hord, lic_ok, obs_url, pages,  # noqa: E402
+                        phase_obs, prefetch, queries, tier_of, trim, usable_obs)
+import inat  # noqa: E402  the batched counts (rule C7)
+from presence import NEAR_AREA, label_confirmed, near_dauin  # noqa: E402  rule C8 and the label rule beside it (Q389)
 
 SRC = ROOT / "tools" / "seaslugs.json"
+INFORMAL = ROOT / "tools" / "seaslug_informal.json"
 CAND = ROOT / "seaslug-cand.json"
 CACHE = ROOT / "tools" / ".cache" / "seaslug_photos.json"
 PREFIX = "seaslug"
+CIRCLES = (1, 2, 3)  # the circles in the game (tools/seaslug_game.py CIRCLES): their genera are the genus units
+AGREE = 2  # current identifications at the genus or below it that make a genus-level observation agreed (Q389 (1))
+GL_FIELDS = FIELDS + ",taxon.ancestor_ids,identifications.current,identifications.taxon.id,identifications.taxon.ancestor_ids"
+GL_BATCH = 30  # genera a genus-level search asks at once (rule C7)
+GL_PAGES = 60  # pages of 200 a genus-level search reads at most (the Philippines: some 6,800 genus-level observations)
 
 
 def target(s, T):
@@ -145,6 +177,185 @@ def species_of(src, circles, only=()):
             and (not only or s["name"] in only or str(s["inat"]) in only)]
 
 
+# ---------------------------------------------------------------- genus-level photos and the species with no name (Q389)
+
+
+def agreement(o):
+    """(agreeing, disagreeing) current identifications of an iNaturalist v2 observation asked with GL_FIELDS, against its
+    own taxon (a genus): agreeing = at that taxon or below it; disagreeing = off its line (neither below it nor one of its
+    ancestors). A coarser identification on its line (the observer's "Nudibranchs") is neither."""
+    t = o.get("taxon") or {}
+    tid = t.get("id")
+    line = set(t.get("ancestor_ids") or []) | {tid}
+    ag = dg = 0
+    for i in o.get("identifications") or []:
+        if not i.get("current"):
+            continue
+        x = i.get("taxon") or {}
+        if x.get("id") == tid or tid in (x.get("ancestor_ids") or []):
+            ag += 1
+        elif x.get("id") not in line:
+            dg += 1
+    return ag, dg
+
+
+def trim_gl(o):
+    """A genus-level observation as the cache keeps it: fetch_fish.trim's fields, its taxon id (tid) and its agreement
+    (ag, dg), not the identifications themselves."""
+    r = trim(o)
+    r.pop("tx", None)
+    r["tid"] = (o.get("taxon") or {}).get("id")
+    r["ag"], r["dg"] = agreement(o)
+    return r
+
+
+def agreed(o):
+    """A genus-level observation well agreed at its genus (Q389 (1), the study's "2 identifications d'accord"): identified
+    at the genus, and Research Grade there, or AGREE current identifications at the genus or below it and none off its
+    line."""
+    return o.get("rk") == "genus" and (o.get("g") == "research" or (o.get("ag", 0) >= AGREE and not o.get("dg")))
+
+
+def usable_gl(o, pairs, used=frozenset(), taken=frozenset()):
+    """A genus-level observation as a selection item (usable's shape), or None: agreed, in the Philippines, never
+    annotated Dead or Egg, not among the candidates, with a CC0 / CC BY / CC BY-NC photo not taken yet (Pierre's own:
+    whatever its licence, as fetch_fish.lic_ok reads it); its first such photo."""
+    an = [tuple(a) for a in o.get("an") or []]
+    if not agreed(o) or not o.get("inph") or DEAD in an or is_egg(o, pairs) or obs_url(o["id"]) in taken:
+        return None
+    own = o.get("u") == "ppericard"
+    P = [p for p in o.get("ph") or [] if p[1] and lic_ok(p[2], own) and str(p[0]) not in used]
+    if not P:
+        return None
+    p = P[0]
+    return {"id": o["id"], "u": o.get("u"), "t": o.get("t"), "g": o.get("g"), "own": own, "tier": tier_of(o),
+            "st": "/".join(sorted({STAGE[a] for a in an if a in STAGE})), "h": hord(o["id"]),
+            "cls": rights_rank({"lic": p[2], "own": own}), "p": p}
+
+
+def gl_query(taxa, extra=""):
+    """The genus-level search of the iNaturalist genera taxa (ids): their observations in the Philippines identified at
+    the genus, Research Grade or Needs ID, with a photo under one of LICENCES (filtered again by usable_gl), by id."""
+    return (f"taxon_id={','.join(map(str, taxa))}&rank=genus&place_id={PH}&quality_grade=research,needs_id&captive=false"
+            f"&photos=true&photo_license={LICENCES}&order_by=id&per_page=200{extra}")
+
+
+def gl_obs(net, q, n=GL_PAGES):
+    """Every observation of the genus-level search q, read to its end (id_below), at most n pages."""
+    keep = lambda d: {"total": d.get("total_results", 0), "results": [trim_gl(o) for o in d.get("results") or []]}  # noqa: E731
+    res, below = [], None
+    for _ in range(n):
+        d = net.fetch(API + q + (f"&id_below={below}" if below else "") + "&fields=" + GL_FIELDS, keep)
+        if not d:
+            break
+        res += d["results"]
+        if len(d["results"]) < 200 or d["total"] <= len(d["results"]):
+            break
+        below = min(o["id"] for o in d["results"])
+    return res
+
+
+def genus_ids(net, src, names):
+    """{genus name: its iNaturalist taxon id} for the genera names, from one species of each (tools/seaslugs.json inat)
+    and its ancestors, GL_BATCH species a request; a genus whose species sit under another iNaturalist genus (a name
+    the two taxonomies differ on) tries its next species, and is left out (reported) when none matches."""
+    by = {}
+    for s in src["species"]:
+        if s.get("genus") in names and s.get("inat"):
+            by.setdefault(s["genus"], []).append(s["inat"])
+    out, k = {}, 0
+    keep = lambda d: {"results": [{"id": r.get("id"), "anc": [[a.get("id"), a.get("name"), a.get("rank")]  # noqa: E731
+                                                          for a in r.get("ancestors") or []]} for r in d.get("results") or []]}
+    while True:
+        ask = {g: L[k] for g, L in by.items() if g not in out and k < len(L)}
+        if not ask:
+            break
+        for B in inat.chunks(sorted(ask.items()), GL_BATCH):
+            d = net.fetch(TAXA + ",".join(str(i) for _, i in B) + "?fields=id,ancestors.id,ancestors.name,ancestors.rank", keep)
+            anc = {r["id"]: r["anc"] for r in (d or {}).get("results") or []}
+            for g, i in B:
+                hit = [a[0] for a in anc.get(i) or [] if a[2] == "genus" and a[1] == g]
+                if hit:
+                    out[g] = hit[0]
+        k += 1
+    return out
+
+
+def game_genera(src, circles=CIRCLES):
+    """The genus units of the game: the genera of the circles' species, in tools/seaslugs.json order."""
+    return list(dict.fromkeys(s["genus"] for s in src["species"] if s.get("circle") in circles and s.get("genus")))
+
+
+def label_counts(net, gid, field, near=False):
+    """(observations, distinct observers) carrying the label field ({id, name, value}) at or under the genus gid, Research
+    Grade or Needs ID, in the Philippines (near: within the centre's radius instead): what label_confirmed reads."""
+    f = "field:" + urllib.parse.quote(field["name"]) + "=" + urllib.parse.quote(field["value"])
+    q = f"taxon_id={gid}&verifiable=true&{f}&" + (NEAR_AREA if near else f"place_id={PH}")
+    tot = lambda d: {"total": d.get("total_results", 0)}  # noqa: E731
+    n = net.fetch(f"{inat.V1}observations?{q}&per_page=0", tot)
+    u = net.fetch(f"{inat.V1}observations/observers?{q}&per_page=1", tot)
+    return (n or {}).get("total", 0), (u or {}).get("total", 0)
+
+
+def label_query(gid, field):
+    """The candidate search of a species with no name: gl_query on its genus, the observations carrying its label."""
+    return gl_query([gid], "&field:" + urllib.parse.quote(field["name"]) + "=" + urllib.parse.quote(field["value"]))
+
+
+def informal_run(net, src, inf, have, T, pairs, used, taken, report):
+    """--informal: each species of tools/seaslug_informal.json, its presence measured (written into inf) and, when
+    present, its candidates added to have under its key."""
+    gids = genus_ids(net, src, {s["genus"] for s in inf["species"]})
+    for s in inf["species"]:
+        gid = gids.get(s["genus"])
+        if not gid:
+            print(f"{s['name']}: genus {s['genus']} not found on iNaturalist under that name; skipped")
+            continue
+        n, u = label_counts(net, gid, s["field"])
+        nn, nu = label_counts(net, gid, s["field"], near=True)
+        s["presence"] = {"obs": n, "observers": u, "nearObs": nn, "nearObservers": nu, "near": bool(near_dauin(nu)),
+                         "confirmed": label_confirmed(u)}
+        if not label_confirmed(u):
+            print(f"{s['name']}: {u} observers with its label in the Philippines, below the rule; no candidates")
+            continue
+        L = have.setdefault(s["key"], [])
+        cap = target(s, T)[0]
+        n_ = Counter(("s", p.get("st", "")) for p in L)
+        items = [x for x in (usable_gl(o, pairs, used, taken) for o in gl_obs(net, label_query(gid, s["field"]))) if x]
+        got = pick(items, max(0, cap - len(L)), n_, used, taken)
+        L += [record(s["key"], o) for o in got]
+        report[s["name"]] = {"n": len(L), "target": cap, "new": len(got), "pool": len(items), **s["presence"]}
+        print(f"{s['name']:<30} {len(L):>2} / {cap} (+{len(got)}; {len(items)} usable observations with its label; "
+              f"presence: {u} observers in the Philippines, {nu} near Dauin)", flush=True)
+
+
+def genus_level_run(net, src, have, T, pairs, used, taken, report, only=()):
+    """--genus-level: the genus-level candidates of each genus unit (game_genera; --only: some of them), keyed by genus
+    name, marked gl."""
+    names = [g for g in game_genera(src) if not only or g in only]
+    gids = genus_ids(net, src, set(names))
+    by_id = {i: g for g, i in gids.items()}
+    pool = {g: [] for g in names}
+    for B in inat.chunks(sorted(by_id), GL_BATCH):
+        for o in gl_obs(net, gl_query(B)):
+            g = by_id.get(o.get("tid"))
+            if g:
+                pool[g].append(o)
+    cap = int(min(T.get("max", 1e9), T["candidates"]))
+    for g in names:
+        L = have.setdefault(g, [])
+        n = Counter()
+        for p in L:
+            n["s", p.get("st", "")] += 1
+        items = [x for x in (usable_gl(o, pairs, used, taken) for o in pool[g]) if x]
+        got = pick(items, max(0, cap - len(L)), n, used, taken)
+        L += [{**record(g, o), "gl": 1} for o in got]
+        report[g] = {"n": len(L), "target": cap, "new": len(got), "pool": len(items), "genus": len(pool[g]),
+                     **({"missing": True} if g not in gids else {})}
+        print(f"{g:<20} {len(L):>2} / {cap} (+{len(got)}; {len(items)} usable of {len(pool[g])} genus-level observations"
+              f"{'; genus not found on iNaturalist' if g not in gids else ''})", flush=True)
+
+
 def own_room(L, T):
     """The room for Pierre's own observations in a list L: up to the ceiling `max`, so on a list the others already
     filled to its target his still come (a candidate already there is never removed); his count in the target after."""
@@ -207,6 +418,27 @@ def run(args):
     net = Net(args.cache, offline=args.offline, refresh=args.refresh)
     report = {}
     own_only = getattr(args, "own", False)
+    inf_path = Path(getattr(args, "informal_src", None) or INFORMAL)
+    inf = json.loads(inf_path.read_text(encoding="utf-8")) if inf_path.exists() else {"species": []}
+    order = [str(s["inat"]) for s in src["species"]] + [s["key"] for s in inf["species"]] + game_genera(src)
+    if getattr(args, "informal", False) or getattr(args, "genus_level", False):
+        try:
+            if args.informal:
+                informal_run(net, src, inf, have, T, pairs, used, taken, report)
+            if args.genus_level:
+                genus_level_run(net, src, have, T, pairs, used, taken, report, only)
+        finally:
+            net.save()
+        if args.informal:
+            inf_path.write_text(json.dumps(inf, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        out = {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}
+        dump({"v": 1, "cand": out}, str(cand_path))
+        gl = {k: v for k, v in report.items() if "genus" in v}
+        if gl:
+            print(f"genus level: {sum(v['new'] for v in gl.values())} candidates added over "
+                  f"{sum(1 for v in gl.values() if v['new'])} of {len(gl)} genera; "
+                  f"{sum(v['n'] for v in gl.values())} in all")
+        return report
     try:
         # Pierre's own for every species with room for them (his search, asked together: rule C7), then the general one.
         prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T)], ["own"])
@@ -228,7 +460,6 @@ def run(args):
                   flush=True)
     finally:
         net.save()
-    order = [str(s["inat"]) for s in src["species"]]
     out = {k: have[k] for k in sorted(have, key=lambda k: order.index(k) if k in order else 1e9) if have[k]}
     dump({"v": 1, "cand": out}, str(cand_path))
     few = sorted(k for k, v in report.items() if v["n"] < T["start"])
@@ -242,6 +473,11 @@ def main(argv=None):
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fetch (default 1)")
     a.add_argument("--only", help="comma-separated species names or iNaturalist taxon ids")
     a.add_argument("--own", action="store_true", help="Pierre's own observations only (his search), nothing else asked")
+    a.add_argument("--informal", action="store_true",
+                   help="the species with no name yet (tools/seaslug_informal.json): presence, then candidates (Q389 (2))")
+    a.add_argument("--genus-level", action="store_true",
+                   help="the genus units' genus-level candidates, marked gl (Q389 (1)); --only takes genus names")
+    a.add_argument("--informal-src", default=str(INFORMAL))
     m = a.add_mutually_exclusive_group()
     m.add_argument("--refresh", action="store_true", help="ask iNaturalist again")
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")

@@ -764,7 +764,8 @@ function fishGenera(X, F) {
             )
           ].join(', '),
           sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
-          wide = E.views.wide.filter(p => set.has(p.sp));
+          // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
+          wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
         X.gen[id] = {
           id,
           name: g,
@@ -940,8 +941,12 @@ const photoTaxon = (L, n) => {
 // WoRMS name after it as the species sheet says it ("now X in WoRMS"); '' without a taxon.
 const taxonLine = t => {
   if (!t || !t.sci) return '';
-  const it = x => (t.rank === 'family' ? esc(x) : `<i>${esc(x)}</i>`);
-  return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${it(t.sci)}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
+  const it = x => (t.rank === 'family' ? esc(x) : `<i>${esc(x)}</i>`),
+    // a species with no name yet (t.src: its source; Q389 (2)): its genus in italics, "sp. 5" upright, the source small
+    sci = t.src
+      ? `<i>${esc(t.sci.split(' ')[0])}</i> ${esc(t.sci.split(' ').slice(1).join(' '))} <small>(${esc(t.src)})</small>`
+      : it(t.sci);
+  return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${sci}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
 };
 // A fish photo's taxon: the species it is in play for (fish-game.json sp, Pierre's curation applied: core.js fishPhotos),
 // by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), the player's first
@@ -951,7 +956,14 @@ const taxonLine = t => {
 const fishTaxon = (R, p, imr) => {
   const s = p && p.sp && R && R[p.sp];
   return s && s.name
-    ? {id: p.sp, sci: s.name, common: cnFirst(s, imr), now: s.now && s.now !== s.name ? s.now : '', rank: 'species'}
+    ? {
+        id: p.sp,
+        sci: s.name,
+        common: cnFirst(s, imr),
+        now: s.now && s.now !== s.name ? s.now : '',
+        rank: 'species',
+        ...(s.inf && s.src ? {src: s.src} : {})
+      }
     : null;
 };
 // The player answered "I'm at IMR" to the fish (model.js imrSaid; Q227: whatever the answer now), for cnFirst; false
@@ -1090,7 +1102,7 @@ function fishCurate(X, cur, F) {
     if (!g && k && k.cover && (sps.has(id) || gens.has(id))) {
       const S = new Set(sps.get(id) || gens.get(id));
       pool = pool || Object.values(X.gen).flatMap(u => (u.rank ? [] : u.views.wide));
-      const L = pool.filter(p => S.has(p.sp)),
+      const L = pool.filter(p => S.has(p.sp) || (!!p.gl && p.sp === id)),
         cv = L.find(p => p.f === k.cover) || L.find(p => fishPid(p.f) === fishPid(k.cover));
       // never a juvenile (juvP), unless he confirmed it (coverOk): then marked cj, which seenCover reads
       if (coverOk(k, cv)) X.covers[id] = juvP(cv) ? {...cv, cj: 1} : cv;

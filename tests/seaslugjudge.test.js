@@ -211,11 +211,15 @@ test("the repository's sea slugs: their species by taxon id, from tools/seaslugs
   const out = J(`import judging_fish as JF
 JF.use('seaslug')
 src = json.load(open('tools/seaslugs.json'))
-print(json.dumps([len(JF.SP), sum(1 for s in src['species'] if s.get('inat')), JF.ids(['Chromodoris annae']), JF.SUBJECT, JF.JDIR,
-                  [k for k in JF.CAND if k not in JF.SP], len(JF.CAND)]))`);
+inf = json.load(open('tools/seaslug_informal.json'))
+print(json.dumps([len(JF.SP), sum(1 for s in src['species'] if s.get('inat')) + len(inf['species']) + len({s['genus'] for s in src['species']}),
+                  JF.ids(['Chromodoris annae']), JF.SUBJECT, JF.JDIR, [k for k in JF.CAND if k not in JF.SP], len(JF.CAND),
+                  JF.ids(['Goniobranchus', 'Goniobranchus sp. 5']), JF.SP['Goniobranchus']['name']]))`);
+  // the species by taxon id, the species with no name yet by key, the genus-level lists by genus name (Q389)
   assert.ok(out[0] > 0 && out[0] === out[1]);
   assert.deepStrictEqual(out[2], ['119434']);
   assert.deepStrictEqual(out.slice(3, 5), ['seaslug', path.join('judging', 'seaslug')]);
-  assert.deepStrictEqual(out[5], [], 'seaslug-cand.json keys are taxon ids of tools/seaslugs.json');
+  assert.deepStrictEqual(out[5], [], 'seaslug-cand.json keys: taxon ids of tools/seaslugs.json, informal keys, genus names');
   assert.ok(out[6] > 0, 'seaslug-cand.json read');
+  assert.deepStrictEqual(out.slice(7), [['Goniobranchus', 'goniobranchus-sp5'], 'Goniobranchus (genus level)']);
 });
