@@ -97,7 +97,10 @@
         .split(/\s+/)
         .filter(Boolean),
       byPhoto = photoSubj ? photos.map(f => photoSubj(f) || '').find(Boolean) : '',
-      subj = (unit && unitSubj(unit).id) || byPhoto || (inSubj ? R.S.id : '');
+      // a unit id two subjects' sheet prefixes fit (the fish's and the sea slugs' f:, g:, s:) belongs to the page's subject
+      // when the page's subject is one of them (Codex review #987), else to the first that fits (unitSubj)
+      own = S => !!S && !!S.sheets && Object.values(S.sheets).some(p => unit.startsWith(p) && unit.length > p.length),
+      subj = (unit && (inSubj && own(R.S) ? R.S.id : unitSubj(unit).id)) || byPhoto || (inSubj ? R.S.id : '');
     return {
       id: String(id == null ? '' : id),
       t: Number(t) || 0,

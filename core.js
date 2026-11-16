@@ -382,6 +382,9 @@
       'f:RequiemSharks': 'Requiem Sharks'
     }
   };
+  // The sync script version that knows the sea-slug subject (rule D4): its group (Code.gs groupIds_) can be set from the
+  // admin's Players page from it (admin.js groupOn, SUBJECTS sheet).
+  const SEASLUG_SHEET = 151;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -649,6 +652,69 @@
           ['world', 'iNat elsewhere', 'World']
         ]
       }
+    },
+    {
+      // The sea slugs (Pierre, 2026-11-15, Q369: one "sea slugs" subject, its circles by popularity, the Philippines as its
+      // area, a stars set, scientific names only; Q377: circle 1 of 45 species; study docs/reviews/2026-11-15-nudibranch-
+      // mode-study.md §9, step 5). Read through the fish engine (app.js UNITS seaslug get: seaslug.json and
+      // seaslug-game.json, built by tools/seaslug_game.py): families, then the genera as an opt-in set; the species have
+      // their sheets. In beta, opened to a group (rule S1): the admin and the players Pierre adds on its Players page.
+      id: 'seaslug',
+      dev: 'seaslug-',
+      base: ['sbase', 'spending'],
+      name: 'Sea slugs',
+      icon: '<path d="M3 16.5c2.2-3 5.4-4.3 9.3-4.3 3.6 0 6.5 1.3 8.7 3.9-2.8 1.3-5.8 1.9-9 1.9-3.3 0-6.3-.5-9-1.5z"/><path d="M6.5 13.4 5.2 9.6M9 12.6l.2-3.8M17.6 13.4c0-1.6.8-2.8 2.2-3.5M17.6 13.4c.9-1.2 2-1.7 3.4-1.6"/>',
+      one: 'family',
+      many: 'families',
+      what: 'Sea slug',
+      several: 'sea slug species',
+      card: 'sea slug',
+      lecture: 'a sea slug ID course',
+      pv: 'seaslug.',
+      hash: 'seaslug/',
+      zoom: 'the rhinophores, the gills and the pattern of the mantle',
+      beta: {
+        kick: 'Sea slugs…',
+        line: '<b>Sea slugs are in beta</b>: nudibranchs and other sea slugs of the Philippines, by their scientific names, iNaturalist photos for now. Feedback welcome.'
+      },
+      // The admin and its group only (rule S1; the group managed on its admin Players page). sheet: the sync script
+      // version that knows this subject (Code.gs groupIds_: its group can be set and is reported from it; rule D4).
+      open: 'group',
+      sheet: SEASLUG_SHEET,
+      views: [['wide', 'Photo']],
+      // sci: its genera, offered as the fish's scientific genera are (app.js UNITS seaslug sets).
+      optin: ['sci'],
+      rank: 'family',
+      // Not replayed by the sheet (no replayed): its progress merges against its own base, as the fish's did before the
+      // replay. No leaderboard, no achievements, no Analyses report and no photo pool yet.
+      replay: false,
+      // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
+      // observations, the sea slugs' candidate count (Q377).
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
+      pages: ['genera', 'sheet', 'quiz'],
+      sheets: {family: 'f:', genus: 'g:', species: 's:'},
+      progress: ['photos'],
+      // No IMR content (study §8): no "I'm at IMR" answer.
+      start: {
+        q: 'How well do you know sea slugs?',
+        opts: {
+          new: ['I’m new to sea slugs', 'Start from scratch: a few easy families first.'],
+          know: ['I know sea slugs well', 'A diver or a photographer: you can already name many families.']
+        }
+      },
+      // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
+      // not about one subject's photos, its Players page holding its beta group.
+      admin: {
+        cur: 'seaslug',
+        todo: [],
+        pages: ['inbox/todo/all', 'inbox/todo/reports', 'inbox/todo/errors', 'players/list'],
+        obs: 'Observations',
+        origins: [
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World']
+        ]
+      }
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
@@ -852,7 +918,12 @@
       })
     );
     (F.families || []).forEach(t => {
-      const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0),
+      // how common its species are: near Dauin for the fish, over the subject's own area where its tree gives one
+      // (present.area: the sea slugs' distinct observers in the Philippines; Pierre, 2026-11-15, Q369 (b))
+      const dauin = (t.species || []).reduce((a, id) => {
+          const p = (sp.get(id) || {}).present || {};
+          return a + ((F.area ? p.area : p.dauin) || 0);
+        }, 0),
         imrGen = (t.genera || []).map(id => gens.get(id)).filter(g => g && g.imr);
       gen[t.id] = {
         id: t.id,
@@ -1127,6 +1198,14 @@
   // that entered by itself he did not reject, exclude or move) and not excluded for good (curation exclude, by name or
   // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2 (2026-11-15: the stopgap of
   // remote iNaturalist photos, which joined an entry short of 5 very easy curated photos, is retired).
+  // treeCur(S, cur): the curation as the fish engine reads it for tree subject S (fishPhotos, fishGone, app.js fishCurate:
+  // its fish part): S's own part (SUBJECTS admin.cur) under the fish's key, the rest as it is; the same content for the
+  // fish, whose part it is. A subject with no part yet (the sea slugs: Pierre has curated none) gets none: its photos in
+  // play are its judged ones, as fish photos are before he decides. null stays null (not loaded).
+  const treeCur = (S, cur) => {
+    const k = S && S.admin && S.admin.cur;
+    return cur && k ? {...cur, fish: cur[k]} : cur;
+  };
   function fishPhotos(first, game, cur) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
@@ -3755,16 +3834,68 @@
   // the ability are untouched.
   // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
   const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
-  function faOf(P, n) {
-    if (!P || !n) return 0;
+  // The typed questions on other units of n's rank, where the chances to give n start (above).
+  const faTyped = (P, n) => Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+  // The scan: every other record of P read for n.
+  function faScan(P, n) {
     let fa = 0,
-      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+      op = faTyped(P, n);
     for (const t in P) {
       if (t === n || t === LEVEL || !P[t]) continue;
       fa += (P[t].conf || {})[n] || 0;
       op += (P[t].off || {})[n] || 0;
     }
     return op > 0 ? Math.min(1, fa / op) : 0;
+  }
+  // The false-alarm table (2026-11-15; speed only, every value the same to the last bit). The scan reads every record of
+  // P for one unit, and a caller that reads every unit's bar after each answer pays it once per unit: the rated world
+  // (tools/ratedworld.js) spent most of a 10,000-answer fish run there. faArm(P) lets the next faOf build one table of
+  // every unit's false alarms and chances in a single pass over P, in the scan's own order (the records in P's order, the
+  // typed questions first: each unit's sums take the same numbers in the same order, so the same floats), and answer the
+  // later calls from it until scoreAnswer writes P (it disarms the table while it runs and arms it again, empty, after) or
+  // faDisarm(P). Opt-in: the caller arms P only while nothing but scoreAnswer writes the records' conf, off, ty or the
+  // level's tyk (the rated world, one answer at a time); the app and the sheet never arm, so they scan as before. A P
+  // whose conf or off is not a plain object of numbers, or a unit id that is not a string or that Object.prototype holds,
+  // is scanned. FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
+  const FA_CHECK = {on: false},
+    FAT = new WeakMap(),
+    faArm = P => void (P && typeof P === 'object' && FAT.set(P, null)),
+    faDisarm = P => void (P && typeof P === 'object' && FAT.delete(P)),
+    faPlain = c => {
+      if (typeof c !== 'object' || Array.isArray(c)) return false;
+      const p = Object.getPrototypeOf(c);
+      return p === null || Object.getPrototypeOf(p) === null; // a plain object, of this realm or of a vm's
+    };
+  function faTable(P) {
+    const u = new Map(),
+      // Record t's conf or off (c) added to every other unit's false alarms or chances (key); false when c is not a plain
+      // object of numbers. A unit's chances start at its typed questions, as the scan's do.
+      add = (c, t, key) => {
+        if (!c) return true;
+        if (!faPlain(c)) return false;
+        for (const k of Object.keys(c)) {
+          const v = c[k];
+          if (v && typeof v !== 'number') return false;
+          if (k === t) continue;
+          if (!u.has(k)) u.set(k, {fa: 0, op: faTyped(P, k)});
+          u.get(k)[key] += v || 0;
+        }
+        return true;
+      };
+    for (const t in P) if (t !== LEVEL && P[t] && !(add(P[t].conf, t, 'fa') && add(P[t].off, t, 'op'))) return {ok: false};
+    return {ok: true, u};
+  }
+  function faOf(P, n) {
+    if (!P || !n) return 0;
+    if (!FAT.has(P) || typeof n !== 'string' || n in Object.prototype) return faScan(P, n);
+    let T = FAT.get(P);
+    if (!T) FAT.set(P, (T = faTable(P)));
+    if (!T.ok) return faScan(P, n);
+    // A unit no other record names nor offers: no false alarm, 0 as the scan gives it.
+    const x = T.u.get(n),
+      v = x ? (x.op > 0 ? Math.min(1, x.fa / x.op) : 0) : 0;
+    if (FA_CHECK.on && !Object.is(v, faScan(P, n))) throw new Error(`faOf: the table gives ${v} for ${n}, the scan ${faScan(P, n)}`);
+    return v;
   }
   // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.
   const domVal = (s, P, n) => Math.max(0, s.ds - faOf(P, n));
@@ -4511,7 +4642,19 @@
   // the question counts as that much easier: a 2-choice right answer, more often right than a 1 in 2 guess explains,
   // proves less, and a 2-choice miss weighs less; 0 until the game passes the sheet's offsets).
   const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
+  // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
+  // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty
+  // after it.
   function scoreAnswer(P, q) {
+    if (!FAT.has(P)) return scoreStep(P, q);
+    FAT.delete(P);
+    try {
+      return scoreStep(P, q);
+    } finally {
+      FAT.set(P, null);
+    }
+  }
+  function scoreStep(P, q) {
     const t = q.t,
       ok = !!q.ok,
       k = q.k,
@@ -5991,6 +6134,9 @@
     keepsMark,
     domFromCounts,
     faOf,
+    FA_CHECK,
+    faArm,
+    faDisarm,
     looksLeft,
     afterBkt,
     TARGET_P,
@@ -6216,6 +6362,7 @@
     fishGone,
     fishPid,
     fishPhotos,
+    treeCur,
     unitPool,
     exposureOf,
     keepSubjectKeys,

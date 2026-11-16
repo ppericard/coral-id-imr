@@ -61,6 +61,9 @@ jobs:
             smoke: fish
             part: fresh
             what: Fish quiz test, the brand-new fish players (the starter core, the easy photos before Open Water, five seeds)
+          - name: seaslug
+            smoke: seaslug
+            what: Sea slug subject test (its beta gate both ways, the admin's quiz, pages and switch on seaslug.json)
           - name: admin 390
             smoke: admin
             w: '390'

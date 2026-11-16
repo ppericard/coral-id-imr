@@ -144,6 +144,10 @@ test('repCtx: a game report (quiz, duel): the expected unit, the answer, its pho
   assert.strictEqual(d.subj, 'coral');
   const f = repCtx(row({g: 'f:Damselfishes', a: 'f:MoorishIdol', m: 'quiz', ph: 'fi464458713', w: 'fish/practice/quiz'}));
   assert.deepStrictEqual([f.unit, f.ans, f.subj, f.src], ['f:Damselfishes', 'f:MoorishIdol', 'fish', 'game']);
+  // the sea slugs share the fish's sheet prefixes: their page says whose unit it is (Codex review #987)
+  const s = repCtx(row({g: 'f:Chromodorididae', a: 'f:Polyceridae', m: 'quiz', w: 'seaslug/practice/quiz'}));
+  assert.deepStrictEqual([s.unit, s.subj], ['f:Chromodorididae', 'seaslug']);
+  assert.strictEqual(repCtx(row({g: 'f:Chromodorididae', m: 'quiz', w: 'seaslug/learn/families'})).subj, 'seaslug');
   // an old fish entry id is read as the family it was renamed into
   const old = Object.keys(FISH.renamed.ids)[0];
   assert.strictEqual(repCtx(row({g: old, m: 'quiz', w: 'fish/practice/quiz'})).unit, FISH.renamed.ids[old]);

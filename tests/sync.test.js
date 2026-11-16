@@ -2463,7 +2463,11 @@ test("v105 analyses head: each subject counted apart, the corals' answers never 
   wink[17] = 'fish';
   s.sheets.Answers.appendRow(wink);
   const h = s.post({analysesGet: 1, head: 1, token: TOK});
-  assert.deepStrictEqual(h.counts, {coral: 5, fish: 3}, 'four coral rows logged before v60 or with Subject coral, three fish');
+  assert.deepStrictEqual(
+    h.counts,
+    {coral: 5, fish: 3, seaslug: 0},
+    'four coral rows logged before v60 or with Subject coral, three fish, none of the sea slugs'
+  );
   assert.strictEqual(h.subject, 'coral');
   assert.strictEqual(h.answers, 5, "the corals' answers, not the tab's 10 rows");
   assert.strictEqual(s.post({analysesGet: 1, head: 1, token: TOK, subject: 'fish'}).answers, 3);

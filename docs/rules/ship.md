@@ -241,7 +241,7 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 **squash merge** whose title ends with ` (#N)` (that is how `git log` reads).
 - Two kinds of commits land on `main` without a PR: Pierre's admin **Publish** ("Photo curation: …", writes
   `curation.json` only) and the GitHub Action that follows it ("Candidate photos: …", writes `data.json` and `img/`). So
-  rebase on `origin/main` right before merging, or merge through a green merge train (rule W26). With one coral genus per line in `data.json`, edits to different genera
+  a PR merges through a green merge train, which tests it on the current `main` (rule W26). With one coral genus per line in `data.json`, edits to different genera
   merge by themselves;
   on a real `data.json` conflict, take `main`'s copy and re-run your `tools/apply_*.py` script rather than hand-merging.
 - Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
@@ -363,9 +363,10 @@ mechanical work a test verifies; never for a judgment (photo judging included).
 
 ### W26
 
-**Several ready PRs merge through one green merge train.** When two or more PRs each meet the merge contract on their
-own head, the integrator runs `python3 tools/train.py N1 N2 …` (`--dry-run` first): a new branch `train/<time>` holds
-`main` plus their heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
+**Every PR merges through a green merge train, alone or with other ready PRs.** When a PR meets the merge contract on
+its own head, the integrator runs `python3 tools/train.py N` (`--dry-run` first; PRs ready at the same time ride one
+train: `N1 N2 …`, in merge order). A PR is never brought up to date with `main` just to merge: a new branch
+`train/<time>` holds `main` plus the heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
 order at the head the train tested, with no update-branch (no new head, so no new Codex wait); then `main`'s tree must
 equal the train's, and the train stops if a Publish, an Action or another merge lands in between. A red train merges
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
@@ -374,8 +375,9 @@ conflict on the header line). Any other new head (a fix, a catch-up merge of `ma
 Codex as always. A train branch gets no PR (rule W6 skips it; the weekly "Clean branches and Actions" workflow deletes it after two
 days, docs/HANDOVER.md); `tools/train.py` sends only GET and PUT to GitHub and
 never force-pushes.
-*Why:* each merge left the other ready PRs behind, and each catch-up cost a CI run and a Codex wait, about 4 min per PR
-in a burst. *Source:* Pierre, 2026-11-08 (Q305).
+*Why:* each merge leaves the other PRs behind `main`, and a catch-up merge is a new head, so a CI run and a Codex wait;
+the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to 16 held a single PR). *Source:* Pierre,
+2026-11-08 (Q305); every PR, even alone, 2026-11-16.
 
 ### W27
 

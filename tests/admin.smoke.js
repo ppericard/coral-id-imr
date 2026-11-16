@@ -3845,12 +3845,13 @@ const darkCards = (p, sel) =>
               row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n);
             return {
               F: F.id,
+              n: SUBJECTS.length, // a group of columns per subject (the sea slugs' too, from 2026-11-15)
               groups: [...document.querySelectorAll('.adm-ugrp th.adm-ug0')].map(th => th.textContent),
               ben: col >= 0 && row('Ben Demo').querySelectorAll('td')[col].innerText.trim(),
               dio: col >= 0 && row('Dio Demo').querySelectorAll('td')[col].innerText.trim()
             };
           });
-          if (L.groups.length !== 2 || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
+          if (L.groups.length !== L.n || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
           await q.click('[data-uopen="Ben Demo"]');
           const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
           if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
@@ -3876,7 +3877,7 @@ const darkCards = (p, sel) =>
             !j.col ||
             !j.sess ||
             !/Families met/i.test(j.kpis) ||
-            j.seg.length !== 2 ||
+            j.seg.length !== L.n ||
             j.seg[1][0] !== 'true' ||
             !/ 48$/.test(j.seg[1][1])
           )

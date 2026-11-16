@@ -5682,6 +5682,18 @@ The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
 
+**Long rated runs: the false-alarm table** (2026-11-15, after #975's 10,000-answer check could not end in the workflow's
+6 hours: 34 minutes a run with the species in). Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which
+scanned every record of the player's progress, and the planner reads the bars of every unit in play several times an
+answer: the cost grew with the units met times the units read, and the scan was the largest single part of a profile
+(23-29% of the time on their own, 36-45% with the bar around them; fish, `main` and #975, 1,000-3,000 answers). The
+rated world now arms a table for each answer (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds
+every unit's false alarms and chances in one pass over the records, in the scan's own order, so each value is the
+scan's to the last bit, and `scoreAnswer` empties it. The app and the sheet never arm it and scan as before. The same
+seeds give byte-identical `--out` files (the date, commit and run time aside) and reports, and every read of a run can
+be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared machine a 3,000-answer fish run of the
+expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
+
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
 cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.

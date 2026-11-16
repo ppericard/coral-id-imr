@@ -2311,7 +2311,9 @@ function fuTreeOf(U) {
   if (TT && TT.units === U) return TT.T;
   const sp = FISHC.species,
     ok = s => sp[s] && !sp[s].out,
-    R = Object.keys(ASUBJ.sheets || {}),
+    // the ranks of the subject whose units these are (FISHS: FISHC's), never the page's (the tree is kept per units, and
+    // another subject's page may build it first: Covers, a third subject)
+    R = Object.keys((FISHS || ASUBJ).sheets || {}),
     N = [],
     K = new Set();
   U.forEach(u => {
@@ -9729,7 +9731,8 @@ function startBlock(u) {
     });
   return rows.some(Boolean) ? `<div class="adm-ustart">${rows.join('')}</div>` : '';
 }
-const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= GROUP_SHEET;
+// A subject newer than the groups (SUBJECTS sheet: the sea slugs) waits for the script version that knows it (rule D4).
+const groupOn = (S = ASUBJ) => subjGroup(S) && (USERS.v || 0) >= Math.max(GROUP_SHEET, S.sheet || 0);
 const inGroup = (u, S = ASUBJ) => (u.groups || []).includes(S.id);
 function renderUsers() {
   status();
@@ -9848,7 +9851,7 @@ function renderUsers() {
   const gLine = SUBJECTS.filter(S => subjGroup(S))
     .map(S => {
       if (!groupOn(S))
-        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${GROUP_SHEET} (live: v${USERS.v || '?'}).</p>`;
+        return `<p class="note">The ${esc(S.name)} beta group needs the sheet script v${Math.max(GROUP_SHEET, S.sheet || 0)} (live: v${USERS.v || '?'}).</p>`;
       const out = U.filter(u => !inGroup(u, S)).length;
       return `<p class="adm-ugroup"><span>${esc(S.name)} beta: <b>${U.length - out}</b> of ${U.length} players</span>${out ? ` <button type="button" class="adm-fchip" data-ugall="${esc(S.id)}">Add all ${out}</button>` : ''}</p>`;
     })

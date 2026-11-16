@@ -570,6 +570,14 @@ Sizes are rough, for one agent **[guess]**.
    - A `SUBJECTS` entry (`open: 'group'`, beta), `UNITS` for family, genus and species, scientific names only.
    - A `core.js` change, so a `tools/sync/changes/` file (rule D3), and the sheet's replay where needed.
    - Smoke tests in the slot.
+   - **Built** (2026-11-15, PR "Sea slugs in the app"): `core.js` `SUBJECTS` `seaslug` ("Sea slugs", `open: 'group'`,
+     beta; its group managed on its admin Players page once the sheet script knows it, `SEASLUG_SHEET`), and `app.js`
+     `UNITS.seaslug`, read through the fish engine: `tools/seaslug_game.py` writes `seaslug.json` (circle 1 in
+     `fish.json`'s shape: 14 families, 24 genera, 45 species, scientific names only, no key, commonness over the
+     Philippines) and `seaslug-game.json` (the judged candidates that are sure, start 6, cap 12, +5 for *H. lacer*'s
+     juvenile form). Families are the game's units, genera the opt-in set as the fish's branch B; species have their
+     sheets but no game unit yet (the fish species level, #975, comes first). Not replayed by the sheet, no leaderboard,
+     no achievements. The photos are still read from iNaturalist (`r: 1`) until step 6. ARCHITECTURE.md "Subjects".
 6. **The R2 game photos**: about 1 day. `tools/fish_game.py` generalised (paths, prefixes) for a second photo subject.
 7. **Tree and sheets**: about 1 day, then content as it comes.
    - The build writes the generic tree section; the admin's Tree shows the subject.
