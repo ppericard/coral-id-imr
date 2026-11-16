@@ -21,8 +21,9 @@ Two stages:
       and Research Grade within the instance centre's radius (observations/species_counts on the five roots together,
       500 a page); then the distinct observers of the new and named species only (observations/observers, one each,
       only when the count can reach the threshold).
-  derive (offline, pure): from those replies to the `look` lists (`derive`); `--check` reruns it on the committed file
-    and the current species list and fails when the file disagrees (CI has no cache).
+  derive (offline, pure): from those replies and the species list they were pulled against (`raw.list`: name, family,
+    genus) to the `look` lists (`derive`); `--check` reruns it on the committed file and fails when the file disagrees
+    (CI has no cache); a later change to tools/seaslugs.json is reported, never a failure, and `--derive` follows it.
 
 The `look` lists:
   rename     a species of ours that WoRMS no longer accepts under our name (status, the accepted name);
@@ -175,7 +176,7 @@ def sources(net, aphia):
 
 def inat_species(net, roots, where):
     """{species name: {"id", "n"}}: the species under the roots with observations matching `where` (species_counts, 500
-    a page; a subspecies row counts for its species)."""
+    a page; a subspecies row counts for its species, and gives the species' id when no species row comes)."""
     out, page = {}, 1
     while True:
         d = net.get(f"{OBS}/species_counts?taxon_id={roots}&{where}&per_page=500&page={page}") or {}
@@ -189,6 +190,9 @@ def inat_species(net, roots, where):
             row["n"] += x["count"]
             if t.get("rank") == "species":
                 row["id"] = t["id"]
+            elif row["id"] is None:  # only subspecies rows so far: their parent is the species (Codex review #1031)
+                anc = t.get("ancestor_ids") or []
+                row["id"] = t.get("parent_id") or (anc[-2] if len(anc) > 1 and anc[-1] == t["id"] else None)
         if page * 500 >= (d.get("total_results") or 0) or not res:
             return out
         page += 1
@@ -358,6 +362,7 @@ def dump(raw, d, pulled):
     lines.append(" },")
     lines.append(' "raw": {')
     lines.append(f'  "since": {raw["since"]},')
+    lines.append(f'  "list": {json.dumps(raw["list"], ensure_ascii=False)},')
     for key in ("ours", "genera", "named", "inat"):
         lines.append(f'  {json.dumps(key)}: {{')
         items = sorted(raw[key].items())
@@ -377,9 +382,19 @@ def load_list():
     return json.loads(LIST.read_text(encoding="utf-8"))["species"]
 
 
+def snapshot(species):
+    """[[name, family, genus]]: the species list the look lists were derived against, kept in raw so that a change to
+    tools/seaslugs.json never fails --check (it is reported, and --derive follows it)."""
+    return [[s["name"], s["family"], s["genus"]] for s in species]
+
+
+def unsnap(rows):
+    return [{"name": n, "family": f, "genus": g} for n, f, g in rows]
+
+
 def check(src):
     d = json.loads(OUT.read_text(encoding="utf-8"))
-    again = derive(d["raw"], load_list(), src)
+    again = derive(d["raw"], unsnap(d["raw"]["list"]), src)
     if again["look"] != d["look"] or again["counts"] != d["counts"]:
         bad = [k for k in again["look"] if again["look"][k] != d["look"].get(k)]
         print(f"tools/seaslug_lit.json is not what the derive stage gives ({bad or 'counts'}): "
@@ -389,6 +404,9 @@ def check(src):
     print(f"tools/seaslug_lit.json derives as written: {c['species']} species, {c['genera']} genera, {c['new']} new since "
           f"{d['since']} (add {c['add']}, watch {c['watch']}, in list {c['inList']}), rename {c['rename']}, "
           f"revised {c['revised']}")
+    if snapshot(load_list()) != d["raw"]["list"]:
+        print("note: tools/seaslugs.json has changed since; python3 tools/seaslug_lit.py --derive follows it offline "
+              "(a new genus needs a network run)")
     return 0
 
 
@@ -416,7 +434,8 @@ def main():
         raw = json.loads(json.dumps(raw))  # the keys as the file writes them (AphiaIDs as strings)
         pulled = today()
         print(f"requests: {dict(inat.calls)}")
-    d = derive(raw, load_list(), src)
+    raw["list"] = snapshot(load_list())
+    d = derive(raw, unsnap(raw["list"]), src)
     for k, v in d["look"].items():
         print(f"{k}: {len(v)}")
     if not o.dry:

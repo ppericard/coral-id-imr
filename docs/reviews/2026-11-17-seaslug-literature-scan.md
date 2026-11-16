@@ -67,11 +67,10 @@ git-ignored; scratch queries in the session's scratch space, not committed; no o
   checklist: 3 observers in the Philippines, or 2 near Dauin).
 - **Hand-kept input**, `tools/seaslug_lit_source.json`: `since`, the watched genera, the Appendix A labels, and the
   labels or old names that a paper now names (`named`, each with its paper and how the link is known).
-- **Output**, `tools/seaslug_lit.json`: `look` (the lists below) and `raw` (the replies they derive from).
-  `python3 tools/seaslug_lit.py --check` derives `look` again from `raw` and the current species list, offline, and
-  fails on a difference (the unit tests run it); `--derive` rewrites it offline; a plain run refreshes from the network
-  (cached, so a rerun is quick). When `tools/seaslugs.json` changes (a species added), `--check` fails until `--derive`
-  is run: the watch follows the list.
+- **Output**, `tools/seaslug_lit.json`: `look` (the lists below) and `raw` (the replies they derive from, with the
+  species list they were pulled against). `python3 tools/seaslug_lit.py --check` derives `look` again from `raw`,
+  offline, and fails on a difference (the unit tests run it); a later change to `tools/seaslugs.json` is reported, not a
+  failure, and `--derive` follows it offline; a plain run refreshes from the network (cached, so a rerun is quick).
 
 The `look` lists today **[measured]**:
 
@@ -225,14 +224,15 @@ matter for the species sheets, the genus units' photos and the later species lev
   585-629, doi:10.1007/s13127-021-00535-7 (the publisher's page redirected to a login and was not read; its Plazi
   treatments read): *Phyllidiella pustulosa* is still a "species complex" problem to solve; the nominal name goes to one
   clade of 74 specimens; *Phyllidiella albonigra* resurrected; *Phyllidiopsis pipeki* a synonym of *P. krempfi*
-  **[search: abstract]**. WoRMS cites it as the status source of 10 of our Phyllidiidae (`tools/seaslug_lit.json`
-  `revised`).
+  **[search: abstract]**. WoRMS cites it on 13 of our Phyllidiidae, as the status source for most
+  (`tools/seaslug_lit.json` `revised`).
 - **For our list.** *P. picta* (96 observers) and *P. coelestis* (154) are both in circle 1; *P. ovata*'s presence:
   §3. *Phyllidiella pustulosa* (61 observers) is a complex with no photo cue for its true form (the lectotype is "completely
   white"): its species-level photos are uncertain **[guess, from the treatment]**. *Phyllidiella albonigra* (3) and
   *Phyllidiopsis krempfi* (59) are already under their current names.
 - **Look-alikes.** *P. ovata* / *P. picta* / *P. coelestis*: a sourced set (the diagnosis above: white against yellow-orange
-  or blue ground, one oval black area against ridges).
+  or blue ground, one oval black area against ridges), not usable until *P. ovata* is confirmed in the Philippines
+  (rule C6, §5.4).
 - **Photos.** *P. picta* and *P. coelestis* candidates showing a white animal with a single oval black area are
   *P. ovata* by the paper's diagnosis **[guess]**: a check for the judging.
 
@@ -386,7 +386,7 @@ matter for the species sheets, the genus units' photos and the later species lev
 | *Costasiella* | Jensen et al. (2014), *J. Molluscan Stud.* **[search]**; Cunha, Fernández-Simón, Petrula, Giribet & Moles (2023), *Diversity* 15(2): 219, doi:10.3390/d15020219 | *C. kuroshimae* "numerous distinct species that currently await description" (2014); ***C. fridae*** described from the Maldives (2023) | *C. kuroshimae* (53, circle 1, the "leaf sheep"), *C. usagi* (62), *C. fridae* (10): the leaf-sheep photos are of a complex |
 | *Plakobranchus* | Meyers-Muñoz et al. (2016); Mehrotra et al. (2020), *ZooKeys* **[search]** | *P. ocellatus* was 10 candidate species; *P. papua* named 2016; a "*Plakobranchus* sp. 6: Gosliner et al. 2018: 434 (Philippines)" still unnamed **[search]** | *P. ocellatus* (30), *P. papua* (39) |
 | *Jorunna* | Tibiriçá, Strömvoll & Cervera (2023), *J. liviae* **[search]**; Innabi, Stout & Valdés (2023), *ZooKeys* 1152, *J. daoulasi* | "*J. funebris* were retrieved as a species complex in all possible partitions" **[search]** | *J. funebris* (153, circle 1) |
-| *Gymnodoris* | De Souza-Canal & Valdés (2025), *Zootaxa* 5710(1): 1-73; De Souza-Canal, Nakano & Valdés (2025), *Zoosystema* 47(17) | 11 new species in New Caledonia; "*Gymnodoris nigricolor* … is a species complex" (title) | *G. nigricolor* (3) and 7 others |
+| *Gymnodoris* | De Souza-Canal & Valdés (2025), *Zootaxa* 5710(1): 1-73; De Souza-Canal, Nakano & Valdés (2025), *Zoosystema* 47(17) | 11 new species in New Caledonia; "*Gymnodoris nigricolor* … is a species complex" (title) | *G. feyae* (9) is one of the 11; WoRMS cites the 2025 papers on 4 more of ours, *G. nigricolor* (3) among them |
 | *Cyerce* | Moreno, Medrano, Gosliner, Wilson, Krug & Valdés (2025), *Zool. J. Linn. Soc.* 204: zlaf030 | nine new species | *C. blackburnae* (27), *C. katiae* (25), *C. basi* (11), *C. goodheartae* (3) are among them |
 | Goniodorididae | Paz-Sedano, Moles, Smirnoff, Gosliner & Pola (2024), *Mol. Phylogenet. Evol.* 107990; Paz-Sedano et al. (2023), *Pelagella* resurrected | new combinations (*Ceratodoris*, *Naisdoris*, *Bermudella*, *Pelagella*) | already under the new names |
 | *Halgerda* | Tibiriçá, Pola & Cervera (2018), *Invertebrate Systematics* 32: 1388-1421, doi:10.1071/is17095; Donohoo, Villalobos, Hallas & Gosliner (2023), "Hyperdiversity of the genus *Halgerda* …", *Marine Biodiversity* 53(3): 42, doi:10.1007/s12526-022-01334-9 | six new species (Mozambique); fourteen new species (2023) | *H. indotessellata* in it; five of the 2023 species seen in the Philippines, none confirmed (§3) |

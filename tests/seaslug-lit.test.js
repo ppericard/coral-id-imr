@@ -85,6 +85,29 @@ print(json.dumps({'raw': raw, 'asked': asked}))
   assert.strictEqual(asked.filter(u => u === 'observations/observers').length, 1, 'observers only where the count can reach 3');
 });
 
+test('a species seen only as subspecies takes its id from them, so its observers are asked (Codex review #1031)', () => {
+  const o = py(`
+asked = []
+def get(url):
+    asked.append(url)
+    if 'species_counts' in url:
+        if 'place_id' not in url:
+            return {'total_results': 0, 'results': []}
+        return {'total_results': 2, 'results': [
+            {'taxon': {'id': 51, 'name': 'Aa bb cc', 'rank': 'subspecies', 'parent_id': 50, 'ancestor_ids': [1, 50, 51]}, 'count': 3},
+            {'taxon': {'id': 52, 'name': 'Aa bb dd', 'rank': 'subspecies', 'ancestor_ids': [1, 50, 52]}, 'count': 2}]}
+    if '/observers' in url:
+        return {'total_results': 4}
+    raise SystemExit('unexpected ' + url)
+rows = L.inat_rows(L.Net(get=get), '5', ['Aa bb'])
+print(json.dumps([rows, [u.split('taxon_id=')[1].split('&')[0] for u in asked if '/observers' in u],
+                  L.presence(rows['Aa bb'])]))
+`);
+  assert.deepStrictEqual(o[0]['Aa bb'], {id: 50, rg: 5, ver: 5, near: 0, obsPh: 4, obsNear: null});
+  assert.deepStrictEqual(o[1], ['50'], 'the observers of the species, its subspecies included');
+  assert.deepStrictEqual(o[2], ['observers']);
+});
+
 test('derive: renames, placements, genera, new species by rule C8, revisions, named labels', () => {
   const o = py(`
 raw = {'since': 2018,
@@ -150,6 +173,20 @@ print(json.dumps([d, L.derive(raw, ours, src) == d]))
 test('tools/seaslug_lit.json derives as written (seaslug_lit.py --check, offline)', () => {
   const r = spawnSync('python3', [path.join(TOOLS, 'seaslug_lit.py'), '--check'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, (r.stdout || '') + (r.stderr || ''));
+});
+
+test('a later change to the species list is reported by --check, never a failure (other PRs edit tools/seaslugs.json)', () => {
+  const o = py(`
+import io, contextlib
+src = json.load(open(L.SRC, encoding='utf-8'))
+base = L.load_list()
+L.load_list = lambda: base + [{'name': 'Aa novus', 'family': 'Fa', 'genus': 'Aa'}]
+out = io.StringIO()
+with contextlib.redirect_stdout(out):
+    code = L.check(src)
+print(json.dumps([code, 'has changed since' in out.getvalue()]))
+`);
+  assert.deepStrictEqual(o, [0, true]);
 });
 
 test('tools/seaslug_lit.json holds no observer id and no personal field', () => {
