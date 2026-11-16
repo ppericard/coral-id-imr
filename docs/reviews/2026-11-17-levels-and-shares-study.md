@@ -36,3 +36,8 @@ costs are Q388's); (2) early-class juveniles early at least 90% of main's share;
 margins of 975's; a tie goes to the simplest rule. Then the chosen rule against 975 and main: the app world (5 profiles
 × 5 seeds × 600 questions, two looks: 95% bounds), the rated world at 10,000 answers (5 seeds), and heavy-tailed photos
 at 3,000. The corals: a run under the chosen rule must be identical to one without it (no parent, no phase).
+
+**Added before reading the screen** (2026-11-17, while its first arms ran; only a 1-seed smoke run of B was seen): arm
+**C0**, `--calib '{"phase":0,"lv":"C","lvRamp":0}'`: C with a ramp of width 0 for the ranks (a step at the threshold, so
+its rank part is #975's cap m²) and the per-unit ramp for the variants. Read with the same measures and the same choice
+rule.
