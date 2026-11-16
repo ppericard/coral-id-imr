@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Roles step 1 (Pierre, 2026-11-13, Q342-Q349: scoped roles, enforced by the sync script through one can_() check and an
 // audit log, never by the page; Q364, 2026-11-15: rights are separate, the platform admin may grant himself a role and the
 // grant is logged): Code.gs can_, gate_, the Roles and Audit tabs, the grants of Pierre's account, and what a delete, a
@@ -41,6 +42,7 @@ const ENDPOINTS = [
   ['readReports', () => ({readReports: 1})],
   ['readEvents', () => ({readEvents: 1})],
   ['readPages', () => ({readEvents: 1, pages: 1})],
+  ['readAlerts', () => ({readAlerts: 1})],
   ['analysesGet', () => ({analysesGet: 1, head: 1})],
   ['analysesPut', () => ({analysesPut: 1, report: JSON.stringify({R: {}, answers: 1, made: 1})})],
   ['readStats', () => ({readStats: 1})],
@@ -378,7 +380,7 @@ test('one gate: the GitHub check is reached through caller_ only, and every priv
   const code = src.replace(/\/\/[^\n]*/g, '');
   assert.deepStrictEqual([...code.matchAll(/isAdmin_\(/g)].length, 2, 'isAdmin_( appears only in its definition and in caller_');
   assert.match(code, /function caller_\(token\)\{\s*const t = String\(token \|\| ''\);\s*return isAdmin_\(t\)/);
-  ['reports_', 'readEvents_', 'analyses_', 'users_', 'roles_'].forEach(f => {
+  ['reports_', 'readEvents_', 'readAlerts_', 'analyses_', 'users_', 'roles_'].forEach(f => {
     const body = code.slice(code.indexOf('function ' + f + '('), code.indexOf('\nfunction ', code.indexOf('function ' + f + '(') + 1));
     assert.match(body, /gate_\(/, f);
   });

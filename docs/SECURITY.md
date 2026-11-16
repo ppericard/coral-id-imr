@@ -188,11 +188,12 @@ logged; (Q365) the pilot's name and 4-digit code are enough for now.
 
 Pierre, 2026-11-01 (ROADMAP "Security follow-ups"): admin **To do › Alerts** (`#inbox/todo/alerts`, the same page on
 every subject's side) shows the tab's lines of the last 30 days, newest first, counted by kind, read-only. The script
-serves them with `readAlerts` (admin token only, as `readEvents`; its last 3000 lines). The tab holds only what the
+serves them with `readAlerts` (the `players` right through `gate_` since roles step 1, so the admin token only today,
+as `readEvents`; its last 3000 lines). The tab holds only what the
 script writes there itself, never what a player sends:
 - `limit reached: <key> (<limit> per 6 h)` (`over_`), the key being `a:<id>` (a device not signed in: its random
   anonymous id, no name), `anon`, `n:<name>` (a signed-in player's answers), `newacct`, `reports`,
-  `ev:<device id>`, `events`, `old`, `selfdel` or `sd:<admin id>`;
+  `ev:<device id>`, `events`, `old`, `selfdel`, `sd:<admin id>` or `auditdeny` (the Audit tab's refusals, roles step 1);
 - `photos not of the unit shown: <admin id> (n of m answers)` (`photoCheck_`);
 - `left out of the statistics: device <admin id> signed in as <admin id>, left out too`.
 

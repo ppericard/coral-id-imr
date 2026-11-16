@@ -1929,7 +1929,8 @@ function readEvents_(token, pages){
   return out;
 }
 // POST {readAlerts: 1, token} (v152; ROADMAP "Security follow-ups", Pierre 2026-11-01: show the Alerts tab in the admin)
-// → {ok, rows: [[time ms, event]]}, newest first, the last 3000, as readEvents. Admins only (isAdmin_). The tab's writers:
+// → {ok, rows: [[time ms, event]]}, newest first, the last 3000, as readEvents. The instance's players right, as readEvents
+// (gate_; vNEXT, roles step 1: the admin token passes, a refusal audited). The tab's writers:
 // over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id).
 // One over_ key names a player, the per-name answer cap ("n:<name>"): served as the name's admin id (aid_, the id admin
 // Players shows beside the name), so the page shows no name.
@@ -1940,7 +1941,7 @@ function readEvents_(token, pages){
 // account's then) or was deleted (anonDelete). The lines that name nobody (a: and ev: device keys, the global caps) stay.
 // The tab itself is never changed here.
 function readAlerts_(token){
-  if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
+  if (!gate_(token, 'players', 'readAlerts')) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Alerts');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
   const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_();
