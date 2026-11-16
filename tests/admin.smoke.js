@@ -260,6 +260,20 @@ const darkCards = (p, sel) =>
     // A genus page: Photos › Genera › Live, the genus as the last segment.
     const goGenus = g => go('photos/genera/live/' + encodeURIComponent(g));
     const text = () => p.evaluate(() => document.getElementById('view').innerText);
+    // One player's heatmap for an id with no answers on the side on screen (a deleted, merged or archived account's: rule
+    // D7): no map, no number, the id never offered in the picker, one line. '' when so, else what showed.
+    const heatNobody = async id => {
+      await go('analyses/difficulty/heatmap?player=' + encodeURIComponent(id));
+      const g = await p.evaluate(id => {
+        const s = document.querySelector('#view [data-hmwho]');
+        return {
+          map: !!document.querySelector('#view .adm-hmt, #view .adm-kpis'),
+          note: (document.querySelector('#view p.note') || {}).textContent,
+          listed: !!s && [...s.options].some(o => o.value === id && !o.disabled)
+        };
+      }, id);
+      return g.map || g.listed || g.note !== 'No answers from this player here.' ? JSON.stringify(g) : '';
+    };
     await p.goto(base + 'admin.html?demo');
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
@@ -2649,6 +2663,67 @@ const darkCards = (p, sel) =>
       await settle();
       // the corals at one rank: no rank switch
       if (await p.$('#view [data-sf="hr"]')) fails.push(`${w}px Analyses heatmap: a rank switch on the corals' side`);
+      // One player's map (Q123 m per player): the picker lists Everyone, then the players with answers (the signed-in ones by
+      // name); a player's map counts their answers only (its KPI against a direct count of their rows), the same rows and
+      // columns, its cells adding up to its Mix-ups, the A5 line in their words; the subject switch keeps the player; Journey
+      // opens theirs, whose Mix-ups card's Heatmap › comes back; Everyone is the pooled map again; a deleted account's id
+      // lists nothing and shows nothing (rule D7).
+      const pl = await p.evaluate(() => {
+          const s = document.querySelector('#view [data-hmwho]');
+          return s ? [...s.options].map(o => [o.value, o.textContent]) : null;
+        }),
+        ana = pl && pl.find(o => o[1] === 'Ana Demo');
+      if (!pl || pl[0][0] !== '' || pl[0][1] !== 'Everyone' || !ana || pl.some(o => /^~/.test(o[1])))
+        fails.push(`${w}px Analyses heatmap, the player picker: ${JSON.stringify(pl && pl.slice(0, 6))}`);
+      if (ana) {
+        await p.selectOption('#view [data-hmwho]', ana[0]);
+        await settle();
+        const h2 = await hm(),
+          x = await p.evaluate(
+            id => ({
+              hash: location.hash,
+              n: rowsOf(ASUBJ).filter(r => r[0] === id).length,
+              ch: rowsOf(ASUBJ).filter(r => r[0] === id && r[10]).length,
+              note: [...document.querySelectorAll('#view p.note')].map(e => e.textContent).join(' | '),
+              sw: [...document.querySelectorAll('#subj a')].map(a => a.getAttribute('href')).filter(h => h.includes('heatmap')),
+              j: (e => e && e.getAttribute('href'))(document.querySelector('#view .adm-shead a[data-own]'))
+            }),
+            ana[0]
+          );
+        if (
+          !h2 ||
+          x.hash !== '#analyses/difficulty/heatmap?player=' + encodeURIComponent(ana[0]) ||
+          h2.kp['Answers with choices'] !== `${x.ch}/${x.n}` ||
+          !x.n ||
+          String(h2.sum) !== h2.kp['Mix-ups'] ||
+          !(h2.sum < h0.sum) ||
+          h2.rows !== h0.rows ||
+          !/^Not enough data yet: .* more of their answers with choices/.test(x.note) ||
+          x.sw.length < 2 ||
+          x.sw.some(h => !h.endsWith('?player=' + encodeURIComponent(ana[0]))) ||
+          x.j !== '#players/list/journey/Ana%20Demo' ||
+          h2.wide > 0
+        )
+          fails.push(`${w}px Analyses heatmap, one player: ${JSON.stringify({x, h2})}`);
+        await go(x.j.slice(1));
+        const back = await p.evaluate(() => (e => e && e.getAttribute('href'))(document.querySelector('#view a[href*="heatmap?player="]')));
+        if (back !== x.hash) fails.push(`${w}px Journey, Heatmap ›: ${back}`);
+        else {
+          await p.click('#view a[href*="heatmap?player="]');
+          await settle();
+          const v = await p.evaluate(() => (document.querySelector('#view [data-hmwho]') || {}).value);
+          if (v !== ana[0]) fails.push(`${w}px Journey, Heatmap › opened ${v}`);
+        }
+        await p.selectOption('#view [data-hmwho]', '');
+        await settle();
+        const h3 = await hm(),
+          h3s = await p.evaluate(() => location.hash);
+        if (!h3 || h3.sum !== h0.sum || h3s !== '#analyses/difficulty/heatmap')
+          fails.push(`${w}px Analyses heatmap, Everyone again: ${JSON.stringify({h3s, sum: h3 && h3.sum, was: h0.sum})}`);
+      }
+      // an id with no answers here (a removed account's: rule D7, the players part checks an archive's) shows nothing
+      const nobody = await heatNobody('dnobody0');
+      if (nobody) fails.push(`${w}px Analyses heatmap, an id with no answers: ${nobody}`);
     }
     // The actions part (once, at 1280; its own CI job since the CI speed work of 2026-11-15, a third of the main part's time):
     // run here in a whole run, first in a run without the main part.
@@ -4086,6 +4161,11 @@ const darkCards = (p, sel) =>
         }));
         if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
           fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
+        // the archive's answers are out of every view (rule D7): its heatmap shows nothing (Q123 m per player)
+        const benId = await p.evaluate(() => ((USERS.archived || []).find(a => a.name === 'Ben Demo-test') || {}).id);
+        const benHeat = benId ? await heatNobody(benId) : 'no archived id';
+        if (benHeat) fails.push(`${w}px Analyses heatmap, an archive's id: ${benHeat}`);
+        await go('players/list');
         // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
         // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
         const nameOf = n =>
