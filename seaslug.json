@@ -6752,6 +6752,19 @@
        "u": "https://en.seaslug.world/species/thecacera_pikachu"
       }
      ]
+    },
+    {
+     "n": "Pikachu",
+     "src": [
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
     }
    ],
    "ensrc": {
