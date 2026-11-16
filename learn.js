@@ -780,7 +780,32 @@ function viewFishList() {
             slateGenera().filter(n => !GX(n).group)
           )
         ]
-      : [blk('', slateGenera())];
+      : UNITS[SUBJ.id].listBy
+        ? byRank(slateGenera(), UNITS[SUBJ.id].listBy)
+        : [blk('', slateGenera())];
+  // No key and a rank to group by (UNITS listBy: the sea slugs' 'family'; Pierre, 2026-11-16: the genera shown directly,
+  // grouped by family): one block per unit of that rank above the units (their parent), titled by its name, in the
+  // subject's order (its tree's, FISH.gen), the units in the slate's order inside it; units without one in a last block.
+  function byRank(L, rk) {
+    const up = n => {
+        const p = GX(n).parent;
+        return p && GX(p) && (rankOf(p) || unitRankOf(SUBJ)) === rk ? p : '';
+      },
+      at = Object.keys(FISH.gen),
+      by = new Map();
+    L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
+    const B = [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity)),
+      fam = ([p, U]) => blk(p ? `<h3 class="gdiv" title="${esc(unameT(p))}"><span class="gtitle">${uname(p)}</span></h3>` : '', U),
+      tx = FISH.taxa;
+    if (!tx) return B.map(fam);
+    // Its families under their taxonomic groups (the tree's taxa, a published classification: tools/seaslug_groups.json;
+    // Pierre, 2026-11-16: the true nudibranchs apart from the other sea slugs), in the groups' order, a heading each.
+    const tg = p => (p && GX(p).tg) || 0;
+    return [...tx.groups, {n: 0, title: ''}].flatMap(gr => {
+      const In = B.filter(([p]) => tg(p) === gr.n);
+      return In.length ? [gr.n ? `<h3 class="gtax">${esc(gr.title)}</h3>` : '', ...In.map(fam)] : [];
+    });
+  }
   const sets = SETS().map(S =>
     Q[S.k] && S.page !== false
       ? blk(`<h3 class="gdiv"><span class="gn">+</span><span class="gt">${esc(S.name)}</span></h3>`, S.units())
@@ -790,7 +815,8 @@ function viewFishList() {
   const lede =
     UNITS[SUBJ.id].lede ||
     `The fish families${key ? ` of ${esc(key.short)}, by its identification groups` : ''}, with the IMR cues (for a family IMR gives none for, its ID marks from other sources, named) and IMR’s names. Photos: iNaturalist and FishBase.`;
-  $v.innerHTML = `<p class="lede">${lede}</p><div class="tiplist gpack">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : ''}`;
+  const tx = !key && UNITS[SUBJ.id].listBy && FISH.taxa;
+  $v.innerHTML = `<p class="lede">${lede}</p><div class="tiplist gpack${tx ? ' gtaxa' : ''}">${[...groups, ...sets].join('')}</div>${key ? `<p class="note keycite">Identification groups: ${esc(key.cite)}</p>` : tx ? `<p class="note keycite">Groups: ${esc(tx.cite)}</p>` : ''}`;
   packGroups($v.querySelector('.tiplist'));
   $v.querySelectorAll('[data-z]').forEach(x => (x.onclick = () => zoom(flat, Number(x.dataset.z))));
 }

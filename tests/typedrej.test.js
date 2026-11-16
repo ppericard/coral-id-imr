@@ -97,6 +97,7 @@ function page(subj = 'fish', typeElse = C.typeElse) {
       coral: {names: () => [], norm: C.typeNorm}
     },
     rankOf,
+    unitRankOf: C.unitRankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
     typeElse,

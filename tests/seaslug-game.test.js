@@ -301,7 +301,8 @@ test('the committed files read through the fish engine: three circles, scientifi
     GM = C.fishGameRead(json('seaslug-game.json')),
     S = C.subjectOf('seaslug');
   assert.strictEqual(S.id, 'seaslug');
-  const X = C.fishGen(F, C.fishPhotos({}, GM.photos, C.treeCur(S, json('curation.json'))));
+  // As the app reads them: its genera the units (core.js SUBJECTS unitRank; Pierre, 2026-11-16; tests/seaslug-genera.test.js).
+  const X = C.fishGen(F, C.fishPhotos({}, GM.photos, C.treeCur(S, json('curation.json'))), undefined, C.unitRankOf(S));
   // The circles of tools/seaslugs.json 1 to 3 (Q377: 45, then 60 and 100 by commonness), circle 4 left out.
   const L = json('tools/seaslugs.json').species,
     n = c => L.filter(s => s.circle === c).length;
@@ -310,14 +311,16 @@ test('the committed files read through the fish engine: three circles, scientifi
     [n(1), n(2), n(3), 0]
   );
   assert.deepStrictEqual([n(1), n(2), n(3)], [45, 60, 100]);
-  assert.strictEqual(X.c1.length + X.c2.length + X.c3.length, F.families.length);
+  assert.strictEqual(X.c1.length + X.c2.length + X.c3.length, F.genera.length);
   assert.deepStrictEqual([X.c1.length > 0, X.c2.length > 0, X.c3.length > 0, X.winks], [true, true, true, []]);
-  // A family takes its best species' circle, as a fish family.
-  F.families.forEach(f => assert.strictEqual(f.circle, Math.min(...f.species.map(id => F.species.find(s => s.id === id).circle)), f.id));
+  // A family or a genus takes its best species' circle, as a fish family.
+  [...F.families, ...F.genera].forEach(f =>
+    assert.strictEqual(f.circle, Math.min(...f.species.map(id => F.species.find(s => s.id === id).circle)), f.id)
+  );
   const all = [...X.c1, ...X.c2, ...X.c3];
   assert.ok(
-    all.every(n => X.gen[n].name === n.slice(2)),
-    'a family is named by its scientific name'
+    all.every(n => n.startsWith('g:') && X.gen[n].name === n.slice(2)),
+    'a genus is named by its scientific name'
   );
   const played = all.filter(n => X.gen[n].views.wide.length);
   assert.ok(played.length >= 5, played.join());
@@ -342,8 +345,10 @@ test('the committed files read through the fish engine: three circles, scientifi
     .flat()
     .forEach(p => (by[p.sp] = (by[p.sp] || 0) + 1));
   Object.entries(by).forEach(([sp, n]) => assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`));
-  // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead.
-  assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...all.map(n => X.gen[n].cm)));
+  // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead the families,
+  // and one of its genera the genera.
+  assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...F.families.map(f => X.gen[f.id].cm)));
+  assert.strictEqual(X.gen[all.reduce((m, n) => (X.gen[n].cm > X.gen[m].cm ? n : m))].parent, 'f:Chromodorididae');
 });
 
 // The app plays the three circles at the fish's thresholds (app.js UNITS seaslug: slate, circles, gate fishGate).
@@ -393,12 +398,12 @@ test('the photos workflow builds the sea-slug game data again and commits it', (
   assert.ok(W.includes('seaslug\\.json|seaslug-game\\.json'), 'allowed in the commit job');
 });
 
-// The R2 step waits for Pierre's go: off in the workflow until the integrator flips SEASLUG_R2; on, its downloads go
-// into the folder the upload step sends to R2, before the commit that lists them.
-test('the photos workflow: the sea slugs R2 step off by default, wired before the upload', () => {
+// The R2 step is on since Pierre's go (2026-11-16, Q387; off before it): its downloads go into the folder the upload
+// step sends to R2, before the commit that lists them; off, the build stays offline.
+test('the photos workflow: the sea slugs R2 step on, wired before the upload', () => {
   const W = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'approved-photos.yml'), 'utf8'),
     at = s => W.indexOf(s);
-  assert.match(W, /^env:\n {2}SEASLUG_R2: 'off'$/m, 'off');
+  assert.match(W, /^env:\n {2}SEASLUG_R2: 'on'$/m, 'on');
   assert.ok(W.includes("- if: env.SEASLUG_R2 != 'on'\n        run: python tools/seaslug_game.py\n"), 'offline while off');
   assert.ok(W.includes("- if: env.SEASLUG_R2 == 'on'\n        run: python tools/seaslug_game.py --r2 --out r2-upload\n"), 'R2 once on');
   assert.ok(at('seaslug_game.py --r2 --out r2-upload') < at('run: tools/r2_sync.sh r2-upload'), 'uploaded by the same step');

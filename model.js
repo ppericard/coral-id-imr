@@ -33,8 +33,9 @@ const RARE = {E: 4, FEW: 3, SHARE: 0.1}; // SHARE: Pierre, 2026-11-08 (Q252)
 // Only the units of the subject's own rank (Pierre, 2026-11-08, Q271: the fish families, "c'est là que le débutant a
 // besoin de photos faciles"): a unit of another rank (a fish genus: app.js rankOf) starts under Open Water too, but its
 // player already knows the family, and capping it held back the ratings of its hard photos (about 30% fewer answers
-// under ease 4 over 10,000 simulated answers). Those units are drawn as before.
-const rareOn = n => (rankOf(n) || SUBJ.rank) === SUBJ.rank;
+// under ease 4 over 10,000 simulated answers). Those units are drawn as before. The subject's own rank is the one its game
+// units are at (core.js unitRankOf: the sea slugs' genera).
+const rareOn = n => (rankOf(n) || unitRankOf(SUBJ)) === unitRankOf(SUBJ);
 // The factor the hard photos' weights take so they make at most `share` of the draw (1 when they already do, or when
 // nothing else can be drawn). sc: each observation's weight; hardOf(k): the share of observation k's photo weight that
 // is hard (0 to 1). Exact for a question showing one photo (the fish); for several views, the share of the photos drawn.

@@ -144,14 +144,15 @@
   // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach: Q309),
   // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
   // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks)}; null
-  // without a tree.
-  function repReg(f, first, gm) {
+  // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
+  // slugs), each photo then shown by its genus.
+  function repReg(f, first, gm, unit) {
     if (!f || typeof f !== 'object') return null;
     const G = (C.fishGameRead(gm) || {}).photos || {},
       F0 = (first && first.photos) || {},
       all = {};
     new Set([...Object.keys(F0), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(F0[t] || [])]));
-    const F = C.fishGen(f, all),
+    const F = C.fishGen(f, all, undefined, unit),
       ph = {},
       fam = Object.create(null),
       spid = Object.create(null),

@@ -35,6 +35,7 @@ function app(photoDiff) {
     refLevel: C.refLevel,
     contentApply: C.contentApply,
     treeCur: C.treeCur,
+    unitRankOf: C.unitRankOf,
     SUBJECTS: C.SUBJECTS,
     ...(photoDiff ? {photoDiff} : {})
   };

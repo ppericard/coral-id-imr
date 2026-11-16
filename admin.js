@@ -5338,7 +5338,7 @@ const unitRead = S => {
     k = ['f', 'ph', 'gm'].filter(x => W[x]);
   return Promise.all(k.map(x => fetch(W[x], {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))).then(L => {
     const J = Object.fromEntries(k.map((x, i) => [x, L[i]]));
-    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm);
+    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
   });
 };
 function fishAdmin() {
@@ -9511,20 +9511,25 @@ const replayS = () => SUBJECTS.find(S => S.replay) || SUBJECTS[0];
 // A player's saved copy for one subject (savedOf): null while read, {err} when it could not be.
 const savedFor = (name, S) => (x => (!x || x.err ? x : x.by[S.id]))(savedOf(name));
 // A subject's units for a replay in the admin (Pierre, 2026-11-06: follow every subject's progress on the Journey): the
-// replayed subject's from data.json; another's from its entries (fishAdmin: fishGen, its circles as the app's slate),
-// once read; null before. stats: the sheet's photo numbers the replay reads (?stats=1, the replayed subject's only for
-// now: another subject replays without memory offsets, pooled confusions or format offsets).
-let UNITM = {d: null, f: null, by: {}};
+// replayed subject's from data.json; another's from its own registry (unitRegOf: fishAdmin for the fish, unitAdmin for
+// another tree subject; fishGen, its circles as the app's slate: the sea slugs' genera), once read; null before. stats:
+// the sheet's photo numbers the replay reads (?stats=1, the replayed subject's only for now: another subject replays
+// without memory offsets, pooled confusions or format offsets).
+let UNITM = {d: null, by: {}};
 function unitsOf(S) {
-  if (UNITM.d !== DATA || UNITM.f !== FISHA) UNITM = {d: DATA, f: FISHA, by: {}};
-  if (!(S.id in UNITM.by))
-    UNITM.by[S.id] = S.replay
-      ? DATA && {gen: DATA.gen, slate: slateOf(DATA)}
-      : FISHA && FISHA.slate
-        ? {gen: FISHA.gen, slate: FISHA.slate}
-        : null;
-  return UNITM.by[S.id];
+  if (UNITM.d !== DATA) UNITM = {d: DATA, by: {}};
+  const R = S.replay ? null : unitRegOf(S),
+    o = UNITM.by[S.id];
+  if (!o || o.R !== R)
+    UNITM.by[S.id] = {
+      R,
+      v: S.replay ? DATA && {gen: DATA.gen, slate: slateOf(DATA)} : R && R.slate ? {gen: R.gen, slate: R.slate} : null
+    };
+  return UNITM.by[S.id].v;
 }
+// The registry a page of subject S waits for before its units are read (unitsOf): its own for a tree subject, else the
+// fish's, as before.
+const unitWait = S => (S && S.sheets ? S : FISHS);
 // The genus offsets too (gd: the domain-score bar of a row logged without its scoring record takes them), as the sheet's
 // replay passes them (Code.gs replay_: gd: st.gd), so the admin's replayed progress is the sheet's (PR #808).
 const statsFor = S => (S.replay ? {mem: SMEM, conf: SCONF, fmt: SFMT, gd: GD, ...domReplay()} : {dom: domReplay().dom});

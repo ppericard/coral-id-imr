@@ -70,15 +70,17 @@ const typeMatch = (text, rk = '') =>
   );
 // What a typed text that is no unit of rank rk names instead (core.js typeElse): the rank word of another unit it names
 // ('family'), 'common' for a common name, '' for nothing. Only on a question below the subject's rank (a fish scientific
-// genus), from the subject's own lists (UNITS typeOther); none for a subject without them.
+// genus, a sea slugs' genus: its tree's top rank is the family), from the subject's own lists (UNITS typeOther); none for
+// a subject without them.
 const typeKind = (text, rk) => {
   const U = UNITS[SUBJ.id],
-    x = rk && U.typeOther ? U.typeOther(rk) : null;
+    at = rk || unitRankOf(SUBJ),
+    x = at !== SUBJ.rank && U.typeOther ? U.typeOther(at) : null;
   if (!x) return '';
   return typeElse(
     text,
     typeNames().filter(o => rankOf(o.g) !== rk),
-    {...x, rank: g => rankOf(g) || SUBJ.rank, own: g => (GX(g) || {}).imrName},
+    {...x, rank: g => rankOf(g) || unitRankOf(SUBJ), own: g => (GX(g) || {}).imrName},
     U.norm
   );
 };
@@ -850,11 +852,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
     ...(tq && tq.rj && tq.rj.length ? {rj: tq.rj.slice(0, TYPEDQ_RJ)} : {}),
     // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
-    // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's (SUBJECTS
-    // rank). An older script ignores these fields and would file the answer as a coral one: the answers of a subject the
-    // sheet does not replay are sent only from LOG_SHEET (core.js logOk, sync.js), queued until then (rule D4).
+    // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's units'
+    // (core.js unitRankOf: SUBJECTS unitRank, else rank). An older script ignores these fields and would file the answer as
+    // a coral one: the answers of a subject the sheet does not replay are sent only from LOG_SHEET (core.js logOk,
+    // sync.js), queued until then (rule D4).
     s: SUBJ.id,
-    rk: rankOf(target) || SUBJ.rank,
+    rk: rankOf(target) || unitRankOf(SUBJ),
     // The names at that rank, shown and answered, when a unit's id is not its name (a fish entry t01 is Damselfish, a
     // scientific genus g:Chromis is Chromis; a coral genus is its own name: nothing more), and the species of the photos
     // shown (UNITS species: a fish photo's species; none for the corals' genus photos), for the sheet's readers.
@@ -1124,7 +1127,7 @@ function winkAnswer(n, id, ids, p, tm) {
     zm: tm.zm ? 1 : 0,
     tz: -new Date().getTimezoneOffset(),
     s: SUBJ.id,
-    rk: rankOf(n) || SUBJ.rank,
+    rk: rankOf(n) || unitRankOf(SUBJ),
     ...(unitName(n) ? {tn: unitName(n)} : {}),
     ...(unitName(a) ? {ta: unitName(a)} : {}),
     ...(sp ? {sp} : {})
