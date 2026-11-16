@@ -1,5 +1,14 @@
 {
  "photos": {
+  "fish-s378-cand-258275773": {
+   "code": "o1g0sls3",
+   "keep": "best",
+   "note": "Below its anchor (4): the orange-banded pair lies across an orange sea fan that competes with its outline."
+  },
+  "fish-s378-cand-258276323": {
+   "code": "o1g0smsc2",
+   "keep": "dup"
+  },
   "fish-s378-cand-755929726": {
    "code": "p1g1sl14",
    "keep": "best"
