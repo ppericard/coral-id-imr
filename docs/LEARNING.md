@@ -3927,6 +3927,40 @@ run on GitHub, learncheck 43703441937, and the local one give the same numbers):
 - **The arms**: not run in the rated world. One run of the branch took two hours on GitHub. The option Pierre picks gets
   this check before it ships.
 
+### The rank share (2026-11-16, Q382, Q384)
+
+**Pierre's answer to Q382** (2026-11-16 ~15:05 Manila): "je ne suis pas forcément d'accord pour qu'il y en ait une à la
+fois. Par contre, je suis plus ouvert à l'idée de limiter le nombre le pourcentage de questions tant que les autres
+niveaux, on va dire, ne sont pas maîtrisés. Donc, je serais plutôt ouvert à une stratégie qui règle finalement la
+répartition des questions, soit au niveau de la famille, du genre ou de l'espèce, en fonction de la maîtrise justement des
+niveaux précédents." And to Q384 (#953, ~15:10): the juveniles and colour phases are the same question, "un mécanisme
+global ... une répartition des questions en fonction des niveaux et du niveau de maîtrise", with thresholds that may
+differ per family, genus or species and juveniles allowed very early.
+
+**The rule** (`model.js` `SHARE`, `sharesNow`, `shareW`, `shareRoom`): a unit that hangs from another (its record's
+`parent`: a fish scientific genus or species from its family) may open and be asked, but the units hanging from one level
+take together at most cap = m^POW of the questions drawn, m the share of that level's units in play at their threshold
+(`shareAt` in a unit's data, else Advanced), and one more of them opens only while their share of the draw is under the
+cap. Families keep the rest. The species still come in each family's commonness order (`spPlay`: the order of Pierre's
+2026-11-04, not a pace); the share decides how often.
+
+**The check, declared before running** (rule L11, level 2: the draw and the opening of every fish player past a family's
+Advanced, the genus questions of a player with the scientific names on):
+- **Arms**, the same seeds: `main` (d736745a); **built** (this branch as built, merged with `main`, edd40c1f: one species
+  at a time per family, no share); **p1**, **p2**, **p3**: the share with POW 1 (linear in the share of families at
+  Advanced), 2 and 3, on the genera and species together; **p2s**: POW 2 on the species alone (the genera as on `main`).
+- **Screening, the rated world** (told the truth, normal photos, count learner): the 5 fish profiles × 5 seeds × 3,000
+  answers. Read against `main` with `tools/learncmp.js`: families at Advanced (`famAdv`, margin −2 or −5%) at 1,000 and
+  3,000, the score shown (margin −1 point) at 1,000 and 3,000, the right % 1,000-3,000, the species' and genera's shares,
+  the species met, at Open Water and at Advanced at 3,000. Exploratory and uncorrected: it chooses the curve.
+- **The choice**: among the curves whose `famAdv` and score hold at 3,000 for every profile, the one that brings the most
+  species at Open Water by 3,000; if none holds, the one closest and the numbers go to Pierre.
+- **Then the chosen curve** (and the runner-up if close): the app world, 5 profiles × 5 seeds × 600 questions against
+  `main` (`famAdv@600` margin −2, the plateau, the right % ±3 points, every guardrail; 95% one-sided bounds, 2 looks as
+  #975 declared); the rated world at 10,000 answers against `main`, 5 seeds per profile.
+- **Real log (rule L12)**: no species row and no genus share rule exist in the log; a replay cannot judge a change of what
+  is asked. Measured instead: the record of a log replays as before (the share moves no record: no `RVS` entry).
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
