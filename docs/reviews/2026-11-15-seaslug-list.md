@@ -740,6 +740,27 @@ near Dauin.
 
 "Near Dauin" here is the candidate's own place (`loc: dauin`, within 40 km), as in §7.
 
+## 9. Pierre's own photos: the fish's rule (2026-11-16)
+
+Pierre, 2026-11-16 (Q386): his own sea slug photos follow the fish's rule (rule P1's fish exception, rule S2). §7 and §8
+took his like anyone's, Research Grade only and with no priority; since then `tools/fetch_seaslugs.py` reads his
+observations with the fish's own function (`fetch_fish.usable_obs`): identified to the species they are usable even when
+Needs ID (`ni`), and they are taken first, so none is left out: on top of a list already full, up to the ceiling of 30.
+Never boosted: they wait for the judging pass on the rubric like any candidate.
+
+**Result [measured]** (pulled 2026-11-16, about 15:20 Manila; `python3 tools/fetch_seaslugs.py --own --circle 1 --circle 2
+--circle 3`, his search only: 8 requests through `tools/inat.py`, rule C7, 3 `species_counts` and 5 searches of up to 50
+species together; nothing else asked):
+- His search returned 174 observations of the 205 species with candidates, all identified at species level; 57 were
+  already candidates (Research Grade, taken like anyone's).
+- **116 added, 5 of them Needs ID** (one each: *Goniobranchus geometricus*, *Phyllidia elegans*, *Chromodoris strigata*,
+  *Phyllidiella pustulosa*, *Phyllidiopsis fissurata*). The other 111 are his Research Grade observations that the
+  variety order (the least represented observer first) had left out of full lists. 39 species gain at least one; the
+  most: *Nembrotha chamberlaini* and *Phyllidia coelestis* +10 each (both at the ceiling of 30; one usable observation of
+  his of *N. chamberlaini* stays out for want of room), *Chromodoris annae* and *Goniobranchus geometricus* +9,
+  *Phyllidia elegans* +7. 8 are from abroad inside the Indo-West Pacific; every one carries a licence.
+- None is judged yet: `python3 tools/judging_fish.py --subject seaslug todo` lists them for the next judging pass.
+
 ## Appendix A. The pages read (pulled 2026-11-15)
 
 Date = the page's own publication date and the field it came from (§1.4), else "—". Species = confirmed species named.
