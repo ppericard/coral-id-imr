@@ -98,3 +98,36 @@ test("node --test with several files waits for the slot, one file does not, and 
     fs.rmSync(dir, {recursive: true, force: true});
   }
 });
+
+// Codex review #1007: the value of a reporter or import option is not a test file, so it never makes a several-file run a
+// single-file one.
+test('testFiles: the files a node --test command names, option values excluded', () => {
+  const {testFiles} = require('./slot.js');
+  assert.deepStrictEqual(testFiles(['a.test.js']), ['a.test.js']);
+  assert.deepStrictEqual(testFiles(['a.test.js', 'b.test.js']), ['a.test.js', 'b.test.js']);
+  assert.deepStrictEqual(testFiles(['--test-reporter', 'spec', '--test-reporter-destination', 'report.log']), []);
+  assert.deepStrictEqual(testFiles(['--import', './x.js', '--test-name-pattern', 'merge', 'tests/']), []);
+  assert.deepStrictEqual(testFiles(['--test-name-pattern=merge', 'tests/*.test.js']), ['tests/*.test.js']);
+});
+
+// Codex review #1007: files racing for one runner take one slot between them, and another run's slot is never touched.
+test('two files racing for one runner end with one slot, with two slots free', async t => {
+  if (!fs.existsSync('/proc/self/stat')) return t.skip('the guard needs /proc (Linux)');
+  const {dir, env} = sandbox();
+  try {
+    env.SMOKE_SLOTS = '2';
+    const runner = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 5000)'], {stdio: 'ignore'}),
+      hold = () => exec([SLOT, '--name', 'racer', '--hold', String(runner.pid)], env, dir);
+    const rs = await Promise.all([hold(), hold(), hold()]);
+    assert.deepStrictEqual(
+      rs.map(r => r.code),
+      [0, 0, 0]
+    );
+    const mine = fs.readdirSync(env.SMOKE_SLOT_DIR).filter(n => /^slot\d+$/.test(n));
+    assert.deepStrictEqual(mine.length, 1, 'one slot for the runner: ' + mine);
+    assert.ok(!fs.readdirSync(env.SMOKE_SLOT_DIR).some(n => n.startsWith('.hold-')), 'the lock is given back');
+    runner.kill();
+  } finally {
+    fs.rmSync(dir, {recursive: true, force: true});
+  }
+});

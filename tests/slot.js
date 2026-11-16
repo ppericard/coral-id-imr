@@ -167,12 +167,49 @@ function reap(f) {
   }
 }
 
+// Taking a slot for the process o.pid (see slot): one taker at a time per process (a lock file made atomically, taken back
+// when its taker is gone), so two files racing for one runner never end with two slots.
+async function holdFor(name, o) {
+  const lock = path.join(DIR, '.hold-' + o.pid);
+  try {
+    fs.mkdirSync(DIR, {recursive: true});
+    fs.chmodSync(DIR, 0o777);
+  } catch (e) {}
+  for (;;) {
+    if (slotsOf(o.pid).length) return () => {};
+    const tmp = path.join(DIR, `.new-${process.pid}-hold-${Math.random().toString(36).slice(2)}`);
+    let got = false;
+    try {
+      fs.writeFileSync(tmp, record(name), {mode: 0o666});
+      fs.linkSync(tmp, lock);
+      got = true;
+    } catch (e) {
+      if (e.code === 'EEXIST') reap(lock);
+      else return () => {}; // no usable directory: run without a slot
+    } finally {
+      try {
+        fs.unlinkSync(tmp);
+      } catch (e) {}
+    }
+    if (got) break;
+    await new Promise(r => setTimeout(r, POLL));
+  }
+  try {
+    return await slot(name, {...o, locked: true});
+  } finally {
+    try {
+      fs.unlinkSync(lock);
+    } catch (e) {}
+  }
+}
+
 // o.timeout (ms, tests): give up waiting and resolve null. o.signals === false: the caller handles Ctrl-C and kills itself
 // (run(), which waits for its child first). o.pid: take the slot for that other, running process (the `node --test` runner,
 // see testGuard) and keep it until that process ends (no exit hook: dead() takes it back); it resolves at once when that
-// process already holds one, and two racing takers end with one slot, the lowest.
+// process already holds one; two racing takers end with one slot (holdFor).
 async function slot(name, o = {}) {
   if (process.env.CI || held()) return () => {};
+  if (o.pid && !o.locked) return holdFor(name, o);
   // Checked before each try, so a run that waited never starts on a disk that filled up meanwhile (Codex review #608).
   const roomy = () => {
     const disk = diskOk();
@@ -221,15 +258,7 @@ async function slot(name, o = {}) {
           } catch (e) {}
         }
         if (!got) continue;
-        if (o.pid) {
-          // Racing takers for one runner: the lowest slot stays, the others are given back.
-          const all = slotsOf(o.pid).sort((a, b) => +a.slice(4) - +b.slice(4));
-          for (const n of all.slice(1))
-            try {
-              fs.unlinkSync(path.join(DIR, n));
-            } catch (e) {}
-          return () => {};
-        }
+        if (o.pid) return () => {}; // the slot stays with the runner, whose end gives it back (dead())
         const mine = fs.readFileSync(f, 'utf8'),
           outer = process.env.REEFID_SLOT, // a stale or test value: put back when this slot is given back
           keep = setInterval(() => {
@@ -362,6 +391,20 @@ function guard(name) {
 // run directly (no runner), CI, a run inside a holder's tree (node tests/run.js: REEFID_SLOT) and a machine without /proc
 // (a laptop: nothing to protect, and the runner's command line cannot be read). Blocks (the file has not started yet) and
 // then gives the file's own children the slot (REEFID_SLOT), so a test that runs a guarded tool never waits for it.
+// The files a `node --test` command line names (the argv after --test): a script (.js .cjs .mjs .ts), or a glob. The value
+// of an option that takes one (--test-reporter-destination report.log, --import x.js) is none (Codex review #1007);
+// a directory or a name without a script extension is not counted: the runner finds the files in it.
+const WITH_VALUE =
+  /^(-r|--require|--import|--loader|--experimental-loader|--env-file|--test-reporter|--test-reporter-destination|--test-name-pattern|--test-skip-pattern|--test-concurrency|--test-timeout|--test-shard|--test-isolation)$/;
+function testFiles(argv) {
+  const files = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (WITH_VALUE.test(argv[i])) i++;
+    else if (!argv[i].startsWith('-') && (/\.[cm]?[jt]s$/.test(argv[i]) || argv[i].includes('*'))) files.push(argv[i]);
+  }
+  return files;
+}
+
 function testGuard() {
   if (process.env.CI || !process.env.NODE_TEST_CONTEXT || held()) return;
   let argv;
@@ -372,7 +415,7 @@ function testGuard() {
   }
   const at = argv.indexOf('--test');
   if (at < 0) return;
-  const files = argv.slice(at + 1).filter(a => !a.startsWith('-') && (/\.[cm]?[jt]s$/.test(a) || a.includes('*') || fs.existsSync(a)));
+  const files = testFiles(argv.slice(at + 1));
   if (files.length === 1 && !files[0].includes('*')) return; // one file: the fast tier
   const r = spawnSync(
     process.execPath,
@@ -387,7 +430,7 @@ function testGuard() {
 }
 
 module.exports = slot;
-Object.assign(slot, {slot, parts, widths, partial, held, run, guard, testGuard, diskOk, maxLoad, LOAD, MIN_FREE_GB, DIR});
+Object.assign(slot, {slot, parts, widths, partial, held, run, guard, testGuard, testFiles, diskOk, maxLoad, LOAD, MIN_FREE_GB, DIR});
 
 // node tests/slot.js [--name N] -- cmd [args]        node tests/slot.js --name N --hold PID  (testGuard's helper)
 if (require.main === module) {
