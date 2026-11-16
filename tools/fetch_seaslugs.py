@@ -16,10 +16,17 @@ sea-slug decisions:
   usable licence, in the observer's order. Unlike the fish (every photo of an observation since 2026-11-08, Q226), a
   candidate is one observation.
 - Identity: Research Grade at the species level (or below), never captive. Pierre's own observations (iNaturalist user
-  ppericard) are taken like anyone's, Research Grade only and with no priority: P1's fish exception (each of his
-  compatible photos in the pool, his Needs ID ones too) is a fish rule. `own` still marks them.
-- Licences (rule P1): CC0, CC BY, CC BY-NC only, never share-alike nor ND; the licence is the last tie-break (an open one
-  before CC BY-NC), after the variety below.
+  ppericard): the fish's rule (Pierre, 2026-11-16, Q386: "la même règle que pour les poissons ... y compris en needs
+  ID"; rule P1's fish exception, rule S2): one identified to the species (the observation's taxon at species level or
+  below, whoever named it) is usable even when Needs ID, and his photo even without a licence, as fetch_fish.usable_obs
+  reads them (this tool calls it). They are asked on their own search (fetch_fish.queries "own": Research Grade and
+  Needs ID, any place, abroad kept inside the Indo-West Pacific) and taken first, as fetch_fish.select takes them, so
+  none is left out: within the photo target on a new list, and on a list already full (filled before 2026-11-16) on
+  top of it, up to the ceiling `max` (30), since a candidate already there is never removed. Never boosted: they wait
+  for the judging pass like any candidate, on the same rubric, and play by their judged ease. `own` marks them, `ni`
+  the Needs ID ones (as fetch_fish.record).
+- Licences (rule P1): CC0, CC BY, CC BY-NC only, never share-alike nor ND (Pierre's own photos whatever their licence,
+  as the fish's); the licence is the last tie-break (an open one or his own before CC BY-NC), after the variety below.
 - Eggs (Pierre, 2026-11-15; photoTarget.exclude, sources note 1.4), filter 1: an observation annotated with one of
   exclude.annotations (Life Stage: Egg, Evidence of Presence: Egg) is dropped, read from its own annotations (no request
   parameter removes them exactly); an annotation voted down (vote score below 0) does not count, as fetch_fish.trim
@@ -29,27 +36,29 @@ sea-slug decisions:
   (not nearest Dauin first, as the fish), then abroad, only when the Philippine search was read to its end and the
   species is still short: the Indo-West Pacific box of the fish (fetch_fish.IWP: 30 S - 30 N, 90 E - 170 E), the
   region of the regional ID guides. `loc` still says dauin (within 40 km), ph or world.
-- Order: the least represented observer first, then the least represented life stage, then the licence, then a fixed
-  hash of the observation id (fetch_fish.hord: no votes or quality order). A rerun keeps every candidate already there
-  and only fills the room left; a photo or an observation is never taken twice.
+- Order: Pierre's own first (above); then the least represented observer first, then the least represented life stage,
+  then the licence, then a fixed hash of the observation id (fetch_fish.hord: no votes or quality order). A rerun keeps
+  every candidate already there and only fills the room left; a photo or an observation is never taken twice.
 
 seaslug-cand.json is shaped like fish-cand.json, so the fish's judging and admin tools can be pointed at it:
 {"v": 1, "cand": {species key: [record, ...]}}, one species per line (tools/datajson.py layout), the species in
 tools/seaslugs.json order. The record fields are the fish's (fetch_fish.record): f, a, lic, o, t, own, loc, src, r
-(r: 1, the photo stays remote at `src`), plus st (the observer's Life Stage annotation) when there is one. The
-differences, as no sea-slug subject exists yet:
+(r: 1, the photo stays remote at `src`), plus st (the observer's Life Stage annotation) when there is one and ni (Pierre's
+own Needs ID observation). The differences, as no sea-slug subject exists yet:
 - the species key is the species' iNaturalist taxon id (a string; tools/seaslugs.json `inat`), the one stable id it has
   (its rank moves with each build);
 - f is "seaslug-<taxon id>-cand-<photo id>" (fish: "fish-<species id>-cand-<photo id>"), so the photo id still ends it
   (fetch_fish.pid, core.js);
-- never `ni` (only Research Grade) nor `rep` or `via` (no covers, no FishBase).
+- never `rep` or `via` (no covers, no FishBase).
 
 Network: iNaturalist API v2, read only, through tools/inat.py (rule C7: about one request a second, a User-Agent, paced
-retries): fetch_fish.py's Philippine and abroad searches (its `queries`), the small species asked together (its
-`prefetch`), the juvenile searches (its `phase_obs`). Every reply is cached, trimmed, in tools/.cache/seaslug_photos.json
-(git-ignored): a rerun is offline and gives the same file; --refresh asks again, --offline never asks.
+retries): fetch_fish.py's searches of Pierre's own, the Philippines and abroad (its `queries`), the small species asked
+together (its `prefetch`), the juvenile searches (its `phase_obs`). Every reply is cached, trimmed, in
+tools/.cache/seaslug_photos.json (git-ignored): a rerun is offline and gives the same file; --refresh asks again,
+--offline never asks. --own asks Pierre's own search only (a few requests for every species together) and adds his
+observations, nothing else.
 
-    python3 tools/fetch_seaslugs.py [--circle 1] [--only "Jorunna parva,119434"] [--refresh | --offline]
+    python3 tools/fetch_seaslugs.py [--circle 1] [--only "Jorunna parva,119434"] [--own] [--refresh | --offline]
 Tests: node --test tests/seaslugcand.test.js (stubbed network).
 """
 import argparse
@@ -62,15 +71,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line
 from rights import rights_rank  # noqa: E402  0 own or open, 1 NC (Q270)
-from fetch_fish import (DEAD, LOC, OK, STAGE, Net, hord, in_iwp, obs_url, pages, phase_obs, prefetch,  # noqa: E402
-                        queries, tier_of)
+from fetch_fish import LOC, Net, obs_url, pages, phase_obs, prefetch, queries, usable_obs  # noqa: E402
 
 SRC = ROOT / "tools" / "seaslugs.json"
 CAND = ROOT / "seaslug-cand.json"
 CACHE = ROOT / "tools" / ".cache" / "seaslug_photos.json"
 PREFIX = "seaslug"
-PIERRE = "ppericard"
-RANKS = ("species", "subspecies", "variety", "form")
 
 
 def target(s, T):
@@ -86,23 +92,19 @@ def is_egg(o, pairs):
 
 
 def usable(o, pairs, used=frozenset(), taken=frozenset()):
-    """One observation (as fetch_fish.trim keeps it) as a selection item, or None: Research Grade at the species level,
-    no egg or Dead annotation, abroad only inside the Indo-West Pacific, not among the candidates (taken: observation
-    URLs), with a photo of a usable licence not taken yet (used: photo ids). The item carries that one photo (p): the
-    observation's first usable one."""
-    if o.get("g") != "research" or o.get("rk") not in RANKS or is_egg(o, pairs) or [*DEAD] in (o.get("an") or []):
+    """One observation (as fetch_fish.trim keeps it) as a selection item, or None: the fish's rule (fetch_fish.usable_obs:
+    the species level or below, Research Grade or Pierre's own, never annotated Dead, abroad only inside the Indo-West
+    Pacific, CC0 / CC BY / CC BY-NC photos or his own whatever their licence), no egg annotation, not among the
+    candidates (taken: observation URLs), with a usable photo not taken yet (used: photo ids). The item carries that one
+    photo (p): the observation's first usable one."""
+    if is_egg(o, pairs) or obs_url(o["id"]) in taken:
         return None
-    if obs_url(o["id"]) in taken:
+    x = usable_obs({**o, "an": o.get("an") or [], "ph": o.get("ph") or []}, used, ())
+    if not x:
         return None
-    tier = tier_of(o)
-    if tier == "world" and not in_iwp(o.get("ll")):
-        return None
-    p = next((p for p in o.get("ph") or [] if p[2] in OK and p[1] and str(p[0]) not in used), None)
-    if not p:
-        return None
-    st = "/".join(sorted({STAGE[tuple(a)] for a in o.get("an") or [] if tuple(a) in STAGE}))
-    return {"id": o["id"], "u": o.get("u"), "t": o.get("t"), "own": o.get("u") == PIERRE, "tier": tier, "st": st,
-            "h": hord(o["id"]), "cls": rights_rank({"lic": p[2]}), "p": p}
+    p = x["P"][0]
+    return {"id": o["id"], "u": o.get("u"), "t": o.get("t"), "g": o.get("g"), "own": x["own"], "tier": x["tier"],
+            "st": x["st"], "h": x["h"], "cls": rights_rank({"lic": p[2], "own": x["own"]}), "p": p}
 
 
 def pick(items, room, n, used, taken):
@@ -127,11 +129,13 @@ def pick(items, room, n, used, taken):
 def record(key, o):
     """A candidate, in fish-cand.json's fields (fetch_fish.record)."""
     p = o["p"]
-    r = {"f": f"{PREFIX}-{key}-cand-{p[0]}", "a": p[3] or (f"(c) {o['u']}" if o["u"] else ""), "lic": p[2],
-         "o": obs_url(o["id"]), "t": o["t"], "own": o["own"], "loc": LOC[o["tier"]],
-         "src": p[1].replace("/square.", "/original."), "r": 1}
+    r = {"f": f"{PREFIX}-{key}-cand-{p[0]}", "a": p[3] or (f"(c) {o['u']}" if o["u"] else ""),
+         "lic": p[2] or ("own" if o["own"] else ""), "o": obs_url(o["id"]), "t": o["t"], "own": o["own"],
+         "loc": LOC[o["tier"]], "src": p[1].replace("/square.", "/original."), "r": 1}
     if o["st"]:
         r["st"] = o["st"]
+    if o["own"] and o.get("g") != "research":
+        r["ni"] = 1
     return r
 
 
@@ -141,24 +145,38 @@ def species_of(src, circles, only=()):
             and (not only or s["name"] in only or str(s["inat"]) in only)]
 
 
-def fill(net, s, L, T, pairs, used, taken):
-    """The new candidates of species s (L: its candidates already there): the juvenile room first (Life Stage: Juvenile
+def own_room(L, T):
+    """The room for Pierre's own observations in a list L: up to the ceiling `max`, so on a list the others already
+    filled to its target his still come (a candidate already there is never removed); his count in the target after."""
+    return max(0, T.get("max", 0) - len(L))
+
+
+def fill(net, s, L, T, pairs, used, taken, own_only=False):
+    """The new candidates of species s (L: its candidates already there): Pierre's own first (his search, every one
+    usable up to own_room: the fish's select takes his first), then the juvenile room (Life Stage: Juvenile
     observations, the Philippines then abroad), then the rest (the Philippines, then abroad when their search was read to
-    its end and room is left). Returns ([items], {"juvenile": short by}) ."""
+    its end and room is left). own_only: his only, nothing else asked. Returns ([items], {"juvenile": short by})."""
     tid, Q = s["inat"], queries(s["inat"])
     cap, juv = target(s, T)
     n = Counter()
     for p in L:
         n["s", p.get("st", "")] += 1
-    jr = max(0, min(juv - sum(1 for p in L if "juvenile" in (p.get("st") or "").split("/")), cap - len(L)))
-    free = max(0, cap - len(L) - jr)
-    if not jr and not free:
-        return [], {}
     it = lambda obs: [x for x in (usable(o, pairs, used, taken) for o in obs) if x]  # noqa: E731
+    got = []
+    if own_room(L, T):
+        mine = pages(net, Q["own"], lambda res: False)
+        got += pick([x for x in it(mine["results"]) if x["own"]], own_room(L, T), n, used, taken)
+    if own_only:
+        return got, {}
+    have = len(L) + len(got)
+    jr = max(0, min(juv - sum(1 for p in L if "juvenile" in (p.get("st") or "").split("/"))
+                    - sum(1 for x in got if "juvenile" in x["st"].split("/")), cap - have))
+    free = max(0, cap - have - jr)
+    if not jr and not free:
+        return got, {}
     enough = lambda res: len(it(res)) >= jr + free  # noqa: E731
     ph = pages(net, Q["ph"], enough)
     pool = it(ph["results"])
-    got = []
     if jr:
         jobs, jmore = phase_obs(net, "juvenile", [tid], "ph")
         J = [x for x in pool if "juvenile" in x["st"].split("/")] + it(jobs[tid])
@@ -188,18 +206,25 @@ def run(args):
     taken = {p["o"] for L in have.values() for p in L}
     net = Net(args.cache, offline=args.offline, refresh=args.refresh)
     report = {}
+    own_only = getattr(args, "own", False)
     try:
-        prefetch(net, [s["inat"] for s in S if len(have.get(str(s["inat"]), [])) < target(s, T)[0]], ["ph"])
+        # Pierre's own for every species with room for them (his search, asked together: rule C7), then the general one.
+        prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T)], ["own"])
+        if not own_only:
+            prefetch(net, [s["inat"] for s in S if len(have.get(str(s["inat"]), [])) < target(s, T)[0]], ["ph"])
         for s in S:
             key = str(s["inat"])
             L = have.setdefault(key, [])
-            got, short = fill(net, s, L, T, pairs, used, taken)
+            got, short = fill(net, s, L, T, pairs, used, taken, own_only)
             L += [record(key, o) for o in got]
             loc = Counter(p["loc"] for p in L)
             report[s["name"]] = {"n": len(L), "target": target(s, T)[0], "ph": loc["dauin"] + loc["ph"], "world": loc["world"],
-                                 "juvenile": sum(1 for p in L if "juvenile" in (p.get("st") or "")), **({"short": short} if short else {})}
+                                 "juvenile": sum(1 for p in L if "juvenile" in (p.get("st") or "")),
+                                 "own": sum(1 for p in L if p.get("own")), "ownNew": sum(1 for o in got if o["own"]),
+                                 **({"short": short} if short else {})}
+            mine = f", Pierre's own {report[s['name']]['own']} (+{report[s['name']]['ownNew']})" if report[s["name"]]["own"] else ""
             print(f"{s['name']:<30} {len(L):>2} / {target(s, T)[0]} (Philippines {loc['dauin'] + loc['ph']}, abroad "
-                  f"{loc['world']}, juvenile {report[s['name']]['juvenile']}){' short ' + json.dumps(short) if short else ''}",
+                  f"{loc['world']}, juvenile {report[s['name']]['juvenile']}{mine}){' short ' + json.dumps(short) if short else ''}",
                   flush=True)
     finally:
         net.save()
@@ -208,7 +233,7 @@ def run(args):
     dump({"v": 1, "cand": out}, str(cand_path))
     few = sorted(k for k, v in report.items() if v["n"] < T["start"])
     print(f"total {sum(map(len, out.values()))} photos for {len(out)} species; below the start of {T['start']}: "
-          f"{', '.join(few) or 'none'}")
+          f"{', '.join(few) or 'none'}; Pierre's own added this run: {sum(v['ownNew'] for v in report.values())}")
     return report
 
 
@@ -216,6 +241,7 @@ def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     a.add_argument("--circle", type=int, action="append", help="circle(s) to fetch (default 1)")
     a.add_argument("--only", help="comma-separated species names or iNaturalist taxon ids")
+    a.add_argument("--own", action="store_true", help="Pierre's own observations only (his search), nothing else asked")
     m = a.add_mutually_exclusive_group()
     m.add_argument("--refresh", action="store_true", help="ask iNaturalist again")
     m.add_argument("--offline", action="store_true", help="never ask iNaturalist (fail on a reply not cached)")
