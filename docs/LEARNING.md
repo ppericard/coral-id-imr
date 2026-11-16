@@ -3961,6 +3961,54 @@ Advanced, the genus questions of a player with the scientific names on):
 - **Real log (rule L12)**: no species row and no genus share rule exist in the log; a replay cannot judge a change of what
   is asked. Measured instead: the record of a log replays as before (the share moves no record: no `RVS` entry).
 
+**Found while running, before the choice**: the share held back an IMR player's IMR genera, which Pierre put in the
+families' phase (Q219: the app world's lecture RA had no genus question by 600 in p1-p3). They are left out of the share
+(`app.js` `shareFree`, with the set turned on by hand early, Q240), and that version, **fin** (POW 2), was run again in both
+worlds. It differs from p2 only for the lecture RA.
+
+**Results** (means over the 5 seeds; the rated world at 3,000 answers, normal photos, told the truth; the app world at 600
+questions, `--choice auto`; beginner / casual diver / lecture RA / strong RA / expert):
+
+| Cell | main | built | p1 (m) | **fin (m²)** | p3 (m³) | p2s (m², species only) |
+|---|---|---|---|---|---|---|
+| Families at Advanced, app world, 600 | 0 / 1.4 / 2.0 / 8.6 / 9.2 | 0 / 0.6 / 0.8 / 3.2 / 4.4 | 0 / 0.4 / 3.2 / 7.6 / 9.8 | 0 / 0.6 / 1.6 / 9.4 / 12.2 | 0 / 1.0 / 5.0 / 11.8 / 12.2 | 0 / 0.6 / 1.6 / 8.4 / 9.2 |
+| Families at Advanced, 1,000 | 2.6 / 6.6 / 5.6 / 13.6 / 11.8 | 3.0 / 2.0 / 2.6 / 8.2 / 6.0 | 4.8 / 5.2 / 12.2 / 19.4 / 19.4 | 5.8 / 6.4 / 10.8 / 21.6 / 22.4 | 5.6 / 6.6 / 14.4 / 23.8 / 22.8 | 2.8 / 6.4 / 5.0 / 12.6 / 12.8 |
+| Families at Advanced, 3,000 | 21.2 / 32.0 / 25.4 / 25.4 / 27.0 | 12.4 / 11.0 / 14.6 / 19.2 / 13.6 | 29.4 / 28.8 / 29.0 / 28.8 / 29.4 | 30.8 / 30.6 / 30.2 / 30.4 / 31.4 | 30.8 / 31.0 / 31.0 / 30.6 / 31.0 | 18.6 / 30.6 / 23.6 / 23.0 / 24.4 |
+| Fish % shown, 1,000 | 30.2 / 31.4 / 35.8 / 41.6 / 42.4 | 29.6 / 29.8 / 33.4 / 38.4 / 40.6 | 31.2 / 31.2 / 37.2 / 42.2 / 42.0 | 31.4 / 31.2 / 37.2 / 41.4 / 41.6 | 31.4 / 31.4 / 36.4 / 40.8 / 40.6 | 30.4 / 31.2 / 36.2 / 41.6 / 42.4 |
+| Fish % shown, 3,000 | 42.6 / 42.0 / 45.6 / 53.0 / 53.2 | 39.2 / 38.4 / 42.0 / 46.6 / 50.8 | 44.2 / 42.6 / 46.8 / 51.8 / 53.8 | 44.2 / 43.2 / 47.2 / 51.8 / 54.2 | 44.0 / 42.8 / 46.6 / 51.0 / 53.4 | 42.4 / 43.2 / 44.6 / 50.2 / 53.2 |
+| Right %, answers 1,001-3,000 | 75 / 97 / 76 / 89 / 89 | 74 / 72 / 74 / 75 / 87 | 77 / 77 / 76 / 81 / 89 | 78 / 78 / 77 / 84 / 90 | 79 / 79 / 77 / 83 / 91 | 74 / 78 / 73 / 77 / 89 |
+| Species at Open Water, 3,000 | 0 | 5.0 / 3.6 / 7.0 / 2.2 / 89.0 | 7.4 / 12.6 / 6.8 / 6.6 / 43.2 | 4.6 / 12.6 / 5.2 / 10.0 / 35.8 | 4.8 / 8.8 / 4.6 / 7.8 / 33.6 | 2.0 / 12.6 / 2.8 / 4.4 / 49.4 |
+| Species met, 3,000 | 0 | 58 / 112 / 87 / 141 / 258 | 33 / 87 / 40 / 73 / 110 | 31 / 78 / 37 / 55 / 122 | 28 / 80 / 37 / 52 / 89 | 27 / 78 / 55 / 94 / 133 |
+| Genera at Advanced, 3,000 | 0.2 / 0 / 1.6 / 22.6 / 23.0 | 0 / 0 / 0.2 / 3.0 / 0.8 | 0.8 / 0 / 1.2 / 16.4 / 11.6 | 0.8 / 0 / 2.4 / 18.0 / 13.4 | 0.2 / 0 / 0.4 / 13.4 / 11.2 | 0 / 0 / 1.0 / 11.2 / 12.0 |
+| Share of answers 1-3,000 on species / genera (strong RA) | 0 / 0.66 | 0.47 / 0.25 | 0.25 / 0.37 | 0.20 / 0.36 | 0.19 / 0.35 | 0.25 / 0.45 |
+
+**The choice: fin, POW 2.** Every curve on the genera and species together removes the loss of the branch as built
+(families at Advanced at 3,000 are 30-31 of 32 for every profile against 21-32 on `main` and 11-19 as built; the fish %
+is higher than as built for every profile and checkpoint). Among them:
+- p1 (linear) leaves the casual diver at 28.8 families at Advanced at 3,000 against 32.0 on `main` (−3.2: breached).
+- p3 (cubic) holds the families best at 1,000 but brings the fewest species and the lowest fish % of the three (expert at
+  1,000 −1.8 points: breached).
+- p2s (species only, the genera as on `main`) keeps the loss for the families of every profile that takes the scientific
+  names (beginner 18.6, lecture RA 23.6, strong RA 23.0, expert 24.4 at 3,000: breached for four).
+- fin holds `famAdv` at every checkpoint in both worlds (the casual diver at 3,000 unclear: −1.4, bound −2.0; the strong
+  RA and the expert at 600 unclear in the app world: +0.8 and +3.0 on average, bounds −2.7 and −2.3), gives the highest
+  fish % of the three at 3,000 for four profiles, and brings species to every profile.
+
+**What fin costs** (paired against `main`, rated world, 90% one-sided bounds; learncmp's verdicts):
+- **The genera come later**, as the rule means them to (Pierre, 2026-11-08: "too early, too strong"; Q382 names the genus):
+  their share of answers 1-3,000 falls from 0.50-0.66 to 0.26-0.36, so the units at Open Water at 1,000 are **breached**
+  for the strong RA and the expert (45.2 → 36.2 and 53.2 → 43.4: the families +2, the genera −12), and the strong RA's
+  fish % at 3,000 is **breached** (53.0 → 51.8, bound −2.2 against −1; its genera at Advanced 22.6 → 18.0).
+- **The longest plateau of the shown %** is **breached** for the beginner (310 → 467 answers), the lecture RA (308 → 462)
+  and the strong RA (276 → 338). Every arm with species has it (p2s too: 418 and 377 for the lecture and strong RA; as
+  built: breached for three): the species' common-name credit comes slowly, one species at a time, once the families are
+  nearly full. Not a property of the curve.
+- **E = bar − D\* of the families** reads **breached** at 1,000 and 3,000 for four profiles, but it moves from below zero
+  towards zero (beginner −0.139 → −0.019, strong RA −0.064 → −0.010 at 3,000): the families' bars under-claim less
+  because they get more answers. fin's E stays below zero for every profile (at most −0.007): it is not an over-claim.
+- Everything else held: true knowledge D\* (up to +0.021 at 1,000), the first unit at Open Water, units met, the share
+  under ease 4.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
