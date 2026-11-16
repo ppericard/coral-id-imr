@@ -28,6 +28,7 @@ function engine(U, refused) {
     Math: M,
     SUBJ: C.subjectOf('coral'),
     calibOf: C.calibOf,
+    unitRankOf: C.unitRankOf,
     refLevel: C.refLevel,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
