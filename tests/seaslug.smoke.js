@@ -203,6 +203,26 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     const gs = await p.evaluate(g => hr('g-' + g), F.genera[0].id);
     await p.goto(base + gs);
     await p.waitForFunction(n => (document.querySelector('#view') || {}).innerText.includes(n), F.genera[0].name, {timeout: 15000});
+    // A species with no name yet (seaslug.json inf; Pierre, 2026-11-17, Q389 (2)): its sheet names it with its source in
+    // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase).
+    const inf = F.species.find(s => s.inf);
+    if (inf) {
+      await p.goto(base + (await p.evaluate(n => hr('g-s:' + n), inf.name)));
+      await p.waitForFunction(n => (document.querySelector('.fn-t') || {}).innerText === n, `${inf.name} (${inf.src})`, {timeout: 15000});
+      const sh = await p.evaluate(() => ({
+        it: [...document.querySelectorAll('.fn-t i')].map(x => x.textContent),
+        small: (document.querySelector('.fn-t small') || {}).textContent,
+        links: [...document.querySelectorAll('.sheetmore a')].map(a => a.href)
+      }));
+      check(sh.it.join() === inf.name.split(' ')[0], '2: the species with no name: its genus alone in italics');
+      check(sh.small === `(${inf.src})`, '2: its source in small type');
+      check(
+        sh.links.some(h => h.includes('doi.org/')) &&
+          sh.links.some(h => h.includes('observation_fields/')) &&
+          !sh.links.some(h => /fishbase|marinespecies|\/taxa\//.test(h)),
+        '2: its links: the paper and the field, no taxon page'
+      );
+    }
     await p.goto(base + '#seaslug');
     await p.waitForFunction(() => /Identify a sea slug/.test(document.querySelector('#view').innerText), null, {timeout: 15000});
     const home = await p.evaluate(() => document.querySelector('#view').innerText);
