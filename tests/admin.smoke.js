@@ -2647,17 +2647,8 @@ const darkCards = (p, sel) =>
         fails.push(`${w}px Analyses heatmap, Typed: ${JSON.stringify(h1)}`);
       await p.click('#view [data-sf="hm"][data-v="pick"]');
       await settle();
-      // not a fish page yet (core.js SUBJECTS admin pages): the corals first
-      if (
-        once &&
-        (await p.evaluate(() =>
-          hasPage(
-            SUBJECTS.find(S => S.admin.pages),
-            'analyses/difficulty/heatmap'
-          )
-        ))
-      )
-        fails.push(`${w}px Analyses heatmap: on the fish side already`);
+      // the corals at one rank: no rank switch
+      if (await p.$('#view [data-sf="hr"]')) fails.push(`${w}px Analyses heatmap: a rank switch on the corals' side`);
     }
     // The actions part (once, at 1280; its own CI job since the CI speed work of 2026-11-15, a third of the main part's time):
     // run here in a whole run, first in a run without the main part.
@@ -5839,8 +5830,81 @@ const darkCards = (p, sel) =>
             cap: ($('lightbox').querySelector('.lb-cap') || {}).textContent || ''
           }));
           if (!lb.open || /\b[fgs]:[A-Z]/.test(lb.cap) || !lb.cap.trim()) fe.push(`a photo enlarged ${JSON.stringify(lb)}`);
+          await fq.keyboard.press('Escape');
         }
-        if (fe.length) fails.push(`${vw}px Fish Answer log and Pairs: ${fe.slice(0, 4).join(' | ')}`);
+        // Difficulty › Heatmap on the fish side (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): one map per rank asked
+        // (Families, Genera: the genus questions added above), every family of the game on the map in its identification
+        // key group's block, the genera in their family's block in italics; the cells add up to the Mix-ups count; named,
+        // never by id; no compare link (the fish have none); the A5 line while most cells are under CONF.N offers.
+        await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/heatmap'));
+        await fq
+          .waitForFunction(() => cur === 'analyses/difficulty/heatmap' && document.querySelector('#view .adm-hmt'), null, {timeout: 60000})
+          .catch(() => fe.push('Heatmap not drawn'));
+        const hmF = () =>
+          fq.evaluate(() => {
+            const V = document.getElementById('view'),
+              T = V.querySelector('.adm-hmt');
+            if (!T) return null;
+            const kp = Object.fromEntries(
+              [...V.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
+            );
+            return {
+              ranks: [...V.querySelectorAll('[data-sf="hr"]')].map(
+                b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')
+              ),
+              rows: T.querySelectorAll('tbody tr').length,
+              cols: T.querySelectorAll('thead .hm-col').length,
+              slate: FISHA.slate.length,
+              names: [...T.querySelectorAll('tbody .hm-row')].map(th => th.textContent),
+              it: T.querySelectorAll('tbody .hm-row.hm-it').length,
+              fams: [...T.querySelectorAll('.hm-fam')].map(th => th.title),
+              sum: [...T.querySelectorAll('td')].reduce((t, e) => t + (Number(e.textContent) || 0), 0),
+              mix: kp['Mix-ups'],
+              links: T.querySelectorAll('td a').length,
+              note: (V.querySelector('p.note') || {}).textContent || '',
+              ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+        const hf = await hmF();
+        if (
+          !hf ||
+          hf.ranks.join() !== 'Families*,Genera' ||
+          hf.rows < hf.slate ||
+          hf.cols !== hf.rows ||
+          hf.it ||
+          hf.fams.length < 3 ||
+          !hf.fams.every(t => /^\d+\. \S/.test(t)) ||
+          String(hf.sum) !== hf.mix ||
+          !hf.sum ||
+          hf.links ||
+          hf.ids.length ||
+          hf.wide > 0
+        )
+          fe.push(`Heatmap, families ${JSON.stringify({...hf, names: undefined})}`);
+        else {
+          await fq.click('#view [data-sf="hr"][data-v="genus"]');
+          await fq.waitForFunction(() => document.querySelector('#view [data-sf="hr"][data-v="genus"][aria-pressed="true"]'), null, {
+            timeout: 30000
+          });
+          const hg = await hmF();
+          if (
+            !hg ||
+            ['Amphiprion', 'Chromis', 'Dascyllus', 'Pomacentrus'].some(g => !hg.names.includes(g)) ||
+            hg.it !== hg.rows ||
+            !hg.fams.includes('Damselfishes') ||
+            String(hg.sum) !== hg.mix ||
+            !hg.sum ||
+            !/^Not enough data yet: \d+ of the \d+ cells offered are under \d+ offers; at least \d+ more answers with choices at this rank/.test(
+              hg.note
+            ) ||
+            hg.ids.length ||
+            hg.wide > 0
+          )
+            fe.push(`Heatmap, genera ${JSON.stringify(hg)}`);
+          await fq.click('#view [data-sf="hr"][data-v="family"]');
+        }
+        if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
       }
       // Fish admin at parity, Journey details: a fish Journey names its units as the Answer log does (a family by name, a
