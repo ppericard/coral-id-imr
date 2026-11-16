@@ -943,7 +943,8 @@ function answers_(q){
       out.me = id(name);
       if (!archived_(row) && adminAcct_() !== h) try { adminClaim_(name, h); } catch (e) {}  // v125: the admin's account (adminAcct_)
       // v156 (roles step 1): Pierre's grants, once, to the admin's account (rolesSeed_)
-      if (q.who && !archived_(row) && adminAcct_() === h) try { rolesSeed_(name, h, q.who); } catch (e) {}
+      // vNEXT: a failure is a Deploy log line, never silent, never the reader's error; the seed's next try finishes it.
+      if (q.who && !archived_(row) && adminAcct_() === h) try { rolesSeed_(name, h, q.who); } catch (e) { roleLog_('seed failed, tried again at the next read: ' + errText_(e)); }
     } else if (r) failed_(name);
   }
   const big = Object.create(null); const dt = ss.getSheetByName(DATA_TAB);
@@ -1597,8 +1598,33 @@ function caller_(token){
 // nothing); a refusal is written at most AUDIT.DENY times every 6 hours (over_; anyone can send one). Nothing reads it
 // in normal operation: it outlives the accounts it names by id only (rule D7).
 const AUDIT = {TAB: 'Audit', HEAD: ['Time', 'Admin id', 'Action', 'Scope', 'Result', 'Target id'], DENY: 20};
+// One Audit row: true once written. vNEXT: a row that could not be written is a line in the Deploy log (roleLog_), never
+// silent and never thrown to the request (the seed of 2026-11-16 left a grant without its row, and nobody saw why).
 function audit_(id, action, scope, result, target){
-  try { sheet_(AUDIT.TAB, AUDIT.HEAD).appendRow([new Date(), safe_(id || ''), safe_(action), safe_(scope), safe_(result), safe_(target || '')]); } catch (e) {}
+  try { sheet_(AUDIT.TAB, AUDIT.HEAD).appendRow([new Date(), safe_(id || ''), safe_(action), safe_(scope), safe_(result), safe_(target || '')]); return true; }
+  catch (e) { roleLog_('Audit row not written (' + action + ', ' + scope + ', ' + result + '): ' + errText_(e)); return false; }
+}
+// A roles or Audit failure in the Deploy log, the same line at most once an hour; it never fails the request.
+function roleLog_(what){
+  try {
+    const c = CacheService.getScriptCache(), ck = 'rolelog:' + CORE_.dataSum({w: what});
+    if (c.get(ck)) return;
+    c.put(ck, '1', 3600);
+    sheet_('Deploy log', ['Time', 'Event']).appendRow([new Date(), safe_(('Roles: ' + what).slice(0, 500))]);
+  } catch (e) {}
+}
+// vNEXT: does the grant (role, scope) of the account with this anonymous id have its Audit row? The last 'ok' grant or
+// revoke of that role and scope for that id is a grant. A grant held without one was written by a try that failed before
+// its row (grantPut_ writes it then).
+function grantAudited_(role, scope, id){
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(AUDIT.TAB);
+  if (!sh || sh.getLastRow() < 2) return false;
+  const v = sh.getRange(2, 3, sh.getLastRow() - 1, 4).getValues();  // Action, Scope, Result, Target id
+  for (let i = v.length - 1; i >= 0; i--) {
+    const m = /^(grant|revoke) (\S+)/.exec(String(v[i][0]));
+    if (m && m[2] === role && String(v[i][1]) === scope && String(v[i][2]) === 'ok' && String(v[i][3]).replace(/^'/, '') === id) return m[1] === 'grant';
+  }
+  return false;
 }
 const auditOf_ = out => (out && out.ok ? 'ok' : String(out && out.error || 'error'));
 // The one gate of every privileged endpoint: the caller if can_ lets them use this right in this scope, else null, the
@@ -1623,16 +1649,23 @@ function rolesDrop_(name, by){
   return n;
 }
 // One grant written (or found already held) for the live account (name, h). Under the script lock (the caller holds it).
+// vNEXT: a role change is never without its Audit row. Everything the row needs is computed before the grant is written;
+// a grant held without its 'ok' row (grantAudited_: an earlier try wrote it, then failed) gets that row now and answers
+// 'ok', as the try that wrote it would have; a row that cannot be written throws, after its Deploy log line (audit_), so
+// the seed is not marked done and its next try writes the row.
 function grantPut_(name, h, role, scope, by, self){
-  const sh = sheet_(ROLES.TAB, ROLES.HEAD), k = lc_(name), act = 'grant ' + role + (self ? ' (self)' : '');
-  if (grants_().some(g => g.name === k && g.role === role && g.scope === scope && g.h === String(h))) { audit_(by, act, scope, 'held', aid_(name)); return 'held'; }
-  sh.appendRow([safe_(name), role, scope, new Date(), safe_(h)]);
-  audit_(by, act, scope, 'ok', aid_(name));
-  return 'ok';
+  const sh = sheet_(ROLES.TAB, ROLES.HEAD), k = lc_(name), act = 'grant ' + role + (self ? ' (self)' : ''), id = aid_(name);
+  const held = grants_().some(g => g.name === k && g.role === role && g.scope === scope && g.h === String(h));
+  const out = held && grantAudited_(role, scope, id) ? 'held' : 'ok';
+  if (!held) sh.appendRow([safe_(name), role, scope, new Date(), safe_(h)]);
+  if (!audit_(by, act, scope, out, id) && out === 'ok') throw new Error('grant ' + role + ': its Audit row was not written');
+  return out;
 }
 // Pierre's grants (ROLES.SEEDS), given once to the admin's account the first time the admin page reads the answer log
 // with the token, signed in to it (answers_, its code checked): a property marks it done, so a revoke or a delete is
 // never silently granted again, and no other account ever gets it this way. Audited as self-grants by the token (Q364).
+// vNEXT: the property is set only once every grant has its Audit row (grantPut_); a try that failed is finished by the
+// next one, which writes 'ok' for a grant the failed try wrote without its row.
 function rolesSeed_(name, h, who){
   const pr = PropertiesService.getScriptProperties();
   if (pr.getProperty(ROLES.SEED)) return false;
