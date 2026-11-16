@@ -384,7 +384,7 @@
   };
   // The sync script version that knows the sea-slug subject (rule D4): its group (Code.gs groupIds_) can be set from the
   // admin's Players page from it (admin.js groupOn, SUBJECTS sheet).
-  const SEASLUG_SHEET = 148;
+  const SEASLUG_SHEET = 151;
   const SUBJECTS = [
     {
       id: 'coral',
