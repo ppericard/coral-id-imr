@@ -39,17 +39,17 @@ to day with Pierre, what bites in the merge mechanics, and the open work (workin
   The machine is protected by `tests/slot.js` (one Playwright run at a time per 2 cores, rule W14), not by holding
   subagents back.
 - **The merge contract.** The integrator merges a PR on its own, at any hour, only when all of these hold:
-  1. every check is green on the current head, and no failed job was re-run to get green (rule W23); in a merge train
-     (rule W26), green on its own head and the train that holds it green;
+  1. every check is green on the current head, no failed job was re-run to get green (rule W23), and the merge train
+     that holds it is green (rule W26);
   2. every Codex finding is fixed or answered, every review thread resolved;
   3. **every choice in it is the integrator's call (easy to correct, below) or was already decided with Pierre**: a standing rule, a ROADMAP row he agreed with its spec, his
      words (quoted with their date in the PR's "Decisions" section), or a decided process (once he agreed how a thing
      is done and checked the first results, its outputs ship without asking him item by item: fish photo judging on the
      agreed rubric, per-species photo pre-proposals; only a change to the process itself waits for him); the PR's
      "Choices I made" section is empty;
-  4. it was rebased on `origin/main` right before the merge (Publish commits land without PRs), or it rides a green
-     merge train whose tree `main` then equals (rule W26), and goes in as a squash merge titled `… (#N)` (rule W18); a
-     PR that changes `Code.gs` gets its `VERSION` from the integrator at that moment (rule D3).
+  4. it rides a green merge train, alone or with other ready PRs, whose tree `main` then equals (rule W26: the train
+     tests it on the current `main`, where Publish commits land without PRs), and goes in as a squash merge titled
+     `… (#N)` (rule W18); a PR that changes `Code.gs` gets its `VERSION` from the integrator before its train (rule D3).
 - **The integrator decides the small choices; Pierre decides the ones that are costly to undo.** Pierre, 2026-11-14:
   "Tu pushe la mise en page. Au pire je corrigerais après. Il faut que tu pushes tout ce qui est facile à corriger à
   posteriori." **Easy to correct afterwards**: shipped under the contract, listed in Decisions as "integrator's call"
@@ -195,7 +195,7 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **W10** Never list Pierre's curation choices item by item; remind once, never nag.
 - **W11** Say what you checked; a guess is labelled.
 - **W25** Use the quota with care, never at the cost of the result.
-- **W26** Several ready PRs merge through one green merge train (`tools/train.py`).
+- **W26** Every PR merges through a green merge train (`tools/train.py`), alone or with other ready PRs.
 - **W27** Bounded cost: at most four agents balanced by weight, PRs from `main` only, two Codex rounds then cut the scope.
 
 ## Read on demand
