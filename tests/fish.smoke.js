@@ -46,6 +46,15 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp'
 };
+// This smoke runs on the corals and the fish alone: the sea slugs, in their beta group, are the admin's too, and a third
+// subject turns the admin's one-click switch into the chip's menu (checked here on a made-up third subject); they have
+// their own smoke, tests/seaslug.smoke.js. core.js is served without their SUBJECTS entry (the last one).
+const twoSubjects = t => {
+  const i = t.indexOf("      id: 'seaslug',"),
+    a = t.lastIndexOf('\n    },\n    {', i),
+    z = t.indexOf('\n    }\n  ];', i);
+  return i < 0 || a < 0 || z < 0 ? t : t.slice(0, a) + t.slice(z);
+};
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
@@ -53,6 +62,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(f, (e, b) => {
     if (e) return (res.writeHead(404), res.end());
     res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
+    if (u === '/core.js') b = Buffer.from(twoSubjects(String(b)));
     res.end(b);
   });
 });

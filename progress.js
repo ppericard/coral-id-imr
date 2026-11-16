@@ -1540,22 +1540,30 @@ function subjHello() {
   // The 'all' card is the beta invitation: only while the subject keeps its beta label (SUBJECTS beta).
   const card = S => (helloMode(S) === 'all' && !S.beta ? null : (UNITS[S.id].hello || {})[helloMode(S)]),
     member = S => (helloMode(S) === 'group' ? subjGroups().includes(S.id) : subjOpen(S));
-  const S = SUBJECTS.find(x => card(x) && member(x)); // a subject with a card for the player, never by its place
+  // The first subject with a card due for the player, never by its place: one whose card is settled (seen, or the subject
+  // already met) gives way to the next (Codex review #987: the fish's invitation, seen, hid the sea slugs' for good).
+  let S = null,
+    H = null,
+    key = '',
+    tok = '';
+  for (const X of SUBJECTS.filter(x => card(x) && member(x))) {
+    const k = subjDev(X.id, HELLO.KEY + helloMode(X)),
+      t = helloTok(X),
+      P2 = store.get(subjKey(X.id, 'progress'), null),
+      due = helloDue({
+        card: card(X),
+        member: member(X),
+        admin: HAS_ADMIN_TOKEN,
+        seen: !!store.get(k, null) || toldHas(t), // or on another device of the account (core.js TOLD)
+        met: SUBJ === X || !!store.get(startKey(X.id), null) || !!(P2 && typeof P2 === 'object' && Object.keys(P2).length),
+        answers: answersSoFar() // the subject on screen's, another subject than X (met otherwise)
+      });
+    if (due === 'met') store.set(k, 'met');
+    if (due !== 'show') continue;
+    [S, H, key, tok] = [X, card(X), k, t];
+    break;
+  }
   if (!S) return;
-  const H = card(S),
-    key = subjDev(S.id, HELLO.KEY + helloMode(S)),
-    tok = helloTok(S),
-    P2 = store.get(subjKey(S.id, 'progress'), null),
-    due = helloDue({
-      card: H,
-      member: member(S),
-      admin: HAS_ADMIN_TOKEN,
-      seen: !!store.get(key, null) || toldHas(tok), // or on another device of the account (core.js TOLD)
-      met: SUBJ === S || !!store.get(startKey(S.id), null) || !!(P2 && typeof P2 === 'object' && Object.keys(P2).length),
-      answers: answersSoFar() // the subject on screen's, another subject than S (met otherwise)
-    });
-  if (due === 'met') return void store.set(key, 'met');
-  if (due !== 'show') return;
   helloT = setTimeout(() => {
     helloT = 0; // decided now: shown, or not now (window.CARDS_SAID)
     const busy = !lb.hidden || !$helpbox.hidden || !$set.hidden || document.querySelector('.apptoast, .hello');

@@ -134,18 +134,19 @@ test('the fish units from the players copy: the same photos in play, covers and 
       fishScoreTree: C.fishScoreTree,
       refLevel: C.refLevel,
       contentApply: C.contentApply,
+      treeCur: C.treeCur,
       SUBJECTS: C.SUBJECTS
     };
   vm.createContext(ctx);
   vm.runInContext(
-    'let FISH = null, FISHRAW = null, CUR = null, FISHF = null;\n' +
+    "let FISH = null, FISHRAW = null, CUR = null, FISHF = null, TREE_AT = 'fish';\n" +
       // a scientific genus's species line names each species by the player's first name (cnFirst; imrNow: not at IMR)
       block(src, 'const cnList = s =>', '\n};\n', {through: 1, file: 'app.js'}) +
       'const imrNow = () => false;\n' +
       block(src, 'const VIEWS = [', '];\n', {through: 1, file: 'app.js'}) +
       block(src, 'const allPhotos = g =>', '// applyCuration(d, c) and applySlots', {file: 'app.js'}) +
       block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
-      block(src, 'const fishBuild = () => {', 'const fishLoad = () =>', {file: 'app.js'}) +
+      block(src, 'const fishBuild = () => {', 'const treeLoad = id =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
       '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); };',
     ctx

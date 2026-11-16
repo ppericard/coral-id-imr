@@ -1,0 +1,1263 @@
+{
+ "v": 1,
+ "about": "the sea-slug subject's tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)",
+ "area": {
+  "inatPlace": 6873,
+  "name": "Philippines"
+ },
+ "centre": {
+  "lat": 9.19,
+  "lon": 123.26,
+  "name": "Dauin",
+  "radiusKm": 40
+ },
+ "start": [],
+ "key": null,
+ "teach": [],
+ "families": [
+  {
+   "id": "f:Chromodorididae",
+   "name": "Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s119434",
+    "s119429",
+    "s468033",
+    "s201640",
+    "s121048",
+    "s346881",
+    "s121406",
+    "s469422",
+    "s468042",
+    "s481507",
+    "s54667",
+    "s548309",
+    "s469421",
+    "s467977"
+   ],
+   "genera": [
+    "g:Chromodoris",
+    "g:Hypselodoris",
+    "g:Goniobranchus",
+    "g:Ardeadoris",
+    "g:Doriprismatica"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Polyceridae",
+   "name": "Polyceridae",
+   "circle": 1,
+   "species": [
+    "s126110",
+    "s121050",
+    "s119860",
+    "s119438",
+    "s142953",
+    "s468030",
+    "s120948",
+    "s142790"
+   ],
+   "genera": [
+    "g:Nembrotha",
+    "g:Thecacera",
+    "g:Tambja"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Phyllidiidae",
+   "name": "Phyllidiidae",
+   "circle": 1,
+   "species": [
+    "s49735",
+    "s50554",
+    "s142294",
+    "s119872",
+    "s207581",
+    "s120989"
+   ],
+   "genera": [
+    "g:Phyllidia",
+    "g:Reticulidia"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Discodorididae",
+   "name": "Discodorididae",
+   "circle": 1,
+   "species": [
+    "s125934",
+    "s50300",
+    "s548348"
+   ],
+   "genera": [
+    "g:Halgerda",
+    "g:Jorunna"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Facelinidae",
+   "name": "Facelinidae",
+   "circle": 1,
+   "species": [
+    "s469568",
+    "s119425"
+   ],
+   "genera": [
+    "g:Pteraeolidia",
+    "g:Caloria"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Myrrhinidae",
+   "name": "Myrrhinidae",
+   "circle": 1,
+   "species": [
+    "s54892"
+   ],
+   "genera": [
+    "g:Phyllodesmium"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Aglajidae",
+   "name": "Aglajidae",
+   "circle": 1,
+   "species": [
+    "s199475",
+    "s56646"
+   ],
+   "genera": [
+    "g:Chelidonura"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Plakobranchidae",
+   "name": "Plakobranchidae",
+   "circle": 1,
+   "species": [
+    "s546397",
+    "s126108"
+   ],
+   "genera": [
+    "g:Elysia",
+    "g:Thuridilla"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Pleurobranchidae",
+   "name": "Pleurobranchidae",
+   "circle": 1,
+   "species": [
+    "s49904"
+   ],
+   "genera": [
+    "g:Pleurobranchus"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Flabellinidae",
+   "name": "Flabellinidae",
+   "circle": 1,
+   "species": [
+    "s871903"
+   ],
+   "genera": [
+    "g:Coryphellina"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Hexabranchidae",
+   "name": "Hexabranchidae",
+   "circle": 1,
+   "species": [
+    "s1475021",
+    "s244849"
+   ],
+   "genera": [
+    "g:Hexabranchus"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Costasiellidae",
+   "name": "Costasiellidae",
+   "circle": 1,
+   "species": [
+    "s469221"
+   ],
+   "genera": [
+    "g:Costasiella"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Trinchesiidae",
+   "name": "Trinchesiidae",
+   "circle": 1,
+   "species": [
+    "s50528"
+   ],
+   "genera": [
+    "g:Phestilla"
+   ],
+   "look": []
+  },
+  {
+   "id": "f:Tethydidae",
+   "name": "Tethydidae",
+   "circle": 1,
+   "species": [
+    "s557665"
+   ],
+   "genera": [
+    "g:Melibe"
+   ],
+   "look": []
+  }
+ ],
+ "genera": [
+  {
+   "id": "g:Chromodoris",
+   "name": "Chromodoris",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s119434",
+    "s119429",
+    "s201640",
+    "s121048",
+    "s467977"
+   ]
+  },
+  {
+   "id": "g:Nembrotha",
+   "name": "Nembrotha",
+   "family": "f:Polyceridae",
+   "circle": 1,
+   "species": [
+    "s126110",
+    "s121050",
+    "s119860",
+    "s119438",
+    "s142953"
+   ]
+  },
+  {
+   "id": "g:Hypselodoris",
+   "name": "Hypselodoris",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s468033",
+    "s54667",
+    "s548309"
+   ]
+  },
+  {
+   "id": "g:Phyllidia",
+   "name": "Phyllidia",
+   "family": "f:Phyllidiidae",
+   "circle": 1,
+   "species": [
+    "s49735",
+    "s50554",
+    "s142294",
+    "s119872",
+    "s207581"
+   ]
+  },
+  {
+   "id": "g:Halgerda",
+   "name": "Halgerda",
+   "family": "f:Discodorididae",
+   "circle": 1,
+   "species": [
+    "s125934"
+   ]
+  },
+  {
+   "id": "g:Pteraeolidia",
+   "name": "Pteraeolidia",
+   "family": "f:Facelinidae",
+   "circle": 1,
+   "species": [
+    "s469568"
+   ]
+  },
+  {
+   "id": "g:Goniobranchus",
+   "name": "Goniobranchus",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s346881",
+    "s469422",
+    "s481507",
+    "s469421"
+   ]
+  },
+  {
+   "id": "g:Phyllodesmium",
+   "name": "Phyllodesmium",
+   "family": "f:Myrrhinidae",
+   "circle": 1,
+   "species": [
+    "s54892"
+   ]
+  },
+  {
+   "id": "g:Jorunna",
+   "name": "Jorunna",
+   "family": "f:Discodorididae",
+   "circle": 1,
+   "species": [
+    "s50300",
+    "s548348"
+   ]
+  },
+  {
+   "id": "g:Ardeadoris",
+   "name": "Ardeadoris",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s121406"
+   ]
+  },
+  {
+   "id": "g:Chelidonura",
+   "name": "Chelidonura",
+   "family": "f:Aglajidae",
+   "circle": 1,
+   "species": [
+    "s199475",
+    "s56646"
+   ]
+  },
+  {
+   "id": "g:Elysia",
+   "name": "Elysia",
+   "family": "f:Plakobranchidae",
+   "circle": 1,
+   "species": [
+    "s546397"
+   ]
+  },
+  {
+   "id": "g:Doriprismatica",
+   "name": "Doriprismatica",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s468042"
+   ]
+  },
+  {
+   "id": "g:Caloria",
+   "name": "Caloria",
+   "family": "f:Facelinidae",
+   "circle": 1,
+   "species": [
+    "s119425"
+   ]
+  },
+  {
+   "id": "g:Thecacera",
+   "name": "Thecacera",
+   "family": "f:Polyceridae",
+   "circle": 1,
+   "species": [
+    "s468030",
+    "s142790"
+   ]
+  },
+  {
+   "id": "g:Tambja",
+   "name": "Tambja",
+   "family": "f:Polyceridae",
+   "circle": 1,
+   "species": [
+    "s120948"
+   ]
+  },
+  {
+   "id": "g:Pleurobranchus",
+   "name": "Pleurobranchus",
+   "family": "f:Pleurobranchidae",
+   "circle": 1,
+   "species": [
+    "s49904"
+   ]
+  },
+  {
+   "id": "g:Coryphellina",
+   "name": "Coryphellina",
+   "family": "f:Flabellinidae",
+   "circle": 1,
+   "species": [
+    "s871903"
+   ]
+  },
+  {
+   "id": "g:Thuridilla",
+   "name": "Thuridilla",
+   "family": "f:Plakobranchidae",
+   "circle": 1,
+   "species": [
+    "s126108"
+   ]
+  },
+  {
+   "id": "g:Reticulidia",
+   "name": "Reticulidia",
+   "family": "f:Phyllidiidae",
+   "circle": 1,
+   "species": [
+    "s120989"
+   ]
+  },
+  {
+   "id": "g:Hexabranchus",
+   "name": "Hexabranchus",
+   "family": "f:Hexabranchidae",
+   "circle": 1,
+   "species": [
+    "s1475021",
+    "s244849"
+   ]
+  },
+  {
+   "id": "g:Costasiella",
+   "name": "Costasiella",
+   "family": "f:Costasiellidae",
+   "circle": 1,
+   "species": [
+    "s469221"
+   ]
+  },
+  {
+   "id": "g:Phestilla",
+   "name": "Phestilla",
+   "family": "f:Trinchesiidae",
+   "circle": 1,
+   "species": [
+    "s50528"
+   ]
+  },
+  {
+   "id": "g:Melibe",
+   "name": "Melibe",
+   "family": "f:Tethydidae",
+   "circle": 1,
+   "species": [
+    "s557665"
+   ]
+  }
+ ],
+ "species": [
+  {
+   "id": "s119434",
+   "name": "Chromodoris annae",
+   "ref": 558229,
+   "inat": 119434,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 1,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 262,
+    "near": true,
+    "nearU": 51,
+    "nearN": 144
+   }
+  },
+  {
+   "id": "s126110",
+   "name": "Nembrotha kubaryana",
+   "ref": 527322,
+   "inat": 126110,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 2,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 251,
+    "near": true,
+    "nearU": 79,
+    "nearN": 174
+   }
+  },
+  {
+   "id": "s119429",
+   "name": "Chromodoris willani",
+   "ref": 558217,
+   "inat": 119429,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 3,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 203,
+    "near": true,
+    "nearU": 6,
+    "nearN": 11
+   }
+  },
+  {
+   "id": "s121050",
+   "name": "Nembrotha chamberlaini",
+   "ref": 527317,
+   "inat": 121050,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 4,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 180,
+    "near": true,
+    "nearU": 15,
+    "nearN": 26
+   }
+  },
+  {
+   "id": "s119860",
+   "name": "Nembrotha lineolata",
+   "ref": 527325,
+   "inat": 119860,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 5,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 173,
+    "near": true,
+    "nearU": 62,
+    "nearN": 113
+   }
+  },
+  {
+   "id": "s468033",
+   "name": "Hypselodoris tryoni",
+   "ref": 558646,
+   "inat": 468033,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 6,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 169,
+    "near": true,
+    "nearU": 28,
+    "nearN": 56
+   }
+  },
+  {
+   "id": "s49735",
+   "name": "Phyllidia varicosa",
+   "ref": 212835,
+   "inat": 49735,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 7,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 165,
+    "near": true,
+    "nearU": 31,
+    "nearN": 92
+   }
+  },
+  {
+   "id": "s125934",
+   "name": "Halgerda batangas",
+   "ref": 457014,
+   "inat": 125934,
+   "circle": 1,
+   "family": "f:Discodorididae",
+   "genus": "g:Halgerda",
+   "r": 8,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 163,
+    "near": true,
+    "nearU": 17,
+    "nearN": 30
+   }
+  },
+  {
+   "id": "s469568",
+   "name": "Pteraeolidia semperi",
+   "ref": 764917,
+   "inat": 469568,
+   "circle": 1,
+   "family": "f:Facelinidae",
+   "genus": "g:Pteraeolidia",
+   "r": 9,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 162,
+    "near": true,
+    "nearU": 38,
+    "nearN": 81
+   }
+  },
+  {
+   "id": "s201640",
+   "name": "Chromodoris lochi",
+   "ref": 558198,
+   "inat": 201640,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 10,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 158,
+    "near": true,
+    "nearU": 12,
+    "nearN": 16
+   }
+  },
+  {
+   "id": "s121048",
+   "name": "Chromodoris magnifica",
+   "ref": 558230,
+   "inat": 121048,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 11,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 157,
+    "near": true,
+    "nearU": 26,
+    "nearN": 43
+   }
+  },
+  {
+   "id": "s50554",
+   "name": "Phyllidia ocellata",
+   "ref": 536623,
+   "inat": 50554,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 12,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 155,
+    "near": true,
+    "nearU": 20,
+    "nearN": 43
+   }
+  },
+  {
+   "id": "s346881",
+   "name": "Goniobranchus geometricus",
+   "ref": 597336,
+   "inat": 346881,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 13,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 155,
+    "near": true,
+    "nearU": 30,
+    "nearN": 58
+   }
+  },
+  {
+   "id": "s142294",
+   "name": "Phyllidia coelestis",
+   "ref": 212836,
+   "inat": 142294,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 14,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 154,
+    "near": true,
+    "nearU": 17,
+    "nearN": 36
+   }
+  },
+  {
+   "id": "s54892",
+   "name": "Phyllodesmium briareum",
+   "ref": 548882,
+   "inat": 54892,
+   "circle": 1,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 15,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 154,
+    "near": true,
+    "nearU": 25,
+    "nearN": 31
+   }
+  },
+  {
+   "id": "s50300",
+   "name": "Jorunna funebris",
+   "ref": 534383,
+   "inat": 50300,
+   "circle": 1,
+   "family": "f:Discodorididae",
+   "genus": "g:Jorunna",
+   "r": 16,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 153,
+    "near": true,
+    "nearU": 42,
+    "nearN": 89
+   }
+  },
+  {
+   "id": "s119872",
+   "name": "Phyllidia elegans",
+   "ref": 536617,
+   "inat": 119872,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 17,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 149,
+    "near": true,
+    "nearU": 17,
+    "nearN": 24
+   }
+  },
+  {
+   "id": "s119438",
+   "name": "Nembrotha cristata",
+   "ref": 527320,
+   "inat": 119438,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 18,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 143,
+    "near": true,
+    "nearU": 53,
+    "nearN": 117
+   }
+  },
+  {
+   "id": "s142953",
+   "name": "Nembrotha milleri",
+   "ref": 527328,
+   "inat": 142953,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 19,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 130,
+    "near": true,
+    "nearU": 45,
+    "nearN": 118
+   }
+  },
+  {
+   "id": "s121406",
+   "name": "Ardeadoris egretta",
+   "ref": 558430,
+   "inat": 121406,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ardeadoris",
+   "r": 20,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 126,
+    "near": true,
+    "nearU": 15,
+    "nearN": 20
+   }
+  },
+  {
+   "id": "s469422",
+   "name": "Goniobranchus kuniei",
+   "ref": 597339,
+   "inat": 469422,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 21,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 124,
+    "near": true,
+    "nearU": 16,
+    "nearN": 19
+   }
+  },
+  {
+   "id": "s199475",
+   "name": "Chelidonura amoena",
+   "ref": 213149,
+   "inat": 199475,
+   "circle": 1,
+   "family": "f:Aglajidae",
+   "genus": "g:Chelidonura",
+   "r": 22,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 120,
+    "near": true,
+    "nearU": 13,
+    "nearN": 19
+   }
+  },
+  {
+   "id": "s546397",
+   "name": "Elysia marginata",
+   "ref": 765107,
+   "inat": 546397,
+   "circle": 1,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Elysia",
+   "r": 23,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 120,
+    "near": true,
+    "nearU": 24,
+    "nearN": 45
+   }
+  },
+  {
+   "id": "s468042",
+   "name": "Doriprismatica atromarginata",
+   "ref": 558499,
+   "inat": 468042,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Doriprismatica",
+   "r": 24,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 118,
+    "near": true,
+    "nearU": 11,
+    "nearN": 25
+   }
+  },
+  {
+   "id": "s119425",
+   "name": "Caloria indica",
+   "ref": 181240,
+   "inat": 119425,
+   "circle": 1,
+   "family": "f:Facelinidae",
+   "genus": "g:Caloria",
+   "r": 25,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 113,
+    "near": true,
+    "nearU": 37,
+    "nearN": 92
+   }
+  },
+  {
+   "id": "s468030",
+   "name": "Thecacera picta",
+   "ref": 527538,
+   "inat": 468030,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Thecacera",
+   "r": 26,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 112,
+    "near": true,
+    "nearU": 35,
+    "nearN": 53
+   }
+  },
+  {
+   "id": "s481507",
+   "name": "Goniobranchus coi",
+   "ref": 597329,
+   "inat": 481507,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 27,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 111,
+    "near": true,
+    "nearU": 24,
+    "nearN": 25
+   }
+  },
+  {
+   "id": "s54667",
+   "name": "Hypselodoris apolegma",
+   "ref": 560044,
+   "inat": 54667,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 28,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 105,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   }
+  },
+  {
+   "id": "s120948",
+   "name": "Tambja morosa",
+   "ref": 531173,
+   "inat": 120948,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Tambja",
+   "r": 29,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 100,
+    "near": true,
+    "nearU": 14,
+    "nearN": 29
+   }
+  },
+  {
+   "id": "s56646",
+   "name": "Chelidonura varians",
+   "ref": 599344,
+   "inat": 56646,
+   "circle": 1,
+   "family": "f:Aglajidae",
+   "genus": "g:Chelidonura",
+   "r": 30,
+   "group": "Cephalaspidea",
+   "star": true,
+   "present": {
+    "area": 98,
+    "near": true,
+    "nearU": 12,
+    "nearN": 14
+   }
+  },
+  {
+   "id": "s207581",
+   "name": "Phyllidia picta",
+   "ref": 536615,
+   "inat": 207581,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 31,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 96,
+    "near": true,
+    "nearU": 14,
+    "nearN": 29
+   }
+  },
+  {
+   "id": "s49904",
+   "name": "Pleurobranchus forskalii",
+   "ref": 140819,
+   "inat": 49904,
+   "circle": 1,
+   "family": "f:Pleurobranchidae",
+   "genus": "g:Pleurobranchus",
+   "r": 32,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 95,
+    "near": true,
+    "nearU": 22,
+    "nearN": 47
+   }
+  },
+  {
+   "id": "s871903",
+   "name": "Coryphellina exoptata",
+   "ref": 1047492,
+   "inat": 871903,
+   "circle": 1,
+   "family": "f:Flabellinidae",
+   "genus": "g:Coryphellina",
+   "r": 33,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 92,
+    "near": true,
+    "nearU": 5,
+    "nearN": 6
+   }
+  },
+  {
+   "id": "s548309",
+   "name": "Hypselodoris bullockii",
+   "ref": 560043,
+   "inat": 548309,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 34,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 90,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   }
+  },
+  {
+   "id": "s126108",
+   "name": "Thuridilla lineolata",
+   "ref": 494498,
+   "inat": 126108,
+   "circle": 1,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Thuridilla",
+   "r": 35,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 85,
+    "near": true,
+    "nearU": 30,
+    "nearN": 47
+   }
+  },
+  {
+   "id": "s120989",
+   "name": "Reticulidia halgerda",
+   "ref": 536733,
+   "inat": 120989,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Reticulidia",
+   "r": 36,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 84,
+    "near": true,
+    "nearU": 8,
+    "nearN": 8
+   }
+  },
+  {
+   "id": "s469421",
+   "name": "Goniobranchus fidelis",
+   "ref": 597334,
+   "inat": 469421,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 37,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 81,
+    "near": true,
+    "nearU": 9,
+    "nearN": 13
+   }
+  },
+  {
+   "id": "s467977",
+   "name": "Chromodoris colemani",
+   "ref": 558301,
+   "inat": 467977,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 38,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 77,
+    "near": true,
+    "nearU": 5,
+    "nearN": 5
+   }
+  },
+  {
+   "id": "s1475021",
+   "name": "Hexabranchus lacer",
+   "ref": 1571927,
+   "inat": 1475021,
+   "circle": 1,
+   "family": "f:Hexabranchidae",
+   "genus": "g:Hexabranchus",
+   "r": 48,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 64,
+    "near": true,
+    "nearU": 9,
+    "nearN": 13
+   },
+   "look": [
+    "s244849"
+   ]
+  },
+  {
+   "id": "s469221",
+   "name": "Costasiella kuroshimae",
+   "ref": 494655,
+   "inat": 469221,
+   "circle": 1,
+   "family": "f:Costasiellidae",
+   "genus": "g:Costasiella",
+   "r": 64,
+   "group": "Sacoglossa",
+   "star": true,
+   "present": {
+    "area": 53,
+    "near": true,
+    "nearU": 13,
+    "nearN": 30
+   }
+  },
+  {
+   "id": "s50528",
+   "name": "Phestilla melanobrachia",
+   "ref": 536543,
+   "inat": 50528,
+   "circle": 1,
+   "family": "f:Trinchesiidae",
+   "genus": "g:Phestilla",
+   "r": 92,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 39,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s557665",
+   "name": "Melibe colemani",
+   "ref": 708806,
+   "inat": 557665,
+   "circle": 1,
+   "family": "f:Tethydidae",
+   "genus": "g:Melibe",
+   "r": 96,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 38,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s244849",
+   "name": "Hexabranchus sanguineus",
+   "ref": 220381,
+   "inat": 244849,
+   "circle": 1,
+   "family": "f:Hexabranchidae",
+   "genus": "g:Hexabranchus",
+   "r": 176,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 18,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "look": [
+    "s1475021"
+   ]
+  },
+  {
+   "id": "s142790",
+   "name": "Thecacera pacifica",
+   "ref": 420618,
+   "inat": 142790,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Thecacera",
+   "r": 213,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 14,
+    "near": true,
+    "nearU": 8,
+    "nearN": 14
+   }
+  },
+  {
+   "id": "s548348",
+   "name": "Jorunna parva",
+   "ref": 534396,
+   "inat": 548348,
+   "circle": 1,
+   "family": "f:Discodorididae",
+   "genus": "g:Jorunna",
+   "r": 334,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 6,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  }
+ ],
+ "vn": [],
+ "ref": {}
+}
