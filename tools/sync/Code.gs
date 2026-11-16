@@ -3814,6 +3814,9 @@ const CORE_ = (function () { const module = {exports: {}};
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         cur: 'fish',
+        // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
+        // its tree; ph, its first photos (none for a subject without); gm, its game photos.
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json'},
         // To do › All and Points (fish admin at parity, Pierre 2026-11-08): All lists the reports, flags and errors with
         // its photo work (todo), never the corals' photo sections; Points, the fish points of points.json.
         todo: ['photos'],
@@ -3921,6 +3924,8 @@ const CORE_ = (function () { const module = {exports: {}};
       // not about one subject's photos, its Players page holding its beta group.
       admin: {
         cur: 'seaslug',
+        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports).
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
         todo: [],
         pages: ['inbox/todo/all', 'inbox/todo/reports', 'inbox/todo/errors', 'players/list'],
         obs: 'Observations',

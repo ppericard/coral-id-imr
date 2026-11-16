@@ -4474,6 +4474,86 @@ const darkCards = (p, sel) =>
         }
         await reportsBar();
       }
+      // Codex review #987: a reported photo of another subject with its own files (core.js SUBJECTS admin files; the sea
+      // slugs) showed as "missing". On its side, at every width: its tile with the photo from its game file's source (a remote
+      // original stays remote), its family, the species it is identified as and its credits, no tool (they act on the fish
+      // part of the curation), no link to family pages it does not have, its reporter's Journey under its prefix; Enlarge
+      // shows the identification and the credits; the report on no other side; no sideways scroll.
+      const MORE = await p.evaluate(() =>
+        SUBJECTS.filter(S => S.sheets && S.admin.files && S !== FISHS).map(S => ({id: S.id, hash: S.hash, one: S.one}))
+      );
+      if (!MORE.length) fails.push(`${w}px To do › Reports: no third subject with its files to check`);
+      for (const X of MORE) {
+        const note = `Demo report: not this ${X.one} (${X.id}).`;
+        await go(X.hash + 'inbox/todo/reports');
+        const r = await p
+          .waitForFunction(
+            note => {
+              const c = [...document.querySelectorAll('#view .adm-rep')].find(x => x.textContent.includes(note)),
+                t = c && c.querySelector('.adm-tile'),
+                im = t && t.querySelector('img');
+              if (!im) return false;
+              const S = SUBJECTS.find(s => UNITA[s.id] && UNITA[s.id].ph[t.dataset.f]),
+                ph = S && UNITA[S.id].ph[t.dataset.f];
+              return {
+                id: c.dataset.rep,
+                f: t.dataset.f,
+                src: im.getAttribute('src'),
+                want: ph && ph.r && ph.src ? ph.src.replace('/original.', '/medium.') : '',
+                fam: ph && UNITA[S.id].gen[ph.entry].name,
+                t: ph && ph.t,
+                a: ph && ph.a,
+                cap: t.querySelector('figcaption').textContent,
+                head: c.querySelector('.adm-rephead').textContent,
+                tools: t.querySelectorAll('[data-fu],[data-act]:not([data-act="zoomx"])').length,
+                missing: /missing/.test(c.textContent),
+                unit: !!c.querySelector('[data-ru]'),
+                links: [...c.querySelectorAll('a.adm-gen')].length,
+                journey: (c.querySelector('[data-rj]') || {}).getAttribute?.('href') || ''
+              };
+            },
+            note,
+            {timeout: 15000}
+          )
+          .then(h => h.jsonValue())
+          .catch(() => null);
+        if (
+          !r ||
+          !r.want ||
+          r.src !== r.want ||
+          !r.cap.includes(r.fam) ||
+          !r.cap.includes(r.t) ||
+          !r.cap.includes(r.a) ||
+          !r.head.includes(r.fam) ||
+          r.tools ||
+          r.missing ||
+          r.unit ||
+          r.links ||
+          r.journey !== '#' + X.hash + 'players/list/journey/Ana%20Demo'
+        )
+          fails.push(`${w}px To do › Reports, ${X.id}: its reported photo ${JSON.stringify(r)}`);
+        else {
+          await p.click(`#view .adm-rep[data-rep="${r.id}"] .adm-tile [data-act="zoomx"]`);
+          const lb = await p
+            .waitForFunction(() => {
+              const l = document.getElementById('lightbox');
+              return !!l && !l.hidden && (l.querySelector('.lb-cap') || {}).textContent;
+            })
+            .then(h => h.jsonValue())
+            .catch(() => '');
+          if (!lb.includes(r.fam) || !lb.includes(r.t) || !lb.includes(r.a) || !lb.includes(r.f))
+            fails.push(`${w}px To do › Reports, ${X.id}: its photo enlarged reads "${lb}"`);
+          if (w === 390) await shot(`report-${X.id}-zoom-390`, '#lightbox');
+          await p.click('#lightbox [data-x]').catch(() => {});
+          if (w === 390) await shot(`report-${X.id}-390`, `#view .adm-rep[data-rep="${r.id}"]`);
+        }
+        const sx = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+        if (sx > 1) fails.push(`${w}px To do › Reports (${X.id}): ${sx}px of horizontal scroll`);
+        for (const other of ['', 'fish/']) {
+          await go(other + 'inbox/todo/reports');
+          if ((await text()).includes(note)) fails.push(`${w}px To do › Reports (${other || 'corals'}): the ${X.id} report shown there`);
+        }
+      }
       // One action bar on every report (Q309), at every width: its status (Done, Stand-by, Dismiss), on one card, never
       // wider than it, on both sides.
       for (const side of ['', 'fish/']) {
