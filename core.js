@@ -638,6 +638,9 @@
           'analyses/difficulty/mix-ups',
           'analyses/difficulty/time',
           'analyses/difficulty/pairs',
+          // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every unit against every unit at each rank asked, live
+          // from its answers, families in their identification key group, genera in their family
+          'analyses/difficulty/heatmap',
           'analyses/learning/practice',
           'analyses/learning/after-a-break',
           'analyses/learning/sessions',
