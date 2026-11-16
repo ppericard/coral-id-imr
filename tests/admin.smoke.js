@@ -2832,17 +2832,20 @@ const darkCards = (p, sel) =>
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Heatmap.') fe.push(`the line on what is not there: "${at.not}"`);
-            // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
-            // fish report
+            // every Analyses view on the fish side since the Heatmap (Q123 m, 2026-11-16): no line on what is not there
+            if (at.not) fe.push(`the line on what is not there: "${at.not}"`);
+            // every view the fish side has: the live ones (Stops, Pairs, Heatmap, Answer log) and the others, each drawn
+            // from the fish report
             const [H, LV] = await fq.evaluate(() => [
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
               LIVE_STATS
             ]);
             if (
-              H.length !== 14 ||
+              H.length !== 15 ||
               !H.includes('analyses/difficulty/photos') ||
-              ['analyses/learning/stops', 'analyses/difficulty/pairs', 'analyses/learning/answer-log'].some(h => !H.includes(h))
+              ['analyses/learning/stops', 'analyses/difficulty/pairs', 'analyses/difficulty/heatmap', 'analyses/learning/answer-log'].some(
+                h => !H.includes(h)
+              )
             )
               fe.push(`its views ${H.join(' ')}`);
             // the views drawn from the fish report (the live ones have no report to draw: their own block below)
