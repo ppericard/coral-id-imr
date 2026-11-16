@@ -149,12 +149,12 @@ as before. The reply it serves holds what `?stats=1` always sent (photo ratings,
 Its row 4 (sheet v145) holds what the admin's `readStats` adds, each player's ability by admin id, never a name, and
 is read only with the admin token; the same deletes blank it with the fold, and the archived players are left out
 when it is read.
-The Roles tab (sheet vNEXT, below): a delete, a self-delete, a merge (its from) and an archive drop the account's
+The Roles tab (sheet v156, below): a delete, a self-delete, a merge (its from) and an archive drop the account's
 grants (`rolesDrop_`), never move them to Into or to the archive name, so whoever takes the name later holds nothing (a
 grant also holds only for the code hash it was made for). Each dropped grant writes an Audit row, by anonymous id. The
 Audit tab keeps its rows: they hold anonymous ids only, never a name, and nothing reads them in normal operation.
 
-## Roles and the Audit tab (sheet vNEXT, roles step 1)
+## Roles and the Audit tab (sheet v156, roles step 1)
 
 Pierre, 2026-11-13 (Q342-Q349, ROADMAP "Roles, instances and cohorts"): scoped roles, enforced by the sync script, never
 by the page; 2026-11-15 (Q364): rights are separate, the platform admin may grant himself a role, and the grant is
