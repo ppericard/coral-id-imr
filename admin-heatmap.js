@@ -140,10 +140,11 @@ function statsHeat() {
     many = !!S.sheets, // units at several ranks, named from the subject's data (unitAdmin: fishAdmin for the fish), as on Pairs
     FA = many ? unitRegOf(S) : null,
     typedOn = SF.hm === 'typed',
-    // the ranks the log asked (heatRanks), the one on screen (SF.hr, kept per browser; the first by default) and its index
+    // the ranks the log asked (heatRanks), the one on screen (SF.hr, kept per browser; the first by default) and its
+    // place among the subject's ranks (0: its top rank, even when the log asked only a lower one: Codex review #1012)
     ranks = heatRanks(R, S.sheets),
     rk = ranks.find(r => r[0] === SF.hr) || ranks[0],
-    ri = rk ? ranks.indexOf(rk) : 0;
+    ri = rk ? Object.keys(S.sheets).indexOf(rk[0]) : 0;
   if (many && !FA) unitAdmin(S).then(() => cur === HEAT_PAGE && unitRegOf(S) && render());
   const seg = (k, L, on, aria) =>
       `<span class="adm-qseg adm-sseg" role="group" aria-label="${aria}">${L.map(
@@ -200,7 +201,10 @@ function statsHeat() {
     cmpOn = (S.pages || []).includes('cmp'),
     href = (a, b) => (cmpOn ? `./#${routeOut(`cmp-${a < b ? a + '|' + b : b + '|' + a}`, S)}` : ''),
     withCh = Rr.filter(r => r[10]).length,
-    nd = heatNeed(M.cell, withCh);
+    // the offers an answer brings a cell, over the answers the cells count: the trusted players' only, as confusionOf
+    // keeps them (Codex review #1012)
+    tr = ofAns('trust:' + S.id, () => trustOf(R)),
+    nd = heatNeed(M.cell, Rr.filter(r => r[10] && tr[r[0]]).length);
   const kp = kpis([
     ['Answers with choices', `${withCh}/${Rr.length}`],
     ['On the map', U.length],

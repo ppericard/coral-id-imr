@@ -5902,6 +5902,24 @@ const darkCards = (p, sel) =>
             hg.wide > 0
           )
             fe.push(`Heatmap, genera ${JSON.stringify(hg)}`);
+          // a log with genus questions only: no switch, still the genera in their family's block (Codex review #1012)
+          const solo = await fq.evaluate(() => {
+            const keep = ANS;
+            ANS = {...ANS, all: (ANS.all || ANS.rows).filter(r => !(rowSubject(r) === ASUBJ.id && /^f:/.test(r[2])))};
+            render();
+            const T = document.querySelector('#view .adm-hmt'),
+              out = {
+                sw: !!document.querySelector('#view [data-sf="hr"]'),
+                rows: T ? T.querySelectorAll('tbody tr').length : 0,
+                it: T ? T.querySelectorAll('tbody .hm-row.hm-it').length : -1,
+                fams: T ? [...T.querySelectorAll('.hm-fam')].map(th => th.title) : []
+              };
+            ANS = keep;
+            render();
+            return out;
+          });
+          if (solo.sw || !solo.rows || solo.it !== solo.rows || !solo.fams.includes('Damselfishes'))
+            fe.push(`Heatmap, genus questions only ${JSON.stringify(solo)}`);
           await fq.click('#view [data-sf="hr"][data-v="family"]');
         }
         if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
