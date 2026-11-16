@@ -431,6 +431,7 @@ const idFiles = (doc, s) => {
 test('the code identifiers the docs cite in backticks still exist', () => {
   const used = new Set(),
     bad = [];
+  // Asked first, whether or not the file exists (git-ignored ones come and go with the smokes), so an entry is "used" by its mention.
   const allowed = key => {
     const a = ID_ALLOW.find(x => (x.prefix ? key.startsWith(x.key) : key === x.key));
     if (a) used.add(a.key);
@@ -442,11 +443,11 @@ test('the code identifiers the docs cite in backticks still exist', () => {
     for (const m of src.matchAll(/`([^`\n]+)`/g)) {
       const s = m[1];
       if (new RegExp('^[\\w.\\/-]+\\.(' + ID_EXT + ')$').test(s)) {
-        if (!idFiles(doc, s).length && !allowed(s)) seen.add('path `' + s + '`');
+        if (!allowed(s) && !idFiles(doc, s).length) seen.add('path `' + s + '`');
       } else if (/^[\w.-]+(\/[\w.-]+)*\/$/.test(s)) {
         const top = s.split('/')[0];
         const here = p => [...ID_TREE.files].some(f => f.startsWith(p));
-        if (here(top + '/') && !here(s) && !here(path.posix.join(path.posix.dirname(doc), s)) && !allowed(s))
+        if (!allowed(s) && here(top + '/') && !here(s) && !here(path.posix.join(path.posix.dirname(doc), s)))
           seen.add('folder `' + s + '`');
       }
     }
@@ -454,7 +455,7 @@ test('the code identifiers the docs cite in backticks still exist', () => {
       const files = idFiles(doc, m[1]);
       if (!files.length) continue; // the missing file is the path check's finding
       const word = new RegExp('(^|[^\\w$])' + m[2].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\w$])');
-      if (!files.some(f => word.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) && !allowed(m[1] + ' ' + m[2]))
+      if (!allowed(m[1] + ' ' + m[2]) && !files.some(f => word.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))))
         seen.add('`' + m[1] + '` has no `' + m[2] + '`');
     }
     for (const s of seen) bad.push(doc + ': ' + s);
