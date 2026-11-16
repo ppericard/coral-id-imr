@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-16, about 08:45 Manila, by the integrator (a checkpoint in the morning session, not an end of day).
+Written 2026-11-16, about 11:35 Manila, by the integrator (a checkpoint in the day session, not an end of day).
 **A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
 
 Last checked: reports and events: 2026-11-16 ~07:48 Manila (none since 11-12 needing action: one `err` "left with a
@@ -13,16 +13,18 @@ card open", two "save recovered"; summary given to Pierre)
 
 ## Now
 
-Main: sheet script **v152** (#996). Every PR now merges through a train, even alone (#1001, Pierre's own PR).
+Main: sheet script **v155** (#1012). Every PR merges through a train, even alone (#1001, Pierre's own PR).
 
-- **Merged this morning**: sea slugs circle 3 judged, all 100 species (#999 #997 #1002); `faOf` table for the rated
-  world, outputs identical (#998, v150); sea slugs in the app as a subject open to an empty beta group (#987, v151;
-  its choices taken as integrator's calls, the admin's subject switch becomes the chip menu with three subjects);
-  admin To do › Alerts, a deleted, merged or archived account's lines withheld (#996, v152; rule D7, integrator's
-  call); `tools/brief.py` pages by hand, so the branches line works again (#1003).
-- **Agents running**: sea slugs step 6 (R2 game photos, circles 2 and 3 into the game data; the R2 path off until
-  Pierre's go), branch `claude/seaslug-r2-photos`; the admin Reports page for sea slug photos (Codex on #987),
-  branch `claude/seaslug-reports`.
+- **Merged on 11-16** (until ~11:30): sea slugs circle 3 judged, all 100 species (#999 #997 #1002); `faOf` table for
+  the rated world, outputs identical (#998, v150); sea slugs in the app, empty beta group (#987, v151; the admin's
+  subject switch becomes the chip menu with three subjects, told to Pierre); circles 2-3 in the sea slug game data and
+  the R2 step built, **off** (`SEASLUG_R2` in approved-photos.yml) until Q387 (#1005); admin Reports shows sea slug
+  photos (#1006, v153); To do › Alerts, D7 lines withheld (#996, v152); fish judged: 88 candidates (#1008) and the 28
+  reference photos left (#1009); `brief.py` pages by hand (#1003); the unit tests take the slot themselves (#1007);
+  the docs identifier check (#1010); stack: Prettier 3.10.1, Playwright 1.65.1, rclone 1.76.0 (signature checked),
+  GitHub API 2026-03-10 in `Code.gs` only (#1011, v154; admin.js waits for a browser CORS check, a suggested task);
+  fish heatmap (#1012, v155) and per-player heatmaps (#1013).
+- **No agent running.** 16 new fish candidates in 8 species wait for a judging pass (the refill of 11-16).
 - **Held for Pierre** (`needs-pierre`, green): #975 (Q382), #981 (Q383), #953 (Q384), #988 (plain OK). #975 and #988
   conflict with main; #988 also with #987's `app.js`. The second of #981 to merge after #996 adds `readAlerts` to
   `gate_` (#981's source test).
@@ -33,7 +35,8 @@ Main: sheet script **v152** (#996). Every PR now merges through a train, even al
 
 1. Pierre's answers (below), then each held PR: merge `main`, `--assign` for `Code.gs`/`core.js`, Codex, train.
 2. Once #975's option is chosen: rework, then its rated-world check at 10,000 answers (#998 makes it fit).
-3. Sea slugs: merge step 6 and the Reports page; the first R2 upload once Pierre says go (the PR gives count and MB).
+3. Sea slugs: Q387 yes → a one-line PR sets `SEASLUG_R2: 'on'` (2,465 photos, ~670-870 MB), then dispatch Candidate
+   photos. Fish basics waits for the IMR fish presentation's location (asked).
 4. The other ROADMAP "Next" rows. Deadline: the domain and repository rename before December 2026 (#886).
 
 ## Questions for Pierre
@@ -49,17 +52,19 @@ Asked in the chat on 2026-11-16 ~08:00 Manila, with context and recommendations:
   own file: yes (rec.).
 - **Q386 his own sea slug photos**: **A** the fish's rule (in play even Needs ID, never boosted; rec.) or B Research
   Grade only as now.
-- Plain: **#988** coral slot names = current fields; the IMR Lecture 6 and same-group lines to the IMR, the 2 joint
+- **Q387 sea slug photos to R2** (asked ~09:00): **A** yes (rec.; 2,465 photos, ~670-870 MB, one run) or B not yet.
+- Plain: **where is the IMR fish presentation** (for Fish basics, a Lab prototype)? **#988** coral slot names = current fields; the IMR Lecture 6 and same-group lines to the IMR, the 2 joint
   lines to the sources (rec. yes). **Reference bonus (#942)**: **A** align the 423 photos (rec.) or B leave. **Rule D3
   wording**: "adds or changes" → "adds" (rec. yes).
 - Dropped as decided or the integrator's: the sea slug rubric's busy background (fish rubric's practice kept); #959's
   points stay in admin Points (his hands).
 - **To read, easy to undo** (integrator's calls in the PR bodies): #976 #980 genus marks; #983 (5), #984 (7), #986,
-  #989, #991, #992 (5), #993 (5), #994 (3); #995 changed W3's example; #997, #999, #1002 reading calls; #987 (11).
-- Possible misidentifications listed in #982 (5), #989 (11), #991 (24), #1002 (10): for his "Not this" when he wants.
+  #989, #991, #992 (5), #993 (5), #994 (3); #995 changed W3's example; #997, #999, #1002, #1008, #1009 reading calls;
+  #987 (11); #1012, #1013 layouts.
+- Possible misidentifications listed in #982 (5), #989 (11), #991 (24), #1002 (10), #1008 (1): for his "Not this".
 - Not now (Pierre): the domain, the accounts, the IMR agreement, a second person.
 
-Last question number: Q386
+Last question number: Q387
 
 ## Pierre's hands
 
@@ -86,5 +91,5 @@ Ideas Pierre dictated after 17:30, kept for the morning.
 
 ## Last stop
 
-2026-11-16 ~08:45 Manila: checkpoint (7 merges this morning, 4 PRs held for Q382-Q386, 2 agents on the sea slugs).
+2026-11-16 ~11:35 Manila: checkpoint (17 merges, 4 PRs held for Q382-Q387, no agent running).
 Old player-data extracts may remain in the session scratchpad (`data/`): delete them, never commit them.
