@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish scientific genera (app.js fishGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
 // everyone once a family is at Advanced, a family's genera from its Advanced (Pierre, 2026-11-08, back from Q205's Open
 // Water); for a player at IMR, the genera the IMR course names alone come without the offer from their family's Open

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tools/stack_check.py (the stack's pins in tools/stack.json, Pierre 2026-11-05: the whole stack on the latest stable) and
 // the brief's once-a-day stack line (tools/brief.py). --check runs on fixtures in a throwaway folder; --latest offline.
 const test = require('node:test'),

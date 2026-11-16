@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Open all genera and the card that offers to go back to one at a time (model.js INTRO, introAll, backDue, introBack,
 // introMerge; docs/LEARNING.md "First meeting with a genus"): model.js's own code run in Node on stubs (the player's
 // record P, the slate, the store).

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The per-format offsets of the subject in play (model.js pfmt; Pierre, 2026-11-09): the sheet's PFMT (?stats=1 fmt) is
 // fitted on the corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is aimed and
 // scored with every format at 0 (the app's own expectation before any fit), never with a coral offset; the corals keep

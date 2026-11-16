@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The cards that tell a player about a subject (progress.js subjHello, helloDue, helloMode; Pierre, 2026-11-05: "a proper
 // card the player closes, shown once, at a calm moment"; 2026-11-06: while fish opens to a group he picks, the card is an
 // invitation to test the fish beta, for the players of that group only). helloDue decides, on its inputs only: 'show',

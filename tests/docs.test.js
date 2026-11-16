@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Docs that every PR touches must not conflict between open PRs (Pierre, 2026-11-04: "we lose a huge amount of time
 // resolving conflicts"): no running "done" list that every PR appends to (rule W19).
 const test = require('node:test'),

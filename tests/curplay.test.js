@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The players' copy of the curation (Pierre, 2026-11-09: "a smaller curation file for players, built at deploy"):
 // tools/curplay.py writes curation-play.json from curation.json, without the admin's working state, and the app reads it
 // (app.js curFetch). Checked here: the copy drops only what it says; the app builds the same games from it as from the

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The merge train (Pierre, 2026-11-08, Q305 b; rule W26; tools/train.py), on throwaway repositories: a bare "origin" with
 // main and the PRs' heads under refs/pull/N/head, the integrator's clone, and a stand-in for gh on PATH that answers the
 // REST calls from a state file, logs each one, and squash-merges in the bare repository as GitHub would.

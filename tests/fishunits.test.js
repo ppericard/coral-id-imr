@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish units page (admin plan PR 6 on the book's families, admin.js renderFishUnits): the families, genera and species
 // as the admin reads them from fish.json (autosort.js fishUnits), a family's choices in curation.json fish genera keyed by
 // family id (fishPick, fishFeat, fishCover, fishOk, fishDrop), the photo order (fishOrder: never by who took them), what a

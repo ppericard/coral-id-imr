@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // tools/learnprof.js (rule L11; docs/LEARNING.md "Validating a learning change", "Profiles"): the simulated players'
 // profiles, by lecture group, family, circle or commonness rather than data order, on the real coral slate and on fixed
 // fish units.

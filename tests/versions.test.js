@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Version numbers stamped at deploy (tools/stamp_versions.py) and checked for consistency (tools/check_versions.py), on
 // throwaway copies of the site: node --test tests/
 const test = require('node:test'),

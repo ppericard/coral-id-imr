@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Structure of fish.json, the fish mode's content (built by tools/build_fish.py from tools/fish_source.json with the
 // instance's layer laid on, tools/instance.py; see its header). Two trees: `ref` (WoRMS reference tree) and `teach`
 // (what the game asks: the 27 IMR entries first).

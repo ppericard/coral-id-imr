@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Rule S1 (docs/rules/subjects.md): a subject differs only by a field of core.js SUBJECTS or a function of app.js UNITS; the engine
 // works on the current subject and never tests which one it is (test-suite review, 2026-11-04: nothing held it). In the
 // app's and the admin's files, outside the SUBJECTS list of core.js: no subject id or name as a string literal ('coral',

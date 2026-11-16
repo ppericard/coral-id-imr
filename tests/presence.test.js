@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The presence rule (Pierre, 2026-11-04; rule C8: "the same scientific rigour for everyone, me included"),
 // defined once in tools/presence.py, applied by tools/build_fish.py (fish.json present), tools/fetch_local.py and
 // tools/coral_presence.py (presence.json), read by the admin through presence.js (the "out of rule" photo flag).
