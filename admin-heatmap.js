@@ -18,7 +18,13 @@
 // Every view says what it can conclude (rule A5): under CONF.N offers a cell is hatched, and while most cells offered are
 // (heatNeed), a line says not enough data yet, with about the answers it would take.
 //
-// The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, HEAT) runs in Node too:
+// One player's map (Pierre, 2026-11-14, Q123 m: "the per-player heatmaps"): the same map from that player's answers only, a
+// filter on the view (?player=<anonymous id>; rule A2: same information, a filter), picked over the map (heatPlayers) or
+// opened from the Mix-ups card of their Journey; their part of the cells above, by the same rules (their answers count once
+// they are above chance, core.js trustOf, as for everyone). A deleted, merged or archived account has no answers here
+// (rule D7: admin.js rowsOf), so it shows nothing.
+//
+// The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, heatPlayers, HEAT) runs in Node too:
 // tests/heatmap.test.js.
 (function (root) {
   const K = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
@@ -128,7 +134,24 @@
       thin: 2 * lo.length > L.length
     };
   }
-  const API = {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed};
+  // The players a map can be drawn for (one player's map, Q123 m: "the per-player heatmaps"): the ids of R, a subject's rows
+  // with the answers a deleted, merged or archived account left already out (admin.js rowsOf, rule D7), each [id, label,
+  // signed in]: the signed-in ones (users, the player list's {name, id}) by name, then the devices that never signed in by
+  // their anonymous id, the latest to answer first, as Players lists them.
+  function heatPlayers(R, users) {
+    const last = new Map();
+    (R || []).forEach(r => r[0] && last.set(r[0], Math.max(last.get(r[0]) || 0, r[1] || 0)));
+    const named = (users || []).filter(u => u && u.id && u.name && last.has(u.id)),
+      ids = new Set(named.map(u => u.id));
+    return [
+      ...named.map(u => [u.id, u.name, 1]).sort((a, b) => a[1].localeCompare(b[1])),
+      ...[...last.keys()]
+        .filter(id => !ids.has(id))
+        .sort((a, b) => last.get(b) - last.get(a))
+        .map(id => [id, id, 0])
+    ];
+  }
+  const API = {HEAT, heatBin, heatOrder, heatMatrix, heatRanks, heatRank, heatNeed, heatPlayers};
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);
@@ -137,7 +160,17 @@
 const HEAT_PAGE = 'analyses/difficulty/heatmap';
 function statsHeat() {
   const S = ASUBJ,
-    R = ofAns('rows-all:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id)),
+    // one player's map (?player=<their anonymous id>): their rows only; the players with answers here (heatPlayers), a
+    // deleted, merged or archived account none (rowsOf, rule D7), so it shows nothing
+    who = hashQuery().get('player') || '',
+    PL = heatPlayers(rowsOf(S), USERS && USERS.users),
+    me = who ? PL.find(p => p[0] === who) : null,
+    pk = who ? ':' + who : '',
+    R = who
+      ? me
+        ? ofAns('rows-pl:' + S.id + pk, () => rowsOf(S).filter(r => r[0] === who))
+        : []
+      : ofAns('rows-all:' + S.id, () => subjRows(ANS.all || ANS.rows || [], S.id)),
     many = !!S.sheets, // units at several ranks, named from the subject's data (unitAdmin: fishAdmin for the fish), as on Pairs
     FA = many ? unitRegOf(S) : null,
     typedOn = SF.hm === 'typed',
@@ -151,7 +184,24 @@ function statsHeat() {
       `<span class="adm-qseg adm-sseg" role="group" aria-label="${aria}">${L.map(
         ([v, t]) => `<button type="button" data-sf="${k}" data-v="${esc(v)}" aria-pressed="${v === on}">${esc(t)}</button>`
       ).join('')}</span>`,
-    head = `<div class="adm-shead">${
+    // the player picker (Everyone, the signed-in players by name, the devices by their anonymous id) and, for one player,
+    // their Journey (in this subject, as its own Corals | Fish keeps it)
+    opt = L => L.map(([id, t]) => `<option value="${esc(id)}"${id === who ? ' selected' : ''}>${esc(t)}</option>`).join(''),
+    anon = PL.filter(p => !p[2]),
+    pick =
+      PL.length || who
+        ? `<select class="adm-fgsel" data-hmwho aria-label="Player"><option value="">Everyone</option>${
+            // a player with no answers here (the other subject's only; a removed account: its id, nothing else)
+            who && !me
+              ? `<option value="${esc(who)}" selected disabled>${esc((((USERS && USERS.users) || []).find(u => u.id === who) || {}).name || who)}</option>`
+              : ''
+          }${opt(PL.filter(p => p[2]))}${anon.length ? `<optgroup label="Not signed in">${opt(anon)}</optgroup>` : ''}</select>${
+            me
+              ? `<a class="adm-fchip plain" data-own href="#${esc(S.hash + (me[2] ? 'players/list/journey/' + encodeURIComponent(me[1]) : 'players/list/anon/' + encodeURIComponent(who)))}">Journey</a>`
+              : ''
+          }`
+        : '',
+    head = `<div class="adm-shead">${pick}${
       // the rank switch, by the subject's words for its ranks (Families, Genera, Species), once two ranks are logged
       ranks.length > 1
         ? seg(
@@ -170,17 +220,24 @@ function statsHeat() {
       typedOn ? 'typed' : 'pick',
       'Mix-ups'
     )}</div>`;
-  if (!R.length) {
-    $v.innerHTML = head + '<p class="note">No answers yet.</p>';
+  // the view's switches (bindStats) and the player picker: a player's map is the view's address with ?player=, Everyone without
+  const bind = () => {
     bindStats();
+    const w = $v.querySelector('[data-hmwho]');
+    if (w) w.onchange = () => (location.hash = '#' + S.hash + HEAT_PAGE + (w.value ? '?player=' + encodeURIComponent(w.value) : ''));
+  };
+  if (!R.length) {
+    $v.innerHTML = head + `<p class="note">${who ? 'No answers from this player here.' : 'No answers yet.'}</p>`;
+    bind();
     return;
   }
   // a unit's name: a coral genus as it is, another subject's unit by its name (its registry), else its id's prefix off
   const lab = n => (many ? (FA && FA.gen[n] ? FA.gen[n].name : String(n).replace(/^[a-z]:/, '')) : n),
     // trust and the pairs over the subject's whole log, as Pairs reads them; then the rank's part (heatRank)
-    C0 = ofAns('conf:' + S.id, () => confusionOf(R)),
-    NC = ofAns('nochoice:' + S.id, () => noChoiceMixups(R)),
-    P = rk ? ofAns('heatrk:' + S.id + ':' + rk[0], () => heatRank(C0, NC.typed, rk[1])) : {C: C0, typed: NC.typed},
+    // (one player's: their part, by the same rules; each memo kept apart by pk)
+    C0 = ofAns('conf:' + S.id + pk, () => confusionOf(R)),
+    NC = ofAns('nochoice:' + S.id + pk, () => noChoiceMixups(R)),
+    P = rk ? ofAns('heatrk:' + S.id + ':' + rk[0] + pk, () => heatRank(C0, NC.typed, rk[1])) : {C: C0, typed: NC.typed},
     Rr = rk ? R.filter(r => String(r[2] || '').startsWith(rk[1])) : R,
     gx = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || {look: []},
     rec = n => (many ? fishUnitRec(FA, n, S.sheets.genus) : gx(n)),
@@ -197,14 +254,14 @@ function statsHeat() {
     // the roster: the corals' slate (core.js slateOf: the games' and the progress's genera), the bonus genera once met;
     // another subject's top rank its slate (every family in the game), its lower ranks as met
     roster = many ? (!ri && FA ? FA.slate : []) : slateOf(DATA),
-    M = ofAns('heat:' + S.id + ':' + !!FA + ':' + (rk ? rk[0] : ''), () => heatMatrix(P.C, P.typed, rec, prior, roster, blockOf)),
+    M = ofAns('heat:' + S.id + ':' + !!FA + ':' + (rk ? rk[0] : '') + pk, () => heatMatrix(P.C, P.typed, rec, prior, roster, blockOf)),
     U = M.units,
     cmpOn = (S.pages || []).includes('cmp'),
     href = (a, b) => (cmpOn ? `./#${routeOut(`cmp-${a < b ? a + '|' + b : b + '|' + a}`, S)}` : ''),
     withCh = Rr.filter(r => r[10]).length,
     // the offers an answer brings a cell, over the answers the cells count: the trusted players' only, as confusionOf
     // keeps them (Codex review #1012)
-    tr = ofAns('trust:' + S.id, () => trustOf(R)),
+    tr = ofAns('trust:' + S.id + pk, () => trustOf(R)),
     nd = heatNeed(M.cell, Rr.filter(r => r[10] && tr[r[0]]).length);
   const kp = kpis([
     ['Answers with choices', `${withCh}/${Rr.length}`],
@@ -218,7 +275,7 @@ function statsHeat() {
       head +
       kp +
       `<p class="note">No answer with its choices yet: sheet script v10 logs them${ANS.v >= 10 ? '' : ` (now v${esc(ANS.v || '?')})`}.</p>`;
-    bindStats();
+    bind();
     return;
   }
   const fams = M.groups.some(g => g[0]),
@@ -282,9 +339,12 @@ function statsHeat() {
     kp +
     // what the map can conclude (rule A5): not enough data yet while most cells offered are under CONF.N offers, with the
     // answers with choices it would take, about (heatNeed)
-    (nd.thin && !typedOn
-      ? `<p class="note">Not enough data yet: ${nd.lo} of the ${nd.n} cells offered are under ${CONF.N} offers; about ${nd.need} more answers with choices${rk && ranks.length > 1 ? ' at this rank' : ''} to bring them there.</p>`
-      : '') +
+    // one player's answers count once they are above chance (trustOf), as everyone's: until then, no cell, and the line says why
+    (me && !tr[who]
+      ? `<p class="note">Not enough data yet: their answers count in the mix-ups once they are ${TRUST.N} or more and clearly above chance, as everyone's.</p>`
+      : nd.thin && !typedOn
+        ? `<p class="note">Not enough data yet: ${nd.lo} of the ${nd.n} cells offered are under ${CONF.N} offers; about ${nd.need} more ${me ? 'of their ' : ''}answers with choices${rk && ranks.length > 1 ? ' at this rank' : ''} to bring them there.</p>`
+        : '') +
     `<div class="adm-sgrid"><section class="adm-scard wide"><h3>${typedOn ? 'Typed mix-ups' : 'Mix-ups'}</h3>${leg}<div class="adm-hm" tabindex="0" role="region" aria-label="Shown (rows) against answered (columns)"><table class="adm-hmt${fams ? '' : ' nofam'}"><thead><tr><th class="hm-corner" colspan="${fams ? 2 : 1}"><span>Shown ↓</span><span>${typedOn ? 'Typed' : 'Answered'} →</span></th>${colTh}</tr></thead><tbody>${body}</tbody></table></div></section></div>`;
-  bindStats();
+  bind();
 }
