@@ -39,8 +39,11 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
 - **An interruption to ask a question is not a stop**: answer, then carry on.
 - **Rule 0 is one sentence since 2026-11-15**: after 17:30 (the hook's time, never a guess) ask Pierre nothing;
   nothing else changes, no "closing" phase, no wind-down talk. He nearly dropped the rule over its misapplication.
-- **Every brief forbids sending anything to an outside service** (search engines, image search, APIs) without
-  Pierre's go (AGENTS.md "Always ask first"): on 11-15 an agent sent R2 photo addresses to Yandex image search.
+- **Every brief lets agents use every useful source** (web search engines, guides, forums, publishers, APIs: AGENTS.md
+  "Research uses every useful source", Pierre, 2026-11-17: "je m'attends à ce que tu utilises toutes les sources
+  possibles") **and forbids sending the project's data out** (photo addresses, names, the sheet's data, image search
+  with our photos): on 11-15 an agent sent R2 photo addresses to Yandex image search; the 11-15 to 11-16 briefs
+  banned every search engine for it, which Pierre found too narrow.
 - **Every brief says: a refused command is reported, never worked around** (another tool, `subprocess`, another
   shell form): on 11-15 an agent wrote files through Python after a redirect was refused (auto mode flagged it).
   Name the routes in the brief: no wrapper script, no Monitor, no split names; plain separate commands, as the
