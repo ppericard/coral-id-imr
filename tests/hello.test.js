@@ -66,4 +66,7 @@ test('subjHello: the group card to the group (subjGroups); the all card while in
   assert.ok(/helloMode\(S\) === 'all' && !S\.beta \? null/.test(fn), "the 'all' card only while the subject keeps its beta label");
   assert.ok(/UNITS\[S\.id\]\.hello/.test(fn), 'the subject with a card is found by its data (UNITS hello)');
   assert.ok(!/SUBJECTS\[\d+\]/.test(fn), 'no subject tested by its place (Codex review #598)');
+  // a subject whose card is settled (seen, met) gives way to the next one with a card (the sea slugs' after the fish's;
+  // Codex review #987), never stops the search
+  assert.ok(/for \(const X of SUBJECTS\.filter\(x => card\(x\) && member\(x\)\)\)/.test(fn) && /if \(due !== 'show'\) continue;/.test(fn));
 });

@@ -341,7 +341,7 @@ def cand_sure(j):
     return judged_sure(j.get('jt'), j.get('e'))
 
 
-TAGS = re.compile(r'^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$')  # autosort.js FISH_TAGS
+TAGS = re.compile(r'^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$')  # autosort.js FISH_TAGS (v, f: the sea slugs')
 
 
 def ref_play(fish, refs, codes):

@@ -87,7 +87,9 @@ const fresh = () => path.join(TMP, `w${++n}`);
     'fish-cand.json',
     'tools/fish_refill.json',
     'tools/fish_refs.json',
-    'seaslug-cand.json'
+    'seaslug-cand.json',
+    'seaslug.json',
+    'seaslug-game.json'
   ])
     write(seed, f, '{"a": 1}\n');
   write(seed, 'img/a.webp', BIN);
