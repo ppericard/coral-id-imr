@@ -16,7 +16,7 @@
 // above (a genus in its family's, a species in its genus's; the top rank in its group of the identification key in force,
 // rule S3, where the subject has one).
 // Every view says what it can conclude (rule A5): under CONF.N offers a cell is hatched, and while most cells offered are
-// (heatNeed), a line says not enough data yet, with the answers it would take at the least.
+// (heatNeed), a line says not enough data yet, with about the answers it would take.
 //
 // The pure part (heatMatrix, heatOrder, heatBin, heatRanks, heatRank, heatNeed, HEAT) runs in Node too:
 // tests/heatmap.test.js.
@@ -111,9 +111,10 @@
   }
   // What the matrix can conclude (rule A5), from its cells (heatMatrix cell) and the answers with choices behind them
   // (withCh): n cells offered, lo of them under N offers (hatched: the colour still mostly the pair's start), the offers
-  // they lack to reach N (short), and the answers with choices that would bring at the least (need: the offers they lack
-  // over the offers an answer has brought a cell so far, every new offer landing on a short cell). thin: most cells offered
-  // are under N, so the map as a whole is not enough data yet.
+  // they lack to reach N (short), and about the answers with choices that would bring them there (need: the offers they
+  // lack over the offers an answer has brought a cell so far, every new offer landing on a short cell; an estimate at
+  // today's mix of formats, not a bound: a four-choice answer brings more offers than a duel, Codex review #1012). thin:
+  // most cells offered are under N, so the map as a whole is not enough data yet.
   function heatNeed(cell, withCh, N = K.CONF.N) {
     const L = Object.values(cell || {}),
       lo = L.filter(c => c.off < N),
@@ -280,9 +281,9 @@ function statsHeat() {
     head +
     kp +
     // what the map can conclude (rule A5): not enough data yet while most cells offered are under CONF.N offers, with the
-    // answers with choices it would take at the least (heatNeed)
+    // answers with choices it would take, about (heatNeed)
     (nd.thin && !typedOn
-      ? `<p class="note">Not enough data yet: ${nd.lo} of the ${nd.n} cells offered are under ${CONF.N} offers; at least ${nd.need} more answers with choices${rk && ranks.length > 1 ? ' at this rank' : ''} to bring them there.</p>`
+      ? `<p class="note">Not enough data yet: ${nd.lo} of the ${nd.n} cells offered are under ${CONF.N} offers; about ${nd.need} more answers with choices${rk && ranks.length > 1 ? ' at this rank' : ''} to bring them there.</p>`
       : '') +
     `<div class="adm-sgrid"><section class="adm-scard wide"><h3>${typedOn ? 'Typed mix-ups' : 'Mix-ups'}</h3>${leg}<div class="adm-hm" tabindex="0" role="region" aria-label="Shown (rows) against answered (columns)"><table class="adm-hmt${fams ? '' : ' nofam'}"><thead><tr><th class="hm-corner" colspan="${fams ? 2 : 1}"><span>Shown ↓</span><span>${typedOn ? 'Typed' : 'Answered'} →</span></th>${colTh}</tr></thead><tbody>${body}</tbody></table></div></section></div>`;
   bindStats();

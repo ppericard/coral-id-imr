@@ -263,7 +263,7 @@ test('heatMatrix: blockOf puts a lower rank in blocks of the rank above (a genus
   );
 });
 
-test('heatNeed: the cells under CONF.N offers, the offers they lack and the answers that would bring them at the least', () => {
+test('heatNeed: the cells under CONF.N offers, the offers they lack and about the answers that would bring them there', () => {
   const N = C.CONF.N,
     cell = {'A|B': {off: 30}, 'B|A': {off: 5}, 'A|C': {off: 2}, 'C|A': {off: N}};
   // 37 + N offers from 20 answers: about (37 + N) / 20 a answer; the short cells lack (N - 5) + (N - 2)

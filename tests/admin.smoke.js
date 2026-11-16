@@ -5895,7 +5895,7 @@ const darkCards = (p, sel) =>
             !hg.fams.includes('Damselfishes') ||
             String(hg.sum) !== hg.mix ||
             !hg.sum ||
-            !/^Not enough data yet: \d+ of the \d+ cells offered are under \d+ offers; at least \d+ more answers with choices at this rank/.test(
+            !/^Not enough data yet: \d+ of the \d+ cells offered are under \d+ offers; about \d+ more answers with choices at this rank/.test(
               hg.note
             ) ||
             hg.ids.length ||
