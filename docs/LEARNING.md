@@ -5691,8 +5691,8 @@ rated world now arms a table for each answer (`core.js` `faArm`, `tools/ratedwor
 every unit's false alarms and chances in one pass over the records, in the scan's own order, so each value is the
 scan's to the last bit, and `scoreAnswer` empties it. The app and the sheet never arm it and scan as before. The same
 seeds give byte-identical `--out` files (the date, commit and run time aside) and reports, and every read of a run can
-be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared machine a 10,000-answer fish run of the
-expert with #975's species took 4 minutes (its first 5,000 answers had taken 17 before).
+be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared machine a 3,000-answer fish run of the
+expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
