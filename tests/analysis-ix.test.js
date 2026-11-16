@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Analyses module (analysis.js), the later views of the multifactor visualisation study (docs/reviews/
 // 2026-11-05-multifactor-viz-study.md §5): interactions (does one effect depend on another?). Synthetic logs with planted
 // effects, recovered; without them, nothing (tests/analysis.test.js says why the module's tests are split).

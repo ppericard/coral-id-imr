@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Property test of the progress merges (test-suite review, 2026-11-04: double counting is the costliest sync bug, and
 // the unit tests checked hand-picked records). Random records, seeded so a failure replays:
 // - core.js mergeProgress(B, L, R), two devices that each answered since their common base B: every count (right, wrong,

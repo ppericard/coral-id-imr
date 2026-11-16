@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Memory (proto/pairs.js memoryGenera): the genera of a game come from those the player has met first, genera not met
 // only to fill the grid (beginner review 2026-11-03). The function runs in Node on stubs, as tests/memory.test.js does.
 const test = require('node:test');

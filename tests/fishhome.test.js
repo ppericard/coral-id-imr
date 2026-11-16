@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Fish Home before fish-game.json (Pierre, 2026-11-09: "Fish Home shown before fish-game.json arrives"; the photos first
 // shown on Home may change): app.js fishHome brings fish.json and fish-photos.json, what start-up waits for (UNITS fish
 // home); fishLoad brings fish-game.json too, what tier 2 waits for (need), so the quiz and the Learn pages never open

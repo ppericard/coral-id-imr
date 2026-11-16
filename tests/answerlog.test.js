@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // The Answer log's and the Pairs' readings for any subject (fish admin at parity with the corals, Pierre 2026-11-08):
 // admin.js logConds, pairPrior, fishUnitRec and noChoiceMixups (between `// answerlog: begin` / `end`). Made-up rows,
 // the sheet's readAnswers shape: [id, time, shown, answered, right, mode, photos, expected, ability, new photos, choices].

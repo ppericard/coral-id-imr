@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish units renamed (Pierre, 2026-11-06 13:04: the book's families, not the IMR entries; Q159: what was logged or
 // saved under the old ids follows): core.js SUBJECTS renamed and its helpers, checked against fish.json.
 const test = require('node:test'),

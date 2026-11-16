@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The rights tie-break (Pierre, 2026-11-08, Q270: "à qualité égale", CC0 / CC BY and his own photos before CC BY-NC, so
 // the stock a later commercial app could use grows; the CC BY-NC photos stay fully usable): core.js licOf, rightsClass,
 // rightsRank and their Python copy tools/rights.py, and every order that takes them as its last key before the fixed

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The players' reports in the admin (Pierre, 2026-11-08, Q309): a report's status (Done thanks the player through
 // curation seen 'rep:<id>'; Stand-by and Dismissed live in curation reps and never thank), the list's order, and what a
 // report is about whatever it was sent from (reports.js repCtx, shared with admin.js).

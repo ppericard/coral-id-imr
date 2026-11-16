@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The one-time notices wait for the visit's first sync (Pierre, 2026-11-08: a device still holding an old copy of his
 // account showed him again the cards and toasts he had seen on another device; sync.js noticeLater, noticesGo, toldAdd,
 // toldMerge; core.js TOLD, toldUnion). sync.js runs here in Node with app.js's globals stubbed, the sheet's replies and

@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // .github/workflows/learncheck.yml (rule L11 tier 2; docs/LEARNING.md "Validating a learning change"): manual dispatch
 // only, read-only, and no input reaches a shell command but through env after its check.
 const test = require('node:test'),

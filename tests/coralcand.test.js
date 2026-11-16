@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Coral candidates (Pierre, 2026-11-05): no share-alike licences any more (aligned with the fish rules), the share-alike
 // photos already on the site left to him (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation
 // whose identification by the trusted expert `thamnasteroid` no other identification disagrees with, accepted in the Philippines tiers

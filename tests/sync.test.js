@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Sync script (tools/sync/Code.gs) against an in-memory sheet: node --test tests/
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked
 const test = require('node:test'),

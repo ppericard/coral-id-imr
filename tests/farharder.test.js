@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The calibration goal (Pierre, 2026-11-06, Q192; docs/reviews/2026-11-06-photo-exposure-study.md §4, §7.6): the admin
 // flags the photos in play far harder than their genus (admin.js farHarder: the photo's own part of its difficulty, its
 // ?stats=1 difficulty minus its genus's offset gd, of FAR.D logits or more after FAR.N answers or more), the farthest

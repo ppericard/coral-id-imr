@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photos › Tree for the corals (admin-coraltree.js; docs/ROADMAP.md "The Tree tab", its last step; Pierre, 2026-11-13: it
 // must work for "coraux, nudibranches ou plantes"): the corals' adapter of the generic tree (taxtree.js), on the real
 // data.json and names.json (as the admin holds them: the x genera merged into gen) and on made-up data.

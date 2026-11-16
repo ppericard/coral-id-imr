@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // rule D4: the app never gets ahead of the sheet script. Every gate on the script's version (a constant named
 // *_SHEET in the app's own files) is listed here with the feature it turns on: off below its version N, on from N, off
 // when a reply carries no version. A new gate fails this test until it is added to the table (test-suite review,

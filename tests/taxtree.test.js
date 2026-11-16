@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The generic classification tree (taxtree.js; Pierre, 2026-11-13, Q340: any depth, any ranks, for any subject): the
 // builder, its roll-ups, the filter, the rows on screen and the WAI-ARIA tree keys, on made-up classifications of
 // several shapes (never assuming a level count or rank names).

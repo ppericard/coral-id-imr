@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // No coral skeleton photo anywhere (rule P6, Pierre, 2026-11-09: "coral skeletons must be excluded, because you cannot
 // see the features properly"). judging/skeletons.json lists the photos judged by eye; tools/apply_skeletons.py marks
 // them skel: 1 in data.json / cand.json; core.js applyCuration drops them from every list, so the games, the wrong-answer

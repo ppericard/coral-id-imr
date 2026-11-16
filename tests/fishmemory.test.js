@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The photo memory offsets of the subject in play (model.js pmem; the re-check of #664, F8, 2026-11-08): the sheet's
 // PMEM is fitted on the corals' answers only (Code.gs stats_ reads the replayed subject's rows), so a fish answer is
 // drawn, scored and recalculated with the prior (core.js MEM.PRIOR), never with a coral offset; the corals keep PMEM,

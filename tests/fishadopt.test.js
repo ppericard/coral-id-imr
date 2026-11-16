@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish progress replayed by the sheet, adopted by the app (ROADMAP "Fish progress replayed from the answer log";
 // Pierre, 2026-11-08, Q298): sync.js replayAdoptS for another subject than the corals, the log the only reference (no floor
 // since fish rules version 2: Pierre, 2026-11-09, Q330), under its own rules versions (core.js FISH_RVS), only from the script that replays it under this

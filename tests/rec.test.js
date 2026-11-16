@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Difficulty in words in the admin (Pierre, 2026-11-05, Q19 and Q26): a photo or genus reads as "recognised by N%", the
 // share of starting players who recognise it without guessing, 1 / (1 + e^d), in five colour bands; a player reads as
 // their Elo, 1000 + 200 × level. One helper for every admin page: admin.js, between "// recognised: begin" and "end".

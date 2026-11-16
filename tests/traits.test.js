@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Traits found in some species of a genus only (data.json gen[g].trs; Pierre, 2026-11-04, after the Favites report):
 // every tool reads `tr` and `trs` through one rule, proto/lab.js trHas (1 the genus, 0.5 some species, 0 no), never
 // by genus name. node --test tests/

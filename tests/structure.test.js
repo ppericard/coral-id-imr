@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A,
 // Q366): the content editor's circles and look-alike pairs in the apply (core.js structApply, fishStructure), the
 // structure stamp (structStamp), the sheet's replay under the structure in force (Code.gs subjRpl_, replay_, replays_,

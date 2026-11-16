@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // app.js imrFormsOf: the IMR growth forms a genus takes, from its classified photos (one photo Pierre or the first guess
 // is sure of, or two unsure guesses), which the quiz's easy wrong choices use (rule L7: genera sharing no
 // growth form). forms.json "gunsure" (the guesses to double-check) is a list; it was read as an object, so every unsure

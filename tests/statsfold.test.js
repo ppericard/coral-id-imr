@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The pooled stats built incrementally (sheet v134; Q123 j, Pierre 2026-11-14): the trigger's fold (Code.gs statsFold_)
 // serves exactly what the whole log gives (stats_), run after run, at any number of rows a run, through every rebuild.
 // Against the in-memory sheet of tests/gas.js only: nothing leaves this process (rule D1).
