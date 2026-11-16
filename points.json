@@ -695,6 +695,23 @@
         {"t": "iNaturalist, Ferdauia", "u": "https://www.inaturalist.org/taxa/1359822"},
         {"t": "tools/taxonomy.json fish gen.Ferdauia (tools/taxonomy.py, 2026-11-15)"}
       ]
+    },
+    {
+      "id": "seaslug-cladobranchia-inat",
+      "kind": "sources",
+      "subj": "seaslug",
+      "at": "2026-11-16",
+      "title": "Cladobranchia: WoRMS's suborder, five suborders in iNaturalist",
+      "q": "The Learn page groups the non-dorid nudibranch families under Cladobranchia, as WoRMS does; iNaturalist splits the same 15 families into Aeolidina, Dendronotina, Arminina, Janolina and Tritonina, with no Cladobranchia. Keep WoRMS's Cladobranchia?",
+      "ctx": [
+        "Read 2026-11-16 for the Learn page's taxonomic groups (tools/seaslug_groups.json; Pierre, 2026-11-16: the true nudibranchs apart from the other sea slugs, Doridina then Cladobranchia). WoRMS is followed; nothing else differs: the 9 Doridina families and the other orders (Sacoglossa, Cephalaspidea, Aplysiida, Pleurobranchida) are placed alike (rule C5).",
+        "iNaturalist: Aeolidina (Facelinidae, Myrrhinidae, Flabellinidae, Trinchesiidae, Samlidae, Eubranchidae, Aeolidiidae), Dendronotina (Tethydidae, Bornellidae, Dotidae, Dendronotidae, Scyllaeidae), Arminina (Arminidae), Janolina (Janolidae), Tritonina (Tritoniidae). WoRMS: all 15 in the suborder Cladobranchia, by superfamily below it."
+      ],
+      "src": [
+        {"t": "WoRMS, Facelinidae (its classification)", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=191"},
+        {"t": "iNaturalist, Facelinidae (its ancestry)", "u": "https://www.inaturalist.org/taxa/47211"},
+        {"t": "tools/seaslug_groups.json (2026-11-16)"}
+      ]
     }
   ]
 }

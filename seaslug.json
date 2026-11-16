@@ -13,6 +13,36 @@
  },
  "start": [],
  "key": null,
+ "taxa": {
+  "cite": "WoRMS Editorial Board, World Register of Marine Species, the classification of each family (read 2026-11-16)",
+  "short": "WoRMS",
+  "groups": [
+   {
+    "n": 1,
+    "title": "Nudibranchia · Doridina"
+   },
+   {
+    "n": 2,
+    "title": "Nudibranchia · Cladobranchia"
+   },
+   {
+    "n": 3,
+    "title": "Sacoglossa"
+   },
+   {
+    "n": 4,
+    "title": "Cephalaspidea"
+   },
+   {
+    "n": 5,
+    "title": "Aplysiida"
+   },
+   {
+    "n": 6,
+    "title": "Pleurobranchida"
+   }
+  ]
+ },
  "teach": [],
  "families": [
   {
@@ -100,7 +130,8 @@
     "g:Miamira",
     "g:Verconia"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Polyceridae",
@@ -131,7 +162,8 @@
     "g:Gymnodoris",
     "g:Tyrannodoris"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Phyllidiidae",
@@ -162,7 +194,8 @@
     "g:Phyllidiopsis",
     "g:Phyllidiella"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Discodorididae",
@@ -192,7 +225,8 @@
     "g:Atagema",
     "g:Platydoris"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Facelinidae",
@@ -212,7 +246,8 @@
     "g:Favorinus",
     "g:Cratena"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Myrrhinidae",
@@ -234,7 +269,8 @@
    "genera": [
     "g:Phyllodesmium"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Aglajidae",
@@ -257,7 +293,8 @@
     "g:Mariaglaja",
     "g:Odontoglaja"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 4
   },
   {
    "id": "f:Plakobranchidae",
@@ -278,7 +315,8 @@
     "g:Thuridilla",
     "g:Plakobranchus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 3
   },
   {
    "id": "f:Pleurobranchidae",
@@ -295,7 +333,8 @@
     "g:Pleurobranchus",
     "g:Tomoberthella"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 6
   },
   {
    "id": "f:Flabellinidae",
@@ -309,7 +348,8 @@
    "genera": [
     "g:Coryphellina"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Hexabranchidae",
@@ -322,7 +362,8 @@
    "genera": [
     "g:Hexabranchus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Costasiellidae",
@@ -335,7 +376,8 @@
    "genera": [
     "g:Costasiella"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 3
   },
   {
    "id": "f:Trinchesiidae",
@@ -352,7 +394,8 @@
     "g:Phestilla",
     "g:Tenellia"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Tethydidae",
@@ -367,7 +410,8 @@
    "genera": [
     "g:Melibe"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Aplysiidae",
@@ -385,7 +429,8 @@
     "g:Aplysia",
     "g:Stylocheilus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 5
   },
   {
    "id": "f:Aegiridae",
@@ -400,7 +445,8 @@
     "g:Aegires",
     "g:Notodoris"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Gastropteridae",
@@ -413,7 +459,8 @@
    "genera": [
     "g:Sagaminopteron"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 4
   },
   {
    "id": "f:Cadlinellidae",
@@ -425,7 +472,8 @@
    "genera": [
     "g:Cadlinella"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Samlidae",
@@ -439,7 +487,8 @@
    "genera": [
     "g:Samla"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Arminidae",
@@ -455,7 +504,8 @@
     "g:Armina",
     "g:Dermatobranchus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Eubranchidae",
@@ -467,7 +517,8 @@
    "genera": [
     "g:Longibranchus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Goniodorididae",
@@ -488,7 +539,8 @@
     "g:Murphydoris",
     "g:Pelagella"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Bornellidae",
@@ -500,7 +552,8 @@
    "genera": [
     "g:Bornella"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Caliphyllidae",
@@ -515,7 +568,8 @@
    "genera": [
     "g:Cyerce"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 3
   },
   {
    "id": "f:Dotidae",
@@ -527,7 +581,8 @@
    "genera": [
     "g:Doto"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Colpodaspididae",
@@ -539,7 +594,8 @@
    "genera": [
     "g:Colpodaspis"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 4
   },
   {
    "id": "f:Dendronotidae",
@@ -551,7 +607,8 @@
    "genera": [
     "g:Cabangus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Janolidae",
@@ -564,7 +621,8 @@
    "genera": [
     "g:Janolus"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Aeolidiidae",
@@ -578,7 +636,8 @@
     "g:Baeolidia",
     "g:Bulbaeolidia"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Pleurobranchaeidae",
@@ -590,7 +649,8 @@
    "genera": [
     "g:Euselenops"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 6
   },
   {
    "id": "f:Dendrodorididae",
@@ -602,7 +662,8 @@
    "genera": [
     "g:Dendrodoris"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 1
   },
   {
    "id": "f:Tritoniidae",
@@ -614,7 +675,8 @@
    "genera": [
     "g:Marioniopsis"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   },
   {
    "id": "f:Scyllaeidae",
@@ -626,7 +688,8 @@
    "genera": [
     "g:Notobryon"
    ],
-   "look": []
+   "look": [],
+   "tgroup": 2
   }
  ],
  "genera": [

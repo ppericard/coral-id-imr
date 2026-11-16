@@ -394,26 +394,28 @@
     ];
     // A game report from every other subject with sheets at several ranks and files of its own (core.js SUBJECTS admin
     // files; Codex review #987): its first game photo as its game file has it (a remote original stays remote), reported as
-    // a wrong answer on the unit showing it, from its quiz.
+    // a wrong answer on the unit showing it, from its quiz: its family, or its species' genus for a subject played at the
+    // genus (core.js unitRankOf: the sea slugs), read from its tree.
     {
       const FX = SUBJECTS.find(x => x.admin.cur && x.sheets),
-        more = SUBJECTS.filter(x => x !== FX && x.sheets && x.admin.files && x.admin.files.gm);
-      const got = await Promise.all(
-        more.map(x =>
-          real(x.admin.files.gm, {cache: 'no-cache'})
+        more = SUBJECTS.filter(x => x !== FX && x.sheets && x.admin.files && x.admin.files.gm),
+        get = u =>
+          real(u, {cache: 'no-cache'})
             .then(r => (r.ok ? r.json() : null))
-            .catch(() => null)
-        )
-      );
+            .catch(() => null);
+      const got = await Promise.all(more.map(x => get(x.admin.files.gm))),
+        trees = await Promise.all(more.map(x => (unitRankOf(x) === 'genus' ? get(x.admin.files.f) : null)));
       more.forEach((x, i) => {
-        const [t, L] = Object.entries((got[i] && got[i].photos) || {}).find(([, L]) => L && L.length && L[0].f) || [];
+        const [t, L] = Object.entries((got[i] && got[i].photos) || {}).find(([, L]) => L && L.length && L[0].f) || [],
+          s = t && trees[i] && (trees[i].species || []).find(y => y.id === L[0].sp),
+          u = s && s.genus ? s.genus : t;
         if (t)
           reports.push(
             rp(
               12 + i,
               'Ana Demo',
               'wrong',
-              t,
+              u,
               '',
               '',
               `Demo report: not this ${x.one} (${x.id}).`,

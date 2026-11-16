@@ -11,12 +11,17 @@ Inputs, all in the repository (no network but --r2's downloads):
   - seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos, one per observation, by iNaturalist taxon id;
   - suggest.json "seaslug" (tools/judging_fish.py --subject seaslug, from judging/seaslug/*.json): the judgements on
     judging/SEASLUG.md's rubric, the caps applied;
-  - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are.
+  - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
+  - tools/seaslug_groups.json (hand-kept from WoRMS's classification): the taxonomic groups the families sit in, in
+    order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order).
 
 seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
   - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
     circle, as a fish family's), species, genera, look (none sourced yet: study §9 step 8), cues (none: no IMR content,
-    study §8)}, in the order of their first species (by circle, then by commonness rank);
+    study §8), tgroup (its taxonomic group's number in taxa)}, in the order of their first species (by circle, then by
+    commonness rank);
+  - taxa {cite, short, groups [{n, title}]}: the taxonomic groups of tools/seaslug_groups.json, which the Learn page
+    shows the families under (learn.js viewFishList); a family in no group fails the build, naming it;
   - genera {id g:<genus>, name, family, circle (its best species'), species};
   - species {id s<iNaturalist taxon id>, name (iNaturalist's, which WoRMS accepts), now (the WoRMS accepted name when it
     differs), ref (the WoRMS AphiaID), inat, circle, family, genus, r (the commonness rank over every group,
@@ -74,6 +79,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
+GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
 CAND = os.path.join(ROOT, 'seaslug-cand.json')
 SUGGEST = os.path.join(ROOT, 'suggest.json')
 TREE_OUT = os.path.join(ROOT, 'seaslug.json')
@@ -134,10 +140,31 @@ def stale(o, c):
     return o.get('cr') != c or bool(o.get('ro'))
 
 
-def build(L, cand, sug, prev=None):
+def taxa(groups, fams):
+    """The tree's taxonomic groups (tools/seaslug_groups.json; Pierre, 2026-11-16: the families in logical taxonomic
+    groups, the true nudibranchs apart from the other sea slugs): {cite, short, groups [{n, title}]} and each family's
+    group number {family name: n}, in the file's order, for the families of the tree fams. A family of the tree in no
+    group, or in two, fails the build, naming it (as the fish's key, rule S3: a published classification, never ours)."""
+    if not groups:
+        return None, {}
+    of, out = {}, []
+    for i, g in enumerate(groups['groups'], 1):
+        out.append({'n': i, 'title': g['title']})
+        for f in g['families']:
+            if f in of:
+                raise SystemExit(f'seaslug_game: family {f} in two groups of tools/seaslug_groups.json')
+            of[f] = i
+    miss = [f for f in fams if f not in of]
+    if miss:
+        raise SystemExit('seaslug_game: no group in tools/seaslug_groups.json for ' + ', '.join(miss))
+    return {'cite': groups['cite'], 'short': groups['short'], 'groups': out}, of
+
+
+def build(L, cand, sug, prev=None, groups=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv)], the photos in play whose files R2 lacks or holds with another crop,
-    circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads)."""
+    circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
+    tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it."""
     T = L.get('photoTarget') or {}
     start, cap, plus = T['start'], T['gameCap'], T.get('perJuvenileForm', 0)
     documented = set(T.get('juvenile') or {})
@@ -170,6 +197,10 @@ def build(L, cand, sug, prev=None):
                         'nearN': s.get('nearObs', 0)},
             **({'look': look} if look else {}),
         })
+    tx, tof = taxa(groups, [f['name'] for f in fams.values()])
+    for f in fams.values():
+        if f['name'] in tof:
+            f['tgroup'] = tof[f['name']]
     tree = {
         'v': V,
         'about': 'the sea-slug subject\'s tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)',
@@ -177,6 +208,7 @@ def build(L, cand, sug, prev=None):
         'centre': L.get('centre'),
         'start': [],
         'key': None,
+        **({'taxa': tx} if tx else {}),
         'teach': [],
         'families': list(fams.values()),
         'genera': list(gens.values()),
@@ -299,7 +331,7 @@ def download_all(todo, out, get=None, pause=None, workers=6):
 def inputs(root=ROOT):
     j = lambda n, d=None: load(os.path.join(root, n), d)
     return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
-            j('seaslug-game.json', {'photos': {}}))
+            j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None)
 
 
 def write(root, tree, game):

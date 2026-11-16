@@ -26,6 +26,7 @@ function page({signedIn = false} = {}) {
       WINK_MODE: C.WINK_MODE,
       renamedId: C.renamedId,
       rankOf: () => '',
+      unitRankOf: C.unitRankOf,
       unitName: n => ({[WALE]: 'Whale Sharks', 'f:Damselfishes': 'Damselfishes'})[n] || '',
       speciesShown: L => (L.length ? 'Rhincodon typus' : ''),
       SYNC: signedIn ? {name: 'P1', log: []} : null,
