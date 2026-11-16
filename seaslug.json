@@ -1085,7 +1085,14 @@
     {
      "n": "Spanish Dancers",
      "src": [
-      "inat"
+      "inat",
+      "web"
+     ],
+     "web": [
+      {
+       "t": "DAN Alert Diver, A Quest for Life (2025-08-28)",
+       "u": "https://dan.org/?p=53983"
+      }
      ]
     }
    ],
@@ -3649,6 +3656,10 @@
       {
        "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
        "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      },
+      {
+       "t": "DAN Alert Diver, A Quest for Life (2025-08-28)",
+       "u": "https://dan.org/?p=53983"
       }
      ]
     },
@@ -3675,6 +3686,10 @@
       {
        "t": "DIVERNET (Scuba Diver Magazine), Shaun The Sheep Slug: The Satori Of Diving (2025-09-21)",
        "u": "https://divernet.com/scuba-news/marine-biology/shaun-the-sheep-slug-the-satori-of-diving/"
+      },
+      {
+       "t": "DAN Alert Diver, A Quest for Life (2025-08-28)",
+       "u": "https://dan.org/?p=53983"
       }
      ]
     },

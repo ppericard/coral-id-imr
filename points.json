@@ -719,7 +719,7 @@
       "subj": "seaslug",
       "at": "2026-11-17",
       "title": "\"Spanish dancer\": Hexabranchus sanguineus, H. lacer or the genus?",
-      "q": "The sources give \"Spanish dancer\" to Hexabranchus sanguineus (iNaturalist, WoRMS, Wikipedia, SEASLUG.WORLD, nudibranch.com.au), to H. lacer (SEASLUG.WORLD's article on the nicknames: the one Japanese divers know, since the genus was split) and, as \"Spanish Dancers\", to the genus Hexabranchus (iNaturalist). The app shows the name, as information, on each taxon a source gives it to. Keep it so, or show it on one of them only?",
+      "q": "The sources give \"Spanish dancer\" to Hexabranchus sanguineus (iNaturalist, WoRMS, Wikipedia, SEASLUG.WORLD, nudibranch.com.au), to H. lacer (SEASLUG.WORLD's article on the nicknames: the one Japanese divers know, since the genus was split) and, as \"Spanish Dancers\", to the genus Hexabranchus (iNaturalist; DAN's Alert Diver: \"hexabranchs, also known as Spanish dancers\"). The app shows the name, as information, on each taxon a source gives it to. Keep it so, or show it on one of them only?",
       "ctx": [
         "Found by tools/seaslug_names.py (2026-11-17; Pierre, 2026-11-17: the sea slugs' common names and nicknames as information wherever names are shown). Nothing settled (rule C5); the game's choices stay scientific names.",
         "H. lacer's own English names in iNaturalist: Decumbent Spanish Dancer, Mottled Spanish Dancer, Torn Spanish Dancer; WoRMS: mottled Spanish dancer. The Philippine Spanish dancers are mostly H. lacer (study 2.3; the list note's sources note, 1.5: Tibiriçá et al. 2023 split the genus)."
@@ -759,7 +759,7 @@
       "subj": "seaslug",
       "at": "2026-11-17",
       "title": "\"Leaf sheep\", \"Shaun the Sheep\": Costasiella kuroshimae or an undescribed Costasiella?",
-      "q": "iNaturalist, Wikipedia and Florent's Guide give \"Leaf sheep\" to Costasiella kuroshimae, and iNaturalist and DIVERNET give it \"Shaun the Sheep\" (\"Shaun the Sheep, or Costasiella kuroshimae, can be found in shallow waters in the Philippines\"); SEASLUG.WORLD says the animal of the viral posts, with pink cheeks, is Costasiella sp. 3, not formally described yet, and that C. kuroshimae \"gets labeled 'leaf sheep' just as often\". The app shows both names on C. kuroshimae. Keep them there?",
+      "q": "iNaturalist, Wikipedia and Florent's Guide give \"Leaf sheep\" to Costasiella kuroshimae, and iNaturalist, DIVERNET and DAN's Alert Diver give it \"Shaun the Sheep\" (\"Shaun the Sheep, or Costasiella kuroshimae, can be found in shallow waters in the Philippines\"; \"Costasiella kuroshimae, also known as leaf sheep or Shaun the Sheep\"); SEASLUG.WORLD says the animal of the viral posts, with pink cheeks, is Costasiella sp. 3, not formally described yet, and that C. kuroshimae \"gets labeled 'leaf sheep' just as often\". The app shows both names on C. kuroshimae. Keep them there?",
       "ctx": [
         "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). Costasiella sp. 3 is not in the game (no scientific name)."
       ],
@@ -767,6 +767,7 @@
         {"t": "iNaturalist, Costasiella kuroshimae", "u": "https://www.inaturalist.org/taxa/469221"},
         {"t": "English Wikipedia, Costasiella kuroshimae", "u": "https://en.wikipedia.org/wiki/Costasiella_kuroshimae"},
         {"t": "DIVERNET (Scuba Diver Magazine), Shaun The Sheep Slug: The Satori Of Diving (2025-09-21)", "u": "https://divernet.com/scuba-news/marine-biology/shaun-the-sheep-slug-the-satori-of-diving/"},
+        {"t": "DAN Alert Diver, A Quest for Life (2025-08-28)", "u": "https://dan.org/?p=53983"},
         {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
         {"t": "tools/seaslug_names.json (2026-11-17)"}
       ]
