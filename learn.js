@@ -751,7 +751,9 @@ function viewFishList() {
     const g = GX(n),
       p = cover(g); // Pierre's ★ Cover while in play (app.js fishCurate), else the card photo as before (core.js easyCover)
     if (p) flat.push({...p, genus: n});
-    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b><small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${g.tl ? `<p class="label">${g.tl}</p>` : ''}${tipsList(g)}${
+    // its first English name given as information (app.js vernFirst: the sea slugs'; Pierre, 2026-11-17), under its name
+    const ven = vernFirst(n);
+    return `<article class="tipg"><span class="tipph">${p ? `<button type="button" class="zoom" data-z="${flat.length - 1}" aria-label="Enlarge photo: ${esc(unameT(n))}"><img ${thumb(p, '130px')} alt="" loading="lazy">${ZOOMI}</button>` : ''}<a class="tipsheet" href="${esc(hr('g-' + n))}"><b>${uname(n)}</b>${ven ? `<span class="ven">${esc(capFirst(ven))}</span>` : ''}<small>${esc(altName(g.fam))}</small><span class="cmpgo">Open the sheet →</span></a></span><div>${g.tl ? `<p class="label">${g.tl}</p>` : ''}${tipsList(g)}${
       g.lk.length
         ? `<p class="note">Don't confuse with ${g.lk
             .map(
@@ -795,7 +797,14 @@ function viewFishList() {
       by = new Map();
     L.forEach(n => by.set(up(n), [...(by.get(up(n)) || []), n]));
     const B = [...by].sort(([a], [b]) => (a ? at.indexOf(a) : Infinity) - (b ? at.indexOf(b) : Infinity)),
-      fam = ([p, U]) => blk(p ? `<h3 class="gdiv" title="${esc(unameT(p))}"><span class="gtitle">${uname(p)}</span></h3>` : '', U),
+      // the family's heading, its first English name beside it (app.js vernFirst; Pierre, 2026-11-17)
+      fam = ([p, U]) =>
+        blk(
+          p
+            ? `<h3 class="gdiv" title="${esc(unameT(p))}"><span class="gtitle">${uname(p)}${vernFirst(p) ? ` <small class="ven">${esc(capFirst(vernFirst(p)))}</small>` : ''}</span></h3>`
+            : '',
+          U
+        ),
       tx = FISH.taxa;
     if (!tx) return B.map(fam);
     // Its families under their taxonomic groups (the tree's taxa, a published classification: tools/seaslug_groups.json;
@@ -1068,8 +1077,27 @@ const spPic = s => {
 };
 // A species' common name as this player sees it first (app.js cnFirst; Pierre, 2026-11-15, Q376 (a)): the IMR name for a
 // player at IMR, the main name (iNaturalist's default) for the others; its own name (fish.json common) for a species out
-// of the game, which has no list; '' for none.
-const spCommon = s => cnFirst(s, imrNow()) || s.common || '';
+// of the game, which has no list; else its first English name given as information (app.js vernFirst: the sea slugs',
+// Pierre 2026-11-17); '' for none.
+const spCommon = s => cnFirst(s, imrNow()) || s.common || capFirst(vernFirst(s.id)) || '';
+// The English names a tree gives as information (app.js vernOf, UNITS vern: the sea slugs' common names and nicknames,
+// tools/seaslug_names.py; Pierre, 2026-11-17), on a family, genus or species sheet: the first under the scientific name,
+// the others on a line below ("Also …"), a nickname said so; and under More details, every name with its sources, linked
+// (rule C2). '' for a record without them (the fish, a sea slug no source names).
+const capFirst = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+const vernName = x => esc(capFirst(x.n)) + (x.nick ? ' <small>(nickname)</small>' : '');
+const vernHead = id => {
+  const L = vernOf(id);
+  return L.length
+    ? `<p class="fn-s fn-v">${vernName(L[0])}</p>${L.length > 1 ? `<p class="fn-g">Also ${L.slice(1).map(vernName).join(', ')}</p>` : ''}`
+    : '';
+};
+const vernMore = id => {
+  const L = vernOf(id);
+  return L.length
+    ? `<p class="note refs"><b>English names:</b> ${L.map(x => `${vernName(x)} <small>(${vernSrcs(id, x)})</small>`).join(' · ')}</p>`
+    : '';
+};
 // Its listed common names on the species sheet (More details), when it has more than one: the player's first, then the
 // others in their order, the IMR name marked (fish.json cni). Any of them is right when typed (Q376 (b)); the regional
 // names (cnr) are not shown (Q376 (c)).
@@ -1125,7 +1153,7 @@ function fishGenusRow(g, flat) {
             .map(spPhoto)
         ]
       : L.slice(0, 4).map(spPhoto);
-  return `<a class="frow" href="${esc(hr('g-' + g.id))}"><span class="fstack">${P.map(p => (p ? `<img ${thumb(p, '60px')} alt="" loading="lazy">` : noFish())).join('')}</span><span class="ftxt"><i>${esc(g.name)}</i>${g.common ? `<span>${esc(g.common)}</span>` : ''}<span>${L.length} species · ${L.filter(spOpen).length} opened for me</span>${g.imr ? `<small>IMR entry: ${esc(g.imr)}</small>` : ''}</span><span class="fgo" aria-hidden="true">›</span></a>`;
+  return `<a class="frow" href="${esc(hr('g-' + g.id))}"><span class="fstack">${P.map(p => (p ? `<img ${thumb(p, '60px')} alt="" loading="lazy">` : noFish())).join('')}</span><span class="ftxt"><i>${esc(g.name)}</i>${g.common || vernFirst(g.id) ? `<span>${esc(g.common || capFirst(vernFirst(g.id)))}</span>` : ''}<span>${L.length} species · ${L.filter(spOpen).length} opened for me</span>${g.imr ? `<small>IMR entry: ${esc(g.imr)}</small>` : ''}</span><span class="fgo" aria-hidden="true">›</span></a>`;
 }
 // The family ID marks and the behaviour, habitat and size lines (study F4b, F9; Pierre, Q11), written in our words from
 // the sources the family lists (tools/fish_sheets.json, built into fish.json: marks, life, msrc), published at once
@@ -1259,7 +1287,7 @@ function fishFamily(f) {
         : '';
   $v.innerHTML = `<p class="lede">One family of ${key ? esc(key.short) : 'the identification key'} on one page, under its English name, its scientific name or names below. The <b>ID tips (IMR)</b> are the IMR fish presentation's. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next family.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t">${esc(f.name)}</p><p class="fn-s">${esc(famSci(f))}${famIMR(f) ? ` <span>· ${esc(famIMR(f))}</span>` : ''}</p>${gr ? `<p class="fn-g">${gr.n}. ${esc(gr.title)}${key ? ' · ' + esc(key.short) : ''}</p>` : ''}</div>
+    <div class="fnames"><p class="fn-t">${esc(f.name)}</p>${vernHead(f.id)}${famSci(f) || famIMR(f) ? `<p class="fn-s">${esc(famSci(f))}${famIMR(f) ? ` <span>· ${esc(famIMR(f))}</span>` : ''}</p>` : ''}${gr ? `<p class="fn-g">${gr.n}. ${esc(gr.title)}${key ? ' · ' + esc(key.short) : ''}</p>` : ''}</div>
     ${u ? myProg(u) : ''}
     <div class="hero">
       ${hero ? `<button type="button" class="zoom hero-ph" data-z="0" aria-label="Enlarge photo: ${esc(f.name)}"><img src="${img(hero, 's')}" srcset="${srcset(hero)}" sizes="(max-width: 599.98px) 100vw, 45vw" alt="${esc(f.name)}">${ZOOMI}</button>` : `<span class="hero-ph">${noFish()}</span>`}
@@ -1270,7 +1298,7 @@ function fishFamily(f) {
         ${G.map(g => genMarks(g, f.id)).join('')}
         ${G.map(g => fishRoot(g, f.id)).join('')}
         ${f.imrWith ? `<p class="note">The IMR fish presentation shows it with the ${esc(f.imrWith)}; ${key ? esc(key.short) : 'the identification key'} puts it in a family of its own.</p>` : ''}
-        <details class="more sheetmore"><summary>More details</summary>
+        <details class="more sheetmore"><summary>More details</summary>${vernMore(f.id)}
         <p class="note refs"><b>References:</b> ${f.cues ? 'IMR fish presentation' + (f.sl ? ' (' + esc(slideLine(f.sl)) + ')' : '') + ' · ' : ''}${key ? esc(key.cite) + (gr && gr.pages ? `, pp. ${gr.pages.join('-')}` : '') + ' · ' : ''}${(
           f.sci || []
         )
@@ -1310,7 +1338,7 @@ function fishGenus(g) {
   };
   $v.innerHTML = `<p class="lede">One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : ''}<p class="${g.common ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
+    <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
     ${(g.cues || []).length ? `<div class="idbox"><div class="tipbox"><h3>ID tips (IMR${g.imr ? ', ' + esc(g.imr) : ''}) <span class="pg">${esc(slideLine(g.sl))}</span></h3><ul class="crit idtips">${g.cues.map(c => `<li>${esc(c)}</li>`).join('')}</ul>${esrcP(g, 'cues')}</div></div>` : ''}
     ${genMarks(g, g.id)}
@@ -1319,7 +1347,7 @@ function fishGenus(g) {
     ${now.length ? `<p class="note">${now.length} of ${L.length} now in <i>${ng.map(esc).join('</i>, <i>')}</i> in WoRMS.</p>` : ''}
     <h3>Species <small>${L.length}</small></h3>${fishTiles(L, flat)}
     ${sib.length ? `<section class="hubsec"><h3>Don't confuse with</h3><div class="lrow">${sib.map(card).join('')}</div></section>` : ''}
-    ${g.common ? `<details class="more sheetmore"><summary>More details</summary><p class="note refs"><b>Common name:</b> ${esc(g.csrc || '')}</p></details>` : ''}
+    ${g.common ? `<details class="more sheetmore"><summary>More details</summary><p class="note refs"><b>Common name:</b> ${esc(g.csrc || '')}</p></details>` : vernOf(g.id).length ? `<details class="more sheetmore"><summary>More details</summary>${vernMore(g.id)}</details>` : ''}
     <p class="repline">${repBtn({k: 'sheet', g: g.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
   fishBind(flat, () => fishGenus(g));
@@ -1358,7 +1386,7 @@ function fishSpecies(s) {
   const links = `<a href="https://www.inaturalist.org/taxa/${encodeURIComponent(s.inat)}" target="_blank" rel="noopener">iNaturalist</a> · <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&amp;id=${encodeURIComponent(s.ref)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.fishbase.se/summary/${encodeURIComponent(fbName)}.html" target="_blank" rel="noopener">FishBase</a>`;
   $v.innerHTML = `<p class="lede">One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.${isPhone() ? '' : ' ← / → go to the previous / next species.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
+    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${vernOf(s.id).length ? vernHead(s.id) : spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
     ${fishNote(s)}
@@ -1382,7 +1410,7 @@ function fishSpecies(s) {
         : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
     }
     ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(fishTile).join('')}</div>` : ''}
-    <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${links}</p></details>
+    <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${links}</p></details>
     <p class="repline">${repBtn({k: 'sheet', g: s.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
   fishBind(flat, () => fishSpecies(s));

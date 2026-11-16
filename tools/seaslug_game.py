@@ -13,7 +13,8 @@ Inputs, all in the repository (no network but --r2's downloads):
     judging/SEASLUG.md's rubric, the caps applied;
   - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
   - tools/seaslug_groups.json (hand-kept from WoRMS's classification): the taxonomic groups the families sit in, in
-    order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order).
+    order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order);
+  - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources.
 
 seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
   - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
@@ -30,7 +31,11 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     Philippines (Q369 (b)), what the game's commonness reads (core.js fishGen cm); near, nearU, nearN: rule C8's near
     test and the observers and observations within the instance's radius of Dauin, what the default covers read (app.js
     nearSeen)}, look (the decided look-alike pairs, tools/seaslugs.json lookalikes: the two Spanish dancers, for step
-    8)}. No English name: they are information for the sheets (Q369 (d)), step 7.
+    8)};
+  - on a family, genus or species some source names in English: en [{n, src, nick, web}], its English common names and
+    nicknames, and ensrc {inat, worms, wiki}, where its sources hold it (tools/seaslug_names.json, names_of); the tree's
+    own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
+    Q369 (d) stands: never a choice, no common-name branch).
   - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
     is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
   - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
@@ -160,11 +165,30 @@ def taxa(groups, fams):
     return {'cite': groups['cite'], 'short': groups['short'], 'groups': out}, of
 
 
-def build(L, cand, sug, prev=None, groups=None):
+def names_of(N):
+    """{(rank, name): {en, ensrc}} from tools/seaslug_names.json N (tools/seaslug_names.py): each taxon's English common
+    names and nicknames, [{n, src, nick, web}] (Pierre, 2026-11-17: information wherever names are shown, never a choice:
+    Q369 (d) stands), and where its sources hold it, ensrc {inat: taxon id, worms: AphiaID, wiki: article title}; none
+    for a taxon no source names."""
+    out = {}
+    for t in (N or {}).get('taxa') or []:
+        if not t.get('names'):
+            continue
+        W = (t.get('raw') or {}).get('wiki') or {}
+        src = {k: v for k, v in (('inat', t.get('inat')), ('worms', t.get('worms')),
+                                 ('wiki', W.get('title') if W.get('kind') in ('own', 'named') else None)) if v}
+        out[(t['rank'], t['name'])] = {'en': t['names'], 'ensrc': src}
+    return out
+
+
+def build(L, cand, sug, prev=None, groups=None, names=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv)], the photos in play whose files R2 lacks or holds with another crop,
     circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
-    tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it."""
+    tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it. names: tools/seaslug_names.json,
+    the English names each family, genus and species carries (en, ensrc: names_of), none without it."""
+    V_ = names_of(names)
+    vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
     start, cap, plus = T['start'], T['gameCap'], T.get('perJuvenileForm', 0)
     documented = set(T.get('juvenile') or {})
@@ -174,11 +198,13 @@ def build(L, cand, sug, prev=None, groups=None):
     fams, gens, species = {}, {}, []
     for s in sp:
         fid, gid, i, c = 'f:' + s['family'], 'g:' + s['genus'], sid[s['name']], s['circle']
-        f = fams.setdefault(fid, {'id': fid, 'name': s['family'], 'circle': c, 'species': [], 'genera': [], 'look': []})
+        f = fams.setdefault(fid, {'id': fid, 'name': s['family'], 'circle': c, 'species': [], 'genera': [], 'look': [],
+                                  **vn('family', s['family'])})
         f['species'].append(i)
         if gid not in f['genera']:
             f['genera'].append(gid)
-        gens.setdefault(gid, {'id': gid, 'name': s['genus'], 'family': fid, 'circle': c, 'species': []})['species'].append(i)
+        gens.setdefault(gid, {'id': gid, 'name': s['genus'], 'family': fid, 'circle': c, 'species': [],
+                              **vn('genus', s['genus'])})['species'].append(i)
         w = s.get('worms') or {}
         look = [sid[o] for p in pairs if s['name'] in p for o in p if o != s['name']]
         species.append({
@@ -196,6 +222,7 @@ def build(L, cand, sug, prev=None, groups=None):
             'present': {'area': s['observers'], 'near': bool(s.get('near')), 'nearU': s.get('nearObservers', 0),
                         'nearN': s.get('nearObs', 0)},
             **({'look': look} if look else {}),
+            **vn('species', s['name']),
         })
     tx, tof = taxa(groups, [f['name'] for f in fams.values()])
     for f in fams.values():
@@ -209,6 +236,10 @@ def build(L, cand, sug, prev=None, groups=None):
         'start': [],
         'key': None,
         **({'taxa': tx} if tx else {}),
+        # the English names' sources and when each was read (tools/seaslug_names.json pulled, guides)
+        **({'ensrc': {**{k: v for k, v in (names.get('pulled') or {}).items() if v},
+                      **({'guide': [{'t': g['t'], 'read': g.get('read')} for g in names.get('guides') or []]}
+                         if names.get('guides') else {})}} if V_ else {}),
         'teach': [],
         'families': list(fams.values()),
         'genera': list(gens.values()),
@@ -331,7 +362,8 @@ def download_all(todo, out, get=None, pause=None, workers=6):
 def inputs(root=ROOT):
     j = lambda n, d=None: load(os.path.join(root, n), d)
     return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
-            j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None)
+            j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_names.json'), {}) or None)
 
 
 def write(root, tree, game):

@@ -594,6 +594,13 @@ Sizes are rough, for one agent **[guess]**.
 7. **Tree and sheets**: about 1 day, then content as it comes.
    - The build writes the generic tree section; the admin's Tree shows the subject.
    - Family and genus sheets with sourced cues.
+   - **Built, partly** (2026-11-17, Pierre: "apporter cette information de nom commun quand elle existe", at the family,
+     genus and species level, nicknames too; still no common-name branch, (d)): the English common names and nicknames as
+     information, each with its sources (`tools/seaslug_names.py` → `tools/seaslug_names.json`, copied into
+     `seaslug.json` `en`): iNaturalist, WoRMS, English Wikipedia, Florent's Guide and SEASLUG.WORLD, and pages read by hand.
+     Shown under the scientific name on the sheets, on the Learn tiles, and in the quiz after the answer only; the choices
+     stay scientific names, and a typed English name is not a right answer (as a fish genus's common name). A name the
+     sources give two taxa is a point (`points.json`, rule C5). ARCHITECTURE.md "Subjects".
 8. **Look-alikes**: half a day, then as data comes.
    - The sourced sets of §6.3 as declared pairs.
    - Then the players' confusions once answers exist.
