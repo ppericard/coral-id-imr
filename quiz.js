@@ -2196,7 +2196,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
     fresh =
       !sel && !start && !warm && met.length && !noOpen() && !introHold() && openPace(at, soon) && openRight(at)
-        ? list.filter(n => !introduced(n) && mayOpen(n))
+        ? list.filter(n => !introduced(n) && mayOpen(n) && shareRoom(n)) // the rank share (model.js SHARE)
         : [];
   if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of

@@ -830,7 +830,7 @@ function fishGenera(X, F) {
   // fishSpUnits: s:s091), asked as a photo then four common names, its scientific name in small type under each
   // (schedule step 1, so the two get associated). Its record, beside the families and genera in X.gen: rank 'species'
   // (its choices and typed answers stay among species: model.js distractors, quiz.js typeMatch), its family (parent: its
-  // species open once the family is at Advanced, one at a time, in the family's commonness order: spPlay; from: a species
+  // species open once the family is at Advanced, in the family's commonness order, at the rank share: spPlay; from: a species
   // never answered starts from its family's ability, core.js abilityOf), the family's group and forms (easy wrong choices
   // from other groups first), the other species of its family as look-alikes (the traps once it is answered right, rule
   // L7) but no declared group (decl: no confusion group, model.js groupsOfRank; the pairs come from the players'
@@ -896,8 +896,10 @@ function fishGenera(X, F) {
 }
 // The species units in play (the sp set, UNITS fish sets): from L (FISH.spl), for each family at Advanced (score: genScore,
 // LV_AT[1]; Pierre, 2026-11-03), its species met (met: introduced; a species met stays in) and the next one not met in
-// the family's order, the most met around Dauin first (core.js fishSpUnits, fish.json cmi), so they open one at a time
-// in that order, through the opening's usual pace (model.js openPick). on: the species level is on (spOn); off, none.
+// the family's order, the most met around Dauin first (core.js fishSpUnits, fish.json cmi): the order they open in
+// (Pierre, 2026-11-04). How often they open and are asked is the rank share's (model.js SHARE; Pierre, 2026-11-16, Q382:
+// not one at a time, a share of the questions set by the families' mastery), through the opening's usual pace
+// (model.js openPick, shareRoom). on: the species level is on (spOn); off, none.
 function spPlay(L, score, met, on) {
   if (!on) return [];
   const by = new Map();
@@ -2449,7 +2451,8 @@ const UNITS = {
       // The species by their common names (fishSpUnitsUnits, above; docs/FISH_PATH.md "Unlock rules": branch A of the
       // tree): no offer and no switch, every player meets them (Pierre, 2026-11-03: "an entry's species open when the
       // entry reaches Advanced"; 2026-11-04: entry by entry, never all at once), once the species level is on (spOn,
-      // rule D4). auto: a family's species from its Advanced, one at a time in its commonness order (spPlay). all: every
+      // rule D4). auto: a family's species from its Advanced, in its commonness order (spPlay), their share of the
+      // questions set by the families' mastery (model.js SHARE, Q382). all: every
       // species unit, for setOf and the choices (rankUnits). They count in the fish % (the common names, core.js
       // treeScore C).
       {
@@ -2471,7 +2474,7 @@ const UNITS = {
         card: n =>
           (FISH.spl || []).some(o => o !== n && introduced(o))
             ? ''
-            : '<b>Your first species name.</b> A family you know well (Advanced) now brings its species, one at a time, the most met around Dauin first.'
+            : '<b>Your first species name.</b> A family you know well (Advanced) now brings its species, the most met around Dauin first, more of them as you master more families.'
       }
     ]
   },
@@ -2597,6 +2600,11 @@ const setLater = n => {
   const S = setOf(n);
   return !!(S && S.after) && !Q[S.k + 'H'] && !(S.auto && S.auto().includes(n));
 };
+// The units the rank share leaves alone (model.js SHARE; Pierre, 2026-11-16, Q382): those of a set that opens after the
+// slate (its after) that come in the slate's phase by Pierre's decisions: the ones it brings by itself (auto: an IMR
+// player's IMR genera from their family's Open Water, Q219) and all of them once the player turned it on by hand before it
+// was due (Q[k + 'H'], Q240). Read once per answer (model.js sharesNow).
+const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...(S.auto ? S.auto() : [])] : []));
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 opened by itself, 2026-11-06 to 2026-11-07, keep it: Pierre,
 // 2026-11-07). A unit of a part that is off never opens (model.js mayOpen); one already open stays open.

@@ -514,7 +514,13 @@ test('rule D8: the trigger replays under the new structure a player who never re
 // ---- The leaderboard's score tree under the structure (design note v2, step 4; Codex review #977) ----
 
 test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
-  const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+  const ctx = {
+    DOM: {EX: 0.9},
+    easyCover: C.easyCover,
+    fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
+    rankWeights: C.rankWeights
+  };
   vm.createContext(ctx);
   vm.runInContext(
     block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',

@@ -202,7 +202,7 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   if (!U.slate) U = unitsOfX(U);
@@ -268,6 +268,9 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
     // app.js setLater (Q208 A): a fish scientific genus waits while a family in play is still to open (model.js openPick),
     // unless it is an auto unit (an IMR player's IMR genus) or the set was turned on by hand early (Q.sciH, Q240).
     setLater: n => subject === 'fish' && U.extra.includes(n) && !ctx.Q[U.setK + 'H'] && !setUnits().auto.includes(n),
+    // app.js shareFree (the rank share, Q382): the fish scientific genera an IMR player gets by themselves (Q219), every one
+    // once the set was turned on by hand early (Q240).
+    shareFree: () => (subject === 'fish' ? [...(ctx.Q[U.setK + 'H'] ? setUnits().units : []), ...setUnits().auto] : []),
     pool: () => [...slate, ...ctx.bonusList()].filter(has), // app.js pool: units with a photo to show
     openShut: n => U.c3.includes(n) && beyond !== 'yes' && !U.c3.some(u => u in ctx.introMap()),
     headScore,
@@ -426,7 +429,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     const start = cards.length > 0,
       met = list.filter(M.introReady);
     if (!start && met.length && !M.introHold() && M.openPace(at, []) && M.openRight(at)) {
-      const fresh = list.filter(n => !M.introduced(n) && M.mayOpen(n));
+      const fresh = list.filter(n => !M.introduced(n) && M.mayOpen(n) && M.shareRoom(n)); // the rank share (model.js SHARE)
       if (fresh.length && ctx.Math.random() < M.openChance(list)) cards = [M.openPick(fresh, list)];
     }
     if (cards.length) M.introAdd(cards, start);

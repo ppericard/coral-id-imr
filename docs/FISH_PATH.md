@@ -246,8 +246,14 @@ The first fish questions must be easy and readable. Two decisions, each built in
   player already knows very well, exactly as scientific names come in species by species; there is no switch from families to species.
   When species questions, and then scientific-name questions, start being asked is the difficulty algorithm's job, following the player's
   progress.
-- They open **one at a time**, with the existing machinery: the `OPEN` share (new units only while few are shaky), a first-meeting card
-  (`INTRO`), the opening hold (`introHold`), never the answer of the question right after its card.
+- They open with the existing machinery: the `OPEN` share (new units only while few are shaky), a first-meeting card
+  (`INTRO`), the opening hold (`introHold`), never the answer of the question right after its card. **Not one at a time
+  but at the rank share** (Pierre, 2026-11-16, Q382: "je ne suis pas forcément d'accord pour qu'il y en ait une à la
+  fois ... une stratégie qui règle finalement la répartition des questions ... en fonction de la maîtrise justement des
+  niveaux précédents"): the units below the families (their species, and their scientific genera) take together a share
+  of the questions set by how many families are at Advanced, small at first, every question free once all are
+  (`model.js` `SHARE`; docs/LEARNING.md "The rank share"). The same mechanism is meant for the juveniles and colour phases
+  (Q384, #953): one more level, its own thresholds in the data.
 - Order inside an entry: **the most commonly met around Dauin first**, by the commonness index (`fish.json` species `cmi`; the entry's
   `species` list is in that order; "Species order: the commonness index" below). Until 2026-11-04 it was the PDF rank (`r`).
 - A species starts from its entry's ability (as `playerStart` starts a genus from the global level), so a strong player on Wrasse gets harder
@@ -258,7 +264,8 @@ The first fish questions must be easy and readable. Two decisions, each built in
     records, rank `species`). The label is the player's first name (`cnFirst`), with the scientific name in small type
     under each choice (schedule step 1).
   - **Opening**: the set `sp` (`UNITS` fish `sets`, no offer, no switch). `app.js` `spPlay` gives a family at Advanced its
-    species met and the next one not met, in its order.
+    species met and the next one not met, in its order; how often one opens and is asked is the rank share's (2026-11-16,
+    Q382: `model.js` `SHARE`, `shareW`, `shareRoom`).
   - **Start**: a species never answered starts from its family's ability (`core.js` `abilityOf` from, the replay too).
   - **No exam yet** (`noex`): the bar tops out at 95%.
   - **The milestone**: a line on the first species card ("Your first species name").

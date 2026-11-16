@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish species level, step 1 (Pierre, 2026-11-15, Q362: one progress unit per species; Q375: behind the chunked tree's
 // version; Q376 (b): the main name fills it, any listed name credits it; docs/reviews/2026-11-14-species-step1.md): the
 // species units (core.js fishSpUnits, app.js fishGenera), the order they open in (app.js spPlay), the global score's tree

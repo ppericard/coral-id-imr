@@ -467,6 +467,83 @@ const openChance = list => {
     stuck = n => late && ((P[n] || {}).ok || 0) + ((P[n] || {}).ko || 0) >= OPEN.STUCK;
   return Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n) && !stuck(n)).length / OPEN.K);
 };
+// The rank share (Pierre, 2026-11-16, Q382: "une stratégie qui règle la répartition des questions, soit au niveau de la
+// famille, du genre ou de l'espèce, en fonction de la maîtrise justement des niveaux précédents"; Q384, the same mechanism
+// for the juveniles and colour phases later; docs/LEARNING.md "The rank share"). One rule for every step of a path: a
+// unit that hangs from another (its record's parent: a fish scientific genus or species from its family) may open and be
+// asked, but the units hanging from one level together take a share of the questions set by how much of that level the
+// player masters, small while it is not mastered, growing as it is.
+// - Inputs: each unit's parent (GX(n).parent; none on the slate) and the parent's level (rankOf: '' for the slate);
+//   the parents' bars (genScore) against their threshold (GX(p).shareAt, a bar from 0 to 1, else LV_AT[SHARE.AT]:
+//   Advanced, Pierre's level for a family's species, 2026-11-03), so a later level (the phases, Q384) or one unit (a
+//   species whose juveniles come early) sets its own in its data.
+// - Output, per level L: m(L), the share of L's units in play (pool: met, or may open now) at their threshold, and
+//   cap(L) = m(L)^SHARE.POW: at most that share of the drawn questions goes to the units hanging from L (shareW, in
+//   weighted), and one more of them opens only while their share of the draw is under it (shareRoom, quiz.js planPhoto).
+// POW 2 (simulated against 1, linear, and 3: docs/LEARNING.md "The rank share"): a quarter of the questions once half the
+// families are at Advanced, all of them free once every one is. A unit with no parent is never capped (the slate, the
+// coral bonus genera); a list of one level only is drawn as before. Nor is a unit the subject frees (app.js shareFree:
+// the units Pierre's decisions put in the families' phase, an IMR player's IMR genera from their family's Open Water,
+// Q219, and the scientific names turned on by hand early, Q240).
+const SHARE = {AT: 1, POW: 2};
+const shareLv = n => {
+  const p = (GX(n) || {}).parent;
+  return p ? (typeof rankOf === 'function' ? rankOf(p) : '') : null;
+};
+let SHARES = null;
+const sharesNow = () => {
+  const tick = SUBJ.id + '|' + answersSoFar() + '|' + (typeof Q === 'object' ? JSON.stringify(Q) : '');
+  if (SHARES && SHARES.tick === tick) return SHARES;
+  const L = typeof pool === 'function' ? pool() : slateGenera(),
+    free = new Set(typeof shareFree === 'function' ? shareFree() : []),
+    lv = new Map(L.map(n => [n, free.has(n) ? null : shareLv(n)])),
+    cap = {},
+    w = {};
+  new Set([...lv.values()].filter(x => x !== null)).forEach(k => {
+    const up = L.filter(u => (typeof rankOf === 'function' ? rankOf(u) : '') === k && (introduced(u) || mayOpen(u))),
+      at = u => (typeof (GX(u) || {}).shareAt === 'number' ? GX(u).shareAt : LV_AT[SHARE.AT]),
+      m = up.length ? up.filter(u => genScore(u) >= at(u)).length / up.length : 0;
+    cap[k] = Math.pow(m, SHARE.POW);
+  });
+  // The draw's weights of the units met (drawW), by level hung from ('' key for those hanging from none: '~').
+  L.filter(introReady).forEach(n => {
+    const k = lv.get(n) === null ? '~' : lv.get(n);
+    w[k] = (w[k] || 0) + drawW(n);
+  });
+  return (SHARES = {tick, free, lv, cap, w});
+};
+const shareLvNow = (S, n) => (S.lv.has(n) ? S.lv.get(n) : S.free.has(n) ? null : shareLv(n));
+// The weights ws of the units list (weighted), those hanging from a level scaled down so that together they take at most
+// its cap of the total (the others keep theirs). None scaled when the list holds only them.
+const shareW = (list, ws) => {
+  if (list.every(n => shareLv(n) === null)) return ws;
+  const S = sharesNow(),
+    k = list.map(n => shareLvNow(S, n)),
+    out = ws.slice();
+  Object.entries(S.cap).forEach(([lv, c]) => {
+    if (c >= 1) return;
+    let g = 0,
+      o = 0;
+    out.forEach((x, i) => (k[i] === lv ? (g += x) : (o += x)));
+    if (g > 0 && o > 0 && g / (g + o) > c) {
+      const f = (c * o) / ((1 - c) * g);
+      out.forEach((x, i) => k[i] === lv && (out[i] = x * f));
+    }
+  });
+  return out;
+};
+// Whether unit n may open now as far as the rank share goes: always for a unit hanging from none; else while the units met
+// that hang from its level take less of the draw (drawW) than its cap.
+const shareRoom = n => {
+  if (shareLv(n) === null) return true;
+  const S = sharesNow(),
+    lv = shareLvNow(S, n);
+  if (lv === null) return true;
+  const c = S.cap[lv] || 0,
+    g = S.w[lv] || 0,
+    t = Object.values(S.w).reduce((a, x) => a + x, 0);
+  return c >= 1 || (c > 0 && (t > 0 ? g / t : 0) < c);
+};
 // The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
 // and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
 // of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
@@ -1212,7 +1289,7 @@ function answeredAt(s, good, now = Date.now()) {
   if (P[LEVEL]) P[LEVEL].at = now;
 }
 function weighted(list) {
-  const w = list.map(weight);
+  const w = shareW(list, list.map(weight)); // the rank share (SHARE)
   const t = w.reduce((a, x) => a + x, 0);
   let r = Math.random() * t;
   for (let i = 0; i < list.length; i++) {

@@ -55,10 +55,11 @@ test('the species units: the worlds of before unchanged, opened from their famil
   assert.deepStrictEqual(W.eps, W0.eps);
   Object.keys(W0.mu).forEach(n => assert.strictEqual(W.mu[n], W0.mu[n], n));
   U.sp.forEach(n => assert.ok(n in W.mu && X.gen[n].from === X.gen[n].parent, n));
-  const r = RW.runOne(X, {profile: 'expert', seed: 1, N: 400, cps: [400]}),
+  // 700 answers: the rank share (model.js SHARE) keeps the species out until some of the families are at Advanced
+  const r = RW.runOne(X, {profile: 'expert', seed: 1, N: 700, cps: [700]}),
     first = {};
   r.expo.forEach((e, i) => r.kinds[e[0]] === 'species' && !(e[0] in first) && (first[e[0]] = i + 1));
-  assert.ok(Object.keys(first).length >= 1, 'no species asked in 400 answers');
+  assert.ok(Object.keys(first).length >= 1, 'no species asked in 700 answers');
   Object.entries(first).forEach(([n, i]) => {
     const p = X.gen[n].parent,
       own = U.sp.filter(o => X.gen[o].parent === p && X.gen[o].views.wide.length);
@@ -67,6 +68,105 @@ test('the species units: the worlds of before unchanged, opened from their famil
     own.slice(0, own.indexOf(n)).forEach(o => assert.ok(o in first && first[o] < i, `${o} before ${n}`));
   });
   assert.strictEqual(r.kinds[U.sp[0]], 'species');
+});
+
+// The rank share (model.js SHARE; Pierre, 2026-11-16, Q382): the units hanging from the families (their scientific genera
+// and species) take at most m^POW of the drawn questions, m the share of the families in play at their threshold, and
+// one more opens only while their share of the draw is under it. On the app's own model.js, in the rated world's engine.
+test('the rank share: the cap from the families at Advanced, the draw scaled to it, the openings held at it', () => {
+  const vm = require('vm'),
+    {ctx, M} = RW.engine(X, RW.world(X, 3), {app: 'truth'}),
+    S = vm.runInContext('({SHARE, sharesNow, shareW, shareRoom})', ctx),
+    inPlay = X.c1, // circle 2 waits for every circle-1 family asked, circle 3 for a yes
+    fam = inPlay[0],
+    spOf = X.spl.filter(n => X.gen[n].parent === fam),
+    gen = X.sci.find(n => X.gen[n].parent === fam),
+    // a new answer count: the share is computed once per answer
+    tick = () => (ctx.P['~level'] = {ok: ((ctx.P['~level'] || {}).ok || 0) + 1, ko: 0});
+  assert.strictEqual(S.SHARE.POW, 2);
+  assert.ok(spOf.length > 1 && gen);
+  // No family at Advanced: no unit hanging from one in play (spPlay, sciOpen), and the cap 0: nothing hanging from them
+  // opens or is drawn beside a family.
+  ctx.Q.sci = true;
+  tick();
+  assert.strictEqual(S.sharesNow().cap[''] || 0, 0);
+  assert.strictEqual(S.shareRoom(spOf[0]), false);
+  assert.strictEqual(S.shareRoom(fam), true); // a family hangs from nothing: never held
+  // Half the families in play mastered: cap 0.25; a family and three species of weight 1 each: the species 0.25 together.
+  inPlay.slice(0, Math.floor(inPlay.length / 2)).forEach(n => (ctx.P[n] = {mx: 1}));
+  tick();
+  const m = Math.floor(inPlay.length / 2) / inPlay.length,
+    c = S.sharesNow().cap[''];
+  assert.ok(Math.abs(c - m * m) < 1e-12, `${c} ${m}`);
+  const w = S.shareW([fam, ...spOf.slice(0, 2), gen], [1, 1, 1, 1]);
+  assert.ok(Math.abs((w[1] + w[2] + w[3]) / (w[0] + w[1] + w[2] + w[3]) - c) < 1e-12, String(w));
+  assert.strictEqual(w[0], 1);
+  // already under the cap: unchanged
+  assert.deepStrictEqual(S.shareW([fam, inPlay[1], spOf[0]], [1, 1, 0.1]), [1, 1, 0.1]);
+  // nothing met hangs from the families yet: room for one
+  assert.strictEqual(S.shareRoom(spOf[0]), true);
+  // Every family in play mastered: the cap is 1, nothing is scaled.
+  inPlay.forEach(n => (ctx.P[n] = {mx: 1}));
+  tick();
+  assert.strictEqual(S.sharesNow().cap[''], 1);
+  assert.deepStrictEqual(S.shareW([fam, spOf[0]], [0.2, 1]), [0.2, 1]);
+  assert.strictEqual(S.shareRoom(spOf[1]), true);
+  // A unit's own threshold (shareAt, its data; Q384: a level or a unit whose juveniles come early): only the first family
+  // mastered, the next ones with a threshold of 0 count at once, the others wait for their Advanced.
+  inPlay.forEach(n => delete ctx.P[n]);
+  ctx.P[fam] = {mx: 1};
+  const k = 5,
+    G = vm.runInContext('GX', ctx);
+  inPlay.slice(1, 1 + k).forEach(n => (G(n).shareAt = 0));
+  tick();
+  assert.ok(Math.abs(S.sharesNow().cap[''] - ((1 + k) / inPlay.length) ** 2) < 1e-12);
+  inPlay.slice(1, 1 + k).forEach(n => delete G(n).shareAt);
+  assert.ok(M.LV_AT[1] === 0.8);
+});
+
+// The corals: no unit hangs from another, so the draw is the one of before (the same weights, not a copy scaled).
+test('the rank share: a list where nothing hangs from another is drawn as before', () => {
+  const vm = require('vm'),
+    U = RW.unitsOf('coral'),
+    {ctx} = RW.engine(U, RW.world(U, 1), {app: 'truth'}),
+    S = vm.runInContext('({shareW})', ctx),
+    ws = [0.5, 1, 0.2];
+  assert.strictEqual(S.shareW(U.slate.slice(0, 3), ws), ws);
+});
+
+// Pierre's decisions that put scientific genera in the families' phase stay as they were (app.js shareFree): an IMR
+// player's IMR genera (Q219) and the set turned on by hand early (Q240) are never held by the share.
+test('the rank share leaves alone an IMR player’s IMR genera and the scientific names turned on by hand early', () => {
+  const vm = require('vm'),
+    {ctx, M} = RW.engine(X, RW.world(X, 3), {app: 'truth'}),
+    S = vm.runInContext('({sharesNow, shareW, shareRoom})', ctx),
+    fam = 'f:Damselfishes',
+    imr = 'g:Chromis',
+    other = X.sci.find(n => X.gen[n].parent === fam && !X.gen[n].imrg),
+    tick = () => (ctx.P['~level'] = {ok: ((ctx.P['~level'] || {}).ok || 0) + 1, ko: 0});
+  assert.ok(X.gen[imr].imrg && other);
+  // The family mastered, alone of its circle: the cap is (1 / circle 1)^2, small.
+  ctx.P[fam] = {mx: 1};
+  ctx.Q.sci = true;
+  tick();
+  const c = S.sharesNow().cap[''];
+  assert.ok(c > 0 && c < 0.01, String(c));
+  // Not an IMR player: both genera are held to the cap.
+  const w0 = S.shareW([X.c1[1], imr, other], [1, 1, 1]);
+  assert.ok(w0[1] < 0.01 && w0[2] < 0.01, String(w0));
+  // An IMR player: the IMR genus is free, the other still held.
+  M.startSet('imr', 'tour');
+  tick();
+  assert.ok(S.sharesNow().free.has(imr) && !S.sharesNow().free.has(other));
+  const w1 = S.shareW([X.c1[1], imr, other], [1, 1, 1]);
+  assert.strictEqual(w1[1], 1);
+  assert.ok(w1[2] < 0.01, String(w1));
+  assert.strictEqual(S.shareRoom(imr), true);
+  // Turned on by hand early (Q240): every genus of the set in play is free.
+  ctx.Q.sciH = true;
+  tick();
+  assert.ok(S.sharesNow().free.has(other));
+  assert.deepStrictEqual(S.shareW([X.c1[1], imr, other], [1, 1, 1]), [1, 1, 1]);
 });
 
 test('told the truth, the app reads every photo and unit as the world has them; on its own, the judged ease alone', () => {
