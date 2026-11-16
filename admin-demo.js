@@ -392,6 +392,38 @@
         {3: 0}
       )
     ];
+    // A game report from every other subject with sheets at several ranks and files of its own (core.js SUBJECTS admin
+    // files; Codex review #987): its first game photo as its game file has it (a remote original stays remote), reported as
+    // a wrong answer on the unit showing it, from its quiz.
+    {
+      const FX = SUBJECTS.find(x => x.admin.cur && x.sheets),
+        more = SUBJECTS.filter(x => x !== FX && x.sheets && x.admin.files && x.admin.files.gm);
+      const got = await Promise.all(
+        more.map(x =>
+          real(x.admin.files.gm, {cache: 'no-cache'})
+            .then(r => (r.ok ? r.json() : null))
+            .catch(() => null)
+        )
+      );
+      more.forEach((x, i) => {
+        const [t, L] = Object.entries((got[i] && got[i].photos) || {}).find(([, L]) => L && L.length && L[0].f) || [];
+        if (t)
+          reports.push(
+            rp(
+              12 + i,
+              'Ana Demo',
+              'wrong',
+              t,
+              '',
+              '',
+              `Demo report: not this ${x.one} (${x.id}).`,
+              'quiz',
+              L[0].f,
+              x.hash + 'practice/quiz'
+            )
+          );
+      });
+    }
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
     // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
     // as the sheet does. Each prompt logs its showing, then an answer, "Not now" (skip), moving on (none) or nothing (the

@@ -135,7 +135,55 @@
   };
   const repWhyText = (ctx, S) =>
     ctx.why === 'wrong' && !ctx.game ? 'Wrong ' + S.one : own(REP_WHY, ctx.why) ? REP_WHY[ctx.why].replace('{things}', S.several) : ctx.why;
-  const API = {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, REP_NOGAME, unitSubj, repCtx, repOn, REP_WHY, repWhyText};
+  // A subject's units and photos as the admin reads them for its reports (admin.js unitRead; Codex review #987), from the
+  // files its SUBJECTS admin files name: f, its tree (fish.json's form); first, its first photos' file (none for a subject
+  // without); gm, its game photos' file (core.js fishGameRead: the short form read whole). Every photo either list holds (a
+  // report may name a photo shown before a Publish), with the unit showing it (entry) and its source as the file has it (a
+  // remote original stays remote: src, r). {gen: unit id -> record (core.js fishGen), ph: photo id -> its record, slate (the
+  // app's UNITS slate), fam: each family, genus and species sheet id (s:<name>) to its family, spid: each species sheet id
+  // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach: Q309),
+  // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log)}; null without a tree.
+  function repReg(f, first, gm) {
+    if (!f || typeof f !== 'object') return null;
+    const G = (C.fishGameRead(gm) || {}).photos || {},
+      F0 = (first && first.photos) || {},
+      all = {};
+    new Set([...Object.keys(F0), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(F0[t] || [])]));
+    const F = C.fishGen(f, all),
+      ph = {},
+      fam = Object.create(null),
+      spid = Object.create(null),
+      spg = Object.create(null),
+      imr = Object.create(null);
+    Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (ph[x.f] = {...x, entry: g.id})));
+    (f.families || []).forEach(x => {
+      fam[x.id] = x.id;
+      (x.genera || []).forEach(g => (fam[g] = fam[g] || x.id));
+    });
+    (f.species || []).forEach(x => {
+      spid['s:' + x.name] = x.id;
+      if (x.genus) spg[x.id] = x.genus;
+      if (!x.family) return;
+      fam['s:' + x.name] = x.family;
+      if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
+    });
+    (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
+    return {gen: F.gen, ph, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg, imr};
+  }
+  const API = {
+    REP_STATUS,
+    repStatus,
+    repStatusSet,
+    repsReconcile,
+    repsOrder,
+    REP_NOGAME,
+    unitSubj,
+    repCtx,
+    repOn,
+    REP_WHY,
+    repWhyText,
+    repReg
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

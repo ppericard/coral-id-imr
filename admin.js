@@ -4773,7 +4773,7 @@ const repPR = id => (HANDLEDF && HANDLEDF[id] && Number(HANDLEDF[id].pr)) || 0;
 // The reports on subject S's side (Q309, rule A4: the list follows the Corals | Fish switch; a report about no subject is
 // on every side), by what each is about (reports.js repCtx; a photo's subject from the photo registries). Open: no status
 // and not handled in a PR; handled in a PR: listed apart, unless Done.
-const repPhotoSubj = f => (PHOTOS[f] ? ADM0.id : FISHA && FISHS && FISHA.ph[f] ? FISHS.id : '');
+const repPhotoSubj = f => (PHOTOS[f] ? ADM0.id : FISHA && FISHS && FISHA.ph[f] ? FISHS.id : (unitPhOf(f) || {S: {id: ''}}).S.id);
 const repsOf = (S = ASUBJ) => (REPS && REPS.rows ? REPS.rows.filter(r => repOn(repCtx(r, repPhotoSubj), S)) : []);
 const repsOpen = (S = ASUBJ) => repsOf(S).filter(r => repStatus(DRAFT, r[0]) === 'open' && !repPR(r[0]));
 const repsPR = (S = ASUBJ) => repsOf(S).filter(r => repStatus(DRAFT, r[0]) !== 'done' && repPR(r[0]));
@@ -5321,62 +5321,72 @@ function bindAlerts() {
 // Triage: only what needs Pierre's eye. 1) photos he flagged on the site, with where they were seen;
 // 2) Featured photos rated Poor. Views without his own Featured pick are not a task (Pierre): the automatic pick is fine.
 // The fish beta's reports (Codex review #442): a report from a fish question names a teaching id (t01) and remote
-// iNaturalist photos (fi…), none in the coral photo registry. fish.json, fish-photos.json and fish-game.json (the curated
-// photos on R2, admin plan PR 7) are read once, when To do first shows: {gen: teaching id -> record (core.js fishGen),
-// ph: photo id -> {photo, entry id}}, every photo either list holds (a report may name a photo shown before a Publish).
+// iNaturalist photos (fi…), none in the coral photo registry. The files its SUBJECTS admin files name (fish.json,
+// fish-photos.json and fish-game.json: the curated photos on R2, admin plan PR 7) are read once, when To do first shows,
+// into FISHA (reports.js repReg: its units, its photos each with the unit showing it, its slate as the app's UNITS slate,
+// a report's unit to its family's page and its photos for Attach, its IMR sub-entries' names).
 let FISHP_ADM = null;
+// Subject S's files (SUBJECTS admin files) read into its registry (reports.js repReg); null when a file it names is missing.
+const unitRead = S => {
+  const W = (S && S.admin.files) || {},
+    k = ['f', 'ph', 'gm'].filter(x => W[x]);
+  return Promise.all(k.map(x => fetch(W[x], {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))).then(L => {
+    const J = Object.fromEntries(k.map((x, i) => [x, L[i]]));
+    return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm);
+  });
+};
 function fishAdmin() {
   return (FISHP_ADM =
     FISHP_ADM ||
-    Promise.all(
-      ['fish.json', 'fish-photos.json', 'fish-game.json'].map(u => fetch(u, {cache: 'no-cache'}).then(r => (r.ok ? r.json() : null)))
-    )
-      .then(([f, ph, gm]) => {
-        if (!f || !ph || !ph.photos) return;
-        const G = (fishGameRead(gm) || {}).photos || {}, // its records whole (core.js: the file's short form)
-          all = {};
-        new Set([...Object.keys(ph.photos), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(ph.photos[t] || [])]));
-        const F = fishGen(f, all),
-          P = {};
-        Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (P[x.f] = {...x, entry: g.id})));
-        // Each family, genus and species sheet id (s:<name>) to its family, each species sheet id to its species, each
-        // species to its genus: a report's unit links to its family's page, its photos for Attach (Q309).
-        const fam = Object.create(null),
-          spid = Object.create(null),
-          spg = Object.create(null);
-        (f.families || []).forEach(x => {
-          fam[x.id] = x.id;
-          (x.genera || []).forEach(g => (fam[g] = fam[g] || x.id));
-        });
-        (f.species || []).forEach(x => {
-          spid['s:' + x.name] = x.id;
-          if (x.genus) spg[x.id] = x.genus;
-          if (!x.family) return;
-          fam['s:' + x.name] = x.family;
-          if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
-        });
-        // The IMR sub-entries: each genus the IMR course names otherwise (its imr tag: Amphiprion, Anemonefish), its IMR
-        // name (Analyses › Learning › Answer log beside the genus).
-        const imr = Object.create(null);
-        (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
-        FISHA = {gen: F.gen, ph: P, slate: [...F.c1, ...F.c2, ...F.c3], fam, spid, spg, imr}; // the slate: the app's (app.js UNITS slate)
+    unitRead(FISHS)
+      .then(R => {
+        if (!R) return;
+        FISHA = R;
         if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       })
       .catch(() => {}));
 }
 // The subject whose photos and units fishAdmin reads (its own part of curation.json, sheets at several ranks), and a
-// family's page (Photos › Tree) under its prefix.
+// family's page (Photos › Tree) under its prefix (or under another subject S's).
 const FISHS = SUBJECTS.find(S => S.admin.cur && S.sheets) || null;
-const famHref = id => '#' + (FISHS ? FISHS.hash : ASUBJ.hash) + TREE + '/' + encodeURIComponent(id);
+const famHref = (id, S = FISHS || ASUBJ) => '#' + S.hash + TREE + '/' + encodeURIComponent(id);
+// Every other subject with sheets at several ranks (Codex review #987: the reports of a third subject), read the same way
+// once one of its reports or flags shows (unitAdmin), its registry by subject id (UNITA): its reports' photos, with their
+// credits and the identification they carry, keep their source (a remote original stays remote); its units' names; Attach.
+// Its tiles carry no tool: fishTile's act on FISHS's part of curation.json.
+const UNITA = {},
+  UNITP = {};
+function unitAdmin(S) {
+  if (!S || S === FISHS) return fishAdmin();
+  return (UNITP[S.id] =
+    UNITP[S.id] ||
+    unitRead(S)
+      .then(R => {
+        if (!R) return;
+        UNITA[S.id] = R;
+        if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
+      })
+      .catch(() => {}));
+}
+// Subject S's registry once read (FISHA for FISHS), else null.
+const unitRegOf = S => (!S ? null : S === FISHS ? FISHA : UNITA[S.id] || null);
+// A photo of another subject unitAdmin read (not FISHS's: fishRepTile): {S, p}, else null.
+const unitPhOf = f => {
+  const S = SUBJECTS.find(x => x !== FISHS && UNITA[x.id] && UNITA[x.id].ph[f]);
+  return S ? {S, p: UNITA[S.id].ph[f]} : null;
+};
 // A unit's name in a report: a coral genus in italics with its page link; a fish family by its name, a fish genus or
 // species in italics (its id's prefix off), each with its family's page once the fish data are read (fishAdmin).
-// bare: without the subject's name after it (a page that is that subject's already: its Stops).
-const repUnit = (x, bare) => {
-  const S = unitSubj(x);
+// bare: without the subject's name after it (a page that is that subject's already: its Stops). S0: the report's subject
+// (a unit id two subjects' prefixes fit: reports.js repCtx), else the unit's (unitSubj); its family's page only when the
+// subject has the family pages (Photos › Tree).
+const repUnit = (x, bare, S0) => {
+  const S = S0 && S0.sheets ? S0 : unitSubj(x);
   if (!S || !S.sheets) return `<a class="adm-gen" href="${esc(genusHref(x))}"><i>${esc(x)}</i></a>`;
-  const fam = FISHA && FISHA.fam[x],
-    nm = FISHA && FISHA.gen[x] ? esc(FISHA.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
-  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
+  const R = unitRegOf(S),
+    fam = R && hasPage(S, TREE) && R.fam[x],
+    nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
+  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
 // A coral photo's tile outside its genus page (To do's reports and flags, Health's photos everyone misses): its genus
 // page's tile (tile0) with every tool it has there (Q309), without the drag handle, its genus first; bound by bindTiles,
@@ -5434,33 +5444,34 @@ function fishRepTile(fp, o = {}) {
 const REP_ATT = {},
   REP_PICK = {},
   REP_OPEN = {}; // Done or Dismissed unfolded, kept across redraws
-// The photos of a unit for the picker: a coral genus's live photos; a fish unit's photos of its family (fishAdmin),
-// those of its species or genus when it names one.
-function repUnitPhotos(u) {
-  if (DATA.gen[u]) return photos(u);
-  const fam = FISHA && FISHA.fam[u],
-    L = (fam && FISHA.gen[fam] && FISHA.gen[fam].views.wide) || [],
-    sid = FISHA && FISHA.spid[u],
-    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => FISHA.spg[p.sp] === u) : L;
+// The photos of a unit for the picker: a coral genus's live photos; a unit of a subject with sheets at several ranks, the
+// photos of its family in that subject's registry R (unitAdmin), those of its species or genus when it names one.
+function repUnitPhotos(u, R) {
+  if (!R) return DATA.gen[u] ? photos(u) : [];
+  const fam = R.fam[u],
+    L = (fam && R.gen[fam] && R.gen[fam].views.wide) || [],
+    sid = R.spid[u],
+    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => R.spg[p.sp] === u) : L;
   return M.length ? M : L;
 }
 function repPicker(c, S) {
   const P = REP_PICK[c.id],
     u = c.unit || (typeof P === 'object' && P.unit) || '',
+    R = unitRegOf(S),
     units = S.admin.cur
-      ? FISHA
-        ? Object.values(FISHA.gen)
+      ? R
+        ? Object.values(R.gen)
             .map(g => [g.id, g.name])
             .sort((a, b) => a[1].localeCompare(b[1]))
         : []
       : Object.keys(DATA.gen)
           .sort()
           .map(n => [n, n]);
-  if (S.admin.cur && !FISHA) fishAdmin();
+  if (S.admin.cur && !R) unitAdmin(S);
   const sel = c.unit
     ? ''
     : `<select data-rpunit aria-label="${esc(cap1(S.one))}"><option value="">${esc(cap1(S.one))}</option>${units.map(([id, nm]) => `<option value="${esc(id)}"${id === u ? ' selected' : ''}>${esc(nm)}</option>`).join('')}</select>`;
-  const L = u ? repUnitPhotos(u) : [];
+  const L = u ? repUnitPhotos(u, S.admin.cur ? R : null) : [];
   return `<div class="adm-reppick">${sel}${L.length ? `<div class="adm-reppgrid">${L.map(p => `<button type="button" class="adm-ph" data-rpf="${esc(p.f)}" title="${esc(p.t || '')}"><img src="${img(p, 1)}" alt="" loading="lazy"></button>`).join('')}</div>` : ''}</div>`;
 }
 function bindRepAttach() {
@@ -5569,7 +5580,7 @@ function renderTriage() {
   const F = flagsOf(DRAFT),
     own = !ASUBJ.admin.cur,
     flagged = Object.keys(F).map(f => ({...((own && PHOTOS[f]) || {genus: F[f].genus || '?'}), f, fl: F[f]}));
-  if (!own && flagged.length && !FISHA) fishAdmin();
+  if (!own && flagged.length && !unitRegOf(ASUBJ)) unitAdmin(ASUBJ);
   const when = t => {
     try {
       return dateText(t, 'dmhm');
@@ -5597,15 +5608,29 @@ function renderTriage() {
   // of its family's page (fishRepTile), those that take it out of play also clearing the flag, plus Done; Undo takes any
   // back. A photo whose data are missing: Done only.
   const unitFlagTile = p => {
-    const fp = FISHA && FISHA.ph[p.fl.file || p.f],
-      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`;
-    if (fp) return fishRepTile(fp, {flag: p.f, cap: where, extra: '<button type="button" data-act="tdone">Done</button>'});
-    return `<figure class="adm-tile" data-f="${esc(p.f)}"><span class="adm-ph none">missing</span><figcaption>${p.fl.unit ? repUnit(p.fl.unit) : ''}${where}</figcaption><div class="adm-acts"><button type="button" data-act="tdone">Done</button></div></figure>`;
+    const k = p.fl.file || p.f,
+      fp = FISHA && FISHA.ph[k],
+      up = unitPhOf(k),
+      where = `<small class="adm-where">${esc(p.fl.where || '')} · ${esc(when(p.fl.at))}</small>`,
+      done = '<button type="button" data-act="tdone">Done</button>';
+    if (fp) return fishRepTile(fp, {flag: p.f, cap: where, extra: done});
+    if (up) return unitTile(up, {flag: p.f, cap: where, extra: done});
+    return `<figure class="adm-tile" data-f="${esc(p.f)}"><span class="adm-ph none">missing</span><figcaption>${p.fl.unit ? repUnit(p.fl.unit, false, ASUBJ) : ''}${where}</figcaption><div class="adm-acts">${done}</div></figure>`;
   };
-  // A reported photo: every tool of its genus page, like a flagged one; a fish photo every tool of its family's page.
+  // A photo of another subject with sheets at several ranks (unitPhOf; Codex review #987): the photo (Enlarge: its unit,
+  // species, credits and observation), its unit, the species it is identified as, its source, rights and credits. No tool:
+  // fishTile's act on FISHS's part of curation.json (docs/ROADMAP.md "More subjects": its photo pages are not built yet).
+  // o: {flag (the flag's key), cap, extra}.
+  const unitTile = ({S, p}, o = {}) => `<figure class="adm-tile" data-f="${esc(p.f)}"${o.flag ? ` data-fflag="${esc(o.flag)}"` : ''}>
+      <button type="button" class="adm-ph" data-act="zoomx" aria-label="Enlarge"><img src="${img(p, 1)}" alt="" loading="lazy"></button>
+      <figcaption>${repUnit(p.entry, true, S)} ${p.t ? `<small><i>${esc(p.t)}</i></small> ` : ''}<span class="adm-src o-${origin(p)}">${esc((S.admin.origins.find(y => y[0] === origin(p)) || [, , origin(p)])[2])}</span>${rightsTag(p)}${nameTag(p, S)}${p.a ? `<small class="adm-where">${esc(p.a)}</small>` : ''}${o.cap || ''}</figcaption><div class="adm-acts">${o.extra || ''}</div></figure>`;
+  // A reported photo: every tool of its genus page, like a flagged one; a fish photo every tool of its family's page;
+  // another subject's (unitTile) with none yet.
   const repTile = (f, g0) => {
-    const fp = FISHA && FISHA.ph[f];
+    const fp = FISHA && FISHA.ph[f],
+      up = !fp && unitPhOf(f);
     if (fp) return fishRepTile(fp);
+    if (up) return unitTile(up);
     return coralRepTile(f, g0) || tile({...(PHOTOS[f] || {}), f, genus: (PHOTOS[f] || {}).genus || g0}, '', '');
   };
   // The reports of the subject on screen (rule A4; one about no subject on every side), by status (reports.js repsOrder):
@@ -5624,6 +5649,15 @@ function renderTriage() {
     return (FISHS && c.subj === FISHS.id) || /^(fi\d|fb|fish-)/.test(r[10] || '');
   };
   if (!FISHA && (REPS && REPS.rows ? REPS.rows : []).some(fishy)) fishAdmin();
+  // Another subject with its files (SUBJECTS admin files; Codex review #987): its data (unitAdmin) once a report is its, or
+  // names a photo no registry read so far knows (a report whose subject only its photo tells).
+  {
+    const rows = REPS && REPS.rows ? REPS.rows : [],
+      known = f => PHOTOS[f] || (FISHA && FISHA.ph[f]) || unitPhOf(f);
+    SUBJECTS.filter(S => S !== FISHS && S.admin.files && !UNITP[S.id])
+      .filter(S => rows.some(r => (c => c.subj === S.id || c.photos.some(f => !known(f)))(repCtx(r))))
+      .forEach(unitAdmin);
+  }
   if (FISHA && !FISHC && repAll.some(r => repCtx(r, repPhotoSubj).photos.some(f => FISHA.ph[f]))) fishLoad().then(() => render());
   // The players' list, for the Journey link of a report from a player.
   if (!USERS && (REPS && REPS.rows ? REPS.rows : []).length && TOKEN)
@@ -5638,8 +5672,9 @@ function renderTriage() {
       // Its tools, each shown when the report carries what it needs (Q309): the reporter's Journey, the unit's admin page,
       // the page it was sent from, a photo to attach when it has none.
       u = !gone && !arch && c.who && USERS && (USERS.users || []).find(x => x.name.toLowerCase() === c.who.toLowerCase()),
-      fam = FISHA && FISHA.fam[c.unit],
-      unitHref = fam ? famHref(fam) : c.unit && DATA.gen[c.unit] ? genusHref(c.unit) : '',
+      // its family's page when its subject has the family pages (Photos › Tree), its genus page for a coral
+      fam = S.sheets && hasPage(S, TREE) && (unitRegOf(S) || {fam: {}}).fam[c.unit],
+      unitHref = fam ? famHref(fam, S) : !S.sheets && c.unit && DATA.gen[c.unit] ? genusHref(c.unit) : '',
       att = !c.photos.length && REP_ATT[c.id],
       shown = c.photos.length ? c.photos : att ? [att] : [],
       acts = ['done', 'wait', 'drop', ...(st === 'open' ? [] : ['open'])].map(k => REP_STATUS.find(x => x[0] === k)),
@@ -5653,7 +5688,7 @@ function renderTriage() {
         c.photos.length ? '' : `<button type="button" class="chip" data-ratt aria-expanded="${!!REP_PICK[c.id]}">Attach a photo</button>`
       }</div>`;
     return `<article class="adm-rep" data-rep="${esc(c.id)}" data-rs="${st}"><div class="adm-rephead">${gone ? '<b class="adm-repwho unv">From a removed account</b>' : arch ? `<b class="adm-repwho unv" title="${esc(c.who)}">From an archived record</b>` : `<b class="adm-repwho${c.ok ? '' : ' unv'}" title="${c.ok ? 'Verified' : 'Not verified'}">${esc(c.who || 'Anonymous')}${c.ok ? '' : ' ?'}</b>`}
-      <span class="adm-repwhy">${esc(repWhyText(c, S))}</span>${c.unit ? `<span>${repUnit(c.unit)}${c.ans && c.ans !== c.unit ? ` · answered ${repUnit(c.ans)}` : ''}</span>` : ''}${c.fix ? `<span class="adm-repfix">→ <i>${esc(c.fix)}</i></span>` : ''}
+      <span class="adm-repwhy">${esc(repWhyText(c, S))}</span>${c.unit ? `<span>${repUnit(c.unit, false, S)}${c.ans && c.ans !== c.unit ? ` · answered ${repUnit(c.ans, false, S)}` : ''}</span>` : ''}${c.fix ? `<span class="adm-repfix">→ <i>${esc(c.fix)}</i></span>` : ''}
       <small class="adm-where">${esc(c.game ? 'game ' + c.mode : c.mode)}${c.page ? ` · ${esc(c.page)}` : ''} · ${esc(when(c.t))}</small></div>
       ${c.note ? `<p class="adm-repnote">${esc(c.note)}</p>` : ''}${bar}${
         shown.length ? `<div class="adm-grid adm-qgrid adm-flagged">${shown.map(f => repTile(f, c.unit)).join('')}</div>` : ''
@@ -5694,8 +5729,9 @@ function renderTriage() {
       prs.length
         ? `<details class="adm-repspr"><summary>Handled in a PR <small>${prs.length}</small></summary>${prs
             .map(r => {
-              const c = repCtx(r, repPhotoSubj);
-              return `<p class="adm-repline"><b>${esc(c.who || 'Anonymous')}</b> ${esc(repWhyText(c, SUBJECTS.find(x => x.id === c.subj) || ASUBJ))}${c.unit ? ` · ${repUnit(c.unit)}` : ''}${c.note ? ` · <span class="adm-where">${esc(c.note.slice(0, 80))}</span>` : ''} · <a href="https://github.com/${REPO}/pull/${repPR(c.id)}" target="_blank" rel="noopener">handled in #${repPR(c.id)}</a></p>`;
+              const c = repCtx(r, repPhotoSubj),
+                S = SUBJECTS.find(x => x.id === c.subj) || ASUBJ;
+              return `<p class="adm-repline"><b>${esc(c.who || 'Anonymous')}</b> ${esc(repWhyText(c, S))}${c.unit ? ` · ${repUnit(c.unit, false, S)}` : ''}${c.note ? ` · <span class="adm-where">${esc(c.note.slice(0, 80))}</span>` : ''} · <a href="https://github.com/${REPO}/pull/${repPR(c.id)}" target="_blank" rel="noopener">handled in #${repPR(c.id)}</a></p>`;
             })
             .join('')}</details>`
         : ''
@@ -5792,7 +5828,10 @@ function renderTriage() {
   $v.querySelectorAll('[data-act="zoomx"]').forEach(
     b =>
       (b.onclick = () => {
-        const p = PHOTOS[b.closest('[data-f]').dataset.f];
+        const f = b.closest('[data-f]').dataset.f,
+          u = !PHOTOS[f] && unitPhOf(f),
+          // another subject's photo (unitTile): its unit's name first, then the species it is identified as and its credits
+          p = PHOTOS[f] || (u && {...u.p, genus: (UNITA[u.S.id].gen[u.p.entry] || {}).name || ''});
         if (p) zoomOne(p);
       })
   );
