@@ -96,7 +96,8 @@ const jOffSlate = (n, slate) => {
 // player's rows in time order ([id, time, unit shown, ...]); rec(n): the unit's record or null; S: the subject.
 // [[answer index, 'rank' | 'circle', the rank's word or the circle's number, the unit asked, time]], in answer order.
 function jSteps(R, rec, S) {
-  const P = Object.entries(S.sheets || {}).filter(([k]) => k !== S.rank),
+  // the rank of its game units (core.js unitRankOf: SUBJECTS unitRank, else rank; the sea slugs' genera)
+  const P = Object.entries(S.sheets || {}).filter(([k]) => k !== (S.unitRank || S.rank)),
     seen = new Set(),
     out = [];
   R.forEach((r, i) => {
@@ -202,12 +203,13 @@ const jDate = t => dateText(t, 'dm'), // one formatter per format (admin.js date
 // repUnit, a coral genus in italics with its page, another subject's unit once its entries are read (admin.js fishAdmin)
 // by its name (a family plain, a genus or species in italics, its id's prefix off) with its family's page in Tree; an IMR
 // sub-entry (a genus the IMR course names otherwise: fishAdmin imr) with its IMR name beside it. jName: the same in plain
-// text, for a title or a chart's tooltip.
-const jImr = g => (FISHA && FISHA.imr[g]) || '',
+// text, for a title or a chart's tooltip. The units of the subject on screen (admin.js unitWait: the sea slugs' own).
+const jReg = () => unitRegOf(unitWait(ASUBJ)),
+  jImr = g => (jReg() && jReg().imr[g]) || '',
   jName = g =>
-    (FISHA && FISHA.gen[g] ? FISHA.gen[g].name : String(g).replace(/^[a-z]:/, '')) + (jImr(g) ? ` (${ORG.short} ${jImr(g)})` : ''),
+    (jReg() && jReg().gen[g] ? jReg().gen[g].name : String(g).replace(/^[a-z]:/, '')) + (jImr(g) ? ` (${ORG.short} ${jImr(g)})` : ''),
   jUnit = g =>
-    repUnit(g, true) +
+    repUnit(g, true, ASUBJ) +
     (jImr(g) ? ` <small title="Its name in the ${esc(ORG.short)} course">${esc(ORG.short)} ${esc(jImr(g))}</small>` : ''),
   // The subject's word for its units, capitalised (Genera, Families).
   jMany = (S = ASUBJ) => S.many[0].toUpperCase() + S.many.slice(1),
@@ -334,7 +336,7 @@ function renderJourney(name, anonId = '') {
   const M = unitsOf(ASUBJ),
     full = !!M,
     own = !!ASUBJ.replay;
-  if (!M && !FISHA) fishAdmin().then(() => cur === here && FISHA && render());
+  if (!M && !jReg()) unitAdmin(unitWait(ASUBJ)).then(() => cur === here && jReg() && render());
   // A subject's rows of this player (u, found below); an archived record's are kept apart from rowsOf (sheet v58 flag 2;
   // Codex review #690).
   const jRows = S => (u.arch ? subjRows(ANS.all || ANS.rows || [], S.id) : rowsOf(S)).filter(r => r[0] === u.id),
