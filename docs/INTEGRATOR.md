@@ -5,7 +5,27 @@ then [STATUS.md](STATUS.md) for where things stand, then this page for how the w
 2026-11-07 by the integrator of 2026-11-02..07, before a quota pause. Keep it current: it is the working knowledge that is
 not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives in STATUS.md).
 
-## Handover of 2026-11-14 evening (read first)
+## Handover of 2026-11-16 (read first)
+
+What the day (29 merges) added, as habits:
+
+- **A wait on a PR counts its check runs** (19 today) before calling it ready: right after a push only a few runs
+  exist, all green, so "no run pending" alone can read ready too early.
+- **A switch that changes where data lives makes tests stale**: turning the sea slugs' R2 step on (#1016) broke the
+  sea slug smoke and the admin smoke's report tile (#1018). After such a change, run the full unit suite and read the
+  smokes that name the data, not only the docs test.
+- **Generated files are rebuilt, never hand-merged**: `seaslug-game.json`, `suggest.json` (re-import the PR's species
+  over `main`'s file), `fish-holdout.json`. A judging PR on species already in play carries the rebuilt game file
+  (`tools/seaslug_game.py --check` fails otherwise).
+- **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`.
+- **The Candidate photos run moves `main`** after any judging merge; a train started meanwhile stops ("main moved"):
+  wait for that workflow's run to end, then train (a loop that retries on "main moved" works).
+- **The machine slot is the bottleneck with four agents**: a local `node tests/run.js` can wait past a tool's time
+  limit. When the slot is saturated, push and let CI run the suite (it does on every head), and say so.
+- **Pierre corrects the shape of a subject quickly** (the sea slugs: genera, not families; Learn grouped by taxonomic
+  group, 15:00-15:45): pass his follow-ups to the running agent with `SendMessage` rather than starting another.
+
+## Handover of 2026-11-14 evening
 
 What the day added (Pierre's words in AGENTS.md "Working mode", not repeated here), as habits:
 
