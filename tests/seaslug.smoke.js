@@ -9,7 +9,9 @@
 //    (circle 2 opens once every circle-1 genus has been asked: app.js fishGate), each logged at the genus, no family
 //    asked and no opt-in genus offer; the genera page in blocks of their families, a family sheet, a genus sheet, Home's
 //    doors and the key page in the sea slugs' words; the switch to the fish and back swaps the tree in force (app.js
-//    treeAt), each subject's progress kept apart;
+//    treeAt), each subject's progress kept apart; their English names (seaslug.json en; Pierre, 2026-11-17) never in a
+//    question before its answer, after it in the verdict and the species line, on the Learn page's headings and tiles
+//    and on the sheets with their sources;
 // 3. a player in the sea-slug group (the sheet's groups, stubbed through the account's GROUPS_KEY record) sees it too.
 // Locally: node tests/seaslug.smoke.js (in the machine slot, tests/slot.js).
 const http = require('http'),
@@ -121,8 +123,20 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       const L = [...document.querySelectorAll('#view .q [data-c]')].map(x => x.dataset.c), // answer.js: a read of the choices
         t = [...document.querySelectorAll('#view .q [data-c]')].map(x => x.textContent.trim()), // answer.js: a read of the choices
         ph = document.querySelector('#view .qph');
-      return {L, t, at: TREE_AT, photo: ph ? getComputedStyle(ph).getPropertyValue('--qbg') : '', a: smokeAnswer()};
+      // pre: the question as shown before the answer (no English name in it: Pierre, 2026-11-17, information after the answer)
+      const pre = (document.querySelector('#view .q') || {}).innerText || '';
+      return {L, t, pre, at: TREE_AT, photo: ph ? getComputedStyle(ph).getPropertyValue('--qbg') : '', a: smokeAnswer()};
     });
+    // The English names (seaslug.json en: tools/seaslug_names.py) as the app shows them, the first letter in capitals.
+    const enFirst = r => {
+      const n = ((r && r.en) || [])[0];
+      return n ? n.n.charAt(0).toUpperCase() + n.n.slice(1) : '';
+    };
+    const G = id => F.genera.find(g => g.id === id);
+    check(
+      !q.L.some(id => enFirst(G(id)) && q.pre.includes(enFirst(G(id)))),
+      `2: an English name shown before the answer: ${q.L.map(id => enFirst(G(id))).filter(Boolean)}`
+    );
     check(q.at === 'seaslug', `2: the tree in force is ${q.at}`);
     check(q.L.length === 4 && q.L.every(n => gens.has(n)), `2: the choices are not 4 sea-slug genera: ${q.L}`);
     check(
@@ -136,10 +150,21 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     );
     const v = await p.evaluate(() => ({
       right: !!document.querySelector('#view .q.done'),
-      sp: (document.querySelector('#view .fbsp') || {}).textContent || ''
+      sp: (document.querySelector('#view .fbsp') || {}).textContent || '',
+      verdict: (document.querySelector('#view .fb h3') || {}).textContent || ''
     }));
     check(v.right, '2: the right answer did not close the question');
-    check(/This photo: \S+ \S+/.test(v.sp) && !/·/.test(v.sp), `2: the species line is not one scientific name: "${v.sp}"`);
+    // After the answer: the photo's species, its first English name before it when a source gives one (Pierre, 2026-11-17)
+    const spName = (v.sp.match(/([A-Z][a-z]+ [a-z-]+)\s*$/) || [])[1],
+      spRec = F.species.find(s => s.name === spName);
+    check(
+      !!spRec && v.sp === `This photo: ${enFirst(spRec) ? enFirst(spRec) + ' · ' : ''}${spName}`,
+      `2: the species line is not its English name and its scientific name: "${v.sp}"`
+    );
+    check(
+      !enFirst(G(q.a.t)) || v.verdict.includes(enFirst(G(q.a.t))),
+      `2: the verdict does not give the genus's English name: "${v.verdict}"`
+    );
     // More answers, right and wrong (30 in all), every one on a circle-1 genus: circle 2 waits until every circle-1 genus
     // has been asked (fishGate), more than 30 answers away; no family asked, no opt-in genus offer (no SETS).
     const seen = [q.a.t];
@@ -191,31 +216,69 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
         return (
           v.innerText.includes(g) &&
           /sea slug genera/.test(document.body.textContent) &&
-          [...v.querySelectorAll('.gdiv')].some(h => h.textContent === f)
+          [...v.querySelectorAll('.gdiv')].some(h => h.textContent.startsWith(f))
         );
       },
       [F.genera[0].name, F.families[0].name],
       {timeout: 15000}
     );
+    // The English names as information on the Learn page: a family's beside its heading, a genus's on its tile.
+    const lp = await p.evaluate(() => ({
+      heads: [...document.querySelectorAll('#view .gdiv')].map(h => h.textContent),
+      tiles: [...document.querySelectorAll('#view .tipsheet')].map(a => [
+        a.querySelector('b').textContent,
+        (a.querySelector('.ven') || {}).textContent || ''
+      ])
+    }));
+    F.families
+      .filter(f => enFirst(f))
+      .forEach(f => check(lp.heads.includes(`${f.name} ${enFirst(f)}`), `2: ${f.name}'s heading lacks its English name`));
+    F.genera
+      .filter(g => lp.tiles.some(([n]) => n === g.name))
+      .forEach(g =>
+        check(
+          lp.tiles.some(([n, e]) => n === g.name && e === enFirst(g)),
+          `2: ${g.name}'s tile: not its English name`
+        )
+      );
     const fam = F.families[0];
     await p.goto(base + '#seaslug/learn/family/' + encodeURIComponent(fam.name));
     await p.waitForFunction(n => (document.querySelector('#view') || {}).innerText.includes(n), fam.name, {timeout: 15000});
+    const fv = await p.evaluate(() => (document.querySelector('#view .fn-v') || {}).textContent || '');
+    check(fv === enFirst(fam), `2: the family sheet's English name: "${fv}"`);
     const gs = await p.evaluate(g => hr('g-' + g), F.genera[0].id);
     await p.goto(base + gs);
     await p.waitForFunction(n => (document.querySelector('#view') || {}).innerText.includes(n), F.genera[0].name, {timeout: 15000});
+    // A species with English names: its sheet gives them, with their sources under More details.
+    const spn = F.species.find(s => (s.en || []).length > 1);
+    if (spn) {
+      await p.goto(base + (await p.evaluate(n => hr('g-s:' + n), spn.name)));
+      await p.waitForFunction(n => (document.querySelector('#view .fn-t') || {}).textContent === n, spn.name, {timeout: 15000});
+      const sv = await p.evaluate(() => ({
+        v: (document.querySelector('#view .fn-v') || {}).textContent || '',
+        more: [...document.querySelectorAll('#view .sheetmore .refs')].map(x => x.textContent).join(' ')
+      }));
+      check(sv.v.startsWith(enFirst(spn)), `2: ${spn.name}'s sheet: "${sv.v}"`);
+      check(/English names:/.test(sv.more), `2: ${spn.name}'s sheet: no English names with their sources`);
+    }
     // A species with no name yet (seaslug.json inf; Pierre, 2026-11-17, Q389 (2)): its sheet names it with its source in
-    // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase).
+    // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase);
+    // it has no English name.
     const inf = F.species.find(s => s.inf);
     if (inf) {
       await p.goto(base + (await p.evaluate(n => hr('g-s:' + n), inf.name)));
-      await p.waitForFunction(n => (document.querySelector('.fn-t') || {}).innerText === n, `${inf.name} (${inf.src})`, {timeout: 15000});
+      await p.waitForFunction(n => (document.querySelector('#view .fn-t') || {}).innerText === n, `${inf.name} (${inf.src})`, {
+        timeout: 15000
+      });
       const sh = await p.evaluate(() => ({
-        it: [...document.querySelectorAll('.fn-t i')].map(x => x.textContent),
-        small: (document.querySelector('.fn-t small') || {}).textContent,
-        links: [...document.querySelectorAll('.sheetmore a')].map(a => a.href)
+        it: [...document.querySelectorAll('#view .fn-t i')].map(x => x.textContent),
+        small: (document.querySelector('#view .fn-t small') || {}).textContent,
+        v: !!document.querySelector('#view .fn-v'),
+        links: [...document.querySelectorAll('#view .sheetmore a')].map(a => a.href)
       }));
       check(sh.it.join() === inf.name.split(' ')[0], '2: the species with no name: its genus alone in italics');
       check(sh.small === `(${inf.src})`, '2: its source in small type');
+      check(!sh.v, '2: the species with no name: no English name');
       check(
         sh.links.some(h => new URL(h).host === 'doi.org') &&
           sh.links.some(h => new URL(h).host === 'www.inaturalist.org' && new URL(h).pathname.startsWith('/observation_fields/')) &&

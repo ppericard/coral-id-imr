@@ -948,6 +948,44 @@ const taxonLine = t => {
       : it(t.sci);
   return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${sci}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
 };
+// A tree subject's English names given as information (UNITS vern; the sea slugs: Pierre, 2026-11-17, their common
+// names and nicknames wherever names are shown, never an answer choice nor a branch of their own, Q369 (d) stands): the
+// names of the family, genus or species with tree id id ([{n, src [the sources], nick: 1 for a nickname, web [{t, u}]}],
+// the first the one shown first), [] for a subject without them (the fish: their genera's common, their species' cn).
+// vernFirst, its first name as shown, its first letter in capitals ("polyceras": Polyceras), '' when none.
+const vernOf = id => (id && UNITS[SUBJ.id] && UNITS[SUBJ.id].vern ? UNITS[SUBJ.id].vern(id) || [] : []);
+const vernFirst = id => {
+  const n = (vernOf(id)[0] || {}).n || '';
+  return n.charAt(0).toUpperCase() + n.slice(1);
+};
+let VERNIX = null;
+// The records of the tree in force by id (fish.json-shaped: families, genera, species), read once per tree.
+const treeRec = id => {
+  const F = FISHRAW && FISHRAW.f;
+  if (!F) return null;
+  if (!VERNIX || VERNIX.f !== F)
+    VERNIX = {f: F, by: new Map([...(F.families || []), ...(F.genera || []), ...(F.species || [])].map(r => [r.id, r]))};
+  return VERNIX.by.get(id) || null;
+};
+// A tree record's English names (the sea slugs' UNITS vern): its en, as tools/seaslug_names.py merged them.
+const treeVern = id => ((treeRec(id) || {}).en || []).filter(x => x && x.n);
+// The sources of English name x of record id, each linked (rule C2): iNaturalist, WoRMS, Wikipedia by the record's own
+// ids (its ensrc), a guide's or a page's by its own address.
+function vernSrcs(id, x) {
+  const S = (treeRec(id) || {}).ensrc || {},
+    a = (u, t, title) =>
+      `<a href="${esc(safeUrl(u))}" target="_blank" rel="noopener"${title ? ` title="${esc(title)}"` : ''}>${esc(t)}</a>`,
+    L = [];
+  (x.src || []).forEach(k => {
+    if (k === 'inat' && S.inat) L.push(a('https://www.inaturalist.org/taxa/' + encodeURIComponent(S.inat), 'iNaturalist'));
+    else if (k === 'worms' && S.worms)
+      L.push(a('https://www.marinespecies.org/aphia.php?p=taxdetails&id=' + encodeURIComponent(S.worms), 'WoRMS'));
+    else if (k === 'wiki' && S.wiki)
+      L.push(a('https://en.wikipedia.org/wiki/' + encodeURIComponent(S.wiki.replace(/ /g, '_')), 'Wikipedia'));
+  });
+  (x.web || []).forEach(w => L.push(a(w.u, String(w.t || '').split(/,| \(/)[0], w.t)));
+  return L.join(', ');
+}
 // A fish photo's taxon: the species it is in play for (fish-game.json sp, Pierre's curation applied: core.js fishPhotos),
 // by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), the player's first
 // common name (cnFirst: the IMR name for a player at IMR, imr; the main name for the others, Q376 (a)). Every fish game
@@ -2070,16 +2108,20 @@ function treePhoto(f) {
 // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237; UNITS
 // typeOther): the scientific names at that rank (every genus of the tree and of its species' names, in the game or not)
 // and the common names (the genera's, their IMR tags, the species': the PDF's, every listed one with its spellings, cn,
-// and the regional ones, cnr), from the tree in force alone. Nothing for another rank.
+// and the regional ones, cnr; the English names a tree gives as information, en: the sea slugs' families, genera and
+// species, Pierre 2026-11-17), from the tree in force alone. Nothing for another rank. An English name typed on a genus
+// question is told so, never read as a genus, as a fish genus's common name (app.js fishGenera names).
 function treeTypeOther(rk) {
   const F = rk === 'genus' && FISHRAW && FISHRAW.f;
   if (!F) return null;
-  const first = x => String(x || '').split(/\s+/)[0];
+  const first = x => String(x || '').split(/\s+/)[0],
+    en = r => ((r && r.en) || []).map(x => x && x.n);
   return {
     sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
     common: [
-      ...(F.genera || []).flatMap(g => [g.common, g.imr]),
-      ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat(), ...(x.cnr || []).flat()])
+      ...(F.genera || []).flatMap(g => [g.common, g.imr, ...en(g)]),
+      ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat(), ...(x.cnr || []).flat(), ...en(x)]),
+      ...(F.families || []).flatMap(en)
     ].filter(Boolean)
   };
 }
@@ -2443,8 +2485,16 @@ const UNITS = {
     circles: () => (FISH ? [FISH.c1, FISH.c2, FISH.c3] : []),
     gate: fishGate,
     species: p => (p && p.sp && FISH && FISH.spn && FISH.spn[p.sp]) || '',
-    // The photo's species under the verdict: its scientific name, the WoRMS name beside it (no common name: Q369 (d)).
-    taxon: p => fishTaxon(FISH && FISH.sps, p, false),
+    // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
+    // its first English name as information (vernFirst; Pierre, 2026-11-17; never a choice: Q369 (d)).
+    taxon: p => {
+      const t = fishTaxon(FISH && FISH.sps, p, false);
+      return t ? {...t, common: vernFirst(t.id)} : t;
+    },
+    // Its English common names and nicknames, information only (Pierre, 2026-11-17; tools/seaslug_names.py): on the
+    // sheets, the Learn tiles and after an answer, never as a choice; typed on a genus question, a common name is told
+    // so (treeTypeOther), never right, as a fish genus's common name never is (fishGenera names).
+    vern: id => treeVern(id),
     photo: f => treePhoto(f),
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, []),
     norm: typeNormAll,

@@ -536,7 +536,10 @@ function sheets(B) {
       genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id)),
       seenCover: X.seenCover,
       fishSeen: sid => X.nearSeen((B.sps || {})[sid]),
-      fishSpPick: sid => (B.covers || {})[sid] || null
+      fishSpPick: sid => (B.covers || {})[sid] || null,
+      // a tree's English names given as information (app.js vernFirst, learn.js capFirst): none for the fish
+      vernFirst: () => '',
+      capFirst: s => s
     };
   vm.createContext(ctx);
   vm.runInContext(

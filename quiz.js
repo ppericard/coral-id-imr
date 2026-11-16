@@ -1007,10 +1007,13 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
       `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt && C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : ''}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
-  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
-  const named = inner =>
+  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling. A unit's
+  // English name given as information (app.js vernFirst, UNITS vern: the sea slugs'; Pierre, 2026-11-17) follows its
+  // scientific name once the answer is out, never in the choices; none for a subject without them.
+  const ven = vernFirst(target),
+    named = inner =>
       fish
-        ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+        ? `<b>${inner}</b>${ven ? ` <span class="ven">${esc(ven)}</span>` : ''} <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
         : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
     name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
     // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
