@@ -372,6 +372,18 @@
   "fish-s420-cand-378143347": {
    "code": "p1g0sm1c3",
    "keep": "dup"
+  },
+  "fish-s420-cand-639746475": {
+   "code": "p0d0ml1c1",
+   "keep": "dup"
+  },
+  "fish-s420-cand-639746505": {
+   "code": "o1g0ml1c2",
+   "keep": "dup"
+  },
+  "fish-s420-cand-763674013": {
+   "code": "h0g0sm1c2",
+   "keep": "best"
   }
  }
 }
