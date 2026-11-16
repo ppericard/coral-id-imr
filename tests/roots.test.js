@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Name roots on the genus sheets (Pierre, 2026-11-14, Q124 d): data.json `root` (tools/apply_name_roots.py), shown by
 // learn.js rootLine. Every root line has a source for each meaning, never an invented split.
 const block = require('./block.js');

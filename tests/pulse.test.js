@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The one-tap question (Pierre, 2026-11-03: varied questions about the same concept, asked now and then): the bank and
 // its rotation (core.js PULSEQ, pulsePick, pulseScore) and the spacing (quiz.js PROMPT, promptOk, PULSE, pulseDue, run in
 // Node on stubs, as tests/intro.test.js runs model.js).

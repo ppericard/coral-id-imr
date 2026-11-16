@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Lighter saves on slow lines (sync.js LIGHT_SHEET, syncOnce, sdSeen, sdSaved, lightBody, syncSoon; Code.gs doPost_,
 // load_, lightData_, hold_; core.js dataDelta, dataPatch, dataSum; docs/ROADMAP.md "Lighter saves on slow lines"): the
 // app's own sync code run in Node on stubs (tests/syncpage.js), against the sync script on an in-memory sheet

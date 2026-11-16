@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The admin's "Bad photo" flag, one brick for every subject (flag.js; app.js UNITS photo; admin.js importFlags):
 // - a photo's name: the data-f its page puts on its <img> (remote photos: an iNaturalist URL names no photo), else its
 //   file under img/;
@@ -22,9 +23,11 @@ const [CORAL, FISH] = C.SUBJECTS;
 const unitsOf = ctx => {
   const end = '\n      return null;\n    },\n',
     coral = block(app, "    species: () => '',\n", end, {through: 1, file: 'app.js'}),
-    fish = block(app, '    species: p => (FISH && FISH.spn', end, {through: 1, file: 'app.js'});
+    // a tree subject's (the fish's, the sea slugs'): app.js treePhoto
+    tree = block(app, 'function treePhoto(f) {', '\n}\n', {through: 1, file: 'app.js'}),
+    fish = block(app, '    species: p => (FISH && FISH.spn', '    photo: f => treePhoto(f),\n', {through: 1, file: 'app.js'});
   vm.createContext(ctx);
-  vm.runInContext(`this.U = {${CORAL.id}: {${coral}}, ${FISH.id}: {${fish}}};`, ctx);
+  vm.runInContext(`${tree}\nthis.U = {${CORAL.id}: {${coral}}, ${FISH.id}: {${fish}}};`, ctx);
   return ctx.U;
 };
 const ph = (f, extra) => ({f, ...extra});

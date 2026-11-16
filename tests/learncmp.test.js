@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // tools/learncmp.js (rule L11; docs/LEARNING.md "Validating a learning change"): the paired comparison of two learnsim
 // --out files, on fixed inputs.
 const test = require('node:test'),

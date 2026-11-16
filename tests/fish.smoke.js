@@ -46,6 +46,15 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp'
 };
+// This smoke runs on the corals and the fish alone: the sea slugs, in their beta group, are the admin's too, and a third
+// subject turns the admin's one-click switch into the chip's menu (checked here on a made-up third subject); they have
+// their own smoke, tests/seaslug.smoke.js. core.js is served without their SUBJECTS entry (the last one).
+const twoSubjects = t => {
+  const i = t.indexOf("      id: 'seaslug',"),
+    a = t.lastIndexOf('\n    },\n    {', i),
+    z = t.indexOf('\n    }\n  ];', i);
+  return i < 0 || a < 0 || z < 0 ? t : t.slice(0, a) + t.slice(z);
+};
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
@@ -53,6 +62,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(f, (e, b) => {
     if (e) return (res.writeHead(404), res.end());
     res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
+    if (u === '/core.js') b = Buffer.from(twoSubjects(String(b)));
     res.end(b);
   });
 });
@@ -2894,7 +2904,6 @@ async function freshPlayers(b, base, errs) {
       fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
       coral: JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'),
       p: startV().p,
-      at: startV().at,
       basics: !!document.querySelector('.unlock.basicsq'),
       card: !!document.querySelector('.unlock.startq'),
       q: !!document.querySelector('#view .q')
@@ -2903,7 +2912,7 @@ async function freshPlayers(b, base, errs) {
     if (!after.fish || after.fish.c !== pick || after.fish.via !== 'card')
       welcome.push(`${pick}: the fish record ${JSON.stringify(after.fish)}`);
     if (!after.coral || after.coral.c !== 'know') welcome.push(`${pick}: the coral answer changed ${JSON.stringify(after.coral)}`);
-    if (after.p !== v.p || after.at !== v.at) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, after.at, v])}`);
+    if (after.p !== v.p) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, v])}`);
     if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
     await c7.close();
   }

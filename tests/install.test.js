@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The offer to install the app (app.js installDue, installVisit, installIos; Pierre, 2026-11-08: nudge phone players to
 // install it on the home screen instead of opening a link in the browser). installDue decides, on its inputs only; the
 // card itself, its calm moment on Home and the ⚙ row are in tests/pages.smoke.js (part install).

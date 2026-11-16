@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Every read of the sync sheet's photo stats (?stats=1) made by this repository's code carries an app version (av).
 // The sheet logs a ?stats=1 read without one as an app from before 2026-11-03 (Code.gs v25 'old'); on 2026-11-05 the
 // only 'old' rows came from such reads by the project's own tools and agents, not from players' devices, and sent the

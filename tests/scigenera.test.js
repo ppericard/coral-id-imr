@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish scientific genera (app.js fishGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
 // everyone once a family is at Advanced, a family's genera from its Advanced (Pierre, 2026-11-08, back from Q205's Open
 // Water); for a player at IMR, the genera the IMR course names alone come without the offer from their family's Open
@@ -150,9 +151,11 @@ test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q
 });
 
 test('the fish make no level-change proposal (Pierre, 2026-11-08); the corals keep theirs', () => {
-  const units = block(APP, 'const UNITS = {', '\n};\n', {file: 'app.js'});
-  assert.strictEqual((units.match(/startFb: false/g) || []).length, 1);
-  assert.ok(units.indexOf('startFb: false') > units.indexOf('  fish: {'), 'on the fish');
+  const units = block(APP, 'const UNITS = {', '\n};\n', {file: 'app.js'}),
+    fish = block(units, '\n  fish: {', '\n  },\n'),
+    coral = block(units, '\n  coral: {', '\n  },\n');
+  assert.ok(/startFb: false/.test(fish), 'on the fish');
+  assert.ok(!/startFb/.test(coral), 'never on the corals');
 });
 
 test('Q240: turned on by hand before Advanced, a family’s genera from its Open Water (Pierre, 2026-11-08)', () => {

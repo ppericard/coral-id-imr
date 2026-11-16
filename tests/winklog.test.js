@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // A surprise card's answer (quiz.js winkShow, winkAnswer; Pierre, 2026-11-08: "il faut l'enregistrer bien sûr") is
 // logged like every other answer, marked by its mode (core.js WINK_MODE), and no reader of the log counts it: the app's
 // own readers of its queue, core.js subjRows / subjEntries (the admin's pages, the analyses, the evaluation tools), the

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Rarely under ease 4 before Open Water, continued (the harness and what it checks: tests/rareease.js and
 // tests/rareease.test.js).
 const test = require('node:test'),

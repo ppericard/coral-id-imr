@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Analyses module (analysis.js): random practice slopes in Learning (each player's and genus's own), the per-genus
 // learning curves and the player profiles' learning slope (the multifactor visualisation study §5 item 7; ROADMAP
 // "Analyses: next views", per-genus learning slopes). Planted slopes recovered (tests/analysis.test.js says why the

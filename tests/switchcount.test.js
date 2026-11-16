@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The admin's subject switch counts what that subject's To do lists (Pierre, 2026-11-09): the fish switch showed ~1,100,
 // mostly the fish auto-sort's Checks, which To do never lists; they keep their own count in Candidates › Checks.
 const test = require('node:test');

@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // Health › Photos everyone misses counts players, not answers (Pierre, 2026-11-05): admin.js photoAnswers, missedBy,
 // manyMiss and everyoneMisses (between `// everyone: begin` / `end`), the one rule Health, To do's Health line, the
 // session summary's "hard for everyone" (healthBad) and the demo data (admin-demo.js) share. Made-up rows:

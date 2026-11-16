@@ -411,7 +411,7 @@ Gaps before species questions ship:
 - **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319); since Q381 (2026-11-15) any name two species carry stays on both, 11 in all ("Common names").
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; a shared name right for the species asked, never two choices of one label (Q381).
-- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design.
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design. The admin reads them already (Q123 m, 2026-11-16): Analyses › Difficulty › Heatmap on the Fish side is view 1 below (family to family, every family of the game in its key group's block) and the genus questions' matrix (genera in their family's block), live from the log (ARCHITECTURE.md "Heatmap").
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
 
@@ -490,7 +490,7 @@ Decided from the admin pooling study:
   the hierarchical photo Elo already do), so a species becomes a cross-family look-alike only when its rate is clearly above its
   family's.
 - Pairs inside a family (same genus, same IMR sub-entry) come later from species questions, seeded from the data (genus, `sub`).
-- **Declared family groups** (Pierre, 2026-11-06, from experience; `tools/fish_source.json` `look`, ARCHITECTURE.md "Fish
+- **Declared family groups** (Pierre, 2026-11-06, from experience; the IMR instance's layer `look`, ARCHITECTURE.md "Fish
   content"): Butterflyfishes ↔ Angelfishes; Snappers ↔ Coral Breams ↔ Emperors; Parrotfishes ↔ Wrasses (some wrasse
   species only: at species level the pair will hold only for those); Soldierfishes ↔ Squirrelfishes ↔ Cardinalfishes;
   Triggerfishes ↔ Filefishes. The seeds of the traps and the confusion groups until pooled fish answers exist.

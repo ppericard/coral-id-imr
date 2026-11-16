@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Sea slug photo judging (judging/SEASLUG.md; Pierre, 2026-11-15, Q369, Q373, Q377 and #970's egg rule): the fish's
 // judging tools with a subject (tools/judging_fish.py --subject seaslug, tools/fish_judge.py RUBRICS "seaslug"), the fish
 // left as they were. The rubric's code and caps (a dorsal view a good view, ventral capped, the juvenile cap, f and w

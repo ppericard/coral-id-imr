@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Glossary words (app.js GLOSS_PAT, gloss, glossAll; beginner review 2026-11-03): app.js's own code run in Node on the
 // real data.json terms.
 const test = require('node:test');

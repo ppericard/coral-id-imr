@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // rule D4: the app never gets ahead of the sheet script. Every gate on the script's version (a constant named
 // *_SHEET in the app's own files) is listed here with the feature it turns on: off below its version N, on from N, off
 // when a reply carries no version. A new gate fails this test until it is added to the table (test-suite review,
@@ -76,6 +77,10 @@ const GATES = {
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
+  // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
+  // serves it; before, an older script answers 'input' and the page names the version it waits for.
+  ALERTS_SHEET: (v, N) =>
+    fn('admin.js', 'const alertsOn = ', '\n', 'alertsOn', {ALERTS_SHEET: N})({ok: true, rows: [], ...(v === undefined ? {} : {v})}),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
@@ -116,6 +121,15 @@ const GATES = {
     assert.strictEqual(on, app, 'the app and the sync agree');
     return on;
   },
+  // The sea slugs' beta group (core.js SUBJECTS seaslug sheet; Code.gs groupIds_): the admin's Players page offers it from
+  // the script that knows the subject; before, the line that says which version it needs.
+  SEASLUG_SHEET: (v, N) =>
+    fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {
+      subjGroup: S => S.open === 'group',
+      USERS: v === undefined ? {} : {v},
+      GROUP_SHEET: 48,
+      ASUBJ: null
+    })({open: 'group', sheet: N}),
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
