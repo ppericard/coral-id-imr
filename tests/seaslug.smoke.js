@@ -123,7 +123,11 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       q.t.every(x => /idae$/.test(x.replace(/^\d\s*/, ''))),
       `2: a choice not named by its scientific family name: ${q.t}`
     );
-    check(/inaturalist-open-data/.test(q.photo), `2: the photo is not the game file's iNaturalist one: ${q.photo}`);
+    // The game file's photo: on R2 since the R2 step is on (Q387; `img/seaslug-…`), or iNaturalist's while not uploaded yet.
+    check(
+      /\.r2\.dev\/img\/seaslug-|inaturalist-open-data/.test(q.photo),
+      `2: the photo is neither the game file's R2 nor its iNaturalist one: ${q.photo}`
+    );
     const v = await p.evaluate(() => ({
       right: !!document.querySelector('#view .q.done'),
       sp: (document.querySelector('#view .fbsp') || {}).textContent || ''
