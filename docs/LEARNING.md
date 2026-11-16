@@ -4009,6 +4009,34 @@ is higher than as built for every profile and checkpoint). Among them:
 - Everything else held: true knowledge D\* (up to +0.021 at 1,000), the first unit at Open Water, units met, the share
   under ease 4.
 
+**The app world, second look** (declared: a cell unclear at the first look gets more seeds): the strong RA and the
+expert, seeds 6-15 added (15 seeds each). Families at Advanced at 600: the expert held (9.1 → 12.1, bound +0.8); the
+strong RA still unclear (10.2 → 9.4, −0.8, bound −2.3 against −2). E unclear for the expert (towards zero); every other
+cell held. The two looks are spent: it stays unclear, a mean inside the margin.
+
+**The long check, the rated world at 10,000 answers** (fin against `main`, 5 seeds per profile, paired, 90% one-sided
+lower bound in brackets; beginner / casual diver / lecture RA / strong RA / expert):
+
+| Cell at 10,000 | main | fin | Difference [lower bound] |
+|---|---|---|---|
+| Families at Advanced | 32.0 / 31.6 / 32.0 / 31.8 / 32.0 | 31.8 / 32.0 / 31.8 / 32.0 / 32.0 | held for every profile (−0.2 to +0.4) |
+| Fish % shown | 59.2 / 42.0 / 59.8 / 60.8 / 60.6 | 57.4 / 51.8 / 58.2 / 61.4 / 68.4 | −1.8 [−2.9] / +9.8 [+7.9] / −1.6 [−2.5] / +0.6 [−0.8] / +7.8 [+5.9] |
+| Species at Open Water | 0 | 67 / 98 / 62 / 60 / 280 | |
+| Species at Advanced | 0 | 6.6 / 8.4 / 5.0 / 4.8 / 51.0 | |
+| Genera at Advanced | 82 / 0 / 84 / 120 / 113 | 14 / 0 / 19 / 64 / 36 | |
+| Longest plateau of the % (the run) | 848 / 8,004 / 1,077 / 2,854 / 2,327 | 732 / 1,138 / 997 / 1,109 / 845 | shorter for every profile |
+
+- **The families**: every one at Advanced by 10,000 in both arms. The loss of the branch as built is gone.
+- **The fish %**: far higher for the casual diver (`main` gives a player who declines the scientific names nothing to
+  earn after the families: 42% for 7,000 answers) and the expert; the strong RA's −1.2 at 3,000 is +0.6 at 10,000. Lower
+  by 1.6-1.8 points for the beginner and the lecture RA. By then every family is at Advanced, so the share no longer
+  holds anything (cap 1): it is the species level's own split. On `main` every answer below the families goes to the
+  genera, whose credit counts half the scientific credit of each of their species; with the species level they share
+  those answers with the 659 species, whose common-name credit comes one species at a time (genera at Advanced 82 → 14
+  for the beginner). The curve cannot change it.
+- **The plateau**: over the whole run, the longest stretch without a new point is shorter for every profile. The
+  breaches at 3,000 come from where that stretch falls, not from a longer wait over the path.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
