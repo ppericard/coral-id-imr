@@ -43,12 +43,13 @@ observer id or name is written here, observer counts are aggregates):
 2. **A fifth of them say which unnamed species they are.** **1,341 (20%)** carry a numbered label, "*Genus* sp. N", in
    their description, a comment, an identification remark or an observation field; 1,525 (23%) any informal mention
    (numbered, cf./aff., "undescribed", a guide cited). The labels name **337 informal species in 92 genera**; **60 are
-   labelled by 3 or more distinct observers** (911 observations) **[measured]**.
+   labelled by 3 or more distinct observers** (911 observations), 50 once the hedged labels are left out (836
+   observations) **[measured]**.
 3. **The guide is the shared reference.** 758 of the labelled observations cite Gosliner, Valdés & Behrens 2018
    ("NSSI2", the 2nd edition of *Nudibranch & Sea Slug Identification – Indo-Pacific*), 12 the 1st edition (2015), 46 the
    book without an edition **[measured]**. But **the numbers change between books and editions**: one *Gymnodoris* is
    sp. 51 in the 2018 guide, sp. 12 in the 2008 one, sp. 6 in Debelius & Kuiter 2007 and sp. 2 on the Sea Slug Forum
-   **[read]** (§3.3).
+   **[read]** (§3.2).
 4. **One unnamed species dominates: *Goniobranchus* sp. 5 of Soong et al. (2020)**, the red-reticulate *Goniobranchus*
    long called *G. reticulatus*. iNaturalist's identifiers mark it with a dedicated observation field: **462 Philippine
    observations, 180 distinct observers** (22 near Dauin), 951 worldwide; *G. reticulatus* itself keeps 1 Research Grade
@@ -71,8 +72,9 @@ observer id or name is written here, observer counts are aggregates):
    once the species become units.
 9. **Recommendation** (§5): photos of the genus units from agreed genus-level observations now; at the species level,
    *Goniobranchus* sp. 5 (Soong et al. 2020) first, through its observation field; the guide's numbered species only
-   through a list Pierre checks against the book. Each needs Pierre's go (presence rule C8, the candidate rule): the
-   question in §6.
+   through a list Pierre checks against the book. **Pierre's answer (Q389, 2026-11-17 06:46-06:50, §6)**: yes to the
+   genus units' photos and to *Goniobranchus* sp. 5; the guide's other "sp. N" wait for a published name, found in the
+   scientific literature.
 
 ## 2. Measuring the gap
 
@@ -93,13 +95,19 @@ Grade at the genus is rare: an observation reaches it only when the community vo
 - **Pulled**: all 6,764 (34 pages of 200, ordered by id), with their description, tags, observation fields, comments,
   identification remarks and species guess.
 - **A numbered label** is "*Genus* sp. N" ("sp. 5", "sp.5", "sp 5", "sp. #5", "Sp. 37, p. 78"), the genus written in the
-  text or else the observation's own. Per observation, the label written most often, the observer's description first.
+  text or else the observation's own. **Each observation counts once, under one label**: the label written most often
+  on it, the observer's description first. 31 of the 1,341 name a second numbered label too (a comparison, a
+  correction); only the first counts. So every count of "observations" below is a count of observations, never of
+  observation-label pairs; "labels" are distinct informal species; "observers" are the distinct owners of the counted
+  observations.
 - **Its source**, from the same text: "NSSI2" / "2nd ed." / "2018" → the 2018 guide; "NSSI1" / "2015" → its 1st edition;
   "NSSI" or "Gosliner" alone → the book, edition not said; "Soong" → Soong et al. 2020; also the observation field of
   §3.1. Papers named in 10 or more observations: Soong et al. 2020 (447), Martín-Hervás et al. 2021 (*Thuridilla*, 15),
   Gosliner et al. 2015 (11); single ones (Papu et al. 2022 on *Phyllidiella*, Korshunova 2017, Cunha 2023…).
-- **Hedged**: a label written with "?", "maybe", "possibly", "probably", "could", "similar", "cf.", "or 7". **562 of the
-  1,341** are hedged. The counts below drop them unless said ("unhedged").
+- **Hedged**: an observation is hedged when a text on it that writes its label's number also writes "?", "maybe",
+  "possibly", "probably", "could", "might", "perhaps", "similar", "looks like", "cf.", "aff." or "or 7". The observation
+  field's Yes is a firm label (its name ends in "?" as a question to answer, not a doubt). **118 of the 1,341** labelled
+  observations are hedged, **1,223 unhedged**. "Unhedged" counts below leave the 118 out; "all" counts keep them.
 - The parser is approximate **[guess]**: a "sp. 2" written about another genus in a comment can be attributed to the
   observation's genus; a few labels may be read twice with different spellings. The order of magnitude holds; a list
   for the game would be checked by hand (§4).
@@ -119,8 +127,9 @@ Observations whose informal mention sits in (one observation can count in severa
 
 ### 2.4 Per genus: the 20 with the most genus-level observations [measured]
 
-"Labelled" = a numbered label; "labels" = distinct informal species; "observers" = distinct owners of the observations
-carrying the label; "species ID not followed" = a current species-level identification on the observation.
+"Labelled" = observations with a numbered label; "labels" = distinct informal species; "observers" = distinct owners of
+the observations counted under the label; all counts here keep the hedged ones (§2.2); "species ID not followed" =
+observations with a current species-level identification.
 
 | Genus | At the genus | RG | Any informal mention | Labelled | Labels | Top labels (observations, observers) | Species ID not followed |
 |---|---|---|---|---|---|---|---|
@@ -155,16 +164,21 @@ Three kinds of genus-level observation show up **[guess, from reading the commen
 
 ### 2.5 The informal species, by how many people record them [measured]
 
-| Distinct observers whose observation carries the label | Labels, all | Labels, unhedged | Of the unhedged: 6 or more observations with a CC0 / CC BY / CC BY-NC photo |
+Labels (and, in brackets, the observations counted under them, §2.2). The observers of a row are counted on the same
+observations as its column: a label's unhedged observers can be fewer than all its observers.
+
+| Distinct observers of the label's observations | Labels, all (observations) | Labels, unhedged (observations) | Of the unhedged labels: 6 or more unhedged observations with a CC0 / CC BY / CC BY-NC photo |
 |---|---|---|---|
-| 1 or more | 337 (1,341 obs.) | 301 (1,224 obs.) | — |
-| 2 or more | 127 (1,087) | — | — |
-| **3 or more** | **60 (911)** | **50 (837)** | **13** |
+| 1 or more | 337 (1,341) | 301 (1,223) | 13 |
+| 2 or more | 127 (1,087) | 109 (998) | 13 |
+| **3 or more** | **60 (911)** | **50 (836)** | **13** |
 | 5 or more | 15 (629) | 12 (595) | 7 |
 
-- With 2 or more observers near Dauin (40 km): 3 labels (*Goniobranchus* sp. 5 with 22, *Stiliger* sp. 1, *Doto* sp. 6).
-- Without *Goniobranchus* sp. 5, the unhedged labels at 3 or more observers hold 376 observations: about 8 each.
-- The 20 most recorded, and the cf./aff. labels: Appendix A.
+- With 2 or more observers near Dauin (40 km), all observations: 3 labels (*Goniobranchus* sp. 5 with 22, *Stiliger* sp.
+  1, *Doto* sp. 6).
+- Without *Goniobranchus* sp. 5 (461 observations, none hedged), the unhedged labels at 3 or more observers hold 375
+  observations: about 8 each.
+- The 31 labels with 4 or more unhedged observers, and the cf./aff. labels: Appendix A.
 
 ## 3. How the community records them
 
@@ -251,9 +265,10 @@ matters as a **unit** only then; **now** it matters for the genus units' photos 
 ### (a) Units from the guide's numbers, mapped automatically from the observations' labels
 
 - **What it needs**: a parser like §2.2 in the build; species units.
-- **Numbers**: 50 unhedged labels at 3 or more observers (837 observations); 13 with the start of 6 photos; 12 at 5 or
+- **Numbers**: 50 unhedged labels at 3 or more observers (836 observations); 13 with the start of 6 photos; 12 at 5 or
   more observers.
-- **Risks**: rule **C2**: the category is the guide's, but the mapping is the observers' free text, 42% hedged, across
+- **Risks**: rule **C2**: the category is the guide's, but the mapping is the observers' free text (118 of the 1,341
+  observations hedged, 9%; 31 naming a second number), often one person's label, across
   editions whose numbers differ (§3.2); merging "sp. 5" written for two editions would invent a species. **C5**: each
   disagreement (§3.1's disputes; *Goniobranchus* sp. 5 written for both Soong et al. and NSSI2, 15 observations) is a
   point to settle, many of them. **C8**: these observations are Needs ID, which confirms nothing; no informal species can
@@ -323,7 +338,12 @@ matters as a **unit** only then; **now** it matters for the genus units' photos 
 4. **Watch the names**: each rebuild of `tools/seaslugs.json` picks up the newly described species; a unit from (b) or
    (d) keeps its id and takes the name when it comes.
 
-## 6. Question for Pierre (French-ready)
+Pierre decided on 2026-11-17 (§6): (c) and (d) yes; (b) no, the guide's other "sp. N" wait for a published name; (a)
+and (e) not taken up.
+
+## 6. Question for Pierre (French-ready), and his answer (Q389)
+
+The question as asked:
 
 **Limaces sans nom.** Environ 6 800 observations iNaturalist des Philippines restent au genre ; une sur cinq porte un
 numéro du livre (« *Stiliger* sp. 1 in NSSI2 ») ou d'un article. La plus fréquente de loin est *Goniobranchus* sp. 5
@@ -333,38 +353,60 @@ photos des genres du jeu (+2 700 photos) ; (2) au niveau espèce, *Goniobranchus
 Gosliner 2018 que tu vérifierais dans le livre, avec une règle de présence à part (3 observateurs avec l'étiquette),
 puisque ces espèces ne peuvent pas atteindre le Research Grade. D'accord ? Et as-tu le livre (2e édition, 2018) ?**
 
-What needs his go: the candidate rule (Research Grade at the species) for (1); a presence rule beside C8 for (2); his
+What needed his go: the candidate rule (Research Grade at the species) for (1); a presence rule beside C8 for (2); his
 time and the book for the guide's numbers (citing a number and a page, nothing copied).
 
-## Appendix A. The 20 informal species recorded by the most observers (unhedged), and the cf./aff. labels [measured]
+**Pierre's answer, Q389, 2026-11-17 06:46-06:50 Manila** (as relayed by the integrator):
+- **(1) Yes**: agreed genus-level observations become candidate photos of the genus units.
+- **(2) Yes for *Goniobranchus* sp. 5** (Soong et al. 2020).
+- **The guide's other "sp. N" wait for a published name.** The 2018 guide is a DRM-protected ebook, and dated: "le livre
+  de 2018 est déjà largement en retard". "C'est là où ça vaut le coup d'explorer la littérature scientifique parce que
+  régulièrement ils séquencent des nudibranches et identifient des espèces." So option (b) is not taken; the way in for
+  the others is the literature (§3.2's papers, §3.3's newly described species), as each is named.
+- Still open, for the step that builds (2): the presence rule of its own (§5, item 3), as *Goniobranchus* sp. 5's
+  observations are Needs ID.
 
-Observations with the label; distinct observers; observations with a usable photo; source as written.
+## Appendix A. The informal species with 4 or more observers (unhedged), and the cf./aff. labels [measured]
+
+Unhedged observations counted under the label (§2.2); their distinct observers; of them, those with a CC0 / CC BY / CC
+BY-NC photo; the source written on them (observations), as the parser reads it. All 31 labels with 4 or more unhedged
+observers.
 
 | Label | Obs. | Observers | Usable photo | Source written |
 |---|---|---|---|---|
-| *Goniobranchus* sp. 5 | 461 | 180 | 321 | Soong et al. 2020 (445, field), NSSI2 (15) |
+| *Goniobranchus* sp. 5 | 461 | 180 | 321 | Soong et al. 2020 (445, mostly the field), NSSI2 (15), not said (1) |
 | *Stiliger* sp. 1 | 16 | 9 | 7 | NSSI2 |
 | *Goniobranchus* sp. 42 | 12 | 8 | 4 | NSSI2 |
-| *Thordisa* sp. 11 | 17 | 7 | 11 | NSSI2 (14), others |
-| *Aegires* sp. 6 | 16 | 7 | 6 | NSSI2 |
-| *Cratena* sp. 2 | 14 | 7 | 4 | NSSI2 |
-| *Eubranchus* sp. 23 | 15 | 7 | 11 | NSSI2 |
-| *Aegires* sp. 7 | 18 | 6 | 9 | NSSI2, NSSI |
+| *Thordisa* sp. 11 | 17 | 7 | 11 | NSSI2 (14), NSSI (1), NSSI1 (1), not said (1) |
+| *Aegires* sp. 6 | 16 | 7 | 6 | NSSI2 (14), NSSI (2) |
+| *Eubranchus* sp. 23 | 15 | 7 | 11 | NSSI2 (12), not said (3) |
+| *Cratena* sp. 2 | 14 | 7 | 4 | NSSI2 (13), not said (1) |
+| *Aegires* sp. 7 | 18 | 6 | 9 | NSSI2 (14), NSSI (4) |
 | *Verconia* sp. 5 | 7 | 5 | 4 | NSSI2 |
-| *Eubranchus* sp. 28 | 5 | 5 | 3 | NSSI2 |
 | *Stiliger* sp. 5 | 7 | 5 | 6 | NSSI2 |
-| *Aegires* sp. 8 | 7 | 5 | 2 | NSSI2 |
-| *Thuridilla* sp. 6 | 4 | 4 | 2 | Martín-Hervás et al. 2021 |
-| *Doto* sp. 6 | 8 | 4 | 2 | NSSI2 |
-| *Marionia* sp. 13 | 9 | 4 | 7 | NSSI2 |
-| *Aldisa* sp. 9 | 5 | 4 | 1 | NSSI2, NSSI |
+| *Aegires* sp. 8 | 7 | 5 | 2 | NSSI2 (6), NSSI1 (1) |
+| *Eubranchus* sp. 28 | 5 | 5 | 3 | NSSI2 |
+| *Tenellia* sp. 6 | 21 | 4 | 17 | NSSI2 |
+| *Marionia* sp. 6 | 15 | 4 | 12 | NSSI2 |
+| *Ceratosoma* sp. 1 | 14 | 4 | 11 | NSSI2 |
+| *Polycera* sp. 3 | 12 | 4 | 4 | NSSI2 |
 | *Caloria* sp. 4 | 11 | 4 | 3 | NSSI2 |
-| *Doto* sp. 1 | 4 | 4 | 3 | mixed |
-| *Favorinus* sp. 2 | 8 | 4 | 2 | NSSI2 |
+| *Paradoris* sp. 10 | 11 | 4 | 8 | NSSI2 |
+| *Marionia* sp. 13 | 9 | 4 | 7 | NSSI2 (8), NSSI (1) |
 | *Stiliger* sp. 9 | 9 | 4 | 4 | NSSI2 |
+| *Doto* sp. 6 | 8 | 4 | 2 | NSSI2 (7), NSSI1 (1) |
+| *Favorinus* sp. 2 | 8 | 4 | 2 | NSSI2 (6), not said (2) |
+| *Goniobranchus* sp. 32 | 7 | 4 | 2 | NSSI2 |
+| *Elysia* sp. 37 | 6 | 4 | 1 | NSSI2 (5), not said (1) |
+| *Aldisa* sp. 9 | 5 | 4 | 1 | NSSI2 (3), NSSI (2) |
+| *Tenellia* sp. 18 | 5 | 4 | 2 | NSSI2 |
+| *Facelina* sp. 9 | 5 | 4 | 1 | NSSI2 |
+| *Stiliger* sp. 6 | 5 | 4 | 3 | NSSI2 |
+| *Thuridilla* sp. 6 | 4 | 4 | 2 | Martín-Hervás et al. 2021 (written; the parser does not read this paper) |
+| *Doto* sp. 1 | 4 | 4 | 3 | not said (2), NSSI2 (1), NSSI (1) |
+| *Eubranchus* sp. 10 | 4 | 4 | 2 | NSSI2 |
 
-Hedged labels left out of this table but recorded by many: *Tenellia* sp. 6 (21 observations, 4 observers), *Marionia*
-sp. 6 (16, 4), *Polycera* sp. 3 (16, 4), *Ceratosoma* sp. 1 (14, 4). The cf. labels: *Tergiposacca* cf. *perspicua* 6,
+The cf. labels (observations): *Tergiposacca* cf. *perspicua* 6,
 *Phyllidiella* cf. *annulata* 4, *Chromodoris* cf. *striatella* 3, *Glossodoris* cf. *cincta* 3 (+2 spelled "cinta"),
 *Goniobranchus* cf. *reticulatus* 3, *Ceratodoris* cf. *kendi* 3.
 
