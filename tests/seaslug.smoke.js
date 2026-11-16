@@ -217,9 +217,11 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       check(sh.it.join() === inf.name.split(' ')[0], '2: the species with no name: its genus alone in italics');
       check(sh.small === `(${inf.src})`, '2: its source in small type');
       check(
-        sh.links.some(h => h.includes('doi.org/')) &&
-          sh.links.some(h => h.includes('observation_fields/')) &&
-          !sh.links.some(h => /fishbase|marinespecies|\/taxa\//.test(h)),
+        sh.links.some(h => new URL(h).host === 'doi.org') &&
+          sh.links.some(h => new URL(h).host === 'www.inaturalist.org' && new URL(h).pathname.startsWith('/observation_fields/')) &&
+          !sh.links.some(
+            h => ['www.fishbase.se', 'www.marinespecies.org'].includes(new URL(h).host) || new URL(h).pathname.startsWith('/taxa/')
+          ),
         '2: its links: the paper and the field, no taxon page'
       );
     }
