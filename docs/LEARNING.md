@@ -3913,8 +3913,8 @@ achievement of every subject again on that subject's current progress (`inSubjec
 their date (the earliest held), the others go, fpct25 with them since no list holds it; every fish % achievement is thus
 re-evaluated on the global score (an fpct50 earned on the families' mean leaves a player under 50%), and the new ones the
 progress already meets come in. Silent (Q264), no card, no toast. The fish data is loaded only when the fish are needed
-(`app.js` `fishLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
-then are recounted the same way (`achPending`, from `fishLoad` and before each check). A device not updated yet: its record
+(`app.js` `treeLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
+then are recounted the same way (`achPending`, from `treeLoad` and before each check). A device not updated yet: its record
 keeps version 2, and `core.js` `mergeAch` takes no achievement from a record of another version (only its feats), so it never
 brings back what the recount removed, and an updated device's record never reaches it either (the same rule on its side).
 The progress itself is not recounted here: the corals' is replayed from the answer log by the sheet (`Code.gs` `replay_`,
