@@ -889,7 +889,7 @@ function play(cfg) {
   // genera apart), the answer at which each first reached Open Water and Advanced (LV_AT), the shown score after every
   // answer (headPct: the fish global score, else the units' mean) for its plateaus, and when circle 3 came (offered, met).
   const SETU = typeof SETS === 'function' ? [...new Set(SETS().flatMap(S => (S.all ? S.all() : S.units())))].filter(g => !SL.includes(g)) : [],
-    kindOf = g => (SL.includes(g) ? SUBJ.rank : BON.includes(g) ? 'bonus' : (typeof rankOf === 'function' && rankOf(g)) || 'other'),
+    kindOf = g => (SL.includes(g) ? unitRankOf(SUBJ) : BON.includes(g) ? 'bonus' : (typeof rankOf === 'function' && rankOf(g)) || 'other'),
     UALL = [...new Set([...SL, ...SETU, ...BON])],
     KINDS = [...new Set(UALL.map(kindOf))],
     owAt = {},

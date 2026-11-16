@@ -578,6 +578,12 @@ Sizes are rough, for one agent **[guess]**.
      juvenile form). Families are the game's units, genera the opt-in set as the fish's branch B; species have their
      sheets but no game unit yet (the fish species level, #975, comes first). Not replayed by the sheet, no leaderboard,
      no achievements. The photos are still read from iNaturalist (`r: 1`) until step 6. ARCHITECTURE.md "Subjects".
+   - **Changed** (2026-11-16, Pierre: the ID books and the experts work at the genus, "c'est au niveau des genres"): the
+     genera are the game's units from the start (`SUBJECTS` `unitRank: 'genus'`; 78 genera over circles 1 to 3), the
+     families structure only (the tree, the sheets), and the opt-in genus set is gone. §6.2's "family → genus → species"
+     mapping now starts at the genus. The Learn page shows the genus tiles directly, grouped by family, the families
+     under WoRMS's taxonomic groups (Nudibranchia · Doridina, Nudibranchia · Cladobranchia, then the other sea slugs by
+     order; Pierre, 2026-11-16, `tools/seaslug_groups.json`).
 6. **The R2 game photos**: about 1 day. `tools/fish_game.py` generalised (paths, prefixes) for a second photo subject.
    - **Built, off until Pierre's go** (2026-11-16, PR "Sea slugs: R2 game photos (off), circles 2 and 3 in the game"):
      `tools/seaslug_game.py --r2` downloads the sea-slug photos in play with the fish's pipeline (`tools/fish_game.py`

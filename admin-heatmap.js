@@ -252,8 +252,9 @@ function statsHeat() {
     up = n => FA && ((FA.spid[n] && FA.spg[FA.spid[n]]) || FA.fam[n]),
     blockOf = many ? (ri ? n => (up(n) ? lab(up(n)) : '') : grp) : undefined,
     // the roster: the corals' slate (core.js slateOf: the games' and the progress's genera), the bonus genera once met;
-    // another subject's top rank its slate (every family in the game), its lower ranks as met
-    roster = many ? (!ri && FA ? FA.slate : []) : slateOf(DATA),
+    // another subject's slate at the rank on screen (the fish: every family in the game at their top rank; the sea slugs:
+    // every genus at theirs, their units' rank, core.js unitRankOf), its other ranks as met
+    roster = many ? (FA ? FA.slate.filter(u => (rk ? String(u).startsWith(rk[1]) : !ri)) : []) : slateOf(DATA),
     M = ofAns('heat:' + S.id + ':' + !!FA + ':' + (rk ? rk[0] : '') + pk, () => heatMatrix(P.C, P.typed, rec, prior, roster, blockOf)),
     U = M.units,
     cmpOn = (S.pages || []).includes('cmp'),

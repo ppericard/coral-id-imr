@@ -690,9 +690,13 @@ function build() {
 // alone (an IMR genus: Chromis, Anemonefish for Amphiprion, Unicornfish for Naso; not Surgeonfish, which names three
 // genera: Pierre, 2026-11-08, Q220), its species in the game (scientific and common names, commonness order) and its
 // family's photos of those species. FISH.sci: every genus, in the families' order.
+// A subject played at the genus from the start (X.unit 'genus': core.js fishGen, SUBJECTS unitRank; the sea slugs): its
+// genera are already the units of its circles (core.js fishGenUnits), each completed here the same way, in its own circle
+// and with every species of the circles; no opt-in set (FISH.sci empty).
 function fishGenera(X, F) {
   const sp = new Map((F.species || []).map(s => [s.id, s])),
     gens = new Map((F.genera || []).map(g => [g.id, g])),
+    atGenus = X.unit === 'genus',
     sci = [];
   // A family IMR gives no cue for (circles 2-3, the Soapfishes): its ID marks (fish.json marks, our own words from the
   // sources it lists, msrc: tools/fish_sheets.json) show where the IMR cues show (the feedback, the first-meeting card,
@@ -724,11 +728,18 @@ function fishGenera(X, F) {
     E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
   });
   (F.families || [])
-    .filter(f => f.circle === 1 && X.gen[f.id])
+    .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
     .forEach(f => {
       const E = X.gen[f.id],
         own = (f.genera || []).map(id => gens.get(id)).filter(Boolean),
-        by = new Map(own.map(G => [G.id, G.species.map(id => sp.get(id)).filter(s => s && s.circle === 1)]).filter(([, L]) => L.length)),
+        // its genera in the game: those holding circle-1 species, or, played from the start, the units fishGen made
+        by = atGenus
+          ? new Map(
+              own
+                .filter(G => X.gen[G.id] && X.gen[G.id].parent === f.id)
+                .map(G => [G.id, X.gen[G.id].species.map(id => sp.get(id)).filter(Boolean)])
+            )
+          : new Map(own.map(G => [G.id, G.species.map(id => sp.get(id)).filter(s => s && s.circle === 1)]).filter(([, L]) => L.length)),
         ids = [...by.keys()];
       by.forEach((L, id) => {
         const G = gens.get(id),
@@ -765,7 +776,7 @@ function fishGenera(X, F) {
           imrName: G.imr || '', // the IMR tag
           imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
           fish: 1,
-          circle: 1,
+          circle: atGenus ? X.gen[id].circle : 1,
           group: E.group,
           ig: E.ig,
           forms: E.forms,
@@ -817,7 +828,7 @@ function fishGenera(X, F) {
         // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
         // whoever took it (Pierre, 2026-11-06).
         if (wide.length) X.gen[id].cover = easyCover(wide).f;
-        sci.push(id);
+        if (!atGenus) sci.push(id);
       });
     });
   X.sci = sci;
@@ -897,9 +908,14 @@ function cnAlso(s, R) {
     })
     .filter(([, L]) => L.length);
 }
-// A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
-// A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
-const rankOf = n => (GX(n) || {}).rank || '';
+// A unit's rank inside its subject: '' for the rank its game units are at (core.js unitRankOf: the corals' genera, the
+// fish families, the sea slugs' genera), else its own ('genus' for a fish scientific genus; 'family' for a sea slugs'
+// family, a record with no rank of its own read at its subject's rank). A question's choices and its typed answers stay
+// within the rank of the unit asked (model.js distractors).
+const rankOf = n => {
+  const r = (GX(n) || {}).rank || SUBJ.rank;
+  return r === unitRankOf(SUBJ) ? '' : r;
+};
 // A unit's name when its id is not its name (a fish entry t01: Damselfish; a scientific genus g:Chromis: Chromis), '' for
 // a coral genus (its id is its name) or no unit (an "I don't know"): what an answer logs beside the unit (quiz.js answer).
 const unitName = n => {
@@ -989,7 +1005,7 @@ const fishBuild = () => {
     f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C), ph.sheet), f), C, f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C), ph.sheet, unitRankOf(S)), f), C, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
@@ -1938,6 +1954,8 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //            once due (progress.js). k, units(), due(), the card's words (kick, title, body, yes, note), row (My progress)
 //   done()   once every unit in play is met and none may open now (quiz.js allMetDue): {k, kick, title, lines}, the card that
 //            says so and what comes next, once per reason k; absent (the corals): no card
+//   listBy   a tree subject without a key: the rank its units are grouped by on its Learn list (learn.js viewFishList, one
+//            block per unit of that rank, its parent): the sea slugs' 'family'; absent, one block (the fish: the key's groups)
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
 // easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
 // tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
@@ -2133,7 +2151,7 @@ const UNITS = {
     identify: 'fishkey',
     // Home's words for a subject with no tool of its own yet (home.js viewHome, viewFishKey; the corals' are the page's
     // own): need, what Identify names; before, when the Learn door is for; when, title, desc, btn, soon: the Identify
-    // door's; key, the key's page line.
+    // door's; key, the key's page line; learn, practice: the Learn door's two lines where they are not the fish's.
     door: {
       need: 'a fish on a survey video, or one you photographed on a dive',
       before: 'EventMeasure or your next dive',
@@ -2355,7 +2373,8 @@ const UNITS = {
     ]
   },
   // The sea slugs (core.js SUBJECTS; Pierre, 2026-11-15, Q369, Q377; study §9 step 5): a tree subject on the fish engine,
-  // circles 1 to 3 (205 species of tools/seaslugs.json), families then genera, scientific names only, no IMR content.
+  // circles 1 to 3 (205 species of tools/seaslugs.json), its genera from the start (core.js SUBJECTS unitRank; Pierre,
+  // 2026-11-16), its families structure only, scientific names only, no IMR content.
   seaslug: {
     // No key of its own: the "coming soon" key page, in its words (door).
     identify: 'fishkey',
@@ -2364,10 +2383,13 @@ const UNITS = {
       before: 'your next dive',
       when: 'A photo from your dive',
       title: 'Identify a sea slug',
-      desc: 'There is no sea slug ID key yet: learn the families and genera in the quiz.',
+      desc: 'There is no sea slug ID key yet: learn the genera in the quiz.',
       btn: 'Sea slug ID key',
       soon: 'Not yet',
-      key: 'There is no key to name sea slugs yet. Learn their families and genera in the quiz.'
+      key: 'There is no key to name sea slugs yet. Learn their genera in the quiz.',
+      // Home's Learn and Practice lines (home.js; the fish's are written there)
+      learn: 'The genera by family, in their taxonomic groups',
+      practice: 'Name the genus from photos'
     },
     land: true,
     // Its files (treeHome, treeLoad), small: no first photos, Home waits for both. Unversioned (beta, its group only): the
@@ -2377,21 +2399,21 @@ const UNITS = {
     pick: 'The sea slugs of the Philippines, nudibranchs first, by their scientific names.',
     tour: {
       doors: {
-        d: 'Learn & practise while you learn the sea slug families and genera, by their scientific names. There is no sea slug ID key yet.'
+        d: 'Learn & practise while you learn the sea slug genera, by their scientific names. There is no sea slug ID key yet.'
       },
       games: {
         t: 'The sea slug quiz',
-        d: 'Practice in the menu opens the quiz: name the family from photos.'
+        d: 'Practice in the menu opens the quiz: name the genus from photos.'
       },
       progress: {
         d: tap =>
-          `Each family fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every family in the game: a ? for each one you have not met yet.`
+          `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every genus in the game: a ? for each one you have not met yet.`
       }
     },
     // The invitation to the players of its group (progress.js subjHello; the fish beta's card, in its words).
     hello: SEA_HELLO,
     about: {
-      who: 'sea slug families and genera',
+      who: 'sea slug genera',
       photos: '',
       course:
         'The sea slugs, their circles and their stars come from iNaturalist’s Research Grade observations in the Philippines, Wikipedia pageviews and public dive pages; their names and classification from WoRMS.',
@@ -2399,9 +2421,10 @@ const UNITS = {
     },
     // No level-change card until the subject is calibrated (as the fish, Pierre, 2026-11-08).
     startFb: false,
-    // Its three circles (tools/seaslug_game.py CIRCLES), all on the path and in the progress as the fish's (Q175, Q204);
-    // circles 2 and 3 open at the fish's thresholds (fishGate: circle 2 once every circle-1 family has been asked, circle
-    // 3 once circle 1 reaches FISH_C3), circle 3 by itself: no offer card (the fish's speaks of the IMR course).
+    // Its three circles (tools/seaslug_game.py CIRCLES) of genera (core.js SUBJECTS unitRank: a genus's circle is its best
+    // species'), all on the path and in the progress as the fish's (Q175, Q204); circles 2 and 3 open at the fish's
+    // thresholds (fishGate: circle 2 once every circle-1 genus has been asked, circle 3 once circle 1 reaches FISH_C3),
+    // circle 3 by itself: no offer card (the fish's speaks of the IMR course).
     slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
     mystery: () => true,
     core: () => (FISH ? FISH.c1 : []),
@@ -2414,42 +2437,24 @@ const UNITS = {
     names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, []),
     norm: typeNormAll,
     typeOther: rk => treeTypeOther(rk),
-    // No sourced look-alike pair between families or genera yet (study §6.3: the two Spanish dancers are one genus).
+    // No sourced look-alike pair between genera yet (study §6.3: the two Spanish dancers are one genus); a genus's sibling
+    // genera are its traps (app.js fishGenera look).
     pairs: () => [],
     winks: () => [],
     tiles: () => [],
     list: () => viewFishList(),
     sheet: id => viewFishSheet(id),
     bar: id => fishBar(id),
-    // The Families page's line (learn.js viewFishList).
-    lede: 'The sea slug families, by their scientific names, with their genera. Photos: iNaturalist.',
+    // The Genera page's line, and its genera grouped by family (learn.js viewFishList listBy; Pierre, 2026-11-16 ~15:42:
+    // "afficher directement les niveaux de genres, mais regroupés par famille"). The fish group theirs by the key.
+    lede: 'The sea slug genera, by their scientific names, in their families. Photos: iNaturalist.',
+    listBy: 'family',
     progHelp: () =>
-      `<p class="lede"><b>To learn a sea slug family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. A <b>?</b> tile is a family you have not met yet: it shows once it opens.</p>`,
-    help: () => `<p class="lede">Name the sea slug family in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The look-alikes come in as you get a family right.</p>
-  <p class="lede">A family fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the family’s scientific name. <b>Photos</b>: from iNaturalist, the easiest first, whoever took them.</p>`,
-    sets: [
-      // Its genera (fishGenera), offered as the fish's scientific genera are: once a family is at Advanced; on, a family's
-      // genera join the game when the family reaches Advanced. No IMR genera, so nothing comes by itself (auto).
-      {
-        all: () => (FISH ? FISH.sci || [] : []),
-        units: () => (FISH && typeof genScore === 'function' ? sciOpen(FISH.sci || [], genScore, introduced, false, !!Q.sciH).units : []),
-        auto: () => [],
-        after: 1,
-        due: () => typeof genScore === 'function' && slateGenera().some(n => genScore(n) >= LV_AT[1]),
-        page: false,
-        kick: 'Genera',
-        title: () => 'Sea slug genera?',
-        body: 'For the families you know well: a photo and four genus names. A family’s genera come as you reach Advanced on it.',
-        note: '⚙ Settings, Genera, any time.',
-        tag: 'Genus',
-        name: 'Genera',
-        row: 'Turn on the genera',
-        onToast: () => `Genera on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
-        card: '',
-        // its key in SUBJECTS optin, as the fish's scientific genera
-        k: 'sci'
-      }
-    ]
+      `<p class="lede"><b>To learn a sea slug genus</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a genus back, for the genus you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. A <b>?</b> tile is a genus you have not met yet: it shows once it opens.</p>`,
+    help: () => `<p class="lede">Name the sea slug genus in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The genera of the same family come in as you get a genus right.</p>
+  <p class="lede">A genus fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the genus’s scientific name. <b>Photos</b>: from iNaturalist, the easiest first, whoever took them.</p>`,
+    // No opt-in set: its genera are its units from the start (core.js SUBJECTS unitRank; Pierre, 2026-11-16).
+    sets: []
   }
 };
 treeAt(SUBJ.id); // the tree of the subject opened on (fish.json for the fish) in force before its files come

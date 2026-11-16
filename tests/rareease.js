@@ -47,6 +47,7 @@ function engine(
     SUBJ,
     // The subject's calibration, built once: photoSet asks for it at every photo weight (a new object each time).
     calibOf: s => (s === SUBJ ? cal : C.calibOf(s)),
+    unitRankOf: C.unitRankOf,
     refLevel: C.refLevel,
     memBucket: C.memBucket,
     aimOf: C.aimOf,

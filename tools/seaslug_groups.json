@@ -1,0 +1,105 @@
+{
+ "_doc": "The sea slugs' taxonomic groups, the headings their families sit under on the Learn page (Pierre, 2026-11-16 ~15:43 Manila: \"organiser même proprement les familles, en regroupant en groupes taxonomiques logiques. Notamment en séparant les \\\"vrais\\\" nudibranches des autres limaces de mers\"; the grouping confirmed ~15:45, \"parfait !\": Nudibranchia first in two blocks, Doridina then Cladobranchia, then the other sea slugs by order). Hand-kept, read by tools/seaslug_game.py (seaslug.json taxa and each family's tgroup), never written by a tool. From WoRMS's classification of each family (AphiaClassificationByAphiaID, read 2026-11-16; rule C2: a published classification, never ours): Nudibranchia's suborders Doridina and Cladobranchia; Sacoglossa is a superorder in WoRMS (no order above its families), the others orders. iNaturalist places the Cladobranchia families in five suborders instead (Aeolidina, Dendronotina, Arminina, Janolina, Tritonina, no Cladobranchia): WoRMS is followed and the difference is a point in points.json (seaslug-cladobranchia-inat, rule C5). A family of the game in no group fails the build. aphia: each family's AphiaID.",
+ "cite": "WoRMS Editorial Board, World Register of Marine Species, the classification of each family (read 2026-11-16)",
+ "short": "WoRMS",
+ "groups": [
+  {
+   "title": "Nudibranchia · Doridina",
+   "families": [
+    "Chromodorididae",
+    "Polyceridae",
+    "Phyllidiidae",
+    "Discodorididae",
+    "Hexabranchidae",
+    "Aegiridae",
+    "Cadlinellidae",
+    "Goniodorididae",
+    "Dendrodorididae"
+   ]
+  },
+  {
+   "title": "Nudibranchia · Cladobranchia",
+   "families": [
+    "Facelinidae",
+    "Myrrhinidae",
+    "Flabellinidae",
+    "Trinchesiidae",
+    "Tethydidae",
+    "Samlidae",
+    "Arminidae",
+    "Eubranchidae",
+    "Bornellidae",
+    "Dotidae",
+    "Dendronotidae",
+    "Janolidae",
+    "Aeolidiidae",
+    "Tritoniidae",
+    "Scyllaeidae"
+   ]
+  },
+  {
+   "title": "Sacoglossa",
+   "families": [
+    "Plakobranchidae",
+    "Costasiellidae",
+    "Caliphyllidae"
+   ]
+  },
+  {
+   "title": "Cephalaspidea",
+   "families": [
+    "Aglajidae",
+    "Gastropteridae",
+    "Colpodaspididae"
+   ]
+  },
+  {
+   "title": "Aplysiida",
+   "families": [
+    "Aplysiidae"
+   ]
+  },
+  {
+   "title": "Pleurobranchida",
+   "families": [
+    "Pleurobranchidae",
+    "Pleurobranchaeidae"
+   ]
+  }
+ ],
+ "aphia": {
+  "Chromodorididae": 23003,
+  "Polyceridae": 177,
+  "Phyllidiidae": 23093,
+  "Discodorididae": 1761,
+  "Hexabranchidae": 412582,
+  "Aegiridae": 531070,
+  "Cadlinellidae": 1423460,
+  "Goniodorididae": 174,
+  "Dendrodorididae": 23026,
+  "Facelinidae": 191,
+  "Myrrhinidae": 570862,
+  "Flabellinidae": 190,
+  "Trinchesiidae": 151283,
+  "Tethydidae": 23125,
+  "Samlidae": 1047246,
+  "Arminidae": 2087,
+  "Eubranchidae": 193,
+  "Bornellidae": 412598,
+  "Dotidae": 187,
+  "Dendronotidae": 186,
+  "Janolidae": 153450,
+  "Aeolidiidae": 192,
+  "Tritoniidae": 183,
+  "Scyllaeidae": 23115,
+  "Plakobranchidae": 411960,
+  "Costasiellidae": 23012,
+  "Caliphyllidae": 196329,
+  "Aglajidae": 22981,
+  "Gastropteridae": 23045,
+  "Colpodaspididae": 848161,
+  "Aplysiidae": 172,
+  "Pleurobranchidae": 1755,
+  "Pleurobranchaeidae": 412554
+ }
+}

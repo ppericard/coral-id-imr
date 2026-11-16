@@ -237,7 +237,11 @@
   //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button)
   //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins: a fish scientific genus): logged
   //           with every answer (sheet v60 Answers Rank). Every subject's answers go to the sheet's Answers tab under its
-  //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
+  //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked). A tree
+  //           subject's top rank (the family: the fish, the sea slugs), which the admin reads as its tree's
+  //   unitRank  the rank of a tree subject's game units from the start (level 1), when not its rank (unitRankOf): the
+  //           sea slugs' 'genus' (Pierre, 2026-11-16: "c'est au niveau des genres"), its genera the units of its circles
+  //           and its families structure only (core.js fishGen unit). Unset: rank (the fish: families, then genera opt-in)
   //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach     it has achievements: achs() its list (core.js ACH, FISH_ACH), all in the one synced record (progress.js
@@ -663,15 +667,16 @@
       // The sea slugs (Pierre, 2026-11-15, Q369: one "sea slugs" subject, its circles by popularity, the Philippines as its
       // area, a stars set, scientific names only; Q377: circle 1 of 45 species; study docs/reviews/2026-11-15-nudibranch-
       // mode-study.md §9, step 5). Read through the fish engine (app.js UNITS seaslug get: seaslug.json and
-      // seaslug-game.json, built by tools/seaslug_game.py): families, then the genera as an opt-in set; the species have
-      // their sheets. In beta, opened to a group (rule S1): the admin and the players Pierre adds on its Players page.
+      // seaslug-game.json, built by tools/seaslug_game.py): its genera from the start (unitRank; Pierre, 2026-11-16: the
+      // experts and the ID books work at the genus), its families structure only; the species have their sheets. In
+      // beta, opened to a group (rule S1): the admin and the players Pierre adds on its Players page.
       id: 'seaslug',
       dev: 'seaslug-',
       base: ['sbase', 'spending'],
       name: 'Sea slugs',
       icon: '<path d="M3 16.5c2.2-3 5.4-4.3 9.3-4.3 3.6 0 6.5 1.3 8.7 3.9-2.8 1.3-5.8 1.9-9 1.9-3.3 0-6.3-.5-9-1.5z"/><path d="M6.5 13.4 5.2 9.6M9 12.6l.2-3.8M17.6 13.4c0-1.6.8-2.8 2.2-3.5M17.6 13.4c.9-1.2 2-1.7 3.4-1.6"/>',
-      one: 'family',
-      many: 'families',
+      one: 'genus',
+      many: 'genera',
       what: 'Sea slug',
       several: 'sea slug species',
       card: 'sea slug',
@@ -688,9 +693,10 @@
       open: 'group',
       sheet: SEASLUG_SHEET,
       views: [['wide', 'Photo']],
-      // sci: its genera, offered as the fish's scientific genera are (app.js UNITS seaslug sets).
-      optin: ['sci'],
+      // No opt-in set: its genera are its units from the start.
+      optin: [],
       rank: 'family',
+      unitRank: 'genus',
       // Not replayed by the sheet (no replayed): its progress merges against its own base, as the fish's did before the
       // replay. No leaderboard, no achievements, no Analyses report and no photo pool yet.
       replay: false,
@@ -704,8 +710,8 @@
       start: {
         q: 'How well do you know sea slugs?',
         opts: {
-          new: ['I’m new to sea slugs', 'Start from scratch: a few easy families first.'],
-          know: ['I know sea slugs well', 'A diver or a photographer: you can already name many families.']
+          new: ['I’m new to sea slugs', 'Start from scratch: a few easy genera first.'],
+          know: ['I know sea slugs well', 'A diver or a photographer: you can already name many genera.']
         }
       },
       // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
@@ -715,7 +721,8 @@
         // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports).
         files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
         todo: [],
-        pages: ['inbox/todo/all', 'inbox/todo/reports', 'inbox/todo/errors', 'players/list'],
+        // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
+        pages: ['inbox/todo/all', 'inbox/todo/reports', 'inbox/todo/errors', 'inbox/todo/points', 'players/list'],
         obs: 'Observations',
         origins: [
           ['dauin', 'iNat Dauin', 'Dauin'],
@@ -734,6 +741,9 @@
   // every observation keeps the whole floor (model.js PICKD.FLOOR).
   const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
+  // The rank subject s's game units are at (SUBJECTS unitRank, else its rank): what an answer on one of them logs, and the
+  // rank app.js rankOf reads as the subject's own.
+  const unitRankOf = s => (s && (s.unitRank || s.rank)) || '';
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
@@ -897,7 +907,38 @@
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
       : L;
   };
-  function fishGen(F, photos, sheet) {
+  // The genera of a subject played at the genus from the start (fishGen unit 'genus'): [record] in F.genera's order, each
+  // {id, name, rank 'genus', one, parent (its family), fam (its family's line), circle (its best species' in a circle),
+  // species (those in a circle), look (its sibling genera of the list), views {wide: its family's photos of its species},
+  // cover}. gen: fishGen's families by id; sp: F's species by id. A genus whose family is not in gen, or a surprise
+  // card's, or with no species in a circle, is none.
+  function fishGenUnits(F, gen, sp) {
+    const inC = id => [1, 2, 3].includes((sp.get(id) || {}).circle),
+      L = (F.genera || [])
+        .map(G => [G, G && gen[G.family], ((G && G.species) || []).filter(inC)])
+        .filter(([G, E, S]) => G && G.id && E && !E.wink && S.length);
+    return L.map(([G, E, S]) => {
+      const set = new Set(S),
+        wide = E.views.wide.filter(p => set.has(p.sp)),
+        g = {
+          id: G.id,
+          name: G.name,
+          rank: 'genus',
+          one: 'genus',
+          parent: E.id,
+          fam: E.name + (E.fam ? ' · ' + E.fam : ''),
+          circle: Math.min(...S.map(id => sp.get(id).circle)),
+          species: S,
+          look: L.filter(([o, X]) => X === E && o !== G).map(([o]) => o.id),
+          views: {wide}
+        };
+      if (wide.length) g.cover = easyCover(wide).f;
+      return g;
+    });
+  }
+  // unit: the rank of the game's units (SUBJECTS unitRank, unitRankOf): 'genus' plays the genera from the start
+  // (fishGenUnits); anything else, the families (the fish).
+  function fishGen(F, photos, sheet, unit) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
       start = new Set((F.start || []).map(id => FISH_RENAMED.ids[id] || id)),
@@ -977,6 +1018,9 @@
           )
         },
         ...(start.has(t.id) ? {first: 1} : {}),
+        // its taxonomic group's number in the tree's taxa (the sea slugs': tools/seaslug_groups.json), the Learn page's
+        // heading above its block (learn.js viewFishList); display only
+        ...(t.tgroup ? {tg: t.tgroup} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
         // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
@@ -993,7 +1037,13 @@
     Object.values(gen).forEach(g => {
       if (g.views.wide.length) g.cover = easyCover(g.views.wide).f;
     });
-    const ids = Object.keys(gen),
+    // A subject whose game units are its genera from the start (unit 'genus', SUBJECTS unitRank: the sea slugs; Pierre,
+    // 2026-11-16): its families stay in gen as structure (the sheets, the blocks, a genus's parent) and its genera are the
+    // units of its circles (fishGenUnits); app.js fishGenera completes their records as it does the fish's scientific
+    // genera. Otherwise (the fish) the families are the units, as before.
+    const byGen = unit === 'genus' ? fishGenUnits(F, gen, sp) : null;
+    if (byGen) byGen.forEach(g => (gen[g.id] = g));
+    const ids = byGen ? byGen.map(g => g.id) : Object.keys(gen),
       play = n => !gen[n].wink,
       sh = {},
       shAdd = (id, p) => p && p.f && p.src && id && !(sh[id] = sh[id] || []).some(x => x.f === p.f) && sh[id].push({...p, use: 'ref'});
@@ -1005,9 +1055,12 @@
       c1: ids.filter(n => play(n) && gen[n].circle === 1),
       c2: ids.filter(n => play(n) && gen[n].circle === 2),
       c3: ids.filter(n => play(n) && gen[n].circle === 3),
-      winks: ids.filter(n => !play(n)),
+      winks: Object.keys(gen).filter(n => !play(n)),
       key: F.key ? {id: F.key.id, region: F.key.region, cite: F.key.cite, short: F.key.short} : null,
-      groups: (F.key && F.key.groups) || []
+      groups: (F.key && F.key.groups) || [],
+      // the taxonomic groups its families sit in (the tree's taxa: {cite, short, groups [{n, title}]}), when it has them
+      ...(F.taxa ? {taxa: F.taxa} : {}),
+      ...(byGen ? {unit: 'genus'} : {})
     };
   }
   // The fish units as the full replay reads them (core.js replayProgress gen: each unit's look-alikes and family line, for
@@ -6333,6 +6386,7 @@
     subjectOf,
     CALIB,
     calibOf,
+    unitRankOf,
     subjGroup,
     replaySubject,
     replayedSubjects,
