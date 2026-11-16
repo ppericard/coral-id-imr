@@ -853,11 +853,14 @@ test('readAlerts: admin only, newest first, the last 3000, a capped name served 
   const many = n => Array.from({length: n}, (_, i) => ans('al' + n + 'x' + i));
   for (let i = 0; i < 6; i++) s.post({anon: 'flooder002', anonAnswers: many(100 + i)});
   assert.strictEqual(s.post({anon: 'flooder002', anonAnswers: many(10)}).error, 'busy');
+  // Two live accounts, one named with a ~ (nothing forbids it): their lines are served (rule D7: the next test).
+  s.post({name: 'Ana Demo', pin: '1234', data: prog(1), summary: {}});
+  s.post({name: '~Tilda Demo', pin: '1234', data: prog(1), summary: {}});
   const t0 = Date.now() + 1000;
   add(t0, 'limit reached: n:ana demo (3000 per 6 h)');
   add(t0 + 1000, 'limit reached: n:~deleted Ab12Cd34 (3000 per 6 h)');
   add(t0 + 1500, 'limit reached: n:~tilda demo (3000 per 6 h)');
-  add(t0 + 2000, 'photos not of the unit shown: Zz99Yy88 (3 of 10 answers)');
+  add(t0 + 2000, `photos not of the unit shown: ${run("aid_('Ana Demo')")} (3 of 10 answers)`);
   const before = JSON.stringify(s.sheets.Alerts.rows),
     r = s.post({readAlerts: 1, token: T});
   assert.strictEqual(JSON.stringify(s.sheets.Alerts.rows), before, 'the read changes nothing in the tab');
@@ -865,13 +868,12 @@ test('readAlerts: admin only, newest first, the last 3000, a capped name served 
   assert.deepStrictEqual(
     r.rows.map(x => x[1]),
     [
-      'photos not of the unit shown: Zz99Yy88 (3 of 10 answers)',
+      `photos not of the unit shown: ${run("aid_('Ana Demo')")} (3 of 10 answers)`,
       `limit reached: n:${run("aid_('~Tilda Demo')")} (3000 per 6 h)`,
-      'limit reached: n:~deleted Ab12Cd34 (3000 per 6 h)',
       `limit reached: n:${run("aid_('Ana Demo')")} (3000 per 6 h)`,
       'limit reached: a:flooder002 (600 per 6 h)'
     ],
-    'newest first; the name as the id admin Players shows (aid_ is case-blind), a name starting with ~ too; a deleted account kept as redact_ left it'
+    'newest first; the name as the id admin Players shows (aid_ is case-blind), a name starting with ~ too; a deleted account (redact_) left out'
   );
   assert.ok(!/ana demo|tilda/i.test(JSON.stringify(r)), 'no name in the reply');
   assert.strictEqual(r.rows[0][0], t0 + 2000, 'the time in ms');
@@ -880,6 +882,52 @@ test('readAlerts: admin only, newest first, the last 3000, a capped name served 
   const w = s.post({readAlerts: 1, token: T}).rows;
   assert.strictEqual(w.length, 3000);
   assert.strictEqual(w[2999][0], t0 + 3000, 'the oldest lines fall out of the window');
+});
+
+// Rule D7 (the integrator, 2026-11-16; Codex review #996): a line that names an account or a device by its admin id is
+// served only while that id is a current writer's (a live account, a device not signed in with answers): a deleted,
+// merged-away or archived account's line is left out, as is a device's once it signed in or was deleted; the lines that
+// name nobody stay. The tab keeps every line.
+test('readAlerts (rule D7): a deleted, merged or archived account leaves no line; a device follows its answers', () => {
+  const s = loadCodeGs(),
+    T = 'ghp_write000000000000000000',
+    id = n => require('vm').runInContext(`aid_(${JSON.stringify(n)})`, s.ctx);
+  ['Ana', 'Ana B', 'Ben', 'Cat'].forEach((n, i) => s.post({name: n, pin: '1234', data: prog(1), summary: {}, answers: [ans('d7n' + i)]}));
+  ['devkeep001', 'devsign001', 'devgone001'].forEach(d => s.post({anon: d, anonAnswers: [ans('d7' + d)]}));
+  const line = {
+    ana: `photos not of the unit shown: ${id('Ana')} (1 of 1 answers)`,
+    anaB: `photos not of the unit shown: ${id('Ana B')} (1 of 1 answers)`,
+    ben: `photos not of the unit shown: ${id('Ben')} (1 of 1 answers)`,
+    keep: `photos not of the unit shown: ${id('~anon devkeep001')} (1 of 1 answers)`,
+    sign: `photos not of the unit shown: ${id('~anon devsign001')} (1 of 1 answers)`,
+    gone: `photos not of the unit shown: ${id('~anon devgone001')} (1 of 1 answers)`,
+    outAna: `left out of the statistics: device ${id('~anon devx00001')} signed in as ${id('Ana')}, left out too`,
+    outBen: `left out of the statistics: device ${id('~anon devx00002')} signed in as ${id('Ben')}, left out too`,
+    sdAna: `limit reached: sd:${id('Ana')} (3 per 6 h)`,
+    sdCat: `limit reached: sd:${id('Cat')} (3 per 6 h)`,
+    nCat: 'limit reached: n:cat (3000 per 6 h)',
+    nBen: 'limit reached: n:ben (3000 per 6 h)',
+    anon: 'limit reached: anon (6000 per 6 h)',
+    a: 'limit reached: a:devgone001 (600 per 6 h)',
+    ev: 'limit reached: ev:dev0000021 (200 per 6 h)',
+    other: 'a line in a format of the future'
+  };
+  const t0 = Date.now() - 60e3;
+  require('vm').runInContext("sheet_('Alerts', ['Time', 'Event'])", s.ctx);
+  Object.values(line).forEach((x, i) => s.sheets.Alerts.appendRow([new Date(t0 + i * 1000), x]));
+  const seen = () => s.post({readAlerts: 1, token: T}).rows.map(r => r[1]);
+  assert.strictEqual(seen().length, Object.keys(line).length, 'before: every line, each account and device current');
+  // The device signs in, another is deleted (anonDelete), Ben is deleted keeping his answers, Ana B merged into Ana, Cat archived.
+  s.post({name: 'Ana', pin: '1234', data: prog(2), summary: {}, anon: 'devsign001'});
+  assert.strictEqual(s.post({anonDelete: [id('~anon devgone001')], token: T}).answers, 1);
+  s.post({userDelete: 'Ben', token: T});
+  s.post({userMerge: {from: 'Ana B', into: 'Ana', data: prog(3)}, token: T});
+  s.post({userArchive: {from: 'Cat', into: 'Cat-old'}, token: T});
+  const kept = ['ana', 'keep', 'outAna', 'sdAna', 'anon', 'a', 'ev', 'other'].map(k => line[k]).reverse();
+  assert.deepStrictEqual(seen(), kept, 'only the live accounts, the device still not signed in, and the lines that name nobody');
+  const tab = JSON.stringify(s.sheets.Alerts.rows);
+  assert.ok(/n:~deleted [^ ]+ \(3000/.test(tab) && /n:cat-old \(3000/i.test(tab), 'redact_ rewrote the names in the tab');
+  ['anaB', 'ben', 'sign', 'gone', 'outBen', 'sdCat'].forEach(k => assert.ok(tab.includes(line[k]), `the tab keeps ${k}`));
 });
 
 test('new accounts are capped per 6 hours', () => {
@@ -2669,7 +2717,7 @@ test('v58 (Codex review #603): archiving moves the name mentions in the log tabs
   assert.ok(!/\(Ben\)/.test(tabText(s, 'Events')) && /\(Ben-old\)/.test(tabText(s, 'Events')), 'Events names the archive');
   assert.match(tabText(s, 'Alerts'), /n:Ben-old \(3000/);
   // The admin's To do › Alerts (readAlerts, vNEXT; rule D7, Codex review #996) leaves the archive's line out, as a normal
-  // view; a live account's line stays, under its admin id.
+  // view; a live account's line stays, under its admin id (every case: the readAlerts rule D7 test).
   require('vm').runInContext("sheet_('Alerts', ['Time', 'Event']).appendRow([new Date(), 'limit reached: n:ana (3000 per 6 h)'])", s.ctx);
   const al = s.post({readAlerts: 1, token: TOK}).rows.map(r => r[1]);
   assert.deepStrictEqual(al, [`limit reached: n:${require('vm').runInContext("aid_('Ana')", s.ctx)} (3000 per 6 h)`]);

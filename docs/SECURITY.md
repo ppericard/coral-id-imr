@@ -165,11 +165,16 @@ script writes there itself, never what a player sends:
 The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves it as the name's admin id (`aid_`, the
 id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name
 the player in brackets; the tab itself keeps the name, as before. A delete or a merge rewrites that mention in the tab
-(`redact_`: `~deleted <id>`, shown as it is, or the name it joined); an archive moves it to the archive's name, and the
-page leaves that line out (rule D7: an archive is in no normal view; the tab keeps it). **Not covered yet** (ROADMAP
-"Alerts lines follow the account"): the lines written by admin id (photos of another unit, a left-out device, `sd:`)
-never follow a delete, a merge or an archive, in the tab since #801; the page shows and counts them under the old name's
-id. Closing it means rewriting those ids in the tab on each of the three, a write-path change for its own PR.
+(`redact_`: `~deleted <id>`, or the name it joined); an archive moves it to the archive's name.
+
+**Rule D7** (the integrator, 2026-11-16): a line that names an account or a device (`n:<name>`, `sd:<admin id>`, the
+photos line, the left-out line by the account the device signed in as) is served only while its admin id is a current
+writer's: a live account (an RAs row, not archived) or a device not signed in that still has answers (`~anon <id>` in
+the Answers tab). So the page shows and counts nothing of a deleted (`~deleted <id>`), merged-away or archived account,
+nor of a device once it signed in (its answers are the account's) or was deleted; the tab keeps every line. The lines
+that name nobody stay (`a:` and `ev:` device ids, the global caps). **Not covered** (ROADMAP "Alerts lines of a name
+taken again"): an admin id is the name's, so a new account under a deleted or archived account's name shows that old
+account's id lines again; closing it means rewriting those ids in the tab, a write-path change for its own PR.
 
 ## If it happens
 

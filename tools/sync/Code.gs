@@ -1771,21 +1771,41 @@ function readEvents_(token, pages){
 // → {ok, rows: [[time ms, event]]}, newest first, the last 3000, as readEvents. Admins only (isAdmin_). The tab's writers:
 // over_ ("limit reached: <key> (<limit> per 6 h)"), photoCheck_'s line and the left-out device's line (both by admin id).
 // One over_ key names a player, the per-name answer cap ("n:<name>"): served as the name's admin id (aid_, the id admin
-// Players shows beside the name), so the page shows no name; a deleted account's "~deleted <id>" (redact_) stays as it is.
-// Rule D7 (Codex review #996): an archived account's line (redact_ moves it to the archive's name) is left out, as
-// readEvents_ leaves out an archive's page summaries. The tab itself is never changed here.
+// Players shows beside the name), so the page shows no name.
+// Rule D7 (the integrator, 2026-11-16; Codex review #996): a line that names an account or a device (alertId_) is
+// served only while that id is a current writer's (alertIds_): a live account, or a device not signed in that still has
+// its answers. So a deleted ("~deleted <id>", redact_), merged-away or archived account's line is left out, as
+// readEvents_ leaves out an archive's page summaries, and so is a device's once it signed in (its answers are the
+// account's then) or was deleted (anonDelete). The lines that name nobody (a: and ev: device keys, the global caps) stay.
+// The tab itself is never changed here.
 function readAlerts_(token){
   if (!isAdmin_(String(token || ''))) return {ok: false, error: 'token'};
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Alerts');
   if (!sh || sh.getLastRow() < 2) return {ok: true, rows: []};
-  const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_(), arch = archivedSet_();
-  // [line shown, the capped name or '']. Only redact_'s exact "~deleted <admin id>" is kept: a name may start with ~ too.
-  const NAMED = /^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/;
-  const see = s => { const m = NAMED.exec(s); return !m || /^~deleted [A-Za-z0-9+/]{8}$/.test(m[2]) ? [s, ''] : [m[1] + aid_(m[2], salt) + ' ' + m[3], m[2]]; };
-  const rows = sh.getRange(from, 1, n - from + 2, 2).getValues().filter(x => String(x[1]))
-    .map(x => [new Date(x[0]).getTime() || 0, see(String(x[1]))]).filter(x => !(x[1][1] && arch.has(lc_(x[1][1]))))
-    .map(x => [x[0], x[1][0]]);
+  const n = sh.getLastRow() - 1, from = Math.max(2, n + 2 - 3000), salt = anonSalt_();
+  let cur = null;  // the current ids, read once, only when a line names someone
+  const rows = sh.getRange(from, 1, n - from + 2, 2).getValues().filter(x => String(x[1])).map(x => [new Date(x[0]).getTime() || 0, String(x[1])])
+    .map(x => { const a = alertId_(x[1], salt); return !a ? x : (cur = cur || alertIds_(salt)).has(a.id) ? [x[0], a.line] : null; })
+    .filter(Boolean);
   return {ok: true, rows: rows.reverse()};
+}
+// The account or device an Alerts line names, as {id: its admin id (aid_), line: the line as served}, or null when it
+// names nobody. The per-name answer cap's "n:<name>" is served with the name's id in place of the name; the other three
+// formats are written by admin id (photoAlert_, the left-out device that signed in, the self-delete cap): a left-out line
+// follows the account the device signed in as (the device's own id has no answers of its own after that sign-in).
+function alertId_(s, salt){
+  const id = '([A-Za-z0-9+/]{8})', named = /^(limit reached: n:)(.*) (\(\d+ per 6 h\))$/.exec(s);
+  if (named) { const a = aid_(named[2], salt); return {id: a, line: named[1] + a + ' ' + named[3]}; }
+  const m = new RegExp('^photos not of the unit shown: ' + id + ' \\(').exec(s) || new RegExp('^left out of the statistics: device \\S+ signed in as ' + id + ',').exec(s) ||
+    new RegExp('^limit reached: sd:' + id + ' \\(').exec(s);
+  return m ? {id: m[1], line: s} : null;
+}
+// The admin ids of the current writers: every live account (liveRows_: an archive, a deleted or merged-away account has
+// no live row) and every device not signed in with answers in the Answers tab ("~anon <id>").
+function alertIds_(salt){
+  const ids = new Set(liveRows_(true).map(r => aid_(r[0], salt))), sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Answers');
+  if (sh && sh.getLastRow() > 1) new Set(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])).filter(w => w.indexOf('~anon ') === 0)).forEach(w => ids.add(aid_(w, salt)));
+  return ids;
 }
 
 // Progress % of a saved progress over a list of genera: core.js pctOf itself (v87; a copy until v86: the coherence
