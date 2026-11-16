@@ -134,6 +134,24 @@ test('the rank share: a list where nothing hangs from another is drawn as before
   assert.strictEqual(S.shareW(U.slate.slice(0, 3), ws), ws);
 });
 
+// A unit whose parent is no unit of the game hangs from nothing (the sea slugs' genera, the units of their circles, name a
+// family that is only their structure, #1020): never held, even with no unit of its parent's rank mastered.
+test('the rank share: a unit whose parent is not a unit of the game is never held', () => {
+  const vm = require('vm'),
+    {ctx} = RW.engine(X, RW.world(X, 5), {app: 'truth'}),
+    S = vm.runInContext('({sharesNow, shareW, shareRoom})', ctx),
+    G = vm.runInContext('GX', ctx),
+    [a, b] = X.c1;
+  G(a).parent = 'f:NotAUnit';
+  G(b).parent = 'f:NotAUnit';
+  ctx.P['~level'] = {ok: 1, ko: 0};
+  assert.strictEqual(S.sharesNow().lv.get(a), null);
+  assert.strictEqual(S.shareRoom(a), true);
+  assert.deepStrictEqual(S.shareW([a, b, X.c1[2]], [1, 1, 1]), [1, 1, 1]);
+  delete G(a).parent;
+  delete G(b).parent;
+});
+
 // Pierre's decisions that put scientific genera in the families' phase stay as they were (app.js shareFree): an IMR
 // player's IMR genera (Q219) and the set turned on by hand early (Q240) are never held by the share.
 test('the rank share leaves alone an IMR player’s IMR genera and the scientific names turned on by hand early', () => {

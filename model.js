@@ -485,19 +485,22 @@ const openChance = list => {
 // families are at Advanced, all of them free once every one is. A unit with no parent is never capped (the slate, the
 // coral bonus genera); a list of one level only is drawn as before. Nor is a unit the subject frees (app.js shareFree:
 // the units Pierre's decisions put in the families' phase, an IMR player's IMR genera from their family's Open Water,
-// Q219, and the scientific names turned on by hand early, Q240).
+// Q219, and the scientific names turned on by hand early, Q240). Nor is a unit whose parent is no unit of the game (the sea
+// slugs' genera, the units of their circles, name a family that is only their structure): it hangs from nothing.
 const SHARE = {AT: 1, POW: 2};
-const shareLv = n => {
+// The level n hangs from (its parent's rank), null for none; inPool: the units of the game (a parent outside: none).
+const shareLv = (n, inPool) => {
   const p = (GX(n) || {}).parent;
-  return p ? (typeof rankOf === 'function' ? rankOf(p) : '') : null;
+  return p && (!inPool || inPool.has(p)) ? (typeof rankOf === 'function' ? rankOf(p) : '') : null;
 };
 let SHARES = null;
 const sharesNow = () => {
   const tick = SUBJ.id + '|' + answersSoFar() + '|' + (typeof Q === 'object' ? JSON.stringify(Q) : '');
   if (SHARES && SHARES.tick === tick) return SHARES;
   const L = typeof pool === 'function' ? pool() : slateGenera(),
+    inPool = new Set(L),
     free = new Set(typeof shareFree === 'function' ? shareFree() : []),
-    lv = new Map(L.map(n => [n, free.has(n) ? null : shareLv(n)])),
+    lv = new Map(L.map(n => [n, free.has(n) ? null : shareLv(n, inPool)])),
     cap = {},
     w = {};
   new Set([...lv.values()].filter(x => x !== null)).forEach(k => {
@@ -511,9 +514,9 @@ const sharesNow = () => {
     const k = lv.get(n) === null ? '~' : lv.get(n);
     w[k] = (w[k] || 0) + drawW(n);
   });
-  return (SHARES = {tick, free, lv, cap, w});
+  return (SHARES = {tick, inPool, free, lv, cap, w});
 };
-const shareLvNow = (S, n) => (S.lv.has(n) ? S.lv.get(n) : S.free.has(n) ? null : shareLv(n));
+const shareLvNow = (S, n) => (S.lv.has(n) ? S.lv.get(n) : S.free.has(n) ? null : shareLv(n, S.inPool));
 // The weights ws of the units list (weighted), those hanging from a level scaled down so that together they take at most
 // its cap of the total (the others keep theirs). None scaled when the list holds only them.
 const shareW = (list, ws) => {
