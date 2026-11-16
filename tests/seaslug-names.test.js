@@ -223,6 +223,12 @@ test('app.js: the names of a unit or taxon by its tree id, the first capitalised
   const T = treeTypeOther('genus');
   assert.ok(T.common.includes('Sea bunny') && T.common.includes('polyceras'));
   assert.ok(!T.sci.includes('Sea bunny'));
+  // core.js typeElse (quiz.js typeKind) reads it so: "“Sea bunny” is a common name: this question needs a genus's
+  // scientific name", the genus names themselves being no common name
+  const C = require('../core.js'),
+    G = [{k: C.typeNormAll('Aa'), g: 'g:Aa', old: '', alt: 0}];
+  assert.strictEqual(C.typeElse('sea bunny', [], {...T, rank: () => 'genus'}, C.typeNormAll), 'common');
+  assert.strictEqual(C.typeElse('Aa', G, {...T, rank: () => 'genus'}, C.typeNormAll), '');
   // a subject whose UNITS has no vern (the fish keep their own names): nothing
   ctx.set(F, 'f');
   assert.deepStrictEqual([...ctx.M.vernOf('s1')], []);
