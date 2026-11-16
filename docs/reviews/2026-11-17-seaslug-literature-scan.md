@@ -424,7 +424,11 @@ Proposed entries, `subj: "seaslug"`, neutral wording; each with its sources as a
 
 ### 5.4 Look-alike pairs with a source (for the look-alike survey, rule C2 and C6)
 
-Both species of each pair are confirmed in the Philippines (rule C8), so each can serve as a cue's doubt:
+The [look-alike survey](2026-11-17-seaslug-lookalikes-survey.md) (#1029) found *C. alcalai* / *C. dianae* "the
+strongest pair of the genus, and no source names it" (iNaturalist's similar species: 12 confusions in the Philippines,
+57 worldwide), and *T. pacifica* / *T. pikachu* in its data only (27 worldwide). This scan gives each a written source,
+both through seaslug.world's species pages, which restate the papers (the papers' full texts not read). Both species of
+each pair are confirmed in the Philippines (rule C8), so each can serve as a cue's doubt:
 - *Thecacera pacifica* / *T. pikachu*: spots on the body and plain black tips against no spots and blue-white tips with a
   black band (seaslug.world, after Pola et al. 2026).
 - *Chromodoris alcalai* / *C. dianae*: confused until 2021; "separated by molecular evidence, external morphology,
