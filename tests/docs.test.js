@@ -368,3 +368,105 @@ test('docs/PAGES.md lists every workflow, and only workflows that exist', () => 
     'docs/PAGES.md lists workflows that are not in .github/workflows/'
   );
 });
+
+// Governance refonte, the identifier-existence check (Pierre, 2026-11-05): the code identifiers the governing docs cite in
+// backticks still exist. Scope: AGENTS.md, docs/rules/*.md, ARCHITECTURE, HANDOVER, INTEGRATOR and LEARNING, the docs an agent
+// follows or takes over from. ROADMAP and STATUS name work to come and are overwritten daily, README / PAGES / FORMATS / DESIGN
+// have no habit of naming code, and the archive and the copied reviews are history. Offline: files only. Two forms count:
+//   - a backticked path (`tools/x.py`, `tests/y.test.js`, `admin.js`, `tools/` ...) exists: from the root, from the doc's own
+//     folder, or (a bare file name) anywhere in the repo; a folder only when its first segment is a folder of the repo;
+//   - a backticked file followed by a backticked name (`core.js` `faOf`, `learn.js` `classics()`) finds the name, as a word, in
+//     that file. A bare name with no file is out of scope (a name alone is too often a word, a key or a path's part).
+// Fix the doc when a reference is simply stale. The list below is only for what a doc names on purpose though it is not (or no
+// longer) in the repo; each entry says why, and an entry that matches nothing any more fails, so the list cannot rot.
+const ID_DOCS = [
+  'AGENTS.md',
+  ...fs
+    .readdirSync(path.join(ROOT, 'docs', 'rules'))
+    .filter(f => /\.md$/.test(f))
+    .map(f => 'docs/rules/' + f),
+  'docs/ARCHITECTURE.md',
+  'docs/HANDOVER.md',
+  'docs/INTEGRATOR.md',
+  'docs/LEARNING.md'
+];
+// A path is the span as written; a pair is "<file> <name>" as written; prefix: every path starting with the key.
+const ID_ALLOW = [
+  {key: 'package.json', why: 'named to say it must never exist (rule W12)'},
+  {key: 'curation-play.json', why: 'written at deploy and by the smokes, git-ignored (tools/curplay.py)'},
+  {key: 'tools/.cache/', prefix: true, why: 'git-ignored: what the tools cache on the machine that ran them'},
+  {key: 'answers_fresh.json', why: "a read-only copy of the sheet's Answers tab (2026-11-03) that was never committed"},
+  {key: 'tools/fishscore.js', why: 'retired tool, cited in the history of the fish score (LEARNING: "since retired")'},
+  {key: 'docs/reviews/2026-11-09-admin-signout-seal.md', why: 'the note lives on the branch claude/admin-signout-seal only (INTEGRATOR)'},
+  {key: 'core.js replayFloor', why: 'removed 2026-11-09 (Q330); the doc tells its history (LEARNING, the version history)'},
+  {key: 'core.js FISHPH', why: "the stopgap's minimum, removed with it; LEARNING tells the plan that replaced it (tests/fishgame.test.js)"},
+  {key: 'core.js photoTimeW', why: "built on #808's branch only, never merged (LEARNING says so)"},
+  {key: 'tools/fish_photos.py his_ok', why: 'the stopgap\'s function, retired 2026-11-15 (rule P1 says "until 2026-11-15")'}
+];
+const ID_TREE = (() => {
+  const skip = new Set(['.git', 'node_modules', 'worktrees']),
+    files = new Set(),
+    names = new Map();
+  const walk = dir => {
+    for (const e of fs.readdirSync(dir, {withFileTypes: true})) {
+      if (skip.has(e.name)) continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else {
+        files.add(path.relative(ROOT, p).split(path.sep).join('/'));
+        names.set(e.name, [...(names.get(e.name) || []), path.relative(ROOT, p).split(path.sep).join('/')]);
+      }
+    }
+  };
+  walk(ROOT);
+  return {files, names};
+})();
+const ID_EXT = 'js|py|gs|html|css|md|json|yml|yaml|sh|tsv|txt';
+// The files a cited file name may mean: exact path, relative to the doc's folder, or a bare name anywhere in the repo.
+const idFiles = (doc, s) => {
+  const rel = path.posix.join(path.posix.dirname(doc), s);
+  return ID_TREE.files.has(s) ? [s] : ID_TREE.files.has(rel) ? [rel] : s.includes('/') ? [] : ID_TREE.names.get(s) || [];
+};
+
+test('the code identifiers the docs cite in backticks still exist', () => {
+  const used = new Set(),
+    bad = [];
+  const allowed = key => {
+    const a = ID_ALLOW.find(x => (x.prefix ? key.startsWith(x.key) : key === x.key));
+    if (a) used.add(a.key);
+    return !!a;
+  };
+  for (const doc of ID_DOCS) {
+    const src = fenceless(read(doc));
+    const seen = new Set();
+    for (const m of src.matchAll(/`([^`\n]+)`/g)) {
+      const s = m[1];
+      if (new RegExp('^[\\w.\\/-]+\\.(' + ID_EXT + ')$').test(s)) {
+        if (!idFiles(doc, s).length && !allowed(s)) seen.add('path `' + s + '`');
+      } else if (/^[\w.-]+(\/[\w.-]+)*\/$/.test(s)) {
+        const top = s.split('/')[0];
+        const here = p => [...ID_TREE.files].some(f => f.startsWith(p));
+        if (here(top + '/') && !here(s) && !here(path.posix.join(path.posix.dirname(doc), s)) && !allowed(s))
+          seen.add('folder `' + s + '`');
+      }
+    }
+    for (const m of src.matchAll(/`([\w./-]+\.(?:js|py|gs|html|css|yml))`\s+`([A-Za-z_$][\w$]*)(?:[.(\[][^`\n]*)?`/g)) {
+      const files = idFiles(doc, m[1]);
+      if (!files.length) continue; // the missing file is the path check's finding
+      const word = new RegExp('(^|[^\\w$])' + m[2].replace(/\$/g, '\\$') + '(?![\\w$])');
+      if (!files.some(f => word.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))) && !allowed(m[1] + ' ' + m[2]))
+        seen.add('`' + m[1] + '` has no `' + m[2] + '`');
+    }
+    for (const s of seen) bad.push(doc + ': ' + s);
+  }
+  assert.deepStrictEqual(
+    bad,
+    [],
+    'identifiers the docs cite that are gone: fix the doc (or, for a history on purpose, ID_ALLOW with its reason)'
+  );
+  assert.deepStrictEqual(
+    ID_ALLOW.filter(a => !used.has(a.key)).map(a => a.key),
+    [],
+    'ID_ALLOW entries no doc needs any more: delete them'
+  );
+});
