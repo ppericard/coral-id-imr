@@ -1,1 +1,0 @@
-The sheet script's one GitHub call (`isAdmin_`, `GET /repos/{repo}`) now sends `X-GitHub-Api-Version: 2026-03-10` (rule W9, stack bump of 2026-11-16); none of that version's breaking changes touches that endpoint's fields (`permissions`), so the check behaves as before.
