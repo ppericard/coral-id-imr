@@ -712,6 +712,100 @@
         {"t": "iNaturalist, Facelinidae (its ancestry)", "u": "https://www.inaturalist.org/taxa/47211"},
         {"t": "tools/seaslug_groups.json (2026-11-16)"}
       ]
+    },
+    {
+      "id": "seaslug-name-spanish-dancer",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Spanish dancer\": Hexabranchus sanguineus, H. lacer or the genus?",
+      "q": "The sources give \"Spanish dancer\" to Hexabranchus sanguineus (iNaturalist, WoRMS, Wikipedia, SEASLUG.WORLD, nudibranch.com.au), to H. lacer (SEASLUG.WORLD's article on the nicknames: the one Japanese divers know, since the genus was split) and, as \"Spanish Dancers\", to the genus Hexabranchus (iNaturalist; DAN's Alert Diver: \"hexabranchs, also known as Spanish dancers\"). The app shows the name, as information, on each taxon a source gives it to. Keep it so, or show it on one of them only?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17; Pierre, 2026-11-17: the sea slugs' common names and nicknames as information wherever names are shown). Nothing settled (rule C5); the game's choices stay scientific names.",
+        "H. lacer's own English names in iNaturalist: Decumbent Spanish Dancer, Mottled Spanish Dancer, Torn Spanish Dancer; WoRMS: mottled Spanish dancer. The Philippine Spanish dancers are mostly H. lacer (study 2.3; the list note's sources note, 1.5: Tibiriçá et al. 2023 split the genus)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Hexabranchus sanguineus", "u": "https://www.inaturalist.org/taxa/244849"},
+        {"t": "iNaturalist, Hexabranchus", "u": "https://www.inaturalist.org/taxa/49745"},
+        {"t": "WoRMS, Hexabranchus sanguineus", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=220381"},
+        {"t": "English Wikipedia, Spanish dancer", "u": "https://en.wikipedia.org/wiki/Spanish_dancer"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "Gary Cobb, nudibranch.com.au, Naming Nudibranchs", "u": "https://nudibranch.com.au/common.html"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-pikachu",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Pikachu nudibranch\": Thecacera pacifica or T. pikachu?",
+      "q": "\"Pikachu nudibranch\" is Thecacera pacifica's nickname in iNaturalist and Wikipedia (\"sometimes also nicknamed the Pikachu nudibranch\"), and \"Pikachu\" its nickname among Japanese divers (SEASLUG.WORLD, whose table of viral nicknames gives \"Pikachu\" to both species); SEASLUG.WORLD's species page also calls Thecacera pikachu, described in 2026 and named after the nickname, \"Pikachu Nudibranch\". Both species are in the game. Keep the name on both?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5); the game's choices stay scientific names.",
+        "SEASLUG.WORLD's article: \"When a Japanese diver says \"Pikachu,\" this is the animal\" (T. pacifica); \"The internet nickname went straight into the scientific name\" (T. pikachu)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Thecacera pacifica", "u": "https://www.inaturalist.org/taxa/142790"},
+        {"t": "English Wikipedia, Thecacera pacifica", "u": "https://en.wikipedia.org/wiki/Thecacera_pacifica"},
+        {"t": "SEASLUG.WORLD, Thecacera pikachu", "u": "https://en.seaslug.world/species/thecacera_pikachu"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-leaf-sheep",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Leaf sheep\", \"Shaun the Sheep\": Costasiella kuroshimae or an undescribed Costasiella?",
+      "q": "iNaturalist, Wikipedia and Florent's Guide give \"Leaf sheep\" to Costasiella kuroshimae, and iNaturalist, DIVERNET and DAN's Alert Diver give it \"Shaun the Sheep\" (\"Shaun the Sheep, or Costasiella kuroshimae, can be found in shallow waters in the Philippines\"; \"Costasiella kuroshimae, also known as leaf sheep or Shaun the Sheep\"); SEASLUG.WORLD says the animal of the viral posts, with pink cheeks, is Costasiella sp. 3, not formally described yet, and that C. kuroshimae \"gets labeled 'leaf sheep' just as often\". The app shows both names on C. kuroshimae. Keep them there?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). Costasiella sp. 3 is not in the game (no scientific name)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Costasiella kuroshimae", "u": "https://www.inaturalist.org/taxa/469221"},
+        {"t": "English Wikipedia, Costasiella kuroshimae", "u": "https://en.wikipedia.org/wiki/Costasiella_kuroshimae"},
+        {"t": "DIVERNET (Scuba Diver Magazine), Shaun The Sheep Slug: The Satori Of Diving (2025-09-21)", "u": "https://divernet.com/scuba-news/marine-biology/shaun-the-sheep-slug-the-satori-of-diving/"},
+        {"t": "DAN Alert Diver, A Quest for Life (2025-08-28)", "u": "https://dan.org/?p=53983"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-blue-dragon",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Blue dragon\": Pteraeolidia semperi, the genus, P. ianthina or Glaucus?",
+      "q": "iNaturalist and SEASLUG.WORLD give \"Blue Dragon\" to Pteraeolidia semperi (SEASLUG.WORLD: the reef one) and iNaturalist \"Blue Dragons\" to the genus Pteraeolidia; nudibranch.com.au gives it to Pteraeolidia ianthina (not in the game), and SEASLUG.WORLD notes the nickname is used as much for the pelagic Glaucus atlanticus (not in the game). The app shows it on P. semperi and on the genus. Keep it so?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). The species list's source already marked \"blue dragon\" as a point to check (tools/seaslug_source.json nicknames, ask)."
+      ],
+      "src": [
+        {"t": "iNaturalist, Pteraeolidia semperi", "u": "https://www.inaturalist.org/taxa/469568"},
+        {"t": "iNaturalist, Pteraeolidia", "u": "https://www.inaturalist.org/taxa/48754"},
+        {"t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)", "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"},
+        {"t": "Gary Cobb, nudibranch.com.au, Naming Nudibranchs", "u": "https://nudibranch.com.au/common.html"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
+    },
+    {
+      "id": "seaslug-name-sea-hares",
+      "kind": "names",
+      "subj": "seaslug",
+      "at": "2026-11-17",
+      "title": "\"Sea hares\": the family Aplysiidae and the genus Aplysia",
+      "q": "iNaturalist and WoRMS call the family Aplysiidae \"Sea Hares\"; WoRMS gives the genus Aplysia the same name. The app shows it on both, as information. Keep it so?",
+      "ctx": [
+        "Found by tools/seaslug_names.py (2026-11-17). Nothing settled (rule C5). The game asks the genera (Aplysia, Dolabella, Stylocheilus in this family), never the family; a typed English name is never a right answer."
+      ],
+      "src": [
+        {"t": "iNaturalist, Aplysiidae", "u": "https://www.inaturalist.org/taxa/48656"},
+        {"t": "WoRMS, Aplysiidae", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=172"},
+        {"t": "WoRMS, Aplysia", "u": "https://www.marinespecies.org/aphia.php?p=taxdetails&id=137654"},
+        {"t": "tools/seaslug_names.json (2026-11-17)"}
+      ]
     }
   ]
 }
