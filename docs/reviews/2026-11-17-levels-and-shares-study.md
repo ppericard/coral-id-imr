@@ -50,6 +50,10 @@ Each of these decides something different; the study keeps that apart, so that n
 | `TYPED`, the single-view share (corals), the name-display schedule (FISH_PATH, not built) | **the question's format**, a ramp on the unit's own level | `model.js` |
 | Starred genera after their references (rule L5) | an opening order between units of one level (look-alikes), not a level | `core.js` `starRefs` |
 
+`RARE` is already the shape this study proposes, for one slice of a unit's photos: the photos under ease 4 take at
+most 10% of the unit's draw until **that unit** reaches Open Water (Q252, Q271). In the app world it is also what keeps
+most juveniles back today: their judged ease is capped at 2, so before Open Water they fall under it.
+
 What overlaps today: #975's share and #953's stage answer the same question ("how much of the level below, from the
 mastery above") with two mechanisms keyed on two different things (a level's share at Advanced; a unit's answer
 count), and the juvenile ease cap answers part of it a third way, through the photo's difficulty. The rule below
@@ -137,7 +141,7 @@ difficulty is at the species). A family whose species should come earlier gets a
 | species from its family; scientific genus from its family | 0.8 (Advanced) | 0.8 (a step), or 0.9 (a ramp) | Pierre, 2026-11-03 (species at Advanced), 2026-11-08 (genera back at Advanced) |
 | an IMR player's IMR genera; genera turned on by hand early | 0.5 (Open Water) | 0.5 | Q219, Q240: they stay as #975's `shareFree` (out of the cap) |
 | jE, an early-class juvenile | 0 | 0 | 2026-11-04: they help learn the family early; Q384 "très rapidement" |
-| j, another juvenile | 0.5 (Open Water) | 0.8 (Advanced) | 2026-11-07: never at the very start, then in stages; about #953's 10-20 answers |
+| j, another juvenile | 0.5 (Open Water) | 0.8 (Advanced) | 2026-11-07: never at the very start, then in stages; Q384 "à partir d'une certaine maîtrise" (a family reaches Open Water at about its 9th answer for the strong RA, its 30th for the beginner: the rated world on main, medians) |
 | jL, a late-class juvenile | 0.8 | 0.9 | 2026-11-04: "taught later, with their explanation card" |
 | ph, a sex or colour phase | 0.5 | 0.8 | the 2026-11-07 row; a = 0 at the family rank outside `dimorph` is the alternative (2026-11-04) |
 
@@ -217,8 +221,56 @@ Means over the 5 seeds; beginner / casual diver / lecture RA / strong RA / exper
 on a unit that has such photos, asked in its first 10 answers, that show one; "first": the unit's answers before the
 first one shown (mean over the units that showed one).
 
-RESULTS_TABLE
+**The ranks** (at 3,000 answers):
+
+| Arm | Families at Advanced (of 32 in play) | Fish % shown | Share of answers on genera | On species | Species at Open Water |
+| --- | --- | --- | --- | --- | --- |
+| main | 21.2 / 32.0 / 25.4 / 25.4 / 27.0 | 42.6 / 42.0 / 45.6 / 53.0 / 53.2 | 0.50 / 0.00 / 0.57 / 0.66 / 0.66 | 0 | 0 |
+| 975 | 30.8 / 30.6 / 30.2 / 30.4 / 31.4 | 44.2 / 43.2 / 47.2 / 51.8 / 54.2 | 0.26 / 0.00 / 0.36 / 0.36 / 0.34 | 0.12 / 0.39 / 0.13 / 0.20 / 0.24 | 5 / 13 / 5 / 10 / 36 |
+| 975+953 | 30.2 / 31.2 / 29.8 / 30.6 / 31.0 | 43.6 / 43.0 / 47.0 / 51.0 / 53.8 | 0.26 / 0.00 / 0.36 / 0.35 / 0.34 | 0.13 / 0.39 / 0.14 / 0.21 / 0.23 | 6 / 12 / 6 / 6 / 36 |
+| A | 30.4 / 30.8 / 29.6 / 30.2 / 30.6 | 44.0 / 42.6 / 47.2 / 51.2 / 54.0 | 0.27 / 0.00 / 0.33 / 0.34 / 0.34 | 0.12 / 0.39 / 0.16 / 0.22 / 0.23 | 5 / 10 / 7 / 7 / 35 |
+| B | **19.2 / 13.6 / 20.2 / 21.8 / 19.2** | **40.6 / 38.4 / 43.4 / 46.4 / 51.4** | 0.16 / 0.00 / 0.24 / 0.22 / 0.16 | 0.32 / 0.51 / 0.35 / 0.48 / 0.59 | 6 / 2 / 6 / 3 / 82 |
+| C | 31.8 / 31.8 / 31.0 / 30.8 / 32.0 | 44.8 / 43.2 / 47.6 / 51.6 / 53.0 | 0.24 / 0.00 / 0.34 / 0.35 / 0.32 | 0.11 / 0.35 / 0.10 / 0.16 / 0.20 | 5 / 10 / 7 / 8 / 30 |
+C0_RANKS
+
+**The variants** (questions 1-3,000; "at Advanced": exploratory, added after the screen, the share among the questions
+on a unit already at Advanced, which only the scratch arms record):
+
+| Arm | Early-class juveniles, early | Other juveniles, early | Late-class juveniles, early | Sexes and phases, early | First other juvenile (answers on the unit) | Other juveniles at Advanced |
+| --- | --- | --- | --- | --- | --- | --- |
+| main | 0.19 / 0.14 / 0.19 / 0.18 / 0.20 | 0.15 / 0.09 / 0.13 / 0.14 / 0.15 | 0.09 / 0.08 / 0.10 / 0.12 / 0.11 | 0.14 / 0.13 / 0.16 / 0.16 / 0.17 | 6 / 15 / 7 / 6 / 5 | - |
+| 975 | 0.19 / 0.22 / 0.19 / 0.23 / 0.21 | 0.13 / 0.12 / 0.13 / 0.13 / 0.13 | 0.12 / 0.11 / 0.14 / 0.11 / 0.11 | 0.21 / 0.27 / 0.18 / 0.18 / 0.20 | 7 / 8 / 7 / 6 / 5 | 0.10 / 0.11 / 0.10 / 0.11 / 0.10 |
+| 975+953 | **0 / 0 / 0 / 0 / 0** | 0 / 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 / 0 | 19 / 20 / 18 / 18 / 18 | 0.10 / 0.10 / 0.11 / 0.11 / 0.12 |
+| A | 0.19 / 0.21 / 0.20 / 0.21 / 0.22 | 0.00 / 0.00 / 0.00 / 0.01 / 0.01 | 0 / 0 / 0 / 0 / 0 | 0.00 / 0.02 / 0.01 / 0.02 / **0.04** | 36 / 35 / 25 / 17 / 16 | 0.11 / 0.11 / 0.10 / 0.10 / 0.10 |
+| B | 0.20 / 0.21 / 0.22 / 0.22 / 0.24 | 0.00 / 0.01 / 0.00 / 0.00 / 0.01 | 0.00 / 0.01 / 0 / 0 / 0 | 0.00 / 0.00 / 0.00 / 0.01 / 0.02 | 37 / 31 / 27 / 17 / 12 | 0.09 / 0.12 / 0.12 / 0.10 / 0.12 |
+| C | 0.19 / 0.22 / 0.22 / 0.18 / 0.20 | 0.00 / 0.00 / 0.00 / 0.01 / 0.01 | 0 / 0 / 0 / 0 / 0 | 0.00 / 0.00 / 0.00 / 0.01 / 0.03 | 39 / 38 / 31 / 18 / 17 | 0.12 / 0.12 / 0.11 / 0.11 / 0.12 |
+C0_VARIANTS
 
 **Every step, read one at a time.**
 
-STEP_READING
+- **Family → genus.** On main the scientific genera take half to two thirds of the answers by 3,000 (the beginner, the
+  RAs, the expert; the casual diver declines them). Every rule with a cap on the child units (975, 975+953, A, C, C0)
+  brings them to about a third, as Q382 meant (the "too early, too strong" of 2026-11-08): the cost Q388 already put to
+  Pierre (the strong RA's genera at Open Water 80 → about 50). B, with no cap, gives the genera even less (0.16-0.24),
+  only because the species take the room.
+- **Family / genus → species.** With a cap the species take 0.10-0.24 of the answers (the casual diver, who has nothing
+  else below the families, 0.35-0.39) and the families at Advanced stay at 30-32 of 32 for every profile. **Without a
+  cap (B) the crowding of #975's first build comes back**: the species take 0.32-0.59 of the answers, and the families
+  at Advanced fall to 14-22. A per-unit ramp is not enough for units that take questions from the others.
+- **Unit → its early-class juveniles** ("très rapidement"). Main shows one in about 19% of the first 10 questions on a
+  unit that has some, from about its 5th answer. #953 as built holds them back with the rest (0 in the first 10; the
+  first at about the 17th answer, for every profile). A, B, C and C0 keep them as main does (about 0.2), from about the
+  unit's 4th-6th answer: Pierre's classes of 2026-11-04, read from the data.
+- **Unit → its other juveniles, its sexes and colour phases.** Main and 975 show them from the first answers (13% and
+  14-27% of the first 10 questions). #953 holds every one to 0 until the unit's 10th answer, then ramps: the first at
+  about the 18th-20th answer whatever the player. The mastery rules hold them to 0-0.02 early too, but **the first one
+  comes with the player's mastery of that unit**: at about the 12th-18th answer for the strong RA and the expert, the
+  25th-39th for the beginner and the casual diver, whose families reach Open Water at about their 30th answer (the
+  median on main). A, pooled over the level, lets the expert's phases into a unit's first questions (0.04, 0.06 for the
+  units met after the 1,000th answer); B, C and C0 keep them at 0.03 or less.
+- **No wall.** Read by answers (once a unit has 20 answers), #953 shows the variants as main does, and the mastery rules
+  fewer for the slow profiles (the beginner's other juveniles 0.05-0.07 against 0.12): by design, a unit not yet at Open
+  Water holds them, however many answers it took. Read by mastery (once the unit is at Advanced), every rule shows the
+  other juveniles, the sexes and the phases as 975, which holds nothing (0.09-0.12 and 0.13-0.17). The late-class
+  juveniles are the exception under B, C and C0, whose ramp for them ends at 0.9, above the exam's 0.85: 0.00-0.06
+  against 0.04-0.07. Their full weight should come by Advanced (a = b = 0.8), a data value.
