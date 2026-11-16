@@ -18,7 +18,7 @@
 #   python3 tools/photos.py --check     fails if a photo of img/ lacks one of its sizes, a photo with no online original
 #                                       is missing from img/, or a photo with one is in img/ (CI)
 #   python3 tools/photos.py --r2-list   the photos that live on R2 only, one per line (tools/r2_sync.sh checks the
-#                                       bucket has their four files)
+#                                       bucket has their four files), the sea slugs' included once on R2
 #   python3 tools/photos.py --r2-tiles  the fish photos with a tile (fish-game.json xc: a fifth file, {f}-x.webp, the
 #                                       360 px square of "Find the X" and Matrix, tools/fish_game.py), one per line
 #                                       (tools/r2_sync.sh checks the bucket has it too)
@@ -31,8 +31,9 @@ IMG = os.path.join(ROOT, 'img')
 SIZES = ((1600, 78, ''), (960, 72, '-m'), (480, 72, '-s'), (240, 70, '-t'))
 SUFFIXES = tuple(s for _, _, s in SIZES)
 # The files that hold photo records (dicts with f): the game and sheet photos, the candidates waiting, the fish photos (on
-# R2: fish-game.json, and fish-photos.json's first and sheet-only photos, tools/fish_game.py).
-DATA = ('data.json', 'cand.json', 'fish-photos.json', 'fish-game.json')
+# R2: fish-game.json, and fish-photos.json's first and sheet-only photos, tools/fish_game.py), the sea-slug photos in play
+# (seaslug-game.json: on R2 once tools/seaslug_game.py --r2 has downloaded them, remote r: 1 until then).
+DATA = ('data.json', 'cand.json', 'fish-photos.json', 'fish-game.json', 'seaslug-game.json')
 CACHE = os.path.join(ROOT, 'tools', '.cache', 'r2')  # gitignored
 UA = {'User-Agent': 'coral-id-imr/1.0'}  # R2's public address refuses Python's default user agent
 
