@@ -73,7 +73,8 @@ Labels (rule W11): **[measured]** = counted by the tool from the replies; **[rea
 ### 1.3 The specialist sources (read by hand, in the source file)
 
 - **Nudi Pixel, "Nudibranch Look-Alikes"** (<https://nudipixel.net/similarities>) **[read]**: an index of 42
-  comparison cards, "X vs. Y" or a group of 3 to 6 species, made with "input from experts and the experiences of
+  comparison cards (its title says 46; 42 were on the page read), "X vs. Y" or a group of 3 to 6 species, made with
+  "input from experts and the experiences of
   photographer friends". It is the closest thing to a published list of confusion groups. Copyrighted ("may not be
   reproduced ... without written permission"): cited, never copied beyond the names.
 - **The Sea Slug Forum** (Bill Rudman, Australian Museum, 1998-2010) **[read]**: the fact sheets that name look-alikes,
