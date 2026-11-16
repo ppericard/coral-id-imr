@@ -5,7 +5,7 @@ file), overwritten at each stop, never appended; at most about 100 lines (`tests
 (open PRs and their checks, branches without a PR, the sheet script's live version) is printed by
 `python3 tools/brief.py`, not written here. History: `git log`, the PR descriptions.
 
-Written 2026-11-16, about 17:45 Manila, by the integrator (an evening checkpoint; the session goes on, Rule 0 holds).
+Written 2026-11-16, about 19:10 Manila, by the integrator (the night checkpoint; no agent running).
 **A new integrator starts here, then reads [INTEGRATOR.md](INTEGRATOR.md).**
 
 Last checked: reports and events: 2026-11-16 ~07:48 Manila (none since 11-12 needing action: one `err` "left with a
@@ -13,29 +13,30 @@ card open", two "save recovered"; summary given to Pierre)
 
 ## Now
 
-Main: sheet script **v156** (#981). Every PR merges through a train, even alone (#1001, Pierre's own PR).
+Main: sheet script **v158** (#1024). Every PR merges through a train, even alone (#1001, Pierre's own PR).
 
-- **Merged on 11-16** (24 PRs, #997-#1019 and #981): the morning's list is in the 11:35 STATUS (git history); since
+- **Merged on 11-16** (29 PRs, #997-#1024 and #981): the morning's list is in the 11:35 STATUS (git history); since
   then: STATUS (#1014); 16 fish candidates (#1015); sea slug **R2 on** (#1016, Q387) and its first run (2,465 photos
   on R2, 0 failed); Pierre's own sea slug photos by the fish's rule (#1017, Q386: 116 added, 111 of them Research
   Grade his search now takes first) and judged (#1019, 74 new photos in play, uploaded by the Candidate photos run
   it triggers); two smokes made stale by R2 fixed (#1018); **roles step 1** (#981, Q383 A, v156, `readAlerts` in
-  `gate_`: Pierre tests it in use).
-- **Agents running**: (1) sea slugs: **genera as the game units**, the Learn page **taxonomic group → family → genus**
-  (Pierre 15:00-15:45, his grouping "parfait !"), PR #1020; (2) **#975 reworked on Q382's answer**: one global
-  mechanism, the share of questions at each rank set by the mastery of the ranks above (no "one at a time"); built to
-  take the phases next (Q384), with two-world checks and the 10,000-answer rated run.
-- **Held**: #953 (redo on #975's mechanism, Q384), #988 (plain OK), both `needs-pierre`.
+  `gate_`: Pierre tests it in use); sea slugs **genera as the game units** (78) and the Learn page **WoRMS group →
+  family → genus** (#1020, v157; his decisions of 15:00-15:45); STATUS (#1021); 3 fish dups (#1022); the **held-out
+  set's data side** (#1023: per species, 10% ≥5, 8 kept: 3,232 observations, not wired yet); the sea slugs' heatmap
+  (#1024, v158).
+- **Held for Pierre** (`needs-pierre`, green): **#975** reworked on Q382 (the rank share `model.js` `SHARE`, cap m² of
+  the parent level at Advanced; Q388 below); #953 (redo on #975's mechanism, Q384); #988 (plain OK).
+- **No agent running.**
 - **Kept on branches, no PR (W27)**: admin-signout-seal, level-count-from-log, fish-todo-wip (moot: delete when Pierre
   says), photo-genus-ability. Suggested task: check admin.js's GitHub API header in a real browser (CORS).
 
 ## Next
 
-1. #1020 and #975: check, `--assign` where `Code.gs`/`core.js` change, Codex, train. Send Pierre the Learn page
-   screenshots of #1020 (in the morning: a visual check is a question).
-2. After #975: #953 redone on its mechanism (juveniles and phases per family/genus/species, juveniles early: Q384);
-   the held-out set (Q385: granularity the integrator's call, e.g. per species where a family has species units).
-3. The sea slugs' next judging pass if candidates wait; 3 fish candidates in 2 species wait (the refill).
+1. Morning: send Pierre the Learn page screenshots of #1020 (info, easy to correct: the session scratchpad
+   `shots-seaslug-genera/`, else retake), Q388 and the plain questions below.
+2. Q388 answered: #975 merge `main`, `--assign` (its `SPECIES_SHEET` gate), Codex, train; then #953 redone on its
+   mechanism (Q384) and the held-out set wired into the draw and the exam (#1023's paragraph), each with L11 checks.
+3. Judging passes as candidates arrive (the Candidate photos refills); `judging_fish.py todo` (fish, `--subject seaslug`).
 4. The other ROADMAP "Next" rows. Deadline: the domain and repository rename before December 2026 (#886).
 
 ## Questions for Pierre
@@ -46,8 +47,14 @@ thresholds per family, genus or species; **Q385** yes, granularity left to the i
 **Q387** A (R2 at ~7-8 GB of the 10 GB free: warn him before any next big upload). Sea slugs: genera, not families
 (15:00); Learn grouped by family and taxonomic group, Nudibranchia (Doridina, Cladobranchia) first (15:43-15:45).
 
-Still open (plain, for the morning):
+Still open, for the morning:
 
+- **Q388 #975 at m²** (the share of genus and species questions ≤ (share of the parent level at Advanced)²): the
+  families' loss is gone (Advanced at 3,000: ~30 for every profile, main 21-32), fish % at 10,000 +0.6 to +9.8 for
+  three profiles; costs: beginner and lecture RA −1.8/−1.6 points at 10,000, strong RA −1.2 at 3,000, genera later
+  (Q382's intent). Ship at m²? (rec. yes; the PR's tables).
+- **Cladobranchia** (#1020, `points.json` `seaslug-cladobranchia-inat`): WoRMS keeps one Cladobranchia group, iNaturalist
+  splits its 15 families into five suborders; the Learn page follows WoRMS (once, W10).
 - **Where is the IMR fish presentation** (for Fish basics, a Lab prototype)?
 - **#988** coral slot names = current fields; the IMR Lecture 6 and same-group lines to the IMR, the 2 joint lines to
   the sources (rec. yes). **Reference bonus (#942)**: **A** align the 423 photos (rec.) or B leave. **Rule D3
@@ -59,7 +66,7 @@ Still open (plain, for the morning):
 - Possible misidentifications listed in #982 (5), #989 (11), #991 (24), #1002 (10), #1008 (1): for his "Not this".
 - Not now (Pierre): the domain, the accounts, the IMR agreement, a second person.
 
-Last question number: Q387
+Last question number: Q388
 
 ## Pierre's hands
 
@@ -86,5 +93,5 @@ Ideas Pierre dictated after 17:30, kept for the morning.
 
 ## Last stop
 
-2026-11-16 ~17:45 Manila: evening checkpoint (24 merges, 2 agents running, #953 and #988 held).
+2026-11-16 ~19:10 Manila: night checkpoint (29 merges, no agent running; #975, #953 and #988 held for the morning).
 Old player-data extracts may remain in the session scratchpad (`data/`): delete them, never commit them.
