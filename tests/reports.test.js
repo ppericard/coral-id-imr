@@ -16,7 +16,8 @@ const {
   repCtx,
   repOn,
   REP_WHY,
-  repWhyText
+  repWhyText,
+  repReg
 } = require('../reports.js');
 const {SUBJECTS, merge3} = require('../core.js');
 const CORAL = SUBJECTS.find(s => !s.hash),
@@ -240,4 +241,59 @@ test('admin.html loads reports.js after core.js and before admin.js', () => {
     at = f => H.search(new RegExp(`<script src="${f}\\?v=\\d+"></script>`));
   assert.ok(at('core\\.js') > 0 && at('core\\.js') < at('reports\\.js'), 'core.js before reports.js');
   assert.ok(at('reports\\.js') > 0 && at('reports\\.js') < at('admin\\.js'), 'reports.js before admin.js');
+});
+
+// Codex review #987: a reported photo of a third subject showed as "missing" on the admin's Reports page (admin.js read the
+// fish's files only). Every subject whose SUBJECTS admin files name its tree and game photos gets a registry from them
+// (reports.js repReg, admin.js unitRead): each photo of its game file in it, with its credits, the identification it
+// carries, the unit showing it and its source as the file has it (a remote original stays remote), and a report on it
+// goes to that subject's side by its photo alone.
+test('repReg: every subject with files: its game photos, their credits, identification, unit and source', () => {
+  const {fishGameRead} = require('../core.js'),
+    json = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')),
+    withFiles = SUBJECTS.filter(S => S.admin.files);
+  assert.ok(withFiles.length >= 2, 'the subjects with sheets at several ranks name their files');
+  withFiles.forEach(S => {
+    const W = S.admin.files;
+    assert.ok(S.sheets && W.f && W.gm, `${S.id}: a tree and a game file`);
+    const f = json(W.f),
+      gm = json(W.gm),
+      R = repReg(f, W.ph ? json(W.ph) : null, gm),
+      fam = new Map((f.species || []).map(x => [x.id, x.family])),
+      inGame = Object.values(fishGameRead(gm).photos).flat();
+    assert.ok(R && inGame.length, `${S.id}: a registry and game photos`);
+    let n = 0;
+    inGame
+      .filter(p => p && p.f && p.src && fam.get(p.sp) && R.gen[fam.get(p.sp)] && p.use !== 'ref')
+      .forEach(p => {
+        const q = R.ph[p.f];
+        assert.ok(q, `${S.id}: ${p.f} in the registry`);
+        assert.strictEqual(q.entry, fam.get(p.sp), `${S.id}: ${p.f} under its species' family`);
+        assert.strictEqual(q.src, p.src, `${S.id}: ${p.f} keeps its source`);
+        assert.strictEqual(!!q.r, !!p.r, `${S.id}: ${p.f} remote as in its file`);
+        assert.strictEqual(q.a, p.a, `${S.id}: ${p.f} keeps its credits`);
+        assert.strictEqual(q.t, p.t, `${S.id}: ${p.f} keeps the identification it carries`);
+        n++;
+      });
+    assert.ok(n > 0, `${S.id}: some game photos checked`);
+    // a report naming one of its photos only (no unit, no page) goes to its side by that photo
+    const f0 = Object.keys(R.ph)[0],
+      c = repCtx(row({why: 'photo', m: 'photo', ph: f0}), x => (R.ph[x] ? S.id : ''));
+    assert.strictEqual(c.subj, S.id);
+    assert.ok(repOn(c, S) && !repOn(c, CORAL));
+    // its unit ids lead to their family, its species sheet ids to their species
+    (f.species || []).slice(0, 3).forEach(x => {
+      assert.strictEqual(R.fam['s:' + x.name], x.family);
+      assert.strictEqual(R.spid['s:' + x.name], x.id);
+    });
+  });
+  // a subject's photos stay in its own registry: no photo in two
+  const regs = withFiles.map(S => {
+      const W = S.admin.files,
+        json = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+      return repReg(json(W.f), W.ph ? json(W.ph) : null, json(W.gm));
+    }),
+    seen = new Map();
+  regs.forEach((R, i) => Object.keys(R.ph).forEach(f => assert.ok(!seen.has(f), `${f} in two subjects`) || seen.set(f, i)));
+  assert.strictEqual(repReg(null, null, null), null);
 });
