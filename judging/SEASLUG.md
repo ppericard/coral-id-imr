@@ -26,7 +26,8 @@ both subjects, `--subject` choosing). Tests: `tests/seaslugjudge.test.js`.
 ## Tags (one code per photo)
 
 **Visual criteria only** (as the fish, Pierre, 2026-11-04): the judge reads how the animal is shown and never the species.
-The species is the iNaturalist identification (Research Grade, `tools/fetch_seaslugs.py`), taken as given: the judge does
+The species is the iNaturalist identification (Research Grade, or Pierre's own observation identified to the species even
+when Needs ID, marked `ni`: the fish's rule, Q386; `tools/fetch_seaslugs.py`), taken as given: the judge does
 not say whether a photo shows the right species or whether its species is recognisable (rule C5 holds for the labels: a
 doubt goes to `points.json`, never settled here).
 
