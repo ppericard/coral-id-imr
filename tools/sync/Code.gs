@@ -217,8 +217,10 @@ function doGet_(e){
   if (e.parameter.stats && !e.parameter.av) oldApp_('photo stats');
   if (e.parameter.stats) behind_(e.parameter);  // v50: a device on a replaced app version
   // v134: the snapshot (statsFold_), else the whole log; v137: &s=<subject> asks another subject's (statsSid_: the corals without it)
+  // vNEXT: the reply names the subject it rates (s), so an app reads another subject's only when it is that one's (sync.js
+  // loadOwnStats: an older script, or a subject with no pool, answers with the corals')
   if (e.parameter.stats) { TIM_.op = 'stats'; const sid = statsSid_(e.parameter.s), st = statsServed_(sid) || stats_(true, sid);
-    return json_({ok: st.ok, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
+    return json_({ok: st.ok, s: sid, photos: st.photos, conf: st.conf, mem: st.mem, memn: st.memn, gd: st.gd, fmt: st.fmt}); }
   if (e.parameter.answers) return json_({ok: false, error: 'token'});
   if (e.parameter.board) return json_(board_(e.parameter.s));
   if (e.parameter.achs) return json_(achs_());
@@ -1273,7 +1275,7 @@ function stats_(read, sid){
 // (statsDirty_), before the next run builds it again without the account. The cursor is mirrored in the Script Property
 // STATS.PROP; the two disagreeing (a run cut between its writes) rebuild too.
 // v137 (Q123 j for the fish, Pierre 2026-11-14: "j (pooled stats built incrementally, per subject) first"): every
-// subject with game photos (core.js SUBJECTS pool: the corals, the fish) has its own fold, snapshot and reply, made by the
+// subject with game photos (core.js SUBJECTS pool: the corals, the fish, the sea slugs from vNEXT) has its own fold, snapshot and reply, made by the
 // same rules over its own answers (stats_(read, sid)): its tab (statsTab_: Stats for the corals, "Stats Fish"), its
 // cursor (statsProp_), its cache (statsCacheKey_), served by ?stats=1&s=<subject> (the corals without s, as before).
 // One mark of a rewrite of the log (STATS.DIRTY) for all of them, and every subject's fold blanked by a delete, merge or
@@ -2915,8 +2917,8 @@ function exposure_(rows, by){
 }
 // Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
 // read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool3<id>, cut in
-// parts by cacheBigPut_: the corals' about 43 KB, the fish's about 390 KB, over the script cache's 100 KB a value). A
-// subject whose files cannot be read is left out, and not asked again for 10 minutes.
+// parts by cacheBigPut_: the corals' about 43 KB, the fish's about 670 KB, the sea slugs' about 110 KB from vNEXT, over
+// the script cache's 100 KB a value). A subject whose files cannot be read is left out, and not asked again for 10 minutes.
 // only (v115): true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that
 // subject's pool fetched when not cached, the others from the cache only. ups (v115): an object given gets each
 // subject's parent units, cached with its pool (unitUp_: a fish genus or species to its family; photoCheck_).
@@ -3775,7 +3777,13 @@ const CORE_ = (function () { const module = {exports: {}};
   //           Identify and the Tools are the corals' for now
   //   pool    where its game photos come from, for the sheet's photo exposure per player (Code.gs pools_, core.js
   //           unitPool; Pierre, 2026-11-06, Q191): files, the site's files it reads (fetched from main, in this order),
-  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them
+  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them; as,
+  //           what each file is to that builder (entries: f its tree, ph its first photos, gm its game photos, cur
+  //           curation.json). A subject with a pool has its own pooled statistics on the sheet (Code.gs statsSubjects_:
+  //           photo ratings, genus offsets, confusions, its own tab and ?stats=1&s=<id>)
+  //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
+  //           serves them (?stats=1&s=<id>, the reply naming its subject; rule D4). The corals' are read as ever (replay);
+  //           a subject with a pool and no stats (the fish) draws on its priors in the app, its statistics on the sheet only
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -3898,6 +3906,10 @@ const CORE_ = (function () { const module = {exports: {}};
   // their board (progress.js boardLive) only from it; before, the subject does exactly what it did (the plain merge, no
   // board: an older script answers &s=seaslug with the corals' board, never shown as the sea slugs').
   const SEASLUGRP_SHEET = 164;
+  // The sync script version that pools the sea slugs' own answer statistics (rule D4; SUBJECTS seaslug pool, stats): its
+  // ?stats=1&s=seaslug serves their photo ratings, genus offsets and confusions, the reply naming its subject (s). The app
+  // asks for and reads them only from it (sync.js loadOwnStats); an older script answers &s=seaslug with the corals'.
+  const SEASLUGST_SHEET = 166;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -4063,7 +4075,7 @@ const CORE_ = (function () { const module = {exports: {}};
         tree: F => fishBoardTree(F),
         vars: (F, Fs, S) => fishVarTable(F, Fs, S)
       },
-      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
+      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries', as: ['f', 'ph', 'gm', 'cur']},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
       ach: true,
@@ -4255,11 +4267,10 @@ const CORE_ = (function () { const module = {exports: {}};
       rank: 'family',
       unitRank: 'genus',
       // Its progress replayed by the sheet from its own answers, as the fish's (Code.gs replays_, replay_ per subject;
-      // rules D5, D8, D9): its units from seaslug.json (file: its pool has none yet), the genera played from the start
+      // rules D5, D8, D9): its units from seaslug.json (file, its pool's first too), the genera played from the start
       // (fishReplayGen at its unitRank), its own rules versions (SEASLUG_RVS), its records in the "Replayed Sea slugs"
       // tab. sheet: the script version that replays it (SEASLUGRP_SHEET; rule D4), before which the app neither asks
-      // for nor adopts it. No tree: its board ranks by the genera's mean, its headline %. No Analyses report and no photo
-      // pool yet.
+      // for nor adopts it. No tree: its board ranks by the genera's mean, its headline %.
       replay: false,
       replayed: {
         file: 'seaslug.json',
@@ -4273,6 +4284,18 @@ const CORE_ = (function () { const module = {exports: {}};
       // (Code.gs board_, boardWarm_; rule D8).
       board: true,
       boardSheet: SEASLUGRP_SHEET,
+      // Its game photos (Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"): its tree, its
+      // game file and its part of curation.json (treeCur), its genera the units (unitRank), as the app builds them. So the
+      // sheet pools its own answer statistics (Code.gs statsSubjects_: the "Stats Sea slugs" tab, ?stats=1&s=seaslug) and
+      // checks its photos and exposure, as the fish's; stats: the app reads them, from the script that serves them
+      // (SEASLUGST_SHEET; rule D4): the pooled photo difficulty, genus offsets and confusions, so a data look-alike seeded
+      // from iNaturalist (model.js dataSeed) is dropped once the players tell the pair apart.
+      pool: {files: ['seaslug.json', 'seaslug-game.json', 'curation.json'], of: 'entries', as: ['f', 'gm', 'cur']},
+      stats: SEASLUGST_SHEET,
+      // Its Analyses report (one per subject, refitted every 1000 of its answers: tools/analyses.js; Pierre, 2026-11-08), by
+      // genus, its units (its one and many): photos 'judged', its photos' judged ease, phase and framing from its game file
+      // (analysis.js photoMetaFish; SUBJECTS admin files gm), as the fish's.
+      analyses: {photos: 'judged'},
       // Its own achievements (Pierre, 2026-11-17: "une première version des succès"; core.js SEASLUG_ACH), in the shared
       // record under ids of their own (ss...), never counted in the corals' or the fish's.
       ach: true,
@@ -4316,7 +4339,22 @@ const CORE_ = (function () { const module = {exports: {}};
           // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
           // at their genus, never as a species (autosort.js fishCov)
           'photos/stats/overview',
-          'analyses/difficulty/heatmap'
+          'analyses/difficulty/heatmap',
+          // Its Analyses report's views (analyses above; admin-analyses.js), and the views drawn live from its answers
+          // (admin.js LIVE_STATS), as the fish's
+          'analyses/overview',
+          'analyses/speed',
+          'analyses/difficulty/photos',
+          'analyses/difficulty/formats',
+          'analyses/difficulty/mix-ups',
+          'analyses/difficulty/time',
+          'analyses/difficulty/pairs',
+          'analyses/learning/practice',
+          'analyses/learning/after-a-break',
+          'analyses/learning/sessions',
+          'analyses/learning/profiles',
+          'analyses/learning/answer-log',
+          'analyses/learning/stops'
         ],
         obs: 'Observations',
         origins: [
@@ -8099,11 +8137,22 @@ const CORE_ = (function () { const module = {exports: {}};
       });
       return out;
     },
-    entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur), (ph || {}).sheet);
+    // entries: a tree subject's files by what each is (SUBJECTS pool as: f, ph, gm, cur), its part of the curation
+    // (treeCur), its units at its unit rank (unitRankOf: the sea slugs' genera, the fish's families); a subject whose
+    // units are below its families (fishGen unit) keeps those units only, its families being structure.
+    entries: (L, S) => {
+      const as = (S && S.pool && S.pool.as) || [],
+        x = k => (as.includes(k) ? L[as.indexOf(k)] : null),
+        ph = x('ph') || {},
+        F = fishGen(
+          x('f') || {},
+          fishPhotos(ph.photos, (fishGameRead(x('gm')) || {}).photos, treeCur(S, x('cur'))),
+          ph.sheet,
+          unitRankOf(S)
+        );
       return Object.fromEntries(
         Object.values(F.gen)
-          .filter(g => !g.wink)
+          .filter(g => !g.wink && (!F.unit || g.rank === F.unit))
           .map(g => [g.id, g.views.wide])
       );
     }
@@ -8116,7 +8165,7 @@ const CORE_ = (function () { const module = {exports: {}};
       make = P && POOLS[P.of];
     if (!make || !Array.isArray(files) || files.length < P.files.length || files.some(x => !x)) return null;
     const by = {};
-    Object.entries(make(files) || {}).forEach(([n, L]) =>
+    Object.entries(make(files, S) || {}).forEach(([n, L]) =>
       (L || []).forEach(p => {
         if (!p || !p.f) return;
         const O = (by[renamedId(S, n, p.t)] = by[renamedId(S, n, p.t)] || {}),
@@ -10375,6 +10424,7 @@ const CORE_ = (function () { const module = {exports: {}};
     LOG_SHEET,
     REPLAYS_SHEET,
     SEASLUGRP_SHEET,
+    SEASLUGST_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,

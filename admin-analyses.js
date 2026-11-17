@@ -2481,12 +2481,12 @@ function anRecompute() {
     // list's ids when loaded, the freshest after a Leave out, else the log's; Codex review #801)
     const ex = (typeof USERS !== 'undefined' && USERS && Array.isArray(USERS.excluded) && USERS.excluded) || (ANS && ANS.excluded) || [],
       rows = ANALYSIS.leftOut(subjRows((ANS && (ANS.all || ANS.rows)) || [], S.id), ex);
-    // its photo features (tools/analyses.js metaOf): the corals' from the data and the draft; the fish's judged ones from
-    // the photos the game plays (FISHC.plays, fish-game.json, read before go)
+    // its photo features (tools/analyses.js metaOf): the corals' from the data and the draft; a tree subject's judged ones
+    // from the photos its game plays (its game file, SUBJECTS admin files gm: anGame, read before go)
     const pk = (S.analyses || {}).photos,
       meta =
         pk === 'judged'
-          ? {ph: {}, fph: ANALYSIS.photoMetaFish({photos: {all: (FISHC && FISHC.plays) || []}})}
+          ? {ph: {}, fph: ANALYSIS.photoMetaFish(ANGAME[S.id] || {})}
           : pk
             ? {ph: ANALYSIS.photoMeta(DATA, DRAFT, {q: AUTOQ}, {m: METRICS})}
             : {ph: {}};
@@ -2519,9 +2519,22 @@ function anRecompute() {
   };
   Promise.all([
     ANS && ANS.all && ANS.all.length ? Promise.resolve() : loadStats(),
-    (S.analyses || {}).photos === 'judged' && !(FISHC && FISHC.plays) ? fishLoad(true) : null
+    (S.analyses || {}).photos === 'judged' ? anGame(S) : null
   ]).then(go);
 }
+// A tree subject's game file (core.js SUBJECTS admin files gm: fish-game.json, seaslug-game.json), its records whole
+// (core.js fishGameRead), fetched once per subject for Recompute here's judged photo features (ANGAME, by subject id).
+const ANGAME = {},
+  ANGAMEP = {};
+const anGame = S =>
+  ANGAME[S.id]
+    ? Promise.resolve(ANGAME[S.id])
+    : (ANGAMEP[S.id] =
+        ANGAMEP[S.id] ||
+        fetch(S.admin.files.gm, {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : {}))
+          .catch(() => ({}))
+          .then(G => (ANGAME[S.id] = fishGameRead(G) || {})));
 // The charts are drawn at the page's width: draw again when it changes.
 let anRz = null;
 addEventListener('resize', () => {

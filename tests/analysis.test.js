@@ -475,7 +475,14 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
     C = require('../core.js'),
     fs = require('fs'),
     data = JSON.parse(fs.readFileSync(require('path').join(__dirname, '..', 'data.json')));
-  assert.deepStrictEqual(subjects(), ['coral', 'fish'], 'the replayed subject first, then every subject with analyses');
+  assert.deepStrictEqual(subjects(), ['coral', 'fish', 'seaslug'], 'the replayed subject first, then every subject with analyses');
+  // the sea slugs: their own judged features, from their own game file (SUBJECTS admin files gm), never a fish photo's
+  const sm = metaOf('seaslug');
+  assert.ok(Object.keys(sm.ph).length === 0 && Object.keys(sm.fph).length > 1000, 'the sea slug photos’ judged features');
+  assert.ok(
+    Object.keys(sm.fph).every(f => f.startsWith('seaslug-')),
+    'from seaslug-game.json alone'
+  );
   // the fish: no coral photo features (ph), their own judged ones apart (fph: SUBJECTS analyses photos 'judged')
   const fm = metaOf('fish');
   assert.ok(Object.keys(fm.ph).length === 0, 'no coral photo features for the fish');
@@ -524,11 +531,13 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
   };
   // an older script: the corals' report only, the fish one neither stored nor read in its place
   v = A.AN_SUBJ_SHEET - 1;
-  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'stored', fish: 'old'});
+  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'stored', fish: 'old', seaslug: 'old'});
   assert.deepStrictEqual(puts, ['coral']);
+  assert.ok(/^Sea slugs: the sync script answers as v\d+: one report per subject needs v\d+\. Nothing done\.$/.test(logs.pop()));
   assert.ok(/^Fish: the sync script answers as v\d+: one report per subject needs v\d+\. Nothing done\.$/.test(logs.pop()));
   v = A.AN_SUBJ_SHEET;
-  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'stored'});
+  // the sea slugs: no answer in this log, no milestone yet (nothing stored)
+  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'stored', seaslug: 'wait'});
   assert.deepStrictEqual(puts, ['coral', 'fish']);
   const rc = JSON.parse(stored.coral),
     rf = JSON.parse(stored.fish);
@@ -559,7 +568,8 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
     "the corals' views kept"
   );
   // nothing new: both wait
-  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'wait'});
+  assert.deepStrictEqual(await sheetRunAll(io, 'tok', {B: 0}), {coral: 'wait', fish: 'wait', seaslug: 'wait'});
+  assert.strictEqual(logs.pop(), 'Sea slugs: 0 answers, no milestone yet: the first one at 1000.');
   assert.strictEqual(logs.pop(), `Fish: ${counts.fish} answers, newest milestone 1000: the next one at 2000.`);
   // the token refused: the corals stop the run, the fish are not asked
   assert.deepStrictEqual(await sheetRunAll({post: async () => ({ok: false, error: 'token'}), log: () => {}}, 'tok', {B: 0}), {

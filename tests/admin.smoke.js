@@ -2866,7 +2866,7 @@ const darkCards = (p, sel) =>
               .waitForFunction(
                 h =>
                   location.hash === '#' + h &&
-                  cur === h.replace(/^fish\//, '') &&
+                  cur === subjOfHash(h)[1] &&
                   /fitted on|No report yet|Not for /.test(document.getElementById('view').textContent),
                 h,
                 {timeout: 90000}
@@ -2948,6 +2948,51 @@ const darkCards = (p, sel) =>
               )
                 fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
             }
+          }
+          // The sea slugs' report on their side (SUBJECTS seaslug analyses, 2026-11-17): its status line, every view the
+          // fish have, drawn from its report (the demo's made-up answers on its genera), never a coral genus nor a raw id;
+          // What makes a photo hard on its judged ease, phase and framing (its game file). Its units are genera: the
+          // words stay. At 1280 from the script that stores one report per subject.
+          if (v >= GATE && vw === 1280) {
+            at = await look('seaslug/analyses/overview');
+            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || at.not)
+              fe.push(`sea slug Overview ${JSON.stringify(at)}`);
+            const [H, LV] = await fq.evaluate(() => [
+              TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(subjectOf('seaslug'), h))),
+              LIVE_STATS
+            ]);
+            if (H.length !== 15) fe.push(`sea slug views ${H.join(' ')}`);
+            for (const h of H.filter(h => !LV.includes(h))) {
+              at = await look('seaslug/' + h);
+              if (at.none || !/^Sea slugs: /.test(at.badge) || at.ids.length || at.coral || at.wide > 0)
+                fe.push(`#seaslug/${h} ${JSON.stringify({...at, views: undefined})}`);
+            }
+            // the views drawn live from its answers (LIVE_STATS: Pairs, Heatmap, Answer log, Stops): drawn, no page error
+            for (const h of H.filter(h => LV.includes(h))) {
+              await fq.evaluate(h => (location.hash = h), 'seaslug/' + h);
+              const lv = await fq
+                .waitForFunction(
+                  h =>
+                    cur === h &&
+                    document.getElementById('view').textContent.trim().length > 40 &&
+                    !/Loading/.test(document.getElementById('view').textContent),
+                  h,
+                  {timeout: 60000}
+                )
+                .then(() => fq.evaluate(() => document.getElementById('view').textContent.slice(0, 120)))
+                .catch(() => null);
+              if (!lv || /Not for sea slugs yet/.test(lv)) fe.push(`#seaslug/${h}: ${lv === null ? 'nothing drawn' : lv}`);
+            }
+            at = await look('seaslug/analyses/difficulty/photos');
+            const ph = await fq.evaluate(() => {
+              const V = document.getElementById('view');
+              return {
+                h: [...V.querySelectorAll('.adm-an-card h3, .adm-an-card summary')].map(e => e.textContent.trim()).join(' | '),
+                t: V.textContent
+              };
+            });
+            if (/IMR lecture|Corallites|quality photo/i.test(ph.t) || !/\bEase\b/.test(ph.h))
+              fe.push(`#seaslug/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
           }
           // the corals' report on the corals' side, as before
           at = await look('analyses/overview');
