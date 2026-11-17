@@ -6291,7 +6291,9 @@ expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
 cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 237 scientific genera (every circle's since 2026-11-18; 130 before), every game photo.
-A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π;
+A seed draws its world: each unit's μ and each photo file's ε (above), the photo's judged ease from ε, the player's π
+(each genus's and species' μ on a stream of its own, keyed by its id, since 2026-11-18: a version with more or fewer
+units plays the same photos and the same other units, so the arms stay paired);
 the same seed gives the same world, so two versions of the app compare on it. `model.js` runs whole in a Node vm, with
 the app's globals it reads written around it (the units, the photos, `pool`, the circles' gates, the scientific
 genera's set, an in-memory store), and `core.js` `scoreAnswer` scores each answer as the game does (the Elo, the

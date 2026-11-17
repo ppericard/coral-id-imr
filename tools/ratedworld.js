@@ -71,6 +71,12 @@ const gen = a => () => {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
 const normal = r => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+// A unit id's 32-bit FNV-1a hash: the key of its own stream in a seed's world (world).
+const idHash = id => {
+  let h = 0x811c9dc5;
+  for (const c of String(id)) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193);
+  return h >>> 0;
+};
 const sig = x => 1 / (1 + Math.exp(-x)),
   logit = q => Math.log(Math.min(0.995, Math.max(0.005, q)) / (1 - Math.min(0.995, Math.max(0.005, q))));
 
@@ -176,10 +182,14 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     mu = {},
     eps = {},
     ease = {};
-  if (U.subject === 'fish') {
-    U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
-    U.extra.forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
-  } else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
+  // A unit below the families (a fish genus or species): its family's mu plus its own offset, drawn on a stream of its
+  // own (seed, its id), so units added or taken away never move another draw: two versions of the app with other units
+  // play the same photos and the same other units (2026-11-18: the genera of circles 2 and 3, 107 more, had moved every
+  // photo's eps and every species' mu, so the arms played different worlds).
+  const below = n =>
+    (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(gen((seed * 2654435761) ^ idHash(n))) + ((U.rec(n).look || []).length ? RATED.SIB : 0));
+  if (U.subject === 'fish') U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
+  else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
   const files = [...new Set([...U.slate, ...U.extra].flatMap(n => Object.values(U.views(n)).flatMap(L => L.map(p => p.f))))].sort();
   files.forEach(f => {
     let e = RATED.EPS * normal(r);
@@ -192,8 +202,9 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     eps[f] = e;
     ease[f] = Math.max(1, Math.min(5, Math.round(RATED.EASE.MID - (e + RATED.EASE.NOISE * normal(r)) / RATED.EASE.STEP)));
   });
-  // The species units after everything else (their photos are their family's), so a world without them is drawn as before.
-  (U.sp || []).forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
+  // The genera and the species (their photos are their family's), each on its own stream (below).
+  if (U.subject === 'fish') U.extra.forEach(below);
+  (U.sp || []).forEach(below);
   return {mu, eps, ease, pi: piOf(seed)};
 }
 // The player's offset of a seed's world, on a stream of its own (so a test reads it for many seeds without their worlds).
