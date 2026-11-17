@@ -441,7 +441,7 @@ function play(cfg) {
   const distOf = g => {
     if (tg) return [muOf(g), TSD];
     if (truth) return [(truth.gd || {})[g] || 0, TSD];
-    // its held-out photos too (the fish: GX(g).held, model.js HELD), so the population is the unit's whole set, as before
+    // its held-out photos too (the fish: GX(g).held, model.js examSet), so the population is the unit's whole set, as before
     // the set was withheld
     const ds = [...VIEWS.flatMap(([v]) => gamePics(g, v)), ...((GX(g) || {}).held || [])].map(p => photoDiff(g, p));
     if (!ds.length) return [0, J.SD];
@@ -1006,7 +1006,7 @@ function play(cfg) {
       if (early.n === 20) early.lvl = (P[LEVEL] || {}).th;
     }
     if (set.exam) nEx++;
-    // a held-out photo shown (model.js HELD: a probe, or an exam question on one; logged |h)
+    // a held-out photo shown (model.js examSet: an exam question on one; logged |h)
     if ((set.shown || []).some(p => p && p.ho)) nHo++;
     if (q.auto) nDuel++;
     if (q.findx) nFind++;

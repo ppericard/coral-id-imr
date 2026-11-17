@@ -1,7 +1,8 @@
 require('./slot.js').testGuard();
 // The held-out set in the game (ROADMAP "A held-out photo set"; Pierre, 2026-11-04 and 2026-11-16, Q385; the set #1023):
-// core.js fishHeld, fishObs, fishPhotos held, fishGen and fishGenUnits held, fishHeldUnits; model.js HELD, heldSet,
-// examSet, genusDiff; quiz.js planPhoto's probe and the |h log token; the sheet's replay deciding alike (rules D8, D9).
+// core.js fishHeld, fishObs, fishPhotos held, fishGen and fishGenUnits held; model.js examSet, genusDiff; the |h log
+// token on the exam's answers; the sheet's replay deciding alike (rules D8, D9). Exam only, no practice probe (Pierre,
+// 2026-11-18: "Je pensais qu'on gardait des photos pour la fin").
 // docs/LEARNING.md "The held-out photos in the game".
 const test = require('node:test'),
   assert = require('node:assert'),
@@ -83,13 +84,10 @@ test('fishPhotos and fishGen: held-out photos marked ho, in the unit’s held li
   assert.deepStrictEqual(G.held.map(x => x.f).sort(), ['a', 'c']);
   // No held key without a held-out photo (the sheet's units are as before).
   assert.ok(!('held' in C.fishGen(F, C.fishPhotos({}, game, null), {}).gen['f:A']));
-  // fishHeldUnits: each held-out photo knows its units.
-  C.fishHeldUnits(X);
-  assert.deepStrictEqual(E.held[0].hu, ['f:A']);
 });
 
 // The app's units as app.js fishBuild makes them on the real files: fishGen over fishPhotos with the set, fishGenera,
-// fishHeldUnits.
+// nothing more.
 let APP = null;
 function appUnits() {
   if (APP) return APP;
@@ -106,7 +104,7 @@ function appUnits() {
     H = json('fish-holdout.json'),
     held = C.fishHeld(H, gm, cur),
     build = h => ctx.fishGenera(C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, gm, cur, h), Fs[1].sheet, C.unitRankOf(S)), Fs[0]);
-  return (APP = {X: C.fishHeldUnits(build(held)), X0: build(undefined), held, H, cur, gm});
+  return (APP = {X: build(held), X0: build(undefined), held, H, cur, gm});
 }
 
 test('the real set: no unit shows a held-out photo; each unit’s photos are its views and its held list, as before', () => {
@@ -131,11 +129,6 @@ test('the real set: no unit shows a held-out photo; each unit’s photos are its
   assert.ok(nh > 500, 'families, genera and species with held-out photos: ' + nh);
   // The sheets' photos (X.sheet: the sheet-only photos) never come from the game list: none held out.
   assert.ok(!Object.values(X.sheet).flat().some(isHeld));
-  // Each held-out photo knows its units: its family, and its species unit when it has one.
-  const fam = Object.values(X.gen).find(g => !g.rank && (g.held || []).length),
-    p = fam.held[0];
-  assert.ok(p.hu.includes(fam.id), JSON.stringify(p.hu));
-  assert.ok(p.hu.includes('s:' + p.sp) || !X.gen['s:' + p.sp], JSON.stringify(p.hu));
 });
 
 test('Pierre’s ★ covers and featured photos stay practice, whatever the file says', () => {
@@ -169,7 +162,7 @@ const unit = () => {
   const L = [],
     H = [];
   for (let i = 0; i < 20; i++) L.push({f: `p${i}`, o: `op${i}`, e: 1 + (i % 5)});
-  for (let i = 0; i < 8; i++) H.push({f: `h${i}`, o: `oh${i}`, e: 1 + (i % 4), ho: 1, hu: ['u']});
+  for (let i = 0; i < 8; i++) H.push({f: `h${i}`, o: `oh${i}`, e: 1 + (i % 4), ho: 1});
   return {L, H};
 };
 
@@ -182,7 +175,7 @@ test('examSet: a held-out photo never shown to this player first, the hardest; n
   }
   // The hardest of them (photoDiff: the lowest ease).
   assert.strictEqual(E.examSet('u').shown[0].e, 1);
-  // Shown on another unit (a family probe, then the genus's exam): not "never shown" any more.
+  // Shown on another unit (the family's exam, then the genus's): not "never shown" any more.
   const seen = Object.fromEntries(H.map(p => [p.f, [1, 1]])),
     F = engine('fish', L, {score: 0.9, held: H, others: {'f:X': {ps: seen}}}),
     q = F.examSet('u').shown[0];
@@ -192,45 +185,17 @@ test('examSet: a held-out photo never shown to this player first, the hardest; n
   assert.ok(/^p/.test(N.examSet('u').shown[0].f));
 });
 
-test('heldSet: a probe shows only a held-out photo never shown, drawn by photoSet; the exam’s reserve kept', () => {
-  const {L, H} = unit(),
-    E = engine('fish', L, {score: 0.3, held: H});
-  assert.strictEqual(E.HELD.p, 0.1);
-  for (let i = 0; i < 50; i++) {
-    const s = E.heldSet('u', 0, 4, 'k4');
-    assert.ok(s && s.held === 1 && s.shown.length === 1, JSON.stringify(s));
-    assert.ok(s.shown[0].ho && /^h/.test(s.shown[0].f), s.shown[0].f);
-  }
-  // Seen ones never come back as probes.
-  const ps = Object.fromEntries(H.slice(0, 2).map(p => [p.f, [1, 0]])),
-    F = engine('fish', L, {score: 0.3, held: H, ps});
-  for (let i = 0; i < 50; i++) assert.ok(!['h0', 'h1'].includes(F.heldSet('u').shown[0].f));
-  // 6 never shown left (> EXAM.n = 5): a probe may take one; 5 left: none (the exam's reserve).
-  const G = engine('fish', L, {score: 0.3, held: H, ps: Object.fromEntries(H.slice(0, 3).map(p => [p.f, [1, 0]]))});
-  assert.strictEqual(G.heldSet('u'), null);
-  // The reserve of every unit holding the photo (p.hu): its genus with 5 never shown stops the family's probe.
-  const gx = {views: {wide: []}, held: H.slice(0, 5).map(p => ({...p}))},
-    K = engine('fish', L, {score: 0.3, held: H.map((p, i) => ({...p, hu: i < 5 ? ['u', 'g:Y'] : ['u']})), others: {'g:Y': {gx}}});
-  const k = K.heldSet('u');
-  assert.ok(k && !['h0', 'h1', 'h2', 'h3', 'h4'].includes(k.shown[0].f), 'only a photo outside the genus: ' + (k && k.shown[0].f));
-  // A species unit (noex) keeps no reserve.
-  const sp = {views: {wide: []}, held: H.slice(0, 2), noex: 1},
-    Q = engine('fish', L, {score: 0.3, held: H.map(p => ({...p, hu: ['u', 's:Y']})), others: {'s:Y': {gx: sp}}});
-  assert.ok(Q.heldSet('u'));
-  // No held-out photo: no probe.
-  assert.strictEqual(engine('fish', L, {score: 0.3}).heldSet('u'), null);
-});
-
 test('photoSet never draws a held-out photo in practice (the views only)', () => {
   const {L, H} = unit(),
     E = engine('fish', L, {score: 0.9, held: H});
   for (let i = 0; i < 300; i++) assert.ok(!E.photoSet('u', null, 0, 4, 'k4').shown.some(p => p.ho));
 });
 
-test('quiz.js: a probe only in the plain photo quiz, logged |h before |kN, |t and |x', () => {
-  const quiz = read('quiz.js');
-  assert.match(quiz, /probe = !ex && !sel && !warm && !cards\.length && Math\.random\(\) < HELD\.p && heldSet\(/);
-  assert.match(quiz, /set = ex \|\| probe \|\| photoSet\(/);
+test('quiz.js: no practice probe; a held-out photo (the exam’s) logged |h before |kN, |t and |x', () => {
+  const quiz = read('quiz.js'),
+    model = read('model.js');
+  assert.match(quiz, /set = ex \|\| photoSet\(/);
+  assert.ok(!/heldSet|HELD\b/.test(quiz + model), 'no silent probe (Pierre, 2026-11-18)');
   const mq = cut(quiz, '  const mq =\n', ';\n', {through: 1, file: 'quiz.js'}) + 'mq;',
     mode = o =>
       vm.runInContext(
@@ -309,7 +274,7 @@ test('the app loads the set for the fish only, with Home’s files, and builds i
   assert.match(app, /ho: \(\) => json\('fish-holdout\.json\?v=1'\)/);
   assert.strictEqual((app.match(/json\('fish-holdout\.json/g) || []).length, 1, 'the fish’s files only (the sea slugs have none)');
   assert.match(app, /held = fishHeld\(ho, /);
-  assert.match(app, /fishCurate\(fishHeldUnits\(fishGenera\(fishGen\(f, fishPhotos\(ph\.photos, gm\.photos, C, held\)/);
+  assert.match(app, /fishCurate\(fishGenera\(fishGen\(f, fishPhotos\(ph\.photos, gm\.photos, C, held\)/);
   assert.ok(sw.includes("'fish-holdout.json?v=1'"), 'offline with the shell');
   // model.js reads both lists for the unit's difficulty and the exam (the variant groups the sheet's replay reads).
   const model = read('model.js');

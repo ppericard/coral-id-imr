@@ -145,7 +145,6 @@ test('the fish units from the players copy: the same photos in play, covers and 
     ctx = {
       fishGen: C.fishGen,
       fishHeld: C.fishHeld,
-      fishHeldUnits: C.fishHeldUnits,
       fishPhotos: C.fishPhotos,
       easyRank: C.easyRank,
       easyCover: C.easyCover,

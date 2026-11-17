@@ -1296,7 +1296,7 @@
             false
           )
         },
-        // its held-out photos (fishPhotos held: ho), never in its views; only the exam and the probes ask them
+        // its held-out photos (fishPhotos held: ho), never in its views; only the mastery exam asks them
         ...((byFam[t.id] || []).some(p => p && p.ho)
           ? {
               held: easyRank(
@@ -1726,8 +1726,8 @@
     return out;
   }
   // The held-out set (fish-holdout.json, tools/holdout.py; ROADMAP "A held-out photo set", Pierre, 2026-11-04 and
-  // 2026-11-16, Q385; #1023): a fixed set of observations per species never shown in practice, asked only as unannounced
-  // questions (model.js HELD: the mastery exam's, the silent probes). fishObs(p): a game record's observation as the file
+  // 2026-11-16, Q385; #1023): a fixed set of observations per species never shown in practice, asked only by the mastery
+  // exam, unannounced (model.js examSet; Pierre, 2026-11-18: "Je pensais qu'on gardait des photos pour la fin"). fishObs(p): a game record's observation as the file
   // names it (tools/holdout.py obs_of: fish-game.json's short o, an iNaturalist id or a FishBase page; else the file).
   // fishHeld(H, game, cur): {species id + ' ' + observation}, the file's held lists (H), less the observations of a photo
   // Pierre picked as a ★ cover or a featured photo (cur: curation.json fish genera cover, feat; matched by fishPid, as
@@ -1755,13 +1755,6 @@
         })
       );
     return out;
-  }
-  // Each held-out photo's units (X.gen: the family, a genus, a species), as p.hu on the photo, which every unit's held
-  // list shares: a silent probe keeps each unit with an exam its reserve (model.js heldSet). Once the units are complete
-  // (app.js fishBuild after fishGenera; the rated world).
-  function fishHeldUnits(X) {
-    Object.values((X && X.gen) || {}).forEach(g => (g.held || []).forEach(p => (p.hu = [...new Set([...(p.hu || []), g.id])])));
-    return X;
   }
   // The names a family is known by, accepted when typed (rule S2): the book's name, IMR's (the IMR tag) and the parts of a
   // double one ("Surgeonfish & Unicornfish"), its scientific names, the names IMR uses inside it with their genera
@@ -7102,7 +7095,6 @@
     subjDev,
     fishGen,
     fishHeld,
-    fishHeldUnits,
     fishObs,
     fishGlOf,
     fishReplayGen,

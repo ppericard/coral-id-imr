@@ -83,14 +83,14 @@ function fishUnits() {
     ph = J('fish-photos.json'),
     gm = C.fishGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
-    // the held-out set, out of the views (core.js fishHeld; model.js HELD), when the file exists (a version before it: none)
+    // the held-out set, out of the views (core.js fishHeld; model.js examSet), when the file exists (a version before it: none)
     HO = fs.existsSync(path.join(ROOT, 'fish-holdout.json')) ? J('fish-holdout.json') : {},
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
     fishGenera = vm.runInContext('(' + cut(src, 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
   const held = C.fishHeld ? C.fishHeld(HO, gm.photos, CUR) : undefined,
     X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR, held), ph.sheet), F);
-  return (XCACHE = C.fishHeldUnits ? C.fishHeldUnits(X) : X);
+  return (XCACHE = X);
 }
 
 // The coral units as the app builds them (app.js build: core.js applyCuration and applySlots, app.js applyForms; the
@@ -146,7 +146,7 @@ function unitsOf(subject) {
       sp: X.spl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
-      // its held-out photos (model.js HELD), drawn into the world with the others so a world is the same with or without
+      // its held-out photos (model.js examSet), drawn into the world with the others so a world is the same with or without
       // the set withheld
       held: n => X.gen[n].held || [],
       core: X.c1,
@@ -211,7 +211,7 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed', 'heldSet', 'HELD'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
   if (!U.slate) U = unitsOfX(U);
@@ -335,10 +335,8 @@ function question(M, ctx, G, t, {list, cards = [], start = false}) {
     cf = typed ? 0 : M.confTerm(t, ch, k),
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : k < 4 ? (k >= 3 ? 'k3' : 'k2') : 'k4',
     cov = cards.includes(t) ? G[t].cover : null,
-    // a silent probe (quiz.js planPhoto: HELD.p, never with a card or an exam question; model.js heldSet)
-    probe = !ex && !cards.length && M.HELD && ctx.Math.random() < M.HELD.p && M.heldSet(t, ease - cf, k, fq),
-    set = ex || probe || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
-  return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set, probe: !!probe};
+    set = ex || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
+  return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set};
 }
 // quiz.js answer: the unit's last two observations shown (s.ro), which photoSet holds back (Codex review #787).
 const noteRecent = (s, ph) => {
@@ -347,7 +345,7 @@ const noteRecent = (s, ph) => {
 
 // The judge's photo population of unit n: every game photo the game may ask (app.js gamePhotoOk, as photoSet reads it:
 // an extra genus's only Pierre's own or Research Grade; Codex review #789).
-// Its held-out photos too (model.js HELD): the population is the unit's whole set, withheld or not.
+// Its held-out photos too (model.js examSet): the population is the unit's whole set, withheld or not.
 const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...(G[n].held || [])])].filter(p => ctx.gamePhotoOk(n, p));
 // The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
 // a slate genus alike; Codex review #789), not of its reporting kind.
@@ -409,7 +407,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     lv = [];
   let rights = 0,
     blk = {n: 0, ok: 0};
-  // the questions of the exam, and those that showed a held-out photo (model.js HELD: a probe, or an exam question on one)
+  // the questions of the exam, and those that showed a held-out photo (model.js examSet: an exam question on one)
   const qs = {exam: 0, held: 0, heldOk: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
@@ -557,6 +555,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
         dStar: mean(slate.map(dStar)),
         knowSlate: mean(slate.map(n => know[n])),
         met: metU.length,
+        // the units learned (s.mx: the mastery exam passed), as the app world's rows count them
+        learned: Object.values(P()).filter(s => s && s.mx).length,
         right: (100 * blk.ok) / blk.n,
         prog: M.progPct(slate),
         f: {gs: Object.fromEntries(metU.map(n => [n, r4(M.genScore(n))])), ds: Object.fromEntries(metU.map(n => [n, r4(ds[n])]))},

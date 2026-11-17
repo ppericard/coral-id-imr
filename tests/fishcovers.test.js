@@ -27,7 +27,6 @@ function app(photoDiff) {
   const ctx = {
     fishGen: C.fishGen,
     fishHeld: C.fishHeld,
-    fishHeldUnits: C.fishHeldUnits,
     fishPhotos: (first, game, cur) => C.fishPhotos(game && Object.keys(game).length ? first : inPlay(first), game, cur),
     easyRank: C.easyRank,
     easyCover: C.easyCover,

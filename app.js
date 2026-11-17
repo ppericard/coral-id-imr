@@ -779,7 +779,7 @@ function fishGenera(X, F) {
           sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
           // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
           wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
-          // its held-out photos the same way (core.js fishGen held; model.js HELD): never in its views
+          // its held-out photos the same way (core.js fishGen held; model.js examSet): never in its views
           held = (E.held || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
         X.gen[id] = {
           id,
@@ -1169,7 +1169,7 @@ const fishBuild = () => {
     held = fishHeld(ho, gm.photos && Object.keys(gm.photos).length ? gm.photos : ph.photos, C);
   FISHON = on;
   FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
-  FISH = fishCurate(fishHeldUnits(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f)), C, f);
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C, held), ph.sheet, unitRankOf(S)), f), C, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
@@ -2227,7 +2227,7 @@ function treePhoto(f) {
   const id = fishPid(f),
     G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
   for (const g of G)
-    // its held-out photos too (model.js HELD: shown as a probe or an exam question, flagged like any other)
+    // its held-out photos too (shown by the mastery exam, model.js examSet: flagged like any other)
     for (const [v, L] of [...Object.entries(g.views || {}), ['wide', g.held]]) {
       const p = (L || []).find(x => x && fishPid(x.f) === id);
       if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
