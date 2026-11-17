@@ -193,6 +193,48 @@ test('scoring: a right answer and a speed bonus, timed from when the question re
   assert.strictEqual(s.lv('answer', {code, pid: a.pid, pk: a.pk, qi: 1, c: 1}).error, 'phase');
 });
 
+test('a student is sent their accepted answers once revealed, a reveal missed or not; never one refused (Codex review #1049)', () => {
+  const s = setup(),
+    {code, tk} = start(s),
+    a = s.lv('join', {code, nick: 'Ann'}),
+    poll = (hx = 0) => s.lv('poll', {code, pid: a.pid, pk: a.pk, hx}),
+    ans = (qi, c) => s.lv('answer', {code, pid: a.pid, pk: a.pk, qi, c});
+  // A subject in beta for a group is never hosted.
+  assert.strictEqual(start(s, {s: 'seaslug'}).error, 'input');
+  s.lv('host', {code, tk, act: 'q', q: Q(1)});
+  poll();
+  ans(0, 2);
+  // Nothing revealed yet: nothing to log, and no right answer in the reply.
+  const p0 = poll();
+  assert.strictEqual(p0.hn, 0);
+  assert.ok(!('past' in p0));
+  // Revealed, then the next question opened before Ann's page polled again: her answer still comes, with its right one.
+  s.lv('host', {code, tk, act: 'rev'});
+  s.lv('host', {code, tk, act: 'q', q: Q(0, 'montipora-2')});
+  const p1 = poll();
+  assert.strictEqual(p1.ph, 'q');
+  assert.strictEqual(p1.hn, 1);
+  assert.deepStrictEqual(p1.past, [
+    {qi: 0, t: 'Acropora', c: 'Porites', ch: ['Montipora', 'Acropora', 'Porites', 'Pocillopora'], f: ['acropora-1']}
+  ]);
+  // Once the page has gone through it (hx), not again.
+  assert.ok(!('past' in poll(1)));
+  // An answer refused (too late) is never sent as hers.
+  s.tick(20000 + 3001);
+  assert.strictEqual(ans(1, 0).error, 'phase');
+  s.lv('host', {code, tk, act: 'rev'});
+  const p2 = poll(1);
+  assert.strictEqual(p2.rev.mine, -1);
+  assert.strictEqual(p2.hn, 2);
+  assert.ok(!('past' in p2));
+  // At the end, from the start: only question 0.
+  s.lv('host', {code, tk, act: 'end'});
+  assert.deepStrictEqual(
+    poll().past.map(x => x.qi),
+    [0]
+  );
+});
+
 test('joins: a nickname of plain text, at most 40 a session, a session older than 6 hours is gone', () => {
   const s = setup(),
     {code, tk} = start(s);

@@ -7795,9 +7795,24 @@ a.ftile:hover {
 .lvph {
   margin: 0;
   min-width: 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+/* After the answer (live.js liveCredits): the photo opens the enlarged view (its enlarge mark, .zic) and shows its source
+   (.psrc). The student's reveal shows the photos smaller, so the shares still fit the screen. */
+.lvph .zoom {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 0;
+}
+.lvstage.lvrevph {
+  height: 22vh;
 }
 .lvph img {
   max-width: 100%;

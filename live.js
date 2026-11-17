@@ -109,6 +109,36 @@ const livePhotos = (ph, cls = '') =>
         `<figure class="lvph"><img src="${esc(p.u)}" alt="Photo to identify${p.v ? ', ' + esc(p.v) + ' view' : ''}" decoding="async"></figure>`
     )
     .join('')}</div>`;
+// Once the answer is out (both pages' reveal): each photo's credit (app.js photoSrc) and the enlarged view with its full
+// credit and its Report button (app.js zoom; rules P5, U14), from the photo's record on this device (photoLook, in the
+// game's subject, its data loaded first). Never before the reveal: no credit or enlarged view gives the answer away.
+function liveCredits(sid, ph, t) {
+  const S = subjectOf(sid),
+    root = $v.querySelector('.lvrev');
+  if (!S || !UNITS[S.id] || !root) return;
+  Promise.resolve(UNITS[S.id].load(S))
+    .then(() => {
+      if (!root.isConnected) return;
+      const R = inSubject(S.id, () => ph.map(x => photoLook(x.f) || null)),
+        L = R.filter(Boolean).map(p => ({...p, genus: t}));
+      root.querySelectorAll('.lvph').forEach((fig, k) => {
+        const p = R[k],
+          im = fig.querySelector('img');
+        if (!p || !im || fig.querySelector('.zoom')) return;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'zoom';
+        b.setAttribute('aria-label', 'Enlarge photo');
+        fig.insertBefore(b, im);
+        b.appendChild(im);
+        b.insertAdjacentHTML('beforeend', ZOOMI);
+        fig.insertAdjacentHTML('beforeend', photoSrc(p));
+        const i = L.findIndex(x => x.f === p.f);
+        b.onclick = () => zoom(L, Math.max(0, i));
+      });
+    })
+    .catch(() => {});
+}
 const liveTop = (top, me) =>
   `<ol class="lvtop">${top
     .map(
@@ -128,17 +158,22 @@ const liveShareList = (ch, rev, mine = -1) => {
 };
 
 // ---- A student's page ----
-// LV: the student's game: {code, pid, pk, name, s: subject id, at: the question's state {qi, t0, rt, c}, logged: the
-// question numbers already logged or kept, pend: a nickname's answers kept until a sign-in, right}.
+// LV: the student's game: {code, pid, pk, name, s: subject id, at: the question's state {qi, t0, rt, c}, mine: this
+// page's answers {qi: {id: the choice's id, rt, at}} (for the answer time), logged: the question numbers already logged
+// or kept, hx: how many revealed questions the script has said (lvView_ hn), pend: a nickname's answers kept until a
+// sign-in, right}. All but at kept per tab (LIVE_KEY.ME), so a reload (a sign-in reloads the page) loses nothing.
 let LV = null,
   LVT = 0;
+const liveSave = () =>
+  LV &&
+  liveSet(LIVE_KEY.ME, {code: LV.code, pid: LV.pid, pk: LV.pk, name: LV.name, logged: LV.logged, hx: LV.hx, pend: LV.pend, mine: LV.mine});
 function viewLive(h) {
   clearTimeout(LVT);
   if (h === 'live-host') return liveHost();
   const code = h.startsWith('live|') ? h.slice(5) : '',
     me = liveGet(LIVE_KEY.ME);
   if (me && (!code || me.code === code)) {
-    LV = {...me, at: null, logged: me.logged || [], pend: [], right: 0, key: ''};
+    LV = {...me, at: null, logged: me.logged || [], hx: me.hx || 0, pend: me.pend || [], mine: me.mine || {}, right: 0, key: ''};
     return livePoll();
   }
   liveJoin(code);
@@ -177,9 +212,8 @@ function liveJoin(code, msg = '') {
     LIVE_CH.join({code: c, nick}).then(j => {
       f.querySelector('button').disabled = false;
       if (!j.ok) return void (m.textContent = liveErr(j.error));
-      const me = {code: c, pid: j.pid, pk: j.pk, name: j.name, logged: []};
-      liveSet(LIVE_KEY.ME, me);
-      LV = {...me, at: null, pend: [], right: 0, key: ''};
+      LV = {code: c, pid: j.pid, pk: j.pk, name: j.name, logged: [], hx: 0, pend: [], mine: {}, at: null, right: 0, key: ''};
+      liveSave();
       livePoll();
     });
   };
@@ -195,7 +229,7 @@ function liveSignin(then) {
 }
 function livePoll() {
   if (!LV || !liveOn()) return;
-  LIVE_CH.poll({code: LV.code, pid: LV.pid, pk: LV.pk}).then(j => {
+  LIVE_CH.poll({code: LV.code, pid: LV.pid, pk: LV.pk, hx: LV.hx}).then(j => {
     if (!LV || !liveOn()) return;
     if (!j.ok && ['gone', 'input', 'old'].includes(j.error)) {
       liveSet(LIVE_KEY.ME, null);
@@ -208,6 +242,7 @@ function livePoll() {
 // The student's screen for a poll's reply: drawn again only when the phase or the question changes; the countdown and
 // counts in place otherwise.
 function liveShow(j) {
+  liveCatch(j);
   const key = j.ph + ':' + j.qi;
   if (key !== LV.key) liveDraw(j, key);
   if (j.ph === 'q') liveClock(j.left, 'lvbar', j.lim * 1000);
@@ -236,15 +271,23 @@ function liveDraw(j, key) {
     $v.querySelectorAll('.lvch [data-i]').forEach(b => (b.onclick = () => liveAnswer(j.qi, Number(b.dataset.i))));
   } else if (j.ph === 'rev') {
     const r = j.rev,
-      ok = r.mine === r.k;
-    liveKeep(j);
+      ok = r.mine === r.k,
+      t = j.q.ch[r.k][0];
+    // A problem with this question reported from here (rule U14), as the quiz's report: the right answer, the one picked
+    // (the accepted one), the photos.
+    const rep =
+      typeof repBtn === 'function' ? repBtn({g: t, a: r.mine >= 0 ? j.q.ch[r.mine][0] : '', ph: j.q.ph.map(p => p.f), m: 'live'}) : '';
     $v.innerHTML = `<div class="live lvrev">${head}<p class="lvverdict ${r.mine < 0 ? '' : ok ? 'ok' : 'ko'}">${
       r.mine < 0 ? 'Time’s up' : ok ? `✓ Right! <span>+${r.pts}</span>` : '✗ Not this time'
-    }</p><p class="lvans">It was ${liveName(j.q.ch[r.k][0], j.q.ch[r.k][1])}</p>${liveShareList(j.q.ch, r, r.mine)}
-      <p class="lvrank">${liveNth(j.rank)} of ${j.of} · ${j.me.s} pts</p></div>`;
+    }</p>${livePhotos(j.q.ph, 'lvrevph')}<p class="lvans">It was ${liveName(t, j.q.ch[r.k][1])}</p>${liveShareList(j.q.ch, r, r.mine)}
+      <p class="lvrank">${liveNth(j.rank)} of ${j.of} · ${j.me.s} pts</p><p class="note lvrep">${rep}</p></div>`;
+    liveCredits(j.s, j.q.ph, t);
   } else if (j.ph === 'end') {
     LV.right = j.me.r;
-    const pend = LV.pend.filter(a => a.ok).length;
+    // Signed in by now with answers still waiting (a sign-in reloads the page: the waiting answers were kept per tab):
+    // logged now.
+    const flush = SYNC && LV.pend.length,
+      pend = LV.pend.filter(a => a.ok).length;
     $v.innerHTML = `<div class="live lvend">${head}<p class="lvbig">${liveNth(j.rank)} of ${j.of}</p>
       <p class="lvrank">${j.me.s} pts · ${j.me.r} right of ${j.n}</p>${liveTop(j.top, LV.name)}
       <div class="lvsign" id="lvkeep">${
@@ -257,7 +300,13 @@ function liveDraw(j, key) {
       <p><a class="next sec" href="${esc(hr('live'))}" id="lvagain">Join another game</a></p></div>`;
     const sb = document.getElementById('lvsign');
     if (sb) sb.onclick = () => liveSignin(() => liveFlush().then(n => liveKept(n)));
-    document.getElementById('lvagain').onclick = () => liveSet(LIVE_KEY.ME, null);
+    if (flush) liveFlush().then(n => liveKept(n));
+    // Another game: the join form at once (the address may already be #live, which no hashchange would redraw).
+    document.getElementById('lvagain').onclick = e => {
+      liveSet(LIVE_KEY.ME, null);
+      clearTimeout(LVT);
+      if (hashNow() === 'live') (e.preventDefault(), liveJoin(''));
+    };
   }
 }
 const liveKept = n => {
@@ -286,6 +335,8 @@ function liveAnswer(qi, i) {
   LV.at.c = i;
   LV.at.rt = LV.at.t0 ? Math.round((Date.now() - LV.at.t0) / 100) / 10 : undefined;
   LV.at.t = new Date().toISOString();
+  LV.mine = {...LV.mine, [qi]: {id: LV.at.q.ch[i][0], rt: LV.at.rt, at: LV.at.t}};
+  liveSave();
   $v.querySelectorAll('.lvch [data-i]').forEach(b => {
     b.disabled = true;
     b.classList.toggle('on', Number(b.dataset.i) === i);
@@ -298,29 +349,27 @@ function liveAnswer(qi, i) {
       m2.textContent = j.ok ? 'Answer locked in. Wait for the reveal…' : j.error === 'phase' ? 'Too late for this one.' : liveErr(j.error);
   });
 }
-// At the reveal, the student's answer to the question just shown, with its right answer now known: logged at once when
-// signed in (liveRecord), else kept in this page's memory for a sign-in at the end (Q393 e). Once per question.
-function liveKeep(j) {
-  const a = LV.at;
-  if (!a || a.qi !== j.qi || a.c < 0 || LV.logged.includes(j.qi)) return;
-  LV.logged = [...LV.logged, j.qi];
-  liveSet(LIVE_KEY.ME, {code: LV.code, pid: LV.pid, pk: LV.pk, name: LV.name, logged: LV.logged});
-  const o = {
-    s: j.s,
-    t: j.q.ch[j.rev.k][0],
-    c: j.q.ch[a.c][0],
-    ok: a.c === j.rev.k,
-    ph: j.q.ph.map(p => p.f),
-    chs: j.q.ch.map(c => c[0]),
-    rt: a.rt,
-    at: a.t
-  };
-  if (SYNC) liveRecord(o);
-  else LV.pend.push(o);
+// The student's answers the script accepted, once their right answer is out (lvView_ past: every question revealed since
+// the last reply, its reveal seen here or not): each logged at once when signed in (liveRecord), else kept for a sign-in
+// at the end (Q393 e). Only the choice the script accepted, never one it refused (too late); once per question. The
+// answer time is this page's own when it is for that same choice.
+function liveCatch(j) {
+  if (!LV || typeof j.hn !== 'number') return;
+  (j.past || [])
+    .filter(x => !LV.logged.includes(x.qi))
+    .forEach(x => {
+      LV.logged = [...LV.logged, x.qi];
+      const m = LV.mine[x.qi] && LV.mine[x.qi].id === x.c ? LV.mine[x.qi] : {},
+        o = {s: j.s, t: x.t, c: x.c, ok: x.c === x.t, ph: x.f, chs: x.ch, rt: m.rt, at: m.at};
+      if (SYNC) liveRecord(o);
+      else LV.pend.push(o);
+    });
+  LV.hx = Math.max(LV.hx || 0, j.hn);
+  liveSave();
 }
 function liveFlush() {
   const L = LV ? LV.pend : [];
-  if (LV) LV.pend = [];
+  if (LV) ((LV.pend = []), liveSave());
   return L.reduce((p, o) => p.then(n => liveRecord(o).then(ok => n + (ok ? 1 : 0))), Promise.resolve(0));
 }
 // One live answer into the signed-in player's progress and answer log, as quiz.js answer scores and logs a photo-quiz
@@ -421,12 +470,15 @@ let LH = null,
 const liveSubjects = () => SUBJECTS.filter(S => !subjGroup(S) && UNITS[S.id]);
 // The sets of the subject on screen: every unit in play, then the IMR lecture's groups when it has them (quiz.js cqGroups,
 // the custom quiz's own groups: never growth forms, rule C4).
+// A group's title (HTML, its text escaped) as plain text: parsed as an inert document (nothing in it runs or loads), its
+// text only; escaped again wherever it is shown.
+const liveText = h => (new DOMParser().parseFromString(String(h || ''), 'text/html').body.textContent || '').replace(/\s+/g, ' ').trim();
 function liveSets() {
   const play = pool(),
     out = [{k: 'all', t: `All ${SUBJ.many}`, L: play}];
   try {
     const G = cqGroups('imr', play).G.filter(g => g.L.length >= 2);
-    if (G.length > 1) G.forEach(g => out.push({k: 'g' + g.k, t: (g.t || '').replace(/<[^>]*>/g, '').trim(), L: g.L}));
+    if (G.length > 1) G.forEach(g => out.push({k: 'g' + g.k, t: liveText(g.t), L: g.L}));
   } catch (e) {}
   return out;
 }
@@ -457,8 +509,14 @@ function hostSetup(msg = '') {
     document.getElementById('lvsign').onclick = () => liveSignin(() => hostSetup());
     return;
   }
-  const subs = liveSubjects(),
-    sets = liveSets(),
+  const subs = liveSubjects();
+  // The subject on screen may be one a trainer cannot host (in beta for a group): the first one they can, first.
+  if (!subs.includes(SUBJ)) {
+    if (subs.length) return void setSubject(subs[0].id);
+    $v.innerHTML = `<div class="live lvhost lvsetup"><p class="lvbig">Host a live game</p><p>No subject can be hosted yet.</p></div>`;
+    return;
+  }
+  const sets = liveSets(),
     seg = (id, L, cur, f = x => x) =>
       `<div class="seg" id="${id}" role="group">${L.map(x => `<button type="button" data-v="${x}" aria-pressed="${x === cur}">${f(x)}</button>`).join('')}</div>`;
   $v.innerHTML = `<div class="live lvhost lvsetup">
@@ -530,12 +588,21 @@ function hostAct(act) {
     const qi = LH.last ? LH.last.qi + 1 : 0;
     // Built in the game's subject (its data loaded, as the player's own subject switch does).
     for (let i = 0; i < 5 && !q; i++) q = inSubject(LH.s, () => liveBuild(i ? pick(LH.plan) : LH.plan[qi]));
-    if (!q) return hostShow(LH.last, 'No photo or choices for this question: try again.');
+    if (!q) return (hostShow(LH.last, 'No photo or choices for this question: try again.'), (LHT = setTimeout(hostPoll, LIVE.HOST)));
     LH.sent = qi;
     liveSet(LIVE_KEY.HOST, LH);
   }
   $v.querySelectorAll('.lvact').forEach(b => (b.disabled = true));
-  hostCall(act, q).then(j => (j.ok || j.error !== 'phase' ? hostReply(j) : hostPoll()));
+  hostCall(act, q).then(j => {
+    if (!LH) return;
+    if (j.ok || ['gone', 'old'].includes(j.error)) return hostReply(j);
+    if (j.error === 'phase') return hostPoll();
+    // Not applied (no connection, a question refused): the screen drawn again with its buttons and the reason, and the
+    // polling goes on; a poll that finds the action applied after all moves on by itself.
+    if (LH.last && liveOn('host')) hostShow(LH.last, liveErr(j.error));
+    clearTimeout(LHT);
+    LHT = setTimeout(hostPoll, LIVE.HOST);
+  });
 }
 // The trainer's screen, projector-friendly: drawn again only when the phase or the question changes.
 function hostShow(j, msg = '') {
@@ -580,6 +647,7 @@ function hostDraw(j, key, last, msg) {
       <div class="lvtopw"><p class="lvk">Top ${Math.min(5, j.rev.top.length)}</p>${liveTop(j.rev.top)}</div>
       <p><button class="next lvact" type="button" id="lhnext">${last ? 'Show the podium' : 'Next question'}</button>${last ? '' : ' <button class="linkish lvact" type="button" id="lhend">End</button>'}</p>${note}</div>`;
     document.getElementById('lhnext').onclick = () => hostAct(last ? 'end' : 'q');
+    liveCredits(j.s, j.q.ph, j.q.ch[j.rev.k][0]);
   } else if (j.ph === 'end') {
     const P3 = j.stand.slice(0, 3),
       miss = liveMissed(j.hist).slice(0, 5);

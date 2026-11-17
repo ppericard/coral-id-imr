@@ -1730,8 +1730,8 @@ function roles_(p){
 // kept LV.TTL seconds from its last write (the cache's most: 6 hours); a session older than LV.MAX counts as ended.
 // POST {lv: 'start', lname, lpin, s, t, n, lim} (the trainer's account in lname / lpin, never name / pin: a script before
 // vNEXT answers 'input' and never takes it for a progress save) → {ok, code, tk}; {lv: 'host', code, tk, act?, q?} →
-// the trainer's view (lvHostView_); {lv: 'join', code, nick} → {ok, pid, pk, name}; {lv: 'poll', code, pid, pk} → the
-// student's view (lvView_); {lv: 'answer', code, pid, pk, qi, c} → {ok}. Errors: input, role, pin, wait, archived, user,
+// the trainer's view (lvHostView_); {lv: 'join', code, nick} → {ok, pid, pk, name}; {lv: 'poll', code, pid, pk, hx} → the
+// student's view (lvView_; hx: how many revealed questions the page went through); {lv: 'answer', code, pid, pk, qi, c} → {ok}. Errors: input, role, pin, wait, archived, user,
 // gone (no such session, or ended), phase, full, busy, lock.
 const LV = {TTL: 21600, MAX: 6 * 3600e3, PLAYERS: 40, JOINS: 400, GRACE: 3000, QMAX: 30, LIM: [5, 120], BASE: 100, BONUS: 100, TOP: 5};
 const lvKey_ = (code, k) => 'lv:' + code + (k ? ':' + k : '');
@@ -1794,7 +1794,8 @@ function lvStart_(p){
   const who = lvTrainer_(p);
   if (who.error) return {ok: false, error: who.error};
   const n = Math.round(Number(p.n)), lim = Math.round(Number(p.lim)), sid = String(p.s || '');
-  if (!(n >= 1 && n <= LV.QMAX) || !(lim >= LV.LIM[0] && lim <= LV.LIM[1]) || !CORE_.SUBJECTS.some(S => S.id === sid)) return {ok: false, error: 'input'};
+  // A subject open to every player only: one in beta for a group (open: 'group') is never hosted (Codex review #1049).
+  if (!(n >= 1 && n <= LV.QMAX) || !(lim >= LV.LIM[0] && lim <= LV.LIM[1]) || !CORE_.SUBJECTS.some(S => S.id === sid && S.open !== 'group')) return {ok: false, error: 'input'};
   let code = '';
   for (let i = 0; i < 20 && !code; i++) { const c = String(100000 + Math.floor(Math.random() * 900000)); if (!lvGet_(lvKey_(c))) code = c; }
   if (!code) return {ok: false, error: 'busy'};
@@ -1822,7 +1823,9 @@ function lvAct_(S, act, q, L, now){
     const tot = d.reduce((t, x) => t + x, 0);
     S.ph = 'rev';
     S.rev = {k: S.q.k, d: d, tot: tot, top: lvStand_(L).slice(0, LV.TOP)};
-    S.hist = S.hist.concat([{qi: S.qi, t: S.q.ch[S.q.k][1], k: S.q.k, d: d, n: L.length, ch: S.q.ch.map(c => c[1]), f: S.q.ph[0].u}]).slice(-LV.QMAX);
+    // ids and fs (the choices' ids, the photos' stems): what a student's page logs an answer with (lvView_ past).
+    S.hist = S.hist.concat([{qi: S.qi, t: S.q.ch[S.q.k][1], k: S.q.k, d: d, n: L.length, ch: S.q.ch.map(c => c[1]), f: S.q.ph[0].u,
+      ids: S.q.ch.map(c => c[0]), fs: S.q.ph.map(p => p.f)}]).slice(-LV.QMAX);
     return '';
   }
   if (act === 'end') {
@@ -1886,10 +1889,14 @@ function lvPoll_(p){
   const {S, me, code, pid} = x, now = Date.now();
   // The question first served to this student now: its clock starts here (lvAnswer_), whatever the poll's lag.
   if (S.ph === 'q' && me.sq !== S.qi) { me.sq = S.qi; me.st = now; lvPut_(lvKey_(code, 'p:' + pid), me); }
-  return lvView_(S, me, now, S.ph === 'rev' || S.ph === 'end' ? lvPlayers_(code) : null);
+  const hx = Math.max(0, Math.floor(Number(p.hx) || 0));
+  return lvView_(S, me, now, S.ph === 'rev' || S.ph === 'end' ? lvPlayers_(code) : null, hx);
 }
 // What a student's page shows: never the right answer before the reveal, never another student's key or answers.
-function lvView_(S, me, now, L){
+// past: the student's own accepted answers to the questions revealed since the page's hx-th (hn: how many are revealed),
+// each {qi, t: the right choice's id, c: the one accepted, ch: the choices' ids, f: the photos' stems}, so the page logs
+// every accepted answer, and only those, even one whose reveal it never saw (Codex review #1049).
+function lvView_(S, me, now, L, hx){
   const a = me.a[S.qi], out = {ok: true, ph: S.ph, qi: S.qi, n: S.n, lim: S.lim, s: S.s, me: {n: me.n, s: me.s, r: me.r}};
   if (S.ph === 'q' || S.ph === 'rev') out.q = {ph: S.q.ph, ch: S.q.ch};
   if (S.ph === 'q') { out.left = Math.max(0, S.ends - now); out.mine = a ? a[0] : -1; }
@@ -1900,6 +1907,9 @@ function lvView_(S, me, now, L){
     out.top = st.slice(0, LV.TOP);
   }
   if (S.ph === 'rev') out.rev = {k: S.rev.k, d: S.rev.d, tot: S.rev.tot, mine: a ? a[0] : -1, pts: a ? a[1] : 0};
+  out.hn = S.hist.length;
+  const past = S.hist.slice(hx || 0).filter(h => h.ids && me.a[h.qi]).map(h => ({qi: h.qi, t: h.ids[h.k], c: h.ids[me.a[h.qi][0]], ch: h.ids, f: h.fs}));
+  if (past.length) out.past = past;
   return out;
 }
 function lvAnswer_(p){

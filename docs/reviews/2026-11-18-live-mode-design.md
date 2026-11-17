@@ -100,9 +100,9 @@ message, and nothing is lost but the game's points.
   as any game answer, through the usual sync (the account's queue), with mode `live`, scored by the same scorer
   (`core.js` `scoreAnswer`, as `quiz.js` `answer` does) so the full replay counts them the same. Only for units the
   student has unlocked (rule L4: no game opens a unit; a live answer on another unit counts in nothing).
-- A student not signed in keeps nothing: their answers wait in the page's memory; if they sign in on the end screen
-  ("Sign in to keep your 7 right answers in your progress") they are scored and logged then, else they are gone when the
-  page is left.
+- A student not signed in keeps nothing: their answers wait in the page's tab (its session storage, so the reload of a
+  sign-in loses none; Codex review #1049); if they sign in on the end screen ("Sign in to keep your 7 right answers in
+  your progress") they are scored and logged then, else they are gone with the tab.
 - Rule D7: nothing to clean when an account goes: the cache holds no account, the logged answers are the account's like
   any other.
 
