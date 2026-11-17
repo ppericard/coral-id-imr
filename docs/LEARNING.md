@@ -5614,7 +5614,7 @@ What it says, on this learner:
   34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
   limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
 
-### The sea slugs' own pooled statistics (2026-11-17, sheet vNEXT)
+### The sea slugs' own pooled statistics (2026-11-17, sheet v167)
 
 Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?". Until then the sea slugs had no game
 photo pool on the sheet (`core.js` `SUBJECTS` `pool`), so the sheet pooled nothing of their answers and the app read the

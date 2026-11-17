@@ -407,7 +407,7 @@
   // The sync script version that pools the sea slugs' own answer statistics (rule D4; SUBJECTS seaslug pool, stats): its
   // ?stats=1&s=seaslug serves their photo ratings, genus offsets and confusions, the reply naming its subject (s). The app
   // asks for and reads them only from it (sync.js loadOwnStats); an older script answers &s=seaslug with the corals'.
-  const SEASLUGST_SHEET = 166;
+  const SEASLUGST_SHEET = 167;
   const SUBJECTS = [
     {
       id: 'coral',
