@@ -11,7 +11,7 @@
 (function (root) {
   'use strict';
   // Bump AV whenever a result could change for the same answers: the admin's cache is keyed by it.
-  const AV = 14; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
+  const AV = 15; // 2: each analysis carries its typical values (typ) for the plain reading (plainOf); 3: Sessions in figures (desc);
   // 4: multiple-testing correction (primary effects under Holm, the others under Benjamini-Hochberg), 999 bootstrap draws
   // 5: effects hard to tell apart (ent) and the mix-up map (Confusions map);
   // 6: the answers a deleted account left (sheet v55, anonymous 2) out of every per-player result and count of players
@@ -26,6 +26,8 @@
   // paired log-loss against the app's expectation; Answer time's residuals
   // 13: the correlations of the estimates over the bootstrap draws (ent rb), the mix-up families' stability (map stab)
   // 14: the fish photos' judged features in Photo factors (fph: ease, phase, framing), the judged ease a primary effect
+  // 15: the rank asked (meta.rk: the fish's families, genera and species units told apart) in Response time, Photo
+  // factors, Confusions and Learning curves, and each rank against the app's expectation in Formats
   const GAP = 30 * 60e3, // a new session after 30 minutes without an answer (model.js SESSION.GAP, admin HEALTH.GAP)
     STEP = 1000, // a milestone every 1000 answers (Pierre, 2026-11-04)
     // The sync script that stores one report per subject (Code.gs analyses_ anTab_): before it, analysesGet and
@@ -531,9 +533,75 @@
     const k = /\|k(\d)/.exec(m);
     return k && Number(k[1]) < 4 ? (Number(k[1]) >= 3 ? 'k3' : 'k2') : 'k4';
   }
+  // The rank of the unit a question asks (the fish parity review, #1056; the integrator, 2026-11-17: a rank effect in the
+  // models, not one report per rank): a subject whose units span several ranks (the fish: families, scientific genera and
+  // species units) has meta.rk, the rank of its game units from the start (core.js unitRankOf: the fish's 'family'), the
+  // models' reference level. Each answer's rank is read from its unit's id prefix (core.js SUBJECTS sheets: f: a family,
+  // g: a genus, s: a species unit), else the log's Rank column (index 18, sheet v60; Code.gs answerOut_ fills a blank one
+  // with the subject's rank), else meta.rk. Without meta.rk (the corals: one rank) no answer carries a rank and every
+  // model is as before. A model with a unit-level term (Response time, Photo factors, Confusions, Learning curves) takes
+  // one 0/1 column per other rank with RK_MIN answers or more (rkLev): that rank's questions against the reference's,
+  // beyond the unit's own random effect, which then varies around its rank's mean (rkUnit adds the rank back where a
+  // unit's own value is shown). Formats reads each rank's right answers against the app's expected chance (oe_rk_*).
+  const RANKS = ['family', 'genus', 'species'],
+    RK_PRE = {f: 'family', g: 'genus', s: 'species'},
+    RK_MIN = 20,
+    LOG_RANK = 18;
+  const rankOfUnit = (g, logged, ref) => {
+    const m = /^([fgs]):/.exec(String(g || ''));
+    if (m) return RK_PRE[m[1]];
+    const l = String(logged || '');
+    return RANKS.includes(l) ? l : ref;
+  };
+  // The reference rank of a subject (core.js SUBJECTS entry) whose ranks the analyses tell apart: one whose units have a
+  // sheet per rank (SUBJECTS sheets: the fish, the sea slugs), at the rank of its game units from the start (unitRank,
+  // else rank: core.js unitRankOf); '' for the corals (one rank). The meta's rk, from tools/analyses.js metaOf, the admin's
+  // Recompute here and its demo alike.
+  const rankRef = S => (S && S.sheets && Object.keys(S.sheets).length > 1 ? String(S.unitRank || S.rank || '') : '');
+  // How many answers of each rank D holds.
+  const rkCount = D => D.reduce((n, a) => ((n[a.rk] = (n[a.rk] || 0) + 1), n), {});
+  // The ranks a fit of D carries a column for, in RANKS order: every rank but the reference with RK_MIN answers or more.
+  function rkLev(D) {
+    const ref = D.length ? D[0].rk0 : '';
+    if (!ref) return [];
+    const n = rkCount(D);
+    return RANKS.filter(r => r !== ref && (n[r] || 0) >= RK_MIN);
+  }
+  // Every rank D holds RK_MIN answers of, the reference included (Formats: each against the app's expectation); none
+  // while only one rank has (its check is the formats' own).
+  function rkAll(D) {
+    if (!D.length || !D[0].rk0) return [];
+    const n = rkCount(D),
+      L = RANKS.filter(r => (n[r] || 0) >= RK_MIN);
+    return L.length > 1 ? L : [];
+  }
+  const rkCols = (a, RK) => RK.map(r => (a.rk === r ? 1 : 0)),
+    rkWord = r => r[0].toUpperCase() + r.slice(1) + ' questions',
+    rkX = (RK, ref) => RK.map(r => ['rk_' + r, `${rkWord(r)} (vs ${ref} questions)`]);
+  // A unit's own effect with its rank's: the rank's coefficient (column c0 + its place in RK) added to the unit's random
+  // effect u, and its variance to the unit's conditional variance cv (sg: -1 where the reported effect is minus the model's
+  // coefficient). The reference rank's units, or a model without ranks, as they are.
+  const rkUnit = (M, RK, c0, rk, u, cv, sg = 1) => {
+    const i = RK.indexOf(rk);
+    if (i < 0) return [u, cv];
+    const c = c0 + i;
+    return [u + sg * M.b[c], cv + (M.V ? Math.max(0, M.V[c][c]) : 0)];
+  };
+  // Each unit's rank in D (a subject whose ranks are told apart), else null.
+  const rkMap = D => (D.length && D[0].rk0 ? new Map(D.map(a => [a.g, a.rk])) : null);
+  // A factor's levels with their rank's effect added (rkUnit): the copy a unit-level view reads (Learning curves' answers
+  // to 80%, the Wright map, the per-unit curves), the fit's own factor left as it is for its spread (sdEff).
+  function rkFold(f, M, RK, c0, ranks, sg = 1) {
+    if (!RK.length || !ranks) return f;
+    const u = new Float64Array(f.n),
+      cv = new Float64Array(f.n);
+    f.L.forEach((k, j) => ([u[j], cv[j]] = rkUnit(M, RK, c0, ranks.get(k), f.u[j], f.cv[j], sg)));
+    return {...f, u, cv};
+  }
   // rows: the sheet's readAnswers rows [id, time ms, shown, answered, right, mode, photos, expected, ability, new
   // photos, choices, anonymous, seconds, enlarged] (Code.gs answers_), oldest first or not. meta.ph: {file: [view,
-  // quality 1-3, sharpness or null, source 'imr' | 'own' | 'inat']} from the admin's data and curation.
+  // quality 1-3, sharpness or null, source 'imr' | 'own' | 'inat']} from the admin's data and curation. meta.rk: the
+  // reference rank of a subject whose ranks are told apart (above).
   function prep(rows, meta = {}) {
     const PH = meta.ph || {},
       R = (rows || []).filter(r => String(r[5] || '').indexOf('quiz') === 0 && r[2]).sort((a, b) => a[1] - b[1]);
@@ -581,6 +649,8 @@
                 ? views[0]
                 : 'multi'
         };
+      // the rank of the unit asked (rankOfUnit), only for a subject whose ranks are told apart: the corals' answers as before
+      if (meta.rk) ((A.rk0 = meta.rk), (A.rk = rankOfUnit(A.g, r[LOG_RANK], meta.rk)));
       let P = per.get(A.p);
       if (!P) per.set(A.p, (P = {last: null, sess: 0, pos: 0, g: {}, miss: 0}));
       if (!P.last || A.t - P.last.t > GAP) ((P.sess += 1), (P.pos = 0));
@@ -754,11 +824,12 @@
     ['diff', 'Expected difficulty (logit)'],
     ['pos', 'Later in the session (log position)']
   ];
-  function rtFit(D, full) {
+  // RK: the ranks with a column of their own (rkLev), after RT_X's.
+  function rtFit(D, RK = []) {
     const y = D.map(a => Math.log(a.s)),
       dif = centre(D.map(a => -a.x)),
       lp = centre(D.map(a => Math.log(a.pos))),
-      X = D.map((a, i) => [1, a.y, a.typed, a.z || 0, a.ch.length === 2 ? 1 : 0, dif[i], lp[i]]),
+      X = D.map((a, i) => [1, a.y, a.typed, a.z || 0, a.ch.length === 2 ? 1 : 0, dif[i], lp[i], ...rkCols(a, RK)]),
       F = [
         factor(
           'player',
@@ -776,10 +847,10 @@
     const M = lmm(y, X, F);
     return {M, F, X};
   }
-  function rtStat(D) {
-    const {M, F} = rtFit(D);
+  function rtStat(D, RK = []) {
+    const {M, F} = rtFit(D, RK);
     const o = {};
-    RT_X.forEach(([k], j) => (o[k] = M.b[j + 1]));
+    [...RT_X, ...rkX(RK, '')].forEach(([k], j) => (o[k] = M.b[j + 1]));
     F.forEach(f => (o['sd_' + f.name] = Math.sqrt(f.tau2)));
     o.sd_res = Math.sqrt(M.s2);
     return o;
@@ -788,10 +859,12 @@
     const D = A.filter(a => a.s && a.x != null);
     // the model's clusters, a deleted account's included: the count shown (players) leaves it out (Codex review #600)
     if (D.length < 100 || new Set(D.map(a => a.p)).size < 2) return thin(D.length, 100);
-    const {M, F, X} = rtFit(D),
-      bi = boot(D, rtStat, B, seed),
+    const RK = rkLev(D),
+      KX = [...RT_X, ...rkX(RK, D[0].rk0)],
+      {M, F, X} = rtFit(D, RK),
+      bi = boot(D, S => rtStat(S, RK), B, seed),
       n = D.length,
-      effects = RT_X.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'log', 0.1, n, {rows: M.nz[j + 1]}));
+      effects = KX.map(([k, l], j) => eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'log', 0.1, n, {rows: M.nz[j + 1]}));
     F.forEach(f => effects.push(sdEff('sd_' + f.name, `SD ${f.name}`, f.tau2, f.n, bi, 'log', 0.1, n, mean([...f.cv]))));
     const parts = [...F.map(f => [f.name, f.tau2]), ['residual', M.s2]],
       tot = sum(parts.map(x => x[1]));
@@ -804,7 +877,11 @@
         lo: f.u[j] - Z * Math.sqrt(f.cv[j]),
         hi: f.u[j] + Z * Math.sqrt(f.cv[j])
       })).filter(x => x.n >= min);
-    const ph = lv(F[2], 3).sort((a, b) => b.u - a.u);
+    const ph = lv(F[2], 3).sort((a, b) => b.u - a.u),
+      // each unit's own time, its rank's effect included, and its rank (a subject whose ranks are told apart)
+      rks = rkMap(D),
+      gen = lv(rkFold(F[1], M, RK, RT_X.length + 1, rks), 1);
+    if (rks) gen.forEach(x => (x.rk = rks.get(x.k)));
     return {
       n,
       players: players(D),
@@ -812,10 +889,11 @@
       typ: typOf(D),
       shares: parts.map(([k, v]) => ({k, v, share: v / tot})),
       effects,
-      genus: lv(F[1], 1).sort((a, b) => b.u - a.u),
+      genus: gen.sort((a, b) => b.u - a.u),
       photos: [...ph.slice(0, 6), ...ph.slice(-6).filter(x => !ph.slice(0, 6).includes(x))],
       player: livePl(D, lv(F[0], 1)).sort((a, b) => b.u - a.u),
-      ent: entOf(M.V, X, [null, ...RT_X.map(x => x[0])], [], bi),
+      ...(rks ? {rk0: D[0].rk0} : {}),
+      ent: entOf(M.V, X, [null, ...KX.map(x => x[0])], [], bi),
       chk: checkLmm(
         M,
         D.map(a => Math.log(a.s)),
@@ -1023,9 +1101,12 @@
   }
   function photo(A, B, seed, meta) {
     const SP = phSpec(meta),
-      PH_X = SP.X,
       D = SP.rows(A, meta);
     if (D.length < 200) return thin(D.length, 200);
+    // the ranks' columns (rkLev) after the photo features', before the last column (typed answers, no effect of its own)
+    const RK = rkLev(D),
+      PH_X = [...SP.X, ...rkX(RK, D[0].rk0)];
+    if (RK.length) D.forEach(a => (a.X = [...a.X.slice(0, -1), ...rkCols(a, RK), a.X[a.X.length - 1]]));
     const {M, F} = phFit(D),
       n = D.length,
       bi = boot(
@@ -1073,6 +1154,20 @@
     D.forEach(a => a.ph.forEach(f => (gen[f] = a.g)));
     L.forEach(x => (x.g = gen[x.f]));
     L.sort((a, b) => b.d - a.d);
+    // a subject whose ranks are told apart: its answers by the rank asked, beside its photo features' tables
+    const rkTab =
+      !SP.of || !D[0].rk0
+        ? []
+        : [
+            {
+              k: 'rank',
+              t: 'Rank asked',
+              rows: RANKS.map(r => {
+                const S = D.filter(a => a.rk === r);
+                return {k: r, label: rkWord(r), n: S.length, y: sum(S.map(a => a.y)), ph: new Set(S.flatMap(a => a.ph)).size};
+              }).filter(t => t.n)
+            }
+          ];
     return {
       n,
       players: players(D),
@@ -1089,7 +1184,10 @@
       ...(SP.of
         ? {
             of: SP.of,
-            tabs: SP.tabs.map(([k, t, key, lab]) => ({k, t, rows: tab(key, lab).sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0))}))
+            tabs: [
+              ...SP.tabs.map(([k, t, key, lab]) => ({k, t, rows: tab(key, lab).sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0))})),
+              ...rkTab
+            ]
           }
         : Object.fromEntries(SP.tabs.map(([k, , key, lab]) => [k, tab(key, lab)]))),
       harder: L.slice(0, 8),
@@ -1105,7 +1203,7 @@
   }
 
   /* ---------- 4. Question formats: real guess rate and difficulty against the app's fixed values ---------- */
-  function fmtStat(D) {
+  function fmtStat(D, RR = []) {
     const o = {};
     FORMATS.forEach(([k]) => {
       const S = D.filter(a => a.f === k);
@@ -1119,12 +1217,18 @@
       o['d_' + k] = r.d;
       o['oe_' + k] = mean(S.map(a => a.y - a.E));
     });
+    // each rank's right answers against the app's expected chance (rkAll: a subject whose ranks are told apart)
+    RR.forEach(r => {
+      const S = D.filter(a => a.rk === r);
+      if (S.length) o['oe_rk_' + r] = mean(S.map(a => a.y - a.E));
+    });
     return o;
   }
   function formats(A, B, seed) {
     const D = A.filter(a => a.x != null);
     if (D.length < 100) return thin(D.length, 100);
-    const bi = boot(D, fmtStat, B, seed),
+    const RR = rkAll(D),
+      bi = boot(D, S => fmtStat(S, RR), B, seed),
       effects = [],
       table = [];
     FORMATS.forEach(([k, l]) => {
@@ -1147,7 +1251,15 @@
       );
       effects.push(eff('oe_' + k, `${l}: right − expected`, mean(oe), se, bi, 'p', 0.05, S.length, {fmt: k}));
     });
-    return {n: D.length, players: players(D), effects, table, ent: fmtEnt(table)};
+    // by the rank asked: the same check on each rank's questions, every format together (ranks: their table)
+    const ranks = RR.map(r => {
+      const S = D.filter(a => a.rk === r),
+        oe = S.map(a => a.y - a.E),
+        se = Math.sqrt(mean(oe.map(v => (v - mean(oe)) ** 2)) / S.length);
+      effects.push(eff('oe_rk_' + r, `${rkWord(r)}: right − expected`, mean(oe), se, bi, 'p', 0.05, S.length, {rk: r}));
+      return {k: r, label: rkWord(r), n: S.length, right: mean(S.map(a => a.y)), E: mean(S.map(a => a.E))};
+    });
+    return {n: D.length, players: players(D), effects, table, ent: fmtEnt(table), ...(RR.length ? {ranks} : {})};
   }
   // The bootstrap of a difficulty is stored as the shift d; reported as -d (+ = harder).
   const remap = (bi, k) => (bi[k] ? {[k]: [-bi[k][1], -bi[k][0]]} : null);
@@ -1801,13 +1913,25 @@
       if (a.typed || a.ch.length < 2) return;
       a.ch.forEach(c => {
         if (c === a.g) return;
-        E.push({p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length});
+        const e = {p: a.p, gone: a.gone, pair: [a.g, c].sort().join('|'), from: a.g, to: c, y: a.a === c ? 1 : 0, qv: a.qv, k: a.ch.length};
+        // the rank asked (a question's choices stay within it: model.js distractors), a subject whose ranks are told apart
+        if (a.rk0) ((e.rk0 = a.rk0), (e.rk = a.rk));
+        E.push(e);
       });
     });
     return E;
   }
-  function confFit(E) {
-    const X = E.map(e => [1, e.qv === 'medium' ? 1 : 0, e.qv === 'macro' ? 1 : 0, e.qv === 'multi' ? 1 : 0, Math.log(e.k - 1)]),
+  // The ranks' columns (RK: rkLev) after the views' and the choices' (column CF_RK on).
+  const CF_RK = 5;
+  function confFit(E, RK = []) {
+    const X = E.map(e => [
+        1,
+        e.qv === 'medium' ? 1 : 0,
+        e.qv === 'macro' ? 1 : 0,
+        e.qv === 'multi' ? 1 : 0,
+        Math.log(e.k - 1),
+        ...rkCols(e, RK)
+      ]),
       F = [
         factor(
           'pair',
@@ -1818,30 +1942,32 @@
           E.map(e => e.p)
         )
       ];
-    return {
-      M: glmm(
-        E.map(e => e.y),
-        X,
-        F,
-        {tau0: 0.3}
-      ),
+    const M = glmm(
+      E.map(e => e.y),
+      X,
       F,
-      X
-    };
+      {tau0: 0.3}
+    );
+    // the ranks the fit carries, for the mix-up map's typical rate of a pair (mixMap)
+    if (RK.length) M.rk = RK;
+    return {M, F, X};
   }
   function confusions(A, B, seed) {
     const E = confRows(A),
       mixed = sum(E.map(e => e.y));
     if (E.length < 300 || mixed < 20) return thin(E.length, 300, {mixed});
-    const {M, F, X} = confFit(E),
+    const RK = rkLev(E),
+      KR = rkX(RK, E[0].rk0),
+      {M, F, X} = confFit(E, RK),
       n = E.length,
       fams = [], // each draw's families of mix-ups (the mix-up map's stability, mixStab)
       bi = boot(
         E,
         S => {
-          const r = confFit(S),
+          const r = confFit(S, RK),
             o = {sd_pair: Math.sqrt(r.F[0].tau2), sd_player: Math.sqrt(r.F[1].tau2)};
           CF_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
+          KR.forEach(([k], j) => (o[k] = r.M.b[CF_RK + j]));
           if (S !== E) fams.push(mixFams(S, r.M, r.F));
           return o;
         },
@@ -1853,11 +1979,13 @@
     const effects = CF_X.map(([k, l], j) =>
       M.nz[j + 1] ? eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', 0.25, n, {rows: M.nz[j + 1]}) : null
     ).filter(Boolean);
+    KR.forEach(([k, l], j) => effects.push(eff(k, l, M.b[CF_RK + j], M.se[CF_RK + j], bi, 'logit', 0.25, n, {rows: M.nz[CF_RK + j]})));
     effects.push(sdEff('sd_player', 'SD player (each player vs pooled)', F[1].tau2, F[1].n, bi, 'logit', 0.25, n, mean([...F[1].cv])));
     effects.push(sdEff('sd_pair', 'SD pair', F[0].tau2, F[0].n, bi, 'logit', 0.25, n, mean([...F[0].cv])));
     const P = {};
     E.forEach(e => {
       const o = (P[e.pair] = P[e.pair] || {k: e.pair, off: 0, mix: 0, v: {}});
+      if (e.rk0) o.rk = e.rk;
       o.off++;
       o.mix += e.y;
       const v = (o.v[e.qv || 'unknown'] = o.v[e.qv || 'unknown'] || [0, 0]);
@@ -1865,14 +1993,16 @@
       v[1] += e.y;
     });
     const pj = new Map(F[0].L.map((k, j) => [k, j]));
-    const pairs = Object.values(P)
-      .filter(o => o.mix)
-      .sort((a, b) => b.mix - a.mix || b.off - a.off)
-      .slice(0, 15)
-      .map(o => {
-        const j = pj.get(o.k);
-        return {...o, u: F[0].u[j], lo: F[0].u[j] - Z * Math.sqrt(F[0].cv[j]), hi: F[0].u[j] + Z * Math.sqrt(F[0].cv[j])};
-      });
+    // the pairs most mixed up (each against a typical pair of its rank, where ranks are told apart: the 15 of each rank)
+    const top = L =>
+        L.filter(o => o.mix)
+          .sort((a, b) => b.mix - a.mix || b.off - a.off)
+          .slice(0, 15)
+          .map(o => {
+            const j = pj.get(o.k);
+            return {...o, u: F[0].u[j], lo: F[0].u[j] - Z * Math.sqrt(F[0].cv[j]), hi: F[0].u[j] + Z * Math.sqrt(F[0].cv[j])};
+          }),
+      pairs = E[0].rk0 ? RANKS.flatMap(r => top(Object.values(P).filter(o => o.rk === r))) : top(Object.values(P));
     // Each player's mix-ups against what the pooled rates (pair, view, choices) expect of them.
     const pl = {},
       Fp = F[1],
@@ -1907,12 +2037,13 @@
       effects,
       pairs,
       player: livePl(E, plist).sort((a, b) => b.n - a.n),
-      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null], [], bi),
+      ent: entOf(M.V, X, [null, ...CF_X.map(x => x[0]), null, ...KR.map(x => x[0])], [], bi),
       map: mixStab(mixMap(E, M, F), fams),
       ix: ixOf([confIx(A, B, seed + 31)]),
+      ...(E[0].rk0 ? {rk0: E[0].rk0} : {}),
       chk: checkOf(
         E,
-        S => confFit(S).M,
+        S => confFit(S, RK).M,
         () => 0,
         seed
       )
@@ -1980,6 +2111,8 @@
     const n = g.length,
       gi = new Map(g.map((x, i) => [x, i])),
       typ = M.b[0] + M.b[4] * Math.log(3), // a colony photo, 4 choices
+      // the pair's rank's effect (confFit RK: a subject whose ranks are told apart; the reference rank's pairs 0)
+      rkb = new Map(M.rk ? E.map(e => [e.pair, M.rk.includes(e.rk) ? M.b[CF_RK + M.rk.indexOf(e.rk)] : 0]) : []),
       jOf = (a, b) => pj.get([a, b].sort().join('|')),
       u = (a, b) => (jOf(a, b) == null ? null : P.u[jOf(a, b)]),
       lo = (a, b) => (jOf(a, b) == null ? 0 : P.u[jOf(a, b)] - Z * Math.sqrt(P.cv[jOf(a, b)])),
@@ -1996,7 +2129,7 @@
         .map(c => {
           const i = gi.get(c.from),
             j = gi.get(c.to),
-            pr = sig(typ + (u(c.from, c.to) || 0));
+            pr = sig(typ + (rkb.get([c.from, c.to].sort().join('|')) || 0) + (u(c.from, c.to) || 0));
           return [re(i), re(j), c.off, c.mix, r3((c.mix + MIX_K * pr) / (c.off + MIX_K))];
         })
         .sort((a, b) => a[0] - b[0] || a[1] - b[1]),
@@ -2033,10 +2166,11 @@
   // the player profiles' learning slope): each player and each genus its own slope on log(1 + answers on the genus),
   // around the common one, uncorrelated with its own level (lme4's (1 | g) + (0 + x | g)); the covariate centred on the
   // answers' mean (lc), so each level stays the level at typical practice. F: player, genus, player slope, genus slope.
-  function lnFit(D) {
+  // RK: the ranks with a column of their own (rkLev), after LN_X's.
+  function lnFit(D, RK = []) {
     const L = D.map(a => Math.log(1 + a.n)),
       lc = mean(L),
-      X = D.map((a, i) => [1, L[i], a.afterMiss, a.afterAgain, a.typed, a.exam, a.back]),
+      X = D.map((a, i) => [1, L[i], a.afterMiss, a.afterAgain, a.typed, a.exam, a.back, ...rkCols(a, RK)]),
       F = [
         factor(
           'player',
@@ -2295,22 +2429,29 @@
   function learning(A, B, seed) {
     const D = A;
     if (D.length < 200) return thin(D.length, 200);
-    const {M, F, X, lc} = lnFit(D),
+    // the ranks' columns (rkLev) after LN_X's; each unit's own level then carries its rank's effect (rkFold)
+    const RK = rkLev(D),
+      KX = [...LN_X, ...rkX(RK, D[0].rk0)],
+      c0 = LN_X.length + 1,
+      rks = rkMap(D),
+      {M, F, X, lc} = lnFit(D, RK),
       n = D.length,
       bi = boot(
         D,
         S => {
-          const r = lnFit(S),
+          const r = lnFit(S, RK),
+            G = rkFold(r.F[1], r.M, RK, c0, rks),
             o = {sd_pslope: Math.sqrt(r.F[2].tau2), sd_gslope: Math.sqrt(r.F[3].tau2)};
-          LN_X.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
+          KX.forEach(([k], j) => (o[k] = r.M.b[j + 1]));
           o.n_all = toMaster(r.M.b[0], r.M.b[1], 0);
-          r.F[1].L.forEach((g, j) => (o['n:' + g] = toMaster(...ownLine(r.M, r.lc, 0, r.F[3].u[j]), r.F[1].u[j])));
+          RK.forEach((rk, j) => (o['n_rk_' + rk] = toMaster(r.M.b[0] + r.M.b[c0 + j], r.M.b[1], 0)));
+          G.L.forEach((g, j) => (o['n:' + g] = toMaster(...ownLine(r.M, r.lc, 0, r.F[3].u[j]), G.u[j])));
           return o;
         },
         B,
         seed
       );
-    const effects = LN_X.map(([k, l], j) =>
+    const effects = KX.map(([k, l], j) =>
       eff(k, l, M.b[j + 1], M.se[j + 1], bi, 'logit', k === 'slope' ? 0.1 : 0.25, n, {rows: M.nz[j + 1]})
     );
     // how much the learning slope differs between genera and between players (random slopes; spreads are never primary)
@@ -2331,13 +2472,35 @@
       [M.V[0][0], M.V[0][1]],
       [M.V[1][0], M.V[1][1]]
     ];
-    const GS = F[3],
+    // A rank's typical unit: the intercept plus the rank's coefficient (column c), with their joint variance and the
+    // intercept's covariance with the slope; the reference rank's, or a model without ranks, the intercept's (V2).
+    const Vr = c =>
+        c == null
+          ? V2
+          : [
+              [M.V[0][0] + M.V[c][c] + 2 * M.V[0][c], M.V[0][1] + M.V[c][1]],
+              [M.V[0][1] + M.V[c][1], M.V[1][1]]
+            ],
+      colOf = rk => (RK.includes(rk) ? c0 + RK.indexOf(rk) : null),
+      GS = F[3],
       genus = G.L.map((g, j) => {
-        const own = ownLine(M, lc, 0, GS.u[j]),
-          est = toMaster(own[0], own[1], G.u[j]);
-        let [lo, hi] = masterCI(own[0], own[1], V2, G.u[j], G.cv[j], j + 1, [GS.cv[j], lc]);
+        const c = rks ? colOf(rks.get(g)) : null,
+          own = ownLine(M, lc, 0, GS.u[j]);
+        if (c != null) own[0] += M.b[c];
+        const est = toMaster(own[0], own[1], G.u[j]);
+        let [lo, hi] = masterCI(own[0], own[1], Vr(c), G.u[j], G.cv[j], j + 1, [GS.cv[j], lc]);
         if (bi && bi['n:' + g]) ((lo = Math.min(lo, bi['n:' + g][0])), (hi = Math.max(hi, bi['n:' + g][1])));
-        return {k: g, n: cnt[g].n, players: cnt[g].p.size, right: cnt[g].y / cnt[g].n, u: G.u[j], est, lo, hi};
+        return {
+          k: g,
+          n: cnt[g].n,
+          players: cnt[g].p.size,
+          right: cnt[g].y / cnt[g].n,
+          u: G.u[j] + (c != null ? M.b[c] : 0),
+          est,
+          lo,
+          hi,
+          ...(rks ? {rk: rks.get(g)} : {})
+        };
       }).sort((a, b) => a.est - b.est);
     const BINS = [
       [0, 0],
@@ -2361,18 +2524,32 @@
         core: sig(M.b[0] + M.b[1] * Math.log(1 + mid))
       };
     }).filter(b => b.n);
-    const all = toMaster(M.b[0], M.b[1], 0);
+    // the answers to 80% on a typical unit: of the reference rank (n_all), then of each other rank (n_rk_*: a subject
+    // whose ranks are told apart), each with the model's own interval (joint intercept and slope), widened by the
+    // bootstrap's when there is one
+    const toN = (k, label, c, more = {}) => {
+      const b0 = M.b[0] + (c == null ? 0 : M.b[c]);
+      let [lo, hi] = masterCI(b0, M.b[1], Vr(c));
+      if (bi && bi[k]) ((lo = Math.min(lo, bi[k][0])), (hi = Math.max(hi, bi[k][1])));
+      return {
+        k,
+        label,
+        est: toMaster(b0, M.b[1], 0),
+        unit: 'n',
+        n,
+        ...more,
+        lo,
+        hi,
+        v: hi < 999 ? 'clear' : 'thin',
+        need: hi < 999 ? null : nice(n * 2)
+      };
+    };
     effects.unshift(
-      Object.assign(
-        {k: 'n_all', label: 'Answers to reach 80% on an average genus', est: all, unit: 'n', n},
-        (() => {
-          // the model's own interval (joint intercept and slope), widened by the bootstrap's when there is one
-          let [lo, hi] = masterCI(M.b[0], M.b[1], V2);
-          if (bi && bi.n_all) ((lo = Math.min(lo, bi.n_all[0])), (hi = Math.max(hi, bi.n_all[1])));
-          return {lo, hi, v: hi < 999 ? 'clear' : 'thin', need: hi < 999 ? null : nice(n * 2)};
-        })()
-      )
+      toN('n_all', 'Answers to reach 80% on an average genus', null, rks ? {rk: D[0].rk0} : {}),
+      ...RK.map((rk, j) => toN('n_rk_' + rk, `${rkWord(rk)}: answers to reach 80% on an average unit`, c0 + j, {rk}))
     );
+    // the unit-level views read each unit with its rank's effect (rkFold)
+    const Fv = RK.length ? [F[0], rkFold(F[1], M, RK, c0, rks), F[2], F[3]] : F;
     return {
       n,
       players: players(D),
@@ -2382,13 +2559,14 @@
       curve,
       b0: M.b[0],
       b1: M.b[1],
-      ent: entOf(M.V, X, [null, ...LN_X.map(x => x[0])], [], bi),
-      wright: wrightOf(D, M, F, lc),
+      ...(rks ? {rk0: D[0].rk0} : {}),
+      ent: entOf(M.V, X, [null, ...KX.map(x => x[0])], [], bi),
+      wright: wrightOf(D, M, Fv, lc),
       res: resOf(D, M, F, seed),
-      gcurve: gcurveOf(D, M, F, lc),
+      gcurve: gcurveOf(D, M, Fv, lc),
       chk: checkOf(
         D,
-        S => lnFit(S).M,
+        S => lnFit(S, RK).M,
         a => a.g0,
         seed
       ),
@@ -2882,7 +3060,7 @@
     if (Dt.length >= 100 && players(Dt) >= 2) {
       FAST = true;
       try {
-        const {F} = rtFit(Dt);
+        const {F} = rtFit(Dt, rkLev(Dt)); // a player's pace beyond the ranks they were asked at
         F[0].L.forEach((id, j) => (out[id][fi('pace')] = F[0].u[j]));
       } catch (e) {
         void e;
@@ -3053,7 +3231,7 @@
     if (A.length < 200 || players(A) < 3) return null;
     FAST = true;
     try {
-      const {M, F} = lnFit(A),
+      const {M, F} = lnFit(A, rkLev(A)),
         o = {};
       if (isFinite(M.b[1])) F[2].L.forEach((id, j) => (o[id] = M.b[1] + F[2].u[j]));
       return o;
@@ -3479,12 +3657,19 @@
     ix: {zoomMacro: 0, pairMacro: 0, typedSlope: 0}
   };
   // o: {players: [[id, ability, answers, enlarge rate, own learning slope (added to the common one; optional)]], photos: {genus: [{f, v, q, sh, src}]}, look: {genus: [genera]},
-  // start, end (ms), seed, subject}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
+  // start, end (ms), seed, subject, rk}. Returns readAnswers rows (Code.gs answers_ shape, id as given); with subject, each row
   // carries it in the Subject column (index 17, core.js LOG_SUBJ), as the sheet serves another subject's answers (the
-  // fish: units f:Damselfishes, g:Chromis, photos of one view).
+  // fish: units f:Damselfishes, g:Chromis, photos of one view). rk: {rank: [logit, log seconds]}, a rank's questions
+  // that much harder and slower (the unit's id prefix: rankOfUnit), for the tests of the rank effects.
   function synth(o) {
     const R = rng(o.seed || 7),
       T = TRUTH,
+      rkd = g => (o.rk && o.rk[rankOfUnit(g, '', '')]) || [0, 0],
+      // with rk, a question's other choices of its own rank, as the game's (model.js distractors), when it has 4 units
+      rkPool = g => {
+        const L = G.filter(x => rankOfUnit(x, '', '') === rankOfUnit(g, '', ''));
+        return L.length >= 4 ? L : G;
+      },
       nrm = () => Math.sqrt(-2 * Math.log(R() + 1e-12)) * Math.cos(2 * Math.PI * R()),
       pick = L => L[Math.floor(R() * L.length)],
       // a wrong choice: a look-alike of the genus shown is picked T.mix times as often as another (one draw, as pick)
@@ -3541,6 +3726,7 @@
           eta =
             th -
             bg[g] -
+            rkd(g)[0] -
             mean(ph.map(x => bph[x.f])) -
             (ph.length === 1 ? T.ph.alone : 0) +
             T.learn.b0 +
@@ -3557,7 +3743,7 @@
         if (f === 'again') ch.push(againQ[1]);
         else if (f !== 'typed')
           while (ch.length < (f === 'qduel' ? 2 : 4)) {
-            const x = look.length && R() < 0.6 ? pick(look) : pick(G);
+            const x = look.length && R() < 0.6 ? pick(look) : pick(o.rk ? rkPool(g) : G);
             if (!ch.includes(x)) ch.push(x);
           }
         const app = f === 'typed' ? 0 : f === 'k2' ? 0.5 : f === 'k4' ? 0.25 : 0.5,
@@ -3574,6 +3760,7 @@
             T.rt.b0 +
               rp +
               rg[g] +
+              rkd(g)[1] +
               mean(ph.map(x => rph[x.f])) +
               T.rt.right * right +
               T.rt.typed * (f === 'typed' ? 1 : 0) +
@@ -3818,6 +4005,21 @@
       }
     }
   };
+  // The rank asked (a subject whose ranks are told apart: rkX, Formats' oe_rk_*, Learning curves' n_rk_*), one entry per
+  // rank in each analysis that carries it; e.rk, its rank, and e.rk0, the reference's (rkTag). Named "<rank> question" so
+  // the admin's words for another subject (admin-analyses.js anWords) leave the rank words as they are.
+  const rkName = e => `A ${e.rk} question instead of a ${e.rk0 || 'first-rank'} question`,
+    rkN = r => `${rkWord(r)}: answers on a unit to reach 80% beyond guessing (a typical unit and player)`;
+  RANKS.forEach(r => {
+    PLAIN.rt['rk_' + r] = {name: rkName, o: 'time'};
+    PLAIN.photo['rk_' + r] = {name: rkName, o: 'right', inv: true};
+    PLAIN.conf['rk_' + r] = {name: rkName, o: 'mix'};
+    PLAIN.learn['rk_' + r] = {name: rkName, o: 'right'};
+    PLAIN.learn['n_rk_' + r] = {name: rkN(r), o: 'n'};
+  });
+  // n_all: a typical unit of the reference rank where ranks are told apart (e.rk)
+  const N_ALL = PLAIN.learn.n_all.name;
+  PLAIN.learn.n_all.name = e => (e && e.rk ? rkN(e.rk) : N_ALL);
   // Question formats: one entry per format and part (guess rate, difficulty, right − expected).
   Object.keys(FMT_PLAIN).forEach(k => {
     const F = FMT_PLAIN[k];
@@ -3839,6 +4041,16 @@
       cal: true,
       up: 'The app underrates players on this format: its expected chance here could be raised.',
       down: 'The app overrates players on this format: its expected chance here could be lowered.'
+    };
+  });
+  // Formats by the rank asked (oe_rk_*): each rank's questions, every format together.
+  RANKS.forEach(r => {
+    PLAIN.fmt['oe_rk_' + r] = {
+      name: `${rkWord(r)}: right answers against the app’s expectation`,
+      o: 'pts',
+      cal: true,
+      up: 'The app underrates players on these questions: its expected chance at this rank could be raised.',
+      down: 'The app overrates players on these questions: its expected chance at this rank could be lowered.'
     };
   });
   const PLAIN_VERDICT = {
@@ -3871,7 +4083,8 @@
     if (row && row.n) ((T.p = row.E), (T.g = row.g0));
     // v: the verdict on the scale shown (the model's, except where the reading changes scale: typed answers)
     const out = {
-      name: P.name,
+      // a name that depends on the effect (the rank asked: rkName)
+      name: typeof P.name === 'function' ? P.name(e) : P.name,
       v: e.v,
       verdict: PLAIN_VERDICT[e.v] || '',
       tone: 'thin',
@@ -4223,6 +4436,8 @@
       } catch (e) {
         out.A[k] = {err: String((e && e.message) || e), effects: []};
       }
+      // a rank's effect (rkX) carries its rank and the reference's, for its plain name (rkName)
+      if (A.length && A[0].rk0) (out.A[k].effects || []).forEach(e => /^rk_/.test(e.k) && ((e.rk = e.k.slice(3)), (e.rk0 = A[0].rk0)));
       out.A[k].ms = Date.now() - t0;
       if (o.progress) o.progress(k);
     });
@@ -4350,7 +4565,7 @@
       live = o.live && all.length % STEP ? all.length : 0,
       Ms = milestones(all.length).concat(live ? [live] : []),
       // the fish photos' features too (fph): a judgment changed refits every milestone, as a coral view or quality
-      mh = hashOf(meta && meta.ph) + (meta && meta.fph ? ':' + hashOf(meta.fph) : ''),
+      mh = hashOf(meta && meta.ph) + (meta && meta.fph ? ':' + hashOf(meta.fph) : '') + (meta && meta.rk ? ':rk' + meta.rk : ''),
       B = o.B == null ? BOOT : o.B,
       Bh = Math.min(B, o.Bh == null ? 199 : o.Bh),
       cap = o.hcap == null ? 60000 : o.hcap,
@@ -4448,6 +4663,9 @@
     fmtFit,
     guessOf,
     fmtOf,
+    RANKS,
+    rankOfUnit,
+    rankRef,
     prep,
     milestones,
     boot,

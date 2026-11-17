@@ -2885,7 +2885,9 @@ const darkCards = (p, sel) =>
                   .split(W.one ? W.one[0].toUpperCase() + W.one.slice(1) : '\u0000')
                   .join(' ')
                   .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
-                  .join(' ');
+                  .join(' ')
+                  // the rank asked (analysis.js rkName, admin-analyses.js anRkWord: "a genus question", "Genus questions")
+                  .replace(/\b(?:family|genus|species) questions?\b/gi, ' ');
               return {
                 badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
                 none: /No report yet/.test(V.textContent),
@@ -2947,6 +2949,42 @@ const darkCards = (p, sel) =>
                 !/\bEase\b/.test(ph.h)
               )
                 fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
+              // the rank asked (the fish parity review, #1056: a rank effect in the models): its effect in the results, its
+              // own table on Formats and on What makes a photo hard, and the views that list units drawn one rank at a time
+              const rk = {};
+              for (const [h, k] of [
+                ['photos', 'ph'],
+                ['formats', 'fmt']
+              ]) {
+                await look('fish/analyses/difficulty/' + h);
+                rk[k] = await fq.evaluate(() => document.getElementById('view').textContent);
+              }
+              await look('fish/analyses/speed');
+              rk.rt = await fq.evaluate(() => ({
+                t: document.getElementById('view').textContent,
+                sub: [...document.querySelectorAll('#view .adm-an-rk')].map(e => e.textContent.replace(/ · .*/, ''))
+              }));
+              if (
+                !/Rank asked/.test(rk.ph) ||
+                !/A genus question instead of a family question/.test(rk.ph) ||
+                !/By the rank asked/.test(rk.fmt) ||
+                !/Genus questions: right answers against the app’s expectation/.test(rk.fmt) ||
+                !/A genus question instead of a family question/.test(rk.rt.t) ||
+                rk.rt.sub.join() !== 'Family questions,Genus questions,Species questions'
+              )
+                fe.push(
+                  `the rank asked: ${JSON.stringify({sub: rk.rt.sub, fmt: /By the rank asked/.test(rk.fmt), ph: /Rank asked/.test(rk.ph)})}`
+                );
+              // the corals' views: no rank
+              await look('analyses/speed');
+              if (
+                await fq.evaluate(
+                  () =>
+                    !!document.querySelector('#view .adm-an-rk') ||
+                    /instead of a family question/.test(document.getElementById('view').textContent)
+                )
+              )
+                fe.push("the corals' Speed tells ranks apart");
             }
           }
           // the corals' report on the corals' side, as before
