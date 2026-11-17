@@ -466,7 +466,14 @@ test('the committed files read through the fish engine: three circles, scientifi
   Object.values(GM.photos)
     .flat()
     .forEach(p => (by[p.sp] = (by[p.sp] || 0) + 1));
-  Object.entries(by).forEach(([sp, n]) => assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`));
+  // A genus's genus-level photos (sp its genus id, gl; Q389 (1)): at most the cap, in play once they and its species'
+  // photos reach the start (tools/seaslug_game.py), so a genus may hold fewer than the start of its own.
+  const gen = new Map(F.genera.map(g => [g.id, g]));
+  Object.entries(by).forEach(([sp, n]) =>
+    gen.has(sp)
+      ? assert.ok(n <= T.gameCap && n + gen.get(sp).species.reduce((s, id) => s + (by[id] || 0), 0) >= T.start, `${sp}: ${n}`)
+      : assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`)
+  );
   // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead the families,
   // and one of its genera the genera.
   assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...F.families.map(f => X.gen[f.id].cm)));
