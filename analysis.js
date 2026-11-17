@@ -538,7 +538,7 @@
   // species units) has meta.rk, the rank of its game units from the start (core.js unitRankOf: the fish's 'family'), the
   // models' reference level. Each answer's rank is read from its unit's id prefix (core.js SUBJECTS sheets: f: a family,
   // g: a genus, s: a species unit), else the log's Rank column (index 18, sheet v60; Code.gs answerOut_ fills a blank one
-  // with the subject's rank), else meta.rk. Without meta.rk (the corals: one rank) no answer carries a rank and every
+  // with the subject's rank), else meta.rk. With no meta.rk (the corals: one rank) no answer carries a rank and every
   // model is as before. A model with a unit-level term (Response time, Photo factors, Confusions, Learning curves) takes
   // one 0/1 column per other rank with RK_MIN answers or more (rkLev): that rank's questions against the reference's,
   // beyond the unit's own random effect, which then varies around its rank's mean (rkUnit adds the rank back where a
@@ -4017,9 +4017,8 @@
     PLAIN.learn['rk_' + r] = {name: rkName, o: 'right'};
     PLAIN.learn['n_rk_' + r] = {name: rkN(r), o: 'n'};
   });
-  // n_all: a typical unit of the reference rank where ranks are told apart (e.rk)
-  const N_ALL = PLAIN.learn.n_all.name;
-  PLAIN.learn.n_all.name = e => (e && e.rk ? rkN(e.rk) : N_ALL);
+  // n_all: a typical unit of the reference rank where ranks are told apart (e.rk), named for it (rkName)
+  PLAIN.learn.n_all.rkName = e => rkN(e.rk);
   // Question formats: one entry per format and part (guess rate, difficulty, right − expected).
   Object.keys(FMT_PLAIN).forEach(k => {
     const F = FMT_PLAIN[k];
@@ -4084,7 +4083,7 @@
     // v: the verdict on the scale shown (the model's, except where the reading changes scale: typed answers)
     const out = {
       // a name that depends on the effect (the rank asked: rkName)
-      name: typeof P.name === 'function' ? P.name(e) : P.name,
+      name: typeof P.name === 'function' ? P.name(e) : e.rk && P.rkName ? P.rkName(e) : P.name,
       v: e.v,
       verdict: PLAIN_VERDICT[e.v] || '',
       tone: 'thin',

@@ -839,7 +839,7 @@
         FG = fishGen(fj, fp.photos).gen,
         E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
-      FANA_META = {ph: {}, fph: ANALYSIS.photoMetaFish(fp), rk: ANALYSIS.rankRef(subjectOf('fish'))};
+      FANA_META = {ph: {}, fph: ANALYSIS.photoMetaFish(fp), rk: ANALYSIS.rankRef(FS)};
       [
         ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
         ['Ana Demo', 0.8, 30, 4, NOW - 3 * DAY],
