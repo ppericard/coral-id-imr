@@ -121,6 +121,8 @@ GL_FIELDS = FIELDS + ",taxon.ancestor_ids,identifications.current,identification
 GL_BATCH = 30  # genera a genus-level search asks at once (rule C7)
 GL_PAGES = 60  # pages of 200 a genus-level search reads at most (the Philippines: some 6,800 genus-level observations)
 EGG_BATCH = 200  # observations asked again by id in one request (eggs_back; rule C7)
+# eggs_back's fields: GL_FIELDS and the observation fields, whose label says a species with no name (Codex review #1046)
+ID_FIELDS = GL_FIELDS + ",ofvs.field_id,ofvs.name,ofvs.value"
 SUGGEST = ROOT / "suggest.json"  # the judgements: suggest.json "seaslug" (tools/judging_fish.py --subject seaslug)
 
 
@@ -391,31 +393,42 @@ def genus_level_run(net, src, have, T, pairs, used, taken, report, only=(), egg=
 
 
 def trim_id(o):
-    """An observation asked again by id (GL_FIELDS): fetch_fish.trim's fields, its taxon's line (tx) and its agreement
-    (tid, ag, dg), so one record serves usable (a species) and usable_gl (a genus, a species with no name)."""
+    """An observation asked again by id (ID_FIELDS): fetch_fish.trim's fields, its taxon's line (tx), its agreement
+    (tid, ag, dg) and its observation fields (of: [field id, name, value]), so one record serves usable (a species),
+    usable_gl (a genus) and labelled (a species with no name)."""
     r = trim(o)
     r["tid"] = (o.get("taxon") or {}).get("id")
     r["ag"], r["dg"] = agreement(o)
+    r["of"] = [[f.get("field_id"), f.get("name"), f.get("value")] for f in o.get("ofvs") or []]
     return r
+
+
+def labelled(o, field):
+    """The observation (trim_id) still carries the label field ({id, name, value}) as its current value: the field by
+    its id or its name, the value as label_query asks it (case and spaces aside)."""
+    v = str(field["value"]).strip().lower()
+    return any((i == field.get("id") or n == field["name"]) and str(x).strip().lower() == v for i, n, x in o.get("of") or [])
 
 
 def egg_query(ids):
     """The request that asks the observations ids again, by id. Never captive (captive=false), as every search: an
     observation marked captive since is not returned (Codex review #1046; fetch_fish.py's by-id refill does the same)."""
-    return API + f"id={','.join(map(str, ids))}&captive=false&per_page={EGG_BATCH}&order_by=id&fields={GL_FIELDS}"
+    return API + f"id={','.join(map(str, ids))}&captive=false&per_page={EGG_BATCH}&order_by=id&fields={ID_FIELDS}"
 
 
 def eggs_back(net, jobs, egg, pairs, used, taken):
-    """Rule P4 with the egg rule's filter 2: in each list of jobs [(key, L, cap, kind, genus)] (kind "sp": a species keyed
-    by its taxon id; "gl": a genus's genus-level list; "inf": a species with no name, of genus `genus`), each observation
+    """Rule P4 with the egg rule's filter 2: in each list of jobs [(key, L, cap, kind, genus, label)] (kind "sp": a species
+    keyed by its taxon id; "gl": a genus's genus-level list; "inf": a species with no name, of genus `genus`, whose
+    observations carry the label field {id, name, value}; label None for the others), each observation
     whose every candidate is judged an egg mass (egg_only) brings its next usable photo, in list order, while the list
     holds fewer than its target (held). The observations are asked again by id, as they are now (EGG_BATCH a request,
-    every list together: rule C7): still that taxon (the species or below it; the genus), and usable under the list's
+    every list together: rule C7): still that taxon (the species or below it; the genus; a species with no name: its
+    genus and still its label, as label_query asks it, never one removed or changed since), and usable under the list's
     rules (usable, usable_gl: Research Grade or agreed, never annotated Egg or Dead, the licences), its own observation
     not counted as taken; a photo already a candidate never again (used). Asked only when one is wanted, then every
     observation with an egg-mass candidate in these lists, a set a rerun asks the same way (cached: --offline gives the
     same file). Returns {key: [records added]}."""
-    want = {key: egg_only(L, egg) for key, L, cap, kind, genus in jobs if held(L, egg) < cap}
+    want = {key: egg_only(L, egg) for key, L, cap, *_ in jobs if held(L, egg) < cap}
     num = lambda u: int(u.rsplit("/", 1)[-1])  # noqa: E731
     ids = sorted({num(p["o"]) for key, L, *_ in jobs for p in L if p["f"] in egg}) if any(want.values()) else []
     obs = {}
@@ -423,7 +436,7 @@ def eggs_back(net, jobs, egg, pairs, used, taken):
         d = net.fetch(egg_query(B), lambda d: {"results": [trim_id(o) for o in d.get("results") or []]})
         obs.update((o["id"], o) for o in (d or {}).get("results") or [])
     out = {}
-    for key, L, cap, kind, genus in jobs:
+    for key, L, cap, kind, genus, label in jobs:
         room = cap - held(L, egg)
         for u in want.get(key, []):
             o = obs.get(num(u))
@@ -431,6 +444,8 @@ def eggs_back(net, jobs, egg, pairs, used, taken):
                 continue
             if kind == "sp":
                 x = int(key) in (o.get("tx") or [o.get("tid")]) and usable(o, pairs, used, taken - {u})
+            elif kind == "inf" and not (label and labelled(o, label)):
+                x = None
             else:
                 x = o.get("t") == genus and usable_gl(o, pairs, used, taken - {u})
             if not x:
@@ -527,10 +542,11 @@ def run(args):
         try:
             jobs = []
             if args.informal:
-                jobs += [(s["key"], have.get(s["key"], []), target(s, T)[0], "inf", s["genus"]) for s in inf["species"]]
+                jobs += [(s["key"], have.get(s["key"], []), target(s, T)[0], "inf", s["genus"], s["field"])
+                         for s in inf["species"]]
             if args.genus_level:
                 gcap = int(min(T.get("max", 1e9), T["candidates"]))
-                jobs += [(g, have.get(g, []), gcap, "gl", g) for g in game_genera(src) if not only or g in only]
+                jobs += [(g, have.get(g, []), gcap, "gl", g, None) for g in game_genera(src) if not only or g in only]
             back(jobs)
             if args.informal:
                 informal_run(net, src, inf, have, T, pairs, used, taken, report, egg)
@@ -550,8 +566,8 @@ def run(args):
         return report
     try:
         # The egg masses' observations first (their next photo keeps their place; not with --own: his search only).
-        back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp", s.get("genus"))
-                                          for s in S])
+        back_ = {} if own_only else back([(str(s["inat"]), have.get(str(s["inat"]), []), target(s, T)[0], "sp",
+                                           s.get("genus"), None) for s in S])
         # Pierre's own for every species with room for them (his search, asked together: rule C7), then the general one.
         prefetch(net, [s["inat"] for s in S if own_room(have.get(str(s["inat"]), []), T, egg)], ["own"])
         if not own_only:

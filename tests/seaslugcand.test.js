@@ -458,7 +458,7 @@ c = {egg_query([1, 2, 3, 5, 7, 8]): {'results': [sp(1), sp(2, lic=['cc-by', 'cc-
                                               gen(7), sp(8, tid=602)]}}
 json.dump(c, open(d + '/c.json', 'w'))
 net = Net(d + '/c.json', offline=True)
-jobs = [('601', L601, 5, 'sp', 'Slugus'), ('Slugus', LG, 20, 'gl', 'Slugus'), ('602', L602, 1, 'sp', 'Slugus')]
+jobs = [('601', L601, 5, 'sp', 'Slugus', None), ('Slugus', LG, 20, 'gl', 'Slugus', None), ('602', L602, 1, 'sp', 'Slugus', None)]
 got = eggs_back(net, jobs, egg, EGG, used, taken)
 again = eggs_back(net, jobs, egg, EGG, used, taken)
 print(json.dumps([{k: [[r['f'], r['o'].rsplit('/', 1)[-1], r.get('gl')] for r in v] for k, v in got.items()}, again,
@@ -554,4 +554,43 @@ json.dump(c, open(d + '/cache.json', 'w'))`,
   run();
   assert.strictEqual(fs.readFileSync(at('cand.json'), 'utf8'), before, 'a rerun changes nothing');
   fs.rmSync(dir, {recursive: true, force: true});
+});
+
+// A species with no name (tools/seaslug_informal.json) is its label (Q389 (2)): an egg-only observation of its list
+// brings its next photo only while it still carries that label as label_query asks it (Codex review #1046).
+test('egg masses of a species with no name: the next photo only while its observation still carries the label', () => {
+  const out = J(`${OBS}
+from fetch_fish import Net
+import tempfile
+d = tempfile.mkdtemp()
+F = {'id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes'}
+def gen(i, of):
+    o = ob(i, n=2, rk='genus', g='research')
+    o.update({'t': 'Slugus', 'tid': 60, 'ag': 0, 'dg': 0, 'of': of})
+    return o
+rec = lambda i: {'f': f'seaslug-slugus-sp1-cand-{i * 10}', 'o': obs_url(i)}
+# 1 still labelled (by its field id, the value's case aside), 2 labelled by the name alone, 3 its label changed to
+# another species with no name, 4 its label removed, 5 the same field set to No
+L = [rec(i) for i in (1, 2, 3, 4, 5)]
+egg = {p['f'] for p in L}
+c = {egg_query([1, 2, 3, 4, 5]): {'results': [gen(1, [[5, 'Slugus sp. 1?', 'yes']]), gen(2, [[None, 'Slugus sp. 1?', 'Yes']]),
+                                             gen(3, [[6, 'Slugus sp. 2?', 'Yes']]), gen(4, []), gen(5, [[5, 'Slugus sp. 1?', 'No']])]}}
+json.dump(c, open(d + '/c.json', 'w'))
+used, taken = {p['f'].rsplit('-', 1)[-1] for p in L}, {p['o'] for p in L}
+got = eggs_back(Net(d + '/c.json', offline=True), [('slugus-sp1', L, 20, 'inf', 'Slugus', F)], egg, EGG, used, taken)
+print(json.dumps([[r['f'], 'gl' in r] for r in got.get('slugus-sp1', [])]))`);
+  assert.deepStrictEqual(out, [
+    ['seaslug-slugus-sp1-cand-11', false],
+    ['seaslug-slugus-sp1-cand-21', false]
+  ]);
+});
+
+test('trim_id keeps the observation fields; labelled reads them; egg_query asks for them', () => {
+  const out = J(`
+o = trim_id({'id': 9, 'quality_grade': 'research', 'taxon': {'id': 60, 'name': 'Slugus', 'rank': 'genus'},
+             'ofvs': [{'field_id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes', 'datatype': 'text'}]})
+F = {'id': 5, 'name': 'Slugus sp. 1?', 'value': 'Yes'}
+print(json.dumps([o['of'], labelled(o, F), labelled(o, {**F, 'value': 'No'}), labelled({**o, 'of': []}, F),
+                  'ofvs.value' in egg_query([9]) and 'ofvs.field_id' in egg_query([9])]))`);
+  assert.deepStrictEqual(out, [[[5, 'Slugus sp. 1?', 'Yes']], true, false, false, true]);
 });
