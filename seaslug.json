@@ -272,7 +272,31 @@
     "worms": 23093,
     "wiki": "Phyllidiidae"
    },
-   "tgroup": 1
+   "tgroup": 1,
+   "marks": [
+    "Tough, flat oval body, its back covered in hard tubercles or ridges",
+    "No gill tuft on the back: the gills lie in a groove under the mantle edge",
+    "Usually bold, contrasting colours and patterns"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, General features, p. 9",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "f:Discodorididae",
@@ -393,7 +417,28 @@
     "g:Plakobranchus"
    ],
    "look": [],
-   "tgroup": 3
+   "tgroup": 3,
+   "marks": [
+    "Wing-like flaps (parapodia) along the sides, often edged in bright colours"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2001, Thuridilla lineolata fact sheet, the parapodia",
+     "u": "https://www.seaslugforum.net/find/thurline"
+    },
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Elysia marginata species page, the parapodia",
+     "u": "https://en.seaslug.world/species/elysia_marginata"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "f:Pleurobranchidae",
@@ -424,7 +469,23 @@
     "worms": 1755,
     "wiki": "Pleurobranchidae"
    },
-   "tgroup": 6
+   "tgroup": 6,
+   "marks": [
+    "A large gill on the right side, in the gap between the mantle and the foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet, the side gill, as in all notaspids",
+     "u": "https://www.seaslugforum.net/find/pleufors"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "f:Flabellinidae",
@@ -843,6 +904,36 @@
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Dark, often black lines running lengthwise along the back",
+    "The lines on a bluish or white ground, often with an orange or yellow rim"
+   ],
+   "msrc": [
+    {
+     "t": "Johnson and Gosliner 2012, A new classification of the chromodorid nudibranchs (PLoS ONE), Chromodoris, the black-lined species",
+     "u": "https://doi.org/10.1371/journal.pone.0033479"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris annae fact sheet, the quadricolor colour group",
+     "u": "https://www.seaslugforum.net/find/chroanna"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chromodoris willani fact sheet, the colour group",
+     "u": "https://www.seaslugforum.net/find/chrowill"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ],
+     [
+      1,
+      2
+     ]
+    ]
    }
   },
   {
@@ -873,6 +964,27 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "Often seen feeding on sea squirts (ascidians)"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 2008, Nembrotha kubaryana fact sheet, its food",
+     "u": "https://www.seaslugforum.net/find/nembkuba"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Nembrotha chamberlaini fact sheet, its food",
+     "u": "https://www.seaslugforum.net/find/nembcham"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0,
+      1
+     ]
     ]
    }
   },
@@ -942,7 +1054,36 @@
    },
    "dlook": [
     "g:Nembrotha"
-   ]
+   ],
+   "marks": [
+    "A tall body whose mantle barely overhangs the foot, as in H. tryoni",
+    "Some, as H. tryoni, crawl in pairs, one close behind the other"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, the body shape, now Hypselodoris tryoni",
+     "u": "https://www.seaslugforum.net/find/risbtryo"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris, trailing in Risbecia, now Hypselodoris",
+     "u": "https://www.seaslugforum.net/find/mantflap"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Risbecia tryoni fact sheet, now Hypselodoris tryoni",
+     "u": "https://www.seaslugforum.net/find/risbtryo"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllidia",
@@ -966,6 +1107,35 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "Cream to yellow rhinophores",
+    "Hard tubercles, often capped in yellow, many joined into ridges"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 4, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 5, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993), Phyllidia against Reticulidia",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1,
+      2
+     ]
     ]
    }
   },
@@ -1009,6 +1179,30 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "A long aeolid that farms algae in its cerata and body, so adults look brown",
+    "Young ones are white until they take up their algae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet, its zooxanthellae",
+     "u": "https://www.seaslugforum.net/find/pteriant"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Pteraeolidia ianthina fact sheet, the white juvenile",
+     "u": "https://www.seaslugforum.net/find/pteriant"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
     ]
    }
   },
@@ -1079,7 +1273,31 @@
     "g:Dermatobranchus",
     "g:Hexabranchus",
     "g:Phyllidia"
-   ]
+   ],
+   "marks": [
+    "A broad mantle that overhangs the foot widely",
+    "Some wave the mantle edge as they crawl, as G. kuniei and G. geometricus"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Chromodoris kuniei fact sheet, the mantle overlap, now Goniobranchus kuniei",
+     "u": "https://www.seaslugforum.net/find/chrokuni"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 2000, Mantle flapping in Chromodoris, now Goniobranchus kuniei and G. geometricus",
+     "u": "https://www.seaslugforum.net/find/mantflap"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phyllodesmium",
@@ -1120,6 +1338,30 @@
       "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
      }
     ]
+   },
+   "marks": [
+    "Feeds on soft corals and hides among their polyps",
+    "Many keep algae in their cerata, seen as rows of brown specks"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet, like other species of Phyllodesmium",
+     "u": "https://www.seaslugforum.net/find/phylbria"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Phyllodesmium briareum fact sheet, its zooxanthellae",
+     "u": "https://www.seaslugforum.net/find/phylbria"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
    }
   },
   {
@@ -1140,6 +1382,22 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "A velvety back, covered all over in tiny spiky papillae"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Jorunna funebris fact sheet, the papillate surface of the back",
+     "u": "https://www.seaslugforum.net/find/jorufune"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
     ]
    }
   },
@@ -1182,7 +1440,31 @@
    },
    "dlook": [
     "g:Tambja"
-   ]
+   ],
+   "marks": [
+    "A smooth body in two shields, a head shield and a back shield",
+    "Side flaps (parapodia) fold up over the body"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet, the head and posterior shields",
+     "u": "https://www.seaslugforum.net/find/chelamoe"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Chelidonura amoena fact sheet, the parapodia",
+     "u": "https://www.seaslugforum.net/find/chelamoe"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Elysia",
@@ -1211,7 +1493,27 @@
    "circle": 1,
    "species": [
     "s468042"
-   ]
+   ],
+   "marks": [
+    "A very wavy mantle edge, rimmed with a thin black line",
+    "Black rhinophore tips and black-edged gills, which wave as it crawls"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Glossodoris atromarginata fact sheet, now Doriprismatica atromarginata",
+     "u": "https://www.seaslugforum.net/find/glosatro"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Caloria",
@@ -1241,7 +1543,23 @@
     "s468030",
     "s142790",
     "s1679552"
-   ]
+   ],
+   "marks": [
+    "Large finger-like appendages flank the gills, as in T. pacifica"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Thecacera pacifica species page, Description",
+     "u": "https://en.seaslug.world/species/thecacera_pacifica"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Tambja",
@@ -1270,7 +1588,23 @@
    },
    "dlook": [
     "g:Chelidonura"
-   ]
+   ],
+   "marks": [
+    "Feeds on branching, plant-like bryozoans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Tambja morosa fact sheet, the food of every Tambja",
+     "u": "https://www.seaslugforum.net/find/tambmoro"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Pleurobranchus",
@@ -1297,6 +1631,22 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "A large gill on the right side, between the mantle and the foot"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Pleurobranchus forskalii fact sheet, the side gill",
+     "u": "https://www.seaslugforum.net/find/pleufors"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
     ]
    }
   },
@@ -1356,7 +1706,32 @@
    "species": [
     "s120989",
     "s120988"
-   ]
+   ],
+   "marks": [
+    "Orange rhinophores",
+    "A smooth network of ridges on the back, with no tubercles"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 4, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1998, Reticulidia halgerda fact sheet (from Brunckhorst 1993), Reticulidia against Phyllidia",
+     "u": "https://www.seaslugforum.net/find/retihalg"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      0,
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Hexabranchus",
@@ -1424,7 +1799,31 @@
     "g:Goniobranchus",
     "g:Jorunna",
     "g:Platydoris"
-   ]
+   ],
+   "marks": [
+    "Gills set one by one into the back, never pulled into a pocket",
+    "Grows very large, and can swim"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its gills",
+     "u": "https://www.seaslugforum.net/find/hexasang"
+    },
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Hexabranchus sanguineus fact sheet, its size and swimming",
+     "u": "https://www.seaslugforum.net/find/hexasang"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ],
+     [
+      1
+     ]
+    ]
+   }
   },
   {
    "id": "g:Costasiella",
@@ -1434,7 +1833,23 @@
    "species": [
     "s469221",
     "s470152"
-   ]
+   ],
+   "marks": [
+    "Smooth, simple rhinophores with blunt tips"
+   ],
+   "msrc": [
+    {
+     "t": "Wikipedia, Costasiella (after Swennen 2007's diagnosis of the genus), the genus's features",
+     "u": "https://en.wikipedia.org/w/index.php?title=Costasiella&oldid=1384690062"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
+    ]
+   }
   },
   {
    "id": "g:Phestilla",
@@ -1453,6 +1868,22 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "A coral eater; P. melanobrachia lives on sun corals (Tubastraea)"
+   ],
+   "msrc": [
+    {
+     "t": "SEASLUG.WORLD, Kimoto, Phestilla melanobrachia species page, food and host corals; the genus",
+     "u": "https://en.seaslug.world/species/phestilla_melanobrachia"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
     ]
    }
   },
@@ -1475,6 +1906,22 @@
      {
       "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
      }
+    ]
+   },
+   "marks": [
+    "A wide oral hood, spread like a net to trap small crustaceans"
+   ],
+   "msrc": [
+    {
+     "t": "Sea Slug Forum, Rudman 1999, Melibe viridis fact sheet, the oral veil",
+     "u": "https://www.seaslugforum.net/find/meliviri"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
     ]
    }
   },
@@ -1630,6 +2077,22 @@
       "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
       "u": "https://nudipixel.net/similarities"
      }
+    ]
+   },
+   "marks": [
+    "Black rhinophores"
+   ],
+   "msrc": [
+    {
+     "t": "Brunckhorst 1993, Systematics and phylogeny of phyllidiid nudibranchs, key to the genera, couplet 3, p. 26",
+     "u": "https://doi.org/10.3853/j.0812-7387.16.1993.79"
+    }
+   ],
+   "mby": {
+    "marks": [
+     [
+      0
+     ]
     ]
    }
   },

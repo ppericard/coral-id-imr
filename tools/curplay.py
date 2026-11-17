@@ -14,6 +14,8 @@ Left out (none of them read by any script index.html loads, nor by the Lab):
 - fish.kept: the proposals Pierre answered Keep mine (the re-judge's, by photo: admin-light.js, the admin's Light
   proposals; the default cover rule's, by node: admin-covers.js, Cover proposals);
 - fish.auto, except its undone automatic adds (log code '-a…'), the one part the app reads (core.js fishGone);
+- the same in every tree subject's part (TREE_PARTS: seaslug.tags, seaslug.ease… as fish.tags, fish.ease…; the game
+  reads them from seaslug-game.json, tools/seaslug_game.py);
 - in each subject's content map (content at the top for the corals, fish.content; the content editor's edits, Pierre,
   2026-11-15, Q359, Q366), every entry's was, t and by: the app applies v and shows src (core.js contentApply), the
   admin alone compares was with the base.
@@ -26,6 +28,9 @@ import sys
 
 DROP = ('auto',)
 FISH_DROP = ('tags', 'ease', 'kept')
+# Every tree subject's part of curation.json (core.js SUBJECTS admin.cur: the fish's, the sea slugs'), slimmed alike
+# (tests/curplay.test.js holds the list to core.js).
+TREE_PARTS = ('fish', 'seaslug')
 ENTRY_KEEP = ('v', 'src')
 
 
@@ -51,8 +56,10 @@ def slim(cur):
     out = {k: v for k, v in cur.items() if k not in DROP}
     if 'content' in out:
         out['content'] = slim_content(out['content'])
-    fish = cur.get('fish')
-    if isinstance(fish, dict):
+    for key in TREE_PARTS:
+        fish = cur.get(key)
+        if not isinstance(fish, dict):
+            continue
         f = {k: v for k, v in fish.items() if k not in FISH_DROP and k != 'auto'}
         if 'content' in f:
             f['content'] = slim_content(f['content'])
@@ -63,7 +70,7 @@ def slim(cur):
                 auto[day] = undone
         if auto:
             f['auto'] = auto
-        out['fish'] = f
+        out[key] = f
     return out
 
 

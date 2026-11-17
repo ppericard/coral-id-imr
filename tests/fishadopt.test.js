@@ -113,7 +113,8 @@ function app({ls = {}, SYNC = null, sheet = null} = {}) {
     SYNC,
     DATA,
     P: get('reefid-sync-coral-progress', {}) || {},
-    UNITS: {coral: {slate: () => []}, fish: {slate: () => [], gen: () => FGEN}},
+    // Its variant table (app.js UNITS vars: null until the whole game pool is in): an empty one, none of these units' photos a variant.
+    UNITS: {coral: {slate: () => []}, fish: {slate: () => [], gen: () => FGEN, vars: () => ({})}},
     PMEM: undefined,
     PCONF: {},
     PFMT: {},
@@ -618,6 +619,28 @@ test("an unsent typed answer at adoption: its typed opportunity in this device's
   assert.strictEqual(a.replaysAdopt(j, [mine], undefined), true);
   assert.ok(((a.fish()['~level'] || {}).tyk || {}).f >= 1, "in this device's progress");
   assert.ok(!((a.base()['~level'] || {}).tyk || {}).f, 'not in the shared baseline');
+});
+
+// Codex review #953: under a fish rules version that reads the variant table (core.js rvVars), this device's queued
+// answers wait for the table (app.js UNITS fish vars: null until fish-game.json is in) before the replay is adopted, and
+// its version is not marked applied meanwhile; a replay with nothing queued needs no table.
+test('queued answers and no variant table yet: the fish replay waits, its version not marked applied', () => {
+  assert.ok(C.rvVars('fish', FRV), 'the fish rules version in force reads the table');
+  const s = loadCodeGs(withFiles());
+  seed(s, {'reefid-sync-fish-progress': JSON.stringify(today)});
+  const fresh = () => app({sheet: atv(s), SYNC: {name: 'Ana', pin: '1234', log: [], base: {}, fbase: {}, srv: 1}}),
+    j = {...s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: [], rvs: {fish: 0}}), v: C.REPLAYS_SHEET},
+    mine = {...fa('u1', 50), a: 'f:Damselfishes', ok: 1};
+  const a = fresh();
+  a.ctx.UNITS.fish.vars = () => null;
+  assert.strictEqual(a.replaysAdopt(j, [mine], undefined), false);
+  assert.strictEqual(a.rvApplied(FS), 0, 'not marked applied');
+  a.ctx.UNITS.fish.vars = () => ({});
+  assert.strictEqual(a.replaysAdopt(j, [mine], undefined), true, 'adopted once the table is in');
+  assert.strictEqual(a.rvApplied(FS), FRV);
+  const b = fresh();
+  b.ctx.UNITS.fish.vars = () => null;
+  assert.strictEqual(b.replaysAdopt(j, [], undefined), true, 'nothing queued: no table needed');
 });
 
 // Production, 2026-11-09: no fish player was ever replayed. Their apps asked at every sync, but the sheet's "Replayed Fish"

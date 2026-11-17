@@ -270,6 +270,10 @@ const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
 // subject), null before they are in.
 const rpUnits = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].gen ? UNITS[S.id].gen() : null);
+// Its variant table (core.js fishVarTable, as the sheet's replay reads it: SUBJECTS replayed vars; app.js UNITS vars), for
+// this device's answers replayed on top of the sheet's under a rules version that reads it (core.js rvVars): a queued
+// right answer on a unit's last variant group then keeps its learned mark (Codex review #953). Null before it is in.
+const rpVars = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].vars ? UNITS[S.id].vars(S) : null);
 // The other subjects' versions a request says, each only once a reply said the script replays it (sheetV), so an older
 // script is never asked for a replay the app would not adopt, and once its units are in (the replay waits for them).
 const rvsAsk = () =>
@@ -405,6 +409,8 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       reset = store.get(sKey('reset'), '') || '',
       me = '~me',
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
+      // The variant table this device's answers replayed on top read, under a rules version that reads it (rpVars).
+      vt = rows.length && rvVars(S.id, rp.rv) ? rpVars(S) : null,
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       // The sheet's photo numbers are the corals' (Code.gs stats_): another subject's replay reads none, nor does this
       // device's on top of it (its answers carry their scoring record).
@@ -425,7 +431,9 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
             dom: Number(v) >= DOM_SHEET,
             gd: st.gd,
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
-            starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {}
+            starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {},
+            // The variant groups left (vl) recomputed with this device's answers, as the sheet's replay (rules D8, D9).
+            vars: vt || undefined
           })[me].P
         : rp.rec,
       before = copy(P),
@@ -439,6 +447,10 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // misses in time order). Not adopted, nor the version marked applied: the save that follows logs them, and its
     // reply brings the replay of the whole log in time order.
     if (rows.some(r => r[1] < last)) return false;
+    // Answers on top under a rules version that reads the variant table, and the table not in (app.js UNITS vars: null
+    // until the whole game pool is in): not adopted, nor the version marked applied, so a partial table never clears a
+    // group the sheet left (Codex review #953); the next reply brings it again.
+    if (rows.length && rvVars(S.id, rp.rv) && !vt) return false;
     // A mark the replay took away: the former model's (a record learned with neither s.pg nor the domain-score bar,
     // core.js afterBkt), or a rule of the new version.
     mxRecalc(
@@ -1843,7 +1855,9 @@ function signOutClear(all) {
       // and the custom quiz's reminder of the Quiz, its count and its showing (quiz.js LEFTN; Codex review #850, rule D7)
       ...['hold', 'comeback', 'custom-left'].map(k => subjDev(S.id, k)),
       // and the "every unit met" card's marks, one per reason (quiz.js ALLMET, app.js fishNextOf; Codex review #851, D7)
-      ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k))
+      ...['c3', 'beyond', 'all'].map(k => subjDev(S.id, 'allmet-' + k)),
+      // and the juveniles and phases cards' marks, one per kind (quiz.js PHASEC; Codex review #953, D7)
+      ...['juvenile', 'phase'].map(k => subjDev(S.id, 'phase-' + k))
     ]),
     BASICS_KEY, // and their Coral basics (app.js; Codex review #428: done there hid the next beginner's offers)
     ACHK,

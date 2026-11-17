@@ -2282,10 +2282,23 @@ const fa = (id, i, x = {}) =>
     sc: {d: 0, r: 1},
     ...x
   });
+// The variant table the fish replay reads (Code.gs subjVar_, core.js fishVarTable; Q391 b), from the repository's files
+// as the sheet reads them from main (tests/gas.js serves the photo files), made once.
+let FVARS = null;
+const fvars = () =>
+  FVARS ||
+  (FVARS = (S =>
+    S.replayed.vars(
+      JSON.parse(FJSON),
+      ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(f =>
+        JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'))
+      ),
+      S
+    ))(C.subjectOf('fish')));
 const fishWant = (L, id, o = {}) =>
   C.replayProgress(
     L.map(a => C.logRow(a, id)),
-    {gen: FGEN, ...o}
+    {gen: FGEN, vars: fvars(), ...o}
   )[id].P;
 
 test('sheet replays per subject: the fish progress replayed from its own answers, asked by its own rules version, kept in its own tab', () => {
@@ -2319,7 +2332,7 @@ test('sheet replays per subject: the fish progress replayed from its own answers
     "the corals' tab keeps the corals' record only"
   );
   // Reused while the rows are the same (a marker comes back); fish.json read once (cached), never for the photo pools
-  // under the script lock (sheet v115).
+  // under the script lock (sheet v115), the variant table made with the units (Code.gs subjRpl_).
   T.rows[1][5] = '{"mark":1}';
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234', rv_fish: '0'}).replays.fish.rec, {mark: 1});
   assert.strictEqual(f.n.f, 1);

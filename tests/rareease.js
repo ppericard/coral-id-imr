@@ -13,7 +13,11 @@ const code = [
   cut(src, 'const PMEM0 = memOf();', '\n// Per-format offsets', {file: 'model.js'}),
   // The format offsets of the subject in play (pfmt: the sheet's PFMT for the corals, none for the fish).
   cut(src, 'const PFMT0 = ', '\n// Progress saved before the photo memory', {file: 'model.js'}),
-  cut(src, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'})
+  cut(src, 'function wpick(', '\n}\n', {through: 1, file: 'model.js'}),
+  // The mastery exam's draw and its rule (examSet, examPassed above it; EXAM, TYPED: tests/phasepath.test.js).
+  cut(src, '// The next exam question of genus n', '\n}\n', {through: 1, file: 'model.js'}),
+  cut(src, 'const EXAM = {', '\n', {file: 'model.js'}),
+  cut(src, 'const TYPED = {', '\n};\n', {through: 1, file: 'model.js'})
 ].join('\n');
 
 // The draw of model.js (PICKD to the end of photoSet, photoDiff, wpick) with the game around it stubbed: one unit, n,
@@ -33,7 +37,11 @@ function engine(
     PMEM = [0, -0.45, -1.1, -1.7],
     PFMT = {},
     fmtOff = () => 0,
-    PSTAT = {}
+    PSTAT = {},
+    calib = {}, // fields merged over the subject's draw calibration (core.js SUBJECTS calib), as learnsim --calib does
+    juv = null, // the unit's juvenile classes (fish.json juv: model.js varKind)
+    varAt = null, // its variant thresholds' overrides (fish.json varAt: model.js varAtOf)
+    ex = null // its mastery exam under way (s.ex: model.js examSet)
   } = {}
 ) {
   let s = 12345;
@@ -41,7 +49,7 @@ function engine(
     M = Object.create(Math);
   M.random = rnd;
   const SUBJ = C.subjectOf(subject),
-    cal = C.calibOf(SUBJ);
+    cal = {...C.calibOf(SUBJ), ...calib};
   const stubs = {
     Math: M,
     SUBJ,
@@ -49,20 +57,28 @@ function engine(
     calibOf: s => (s === SUBJ ? cal : C.calibOf(s)),
     unitRankOf: C.unitRankOf,
     refLevel: C.refLevel,
+    phaseOf: C.phaseOf,
+    varKindOf: C.varKindOf,
+    VAR_AT: C.VAR_AT,
+    varRamp: C.varRamp,
+    VAR_GROUPS: C.VAR_GROUPS,
+    varGroup: C.varGroup,
+    varUnit: C.varUnit,
+    varLeftOf: C.varLeftOf,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
     DOM: C.DOM,
     TARGET_P: C.TARGET_P,
     AIM: C.AIM,
     LEVEL: '_level',
-    P: {u: {ok, ko: 0, th, ps}},
+    P: {u: {ok, ko: 0, th, ps, ...(ex ? {ex} : {})}},
     PSTAT,
     PGD: {},
     PMEM,
     memOf: C.memOf,
     PFMT,
     fmtOff,
-    GX: () => ({levels: 3, views: {wide: L}}),
+    GX: () => ({levels: 3, views: {wide: L}, ...(juv ? {juv} : {}), ...(varAt ? {varAt} : {})}),
     imrFormsOf: () => ['a'],
     gamePics: (n, v) => (v === 'wide' ? L : []),
     gamePhotoOk: () => true,
@@ -78,7 +94,10 @@ function engine(
   };
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
-    make = vm.runInContext(`(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap};\n})`, ctx);
+    make = vm.runInContext(
+      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P};\n})`,
+      ctx
+    );
   return make(...names.map(k => stubs[k]));
 }
 // A pool like a starter family's, but harder still: 12 easy photos (ease 4-5) against 240 under ease 4.
