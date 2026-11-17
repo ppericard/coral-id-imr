@@ -6483,6 +6483,237 @@
     "n": 20
    }
   },
+  "Tubulophilinopsis": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 12
+   }
+  },
+  "Samla": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 2
+   }
+  },
+  "Miamira": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 1
+   }
+  },
+  "Armina": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Plakobranchus": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 8
+   }
+  },
+  "Melibe": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Longibranchus": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 1
+   }
+  },
+  "Bermudella": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 2
+   }
+  },
+  "Aplysia": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 14
+   }
+  },
+  "Bornella": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 4
+   }
+  },
+  "Gymnodoris": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Cyerce": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 11
+   }
+  },
+  "Doto": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Tenellia": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Colpodaspis": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 2
+   }
+  },
+  "Asteronotus": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 1
+   }
+  },
+  "Trapania": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 16
+   }
+  },
+  "Janolus": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 15
+   }
+  },
+  "Notodoris": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 2
+   }
+  },
+  "Verconia": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Baeolidia": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 4
+   }
+  },
+  "Philinopsis": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 1
+   }
+  },
+  "Sclerodoris": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 5
+   }
+  },
+  "Murphydoris": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 17
+   }
+  },
+  "Cratena": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Dendrodoris": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 7
+   }
+  },
+  "Dermatobranchus": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Mariaglaja": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 2
+   }
+  },
+  "Marioniopsis": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 20
+   }
+  },
+  "Odontoglaja": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 6
+   }
+  },
+  "Atagema": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 17
+   }
+  },
+  "Platydoris": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 10
+   }
+  },
+  "Pelagella": {
+   "seaslug": {
+    "by": "claude",
+    "at": "2026-11-17",
+    "n": 1
+   }
+  },
   "goniobranchus-sp5": {
    "seaslug": {
     "by": "claude",
@@ -213164,6 +213395,81 @@
    "e": 1,
    "k": "best"
   },
+  "seaslug-Aplysia-cand-103060692": {
+   "jt": "o0g0ml1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-172664241": {
+   "jt": "p1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "rearing up, the body upright and foreshortened"
+  },
+  "seaslug-Aplysia-cand-198558659": {
+   "jt": "h1g0sl1w",
+   "e": 3,
+   "k": "best",
+   "n": "seen end-on, the head or the rear toward the camera"
+  },
+  "seaslug-Aplysia-cand-257316556": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-288438555": {
+   "jt": "p1g0sl1cw",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-29721345": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-380834098": {
+   "jt": "p1g0sls",
+   "e": 4,
+   "k": "best",
+   "n": "a second animal partly hidden behind it"
+  },
+  "seaslug-Aplysia-cand-447539255": {
+   "jt": "p1d0ml1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-497910250": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "red algae around it compete with the outline"
+  },
+  "seaslug-Aplysia-cand-66705958": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-688315245": {
+   "jt": "d1g0sl1a",
+   "e": 3,
+   "k": "best",
+   "n": "on a dry-looking shore surface, no water seen over it: read as out of water"
+  },
+  "seaslug-Aplysia-cand-713127923": {
+   "jt": "o1g0mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-81378095": {
+   "jt": "o0g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Aplysia-cand-87959417": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
   "seaslug-Ardeadoris-cand-385029247": {
    "jt": "o0g0sls",
    "e": 3,
@@ -213180,6 +213486,260 @@
    "k": "best"
   },
   "seaslug-Ardeadoris-cand-629383838": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-10254517": {
+   "jt": "p1g0ml1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-181190860": {
+   "jt": "o1g0sl1jw",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-182203763": {
+   "jt": "o1g0sls",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-182203767": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-182205384": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-19347795": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-19734690": {
+   "jt": "o0g0sl1w",
+   "e": 3,
+   "k": "best",
+   "n": "half buried in the sand"
+  },
+  "seaslug-Armina-cand-202826302": {
+   "jt": "h1g0sl1w",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-265422728": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the rear cut by the frame; its egg ribbon beside it is background"
+  },
+  "seaslug-Armina-cand-276184506": {
+   "jt": "p1d0sl1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-382717056": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "seagrass blades cross the body"
+  },
+  "seaslug-Armina-cand-384486333": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-464445584": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-505497363": {
+   "jt": "o1g2bs1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-537495470": {
+   "jt": "h1g0ml1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-53785138": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-617173480": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-628985052": {
+   "jt": "h0g0sl1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-694858092": {
+   "jt": "h1g0sm1w",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Armina-cand-711514633": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Asteronotus-cand-181457626": {
+   "jt": "d1g0bl1",
+   "e": 3,
+   "k": "best",
+   "n": "a blurred purple oval on a yellow coral"
+  },
+  "seaslug-Atagema-cand-181458400": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-181591366": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-244694406": {
+   "jt": "o1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "no rhinophores or gills seen"
+  },
+  "seaslug-Atagema-cand-333318055": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-390531840": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-391722365": {
+   "jt": "d0g0mlx",
+   "e": 1,
+   "k": "best",
+   "n": "a grey fuzzy mass on a sponge: where the animal is, is not obvious"
+  },
+  "seaslug-Atagema-cand-392907501": {
+   "jt": "o1g0sl1c",
+   "e": 1,
+   "k": "best",
+   "n": "a pale oval on a pale sponge of the same texture"
+  },
+  "seaslug-Atagema-cand-393123507": {
+   "jt": "o1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the front raised and folded, no rhinophores or gills seen"
+  },
+  "seaslug-Atagema-cand-505093497": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-507947284": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-585246553": {
+   "jt": "o0g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-585638498": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-589193462": {
+   "jt": "d1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-609165815": {
+   "jt": "o0g0mlx",
+   "e": 1,
+   "k": "best",
+   "n": "a pale shape inside a sponge of the same colour: where the animal is, is not obvious"
+  },
+  "seaslug-Atagema-cand-66745905": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-731813950": {
+   "jt": "o1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Atagema-cand-95702607": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Baeolidia-cand-510967875": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Baeolidia-cand-521936302": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent cerata on a dark algal background"
+  },
+  "seaslug-Baeolidia-cand-63745918": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the streaked, glinting wood competes with the pale cerata"
+  },
+  "seaslug-Baeolidia-cand-81639841": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Bermudella-cand-181964371": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Bermudella-cand-644633439": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the lower body hidden behind a red sponge"
+  },
+  "seaslug-Bornella-cand-469841982": {
+   "jt": "o1d0mm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Bornella-cand-66744116": {
+   "jt": "o0g0sms",
+   "e": 2,
+   "k": "best",
+   "n": "three or four animals among algae, overlapping, the left ones cut by the frame"
+  },
+  "seaslug-Bornella-cand-724538830": {
+   "jt": "o1g0sl1a",
+   "e": 3,
+   "k": "best",
+   "n": "on a dark woven mesh, a net or a tank, not a natural substrate: read as out of water"
+  },
+  "seaslug-Bornella-cand-745273308": {
    "jt": "o1g0sl1",
    "e": 5,
    "k": "best"
@@ -213461,6 +214021,16 @@
    "e": 2,
    "k": "best"
   },
+  "seaslug-Colpodaspis-cand-260317638": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Colpodaspis-cand-460845571": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Coryphellina-cand-264444945": {
    "jt": "o1g0bm1",
    "e": 2,
@@ -213663,6 +214233,326 @@
    "e": 2,
    "k": "best"
   },
+  "seaslug-Cratena-cand-178220683": {
+   "jt": "o1g0sm1cw",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-180091765": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-180092741": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the busy orange algae compete with the outline"
+  },
+  "seaslug-Cratena-cand-18782049": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the busy reef competes with the outline"
+  },
+  "seaslug-Cratena-cand-271744017": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a translucent body on a busy algal background of its colours"
+  },
+  "seaslug-Cratena-cand-323757595": {
+   "jt": "p1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "soft at full size; the busy red and white background competes with the outline"
+  },
+  "seaslug-Cratena-cand-338078268": {
+   "jt": "o1g0ss1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-445577337": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the body curled into a U, the cerata folded over it"
+  },
+  "seaslug-Cratena-cand-488728124": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the busy orange background competes with the cerata"
+  },
+  "seaslug-Cratena-cand-490547820": {
+   "jt": "p1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "the busy hydroids around it compete with the cerata"
+  },
+  "seaslug-Cratena-cand-493374899": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-510968440": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-567653946": {
+   "jt": "o0g0sm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-625877319": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Cratena-cand-628984790": {
+   "jt": "o0g0sls",
+   "e": 3,
+   "k": "best",
+   "n": "two animals, one behind the other"
+  },
+  "seaslug-Cratena-cand-63742679": {
+   "jt": "d1g0slo",
+   "e": 4,
+   "k": "best",
+   "n": "a blurred pale animal at the lower left, not the subject's shape"
+  },
+  "seaslug-Cratena-cand-719986906": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the head comes toward the camera, the body behind it"
+  },
+  "seaslug-Cratena-cand-84423959": {
+   "jt": "o1g0sl1fw",
+   "e": 4,
+   "k": "best",
+   "n": "the head end under the cerata"
+  },
+  "seaslug-Cratena-cand-87244964": {
+   "jt": "p1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "pink algae around it compete with the outline"
+  },
+  "seaslug-Cratena-cand-96820901": {
+   "jt": "o1g0sms",
+   "e": 3,
+   "k": "best",
+   "n": "two animals among hydroids, the hydroids compete with the cerata"
+  },
+  "seaslug-Cyerce-cand-145599488": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent cerata"
+  },
+  "seaslug-Cyerce-cand-176760667": {
+   "jt": "o1g0ml1cw",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Cyerce-cand-176879886": {
+   "jt": "o1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Cyerce-cand-182570592": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent cerata"
+  },
+  "seaslug-Cyerce-cand-336037198": {
+   "jt": "d1g0ss1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Cyerce-cand-351574040": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Cyerce-cand-427865203": {
+   "jt": "o1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "translucent cerata, the background shows through"
+  },
+  "seaslug-Cyerce-cand-464116140": {
+   "jt": "d1g0ms1w",
+   "e": 1,
+   "k": "best",
+   "n": "a small pale blob on a leaf, its shape hard to read"
+  },
+  "seaslug-Cyerce-cand-612949760": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent cerata, hydroid threads across them"
+  },
+  "seaslug-Cyerce-cand-631269775": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Cyerce-cand-87815382": {
+   "jt": "o1g0ml1c",
+   "e": 1,
+   "k": "best",
+   "n": "translucent on pale sand, its outline hard to pick out"
+  },
+  "seaslug-Dendrodoris-cand-103800767": {
+   "jt": "o1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the rhinophores and gills out of sight among the tubercles"
+  },
+  "seaslug-Dendrodoris-cand-173990388": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Dendrodoris-cand-181600057": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Dendrodoris-cand-363329078": {
+   "jt": "d0g0sl1cf",
+   "e": 1,
+   "k": "best",
+   "n": "a grey mottled mantle on a grey reef, cut by the right edge, no rhinophores or gills seen"
+  },
+  "seaslug-Dendrodoris-cand-364371426": {
+   "jt": "d1g0sl1c",
+   "e": 3,
+   "k": "best",
+   "n": "a grey mottled mantle on a grey reef"
+  },
+  "seaslug-Dendrodoris-cand-507631702": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the rear runs off the top edge"
+  },
+  "seaslug-Dendrodoris-cand-63746522": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-108101244": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-174530642": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-182212553": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-203098692": {
+   "jt": "h1g0sm1w",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-254608647": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-268772969": {
+   "jt": "h1g0sso",
+   "e": 1,
+   "k": "best",
+   "n": "a small head-on animal on turf; a blurred white shape at the bottom, possibly another sea slug, plainly not the subject"
+  },
+  "seaslug-Dermatobranchus-cand-270953546": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-277672028": {
+   "jt": "o0g0sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-35093003": {
+   "jt": "p1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-353164449": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body bent, a busy rubble background"
+  },
+  "seaslug-Dermatobranchus-cand-489979347": {
+   "jt": "o1d0ml1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-507632212": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-540269740": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-568810433": {
+   "jt": "p0g0sl1w",
+   "e": 3,
+   "k": "best",
+   "n": "soft-coral polyps in front of the body"
+  },
+  "seaslug-Dermatobranchus-cand-599918053": {
+   "jt": "o0g0sm1",
+   "e": 2,
+   "k": "best",
+   "n": "curled up, its shape not read whole"
+  },
+  "seaslug-Dermatobranchus-cand-60513847": {
+   "jt": "d1g0mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-638942735": {
+   "jt": "d1g0sl1a",
+   "e": 3,
+   "k": "best",
+   "n": "in a clear container"
+  },
+  "seaslug-Dermatobranchus-cand-640484342": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Dermatobranchus-cand-726351010": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the mottled body is close to the busy reef's colours"
+  },
+  "seaslug-Dermatobranchus-cand-81022069": {
+   "jt": "o0g0sl1w",
+   "e": 3,
+   "k": "best",
+   "n": "the body coiled on itself over a soft coral, its shape not read whole"
+  },
   "seaslug-Discodoris-cand-186546366": {
    "jt": "h1g0ml1",
    "e": 2,
@@ -213707,6 +214597,116 @@
    "jt": "p1g0sl1",
    "e": 5,
    "k": "best"
+  },
+  "seaslug-Doto-cand-106692597": {
+   "jt": "d1g0sl1f",
+   "e": 3,
+   "k": "best",
+   "n": "the head out of sight; its cerata look like the bryozoans around it"
+  },
+  "seaslug-Doto-cand-182440807": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-203418360": {
+   "jt": "o0g0slsw",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-265446005": {
+   "jt": "o1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-269191383": {
+   "jt": "o1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-278899893": {
+   "jt": "h1g0sl1w",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-352600815": {
+   "jt": "o1g0sm1",
+   "e": 3,
+   "k": "best",
+   "n": "its white egg ribbon beside it competes with the white cerata"
+  },
+  "seaslug-Doto-cand-443285390": {
+   "jt": "o1g0mm1w",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-445689138": {
+   "jt": "o1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the head out of sight, a hydroid branch across the cerata"
+  },
+  "seaslug-Doto-cand-468174999": {
+   "jt": "o1g0sm1c",
+   "e": 1,
+   "k": "best",
+   "n": "among hydroid stalks, the cerata like the debris around them"
+  },
+  "seaslug-Doto-cand-598870009": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-610163222": {
+   "jt": "h1g0sl1w",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-616607994": {
+   "jt": "o1g0sm1",
+   "e": 3,
+   "k": "best",
+   "n": "large egg masses fill most of the frame beside the animal"
+  },
+  "seaslug-Doto-cand-630575760": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "white egg masses around it compete with the outline"
+  },
+  "seaslug-Doto-cand-631268465": {
+   "jt": "t1g0sm1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-682034735": {
+   "jt": "o0g0bms",
+   "e": 1,
+   "k": "best",
+   "n": "blurred; a second animal cut by the top edge"
+  },
+  "seaslug-Doto-cand-700704248": {
+   "jt": "o1g0mm1",
+   "e": 3,
+   "k": "best",
+   "n": "white egg masses beside it"
+  },
+  "seaslug-Doto-cand-712255696": {
+   "jt": "o1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Doto-cand-722321516": {
+   "jt": "o1g0sm1",
+   "e": 2,
+   "k": "best",
+   "n": "a small animal on a hydroid stalk among debris, findable at full size"
+  },
+  "seaslug-Doto-cand-95687792": {
+   "jt": "o1g0sms",
+   "e": 3,
+   "k": "best",
+   "n": "two animals among hydroid stalks, white egg ribbons beside them"
   },
   "seaslug-Elysia-cand-179830767": {
    "jt": "p1g0mm1w",
@@ -214117,6 +215117,109 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Gymnodoris-cand-10189889": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-120611817": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the white polyps around it compete with the white body"
+  },
+  "seaslug-Gymnodoris-cand-181813187": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-243119109": {
+   "jt": "d1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-264452625": {
+   "jt": "o1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-2670711": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-277460788": {
+   "jt": "d1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "a busy reef of the same colours competes with the pale body"
+  },
+  "seaslug-Gymnodoris-cand-33515113": {
+   "jt": "p1g0bl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-3695259": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "the body twisted into an S"
+  },
+  "seaslug-Gymnodoris-cand-484557559": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-50878722": {
+   "jt": "d1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-517712935": {
+   "jt": "p0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-601636899": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-615421691": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-617119813": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-625445191": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-628368891": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-639399629": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-639460639": {
+   "jt": "o1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Gymnodoris-cand-90831468": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Halgerda-cand-102468474": {
    "jt": "d1g1bm1",
    "e": 1,
@@ -214315,6 +215418,85 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-Janolus-cand-182247127": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-182247132": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-279756434": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "algal threads across the head end"
+  },
+  "seaslug-Janolus-cand-391590159": {
+   "jt": "o1g0mlx",
+   "e": 1,
+   "k": "best",
+   "n": "a brown frayed shape among hydroids: which part is the animal is not obvious"
+  },
+  "seaslug-Janolus-cand-445578489": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-505093451": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-585402079": {
+   "jt": "o1g0sl1w",
+   "e": 4,
+   "k": "best",
+   "n": "hydroid branches across the cerata"
+  },
+  "seaslug-Janolus-cand-608327722": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-610992456": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-628265371": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the pale algae around it compete with the pale body"
+  },
+  "seaslug-Janolus-cand-628984992": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-631755839": {
+   "jt": "o1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-63745537": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-638436166": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Janolus-cand-678057036": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Jorunna-cand-102323873": {
    "jt": "o1g0sl1w",
    "e": 4,
@@ -214403,6 +215585,238 @@
    "e": 3,
    "k": "best"
   },
+  "seaslug-Longibranchus-cand-626728505": {
+   "egg": 1,
+   "n": "a row of small translucent beads along a hydroid stalk: an egg string or the animal, not told apart"
+  },
+  "seaslug-Mariaglaja-cand-575851784": {
+   "jt": "p1g0mm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Mariaglaja-cand-599982671": {
+   "jt": "d0g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-362803240": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-430755554": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the lumpy green body looks like the algae on the rock"
+  },
+  "seaslug-Marioniopsis-cand-468202134": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-474985531": {
+   "jt": "p1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-480199878": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a narrow animal along a rock edge, a busy background"
+  },
+  "seaslug-Marioniopsis-cand-514958603": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-568807198": {
+   "jt": "d1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-593235788": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the rear hidden behind a shell"
+  },
+  "seaslug-Marioniopsis-cand-616043754": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best",
+   "n": "an animal among soft-coral polyps of its colour"
+  },
+  "seaslug-Marioniopsis-cand-626296305": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a compact body seen from the rear quarter, its head end hard to place"
+  },
+  "seaslug-Marioniopsis-cand-626718272": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent branched gills"
+  },
+  "seaslug-Marioniopsis-cand-628265524": {
+   "jt": "h0g0sl1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-633688672": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-634048370": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-638316080": {
+   "jt": "o1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the head and rhinophores hidden under the branched gills"
+  },
+  "seaslug-Marioniopsis-cand-638458170": {
+   "jt": "p1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "translucent gills on a busy reef of the same colours"
+  },
+  "seaslug-Marioniopsis-cand-639984777": {
+   "jt": "o1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the head and rhinophores hidden under the branched gills"
+  },
+  "seaslug-Marioniopsis-cand-707679306": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Marioniopsis-cand-728246249": {
+   "jt": "p1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "translucent branched body, the background shows through"
+  },
+  "seaslug-Marioniopsis-cand-745273252": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-183287594": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-183287603": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-254897922": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-257318207": {
+   "jt": "p0g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-264946605": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-363071294": {
+   "jt": "p1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-363319365": {
+   "jt": "p1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-363336945": {
+   "jt": "o1g0ml1c",
+   "e": 1,
+   "k": "best",
+   "n": "a translucent, algae-like animal among algae, hard to pick out"
+  },
+  "seaslug-Melibe-cand-387150888": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-445695492": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "algae-like outline, particles in the water around it"
+  },
+  "seaslug-Melibe-cand-453474768": {
+   "jt": "o1g1ml1c",
+   "e": 1,
+   "k": "best",
+   "n": "translucent, hard to pick out from the blurred background"
+  },
+  "seaslug-Melibe-cand-479883602": {
+   "jt": "d1g0bl1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-502252796": {
+   "jt": "p1g0ml1cw",
+   "e": 1,
+   "k": "best",
+   "n": "translucent and algae-like on rubble, hard to pick out"
+  },
+  "seaslug-Melibe-cand-610716040": {
+   "jt": "p1g0ml1cw",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-613388197": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Melibe-cand-628733351": {
+   "jt": "p1g0ml1",
+   "e": 3,
+   "k": "best",
+   "n": "translucent body, its outline vague"
+  },
+  "seaslug-Melibe-cand-639450170": {
+   "jt": "p1g0ml1c",
+   "e": 1,
+   "k": "best",
+   "n": "barely stands out from the sand, a seagrass blade in front"
+  },
+  "seaslug-Melibe-cand-711495764": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent branched body, the background shows through"
+  },
+  "seaslug-Melibe-cand-719162261": {
+   "jt": "o1g0ml1c",
+   "e": 1,
+   "k": "best",
+   "n": "a translucent animal among soft-coral polyps, findable at full size"
+  },
+  "seaslug-Melibe-cand-734076174": {
+   "jt": "o0g0bl1c",
+   "e": 1,
+   "k": "best"
+  },
   "seaslug-Mexichromis-cand-277701766": {
    "jt": "o1g0ss1",
    "e": 3,
@@ -214431,6 +215845,102 @@
   "seaslug-Mexichromis-cand-650635276": {
    "jt": "h0g0sls",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-Miamira-cand-15276616": {
+   "jt": "d1g0ml1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-181956965": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-181956970": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body draped over a stalk, its outline cross-shaped"
+  },
+  "seaslug-Murphydoris-cand-181956973": {
+   "jt": "o1g0sss",
+   "e": 2,
+   "k": "best",
+   "n": "two small animals apart on hydroid stalks"
+  },
+  "seaslug-Murphydoris-cand-19313415": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-277691989": {
+   "jt": "o1g0ss1",
+   "e": 2,
+   "k": "best",
+   "n": "a tiny animal on algal turf"
+  },
+  "seaslug-Murphydoris-cand-363610637": {
+   "jt": "o1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-370458096": {
+   "jt": "d1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the head end out of sight"
+  },
+  "seaslug-Murphydoris-cand-380194819": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "curled, the head end tucked under"
+  },
+  "seaslug-Murphydoris-cand-442899664": {
+   "jt": "p1g0mm1w",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-611313723": {
+   "jt": "p1g0ml1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-626751778": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-627849145": {
+   "jt": "p1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "red algal threads across the body"
+  },
+  "seaslug-Murphydoris-cand-628984833": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-628984896": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-630061628": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-632096595": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Murphydoris-cand-638293089": {
+   "jt": "p1g0sm1",
+   "e": 4,
    "k": "best"
   },
   "seaslug-Nembrotha-cand-150369775": {
@@ -214533,6 +216043,53 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Notodoris-cand-499191917": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Notodoris-cand-90213": {
+   "jt": "o0g0ml1",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Odontoglaja-cand-191409632": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Odontoglaja-cand-238030939": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Odontoglaja-cand-496013112": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Odontoglaja-cand-501070549": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Odontoglaja-cand-505873458": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body foreshortened, the head end toward the lower right"
+  },
+  "seaslug-Odontoglaja-cand-505873641": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a pale animal on a pale coral, its outline less clear"
+  },
+  "seaslug-Pelagella-cand-393744085": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Phestilla-cand-712558153": {
    "jt": "d1g0sl1",
    "e": 4,
@@ -214542,6 +216099,11 @@
   "seaslug-Phestilla-cand-715412949": {
    "jt": "o1g0ss1c",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-Philinopsis-cand-577489559": {
+   "jt": "p1g0sl1",
+   "e": 5,
    "k": "best"
   },
   "seaslug-Phyllidia-cand-115460008": {
@@ -214905,6 +216467,103 @@
    "e": 5,
    "k": "best"
   },
+  "seaslug-Plakobranchus-cand-174530677": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the mottled body is close to the silt's colours"
+  },
+  "seaslug-Plakobranchus-cand-182598007": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Plakobranchus-cand-209312464": {
+   "jt": "d1g0ml1a",
+   "e": 3,
+   "k": "best",
+   "n": "in a plastic cup"
+  },
+  "seaslug-Plakobranchus-cand-254046453": {
+   "jt": "p0g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Plakobranchus-cand-333242127": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the pale rubble background competes with the pale body"
+  },
+  "seaslug-Plakobranchus-cand-625127695": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the sandy, algal background competes with the outline"
+  },
+  "seaslug-Plakobranchus-cand-764143268": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Plakobranchus-cand-98243300": {
+   "jt": "o0g0ml1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-103472239": {
+   "jt": "p0g0sl1w",
+   "e": 3,
+   "k": "best",
+   "n": "the lower body hidden behind algae"
+  },
+  "seaslug-Platydoris-cand-181543594": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-181546209": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-181546216": {
+   "jt": "p0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the front cut by the left edge, algae over the body"
+  },
+  "seaslug-Platydoris-cand-181546218": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-181546757": {
+   "jt": "d0g0sls",
+   "e": 3,
+   "k": "best",
+   "n": "two animals, one overlapping the other"
+  },
+  "seaslug-Platydoris-cand-181548110": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-181548725": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-181566572": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Platydoris-cand-343827644": {
+   "jt": "p1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
   "seaslug-Pleurobranchus-cand-601666615": {
    "jt": "d1g0sl1",
    "e": 5,
@@ -215009,6 +216668,44 @@
    "e": 2,
    "k": "best"
   },
+  "seaslug-Samla-cand-152625306": {
+   "jt": "o0g0ml1",
+   "e": 2,
+   "k": "best",
+   "n": "the body runs along a hydroid stalk, its rear hidden among the branches"
+  },
+  "seaslug-Samla-cand-631102275": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Sclerodoris-cand-108213177": {
+   "jt": "d1g0smo",
+   "e": 3,
+   "k": "best",
+   "n": "a chromodorid cut by the top edge, plainly another shape and colour"
+  },
+  "seaslug-Sclerodoris-cand-174127421": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Sclerodoris-cand-327391678": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Sclerodoris-cand-507549485": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Sclerodoris-cand-593237235": {
+   "jt": "d1g0sl1f",
+   "e": 4,
+   "k": "best",
+   "n": "the rhinophores and gills out of sight on the translucent mantle"
+  },
   "seaslug-Tambja-cand-178217106": {
    "jt": "p1g0sm1w",
    "e": 4,
@@ -215018,6 +216715,114 @@
    "jt": "o1d0sl1",
    "e": 4,
    "k": "best"
+  },
+  "seaslug-Tenellia-cand-10217007": {
+   "jt": "o1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-13982629": {
+   "jt": "o1g0ss1",
+   "e": 2,
+   "k": "best",
+   "n": "a small dark animal on a busy reef"
+  },
+  "seaslug-Tenellia-cand-202598217": {
+   "jt": "o1g0ml1w",
+   "e": 4,
+   "k": "best",
+   "n": "a pink background close to the animal's colours"
+  },
+  "seaslug-Tenellia-cand-250812685": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-273219224": {
+   "jt": "h1g0ss1",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-348289319": {
+   "jt": "o1g0slo",
+   "e": 4,
+   "k": "best",
+   "n": "a paler aeolid of another colour beside it"
+  },
+  "seaslug-Tenellia-cand-360995697": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-420723423": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-427783679": {
+   "jt": "o1g0mmsc",
+   "e": 1,
+   "k": "best",
+   "n": "two animals camouflaged on a coral"
+  },
+  "seaslug-Tenellia-cand-451849110": {
+   "jt": "d1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-493374141": {
+   "jt": "o1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-493662454": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-504585590": {
+   "jt": "p1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-571366930": {
+   "jt": "d1g0sm1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-587907667": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-594363783": {
+   "jt": "o1g0smo",
+   "e": 3,
+   "k": "best",
+   "n": "another sea slug with round cerata below it, plainly another shape"
+  },
+  "seaslug-Tenellia-cand-614132435": {
+   "jt": "o1g0ml1c",
+   "e": 2,
+   "k": "best"
+  },
+  "seaslug-Tenellia-cand-625445200": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent body and cerata"
+  },
+  "seaslug-Tenellia-cand-631267036": {
+   "jt": "o1g0sms",
+   "e": 3,
+   "k": "best",
+   "n": "two animals apart on a busy turf"
+  },
+  "seaslug-Tenellia-cand-638942690": {
+   "jt": "o1g0sl1a",
+   "e": 3,
+   "k": "best",
+   "n": "in a clear container"
   },
   "seaslug-Thecacera-cand-179712870": {
    "jt": "o1g0sl1w",
@@ -215253,6 +217058,257 @@
   "seaslug-Thuridilla-cand-693782769": {
    "jt": "p1d0ms1w",
    "e": 1,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-103992793": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "the body twisted around a stalk, its outline folded"
+  },
+  "seaslug-Trapania-cand-105277762": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-277711876": {
+   "jt": "o0g0sm1",
+   "e": 2,
+   "k": "best",
+   "n": "the rear behind a red sponge"
+  },
+  "seaslug-Trapania-cand-278220405": {
+   "jt": "o1g0sl1c",
+   "e": 3,
+   "k": "best",
+   "n": "a yellow tuberculate body on an orange sponge"
+  },
+  "seaslug-Trapania-cand-354209414": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a green sea squirt in front of the lower body"
+  },
+  "seaslug-Trapania-cand-380194603": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-393742572": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-393743640": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-451848199": {
+   "jt": "d1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "a fuzzy translucent body, its outline uneven"
+  },
+  "seaslug-Trapania-cand-508574453": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-626716013": {
+   "jt": "o1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-626716025": {
+   "jt": "o1g0mm1c",
+   "e": 1,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-626716027": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-627030807": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Trapania-cand-630061696": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "translucent, tuberculate body"
+  },
+  "seaslug-Trapania-cand-79193470": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-180827611": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-180827622": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-180827630": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-180827640": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-250376841": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-254609700": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-580509079": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-638436160": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-641793890": {
+   "jt": "p1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-642309739": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-728882699": {
+   "jt": "h1g0sl1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Tubulophilinopsis-cand-759829919": {
+   "jt": "o1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-173423739": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-181450280": {
+   "jt": "d1g0ml1",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-181450290": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-264451906": {
+   "jt": "o1g0ss1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-269230264": {
+   "jt": "o1g0sl1",
+   "e": 4,
+   "k": "best",
+   "n": "rearing up, the body upright and foreshortened, a stalk in front"
+  },
+  "seaslug-Verconia-cand-323529556": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-379547037": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-442928448": {
+   "jt": "o1g0sm1w",
+   "e": 4,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-443339030": {
+   "jt": "d1g0sl1w",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-4615093": {
+   "jt": "o1g0mm1",
+   "e": 3,
+   "k": "best",
+   "n": "a ruler fills the top of the frame"
+  },
+  "seaslug-Verconia-cand-505873595": {
+   "jt": "o0g0sls",
+   "e": 3,
+   "k": "best",
+   "n": "two animals overlapping, pink on a pink sponge"
+  },
+  "seaslug-Verconia-cand-505873835": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-507631809": {
+   "jt": "p1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-510968754": {
+   "jt": "o0g0sl1",
+   "e": 3,
+   "k": "best",
+   "n": "the front half behind a ledge of the sponge"
+  },
+  "seaslug-Verconia-cand-514958518": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-631787999": {
+   "jt": "o1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-638449679": {
+   "jt": "d1g0sl1",
+   "e": 5,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-639451597": {
+   "jt": "o1g0ss1",
+   "e": 2,
+   "k": "best",
+   "n": "a small animal on a busy reef"
+  },
+  "seaslug-Verconia-cand-721706449": {
+   "jt": "o1d0sm1",
+   "e": 3,
+   "k": "best"
+  },
+  "seaslug-Verconia-cand-721800828": {
+   "jt": "o1g0ss1",
+   "e": 3,
    "k": "best"
   },
   "seaslug-goniobranchus-sp5-cand-2617827": {

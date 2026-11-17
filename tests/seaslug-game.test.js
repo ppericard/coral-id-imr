@@ -461,16 +461,20 @@ test('the committed files read through the fish engine: three circles, scientifi
           .map(p => p.sp)
       ).size;
   assert.deepStrictEqual([sp(1), sp(2) > 40, sp(3) > 40], [45, true, true]);
-  // Every species with photos has at least the start, at most the cap (+ the documented juvenile form's places); a genus's
-  // genus-level photos (gl, Q389 (1)) at most the cap, the start counted with its species' (tools/seaslug_game.py).
+  // Every species with photos has at least the start, at most the cap (+ the documented juvenile form's places).
   const T = json('tools/seaslugs.json').photoTarget,
-    by = {},
-    gl = {};
+    by = {};
   Object.values(GM.photos)
     .flat()
-    .forEach(p => ((p.gl ? gl : by)[p.sp] = ((p.gl ? gl : by)[p.sp] || 0) + 1));
-  Object.entries(by).forEach(([sp, n]) => assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`));
-  Object.entries(gl).forEach(([g, n]) => assert.ok(g.startsWith('g:') && n <= T.gameCap, `${g}: ${n}`));
+    .forEach(p => (by[p.sp] = (by[p.sp] || 0) + 1));
+  // A genus's genus-level photos (sp its genus id, gl; Q389 (1)): at most the cap, in play once they and its species'
+  // photos reach the start (tools/seaslug_game.py), so a genus may hold fewer than the start of its own.
+  const gen = new Map(F.genera.map(g => [g.id, g]));
+  Object.entries(by).forEach(([sp, n]) =>
+    gen.has(sp)
+      ? assert.ok(n <= T.gameCap && n + gen.get(sp).species.reduce((s, id) => s + (by[id] || 0), 0) >= T.start, `${sp}: ${n}`)
+      : assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`)
+  );
   // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead the families,
   // and one of its genera the genera.
   assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...F.families.map(f => X.gen[f.id].cm)));
