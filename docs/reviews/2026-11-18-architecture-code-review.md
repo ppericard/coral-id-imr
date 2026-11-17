@@ -315,7 +315,12 @@ dead, though:
    - What remains is a single `MIN_SHEET`: an app that gets a reply from an older script (a rollback) shows "updating"
      and keeps its answers queued, as it does on `busy`.
 2. **A gate floor (S), now, even before the deploy order.**
-   - Treat an unknown `sheetV()` as the version the app was built against: write `MIN_SHEET` into the app at deploy.
+   - Treat an unknown `sheetV()` as `MIN_SHEET`, a version **already confirmed live** on the sheet, never the version the
+     app was built against: Pages deploys on a push to `main` independently of the script's `autoUpdate`, so the build's
+     `VERSION` can be ahead of the running script, and flooring to it would switch on new behaviour in that gap (the
+     failure rule D4 prevents). `MIN_SHEET` is the live version the script reported at least a few days earlier (the
+     integrator's `tools/brief.py` reads it), set by hand in a PR and ratcheted up; once the deploy order (step 8) exists
+     it can follow the deploy.
    - Delete every gate at or below it, with its old branch.
    - A test fails when a gate is more than N versions below `VERSION`.
    - This removes about 28 gates (those below v150) and their old branches, a few hundred lines (estimate).
@@ -784,7 +789,7 @@ players see and are integrator's calls under the merge contract. The later ones 
 | Step | What | Effort | Risk | Needs Pierre |
 |---|---|---|---|---|
 | 1 | Minify at deploy, source maps, a smoke on the staged copy (R4) | S | Low | No (deploy detail) |
-| 2 | Gate floor: unknown `sheetV()` = the build's `MIN_SHEET`; delete gates below it; a ratchet test (R3) | S | Low | No: it fixes new devices playing retired rules |
+| 2 | Gate floor: unknown `sheetV()` = `MIN_SHEET`, a version already confirmed live (never the build's); delete gates below it; a ratchet test (R3) | S | Low | No: it fixes new devices playing retired rules |
 | 3 | Rename `fish*` → `tree*` where the code is the tree engine; capability flags instead of the `data.json` and `replay` proxies (R1) | M | Low | No (a name inside the code) |
 | 4 | Split `core.js` into `core/*.js`, concatenated by `tools/sync_core.py` (R6); a `slow` test tag (R9) | M | Low | No |
 | 5 | Finish F5: `stats_` calls `CORE_`; `autoUpdate` from a release branch the train moves (R5) | M | Low-medium | (h) the release branch is a change to his setup: tell him |
