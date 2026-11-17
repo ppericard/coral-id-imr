@@ -604,6 +604,10 @@ Sizes are rough, for one agent **[guess]**.
 8. **Look-alikes**: half a day, then as data comes.
    - The sourced sets of §6.3 as declared pairs.
    - Then the players' confusions once answers exist.
+   - Built for the genera (Pierre, 2026-11-17, Q390 D, after the
+     [look-alike survey](2026-11-17-seaslug-lookalikes-survey.md)): `tools/seaslug_game.py` `genus_looks` writes the
+     genus pairs of the survey's literature sets as declared look-alikes and its iNaturalist-only genus pairs across
+     families as data look-alikes (`seaslug.json` genus `look`, `dlook`, `lsrc`). ARCHITECTURE.md "Tools".
 
 Steps 1, 3 and 4 can start without the app work. Steps 2 and 5 wait for Pierre's answers.
 
