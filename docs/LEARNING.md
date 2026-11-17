@@ -3756,14 +3756,19 @@ is (`SHARE`, `sharesNow`, `shareW`).
   the group, and a right answer there makes it learned again. The record adopted keeps the log's groups (`vl`), which
   the exam reads over the photos seen (`model.js` `varLeft`) until a right answer on the device clears each
   (`varRight`): a right answer the saved copy holds but the log lacks (one played before the fish answers were logged)
-  never brings the mark back (rule D9; Codex review #953). The leaderboards follow at once (`board_` ranks a player
+  never brings the mark back (rule D9; Codex review #953). Two devices merging (`core.js` `mergeProgress`): the groups
+  left are the kept side's less every group either device has cleared since the shared replay (one the baseline has,
+  missing from a side holding the same replay, its `rv`), so a group stays left only while neither device has answered
+  it right, as the log will say once their answers are in. The leaderboards follow at once (`board_` ranks a player
   behind the rules by `replayAdopted` of their replay; `boardWarm_` makes the replays), each device when it adopts the
   replay (`sync.js` `replayAdoptS`). The app's exam uses the same functions (`model.js` `varLeft`: `varUnit`,
   `varLeftOf`), so app and sheet agree (`tests/phasepath.test.js`); no device takes a mark away on its own. A replay is
   made only with the table (`Code.gs` `rplMake_`: none without it; the app keeps its own and asks again). This device's
   answers replayed on top of the sheet's recompute `vl` with the same table (`app.js` `UNITS` `vars`, `sync.js`
   `rpVars`, from the rules version that reads it: `core.js` `rvVars`, `FISH_RVS` `vars`), so a queued right answer on a
-  unit's last variant group keeps its mark (Codex review #953).
+  unit's last variant group keeps its mark (Codex review #953). The table waits for the whole game pool (`app.js`
+  `UNITS` `vars`: none while the units play on their first photos, without `fish-game.json`); until it is in, a replay
+  with queued answers is not adopted, nor its rules version marked applied (`sync.js` `replayAdoptS`).
 - **The card** stays as built (`phaseArm`, `phaseShow`, `phasePair`, its two kinds, the `dimorph` condition, `TOLD`,
   the sign-out clear): it comes with the first variant photo a player meets.
 

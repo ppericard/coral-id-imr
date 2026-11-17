@@ -588,7 +588,81 @@ test('a queued right answer on the last variant group keeps the mark when this d
   assert.ok(!('vl' in onTop({vars})['f:X']));
   assert.strictEqual(C.replayAdopted(onTop({vars}), saved, 3)['f:X'].mx, mx);
   assert.ok(!C.replayAdopted(onTop({}), saved, 3)['f:X'].mx, 'without the table, the sheet’s vl as it came');
-  // sync.js replayAdoptS passes the table (rpVars: app.js UNITS vars) under such a version.
+  // sync.js replayAdoptS passes the table (rpVars: app.js UNITS vars) under such a version, and waits without it
+  // (tests/fishadopt.test.js runs it).
   const sync = require('fs').readFileSync(require('path').join(__dirname, '..', 'sync.js'), 'utf8');
-  assert.match(sync, /vars: rvVars\(S\.id, rp\.rv\) \? rpVars\(S\) \|\| undefined : undefined/);
+  assert.match(sync, /vt = rows\.length && rvVars\(S\.id, rp\.rv\) \? rpVars\(S\) : null,/);
+  assert.match(sync, /vars: vt \|\| undefined/);
+  assert.match(sync, /if \(rows\.length && rvVars\(S\.id, rp\.rv\) && !vt\) return false;/);
+});
+
+// Codex review #953: without fish-game.json the units play on their first photos (app.js treeLoad), and a variant table
+// made from them lacks variant photos (the morays: their sexes only, not their juveniles), so a queued right answer on a
+// male would clear the juveniles the sheet left. app.js UNITS fish vars gives no table until the whole game pool is in.
+test('the variant table waits for the whole game pool: a partial one would clear a group the sheet left', () => {
+  const fs = require('fs'),
+    path = require('path'),
+    json = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')),
+    Fs = ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(json),
+    S = C.subjectOf('fish'),
+    full = S.replayed.vars(Fs[0], Fs, S),
+    part = S.replayed.vars(Fs[0], [Fs[0], Fs[1], {photos: {}}, Fs[3]], S),
+    groups = U => [...new Set(U.v.map(x => C.varGroup(x[1])))].sort();
+  assert.deepStrictEqual(groups(full['f:Morays']), ['juv', 'ph']);
+  assert.deepStrictEqual(groups(part['f:Morays']), ['ph'], 'the first photos alone: no juvenile');
+  const male = part['f:Morays'].v.find(x => x[1] === 'ph')[0],
+    gen = C.fishReplayGen(Fs[0]),
+    t0 = Date.UTC(2026, 10, 10),
+    row = (i, f, who) =>
+      C.logRow(
+        {
+          id: 'a' + i,
+          t: new Date(t0 + i * 1000).toISOString(),
+          g: 'f:Morays',
+          a: 'f:Morays',
+          ok: 1,
+          m: 'quiz|c',
+          ph: f,
+          ch: '',
+          e: 0.8,
+          th: 1,
+          sc: {d: 0, r: 1}
+        },
+        who
+      ),
+    rec = C.replayProgress([row(0, 'an-adult', 'p')], {gen, vars: full}).p.P,
+    onTop = vars => C.replayProgress([row(1, male, '~me')], {gen, start: {'~me': {P: rec, n: 0, used: 0, rep: 0}}, vars})['~me'].P;
+  assert.deepStrictEqual(rec['f:Morays'].vl, ['juv', 'ph']);
+  assert.deepStrictEqual(onTop(full)['f:Morays'].vl, ['juv'], 'the whole table: the juveniles still left');
+  assert.ok(!('vl' in onTop(part)['f:Morays']), 'a partial table would clear them');
+  // The hook: null until fish-game.json is in (FISHRAW game, app.js treeLoad).
+  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
+    hook = require('./block.js')(app, '    vars: S =>\n', '\n    // The structure stamp', {file: 'app.js'}).trim().replace(/,$/, ''),
+    vars = FISHRAW => new Function('FISHRAW', 'FISHF', 'CUR', `return {${hook}};`)(FISHRAW, null, Fs[3]).vars(S);
+  assert.match(app, /full: true, game: !!\(gm && gm\.photos\)/);
+  assert.strictEqual(vars({f: Fs[0], ph: Fs[1], gm: {photos: {}}, full: true, game: false}), null);
+  assert.deepStrictEqual(
+    Object.keys(vars({f: Fs[0], ph: Fs[1], gm: C.fishGameRead(Fs[2]), full: true, game: true})).sort(),
+    Object.keys(full).sort()
+  );
+});
+
+// Two devices on one account, each clearing a variant group the log left (core.js mergeProgress; Codex review #953): the
+// groups left after the merge are those neither device has answered right since the shared replay.
+test('two devices each clearing a variant group: the merge leaves neither', () => {
+  const b = {ok: 4, ko: 0, h: '1111', rv: 3, vl: ['juv', 'ph'], ps: {a0: [4, 4]}},
+    one = {...b, ok: 5, h: '11111', vl: ['ph'], ps: {a0: [4, 4], j0: [1, 1]}},
+    two = {...b, ok: 5, h: '11111', vl: ['juv'], ps: {a0: [4, 4], m0: [1, 1]}},
+    M = C.mergeProgress({u: b}, {u: one}, {u: two}).u;
+  assert.deepStrictEqual(M.ps, {a0: [4, 4], j0: [1, 1], m0: [1, 1]});
+  assert.ok(!('vl' in M), 'each group answered right on one device');
+  assert.ok(!('vl' in C.mergeProgress({u: b}, {u: two}, {u: one}).u), 'either way round');
+  // One device cleared a group, the other answered an adult: the other group still left.
+  const adult = {...b, ok: 5, h: '11111', ps: {a0: [5, 5]}};
+  assert.deepStrictEqual(C.mergeProgress({u: b}, {u: adult}, {u: one}).u.vl, ['ph']);
+  assert.deepStrictEqual(C.mergeProgress({u: b}, {u: one}, {u: adult}).u.vl, ['ph']);
+  // A side that never held that replay (another rules version, no vl) clears nothing.
+  const old = {ok: 5, ko: 0, h: '11111', rv: 2, ps: {a0: [5, 5]}};
+  assert.deepStrictEqual(C.mergeProgress({u: b}, {u: b}, {u: old}).u.vl || null, null, 'its own record taken whole');
+  assert.deepStrictEqual(C.mergeProgress({u: b}, {u: {...b, ok: 6, h: '111111'}}, {u: old}).u.vl, ['juv', 'ph']);
 });

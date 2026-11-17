@@ -409,6 +409,8 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
       reset = store.get(sKey('reset'), '') || '',
       me = '~me',
       rows = (pending || []).filter(a => a && a.g && !had.has(String(a.id)) && String(a.t || '') > reset).map(a => logRow(a, me)),
+      // The variant table this device's answers replayed on top read, under a rules version that reads it (rpVars).
+      vt = rows.length && rvVars(S.id, rp.rv) ? rpVars(S) : null,
       last = Number((rp.rec[LEVEL] || {}).at) || 0,
       // The sheet's photo numbers are the corals' (Code.gs stats_): another subject's replay reads none, nor does this
       // device's on top of it (its answers carry their scoring record).
@@ -431,7 +433,7 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
             // The first-launch answer (core.js startPriorAt), from the script that replays it (START_SHEET), as the live game.
             starts: Number(v) >= START_SHEET ? {[me]: store.get(startKey(SUBJ.id), null)} : {},
             // The variant groups left (vl) recomputed with this device's answers, as the sheet's replay (rules D8, D9).
-            vars: rvVars(S.id, rp.rv) ? rpVars(S) || undefined : undefined
+            vars: vt || undefined
           })[me].P
         : rp.rec,
       before = copy(P),
@@ -445,6 +447,10 @@ function replayAdoptS(S, rp, pending, v, cut, pre) {
     // misses in time order). Not adopted, nor the version marked applied: the save that follows logs them, and its
     // reply brings the replay of the whole log in time order.
     if (rows.some(r => r[1] < last)) return false;
+    // Answers on top under a rules version that reads the variant table, and the table not in (app.js UNITS vars: null
+    // until the whole game pool is in): not adopted, nor the version marked applied, so a partial table never clears a
+    // group the sheet left (Codex review #953); the next reply brings it again.
+    if (rows.length && rvVars(S.id, rp.rv) && !vt) return false;
     // A mark the replay took away: the former model's (a record learned with neither s.pg nor the domain-score bar,
     // core.js afterBkt), or a rule of the new version.
     mxRecalc(

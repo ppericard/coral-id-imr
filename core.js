@@ -2361,6 +2361,16 @@
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
+      // The variant groups left (vl), less every group either device has cleared since B (Codex review #953): one B has,
+      // missing from a side that holds the same replay (its rv, B's), which only a right answer there takes away (model.js
+      // varRight). A group stays left only while neither device has answered it right, as the log will say.
+      const cleared = x =>
+          Array.isArray(b.vl) && (x.rv || 0) === (b.rv || 0) ? b.vl.filter(g => !(Array.isArray(x.vl) ? x.vl : []).includes(g)) : [],
+        cut = [...cleared(l), ...cleared(r)];
+      if (Array.isArray(out.vl) && cut.length) {
+        out.vl = out.vl.filter(g => !cut.includes(g));
+        if (!out.vl.length) delete out.vl;
+      }
       // Times for the comeback after a break (model.js): the latest answer (at) and the latest day answered right (dl) of
       // either device; days answered right (dd) the larger count (two devices on different days count one less: safe side).
       ['at', 'dl', 'dd'].forEach(k => {
