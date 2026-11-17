@@ -148,7 +148,8 @@ is the design's shorthand, and internal identifiers may keep it.
   any other listed name of the target (`model.js` `choiceKeys`, the species' `also`: outside IMR "Longnose
   butterflyfish", *F. longirostris*'s main name, is never a wrong choice on a photo of *F. flavissimus*, which lists it; 5
   such pairs outside IMR, 9 at IMR on 2026-11-15), an "Again" after a mix-up included: it asks only a unit the other
-  choice does not name, none when each names the other (`quiz.js` `planPhoto`, `model.js` `choiceNames`); the
+  choice does not name, none when each names the other (`quiz.js` `planPhoto`, `model.js` `choiceNames`), and a duel
+  never pairs two units one label names (`quiz.js` `duelPick`, `planDuel`, 2026-11-17); the
   species sheet names the other species of a shared name under the name shown ("Also used for *Oxycheilinus
   bimaculatus*", linked to its sheet; "“Clown anemonefish” is also used for …" for another listed name: `app.js` `cnAlso`,
   `learn.js` `spAlso`); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`

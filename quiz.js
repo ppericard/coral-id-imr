@@ -2391,7 +2391,11 @@ function quizDuel(a, b, fresh = true, from = '') {
 function duelPick(list, keep = () => true) {
   // The subject's look-alike pairs (app.js UNITS pairs: for corals, Millepora and the bonus genera duel with the slate
   // look-alike the Coral Finder names) and the look-alikes from the data (model.js dataLooks), when both are in the list.
-  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list)].filter(([x, y]) => list.includes(x) && list.includes(y) && keep([x, y]));
+  // Never two units one label names (model.js choiceNames: two fish species may share a common name, Q381): such a duel
+  // would read "Brown damsel or Brown damsel?", and either answer is right (Q319).
+  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list)].filter(
+    ([x, y]) => list.includes(x) && list.includes(y) && !choiceNames(x, y) && !choiceNames(y, x) && keep([x, y])
+  );
   if (!ps.length) return null;
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
   // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
@@ -2409,9 +2413,22 @@ function duelPick(list, keep = () => true) {
 function planDuel(a, b) {
   // Only the genera the player has unlocked (model.js unlocked: one progression path for every game, Pierre 2026-11-04):
   // the Duel tab opens none. A pair from a link (#practice/duels/A/B, "Drill this pair") must name two unlocked genera with game
-  // photos; anything else gets a normal duel (code re-review L2). Null when no look-alike pair is unlocked yet.
+  // photos, and not two of one label (choiceNames, as duelPick); anything else gets a normal duel (code re-review L2).
+  // Null when no look-alike pair is unlocked yet.
   const list = unlocked();
-  if (a && b && !(a !== b && list.includes(a) && list.includes(b) && photoSet(a).shown.length && photoSet(b).shown.length))
+  if (
+    a &&
+    b &&
+    !(
+      a !== b &&
+      list.includes(a) &&
+      list.includes(b) &&
+      !choiceNames(a, b) &&
+      !choiceNames(b, a) &&
+      photoSet(a).shown.length &&
+      photoSet(b).shown.length
+    )
+  )
     a = b = undefined;
   let pair = a && b ? [a, b] : null;
   if (!pair) pair = duelPick(list);
