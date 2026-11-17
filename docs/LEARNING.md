@@ -4087,6 +4087,32 @@ question's choices genera and every entry question's entries. Not measured: what
 how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
 take many questions). To check with learnsim fish profiles once they exist.
 
+**Every circle's genera** (2026-11-18; Pierre, ~06:32 Manila: "lance"). The genera were built for circle 1 alone (130), when
+circle 1 alone was on the path; every circle has been since Q175 (2026-11-06), so the 107 genera of the families of circles
+2 and 3 (5 and 102; a surprise card's genus none) are units as circle 1's are: `core.js` `fishGenSets`, the one list the app
+(`app.js` `fishGenera`), the sheet's replay (`fishReplayGen`), the variant table (`fishVarTable`) and the score's tree read.
+Each opens at its family's Advanced as circle 1's do (no IMR genus outside circle 1), in its family's circle (so `fishGate`
+holds it with its family). No rule moves: what changes is which units exist. Fish rules version 4 (no card), the sheet's
+cache keys `sgen4`, `stree3`, `svar2`; the app opens them from `sync.js` `GENERA_SHEET` (rule D4).
+
+**The check, declared before running** (rule L11, level 2 by nature: it changes the path's units; capped at about 40
+minutes of machine time, Pierre, 2026-11-17: "6h de calcul ne devrait JAMAIS arriver"):
+- **Worlds and runs.** Rated world: the lecture RA, the strong RA and the expert (the profiles that accept the scientific
+  names and reach Advanced soonest; the casual diver declines them, the beginner is left out for the cap) × 5 seeds ×
+  3,000 answers, normal photos, `--beyond yes` (circle 3 closed, only circle 2's 5 genera could come). App world: the same
+  three profiles × 3 seeds × 600 questions, `--choice auto --beyond yes`. Both arms on the same seeds: `main` (b6e0d263)
+  against this branch, through `node tests/slot.js`, then `tools/learncmp.js` of this branch, one look.
+- **Primary** (non-inferiority, rated world): the families at Advanced at 3,000 answers (`famAdv@3000`), its one-sided 90%
+  bound not below the guardrail's margin (−2 families or −5%, the larger). Why: more genera in play compete with the
+  families for questions, the cost Q208's study measured; the gain itself (more genera to learn) needs no test.
+- **Watched, no margin**: the share of answers on genera (`genShare`) and on species, the global score at 1,000 and 3,000.
+- **Every guardrail** of the table, both worlds.
+- **Power given up**: 5 seeds, not 10, and no heavy-tailed variant, no 10,000-answer horizon (where circle 3's genera
+  would weigh most): a guardrail result near its margin reads as unclear and is reported, not chased with more seeds
+  within the cap. The app world at 600 questions barely reaches a circle-2 or 3 family at Advanced, so it is a guardrail
+  check only. The real log (rule L12): no player has answered these units (they did not exist), so a replay cannot judge
+  the change; nothing is measured there.
+
 ### Fish: the species level, step 1, by common name (2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md)
 
 One unit per species with a listed common name (`core.js` `fishSpUnits`: `s:s091`, 659 on 2026-11-15), in a family in
