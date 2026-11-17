@@ -2885,7 +2885,9 @@ const darkCards = (p, sel) =>
                   .split(W.one ? W.one[0].toUpperCase() + W.one.slice(1) : '\u0000')
                   .join(' ')
                   .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
-                  .join(' ');
+                  .join(' ')
+                  // the rank asked (analysis.js rkName, admin-analyses.js anRkWord: "a genus question", "Genus questions")
+                  .replace(/\b(?:family|genus|species) questions?/gi, ' '); // no \b after: textContent runs cells together
               return {
                 badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
                 none: /No report yet/.test(V.textContent),
@@ -2893,6 +2895,7 @@ const darkCards = (p, sel) =>
                 note: (document.querySelector('#view > .note') || {}).textContent || '',
                 views: [...document.querySelectorAll('#subnav .adm-views a, #subnav .adm-subtabs a')].map(a => a.textContent),
                 words: (t.match(/\b(genus|genera|Genus|Genera)\b/g) || []).length,
+                wctx: (t.match(/.{0,60}\b(?:genus|genera|Genus|Genera)\b.{0,30}/) || [''])[0],
                 ids: (t.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
                 coral: Object.keys(DATA.gen).some(g => new RegExp(`\\b${g}\\b`).test(V.textContent)),
                 cards: V.querySelectorAll('.adm-an-card').length,
@@ -2947,6 +2950,38 @@ const darkCards = (p, sel) =>
                 !/\bEase\b/.test(ph.h)
               )
                 fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
+              // the rank asked (the fish parity review, #1056: a rank effect in the models): its effect in the results, its
+              // own table on Formats and on What makes a photo hard, and the views that list units drawn one rank at a time
+              const rk = {};
+              for (const [h, k] of [
+                ['photos', 'ph'],
+                ['formats', 'fmt']
+              ]) {
+                await look('fish/analyses/difficulty/' + h);
+                rk[k] = await fq.evaluate(() => document.getElementById('view').textContent);
+              }
+              await look('fish/analyses/speed/answer-time');
+              // the units by rank (the rank effects themselves may read "not enough data" there, folded away)
+              rk.rt = await fq.evaluate(() =>
+                [...document.querySelectorAll('#view .adm-an-rk')].map(e => e.textContent.replace(/ · .*/, '')).join()
+              );
+              const ok = {
+                tab: /Rank asked/.test(rk.ph),
+                eff: /A (genus|species) question instead of a family question/.test(rk.ph),
+                fmt: /By the rank asked/.test(rk.fmt),
+                rt: rk.rt === 'Family questions,Genus questions,Species questions'
+              };
+              if (Object.values(ok).some(v => !v)) fe.push(`the rank asked: ${JSON.stringify({...ok, sub: rk.rt})}`);
+              // the corals' views: no rank
+              await look('analyses/speed/answer-time');
+              if (
+                await fq.evaluate(
+                  () =>
+                    !!document.querySelector('#view .adm-an-rk') ||
+                    /instead of a family question/.test(document.getElementById('view').textContent)
+                )
+              )
+                fe.push("the corals' Speed tells ranks apart");
             }
           }
           // the corals' report on the corals' side, as before
