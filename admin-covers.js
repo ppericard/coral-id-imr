@@ -162,7 +162,8 @@
 
 // ---- The admin view (browser only: admin.js state and helpers) ----
 const COVER_PAGE = 'photos/review/cover-proposals';
-let COVER_P = null;
+// per tree subject (FISHS: the one in force), so a switch never reuses the other's load (Codex review #1047)
+let COVER_P = {};
 // Every proposal of the draft, family then genus nodes in the Tree page's order (FISHC.units), each on the photos its node
 // page chooses from (admin.js fuNodePhotos: a family's species in play; a genus's, its species in play there); once per draft
 // (cached on fuDataM's record, which a click on the draft, Publish or the game list renews).
@@ -186,8 +187,9 @@ function coverList() {
 // The family pages' data, read once, on the first look at a fish page's switch (coverLive) or at the view.
 function coverLoad() {
   if (FISHC && FISHC.plays) return Promise.resolve();
-  return (COVER_P =
-    COVER_P ||
+  const k = (typeof FISHS === 'object' && FISHS && FISHS.id) || '';
+  return (COVER_P[k] =
+    COVER_P[k] ||
     fishLoad(true).then(() => {
       status();
       if (cur === COVER_PAGE) render();
