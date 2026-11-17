@@ -4007,6 +4007,51 @@ unknown; the three versions of the file of 2026-11-06 to 2026-11-09 recover 54 s
   beyond it. Descriptive only: four players allow no test (the smallest two-sided sign-flip p is 0.125). It cannot
   show whether holding them back helps (what the card and the stage teach), only that the change moves few real answers.
 
+### The held-out photos in the game (fish; 2026-11-17, Q385; the set #1023)
+
+ROADMAP "A held-out photo set" (Pierre, 2026-11-04: "a fixed set of photos never shown in practice, for a transfer check
+(recognition of photos never seen, at the start and later) and an honest exam"); the design note
+[2026-11-15-held-out-photo-set-design.md](reviews/2026-11-15-held-out-photo-set-design.md), answered by Pierre on
+2026-11-16 (Q385: the size, never his own nor the reference photos, the held-out questions counted like the others and
+slipped in unannounced, a file of their own); the set, per species, in `fish-holdout.json` (#1023, `tools/holdout.py`).
+
+**What the game does with it** (the fish only; the sea slugs and the corals have no set):
+- **Withheld from practice.** `core.js` `fishPhotos` takes the set (`fishHeld`: its observations, less those of a photo
+  Pierre picked as a ★ cover or featured photo, which stay practice) and marks those photos `ho`; `fishGen` and the
+  genus and species units (`fishGenUnits`, `app.js` `fishGenera`) put them in the unit's `held` list, never in
+  `views.wide`. Every list built for the games and the pages (the draw, the cards and covers, the sheets, Learn, the
+  duels, Find the X, Memory, Home) reads `views.wide`, so none shows them. The unit's difficulty (`model.js` `genusDiff`)
+  and its variant groups (`varUnitOf`, the exam's photos) read `views.wide` and `held` together: the same as the sheet's
+  replay, whose variant table (`fishVarTable`) is made without the set (rules D8, D9).
+- **The mastery exam** (rule L9) draws from the unit's held-out photos this player was never shown (on any unit),
+  the hardest first, each variant group's own while one is left (Q391 b); none left, today's rule.
+- **Silent probes** (the transfer check, design note §2; Q385 (d) A): a photo-quiz question on a unit becomes, with
+  chance `HELD.p` (0.1), a question on one of its held-out photos never shown to this player, drawn by the same rule
+  (`photoSet` on that pool: the same target, format, choices and traps). Never in the custom quiz, a duel, an Again,
+  Find the X, a comeback, the question of a unit's card or an exam question. A probe keeps every unit holding the
+  photo with more than `EXAM.n` held-out photos never shown (its exam's reserve).
+- **Logged** `|h` (after `|c`, before `|kN`, `|t` and `|x`) on every answer that showed a held-out photo, so a probe is
+  `…|h` and an exam question on one `…|h|x`. Counted like any answer (Q385 (c) A): no replay branch, no rules version.
+
+**Check declared before running** (rule L11; Pierre, 2026-11-17: a whole check fits in about 30-40 minutes of machine
+time). Level 2 (probes draw a share of every fish question from another pool), cut to fit the time:
+- **App world**: fish, profiles beginner, strongRA, expert × seeds 1-3 × 600 questions, `main` (4e5cc216) against this
+  branch on the same seeds, through `node tests/slot.js`. Guardrails only (no primary), with one cost declared: the
+  share under ease 4 before Open Water (`--cost hard@300:0.05`), from probes drawn from a pool with fewer very easy
+  photos (the design note's accepted bound, the guardrail's own margin).
+- **Rated world**: fish, the same three profiles × seeds 1-5 × 3,000 answers. **Primary `score@3000:up`, none
+  expected**, read with the guardrails as non-inferiority (as the leak fix of 2026-11-08 read `know@300:up`).
+- One look each, `tools/learncmp.js`. Reported beside: the exams started, the answers logged `|h`.
+- **Power given up**: level 2 asks 10 seeds per profile at 3,000 answers (10,000 when the change reaches species, as
+  probes on species units do) and 5 app-world seeds at 300 questions. With 3 app-world seeds a profile's bound has 2
+  degrees of freedom (t 1.89 instead of 1.53 at 5), and 5 rated-world seeds 4 (1.53 instead of 1.38): a guardrail
+  moved by less than about half its margin may read "unclear" where the full level would read "held"; such a result
+  is reported as unclear, not as held.
+- **What the worlds cannot show**: neither shows a photo outside the quiz, and their learners do not remember single
+  photos the way players may, so held-out and practice photos at first exposure are alike there. The check can only
+  show the change costs no learning; the transfer itself waits for the real log (the design note's stop rule: 20
+  players × 20 clean probes).
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
