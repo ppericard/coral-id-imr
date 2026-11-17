@@ -108,6 +108,17 @@ const anSpec = (key, e) => (ANALYSIS.PLAIN[key] || {})[e.k] || {o: 'right'};
 // The format row of a Formats effect (its own expected chance and guess rate are the typical values).
 const anRowOf = (a, key, e) => (key === 'fmt' ? (a.table || []).find(r => e.k.replace(/^(g|d|oe)_/, '') === r.k) : null);
 const anPlain = (key, e, a) => ANALYSIS.plainOf(key, e, a, {row: anRowOf(a, key, e)});
+// The rank asked (analysis.js rankOfUnit; a subject whose ranks the models tell apart, a.rk0): the views that list units
+// draw each rank's apart, under "<Rank> questions" (words anWords leaves as they are), in analysis.js RANKS order. draw:
+// the list of one rank -> its HTML. A report without ranks (the corals) as before.
+const anRkWord = r => r[0].toUpperCase() + r.slice(1) + ' questions';
+const anRk = (a, L, draw) =>
+  a && a.rk0 && (L || []).some(x => x.rk)
+    ? ANALYSIS.RANKS.map(r => {
+        const S = L.filter(x => x.rk === r);
+        return S.length ? `<p class="adm-an-rk"><b>${anRkWord(r)}</b> · ${anInt(S.length)}</p>` + draw(S) : '';
+      }).join('')
+    : draw(L || []);
 const anPc = v =>
   v == null || !isFinite(v) ? '–' : v > 0 && v < 0.095 ? (Math.round(v * 1000) / 10).toFixed(1) + '%' : Math.round(v * 100) + '%';
 const anSec = v => (v == null || !isFinite(v) ? '–' : (v < 10 ? v.toFixed(1) : Math.round(v)) + ' s');
@@ -1813,6 +1824,12 @@ const AN_PART = {
 };
 const anTyp = a => Object.assign({p: 0.75, g: 0.25, s: 6}, (a && a.typ) || {});
 const anS = (a, u) => anTyp(a).s * Math.exp(u);
+// The mix-up rate a pair's odds ratio is read on (Pairs most mixed up): its own rank's rate where the ranks are told
+// apart (analysis.js confusions rkp; Codex review #1058), else the pooled rate.
+const anPairP = (a, p) => (a && a.rkp && p && a.rkp[p.rk] != null ? a.rkp[p.rk] : anTyp(a).p);
+// A unit's seconds (Answer time's list by unit): from the reference rank's typical time where the units carry their
+// rank's effect (analysis.js rt s0: the fish's ranks told apart), else the typical answer's.
+const anSu = (a, u) => (a && a.s0 ? a.s0 : anTyp(a).s) * Math.exp(u);
 const ANV = {
   // Time and difficulty (analysis.js tdiff): right answers by how fast other players answered the photo right; time
   // intensity beside difficulty, for the genera and the slowest and fastest photos.
@@ -1869,15 +1886,17 @@ const ANV = {
     ),
     anCard(
       'Seconds to answer, by genus',
-      forest(
-        a.genus.map(g => ({
-          label: g.k,
-          est: anS(a, g.u),
-          lo: anS(a, g.lo),
-          hi: anS(a, g.hi),
-          title: `${g.k}: about ${anSec(anS(a, g.u))} (${g.n} answers)`
-        })),
-        {nul: anTyp(a).s, tf: anSec, title: 'Seconds to answer a typical photo of each genus'}
+      anRk(a, a.genus, L =>
+        forest(
+          L.map(g => ({
+            label: g.k,
+            est: anSu(a, g.u),
+            lo: anSu(a, g.lo),
+            hi: anSu(a, g.hi),
+            title: `${g.k}: about ${anSec(anSu(a, g.u))} (${g.n} answers)`
+          })),
+          {nul: a.s0 || anTyp(a).s, tf: anSec, title: 'Seconds to answer a typical photo of each genus'}
+        )
       ),
       'wide'
     ),
@@ -1987,36 +2006,51 @@ const ANV = {
         )
       ),
       'wide'
-    )
+    ),
+    // a subject whose ranks the models tell apart (analysis.js formats ranks): each rank's questions, every format together
+    a.ranks && a.ranks.length
+      ? anCard(
+          'By the rank asked',
+          anTable(
+            ['Rank asked', '#Answers', '#Right', '#App expected', '#Right − expected'],
+            a.ranks.map(
+              r =>
+                `<tr><td>${esc(anRkWord(r.k))}</td><td class="n">${anInt(r.n)}</td><td class="n">${pc(r.right)}</td><td class="n">${pc(r.E)}</td><td class="n">${anPts(r.right - r.E)}</td></tr>`
+            )
+          )
+        )
+      : ''
   ],
   conf: a => [
     anMixMap(a),
     anIx(a, 'pairview'),
     anCard(
       'Pairs most mixed up',
-      anTable(
-        [
-          'Pair',
-          '#Offered together',
-          '#Mixed up',
-          '#Rate',
-          '#Colony',
-          '#Close-up',
-          '#Corallites',
-          '#Several views',
-          '#Against a typical pair'
-        ],
-        a.pairs.map(p => {
-          // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio (Codex review #495)
-          const fr = u => ANALYSIS.freqRatio(anTyp(a).p, u),
-            v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
-          return `<tr><td>${p.k
-            .split('|')
-            .map(g => `<i>${esc(g)}</i>`)
-            .join(
-              ' · '
-            )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How many times as often as a typical pair, at the typical mix-up rate">×${fr(p.u).toFixed(1)} <small class="adm-an-ci">×${fr(p.lo).toFixed(1)} – ×${fr(p.hi).toFixed(1)}</small></td></tr>`;
-        })
+      anRk(a, a.pairs, PL =>
+        anTable(
+          [
+            'Pair',
+            '#Offered together',
+            '#Mixed up',
+            '#Rate',
+            '#Colony',
+            '#Close-up',
+            '#Corallites',
+            '#Several views',
+            a.rk0 ? '#Against a typical pair of its rank' : '#Against a typical pair'
+          ],
+          PL.map(p => {
+            // times as often as a typical pair at the typical mix-up rate, from the pair's odds ratio (Codex review #495)
+            const fr = u => ANALYSIS.freqRatio(anPairP(a, p), u),
+              v = k => (p.v[k] ? `${pc(p.v[k][1] / p.v[k][0])} <small class="adm-an-ci">${p.v[k][0]}</small>` : '–');
+            return `<tr><td>${p.k
+              .split('|')
+              .map(g => `<i>${esc(g)}</i>`)
+              .join(
+                ' · '
+              )}</td><td class="n">${p.off}</td><td class="n">${p.mix}</td><td class="n">${pc(p.mix / p.off)}</td><td class="n">${v('wide')}</td><td class="n">${v('medium')}</td><td class="n">${v('macro')}</td><td class="n">${v('multi')}</td><td class="n" title="How many times as often as a typical pair, at the typical mix-up rate">×${fr(p.u).toFixed(1)} <small class="adm-an-ci">×${fr(p.lo).toFixed(1)} – ×${fr(p.hi).toFixed(1)}</small></td></tr>`;
+          })
+        )
       ),
       'wide'
     ),
@@ -2067,24 +2101,29 @@ const ANV = {
     anGcurve(a),
     anCard(
       'Answers needed to reach 80% beyond guessing, by genus',
-      forest(
-        a.genus.map(g => ({
-          label: g.k,
-          est: Math.log(1 + Math.min(g.est, 999)),
-          lo: Math.log(1 + Math.min(g.lo, 999)),
-          hi: Math.log(1 + Math.min(g.hi, 999)),
-          title: `${g.k}: about ${anInt(g.est)} answers (likely ${anInt(g.lo)} to ${g.hi >= 999 ? '999+' : anInt(g.hi)})`
-        })),
-        {nul: 0, tf: v => anInt(Math.exp(v) - 1), title: 'Answers needed to reach 80% beyond guessing, by genus'}
-      ) +
-        anTable(
-          ['Genus', '#Answers', '#Players', '#Right', '#Answers to 80% beyond guessing', '#Likely between'],
-          a.genus.map(
-            g =>
-              `<tr><td><i>${esc(g.k)}</i></td><td class="n">${g.n}</td><td class="n">${g.players}</td><td class="n">${pc(g.right)}</td><td class="n">${g.est >= 999 ? '999+' : anInt(g.est)}</td><td class="n">${anInt(g.lo)} – ${g.hi >= 999 ? '999+' : anInt(g.hi)}</td></tr>`
-          ),
-          'tall'
-        ),
+      anRk(
+        a,
+        a.genus,
+        L =>
+          forest(
+            L.map(g => ({
+              label: g.k,
+              est: Math.log(1 + Math.min(g.est, 999)),
+              lo: Math.log(1 + Math.min(g.lo, 999)),
+              hi: Math.log(1 + Math.min(g.hi, 999)),
+              title: `${g.k}: about ${anInt(g.est)} answers (likely ${anInt(g.lo)} to ${g.hi >= 999 ? '999+' : anInt(g.hi)})`
+            })),
+            {nul: 0, tf: v => anInt(Math.exp(v) - 1), title: 'Answers needed to reach 80% beyond guessing, by genus'}
+          ) +
+          anTable(
+            ['Genus', '#Answers', '#Players', '#Right', '#Answers to 80% beyond guessing', '#Likely between'],
+            L.map(
+              g =>
+                `<tr><td><i>${esc(g.k)}</i></td><td class="n">${g.n}</td><td class="n">${g.players}</td><td class="n">${pc(g.right)}</td><td class="n">${g.est >= 999 ? '999+' : anInt(g.est)}</td><td class="n">${anInt(g.lo)} – ${g.hi >= 999 ? '999+' : anInt(g.hi)}</td></tr>`
+            ),
+            'tall'
+          )
+      ),
       'wide'
     )
   ],
@@ -2314,8 +2353,9 @@ function anWords(root, S) {
           .replace(/\b([Gg])enus by genus\b/g, (_, g) => (g === 'G' ? 'By ' : 'by ') + W.one)
           .replace(/\bgenera\b/g, W.many)
           .replace(/\bGenera\b/g, anCap(W.many))
-          .replace(/\bgenus\b/g, W.one)
-          .replace(/\bGenus\b/g, anCap(W.one));
+          // the rank asked (anRkWord, analysis.js rkName: "a genus question", "Genus questions") keeps its word
+          .replace(/\bgenus\b(?! questions?\b)/g, W.one)
+          .replace(/\bGenus\b(?! questions?\b)/g, anCap(W.one));
       return o;
     };
   const T = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -2481,15 +2521,19 @@ function anRecompute() {
     // list's ids when loaded, the freshest after a Leave out, else the log's; Codex review #801)
     const ex = (typeof USERS !== 'undefined' && USERS && Array.isArray(USERS.excluded) && USERS.excluded) || (ANS && ANS.excluded) || [],
       rows = ANALYSIS.leftOut(subjRows((ANS && (ANS.all || ANS.rows)) || [], S.id), ex);
-    // its photo features (tools/analyses.js metaOf): the corals' from the data and the draft; the fish's judged ones from
-    // the photos the game plays (FISHC.plays, fish-game.json, read before go)
+    // its photo features (tools/analyses.js metaOf): the corals' from the data and the draft; a tree subject's judged ones
+    // from the photos its game plays (its game file, SUBJECTS admin files gm: anGame, read before go); the reference rank
+    // of a subject whose ranks the models tell apart (analysis.js rankRef: the fish's family, the sea slugs' genus)
     const pk = (S.analyses || {}).photos,
-      meta =
-        pk === 'judged'
-          ? {ph: {}, fph: ANALYSIS.photoMetaFish({photos: {all: (FISHC && FISHC.plays) || []}})}
+      rk = ANALYSIS.rankRef(S),
+      meta = {
+        ...(pk === 'judged'
+          ? {ph: {}, fph: ANALYSIS.photoMetaFish(ANGAME[S.id] || {})}
           : pk
             ? {ph: ANALYSIS.photoMeta(DATA, DRAFT, {q: AUTOQ}, {m: METRICS})}
-            : {ph: {}};
+            : {ph: {}}),
+        ...(rk ? {rk} : {})
+      };
     const src = (document.querySelector('script[src^="analysis.js"]') || {}).getAttribute?.('src') || 'analysis.js';
     try {
       ANWORK = new Worker(src);
@@ -2519,9 +2563,22 @@ function anRecompute() {
   };
   Promise.all([
     ANS && ANS.all && ANS.all.length ? Promise.resolve() : loadStats(),
-    (S.analyses || {}).photos === 'judged' && !(FISHC && FISHC.plays) ? fishLoad(true) : null
+    (S.analyses || {}).photos === 'judged' ? anGame(S) : null
   ]).then(go);
 }
+// A tree subject's game file (core.js SUBJECTS admin files gm: fish-game.json, seaslug-game.json), its records whole
+// (core.js fishGameRead), fetched once per subject for Recompute here's judged photo features (ANGAME, by subject id).
+const ANGAME = {},
+  ANGAMEP = {};
+const anGame = S =>
+  ANGAME[S.id]
+    ? Promise.resolve(ANGAME[S.id])
+    : (ANGAMEP[S.id] =
+        ANGAMEP[S.id] ||
+        fetch(S.admin.files.gm, {cache: 'no-cache'})
+          .then(r => (r.ok ? r.json() : {}))
+          .catch(() => ({}))
+          .then(G => (ANGAME[S.id] = fishGameRead(G) || {})));
 // The charts are drawn at the page's width: draw again when it changes.
 let anRz = null;
 addEventListener('resize', () => {
@@ -2530,6 +2587,8 @@ addEventListener('resize', () => {
 });
 
 // Help ("?"), per view: the definitions and the methods stay off the page (rule A2).
+// The rank asked (analysis.js rankOfUnit; the fish): one line in the help of each view whose model carries it.
+const AN_HELP_RANK = `<p><b>The rank asked</b> (the fish side): a question asks a family, a scientific genus or a species. <b>A genus (species) question instead of a family question</b> is what that rank changes, the player, the unit and the rest held equal; where a view lists units, each rank's units are drawn apart, each unit with its rank's effect.</p>`;
 const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result: how much it changes the outcome named above the chart (the chance of a right answer, the time to answer, the chance to end the session, the chance to mix up genera) from its typical value, for a typical player and photo; its value is on the right. Coloured by verdict (green helps, red hurts, blue clear but neither good nor bad, grey no clear effect, dashed outline not enough data yet); the thin line is its likely range. Only the clear results show at first: the button under a chart or table shows the others there (no clear effect, too early to tell), in the same order. <b>Show</b> keeps only the clear results, what helps, what hurts or what still lacks data (all of these). <b>Sort</b>, above every chart and table: <b>Most negative first</b> or <b>Most positive first</b> (by the signed change: a chance in points, a time as the share of time gained or lost; spreads after the changes, by size), <b>By topic</b> (Overview: a sub-heading per analysis, the analyses in the menu's order, by the signed change inside each) or <b>By name</b>; on the Overview each result's topic (the analysis it comes from) is the grey line under its name. A tap on a card's title folds it; the chips under them jump to a card. These choices are kept per page, in this browser only. The words, the tables and the results over time are folded by default: tap to open.</p>
   <p><b>How to read a result.</b> Each line compares two situations (<i>Compared</i>) and says which way the result goes and by how much, for a typical player on a typical photo: "More likely wrong: about 62% right instead of 75%" means a typical player who gets 75% right would get about 62% right in that situation. <b>Likely</b>: the range the true value lies in, with 95% confidence (a 95% interval). <b>Verdicts</b>: ▲ <b>Helps</b> (more right answers, fewer mix-ups, fewer stops), ▼ <b>Hurts</b> (the opposite), ● <b>Clear</b> (a clear result that is neither good nor bad: answer time, or how far the app's own estimate is off), – <b>No clear effect</b> (the range is narrow and close to no change: if there is an effect, it is small), … <b>Not enough data yet</b> (the range is too wide to say; hover for the answers it would need). <b>→</b> what a clear result suggests for the app. <b>How much they differ</b>: how far apart players (or genera, photos, pairs) are, as the range a typical one falls in (two in three fall inside it).</p>
   <p><b>Many results at once.</b> With some 40 results per milestone, a few would look clear by chance alone, so the verdicts are corrected for it. Each analysis names the one or two questions it exists to answer, chosen before any result was seen (tagged <b>primary</b>, ${Object.values(ANALYSIS.PRIMARY).flat().length} in all): they are judged together, so that the chance of even one of them reading clear by chance stays under 5% (Holm's method). Every other result is <b>exploratory</b>: judged together, so that among those reading clear, about 1 in 20 at most is chance (Benjamini-Hochberg, false discovery rate 5%); an exploratory result that reads clear is tagged: a lead to check on later answers before acting on it. The likely range shown is still the plain 95% one, so a range that leaves out "no change" can still read "Not enough data yet" once corrected. Hover a verdict for its adjusted p (and the unadjusted one). <b>Milestones</b> are further looks at the same growing log, not new studies: a result that turns clear at one milestone is not a new finding; read the latest.</p>
@@ -2539,12 +2598,12 @@ const AN_HELP_COMMON = `<p><b>How to read the charts.</b> Each bar is one result
   <p><b>Method, for the curious.</b> Mixed models fitted on every answer (players, genera and photos as random effects, so a genus with few answers is pulled towards the average); right / wrong as a logistic model above each question's guess rate; time on a log scale. Each effect is turned into the change it makes for a typical player and photo (the share of right answers, the median time, the share of stops in the data). 95% ranges: the wider of the model's own and a bootstrap over players (from 6 players; 999 draws for the latest milestone of the stored report, 199 for earlier ones; Recompute here: 199 draws, read from their spread). "No clear effect" = the range fits inside the smallest change that would matter (10% of time; 0.25 on the log-odds scale, about 5 points of right answers near 75%; 5 points).</p>`;
 Object.assign(HELP, {
   an: `<p><b>Overview.</b> What the data says clearly, in one list, then every result of every analysis, and the milestones (one per 1000 answers), kept as history: each is another look at the same growing log, not a new finding.</p>${AN_HELP_COMMON}`,
-  'an-rt': `<p><b>Answer time.</b> Seconds from the moment the photos are in view to the answer (0-600 s). Each line says how much faster or slower answers are in one situation than a typical answer, the others held equal: right against wrong answers, typed against picked, a photo enlarged, 2 choices against 4, a question the app rates harder, later in a session. <b>What makes answer times differ</b>: how much of the differences in time come from who answers (players), from the genus, from the photo, and from one time to the next. By genus and by player: the typical time, after pulling those with few answers towards the average.</p>${AN_HELP_COMMON}`,
+  'an-rt': `<p><b>Answer time.</b> Seconds from the moment the photos are in view to the answer (0-600 s). Each line says how much faster or slower answers are in one situation than a typical answer, the others held equal: right against wrong answers, typed against picked, a photo enlarged, 2 choices against 4, a question the app rates harder, later in a session. <b>What makes answer times differ</b>: how much of the differences in time come from who answers (players), from the genus, from the photo, and from one time to the next. By genus and by player: the typical time, after pulling those with few answers towards the average.</p>${AN_HELP_RANK}${AN_HELP_COMMON}`,
   'an-zoom': `<p><b>Enlarging photos.</b> Is an answer more often right when the player enlarged a photo first, compared with the same player not enlarging, beyond what the app expected? And are players who enlarge often better or worse? Players: how often each enlarges, right when enlarging or not, and right answers against the app's expectation. Since 2026-11-03 20:24 the enlarge button is visible: compare milestones after it.</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does enlarging help more on some views?</b> What enlarging changes, in points of right answers for a typical player and question, on each view shown (views with 30 answers and 5 enlarged or more). Not on the fish side while its photos have one view.</p>${AN_HELP_COMMON}`,
-  'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p><p><b>On the fish side</b> the features are the photos' judged ones, as the game reads them (fish-game.json: your ease and tags where you set them, else the judging pass's): the <b>ease</b> (1 very hard to 5 very easy, per point), the <b>phase</b> (juvenile, or male, female, intermediate, against none) and the <b>framing</b> (oblique, or head-on, tail or from above, against a profile; part of the fish against the whole fish), the player, the family or genus asked and the photo itself held equal; whether the judged ease predicts the right answers is the question this view exists to answer (primary). A change you have not published yet counts once the Candidate photos run has rebuilt fish-game.json. A feature no photo shown had is left out. Tables: the answers by ease, phase, view and whole or part.</p>${AN_HELP_COMMON}`,
-  'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects, beyond guessing (the format's own guess rate set aside); and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p>${AN_HELP_COMMON}`,
-  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p><p><b>Mix-up map.</b> Which genera form families of mix-ups. Two genera are close when their pair is clearly mixed up more often than a typical pair, per offer (the lower end of its likely range, so chance alone makes no family); genera are grouped by average distance and a family is a group whose pairs are, on average, at least a fifth as close as the closest pair. Rows: the genus shown; columns: the genus answered instead, both in the tree's order, so families sit as blocks on the diagonal (dashed). Colour: the rate per offer, pulled towards the pair's own rate when offers are few, against a typical pair's (blank: never offered together). Outlined: look-alikes named on a genus sheet; a family with no outline is one the sheets do not name. <b>Mixed up across families</b>: the cells most mixed up between two families, worth a look at their photos. On a phone the tree is a list: tap a family's band for its block and its numbers. Only genera mixed up at least once are on the map. <b>Found again when the players are drawn again</b>: each family is looked for in the map of every bootstrap draw over the players (its best overlap, a Jaccard, averaged over the draws); 0.75 or more: stable (Hennig 2007), else <b>not stable yet</b>: a family that may change with a few more players.</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does the view change where misses go, pair by pair?</b> Among the questions missed with choices, the chance that the miss goes to the other genus of a pair when it is offered, by view shown, for the 6 pairs most offered on a colony photo and on another view (20 offers each on missed questions), against a typical pair's (dashed). Asked on missed questions only, since whether a question is missed is the photo's own effect (What makes a photo hard). Not on the fish side while its photos have one view.</p>${AN_HELP_COMMON}`,
-  'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus, each genus at its own pace. Each player and each genus has its own learning slope around the common one (how much the next answers on a genus gain); <b>how much genera (players) differ in how fast practice helps</b>: the gain from twice as many answers, for a typical genus (player) either side of the common one. <b>Each genus with practice</b>: right answers by the answers already given on the genus (dots) against the model's own prediction of the same answers (dashed), the genus furthest below the app's 80% today first (a typical player at their current practice); <b>flat</b>: its own slope clearly under the smallest that matters (0.1 on the log-odds per unit of log practice: about a point per doubling of the answers), after a correction over the genera (a lead: two forms to teach apart, or photos that mislead?); <b>twice as many answers</b>: the points a typical question gains from twice as many answers on that genus, with its likely range. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does practice help every format alike?</b> The chance of recognising the genus beyond guessing by the answers already given on it, for 4 choices, 2 choices (Again, duels) and typed answers (formats with 100 answers or more), each against 4 choices (dashed).</p>${AN_HELP_COMMON}`,
+  'an-photo': `<p><b>What makes a photo hard.</b> The chance of a right answer for each feature of the photos shown (view, quality, sharpness, source, one view alone), against the reference in brackets, the player's level, the genus and the photo itself held equal. Quality: Pierre's rating, else the automatic one. <b>Harder / easier than their view, quality and source say</b>: the photos whose own difficulty is furthest from what their features predict (click to enlarge): maybe a wrong label, a misleading colony, or a great photo.</p><p><b>On the fish side</b> the features are the photos' judged ones, as the game reads them (fish-game.json: your ease and tags where you set them, else the judging pass's): the <b>ease</b> (1 very hard to 5 very easy, per point), the <b>phase</b> (juvenile, or male, female, intermediate, against none) and the <b>framing</b> (oblique, or head-on, tail or from above, against a profile; part of the fish against the whole fish), the player, the family or genus asked and the photo itself held equal; whether the judged ease predicts the right answers is the question this view exists to answer (primary). A change you have not published yet counts once the Candidate photos run has rebuilt fish-game.json. A feature no photo shown had is left out. Tables: the answers by ease, phase, view and whole or part.</p>${AN_HELP_RANK}${AN_HELP_COMMON}`,
+  'an-fmt': `<p><b>Question formats.</b> For each format (4 choices; 4 choices with one or two easy to rule out; Again after a miss; duels; the exam; typed answers): the success of a pure guess as measured, against the value the app uses (¼ with 4 choices, ½ with 2, 0 typed); whether players find it easier or harder than the app expects, beyond guessing (the format's own guess rate set aside); and the plain gap, right answers minus what the app expected, in points. A guess rate is measured on the weakest answers, so its range stays wide until there are many.</p><p><b>By the rank asked</b> (the fish side): the same gap, right answers minus what the app expected, for each rank's questions (family, genus, species), every format together.</p>${AN_HELP_COMMON}`,
+  'an-conf': `<p><b>Genera mixed up.</b> Each wrong genus offered as a choice is a chance to be picked (typed answers left out). The chance to pick it, by the view shown (against a colony photo), the pair of genera and the player held equal. <b>Pairs most mixed up</b>: offered together, mixed up, the rate by view shown (answers under it), and how many times as often as a typical pair (at the typical mix-up rate: the model's odds ratio turned into a ratio of chances). <b>Each player against everyone's rates</b>: the player's mix-ups divided by what everyone's rates for the same pairs, views and choices predict (×1 = like everyone).</p><p><b>Mix-up map.</b> Which genera form families of mix-ups. Two genera are close when their pair is clearly mixed up more often than a typical pair, per offer (the lower end of its likely range, so chance alone makes no family); genera are grouped by average distance and a family is a group whose pairs are, on average, at least a fifth as close as the closest pair. Rows: the genus shown; columns: the genus answered instead, both in the tree's order, so families sit as blocks on the diagonal (dashed). Colour: the rate per offer, pulled towards the pair's own rate when offers are few, against a typical pair's (blank: never offered together). Outlined: look-alikes named on a genus sheet; a family with no outline is one the sheets do not name. <b>Mixed up across families</b>: the cells most mixed up between two families, worth a look at their photos. On a phone the tree is a list: tap a family's band for its block and its numbers. Only genera mixed up at least once are on the map. <b>Found again when the players are drawn again</b>: each family is looked for in the map of every bootstrap draw over the players (its best overlap, a Jaccard, averaged over the draws); 0.75 or more: stable (Hennig 2007), else <b>not stable yet</b>: a family that may change with a few more players.</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does the view change where misses go, pair by pair?</b> Among the questions missed with choices, the chance that the miss goes to the other genus of a pair when it is offered, by view shown, for the 6 pairs most offered on a colony photo and on another view (20 offers each on missed questions), against a typical pair's (dashed). Asked on missed questions only, since whether a question is missed is the photo's own effect (What makes a photo hard). Not on the fish side while its photos have one view.</p>${AN_HELP_RANK}${AN_HELP_COMMON}`,
+  'an-learn': `<p><b>Learning with practice.</b> How the chance of a right answer grows with the answers already given on a genus, and the effect of the next question after a miss, of "Again" after that miss, of typed answers, exam and comeback questions, the player and the genus held equal. <b>Answers needed to reach 80% right</b> (beyond guessing, the app's target), for a typical player, by genus, each genus at its own pace. Each player and each genus has its own learning slope around the common one (how much the next answers on a genus gain); <b>how much genera (players) differ in how fast practice helps</b>: the gain from twice as many answers, for a typical genus (player) either side of the common one. <b>Each genus with practice</b>: right answers by the answers already given on the genus (dots) against the model's own prediction of the same answers (dashed), the genus furthest below the app's 80% today first (a typical player at their current practice); <b>flat</b>: its own slope clearly under the smallest that matters (0.1 on the log-odds per unit of log practice: about a point per doubling of the answers), after a correction over the genera (a lead: two forms to teach apart, or photos that mislead?); <b>twice as many answers</b>: the points a typical question gains from twice as many answers on that genus, with its likely range. The first-meeting card and the side-by-side comparison leave no row in the answer log: they cannot be measured yet (ROADMAP).</p><p><b>Does it depend on …?</b> One check of whether the effect is the same at every level, as a whole (one test, exploratory: judged with the other exploratory results); its answer in one line: <b>Yes</b> (it clearly depends), <b>No</b> (every difference is within the smallest change that would matter, 0.25 on the log-odds scale), or not enough data yet, with the answers it would need. The chart shows each level with its likely range (95%), from the same model; levels with too few answers are left out. <b>Does practice help every format alike?</b> The chance of recognising the genus beyond guessing by the answers already given on it, for 4 choices, 2 choices (Again, duels) and typed answers (formats with 100 answers or more), each against 4 choices (dashed).</p>${AN_HELP_RANK}${AN_HELP_COMMON}`,
   'an-back': `<p><b>After a break.</b> Answers on a genus the player last answered right: how the chance of a right answer falls with the time since (a week against a day), against what the app expected then; and the comeback questions after a break: right answers against the app's expected chance (its forgetting curve, model.js comebackOf). By length of the break: answers, right, the app's expectation now and before the break.</p>${AN_HELP_COMMON}`,
   'an-sess': `<p><b>Sessions</b> (a player's answers less than 30 minutes apart). <b>Sessions still going after n answers</b>: a session still open at the end of the log counts only as far as it went. <b>What changes the result</b>: the chance to end the session right after an answer, depending on that answer (wrong, the second miss in a row or more, a question the app rates harder, a slow answer for that player) and on how far into the session it comes.</p>${AN_HELP_COMMON}`,
   'an-tdiff': `<p><b>Time and difficulty.</b> What the time to answer and enlarging say about how hard a photo is, the other way round from Answer time and Enlarging. <b>Others on the photo</b>: before each answer, the earlier answers of other players on its photo (its first photo): how slowly they answered it right, against each one's own usual time (their median over their earlier answers, from their 10th), and how often they enlarged it, against each one's own habit; each the photo's average pulled towards none when few answered it. Is the answer then right less often than the app expected, its photo rating included? <b>Time beside accuracy</b>: how long each photo and genus takes to answer (right or wrong held equal), and whether the slower ones are also missed more, the player held equal. Genus table and photos: the typical time and the chance of a right answer for a typical player, from the accuracy alone. Agreement: the correlation of the two (pulled towards the average, so it reads low with few answers).</p>${AN_HELP_COMMON}`,

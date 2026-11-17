@@ -275,7 +275,13 @@
   //           Identify and the Tools are the corals' for now
   //   pool    where its game photos come from, for the sheet's photo exposure per player (Code.gs pools_, core.js
   //           unitPool; Pierre, 2026-11-06, Q191): files, the site's files it reads (fetched from main, in this order),
-  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them
+  //           and of, the builder of POOLS that turns them into its units' game photos, as the app's games draw them; as,
+  //           what each file is to that builder (entries: f its tree, ph its first photos, gm its game photos, cur
+  //           curation.json). A subject with a pool has its own pooled statistics on the sheet (Code.gs statsSubjects_:
+  //           photo ratings, genus offsets, confusions, its own tab and ?stats=1&s=<id>)
+  //   stats   the app reads its own pooled statistics (sync.js loadOwnStats, model.js statsJoin): the script version that
+  //           serves them (?stats=1&s=<id>, the reply naming its subject; rule D4). The corals' are read as ever (replay);
+  //           a subject with a pool and no stats (the fish) draws on its priors in the app, its statistics on the sheet only
   // The fish units renamed (Pierre, 2026-11-06 13:04: the game's units are the book's families, genera and species, not
   // the IMR entries; docs/reviews/2026-11-06-fish-units-plan.md): each old teaching-entry id (t01) and the family that
   // took it over (fish.json families: the family holding most of its species); split: the genera of an entry that went
@@ -398,6 +404,10 @@
   // their board (progress.js boardLive) only from it; before, the subject does exactly what it did (the plain merge, no
   // board: an older script answers &s=seaslug with the corals' board, never shown as the sea slugs').
   const SEASLUGRP_SHEET = 164;
+  // The sync script version that pools the sea slugs' own answer statistics (rule D4; SUBJECTS seaslug pool, stats): its
+  // ?stats=1&s=seaslug serves their photo ratings, genus offsets and confusions, the reply naming its subject (s). The app
+  // asks for and reads them only from it (sync.js loadOwnStats); an older script answers &s=seaslug with the corals'.
+  const SEASLUGST_SHEET = 167;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -526,15 +536,11 @@
       zoom: 'the markings and the fins',
       // A word a typed name may leave out (core.js fishTypeNames): "trigger" for Triggerfish.
       typeDrop: 'fish',
-      // In beta (2026-11-04: Pierre promised the beta players "something fishy is coming"): said on its buttons and, once
-      // chosen, on Home (home.js: "Something fishy…" and this line, HTML).
-      beta: {
-        kick: 'Something fishy…',
-        line: '<b>Fish is in beta</b>: the reef fish families, iNaturalist photos for now. Feedback welcome.'
-      },
-      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-06, Q158: "open fish to everyone
-      // now"; it opened to the admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close
-      // it to that group again (the sheet keeps the Groups tab's rows).
+      // Out of beta (Pierre, 2026-11-17 ~19:10 Manila: "les poissons on peut les sortir du mode bêta, parce que c'est plus
+      // vraiment une bêta … à peu près stable"; in beta from 2026-11-04, "Something fishy…"): no beta label.
+      // Opens to every player, signed out included (Pierre, 2026-11-06, Q158: "open fish to everyone now"; it opened to the
+      // admin and a beta group picked in the admin's Players from 2026-11-04). 'group' would close it to that group again
+      // (the sheet keeps the Groups tab's rows).
       open: 'all',
       views: [['wide', 'Photo']],
       // sci: the scientific genera (app.js fishGenera, docs/FISH_PATH.md "Levels"). beyond: circle 3, the families beyond
@@ -563,7 +569,7 @@
         tree: F => fishBoardTree(F),
         vars: (F, Fs, S) => fishVarTable(F, Fs, S)
       },
-      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
+      pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries', as: ['f', 'ph', 'gm', 'cur']},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
       ach: true,
@@ -745,9 +751,11 @@
         kick: 'Sea slugs…',
         line: '<b>Sea slugs are in beta</b>: nudibranchs and other sea slugs of the Philippines, by their scientific names, iNaturalist photos for now. Feedback welcome.'
       },
-      // The admin and its group only (rule S1; the group managed on its admin Players page). sheet: the sync script
-      // version that knows this subject (Code.gs groupIds_: its group can be set and is reported from it; rule D4).
-      open: 'group',
+      // Opens to every player, signed out included, the beta label kept (Pierre, 2026-11-17 ~19:10 Manila: "on peut laisser
+      // les nudibranches ouverts à tous mais en gardant le mot bêta dedans"; the admin and its beta group only from
+      // 2026-11-16). 'group' would close it to that group again (the sheet keeps the Groups tab's rows). sheet: the sync
+      // script version that knows this subject (Code.gs groupIds_: its group can be set while it opens to a group; D4).
+      open: 'all',
       sheet: SEASLUG_SHEET,
       views: [['wide', 'Photo']],
       // No opt-in set: its genera are its units from the start.
@@ -755,11 +763,10 @@
       rank: 'family',
       unitRank: 'genus',
       // Its progress replayed by the sheet from its own answers, as the fish's (Code.gs replays_, replay_ per subject;
-      // rules D5, D8, D9): its units from seaslug.json (file: its pool has none yet), the genera played from the start
+      // rules D5, D8, D9): its units from seaslug.json (file, its pool's first too), the genera played from the start
       // (fishReplayGen at its unitRank), its own rules versions (SEASLUG_RVS), its records in the "Replayed Sea slugs"
       // tab. sheet: the script version that replays it (SEASLUGRP_SHEET; rule D4), before which the app neither asks
-      // for nor adopts it. No tree: its board ranks by the genera's mean, its headline %. No Analyses report and no photo
-      // pool yet.
+      // for nor adopts it. No tree: its board ranks by the genera's mean, its headline %.
       replay: false,
       replayed: {
         file: 'seaslug.json',
@@ -773,6 +780,18 @@
       // (Code.gs board_, boardWarm_; rule D8).
       board: true,
       boardSheet: SEASLUGRP_SHEET,
+      // Its game photos (Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"): its tree, its
+      // game file and its part of curation.json (treeCur), its genera the units (unitRank), as the app builds them. So the
+      // sheet pools its own answer statistics (Code.gs statsSubjects_: the "Stats Sea slugs" tab, ?stats=1&s=seaslug) and
+      // checks its photos and exposure, as the fish's; stats: the app reads them, from the script that serves them
+      // (SEASLUGST_SHEET; rule D4): the pooled photo difficulty, genus offsets and confusions, so a data look-alike seeded
+      // from iNaturalist (model.js dataSeed) is dropped once the players tell the pair apart.
+      pool: {files: ['seaslug.json', 'seaslug-game.json', 'curation.json'], of: 'entries', as: ['f', 'gm', 'cur']},
+      stats: SEASLUGST_SHEET,
+      // Its Analyses report (one per subject, refitted every 1000 of its answers: tools/analyses.js; Pierre, 2026-11-08), by
+      // genus, its units (its one and many): photos 'judged', its photos' judged ease, phase and framing from its game file
+      // (analysis.js photoMetaFish; SUBJECTS admin files gm), as the fish's.
+      analyses: {photos: 'judged'},
       // Its own achievements (Pierre, 2026-11-17: "une première version des succès"; core.js SEASLUG_ACH), in the shared
       // record under ids of their own (ss...), never counted in the corals' or the fish's.
       ach: true,
@@ -871,7 +890,22 @@
           // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
           // at their genus, never as a species (autosort.js fishCov)
           'photos/stats/overview',
-          'analyses/difficulty/heatmap'
+          'analyses/difficulty/heatmap',
+          // Its Analyses report's views (analyses above; admin-analyses.js), and the views drawn live from its answers
+          // (admin.js LIVE_STATS), as the fish's
+          'analyses/overview',
+          'analyses/speed',
+          'analyses/difficulty/photos',
+          'analyses/difficulty/formats',
+          'analyses/difficulty/mix-ups',
+          'analyses/difficulty/time',
+          'analyses/difficulty/pairs',
+          'analyses/learning/practice',
+          'analyses/learning/after-a-break',
+          'analyses/learning/sessions',
+          'analyses/learning/profiles',
+          'analyses/learning/answer-log',
+          'analyses/learning/stops'
         ],
         obs: 'Observations',
         origins: [
@@ -4662,11 +4696,22 @@
       });
       return out;
     },
-    entries: ([f, ph, gm, cur]) => {
-      const F = fishGen(f || {}, fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, cur), (ph || {}).sheet);
+    // entries: a tree subject's files by what each is (SUBJECTS pool as: f, ph, gm, cur), its part of the curation
+    // (treeCur), its units at its unit rank (unitRankOf: the sea slugs' genera, the fish's families); a subject whose
+    // units are below its families (fishGen unit) keeps those units only, its families being structure.
+    entries: (L, S) => {
+      const as = (S && S.pool && S.pool.as) || [],
+        x = k => (as.includes(k) ? L[as.indexOf(k)] : null),
+        ph = x('ph') || {},
+        F = fishGen(
+          x('f') || {},
+          fishPhotos(ph.photos, (fishGameRead(x('gm')) || {}).photos, treeCur(S, x('cur'))),
+          ph.sheet,
+          unitRankOf(S)
+        );
       return Object.fromEntries(
         Object.values(F.gen)
-          .filter(g => !g.wink)
+          .filter(g => !g.wink && (!F.unit || g.rank === F.unit))
           .map(g => [g.id, g.views.wide])
       );
     }
@@ -4679,7 +4724,7 @@
       make = P && POOLS[P.of];
     if (!make || !Array.isArray(files) || files.length < P.files.length || files.some(x => !x)) return null;
     const by = {};
-    Object.entries(make(files) || {}).forEach(([n, L]) =>
+    Object.entries(make(files, S) || {}).forEach(([n, L]) =>
       (L || []).forEach(p => {
         if (!p || !p.f) return;
         const O = (by[renamedId(S, n, p.t)] = by[renamedId(S, n, p.t)] || {}),
@@ -6938,6 +6983,7 @@
     LOG_SHEET,
     REPLAYS_SHEET,
     SEASLUGRP_SHEET,
+    SEASLUGST_SHEET,
     STRUCT_SHEET,
     PAIRS_SHEET,
     structSheet,

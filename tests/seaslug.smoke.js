@@ -69,7 +69,8 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
   const fails = [];
   const check = (ok, what) => ok || fails.push(what);
 
-  // 1. Not the admin, in no group: the corals, and no sea-slug file asked for.
+  // 1. Not the admin, signed out: the sea slugs open to every player, in beta (Pierre, 2026-11-17: "ouverts à tous mais
+  // en gardant le mot bêta dedans"): the saved choice opens them and their files are fetched.
   {
     const {ctx, p, errs} = await page(b, base, () => {
       try {
@@ -91,10 +92,13 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       btn: !!document.querySelector('[data-subj="seaslug"]'),
       hash: location.hash
     }));
-    check(o.subj === 'coral', `1: a player outside the group is on ${o.subj}`);
-    check(!o.mine.includes('seaslug') && !o.btn, `1: the switch offers the sea slugs: ${o.mine}`);
+    check(o.subj === 'seaslug', `1: a player who is not the admin is on ${o.subj}`);
+    check(o.mine.includes('seaslug') && o.btn, `1: the switch does not offer the sea slugs: ${o.mine}`);
     check(o.saved === '"seaslug"', `1: the saved choice changed: ${o.saved}`);
-    check(!asked.some(u => /seaslug/.test(u)), `1: sea-slug files fetched: ${asked.filter(u => /seaslug/.test(u))}`);
+    check(
+      asked.some(u => /seaslug\.json/.test(u)),
+      `1: the sea-slug files not fetched: ${asked.filter(u => /seaslug/.test(u))}`
+    );
     check(!errs.length, '1: page errors: ' + errs.join('; '));
     await ctx.close();
   }

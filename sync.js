@@ -33,26 +33,53 @@ function loadStats() {
     .then(j => {
       sheetSeen(j);
       if (j && j.ok && j.photos) {
-        PSTAT = j.photos;
-        GDIFF = {}; // genus difficulties follow the new photo stats and confusions
-        PCONF = j.conf || {};
-        PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
-        PGD = gdOf(j); // genus offsets of the photo Elo (sheet v31, model.js photoDiff); none from an older sheet
-        if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
-        PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf); none from an older sheet
-        store.set('reefid-photo-stats', {
+        const st = {
           t: Date.now(),
           v: j.v,
           photos: j.photos,
-          conf: PCONF,
+          conf: j.conf || {},
           ...(j.mem ? {mem: j.mem} : {}),
           ...(j.gd ? {gd: j.gd} : {}),
           ...(j.fmt ? {fmt: j.fmt} : {})
-        });
+        };
+        // The photo ratings, the confusions and the genus offsets of the photo Elo (sheet v31, model.js photoDiff; none
+        // from an older sheet), joined to each other subject's own (model.js statsJoin)
+        statsJoin(st);
+        PMEM = memOf(j.mem); // photo memory offsets (sheet v26); the prior from an older sheet
+        if (typeof rankPhotos === 'function') rankPhotos(); // the fish lists' first photos follow the new ratings (app.js)
+        PFMT = fmtsOf(j); // per-format offsets (sheet v77, core.js fmtOffsetsOf); none from an older sheet
+        store.set('reefid-photo-stats', st);
       }
+      loadOwnStats();
     })
     .catch(() => {});
 }
+// The subject on screen's own pooled statistics (core.js SUBJECTS stats: the sea slugs, sheet SEASLUGST_SHEET): its photo
+// ratings, genus offsets and confusions (?stats=1&s=<id>, Code.gs statsServed_), so its draw, its traps and its data
+// look-alikes (model.js dataSeed) follow its players' answers as the corals' do. Asked with the corals' (every 10 minutes,
+// once their reply has told the script's version) and when the player switches to it, for the subject on screen only:
+// a player who never opens it asks nothing more of the sheet. Only from a script that serves them (S.stats, rule D4) and
+// only a reply that names that subject (s): an older script, or one where it has no pool, answers with the corals'. Kept
+// on this device and joined to the corals' (model.js OWN_STATS, statsJoin).
+const ownStatsAt = {};
+function loadOwnStats(S = SUBJ) {
+  if (!SYNC_URL || !S || S.replay || !S.stats || sheetV() < S.stats) return;
+  ownStatsAt[S.id] = Date.now();
+  fetch(`${SYNC_URL}?stats=1&s=${encodeURIComponent(S.id)}&av=${appVer()}`)
+    .then(r => r.json())
+    .then(j => {
+      if (!j || !j.ok || !j.photos || j.s !== S.id || !(Number(j.v) >= S.stats)) return;
+      store.set(OWN_STATS + S.id, {t: Date.now(), v: j.v, s: j.s, photos: j.photos, conf: j.conf || {}, ...(j.gd ? {gd: j.gd} : {})});
+      statsJoin();
+      if (typeof rankPhotos === 'function') rankPhotos();
+    })
+    .catch(() => {});
+}
+// A switch to a subject with its own statistics brings them, unless asked in the last 10 minutes (a visit, keep, never).
+if (typeof SUBJ_HOOKS !== 'undefined')
+  SUBJ_HOOKS.push(keep => {
+    if (!keep && Date.now() - (ownStatsAt[SUBJ.id] || 0) > 600000) loadOwnStats();
+  });
 // The slate genera (Millepora included since 2026-11-02): the sheet's "By genus" columns and the leaderboard % follow them.
 // The first leaderboard's subject (core.js SUBJECTS board: corals), whatever the subject on screen; the others' units
 // in boards.
