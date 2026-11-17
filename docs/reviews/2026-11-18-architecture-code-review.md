@@ -117,7 +117,7 @@ These are judgements, each with its evidence. They are the parts the redesign be
   - the merge train;
   - the deploy stamping its own version numbers (rule W15), so PRs never conflict on them;
   - `curation-play.json` trimmed for players.
-- **`home.js`, `tour.js`, `tips.js`, `home-art.js`** are already wrapped modules with no globals. They show the target
+- **`home.js`, `tour.js`, `tips.js`, `home-art.js`** are already wrapped, with no top-level declarations. They show the target
   style works in this code base.
 
 ## Measurements
@@ -307,8 +307,10 @@ dead, though:
 **Proposal.**
 
 1. **A deploy order instead of gates (M).**
-   - The merge train already knows when `Code.gs` changes. Pages deploys after the train, so the deploy step can call the
-     script's `autoUpdate` (or wait for `?v=` to report the new `VERSION`) before it publishes the app.
+   - The merge train already knows when `Code.gs` changes. Pages deploys after the train, so the deploy step can wait until the
+     script's replies report the new `VERSION` (it updates itself within about 15 minutes) before it publishes the app.
+     `autoUpdate` is a trigger with no public endpoint, so starting it from the deploy would need a new authenticated
+     route; waiting needs none.
    - The app then never runs ahead of the script by construction, and rule D4 holds without a gate per feature.
    - What remains is a single `MIN_SHEET`: an app that gets a reply from an older script (a rollback) shows "updating"
      and keeps its answers queued, as it does on `busy`.
