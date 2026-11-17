@@ -16,7 +16,13 @@ const F = json('fish.json'),
   PH = json('fish-photos.json'),
   GM = C.fishGameRead(json('fish-game.json')),
   CUR = json('curation.json');
-const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+const ctx = {
+  DOM: {EX: 0.9},
+  easyCover: C.easyCover,
+  fishScoreTree: C.fishScoreTree,
+  fishSpUnits: C.fishSpUnits,
+  rankWeights: C.rankWeights
+};
 vm.createContext(ctx);
 vm.runInContext(
   block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
@@ -25,10 +31,12 @@ vm.runInContext(
 
 test("fishReplayGen: the app's fish units, their look-alikes and family lines, from fish.json alone", () => {
   const X = ctx.fishGenera(C.fishGen(F, C.fishPhotos(PH.photos, GM.photos, CUR), PH.sheet), F),
-    want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam}])),
+    // a species unit with the unit it starts from (its family: core.js abilityOf from)
+    want = Object.fromEntries(Object.values(X.gen).map(g => [g.id, {look: [...g.look], fam: g.fam, ...(g.from ? {from: g.from} : {})}])),
     got = C.fishReplayGen(F);
   assert.deepStrictEqual(JSON.parse(JSON.stringify(got)), JSON.parse(JSON.stringify(want)));
-  assert.ok(Object.keys(got).some(id => id.startsWith('g:')) && Object.keys(got).some(id => id.startsWith('f:')));
+  assert.ok(['g:', 'f:', 's:'].every(p => Object.keys(got).some(id => id.startsWith(p))));
+  assert.strictEqual(got['s:s091'].from, 'f:Damselfishes');
 });
 
 test('fishReplayGen: nothing from an empty fish.json', () => {

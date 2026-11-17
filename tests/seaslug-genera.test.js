@@ -23,7 +23,7 @@ const SEA = C.subjectOf('seaslug'),
   photos = () => C.fishPhotos({}, GM.photos, C.treeCur(SEA, json('curation.json')));
 
 // fishGenera as app.js has it (its core.js helpers, as the app has them).
-const ctx = {easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+const ctx = {easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
 vm.createContext(ctx);
 vm.runInContext(block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;', ctx);
 

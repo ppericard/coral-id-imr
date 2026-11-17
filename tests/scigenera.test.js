@@ -18,7 +18,14 @@ const F = json('fish.json'),
   APP = src('app.js');
 
 // fishGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
-const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights}; // core.js, as the app has it (the card photo, Q270; the fish score's tree, #730)
+// core.js, as the app has it (the card photo, Q270; the fish score's tree, #730; the species units)
+const ctx = {
+  DOM: {EX: 0.9},
+  easyCover: C.easyCover,
+  fishScoreTree: C.fishScoreTree,
+  fishSpUnits: C.fishSpUnits,
+  rankWeights: C.rankWeights
+};
 vm.createContext(ctx);
 vm.runInContext(
   [

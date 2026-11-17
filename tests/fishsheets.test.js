@@ -112,7 +112,13 @@ test('every family of the game has ID cues to show: IMR’s, or its own ID marks
     block = require('./block.js'),
     APP = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
     PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')),
-    ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+    ctx = {
+      DOM: {EX: 0.9},
+      easyCover: C.easyCover,
+      fishScoreTree: C.fishScoreTree,
+      fishSpUnits: C.fishSpUnits,
+      rankWeights: C.rankWeights
+    };
   vm.createContext(ctx);
   vm.runInContext(
     block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
