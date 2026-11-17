@@ -7198,6 +7198,47 @@ const darkCards = (p, sel) =>
         if (s2.seen !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h))) se.push(`the report ${JSON.stringify(s2)}`);
         await sq.goto(base + 'admin.html?demo#seaslug/photos/stats/overview');
         await swait(() => /genera in play/i.test(document.querySelector('#view').textContent), 'Photo stats by genus');
+        // The rest of their admin at parity (Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin, c'est
+        // prévu aussi ?"): their rubric's tag rows on a photo's Tags (a view and the f flag), the Sheet box on a genus page
+        // (its note saved with a source), and their Candidates (no Checks switch; + Add writes their part).
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AChromodoris');
+        await swait(() => document.querySelectorAll('#view .adm-ftile [data-fu="tags"]').length > 4, 'the genus page again');
+        await sq.click(`.adm-ftile[data-f="${f1}"] [data-fu="tags"]`);
+        await swait(() => !!document.querySelector('.adm-ftrows [data-ft="0"][data-fv="v"]'), 'the sea slugs’ tag rows');
+        const tr = await sq.evaluate(() => ({
+          night: !!document.querySelector('.adm-ftrows [data-ft="2"][data-fv="n"]'),
+          one: [...document.querySelectorAll('.adm-ftrows [data-ft="6"]')].map(x => x.textContent)[0],
+          f: !!document.querySelector('.adm-ftrows [data-ff2="f"]')
+        }));
+        if (tr.night || tr.one !== 'One sea slug' || !tr.f) se.push(`the tag rows ${JSON.stringify(tr)}`);
+        await sq.click(`.adm-ftile[data-f="${f1}"] .adm-ftrows [data-ft="0"][data-fv="v"]`);
+        await sq.click(`.adm-ftile[data-f="${f1}"] .adm-ftrows [data-ff2="f"]`);
+        const tg = await sq.evaluate(f => ((DRAFT.seaslug || {}).tags || {})[f] || '', f1);
+        if (tg[0] !== 'v' || !tg.slice(7).includes('f')) se.push(`the tags set ${tg}`);
+        await sq.evaluate(() => {
+          const d = document.querySelector('#view .adm-csheet[data-csid="g:Chromodoris"]');
+          if (d) d.open = true;
+        });
+        await swait(() => !!document.querySelector('.adm-csheet [data-cs="note"] [data-csa="edit"]'), 'the Sheet box');
+        await sq.click('.adm-csheet [data-cs="note"] [data-csa="edit"]');
+        await sq.fill('.adm-csheet [data-cs="note"] [data-cst]', 'A made-up note');
+        await sq.fill('.adm-csheet [data-cs="note"] [data-css]', 'Made-up source');
+        await sq.click('.adm-csheet [data-cs="note"] [data-csa="save"]');
+        const sn = await sq.evaluate(() => ((((DRAFT.seaslug || {}).content || {}).nodes || {})['g:Chromodoris'] || {}).note || null);
+        if (!sn || sn.v !== 'A made-up note' || !sn.src || sn.src.t !== 'Made-up source') se.push(`the sheet note ${JSON.stringify(sn)}`);
+        // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
+        const cf = await sq.evaluate(() => {
+          const S = document.querySelector('#view .adm-fsw');
+          return {f: S.dataset.f, s: S.dataset.s, chk: !!document.querySelector('#view [data-fq="chk"]')};
+        });
+        await sq.click('#view .adm-fsw [data-add]');
+        const ca = await sq.evaluate(f => ((DRAFT.seaslug || {}).add || {})[f], cf.f),
+          fishSame = await sq.evaluate(() => JSON.stringify(DRAFT.fish) === JSON.stringify(SAVED.fish));
+        if (cf.chk || ca !== cf.s || !fishSame) se.push(`their Candidates ${JSON.stringify({...cf, ca, fishSame})}`);
         if (se.length) fails.push(`Sea slugs' photo pages: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
