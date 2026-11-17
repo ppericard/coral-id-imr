@@ -900,7 +900,14 @@ const nodeCover = S => {
 // read as ID information; the "Photo missing" tile's style (DESIGN.md).
 const NOFISH =
   '<svg viewBox="0 0 64 40" aria-hidden="true"><path class="np-t" d="M10 20c6-11 22-14 33-6l9-7c1 5 1 21 0 26l-9-7c-11 8-27 5-33-6z"/><circle class="eye" cx="20" cy="17" r="2"/><path d="M14 24c3 2 6 2 8 1"/></svg>';
-const noFish = () => `<span class="nofish">${NOFISH}<span>No photo yet</span></span>`;
+// A subject with its own drawing (UNITS words.nophoto: the sea slugs') shows it instead, in the same style.
+const noFish = () => `<span class="nofish">${sheetWord('nophoto') || NOFISH}<span>No photo yet</span></span>`;
+// A tree subject's own words on its sheets (UNITS words; the sea slugs', study §9 step 7: never a fish word on a sea-slug
+// sheet), k one of: famLede(f), genLede(f), spLede, the ? text of each sheet; met {v(s), where}, what a species' rank
+// in its family on its sheet counts and where (fish.json cmi around Dauin by default); links(s), its species links
+// beyond iNaturalist and WoRMS (FishBase by default), [] for none; nophoto, its "No photo yet" drawing. undefined when
+// the subject gives none: the sheet keeps its default words.
+const sheetWord = k => ((UNITS[SUBJ.id] || {}).words || {})[k];
 // The unit the player's progress keeps a family under: the family once the game asks the families, else the IMR entry
 // that was renamed into it (SUBJECTS renamed), '' when none.
 // An entry renamed into two families counts for both (SUBJECTS renamed split: t46 is the Pipefishes and the Seahorses;
@@ -1141,7 +1148,14 @@ const spLinks = s => {
     ]
       .filter(Boolean)
       .join(' · ');
-  return `${a('https://www.inaturalist.org/taxa/' + encodeURIComponent(s.inat), 'iNaturalist')} · ${a('https://www.marinespecies.org/aphia.php?p=taxdetails&id=' + encodeURIComponent(s.ref), 'WoRMS')} · ${a('https://www.fishbase.se/summary/' + encodeURIComponent(s.name.replace(/\s+/g, '-')) + '.html', 'FishBase')}`;
+  const more = sheetWord('links')
+    ? sheetWord('links')(s)
+    : [['https://www.fishbase.se/summary/' + encodeURIComponent(s.name.replace(/\s+/g, '-')) + '.html', 'FishBase']];
+  return [
+    a('https://www.inaturalist.org/taxa/' + encodeURIComponent(s.inat), 'iNaturalist'),
+    a('https://www.marinespecies.org/aphia.php?p=taxdetails&id=' + encodeURIComponent(s.ref), 'WoRMS'),
+    ...more.map(([u, t]) => a(u, esc(t)))
+  ].join(' · ');
 };
 const fishTile = s =>
   `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap">${spNameH(s)}${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
@@ -1220,14 +1234,27 @@ const famSizes = f => {
     b = Math.max(...L);
   return `<li>${L.length > 1 && a !== b ? `Its species reach ${a} to ${b} cm` : `Up to ${b} cm`} <small>(the largest total length of each species: Reef Life Survey, else FishBase; ${L.length} of ${famSpecies(f).length} species)</small></li>`;
 };
+// A line's source numbers, linked, from a record's msrc (ix: its indexes; '' for none): as genMarks numbers its lines.
+const srcNums = (r, ix) =>
+  (ix || [])
+    .map(i =>
+      (r.msrc || [])[i]
+        ? ` <a class="srcn" href="${esc(safeUrl(r.msrc[i].u))}" target="_blank" rel="noopener" title="${esc(r.msrc[i].t)}">[${i + 1}]</a>`
+        : ''
+    )
+    .join('');
 const fishMarks = f =>
   (f.marks || []).length || (f.life || []).length || famSizes(f)
-    ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map(x => `<li>${esc(x)}</li>`).join('')}</ul>${esrcP(f, 'marks')}` : ''}${
+    ? `<div class="fmarks">${(f.marks || []).length ? `<h3>Family ID marks</h3><ul class="crit">${f.marks.map((x, i) => `<li>${esc(x)}${srcNums(f, ((f.mby || {}).marks || [])[i])}</li>`).join('')}</ul>${esrcP(f, 'marks')}` : ''}${
         (f.life || []).length || famSizes(f)
           ? `<h3>Behaviour, habitat, size</h3><ul class="crit">${(f.life || []).map(x => `<li>${esc(x)}</li>`).join('')}${famSizes(f)}</ul>${esrcP(f, 'life')}`
           : ''
       }<p class="note msrc">${(f.msrc || []).length ? 'Sources: ' : ''}${(f.msrc || [])
-        .map(x => (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t)))
+        .map(
+          (x, i) =>
+            (f.mby ? `[${i + 1}] ` : '') +
+            (x.u ? `<a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>` : esc(x.t))
+        )
         .join(
           '; '
         )}${(f.msrc || []).length ? ' · ' : ''}${repBtn({k: 'sheet', g: f.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`
@@ -1310,7 +1337,7 @@ function fishFamily(f) {
               : ''
           }${juv.length ? `<div class="ftiles juv">${juv.map(p => `<figure class="ftile">${fishPic(p, flat, p.t || 'Juvenile')}<figcaption><i>${esc(p.t || '')}</i><span>Juvenile</span></figcaption></figure>`).join('')}</div>` : ''}`
         : '';
-  $v.innerHTML = `<p class="lede">One family of ${key ? esc(key.short) : 'the identification key'} on one page, under its English name, its scientific name or names below. The <b>ID tips (IMR)</b> are the IMR fish presentation's. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next family.'}</p>
+  $v.innerHTML = `<p class="lede">${sheetWord('famLede') ? sheetWord('famLede')(f) : `One family of ${key ? esc(key.short) : 'the identification key'} on one page, under its English name, its scientific name or names below. The <b>ID tips (IMR)</b> are the IMR fish presentation's. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next family.'}</p>
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t">${esc(f.name)}</p>${vernHead(f.id)}${famSci(f) || famIMR(f) ? `<p class="fn-s">${esc(famSci(f))}${famIMR(f) ? ` <span>· ${esc(famIMR(f))}</span>` : ''}</p>` : ''}${gr ? `<p class="fn-g">${gr.n}. ${esc(gr.title)}${key ? ' · ' + esc(key.short) : ''}</p>` : ''}</div>
     ${u ? myProg(u) : ''}
@@ -1390,7 +1417,7 @@ function fishGenus(g) {
   };
   // Its look-alikes beyond those (fishGenusLooks), each with its source.
   const looks = fishGenusLooks(g, T).filter(([o]) => !sib.some(x => x.id === o));
-  $v.innerHTML = `<p class="lede">One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart, and the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
+  $v.innerHTML = `<p class="lede">${sheetWord('genLede') ? sheetWord('genLede')(f) : `One genus of the ${esc(f.name)} on one page: its species, one photo each, the most met around Dauin first. <b>Opened for me</b> shows the species of the families you have reached Advanced on; <b>All</b> shows every species. <b>Don't confuse with</b> shows the other genera of the family the IMR fish presentation tells apart, and the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`}${isPhone() ? '' : ' ← / → go to the previous / next genus of the family.'}</p>
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t"><i>${esc(g.name)}</i></p>${g.common ? `<p class="fn-s">${esc(g.common)}${g.cinf ? ' <span>· inferred from its species’ names</span>' : ''}</p>` : vernHead(g.id)}<p class="${g.common || vernOf(g.id).length ? 'fn-g' : 'fn-s'}">${L.length} species · in <a href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g.imr ? ` <span>· IMR entry: ${esc(g.imr)}</span>` : ''}</p></div>
     ${GX(g.id) ? myProg(g.id) : ''}
@@ -1431,7 +1458,9 @@ function fishSpecies(s) {
     {shown, more} = spSheetPhotos(P, P.length ? spPhoto(s) : null),
     flat = [...shown, ...more],
     F = famSpecies(f),
-    rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,
+    // its rank in its family by what the subject counts (UNITS words.met: the sea slugs', observers in the Philippines)
+    met = sheetWord('met') || {v: x => x.cmi || 0, where: 'around Dauin, by how often it is met'},
+    rank = [...F].sort((a, b) => met.v(b) - met.v(a)).indexOf(s) + 1,
     sib = g ? genSpecies(g).filter(x => x !== s) : [],
     gto = g ? fishGo(g.id) : '',
     // its genus's look-alikes when its genus opens this sheet (one species: fishGenusLooksOn; Q390 D)
@@ -1439,7 +1468,7 @@ function fishSpecies(s) {
   const fig = (p, i, big) =>
     `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
   const links = spLinks(s);
-  $v.innerHTML = `<p class="lede">One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.${isPhone() ? '' : ' ← / → go to the previous / next species.'}</p>
+  $v.innerHTML = `<p class="lede">${sheetWord('spLede') || 'One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.'}${isPhone() ? '' : ' ← / → go to the previous / next species.'}</p>
   <article class="sheet fsheet">
     <div class="fnames"><p class="fn-t">${spNameH(s)}</p>${vernOf(s.id).length ? vernHead(s.id) : spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
@@ -1447,7 +1476,7 @@ function fishSpecies(s) {
     ${fishNote(s)}
     ${genMarks(g, 's:' + s.name)}
     ${fishRoot(g, 's:' + s.name)}
-    ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} around Dauin, by how often it is met.</p>` : ''}
+    ${F.length > 1 && rank ? `<p class="note">${rank === 1 ? 'The most met' : `#${rank} of ${F.length}`} ${esc(f.name)} ${esc(met.where)}.</p>` : ''}
     ${
       shown.length
         ? `<div class="fphotos">${fig(shown[0], 0, true)}${
