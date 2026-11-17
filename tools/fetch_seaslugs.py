@@ -554,8 +554,8 @@ def run(args):
                 jobs += [(s["key"], have.get(s["key"], []), target(s, T)[0], "inf", s["genus"], s["field"])
                          for s in inf["species"]]
             if args.genus_level:
-                gcap = int(min(T.get("max", 1e9), T["candidates"]))
-                jobs += [(g, have.get(g, []), gcap, "gl", g, None) for g in game_genera(src) if not only or g in only]
+                # each genus's own target, the very variable genera's 30 included (gl_target; Codex review #1048)
+                jobs += [(g, have.get(g, []), gl_target(g, T), "gl", g, None) for g in game_genera(src) if not only or g in only]
             back(jobs)
             if args.informal:
                 informal_run(net, src, inf, have, T, pairs, used, taken, report, egg)

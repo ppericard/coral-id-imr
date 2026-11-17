@@ -411,7 +411,9 @@ print(json.dumps([T['maxGenera'], target({'name': 'Chromodoris annae', 'genus': 
                   target({'name': 'Slugus juvenilis', 'genus': 'Slugus'}, J),
                   target({'name': 'Phyllidiella pustulosa', 'genus': 'Phyllidiella'}, T),
                   target({'name': 'No genus'}, T),
-                  [gl_target(g, T) for g in ('Chromodoris', 'Phyllidia', 'Phyllidiella')]]))`);
+                  [gl_target(g, T) for g in ('Chromodoris', 'Phyllidia', 'Phyllidiella')],
+                  # the egg refill's genus-level jobs take the same target (Codex review #1048)
+                  'gl_target(g, T), "gl"' in __import__('inspect').getsource(run)]))`);
   assert.deepStrictEqual(out, [
     ['Chromodoris', 'Phyllidia'],
     [30, 0],
@@ -421,7 +423,8 @@ print(json.dumps([T['maxGenera'], target({'name': 'Chromodoris annae', 'genus': 
     [25, 5],
     [20, 0], // a genus of the same family, not listed
     [20, 0],
-    [30, 30, 20] // a genus's genus-level list: the ceiling for a very variable genus too (gl_target)
+    [30, 30, 20], // a genus's genus-level list: the ceiling for a very variable genus too (gl_target)
+    true
   ]);
 });
 
