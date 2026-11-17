@@ -808,7 +808,8 @@ function fishGenera(X, F) {
           // look-alikes the players' answers can drop (model.js dataSeed).
           ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
           qt: cues || marks,
-          ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
+          // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
+          ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
           tl: cues
             ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
             : marks
@@ -2251,6 +2252,13 @@ const SEA_HELLO = {
     kick: 'Invitation',
     title: 'Test the sea slug beta',
     body: '<p>You’re invited to try sea slugs: nudibranchs and other sea slugs of the Philippines, by their scientific names, with the same game as the corals.</p><p>Switch subjects at the top of Home, any time: your other progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
+  },
+  // all (Pierre, 2026-11-17: the sea slugs open to every player, the beta label kept): the same invitation to each
+  // player, once, while they keep their beta label (progress.js subjHello), as the fish's was from Q158 to 2026-11-17.
+  all: {
+    kick: 'Invitation',
+    title: 'Test the sea slug beta',
+    body: '<p>Try sea slugs, now in beta: nudibranchs and other sea slugs of the Philippines, by their scientific names, with the same game as the corals.</p><p>Switch subjects at the top of Home, any time: your other progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
   }
 };
 const UNITS = {

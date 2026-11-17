@@ -2866,7 +2866,7 @@ const darkCards = (p, sel) =>
               .waitForFunction(
                 h =>
                   location.hash === '#' + h &&
-                  cur === h.replace(/^fish\//, '') &&
+                  cur === subjOfHash(h)[1] &&
                   /fitted on|No report yet|Not for /.test(document.getElementById('view').textContent),
                 h,
                 {timeout: 90000}
@@ -2983,6 +2983,51 @@ const darkCards = (p, sel) =>
               )
                 fe.push("the corals' Speed tells ranks apart");
             }
+          }
+          // The sea slugs' report on their side (SUBJECTS seaslug analyses, 2026-11-17): its status line, every view the
+          // fish have, drawn from its report (the demo's made-up answers on its genera), never a coral genus nor a raw id;
+          // What makes a photo hard on its judged ease, phase and framing (its game file). Its units are genera: the
+          // words stay. At 1280 from the script that stores one report per subject.
+          if (v >= GATE && vw === 1280) {
+            at = await look('seaslug/analyses/overview');
+            if (!/^Sea slugs: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards || at.not)
+              fe.push(`sea slug Overview ${JSON.stringify(at)}`);
+            const [H, LV] = await fq.evaluate(() => [
+              TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(subjectOf('seaslug'), h))),
+              LIVE_STATS
+            ]);
+            if (H.length !== 15) fe.push(`sea slug views ${H.join(' ')}`);
+            for (const h of H.filter(h => !LV.includes(h))) {
+              at = await look('seaslug/' + h);
+              if (at.none || !/^Sea slugs: /.test(at.badge) || at.ids.length || at.coral || at.wide > 0)
+                fe.push(`#seaslug/${h} ${JSON.stringify({...at, views: undefined})}`);
+            }
+            // the views drawn live from its answers (LIVE_STATS: Pairs, Heatmap, Answer log, Stops): drawn, no page error
+            for (const h of H.filter(h => LV.includes(h))) {
+              await fq.evaluate(h => (location.hash = h), 'seaslug/' + h);
+              const lv = await fq
+                .waitForFunction(
+                  h =>
+                    cur === h &&
+                    document.getElementById('view').textContent.trim().length > 40 &&
+                    !/Loading/.test(document.getElementById('view').textContent),
+                  h,
+                  {timeout: 60000}
+                )
+                .then(() => fq.evaluate(() => document.getElementById('view').textContent.slice(0, 120)))
+                .catch(() => null);
+              if (!lv || /Not for sea slugs yet/.test(lv)) fe.push(`#seaslug/${h}: ${lv === null ? 'nothing drawn' : lv}`);
+            }
+            at = await look('seaslug/analyses/difficulty/photos');
+            const ph = await fq.evaluate(() => {
+              const V = document.getElementById('view');
+              return {
+                h: [...V.querySelectorAll('.adm-an-card h3, .adm-an-card summary')].map(e => e.textContent.trim()).join(' | '),
+                t: V.textContent
+              };
+            });
+            if (/IMR lecture|Corallites|quality photo/i.test(ph.t) || !/\bEase\b/.test(ph.h))
+              fe.push(`#seaslug/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
           }
           // the corals' report on the corals' side, as before
           at = await look('analyses/overview');
@@ -4185,6 +4230,140 @@ const darkCards = (p, sel) =>
             await settle();
             if (!new RegExp(`beta:\\s+${n - 1}\\s+of\\s+${n}\\s+players`).test((await grp()).line))
               fails.push(`${w}px Players (${beta}): Remove did not take Dio out`);
+            // Remove all (Pierre, 2026-11-17; Codex review #1051): refused, nothing changes; accepted, every member of this
+            // group leaves it, and the members of another group keep theirs (a second subject set to a group here, every
+            // player added to it first). Read on the page and on the demo sheet.
+            {
+              // The other subject's sheet version is dropped with it: the demo sheet is v58, before the sea slugs' (v151).
+              const other = await p.evaluate(b => SUBJECTS.find(S => S.id !== b && !S.replay && !subjGroup(S)).id, beta),
+                was = await p.evaluate(o => (S => ({open: S.open, sheet: S.sheet}))(SUBJECTS.find(S => S.id === o)), other),
+                // each subject's group line, by its name
+                lines = () =>
+                  p.evaluate(
+                    ids =>
+                      ids.map(
+                        id =>
+                          [...document.querySelectorAll('.adm-ugroup')]
+                            .map(x => x.innerText)
+                            .find(t => t.startsWith(SUBJECTS.find(S => S.id === id).name + ' beta:')) || ''
+                      ),
+                    [beta, other]
+                  ),
+                // each group's members on the demo sheet, sorted
+                sheet = () =>
+                  p.evaluate(
+                    ids =>
+                      fetch(SYNC_URL, {method: 'POST', body: JSON.stringify({users: 1, token: TOKEN})})
+                        .then(r => r.json())
+                        .then(j =>
+                          ids.map(id =>
+                            j.users
+                              .filter(u => (u.groups || []).includes(id))
+                              .map(u => u.name)
+                              .sort()
+                              .join()
+                          )
+                        ),
+                    [beta, other]
+                  );
+              await p.evaluate(
+                o =>
+                  Object.assign(
+                    SUBJECTS.find(S => S.id === o),
+                    {open: 'group', sheet: 0}
+                  ),
+                other
+              );
+              await go('players/list');
+              await go(beta + '/players/list');
+              await p.click(`[data-ugall="${other}"]`);
+              await settle();
+              const s0 = await sheet(),
+                l0 = await lines(),
+                everyone = await p.evaluate(() =>
+                  USERS.users
+                    .map(u => u.name)
+                    .sort()
+                    .join()
+                ),
+                inBeta = await p.evaluate(
+                  b =>
+                    USERS.users.filter(u =>
+                      inGroup(
+                        u,
+                        SUBJECTS.find(S => S.id === b)
+                      )
+                    ).length,
+                  beta
+                );
+              if (
+                inBeta !== n - 1 ||
+                s0[0].split(',').length !== n - 1 ||
+                s0[1] !== everyone ||
+                !new RegExp(`beta:\\s+${n}\\s+of\\s+${n}\\s+players`).test(l0[1])
+              )
+                fails.push(`${w}px Players (${beta}): before Remove all ${JSON.stringify({s0, l0, inBeta})}`);
+              // Refused: the confirm names the count, and nothing moves.
+              const asked = await p.evaluate(b => {
+                const c = window.confirm;
+                let m = null;
+                window.confirm = x => ((m = x), false);
+                document.querySelector(`[data-ugnone="${b}"]`).click();
+                window.confirm = c;
+                return m;
+              }, beta);
+              await settle();
+              const s1 = await sheet(),
+                l1 = await lines();
+              if (
+                !new RegExp(`^Remove all ${n - 1} players from the `).test(asked || '') ||
+                s1.join('|') !== s0.join('|') ||
+                l1.join('|') !== l0.join('|')
+              )
+                fails.push(`${w}px Players (${beta}): Remove all refused ${JSON.stringify({asked, s1, l1})}`);
+              // Accepted (the page's dialog handler): nobody left in this group, everyone still in the other one.
+              await p.click(`[data-ugnone="${beta}"]`);
+              await settle();
+              const s2 = await sheet(),
+                l2 = await lines(),
+                left = await p.evaluate(
+                  b => ({
+                    beta: USERS.users.filter(u =>
+                      inGroup(
+                        u,
+                        SUBJECTS.find(S => S.id === b)
+                      )
+                    ).length,
+                    btn: !!document.querySelector(`[data-ugnone="${b}"]`),
+                    all: !!document.querySelector(`[data-ugall="${b}"]`)
+                  }),
+                  beta
+                );
+              if (
+                s2[0] ||
+                s2[1] !== everyone ||
+                left.beta ||
+                left.btn ||
+                !left.all ||
+                !new RegExp(`beta:\\s+0\\s+of\\s+${n}\\s+players`).test(l2[0]) ||
+                l2[1] !== l0[1]
+              )
+                fails.push(`${w}px Players (${beta}): Remove all ${JSON.stringify({s2, l2, left})}`);
+              // Back as it was: the other group emptied (Remove all again), its subject as core.js has it.
+              await p.click(`[data-ugnone="${other}"]`);
+              await settle();
+              if ((await sheet())[1]) fails.push(`${w}px Players (${other}): Remove all left members`);
+              await p.evaluate(
+                a =>
+                  Object.assign(
+                    SUBJECTS.find(S => S.id === a[0]),
+                    a[1]
+                  ),
+                [other, was]
+              );
+              await go('players/list');
+              await go(beta + '/players/list');
+            }
             const q = await p.context().newPage();
             // A fresh page reads core.js again: fish served back to open: 'group' there too (open to all since Q158).
             await q.route(
@@ -4210,7 +4389,11 @@ const darkCards = (p, sel) =>
             await go('players/list');
             await go(beta + '/players/list');
             const ga = await grp(),
-              gb = await p.evaluate(() => ({btn: !!document.querySelector('[data-ugall], [data-ugroup]'), label: !!ASUBJ.beta}));
+              // its beta label as core.js gives it (fish out of beta since 2026-11-17): opening to all never changes it
+              gb = await p.evaluate(() => ({
+                btn: !!document.querySelector('[data-ugall], [data-ugroup]'),
+                label: !!ASUBJ.beta === !!SUBJECTS.find(S => S.id === ASUBJ.id).beta
+              }));
             if (ga.line || ga.col || ga.all || gb.btn || !gb.label)
               fails.push(`${w}px Players (${beta}) open to all: ${JSON.stringify({...ga, ...gb})}`);
             await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'group'), beta);
@@ -6113,8 +6296,8 @@ const darkCards = (p, sel) =>
       }
       // Difficulty › Heatmap of a subject with units at several ranks played at the genus (SUBJECTS sheets, core.js
       // unitRankOf: the sea slugs; the corals' one rank is the genus too; Q123 m, after #1020):
-      // its one Analyses view; every genus of its game on the map in italics, by name, in its family's block, the families
-      // in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
+      // the Analyses views the fish have (SUBJECTS analyses, #1060), its Heatmap among them; every genus of its game on
+      // the map in italics, by name, in its family's block, the families in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
       // line over its few made-up answers (admin-demo.js: Ana's count, Mara's not yet: her map says why); with no answer
       // at all, Not enough data yet. No raw unit id, no sideways scroll. Once, at 1280 and 390 px.
       for (const vw of [1280, 390]) {
@@ -6159,6 +6342,9 @@ const darkCards = (p, sel) =>
             );
             return {
               views: TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
+              fishViews: TABS.filter(t => t[3] === 'analyses').flatMap(t =>
+                t[2].map(([h]) => h).filter(h => hasPage(subjectOf('fish'), h))
+              ),
               sw: !!V.querySelector('[data-sf="hr"]'),
               rows: T.querySelectorAll('tbody tr').length,
               cols: T.querySelectorAll('thead .hm-col').length,
@@ -6178,7 +6364,8 @@ const darkCards = (p, sel) =>
           });
           if (
             !hs ||
-            hs.views.join() !== 'analyses/difficulty/heatmap' ||
+            hs.views.join() !== hs.fishViews.join() ||
+            !hs.views.includes('analyses/difficulty/heatmap') ||
             hs.sw ||
             hs.rows !== hs.slate ||
             hs.cols !== hs.rows ||
@@ -6193,7 +6380,7 @@ const darkCards = (p, sel) =>
             hs.ids.length ||
             hs.wide > 0
           )
-            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined})}`);
+            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined, fishViews: undefined})}`);
           // Mara's few answers do not count yet: her map says so
           const mara = hs && hs.players.find(p => p[1] === 'Mara Demo');
           if (!mara) ge.push('Mara not in the picker');
@@ -7072,6 +7259,47 @@ const darkCards = (p, sel) =>
         if (s2.seen !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h))) se.push(`the report ${JSON.stringify(s2)}`);
         await sq.goto(base + 'admin.html?demo#seaslug/photos/stats/overview');
         await swait(() => /genera in play/i.test(document.querySelector('#view').textContent), 'Photo stats by genus');
+        // The rest of their admin at parity (Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin, c'est
+        // prévu aussi ?"): their rubric's tag rows on a photo's Tags (a view and the f flag), the Sheet box on a genus page
+        // (its note saved with a source), and their Candidates (no Checks switch; + Add writes their part).
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AChromodoris');
+        await swait(() => document.querySelectorAll('#view .adm-ftile [data-fu="tags"]').length > 4, 'the genus page again');
+        await sq.click(`.adm-ftile[data-f="${f1}"] [data-fu="tags"]`);
+        await swait(() => !!document.querySelector('.adm-ftrows [data-ft="0"][data-fv="v"]'), 'the sea slugs’ tag rows');
+        const tr = await sq.evaluate(() => ({
+          night: !!document.querySelector('.adm-ftrows [data-ft="2"][data-fv="n"]'),
+          one: [...document.querySelectorAll('.adm-ftrows [data-ft="6"]')].map(x => x.textContent)[0],
+          f: !!document.querySelector('.adm-ftrows [data-ff2="f"]')
+        }));
+        if (tr.night || tr.one !== 'One sea slug' || !tr.f) se.push(`the tag rows ${JSON.stringify(tr)}`);
+        await sq.click(`.adm-ftile[data-f="${f1}"] .adm-ftrows [data-ft="0"][data-fv="v"]`);
+        await sq.click(`.adm-ftile[data-f="${f1}"] .adm-ftrows [data-ff2="f"]`);
+        const tg = await sq.evaluate(f => ((DRAFT.seaslug || {}).tags || {})[f] || '', f1);
+        if (tg[0] !== 'v' || !tg.slice(7).includes('f')) se.push(`the tags set ${tg}`);
+        await sq.evaluate(() => {
+          const d = document.querySelector('#view .adm-csheet[data-csid="g:Chromodoris"]');
+          if (d) d.open = true;
+        });
+        await swait(() => !!document.querySelector('.adm-csheet [data-cs="note"] [data-csa="edit"]'), 'the Sheet box');
+        await sq.click('.adm-csheet [data-cs="note"] [data-csa="edit"]');
+        await sq.fill('.adm-csheet [data-cs="note"] [data-cst]', 'A made-up note');
+        await sq.fill('.adm-csheet [data-cs="note"] [data-css]', 'Made-up source');
+        await sq.click('.adm-csheet [data-cs="note"] [data-csa="save"]');
+        const sn = await sq.evaluate(() => ((((DRAFT.seaslug || {}).content || {}).nodes || {})['g:Chromodoris'] || {}).note || null);
+        if (!sn || sn.v !== 'A made-up note' || !sn.src || sn.src.t !== 'Made-up source') se.push(`the sheet note ${JSON.stringify(sn)}`);
+        // their species mostly at their target (the game's cap: the build puts the sure ones in play): those on demand
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/candidates');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add], #view [data-ffull]'), 'their Candidates');
+        if (!(await sq.$('#view .adm-fsw [data-add]'))) await sq.click('#view [data-ffull]');
+        await swait(() => !!document.querySelector('#view .adm-fsw [data-add]'), 'their Candidates card');
+        const cf = await sq.evaluate(() => {
+          const S = document.querySelector('#view .adm-fsw');
+          return {f: S.dataset.f, s: S.dataset.s, chk: !!document.querySelector('#view [data-fq="chk"]')};
+        });
+        await sq.click('#view .adm-fsw [data-add]');
+        const ca = await sq.evaluate(f => ((DRAFT.seaslug || {}).add || {})[f], cf.f),
+          fishSame = await sq.evaluate(() => JSON.stringify(DRAFT.fish) === JSON.stringify(SAVED.fish));
+        if (cf.chk || ca !== cf.s || !fishSame) se.push(`their Candidates ${JSON.stringify({...cf, ca, fishSame})}`);
         if (se.length) fails.push(`Sea slugs' photo pages: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }

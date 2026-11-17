@@ -54,9 +54,10 @@ test("fishReplayGen at the genus: the app's sea slug units, from seaslug.json al
   assert.strictEqual(genera.length, SF.genera.length);
   assert.ok(got['g:Chromodoris'].look.includes('g:Hypselodoris'), 'a sibling genus is a look-alike');
   assert.ok(!Object.keys(got).some(id => id.startsWith('s:')), 'no species unit');
-  // its file named, its pool none yet (Code.gs subjFile_), its board from the version that replays it
+  // its file named, its pool's first too (Code.gs subjFile_), its board from the version that replays it
   assert.strictEqual(S.replayed.file, 'seaslug.json');
-  assert.ok(!S.pool && S.board && S.boardSheet === S.replayed.sheet && S.replayed.sheet > C.REPLAYS_SHEET);
+  assert.strictEqual(S.pool.files[0], S.replayed.file);
+  assert.ok(S.board && S.boardSheet === S.replayed.sheet && S.replayed.sheet > C.REPLAYS_SHEET);
 });
 
 test('fishReplayGen: nothing from an empty fish.json', () => {

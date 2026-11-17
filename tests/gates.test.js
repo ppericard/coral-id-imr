@@ -175,6 +175,25 @@ const GATES = {
     assert.strictEqual(live(SS), on, 'the board live with the replay');
     return on;
   },
+  // The sea slugs' own pooled statistics (core.js SUBJECTS seaslug stats; Code.gs ?stats=1&s=seaslug, statsSubjects_):
+  // the app asks for them (sync.js loadOwnStats) from the script that pools them; before, an older script would answer
+  // &s=seaslug with the corals', so nothing is asked (and a reply not naming the sea slugs is never kept:
+  // tests/seaslugstats.test.js).
+  SEASLUGST_SHEET: (v, N) => {
+    const SS = require('../core.js').subjectOf('seaslug');
+    assert.strictEqual(SS.stats, N);
+    let asked = '';
+    fn('sync.js', 'function loadOwnStats(', '\n// A switch to a subject', 'loadOwnStats', {
+      SYNC_URL: 'https://sheet.invalid/exec',
+      SUBJ: SS,
+      sheetV: () => (v === undefined ? 0 : v),
+      appVer: () => 1,
+      ownStatsAt: {},
+      fetch: u => ((asked = u), new Promise(() => {}))
+    })();
+    if (asked) assert.match(asked, /[?&]stats=1&s=seaslug&/);
+    return !!asked;
+  },
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
