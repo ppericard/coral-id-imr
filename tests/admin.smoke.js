@@ -4601,10 +4601,11 @@ const darkCards = (p, sel) =>
         if (
           !r ||
           !r.want ||
-          r.src !== r.want ||
+          // with its Tree, the tile of its Tree (its file on R2, else its original; its credits on Enlarge, below)
+          (X.tree ? !r.src : r.src !== r.want) ||
           !r.cap.includes(r.fam) ||
           !r.cap.includes(r.t) ||
-          !r.cap.includes(r.a) ||
+          (!X.tree && !r.cap.includes(r.a)) ||
           !r.head.includes(r.fam) ||
           !r.tools !== !X.tree ||
           r.missing ||
