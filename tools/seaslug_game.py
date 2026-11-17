@@ -16,7 +16,8 @@ Inputs, all in the repository (no network but --r2's downloads):
     order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order);
   - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources;
   - tools/seaslug_lookalikes_cand.json (tools/seaslug_lookalikes.py): the look-alike survey's literature sets and genus
-    pairs, of which the genus look-alikes (genus_looks; Pierre, 2026-11-17, Q390 D).
+    pairs, of which the genus look-alikes (genus_looks; Pierre, 2026-11-17, Q390 D);
+  - tools/seaslug_cues.json (checked by tools/seaslug_cues.py): the sourced ID marks of genera and families.
 
 seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
   - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
@@ -41,6 +42,8 @@ seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.j
     nicknames, and ensrc {inat, worms, wiki}, where its sources hold it (tools/seaslug_names.json, names_of); the tree's
     own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
     Q369 (d) stands: never a choice, no common-name branch).
+  - on a genus or family tools/seaslug_cues.json gives ID marks: marks, msrc, mby, as a fish genus's (tools/seaslug_cues.py
+    apply; study §9 step 7): shown on its sheets and, a genus's, in the quiz feedback.
   - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
     is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
   - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
@@ -99,6 +102,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from presence import label_confirmed  # noqa: E402  the label rule beside C8 (Q389 (2))
+import seaslug_cues  # noqa: E402  the sourced ID marks (study §9 step 7)
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
 CAND = os.path.join(ROOT, 'seaslug-cand.json')
@@ -263,7 +267,7 @@ def names_of(N):
     return out
 
 
-def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None):
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None, cur=None, cues=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv, rotation)], the photos in play whose files R2 lacks or holds with
     another crop or rotation, circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
@@ -273,7 +277,8 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     tools/seaslug_lookalikes_cand.json, the genus look-alikes (genus_looks), none without it. cur: curation.json, whose
     sea-slug part (part: Pierre's admin choices) the photos in play follow, as a fish photo follows the fish part
     (tools/fish_game.py in_play, record): what he removed, excluded or moved leaves, his adds enter, his crop, rotation,
-    ease and tags are the record's."""
+    ease and tags are the record's. cues: tools/seaslug_cues.json, the sourced ID marks (seaslug_cues.apply), none
+    without it."""
     import fish_game as FG
     F = part(cur)
     top = set((cur or {}).get('exclude') or {})
@@ -354,6 +359,7 @@ def build(L, cand, sug, prev=None, groups=None, inf=None, names=None, looks=None
     for f in fams.values():
         if f['name'] in tof:
             f['tgroup'] = tof[f['name']]
+    seaslug_cues.apply(cues, fams, gens, species)
     tree = {
         'v': V,
         'about': 'the sea-slug subject\'s tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)',
@@ -557,7 +563,8 @@ def inputs(root=ROOT):
             j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_names.json'), {}) or None,
-            j(os.path.join('tools', 'seaslug_lookalikes_cand.json'), {}) or None, j('curation.json', {}))
+            j(os.path.join('tools', 'seaslug_lookalikes_cand.json'), {}) or None, j('curation.json', {}),
+            j(os.path.join('tools', 'seaslug_cues.json'), {}) or None)
 
 
 def write(root, tree, game):

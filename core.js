@@ -429,6 +429,43 @@
       analyses: {photos: true},
       // basics: Coral basics (proto/basics.js), step 0 of the Learn path, corals only.
       pages: ['basics', 'genera', 'sheet', 'cmp', 'quiz', 'quiz-custom', 'quiz-duel', 'pairs'],
+      // The text slots its content editor may edit on a genus sheet (docs/reviews/2026-11-14-sheet-overlay-design.md v2,
+      // step 8; Pierre, 2026-11-15, Q359 and Q366), laid over data.json by core.js contentApply as the fish's (SUBJECTS fish
+      // content): one rank, the genus, its records in data.json gen and x.gen (Millepora, the bonus and Coral ID Key
+      // genera), by name. lsrc/<other genus> is one look-alike line (the words under it on the sheet's Don't confuse with,
+      // and its source), at the pairs the base holds only (a new one is a new pair: structure). keep: hidden, the field
+      // stays empty ([] or ''), as every genus record holds it and its readers read it (contentPut).
+      content: {
+        genus: {
+          at: ['gen', 'x.gen'],
+          slots: [
+            {k: 'plain', n: 'Plain words', t: 'text'},
+            {k: 'qt', n: 'ID tips', t: 'list'},
+            {k: 'mn', n: 'Mnemonic', t: 'text', imr: 1},
+            {k: 'imr', n: 'IMR lecture notes', t: 'list', imr: 1, keep: 1},
+            {k: 'sum', n: 'Summary', t: 'text', keep: 1},
+            {k: 'crit', n: 'Coral ID Key criteria', t: 'list', keep: 1},
+            {k: 'lsrc', n: 'Look-alike', t: 'text', map: 1},
+            {k: 'check', n: 'To check with an IMR trainer', t: 'text'},
+            {k: 'info', n: 'Other sources', t: 'list'}
+          ]
+        }
+      },
+      // The structure its content editor may change (design note v2, step 8; Q359, Q363 h A, Q366): its look-alike pairs
+      // between genera (look: a list of genus names; the pair key a|b, v 1 or null), laid over data.json by core.js
+      // structApply (genStructure); no circles (the slate is not the editor's: design note section 6, "Not in this
+      // design"). hold: the withdrawals the ★ rule refuses (starHold, rule L5: a starred genus keeps a surveyed look-alike
+      // to open after), never applied, held their word for it on the admin's pages. sheet: the sync script that replays
+      // the progress under it (rule D4). A change to them replays every player's progress (Q363 h A: structStamp).
+      structure: {
+        pairs: {rank: 'genus', slot: 'look', hold: (R, P) => starHold(R, P), held: '★ rule'},
+        apply: (R, X) => genStructure(R, X),
+        sheet: () => PAIRS_SHEET
+      },
+      // The units its replay reads (core.js replayProgress gen: each genus's look-alikes and family), from data.json (gen
+      // and x.gen): what the sheet builds its coral replay from under the structure in force (Code.gs subjRpl_, gen_).
+      // Only gen: it stays the subject the sheet replays (replay), never one of replayedSubjects.
+      replayed: {gen: d => genLooks(d)},
       progress: ['slate', 'photos', 'groups'],
       // The first-launch question (CHOICE below): its words for this subject, one [answer, line] per CHOICE.opts id.
       start: {
@@ -1412,6 +1449,109 @@
     }
     return out;
   }
+  // ---- Genera by name: the structure of a subject whose units are data.json's genus records (design note v2, step 8) ----
+  // Where its genus records sit: gen (the slate) and x.gen (Millepora, the bonus and Coral ID Key genera), by name.
+  const GEN_AT = ['gen', 'x.gen'];
+  // The units its replay reads (Code.gs dataJson_ and subjRpl_, core.js replayProgress gen): each genus of d's gen and
+  // x.gen (gen's first) with its look-alikes (look, names only) and its family (fam).
+  function genLooks(d) {
+    const out = {};
+    GEN_AT.forEach(at => {
+      const G = atPath(d || {}, at);
+      Object.keys(isObj(G) ? G : {}).forEach(n => {
+        if (!out[n] && isObj(G[n]))
+          out[n] = {look: (Array.isArray(G[n].look) ? G[n].look : []).filter(x => typeof x === 'string'), fam: String(G[n].fam || '')};
+      });
+    });
+    return out;
+  }
+  // The pairs in force written into data.json R (SUBJECTS structure apply; design note v2, step 8; Q359, Q366): the
+  // content editor's pairs X ({pairs: [{a, b, v: 1 or null, src}]}, each a change from R: structApply) on the genus
+  // records, both sides, as the build writes a pair: one withdrawn leaves both records' look and their lsrc lines (its
+  // words: their text slots lsrc/<other genus> are then orphaned, kept and not applied); one added joins both looks after
+  // the base's look-alikes, with an lsrc line on each side, the source the editor gave, else EDITOR_PAIR (never IMR's or
+  // the Coral Finder's words). A record held in both gen and x.gen (the admin's merged data) changes in both. A new object
+  // sharing every record it does not change; R itself when X changes nothing.
+  function genStructure(R, X) {
+    const P = (X && X.pairs) || [];
+    if (!P.length) return R;
+    const add = new Map(),
+      drop = new Map(),
+      put = (m, k, v) => m.set(k, [...(m.get(k) || []), v]);
+    P.forEach(x => (x.v === 1 ? (put(add, x.a, [x.b, x.src]), put(add, x.b, [x.a, x.src])) : (put(drop, x.a, x.b), put(drop, x.b, x.a))));
+    const made = new Map(),
+      one = (id, g) => {
+        if (made.has(g)) return made.get(g);
+        const look = Array.isArray(g.look) ? g.look : [],
+          ls = isObj(g.lsrc) ? g.lsrc : {},
+          D = new Set(drop.get(id) || []),
+          A = (add.get(id) || []).filter(([o], i, L) => !look.includes(o) && L.findIndex(y => y[0] === o) === i);
+        let r = g;
+        if (A.length || look.some(o => D.has(o)) || Object.keys(ls).some(o => D.has(o))) {
+          const l2 = Object.fromEntries(Object.entries(ls).filter(([o]) => !D.has(o)));
+          A.forEach(([o, s]) => !l2[o] && (l2[o] = s ? s.t : EDITOR_PAIR));
+          r = {...g, look: [...look.filter(o => !D.has(o)), ...A.map(([o]) => o)], lsrc: l2};
+        }
+        made.set(g, r);
+        return r;
+      },
+      out = {...R},
+      done = new Set();
+    GEN_AT.forEach(at => {
+      const G = atPath(R, at);
+      Object.keys(isObj(G) ? G : {}).forEach(n => {
+        if (!isObj(G[n]) || (!add.has(n) && !drop.has(n))) return;
+        const r = one(n, G[n]);
+        if (r !== G[n]) contentBox(out, R, at, done)[n] = r;
+      });
+    });
+    return done.size ? out : R;
+  }
+  // The ★ rule under the content editor's pairs (rule L5; design note v2, step 8): a starred genus is on the slate because
+  // it looks like surveyed genera, and opens only after the ones its card names (starRefs: its own look-alikes that are
+  // surveyed genera of the lecture group it is shown in). Every starred genus of the base has some; a withdrawn pair could
+  // leave one with none (Alveopora and Halomitra have one look-alike each), and it would then open at any time and be
+  // shown in no group. Of the pair changes P that apply ([{key, a, b, v}]: structEntries), the withdrawals refused: every
+  // addition first (they only add references), then the withdrawals in key order, each refused when it leaves a starred
+  // genus of either side with no reference, so two devices' withdrawals merged keep the first and hold the other,
+  // whatever order they were made in. A Set of their keys (structEntries: orphaned, why hold; never applied).
+  function starHold(R, P) {
+    const held = new Set(),
+      W = (P || []).filter(x => x.v !== 1).sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
+    if (!W.length) return held;
+    const G = (R && R.gen) || {},
+      X = xGen(R),
+      d = {gen: {}, x: {gen: {}}},
+      copy = g => ({...g, look: Array.isArray(g.look) ? g.look.slice() : []});
+    Object.keys(X).forEach(n => isObj(X[n]) && (d.x.gen[n] = copy(X[n])));
+    Object.keys(G).forEach(n => isObj(G[n]) && (d.gen[n] = G[n] === X[n] ? d.x.gen[n] : copy(G[n])));
+    const rec = n => d.gen[n] || d.x.gen[n],
+      star = n => !!d.gen[n] && !d.gen[n].n && !d.x.gen[n] && starRefs(R, n).length > 0;
+    (P || [])
+      .filter(x => x.v === 1)
+      .forEach(x => {
+        const a = rec(x.a),
+          b = rec(x.b);
+        if (!a || !b) return;
+        if (!a.look.includes(x.b)) a.look.push(x.b);
+        if (!b.look.includes(x.a)) b.look.push(x.a);
+      });
+    W.forEach(x => {
+      const a = rec(x.a),
+        b = rec(x.b);
+      if (!a || !b) return;
+      const la = a.look,
+        lb = b.look;
+      a.look = la.filter(o => o !== x.b);
+      b.look = lb.filter(o => o !== x.a);
+      if ([x.a, x.b].some(n => star(n) && !starRefs(d, n).length)) {
+        a.look = la;
+        b.look = lb;
+        held.add(x.key);
+      }
+    });
+    return held;
+  }
   // The fish game photos (admin plan PR 7): the photos in play (Pierre's adds, the candidates and reference photos judged
   // sure), downloaded to R2 (fish-game.json, tools/fish_game.py, run by the Candidate photos workflow after each Publish).
   // The stopgap list of remote iNaturalist photos they replaced entry by entry was retired on 2026-11-15 (Pierre): no fish
@@ -1852,15 +1992,41 @@
       c = P && P.content;
     return isObj(c) ? c : {};
   };
-  // A rank's records by id ({id: {rec, i}}: i its place in the list, or its key in a map), from its declaration D.
+  // A rank's records by id ({id: {rec, i, at}}: i its place in the list, or its key in a map; at the path of the list or
+  // map), from its declaration D. D.at is a path (a.b: a field inside one) or a list of them, read in order: an id met
+  // again in a later one is the first one's (the admin's coral data holds the x genera in gen too, the same records).
+  const atPath = (R, at) =>
+    String(at)
+      .split('.')
+      .reduce((o, k) => (isObj(o) ? o[k] : undefined), R);
   const contentRecs = (R, D) => {
-    const L = (R || {})[D.at],
-      out = new Map();
-    if (Array.isArray(L)) L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i}));
-    else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && out.set(id, {rec: r, i: id}));
+    const out = new Map();
+    (Array.isArray(D.at) ? D.at : [D.at]).forEach(at => {
+      const L = atPath(R || {}, at);
+      if (Array.isArray(L))
+        L.forEach((r, i) => isObj(r) && r.id != null && !out.has(String(r.id)) && out.set(String(r.id), {rec: r, i, at}));
+      else if (isObj(L)) Object.entries(L).forEach(([id, r]) => isObj(r) && !out.has(id) && out.set(id, {rec: r, i: id, at}));
+    });
     return out;
   };
-  // Every node a subject's slots reach in built file R: {id: {rank, rec, i}}.
+  // The list or map at path at of out (a copy of built file R, sharing what is not copied yet), copied from R's the first
+  // time (each level of the path once: done, the paths copied), so a record can be put in it without touching R.
+  function contentBox(out, R, at, done) {
+    const P = String(at).split('.');
+    let o = out,
+      r = R;
+    P.forEach((k, j) => {
+      r = isObj(r) ? r[k] : undefined;
+      const p = P.slice(0, j + 1).join('.');
+      if (!done.has(p)) {
+        o[k] = Array.isArray(r) ? r.slice() : {...(isObj(r) ? r : {})};
+        done.add(p);
+      }
+      o = o[k];
+    });
+    return o;
+  }
+  // Every node a subject's slots reach in built file R: {id: {rank, rec, i, at}}.
   function contentNodes(S, R) {
     const out = new Map();
     Object.entries((S && S.content) || {}).forEach(([rank, D]) =>
@@ -1920,7 +2086,10 @@
         last = P.pop();
       let o = r;
       P.forEach(x => (o = o[x] = isObj(o[x]) ? {...o[x]} : {}));
-      if (val == null) delete o[last];
+      // keep: a field every record holds and its readers read as such (a coral genus's crit, imr, sum): hidden, it stays,
+      // empty ([] or ''), which reads as no value (contentVal) and shows nothing
+      if (val == null && sp.keep) o[last] = sp.t === 'list' ? [] : '';
+      else if (val == null) delete o[last];
       else o[last] = val;
     }
   }
@@ -1994,15 +2163,14 @@
     L.forEach(x => {
       const n = N.get(x.node),
         at = S.content[n.rank].at;
-      if (!done.has(at)) {
-        out[at] = Array.isArray(R[at]) ? R[at].slice() : {...R[at]};
-        done.add(at);
-      }
       let r = recs.get(x.node);
       if (!r) {
         r = JSON.parse(JSON.stringify(n.rec));
         recs.set(x.node, r);
-        out[at][n.i] = r;
+        // in its list or map, and in any other of its rank's that holds the same record (the admin's merged coral gen)
+        (Array.isArray(at) ? at : [at]).forEach(a => {
+          if (a === n.at || (atPath(R, a) || {})[n.i] === n.rec) contentBox(out, R, a, done)[n.i] = r;
+        });
       }
       contentPut(x.sp, r, x.key, x.e.v);
       const s = contentSrc(x.e.src);
@@ -2044,7 +2212,7 @@
     if (D.pairs) {
       const N = at(D.pairs.rank),
         f = D.pairs.slot,
-        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => Array.isArray(y) && y[0] === o);
+        has = (r, o) => (Array.isArray(r[f]) ? r[f] : []).some(y => pairIdOf(y) === o);
       Object.keys(isObj(C && C.pairs) ? C.pairs : {})
         .sort()
         .forEach(key => {
@@ -2058,9 +2226,23 @@
               p.length !== 2 || !a || !b || !(a < b) ? 'key' : !x || !y ? 'node' : !isObj(e) || !(e.v === 1 || e.v === null) ? 'value' : '';
           out.pairs.push({key, a, b, e, base, ...st(e, base, why)});
         });
+      // The subject's own guard (SUBJECTS structure pairs hold: the corals' ★ rule, starHold): the changes it refuses among
+      // those that apply are never applied, orphaned with why hold, so the apply, the stamp, the admin and the sheet agree.
+      if (typeof D.pairs.hold === 'function') {
+        const H = D.pairs.hold(
+          R,
+          out.pairs.filter(x => x.state !== 'orphan' && x.e.v !== x.base).map(x => ({key: x.key, a: x.a, b: x.b, v: x.e.v}))
+        );
+        if (H && H.size)
+          out.pairs = out.pairs.map(x =>
+            H.has(x.key) ? {key: x.key, a: x.a, b: x.b, e: x.e, base: x.base, state: 'orphan', why: 'hold'} : x
+          );
+      }
     }
     return out;
   }
+  // A look-alike row's other node id: a row [id, words] (fish.json look) or the id itself (data.json look: genus names).
+  const pairIdOf = y => (Array.isArray(y) ? (y[0] == null ? '' : String(y[0])) : typeof y === 'string' ? y : '');
   // Whether content map Cm holds any structure entry (a circle slot, a pair).
   const structHas = Cm =>
     Object.values(isObj(Cm && Cm.nodes) ? Cm.nodes : {}).some(m => isObj(m) && CIRCLE_SLOT in m) ||
@@ -2092,7 +2274,7 @@
     if (D.pairs)
       contentRecs(R, S.content[D.pairs.rank]).forEach((x, id) =>
         (Array.isArray(x.rec[D.pairs.slot]) ? x.rec[D.pairs.slot] : []).forEach(y => {
-          const o = Array.isArray(y) ? String(y[0]) : '';
+          const o = pairIdOf(y);
           if (o && o !== id) p.add(id < o ? id + '|' + o : o + '|' + id);
         })
       );
@@ -5405,6 +5587,11 @@
   // replay made under a new stamp only once the script's replies say v >= STRUCT_SHEET (rule D4); before, it applies the
   // text slots alone, as it did (app.js fishBuild, sync.js stsAsk, replayAdoptS).
   const STRUCT_SHEET = 146;
+  // The sync script version that replays the subject it rates photos for (SUBJECTS replay: the corals) under its content
+  // editor's look-alike pairs (Code.gs v163: gen_ and replay_ under curation.json's pairs, keyed by the structure stamp;
+  // design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
+  const PAIRS_SHEET = 163;
+  const structSheet = S => (S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET);
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
   // sends it only once the script's replies say v >= WINK_SHEET, queued until then (rule D4).
@@ -6610,6 +6797,8 @@
     LOG_SHEET,
     REPLAYS_SHEET,
     STRUCT_SHEET,
+    PAIRS_SHEET,
+    structSheet,
     WINK_SHEET,
     logOk,
     PA_SHEET,
@@ -6842,6 +7031,10 @@
     structStamp,
     structFp,
     fishStructure,
+    genStructure,
+    genLooks,
+    starHold,
+    pairIdOf,
     EDITOR_PAIR,
     hash53,
     contentOut,
