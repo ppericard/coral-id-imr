@@ -149,7 +149,13 @@ function app(sheetVersion, reply) {
     S = src('sync.js'),
     T = json('seaslug.json'),
     X = C.fishGen(T, C.fishPhotos({}, C.fishGameRead(json('seaslug-game.json')).photos, null), undefined, C.unitRankOf(SEA)),
-    G = vm.createContext({easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights});
+    G = vm.createContext({
+      easyCover: C.easyCover,
+      fishScoreTree: C.fishScoreTree,
+      fishSpUnits: C.fishSpUnits,
+      fishGenSets: C.fishGenSets,
+      rankWeights: C.rankWeights
+    });
   vm.runInContext(
     block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
     G

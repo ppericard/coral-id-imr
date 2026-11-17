@@ -24,6 +24,7 @@ const ctx = {
   easyCover: C.easyCover,
   fishScoreTree: C.fishScoreTree,
   fishSpUnits: C.fishSpUnits,
+  fishGenSets: C.fishGenSets,
   rankWeights: C.rankWeights
 };
 vm.createContext(ctx);
@@ -203,4 +204,66 @@ test('Q240: turned on by hand before Advanced, a family’s genera from its Open
 test('Q238: the IMR families first for anyone who ever answered imr (openPick reads imrSaid)', () => {
   const pick = block(src('model.js'), 'function openPick(', '\n}\n', {file: 'model.js'});
   assert.ok(pick.includes('if (imrSaid()) {') && !pick.includes("c === 'imr'"));
+});
+
+// The genera of circles 2 and 3 (Pierre, 2026-11-18 ~06:32 Manila, "lance"; docs/FISH_PATH.md "Levels"): built for
+// circle 1 alone when circle 1 alone was on the path, every circle's since (core.js fishGenSets), each as circle 1's: in
+// its family's circle, its sibling genera as look-alikes, its family's line, opened at its family's Advanced, counted in
+// the score's tree; a surprise card's genus none.
+test('every circle: the genera of circles 2 and 3 are units as circle 1’s are', () => {
+  const sp = new Map(F.species.map(s => [s.id, s])),
+    want = c =>
+      F.families
+        .filter(f => f.circle === c && !f.wink)
+        .flatMap(f => f.genera.filter(id => F.genera.find(g => g.id === id).species.some(s => sp.has(s)))),
+    of = c => plain(X.sci.filter(n => X.gen[n].circle === c));
+  [1, 2, 3].forEach(c => assert.deepStrictEqual(of(c), want(c), 'circle ' + c));
+  assert.deepStrictEqual([of(1).length, of(2).length, of(3).length], [130, 5, 102]);
+  assert.ok(!X.gen['g:Rhincodon'] && !X.gen['g:Alopias'], 'a surprise card’s genus: none');
+  // a circle-2 species' genus, as a circle-1 one: its record, its sibling genus the trap, its family's line and circle
+  const g = X.gen['g:Aeoliscus'],
+    s = F.species.find(x => x.genus === 'g:Aeoliscus');
+  assert.ok(s && s.circle === 2);
+  assert.deepStrictEqual(plain([g.rank, g.parent, g.circle, g.look, g.species, g.names[0]]), [
+    'genus',
+    'f:Shrimpfishes',
+    2,
+    ['g:Centriscus'],
+    [s.id],
+    'Aeoliscus'
+  ]);
+  assert.ok(g.fam.startsWith('Shrimpfishes') && g.tl === 'Its species here' && typeof g.sum === 'string');
+  assert.ok(g.views.wide.every(p => p.sp === s.id));
+  assert.strictEqual(X.gen['g:Centriscus'].look[0], 'g:Aeoliscus');
+  // opens as circle 1's: from its family's Advanced (never an IMR genus: no IMR sub-entry outside circle 1)
+  assert.deepStrictEqual(open({'f:Shrimpfishes': 0.6}, true), {auto: [], units: []});
+  assert.deepStrictEqual(open({'f:Shrimpfishes': 0.8}, true).units, ['g:Aeoliscus', 'g:Centriscus']);
+  assert.ok(X.sci.filter(n => X.gen[n].circle > 1).every(n => !X.gen[n].imrg));
+  // counts in the score's tree: its species' entry carries it, and a genus learnt credits half their scientific names
+  const K = C.subjectOf('fish').score;
+  [X.tree, X.treeSp].forEach(T => {
+    assert.ok(T.s.some(e => e[1] === 'g:Aeoliscus' && e[4] === 2));
+    const base = Object.fromEntries(T.f.map(([u]) => [u, {mx: 1}])),
+      a = C.treeScore(base, T, K),
+      b = C.treeScore({...base, 'g:Aeoliscus': {mx: 1}}, T, K);
+    assert.ok(b.raw > a.raw && b.by[2].S > a.by[2].S && b.by[1].S === a.by[1].S);
+  });
+});
+
+// Rule D4: the genera of circles 2 and 3 open, and are offered as choices, only once the sheet replays them (sync.js
+// generaOn, GENERA_SHEET); before, circle 1's alone, as before; every one where sync.js is not loaded.
+test('the gate: the genera of circles 2 and 3 from the sheet that replays them (rule D4)', () => {
+  const now = on => {
+    const c = {FISH: X, GX: n => X.gen[n], ...(on === undefined ? {} : {generaOn: () => on})};
+    vm.createContext(c);
+    vm.runInContext(block(APP, 'const sciNow = ', '\n', {through: 1, file: 'app.js'}).replace('const sciNow', 'this.sciNow'), c);
+    return plain(c.sciNow());
+  };
+  assert.deepStrictEqual(now(true), plain(X.sci));
+  assert.deepStrictEqual(now(undefined), plain(X.sci));
+  assert.deepStrictEqual(now(false), plain(X.sci.filter(n => X.gen[n].circle === 1)));
+  const set = block(APP, "k: 'sci',", 'page: false', {file: 'app.js'});
+  assert.ok(/all: \(\) => sciNow\(\)/.test(set) && (set.match(/sciOpen\(sciNow\(\)/g) || []).length === 2, 'the set reads it');
+  const S = src('sync.js');
+  assert.ok(/const GENERA_SHEET = \d+;/.test(S) && S.includes('const generaOn = () => sheetV() >= GENERA_SHEET;'));
 });

@@ -842,9 +842,11 @@ function mainJson_(file){
 // it (core.js contentApply, the app's own function), and {gen, st} carries its structure stamp (core.js structStamp: ''
 // while nothing changes the base). curation.json is read from main, the full file (the players' copy is written only at
 // deploy); its structure entries alone are kept (scur1: {fp, c}, fp their fingerprint, core.js structFp), and the units
-// under that fingerprint (sgen3:<subject>:<fp>), so fish.json is read again only when they change, or after 6 hours.
+// under that fingerprint (sgen4:<subject>:<fp>), so fish.json is read again only when they change, or after 6 hours.
 // v161: sgen3 and stree2, so the units and the tree a script before the species level cached (no species units, no
 // species entries) are never read by this one (the species level, step 1).
+// vNEXT: sgen4, stree3 and svar2, so the units, the tree and the variant table a script before the scientific genera of
+// circles 2 and 3 cached (core.js fishGenSets: circle 1's alone) are never read by this one (Pierre, 2026-11-18).
 // The curation is read again by the 15-minute trigger (subjStRefresh_) and at once when a device says a stamp the sheet
 // does not hold (replays_ stn, at most once a minute), so a Publish reaches the replays within 15 minutes. null when the
 // curation or the file cannot be read: no replay then (never the base's structure in place of the editor's), the app
@@ -882,7 +884,7 @@ let CURF_ = null;
 // fishVarTable: each unit's variant photos, their kinds and observations, from the pool files on GitHub main, fish.json
 // with the structure laid over it), kept under the same fingerprint (SVAR_, about 330 KB in parts), so the replay takes a
 // learned mark away from the log (subjVar_, rplMake_); not made (a file unreadable): the units made again at the next call.
-const SGEN_ = 'sgen3:', STREE_ = 'stree2:', SVAR_ = 'svar1:';
+const SGEN_ = 'sgen4:', STREE_ = 'stree3:', SVAR_ = 'svar2:';
 const subjTreeOn_ = S => !!(S.score && S.replayed && typeof S.replayed.tree === 'function');
 const subjVarOn_ = S => !!(S.replayed && typeof S.replayed.vars === 'function');
 function subjRpl_(sid, force){
@@ -4611,8 +4613,8 @@ const CORE_ = (function () { const module = {exports: {}};
   // every unit that can be learned and has a variant photo, made from the subject's pool files as the app makes its units:
   // F, its first file with the structure in force laid over it (core.js contentApply, as Code.gs subjRpl_); Fs, the pool
   // files [fish.json, fish-photos.json, fish-game.json, curation.json]; S, the subject. The families (fishGen over
-  // fishPhotos, as app.js fishBuild) and the scientific genera, each with its family's photos of its species (app.js
-  // fishGenera's filter: in circle 1 its species of circle 1; played at the genus, the species of its unit); a species unit
+  // fishPhotos, as app.js fishBuild) and the genus units, each with its family's photos of its species (fishGenSets, as
+  // app.js fishGenera: the scientific genera of every circle; played at the genus, the species of its unit); a species unit
   // has no exam (app.js noex). Each unit's juvenile classes and thresholds are its family's (model.js varHome, varAtOf).
   // tests/phasepath.test.js checks it is the app's (model.js varLeft over app.js units).
   function fishVarTable(F, Fs, S) {
@@ -4623,9 +4625,6 @@ const CORE_ = (function () { const module = {exports: {}};
         (ph || {}).sheet,
         unitRankOf(S)
       ),
-      sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
-      gens = new Map(((F && F.genera) || []).map(g => [g.id, g])),
-      atGenus = X.unit === 'genus',
       out = {},
       ok = p => p && p.f && !p.multi,
       put = (id, L, home, own) => {
@@ -4635,28 +4634,17 @@ const CORE_ = (function () { const module = {exports: {}};
     Object.values(X.gen).forEach(g => {
       if (!g.wink && !g.rank && !g.parent) put(g.id, (g.views || {}).wide || [], g, g);
     });
-    ((F && F.families) || [])
-      .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
-      .forEach(f => {
-        const E = X.gen[f.id];
-        (f.genera || [])
-          .map(id => gens.get(id))
-          .filter(Boolean)
-          .forEach(G => {
-            const L = atGenus
-              ? X.gen[G.id] && X.gen[G.id].parent === f.id
-                ? X.gen[G.id].species.map(id => sp.get(id)).filter(Boolean)
-                : []
-              : (G.species || []).map(id => sp.get(id)).filter(s => s && s.circle === 1);
-            if (!L.length) return;
-            const set = new Set(L.map(s => s.id));
-            put(
-              G.id,
-              ((E.views || {}).wide || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === G.id)),
-              E
-            );
-          });
-      });
+    fishGenSets(F, X).forEach(({E, by}) =>
+      by.forEach((L, id) => {
+        if (!L.length) return;
+        const set = new Set(L.map(s => s.id));
+        put(
+          id,
+          ((E.views || {}).wide || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === id)),
+          E
+        );
+      })
+    );
     return out;
   }
   // The explanation card a phase photo brings (quiz.js phaseArm): 'juvenile', 'phase' for a sex or colour phase, '' none.
@@ -4743,6 +4731,31 @@ const CORE_ = (function () { const module = {exports: {}};
       if (wide.length) g.cover = easyCover(wide).f;
       return g;
     });
+  }
+  // The genera a subject's game has as genus units, family by family, as the app completes them (app.js fishGenera), the
+  // sheet's replay reads them (fishReplayGen) and the variant table holds them (fishVarTable): [{f: the family's record,
+  // E: its unit, by: Map(genus id → its species records)}], in F's families' order, each family's genera in its order. X:
+  // fishGen's units. Played at the family (the fish): the scientific genera (docs/FISH_PATH.md "Levels", branch B), every
+  // genus holding species of the circles of a family in play (a unit of X, never a surprise card's, whose species are never
+  // asked), whatever its circle (Pierre, 2026-11-18, "lance": built for circle 1 alone, #526, when circle 1 alone was on
+  // the path; every circle is since Q175). Played at the genus from the start (X.unit 'genus': the sea slugs): the genus
+  // units fishGen made (fishGenUnits), each with the species of its unit.
+  function fishGenSets(F, X) {
+    const sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
+      gens = new Map(((F && F.genera) || []).map(g => [g.id, g])),
+      atGenus = X.unit === 'genus',
+      inC = s => !!s && [1, 2, 3].includes(s.circle);
+    return ((F && F.families) || [])
+      .filter(f => X.gen[f.id] && !X.gen[f.id].wink)
+      .map(f => {
+        const own = (f.genera || []).map(id => gens.get(id)).filter(Boolean),
+          by = atGenus
+            ? own
+                .filter(G => X.gen[G.id] && X.gen[G.id].parent === f.id)
+                .map(G => [G.id, (X.gen[G.id].species || []).map(id => sp.get(id)).filter(Boolean)])
+            : own.map(G => [G.id, (G.species || []).map(id => sp.get(id)).filter(inC)]).filter(([, L]) => L.length);
+        return {f, E: X.gen[f.id], by: new Map(by)};
+      });
   }
   // unit: the rank of the game's units (SUBJECTS unitRank, unitRankOf): 'genus' plays the genera from the start
   // (fishGenUnits); anything else, the families (the fish).
@@ -4880,16 +4893,16 @@ const CORE_ = (function () { const module = {exports: {}};
   }
   // The fish units as the full replay reads them (core.js replayProgress gen: each unit's look-alikes and family line, for
   // the look-alike prior of a mix-up and the unit wrongly given): the families of fishGen and the scientific genera of
-  // app.js fishGenera (a circle-1 family's genera with species of circle 1, each with its sibling genera as look-alikes
-  // and its family's name and line as its family), from fish.json alone (no photo changes them). The sync sheet builds it
+  // app.js fishGenera (fishGenSets: every genus of a family in play holding species, in every circle, each with its
+  // sibling genera as look-alikes and its family's name and line as its family), from fish.json alone (no photo changes
+  // them). The sync sheet builds it
   // from fish.json (Code.gs fishGen_); tests/fishreplay.test.js checks it against the app's units.
   // unit: the rank of the subject's game units (SUBJECTS unitRank): 'genus' (the sea slugs) reads the units fishGen plays
   // from the start (fishGenUnits: each genus with its sibling genera as look-alikes and its family's line), as the app's
-  // (app.js fishGenera keeps them); no circle-1 genera or species units are added then (the subject has neither).
+  // (app.js fishGenera keeps them); no scientific genera or species units are added then (the subject has neither).
   function fishReplayGen(F, unit) {
     const X = fishGen(F || {}, {}, undefined, unit),
       out = {},
-      sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
       gens = new Map(((F && F.genera) || []).map(g => [g.id, g]));
     Object.values(X.gen).forEach(g => (out[g.id] = {look: g.look.slice(), fam: g.fam}));
     if (X.unit === 'genus') {
@@ -4901,16 +4914,10 @@ const CORE_ = (function () { const module = {exports: {}};
       });
       return out;
     }
-    ((F && F.families) || [])
-      .filter(f => f.circle === 1 && X.gen[f.id])
-      .forEach(f => {
-        const E = X.gen[f.id],
-          ids = (f.genera || [])
-            .map(id => gens.get(id))
-            .filter(G => G && (G.species || []).some(id => (sp.get(id) || {}).circle === 1))
-            .map(G => G.id);
-        ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
-      });
+    fishGenSets(F, X).forEach(({E, by}) => {
+      const ids = [...by.keys()];
+      ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
+    });
     // The species units (fishSpUnits, below), each with its look-alikes, its family line and the unit it starts from
     // (from: abilityOf), so the replay counts a species picked wrongly as the game does (rule L2) and starts a species
     // from its family's ability as the game does.
@@ -7745,7 +7752,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // branches every species of those families, weighted by how common it is near Dauin (rankWeights over fish.json
   // present.dauinU, its distinct Research Grade observers within 40 km: observers, not observations, so a few keen
   // photographers of one species do not weigh; Codex review #730), with its units: its genus when the game has it as a unit (the scientific
-  // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
+  // genera of every circle, fishGenSets, app.js fishGenera), its scientific and common names none until the species level exists. The species with
   // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
   // The circle is the family's (treeScore by: the components per circle).
   // on: the species level on (sync.js speciesOn: the sheet keeps the tree in chunks and replays the species units; rule
@@ -9151,6 +9158,13 @@ const CORE_ = (function () { const module = {exports: {}};
       // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330; a learned mark taken away silent too, Q332).
       // The replay reads the variant table from this version (vars: replayProgress vars; sync.js replayAdoptS).
       vars: true,
+      msg: null
+    },
+    {
+      v: 4,
+      at: '2026-11-18',
+      why: "The scientific genera of every circle (Pierre, 2026-11-18 ~06:32 Manila, \"lance\"; docs/FISH_PATH.md \"Levels\"): the genera of the families of circles 2 and 3 are units as circle 1's are (fishGenSets: their sibling genera as look-alikes, their family's line), so the sheet's replay counts a wrong pick of one against it (rule L2), its variant table holds them and the score's tree credits their species' scientific names with them (fishScoreTree, fishBoardTree), every player replayed at once, the leaderboards included (rules D8, D9), silently (rule D6)",
+      // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330).
       msg: null
     }
   ];
@@ -10591,6 +10605,7 @@ const CORE_ = (function () { const module = {exports: {}};
     subjKey,
     subjDev,
     fishGen,
+    fishGenSets,
     fishGlOf,
     fishReplayGen,
     SEASLUG_RVS,

@@ -625,7 +625,7 @@ Pierre, 2026-11-04: "I love this kind of multifactor report. Weekly would frustr
   tree (`SUBJECTS` `replayed` `tree`: fish, `core.js` `fishBoardTree`, `fishScoreTree` over `fishGen`'s families and
   `fishReplayGen`'s genera, the app's own `UNITS` tree, `tests/structure.test.js`; with the species level, the app's
   species tree `treeSp`, `fishScoreTree` on) from the same file and curation,
-  checked as a tree an app sends (`boardTreeOk_`) and kept as `stree2:fish:<fingerprint>` (made again when it is missing
+  checked as a tree an app sends (`boardTreeOk_`) and kept as `stree3:fish:<fingerprint>` (made again when it is missing
   beside cached units); `board_` ranks by it, from the cache only (`subjTreeKept_`), so the board's weights per family
   and circle follow a circle Publish within the trigger's 15 minutes, whether a device saves or not, and a device still
   on the old units cannot send the old tree back into force; not cached, the tree the apps sent (`boardUnits_`), as

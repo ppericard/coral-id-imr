@@ -32,6 +32,7 @@ function app(photoDiff) {
     fishPid: C.fishPid,
     fishScoreTree: C.fishScoreTree,
     fishSpUnits: C.fishSpUnits,
+    fishGenSets: C.fishGenSets,
     refLevel: C.refLevel,
     contentApply: C.contentApply,
     treeCur: C.treeCur,
@@ -468,7 +469,8 @@ test("wink card: his ★ Cover while in play, else the wink's chosen photos (Q29
 const F2 = {
   families: [
     {id: 'f:A', name: 'As', sci: ['Aidae'], species: ['s1', 's2'], genera: ['g:Xus'], circle: 1},
-    {id: 'f:B', name: 'Bs', sci: ['Bidae'], species: ['s3'], genera: ['g:Yus'], circle: 3}
+    // a surprise card's family (a wink): its genus has no unit, in every circle (app.js fishGenera, core.js fishGenSets)
+    {id: 'f:B', name: 'Bs', sci: ['Bidae'], species: ['s3'], genera: ['g:Yus'], circle: 3, wink: {choices: [], right: '', wrong: ''}}
   ],
   genera: [
     {id: 'g:Xus', name: 'Xus', family: 'f:A', species: ['s1', 's2']},
