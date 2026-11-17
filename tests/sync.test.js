@@ -1188,7 +1188,9 @@ test("groups (v53): a subject that opens to all has no group, whatever its beta 
   open('group'); // fish opens to all since Q158: a group first, then open to all as it is now
   assert.strictEqual(s.post({userGroup: 'Ana', group: 'fish', on: true, token: TOK}).n, 1);
   open('all');
-  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'fish').beta", s.ctx), 'the beta label kept');
+  // a beta label does not make a group: the sea slugs, in beta and open to all (Pierre, 2026-11-17)
+  assert.ok(require('vm').runInContext("!!CORE_.SUBJECTS.find(S => S.id === 'seaslug').beta", s.ctx), 'a beta label');
+  assert.strictEqual(require('vm').runInContext('groupIds_().length', s.ctx), 0, 'no subject opens to a group');
   assert.deepStrictEqual(s.get({name: 'Ana', pin: '1234'}).groups, [], 'no group for a subject open to all');
   assert.strictEqual(s.post({userGroup: 'Ben', group: 'fish', on: true, token: TOK}).error, 'group');
   assert.ok(
