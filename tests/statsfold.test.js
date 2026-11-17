@@ -583,7 +583,7 @@ test("the replays read the snapshot: each player's record and the admin's list a
   // The replay's units and the slate (data.json, cached as gen_ and slate_ read them: the units under the content
   // editor's pairs, none here, through subjRpl_'s cache, design note v2 step 8).
   s.cache['scur1:coral'] = JSON.stringify({fp: '', c: {}});
-  s.cache['sgen2:coral:'] = JSON.stringify({
+  s.cache['sgen3:coral:'] = JSON.stringify({
     gen: {
       Acropora: {look: ['Porites'], fam: 'Acroporidae'},
       Porites: {look: ['Acropora']},

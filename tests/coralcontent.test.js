@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The sheet overlay's step 8 (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A,
 // Q366): the corals' text slots and look-alike pairs at the genus rank (core.js SUBJECTS coral content and structure,
 // genStructure), the ★ rule kept under edited pairs (starHold, rule L5), the structure stamp, and the sheet's coral replay

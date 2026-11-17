@@ -5325,7 +5325,7 @@
   // The sync script version that replays the subject it rates photos for (SUBJECTS replay: the corals) under its content
   // editor's look-alike pairs (Code.gs vNEXT: gen_ and replay_ under curation.json's pairs, keyed by the structure stamp;
   // design note v2, step 8). That subject's SUBJECTS structure sheet; a subject that names none, STRUCT_SHEET.
-  const PAIRS_SHEET = 148;
+  const PAIRS_SHEET = 162;
   const structSheet = S => (S && S.structure && typeof S.structure.sheet === 'function' ? S.structure.sheet() : STRUCT_SHEET);
   // The sync script version whose readers leave a surprise card's answer out (Code.gs v98: replayed_, answers_, the
   // Activity tab): an older one would count it as a fish answer in the admin's lists and the Activity tab, so the app
