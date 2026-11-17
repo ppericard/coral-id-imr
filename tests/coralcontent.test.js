@@ -398,3 +398,105 @@ test('the sheet: the replay is the app’s own under the pairs in force (genLook
   assert.deepStrictEqual(r.rec.Acropora.ok, want.Acropora.ok);
   assert.deepStrictEqual(Object.keys(r.rec).sort(), Object.keys(want).sort());
 });
+
+// Rule C2 under the editor's coral edits (Codex review #988): an edited slot's source travels with it wherever the slot
+// is shown with an attribution of its own. The criteria are cited by the source he gave, the Coral Finder pages only for
+// the book's own text (app.js critRef: the genus sheet, the quiz's answer, the Coral ID Key); his summary's, mnemonic's
+// and look-alike line's sources with them; a bonus genus's reworded tips lose the Coral Finder label (tipsLabel).
+test('C2: an edited coral slot shows its own source, never the Coral Finder’s or nothing, in the quiz’s answer and the sheets', () => {
+  const vm = require('vm'),
+    block = require('./block.js'),
+    APP = src('app.js'),
+    LEARN = src('learn.js'),
+    QUIZ = src('quiz.js'),
+    G = D.gen.Acropora,
+    xg = Object.keys(X).find(n => (X[n].qt || []).length && (X[n].pages || []).length),
+    A = C.contentApply(
+      S,
+      D,
+      cur({
+        nodes: {
+          Acropora: {
+            crit: {v: ['Made-up criterion'], was: G.crit, src: {t: 'A made-up key', u: 'https://example.org/key'}, t: 1},
+            sum: {v: 'Made-up summary', was: G.sum, src: {t: 'A made-up summary source'}, t: 1},
+            mn: {v: 'Made-up mnemonic', was: G.mn, src: {t: 'A made-up course'}, t: 1},
+            'lsrc/Anacropora': {v: 'Made-up line', was: G.lsrc.Anacropora, src: {t: 'A made-up line source'}, t: 1}
+          },
+          [xg]: {qt: {v: ['Made-up tip'], was: X[xg].qt, src: {t: 'A made-up tip source'}, t: 1}}
+        }
+      })
+    );
+  assert.ok(xg, 'a bonus genus with tips and pages');
+  // as app.js build does: an edited tip's source read by tipsList
+  [A.gen, A.x.gen].forEach(M => Object.values(M).forEach(g => g.esrc && g.esrc.qt && (g.qsrc = g.esrc.qt)));
+  const ctx = {
+    DATA: A,
+    FISH: null,
+    namesLine: () => '',
+    uname: n => `<i>${n}</i>`,
+    unameT: n => n,
+    hr: x => '#' + x,
+    vernFirst: () => '',
+    altName: s => s,
+    isBonus: () => false,
+    setOf: () => ({}),
+    sheetTab: () => '',
+    isBenthic: () => false,
+    credit: () => '',
+    againTold: () => false,
+    taxonLine: () => ''
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    [
+      block(APP, 'const esc = s =>', '\n// Page keyboard handlers', {file: 'app.js'}),
+      'const gloss = x => esc(x), glossAll = L => L.map(esc);',
+      block(APP, 'const GX = n =>', '\n', {file: 'app.js'}),
+      block(APP, '// A source the content editor gave with an edit', '// A name as IMR writes it', {file: 'app.js'}),
+      block(APP, 'const tipsLabel = g =>', "'ID tips (IMR)');\n", {through: 1, file: 'app.js'}),
+      block(LEARN, 'const srcA = x =>', '\n', {file: 'learn.js'}),
+      block(LEARN, 'const esrcOf = (r, k) =>', 'const fishNote', {file: 'learn.js'}),
+      block(LEARN, 'const lsrcOf = (a, b) =>', 'const isClassic', {file: 'learn.js'}),
+      block(QUIZ, 'function fbBody(', '\n}\n', {through: 1, file: 'quiz.js'}),
+      'Object.assign(this, {fbBody, critRef, tipsList, tipsLabel, lsrcEsrc});'
+    ].join('\n'),
+    ctx
+  );
+  const tref = h => (h.match(/<p class="tref">(.*?)<\/p>/) || [])[1];
+  // the quiz's answer: the edited criteria by their source (a link), the summary and mnemonic with theirs
+  const fb = ctx.fbBody('Acropora', 'Acropora', true, false, false, [], '', null, null);
+  assert.strictEqual(tref(fb), '<a href="https://example.org/key" target="_blank" rel="noopener">A made-up key</a>');
+  assert.ok(!/Coral Finder p\./.test(fb), 'no Coral Finder page for the editor’s criteria');
+  assert.match(fb, /Made-up summary <small class="esrc">\(A made-up summary source\)<\/small>/);
+  assert.match(fb, /Made-up mnemonic <small class="esrc">\(A made-up course\)<\/small>/);
+  // an unedited genus: the book's pages, as before
+  const P = D.gen.Porites;
+  assert.strictEqual(
+    tref(ctx.fbBody('Porites', 'Porites', true, false, false, [], '', null, null)),
+    `Coral Finder p. ${P.pages.join(', ')}`
+  );
+  assert.strictEqual(ctx.critRef(A.gen.Porites), `Coral Finder p. ${P.pages.join(', ')}`);
+  assert.strictEqual(ctx.critRef(A.gen.Acropora, false), 'A made-up key');
+  // criteria hidden (keep: []): no empty list, no reference
+  const H = C.contentApply(S, D, cur({nodes: {Porites: {crit: {v: null, was: P.crit, t: 1}}}}));
+  ctx.DATA = H;
+  assert.strictEqual(tref(ctx.fbBody('Porites', 'Porites', true, false, false, [], '', null, null)), undefined);
+  ctx.DATA = A;
+  // a bonus genus's reworded tips: no Coral Finder label, their source under them; its other tips keep the book's label
+  const xr = A.x.gen[xg];
+  assert.strictEqual(ctx.tipsLabel(xr), 'ID tips');
+  assert.match(ctx.tipsList(xr), /<p class="note esrc">Source: A made-up tip source<\/p>/);
+  const xo = Object.keys(X).find(n => n !== xg && (X[n].pages || []).length);
+  assert.strictEqual(ctx.tipsLabel(A.x.gen[xo]), `ID tips (Coral Finder p. ${X[xo].pages.join(', ')})`);
+  // a summary shown as the tips (no tips of its own) with its source
+  assert.strictEqual(ctx.tipsList({sum: 'S', esrc: {sum: {t: 'Src'}}}), '<p class="keyid">S <small class="esrc">(Src)</small></p>');
+  // the Look-alikes deck's line: the edited line's source, from whichever side holds it
+  assert.strictEqual(ctx.lsrcEsrc('Acropora', 'Anacropora'), '; A made-up line source');
+  assert.strictEqual(ctx.lsrcEsrc('Anacropora', 'Acropora'), D.gen.Anacropora.lsrc.Acropora ? '' : '; A made-up line source');
+  assert.strictEqual(ctx.lsrcEsrc('Pocillopora', 'Stylophora'), '');
+  // the genus sheet and the Coral ID Key cite the criteria through critRef, the deck's line with its source
+  assert.match(block(LEARN, 'const cfList =', '\n', {file: 'learn.js'}), /<span class="pg">\$\{critRef\(g\)\}<\/span>/);
+  assert.match(LEARN, /\$\{srcTag\(m\.src\)\}\$\{esc\(m\.es\)\}/);
+  assert.match(src('proto/idkey.js'), /Criteria <small>· \$\{critRef\(g, false\)\}<\/small>/);
+  ['quiz.js', 'proto/idkey.js'].forEach(f => assert.ok(!src(f).includes('Coral Finder p. ${g.pages'), `${f}: a hard-coded criteria page`));
+});

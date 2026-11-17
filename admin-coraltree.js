@@ -92,17 +92,32 @@
   // show the same genera. Offered: ★ (the slate's starred genera, rule L5); the look-alikes, the pairs Photos ›
   // Look-alikes shows (the IMR lecture's and the Coral Finder text's: admin.js classicPairs), any or one; Needs work (a
   // genus whose ✓ Validated waits: admin.js needs), Candidates waiting (admin.js pending), Draft (a genus whose choices
-  // changed since the published file: admin.js changed). No growth form, ever (rule C4). c: {pairs: [{k, A, B}], needs(n)
-  // → [what], waiting(n) → count, draft: [genera]}. [{k, grp, t, on(node)}].
+  // changed since the published file: admin.js changed). No growth form, ever (rule C4). c: {pairs: [{k, A, B}], rows:
+  // the content editor's pairs (admin-content.js pairRows), needs(n) → [what], waiting(n) → count, draft: [genera]}.
+  // [{k, grp, t, on(node)}]. The look-alikes, as the fish's (admin.js fuFilters): the base's, then each pair the draft
+  // holds an entry for (one he added with + Pair, a withdrawal), so its tools in the bar (structBar) can be reached; each
+  // says when he added or withdrew it; Any look-alike, the pairs in force (Codex review #988).
   function ctFilters(d, c) {
-    const P = (c && c.pairs) || [],
-      inP = new Set(P.flatMap(p => [p.A, p.B])),
+    const P0 = (c && c.pairs) || [],
+      PR = (c && c.rows) || [],
+      byK = new Map(PR.map(r => [r.key, r])),
+      ids = new Set(ctLeaves(d).map(l => l.id)),
+      P = [
+        ...P0,
+        ...PR.filter(r => r.e && !P0.some(p => p.k === r.key) && ids.has(r.a) && ids.has(r.b)).map(r => ({k: r.key, A: r.a, B: r.b}))
+      ],
+      live = p => !byK.has(p.k) || byK.get(p.k).v === 1,
+      word = p => {
+        const r = byK.get(p.k);
+        return r && r.e && (r.state === 'fresh' || r.state === 'stale') ? (r.v === 1 ? ' (added)' : ' (withdrawn)') : '';
+      },
+      inP = new Set(P.filter(live).flatMap(p => [p.A, p.B])),
       dr = new Set((c && c.draft) || []),
       g = n => !!n.genus,
       out = [];
     if (ctLeaves(d).some(l => l.star)) out.push({k: 'star', grp: 'Slate', t: '★ Starred', on: n => g(n) && !!n.star});
     if (P.length) out.push({k: 'look', grp: 'Look-alikes', t: 'Any look-alike', on: n => g(n) && inP.has(n.id)});
-    P.forEach(p => out.push({k: 'look:' + p.k, grp: 'Look-alikes', t: `${p.A} · ${p.B}`, on: n => n.id === p.A || n.id === p.B}));
+    P.forEach(p => out.push({k: 'look:' + p.k, grp: 'Look-alikes', t: `${p.A} · ${p.B}${word(p)}`, on: n => n.id === p.A || n.id === p.B}));
     out.push(
       {k: 'work', grp: 'To do', t: 'Needs work', on: n => g(n) && !!(c && c.needs && c.needs(n.id).length)},
       {k: 'cand', grp: 'To do', t: 'Candidates waiting', on: n => g(n) && !!(c && c.waiting && c.waiting(n.id))},
@@ -179,7 +194,14 @@ function renderCoralTree(id, view = TREE) {
     hadF = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.adm-tree')),
     top = (o => (o ? o.scrollTop : null))($v.querySelector('.adm-tree') && $v.querySelector('.adm-list'));
   const imrOn = FU_IMR === 'imr',
-    FL = ctFilters(DATA, {pairs: classicPairs(), needs, waiting: m => pending(m).length, draft: changed()}),
+    // the base's classic pairs and the draft's pair entries (ctFilters rows)
+    FL = ctFilters(DATA, {
+      pairs: classicPairs(),
+      rows: typeof pairRows === 'function' ? pairRows(ASUBJ, DATA, contentOf(DRAFT, ASUBJ)) : [],
+      needs,
+      waiting: m => pending(m).length,
+      draft: changed()
+    }),
     tag = FL.find(x => x.k === store.get(ctTagK(), '')),
     imrF = x => !!x.slate,
     // the filters read in the Key through its leaves, shown in the view on screen with what leads to them (as the fish's)

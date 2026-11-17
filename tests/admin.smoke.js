@@ -7466,6 +7466,18 @@ const darkCards = (p, sel) =>
         x = await pair('Acropora|Porites');
         if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`add ${JSON.stringify(x)}`);
         if (!(await has('#view .adm-csheet [data-cs="lsrc/Porites"]'))) se.push("the added pair's line in the Sheet box");
+        // The Look-alikes filter offers the pair he added (admin-coraltree.js ctFilters rows; Codex review #988): chosen,
+        // its tools are in the bar (structBar), then the tag is put back.
+        const opt = await sq.evaluate(
+          () => (document.querySelector('#view [data-tttag] option[value="look:Acropora|Porites"]') || {}).textContent || ''
+        );
+        if (!/^Acropora · Porites \(added\) · 2 genera$/.test(opt)) se.push(`the Tree filter's added pair ${JSON.stringify(opt)}`);
+        else {
+          await sq.selectOption('#view [data-tttag]', 'look:Acropora|Porites');
+          await swait(() => document.querySelector('#view .adm-filter [data-stp="Acropora|Porites"]'));
+          await sq.selectOption('#view [data-tttag]', '');
+          await swait(() => !document.querySelector('#view .adm-filter [data-stp]'));
+        }
         // The Sheet: the corals' slots; ✎ the plain words, Save: one entry, the original in was.
         if (!(await sq.evaluate(() => document.querySelector('#view .adm-csheet').open))) await sq.click('#view .adm-csheet > summary');
         const slots = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-csheet [data-cs]')].map(x => x.dataset.cs));

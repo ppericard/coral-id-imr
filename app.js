@@ -1985,18 +1985,30 @@ addEventListener(
   },
   true
 );
+// A source the content editor gave with an edit ({t, u}: core.js contentApply esrc; Q359 e, rule C2), as HTML: its words,
+// a link when it has an address. esrcTag: the source of his edit of slot k of record g, a few words after its text ('' when
+// he gave none).
+const esrcHtml = s => (s.u ? `<a href="${esc(safeUrl(s.u))}" target="_blank" rel="noopener">${esc(s.t)}</a>` : esc(s.t));
+const esrcTag = (g, k) => {
+  const s = ((g && g.esrc) || {})[k];
+  return s && s.t ? ` <small class="esrc">(${esrcHtml(s)})</small>` : '';
+};
+// What a genus's Coral ID Key criteria are cited by, wherever they are shown (the genus sheet, the quiz's answer, the
+// Coral ID Key): the source the content editor gave with his edit of them, else the Coral Finder pages of the book's own
+// text (rule C2; Codex review #988). link false: its words only (inside a summary).
+const critRef = (g, link = true) => {
+  const s = ((g && g.esrc) || {}).crit;
+  return s && s.t ? (link ? esrcHtml(s) : esc(s.t)) : `Coral Finder p. ${((g && g.pages) || []).join(', ')}`;
+};
 // Short ID tips; genera the lecture skips fall back to the Coral Finder summary. Tips the content editor reworded with a
-// source (qsrc: core.js fishGen, app.js fishGenera; Q359 e, rule C2) show it under them, wherever they are shown.
+// source (qsrc: core.js fishGen, app.js fishGenera and build; Q359 e, rule C2) show it under them, wherever they are
+// shown; a summary he reworded with one, after it.
 const tipsList = (g, cls = '') =>
   g.qt
     ? `<ul class="crit idtips${cls ? ' ' + cls : ''}">${glossAll(g.qt)
         .map(x => `<li>${x}</li>`)
-        .join('')}</ul>${
-        g.qsrc && g.qsrc.t
-          ? `<p class="note esrc">Source: ${g.qsrc.u ? `<a href="${esc(safeUrl(g.qsrc.u))}" target="_blank" rel="noopener">${esc(g.qsrc.t)}</a>` : esc(g.qsrc.t)}</p>`
-          : ''
-      }`
-    : `<p class="keyid">${gloss(g.sum)}</p>`;
+        .join('')}</ul>${g.qsrc && g.qsrc.t ? `<p class="note esrc">Source: ${esrcHtml(g.qsrc)}</p>` : ''}`
+    : `<p class="keyid">${gloss(g.sum)}${esrcTag(g, 'sum')}</p>`;
 const tipsText = g => (g.qt ? g.qt.join(' · ') : g.sum);
 // A name as IMR writes it, then its other spelling when a reference writes it differently (data.json `spell`: name →
 // [spelling, source]; Pierre, 2026-11-04: "show both, the IMR one first"). Plain text: escape it where it is shown.
@@ -2802,8 +2814,10 @@ const uplain = n => {
 };
 const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
-// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
-const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
+// ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera; a bonus genus's
+// tips the content editor reworded with a source, plain (the source shows under them: tipsList; Codex review #988).
+const tipsLabel = g =>
+  g.tl || (g.x ? (g.qsrc && g.qsrc.t ? 'ID tips' : `ID tips (Coral Finder p. ${g.pages.join(', ')})`) : 'ID tips (IMR)');
 // What is wrong with the sync, in words, or '' when everything is saved.
 function syncTrouble() {
   if (!SYNC_URL || !SYNC) return '';
