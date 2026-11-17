@@ -450,8 +450,9 @@ test('the committed files read through the fish engine: three circles, scientifi
   played.forEach(n =>
     X.gen[n].views.wide.forEach(p => assert.ok((p.r === 1 || (!p.r && p.ar > 0)) && /^https:\/\/inaturalist-open-data\./.test(p.src), p.f))
   );
-  // Every circle plays: circle 1 every species (Q377), circles 2 and 3 their species with enough sure photos.
-  const circ = new Map(F.species.map(s => [s.id, s.circle])),
+  // Every circle plays: circle 1 every species (Q377), circles 2 and 3 their species with enough sure photos. The species
+  // with no name yet (Goniobranchus sp. 5, Q389 (2)) counts apart: circle 1's 45 named species, plus it once judged.
+  const circ = new Map(F.species.filter(s => !s.inf).map(s => [s.id, s.circle])),
     sp = c =>
       new Set(
         Object.values(GM.photos)
@@ -460,13 +461,16 @@ test('the committed files read through the fish engine: three circles, scientifi
           .map(p => p.sp)
       ).size;
   assert.deepStrictEqual([sp(1), sp(2) > 40, sp(3) > 40], [45, true, true]);
-  // Every species with photos has at least the start, at most the cap (+ the documented juvenile form's places).
+  // Every species with photos has at least the start, at most the cap (+ the documented juvenile form's places); a genus's
+  // genus-level photos (gl, Q389 (1)) at most the cap, the start counted with its species' (tools/seaslug_game.py).
   const T = json('tools/seaslugs.json').photoTarget,
-    by = {};
+    by = {},
+    gl = {};
   Object.values(GM.photos)
     .flat()
-    .forEach(p => (by[p.sp] = (by[p.sp] || 0) + 1));
+    .forEach(p => ((p.gl ? gl : by)[p.sp] = ((p.gl ? gl : by)[p.sp] || 0) + 1));
   Object.entries(by).forEach(([sp, n]) => assert.ok(n >= T.start && n <= T.gameCap + T.perJuvenileForm, `${sp}: ${n}`));
+  Object.entries(gl).forEach(([g, n]) => assert.ok(g.startsWith('g:') && n <= T.gameCap, `${g}: ${n}`));
   // The commonness is the area's (Q369 b): the Chromodorididae, most observed in the Philippines, lead the families,
   // and one of its genera the genera.
   assert.ok(X.gen['f:Chromodorididae'].cm >= Math.max(...F.families.map(f => X.gen[f.id].cm)));
