@@ -142,7 +142,7 @@ difficulty is at the species). A family whose species should come earlier gets a
 | an IMR player's IMR genera; genera turned on by hand early | 0.5 (Open Water) | 0.5 | Q219, Q240: they stay as #975's `shareFree` (out of the cap) |
 | jE, an early-class juvenile | 0 | 0 | 2026-11-04: they help learn the family early; Q384 "très rapidement" |
 | j, another juvenile | 0.5 (Open Water) | 0.8 (Advanced) | 2026-11-07: never at the very start, then in stages; Q384 "à partir d'une certaine maîtrise" (a family reaches Open Water at about its 9th answer for the strong RA, its 30th for the beginner: the rated world on main, medians) |
-| jL, a late-class juvenile | 0.8 | 0.9 | 2026-11-04: "taught later, with their explanation card" |
+| jL, a late-class juvenile | 0.8 | 0.9 (measured; 0.8 proposed, section 7) | 2026-11-04: "taught later, with their explanation card" |
 | ph, a sex or colour phase | 0.5 | 0.8 | the 2026-11-07 row; a = 0 at the family rank outside `dimorph` is the alternative (2026-11-04) |
 
 **What does not change**: the opening's pace, the circles, the opt-in sets and their offers, the commonness order of a
@@ -231,7 +231,7 @@ first one shown (mean over the units that showed one).
 | A | 30.4 / 30.8 / 29.6 / 30.2 / 30.6 | 44.0 / 42.6 / 47.2 / 51.2 / 54.0 | 0.27 / 0.00 / 0.33 / 0.34 / 0.34 | 0.12 / 0.39 / 0.16 / 0.22 / 0.23 | 5 / 10 / 7 / 7 / 35 |
 | B | **19.2 / 13.6 / 20.2 / 21.8 / 19.2** | **40.6 / 38.4 / 43.4 / 46.4 / 51.4** | 0.16 / 0.00 / 0.24 / 0.22 / 0.16 | 0.32 / 0.51 / 0.35 / 0.48 / 0.59 | 6 / 2 / 6 / 3 / 82 |
 | C | 31.8 / 31.8 / 31.0 / 30.8 / 32.0 | 44.8 / 43.2 / 47.6 / 51.6 / 53.0 | 0.24 / 0.00 / 0.34 / 0.35 / 0.32 | 0.11 / 0.35 / 0.10 / 0.16 / 0.20 | 5 / 10 / 7 / 8 / 30 |
-C0_RANKS
+| **C0** | 30.6 / 30.2 / 29.6 / 30.6 / 30.6 | 44.2 / 43.4 / 47.2 / 51.6 / 53.2 | 0.27 / 0.00 / 0.36 / 0.36 / 0.35 | 0.13 / 0.39 / 0.13 / 0.20 / 0.21 | 6 / 10 / 8 / 10 / 33 |
 
 **The variants** (questions 1-3,000; "at Advanced": exploratory, added after the screen, the share among the questions
 on a unit already at Advanced, which only the scratch arms record):
@@ -244,7 +244,7 @@ on a unit already at Advanced, which only the scratch arms record):
 | A | 0.19 / 0.21 / 0.20 / 0.21 / 0.22 | 0.00 / 0.00 / 0.00 / 0.01 / 0.01 | 0 / 0 / 0 / 0 / 0 | 0.00 / 0.02 / 0.01 / 0.02 / **0.04** | 36 / 35 / 25 / 17 / 16 | 0.11 / 0.11 / 0.10 / 0.10 / 0.10 |
 | B | 0.20 / 0.21 / 0.22 / 0.22 / 0.24 | 0.00 / 0.01 / 0.00 / 0.00 / 0.01 | 0.00 / 0.01 / 0 / 0 / 0 | 0.00 / 0.00 / 0.00 / 0.01 / 0.02 | 37 / 31 / 27 / 17 / 12 | 0.09 / 0.12 / 0.12 / 0.10 / 0.12 |
 | C | 0.19 / 0.22 / 0.22 / 0.18 / 0.20 | 0.00 / 0.00 / 0.00 / 0.01 / 0.01 | 0 / 0 / 0 / 0 / 0 | 0.00 / 0.00 / 0.00 / 0.01 / 0.03 | 39 / 38 / 31 / 18 / 17 | 0.12 / 0.12 / 0.11 / 0.11 / 0.12 |
-C0_VARIANTS
+| **C0** | 0.21 / 0.23 / 0.23 / 0.22 / 0.21 | 0.00 / 0.00 / 0.00 / 0.01 / 0.02 | 0 / 0 / 0 / 0 / 0 | 0.00 / 0.00 / 0.00 / 0.02 / 0.03 | 38 / 36 / 30 / 19 / 15 | 0.11 / 0.11 / 0.11 / 0.11 / 0.12 |
 
 **Every step, read one at a time.**
 
@@ -275,11 +275,109 @@ C0_VARIANTS
   juveniles are the exception under B, C and C0, whose ramp for them ends at 0.9, above the exam's 0.85: 0.00-0.06
   against 0.04-0.07. Their full weight should come by Advanced (a = b = 0.8), a data value.
 
-ARMS_LINES
+**Each arm against main** (`tools/learncmp.js`, every guardrail, 90% one-sided bounds, one look). The cells #975 alone
+already breaches are Q388's costs: E = bar − D\* of the families moving towards zero from below at 1,000 and 3,000, the
+strong RA's fish % at 3,000 (53.0 → 51.8), the units at Open Water at 1,000 for the strong RA and the expert (the genera
+later), the longest plateau of the % for the beginner, the lecture RA and the strong RA. On top of them:
+
+- **975+953** adds one breach: the lecture RA's first unit at Open Water (101 → 138 answers; the beginner, the casual
+  diver and the strong RA reached theirs sooner).
+- **A** adds the same one (101 → 126) and the expert's fish % at 1,000 (42.4 → 41.2; unclear in 975).
+- **B** breaks the families: at Advanced at 1,000 (three profiles) and 3,000 (four; the casual diver 32 → 14), the
+  fish % at 3,000 for every profile (the strong RA 53.0 → 46.4), the share under ease 4 before Open Water for the
+  expert at 1,000 (0.31 → 0.41).
+- **C** adds the lecture RA's first Open Water, the expert's fish % at 1,000, and **E turns positive** at 3,000 for the
+  strong RA and the expert (+0.001, +0.015): the families' bars start to claim more than the player knows, because the
+  stricter cap ((mean g)² with a ramp, under m²) leaves them more answers. Its fish % at 3,000 is 1.2 points under 975's
+  for the expert.
+- **C0** adds the lecture RA's first Open Water (101 → 126, as A, B and C), the strong RA's units at Open Water at 300
+  answers (16.2 → 13.8) and the lecture RA's longest plateau (308 → 557, where 975 alone gives 462). Against 975 itself
+  (its variant part alone) those three are its only breaches; its fish % at 3,000 is within a point of 975's for every
+  profile (the expert 54.2 → 53.2, unclear).
+
+The lecture RA's first Open Water moves with every rule that holds variant photos back at a unit's start (#953 as
+built included), not with the ranks: before any family is at Open Water, A, B, C and C0 hold the same photos, and gave
+the same first Open Water. With 5 seeds its spread is wide (the other profiles' first Open Water came 14-91 answers
+sooner). **The declared second look** (seeds 1-20, two looks, 95% bounds) confirms it, for the lecture RA only:
+
+| Answers to the first unit at Open Water, 20 seeds | beginner | casual diver | lecture RA | strong RA | expert |
+| --- | --- | --- | --- | --- | --- |
+| main, and 975 (the ranks do not move it) | 184 | 145 | 52 | 26 | 20 |
+| 975+953 | 191, held | 140, held | **77, breached** (+24 [+41], margin +10.5) | 26, held | 21, held |
+| C0 | 189, held | 113, held (sooner) | **70, breached** (+18 [+31]) | 22, held | 20, held |
+
+So holding the variants back at a unit's start costs the lecture RA (who half knows the IMR families) 18-24 more answers
+before a first family at Open Water, with #953 as built and with C0 alike; the casual diver gets there sooner. The cause
+was not measured. No PR declared this cost: it goes to Pierre with the question.
 
 ## 8. The choice
 
-CHOICE_TEXT
+**The declared rule, applied** (✓ met, ✗ not met; the exact values behind each mark in section 7):
+
+| Criterion | A | B | C | C0 |
+| --- | --- | --- | --- | --- |
+| (1) no breach against main beyond 975's | ✗ the lecture RA's first Open Water\*; the expert's % at 1,000 | ✗ the families at Advanced and the fish %, most profiles | ✗ first Open Water\*; the expert's % at 1,000; E turns positive | ✗ first Open Water\*; the strong RA's units at Open Water at 300; the lecture RA's plateau |
+| (2) early-class juveniles early, at least 90% of main's | ✓ | ✓ | ✓ | ✓ |
+| (3) the other variants early, at most 0.02 | ✗ the expert's phases 0.042 | ✗ the expert's phases 0.022 | ✗ the expert's phases 0.027 | ✗ the expert's phases 0.028 |
+| (4) the share once a unit has 20 answers, within ±0.03 of main's | ✗ slow profiles | ✗ slow profiles | ✗ slow profiles | ✗ slow profiles |
+| (5) families at Advanced and the fish % within their margins of 975's | ✓ | ✗ | ✗ the expert's % 1.2 lower | ✓ |
+
+\* Shared by every rule that holds variant photos at a unit's start, #953 as built included; confirmed on 20 seeds
+(section 7).
+
+**What the rule did not foresee.** Criterion (4) reads "no wall" by answers, as #953 declared it. A rule keyed on mastery
+cannot meet it for a slow player, and is not meant to: Q384 asks for the variants "à partir d'une certaine maîtrise",
+and a beginner's family reaches Open Water at about its 30th answer. Read by mastery instead (a unit at Advanced:
+exploratory, added after the screen), A, B, C and C0 show the juveniles, sexes and phases as often as 975, which holds
+nothing. Criterion (3) is missed by 0.002-0.008 by B, C and C0, each time on the expert, whose units reach Open Water
+within a few answers (so the ramp opens almost at once: a mastery rule doing what it should); A misses it by more,
+from its pooling.
+
+**So no rule meets the declared choice as written**, and the reading has to say why:
+
+- **B is out**: without a cap the child units crowd the families out (criteria 1 and 5, by far).
+- **C is out**: its stricter cap starts the families' bars over-claiming (E above zero) and costs the expert a point of
+  the fish %, for no gain the measures show.
+- **A against C0**: the same rank part (#975's cap), so the same families, genera, species and fish % within the seeds'
+  spread. They differ on the variants only: A pools them over a level, so a unit's juveniles wait for the other units,
+  a unit met late gets its phases from its first question (the expert 0.04, 0.06 after the 1,000th answer), and the
+  slow profiles see fewer variants even on units they master; C0 keys them on the unit asked, which is what Q384 asks
+  ("par espèce ou par genre ou par famille"). A also needs one cap per variant kind and level; C0 only the ramp.
+- **C0's costs**: those of #975 (Q388), and three more cells, all on the variant side: the lecture RA's first family at
+  Open Water 18 answers later (confirmed on 20 seeds, and #953 as built does it too: 24; in the app world the casual
+  diver's, 12 later), the strong RA's units at Open
+  Water at 300 answers (16.2 → 13.8) and the lecture RA's longest plateau (462 with 975 → 557), the last two on 5 seeds
+  only. And by design: a slow player meets a unit's other juveniles and phases later than #953 would show them (the
+  beginner at about the unit's 38th answer instead of its 19th), never before Open Water on that unit.
+
+**Recommendation: C0.** One rule (a ramp on the bar of the unit something depends on, thresholds in the data) for every
+rank and every variant, with #975's cap where the child units take questions from the others. It is #975 unchanged
+plus about 30 lines for the variants, the easy juveniles from the first questions (Pierre's classes of 2026-11-04),
+the others with the unit's own mastery.
+
+**The app world** (the real app on the real data, the real judged eases and the juvenile ease cap; 5 profiles × 5 seeds
+× 600 questions, `--choice auto`, two looks: 95% bounds). There main already keeps most other juveniles out of a
+unit's first questions (1-5%, through the ease cap and `RARE`), but not the sexes and phases (13-17%):
+
+| At 600 questions | Families at Advanced | Fish % | Easy juveniles, early | Other juveniles, early | Sexes and phases, early | First other juvenile (answers on the unit) |
+| --- | --- | --- | --- | --- | --- | --- |
+| main | 0.0 / 1.4 / 2.0 / 8.6 / 9.2 | 32.6 / 33.4 / 36.4 / 37.0 / 38.0 | 0.10-0.16 | 0.01-0.05 | 0.13-0.17 | 8-14 |
+| 975 | 0.0 / 0.6 / 1.6 / 9.4 / 12.2 | 32.6 / 33.2 / 36.8 / 37.0 / 37.6 | 0.10-0.16 | 0.01-0.05 | 0.12-0.17 | 9-14 |
+| C0 | 0.2 / 0.6 / 1.8 / 10.2 / 11.8 | 33.4 / 33.2 / 36.8 / 36.8 / 37.2 | 0.11-0.18 | 0.00-0.01 | 0.00-0.02 | 12-19 |
+
+Against main, 975 breaches nothing (six cells unclear, as in #975's own check). C0 against main breaches two cells:
+the expert's E at 600 (−0.203 → −0.173, from below towards zero, unclear for 975 too: not an over-claim) and **the
+casual diver's first family at Open Water** (56 → 68 answers; against 975 too, its only breach). So in the app world
+the first-Open-Water cost of holding the variants falls on the casual diver, where the rated world put it on the
+lecture RA (and the casual diver's came sooner there): a real cost of the same size, on whichever profile meets the
+held photos first, the cause not measured.
+
+**Heavy-tailed photos** (rated world, 3,000 answers, 15% of the photos +1.5): TAIL_TEXT
+
+**10,000 answers**: not rerun. C0's rank part is #975's cap, whose 10,000-answer check against main is in #975 (the
+families all at Advanced in both arms; the fish % −1.8 to +9.8 points by profile; species at Advanced 5-51). Its variant
+part has nothing left to hold by then: every family is at Advanced in both arms, and at Advanced C0 shows the juveniles,
+sexes and phases as often as 975 does (section 7, "at Advanced"). So the long check would read #975's numbers again.
 
 ## 9. What #975 keeps or changes, and how #953 is rebuilt
 
@@ -316,4 +414,29 @@ in the #953 rebuild, not in #975:
 
 ## 10. Question for Pierre
 
-QUESTION_TEXT
+**Context.** Q388 asked about the families and Advanced only. This study puts every level under one rule: whatever
+depends on something comes as **that** thing is mastered. A family's genera and species come as the family is
+mastered; a unit's juveniles, sexes and colour phases come as the unit itself is mastered. The thresholds are written in
+the data, so they can differ per family, genus or species: the easy juveniles of your classes of 2026-11-04 come from
+the first questions, the misleading ones after Advanced, the others between Open Water and Advanced. The genera and
+species also keep #975's cap (at most m² of the questions, m the share of families at Advanced), because, unlike the
+juveniles, they take questions away from the other families: without it the families fall far behind (B).
+
+**Question.** Do we build every level on this one rule (C0: #975 as it is for the genera and species, and #953 rebuilt
+so that juveniles, sexes and phases follow their own unit's mastery, the easy juveniles from the start), accepting its
+one new cost: for some players the first family at Open Water comes 12-18 answers later (a lecture RA in one simulated
+world, a casual diver in the other; #953 as built does the same, 24 later)?
+
+**Recommendation: yes, C0.** The same yes answers Q388: #975 ships at m².
+
+| Rule (rated world, 3,000 answers) | Easy juveniles in a unit's first 10 questions | First other juvenile, at the unit's answer (strong RA / beginner) | Families at Advanced (of 32) | Fish % | Lecture RA's first family at Open Water (answers) |
+| --- | --- | --- | --- | --- | --- |
+| Today (main) | 18% | 6 / 6 | 21-32 | 42-53 | 52 |
+| #975 alone | 21% | 6 / 7 | 30-31 | 43-54 | 52 |
+| #975 + #953 as built | **0%** | 18 / 19 | 30-31 | 43-54 | **77** |
+| A (one cap per level, pooled) | 21% | 17 / 36 | 30-31 | 43-54 | later (5 seeds) |
+| B (own ramp, no cap) | 22% | 17 / 37 | **14-22** | **38-51** | later (5 seeds) |
+| C (own ramp under a stricter cap) | 20% | 18 / 39 | 31-32 | 43-53 | later (5 seeds) |
+| **C0 (recommended)** | 22% | 19 / 38 | 30-31 | 43-53 | **70** |
+
+(Families and % as ranges over the five profiles; the last column on 20 seeds where a number is given.)
