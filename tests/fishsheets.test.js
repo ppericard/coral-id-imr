@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish sheets (docs/reviews/2026-11-05-fish-sheets-study.md, option B, Pierre 2026-11-06): their addresses in the
 // words on screen (core.js SUBJECTS sheets, routeOut, routeIn), a sheet id in its one spelling (sheetIdOf: an old unit id
 // renamed since), and the sheet each family, genus or species opens (fishTree go) on the real fish.json.
@@ -111,7 +112,13 @@ test('every family of the game has ID cues to show: IMR’s, or its own ID marks
     block = require('./block.js'),
     APP = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8'),
     PH = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish-photos.json'), 'utf8')),
-    ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+    ctx = {
+      DOM: {EX: 0.9},
+      easyCover: C.easyCover,
+      fishScoreTree: C.fishScoreTree,
+      fishSpUnits: C.fishSpUnits,
+      rankWeights: C.rankWeights
+    };
   vm.createContext(ctx);
   vm.runInContext(
     block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',

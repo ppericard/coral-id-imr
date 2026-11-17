@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Candidate photos workflow's push (.github/workflows/approved-photos.yml; docs/SECURITY.md): the jobs that download
 // and decode photos and JSON (photos, fish) are read-only and hand a patch to a push job (photos-push, fish-push) that
 // runs no repository code, checks the patch and pushes it. Here the push jobs' own shell, taken from the workflow, runs
@@ -83,10 +84,14 @@ const fresh = () => path.join(TMP, `w${++n}`);
     'cand.json',
     'excluded.json',
     'fish-game.json',
+    'fish-holdout.json',
     'fish-photos.json',
     'fish-cand.json',
     'tools/fish_refill.json',
-    'tools/fish_refs.json'
+    'tools/fish_refs.json',
+    'seaslug-cand.json',
+    'seaslug.json',
+    'seaslug-game.json'
   ])
     write(seed, f, '{"a": 1}\n');
   write(seed, 'img/a.webp', BIN);
@@ -158,6 +163,7 @@ test("photos-push commits the photos job's change on top of a main that moved, s
     // The licence refresh's sources of the fish photos in play (tools/licences.py).
     write(d, 'fish-cand.json', '{"a": 2}\n');
     write(d, 'tools/fish_refs.json', '{"a": 2}\n');
+    write(d, 'seaslug-cand.json', '{"a": 2}\n'); // the sea slugs' candidates, refreshed too
     write(d, 'img/b.webp', Buffer.concat([BIN, BIN]));
     fs.rmSync(path.join(d, 'img/a.webp'));
     write(d, 'tools/x.py', 'print(2)\n'); // not this job's file: the job's own git add leaves it out
@@ -181,6 +187,7 @@ test("photos-push commits the photos job's change on top of a main that moved, s
     'D\timg/a.webp',
     'M\tdata.json',
     'M\tfish-cand.json',
+    'M\tseaslug-cand.json',
     'M\ttools/fish_refs.json'
   ]);
   assert.deepStrictEqual(

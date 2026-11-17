@@ -12,7 +12,8 @@ Files: the judgements are `tools/fish_judge.json` (hand- or agent-made, like `to
 into `suggest.json`, and `python3 tools/fish_judge.py` prints the summary of the photos in play (`fish-game.json`).
 Until 2026-11-15 it also wrote them into the stopgap list of `fish-photos.json` (remote iNaturalist photos, retired).
 `tests/fish.test.js` checks that every code is valid, that the caps below hold and that every circle-1 entry has 5 very
-easy photos in play.
+easy photos in play. The sea slugs' rubric, [SEASLUG.md](SEASLUG.md), adapts this one on the same tools (`--subject
+seaslug`).
 
 ## How to look
 
@@ -46,7 +47,7 @@ A code is seven characters, then the flags, then the ease digit: `p1g0sm14`, `p1
 | flags | `j` | a **juvenile**: the colours or shape of a young fish (e.g. the yellow-and-black stripes of a young *Scolopsis*, the white-blotched brown of a young *Plectorhinchus chaetodonoides*, a young batfish's long fins) |
 | | `c` | **camouflage**: the fish blends into its background, its outline hard to pick out at a glance |
 | | `a` | **out of water** (a fish on a net, in a hand, dead) |
-| | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing, only Home skips it (below, "Watermark") |
+| | `w` | **watermark**: a visible watermark or text on the photo (a photographer's name, a logo, a copyright line); caps nothing and leaves the games as they are; Home skips it and the default covers avoid it (below, "Watermark") |
 | | `p` | **phase**: added by the tool, never typed: every photo of an entry marked `dimorph` in `tools/fish_source.json` (the presentation's phase lines say the sexes or colour phases differ: Parrotfish, Anthias) |
 | | `r` | **reference photo**: added by the tool, never typed: the photo carries `rep` (below, "Reference photos") |
 | last | **ease** | 1 to 5, below |
@@ -197,6 +198,14 @@ off (or sets it) in the admin like any tag (Tags › Watermark). His tags win as
 since then (`tools/fish_game.py` `record`). The pass's `w` also reaches tags the auto-sort copied into his curation (its log code
 still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/fish_game.py` `marked`).
 
+**Covers** (Pierre, 2026-11-15, Q379, on 4 of his ★ covers tagged watermarked: "Perhaps we should also avoid them for
+covers"): the default cover never takes a watermarked photo, at any level, while the node has an adult photo without one
+(`app.js` `wmP`, `seenCover`, `coverFirst`; the admin's `autosort.js` `fishWm`, `fishCoverRule`, `fishLeafCover`). His ★
+cover on one stays his choice (rule A1): the Tree page asks "Watermark: keep as cover?", Keep records `coverW` beside the
+cover (`curation.json` `fish` `genera` `{node id: {cover, coverW}}`, as the juvenile cover's `coverJ`), Choose another
+opens its Cover proposal (a photo without one). Home skips it all the same, kept or not. docs/ARCHITECTURE.md "Pierre's
+choices per family in the app" has the details.
+
 - **The pass of 2026-11-15** judged each photo on its R2 file (Pierre's crop applied), on contact sheets of 6 at 560 px,
   with the top and bottom bands enlarged for faint text. 844 photos were looked at and 224 were tagged: iNaturalist
   photographers' names and logos, and 1 FishBase photo. It covered three groups:
@@ -227,10 +236,48 @@ still lists `t`), never tags he set himself (`autosort.js` `fishMarked`, `tools/
 
   **35 tagged** in all: photographers' names, signatures and logos, one caption, 1 FishBase photo. None is one of
   Pierre's ★ covers, and none has tags he set himself.
-- **Every band-kind photo has now been looked at.** Still to look at the same way (ROADMAP "Watermark pass, the
-  rest"): the photos a new refill or reference run brings into the pools. Also the photos the Identify art and a tile
-  can fall back on (`home.js` `tilePhoto`), for a family with few band-kind photos once the ratings re-sort it: the
-  first `landR2` photo in its first 10, which need not be reference-level, else its first adult photo.
+- **Every band-kind photo has now been looked at.**
+- **The third pass, the same day** (ROADMAP "Watermark pass, the rest") took the rest of what Home can show.
+  - The set was computed with the app's own code. `fishBuild` and `home.js` `tilePhoto` and `landPool` were run in a vm,
+    with `fish-game.json` in and on a first launch (`fish-photos.json` alone). The ratings re-sort only within each of
+    `easyRank`'s two groups (reference-level photos first, then the others). So for each photo, an order favouring it
+    was built (it first in its group, the photos that would beat it last), and `tilePhoto` was run on that order.
+  - What Home can show is every photo `tilePhoto` returns that way, plus every band-kind photo (`landPool`). From that
+    were taken out the photos the first two passes looked at (by `core.js` `fishPid`): the tagged ones, every band-kind
+    photo of `fish-game.json` at #961's merge, and #956's Home draws (cover, card photo, `tilePhoto`, `landPool`)
+    rebuilt at its merge in both orders.
+  - New photos since #961: none. No photo entered `fish-game.json` since then, and `fish_game.py --plan` has none
+    waiting. The refills only added 2 candidates, not yet judged.
+  - The fallback photos: **897**.
+    - 682 are in the 9 families with no band-kind photo (Moorish Idol, Sea Moths, Scorpionfishes, Stonefishes,
+      Flying Gurnards, Stargazers, Garden Eels, Soles, Cornetfishes). Their tile and art take `tilePhoto` every day:
+      any landscape photo on R2, else any adult photo once a re-sort pushes those out of the first 10.
+    - 215 are reference-level photos of 14 large families that are not landscape or not the whole fish. The Identify
+      art takes one of these only if a re-sort puts 10 such photos ahead of every band-kind one (`adultFirst`).
+  - Method, as #961's:
+    - each R2 file (`-m`, Pierre's crop applied) on contact sheets of 12 at 380 px, local contrast raised;
+    - the top 12% and bottom 25% of each photo at 700 px (at most 80 and 160 px deep). #961's faint controls were
+      seen in the same bands once, at the start;
+    - the 108 untagged photos of the 897 by authors tagged in any pass, seen again: 9 whole at 510 px, the other 99
+      as their bottom 14% (left and right thirds) at 2x.
+    - The side edges and the middle of the frame were seen at 380 px only.
+  - **146 tagged** among the 897: photographers' names, signatures and logos, date stamps and a dive caption. Among
+    them are 23 David Rolla photos (most of them faint, bottom left) and 1 photo with faint text that could not be
+    read. The 380 px sheets missed 6 faint marks: the bands found 5 and the recheck 1.
+  - As #961 did for its authors, the 98 photos Home can show by the authors this pass tagged, looked at by an earlier
+    pass, were seen again: their full-width top 10% and bottom 16% at 2x, local contrast raised, and the corners at 3x
+    for the David Rolla account. **12 more tagged**:
+    - 11 by that account: faint "(c) David Rolla" signatures at bottom right, 4 of them too faint to read (tagged).
+      One of them had been the Sweepers' tile and Identify art in today's order;
+    - 1 plain "(c) Dan Schofield", which is Pierre's ★ cover of Scorpionfishes (the admin asks him "Watermark: keep as
+      cover?").
+  - **158 tagged** in all.
+  - Tagging changed the first photos of 16 units in `fish-photos.json`: 24 tagged photos were swapped for others
+    (#972 puts a watermarked photo after its unit's adults without one). It also changed the default card photo of 3
+    families: Moorish Idol, Sweepers and Sea Moths (Q379). The set was then computed again: nothing new to look at.
+    No family is left without a clean photo, and each family's tile and art in today's order is a clean photo.
+- **Still to look at the same way:** only the photos a later refill, reference run or judging change brings into the
+  pools, or new code that lets Home show other photos.
 - `judging/fish-watermark.json` lists each tagged photo with what the judge saw. `python3 tools/judging_fish.py watermark`
   writes the flag into each photo's single judgement: its candidate file, else `tools/fish_judge.json`. Then run
   `python3 tools/judging_fish.py codes` and `one`. `--check` lists the photos whose code lacks the flag, and the test runs it.

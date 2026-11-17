@@ -46,6 +46,15 @@ const TYPES = {
   '.svg': 'image/svg+xml',
   '.webp': 'image/webp'
 };
+// This smoke runs on the corals and the fish alone: the sea slugs, in their beta group, are the admin's too, and a third
+// subject turns the admin's one-click switch into the chip's menu (checked here on a made-up third subject); they have
+// their own smoke, tests/seaslug.smoke.js. core.js is served without their SUBJECTS entry (the last one).
+const twoSubjects = t => {
+  const i = t.indexOf("      id: 'seaslug',"),
+    a = t.lastIndexOf('\n    },\n    {', i),
+    z = t.indexOf('\n    }\n  ];', i);
+  return i < 0 || a < 0 || z < 0 ? t : t.slice(0, a) + t.slice(z);
+};
 const server = http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, 'http://x').pathname),
     f = path.join(ROOT, u.endsWith('/') ? u + 'index.html' : u);
@@ -53,6 +62,7 @@ const server = http.createServer((req, res) => {
   fs.readFile(f, (e, b) => {
     if (e) return (res.writeHead(404), res.end());
     res.writeHead(200, {'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream'});
+    if (u === '/core.js') b = Buffer.from(twoSubjects(String(b)));
     res.end(b);
   });
 });
@@ -374,12 +384,15 @@ async function freshPlayers(b, base, errs) {
       // then observations), the first of that species' adult photos by reference level (core.js refFirst), never a juvenile.
       const seenK = p => fishSeen(p.sp)[0] * 1e6 + fishSeen(p.sp)[1],
         // among the species with a reference-level adult photo (else with an adult photo), the most seen; his ★ cover of it
-        // when he picked one (Pierre, 2026-11-14 on #864), else its reference photo
+        // when he picked one (Pierre, 2026-11-14 on #864), else its reference photo; never a watermarked photo while the
+        // unit has an adult one without (app.js wmP; Q379), his ★ cover of the species included
         mostSeen = (L, c) => {
-          const A = L.filter(p => !juvP(p)),
+          const A0 = L.filter(p => !juvP(p)),
+            A1 = A0.filter(p => !wmP(p)),
+            A = A1.length ? A1 : A0,
             R = A.filter(refLevel);
           if (!A.length) return !!c;
-          if (!c || juvP(c) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
+          if (!c || juvP(c) || (A1.length && wmP(c)) || seenK(c) !== Math.max(...(R.length ? R : A).map(seenK))) return false;
           const pk = fishSpPick(c.sp);
           if (pk && A.some(p => p.f === pk.f)) return c.f === pk.f;
           return R.length ? refLevel(c) : refFirst(c) === Math.min(...A.filter(p => p.sp === c.sp).map(refFirst));
@@ -1155,9 +1168,13 @@ async function freshPlayers(b, base, errs) {
         // easiest; an open licence breaking ties among equals (core.js easyCover, Q270), so the cover may be another of the
         // order's equal leaders; never a juvenile while it has another photo (app.js juvP; Pierre, 2026-11-13)
         if (!w.length || GX(n).coverP) return true;
-        const A = w.filter(p => !juvP(p)),
+        // nor a watermarked photo while it has an adult one without (app.js wmP; Q379)
+        const A0 = w.filter(p => !juvP(p)),
+          A1 = A0.filter(p => !wmP(p)),
+          A = A1.length ? A1 : A0,
           c = w.find(p => p.f === GX(n).cover);
         if (!A.length) return !!c;
+        if (A1.length && wmP(c)) return false;
         // (Pierre, 2026-11-14 on #864: among the species with a reference photo; his ★ cover of that species when he has one)
         const k = p => fishSeen(p.sp)[0] * 1e6 + fishSeen(p.sp)[1],
           R = A.filter(refLevel),
@@ -1208,6 +1225,58 @@ async function freshPlayers(b, base, errs) {
     ok(Q.sci === true && !document.querySelector('#view [data-seton="sci"]'), 'sci: on from My progress, the box gone');
     bonusSet(false, 'sci');
     route();
+    // The species level, step 1 (Pierre, 2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md):
+    // off below SPECIES_SHEET (rule D4); on, a family at Advanced (the Spadefishes, above) brings its species one at a
+    // time, the first in its order, labelled by the player's first common name, the scientific name under each choice.
+    {
+      const spS = SETS().find(S => S.k === 'sp'),
+        v0 = store.get(SHEETV, 0),
+        own = FISH.spl.filter(n => GX(n).parent === 'f:Spadefishes' && photoAny(n));
+      store.set(SHEETV, SPECIES_SHEET - 1);
+      ok(
+        !spOn() && !spS.auto().length && !pool().some(n => rankOf(n) === 'species') && UNITS.fish.tree() === FISH.tree,
+        'species: off below SPECIES_SHEET'
+      );
+      store.set(SHEETV, SPECIES_SHEET);
+      ok(spOn() && UNITS.fish.tree() === FISH.treeSp, 'species: on from SPECIES_SHEET, the tree with the species units');
+      const L = spS.auto(),
+        t = own[0];
+      ok(t && L.length === 1 && L[0] === t && pool().includes(t), 'species: the family at Advanced brings its first species: ' + L);
+      const ch = distractors(t, pool(), 3);
+      ok(ch.length === 3 && ch.every(n => rankOf(n) === 'species'), 'species: its wrong choices are species: ' + ch);
+      ok(new Set([t, ...ch].map(choiceKey)).size === 4, 'species: four labels');
+      // its first-meeting card: the milestone line on the first species met (introCard records nothing)
+      const c = introCard(t);
+      ok(/first species name/.test(c.body) && c.title === esc(GX(t).name), 'species: its card names it and marks the milestone');
+      // the question on screen
+      dropPlans();
+      SHOWNQ = null;
+      question('quiz', t, [t, ...ch], 'Which species?', photoSet(t));
+      // answer.js: reads the rendered buttons' labels, answers nothing
+      const bs = [...document.querySelectorAll('#view .ans button')];
+      ok(
+        bs.length === 4 && bs.every(b => b.classList.contains('plain') && b.querySelector('.csn small')),
+        'species: four choices, each with its scientific name under it'
+      );
+      ok(
+        bs.some(b => b.dataset.c === t && b.querySelector('.csn small').textContent === GX(t).sci),
+        'species: the right one with its own'
+      );
+      // typed: every listed name is its unit's (a shared one too, Q381); a family question reads it as the family
+      ok(
+        GX(t).also.every(x => {
+          const m = typeMatch(x, 'species');
+          return m && (m.g === t || (m.shared || []).includes(t));
+        }),
+        'species: every listed name typed is right'
+      );
+      ok(!typeMatch(GX(t).name) || typeMatch(GX(t).name).g !== t, 'species: a family question never reads it as a species');
+      // its sheet: the species' own (core.js fishTree go)
+      ok(fishTree(FISHF).go(t) === 's:' + GX(t).sci, 'species: its unit opens its species sheet');
+      store.set(SHEETV, v0);
+      dropPlans();
+      route();
+    }
     // Report a problem after a fish answer (fish beta sweep, 2026-11-05: the right-answer list offered the teaching ids,
     // "t01", and the dialog spoke of genera and corals): the fish names, in the fish words.
     closeCards();
@@ -2969,7 +3038,6 @@ async function freshPlayers(b, base, errs) {
       fish: JSON.parse(localStorage.getItem('reefid-sync-fish-start') || 'null'),
       coral: JSON.parse(localStorage.getItem('reefid-sync-coral-start') || 'null'),
       p: startV().p,
-      at: startV().at,
       basics: !!document.querySelector('.unlock.basicsq'),
       card: !!document.querySelector('.unlock.startq'),
       q: !!document.querySelector('#view .q')
@@ -2978,7 +3046,7 @@ async function freshPlayers(b, base, errs) {
     if (!after.fish || after.fish.c !== pick || after.fish.via !== 'card')
       welcome.push(`${pick}: the fish record ${JSON.stringify(after.fish)}`);
     if (!after.coral || after.coral.c !== 'know') welcome.push(`${pick}: the coral answer changed ${JSON.stringify(after.coral)}`);
-    if (after.p !== v.p || after.at !== v.at) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, after.at, v])}`);
+    if (after.p !== v.p) welcome.push(`${pick}: the fish starting values ${JSON.stringify([after.p, v])}`);
     if (after.basics || after.card || !after.q) welcome.push(`${pick}: after the answer ${JSON.stringify(after)}`);
     await c7.close();
   }

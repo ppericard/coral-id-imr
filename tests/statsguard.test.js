@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Sheet v115 (ROADMAP "Security follow-ups", Pierre 2026-11-08): the admin leaves a player or a device not signed in out
 // of the statistics (Code.gs sxSet_, statsExclude), and an answer whose photos are of another unit rates no photo
 // (photoCheck_, photoAlert_), the answer itself always kept. Against the in-memory sheet (tests/gas.js).
@@ -13,13 +14,13 @@ const at = i => new Date(Date.UTC(2026, 10, 1, 0, 0, i)).toISOString();
 const ans = (id, extra = {}) => ({id, t: at(0), g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-wide-1', ...extra});
 // Twelve right answers: clearly above chance (TRUST), so the sender rates the photos.
 const run = (k, extra = {}) => Array.from({length: 12}, (_, i) => ans(k + i, {t: at(i), ...extra}));
-// The games' photos per unit as pools_ caches them (pool2<subject>: {p: pool, u: parent units}): two coral genera and one
+// The games' photos per unit as pools_ caches them (pool3<subject>: {p: pool, u: parent units}): two coral genera and one
 // fish unit.
 const POOL = {
   coral: {Acropora: [['acropora-wide-1', 'acropora-medium-1']], Porites: [['porites-wide-9']]},
   fish: {'f:pomacentridae': [['fi123']]}
 };
-const pools = s => Object.entries(POOL).forEach(([k, v]) => (s.cache['pool2' + k] = JSON.stringify({p: v, u: {}})));
+const pools = s => Object.entries(POOL).forEach(([k, v]) => (s.cache['pool3' + k] = JSON.stringify({p: v, u: {}})));
 // Stats are cached 10 minutes: drop them (and put the pools back) before reading again.
 // How many answers rated a photo (stats_ photos [difficulty, weighed, right, answers]; 0 when none or never shown).
 const rated = (st, f) => (st.photos[f] || [0, 0, 0, 0])[3];
@@ -207,8 +208,8 @@ test('the real pools fit the script cache in parts: fish photos are checked, a f
   assert.strictEqual(rated(st, bfly), 0, 'a fish photo under a coral genus rates nothing');
   assert.strictEqual(st.skip.photos, 12);
   // Cached in parts, each under 100 KB: read again without any file fetched.
-  assert.match(String(s.cache.pool2fish), /^#\d+$/);
-  assert.ok(Number(s.cache.pool2fish.slice(1)) >= 4);
+  assert.match(String(s.cache.pool3fish), /^#\d+$/);
+  assert.ok(Number(s.cache.pool3fish.slice(1)) >= 4);
   const before = JSON.stringify(n);
   drop();
   st = s.post({readStats: 1, token: TOK});
@@ -239,10 +240,42 @@ test('the real pools fit the script cache in parts: fish photos are checked, a f
     'photos not of the unit shown: ' + s.ctx.aid_('Ivy') + ' (12 of 12 answers)'
   ]);
   // A part gone from the cache: the pool is read again, never a part taken for the whole.
-  delete s.cache['pool2fish#1'];
+  delete s.cache['pool3fish#1'];
   drop();
   assert.strictEqual(rated(s.post({readStats: 1, token: TOK}), bfly), 0);
   assert.strictEqual(n['fish-photos.json'], 2);
+});
+
+// Codex review #975 (P2): the species units of the species level (s: and the species id, s:s084: core.js fishSpUnits)
+// are their family's for the photo check (unitUp_), so a species question with its family's photos is never flagged, and
+// the pools cached by a script before them (pool2, with no such parent) are never read: pool3.
+test('a species unit (s:<id>) is its family for the photo check; the parents cached before it are never read', () => {
+  const fish = C.SUBJECTS.find(S => S.id === 'fish'),
+    files = fish.pool.files.map(f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))),
+    FP = C.unitPool(fish, files),
+    SP = C.fishSpUnits(files[0]),
+    n = {},
+    s = loadCodeGs({fetch: site(n), cacheMax: 100 * 1024});
+  // Every species unit to the family it hangs from in the game.
+  const up = s.ctx.unitUp_(files[0]);
+  assert.ok(SP.length > 100);
+  SP.forEach(u => assert.strictEqual(up[u.id], u.family, u.id));
+  const sp = SP.find(u => u.family === 'f:Damselfishes').id,
+    dam = FP['f:Damselfishes'][0][0],
+    bfly = FP['f:Butterflyfishes'][0][0];
+  // A pool cached by the script before (no species parent): never read.
+  s.cache.pool2fish = JSON.stringify({p: FP, u: {}});
+  const idx = s.ctx.photoIdx_('fish');
+  assert.match(String(s.cache.pool3fish), /^#\d+$/);
+  assert.strictEqual(s.ctx.photoCheck_(idx, 'fish', sp, [dam]), 'ok');
+  assert.strictEqual(s.ctx.photoCheck_(idx, 'fish', sp, [bfly]), 'other');
+  // A species question's send with its family's photo: no alert; a butterflyfish photo under it: one.
+  const F = (k, g, ph) => run(k, {g, a: g, ph, s: 'fish', rk: 'species'}),
+    alerts = () => (s.sheets.Alerts ? s.sheets.Alerts.rows.slice(1).map(x => String(x[1])) : []);
+  s.post({name: 'Fin', pin: '1111', data: {}, summary: {}, answers: F('s', sp, dam)});
+  assert.deepStrictEqual(alerts(), []);
+  s.post({name: 'Ivy', pin: '2222', data: {}, summary: {}, answers: F('b', sp, bfly)});
+  assert.deepStrictEqual(alerts(), ['photos not of the unit shown: ' + s.ctx.aid_('Ivy') + ' (12 of 12 answers)']);
 });
 
 test('a value over the cache limit is put in parts and read back whole; a lost part reads as missing', () => {
@@ -362,10 +395,10 @@ test('a replay under the script lock fetches no photo pool when cold; the public
   s.post({anon: 'device0003', anonAnswers: run('d'), rv: 0});
   assert.ok(n['data.json'] >= 1, 'the replays ran (their genera read): ' + JSON.stringify(n));
   assert.deepStrictEqual(pool(), [], 'no pool file read under the lock: ' + JSON.stringify(n));
-  assert.ok(!s.cache.pool2fish && !s.cache.pool2coral);
+  assert.ok(!s.cache.pool3fish && !s.cache.pool3coral);
   for (const k of Object.keys(s.cache)) if (k.startsWith('stats')) delete s.cache[k];
   assert.strictEqual(s.get({stats: '1'}).ok, true);
-  assert.match(String(s.cache.pool2fish), /^#\d+$/, 'the public stats cached the pools');
+  assert.match(String(s.cache.pool3fish), /^#\d+$/, 'the public stats cached the pools');
   assert.ok(n['fish-photos.json'] === 1 && n['curation.json'] >= 1);
 });
 
@@ -383,13 +416,13 @@ test('unchecked stats made under the lock are never served as checked by the pub
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a', {ph: 'imrl-p8_g36'})});
   // A fish photo under a coral genus, then a replay under the lock: its stats are made with no pool, and cached.
   s.post({name: 'Bot', pin: '3333', data: {}, summary: {}, answers: run('b', {ph: bfly}), rv: 0});
-  assert.ok(!s.cache.pool2fish, 'nothing fetched under the lock');
+  assert.ok(!s.cache.pool3fish, 'nothing fetched under the lock');
   assert.strictEqual(JSON.parse(s.cache.stats17).chk, 0, 'cached as unchecked');
   assert.strictEqual(rated(JSON.parse(s.cache.stats17), bfly), 12);
   // The public stats: the pools read, the ratings checked, cached as checked.
   const pub = s.get({stats: '1'});
   assert.strictEqual(rated(pub, bfly), 0, 'the fish photo under a coral genus rates nothing');
-  assert.match(String(s.cache.pool2fish), /^#\d+$/);
+  assert.match(String(s.cache.pool3fish), /^#\d+$/);
   assert.strictEqual(JSON.parse(s.cache.stats17).chk, 1);
   assert.strictEqual(rated(s.post({readStats: 1, token: TOK}), bfly), 0);
   // A replay under the lock now takes the checked stats from the cache.

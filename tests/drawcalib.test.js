@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish draw in big pools (Pierre, 2026-11-06 15:33, Q186: the draw keeps favouring the easy photos strongly
 // whatever the pool size, through a per-subject calibration; the corals unchanged): model.js calU, calSd and drawFloor
 // run in Node on the subject's calibration (core.js SUBJECTS calib, calibOf). The corals keep model.js CAL.U and the

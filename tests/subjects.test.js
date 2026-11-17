@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The subject registry (core.js SUBJECTS, the taxon model: corals and fish on one engine) and the fish adapter
 // (fishGen, fishTypeNames) on the real fish.json and fish-photos.json; each subject's progress kept apart when two
 // accounts merge (mergeUsers).
@@ -12,7 +13,12 @@ const F = read('fish.json'),
 
 test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys unchanged for the corals', () => {
   const ids = C.SUBJECTS.map(s => s.id);
-  assert.deepStrictEqual(ids, ['coral', 'fish']);
+  assert.deepStrictEqual(ids, ['coral', 'fish', 'seaslug']);
+  // the sea slugs (study §9 step 5): a beta subject that opens to its group, on the sheet version that knows it (rule D4)
+  assert.ok(C.subjGroup(C.subjectOf('seaslug')) && C.subjectOf('seaslug').beta);
+  assert.ok(C.subjectOf('seaslug').sheet > C.STRUCT_SHEET);
+  assert.strictEqual(C.subjKey('seaslug', 'progress'), 'reefid-sync-seaslug-progress');
+  assert.strictEqual(C.subjDev('seaslug', 'comeback'), 'reefid-seaslug-comeback');
   assert.strictEqual(C.subjectOf('fish').id, 'fish');
   assert.strictEqual(C.subjectOf('nope'), C.SUBJECTS[0]); // an unknown choice falls back on the first subject
   // the report dialog's "Several …" reason in each subject's words (sync.js REP_WHY)
@@ -40,14 +46,20 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(new Set(C.SUBJECTS.flatMap(s => s.base)).size, 2 * C.SUBJECTS.length);
   assert.strictEqual(new Set(C.SUBJECTS.map(s => s.dev)).size, C.SUBJECTS.length);
   // A leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; sheet v95); achievements
-  // per subject too (Pierre, 2026-11-04), each its own list in the one record.
+  // per subject too (Pierre, 2026-11-04), each its own list in the one record. A subject still in its beta group may come
+  // without them, as the fish did before sheet v95 (the sea slugs, study §9 step 5); never one open to every player.
+  const all = C.SUBJECTS.filter(s => !C.subjGroup(s));
   assert.ok(
-    C.SUBJECTS.every(s => s.board === true),
-    'every subject has its leaderboard'
+    all.every(s => s.board === true),
+    'every subject open to all has its leaderboard'
   );
   assert.ok(
-    C.SUBJECTS.every(s => s.ach === true && typeof s.achs === 'function'),
-    'every subject has its achievements'
+    all.every(s => s.ach === true && typeof s.achs === 'function'),
+    'every subject open to all has its achievements'
+  );
+  assert.ok(
+    C.SUBJECTS.every(s => !s.ach || typeof s.achs === 'function'),
+    'achievements come with their list'
   );
   assert.strictEqual(C.SUBJECTS.filter(s => s.achFeats).length, 1, "one subject's answers keep the record's feats");
 });
@@ -177,17 +189,43 @@ test('fish-photos.json: no remote photo, the first photos are fish-game.json rec
   // whatever Pierre's covers are today (a Publish changes them before the workflow writes the file again): every entry
   // of fish-game.json has some, every circle-1 family among them, the adults before a juvenile.
   assert.deepStrictEqual(Object.keys(PH.photos).sort(), Object.keys(GM).sort(), 'every entry of fish-game.json');
-  const juv = p => p.ph === 'juvenile' || /j/.test(String(p.jt || '').slice(7));
+  const juv = p => p.ph === 'juvenile' || /j/.test(String(p.jt || '').slice(7)),
+    wm = p => /w/.test(String(p.jt || '').slice(7));
   Object.entries(PH.photos).forEach(([id, L]) => {
     const k = L.findIndex(juv);
     assert.ok(k < 0 || L.slice(k).every(juv) || GM[id].filter(p => !juv(p)).length < L.length, `${id}: a juvenile before an adult`);
-    // core.js easyRank's order: an entry with an adult reference-level photo in play has one among its first photos
-    // (Codex review #931: t52 kept eight ease-3 photos and left out its two ease-5 reference-level Waspfish photos).
-    if (GM[id].some(p => C.refLevel(p) && !juv(p)))
+    // core.js easyRank's order: an entry with an adult reference-level photo without a watermark in play has one among
+    // its first photos (Codex review #931: t52 kept eight ease-3 photos and left out its two ease-5 reference-level
+    // Waspfish photos). Without a watermark: a watermarked one ranks after its unit's adults without one, whatever its
+    // level (Q379; #968's call 2: the Moorish Idol's reference photos all carry one).
+    if (GM[id].some(p => C.refLevel(p) && !juv(p) && !wm(p)))
       assert.ok(
         L.some(p => C.refLevel(p)),
         `${id}: no reference-level photo first`
       );
+  });
+  // No default card watermarked before fish-game.json is in (Pierre, 2026-11-15, Q379; app.js seenCover, since #968, reads
+  // these photos until then): a unit (a genus or a family: fish.json) among an entry's first photos whose adults there all
+  // carry a watermark (judged flag w, Q373) has no adult without one in play, unless one of them is Pierre's ★ cover (his
+  // choice, rule A1: his watermarked covers stay first). On 2026-11-15 the genus units Gnathodentex, Neochirus and
+  // Dendrochirus had only watermarked first photos; since, Dendrochirus has one without, and the other two none among the
+  // first photos (as 62 other genus units of 130), so their card waits for fish-game.json.
+  const gen = new Map(F.species.filter(s => s.genus).map(s => [s.id, s.genus])),
+    fam = new Map(F.families.flatMap(f => (f.species || []).map(s => [s, f.id]))),
+    covers = new Set(
+      Object.values((read('curation.json').fish || {}).genera || {})
+        .filter(k => k && k.cover)
+        .map(k => C.fishPid(k.cover))
+    ),
+    clean = p => !juv(p) && !wm(p);
+  Object.entries(PH.photos).forEach(([id, L]) => {
+    [gen, fam].forEach(U =>
+      new Set(L.map(p => U.get(p.sp)).filter(Boolean)).forEach(u => {
+        const A = L.filter(p => U.get(p.sp) === u && !juv(p));
+        if (!A.length || A.some(clean) || A.some(p => covers.has(C.fishPid(p.f)))) return;
+        assert.ok(!GM[id].some(p => U.get(p.sp) === u && clean(p)), `${id} ${u}: only watermarked first photos`);
+      })
+    );
   });
   const remote = [];
   Object.values(PH.sheet || {}).forEach(L =>
@@ -576,7 +614,8 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
     C.SUBJECTS.map(S => [S.id, S.rank, S.replay]),
     [
       ['coral', 'genus', true],
-      ['fish', 'family', false]
+      ['fish', 'family', false],
+      ['seaslug', 'family', false]
     ]
   );
   assert.ok(

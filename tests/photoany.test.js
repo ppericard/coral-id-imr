@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // model.js photoAny tells whether photoSet(n) would show a photo without drawing one (performance pass, 2026-11-09:
 // app.js pool asks it of every unit, several times a question). Here both run on made-up units of every shape (three
 // views or two levels, forms "x" in the colony slot, one or several growth forms, photos refused by gamePhotoOk, a
@@ -27,6 +28,7 @@ function engine(U, refused) {
     Math: M,
     SUBJ: C.subjectOf('coral'),
     calibOf: C.calibOf,
+    unitRankOf: C.unitRankOf,
     refLevel: C.refLevel,
     phaseOf: C.phaseOf,
     phaseStage: C.phaseStage,

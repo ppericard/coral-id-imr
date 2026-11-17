@@ -2589,6 +2589,16 @@ td.cov-c .cov-off {
     --cut: 36em;
   }
 }
+/* To do › Alerts: each line is the whole alert, so it wraps in its cell instead of ending in "…" on phones. */
+.adm-alerts td:last-child {
+  max-width: none;
+  white-space: normal;
+}
+.adm-alerts code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
 .adm-tscroll.tall {
   max-height: 420px;
   overflow-y: auto;
@@ -5477,6 +5487,11 @@ button.adm-chip.adm-cauto[aria-expanded='true'] {
   font-size: var(--fs-xs);
   color: var(--muted);
 }
+/* the Tree page's question on a watermarked ★ cover (admin-covers.js WM_ASK) before its two answers */
+.adm-fwmq {
+  align-self: center;
+  font-size: var(--fs-xs);
+}
 .adm-nlink {
   color: inherit;
   text-decoration: none;
@@ -5883,6 +5898,16 @@ a.adm-fchip {
 .adm-hmt.nofam .hm-corner {
   width: var(--hm-lw);
 }
+/* The families' groups (a subject whose families sit in taxonomic groups): a column of their own, left of the families'. */
+.adm-hmt.sup .hm-fam:not(.hm-sup) {
+  left: var(--hm-fw);
+}
+.adm-hmt.sup .hm-row {
+  left: calc(2 * var(--hm-fw));
+}
+.adm-hmt.sup .hm-corner {
+  width: calc(2 * var(--hm-fw) + var(--hm-lw));
+}
 .adm-hmt .hm-it {
   font-style: italic;
 }
@@ -6066,6 +6091,46 @@ ul.adm-csv {
 .adm-csed .adm-acts {
   margin: 0;
   padding: 0;
+}
+/* Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, design note v2 step 4), and the
+   Look-alikes filter's pair tools in the bar (structBar, structAdd). */
+.adm-cstruct .adm-stseg {
+  flex: none;
+}
+.adm-cstruct .adm-stseg button:disabled {
+  cursor: default;
+}
+.adm-stpairs > .adm-cslots {
+  margin-top: 6px;
+  gap: 6px;
+}
+.adm-stpairs .adm-cslot {
+  padding: 4px 8px;
+}
+.adm-stpairs .adm-cslot.is-out > .adm-cshd > a,
+.adm-stpairs .adm-cslot.is-out > .adm-cshd > b {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.adm-stpairs > .adm-fgsel,
+.adm-stpairs > .adm-stadd {
+  margin-top: 8px;
+}
+.adm-stab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.adm-stab .adm-fgsel {
+  min-width: 0;
+  max-width: 100%;
+}
+.adm-stbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
 }
 @media (min-width: 600px) {
   .adm-cs3 {

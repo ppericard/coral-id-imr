@@ -2,7 +2,6 @@
 // First of all, the storage keys from before the rename to IMR Reef ID (2026-11-03) move to their new names (core.js
 // migrateKeys): nothing below may read a key before this line. The theme script of index.html reads both names itself.
 migrateStorage();
-migrateIdKey(); // the renamed Coral ID Key (2026-11-04): its keys moved once (core.js)
 migrateRoutes(); // the URL refonte (2026-11-05): page names and addresses in this device's data moved once (core.js)
 let DATA;
 const $v = document.getElementById('view');
@@ -604,6 +603,13 @@ const juvP = p => !!p && (p.ph === JUV_PH || /j/.test(String(p.jt || '').slice(7
 const coverOk = (k, p) =>
   !!p && (!juvP(p) || !!(k && k.cover && k.coverJ && fishPid(k.coverJ) === fishPid(k.cover) && fishPid(p.f) === fishPid(k.cover)));
 const adultFirst = L => (L || []).find(p => !juvP(p)) || (L || [])[0] || null;
+// A photo with a visible watermark or text (its judged flag w: judging/FISH.md "Watermark"; Pierre, 2026-11-15, Q373)
+// is never a default cover, at any level (Pierre, 2026-11-15, Q379: "Perhaps we should also avoid them for covers"): the
+// defaults take one only when the node has no other adult photo. His ★ cover on one stays his choice (rule A1: the admin
+// asks him whether to keep it, autosort.js fishCoverW); Home skips it all the same (home.js homeOk). The games keep it.
+// coverFirst(L): the first of L that is neither a juvenile nor watermarked, else adultFirst(L).
+const wmP = p => !!p && /w/.test(String(p.jt || '').slice(7));
+const coverFirst = L => (L || []).find(p => !juvP(p) && !wmP(p)) || adultFirst(L);
 // A leaf's presence around the instance's centre (Pierre, 2026-11-13, Q339: "Il faudra rendre générique la localisation
 // centrale de l'instance"; the centre: tools/instance.json, fish.json centre): [its distinct Research Grade observers,
 // its observations] within the centre's radius, from its record's present: nearU and nearN, else their first names
@@ -618,23 +624,28 @@ const nearSeen = r => {
 // he picked one in play ("mon choix était le meilleur au moment avec ce que j'avais sous les yeux"), else that leaf's
 // easiest such reference photo (easyRank: the licence breaking ties). With no reference photo under the node: the most
 // seen leaf among those with an adult photo, then his ★ cover of it, else its easiest adult photo. Never a juvenile while
-// the node has another photo (juvP); a node with no presence keeps the easy order's first. L: the node's photos in play
+// the node has another photo (juvP); never a watermarked photo while it has another adult one (wmP, Q379: the leaves then
+// compete on their adult photos without one, and his ★ cover of the leaf chosen is taken only without one, kept or not);
+// a node with no presence keeps the easy order's first. L: the node's photos in play
 // (p.sp: its leaf), seen(leaf id): [observers, observations] (nearSeen), d: easyRank's difficulty, pick(leaf id): his ★
 // cover of that leaf, or null. autosort.js fishCoverOf is the admin's copy (tests/fishcovers.test.js holds them together).
 function seenCover(L, seen, d, pick = () => null) {
   const R = easyRank(L, d),
-    A = R.filter(p => !juvP(p)),
+    A0 = R.filter(p => !juvP(p)),
+    A1 = A0.filter(p => !wmP(p)),
+    A = A1.length ? A1 : A0,
     Ref = A.filter(refLevel);
   let best = null;
   (Ref.length ? Ref : A).forEach(p => {
     const s = seen(p.sp) || [0, 0];
     if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
   });
-  if (!best) return R[0] || null;
-  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers)
+  if (!best) return R.find(p => !wmP(p)) || R[0] || null;
+  // his pick there: an adult, or a juvenile he confirmed as that leaf's cover (cj: fishCurate's covers); without a
+  // watermark while the node has an adult photo without one
   const k = pick(best.p.sp),
     c = k && R.find(p => p.f === k.f);
-  return (c && (!juvP(c) || k.cj) && c) || best.p;
+  return (c && (!juvP(c) || k.cj) && (!wmP(c) || !A1.length) && c) || best.p;
 }
 // A fish species' presence (FISH.sps: fish.json species by id) and his ★ cover of it (FISH.covers: app.js fishCurate).
 const fishSeen = sid => nearSeen(((FISH && FISH.sps) || {})[sid]);
@@ -665,7 +676,7 @@ function build() {
     applySlots(x, CUR, {picks: PICKS, autoq: AUTOQ});
   }
   DATA = d;
-  if (FISHRAW) fishBuild(); // the fish photos under the same curation
+  treeBuildAll(); // the fish (and every tree subject's) photos under the same curation
 }
 // The scientific genera of the fish (Pierre, 2026-11-04, docs/FISH_PATH.md "Levels": the path is a tree; branch B starts
 // with the scientific genus names, "a photo, then 4 genus names"): one unit per genus of fish.json genera holding
@@ -679,9 +690,13 @@ function build() {
 // alone (an IMR genus: Chromis, Anemonefish for Amphiprion, Unicornfish for Naso; not Surgeonfish, which names three
 // genera: Pierre, 2026-11-08, Q220), its species in the game (scientific and common names, commonness order) and its
 // family's photos of those species. FISH.sci: every genus, in the families' order.
+// A subject played at the genus from the start (X.unit 'genus': core.js fishGen, SUBJECTS unitRank; the sea slugs): its
+// genera are already the units of its circles (core.js fishGenUnits), each completed here the same way, in its own circle
+// and with every species of the circles; no opt-in set (FISH.sci empty).
 function fishGenera(X, F) {
   const sp = new Map((F.species || []).map(s => [s.id, s])),
     gens = new Map((F.genera || []).map(g => [g.id, g])),
+    atGenus = X.unit === 'genus',
     sci = [];
   // A family IMR gives no cue for (circles 2-3, the Soapfishes): its ID marks (fish.json marks, our own words from the
   // sources it lists, msrc: tools/fish_sheets.json) show where the IMR cues show (the feedback, the first-meeting card,
@@ -713,19 +728,44 @@ function fishGenera(X, F) {
     E.tl = 'ID marks' + (by ? ` (${by})` : ''); // shown as HTML, as every tl (tipsLabel): plain words, tests/fishsheets.test.js
   });
   (F.families || [])
-    .filter(f => f.circle === 1 && X.gen[f.id])
+    .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
     .forEach(f => {
       const E = X.gen[f.id],
         own = (f.genera || []).map(id => gens.get(id)).filter(Boolean),
-        by = new Map(own.map(G => [G.id, G.species.map(id => sp.get(id)).filter(s => s && s.circle === 1)]).filter(([, L]) => L.length)),
+        // its genera in the game: those holding circle-1 species, or, played from the start, the units fishGen made
+        by = atGenus
+          ? new Map(
+              own
+                .filter(G => X.gen[G.id] && X.gen[G.id].parent === f.id)
+                .map(G => [G.id, X.gen[G.id].species.map(id => sp.get(id)).filter(Boolean)])
+            )
+          : new Map(own.map(G => [G.id, G.species.map(id => sp.get(id)).filter(s => s && s.circle === 1)]).filter(([, L]) => L.length)),
         ids = [...by.keys()];
       by.forEach((L, id) => {
         const G = gens.get(id),
           g = G.name,
           set = new Set(L.map(s => s.id)),
           cues = G.cues && G.cues.length ? G.cues : null,
+          // Its own ID marks when IMR gives no cues (fish.json marks, tools/fish_genus_marks.json; Pierre, 2026-11-08),
+          // under a label naming the marks' own sources (mby.marks: not the presentation's), never as IMR's (rule C1);
+          // their source per line is on the sheet (genMarks).
+          marks = !cues && G.marks && G.marks.length ? G.marks : null,
+          mby = [
+            ...new Set(
+              ((G.mby || {}).marks || [])
+                .flat()
+                .map(i => (G.msrc || [])[i] || {})
+                .map(s =>
+                  String(s.t || '')
+                    .split(',')[0]
+                    .trim()
+                )
+                .filter(Boolean)
+            )
+          ].join(', '),
           sl = G.imr && G.sl && G.sl.length ? `, slide${G.sl.length > 1 ? 's' : ''} ${G.sl.join(', ')}` : '',
-          wide = E.views.wide.filter(p => set.has(p.sp));
+          // its species' photos and its genus-level photos (gl, sp its id: core.js fishGlOf; the sea slugs, Q389 (1))
+          wide = E.views.wide.filter(p => set.has(p.sp) || (!!p.gl && p.sp === id));
         X.gen[id] = {
           id,
           name: g,
@@ -737,7 +777,7 @@ function fishGenera(X, F) {
           imrName: G.imr || '', // the IMR tag
           imrg: G.imr && (F.genera || []).filter(o => o.imr === G.imr && o.family === G.family).length === 1 ? 1 : 0,
           fish: 1,
-          circle: 1,
+          circle: atGenus ? X.gen[id].circle : 1,
           group: E.group,
           ig: E.ig,
           forms: E.forms,
@@ -747,9 +787,15 @@ function fishGenera(X, F) {
           decl: G.imr ? ids.filter(o => o !== id && gens.get(o).imr === G.imr) : [],
           lk: [],
           lsrc: {},
-          qt: cues,
+          qt: cues || marks,
           ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
-          tl: cues ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')' : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+          tl: cues
+            ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
+            : marks
+              ? 'ID marks' + (mby ? ` (${mby})` : '') // plain words, shown as HTML as every tl (tipsLabel)
+              : 'Its species here' + (sl ? ' (IMR, ' + G.imr + sl + ')' : ''),
+          // Its presentation (fish.json plain), the card's plain sentence (app.js plainLine), as a coral genus's.
+          ...(G.plain ? {plain: G.plain} : {}),
           // Its species in a line: the 3 most met around Dauin (commonness order), the genus abbreviated, each with the
           // player's first common name (cnFirst, Q376 (a): read when shown, the IMR answer may come after this build),
           // then the count.
@@ -771,7 +817,8 @@ function fishGenera(X, F) {
           species: L.map(s => s.id),
           phase: [],
           sub: [],
-          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {}).dauin || 0), 0))),
+          // how common near Dauin, or over the subject's area where its tree gives one (core.js fishGen)
+          cm: Math.round(Math.sqrt(L.reduce((a, s) => a + ((s.present || {})[F.area ? 'area' : 'dauin'] || 0), 0))),
           levels: 1,
           views: {wide},
           // the PDF genus shown and its species' WoRMS-accepted genera (Codex review #526: Mirolabrichthys) accepted when typed;
@@ -782,7 +829,7 @@ function fishGenera(X, F) {
         // The card's photo as fishGen picks a family's: the first of its easyRank order (the family's, kept by the filter),
         // whoever took it (Pierre, 2026-11-06).
         if (wide.length) X.gen[id].cover = easyCover(wide).f;
-        sci.push(id);
+        if (!atGenus) sci.push(id);
       });
     });
   X.sci = sci;
@@ -790,8 +837,93 @@ function fishGenera(X, F) {
   X.spn = Object.fromEntries((F.species || []).map(s => [s.id, s.name]));
   // Their records by id, for the photo's species said under the verdict (UNITS taxon, fishTaxon).
   X.sps = Object.fromEntries((F.species || []).map(s => [s.id, s]));
-  X.tree = fishScoreTree(X, F); // core.js: the tree of the fish global score
+  // The fish species level, step 1 (Pierre, 2026-11-03 and 2026-11-04, docs/FISH_PATH.md "Unlock rules"; 2026-11-15, Q362,
+  // Q376, Q381; docs/reviews/2026-11-14-species-step1.md): one unit per species with a listed common name (core.js
+  // fishSpUnits: s:s091), asked as a photo then four common names, its scientific name in small type under each
+  // (schedule step 1, so the two get associated). Its record, beside the families and genera in X.gen: rank 'species'
+  // (its choices and typed answers stay among species: model.js distractors, quiz.js typeMatch), its family (parent: its
+  // species open once the family is at Advanced, in the family's commonness order, at the rank share: spPlay; from: a species
+  // never answered starts from its family's ability, core.js abilityOf), the family's group and forms (easy wrong choices
+  // from other groups first), the other species of its family as look-alikes (the traps once it is answered right, rule
+  // L7) but no declared group (decl: no confusion group, model.js groupsOfRank; the pairs come from the players'
+  // mix-ups), its family's photos of that species, no mastery exam yet (noex: docs/reviews/2026-11-14-species-step1.md,
+  // "No species exam yet": its bar tops out at 95%). Its label (name) is the player's first common name (cnFirst, Q376
+  // (a): the IMR name for a player at IMR, read when shown); sci, its scientific name; also, every listed name with its
+  // spellings (a wrong choice never carries one: model.js choiceKeys). X.spl: every species unit, in the families' order.
+  // (typeof: the tools and tests that run fishGenera alone read the main name, fish.json cn's first, as outside IMR.)
+  const imr = () => typeof imrNow === 'function' && imrNow(),
+    first = s => (typeof cnFirst === 'function' ? cnFirst(s, imr()) : ((s.cn || [])[0] || [])[0]) || s.common || s.name;
+  X.spl = fishSpUnits(F, X).map(u => {
+    const E = X.gen[u.family],
+      s = u.s,
+      wide = E.views.wide.filter(p => p.sp === s.id);
+    X.gen[u.id] = {
+      id: u.id,
+      get name() {
+        return first(s);
+      },
+      sci: s.name,
+      sp: s.id,
+      rank: 'species',
+      one: 'species',
+      parent: u.family,
+      from: u.from,
+      fam: u.fam,
+      wfam: [],
+      fish: 1,
+      circle: E.circle,
+      group: E.group,
+      ig: E.ig,
+      forms: E.forms,
+      look: u.look,
+      decl: [],
+      lk: [],
+      lsrc: {},
+      also: (s.cn || []).flat(),
+      qt: null,
+      tl: 'Its names',
+      // Its card's and its feedback's line: its scientific name (the WoRMS name beside it, rule S2), then its other listed
+      // names (read when shown: the first one is the player's).
+      get sum() {
+        const f = first(s),
+          o = (s.cn || []).map(n => n[0]).filter(x => x !== f);
+        return `${s.name}${s.now && s.now !== s.name ? ` (now ${s.now} in WoRMS)` : ''}.${o.length ? ` Also called ${o.join(', ')}.` : ''}`;
+      },
+      species: [s.id],
+      phase: [],
+      sub: [],
+      cm: Math.round(Math.sqrt((s.present || {}).dauin || 0)),
+      levels: 1,
+      noex: 1,
+      views: {wide},
+      names: []
+    };
+    if (wide.length) X.gen[u.id].cover = easyCover(wide).f;
+    return u.id;
+  });
+  // core.js: the tree of the fish global score, without the species units and with them (UNITS fish tree: spOn)
+  X.tree = fishScoreTree(X, F);
+  X.treeSp = fishScoreTree(X, F, true);
   return X;
+}
+// The species units in play (the sp set, UNITS fish sets): from L (FISH.spl), for each family at Advanced (score: genScore,
+// LV_AT[1]; Pierre, 2026-11-03), its species met (met: introduced; a species met stays in) and the next one not met in
+// the family's order, the most met around Dauin first (core.js fishSpUnits, fish.json cmi): the order they open in
+// (Pierre, 2026-11-04). How often they open and are asked is the rank share's (model.js SHARE; Pierre, 2026-11-16, Q382:
+// not one at a time, a share of the questions set by the families' mastery), through the opening's usual pace
+// (model.js openPick, shareRoom). on: the species level is on (spOn); off, none.
+function spPlay(L, score, met, on) {
+  if (!on) return [];
+  const by = new Map();
+  L.forEach(n => {
+    const p = GX(n).parent;
+    if (!by.has(p)) by.set(p, []);
+    by.get(p).push(n);
+  });
+  return [...by].flatMap(([p, U]) => {
+    const next = score(p) >= LV_AT[1] && U.find(n => !met(n) && photoAny(n));
+    return [...U.filter(met), ...(next ? [next] : [])];
+  });
 }
 // The scientific genera in play (the sci set, UNITS fish sets), from L (FISH.sci) by their family's score (score: genScore)
 // and whether met (met: introduced; a genus met stays in): units, offered to everyone (Pierre, 2026-11-08: back at
@@ -862,9 +994,14 @@ function cnAlso(s, R) {
     })
     .filter(([, L]) => L.length);
 }
-// A unit's rank inside its subject: '' for the corals' genera and the fish families, 'genus' for a fish scientific genus.
-// A question's choices and its typed answers stay within the rank of the unit asked (model.js distractors).
-const rankOf = n => (GX(n) || {}).rank || '';
+// A unit's rank inside its subject: '' for the rank its game units are at (core.js unitRankOf: the corals' genera, the
+// fish families, the sea slugs' genera), else its own ('genus' for a fish scientific genus; 'family' for a sea slugs'
+// family, a record with no rank of its own read at its subject's rank). A question's choices and its typed answers stay
+// within the rank of the unit asked (model.js distractors).
+const rankOf = n => {
+  const r = (GX(n) || {}).rank || SUBJ.rank;
+  return r === unitRankOf(SUBJ) ? '' : r;
+};
 // A unit's name when its id is not its name (a fish entry t01: Damselfish; a scientific genus g:Chromis: Chromis), '' for
 // a coral genus (its id is its name) or no unit (an "I don't know"): what an answer logs beside the unit (quiz.js answer).
 const unitName = n => {
@@ -889,9 +1026,51 @@ const photoTaxon = (L, n) => {
 // WoRMS name after it as the species sheet says it ("now X in WoRMS"); '' without a taxon.
 const taxonLine = t => {
   if (!t || !t.sci) return '';
-  const it = x => (t.rank === 'family' ? esc(x) : `<i>${esc(x)}</i>`);
-  return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${it(t.sci)}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
+  const it = x => (t.rank === 'family' ? esc(x) : `<i>${esc(x)}</i>`),
+    // a species with no name yet (t.src: its source; Q389 (2)): its genus in italics, "sp. 5" upright, the source small
+    sci = t.src
+      ? `<i>${esc(t.sci.split(' ')[0])}</i> ${esc(t.sci.split(' ').slice(1).join(' '))} <small>(${esc(t.src)})</small>`
+      : it(t.sci);
+  return `<p class="fbsp">This photo: ${t.common ? `${esc(t.common)} · ` : ''}${sci}${t.now ? ` <small>(now ${it(t.now)} in WoRMS)</small>` : ''}</p>`;
 };
+// A tree subject's English names given as information (UNITS vern; the sea slugs: Pierre, 2026-11-17, their common
+// names and nicknames wherever names are shown, never an answer choice nor a branch of their own, Q369 (d) stands): the
+// names of the family, genus or species with tree id id ([{n, src [the sources], nick: 1 for a nickname, web [{t, u}]}],
+// the first the one shown first), [] for a subject without them (the fish: their genera's common, their species' cn).
+// vernFirst, its first name as shown, its first letter in capitals ("polyceras": Polyceras), '' when none.
+const vernOf = id => (id && UNITS[SUBJ.id] && UNITS[SUBJ.id].vern ? UNITS[SUBJ.id].vern(id) || [] : []);
+const vernFirst = id => {
+  const n = (vernOf(id)[0] || {}).n || '';
+  return n.charAt(0).toUpperCase() + n.slice(1);
+};
+let VERNIX = null;
+// The records of the tree in force by id (fish.json-shaped: families, genera, species), read once per tree.
+const treeRec = id => {
+  const F = FISHRAW && FISHRAW.f;
+  if (!F) return null;
+  if (!VERNIX || VERNIX.f !== F)
+    VERNIX = {f: F, by: new Map([...(F.families || []), ...(F.genera || []), ...(F.species || [])].map(r => [r.id, r]))};
+  return VERNIX.by.get(id) || null;
+};
+// A tree record's English names (the sea slugs' UNITS vern): its en, as tools/seaslug_names.py merged them.
+const treeVern = id => ((treeRec(id) || {}).en || []).filter(x => x && x.n);
+// The sources of English name x of record id, each linked (rule C2): iNaturalist, WoRMS, Wikipedia by the record's own
+// ids (its ensrc), a guide's or a page's by its own address.
+function vernSrcs(id, x) {
+  const S = (treeRec(id) || {}).ensrc || {},
+    a = (u, t, title) =>
+      `<a href="${esc(safeUrl(u))}" target="_blank" rel="noopener"${title ? ` title="${esc(title)}"` : ''}>${esc(t)}</a>`,
+    L = [];
+  (x.src || []).forEach(k => {
+    if (k === 'inat' && S.inat) L.push(a('https://www.inaturalist.org/taxa/' + encodeURIComponent(S.inat), 'iNaturalist'));
+    else if (k === 'worms' && S.worms)
+      L.push(a('https://www.marinespecies.org/aphia.php?p=taxdetails&id=' + encodeURIComponent(S.worms), 'WoRMS'));
+    else if (k === 'wiki' && S.wiki)
+      L.push(a('https://en.wikipedia.org/wiki/' + encodeURIComponent(S.wiki.replace(/ /g, '_')), 'Wikipedia'));
+  });
+  (x.web || []).forEach(w => L.push(a(w.u, String(w.t || '').split(/,| \(/)[0], w.t)));
+  return L.join(', ');
+}
 // A fish photo's taxon: the species it is in play for (fish-game.json sp, Pierre's curation applied: core.js fishPhotos),
 // by its records R (FISH.sps, fish.json species): its PDF name and the WoRMS name beside it (rule S2), the player's first
 // common name (cnFirst: the IMR name for a player at IMR, imr; the main name for the others, Q376 (a)). Every fish game
@@ -900,12 +1079,21 @@ const taxonLine = t => {
 const fishTaxon = (R, p, imr) => {
   const s = p && p.sp && R && R[p.sp];
   return s && s.name
-    ? {id: p.sp, sci: s.name, common: cnFirst(s, imr), now: s.now && s.now !== s.name ? s.now : '', rank: 'species'}
+    ? {
+        id: p.sp,
+        sci: s.name,
+        common: cnFirst(s, imr),
+        now: s.now && s.now !== s.name ? s.now : '',
+        rank: 'species',
+        ...(s.inf && s.src ? {src: s.src} : {})
+      }
     : null;
 };
 // The player answered "I'm at IMR" to the fish (model.js imrSaid; Q227: whatever the answer now), for cnFirst; false
 // where model.js is not loaded.
 const imrNow = () => typeof imrSaid === 'function' && !!imrSaid();
+// The fish species level on (sync.js speciesOn, rule D4); false where sync.js is not loaded.
+const spOn = () => typeof speciesOn === 'function' && !!speciesOn();
 // A coral photo's taxon: its iNaturalist species (data.json, cand.json t), only when that species is in the genus asked n
 // (a photo Pierre moved to another genus keeps its old name: nothing then) and the identification is sure: Research Grade
 // (no gid) or Pierre's own (rule S2). A photo named to the genus only, or an IMR lecture photo (no t), says nothing more
@@ -929,23 +1117,91 @@ const GX = n => DATA.gen[n] || ((DATA.x || {}).gen || {})[n] || (FISH ? FISH.gen
 // FISHF: fish.json with the content editor's edits laid over it (core.js contentApply; Pierre, 2026-11-15, Q359): what
 // the units and the sheets read (learn.js ftree), made again with the units whenever the curation is; fish.json itself
 // (FISHRAW.f) when nothing is edited.
+// The editor's circles and pairs (core.js structApply; Q359, Q363 h A) only once the sync script replays the progress
+// under them (rule D4: structOn, core.js STRUCT_SHEET); before, the text slots alone, as before. FISHST: the structure
+// stamp of the units made (core.js structStamp, '' without the structure), FISHON: whether they were made under it.
+// Every subject read through this fish engine (a tree subject: UNITS get, its files; the fish, the sea slugs) has its own
+// copy of them (TREE_OF, treeOf); these globals are the copy of the tree subject in force (TREE_AT: the subject on screen's,
+// subjectLoad and inSubject bring it, treeAt), so everything that reads FISH reads the subject on screen. The corals have
+// none: on them the globals stay the last tree subject's, as they stayed the fish's.
 let FISH = null,
   FISHP = null,
   FISHH = null,
   FISHRAW = null,
-  FISHF = null;
+  FISHF = null,
+  FISHST = '',
+  FISHON = false;
+let TREE_AT = null;
+const TREE_OF = {};
 const fishBuild = () => {
-  const {ph, gm} = FISHRAW,
-    // the subject whose first pool file is fish.json (SUBJECTS pool), whose content slots apply to it
-    f = (FISHF = contentApply(
-      SUBJECTS.find(S => S.pool.files[0] === 'fish.json'),
-      FISHRAW.f,
-      CUR
-    ));
-  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), f), CUR, f);
+  // the tree subject in force (TREE_AT): its content slots apply to it, and its part of the curation (core.js treeCur)
+  const S = SUBJECTS.find(x => x.id === TREE_AT),
+    {ph, gm} = FISHRAW,
+    on = structOn(),
+    C = treeCur(S, CUR),
+    f = (FISHF = contentApply(S, FISHRAW.f, CUR, {structure: on}));
+  FISHON = on;
+  FISHST = on ? structStamp(S, FISHRAW.f, CUR) : '';
+  FISH = fishCurate(fishGenera(fishGen(f, fishPhotos(ph.photos, gm.photos, C), ph.sheet, unitRankOf(S)), f), C, f);
   rankPhotos(); // the photos in easyRank order on their difficulty (below)
   return FISH;
 };
+// A tree subject's own state (the globals' names), made on first use; the globals from the state in force and back.
+const treeOf = id =>
+  TREE_OF[id] || (TREE_OF[id] = {id, FISH: null, FISHP: null, FISHH: null, FISHRAW: null, FISHF: null, FISHST: '', FISHON: false});
+function treePull() {
+  if (TREE_AT) ({FISH, FISHP, FISHH, FISHRAW, FISHF, FISHST, FISHON} = treeOf(TREE_AT));
+}
+function treePush() {
+  if (TREE_AT) Object.assign(treeOf(TREE_AT), {FISH, FISHP, FISHH, FISHRAW, FISHF, FISHST, FISHON});
+}
+// Subject id's tree in force (subjectLoad, inSubject): nothing for a subject with none (the corals). Its units are made
+// here when its data came while another was in force, or a curation came since (stale).
+function treeAt(id) {
+  if (!UNITS[id] || !UNITS[id].get || id === TREE_AT) return;
+  treePush();
+  TREE_AT = id;
+  treePull();
+  const T = treeOf(id);
+  if (FISHRAW && DATA && (!FISH || T.stale)) {
+    T.stale = false;
+    fishBuild();
+    treePush();
+  }
+}
+// fn() with subject id's tree in force, then the one before: what reads a tree subject's units outside its own context
+// (sync.js boardUnits: each leaderboard's tree, whatever the subject on screen; Codex review #987).
+function treeWith(id, fn) {
+  const was = TREE_AT;
+  treeAt(id);
+  try {
+    return fn();
+  } finally {
+    if (was) treeAt(was);
+  }
+}
+// The units of every tree subject loaded made again (build: a new curation): the one in force at once, the others when
+// they come back in force (treeAt).
+function treeBuildAll() {
+  Object.values(TREE_OF).forEach(T => {
+    if (T.id === TREE_AT) {
+      if (FISHRAW) (fishBuild(), treePush());
+    } else if (T.FISHRAW) T.stale = true;
+  });
+}
+const structOn = () => typeof sheetV === 'function' && sheetV() >= STRUCT_SHEET;
+// A reply from the script that replays under the structure, the units made before it without the structure the curation
+// holds (sync.js sheetSeen): made again at the next page change, as a new curation is (CUR_NEW).
+function structSeen() {
+  if (!FISHRAW || FISHON === structOn() || CUR_NEW) return;
+  if (
+    structFp(
+      SUBJECTS.find(x => x.id === TREE_AT),
+      CUR
+    )
+  )
+    CUR_NEW = CUR;
+}
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick), on the built units X (2026-11-08: his covers, published, never reached the app). ★ Cover: the
 // card's photo (coverP, which cover() reads first, as a coral genus's: core.js applyCuration) while it is among the
@@ -958,7 +1214,8 @@ const fishBuild = () => {
 // unit (fishGenera) takes it as its coverP like a family; a genus with no unit (not in circle 1) and a species, which
 // have no record in X.gen, get it in X.covers {id: photo} while it is in play as a photo of that genus or species (the
 // family's views.wide, every photo of its species in play): the genus rows and cards and the species' first photo on
-// the sheets (learn.js genCover, fishSpPhotos). F: fish.json.
+// the sheets (learn.js genCover, fishSpPhotos). F: fish.json. cur: the curation as the engine reads it (core.js treeCur:
+// the subject's own part under the fish's key).
 function fishCurate(X, cur, F) {
   const G = (cur && cur.fish && cur.fish.genera) || {},
     sps = new Map(((F && F.species) || []).map(s => [s.id, [s.id]])),
@@ -970,7 +1227,7 @@ function fishCurate(X, cur, F) {
     if (!g && k && k.cover && (sps.has(id) || gens.has(id))) {
       const S = new Set(sps.get(id) || gens.get(id));
       pool = pool || Object.values(X.gen).flatMap(u => (u.rank ? [] : u.views.wide));
-      const L = pool.filter(p => S.has(p.sp)),
+      const L = pool.filter(p => S.has(p.sp) || (!!p.gl && p.sp === id)),
         cv = L.find(p => p.f === k.cover) || L.find(p => fishPid(p.f) === fishPid(k.cover));
       // never a juvenile (juvP), unless he confirmed it (coverOk): then marked cj, which seenCover reads
       if (coverOk(k, cv)) X.covers[id] = juvP(cv) ? {...cv, cj: 1} : cv;
@@ -990,7 +1247,8 @@ function fishCurate(X, cur, F) {
     if (fe.length) g.featP = Object.fromEntries(fe);
   });
   // Every unit's card photo without his pick (Q339 (b), seenCover): its species with a reference photo most seen around
-  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile.
+  // the instance's centre, then his ★ cover of that species (X.covers), else its easiest reference photo; never a juvenile,
+  // nor a watermarked photo while the unit has another adult one (wmP, Q379).
   const spr = new Map(((F && F.species) || []).map(s => [s.id, s])),
     seen = sid => nearSeen(spr.get(sid));
   Object.values(X.gen).forEach(g => {
@@ -999,26 +1257,43 @@ function fishCurate(X, cur, F) {
   });
   return X;
 }
-// In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): fishHome,
+// In two steps (Pierre, 2026-11-09: Home before fish-game.json, the photos first shown on Home may change): treeHome,
 // fish.json and fish-photos.json (the families and their first photos), enough for Home, which start-up waits for; then
-// fishLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
+// treeLoad, fish-game.json too (the curated photos, the biggest file), which the games and the Learn pages wait for (tier
 // 2: need). Until it is in, the units play on the first photos only, as when it cannot come; then they are built
 // again with it. A launch that finds it in the service worker's cache waits for it at start-up, as before (fishCached).
-const fishHome = () =>
-  FISHH ||
-  (FISHH = Promise.all([json('fish.json?v=6'), json('fish-photos.json?v=6')])
-    .then(([f, ph]) => {
-      // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
-      // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
-      // whole list is not required: without it every family plays on its first photos.
-      if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
-      if (!FISHRAW) FISHRAW = {f, ph, gm: {photos: {}}};
-      return FISHRAW;
-    })
-    .catch(e => {
-      FISHH = null;
-      throw e;
-    }));
+// Per tree subject id, its files (UNITS get: f its tree, ph its first photos, none for a subject whose game file is small,
+// gm its game photos), its state written into its own copy (treeOf) and into the globals only while it is in force
+// (TREE_AT): a subject's files may come while another is on screen (setSubject loads before it switches).
+const treeSet = (id, k, v) => {
+  treeOf(id)[k] = v;
+  if (id === TREE_AT) treePull();
+  return v;
+};
+const treeHome = id => {
+  const T = treeOf(id),
+    G = UNITS[id].get;
+  return (
+    T.FISHH ||
+    treeSet(
+      id,
+      'FISHH',
+      Promise.all([G.f(), G.ph ? G.ph() : {photos: {}}])
+        .then(([f, ph]) => {
+          // json() answers {} when a file cannot come: refused here, so nothing empty is kept and the next try fetches again
+          // (Codex review #442: a failed load cached an empty fish quiz, with no retry and no way back to the corals). The
+          // whole list is not required: without it every family plays on its first photos.
+          if (!f || !Array.isArray(f.families) || !f.families.length || !ph || !ph.photos) throw new Error('fish data not loaded');
+          if (!T.FISHRAW) treeSet(id, 'FISHRAW', {f, ph, gm: {photos: {}}});
+          return T.FISHRAW;
+        })
+        .catch(e => {
+          treeSet(id, 'FISHH', null);
+          throw e;
+        })
+    )
+  );
+};
 // The subject's data still partial (the fish units on their first photos only, until fish-game.json is in): what reads
 // the units' photos once for good waits (model.js domRecalcAll, the one-time rebuild of an old record's bar).
 const dataPartial = () => !!(UNITS[SUBJ.id].partial && UNITS[SUBJ.id].partial());
@@ -1031,28 +1306,44 @@ const fishCached = () =>
         () => false
       )
     : Promise.resolve(false);
-const fishLoad = () =>
-  FISHP ||
-  (FISHP = Promise.all([fishHome(), json('fish-game.json?v=1')])
-    .then(([raw, gm]) => {
-      // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
-      FISHRAW = {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true};
-      // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
-      // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
-      // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way.
-      if (!DATA) return FISH;
-      const F = fishBuild();
-      if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
-      // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
-      try {
-        if (typeof achPending === 'function') achPending();
-      } catch (e) {}
-      return F;
-    })
-    .catch(e => {
-      FISHP = null;
-      throw e;
-    }));
+const treeLoad = id => {
+  const T = treeOf(id);
+  return (
+    T.FISHP ||
+    treeSet(
+      id,
+      'FISHP',
+      Promise.all([treeHome(id), UNITS[id].get.gm()])
+        .then(([raw, gm]) => {
+          // A subject with no first photos (the sea slugs) has nothing to play without its game file: refused, so the
+          // next try fetches it again and start-up falls back on the corals (Codex review #987), as fishHome refuses fish.json.
+          if (!UNITS[id].get.ph && !(gm && gm.photos)) throw new Error('tree data not loaded');
+          // fish-game.json's records whole (core.js fishGameRead: the file's short form, observation ids and extensions).
+          treeSet(id, 'FISHRAW', {...raw, gm: gm && gm.photos ? fishGameRead(gm) : {photos: {}}, full: true});
+          // At start-up (no data built yet) the first build() makes the units, under the curation it reads with data.json:
+          // built here too, they were thrown away unused a moment later (performance pass, 2026-11-09: a third of a second of
+          // a mid phone's start, per launch). Until then FISH stays null, as while the fish files are on their way. A subject
+          // not in force makes its units again, on its whole data, when it comes back in force (treeAt: stale; Codex review
+          // #987: units made on its first photos alone were kept).
+          if (id !== TREE_AT) T.stale = true;
+          if (!DATA || id !== TREE_AT) return T.FISH;
+          T.stale = false;
+          const F = fishBuild();
+          treePush();
+          if (typeof domRecalcAll === 'function') domRecalcAll(); // model.js: units pulled before the fish data came
+          // progress.js: an achievement recount waiting for this data; never a reason for the fish data to fail (Codex review #734)
+          try {
+            if (typeof achPending === 'function') achPending();
+          } catch (e) {}
+          return F;
+        })
+        .catch(e => {
+          treeSet(id, 'FISHP', null);
+          throw e;
+        })
+    )
+  );
+};
 // The fish units' photos in easyRank order on their difficulty as the game sees it (model.js photoDiff: the judged ease,
 // then the players' answers once fish answers are logged and rated), so the card's photo and each list's first photo stay
 // the easiest, most reference-like ones as the ratings come (Pierre, 2026-11-06). Run when the fish data or the photo
@@ -1075,6 +1366,7 @@ function rankPhotos() {
 const SUBJ_HOOKS = [];
 function subjectLoad(S, keep) {
   SUBJ = S;
+  treeAt(S.id); // its tree in force (FISH: the fish's, the sea slugs'), none for the corals
   unitsRenamed(S);
   P = store.get(sKey('progress'), {}) || {};
   Q = qLoad();
@@ -1085,7 +1377,7 @@ function subjectLoad(S, keep) {
 let SUBJ_VISIT = 0;
 function inSubject(id, fn) {
   const S = subjectOf(id),
-    was = {S: SUBJ, P, Q};
+    was = {S: SUBJ, P, Q, T: TREE_AT};
   if (S === SUBJ) return fn();
   SUBJ_VISIT++;
   subjectLoad(S, true);
@@ -1094,6 +1386,7 @@ function inSubject(id, fn) {
   } finally {
     SUBJ_VISIT--;
     SUBJ = was.S;
+    if (was.T) treeAt(was.T); // the tree on screen back in force
     SUBJ_HOOKS.forEach(f => f(true));
     P = was.P;
     Q = was.Q;
@@ -1109,7 +1402,7 @@ function inSubject(id, fn) {
 function setSubject(id) {
   const S = subjAt(id);
   if (S === SUBJ) return Promise.resolve();
-  return UNITS[S.id].load().then(() => {
+  return UNITS[S.id].load(S).then(() => {
     store.set(SUBJECT_KEY, S.id);
     if (typeof toastsOff === 'function') toastsOff(); // progress.js: a note about the subject left
     subjectLoad(S);
@@ -1779,7 +2072,9 @@ let session = {ok: 0, n: 0, h: []},
 // BENTHIC and BONUS (below) are defined once in core.js, with slateOf / gameOf, which the admin and tools share.
 const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 // What each subject's units are, read from its data (core.js SUBJECTS holds the rest of the taxon model):
-//   load()   its data, before its pages open (corals: data.json, always loaded; fish: fishLoad)
+//   load(S)  its data, before its pages open (corals: data.json, always loaded; a tree subject, the fish and the sea
+//            slugs: treeLoad over its files, get)
+//   get      a tree subject's files ({f, ph, gm}: treeHome, treeLoad), read through the fish engine (FISH in force: treeAt)
 //   doorsFirst  Home's doors may be drawn before data.json, their band empty until it comes (beforeData): the doors' words
 //            are the corals' (home.js viewHome without DATA)
 //   pick     its line where a player with two subjects picks the one to start with (tour.js, the welcome tour's first step)
@@ -1796,6 +2091,8 @@ const isBenthic = n => !DATA.gen[n] && BENTHIC.includes(n) && !!GX(n);
 //            once due (progress.js). k, units(), due(), the card's words (kick, title, body, yes, note), row (My progress)
 //   done()   once every unit in play is met and none may open now (quiz.js allMetDue): {k, kick, title, lines}, the card that
 //            says so and what comes next, once per reason k; absent (the corals): no card
+//   listBy   a tree subject without a key: the rank its units are grouped by on its Learn list (learn.js viewFishList, one
+//            block per unit of that rank, its parent): the sea slugs' 'family'; absent, one block (the fish: the key's groups)
 // Bonus genera (Pierre, 2026-11-01; opt-in since 2026-11-02): genera off the IMR slate that are common at Dauin and
 // easily taken for a slate genus. Picked from the Coral Finder book genera present at Dauin (data.json "x",
 // tools/build_extra.py): 4+ Research Grade iNaturalist observations within 40 km, and a look-alike on the slate named by
@@ -1882,6 +2179,47 @@ const fishNextOf = o => {
     lines: ['Every fish family open to you is in your game: no new one comes for a while.', ...L]
   };
 };
+// A tree subject's photo by its name, for the admin's "Bad photo" flag (flag.js; UNITS photo): {id, its key in the
+// subject's curation (core.js fishPid: one photo under its candidate and reference names), and what the flag records:
+// file (its name), unit (the family showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
+function treePhoto(f) {
+  const id = fishPid(f),
+    G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
+  for (const g of G)
+    for (const [v, L] of Object.entries(g.views || {})) {
+      const p = (L || []).find(x => x && fishPid(x.f) === id);
+      if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
+    }
+  return null;
+}
+// A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237; UNITS
+// typeOther): the scientific names at that rank (every genus of the tree and of its species' names, in the game or not)
+// and the common names (the genera's, their IMR tags, the species': the PDF's, every listed one with its spellings, cn,
+// and the regional ones, cnr; the English names a tree gives as information, en: the sea slugs' families, genera and
+// species, Pierre 2026-11-17), from the tree in force alone. Nothing for another rank. An English name typed on a genus
+// question is told so, never read as a genus, as a fish genus's common name (app.js fishGenera names).
+function treeTypeOther(rk) {
+  const F = rk === 'genus' && FISHRAW && FISHRAW.f;
+  if (!F) return null;
+  const first = x => String(x || '').split(/\s+/)[0],
+    en = r => ((r && r.en) || []).map(x => x && x.n);
+  return {
+    sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
+    common: [
+      ...(F.genera || []).flatMap(g => [g.common, g.imr, ...en(g)]),
+      ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat(), ...(x.cnr || []).flat(), ...en(x)]),
+      ...(F.families || []).flatMap(en)
+    ].filter(Boolean)
+  };
+}
+// The sea slugs' card (UNITS seaslug hello): the invitation to the players of their beta group.
+const SEA_HELLO = {
+  group: {
+    kick: 'Invitation',
+    title: 'Test the sea slug beta',
+    body: '<p>You’re invited to try sea slugs: nudibranchs and other sea slugs of the Philippines, by their scientific names, with the same game as the corals.</p><p>Switch subjects at the top of Home, any time: your other progress stays as it is.</p><p class="note">Beta: still being built, iNaturalist photos for now. Your feedback helps: send it from the ? on any page.</p>'
+  }
+};
 const UNITS = {
   coral: {
     // Its Identify tool (MODES identify): the Coral ID Key (proto/idkey.js).
@@ -1952,12 +2290,28 @@ const UNITS = {
   fish: {
     // The Fish ID Key, coming soon (home.js viewFishKey; ROADMAP "Fish ID Key for EventMeasure").
     identify: 'fishkey',
+    // Home's words for a subject with no tool of its own yet (home.js viewHome, viewFishKey; the corals' are the page's
+    // own): need, what Identify names; before, when the Learn door is for; when, title, desc, btn, soon: the Identify
+    // door's; key, the key's page line; learn, practice: the Learn door's two lines where they are not the fish's.
+    door: {
+      need: 'a fish on a survey video, or one you photographed on a dive',
+      before: 'EventMeasure or your next dive',
+      when: 'In EventMeasure<span class="wide"> · or a photo from your dive</span>',
+      title: 'Identify a fish',
+      desc: 'The Fish ID Key is on its way: it will help you name the fish on the IMR survey videos, or in your own photos.',
+      btn: 'Fish ID Key',
+      soon: 'Coming soon',
+      key: 'A key to name the fish on the IMR survey videos and in your own photos, as the Coral ID Key does for corals.'
+    },
     // Home's Learn band in landscape tiles (home.js, home.css .hdtiles.land; Pierre, 2026-11-08: most fish are horizontal,
     // square tiles cut them); the corals keep their square-ish close-ups.
     land: true,
-    load: () => fishLoad(),
-    // What start-up waits for: the files of Home (fishHome), and the curated photos too when this device holds them.
-    home: () => fishHome().then(() => fishCached().then(c => c && fishLoad())),
+    // Its files (a tree subject, read through the fish engine: treeHome, treeLoad): f its tree, ph its first photos
+    // (Home before the biggest file), gm its game photos.
+    get: {f: () => json('fish.json?v=6'), ph: () => json('fish-photos.json?v=6'), gm: () => json('fish-game.json?v=1')},
+    load: S => treeLoad(S.id),
+    // What start-up waits for: the files of Home (treeHome), and the curated photos too when this device holds them.
+    home: S => treeHome(S.id).then(() => fishCached().then(c => c && treeLoad(S.id))),
     // Between the two: the units on their first photos only (dataPartial).
     partial: () => !!FISHRAW && !FISHRAW.full,
     pick: 'The reef fish families, as on the IMR survey videos.',
@@ -2014,10 +2368,15 @@ const UNITS = {
     // their first-launch answer.
     mystery: () => true,
     // The tree of its global score (core.js fishScoreTree, SUBJECTS fish score, treeScore).
-    tree: () => (FISH ? FISH.tree : null),
+    // With the species units once the species level is on (spOn; rule D4: the sheet keeps the tree in chunks and replays
+    // them), read when used, so the tree follows the sheet's version as its replies come.
+    tree: () => (FISH ? (spOn() ? FISH.treeSp : FISH.tree) : null),
     // Its units for the sheet's replay adopted here (sync.js replayAdoptS: core.js replayProgress gen, the look-alikes and
     // family lines the sheet reads from fish.json, core.js fishReplayGen); null before the fish data is in.
     gen: () => (FISH ? FISH.gen : null),
+    // The structure stamp of those units (core.js structStamp: '' while the circles and pairs in force are fish.json's),
+    // sent with the requests so the sheet replays under the structure in force (sync.js stsAsk; Q363 h A).
+    st: () => (FISH ? FISHST : ''),
     core: () => (FISH ? FISH.c1 : []),
     // Its circles, for the achievements that read them (progress.js achSnap circ; core.js FISH_ACH): the IMR course's
     // families, those that open right after them, those beyond the course.
@@ -2064,42 +2423,29 @@ const UNITS = {
     // A photo by its name, for the admin's "Bad photo" flag (flag.js): {id, its key in the subject's curation (core.js
     // fishPid: one photo under its candidate and reference names), and what the flag records: file (its name),
     // unit (the entry showing it, else a scientific genus), sp (its species), view}; null when no unit shows it.
-    photo: f => {
-      const id = fishPid(f),
-        G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
-      for (const g of G)
-        for (const [v, L] of Object.entries(g.views || {})) {
-          const p = (L || []).find(x => x && fishPid(x.f) === id);
-          if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
-        }
-      return null;
-    },
+    photo: f => treePhoto(f),
     // The typed names: the entries' (core.js fishTypeNames) and the name index (fishNameIndex: the names of their genera
     // and species and the kind words, fish.json vn, with Pierre's exceptions, curation.json fish.names), each read as
-    // the family it lifts to (Q319, Q320), a known word as such, never as a slip of another name.
-    names: () =>
-      fishTypeNames(
-        FISH ? FISH.gen : {},
-        SUBJ.typeDrop,
-        FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []
-      ),
+    // the family it lifts to (Q319, Q320), a known word as such, never as a slip of another name. The species units
+    // (fishSpUnitsUnits) are read apart: their listed and regional names with their spellings only (cnTypeNames: no short
+    // form, no other number), each its species unit's; a name two species list is right for the one asked (typeMatchIn
+    // shared, Q381). A typed answer is read among the names of the rank asked (quiz.js typeMatch), so a family question
+    // never meets them.
+    names: () => {
+      const G = FISH ? FISH.gen : {},
+        own = Object.fromEntries(Object.entries(G).filter(([, g]) => g.rank !== 'species')),
+        sp = (FISH ? FISH.spl || [] : []).map(n => FISH.sps[G[n].sp]);
+      return [
+        ...fishTypeNames(own, SUBJ.typeDrop, FISHRAW && FISHRAW.f ? fishNameIndex(FISHRAW.f, ((CUR || {}).fish || {}).names) : []),
+        ...cnTypeNames(sp).map(o => ({...o, g: 's:' + o.g}))
+      ];
+    },
     norm: typeNormAll,
     // A genus question's typed text that names no genus (core.js typeElse, quiz.js typeKind; Pierre, 2026-11-08, Q237): the
     // scientific names at that rank (every genus of fish.json and of its species' names, in the game or not) and the
     // common names (the genera's, their IMR tags, the species': the PDF's, every listed one with its spellings, cn, and
     // the regional ones, cnr), from fish.json alone. Nothing for another rank.
-    typeOther: rk => {
-      const F = rk === 'genus' && FISHRAW && FISHRAW.f;
-      if (!F) return null;
-      const first = x => String(x || '').split(/\s+/)[0];
-      return {
-        sci: [...(F.genera || []).map(g => g.name), ...(F.species || []).flatMap(x => [first(x.name), first(x.now)])].filter(Boolean),
-        common: [
-          ...(F.genera || []).flatMap(g => [g.common, g.imr]),
-          ...(F.species || []).flatMap(x => [x.common, ...(x.cn || []).flat(), ...(x.cnr || []).flat()])
-        ].filter(Boolean)
-      };
-    },
+    typeOther: rk => treeTypeOther(rk),
     // The look-alikes the IMR presentation names, each pair once.
     pairs: () =>
       Object.values(FISH ? FISH.gen : {})
@@ -2119,7 +2465,7 @@ const UNITS = {
     bar: id => fishBar(id),
     // The achievements page's ? text (progress.js viewAch).
     achHelp: () =>
-      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, and scientific genus names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
+      `<p class="lede">Achievements mark milestones of your fish learning: families met (those of the IMR course, then every family in the game), families at each level (Open Water, Advanced, Divemaster, Instructor), the IMR course’s families and those beyond it at Advanced, your fish % every 10 points, scientific genus names and species named by their common names. Never time spent. They are the fish's own: your coral achievements are on the Corals side. Contributions, apart, thank you for the reports and feedback you send (⚑ Report a problem, Send feedback); they never count in your progress. The share of players counts everyone who signed in.</p>`,
     // My progress's ? text (progress.js quizBoard).
     progHelp: () =>
       `<p class="lede"><b>To learn a fish family</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a family back, for the family you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. <b>Your fish %</b> covers the whole path: the families (alone, up to 50%), then the species by their common and scientific names; a scientific genus you know counts as half the scientific name of each of its species. The species most met around Dauin count most, and the % rises fast at first, then slower and slower. The three bars under your name show the parts: Families, Common names, Scientific names. You start with the families of the IMR survey; more families open as you go. A <b>?</b> tile is a family you have not met yet: it shows once it opens. The surprise cards don't count. The fish have their own leaderboard and achievements.</p>`,
@@ -2173,10 +2519,131 @@ const UNITS = {
         row: 'Turn on scientific names',
         onToast: () => `Scientific names on: a family’s genera come as you reach ${Q.sciH ? 'Open Water' : 'Advanced'} on it.`,
         card: ''
+      },
+      // The species by their common names (fishSpUnitsUnits, above; docs/FISH_PATH.md "Unlock rules": branch A of the
+      // tree): no offer and no switch, every player meets them (Pierre, 2026-11-03: "an entry's species open when the
+      // entry reaches Advanced"; 2026-11-04: entry by entry, never all at once), once the species level is on (spOn,
+      // rule D4). auto: a family's species from its Advanced, in its commonness order (spPlay), their share of the
+      // questions set by the families' mastery (model.js SHARE, Q382). all: every
+      // species unit, for setOf and the choices (rankUnits). They count in the fish % (the common names, core.js
+      // treeScore C).
+      {
+        k: 'sp',
+        all: () => (FISH ? FISH.spl || [] : []),
+        units: () => [],
+        auto: () => (FISH && typeof genScore === 'function' ? spPlay(FISH.spl || [], genScore, introduced, spOn()) : []),
+        due: () => false,
+        page: false, // not on the families page
+        kick: 'Species',
+        title: () => 'Species names',
+        body: 'For the families you know well: a photo and four species, by their common names.',
+        note: '',
+        tag: 'Species',
+        name: 'Species',
+        // The first species met: its card marks the milestone (Pierre, 2026-11-04, docs/FISH_PATH.md "Name-display
+        // schedule", milestones: "the first unlock of species names, even if it concerns only one or two entries at
+        // first"), once per player (the units met, synced), never again.
+        card: n =>
+          (FISH.spl || []).some(o => o !== n && introduced(o))
+            ? ''
+            : '<b>Your first species name.</b> A family you know well (Advanced) now brings its species, the most met around Dauin first, more of them as you master more families.'
       }
     ]
+  },
+  // The sea slugs (core.js SUBJECTS; Pierre, 2026-11-15, Q369, Q377; study §9 step 5): a tree subject on the fish engine,
+  // circles 1 to 3 (205 species of tools/seaslugs.json), its genera from the start (core.js SUBJECTS unitRank; Pierre,
+  // 2026-11-16), its families structure only, scientific names only, no IMR content.
+  seaslug: {
+    // No key of its own: the "coming soon" key page, in its words (door).
+    identify: 'fishkey',
+    door: {
+      need: 'a sea slug you photographed on a dive',
+      before: 'your next dive',
+      when: 'A photo from your dive',
+      title: 'Identify a sea slug',
+      desc: 'There is no sea slug ID key yet: learn the genera in the quiz.',
+      btn: 'Sea slug ID key',
+      soon: 'Not yet',
+      key: 'There is no key to name sea slugs yet. Learn their genera in the quiz.',
+      // Home's Learn and Practice lines (home.js; the fish's are written there)
+      learn: 'The genera by family, in their taxonomic groups',
+      practice: 'Name the genus from photos'
+    },
+    land: true,
+    // Its files (treeHome, treeLoad), small: no first photos, Home waits for both. Unversioned (beta, its group only): the
+    // service worker revalidates them and never holds them in its shell for the players who cannot open it.
+    get: {f: () => json('seaslug.json'), gm: () => json('seaslug-game.json')},
+    load: S => treeLoad(S.id),
+    pick: 'The sea slugs of the Philippines, nudibranchs first, by their scientific names.',
+    tour: {
+      doors: {
+        d: 'Learn & practise while you learn the sea slug genera, by their scientific names. There is no sea slug ID key yet.'
+      },
+      games: {
+        t: 'The sea slug quiz',
+        d: 'Practice in the menu opens the quiz: name the genus from photos.'
+      },
+      progress: {
+        d: tap =>
+          `Each genus fills up as you get it right on harder photos, then a surprise exam in the quiz makes it learned. ${tap} to see every genus in the game: a ? for each one you have not met yet.`
+      }
+    },
+    // The invitation to the players of its group (progress.js subjHello; the fish beta's card, in its words).
+    hello: SEA_HELLO,
+    about: {
+      who: 'sea slug genera',
+      photos: '',
+      course:
+        'The sea slugs, their circles and their stars come from iNaturalist’s Research Grade observations in the Philippines, Wikipedia pageviews and public dive pages; their names and classification from WoRMS.',
+      refs: '<li>WoRMS Editorial Board, <a href="https://www.marinespecies.org" target="_blank" rel="noopener">World Register of Marine Species</a>: the sea slugs’ scientific names and classification.</li>'
+    },
+    // No level-change card until the subject is calibrated (as the fish, Pierre, 2026-11-08).
+    startFb: false,
+    // Its three circles (tools/seaslug_game.py CIRCLES) of genera (core.js SUBJECTS unitRank: a genus's circle is its best
+    // species'), all on the path and in the progress as the fish's (Q175, Q204); circles 2 and 3 open at the fish's
+    // thresholds (fishGate: circle 2 once every circle-1 genus has been asked, circle 3 once circle 1 reaches FISH_C3),
+    // circle 3 by itself: no offer card (the fish's speaks of the IMR course).
+    slate: () => (FISH ? [...FISH.c1, ...FISH.c2, ...FISH.c3] : []),
+    mystery: () => true,
+    core: () => (FISH ? FISH.c1 : []),
+    circles: () => (FISH ? [FISH.c1, FISH.c2, FISH.c3] : []),
+    gate: fishGate,
+    species: p => (p && p.sp && FISH && FISH.spn && FISH.spn[p.sp]) || '',
+    // The photo's species under the verdict, after the answer only: its scientific name, the WoRMS name beside it, and
+    // its first English name as information (vernFirst; Pierre, 2026-11-17; never a choice: Q369 (d)).
+    taxon: p => {
+      const t = fishTaxon(FISH && FISH.sps, p, false);
+      return t ? {...t, common: vernFirst(t.id)} : t;
+    },
+    // Its English common names and nicknames, information only (Pierre, 2026-11-17; tools/seaslug_names.py): on the
+    // sheets, the Learn tiles and after an answer, never as a choice; typed on a genus question, a common name is told
+    // so (treeTypeOther), never right, as a fish genus's common name never is (fishGenera names).
+    vern: id => treeVern(id),
+    photo: f => treePhoto(f),
+    names: () => fishTypeNames(FISH ? FISH.gen : {}, SUBJ.typeDrop, []),
+    norm: typeNormAll,
+    typeOther: rk => treeTypeOther(rk),
+    // No sourced look-alike pair between genera yet (study §6.3: the two Spanish dancers are one genus); a genus's sibling
+    // genera are its traps (app.js fishGenera look).
+    pairs: () => [],
+    winks: () => [],
+    tiles: () => [],
+    list: () => viewFishList(),
+    sheet: id => viewFishSheet(id),
+    bar: id => fishBar(id),
+    // The Genera page's line, and its genera grouped by family (learn.js viewFishList listBy; Pierre, 2026-11-16 ~15:42:
+    // "afficher directement les niveaux de genres, mais regroupés par famille"). The fish group theirs by the key.
+    lede: 'The sea slug genera, by their scientific names, in their families. Photos: iNaturalist.',
+    listBy: 'family',
+    progHelp: () =>
+      `<p class="lede"><b>To learn a sea slug genus</b>, keep getting it right: its % is the share of its photos you would name alone and typed, as far as your answers on it have shown, up to 95%. From ${Math.round(100 * DOM.EX)}%, once it has been asked beside each of its look-alikes, comes its <b>mastery exam</b>: ${EXAM.n} hard questions on it slipped unannounced into the quiz, at least ${TYPED.exam} of them typed; all right and you are its Instructor (100%). A mistake sets a genus back, for the genus you missed and for the one you answered. <b>Levels</b>: Snorkeler under 50%, Open Water from 50%, Advanced from 80%, Divemaster from ${Math.round(100 * DOM.EX)}% (its exam is on), Instructor once the exam is passed. A <b>?</b> tile is a genus you have not met yet: it shows once it opens.</p>`,
+    help: () => `<p class="lede">Name the sea slug genus in the photo, by its scientific name. Pick an answer (or press 1-4); <b>Next</b> (or Enter) goes on. The genera of the same family come in as you get a genus right.</p>
+  <p class="lede">A genus fills up to 95% with your right answers; it is learned (100%) once you pass its mastery exam, ${EXAM.n} hard questions slipped unannounced into the quiz, at least ${TYPED.exam} of them typed. Typed answers accept the genus’s scientific name. <b>Photos</b>: from iNaturalist, the easiest first, whoever took them.</p>`,
+    // No opt-in set: its genera are its units from the start (core.js SUBJECTS unitRank; Pierre, 2026-11-16).
+    sets: []
   }
 };
+treeAt(SUBJ.id); // the tree of the subject opened on (fish.json for the fish) in force before its files come
 const SETS = () => UNITS[SUBJ.id].sets;
 // The genera the games teach and the progress counts (the units of the subject): "the slate" in the code means this list.
 const slateGenera = () => UNITS[SUBJ.id].slate();
@@ -2200,6 +2667,11 @@ const setLater = n => {
   const S = setOf(n);
   return !!(S && S.after) && !Q[S.k + 'H'] && !(S.auto && S.auto().includes(n));
 };
+// The units the rank share leaves alone (model.js SHARE; Pierre, 2026-11-16, Q382): those of a set that opens after the
+// slate (its after) that come in the slate's phase by Pierre's decisions: the ones it brings by itself (auto: an IMR
+// player's IMR genera from their family's Open Water, Q219) and all of them once the player turned it on by hand before it
+// was due (Q[k + 'H'], Q240). Read once per answer (model.js sharesNow).
+const shareFree = () => SETS().flatMap(S => (S.after ? [...(Q[S.k + 'H'] ? S.units() : []), ...(S.auto ? S.auto() : [])] : []));
 // The parts of the slate opened by choice (UNITS opens). One is on once the player said yes, or, never asked, when one of
 // its units already opened on a card (players whose circle 3 opened by itself, 2026-11-06 to 2026-11-07, keep it: Pierre,
 // 2026-11-07). A unit of a part that is off never opens (model.js mayOpen); one already open stays open.
@@ -2267,10 +2739,13 @@ const plainLine = g => (g.plain ? `<p class="plainw">${esc(g.plain)}</p>` : '');
 // its IMR name. unameT: the plain text (tooltips, aria labels).
 const unameT = n => (GX(n) || {}).name || n;
 // unameIn: unit n's name already written as h (escaped HTML: quiz.js namesLine marks letters in it), set as uname sets it.
-const unameIn = (n, h) => {
+// A unit whose label is a common name, upright: a fish family, a fish species asked by its common name (its scientific
+// name beside it, sci); a coral genus and a fish scientific genus are in italics.
+const uplain = n => {
   const g = GX(n) || {};
-  return g.name && !g.rank ? h : `<i>${h}</i>`; // a fish scientific genus in italics, as a coral genus
+  return !!g.name && (!g.rank || !!g.sci);
 };
+const unameIn = (n, h) => (uplain(n) ? h : `<i>${h}</i>`);
 const uname = n => unameIn(n, esc(unameT(n)));
 // ID tips heading: the lecture's for slate genera, the Coral Finder's (with its pages) for bonus genera.
 const tipsLabel = g => g.tl || (g.x ? `ID tips (Coral Finder p. ${g.pages.join(', ')})` : 'ID tips (IMR)');
@@ -3431,7 +3906,7 @@ function need(n) {
       window.loadTier ? loadTier(n) : null,
       n === 2 ? tier2json() : null,
       // The subject's whole data (fish: fish-game.json, after Home's files): the quiz and the Learn pages wait for it.
-      n === 2 ? UNITS[SUBJ.id].load().catch(() => null) : null
+      n === 2 ? UNITS[SUBJ.id].load(SUBJ).catch(() => null) : null
     ])
       .then(a => SETUP[n] && SETUP[n](a[2]))
       .then(() => (HAVE = Math.max(HAVE, n)));
@@ -3504,7 +3979,7 @@ Promise.all([
   draftCand(),
   domReady,
   // The subject's own data (fish: fish.json): if it cannot come, the app opens on the first subject (corals).
-  (UNITS[SUBJ.id].home || UNITS[SUBJ.id].load)().catch(() => subjectLoad(SUBJECTS[0]))
+  (UNITS[SUBJ.id].home || UNITS[SUBJ.id].load)(SUBJ).catch(() => subjectLoad(SUBJECTS[0]))
 ])
   .then(([d, c, dc]) => {
     Object.entries(dc).forEach(([g, L]) => {

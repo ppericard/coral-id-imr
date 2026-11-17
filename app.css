@@ -4624,6 +4624,21 @@ a.psrc:focus-visible {
 .tiplist > .note {
   grid-column: 1/-1;
 }
+/* A list under taxonomic groups (learn.js viewFishList: the sea slugs' genera by family, the families by group): short
+   cards, so as many columns as fit (no empty half-row on a wide screen; one on phones), a group heading above its
+   families' blocks. */
+.tiplist.gtaxa {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+}
+.tiplist.gtaxa > .gtax {
+  margin: 28px 0 0;
+  padding-bottom: 4px;
+  font-size: var(--fs-l);
+  font-weight: 700;
+}
+.tiplist.gtaxa > .gtax:first-child {
+  margin-top: 0;
+}
 .tipg {
   grid-template-columns: 110px minmax(0, 1fr);
 }
@@ -7341,6 +7356,19 @@ html.touring .unlock {
 .ans button.plain {
   font-style: normal;
 }
+/* A fish species by its common name, its scientific name in small type underneath (the species level, step 1: the two
+   names associated; quiz.js question). */
+.ans .csn small {
+  display: block;
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.ans .ok .csn small,
+.ans .ko .csn small {
+  color: inherit;
+}
 /* A subject in beta (core.js SUBJECTS beta): a small tag on its name in the subject switches (Home, the header chip's menu). */
 small.beta {
   display: inline-block;
@@ -7595,6 +7623,23 @@ a.frow:hover {
 .tipsheet .cmpgo {
   margin-top: 2px;
   font-size: var(--fs-xs);
+}
+/* A unit's English name given as information (app.js vernFirst: the sea slugs' common names and nicknames, Pierre
+   2026-11-17): under its scientific name on a Learn tile, beside it in a family's heading and in the answer's verdict;
+   lighter than the scientific name, which stays the name learned. */
+.tipsheet .ven,
+.fb h3 .ven {
+  font-size: var(--fs-s);
+  font-weight: 600;
+}
+.fb h3 .ven {
+  color: var(--muted);
+}
+.gdiv .ven {
+  font-family: var(--body);
+  font-size: var(--fs-s);
+  font-weight: 400;
+  color: var(--muted);
 }
 a.ftile {
   display: block;

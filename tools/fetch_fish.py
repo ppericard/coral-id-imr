@@ -6,7 +6,8 @@ The fish counterpart of tools/fetch_local.py (corals), with Pierre's decisions f
 - Unit: the species of fish.json (`species`, PDF / EventMeasure names), grouped under the teaching entries (`teach`).
   A photo belongs to the most precise taxon its observation names: the species (iNaturalist's taxon query includes
   subspecies). Its taxon is the species' own (`inat`), or its `photoTaxon` when it has one (photo_taxon; Pierre,
-  2026-11-14, Q354 b: the Pacific form iNaturalist splits off, the IMR name kept on screen). Only species in the game (with a `circle`, never `out`), circle 1 by default (--circle).
+  2026-11-14, Q354 b: the Pacific form iNaturalist splits off, the IMR name kept on screen). Only species in the game (with a `circle`, never `out`), circle 1 by default (--circle). The circles are those in force:
+  fish.json's with the content editor's moves in curation.json laid over it (tools/fish_inforce.py; read, never written).
 - Identity: Research Grade at the species level; Pierre's own observations (iNaturalist user ppericard) identified to
   the species are usable as that species even when Needs ID (rule S2: he names a species only when nearly
   sure), nobody else's. That is photo use only: they no longer confirm presence on their own (rule C8; fish.json
@@ -110,6 +111,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 from datajson import dump  # noqa: E402  one species per line, as cand.json
 from rights import rights_rank  # noqa: E402  the rights of a photo, as core.js rightsRank (Q270)
+from fish_inforce import in_force  # noqa: E402  the circles in force (the content editor's: design note v2, step 3)
 
 API = "https://api.inaturalist.org/v2/observations?"
 TAXA = "https://api.inaturalist.org/v2/taxa/"
@@ -498,6 +500,7 @@ def topup(args):
     {species id: photos added}."""
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
     fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
+    fish = in_force(fish, cur)  # the circles in force (the content editor's, tools/fish_inforce.py)
     have = rd(args.cand).get("cand", {})
     _, excl = state(cur, sug)
     moved = moved_of(cur)
@@ -780,7 +783,7 @@ def sure_out(j):
     return j.get("k") == "dup" or (len(jt) >= 7 and (jt[6] in "xk" or "a" in jt[7:]))
 
 
-FISH_TAGS = re.compile(r"^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$")  # autosort.js FISH_TAGS
+FISH_TAGS = re.compile(r"^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$")  # autosort.js FISH_TAGS (v, f: the sea slugs')
 
 
 def sure_add(j):
@@ -885,6 +888,7 @@ def run(args):
     cand_path = Path(args.cand)
     have = json.loads(cand_path.read_text(encoding="utf-8")).get("cand", {}) if cand_path.exists() else {}
     cur = json.loads(Path(args.cur).read_text(encoding="utf-8")) if Path(args.cur).exists() else {}
+    fish = in_force(fish, cur)  # the circles in force (the content editor's, tools/fish_inforce.py)
     sug = json.loads(Path(args.suggest).read_text(encoding="utf-8")) if Path(args.suggest).exists() else {}
     fbsrc = (json.loads(Path(args.fbsrc).read_text(encoding="utf-8")) if Path(args.fbsrc).exists() else {}).get("species") or {}
     gone, excl = state(cur, sug)
@@ -1157,6 +1161,7 @@ def refill(args):
         topup(argparse.Namespace(**{**vars(args), "only": "", "refresh": not args.offline}))
     rd = lambda a: json.loads(Path(a).read_text(encoding="utf-8")) if Path(a).exists() else {}  # noqa: E731
     fish, cur, sug = rd(args.fish), rd(args.cur), rd(args.suggest)
+    fish = in_force(fish, cur)  # the circles in force (the content editor's, tools/fish_inforce.py)
     have = rd(args.cand).get("cand", {})
     fbsrc = rd(args.fbsrc).get("species") or {}
     gone, _ = state(cur, sug)

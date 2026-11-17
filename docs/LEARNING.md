@@ -1332,7 +1332,7 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
 
 **The variables, all of the existing model** (`CHOICE.opts[i][1]`):
 
-| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337) | Coral basics first |
+| Answer | `p`: the level the answers are shrunk towards | `at`: the open-all offer from answer (not read since 2026-11-12, Q337; removed 2026-11-15) | Coral basics first |
 | --- | --- | --- | --- |
 | I'm new to corals | 0 (as before: a new player is a beginner) | 50 (as before, `INTRO.OFFER.AT`) | yes (tour's last button, the card's follow-up) |
 | I had the IMR coral course | 0.5 | 30 | no |
@@ -1348,8 +1348,8 @@ profiles (docs/FISH_PATH.md "Checks before release"); the fish prior applies at 
   p 0 is 0.08 (beginner), 0.52 (lecture RA), 0.78 (strong RA), 2.0 (expert) (`tools/learnsim.js`, below); "I know
   corals well" covers both a strong RA and an expert, so 1.25 (start 1.0), between them, and a wrong answer must stay
   cheap. 0.3 / 0.8 and 0.8 / 1.875 were tried (table).
-- **`at`** (not read since the offer card went, 2026-11-12, Q337; it stays in `core.js` `CHOICE` until the next change
-  to that file, ROADMAP): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
+- **`at`** (not read since the offer card went, 2026-11-12, Q337; removed from `core.js` `CHOICE` on 2026-11-15, the
+  record below kept): the offer to open all genera came from answer 50 for everyone; a player who says they know the genera can be
   offered it sooner. The offer still needs 10 slate genera met and a global level of 0.5 (`introOffer`), so the answers
   decide; `at` only lets it come earlier. Simulated with the offer accepted (`--openall offer`): opened at answer 30-56
   (lecture RA) and 30-36 (strong RA, expert) instead of 50-58 and 50-51; true knowledge at 300 unchanged (0.76, 0.84-0.85,
@@ -3433,7 +3433,7 @@ first photos were too hard. Fish answers were not logged to the sheet then (logg
 rating and no entry a difficulty: every fish photo sat at 0, and the opening order was commonness and chance. Three
 changes, all data the engine reads generically (the corals have none of these fields, so nothing moves for them):
 
-- **The starter core** (`fish.json` `start`, from `tools/fish_source.json`; Pierre's fish-ID design: four easy, readable
+- **The starter core** (`fish.json` `start`, from the IMR instance's layer `tools/instances/imr/fish.json`; Pierre's fish-ID design: four easy, readable
   families first): Butterflyfish, Angelfish, Damselfish, Surgeonfish & Unicornfish. `fishGen` marks their records
   `first`; `openPick` opens a `first` unit before any other while one is left, so the `INTRO.START` (4) first cards are
   exactly these four. The rest then opens by the existing rule, easiest and most common first: an entry's difficulty
@@ -3997,6 +3997,249 @@ question's choices genera and every entry question's entries. Not measured: what
 how the genus share of the questions should be paced against the entries (the draw weighs every unit alike, so many genera
 take many questions). To check with learnsim fish profiles once they exist.
 
+### Fish: the species level, step 1, by common name (2026-11-15, Q362, Q375, Q376, Q381; docs/reviews/2026-11-14-species-step1.md)
+
+One unit per species with a listed common name (`core.js` `fishSpUnits`: `s:s091`, 659 on 2026-11-15), in a family in
+play. A family's species join the game once the family is at Advanced. They open one at a time in the family's
+commonness order (`app.js` `spPlay`: the species met, then the next one), through the usual opening (`OPEN`, the card,
+`introHold`). The app turns this on only once the sheet keeps the tree in chunks and replays the species units
+(`sync.js` `speciesOn`: `TREE_SHEET` and `SPECIES_SHEET`).
+- **Start**: a species never answered starts from its family's ability (`core.js` `abilityOf` from, as the replay does).
+- **Choices**: wrong choices of its rank only. Easy ones first come from other families' groups; then the other species
+  of its family, its look-alikes, are the traps (rule L7). It has no declared confusion group and no mastery exam yet, so
+  its bar tops out at 95%.
+- **Score**: each species' unit is its common-name credit C in the global score (`fishScoreTree` with the species on).
+  Families plus every common name give 89%.
+- **Not built in step 1**: a wrong pick of another family's species also counting against both families (#892, "Feeding
+  the families"). It needs its own scoring of the family question and a fish rules version once species rows exist.
+
+**The check, declared before running** (rule L11, level 2: it changes the opening, the draw and the score for every
+fish player past a family's Advanced; this commit, before any run):
+- **Worlds and arms**: before `main` (219354c), after this branch, the same seeds. Fish, the default profiles (beginner,
+  casual diver, lecture RA, strong RA, expert).
+  - Rated world (`tools/ratedworld.js`, which now builds the species units as the app does): 10 seeds per profile,
+    10,000 answers, normal photos; then the same with heavy tails (`--dist tail`).
+  - App world: 5 seeds per profile, 600 questions (the species come after a family's Advanced). It runs on a GitHub
+    runner (`learncheck.yml`), not the shared machine.
+- **Primary** (#892's): the families' pace at Advanced, `famAdv@3000` in the rated world with normal photos. It is a
+  claim of no harm, so it is read as a guardrail: held when the one-sided bound of the paired difference stays above −2
+  families or −5% of before (the larger; the margin of units at Open Water), for each profile. It is also read at 300, 600,
+  1,000 and 10,000 answers.
+- **Guardrails**: every guardrail of the table below, in both worlds, at the checkpoints both reach, with its margin. No
+  cost is declared, so a breach goes to Pierre.
+- **Watched, with bounds declared here**:
+  - success near the target: the right % since the last checkpoint, held when both one-sided bounds stay within ±3 points
+    at 1,000, 3,000 and 10,000 answers;
+  - the genus share: the share of answers on the scientific genera, held when the upper bound stays under +0.05 (Q208).
+  - The share of answers on the species is reported (exploratory), with the species met and at each level, so a run where
+    none open is seen.
+- **Looks**: 2 declared (one-sided bounds at 95%). The second look runs only on a cell that is unclear at 10 seeds, with
+  20 seeds and that cell alone.
+- **Real log (rule L12)**: no species row exists yet (the species are never asked before this), so no replay can judge
+  it. Measured instead: a log with no species row replays exactly as before (`tests/species.test.js`).
+
+**The rated world's horizon, revised before any of its results was read** (2026-11-15):
+- **Why**: with the species in, one run of 10,000 answers takes 34 minutes (the strong RA, measured locally). Most of the
+  time goes to `core.js` `faOf`, called for every answered unit at every answer, so the time grows about with the square
+  of the units answered.
+- **What happened**: the two GitHub runs of 10 seeds × 5 profiles could not end inside the workflow's 6 hours. They were
+  cancelled unread.
+- **What replaces them**: the rated world at **3,000 answers** (the level-2 horizon of the table below), 10 seeds, normal
+  photos, the same arms (`main` 219354c, this branch's 0719e1cb), the same guardrails and watched cells. Its rows are at
+  1,000 and 3,000. 10,000 answers waits for the `faOf` speed-up (a tooling fix of its own, rule W27).
+
+**Exploratory arms, declared before counting** (2026-11-15, after the app world breached `famAdv` at 600; the integrator's
+list for Pierre's options). Each arm is a variant of this branch, held in a scratch copy and not committed:
+- **(after)**: this branch as it is.
+- **(1) no family start**: a species never answered starts from the global level, as any unit (no `from`).
+- **(2) shaky until 10**: a species counts as shaky in `openChance` until it has `OPEN.STUCK` (10) answers of its own, so
+  `OPEN.K` holds the openings while new species are many.
+- **(3) cap 20%**: in the draw (`model.js` `weighted`), the species of families below Divemaster take at most 20% of the
+  draw's weight together; the others keep their share.
+- **(1)+(2)**, **(1)+(3)**, **(2)+(3)**.
+- Added before counting them, after the six arms above all left `famAdv` at 600 breached for the RAs and the expert:
+  - **(4) from Divemaster**: a family's species join at its Divemaster (`LV_AT[2]`, 85%: its exam's entry) instead of
+    Advanced. This changes Pierre's threshold of 2026-11-03.
+  - **(5) families first**: no species opens while a family in play is still below Advanced. This is Q208 A's rule for
+    the genera, raised to the families' Advanced.
+- Added before counting it, after the readings showed the species met by 600 at about 4 answers each and almost none at
+  Open Water:
+  - **(6) next after Open Water**: a family's next species opens only once each of its species met is at Open Water
+    (`LV_AT[0]`), an existing level, so "one at a time" waits for the previous one to be known a little.
+
+How they are run and read:
+- **World**: the app world only, fish, the default profiles, 5 seeds, 600 questions. Every arm is run locally through the
+  slot on the same seeds as `main` at 219354c.
+- **Cells, each against main**, paired per profile: families at Advanced at 600 (`famAdv`), the longest plateau, the right %
+  at 300 and 600, and the species' share at 600, with the other guardrails as learncmp prints them.
+- **Reading**: exploratory and uncorrected. These are options with numbers for Pierre, not a verdict. The arm he picks is
+  then checked in full, both worlds, as declared above.
+
+**Results, the app world** (fish, 5 seeds × 600 questions, every arm against `main` on the same seeds; the branch's own
+run on GitHub, learncheck 43703441937, and the local one give the same numbers):
+- **The declared check**: `famAdv` at 600 is **breached** for the lecture RA (4.4 → 1.4 families at Advanced), the strong
+  RA (9.6 → 3.4) and the expert (11.2 → 3.2). The longest plateau is breached for the lecture RA (87 → 104) and the strong
+  RA (103 → 123). The right % is outside its ±3 bound for the lecture RA (93.9 → 86.5) and the strong RA (96.5 → 84.7).
+  The beginner and the casual diver hold; they reach no family's Advanced by 600.
+- **The arms** (exploratory, uncorrected): means over the 5 seeds, `main` → the arm. "Species met" counts the species
+  units met by question 600.
+
+| Arm | Families at Advanced, lecture RA / strong RA / expert | Right %, strong RA | Species share, strong RA / expert | Species met, strong RA / expert |
+|---|---|---|---|---|
+| main | 4.4 / 9.6 / 11.2 | 96.5 | 0 / 0 | 0 / 0 |
+| this branch | 1.4 / 3.4 / 3.2 | 84.7 | 0.24 / 0.32 | 32 / 52 |
+| (1) no family start | 1.8 / 2.8 / 3.2 | 84.1 | 0.25 / 0.31 | 28 / 54 |
+| (2) shaky until 10 | 2.2 / 5.0 / 7.4 | 91.5 | 0.15 / 0.13 | 11 / 10 |
+| (3) cap 20% | 2.6 / 4.6 / 5.2 | 86.2 | 0.18 / 0.23 | 32 / 57 |
+| (1)+(2) | 2.2 / 5.6 / 5.0 | 91.3 | 0.13 / 0.15 | 11 / 12 |
+| (1)+(3) | 1.4 / 4.4 / 4.8 | 86.7 | 0.19 / 0.23 | 34 / 51 |
+| (2)+(3) | 3.0 / 7.2 / 7.2 | 90.9 | 0.13 / 0.12 | 10 / 10 |
+| (4) from Divemaster | 3.8 / 6.8 / 8.2 | 92.1 | 0.08 / 0.10 | 13 / 23 |
+| (5) families first | 4.4 / 9.6 / 11.2 | 96.5 | 0 / 0 | 0 / 0 |
+| (6) next after Open Water | 3.8 / 6.8 / 8.0 | 93.3 | 0.06 / 0.10 | 7 / 12 |
+
+- **The cause is not the family start**: arm (1) is the branch's result again. The loss follows the species' share of
+  the answers. In this branch, the species opened by 600 got about 4 answers each and almost none reached Open Water:
+  a family at Advanced kept opening its next species, as each one was met, before the previous one was known.
+- **(3) is not a 20% share**: it caps the weighted draw only. A species' first questions, right after its card, are not
+  drawn, so the expert's share is still 23%.
+- **(5) measured nothing at 600**: no species opened in any run. Pierre's line of 2026-11-04 is "there is no switch from
+  families to species". (4) opened almost none for the lecture RA. Both need a longer horizon to be judged.
+- **No arm that opens species before 600 holds** `famAdv` for the strong RA and the expert. The closest are (6), (2)+(3)
+  and (4): −2.8 to −4.0 families against a margin of −2. Families at Advanced per 100 family answers fall too (strong RA
+  1.67 → 0.79 in this branch, 1.33 in (6)), so the loss is not only fewer family questions. A count at a threshold
+  (80%) is not linear in the answers, though, so this does not separate the two.
+- **Not measured**: the right % by kind of unit. The files keep no per-answer result.
+
+**Results, the rated world** (fish, 10 seeds × 3,000 answers, normal photos, this branch against `main`; learncheck
+43717079879; 95% one-sided bounds, 2 looks):
+- **Families at Advanced, breached** at 1,000 for all but the beginner (unclear), and at 3,000 for every profile:
+  - beginner 24.8 → 14.7;
+  - casual diver 32.0 → 9.5;
+  - lecture RA 26.6 → 18.6;
+  - strong RA 27.5 → 16.7;
+  - expert 27.1 → 15.9.
+- **The global score as shown, breached** for every profile at 1,000 and 3,000. It falls, from −1.3 to −4.6 points at
+  1,000 and from −1.6 to −6.7 at 3,000 (strong RA 53.8 → 47.1). Over this horizon the species' common-name credit does
+  not make up for the families' slower bars.
+- **The species' share** of answers 1-3,000 is 0.35 to 0.61. The right % falls with it, by −25 points for the casual
+  diver at 3,000 and −16 for the strong RA.
+- **Other guardrails**: true knowledge (D*) is held except the casual diver at 1,000 (−0.023). The units at Open Water at
+  1,000 are breached for three profiles. The plateau is unclear for three.
+- **So the loss is not only a delay**: by 3,000 answers the families have not caught up, and the score is lower.
+- **The arms**: not run in the rated world. One run of the branch took two hours on GitHub. The option Pierre picks gets
+  this check before it ships.
+
+### The rank share (2026-11-16, Q382, Q384)
+
+**Pierre's answer to Q382** (2026-11-16 ~15:05 Manila): "je ne suis pas forcément d'accord pour qu'il y en ait une à la
+fois. Par contre, je suis plus ouvert à l'idée de limiter le nombre le pourcentage de questions tant que les autres
+niveaux, on va dire, ne sont pas maîtrisés. Donc, je serais plutôt ouvert à une stratégie qui règle finalement la
+répartition des questions, soit au niveau de la famille, du genre ou de l'espèce, en fonction de la maîtrise justement des
+niveaux précédents." And to Q384 (#953, ~15:10): the juveniles and colour phases are the same question, "un mécanisme
+global ... une répartition des questions en fonction des niveaux et du niveau de maîtrise", with thresholds that may
+differ per family, genus or species and juveniles allowed very early.
+
+**The rule** (`model.js` `SHARE`, `sharesNow`, `shareW`, `shareRoom`): a unit that hangs from another (its record's
+`parent`: a fish scientific genus or species from its family) may open and be asked, but the units hanging from one level
+take together at most cap = m^POW of the questions drawn, m the share of that level's units in play at their threshold
+(`shareAt` in a unit's data, else Advanced), and one more of them opens only while their share of the draw is under the
+cap. Families keep the rest. The species still come in each family's commonness order (`spPlay`: the order of Pierre's
+2026-11-04, not a pace); the share decides how often.
+
+**The check, declared before running** (rule L11, level 2: the draw and the opening of every fish player past a family's
+Advanced, the genus questions of a player with the scientific names on):
+- **Arms**, the same seeds: `main` (d736745a); **built** (this branch as built, merged with `main`, edd40c1f: one species
+  at a time per family, no share); **p1**, **p2**, **p3**: the share with POW 1 (linear in the share of families at
+  Advanced), 2 and 3, on the genera and species together; **p2s**: POW 2 on the species alone (the genera as on `main`).
+- **Screening, the rated world** (told the truth, normal photos, count learner): the 5 fish profiles × 5 seeds × 3,000
+  answers. Read against `main` with `tools/learncmp.js`: families at Advanced (`famAdv`, margin −2 or −5%) at 1,000 and
+  3,000, the score shown (margin −1 point) at 1,000 and 3,000, the right % 1,000-3,000, the species' and genera's shares,
+  the species met, at Open Water and at Advanced at 3,000. Exploratory and uncorrected: it chooses the curve.
+- **The choice**: among the curves whose `famAdv` and score hold at 3,000 for every profile, the one that brings the most
+  species at Open Water by 3,000; if none holds, the one closest and the numbers go to Pierre.
+- **Then the chosen curve** (and the runner-up if close): the app world, 5 profiles × 5 seeds × 600 questions against
+  `main` (`famAdv@600` margin −2, the plateau, the right % ±3 points, every guardrail; 95% one-sided bounds, 2 looks as
+  #975 declared); the rated world at 10,000 answers against `main`, 5 seeds per profile.
+- **Real log (rule L12)**: no species row and no genus share rule exist in the log; a replay cannot judge a change of what
+  is asked. Measured instead: the record of a log replays as before (the share moves no record: no `RVS` entry).
+
+**Found while running, before the choice**: the share held back an IMR player's IMR genera, which Pierre put in the
+families' phase (Q219: the app world's lecture RA had no genus question by 600 in p1-p3). They are left out of the share
+(`app.js` `shareFree`, with the set turned on by hand early, Q240), and that version, **fin** (POW 2), was run again in both
+worlds. It differs from p2 only for the lecture RA.
+
+**Results** (means over the 5 seeds; the rated world at 3,000 answers, normal photos, told the truth; the app world at 600
+questions, `--choice auto`; beginner / casual diver / lecture RA / strong RA / expert):
+
+| Cell | main | built | p1 (m) | **fin (m²)** | p3 (m³) | p2s (m², species only) |
+|---|---|---|---|---|---|---|
+| Families at Advanced, app world, 600 | 0 / 1.4 / 2.0 / 8.6 / 9.2 | 0 / 0.6 / 0.8 / 3.2 / 4.4 | 0 / 0.4 / 3.2 / 7.6 / 9.8 | 0 / 0.6 / 1.6 / 9.4 / 12.2 | 0 / 1.0 / 5.0 / 11.8 / 12.2 | 0 / 0.6 / 1.6 / 8.4 / 9.2 |
+| Families at Advanced, 1,000 | 2.6 / 6.6 / 5.6 / 13.6 / 11.8 | 3.0 / 2.0 / 2.6 / 8.2 / 6.0 | 4.8 / 5.2 / 12.2 / 19.4 / 19.4 | 5.8 / 6.4 / 10.8 / 21.6 / 22.4 | 5.6 / 6.6 / 14.4 / 23.8 / 22.8 | 2.8 / 6.4 / 5.0 / 12.6 / 12.8 |
+| Families at Advanced, 3,000 | 21.2 / 32.0 / 25.4 / 25.4 / 27.0 | 12.4 / 11.0 / 14.6 / 19.2 / 13.6 | 29.4 / 28.8 / 29.0 / 28.8 / 29.4 | 30.8 / 30.6 / 30.2 / 30.4 / 31.4 | 30.8 / 31.0 / 31.0 / 30.6 / 31.0 | 18.6 / 30.6 / 23.6 / 23.0 / 24.4 |
+| Fish % shown, 1,000 | 30.2 / 31.4 / 35.8 / 41.6 / 42.4 | 29.6 / 29.8 / 33.4 / 38.4 / 40.6 | 31.2 / 31.2 / 37.2 / 42.2 / 42.0 | 31.4 / 31.2 / 37.2 / 41.4 / 41.6 | 31.4 / 31.4 / 36.4 / 40.8 / 40.6 | 30.4 / 31.2 / 36.2 / 41.6 / 42.4 |
+| Fish % shown, 3,000 | 42.6 / 42.0 / 45.6 / 53.0 / 53.2 | 39.2 / 38.4 / 42.0 / 46.6 / 50.8 | 44.2 / 42.6 / 46.8 / 51.8 / 53.8 | 44.2 / 43.2 / 47.2 / 51.8 / 54.2 | 44.0 / 42.8 / 46.6 / 51.0 / 53.4 | 42.4 / 43.2 / 44.6 / 50.2 / 53.2 |
+| Right %, answers 1,001-3,000 | 75 / 97 / 76 / 89 / 89 | 74 / 72 / 74 / 75 / 87 | 77 / 77 / 76 / 81 / 89 | 78 / 78 / 77 / 84 / 90 | 79 / 79 / 77 / 83 / 91 | 74 / 78 / 73 / 77 / 89 |
+| Species at Open Water, 3,000 | 0 | 5.0 / 3.6 / 7.0 / 2.2 / 89.0 | 7.4 / 12.6 / 6.8 / 6.6 / 43.2 | 4.6 / 12.6 / 5.2 / 10.0 / 35.8 | 4.8 / 8.8 / 4.6 / 7.8 / 33.6 | 2.0 / 12.6 / 2.8 / 4.4 / 49.4 |
+| Species met, 3,000 | 0 | 58 / 112 / 87 / 141 / 258 | 33 / 87 / 40 / 73 / 110 | 31 / 78 / 37 / 55 / 122 | 28 / 80 / 37 / 52 / 89 | 27 / 78 / 55 / 94 / 133 |
+| Genera at Advanced, 3,000 | 0.2 / 0 / 1.6 / 22.6 / 23.0 | 0 / 0 / 0.2 / 3.0 / 0.8 | 0.8 / 0 / 1.2 / 16.4 / 11.6 | 0.8 / 0 / 2.4 / 18.0 / 13.4 | 0.2 / 0 / 0.4 / 13.4 / 11.2 | 0 / 0 / 1.0 / 11.2 / 12.0 |
+| Share of answers 1-3,000 on species / genera (strong RA) | 0 / 0.66 | 0.47 / 0.25 | 0.25 / 0.37 | 0.20 / 0.36 | 0.19 / 0.35 | 0.25 / 0.45 |
+
+**The choice: fin, POW 2.** Every curve on the genera and species together removes the loss of the branch as built
+(families at Advanced at 3,000 are 30-31 of 32 for every profile against 21-32 on `main` and 11-19 as built; the fish %
+is higher than as built for every profile and checkpoint). Among them:
+- p1 (linear) leaves the casual diver at 28.8 families at Advanced at 3,000 against 32.0 on `main` (−3.2: breached).
+- p3 (cubic) holds the families best at 1,000 but brings the fewest species and the lowest fish % of the three (expert at
+  1,000 −1.8 points: breached).
+- p2s (species only, the genera as on `main`) keeps the loss for the families of every profile that takes the scientific
+  names (beginner 18.6, lecture RA 23.6, strong RA 23.0, expert 24.4 at 3,000: breached for four).
+- fin holds `famAdv` at every checkpoint in both worlds (the casual diver at 3,000 unclear: −1.4, bound −2.0; the strong
+  RA and the expert at 600 unclear in the app world: +0.8 and +3.0 on average, bounds −2.7 and −2.3), gives the highest
+  fish % of the three at 3,000 for four profiles, and brings species to every profile.
+
+**What fin costs** (paired against `main`, rated world, 90% one-sided bounds; learncmp's verdicts):
+- **The genera come later**, as the rule means them to (Pierre, 2026-11-08: "too early, too strong"; Q382 names the genus):
+  their share of answers 1-3,000 falls from 0.50-0.66 to 0.26-0.36, so the units at Open Water at 1,000 are **breached**
+  for the strong RA and the expert (45.2 → 36.2 and 53.2 → 43.4: the families +2, the genera −12), and the strong RA's
+  fish % at 3,000 is **breached** (53.0 → 51.8, bound −2.2 against −1; its genera at Advanced 22.6 → 18.0).
+- **The longest plateau of the shown %** is **breached** for the beginner (310 → 467 answers), the lecture RA (308 → 462)
+  and the strong RA (276 → 338). Every arm with species has it (p2s too: 418 and 377 for the lecture and strong RA; as
+  built: breached for three): the species' common-name credit comes slowly, one species at a time, once the families are
+  nearly full. Not a property of the curve.
+- **E = bar − D\* of the families** reads **breached** at 1,000 and 3,000 for four profiles, but it moves from below zero
+  towards zero (beginner −0.139 → −0.019, strong RA −0.064 → −0.010 at 3,000): the families' bars under-claim less
+  because they get more answers. fin's E stays below zero for every profile (at most −0.007): it is not an over-claim.
+- Everything else held: true knowledge D\* (up to +0.021 at 1,000), the first unit at Open Water, units met, the share
+  under ease 4.
+
+**The app world, second look** (declared: a cell unclear at the first look gets more seeds): the strong RA and the
+expert, seeds 6-15 added (15 seeds each). Families at Advanced at 600: the expert held (9.1 → 12.1, bound +0.8); the
+strong RA still unclear (10.2 → 9.4, −0.8, bound −2.3 against −2). E unclear for the expert (towards zero); every other
+cell held. The two looks are spent: it stays unclear, a mean inside the margin.
+
+**The long check, the rated world at 10,000 answers** (fin against `main`, 5 seeds per profile, paired, 90% one-sided
+lower bound in brackets; beginner / casual diver / lecture RA / strong RA / expert):
+
+| Cell at 10,000 | main | fin | Difference [lower bound] |
+|---|---|---|---|
+| Families at Advanced | 32.0 / 31.6 / 32.0 / 31.8 / 32.0 | 31.8 / 32.0 / 31.8 / 32.0 / 32.0 | held for every profile (−0.2 to +0.4) |
+| Fish % shown | 59.2 / 42.0 / 59.8 / 60.8 / 60.6 | 57.4 / 51.8 / 58.2 / 61.4 / 68.4 | −1.8 [−2.9] / +9.8 [+7.9] / −1.6 [−2.5] / +0.6 [−0.8] / +7.8 [+5.9] |
+| Species at Open Water | 0 | 67 / 98 / 62 / 60 / 280 | |
+| Species at Advanced | 0 | 6.6 / 8.4 / 5.0 / 4.8 / 51.0 | |
+| Genera at Advanced | 82 / 0 / 84 / 120 / 113 | 14 / 0 / 19 / 64 / 36 | |
+| Longest plateau of the % (the run) | 848 / 8,004 / 1,077 / 2,854 / 2,327 | 732 / 1,138 / 997 / 1,109 / 845 | shorter for every profile |
+
+- **The families**: every one at Advanced by 10,000 in both arms. The loss of the branch as built is gone.
+- **The fish %**: far higher for the casual diver (`main` gives a player who declines the scientific names nothing to
+  earn after the families: 42% for 7,000 answers) and the expert; the strong RA's −1.2 at 3,000 is +0.6 at 10,000. Lower
+  by 1.6-1.8 points for the beginner and the lecture RA. By then every family is at Advanced, so the share no longer
+  holds anything (cap 1): it is the species level's own split. On `main` every answer below the families goes to the
+  genera, whose credit counts half the scientific credit of each of their species; with the species level they share
+  those answers with the 659 species, whose common-name credit comes one species at a time (genera at Advanced 82 → 14
+  for the beginner). The curve cannot change it.
+- **The plateau**: over the whole run, the longest stretch without a new point is shorter for every profile. The
+  breaches at 3,000 come from where that stretch falls, not from a longer wait over the path.
+
 ### Fish: species order, the commonness index (2026-11-04)
 
 Pierre, 2026-11-04: inside an entry, species open **most commonly met around Dauin first**: the point is to identify what one
@@ -4093,18 +4336,18 @@ fish game in a browser, the answer at which each achievement first enters the re
 | fc2 | Supporting cast | every circle-2 family (those that open right after the IMR course's) at Advanced or above | 2 |
 | fc3adv | Muck diver | 20 families beyond the IMR course (circle 3) at Advanced or above | 3 |
 | flearncore | Transect master | every family of the IMR course learned (its exam passed) | 3 |
+| fsp1, fsp10, fsp50 | First name terms, Name tags, Fish ID nerd | 1, 10, 50 species at Advanced or above by their common names (the species level, step 1, 2026-11-15: `achSnap` `setsAdv.sp`) | 1, 2, 3 |
 
 flearn30 joins `ACH_LEARN` (taken back with a learned mark, as the other Instructor ones). The circles read `UNITS` fish
 `circles` (`progress.js` `achSnap` `circ`), the genera at Advanced `achSnap` `setsAdv`; the % reads the global score from the
 device's progress (`treeScore` over `UNITS` tree), whatever the sheet's version (the achievements need nothing from it).
 
-**Waiting, 9** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
-confuse; names proposed for when they are built):
-- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): today's score tops out at 67% (families and
-  every genus), the species level brings the rest.
-- At the species level: fsp1 "First name terms", fsp10 "Name tags", fsp50 "Fish ID nerd" (species named by a common name at
-  Advanced); fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with both names at
-  Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
+**Waiting, 6** (documented, not built: no "dormant" achievement exists in the app, and one shown but out of reach would only
+confuse; names proposed for when they are built; fsp1, fsp10 and fsp50 came with the species level's step 1):
+- fpct70 "Twilight zone" and fpct100 "Fish god" (every name of every species): the families, every genus and every common
+  name top out at 95% once the species level is on; 100% needs the scientific species names.
+- At the species level: fspsci1 "Binomial" (a first species named in Latin, Q262); fboth25 "Bilingual" (25 species with
+  both names at Advanced); fdauin20 "Local legend" ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261).
 - Fish basics: fbasics, with the module.
 - Also for the species level (Q261, counted beyond the 33): "Usual suspects", the X fish most often seen (circle 1, then
   every circle), and "Rare finds", the X least often seen at Dauin, by the rank of observers near Dauin (`present.dauinU`,
@@ -4116,8 +4359,8 @@ achievement of every subject again on that subject's current progress (`inSubjec
 their date (the earliest held), the others go, fpct25 with them since no list holds it; every fish % achievement is thus
 re-evaluated on the global score (an fpct50 earned on the families' mean leaves a player under 50%), and the new ones the
 progress already meets come in. Silent (Q264), no card, no toast. The fish data is loaded only when the fish are needed
-(`app.js` `fishLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
-then are recounted the same way (`achPending`, from `fishLoad` and before each check). A device not updated yet: its record
+(`app.js` `treeLoad`): until then the fish achievements wait on the device (`reefid-ach-old`, outside the synced record),
+then are recounted the same way (`achPending`, from `treeLoad` and before each check). A device not updated yet: its record
 keeps version 2, and `core.js` `mergeAch` takes no achievement from a record of another version (only its feats), so it never
 brings back what the recount removed, and an updated device's record never reaches it either (the same rule on its side).
 The progress itself is not recounted here: the corals' is replayed from the answer log by the sheet (`Code.gs` `replay_`,
@@ -5885,6 +6128,18 @@ The rated world mimics `model.js` (the aim, the start's lean, the Gaussian photo
 app's own. It is anchored on the app world where both reach: at 1,000 fish answers the fish % and the right rate within
 a few points (2026-11-08: 41% and 37% against 40% and 28%; 75-81% right against 77-86%).
 
+**Long rated runs: the false-alarm table** (2026-11-15, after #975's 10,000-answer check could not end in the workflow's
+6 hours: 34 minutes a run with the species in). Every unit's bar reads its false-alarm rate (`core.js` `faOf`), which
+scanned every record of the player's progress, and the planner reads the bars of every unit in play several times an
+answer: the cost grew with the units met times the units read, and the scan was the largest single part of a profile
+(23-29% of the time on their own, 36-45% with the bar around them; fish, `main` and #975, 1,000-3,000 answers). The
+rated world now arms a table for each answer (`core.js` `faArm`, `tools/ratedworld.js` `step`): the first read builds
+every unit's false alarms and chances in one pass over the records, in the scan's own order, so each value is the
+scan's to the last bit, and `scoreAnswer` empties it. The app and the sheet never arm it and scan as before. The same
+seeds give byte-identical `--out` files (the date, commit and run time aside) and reports, and every read of a run can
+be checked against the scan (`FA_CHECK`, `tests/faof.test.js`). On the shared machine a 3,000-answer fish run of the
+expert (seed 1, without #975's species) took 35 s against 139 s with the scan.
+
 **The rated world, built** (`tools/ratedworld.js`, `--world rated`; the distributions in its `RATED`, the one place they
 are stated). The fish units are built as the app builds them (`core.js` `fishGen`, `fishPhotos`, `app.js` `fishGenera`
 cut out as `tests/rareease.js` cuts `model.js`): 65 families in three circles, the 130 scientific genera, every game photo.
@@ -6015,6 +6270,7 @@ paired difference on the side of harm; validated with #735):
 | Longest plateau of the shown score | the run | +20% | Pierre's "fast at the start, slow after", without a flat stretch a fifth longer |
 | Share under ease 4 before Open Water | questions 1-300; answers 1-1,000 | +0.05 | half of the 0.1 Pierre set (Q252): a change must not undo half of it unnoticed |
 | Units met | 100 and 300 questions | −2 units or −5%, the larger (corals: −2 genera, as before) | the pace of new units, as the CI test reads it; two units is a card or two a session |
+| Fish families at Advanced (`famAdv`) | 300 and 600 questions; 1,000, 3,000 and 10,000 answers | −2 families or −5%, the larger | the families' pace while genera and species share the draw (#892, 2026-11-15); the margin of the units at Open Water |
 
 None comes from the seeds' spread, which only sizes the seeds. A change meant to move one of them declares that cost
 and its accepted bound before running (rule L11).
@@ -6060,8 +6316,10 @@ raw, by circle); `plateau`, the longest stretch so far without a new high of the
 photo exposure. learncmp's measures (`--list`): `know`, `over`, `met`, `hard`, `score`, `entries`, `credit`, `firstOW`
 (the first unit at Open Water, the corals' bonus genera left out; a run where none got there drops its pair), `unitsOW`,
 `unitsAdv` (every kind but the bonus genera), `plateau`, `c3`, `hardAns` (answers on photos under ease 4, any level),
-`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `right`, `prog`, `thErr`. The species and name units of the fish tree do not
-exist yet, so their kinds are empty until they do.
+`perPhoto` (answers per photo shown), `genShare` (the share of answers on the fish scientific genera, a fish run only: Q208, 2026-11-09), `famAdv` (the fish families at Advanced) and `spShare` (the share of answers on the fish species; both 2026-11-15, the species level), `right`, `prog`, `thErr`. The species units (kind `species`) are in both worlds
+since the species level (step 1, by common name); the scientific species names do not exist yet. After the guardrails,
+learncmp also prints, with no margin, the right %, `genShare` and `spShare` at each checkpoint (its `WATCH`), with the
+one-sided bounds either side.
 
 **On a GitHub runner** (tier 2 and level 3, too long for the shared machine): Actions › "Learning check (tier 2)" › Run
 workflow (`.github/workflows/learncheck.yml`, manual dispatch only), with the version with the change (`after`: its

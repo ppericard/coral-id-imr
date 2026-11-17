@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Pages opened in a visit (core.js PAGES, sheet v30 'pages'): the tally the app keeps and the summary it sends.
 // node --test tests/
 const test = require('node:test'),

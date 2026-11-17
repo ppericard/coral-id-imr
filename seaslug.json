@@ -1,0 +1,9641 @@
+{
+ "v": 1,
+ "about": "the sea-slug subject's tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)",
+ "area": {
+  "inatPlace": 6873,
+  "name": "Philippines"
+ },
+ "centre": {
+  "lat": 9.19,
+  "lon": 123.26,
+  "name": "Dauin",
+  "radiusKm": 40
+ },
+ "start": [],
+ "key": null,
+ "taxa": {
+  "cite": "WoRMS Editorial Board, World Register of Marine Species, the classification of each family (read 2026-11-16)",
+  "short": "WoRMS",
+  "groups": [
+   {
+    "n": 1,
+    "title": "Nudibranchia · Doridina"
+   },
+   {
+    "n": 2,
+    "title": "Nudibranchia · Cladobranchia"
+   },
+   {
+    "n": 3,
+    "title": "Sacoglossa"
+   },
+   {
+    "n": 4,
+    "title": "Cephalaspidea"
+   },
+   {
+    "n": 5,
+    "title": "Aplysiida"
+   },
+   {
+    "n": 6,
+    "title": "Pleurobranchida"
+   }
+  ]
+ },
+ "ensrc": {
+  "inat": [
+   "2026-11-17",
+   "2026-11-17"
+  ],
+  "wiki": [
+   "2026-11-17",
+   "2026-11-17"
+  ],
+  "worms": [
+   "2026-11-17",
+   "2026-11-17"
+  ],
+  "guide": [
+   {
+    "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+    "read": "2026-11-17"
+   },
+   {
+    "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+    "read": "2026-11-17"
+   }
+  ]
+ },
+ "teach": [],
+ "families": [
+  {
+   "id": "f:Chromodorididae",
+   "name": "Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s119434",
+    "s119429",
+    "s468033",
+    "s201640",
+    "s121048",
+    "s346881",
+    "s121406",
+    "s469422",
+    "s468042",
+    "s481507",
+    "s54667",
+    "s548309",
+    "s469421",
+    "s467977",
+    "s780919",
+    "s143227",
+    "s782298",
+    "s346899",
+    "s467980",
+    "s1263433",
+    "s358109",
+    "s319379",
+    "s119863",
+    "s469415",
+    "s471255",
+    "s349039",
+    "s126096",
+    "s147938",
+    "s54668",
+    "s781241",
+    "s847499",
+    "s471362",
+    "s471361",
+    "s319772",
+    "s715017",
+    "s199473",
+    "s778448",
+    "s552180",
+    "s120937",
+    "s469460",
+    "s199474",
+    "s52862",
+    "s418465",
+    "s471382",
+    "s785725",
+    "s143297",
+    "s469554",
+    "s354398",
+    "s495795",
+    "s469420",
+    "s415316",
+    "s715146",
+    "s849396",
+    "s355499",
+    "s469461",
+    "s349044",
+    "s1354147",
+    "s504373",
+    "s469419",
+    "s121317",
+    "s504813",
+    "s1115871",
+    "s505174",
+    "s878721",
+    "s781482",
+    "x:goniobranchus-sp5"
+   ],
+   "genera": [
+    "g:Chromodoris",
+    "g:Hypselodoris",
+    "g:Goniobranchus",
+    "g:Ardeadoris",
+    "g:Doriprismatica",
+    "g:Diversidoris",
+    "g:Ceratosoma",
+    "g:Glossodoris",
+    "g:Thorunna",
+    "g:Mexichromis",
+    "g:Miamira",
+    "g:Verconia"
+   ],
+   "look": [],
+   "en": [
+    {
+     "n": "Chromodorids",
+     "src": [
+      "inat",
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 47402,
+    "worms": 23003,
+    "wiki": "Chromodorididae"
+   },
+   "tgroup": 1
+  },
+  {
+   "id": "f:Polyceridae",
+   "name": "Polyceridae",
+   "circle": 1,
+   "species": [
+    "s126110",
+    "s121050",
+    "s119860",
+    "s119438",
+    "s142953",
+    "s468030",
+    "s120948",
+    "s142790",
+    "s468034",
+    "s120982",
+    "s1143046",
+    "s1679552",
+    "s504449",
+    "s418431",
+    "s699008"
+   ],
+   "genera": [
+    "g:Nembrotha",
+    "g:Thecacera",
+    "g:Tambja",
+    "g:Roboastra",
+    "g:Gymnodoris",
+    "g:Tyrannodoris"
+   ],
+   "look": [],
+   "en": [
+    {
+     "n": "polyceras",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 47767,
+    "worms": 177,
+    "wiki": "Polyceridae"
+   },
+   "tgroup": 1
+  },
+  {
+   "id": "f:Phyllidiidae",
+   "name": "Phyllidiidae",
+   "circle": 1,
+   "species": [
+    "s49735",
+    "s50554",
+    "s142294",
+    "s119872",
+    "s207581",
+    "s120989",
+    "s120977",
+    "s136327",
+    "s49728",
+    "s143074",
+    "s126094",
+    "s50552",
+    "s120988",
+    "s519522",
+    "s467978",
+    "s319334",
+    "s120983"
+   ],
+   "genera": [
+    "g:Phyllidia",
+    "g:Reticulidia",
+    "g:Phyllidiopsis",
+    "g:Phyllidiella"
+   ],
+   "look": [],
+   "en": [
+    {
+     "n": "Phyllidiid Nudibranchs",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Sea rabbits",
+     "src": [
+      "web"
+     ],
+     "web": [
+      {
+       "t": "DIVERNET (Scuba Diver Magazine; Lawson Wood), In Search of Sea Rabbits: A Guide to Phyllidiidae Nudibranchs (2026-04-25)",
+       "u": "https://divernet.com/scuba-news/marine-biology/in-search-of-sea-rabbits/"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49731,
+    "worms": 23093,
+    "wiki": "Phyllidiidae"
+   },
+   "tgroup": 1
+  },
+  {
+   "id": "f:Discodorididae",
+   "name": "Discodorididae",
+   "circle": 1,
+   "species": [
+    "s125934",
+    "s50300",
+    "s548348",
+    "s467976",
+    "s50442",
+    "s469508",
+    "s51172",
+    "s390159",
+    "s52961",
+    "s199590",
+    "s50445",
+    "s559946"
+   ],
+   "genera": [
+    "g:Halgerda",
+    "g:Jorunna",
+    "g:Discodoris",
+    "g:Taringa",
+    "g:Asteronotus",
+    "g:Sclerodoris",
+    "g:Atagema",
+    "g:Platydoris"
+   ],
+   "look": [],
+   "tgroup": 1
+  },
+  {
+   "id": "f:Facelinidae",
+   "name": "Facelinidae",
+   "circle": 1,
+   "species": [
+    "s469568",
+    "s119425",
+    "s389587",
+    "s147944",
+    "s467982",
+    "s120967"
+   ],
+   "genera": [
+    "g:Pteraeolidia",
+    "g:Caloria",
+    "g:Favorinus",
+    "g:Cratena"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Myrrhinidae",
+   "name": "Myrrhinidae",
+   "circle": 1,
+   "species": [
+    "s54892",
+    "s126092",
+    "s54648",
+    "s346901",
+    "s504309",
+    "s418427",
+    "s349052",
+    "s54645",
+    "s346900",
+    "s496578",
+    "s548307"
+   ],
+   "genera": [
+    "g:Phyllodesmium"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Aglajidae",
+   "name": "Aglajidae",
+   "circle": 1,
+   "species": [
+    "s199475",
+    "s56646",
+    "s823909",
+    "s63087",
+    "s823908",
+    "s199467",
+    "s823951",
+    "s506090"
+   ],
+   "genera": [
+    "g:Chelidonura",
+    "g:Tubulophilinopsis",
+    "g:Philinopsis",
+    "g:Mariaglaja",
+    "g:Odontoglaja"
+   ],
+   "look": [],
+   "tgroup": 4
+  },
+  {
+   "id": "f:Plakobranchidae",
+   "name": "Plakobranchidae",
+   "circle": 1,
+   "species": [
+    "s546397",
+    "s126108",
+    "s199470",
+    "s723224",
+    "s194607",
+    "s49121",
+    "s50550",
+    "s418333"
+   ],
+   "genera": [
+    "g:Elysia",
+    "g:Thuridilla",
+    "g:Plakobranchus"
+   ],
+   "look": [],
+   "tgroup": 3
+  },
+  {
+   "id": "f:Pleurobranchidae",
+   "name": "Pleurobranchidae",
+   "circle": 1,
+   "species": [
+    "s49904",
+    "s1532043",
+    "s123404",
+    "s548297",
+    "s418506"
+   ],
+   "genera": [
+    "g:Pleurobranchus",
+    "g:Tomoberthella"
+   ],
+   "look": [],
+   "en": [
+    {
+     "n": "Pleurobranchid",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49900,
+    "worms": 1755,
+    "wiki": "Pleurobranchidae"
+   },
+   "tgroup": 6
+  },
+  {
+   "id": "f:Flabellinidae",
+   "name": "Flabellinidae",
+   "circle": 1,
+   "species": [
+    "s871903",
+    "s1375852",
+    "s873747"
+   ],
+   "genera": [
+    "g:Coryphellina"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Hexabranchidae",
+   "name": "Hexabranchidae",
+   "circle": 1,
+   "species": [
+    "s1475021",
+    "s244849"
+   ],
+   "genera": [
+    "g:Hexabranchus"
+   ],
+   "look": [],
+   "tgroup": 1
+  },
+  {
+   "id": "f:Costasiellidae",
+   "name": "Costasiellidae",
+   "circle": 1,
+   "species": [
+    "s469221",
+    "s470152"
+   ],
+   "genera": [
+    "g:Costasiella"
+   ],
+   "look": [],
+   "tgroup": 3
+  },
+  {
+   "id": "f:Trinchesiidae",
+   "name": "Trinchesiidae",
+   "circle": 1,
+   "species": [
+    "s50528",
+    "s50534",
+    "s1595814",
+    "s1595806",
+    "s1595807"
+   ],
+   "genera": [
+    "g:Phestilla",
+    "g:Tenellia"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Tethydidae",
+   "name": "Tethydidae",
+   "circle": 1,
+   "species": [
+    "s557665",
+    "s50551",
+    "s779446",
+    "s467983"
+   ],
+   "genera": [
+    "g:Melibe"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Aplysiidae",
+   "name": "Aplysiidae",
+   "circle": 2,
+   "species": [
+    "s49860",
+    "s898566",
+    "s508245",
+    "s48654",
+    "s891014"
+   ],
+   "genera": [
+    "g:Dolabella",
+    "g:Aplysia",
+    "g:Stylocheilus"
+   ],
+   "look": [],
+   "en": [
+    {
+     "n": "Sea Hares",
+     "src": [
+      "inat",
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 48656,
+    "worms": 172,
+    "wiki": "Aplysiidae"
+   },
+   "tgroup": 5
+  },
+  {
+   "id": "f:Aegiridae",
+   "name": "Aegiridae",
+   "circle": 2,
+   "species": [
+    "s467975",
+    "s504909",
+    "s504910"
+   ],
+   "genera": [
+    "g:Aegires",
+    "g:Notodoris"
+   ],
+   "look": [],
+   "tgroup": 1
+  },
+  {
+   "id": "f:Gastropteridae",
+   "name": "Gastropteridae",
+   "circle": 2,
+   "species": [
+    "s332450",
+    "s607312"
+   ],
+   "genera": [
+    "g:Sagaminopteron"
+   ],
+   "look": [],
+   "en": [
+    {
+     "n": "bat-winged slugs",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49840,
+    "worms": 23045,
+    "wiki": "Gastropteridae"
+   },
+   "tgroup": 4
+  },
+  {
+   "id": "f:Cadlinellidae",
+   "name": "Cadlinellidae",
+   "circle": 2,
+   "species": [
+    "s60594"
+   ],
+   "genera": [
+    "g:Cadlinella"
+   ],
+   "look": [],
+   "tgroup": 1
+  },
+  {
+   "id": "f:Samlidae",
+   "name": "Samlidae",
+   "circle": 2,
+   "species": [
+    "s696622",
+    "s778294",
+    "s778296"
+   ],
+   "genera": [
+    "g:Samla"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Arminidae",
+   "name": "Arminidae",
+   "circle": 2,
+   "species": [
+    "s841162",
+    "s841163",
+    "s495412",
+    "s626349"
+   ],
+   "genera": [
+    "g:Armina",
+    "g:Dermatobranchus"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Eubranchidae",
+   "name": "Eubranchidae",
+   "circle": 2,
+   "species": [
+    "s1668619"
+   ],
+   "genera": [
+    "g:Longibranchus"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Goniodorididae",
+   "name": "Goniodorididae",
+   "circle": 2,
+   "species": [
+    "s1521020",
+    "s348633",
+    "s1365704",
+    "s476173",
+    "s476171",
+    "s332512",
+    "s1471723"
+   ],
+   "genera": [
+    "g:Bermudella",
+    "g:Trapania",
+    "g:Murphydoris",
+    "g:Pelagella"
+   ],
+   "look": [],
+   "tgroup": 1
+  },
+  {
+   "id": "f:Bornellidae",
+   "name": "Bornellidae",
+   "circle": 3,
+   "species": [
+    "s64717"
+   ],
+   "genera": [
+    "g:Bornella"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Caliphyllidae",
+   "name": "Caliphyllidae",
+   "circle": 3,
+   "species": [
+    "s840762",
+    "s1623585",
+    "s1623583",
+    "s549234"
+   ],
+   "genera": [
+    "g:Cyerce"
+   ],
+   "look": [],
+   "tgroup": 3
+  },
+  {
+   "id": "f:Dotidae",
+   "name": "Dotidae",
+   "circle": 3,
+   "species": [
+    "s471272"
+   ],
+   "genera": [
+    "g:Doto"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Colpodaspididae",
+   "name": "Colpodaspididae",
+   "circle": 3,
+   "species": [
+    "s487302"
+   ],
+   "genera": [
+    "g:Colpodaspis"
+   ],
+   "look": [],
+   "tgroup": 4
+  },
+  {
+   "id": "f:Dendronotidae",
+   "name": "Dendronotidae",
+   "circle": 3,
+   "species": [
+    "s1153968"
+   ],
+   "genera": [
+    "g:Cabangus"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Janolidae",
+   "name": "Janolidae",
+   "circle": 3,
+   "species": [
+    "s497250",
+    "s891079"
+   ],
+   "genera": [
+    "g:Janolus"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Aeolidiidae",
+   "name": "Aeolidiidae",
+   "circle": 3,
+   "species": [
+    "s349048",
+    "s325414"
+   ],
+   "genera": [
+    "g:Baeolidia",
+    "g:Bulbaeolidia"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Pleurobranchaeidae",
+   "name": "Pleurobranchaeidae",
+   "circle": 3,
+   "species": [
+    "s50556"
+   ],
+   "genera": [
+    "g:Euselenops"
+   ],
+   "look": [],
+   "tgroup": 6
+  },
+  {
+   "id": "f:Dendrodorididae",
+   "name": "Dendrodorididae",
+   "circle": 3,
+   "species": [
+    "s50430"
+   ],
+   "genera": [
+    "g:Dendrodoris"
+   ],
+   "look": [],
+   "tgroup": 1
+  },
+  {
+   "id": "f:Tritoniidae",
+   "name": "Tritoniidae",
+   "circle": 3,
+   "species": [
+    "s1491723"
+   ],
+   "genera": [
+    "g:Marioniopsis"
+   ],
+   "look": [],
+   "tgroup": 2
+  },
+  {
+   "id": "f:Scyllaeidae",
+   "name": "Scyllaeidae",
+   "circle": 3,
+   "species": [
+    "s50398"
+   ],
+   "genera": [
+    "g:Notobryon"
+   ],
+   "look": [],
+   "tgroup": 2
+  }
+ ],
+ "genera": [
+  {
+   "id": "g:Chromodoris",
+   "name": "Chromodoris",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s119434",
+    "s119429",
+    "s201640",
+    "s121048",
+    "s467977",
+    "s143227",
+    "s1263433",
+    "s126096",
+    "s199473",
+    "s504373",
+    "s1115871"
+   ]
+  },
+  {
+   "id": "g:Nembrotha",
+   "name": "Nembrotha",
+   "family": "f:Polyceridae",
+   "circle": 1,
+   "species": [
+    "s126110",
+    "s121050",
+    "s119860",
+    "s119438",
+    "s142953",
+    "s468034",
+    "s418431"
+   ]
+  },
+  {
+   "id": "g:Hypselodoris",
+   "name": "Hypselodoris",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s468033",
+    "s54667",
+    "s548309",
+    "s780919",
+    "s782298",
+    "s319379",
+    "s147938",
+    "s781241",
+    "s471362",
+    "s471361",
+    "s469460",
+    "s52862",
+    "s785725",
+    "s143297",
+    "s415316",
+    "s849396",
+    "s469461",
+    "s878721",
+    "s781482"
+   ]
+  },
+  {
+   "id": "g:Phyllidia",
+   "name": "Phyllidia",
+   "family": "f:Phyllidiidae",
+   "circle": 1,
+   "species": [
+    "s49735",
+    "s50554",
+    "s142294",
+    "s119872",
+    "s207581",
+    "s467978",
+    "s120983"
+   ]
+  },
+  {
+   "id": "g:Halgerda",
+   "name": "Halgerda",
+   "family": "f:Discodorididae",
+   "circle": 1,
+   "species": [
+    "s125934",
+    "s51172",
+    "s390159"
+   ]
+  },
+  {
+   "id": "g:Pteraeolidia",
+   "name": "Pteraeolidia",
+   "family": "f:Facelinidae",
+   "circle": 1,
+   "species": [
+    "s469568"
+   ],
+   "en": [
+    {
+     "n": "Blue Dragons",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 48754,
+    "worms": 206296,
+    "wiki": "Pteraeolidia"
+   }
+  },
+  {
+   "id": "g:Goniobranchus",
+   "name": "Goniobranchus",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s346881",
+    "s469422",
+    "s481507",
+    "s469421",
+    "s346899",
+    "s469415",
+    "s471255",
+    "s715017",
+    "s469420",
+    "s349044",
+    "s1354147",
+    "s505174",
+    "x:goniobranchus-sp5"
+   ]
+  },
+  {
+   "id": "g:Phyllodesmium",
+   "name": "Phyllodesmium",
+   "family": "f:Myrrhinidae",
+   "circle": 1,
+   "species": [
+    "s54892",
+    "s126092",
+    "s54648",
+    "s346901",
+    "s504309",
+    "s418427",
+    "s349052",
+    "s54645",
+    "s346900",
+    "s496578",
+    "s548307"
+   ]
+  },
+  {
+   "id": "g:Jorunna",
+   "name": "Jorunna",
+   "family": "f:Discodorididae",
+   "circle": 1,
+   "species": [
+    "s50300",
+    "s548348",
+    "s467976"
+   ]
+  },
+  {
+   "id": "g:Ardeadoris",
+   "name": "Ardeadoris",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s121406",
+    "s354398",
+    "s495795"
+   ]
+  },
+  {
+   "id": "g:Chelidonura",
+   "name": "Chelidonura",
+   "family": "f:Aglajidae",
+   "circle": 1,
+   "species": [
+    "s199475",
+    "s56646",
+    "s63087"
+   ]
+  },
+  {
+   "id": "g:Elysia",
+   "name": "Elysia",
+   "family": "f:Plakobranchidae",
+   "circle": 1,
+   "species": [
+    "s546397",
+    "s50550"
+   ]
+  },
+  {
+   "id": "g:Doriprismatica",
+   "name": "Doriprismatica",
+   "family": "f:Chromodorididae",
+   "circle": 1,
+   "species": [
+    "s468042"
+   ]
+  },
+  {
+   "id": "g:Caloria",
+   "name": "Caloria",
+   "family": "f:Facelinidae",
+   "circle": 1,
+   "species": [
+    "s119425"
+   ]
+  },
+  {
+   "id": "g:Thecacera",
+   "name": "Thecacera",
+   "family": "f:Polyceridae",
+   "circle": 1,
+   "species": [
+    "s468030",
+    "s142790",
+    "s1679552"
+   ]
+  },
+  {
+   "id": "g:Tambja",
+   "name": "Tambja",
+   "family": "f:Polyceridae",
+   "circle": 1,
+   "species": [
+    "s120948",
+    "s504449"
+   ]
+  },
+  {
+   "id": "g:Pleurobranchus",
+   "name": "Pleurobranchus",
+   "family": "f:Pleurobranchidae",
+   "circle": 1,
+   "species": [
+    "s49904",
+    "s123404",
+    "s548297",
+    "s418506"
+   ]
+  },
+  {
+   "id": "g:Coryphellina",
+   "name": "Coryphellina",
+   "family": "f:Flabellinidae",
+   "circle": 1,
+   "species": [
+    "s871903",
+    "s1375852",
+    "s873747"
+   ]
+  },
+  {
+   "id": "g:Thuridilla",
+   "name": "Thuridilla",
+   "family": "f:Plakobranchidae",
+   "circle": 1,
+   "species": [
+    "s126108",
+    "s199470",
+    "s194607",
+    "s418333"
+   ]
+  },
+  {
+   "id": "g:Reticulidia",
+   "name": "Reticulidia",
+   "family": "f:Phyllidiidae",
+   "circle": 1,
+   "species": [
+    "s120989",
+    "s120988"
+   ]
+  },
+  {
+   "id": "g:Hexabranchus",
+   "name": "Hexabranchus",
+   "family": "f:Hexabranchidae",
+   "circle": 1,
+   "species": [
+    "s1475021",
+    "s244849"
+   ],
+   "en": [
+    {
+     "n": "Spanish Dancers",
+     "src": [
+      "inat",
+      "web"
+     ],
+     "web": [
+      {
+       "t": "DAN Alert Diver, A Quest for Life (2025-08-28)",
+       "u": "https://dan.org/?p=53983"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49745,
+    "worms": 206859,
+    "wiki": "Hexabranchus"
+   }
+  },
+  {
+   "id": "g:Costasiella",
+   "name": "Costasiella",
+   "family": "f:Costasiellidae",
+   "circle": 1,
+   "species": [
+    "s469221",
+    "s470152"
+   ]
+  },
+  {
+   "id": "g:Phestilla",
+   "name": "Phestilla",
+   "family": "f:Trinchesiidae",
+   "circle": 1,
+   "species": [
+    "s50528",
+    "s50534"
+   ]
+  },
+  {
+   "id": "g:Melibe",
+   "name": "Melibe",
+   "family": "f:Tethydidae",
+   "circle": 1,
+   "species": [
+    "s557665",
+    "s50551",
+    "s779446",
+    "s467983"
+   ]
+  },
+  {
+   "id": "g:Favorinus",
+   "name": "Favorinus",
+   "family": "f:Facelinidae",
+   "circle": 2,
+   "species": [
+    "s389587",
+    "s147944",
+    "s120967"
+   ]
+  },
+  {
+   "id": "g:Dolabella",
+   "name": "Dolabella",
+   "family": "f:Aplysiidae",
+   "circle": 2,
+   "species": [
+    "s49860"
+   ]
+  },
+  {
+   "id": "g:Diversidoris",
+   "name": "Diversidoris",
+   "family": "f:Chromodorididae",
+   "circle": 2,
+   "species": [
+    "s467980"
+   ]
+  },
+  {
+   "id": "g:Phyllidiopsis",
+   "name": "Phyllidiopsis",
+   "family": "f:Phyllidiidae",
+   "circle": 2,
+   "species": [
+    "s120977",
+    "s136327",
+    "s143074",
+    "s126094",
+    "s519522"
+   ],
+   "en": [
+    {
+     "n": "Phyllidiopsis Nudibranchs",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49734,
+    "worms": 138348,
+    "wiki": "Phyllidiopsis"
+   }
+  },
+  {
+   "id": "g:Aegires",
+   "name": "Aegires",
+   "family": "f:Aegiridae",
+   "circle": 2,
+   "species": [
+    "s467975"
+   ]
+  },
+  {
+   "id": "g:Ceratosoma",
+   "name": "Ceratosoma",
+   "family": "f:Chromodorididae",
+   "circle": 2,
+   "species": [
+    "s358109",
+    "s120937",
+    "s199474"
+   ]
+  },
+  {
+   "id": "g:Phyllidiella",
+   "name": "Phyllidiella",
+   "family": "f:Phyllidiidae",
+   "circle": 2,
+   "species": [
+    "s49728",
+    "s50552",
+    "s319334"
+   ]
+  },
+  {
+   "id": "g:Glossodoris",
+   "name": "Glossodoris",
+   "family": "f:Chromodorididae",
+   "circle": 2,
+   "species": [
+    "s119863",
+    "s847499",
+    "s778448",
+    "s469419"
+   ],
+   "en": [
+    {
+     "n": "Glossodorises",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50215,
+    "worms": 137783,
+    "wiki": "Glossodoris"
+   }
+  },
+  {
+   "id": "g:Sagaminopteron",
+   "name": "Sagaminopteron",
+   "family": "f:Gastropteridae",
+   "circle": 2,
+   "species": [
+    "s332450",
+    "s607312"
+   ]
+  },
+  {
+   "id": "g:Thorunna",
+   "name": "Thorunna",
+   "family": "f:Chromodorididae",
+   "circle": 2,
+   "species": [
+    "s349039",
+    "s355499",
+    "s121317"
+   ]
+  },
+  {
+   "id": "g:Discodoris",
+   "name": "Discodoris",
+   "family": "f:Discodorididae",
+   "circle": 2,
+   "species": [
+    "s50442"
+   ]
+  },
+  {
+   "id": "g:Mexichromis",
+   "name": "Mexichromis",
+   "family": "f:Chromodorididae",
+   "circle": 2,
+   "species": [
+    "s54668",
+    "s319772",
+    "s469554"
+   ]
+  },
+  {
+   "id": "g:Cadlinella",
+   "name": "Cadlinella",
+   "family": "f:Cadlinellidae",
+   "circle": 2,
+   "species": [
+    "s60594"
+   ]
+  },
+  {
+   "id": "g:Tubulophilinopsis",
+   "name": "Tubulophilinopsis",
+   "family": "f:Aglajidae",
+   "circle": 2,
+   "species": [
+    "s823909",
+    "s823908"
+   ]
+  },
+  {
+   "id": "g:Samla",
+   "name": "Samla",
+   "family": "f:Samlidae",
+   "circle": 2,
+   "species": [
+    "s696622",
+    "s778294",
+    "s778296"
+   ]
+  },
+  {
+   "id": "g:Miamira",
+   "name": "Miamira",
+   "family": "f:Chromodorididae",
+   "circle": 2,
+   "species": [
+    "s552180",
+    "s418465",
+    "s471382"
+   ]
+  },
+  {
+   "id": "g:Armina",
+   "name": "Armina",
+   "family": "f:Arminidae",
+   "circle": 2,
+   "species": [
+    "s841162",
+    "s841163"
+   ]
+  },
+  {
+   "id": "g:Roboastra",
+   "name": "Roboastra",
+   "family": "f:Polyceridae",
+   "circle": 2,
+   "species": [
+    "s120982"
+   ]
+  },
+  {
+   "id": "g:Plakobranchus",
+   "name": "Plakobranchus",
+   "family": "f:Plakobranchidae",
+   "circle": 2,
+   "species": [
+    "s723224",
+    "s49121"
+   ]
+  },
+  {
+   "id": "g:Longibranchus",
+   "name": "Longibranchus",
+   "family": "f:Eubranchidae",
+   "circle": 2,
+   "species": [
+    "s1668619"
+   ]
+  },
+  {
+   "id": "g:Bermudella",
+   "name": "Bermudella",
+   "family": "f:Goniodorididae",
+   "circle": 2,
+   "species": [
+    "s1521020"
+   ]
+  },
+  {
+   "id": "g:Aplysia",
+   "name": "Aplysia",
+   "family": "f:Aplysiidae",
+   "circle": 2,
+   "species": [
+    "s898566",
+    "s508245",
+    "s891014"
+   ],
+   "en": [
+    {
+     "n": "sea hares",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 48657,
+    "worms": 137654,
+    "wiki": "Aplysia"
+   }
+  },
+  {
+   "id": "g:Bornella",
+   "name": "Bornella",
+   "family": "f:Bornellidae",
+   "circle": 3,
+   "species": [
+    "s64717"
+   ]
+  },
+  {
+   "id": "g:Gymnodoris",
+   "name": "Gymnodoris",
+   "family": "f:Polyceridae",
+   "circle": 3,
+   "species": [
+    "s1143046"
+   ]
+  },
+  {
+   "id": "g:Cyerce",
+   "name": "Cyerce",
+   "family": "f:Caliphyllidae",
+   "circle": 3,
+   "species": [
+    "s840762",
+    "s1623585",
+    "s1623583",
+    "s549234"
+   ]
+  },
+  {
+   "id": "g:Taringa",
+   "name": "Taringa",
+   "family": "f:Discodorididae",
+   "circle": 3,
+   "species": [
+    "s469508"
+   ]
+  },
+  {
+   "id": "g:Doto",
+   "name": "Doto",
+   "family": "f:Dotidae",
+   "circle": 3,
+   "species": [
+    "s471272"
+   ]
+  },
+  {
+   "id": "g:Tenellia",
+   "name": "Tenellia",
+   "family": "f:Trinchesiidae",
+   "circle": 3,
+   "species": [
+    "s1595814",
+    "s1595806",
+    "s1595807"
+   ]
+  },
+  {
+   "id": "g:Tomoberthella",
+   "name": "Tomoberthella",
+   "family": "f:Pleurobranchidae",
+   "circle": 3,
+   "species": [
+    "s1532043"
+   ]
+  },
+  {
+   "id": "g:Colpodaspis",
+   "name": "Colpodaspis",
+   "family": "f:Colpodaspididae",
+   "circle": 3,
+   "species": [
+    "s487302"
+   ]
+  },
+  {
+   "id": "g:Cabangus",
+   "name": "Cabangus",
+   "family": "f:Dendronotidae",
+   "circle": 3,
+   "species": [
+    "s1153968"
+   ]
+  },
+  {
+   "id": "g:Asteronotus",
+   "name": "Asteronotus",
+   "family": "f:Discodorididae",
+   "circle": 3,
+   "species": [
+    "s52961"
+   ]
+  },
+  {
+   "id": "g:Trapania",
+   "name": "Trapania",
+   "family": "f:Goniodorididae",
+   "circle": 3,
+   "species": [
+    "s348633",
+    "s476173",
+    "s476171",
+    "s332512"
+   ]
+  },
+  {
+   "id": "g:Janolus",
+   "name": "Janolus",
+   "family": "f:Janolidae",
+   "circle": 3,
+   "species": [
+    "s497250",
+    "s891079"
+   ]
+  },
+  {
+   "id": "g:Notodoris",
+   "name": "Notodoris",
+   "family": "f:Aegiridae",
+   "circle": 3,
+   "species": [
+    "s504909",
+    "s504910"
+   ]
+  },
+  {
+   "id": "g:Verconia",
+   "name": "Verconia",
+   "family": "f:Chromodorididae",
+   "circle": 3,
+   "species": [
+    "s715146",
+    "s504813"
+   ]
+  },
+  {
+   "id": "g:Baeolidia",
+   "name": "Baeolidia",
+   "family": "f:Aeolidiidae",
+   "circle": 3,
+   "species": [
+    "s349048"
+   ]
+  },
+  {
+   "id": "g:Philinopsis",
+   "name": "Philinopsis",
+   "family": "f:Aglajidae",
+   "circle": 3,
+   "species": [
+    "s199467"
+   ]
+  },
+  {
+   "id": "g:Sclerodoris",
+   "name": "Sclerodoris",
+   "family": "f:Discodorididae",
+   "circle": 3,
+   "species": [
+    "s199590"
+   ]
+  },
+  {
+   "id": "g:Murphydoris",
+   "name": "Murphydoris",
+   "family": "f:Goniodorididae",
+   "circle": 3,
+   "species": [
+    "s1365704"
+   ]
+  },
+  {
+   "id": "g:Stylocheilus",
+   "name": "Stylocheilus",
+   "family": "f:Aplysiidae",
+   "circle": 3,
+   "species": [
+    "s48654"
+   ]
+  },
+  {
+   "id": "g:Cratena",
+   "name": "Cratena",
+   "family": "f:Facelinidae",
+   "circle": 3,
+   "species": [
+    "s467982"
+   ]
+  },
+  {
+   "id": "g:Euselenops",
+   "name": "Euselenops",
+   "family": "f:Pleurobranchaeidae",
+   "circle": 3,
+   "species": [
+    "s50556"
+   ]
+  },
+  {
+   "id": "g:Dendrodoris",
+   "name": "Dendrodoris",
+   "family": "f:Dendrodorididae",
+   "circle": 3,
+   "species": [
+    "s50430"
+   ]
+  },
+  {
+   "id": "g:Dermatobranchus",
+   "name": "Dermatobranchus",
+   "family": "f:Arminidae",
+   "circle": 3,
+   "species": [
+    "s495412",
+    "s626349"
+   ]
+  },
+  {
+   "id": "g:Mariaglaja",
+   "name": "Mariaglaja",
+   "family": "f:Aglajidae",
+   "circle": 3,
+   "species": [
+    "s823951"
+   ]
+  },
+  {
+   "id": "g:Marioniopsis",
+   "name": "Marioniopsis",
+   "family": "f:Tritoniidae",
+   "circle": 3,
+   "species": [
+    "s1491723"
+   ]
+  },
+  {
+   "id": "g:Tyrannodoris",
+   "name": "Tyrannodoris",
+   "family": "f:Polyceridae",
+   "circle": 3,
+   "species": [
+    "s699008"
+   ]
+  },
+  {
+   "id": "g:Odontoglaja",
+   "name": "Odontoglaja",
+   "family": "f:Aglajidae",
+   "circle": 3,
+   "species": [
+    "s506090"
+   ]
+  },
+  {
+   "id": "g:Notobryon",
+   "name": "Notobryon",
+   "family": "f:Scyllaeidae",
+   "circle": 3,
+   "species": [
+    "s50398"
+   ]
+  },
+  {
+   "id": "g:Atagema",
+   "name": "Atagema",
+   "family": "f:Discodorididae",
+   "circle": 3,
+   "species": [
+    "s50445"
+   ]
+  },
+  {
+   "id": "g:Bulbaeolidia",
+   "name": "Bulbaeolidia",
+   "family": "f:Aeolidiidae",
+   "circle": 3,
+   "species": [
+    "s325414"
+   ]
+  },
+  {
+   "id": "g:Platydoris",
+   "name": "Platydoris",
+   "family": "f:Discodorididae",
+   "circle": 3,
+   "species": [
+    "s559946"
+   ]
+  },
+  {
+   "id": "g:Pelagella",
+   "name": "Pelagella",
+   "family": "f:Goniodorididae",
+   "circle": 3,
+   "species": [
+    "s1471723"
+   ]
+  }
+ ],
+ "species": [
+  {
+   "id": "s119434",
+   "name": "Chromodoris annae",
+   "ref": 558229,
+   "inat": 119434,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 1,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 262,
+    "near": true,
+    "nearU": 51,
+    "nearN": 144
+   },
+   "en": [
+    {
+     "n": "Anna's Chromodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_annae"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorisannae.html"
+      }
+     ]
+    },
+    {
+     "n": "Anna's magnificent sea slug",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119434,
+    "worms": 558229,
+    "wiki": "Chromodoris annae"
+   }
+  },
+  {
+   "id": "s126110",
+   "name": "Nembrotha kubaryana",
+   "ref": 527322,
+   "inat": 126110,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 2,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 251,
+    "near": true,
+    "nearU": 79,
+    "nearN": 174
+   },
+   "en": [
+    {
+     "n": "Dusky Nembrotha",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/nembrotha_kubaryana"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/nembrothakubaryana.html"
+      }
+     ]
+    },
+    {
+     "n": "Trance Wrinkle Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "variable neon slug",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 126110,
+    "worms": 527322,
+    "wiki": "Nembrotha kubaryana"
+   }
+  },
+  {
+   "id": "s119429",
+   "name": "Chromodoris willani",
+   "ref": 558217,
+   "inat": 119429,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 3,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 203,
+    "near": true,
+    "nearU": 6,
+    "nearN": 11
+   },
+   "en": [
+    {
+     "n": "Willan's Chromodoris",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_willani"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodoriswillani.html"
+      }
+     ]
+    },
+    {
+     "n": "Striped White Sea Slug",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119429,
+    "worms": 558217,
+    "wiki": "Chromodoris willani"
+   }
+  },
+  {
+   "id": "s121050",
+   "name": "Nembrotha chamberlaini",
+   "ref": 527317,
+   "inat": 121050,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 4,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 180,
+    "near": true,
+    "nearU": 15,
+    "nearN": 26
+   },
+   "en": [
+    {
+     "n": "Chamberlain's Nembrotha",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/nembrotha_chamberlaini"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/nembrothachamberlaini.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 121050,
+    "worms": 527317,
+    "wiki": "Nembrotha chamberlaini"
+   }
+  },
+  {
+   "id": "s119860",
+   "name": "Nembrotha lineolata",
+   "ref": 527325,
+   "inat": 119860,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 5,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 173,
+    "near": true,
+    "nearU": 62,
+    "nearN": 113
+   },
+   "en": [
+    {
+     "n": "Lined Nembrotha",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/nembrotha_lineolata"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/nembrothalineolata.html"
+      }
+     ]
+    },
+    {
+     "n": "Ivory Wrinkle Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119860,
+    "worms": 527325,
+    "wiki": "Nembrotha lineolata"
+   }
+  },
+  {
+   "id": "s468033",
+   "name": "Hypselodoris tryoni",
+   "ref": 558646,
+   "inat": 468033,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 6,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 169,
+    "near": true,
+    "nearU": 28,
+    "nearN": 56
+   },
+   "en": [
+    {
+     "n": "Tryon's Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_tryoni"
+      }
+     ]
+    },
+    {
+     "n": "Tryon's Risbecia",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodoristryoni.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 468033,
+    "worms": 558646,
+    "wiki": "Hypselodoris tryoni"
+   }
+  },
+  {
+   "id": "s49735",
+   "name": "Phyllidia varicosa",
+   "ref": 212835,
+   "inat": 49735,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 7,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 165,
+    "near": true,
+    "nearU": 31,
+    "nearN": 92
+   },
+   "en": [
+    {
+     "n": "Varicose Wart Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidia_varicosa"
+      }
+     ]
+    },
+    {
+     "n": "Variable Wart Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49735,
+    "worms": 212835,
+    "wiki": "Phyllidia varicosa"
+   }
+  },
+  {
+   "id": "s125934",
+   "name": "Halgerda batangas",
+   "ref": 457014,
+   "inat": 125934,
+   "circle": 1,
+   "family": "f:Discodorididae",
+   "genus": "g:Halgerda",
+   "r": 8,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 163,
+    "near": true,
+    "nearU": 17,
+    "nearN": 30
+   },
+   "en": [
+    {
+     "n": "Batangas Halgerda",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/halgerda_batangas"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/halgerdabatangas.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 125934,
+    "worms": 457014,
+    "wiki": "Halgerda batangas"
+   }
+  },
+  {
+   "id": "s469568",
+   "name": "Pteraeolidia semperi",
+   "ref": 764917,
+   "inat": 469568,
+   "circle": 1,
+   "family": "f:Facelinidae",
+   "genus": "g:Pteraeolidia",
+   "r": 9,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 162,
+    "near": true,
+    "nearU": 38,
+    "nearN": 81
+   },
+   "en": [
+    {
+     "n": "Blue Dragon",
+     "src": [
+      "inat",
+      "guide",
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/pteraeolidia_semperi"
+      },
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
+    },
+    {
+     "n": "Blue Dragon Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Chinese Dragon Nudibranch",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469568,
+    "worms": 764917
+   }
+  },
+  {
+   "id": "s201640",
+   "name": "Chromodoris lochi",
+   "ref": 558198,
+   "inat": 201640,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 10,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 158,
+    "near": true,
+    "nearU": 12,
+    "nearN": 16
+   },
+   "en": [
+    {
+     "n": "Loch's Chromodoris",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_lochi"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorislochi.html"
+      }
+     ]
+    },
+    {
+     "n": "Pyjama Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Loch's chromodoris slug",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 201640,
+    "worms": 558198,
+    "wiki": "Chromodoris lochi"
+   }
+  },
+  {
+   "id": "s121048",
+   "name": "Chromodoris magnifica",
+   "ref": 558230,
+   "inat": 121048,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 11,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 157,
+    "near": true,
+    "nearU": 26,
+    "nearN": 43
+   },
+   "en": [
+    {
+     "n": "Magnificent Chromodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_magnifica"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorismagnifica.html"
+      }
+     ]
+    },
+    {
+     "n": "magnificent sea slug",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 121048,
+    "worms": 558230,
+    "wiki": "Chromodoris magnifica"
+   }
+  },
+  {
+   "id": "s50554",
+   "name": "Phyllidia ocellata",
+   "ref": 536623,
+   "inat": 50554,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 12,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 155,
+    "near": true,
+    "nearU": 20,
+    "nearN": 43
+   },
+   "en": [
+    {
+     "n": "Ocellate Phyllidia",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidia_ocellata"
+      }
+     ]
+    },
+    {
+     "n": "Eyespot Phyllidia",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Ocellated Wart Slug",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Ocellated Phyllidia",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiaocellata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50554,
+    "worms": 536623,
+    "wiki": "Phyllidia ocellata"
+   }
+  },
+  {
+   "id": "s346881",
+   "name": "Goniobranchus geometricus",
+   "ref": 597336,
+   "inat": 346881,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 13,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 155,
+    "near": true,
+    "nearU": 30,
+    "nearN": 58
+   },
+   "en": [
+    {
+     "n": "Geometric Goniobranchus",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/goniobranchus_geometricus"
+      }
+     ]
+    },
+    {
+     "n": "Geometric Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Geometric Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorisgeometrica.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 346881,
+    "worms": 597336,
+    "wiki": "Goniobranchus geometricus"
+   }
+  },
+  {
+   "id": "s142294",
+   "name": "Phyllidia coelestis",
+   "ref": 212836,
+   "inat": 142294,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 14,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 154,
+    "near": true,
+    "nearU": 17,
+    "nearN": 36
+   },
+   "en": [
+    {
+     "n": "Sky Blue Phyllidia",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidia_coelestis"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiacoelestis.html"
+      }
+     ]
+    },
+    {
+     "n": "Heavenly Wart Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 142294,
+    "worms": 212836,
+    "wiki": "Phyllidia coelestis"
+   }
+  },
+  {
+   "id": "s54892",
+   "name": "Phyllodesmium briareum",
+   "ref": 548882,
+   "inat": 54892,
+   "circle": 1,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 15,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 154,
+    "near": true,
+    "nearU": 25,
+    "nearN": 31
+   },
+   "en": [
+    {
+     "n": "Yellow-tipped Phyllodesmium",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllodesmium_briareum"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllodesmiumbriareum.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 54892,
+    "worms": 548882,
+    "wiki": "Phyllodesmium briareum"
+   }
+  },
+  {
+   "id": "s50300",
+   "name": "Jorunna funebris",
+   "ref": 534383,
+   "inat": 50300,
+   "circle": 1,
+   "family": "f:Discodorididae",
+   "genus": "g:Jorunna",
+   "r": 16,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 153,
+    "near": true,
+    "nearU": 42,
+    "nearN": 89
+   },
+   "en": [
+    {
+     "n": "Mourning Dorid",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/jorunna_funebris"
+      }
+     ]
+    },
+    {
+     "n": "Dotted Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Funeral Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Panda Nudi",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Funeral Pyre Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Ringed Velvet Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Funeral Jorunna",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/jorunnafunebris.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50300,
+    "worms": 534383,
+    "wiki": "Jorunna funebris"
+   }
+  },
+  {
+   "id": "s119872",
+   "name": "Phyllidia elegans",
+   "ref": 536617,
+   "inat": 119872,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 17,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 149,
+    "near": true,
+    "nearU": 17,
+    "nearN": 24
+   },
+   "en": [
+    {
+     "n": "Elegant Phyllidia",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidia_elegans"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiaelegans.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119872,
+    "worms": 536617,
+    "wiki": "Phyllidia elegans"
+   }
+  },
+  {
+   "id": "s119438",
+   "name": "Nembrotha cristata",
+   "ref": 527320,
+   "inat": 119438,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 18,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 143,
+    "near": true,
+    "nearU": 53,
+    "nearN": 117
+   },
+   "en": [
+    {
+     "n": "Crested Nembrotha",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/nembrotha_cristata"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/nembrothacristata.html"
+      }
+     ]
+    },
+    {
+     "n": "Nathalie's Nembrotha",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119438,
+    "worms": 527320,
+    "wiki": "Nembrotha cristata"
+   }
+  },
+  {
+   "id": "s142953",
+   "name": "Nembrotha milleri",
+   "ref": 527328,
+   "inat": 142953,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 19,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 130,
+    "near": true,
+    "nearU": 45,
+    "nearN": 118
+   },
+   "en": [
+    {
+     "n": "Miller's Nembrotha",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/nembrotha_milleri"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/nembrothamilleri.html"
+      }
+     ]
+    },
+    {
+     "n": "Shadowy Wrinkle Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 142953,
+    "worms": 527328,
+    "wiki": "Nembrotha milleri"
+   }
+  },
+  {
+   "id": "s121406",
+   "name": "Ardeadoris egretta",
+   "ref": 558430,
+   "inat": 121406,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ardeadoris",
+   "r": 20,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 126,
+    "near": true,
+    "nearU": 15,
+    "nearN": 20
+   },
+   "en": [
+    {
+     "n": "heron ardeadoris",
+     "src": [
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/ardeadorisegretta.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 121406,
+    "worms": 558430,
+    "wiki": "Ardeadoris egretta"
+   }
+  },
+  {
+   "id": "s469422",
+   "name": "Goniobranchus kuniei",
+   "ref": 597339,
+   "inat": 469422,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 21,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 124,
+    "near": true,
+    "nearU": 16,
+    "nearN": 19
+   },
+   "en": [
+    {
+     "n": "Kunie's Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodoriskuniei.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469422,
+    "worms": 597339,
+    "wiki": "Goniobranchus kuniei"
+   }
+  },
+  {
+   "id": "s199475",
+   "name": "Chelidonura amoena",
+   "ref": 213149,
+   "inat": 199475,
+   "circle": 1,
+   "family": "f:Aglajidae",
+   "genus": "g:Chelidonura",
+   "r": 22,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 120,
+    "near": true,
+    "nearU": 13,
+    "nearN": 19
+   },
+   "en": [
+    {
+     "n": "Lovely Headshield Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chelidonura_amoena"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chelidonuraamoena.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 199475,
+    "worms": 213149,
+    "wiki": "Chelidonura amoena"
+   }
+  },
+  {
+   "id": "s546397",
+   "name": "Elysia marginata",
+   "ref": 765107,
+   "inat": 546397,
+   "circle": 1,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Elysia",
+   "r": 23,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 120,
+    "near": true,
+    "nearU": 24,
+    "nearN": 45
+   },
+   "en": [
+    {
+     "n": "Tri-banded Taco Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 546397,
+    "worms": 765107,
+    "wiki": "Elysia marginata"
+   }
+  },
+  {
+   "id": "s468042",
+   "name": "Doriprismatica atromarginata",
+   "ref": 558499,
+   "inat": 468042,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Doriprismatica",
+   "r": 24,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 118,
+    "near": true,
+    "nearU": 11,
+    "nearN": 25
+   },
+   "en": [
+    {
+     "n": "Black-margined Nudibranch",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/doriprismatica_atromarginata"
+      }
+     ]
+    },
+    {
+     "n": "Cheesecake nudibranch",
+     "src": [
+      "wiki"
+     ]
+    },
+    {
+     "n": "Dark Margin Glossodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/doriprismaticaatromarginata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 468042,
+    "worms": 558499,
+    "wiki": "Doriprismatica atromarginata"
+   }
+  },
+  {
+   "id": "s119425",
+   "name": "Caloria indica",
+   "ref": 181240,
+   "inat": 119425,
+   "circle": 1,
+   "family": "f:Facelinidae",
+   "genus": "g:Caloria",
+   "r": 25,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 113,
+    "near": true,
+    "nearU": 37,
+    "nearN": 92
+   },
+   "en": [
+    {
+     "n": "Indian Caloria",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/caloria_indica"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/caloriaindica.html"
+      }
+     ]
+    },
+    {
+     "n": "sunrise nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Sunrise Tentacle Aeolid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119425,
+    "worms": 181240,
+    "wiki": "Caloria indica"
+   }
+  },
+  {
+   "id": "s468030",
+   "name": "Thecacera picta",
+   "ref": 527538,
+   "inat": 468030,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Thecacera",
+   "r": 26,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 112,
+    "near": true,
+    "nearU": 35,
+    "nearN": 53
+   },
+   "en": [
+    {
+     "n": "Painted Thecacera",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/thecacerapicta.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 468030,
+    "worms": 527538,
+    "wiki": "Thecacera picta"
+   }
+  },
+  {
+   "id": "s481507",
+   "name": "Goniobranchus coi",
+   "ref": 597329,
+   "inat": 481507,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 27,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 111,
+    "near": true,
+    "nearU": 24,
+    "nearN": 25
+   },
+   "en": [
+    {
+     "n": "Coi's Goniobranchus",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/goniobranchus_coi"
+      }
+     ]
+    },
+    {
+     "n": "Co's Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodoriscoi.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 481507,
+    "worms": 597329,
+    "wiki": "Goniobranchus coi"
+   }
+  },
+  {
+   "id": "s54667",
+   "name": "Hypselodoris apolegma",
+   "ref": 560044,
+   "inat": 54667,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 28,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 105,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Giant Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_apolegma"
+      }
+     ]
+    },
+    {
+     "n": "Robe Hem Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodorisapolegma.html"
+      }
+     ]
+    },
+    {
+     "n": "Cinderella Sea Slug",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Bubblegum Worm",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 54667,
+    "worms": 560044,
+    "wiki": "Hypselodoris apolegma"
+   }
+  },
+  {
+   "id": "s120948",
+   "name": "Tambja morosa",
+   "ref": 531173,
+   "inat": 120948,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Tambja",
+   "r": 29,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 100,
+    "near": true,
+    "nearU": 14,
+    "nearN": 29
+   },
+   "en": [
+    {
+     "n": "Gloomy Nudibranch",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/tambja_morosa"
+      }
+     ]
+    },
+    {
+     "n": "Blue-spotted Wrinkle Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Gloomy Tambja",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/tambjamorosa.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120948,
+    "worms": 531173,
+    "wiki": "Tambja morosa"
+   }
+  },
+  {
+   "id": "s56646",
+   "name": "Chelidonura varians",
+   "ref": 599344,
+   "inat": 56646,
+   "circle": 1,
+   "family": "f:Aglajidae",
+   "genus": "g:Chelidonura",
+   "r": 30,
+   "group": "Cephalaspidea",
+   "star": true,
+   "present": {
+    "area": 98,
+    "near": true,
+    "nearU": 12,
+    "nearN": 14
+   },
+   "en": [
+    {
+     "n": "Blue Velvet Headshield Slug",
+     "src": [
+      "inat",
+      "worms",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chelidonura_varians"
+      }
+     ]
+    },
+    {
+     "n": "blue velvet nudibranch",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 56646,
+    "worms": 599344,
+    "wiki": "Chelidonura varians"
+   }
+  },
+  {
+   "id": "s207581",
+   "name": "Phyllidia picta",
+   "ref": 536615,
+   "inat": 207581,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 31,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 96,
+    "near": true,
+    "nearU": 14,
+    "nearN": 29
+   },
+   "en": [
+    {
+     "n": "Painted Phyllidia",
+     "src": [
+      "inat",
+      "worms",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidia_picta"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiapicta.html"
+      }
+     ]
+    },
+    {
+     "n": "black-rayed phyllidia",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 207581,
+    "worms": 536615,
+    "wiki": "Phyllidia picta"
+   }
+  },
+  {
+   "id": "s49904",
+   "name": "Pleurobranchus forskalii",
+   "ref": 140819,
+   "inat": 49904,
+   "circle": 1,
+   "family": "f:Pleurobranchidae",
+   "genus": "g:Pleurobranchus",
+   "r": 32,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 95,
+    "near": true,
+    "nearU": 22,
+    "nearN": 47
+   },
+   "en": [
+    {
+     "n": "Forsskål's Pleurobranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/pleurobranchus_forskalii"
+      }
+     ]
+    },
+    {
+     "n": "Forskal's sidegill slug",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Forskal's side-gilled sea slug",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Forskal's sidegilled slug",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Forskal's Pleurobranch",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/pleurobranchusforskalii.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49904,
+    "worms": 140819,
+    "wiki": "Pleurobranchus forskalii"
+   }
+  },
+  {
+   "id": "s871903",
+   "name": "Coryphellina exoptata",
+   "ref": 1047492,
+   "inat": 871903,
+   "circle": 1,
+   "family": "f:Flabellinidae",
+   "genus": "g:Coryphellina",
+   "r": 33,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 92,
+    "near": true,
+    "nearU": 5,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "Desirable Flabellina",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/coryphellina_exoptata"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/flabellinaexoptata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 871903,
+    "worms": 1047492,
+    "wiki": "Coryphellina exoptata"
+   }
+  },
+  {
+   "id": "s548309",
+   "name": "Hypselodoris bullockii",
+   "ref": 560043,
+   "inat": 548309,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 34,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 90,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Bullock's Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_bullockii"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodorisbullockii.html"
+      }
+     ]
+    },
+    {
+     "n": "Lavender Split-tooth Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 548309,
+    "worms": 560043,
+    "wiki": "Hypselodoris bullockii"
+   }
+  },
+  {
+   "id": "s126108",
+   "name": "Thuridilla lineolata",
+   "ref": 494498,
+   "inat": 126108,
+   "circle": 1,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Thuridilla",
+   "r": 35,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 85,
+    "near": true,
+    "nearU": 30,
+    "nearN": 47
+   },
+   "en": [
+    {
+     "n": "Orange-edged Sapsucking Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/thuridilla_lineolata"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/thuridillalineolata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 126108,
+    "worms": 494498,
+    "wiki": "Thuridilla lineolata"
+   }
+  },
+  {
+   "id": "s120989",
+   "name": "Reticulidia halgerda",
+   "ref": 536733,
+   "inat": 120989,
+   "circle": 1,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Reticulidia",
+   "r": 36,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 84,
+    "near": true,
+    "nearU": 8,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "Chocolate Mango Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/reticulidia_halgerda"
+      }
+     ]
+    },
+    {
+     "n": "Halgerda Reticulidia",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/reticulidiahalgerda.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120989,
+    "worms": 536733,
+    "wiki": "Reticulidia halgerda"
+   }
+  },
+  {
+   "id": "s469421",
+   "name": "Goniobranchus fidelis",
+   "ref": 597334,
+   "inat": 469421,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 37,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 81,
+    "near": true,
+    "nearU": 9,
+    "nearN": 13
+   },
+   "en": [
+    {
+     "n": "Faithful Sea Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/goniobranchus_fidelis"
+      }
+     ]
+    },
+    {
+     "n": "Creamy Goniobranchus",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Reliable Chromodoris",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Fiesta Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Creamy Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorisfidelis.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469421,
+    "worms": 597334,
+    "wiki": "Goniobranchus fidelis"
+   }
+  },
+  {
+   "id": "s467977",
+   "name": "Chromodoris colemani",
+   "ref": 558301,
+   "inat": 467977,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 38,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 77,
+    "near": true,
+    "nearU": 5,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Coleman's Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodoriscolemani.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467977,
+    "worms": 558301,
+    "wiki": "Chromodoris colemani"
+   }
+  },
+  {
+   "id": "s1475021",
+   "name": "Hexabranchus lacer",
+   "ref": 1571927,
+   "inat": 1475021,
+   "circle": 1,
+   "family": "f:Hexabranchidae",
+   "genus": "g:Hexabranchus",
+   "r": 48,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 64,
+    "near": true,
+    "nearU": 9,
+    "nearN": 13
+   },
+   "look": [
+    "s244849"
+   ],
+   "en": [
+    {
+     "n": "Decumbent Spanish Dancer",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hexabranchus_lacer"
+      }
+     ]
+    },
+    {
+     "n": "mottled Spanish dancer",
+     "src": [
+      "inat",
+      "worms"
+     ]
+    },
+    {
+     "n": "Torn Spanish Dancer",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Spanish dancer",
+     "src": [
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1475021,
+    "worms": 1571927
+   }
+  },
+  {
+   "id": "s469221",
+   "name": "Costasiella kuroshimae",
+   "ref": 494655,
+   "inat": 469221,
+   "circle": 1,
+   "family": "f:Costasiellidae",
+   "genus": "g:Costasiella",
+   "r": 64,
+   "group": "Sacoglossa",
+   "star": true,
+   "present": {
+    "area": 53,
+    "near": true,
+    "nearU": 13,
+    "nearN": 30
+   },
+   "en": [
+    {
+     "n": "Leaf Sheep",
+     "src": [
+      "inat",
+      "wiki",
+      "guide",
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/costasiellakuroshimae.html"
+      },
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      },
+      {
+       "t": "DAN Alert Diver, A Quest for Life (2025-08-28)",
+       "u": "https://dan.org/?p=53983"
+      }
+     ]
+    },
+    {
+     "n": "little leaf-sheep",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/costasiella_kuroshimae"
+      }
+     ]
+    },
+    {
+     "n": "Shaun the Sheep",
+     "src": [
+      "inat",
+      "web"
+     ],
+     "web": [
+      {
+       "t": "DIVERNET (Scuba Diver Magazine), Shaun The Sheep Slug: The Satori Of Diving (2025-09-21)",
+       "u": "https://divernet.com/scuba-news/marine-biology/shaun-the-sheep-slug-the-satori-of-diving/"
+      },
+      {
+       "t": "DAN Alert Diver, A Quest for Life (2025-08-28)",
+       "u": "https://dan.org/?p=53983"
+      }
+     ]
+    },
+    {
+     "n": "Leaf Slug",
+     "src": [
+      "inat",
+      "wiki"
+     ]
+    },
+    {
+     "n": "Salty Ocean Caterpillar",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Diamond-mask Sap-sucker",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "sea sheep",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469221,
+    "worms": 494655,
+    "wiki": "Costasiella kuroshimae"
+   }
+  },
+  {
+   "id": "s50528",
+   "name": "Phestilla melanobrachia",
+   "ref": 536543,
+   "inat": 50528,
+   "circle": 1,
+   "family": "f:Trinchesiidae",
+   "genus": "g:Phestilla",
+   "r": 92,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 39,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Cup Coral Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phestilla_melanobrachia"
+      }
+     ]
+    },
+    {
+     "n": "Blackgill Tenellia",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50528,
+    "worms": 536543,
+    "wiki": "Phestilla melanobrachia"
+   }
+  },
+  {
+   "id": "s557665",
+   "name": "Melibe colemani",
+   "ref": 708806,
+   "inat": 557665,
+   "circle": 1,
+   "family": "f:Tethydidae",
+   "genus": "g:Melibe",
+   "r": 96,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 38,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "ghost nudi",
+     "src": [
+      "wiki",
+      "web"
+     ],
+     "web": [
+      {
+       "t": "Murex Resorts, Melibe Colemani: The Elusive Ghost Nudi of North Sulawesi (2025-06-27)",
+       "u": "https://murexresorts.com/tag/ghost-nudi"
+      }
+     ]
+    },
+    {
+     "n": "Coleman's melibe",
+     "src": [
+      "wiki"
+     ]
+    },
+    {
+     "n": "Holy grail of nudibranchs",
+     "src": [
+      "wiki"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "English Wikipedia, Melibe colemani",
+       "u": "https://en.wikipedia.org/wiki/Melibe_colemani"
+      }
+     ]
+    },
+    {
+     "n": "ghost melibe",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 557665,
+    "worms": 708806,
+    "wiki": "Melibe colemani"
+   }
+  },
+  {
+   "id": "s244849",
+   "name": "Hexabranchus sanguineus",
+   "ref": 220381,
+   "inat": 244849,
+   "circle": 1,
+   "family": "f:Hexabranchidae",
+   "genus": "g:Hexabranchus",
+   "r": 176,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 18,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "look": [
+    "s1475021"
+   ],
+   "en": [
+    {
+     "n": "Spanish Dancer",
+     "src": [
+      "inat",
+      "worms",
+      "wiki",
+      "guide",
+      "web"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hexabranchus_sanguineus"
+      },
+      {
+       "t": "Gary Cobb, Nudibranchs of the Sunshine Coast Australia and Indo-Pacific, Naming Nudibranchs",
+       "u": "https://nudibranch.com.au/common.html"
+      }
+     ]
+    },
+    {
+     "n": "Red-margined Spanish Dancer",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Virtuous Spanish Dancer",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Bloody Spanish Dancer",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 244849,
+    "worms": 220381,
+    "wiki": "Spanish dancer"
+   }
+  },
+  {
+   "id": "s142790",
+   "name": "Thecacera pacifica",
+   "ref": 420618,
+   "inat": 142790,
+   "circle": 1,
+   "family": "f:Polyceridae",
+   "genus": "g:Thecacera",
+   "r": 213,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 14,
+    "near": true,
+    "nearU": 8,
+    "nearN": 14
+   },
+   "en": [
+    {
+     "n": "Pikachu Nudibranch",
+     "src": [
+      "inat",
+      "wiki"
+     ],
+     "nick": 1
+    },
+    {
+     "n": "Pikachu Sea Slug",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Pacific Thecacera",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Orange Sea Slug",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Pikachu Longhorn Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Pikachu",
+     "src": [
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 142790,
+    "worms": 420618,
+    "wiki": "Thecacera pacifica"
+   }
+  },
+  {
+   "id": "s548348",
+   "name": "Jorunna parva",
+   "ref": 534396,
+   "inat": 548348,
+   "circle": 1,
+   "family": "f:Discodorididae",
+   "genus": "g:Jorunna",
+   "r": 334,
+   "group": "Nudibranchia",
+   "star": true,
+   "present": {
+    "area": 6,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Sea Bunny",
+     "src": [
+      "inat",
+      "wiki",
+      "guide",
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/jorunna_parva"
+      },
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
+    },
+    {
+     "n": "Peppercorn Velvet Dorid",
+     "src": [
+      "worms",
+      "web"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
+    },
+    {
+     "n": "Tiger Dorid",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Sea Bunny Slug",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 548348,
+    "worms": 534396,
+    "wiki": "Jorunna parva"
+   }
+  },
+  {
+   "id": "s780919",
+   "name": "Hypselodoris variobranchia",
+   "ref": 1297853,
+   "inat": 780919,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 39,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 76,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s389587",
+   "name": "Favorinus tsuruganus",
+   "ref": 599253,
+   "inat": 389587,
+   "circle": 2,
+   "family": "f:Facelinidae",
+   "genus": "g:Favorinus",
+   "r": 40,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 76,
+    "near": true,
+    "nearU": 7,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "Black-horned Egg-eater",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Ringed Favorinus",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/favorinustsuruganus.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 389587,
+    "worms": 599253,
+    "wiki": "Favorinus tsuruganus"
+   }
+  },
+  {
+   "id": "s143227",
+   "name": "Chromodoris strigata",
+   "ref": 558300,
+   "inat": 143227,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 41,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 74,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Streaked Chromodoris",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_strigata"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorisstrigata.html"
+      }
+     ]
+    },
+    {
+     "n": "Strigate Chromodoris",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Broken-line Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 143227,
+    "worms": 558300,
+    "wiki": "Chromodoris strigata"
+   }
+  },
+  {
+   "id": "s782298",
+   "name": "Hypselodoris decorata",
+   "ref": 565422,
+   "inat": 782298,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 42,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 73,
+    "near": true,
+    "nearU": 8,
+    "nearN": 10
+   },
+   "en": [
+    {
+     "n": "Triple-banded Split-tooth Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Decorated Hypselodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodorisdecorata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 782298,
+    "worms": 565422,
+    "wiki": "Hypselodoris decorata"
+   }
+  },
+  {
+   "id": "s346899",
+   "name": "Goniobranchus hintuanensis",
+   "ref": 597338,
+   "inat": 346899,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 43,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 72,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Bus Stop Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/goniobranchus_hintuanensis"
+      }
+     ]
+    },
+    {
+     "n": "Bus Stop Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorishintuanensis.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 346899,
+    "worms": 597338,
+    "wiki": "Goniobranchus hintuanensis"
+   }
+  },
+  {
+   "id": "s49860",
+   "name": "Dolabella auricularia",
+   "ref": 208629,
+   "inat": 49860,
+   "circle": 2,
+   "family": "f:Aplysiidae",
+   "genus": "g:Dolabella",
+   "r": 44,
+   "group": "Aplysiida",
+   "present": {
+    "area": 71,
+    "near": true,
+    "nearU": 10,
+    "nearN": 12
+   },
+   "en": [
+    {
+     "n": "Blunt-end Seahare",
+     "src": [
+      "inat",
+      "worms",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/dolabella_auricularia"
+      }
+     ]
+    },
+    {
+     "n": "Wedge Sea Hare",
+     "src": [
+      "inat",
+      "worms",
+      "wiki"
+     ]
+    },
+    {
+     "n": "Anvil Sea Hare",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "donsol",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "shoulderblade sea cat",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49860,
+    "worms": 208629,
+    "wiki": "Dolabella auricularia"
+   }
+  },
+  {
+   "id": "s467980",
+   "name": "Diversidoris crocea",
+   "ref": 597311,
+   "inat": 467980,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Diversidoris",
+   "r": 45,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 69,
+    "near": true,
+    "nearU": 3,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Tulip Longtail Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Saffron Noumea",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/noumeacrocea.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467980,
+    "worms": 597311,
+    "wiki": "Diversidoris crocea"
+   }
+  },
+  {
+   "id": "s1263433",
+   "name": "Chromodoris alcalai",
+   "ref": 1533655,
+   "inat": 1263433,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 46,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 66,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Alcala's Chromodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_alcalai"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorisalcalai.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1263433,
+    "worms": 1533655
+   }
+  },
+  {
+   "id": "s120977",
+   "name": "Phyllidiopsis shireenae",
+   "ref": 536717,
+   "inat": 120977,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiopsis",
+   "r": 47,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 65,
+    "near": true,
+    "nearU": 4,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "Shireen's Phyllidiopsis",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidiopsis_shireenae"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiopsisshireenae.html"
+      }
+     ]
+    },
+    {
+     "n": "Crested Wart Slug",
+     "src": [
+      "worms",
+      "wiki"
+     ]
+    },
+    {
+     "n": "Shireen’s Phyllidiopsis Sea Slug",
+     "src": [
+      "wiki"
+     ]
+    },
+    {
+     "n": "Shirin Sea Slug",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120977,
+    "worms": 536717,
+    "wiki": "Phyllidiopsis shireenae"
+   }
+  },
+  {
+   "id": "s136327",
+   "name": "Phyllidiopsis xishaensis",
+   "ref": 599830,
+   "inat": 136327,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiopsis",
+   "r": 49,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 63,
+    "near": true,
+    "nearU": 10,
+    "nearN": 12
+   },
+   "en": [
+    {
+     "n": "Striped Phyllidiopsis",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidiopsis_xishaensis"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiopsisstriata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 136327,
+    "worms": 599830,
+    "wiki": "Phyllidiopsis xishaensis"
+   }
+  },
+  {
+   "id": "s467975",
+   "name": "Aegires villosus",
+   "ref": 531083,
+   "inat": 467975,
+   "circle": 2,
+   "family": "f:Aegiridae",
+   "genus": "g:Aegires",
+   "r": 50,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 63,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Sunset Knobbed Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Hairy Norse God",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/aegiresvillosus.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467975,
+    "worms": 531083,
+    "wiki": "Aegires villosus"
+   }
+  },
+  {
+   "id": "s358109",
+   "name": "Ceratosoma gracillimum",
+   "ref": 558618,
+   "inat": 358109,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ceratosoma",
+   "r": 51,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 63,
+    "near": true,
+    "nearU": 2,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Slender ceratosoma nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/ceratosoma_gracillimum"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 358109,
+    "worms": 558618,
+    "wiki": "Ceratosoma gracillimum"
+   }
+  },
+  {
+   "id": "s470152",
+   "name": "Costasiella usagi",
+   "ref": 494660,
+   "inat": 470152,
+   "circle": 2,
+   "family": "f:Costasiellidae",
+   "genus": "g:Costasiella",
+   "r": 52,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 62,
+    "near": true,
+    "nearU": 17,
+    "nearN": 25
+   },
+   "en": [
+    {
+     "n": "Rabbit Sapsucking Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/costasiella_usagi"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/costasiellausagi.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 470152,
+    "worms": 494660
+   }
+  },
+  {
+   "id": "s49728",
+   "name": "Phyllidiella pustulosa",
+   "ref": 536574,
+   "inat": 49728,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiella",
+   "r": 53,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 61,
+    "near": true,
+    "nearU": 10,
+    "nearN": 27
+   },
+   "en": [
+    {
+     "n": "Pustulose Wart Slug",
+     "src": [
+      "inat",
+      "worms",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidiella_pustulosa"
+      }
+     ]
+    },
+    {
+     "n": "Pimpled Phyllidellia",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "pustular phyllidia",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "pustule nudibranch",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Warty Wart Slug",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Pimpled Phyllidiella",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiellapustulosa.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49728,
+    "worms": 536574,
+    "wiki": "Phyllidiella pustulosa"
+   }
+  },
+  {
+   "id": "s319379",
+   "name": "Hypselodoris emma",
+   "ref": 209596,
+   "inat": 319379,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 54,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 60,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Emma's Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_emma"
+      }
+     ]
+    },
+    {
+     "n": "Triple-striped Split-tooth Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 319379,
+    "worms": 209596,
+    "wiki": "Hypselodoris emma"
+   }
+  },
+  {
+   "id": "s143074",
+   "name": "Phyllidiopsis krempfi",
+   "ref": 536716,
+   "inat": 143074,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiopsis",
+   "r": 55,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 59,
+    "near": true,
+    "nearU": 3,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Krempf's Phyllidiopsis",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidiopsis_krempfi"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiopsiskrempfi.html"
+      }
+     ]
+    },
+    {
+     "n": "Pipek's Pyhillidopsis",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 143074,
+    "worms": 536716,
+    "wiki": "Phyllidiopsis krempfi"
+   }
+  },
+  {
+   "id": "s119863",
+   "name": "Glossodoris rufomarginata",
+   "ref": 559960,
+   "inat": 119863,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Glossodoris",
+   "r": 56,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 59,
+    "near": true,
+    "nearU": 12,
+    "nearN": 15
+   },
+   "en": [
+    {
+     "n": "Caramel Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/glossodoris_rufomarginata"
+      }
+     ]
+    },
+    {
+     "n": "White-margin Sea Slug",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Red-margined Glossodoris",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 119863,
+    "worms": 559960,
+    "wiki": "Glossodoris rufomarginata"
+   }
+  },
+  {
+   "id": "s469415",
+   "name": "Goniobranchus verrieri",
+   "ref": 597344,
+   "inat": 469415,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 57,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 57,
+    "near": true,
+    "nearU": 6,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "Pink-eared Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469415,
+    "worms": 597344,
+    "wiki": "Goniobranchus verrieri"
+   }
+  },
+  {
+   "id": "s1375852",
+   "name": "Coryphellina flamma",
+   "ref": 1578296,
+   "inat": 1375852,
+   "circle": 2,
+   "family": "f:Flabellinidae",
+   "genus": "g:Coryphellina",
+   "r": 58,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 57,
+    "near": true,
+    "nearU": 7,
+    "nearN": 8
+   }
+  },
+  {
+   "id": "s332450",
+   "name": "Sagaminopteron psychedelicum",
+   "ref": 599450,
+   "inat": 332450,
+   "circle": 2,
+   "family": "f:Gastropteridae",
+   "genus": "g:Sagaminopteron",
+   "r": 59,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 56,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Psychedelic Batwing",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 332450,
+    "worms": 599450
+   }
+  },
+  {
+   "id": "s471255",
+   "name": "Goniobranchus preciosus",
+   "ref": 597340,
+   "inat": 471255,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 60,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 56,
+    "near": true,
+    "nearU": 3,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Precious Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/goniobranchus_preciosus"
+      }
+     ]
+    },
+    {
+     "n": "Precious Chromodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/goniobranchuspreciosus.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 471255,
+    "worms": 597340,
+    "wiki": "Goniobranchus preciosus"
+   }
+  },
+  {
+   "id": "s467976",
+   "name": "Jorunna rubescens",
+   "ref": 534389,
+   "inat": 467976,
+   "circle": 2,
+   "family": "f:Discodorididae",
+   "genus": "g:Jorunna",
+   "r": 61,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 55,
+    "near": true,
+    "nearU": 15,
+    "nearN": 15
+   },
+   "en": [
+    {
+     "n": "Red-lined Jorunna",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/jorunna_rubescens"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/jorunnarubescens.html"
+      }
+     ]
+    },
+    {
+     "n": "Turret Velvet Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467976,
+    "worms": 534389,
+    "wiki": "Jorunna rubescens"
+   }
+  },
+  {
+   "id": "s349039",
+   "name": "Thorunna furtiva",
+   "ref": 558609,
+   "inat": 349039,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Thorunna",
+   "r": 62,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 55,
+    "near": true,
+    "nearU": 3,
+    "nearN": 4
+   }
+  },
+  {
+   "id": "s50534",
+   "name": "Phestilla sibogae",
+   "ref": 536544,
+   "inat": 50534,
+   "circle": 2,
+   "family": "f:Trinchesiidae",
+   "genus": "g:Phestilla",
+   "r": 63,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 54,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Porites-eating Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "drab aeolid",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Tropical Gasflame",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50534,
+    "worms": 536544,
+    "wiki": "Phestilla sibogae"
+   }
+  },
+  {
+   "id": "s50442",
+   "name": "Discodoris boholiensis",
+   "ref": 578705,
+   "inat": 50442,
+   "circle": 2,
+   "family": "f:Discodorididae",
+   "genus": "g:Discodoris",
+   "r": 65,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 52,
+    "near": true,
+    "nearU": 4,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Flatworm Discodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/discodoris_boholiensis"
+      }
+     ]
+    },
+    {
+     "n": "Bohol Discodoris",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50442,
+    "worms": 578705,
+    "wiki": "Discodoris boholiensis"
+   }
+  },
+  {
+   "id": "s126096",
+   "name": "Chromodoris dianae",
+   "ref": 457494,
+   "inat": 126096,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 66,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 52,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Diana's Chromodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_dianae"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chromodorisdianae.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 126096,
+    "worms": 457494,
+    "wiki": "Chromodoris dianae"
+   }
+  },
+  {
+   "id": "s147938",
+   "name": "Hypselodoris whitei",
+   "ref": 560037,
+   "inat": 147938,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 67,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 51,
+    "near": true,
+    "nearU": 3,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "White's Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_whitei"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodoriswhitei.html"
+      }
+     ]
+    },
+    {
+     "n": "Bumpy Split-tooth Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 147938,
+    "worms": 560037,
+    "wiki": "Hypselodoris whitei"
+   }
+  },
+  {
+   "id": "s54668",
+   "name": "Mexichromis multituberculata",
+   "ref": 558673,
+   "inat": 54668,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Mexichromis",
+   "r": 68,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 51,
+    "near": true,
+    "nearU": 7,
+    "nearN": 11
+   },
+   "en": [
+    {
+     "n": "Bumpy Mexichromis",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/mexichromis_multituberculata"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/mexichromismultituberculata.html"
+      }
+     ]
+    },
+    {
+     "n": "Beau Vallon Magnificent Slug",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Tuberculate Sea Goddess",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 54668,
+    "worms": 558673,
+    "wiki": "Mexichromis multituberculata"
+   }
+  },
+  {
+   "id": "s60594",
+   "name": "Cadlinella ornatissima",
+   "ref": 558431,
+   "inat": 60594,
+   "circle": 2,
+   "family": "f:Cadlinellidae",
+   "genus": "g:Cadlinella",
+   "r": 69,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 51,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Sunburst Ray Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Ornamental Cadlinella",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/cadlinellaornatissima.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 60594,
+    "worms": 558431,
+    "wiki": "Cadlinella ornatissima"
+   }
+  },
+  {
+   "id": "s781241",
+   "name": "Hypselodoris roo",
+   "ref": 1297850,
+   "inat": 781241,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 70,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 51,
+    "near": true,
+    "nearU": 13,
+    "nearN": 24
+   }
+  },
+  {
+   "id": "s847499",
+   "name": "Glossodoris acosti",
+   "ref": 1264645,
+   "inat": 847499,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Glossodoris",
+   "r": 71,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 50,
+    "near": true,
+    "nearU": 11,
+    "nearN": 28
+   }
+  },
+  {
+   "id": "s823909",
+   "name": "Tubulophilinopsis pilsbryi",
+   "ref": 1055261,
+   "inat": 823909,
+   "circle": 2,
+   "family": "f:Aglajidae",
+   "genus": "g:Tubulophilinopsis",
+   "r": 72,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 50,
+    "near": true,
+    "nearU": 11,
+    "nearN": 21
+   },
+   "en": [
+    {
+     "n": "Pilsbry's Head Shield Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/tubulophilinopsis_pilsbryi"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/philinopsispilsbryi.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 823909,
+    "worms": 1055261
+   }
+  },
+  {
+   "id": "s696622",
+   "name": "Samla bicolor",
+   "ref": 766653,
+   "inat": 696622,
+   "circle": 2,
+   "family": "f:Samlidae",
+   "genus": "g:Samla",
+   "r": 73,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 49,
+    "near": true,
+    "nearU": 12,
+    "nearN": 19
+   },
+   "en": [
+    {
+     "n": "Bicolor nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/samla_bicolor"
+      }
+     ]
+    },
+    {
+     "n": "Two-tone Bluntnose",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Bicolor Flabellina",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/flabellinabicolor.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 696622,
+    "worms": 766653,
+    "wiki": "Samla bicolor"
+   }
+  },
+  {
+   "id": "s471362",
+   "name": "Hypselodoris krakatoa",
+   "ref": 457526,
+   "inat": 471362,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 74,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 49,
+    "near": true,
+    "nearU": 3,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Krakatoa Hypselodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodoriskrakatoa.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 471362,
+    "worms": 457526,
+    "wiki": "Hypselodoris krakatoa"
+   }
+  },
+  {
+   "id": "s471361",
+   "name": "Hypselodoris purpureomaculosa",
+   "ref": 559984,
+   "inat": 471361,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 75,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 49,
+    "near": true,
+    "nearU": 11,
+    "nearN": 20
+   }
+  },
+  {
+   "id": "s126094",
+   "name": "Phyllidiopsis annae",
+   "ref": 536725,
+   "inat": 126094,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiopsis",
+   "r": 76,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 48,
+    "near": true,
+    "nearU": 8,
+    "nearN": 17
+   },
+   "en": [
+    {
+     "n": "Anne's Phyllidiopsis",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidiopsis_annae"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiopsisannae.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 126094,
+    "worms": 536725,
+    "wiki": "Phyllidiopsis annae"
+   }
+  },
+  {
+   "id": "s319772",
+   "name": "Mexichromis trilineata",
+   "ref": 597888,
+   "inat": 319772,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Mexichromis",
+   "r": 77,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 48,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Three-lines Purple Doris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/mexichromis_trilineata"
+      }
+     ]
+    },
+    {
+     "n": "Tree-Lined Mexichromis",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/mexichromistrilineata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 319772,
+    "worms": 597888,
+    "wiki": "Mexichromis trilineata"
+   }
+  },
+  {
+   "id": "s715017",
+   "name": "Goniobranchus leopardus",
+   "ref": 833143,
+   "inat": 715017,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 78,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 47,
+    "near": true,
+    "nearU": 15,
+    "nearN": 21
+   },
+   "en": [
+    {
+     "n": "Leopard Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/goniobranchus_leopardus"
+      }
+     ]
+    },
+    {
+     "n": "Leopard Chromodoris",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 715017,
+    "worms": 833143,
+    "wiki": "Goniobranchus leopardus"
+   }
+  },
+  {
+   "id": "s199473",
+   "name": "Chromodoris joshi",
+   "ref": 457496,
+   "inat": 199473,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 79,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 47,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Josh's Chromodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_joshi"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 199473,
+    "worms": 457496,
+    "wiki": "Chromodoris joshi"
+   }
+  },
+  {
+   "id": "s778448",
+   "name": "Glossodoris buko",
+   "ref": 1264642,
+   "inat": 778448,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Glossodoris",
+   "r": 80,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 46,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "White Mantle Glossodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/glossodoris_buko"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 778448,
+    "worms": 1264642,
+    "wiki": "Glossodoris buko"
+   }
+  },
+  {
+   "id": "s552180",
+   "name": "Miamira alleni",
+   "ref": 597461,
+   "inat": 552180,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Miamira",
+   "r": 81,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 46,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s199470",
+   "name": "Thuridilla albopustulosa",
+   "ref": 494488,
+   "inat": 199470,
+   "circle": 2,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Thuridilla",
+   "r": 82,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 44,
+    "near": true,
+    "nearU": 4,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "White-bump Sapsucking Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/thuridilla_albopustulosa"
+      }
+     ]
+    },
+    {
+     "n": "White-marked Taco Slug",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "White-Bump Thuridilla",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/thuridillaalbopustulosa.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 199470,
+    "worms": 494488
+   }
+  },
+  {
+   "id": "s126092",
+   "name": "Phyllodesmium rudmani",
+   "ref": 390071,
+   "inat": 126092,
+   "circle": 2,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 83,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 44,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Mimic Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllodesmium_rudmani"
+      }
+     ]
+    },
+    {
+     "n": "Rudman's Nudibranch",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 126092,
+    "worms": 390071,
+    "wiki": "Phyllodesmium rudmani"
+   }
+  },
+  {
+   "id": "s841162",
+   "name": "Armina occulta",
+   "ref": 990404,
+   "inat": 841162,
+   "circle": 2,
+   "family": "f:Arminidae",
+   "genus": "g:Armina",
+   "r": 84,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 42,
+    "near": true,
+    "nearU": 33,
+    "nearN": 43
+   }
+  },
+  {
+   "id": "s120937",
+   "name": "Ceratosoma tenue",
+   "ref": 212893,
+   "inat": 120937,
+   "circle": 2,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ceratosoma",
+   "r": 85,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 41,
+    "near": true,
+    "nearU": 8,
+    "nearN": 20
+   },
+   "en": [
+    {
+     "n": "Many-lobed Ceratosoma",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/ceratosoma_tenue"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/ceratosomatenue.html"
+      }
+     ]
+    },
+    {
+     "n": "Kangaroo-like Tail",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Elongate Pantechnicon Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120937,
+    "worms": 212893,
+    "wiki": "Ceratosoma tenue"
+   }
+  },
+  {
+   "id": "s468034",
+   "name": "Nembrotha mullineri",
+   "ref": 527329,
+   "inat": 468034,
+   "circle": 2,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 86,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 41,
+    "near": true,
+    "nearU": 11,
+    "nearN": 12
+   }
+  },
+  {
+   "id": "s778294",
+   "name": "Samla bilas",
+   "ref": 1047248,
+   "inat": 778294,
+   "circle": 2,
+   "family": "f:Samlidae",
+   "genus": "g:Samla",
+   "r": 87,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 41,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Red-ringed Bluntnose",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 778294,
+    "worms": 1047248,
+    "wiki": "Samla bilas"
+   }
+  },
+  {
+   "id": "s120982",
+   "name": "Roboastra gracilis",
+   "ref": 531059,
+   "inat": 120982,
+   "circle": 2,
+   "family": "f:Polyceridae",
+   "genus": "g:Roboastra",
+   "r": 88,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 40,
+    "near": true,
+    "nearU": 3,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Slender Roboastra",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/roboastra_gracilis"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/roboastragracilis.html"
+      }
+     ]
+    },
+    {
+     "n": "Graceful Wrinkle Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120982,
+    "worms": 531059,
+    "wiki": "Roboastra gracilis"
+   }
+  },
+  {
+   "id": "s841163",
+   "name": "Armina scotti",
+   "ref": 990403,
+   "inat": 841163,
+   "circle": 2,
+   "family": "f:Arminidae",
+   "genus": "g:Armina",
+   "r": 89,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 40,
+    "near": true,
+    "nearU": 10,
+    "nearN": 10
+   }
+  },
+  {
+   "id": "s54648",
+   "name": "Phyllodesmium jakobsenae",
+   "ref": 388630,
+   "inat": 54648,
+   "circle": 2,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 90,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 40,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s723224",
+   "name": "Plakobranchus papua",
+   "ref": 879682,
+   "inat": 723224,
+   "circle": 2,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Plakobranchus",
+   "r": 91,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 39,
+    "near": true,
+    "nearU": 2,
+    "nearN": 3
+   }
+  },
+  {
+   "id": "s346901",
+   "name": "Phyllodesmium crypticum",
+   "ref": 548878,
+   "inat": 346901,
+   "circle": 2,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 93,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 39,
+    "near": false,
+    "nearU": 1,
+    "nearN": 12
+   },
+   "en": [
+    {
+     "n": "Beaded Soft Coral Eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 346901,
+    "worms": 548878,
+    "wiki": "Phyllodesmium crypticum"
+   }
+  },
+  {
+   "id": "s50552",
+   "name": "Phyllidiella nigra",
+   "ref": 536691,
+   "inat": 50552,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiella",
+   "r": 94,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 38,
+    "near": true,
+    "nearU": 4,
+    "nearN": 5
+   }
+  },
+  {
+   "id": "s63087",
+   "name": "Chelidonura hirundinina",
+   "ref": 420528,
+   "inat": 63087,
+   "circle": 2,
+   "family": "f:Aglajidae",
+   "genus": "g:Chelidonura",
+   "r": 95,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 38,
+    "near": true,
+    "nearU": 6,
+    "nearN": 7
+   },
+   "en": [
+    {
+     "n": "Swallowtail Headshield Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chelidonura_hirundinina"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/chelidonurahirundinina.html"
+      }
+     ]
+    },
+    {
+     "n": "T-bar Swallowtail",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 63087,
+    "worms": 420528,
+    "wiki": "Chelidonura hirundinina"
+   }
+  },
+  {
+   "id": "s120988",
+   "name": "Reticulidia fungia",
+   "ref": 536734,
+   "inat": 120988,
+   "circle": 2,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Reticulidia",
+   "r": 97,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 37,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Mushroom Coral Reticulida",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/reticulidia_fungia"
+      }
+     ]
+    },
+    {
+     "n": "Mushroom Coral Reticulidia",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/reticulidiafungia.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120988,
+    "worms": 536734,
+    "wiki": "Reticulidia fungia"
+   }
+  },
+  {
+   "id": "s1668619",
+   "name": "Longibranchus putnami",
+   "ref": 1832557,
+   "inat": 1668619,
+   "circle": 2,
+   "family": "f:Eubranchidae",
+   "genus": "g:Longibranchus",
+   "r": 98,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 37,
+    "near": true,
+    "nearU": 7,
+    "nearN": 14
+   },
+   "en": [
+    {
+     "n": "Dark Longibranchus",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/longibranchusputnami.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1668619,
+    "worms": 1832557
+   }
+  },
+  {
+   "id": "s504309",
+   "name": "Phyllodesmium koehleri",
+   "ref": 456998,
+   "inat": 504309,
+   "circle": 2,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 99,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 36,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s1521020",
+   "name": "Bermudella brunneomaculata",
+   "ref": 1723419,
+   "inat": 1521020,
+   "circle": 2,
+   "family": "f:Goniodorididae",
+   "genus": "g:Bermudella",
+   "r": 100,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 36,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Brown-blotched okenia",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/bermudella_brunneomaculata"
+      }
+     ]
+    },
+    {
+     "n": "Brown-blotched Bermudella",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1521020,
+    "worms": 1723419,
+    "wiki": "Bermudella brunneomaculata"
+   }
+  },
+  {
+   "id": "s898566",
+   "name": "Aplysia nigrocincta",
+   "ref": 1349546,
+   "inat": 898566,
+   "circle": 2,
+   "family": "f:Aplysiidae",
+   "genus": "g:Aplysia",
+   "r": 101,
+   "group": "Aplysiida",
+   "present": {
+    "area": 35,
+    "near": true,
+    "nearU": 5,
+    "nearN": 12
+   },
+   "en": [
+    {
+     "n": "Black-edged Sea Hare",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "corn-bearing aplysia",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 898566,
+    "worms": 1349546,
+    "wiki": "Aplysia nigrocincta"
+   }
+  },
+  {
+   "id": "s778296",
+   "name": "Samla riwo",
+   "ref": 1047250,
+   "inat": 778296,
+   "circle": 2,
+   "family": "f:Samlidae",
+   "genus": "g:Samla",
+   "r": 102,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 35,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Purple-ringed Bluntnose",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 778296,
+    "worms": 1047250,
+    "wiki": "Samla riwo"
+   }
+  },
+  {
+   "id": "s50551",
+   "name": "Melibe viridis",
+   "ref": 181237,
+   "inat": 50551,
+   "circle": 3,
+   "family": "f:Tethydidae",
+   "genus": "g:Melibe",
+   "r": 103,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 34,
+    "near": true,
+    "nearU": 4,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Green Melibe",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/melibe_viridis"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/melibeviridis.html"
+      }
+     ]
+    },
+    {
+     "n": "Wonderous Melibe Slug",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Giant Monkdragon",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50551,
+    "worms": 181237,
+    "wiki": "Melibe viridis"
+   }
+  },
+  {
+   "id": "s64717",
+   "name": "Bornella anguilla",
+   "ref": 549611,
+   "inat": 64717,
+   "circle": 3,
+   "family": "f:Bornellidae",
+   "genus": "g:Bornella",
+   "r": 104,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 34,
+    "near": true,
+    "nearU": 5,
+    "nearN": 7
+   },
+   "en": [
+    {
+     "n": "Eel Bornella",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/bornella_anguilla"
+      }
+     ]
+    },
+    {
+     "n": "Paisley Eeldragon",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Eel Bornella Nudibranch",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/bornellaanguilla.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 64717,
+    "worms": 549611,
+    "wiki": "Bornella anguilla"
+   }
+  },
+  {
+   "id": "s1143046",
+   "name": "Gymnodoris crocea",
+   "ref": 766696,
+   "inat": 1143046,
+   "circle": 3,
+   "family": "f:Polyceridae",
+   "genus": "g:Gymnodoris",
+   "r": 105,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 34,
+    "near": true,
+    "nearU": 33,
+    "nearN": 63
+   },
+   "en": [
+    {
+     "n": "Ridged Gymnodoris",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1143046,
+    "worms": 766696
+   }
+  },
+  {
+   "id": "s823908",
+   "name": "Tubulophilinopsis gardineri",
+   "ref": 1055265,
+   "inat": 823908,
+   "circle": 3,
+   "family": "f:Aglajidae",
+   "genus": "g:Tubulophilinopsis",
+   "r": 106,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 33,
+    "near": true,
+    "nearU": 6,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "Gardiner's Headshield Slug",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/philinopsisgardineri.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 823908,
+    "worms": 1055265,
+    "wiki": "Tubulophilinopsis gardineri"
+   }
+  },
+  {
+   "id": "s840762",
+   "name": "Cyerce nigra",
+   "ref": 1814148,
+   "inat": 840762,
+   "circle": 3,
+   "family": "f:Caliphyllidae",
+   "genus": "g:Cyerce",
+   "r": 107,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 33,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Tiger Butterfly Sea Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/cyerce_nigra"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 840762,
+    "worms": 1814148
+   }
+  },
+  {
+   "id": "s519522",
+   "name": "Phyllidiopsis fissurata",
+   "ref": 536729,
+   "inat": 519522,
+   "circle": 3,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiopsis",
+   "r": 108,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 32,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Compound Wart Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 519522,
+    "worms": 536729,
+    "wiki": "Phyllidiopsis fissurata"
+   }
+  },
+  {
+   "id": "s469460",
+   "name": "Hypselodoris reidi",
+   "ref": 457528,
+   "inat": 469460,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 109,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 32,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  },
+  {
+   "id": "s469508",
+   "name": "Taringa halgerda",
+   "ref": 457500,
+   "inat": 469508,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Taringa",
+   "r": 110,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 32,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Tagalog Dorid",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/taringa_halgerda"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469508,
+    "worms": 457500,
+    "wiki": "Taringa halgerda"
+   }
+  },
+  {
+   "id": "s194607",
+   "name": "Thuridilla gracilis",
+   "ref": 494494,
+   "inat": 194607,
+   "circle": 3,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Thuridilla",
+   "r": 111,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 31,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Slender Sap Sucking Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/thuridilla_gracilis"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/thuridillagracilis.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 194607,
+    "worms": 494494,
+    "wiki": "Thuridilla gracilis"
+   }
+  },
+  {
+   "id": "s199474",
+   "name": "Ceratosoma trilobatum",
+   "ref": 212891,
+   "inat": 199474,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ceratosoma",
+   "r": 112,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 31,
+    "near": true,
+    "nearU": 3,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Three-lobed T-bar Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/ceratosoma_trilobatum"
+      }
+     ]
+    },
+    {
+     "n": "Three Horned Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "T-bar Pantechnicon Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 199474,
+    "worms": 212891,
+    "wiki": "Ceratosoma trilobatum"
+   }
+  },
+  {
+   "id": "s418427",
+   "name": "Phyllodesmium colemani",
+   "ref": 548883,
+   "inat": 418427,
+   "circle": 3,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 113,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 31,
+    "near": true,
+    "nearU": 5,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "Coleman's Phyllodesmium",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllodesmium_colemani"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 418427,
+    "worms": 548883,
+    "wiki": "Phyllodesmium colemani"
+   }
+  },
+  {
+   "id": "s1679552",
+   "name": "Thecacera pikachu",
+   "ref": 1883897,
+   "inat": 1679552,
+   "circle": 3,
+   "family": "f:Polyceridae",
+   "genus": "g:Thecacera",
+   "r": 114,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 31,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Pikachu nudibranch",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/thecacera_pikachu"
+      }
+     ]
+    },
+    {
+     "n": "Pikachu",
+     "src": [
+      "web"
+     ],
+     "nick": 1,
+     "web": [
+      {
+       "t": "SEASLUG.WORLD, Sea Bunny, Blue Dragon, Leaf Sheep: The Real Species Behind Viral Sea Slugs (2026-04-21)",
+       "u": "https://en.seaslug.world/blog/sea-slug-nicknames-cross-culture"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1679552,
+    "worms": 1883897
+   }
+  },
+  {
+   "id": "s49121",
+   "name": "Plakobranchus ocellatus",
+   "ref": 451657,
+   "inat": 49121,
+   "circle": 3,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Plakobranchus",
+   "r": 115,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 30,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Ringed Sap-sucking Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/plakobranchus_ocellatus"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/plakobranchusocellatus.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 49121,
+    "worms": 451657,
+    "wiki": "Plakobranchus ocellatus"
+   }
+  },
+  {
+   "id": "s471272",
+   "name": "Doto ussi",
+   "ref": 599560,
+   "inat": 471272,
+   "circle": 3,
+   "family": "f:Dotidae",
+   "genus": "g:Doto",
+   "r": 116,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 30,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Yellow-beaded Grapedragon",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Grape Doto",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/dotoussi.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 471272,
+    "worms": 599560,
+    "wiki": "Doto ussi"
+   }
+  },
+  {
+   "id": "s1595814",
+   "name": "Tenellia bughaw",
+   "ref": 1783801,
+   "inat": 1595814,
+   "circle": 3,
+   "family": "f:Trinchesiidae",
+   "genus": "g:Tenellia",
+   "r": 117,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 30,
+    "near": true,
+    "nearU": 9,
+    "nearN": 10
+   }
+  },
+  {
+   "id": "s349052",
+   "name": "Phyllodesmium tuberculatum",
+   "ref": 457931,
+   "inat": 349052,
+   "circle": 3,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 118,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 30,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Warty Soft Coral Eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 349052,
+    "worms": 457931,
+    "wiki": "Phyllodesmium tuberculatum"
+   }
+  },
+  {
+   "id": "s1532043",
+   "name": "Tomoberthella martensi",
+   "ref": 1720806,
+   "inat": 1532043,
+   "circle": 3,
+   "family": "f:Pleurobranchidae",
+   "genus": "g:Tomoberthella",
+   "r": 119,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 29,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Marten's Sidegill Slug",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1532043,
+    "worms": 1720806,
+    "wiki": "Tomoberthella martensi"
+   }
+  },
+  {
+   "id": "s54645",
+   "name": "Phyllodesmium poindimiei",
+   "ref": 534073,
+   "inat": 54645,
+   "circle": 3,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 120,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 29,
+    "near": true,
+    "nearU": 4,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Poindimie's Phyllodesmium",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllodesmium_poindimiei"
+      }
+     ]
+    },
+    {
+     "n": "Branched Soft Coral Eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 54645,
+    "worms": 534073,
+    "wiki": "Phyllodesmium poindimiei"
+   }
+  },
+  {
+   "id": "s52862",
+   "name": "Hypselodoris infucata",
+   "ref": 139151,
+   "inat": 52862,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 121,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 29,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Painted Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_infucata"
+      }
+     ]
+    },
+    {
+     "n": "Colourful Hypseldoris",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Flame-tipped Chromodorid",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Mottled Doris",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Black-spotted Split-tooth Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "mottled dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Painted Nudibranch",
+     "src": [
+      "wiki"
+     ]
+    },
+    {
+     "n": "Colorful Hypselodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodorisinfucata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 52862,
+    "worms": 139151,
+    "wiki": "Hypselodoris infucata"
+   }
+  },
+  {
+   "id": "s487302",
+   "name": "Colpodaspis thompsoni",
+   "ref": 509679,
+   "inat": 487302,
+   "circle": 3,
+   "family": "f:Colpodaspididae",
+   "genus": "g:Colpodaspis",
+   "r": 122,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 29,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Fried Egg Bubble Snail",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 487302,
+    "worms": 509679
+   }
+  },
+  {
+   "id": "s1153968",
+   "name": "Cabangus regius",
+   "ref": 1457499,
+   "inat": 1153968,
+   "circle": 3,
+   "family": "f:Dendronotidae",
+   "genus": "g:Cabangus",
+   "r": 123,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 29,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Regal Nudibranch",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/cabangusregius.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1153968,
+    "worms": 1457499,
+    "wiki": "Cabangus regius"
+   }
+  },
+  {
+   "id": "s51172",
+   "name": "Halgerda tessellata",
+   "ref": 221080,
+   "inat": 51172,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Halgerda",
+   "r": 124,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 28,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Tessellated Halgerda",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/halgerdatessellata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 51172,
+    "worms": 221080,
+    "wiki": "Halgerda tessellata"
+   }
+  },
+  {
+   "id": "s418465",
+   "name": "Miamira miamirana",
+   "ref": 597463,
+   "inat": 418465,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Miamira",
+   "r": 125,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 28,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Pancake Lobe-margin Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Pitted Miamira",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/miamiramiamirana.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 418465,
+    "worms": 597463,
+    "wiki": "Miamira miamirana"
+   }
+  },
+  {
+   "id": "s346900",
+   "name": "Phyllodesmium opalescens",
+   "ref": 599305,
+   "inat": 346900,
+   "circle": 3,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 126,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 28,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s471382",
+   "name": "Miamira sinuata",
+   "ref": 567583,
+   "inat": 471382,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Miamira",
+   "r": 127,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 28,
+    "near": true,
+    "nearU": 4,
+    "nearN": 12
+   },
+   "en": [
+    {
+     "n": "Jolly Green Giant",
+     "src": [
+      "inat",
+      "worms",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/miamira_sinuata"
+      }
+     ]
+    },
+    {
+     "n": "Wavy Lobe-margin Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 471382,
+    "worms": 567583,
+    "wiki": "Miamira sinuata"
+   }
+  },
+  {
+   "id": "s785725",
+   "name": "Hypselodoris paradisa",
+   "ref": 1297848,
+   "inat": 785725,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 128,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 28,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Paradise Hypselodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodorisparadisa.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 785725,
+    "worms": 1297848,
+    "wiki": "Hypselodoris paradisa"
+   }
+  },
+  {
+   "id": "s390159",
+   "name": "Halgerda willeyi",
+   "ref": 221077,
+   "inat": 390159,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Halgerda",
+   "r": 129,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 28,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Willey’s Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/halgerda_willeyi"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 390159,
+    "worms": 221077,
+    "wiki": "Halgerda willeyi"
+   }
+  },
+  {
+   "id": "s508245",
+   "name": "Aplysia argus",
+   "ref": 730434,
+   "inat": 508245,
+   "circle": 3,
+   "family": "f:Aplysiidae",
+   "genus": "g:Aplysia",
+   "r": 130,
+   "group": "Aplysiida",
+   "present": {
+    "area": 27,
+    "near": true,
+    "nearU": 5,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "White-speckled Seahare",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/aplysia_argus"
+      }
+     ]
+    },
+    {
+     "n": "Ocellate Sea Hare",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 508245,
+    "worms": 730434,
+    "wiki": "Aplysia argus"
+   }
+  },
+  {
+   "id": "s1595806",
+   "name": "Tenellia nakapila",
+   "ref": 1783802,
+   "inat": 1595806,
+   "circle": 3,
+   "family": "f:Trinchesiidae",
+   "genus": "g:Tenellia",
+   "r": 131,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 27,
+    "near": true,
+    "nearU": 14,
+    "nearN": 23
+   }
+  },
+  {
+   "id": "s52961",
+   "name": "Asteronotus cespitosus",
+   "ref": 215302,
+   "inat": 52961,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Asteronotus",
+   "r": 132,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 27,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Clumpy Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/asteronotus_cespitosus"
+      }
+     ]
+    },
+    {
+     "n": "Starback Tentacled Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Lumpy Asteronotus",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/asteronotuscespitosus.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 52961,
+    "worms": 215302,
+    "wiki": "Asteronotus cespitosus"
+   }
+  },
+  {
+   "id": "s348633",
+   "name": "Trapania vitta",
+   "ref": 457519,
+   "inat": 348633,
+   "circle": 3,
+   "family": "f:Goniodorididae",
+   "genus": "g:Trapania",
+   "r": 133,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 27,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Orange-edged Pump Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 348633,
+    "worms": 457519,
+    "wiki": "Trapania vitta"
+   }
+  },
+  {
+   "id": "s1623585",
+   "name": "Cyerce blackburnae",
+   "ref": 1814155,
+   "inat": 1623585,
+   "circle": 3,
+   "family": "f:Caliphyllidae",
+   "genus": "g:Cyerce",
+   "r": 134,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 27,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   }
+  },
+  {
+   "id": "s467978",
+   "name": "Phyllidia exquisita",
+   "ref": 536631,
+   "inat": 467978,
+   "circle": 3,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 135,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 26,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Yellow-edged Wart Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467978,
+    "worms": 536631,
+    "wiki": "Phyllidia exquisita"
+   }
+  },
+  {
+   "id": "s50550",
+   "name": "Elysia pusilla",
+   "ref": 536474,
+   "inat": 50550,
+   "circle": 3,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Elysia",
+   "r": 136,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 26,
+    "near": true,
+    "nearU": 5,
+    "nearN": 13
+   },
+   "en": [
+    {
+     "n": "Halimeda Taco Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50550,
+    "worms": 536474,
+    "wiki": "Elysia pusilla"
+   }
+  },
+  {
+   "id": "s504449",
+   "name": "Tambja olivaria",
+   "ref": 531196,
+   "inat": 504449,
+   "circle": 3,
+   "family": "f:Polyceridae",
+   "genus": "g:Tambja",
+   "r": 137,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 26,
+    "near": false,
+    "nearU": 1,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Olive Dorid",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/tambja_olivaria"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 504449,
+    "worms": 531196,
+    "wiki": "Tambja olivaria"
+   }
+  },
+  {
+   "id": "s143297",
+   "name": "Hypselodoris maculosa",
+   "ref": 209597,
+   "inat": 143297,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 138,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 26,
+    "near": false,
+    "nearU": 1,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Spotted Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_maculosa"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodorismaculosa.html"
+      }
+     ]
+    },
+    {
+     "n": "Purple-speckled Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Double-banded Split-tooth Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 143297,
+    "worms": 209597,
+    "wiki": "Hypselodoris maculosa"
+   }
+  },
+  {
+   "id": "s469554",
+   "name": "Mexichromis pusilla",
+   "ref": 597884,
+   "inat": 469554,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Mexichromis",
+   "r": 139,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 26,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Twinspot Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469554,
+    "worms": 597884,
+    "wiki": "Mexichromis pusilla"
+   }
+  },
+  {
+   "id": "s497250",
+   "name": "Janolus savinkini",
+   "ref": 723627,
+   "inat": 497250,
+   "circle": 3,
+   "family": "f:Janolidae",
+   "genus": "g:Janolus",
+   "r": 140,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 26,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Harlequin Flame",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "purple-tipped janolus",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 497250,
+    "worms": 723627,
+    "wiki": "Janolus savinkini"
+   }
+  },
+  {
+   "id": "s891079",
+   "name": "Janolus flavoanulatus",
+   "ref": 1340020,
+   "inat": 891079,
+   "circle": 3,
+   "family": "f:Janolidae",
+   "genus": "g:Janolus",
+   "r": 141,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 26,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   }
+  },
+  {
+   "id": "s319334",
+   "name": "Phyllidiella rudmani",
+   "ref": 536709,
+   "inat": 319334,
+   "circle": 3,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidiella",
+   "r": 142,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 25,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Rudman's Phyllidiella",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidiella_rudmani"
+      }
+     ]
+    },
+    {
+     "n": "Peaked Wart Slug",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 319334,
+    "worms": 536709,
+    "wiki": "Phyllidiella rudmani"
+   }
+  },
+  {
+   "id": "s147944",
+   "name": "Favorinus mirabilis",
+   "ref": 599289,
+   "inat": 147944,
+   "circle": 3,
+   "family": "f:Facelinidae",
+   "genus": "g:Favorinus",
+   "r": 143,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 25,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Miraculous Egg-eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 147944,
+    "worms": 599289
+   }
+  },
+  {
+   "id": "s1623583",
+   "name": "Cyerce katiae",
+   "ref": 1814153,
+   "inat": 1623583,
+   "circle": 3,
+   "family": "f:Caliphyllidae",
+   "genus": "g:Cyerce",
+   "r": 144,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 25,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s504909",
+   "name": "Notodoris minor",
+   "ref": 531090,
+   "inat": 504909,
+   "circle": 3,
+   "family": "f:Aegiridae",
+   "genus": "g:Notodoris",
+   "r": 145,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 24,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Banana Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/notodoris_minor"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/aegiresminor.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 504909,
+    "worms": 531090,
+    "wiki": "Notodoris minor"
+   }
+  },
+  {
+   "id": "s123404",
+   "name": "Pleurobranchus grandis",
+   "ref": 599475,
+   "inat": 123404,
+   "circle": 3,
+   "family": "f:Pleurobranchidae",
+   "genus": "g:Pleurobranchus",
+   "r": 146,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 24,
+    "near": true,
+    "nearU": 4,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "Grand Pleurobranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/pleurobranchus_grandis"
+      }
+     ]
+    },
+    {
+     "n": "giant pleurobranch",
+     "src": [
+      "wiki"
+     ]
+    },
+    {
+     "n": "Cuban dancer",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 123404,
+    "worms": 599475,
+    "wiki": "Pleurobranchus grandis"
+   }
+  },
+  {
+   "id": "s354398",
+   "name": "Ardeadoris angustolutea",
+   "ref": 597314,
+   "inat": 354398,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ardeadoris",
+   "r": 147,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 24,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Yellow-margin Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/ardeadoris_angustolutea"
+      }
+     ]
+    },
+    {
+     "n": "White-centred Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 354398,
+    "worms": 597314,
+    "wiki": "Ardeadoris angustolutea"
+   }
+  },
+  {
+   "id": "s495795",
+   "name": "Ardeadoris averni",
+   "ref": 597315,
+   "inat": 495795,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Ardeadoris",
+   "r": 148,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 24,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s418431",
+   "name": "Nembrotha livingstonei",
+   "ref": 527326,
+   "inat": 418431,
+   "circle": 3,
+   "family": "f:Polyceridae",
+   "genus": "g:Nembrotha",
+   "r": 149,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 23,
+    "near": true,
+    "nearU": 4,
+    "nearN": 6
+   },
+   "en": [
+    {
+     "n": "Crucifix Wrinkle Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 418431,
+    "worms": 527326,
+    "wiki": "Nembrotha livingstonei"
+   }
+  },
+  {
+   "id": "s469420",
+   "name": "Goniobranchus albopunctatus",
+   "ref": 565620,
+   "inat": 469420,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 150,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 23,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Magic Carpet Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469420,
+    "worms": 565620,
+    "wiki": "Goniobranchus albopunctatus"
+   }
+  },
+  {
+   "id": "s415316",
+   "name": "Hypselodoris zephyra",
+   "ref": 457531,
+   "inat": 415316,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 151,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 23,
+    "near": true,
+    "nearU": 7,
+    "nearN": 10
+   },
+   "en": [
+    {
+     "n": "Zephyr Hypselodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/hypselodoris_zephyra"
+      }
+     ]
+    },
+    {
+     "n": "West Wind Hypselodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodoriszephyra.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 415316,
+    "worms": 457531,
+    "wiki": "Hypselodoris zephyra"
+   }
+  },
+  {
+   "id": "s779446",
+   "name": "Melibe digitata",
+   "ref": 388315,
+   "inat": 779446,
+   "circle": 3,
+   "family": "f:Tethydidae",
+   "genus": "g:Melibe",
+   "r": 152,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 23,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s715146",
+   "name": "Verconia alboannulata",
+   "ref": 866649,
+   "inat": 715146,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Verconia",
+   "r": 153,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 23,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "White Ring Noumea",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/noumeaalboannulata.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 715146,
+    "worms": 866649,
+    "wiki": "Verconia alboannulata"
+   }
+  },
+  {
+   "id": "s349048",
+   "name": "Baeolidia moebii",
+   "ref": 730416,
+   "inat": 349048,
+   "circle": 3,
+   "family": "f:Aeolidiidae",
+   "genus": "g:Baeolidia",
+   "r": 154,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 22,
+    "near": true,
+    "nearU": 3,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Moebius' Big Aeolid",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/baeolidia_moebii"
+      }
+     ]
+    },
+    {
+     "n": "Anemone-eating Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Multicoloured Anemone Eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 349048,
+    "worms": 730416,
+    "wiki": "Baeolidia moebii"
+   }
+  },
+  {
+   "id": "s199467",
+   "name": "Philinopsis speciosa",
+   "ref": 559039,
+   "inat": 199467,
+   "circle": 3,
+   "family": "f:Aglajidae",
+   "genus": "g:Philinopsis",
+   "r": 155,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 22,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Blue-margin Headshield Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/philinopsis_speciosa"
+      }
+     ]
+    },
+    {
+     "n": "slipper slug",
+     "src": [
+      "inat",
+      "wiki"
+     ]
+    },
+    {
+     "n": "Beautiful Swallowtail",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "blue-lined philinopsis",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 199467,
+    "worms": 559039,
+    "wiki": "Philinopsis speciosa"
+   }
+  },
+  {
+   "id": "s607312",
+   "name": "Sagaminopteron nigropunctatum",
+   "ref": 599449,
+   "inat": 607312,
+   "circle": 3,
+   "family": "f:Gastropteridae",
+   "genus": "g:Sagaminopteron",
+   "r": 156,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 22,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  },
+  {
+   "id": "s199590",
+   "name": "Sclerodoris tuberculata",
+   "ref": 209606,
+   "inat": 199590,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Sclerodoris",
+   "r": 157,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 22,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Variable Granulated Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 199590,
+    "worms": 209606,
+    "wiki": "Sclerodoris tuberculata"
+   }
+  },
+  {
+   "id": "s873747",
+   "name": "Coryphellina lotos",
+   "ref": 1047496,
+   "inat": 873747,
+   "circle": 3,
+   "family": "f:Flabellinidae",
+   "genus": "g:Coryphellina",
+   "r": 158,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 22,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  },
+  {
+   "id": "s1365704",
+   "name": "Murphydoris adusta",
+   "ref": 1568876,
+   "inat": 1365704,
+   "circle": 3,
+   "family": "f:Goniodorididae",
+   "genus": "g:Murphydoris",
+   "r": 159,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 22,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   }
+  },
+  {
+   "id": "s548297",
+   "name": "Pleurobranchus weberi",
+   "ref": 599478,
+   "inat": 548297,
+   "circle": 3,
+   "family": "f:Pleurobranchidae",
+   "genus": "g:Pleurobranchus",
+   "r": 160,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 22,
+    "near": true,
+    "nearU": 3,
+    "nearN": 6
+   }
+  },
+  {
+   "id": "s48654",
+   "name": "Stylocheilus striatus",
+   "ref": 224662,
+   "inat": 48654,
+   "circle": 3,
+   "family": "f:Aplysiidae",
+   "genus": "g:Stylocheilus",
+   "r": 161,
+   "group": "Aplysiida",
+   "present": {
+    "area": 21,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Lined Sea Hare",
+     "src": [
+      "inat",
+      "wiki",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/stylocheilus_striatus"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/stylocheilusstriatus.html"
+      }
+     ]
+    },
+    {
+     "n": "Spiky Sea Hare",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "blue ring sea hare",
+     "src": [
+      "wiki"
+     ]
+    },
+    {
+     "n": "furry sea hare",
+     "src": [
+      "wiki"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 48654,
+    "worms": 224662,
+    "wiki": "Stylocheilus striatus"
+   }
+  },
+  {
+   "id": "s418506",
+   "name": "Pleurobranchus peronii",
+   "ref": 599477,
+   "inat": 418506,
+   "circle": 3,
+   "family": "f:Pleurobranchidae",
+   "genus": "g:Pleurobranchus",
+   "r": 162,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 21,
+    "near": true,
+    "nearU": 3,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Peron's Pleurobranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/pleurobranchus_peronii"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/pleurobranchusperonii.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 418506,
+    "worms": 599477
+   }
+  },
+  {
+   "id": "s467982",
+   "name": "Cratena simba",
+   "ref": 599286,
+   "inat": 467982,
+   "circle": 3,
+   "family": "f:Facelinidae",
+   "genus": "g:Cratena",
+   "r": 163,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 21,
+    "near": true,
+    "nearU": 5,
+    "nearN": 7
+   },
+   "en": [
+    {
+     "n": "Lion Tentacle Aeolid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467982,
+    "worms": 599286,
+    "wiki": "Cratena simba"
+   }
+  },
+  {
+   "id": "s496578",
+   "name": "Phyllodesmium pinnatum",
+   "ref": 457930,
+   "inat": 496578,
+   "circle": 3,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 164,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 21,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s476173",
+   "name": "Trapania palmula",
+   "ref": 457515,
+   "inat": 476173,
+   "circle": 3,
+   "family": "f:Goniodorididae",
+   "genus": "g:Trapania",
+   "r": 165,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 20,
+    "near": true,
+    "nearU": 5,
+    "nearN": 7
+   },
+   "en": [
+    {
+     "n": "Blue-banded Pump Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 476173,
+    "worms": 457515,
+    "wiki": "Trapania palmula"
+   }
+  },
+  {
+   "id": "s50556",
+   "name": "Euselenops luniceps",
+   "ref": 535693,
+   "inat": 50556,
+   "circle": 3,
+   "family": "f:Pleurobranchaeidae",
+   "genus": "g:Euselenops",
+   "r": 166,
+   "group": "Pleurobranchida",
+   "present": {
+    "area": 20,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Moon-headed Sidegill Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/euselenops_luniceps"
+      }
+     ]
+    },
+    {
+     "n": "Leopard Pleurobranch",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50556,
+    "worms": 535693,
+    "wiki": "Euselenops luniceps"
+   }
+  },
+  {
+   "id": "s1595807",
+   "name": "Tenellia puti",
+   "ref": 1783800,
+   "inat": 1595807,
+   "circle": 3,
+   "family": "f:Trinchesiidae",
+   "genus": "g:Tenellia",
+   "r": 167,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 20,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   }
+  },
+  {
+   "id": "s849396",
+   "name": "Hypselodoris skyleri",
+   "ref": 1297852,
+   "inat": 849396,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 168,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 20,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s50430",
+   "name": "Dendrodoris tuberculosa",
+   "ref": 537016,
+   "inat": 50430,
+   "circle": 3,
+   "family": "f:Dendrodorididae",
+   "genus": "g:Dendrodoris",
+   "r": 169,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 19,
+    "near": true,
+    "nearU": 4,
+    "nearN": 5
+   },
+   "en": [
+    {
+     "n": "Warty Sucking Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50430,
+    "worms": 537016
+   }
+  },
+  {
+   "id": "s355499",
+   "name": "Thorunna daniellae",
+   "ref": 558680,
+   "inat": 355499,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Thorunna",
+   "r": 170,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 19,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Danielle's Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/thorunna_daniellae"
+      }
+     ]
+    },
+    {
+     "n": "Danielle's Thorunna",
+     "src": [
+      "inat"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 355499,
+    "worms": 558680,
+    "wiki": "Thorunna daniellae"
+   }
+  },
+  {
+   "id": "s469461",
+   "name": "Hypselodoris bollandi",
+   "ref": 457522,
+   "inat": 469461,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 171,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 19,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s548307",
+   "name": "Phyllodesmium kabiranum",
+   "ref": 599304,
+   "inat": 548307,
+   "circle": 3,
+   "family": "f:Myrrhinidae",
+   "genus": "g:Phyllodesmium",
+   "r": 172,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 19,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Kabira Phyllodesmium",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllodesmiumkabiranum.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 548307,
+    "worms": 599304,
+    "wiki": "Phyllodesmium kabiranum"
+   }
+  },
+  {
+   "id": "s495412",
+   "name": "Dermatobranchus funiculus",
+   "ref": 558985,
+   "inat": 495412,
+   "circle": 3,
+   "family": "f:Arminidae",
+   "genus": "g:Dermatobranchus",
+   "r": 173,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 19,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s823951",
+   "name": "Mariaglaja tsurugensis",
+   "ref": 1251040,
+   "inat": 823951,
+   "circle": 3,
+   "family": "f:Aglajidae",
+   "genus": "g:Mariaglaja",
+   "r": 174,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 18,
+    "near": true,
+    "nearU": 3,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Variable Swallowtail",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 823951,
+    "worms": 1251040,
+    "wiki": "Mariaglaja tsurugensis"
+   }
+  },
+  {
+   "id": "s626349",
+   "name": "Dermatobranchus caeruleomaculatus",
+   "ref": 558975,
+   "inat": 626349,
+   "circle": 3,
+   "family": "f:Arminidae",
+   "genus": "g:Dermatobranchus",
+   "r": 175,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 18,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s1491723",
+   "name": "Marioniopsis arborescens",
+   "ref": 1669262,
+   "inat": 1491723,
+   "circle": 3,
+   "family": "f:Tritoniidae",
+   "genus": "g:Marioniopsis",
+   "r": 177,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 18,
+    "near": false,
+    "nearU": 1,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "Bushy Lacedragon",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1491723,
+    "worms": 1669262
+   }
+  },
+  {
+   "id": "s349044",
+   "name": "Goniobranchus setoensis",
+   "ref": 597372,
+   "inat": 349044,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 178,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 18,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  },
+  {
+   "id": "s476171",
+   "name": "Trapania miltabrancha",
+   "ref": 457512,
+   "inat": 476171,
+   "circle": 3,
+   "family": "f:Goniodorididae",
+   "genus": "g:Trapania",
+   "r": 179,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 18,
+    "near": true,
+    "nearU": 7,
+    "nearN": 9
+   }
+  },
+  {
+   "id": "s1354147",
+   "name": "Goniobranchus fabulus",
+   "ref": 1561406,
+   "inat": 1354147,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 180,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 18,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s699008",
+   "name": "Tyrannodoris luteolineata",
+   "ref": 1036120,
+   "inat": 699008,
+   "circle": 3,
+   "family": "f:Polyceridae",
+   "genus": "g:Tyrannodoris",
+   "r": 181,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s506090",
+   "name": "Odontoglaja guamensis",
+   "ref": 559047,
+   "inat": 506090,
+   "circle": 3,
+   "family": "f:Aglajidae",
+   "genus": "g:Odontoglaja",
+   "r": 182,
+   "group": "Cephalaspidea",
+   "present": {
+    "area": 17,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s120967",
+   "name": "Favorinus japonicus",
+   "ref": 599288,
+   "inat": 120967,
+   "circle": 3,
+   "family": "f:Facelinidae",
+   "genus": "g:Favorinus",
+   "r": 183,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Egg-eating Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/favorinus_japonicus"
+      }
+     ]
+    },
+    {
+     "n": "White-diamond Egg-eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120967,
+    "worms": 599288
+   }
+  },
+  {
+   "id": "s504373",
+   "name": "Chromodoris michaeli",
+   "ref": 457497,
+   "inat": 504373,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 184,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Michael's Chromodoris",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/chromodoris_michaeli"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 504373,
+    "worms": 457497,
+    "wiki": "Chromodoris michaeli"
+   }
+  },
+  {
+   "id": "s469419",
+   "name": "Glossodoris hikuerensis",
+   "ref": 559949,
+   "inat": 469419,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Glossodoris",
+   "r": 185,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": true,
+    "nearU": 3,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Brown-edge Glossodorid",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/glossodoris_hikuerensis"
+      }
+     ]
+    },
+    {
+     "n": "Hikueru Glossodoris",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Pastel Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 469419,
+    "worms": 559949,
+    "wiki": "Glossodoris hikuerensis"
+   }
+  },
+  {
+   "id": "s549234",
+   "name": "Cyerce elegans",
+   "ref": 494512,
+   "inat": 549234,
+   "circle": 3,
+   "family": "f:Caliphyllidae",
+   "genus": "g:Cyerce",
+   "r": 186,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 17,
+    "near": true,
+    "nearU": 3,
+    "nearN": 4
+   },
+   "en": [
+    {
+     "n": "Elegant Sapsucking Slug",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/cyerce_elegans"
+      },
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/cyerceelegans.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 549234,
+    "worms": 494512,
+    "wiki": "Cyerce elegans"
+   }
+  },
+  {
+   "id": "s121317",
+   "name": "Thorunna halourga",
+   "ref": 457655,
+   "inat": 121317,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Thorunna",
+   "r": 187,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Wide-margined Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    },
+    {
+     "n": "Sea-Purple Thorunna",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/thorunnahalourga.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 121317,
+    "worms": 457655,
+    "wiki": "Thorunna halourga"
+   }
+  },
+  {
+   "id": "s120983",
+   "name": "Phyllidia polkadotsa",
+   "ref": 536637,
+   "inat": 120983,
+   "circle": 3,
+   "family": "f:Phyllidiidae",
+   "genus": "g:Phyllidia",
+   "r": 188,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Polka-dotted Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/phyllidia_polkadotsa"
+      }
+     ]
+    },
+    {
+     "n": "Polkadot Nudibranch",
+     "src": [
+      "inat"
+     ]
+    },
+    {
+     "n": "Polka Dot Phyllidia",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/phyllidiapolkadotsa.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 120983,
+    "worms": 536637,
+    "wiki": "Phyllidia polkadotsa"
+   }
+  },
+  {
+   "id": "s50398",
+   "name": "Notobryon wardi",
+   "ref": 225545,
+   "inat": 50398,
+   "circle": 3,
+   "family": "f:Scyllaeidae",
+   "genus": "g:Notobryon",
+   "r": 189,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 17,
+    "near": true,
+    "nearU": 7,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "iridescent nudibranch",
+     "src": [
+      "worms",
+      "wiki"
+     ]
+    },
+    {
+     "n": "Sandy Grassdragon",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50398,
+    "worms": 225545,
+    "wiki": "Notobryon wardi"
+   }
+  },
+  {
+   "id": "s504910",
+   "name": "Notodoris serenae",
+   "ref": 531091,
+   "inat": 504910,
+   "circle": 3,
+   "family": "f:Aegiridae",
+   "genus": "g:Notodoris",
+   "r": 190,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 16,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "Gray Norse God Nudibranch",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/aegiresserenae.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 504910,
+    "worms": 531091,
+    "wiki": "Notodoris serenae"
+   }
+  },
+  {
+   "id": "s418333",
+   "name": "Thuridilla carlsoni",
+   "ref": 494490,
+   "inat": 418333,
+   "circle": 3,
+   "family": "f:Plakobranchidae",
+   "genus": "g:Thuridilla",
+   "r": 191,
+   "group": "Sacoglossa",
+   "present": {
+    "area": 16,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  },
+  {
+   "id": "s332512",
+   "name": "Trapania scurra",
+   "ref": 457516,
+   "inat": 332512,
+   "circle": 3,
+   "family": "f:Goniodorididae",
+   "genus": "g:Trapania",
+   "r": 192,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 16,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   },
+   "en": [
+    {
+     "n": "Jester Trapania Nudibranch",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/trapania_scurra"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 332512,
+    "worms": 457516,
+    "wiki": "Trapania scurra"
+   }
+  },
+  {
+   "id": "s504813",
+   "name": "Verconia norba",
+   "ref": 866658,
+   "inat": 504813,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Verconia",
+   "r": 193,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 16,
+    "near": true,
+    "nearU": 2,
+    "nearN": 2
+   },
+   "en": [
+    {
+     "n": "White-stripe Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 504813,
+    "worms": 866658,
+    "wiki": "Verconia norba"
+   }
+  },
+  {
+   "id": "s1115871",
+   "name": "Chromodoris kalawakan",
+   "ref": 1450726,
+   "inat": 1115871,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Chromodoris",
+   "r": 194,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 16,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s505174",
+   "name": "Goniobranchus albonares",
+   "ref": 597346,
+   "inat": 505174,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 195,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 16,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Alabaster Rainbow Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 505174,
+    "worms": 597346,
+    "wiki": "Goniobranchus albonares"
+   }
+  },
+  {
+   "id": "s467983",
+   "name": "Melibe engeli",
+   "ref": 593362,
+   "inat": 467983,
+   "circle": 3,
+   "family": "f:Tethydidae",
+   "genus": "g:Melibe",
+   "r": 196,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Hairy Monkdragon",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 467983,
+    "worms": 593362
+   }
+  },
+  {
+   "id": "s50445",
+   "name": "Atagema intecta",
+   "ref": 599494,
+   "inat": 50445,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Atagema",
+   "r": 197,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": true,
+    "nearU": 2,
+    "nearN": 3
+   },
+   "en": [
+    {
+     "n": "Ridged Granulated Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 50445,
+    "worms": 599494,
+    "wiki": "Atagema intecta"
+   }
+  },
+  {
+   "id": "s878721",
+   "name": "Hypselodoris violacea",
+   "ref": 1297854,
+   "inat": 878721,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 198,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   }
+  },
+  {
+   "id": "s325414",
+   "name": "Bulbaeolidia alba",
+   "ref": 730446,
+   "inat": 325414,
+   "circle": 3,
+   "family": "f:Aeolidiidae",
+   "genus": "g:Bulbaeolidia",
+   "r": 199,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "White Aeolidiella",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/bulbaeolidia_alba"
+      }
+     ]
+    },
+    {
+     "n": "White Anemone Eater",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 325414,
+    "worms": 730446,
+    "wiki": "Bulbaeolidia alba"
+   }
+  },
+  {
+   "id": "s559946",
+   "name": "Platydoris sanguinea",
+   "ref": 560057,
+   "inat": 559946,
+   "circle": 3,
+   "family": "f:Discodorididae",
+   "genus": "g:Platydoris",
+   "r": 200,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": false,
+    "nearU": 1,
+    "nearN": 1
+   }
+  },
+  {
+   "id": "s781482",
+   "name": "Hypselodoris katherinae",
+   "ref": 1297856,
+   "inat": 781482,
+   "circle": 3,
+   "family": "f:Chromodorididae",
+   "genus": "g:Hypselodoris",
+   "r": 201,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Katherina's Hypselodoris",
+     "src": [
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "Florent's Guide to the Indo-Pacific Reefs (Florent Charpin), sea slugs",
+       "u": "https://reefguide.org/indopac/hypselodoriskatherinae.html"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 781482,
+    "worms": 1297856,
+    "wiki": "Hypselodoris katherinae"
+   }
+  },
+  {
+   "id": "s1471723",
+   "name": "Pelagella longicornis",
+   "ref": 1663409,
+   "inat": 1471723,
+   "circle": 3,
+   "family": "f:Goniodorididae",
+   "genus": "g:Pelagella",
+   "r": 202,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 15,
+    "near": false,
+    "nearU": 0,
+    "nearN": 0
+   },
+   "en": [
+    {
+     "n": "Burnt-edged Pump Dorid",
+     "src": [
+      "worms"
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 1471723,
+    "worms": 1663409
+   }
+  },
+  {
+   "id": "s891014",
+   "name": "Aplysia reticulata",
+   "ref": 568191,
+   "inat": 891014,
+   "circle": 3,
+   "family": "f:Aplysiidae",
+   "genus": "g:Aplysia",
+   "r": 203,
+   "group": "Aplysiida",
+   "present": {
+    "area": 15,
+    "near": true,
+    "nearU": 5,
+    "nearN": 8
+   },
+   "en": [
+    {
+     "n": "Reticulated sea hare",
+     "src": [
+      "inat",
+      "guide"
+     ],
+     "web": [
+      {
+       "t": "SEASLUG.WORLD (Kimoto Nobuhiko), species page",
+       "u": "https://en.seaslug.world/species/aplysia_reticulata"
+      }
+     ]
+    }
+   ],
+   "ensrc": {
+    "inat": 891014,
+    "worms": 568191,
+    "wiki": "Aplysia reticulata"
+   }
+  },
+  {
+   "id": "x:goniobranchus-sp5",
+   "name": "Goniobranchus sp. 5",
+   "inf": 1,
+   "src": "Soong et al. 2020",
+   "cite": "Soong, G.Y., Wilson, N.G. & Reimer, J.D. (2020). A species complex within the red-reticulate Goniobranchus Pease, 1866 (Nudibranchia: Doridina: Chromodorididae). Marine Biodiversity 50: 25.",
+   "doi": "10.1007/s12526-020-01048-w",
+   "field": 18499,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 3.5,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 183,
+    "near": true,
+    "nearU": 23,
+    "nearN": 40
+   }
+  }
+ ],
+ "vn": [],
+ "ref": {}
+}

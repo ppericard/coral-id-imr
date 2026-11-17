@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Analyses module (analysis.js), continued: the multiple-testing correction and the verdicts, the report's draws, entangled effects, the mix-up map (the first part, and why it is split: tests/analysis.test.js).
 const test = require('node:test'),
   assert = require('node:assert');

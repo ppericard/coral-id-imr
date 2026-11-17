@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The log is the only reference (rule D9; Pierre, 2026-11-09, Q322, Q330; core.js replayedOf, replayBase, replayAdopted;
 // rules version 10, fish rules version 2, no card): the replay's record of a unit and its answer count win over the
 // device's, also when the device holds more answers there (they were counted twice: a save whose reply was lost, then

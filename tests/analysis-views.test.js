@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The Analyses module (analysis.js), continued: Recompute here, deleted accounts, the player profiles, the Wright map, time and difficulty (the first part, and why it is split: tests/analysis.test.js).
 const test = require('node:test'),
   assert = require('node:assert');

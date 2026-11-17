@@ -16,6 +16,12 @@ Confirmed in the Philippines (`ph_confirmed`), any of:
 Pierre (iNaturalist user ppericard) is one observer like anyone else: his Research Grade observations count, his Needs ID
 ones do not confirm anything (his species-level photos stay usable as that species: rule S2). Not used: the number of
 identifiers and the date.
+
+Beside rule C8, for a species with no name yet, which iNaturalist cannot hold as a taxon so none of its observations can
+reach Research Grade (Pierre, 2026-11-17, Q389 (2): "une règle de présence à part (3 observateurs avec l'étiquette)"):
+confirmed in the Philippines (`label_confirmed`) when the observations carrying its label (the observation field that
+marks it, tools/seaslug_informal.json) in the Philippines, Research Grade or Needs ID, have at least LABEL_OBSERVERS (3)
+distinct observers. Near Dauin reads `near_dauin` on the same label's observers within the centre's radius.
 """
 import json
 from pathlib import Path
@@ -25,6 +31,7 @@ from taxonomy import aliases  # the species rows of tools/taxonomy.json: former 
 
 NEAR_OBSERVERS = 2
 PH_OBSERVERS = 3
+LABEL_OBSERVERS = 3  # a species with no name yet: distinct observers whose observation carries its label (Q389 (2))
 CHECKLISTS = Path(__file__).resolve().parent / "presence_checklists.json"
 # The instance's centre (tools/instance.json centre; Pierre, 2026-11-13, Q339): "near" is within radiusKm of it. Today
 # Dauin, 40 km; the query is the same string as before (the reply caches are keyed by URL).
@@ -49,6 +56,12 @@ def ph_confirmed(rg_ph, observers_ph, listed, near):
     if near:
         why.append("near")
     return why
+
+
+def label_confirmed(label_observers_ph):
+    """A species with no name yet is confirmed in the Philippines (Q389 (2), beside rule C8): the observations carrying its
+    label there, Research Grade or Needs ID, have at least LABEL_OBSERVERS distinct observers."""
+    return (label_observers_ph or 0) >= LABEL_OBSERVERS
 
 
 _C = {}

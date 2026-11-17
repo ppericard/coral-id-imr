@@ -1,5 +1,10 @@
 {
  "photos": {
+  "fish-s204-cand-469143932": {
+   "code": "p1g1ml13",
+   "keep": "best",
+   "phase": "terminal"
+  },
   "fish-s204-cand-513904269": {
    "code": "p1g2sm13",
    "keep": "best"

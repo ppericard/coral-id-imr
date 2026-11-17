@@ -5,7 +5,27 @@ then [STATUS.md](STATUS.md) for where things stand, then this page for how the w
 2026-11-07 by the integrator of 2026-11-02..07, before a quota pause. Keep it current: it is the working knowledge that is
 not a rule (rules live in AGENTS.md and docs/rules/) and not state (state lives in STATUS.md).
 
-## Handover of 2026-11-14 evening (read first)
+## Handover of 2026-11-16 (read first)
+
+What the day (29 merges) added, as habits:
+
+- **A wait on a PR counts its check runs** (19 today) before calling it ready: right after a push only a few runs
+  exist, all green, so "no run pending" alone can read ready too early.
+- **A switch that changes where data lives makes tests stale**: turning the sea slugs' R2 step on (#1016) broke the
+  sea slug smoke and the admin smoke's report tile (#1018). After such a change, run the full unit suite and read the
+  smokes that name the data, not only the docs test.
+- **Generated files are rebuilt, never hand-merged**: `seaslug-game.json`, `suggest.json` (re-import the PR's species
+  over `main`'s file), `fish-holdout.json`. A judging PR on species already in play carries the rebuilt game file
+  (`tools/seaslug_game.py --check` fails otherwise).
+- **`tools/judging_fish.py` has no `--help`**: an unknown argument imports every fish species into `suggest.json`.
+- **The Candidate photos run moves `main`** after any judging merge; a train started meanwhile stops ("main moved"):
+  wait for that workflow's run to end, then train (a loop that retries on "main moved" works).
+- **The machine slot is the bottleneck with four agents**: a local `node tests/run.js` can wait past a tool's time
+  limit. When the slot is saturated, push and let CI run the suite (it does on every head), and say so.
+- **Pierre corrects the shape of a subject quickly** (the sea slugs: genera, not families; Learn grouped by taxonomic
+  group, 15:00-15:45): pass his follow-ups to the running agent with `SendMessage` rather than starting another.
+
+## Handover of 2026-11-14 evening
 
 What the day added (Pierre's words in AGENTS.md "Working mode", not repeated here), as habits:
 
@@ -19,8 +39,11 @@ What the day added (Pierre's words in AGENTS.md "Working mode", not repeated her
 - **An interruption to ask a question is not a stop**: answer, then carry on.
 - **Rule 0 is one sentence since 2026-11-15**: after 17:30 (the hook's time, never a guess) ask Pierre nothing;
   nothing else changes, no "closing" phase, no wind-down talk. He nearly dropped the rule over its misapplication.
-- **Every brief forbids sending anything to an outside service** (search engines, image search, APIs) without
-  Pierre's go (AGENTS.md "Always ask first"): on 11-15 an agent sent R2 photo addresses to Yandex image search.
+- **Every brief lets agents use every useful source** (web search engines, guides, forums, publishers, APIs: AGENTS.md
+  "Research uses every useful source", Pierre, 2026-11-17: "je m'attends à ce que tu utilises toutes les sources
+  possibles") **and forbids sending the project's data out** (photo addresses, names, the sheet's data, image search
+  with our photos): on 11-15 an agent sent R2 photo addresses to Yandex image search; the 11-15 to 11-16 briefs
+  banned every search engine for it, which Pierre found too narrow.
 - **Every brief says: a refused command is reported, never worked around** (another tool, `subprocess`, another
   shell form): on 11-15 an agent wrote files through Python after a redirect was refused (auto mode flagged it).
   Name the routes in the brief: no wrapper script, no Monitor, no split names; plain separate commands, as the
@@ -141,10 +164,10 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   integrator's only, and only with Pierre's explicit one-off permission (used once: the Notes tab, key `card.rv8.ps`,
   the PS of the apology card). Tests never touch it.
 - **curation.json** is written only by the admin's draft and Publish, never by an agent.
-- **Never force-push** (the classifier refuses it anyway). The merge contract still wants a PR up to date with
-  origin/main right before it merges: since a rebase would need a force-push, bring the branch up to date with a merge
-  commit (`gh api -X PUT …/pulls/N/update-branch`, or merge origin/main locally), wait for green, then merge. Never
-  force-push main. **The history was rewritten on 2026-11-08 ~16:20 Manila** (photos step 3, Q121, Q300; HANDOVER
+- **Never force-push** (the classifier refuses it anyway). A PR is not brought up to date with origin/main to merge:
+  its train tests it on `main` (rule W26). Only a conflict or the Code.gs `VERSION` assign needs it, and then with a
+  merge commit (`gh api -X PUT …/pulls/N/update-branch`, or merge origin/main locally), never a rebase: a new head,
+  so green and Codex again. Never force-push main. **The history was rewritten on 2026-11-08 ~16:20 Manila** (photos step 3, Q121, Q300; HANDOVER
   "Photos out of the repo, step 3"): **every clone or worktree made before then must never push** (a push would bring
   the old photos back). Work only from a fresh clone; carry a commit left in an old one over as a patch
   (`git format-patch`, then `git am` in the fresh clone), never by pushing from it.
@@ -160,8 +183,8 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   `POST …/pulls/N/ccr/ready_for_review`. Subagents are refused thread resolution: the integrator resolves. In auto
   mode the permission classifier refused the resolve to the integrator too (2026-11-12), so `.claude/settings.json`
   allows exactly `gh api -X POST repos/ppericard/coral-id-imr/pulls/*/ccr/comments/*/resolve` (Pierre, 2026-11-12).
-- **Merge**: `gh api -X PUT …/pulls/N/merge -f merge_method=squash -f sha=<head>` once the branch is up to date with
-  origin/main (above) or through a green train (below), every check is green on that head (their number grows: CodeQL and other security checks run
+- **Merge**: through a green train (below), which squash-merges at the tested head (`…/pulls/N/merge`,
+  `merge_method=squash`, `sha=<head>`), once every check is green on that head (their number grows: CodeQL and other security checks run
   too), the mergeable state is `clean`, no unresolved thread, "Choices I made" empty. Check Codex's latest-head findings
   (`…/pulls/N/comments`, commit_id = head) even when the thread count is 0: a finding on the head may not be a thread yet.
 - **Security bots** (Pierre turned on more automatic security audits in GitHub, 2026-11-08: CodeQL, secret scanning
@@ -176,27 +199,29 @@ integrator starts on another account from 11-11 morning. What the day taught, no
   `vNEXT` set to the new number, main's gates left alone, the file removed; a merge stopped on a conflict may stay
   uncommitted until then, the tool reads its `MERGE_HEAD`, and it refuses a branch that does not hold `origin/main`
   yet, unresolved conflicts, or a PR that moves one of main's gates), run the fast tier, commit "Sheet script vN assigned at merge",
-  push, `@codex review`, wait for green and Codex, then merge alone or as the one Code.gs PR of a train. A PR built under
+  push, `@codex review`, wait for green and Codex, then send it in a train, alone or as that train's one Code.gs PR. A PR built under
   the old rule (its own VERSION bump) passes the check only if its number is still main+1 and ARCHITECTURE.md names it:
   otherwise move its header entry into a changes file and restore main's VERSION and header line. Rules versions (RVS)
   run with no gap. Main's `VERSION` and the live script's: `python3 tools/brief.py` (STATUS "Now" says what is in flight).
-- **The merge train** (rule W26; Pierre, 2026-11-08, Q305 b): when two or more PRs are ready on their own heads (green,
-  Codex-clean, threads resolved, "Choices I made" empty, no `needs-pierre`), run `python3 tools/train.py --dry-run N1 N2 …`
-  (in merge order: it checks each PR and builds the train locally), then the same without `--dry-run` in the background
+- **The merge train** (rule W26; Pierre, 2026-11-08, Q305 b; every PR, 2026-11-16): when a PR is ready on its own head
+  (green, Codex-clean, threads resolved, "Choices I made" empty, no `needs-pierre`), run `python3 tools/train.py
+  --dry-run N` (several PRs ready at once: `N1 N2 …`, in merge order; it checks each PR and builds the train locally),
+  then the same without `--dry-run` in the background
   (Bash `run_in_background`: it waits about 4 min for Checks and Smokes on `train/<time>`). Green: it squash-merges each
   PR at its tested head, then compares `main`'s tree with the train's. Red: nothing merged; read the failing job, leave
   out the PR it points to (or fix it), build a new train; never re-run (rule W23). It stops before a merge if `main`
   moved (a Publish, Candidate photos): the PRs left go in a new train. Exit 2 = `main`'s tree differs from the train's:
   dispatch Checks and Smokes on `main` and fix forward. Train branches stay on GitHub until the weekly "Clean branches and
   Actions" run deletes them after two days (agents cannot delete branches; docs/HANDOVER.md); `tools/brief.py` does not
-  list them. One PR alone: merge it as before, a train of one saves nothing. The merges land
+  list them. A train of one PR is the usual case (87 of 98 trains, 2026-11-14 to 16): it saves the catch-up merge, its
+  CI run and its Codex wait; a docs-only PR runs the smokes on its train (about 3 min). The merges land
   seconds apart: Deploy Pages cancels all but the last run (its concurrency group), so check that last one; a Code.gs
   PR in the train goes live on the sheet at the next self-update, as after any merge (rule D4).
 - **Codex on every new head** (Q305 c not adopted): a catch-up merge of `main`, even a clean one, and the `VERSION`
   assign are new heads, so `@codex review` and wait. The train adds no head.
 - **Never hand-edit `?v=N`, `LAB_V` or the sw.js cache name `V`**: tools/stamp_versions.py does it at publish (Codex
   caught this on #701).
-- **Prettier**: CI uses 3.9.10; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
+- **Prettier**: CI uses 3.10.1; the local copy may be 3.8.1 and reformats some untouched lines differently. Check the
   diff after `--write` and revert unrelated hunks.
 - **Stacked PRs**: merging a PR whose base is another PR's branch merges into that branch, not main (it happened with
   #667 into #663; harmless, but check `base.ref` before merging).

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo review › Cover proposals (admin-covers.js; Pierre, 2026-11-14 after Q339 (b), #864: "Si tu as mieux fait moi des
 // propositions"): where his ★ Cover of a family or a genus differs from the default cover rule's pick, the rule's photo is
 // proposed beside his; Accept sets it as his cover in the draft (one Undo step), Keep mine records the pair in fish.kept;
@@ -17,10 +18,25 @@ const test = require('node:test'),
     coverWhy,
     nodeCover,
     nodeCoverWhy,
-    juvCovers
+    juvCovers,
+    WM_ASK,
+    coverWKeep
   } = require('../admin-covers.js'),
   {lightOpen, lightKeep} = require('../admin-light.js'),
-  {fishCover, fishCoverOf, fishLeafCover, fishWaiting, fishCoverJ, fishCoverYes, fishCoverJOk, fishDrop} = require('../autosort.js'),
+  {
+    fishCover,
+    fishCoverOf,
+    fishCoverRule,
+    fishLeafCover,
+    fishWaiting,
+    fishCoverJ,
+    fishCoverYes,
+    fishCoverJOk,
+    fishCoverW,
+    fishCoverWOk,
+    fishWm,
+    fishDrop
+  } = require('../autosort.js'),
   {merge3} = require('../core.js');
 
 // Family f:A, genus g:B (species s1, s2); s2 seen by more observers around the centre. Every photo an adult reference
@@ -333,6 +349,79 @@ test('a juvenile ★ cover he confirmed: in force on its node page, at any rank;
   const base = {fish: {genera: {'f:A': {cover: 'fi9'}}}},
     out = merge3(base, {fish: fishCoverJOk(base.fish, 'f:A')}, {fish: {genera: {'f:A': {cover: 'fi9', ok: true}}}});
   assert.deepStrictEqual(out.fish.genera['f:A'], {cover: 'fi9', ok: true, coverJ: 'fi9'});
+});
+
+// A watermarked photo (its flag w, as the game reads it: autosort.js fishWm) is never a default cover (Pierre, 2026-11-15,
+// Q379), but his ★ cover on one stays in force (rule A1): the node page asks "Watermark: keep as cover?" (nodeCover's wm);
+// Keep records coverW beside the cover (fishCoverW, as #948's coverJ) and answers the node's proposal; Cover proposals
+// propose the rule's photo without one, open whatever an earlier Keep mine of the pair said.
+test('a watermarked ★ cover: in force, asked about, kept with coverW; the proposal offers one without a watermark', () => {
+  const JW = {...J, fi1: {e: 4, jt: 'p1g0sl1w'}},
+    jw = f => JW[f] || null,
+    pw = (F, id = 'f:A', jj = jw) => coverProposal(id, L, F, jj, seen()),
+    F = deepFreeze({genera: {'f:A': {cover: 'fi1'}, 'g:B': {cover: 'fi4'}}});
+  assert.ok(fishWm(L[0], jw('fi1'), F) && !fishWm(L[1], jw('fi2'), F) && !fishWm(null, null, F));
+  // his cover stays in force; the page asks; the proposal offers the rule's photo, without a watermark
+  let c = nodeCover('f:A', L, F, jw, false, seen());
+  assert.deepStrictEqual([c.p.f, c.by, c.wm, c.wok], ['fi1', 'mine', true, false]);
+  assert.strictEqual(nodeCoverWhy(c, 'Dauin'), 'Your ★ cover');
+  assert.strictEqual(WM_ASK, 'Watermark: keep as cover?');
+  const x = pw(F);
+  assert.deepStrictEqual([x.his.f, x.rule.f, x.wm], ['fi1', 'fi4', true]);
+  assert.ok(!fishWm(x.rule, jw(x.rule.f), F), 'a photo without a watermark');
+  // an earlier Keep mine of the same pair (made before the watermark was known) does not close it
+  const old = {...F, kept: {'f:A': coverKey(x)}};
+  assert.strictEqual(coverOpen([pw(old)], old).length, 1);
+  // Keep (the Tree page, with its proposal open; or Keep mine in the view): coverW and the pair, one new draft
+  for (const N of [coverWKeep(F, 'f:A', x), coverKeep(F, x)]) {
+    assert.deepStrictEqual(N.genera['f:A'], {cover: 'fi1', coverW: 'fi1'});
+    assert.deepStrictEqual(N.kept, {'f:A': 'cover:i1>i4'});
+    assert.ok(fishCoverW(N, 'f:A', L[0]) && fishCoverW(N, 'f:A', 'fish-s1-cand-1'), 'under either name');
+    c = nodeCover('f:A', L, N, jw, false, seen());
+    assert.deepStrictEqual([c.p.f, c.by, c.wm, c.wok], ['fi1', 'mine', false, true]);
+    assert.strictEqual(nodeCoverWhy(c, 'Dauin'), 'Your ★ cover, a watermark you kept');
+    assert.deepStrictEqual(coverOpen([pw(N)], N), [], 'answered');
+  }
+  // with no proposal open (a leaf; or the rule's photo watermarked too): the Keep alone
+  assert.deepStrictEqual(coverWKeep(F, 'f:A', null).genera['f:A'], {cover: 'fi1', coverW: 'fi1'});
+  assert.strictEqual(coverWKeep(F, 'f:A', null).kept, undefined);
+  assert.deepStrictEqual(fishCoverWOk({}, 'f:A').genera, {}, 'no cover: nothing to keep');
+  // a Keep of another photo is none; it goes with the pick: another pick, taken off, Remove, a proposal accepted
+  const K = coverWKeep(F, 'f:A', x);
+  assert.ok(nodeCover('f:A', L, {genera: {'f:A': {cover: 'fi1', coverW: 'fi2'}}}, jw, false, seen()).wm);
+  assert.deepStrictEqual(fishCover(K, 'f:A', 'fi2').genera['f:A'], {cover: 'fi2'});
+  assert.deepStrictEqual(fishCover(K, 'f:A', 'fi1').genera['f:A'], undefined);
+  assert.deepStrictEqual(fishDrop(K, 'f:A', 'fi1').genera['f:A'], undefined);
+  assert.deepStrictEqual(coverAccept(F, x).genera['f:A'], {cover: 'fi4'});
+  assert.deepStrictEqual(coverAccept(K, pw(K)).genera['f:A'], {cover: 'fi4'});
+  // the watermark as the game reads it: his own tags without it (his Watermark off) stand; the auto-sort's copy takes the
+  // pass's w (autosort.js fishTagsMine)
+  assert.ok(!nodeCover('f:A', L, {...F, tags: {fi1: 'p1g0sl1'}}, jw, false, seen()).wm, 'his Watermark off');
+  assert.ok(nodeCover('f:A', L, {...F, tags: {fi1: 'p1g0sl1'}, auto: {'2026-11-05': {fi1: 'ate'}}}, jw, false, seen()).wm, 'the copy');
+  assert.ok(!pw({...F, tags: {fi1: 'p1g0sl1'}}).wm);
+  // the default rule: s2 the most seen, its easiest photo fi4 watermarked: fi3; his ★ of s2 on fi4 is not taken, kept or
+  // not; a leaf's default skips it too, his pick there holds
+  const J4 = {...J, fi4: {e: 5, jt: 'p1g0sl1w'}},
+    j4 = f => J4[f] || null;
+  assert.strictEqual(fishCoverOf(L, {}, 'f:A', j4, seen()).f, 'fi3');
+  for (const k of [{cover: 'fi4'}, {cover: 'fi4', coverW: 'fi4'}]) {
+    const r = fishCoverRule(L, {genera: {s2: k}}, 'f:A', j4, seen());
+    assert.deepStrictEqual([r.p.f, r.mine], ['fi3', false], JSON.stringify(k));
+  }
+  const S2 = [L[3], L[2]];
+  assert.strictEqual(fishLeafCover(S2, {}, 's2', j4).f, 'fi3');
+  assert.strictEqual(fishLeafCover(S2, {genera: {s2: {cover: 'fi4'}}}, 's2', j4).f, 'fi4');
+  c = nodeCover('s2', S2, {genera: {s2: {cover: 'fi4'}}}, j4, true);
+  assert.deepStrictEqual([c.p.f, c.by, c.wm], ['fi4', 'mine', true], "a leaf's page asks too");
+  // every adult photo watermarked: the rule keeps one, and no proposal claims to be without one
+  const Jall = Object.fromEntries(Object.entries(J).map(([f, x]) => [f, {...x, jt: x.jt + 'w'}])),
+    jall = f => Jall[f] || null;
+  assert.strictEqual(fishCoverOf(L, {}, 'f:A', jall, seen()).f, 'fi4');
+  assert.strictEqual(pw(F, 'f:A', jall).wm, false);
+  // Publish keeps it (merge3: key by key, onto a published file changed elsewhere)
+  const base = {fish: {genera: {'f:A': {cover: 'fi1'}}}},
+    out = merge3(base, {fish: fishCoverWOk(base.fish, 'f:A')}, {fish: {genera: {'f:A': {cover: 'fi1', ok: true}}}});
+  assert.deepStrictEqual(out.fish.genera['f:A'], {cover: 'fi1', ok: true, coverW: 'fi1'});
 });
 
 test('a node page’s candidates waiting: by the species they wait in now, never one in play, rejected or gone', () => {

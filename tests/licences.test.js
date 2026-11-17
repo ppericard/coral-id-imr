@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The licence refresh (tools/licences.py): the licence and the credit of every iNaturalist photo listed, read again from
 // iNaturalist (an author can change them, in either direction: Pierre moved all his photos to CC BY on 2026-11-15) and
 // brought up to date in place, no field added; a photo whose new licence the rules refuse leaves play and is reported
@@ -393,4 +394,56 @@ test('the workflow report: the summary lists what left play, each one also a war
   const warn = r.log.filter(l => l.startsWith('::warning '));
   assert.strictEqual(warn.length, 8);
   assert.match(warn.join('\n'), /cand\.json: acropora-cand-23 is now all rights reserved \(was cc-by\)/);
+});
+
+// The sea slugs' candidates (seaslug-cand.json, tools/fetch_seaslugs.py: keyed by iNaturalist taxon id) follow the fish's
+// rule (CC0, CC BY, CC BY-NC; Pierre's own without a licence): a candidate whose licence turns refused leaves the file,
+// share-alike included (unlike a coral photo in play), and is reported; a species left with none is not listed.
+test('sea slugs: seaslug-cand.json follows the fish licence rule; a refused candidate leaves the file and is reported', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'licences-slug-'));
+  const slug = (k, i, o, a, lic, extra = {}) => cand(`seaslug-${k}-cand-${i}`, i, o, a, lic, {t: 'Slugus slugii', ...extra});
+  fs.writeFileSync(
+    path.join(dir, 'seaslug-cand.json'),
+    JSON.stringify({
+      v: 1,
+      cand: {
+        900: [
+          slug(900, 31, 301, BY('Mo', 'CC BY-NC'), 'cc-by-nc'), // more open: CC BY
+          slug(900, 32, 302, BY('Ned', 'CC BY'), 'cc-by'), // share-alike: leaves
+          slug(900, 33, 303, BY('Pierre Pericard', 'CC BY'), 'cc-by', {own: true}) // his own, no licence: stays
+        ],
+        901: [slug(901, 34, 304, BY('Oz', 'CC BY'), 'cc-by')] // no derivatives: leaves, and the species with it
+      }
+    })
+  );
+  const get = `
+WORLD = {'301': ('mo', 31, 'cc-by', '(c) Mo, some rights reserved (CC BY)'), '302': ('ned', 32, 'cc-by-sa', '(c) Ned, some rights reserved (CC BY-SA)'),
+         '303': ('ppericard', 33, None, '(c) Pierre Pericard, all rights reserved'), '304': ('oz', 34, 'cc-by-nd', '(c) Oz, some rights reserved (CC BY-ND)')}
+def get(url, missing=False, timeout=None):
+    import re
+    ids = re.search(r'id=([0-9,]+)', url).group(1).split(',')
+    return {'results': [{'id': int(i), 'user': {'login': WORLD[i][0]}, 'photos': [{'id': WORLD[i][1], 'license_code': WORLD[i][2], 'attribution': WORLD[i][3]}]} for i in ids if i in WORLD]}`;
+  const sum = path.join(dir, 'summary.md');
+  const r = py(`${get}
+LOG = []
+r = L.run(root=${JSON.stringify(dir)}, get=get, summary=${JSON.stringify(sum)}, log=LOG.append)
+print(json.dumps({'left': r['left'], 'opener': dict(r['opener']), 'stricter': dict(r['stricter']), 'asked': r['asked'], 'log': LOG}))`);
+  const C = read(dir, 'seaslug-cand.json');
+  assert.deepStrictEqual(Object.keys(C.cand), ['900'], 'a species left with no candidate is not listed');
+  const by = Object.fromEntries(C.cand['900'].map(p => [p.f, p]));
+  assert.deepStrictEqual(Object.keys(by), ['seaslug-900-cand-31', 'seaslug-900-cand-33']);
+  assert.deepStrictEqual([by['seaslug-900-cand-31'].lic, by['seaslug-900-cand-31'].a], ['cc-by', BY('Mo', 'CC BY')]);
+  assert.strictEqual(by['seaslug-900-cand-33'].lic, 'own', "Pierre's own without a licence stays, as for the fish");
+  assert.strictEqual(r.asked, 4);
+  assert.deepStrictEqual(r.opener, {'seaslug-cand.json': 1});
+  assert.deepStrictEqual(r.stricter, {'seaslug-cand.json': 1});
+  assert.deepStrictEqual(r.left.sort(), [
+    ['seaslug-cand.json', 'seaslug-900-cand-32', 'cc-by', 'cc-by-sa'],
+    ['seaslug-cand.json', 'seaslug-901-cand-34', 'cc-by', 'cc-by-nd']
+  ]);
+  assert.match(fs.readFileSync(sum, 'utf8'), /Left play \(licence the rules refuse\): 2/);
+  assert.strictEqual(r.log.filter(l => l.startsWith('::warning ') && l.includes('seaslug-cand.json: seaslug-')).length, 2);
+  // One species per line, as tools/fetch_seaslugs.py writes it (tools/datajson.py dump).
+  assert.match(fs.readFileSync(path.join(dir, 'seaslug-cand.json'), 'utf8'), /^"900":\[/m);
+  fs.rmSync(dir, {recursive: true, force: true});
 });

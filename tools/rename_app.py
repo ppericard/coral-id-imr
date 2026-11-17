@@ -41,7 +41,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SELF = 'tools/rename_app.py'
-PRETTIER = 'prettier@3.9.10'  # as rule W13 (docs/rules/ship.md) and .github/workflows/checks.yml
+PRETTIER = 'prettier@3.10.1'  # as rule W13 (docs/rules/ship.md) and .github/workflows/checks.yml
 EXT = {'.js', '.css', '.html', '.md', '.py', '.gs', '.yml', '.sh', '.webmanifest'}
 SKIP_DIRS = ('img/', 'docs/reviews/', 'docs/reference/', 'tools/archive/', 'judging/out/')
 OLD_NAMES = ['IMR Coral ID']

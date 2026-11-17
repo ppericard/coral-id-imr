@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tests/slot.js: the machine-wide cap on Playwright runs and the SMOKE_ONLY / SMOKE_PART / SMOKE_W selection.
 const test = require('node:test'),
   assert = require('node:assert'),

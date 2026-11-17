@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // tests/answer.js, the one way the smokes wait for and answer a question: it knows every answer control the app has, and
 // no smoke waits for or clicks one format's answer on its own (a wait for the choice buttons hung 30 s on a typed
 // question: #855's first head, the overlays smoke).

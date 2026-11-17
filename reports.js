@@ -97,7 +97,10 @@
         .split(/\s+/)
         .filter(Boolean),
       byPhoto = photoSubj ? photos.map(f => photoSubj(f) || '').find(Boolean) : '',
-      subj = (unit && unitSubj(unit).id) || byPhoto || (inSubj ? R.S.id : '');
+      // a unit id two subjects' sheet prefixes fit (the fish's and the sea slugs' f:, g:, s:) belongs to the page's subject
+      // when the page's subject is one of them (Codex review #987), else to the first that fits (unitSubj)
+      own = S => !!S && !!S.sheets && Object.values(S.sheets).some(p => unit.startsWith(p) && unit.length > p.length),
+      subj = (unit && (inSubj && own(R.S) ? R.S.id : unitSubj(unit).id)) || byPhoto || (inSubj ? R.S.id : '');
     return {
       id: String(id == null ? '' : id),
       t: Number(t) || 0,
@@ -132,7 +135,70 @@
   };
   const repWhyText = (ctx, S) =>
     ctx.why === 'wrong' && !ctx.game ? 'Wrong ' + S.one : own(REP_WHY, ctx.why) ? REP_WHY[ctx.why].replace('{things}', S.several) : ctx.why;
-  const API = {REP_STATUS, repStatus, repStatusSet, repsReconcile, repsOrder, REP_NOGAME, unitSubj, repCtx, repOn, REP_WHY, repWhyText};
+  // A subject's units and photos as the admin reads them for its reports (admin.js unitRead; Codex review #987), from the
+  // files its SUBJECTS admin files name: f, its tree (fish.json's form); first, its first photos' file (none for a subject
+  // without); gm, its game photos' file (core.js fishGameRead: the short form read whole). Every photo either list holds (a
+  // report may name a photo shown before a Publish), with the unit showing it (entry) and its source as the file has it (a
+  // remote original stays remote: src, r). {gen: unit id -> record (core.js fishGen), ph: photo id -> its record, slate (the
+  // app's UNITS slate), fam: each family, genus and species sheet id (s:<name>) to its family, spid: each species sheet id
+  // to its species, spg: each species to its genus (a report's unit to its family's page, its photos for Attach: Q309),
+  // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
+  // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
+  // where its tree has them, the taxonomic groups its families sit in (core.js fishGen taxa, each family's tg; the
+  // Heatmap's column of the families' groups)}; null
+  // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
+  // slugs), each photo then shown by its genus.
+  function repReg(f, first, gm, unit) {
+    if (!f || typeof f !== 'object') return null;
+    const G = (C.fishGameRead(gm) || {}).photos || {},
+      F0 = (first && first.photos) || {},
+      all = {};
+    new Set([...Object.keys(F0), ...Object.keys(G)]).forEach(t => (all[t] = [...(G[t] || []), ...(F0[t] || [])]));
+    const F = C.fishGen(f, all, undefined, unit),
+      ph = {},
+      fam = Object.create(null),
+      spid = Object.create(null),
+      spg = Object.create(null),
+      imr = Object.create(null);
+    Object.values(F.gen).forEach(g => g.views.wide.forEach(x => (ph[x.f] = {...x, entry: g.id})));
+    (f.families || []).forEach(x => {
+      fam[x.id] = x.id;
+      (x.genera || []).forEach(g => (fam[g] = fam[g] || x.id));
+    });
+    (f.species || []).forEach(x => {
+      spid['s:' + x.name] = x.id;
+      if (x.genus) spg[x.id] = x.genus;
+      if (!x.family) return;
+      fam['s:' + x.name] = x.family;
+      if (x.genus) fam[x.genus] = fam[x.genus] || x.family;
+    });
+    (f.genera || []).forEach(x => x.imr && x.imr !== x.name && (imr[x.id] = x.imr));
+    return {
+      gen: F.gen,
+      ph,
+      slate: [...F.c1, ...F.c2, ...F.c3],
+      fam,
+      spid,
+      spg,
+      imr,
+      groups: F.groups || [],
+      ...(F.taxa ? {taxa: F.taxa} : {})
+    };
+  }
+  const API = {
+    REP_STATUS,
+    repStatus,
+    repStatusSet,
+    repsReconcile,
+    repsOrder,
+    REP_NOGAME,
+    unitSubj,
+    repCtx,
+    repOn,
+    REP_WHY,
+    repWhyText,
+    repReg
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
   else Object.assign(root, API);
 })(this);

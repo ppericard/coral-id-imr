@@ -23,7 +23,7 @@ data, bulk changes to his curation).
 **Alpha phase: no backward compatibility for old URLs, old keys or old app versions.** Rename cleanly, everywhere (code
 must say what things are). Where real data would be lost (a player's saved data under a renamed key, logged rows under
 an old page name), migrate the data once, in the data itself (the app moves its own stored keys at start-up, e.g.
-`core.js` `migrateIdKey`; the sheet script moves its own rows once after its install, `Code.gs` `ONCE_`, logged in the
+`core.js` `migrateRoutes`; the sheet script moves its own rows once after its install, `Code.gs` `ONCE_`, logged in the
 Deploy log), then forget the old name: no redirect, no permanent dual read. Old app versions may break; players update.
 The deploy-order rule D4 still holds (the app never relies on a sheet feature before the sheet has it).
 *Source:* Pierre, 2026-11-04.
@@ -147,8 +147,8 @@ overlays smoke on #855).
 
 ### W13
 
-**Format JS and CSS with Prettier 3.9.10** and `.prettierrc.json` (print width 140): app, admin, Lab, tests; not
-`tools/`, HTML or JSON. Before pushing: `npx --yes prettier@3.9.10 --write "*.js" "*.css" "proto/*.js" "proto/*.css"
+**Format JS and CSS with Prettier 3.10.1** and `.prettierrc.json` (print width 140): app, admin, Lab, tests; not
+`tools/`, HTML or JSON. Before pushing: `npx --yes prettier@3.10.1 --write "*.js" "*.css" "proto/*.js" "proto/*.css"
 "tests/*.js"` (no package.json); the PR check fails otherwise. After a formatter upgrade, compare the syntax trees before
 and after, and run it until the files stop changing (Prettier 3.3.3, picked from memory, dropped array elements inside
 a template literal in `proto/anatomy.js`, found by an AST comparison on 2026-11-01). `.git-blame-ignore-revs` lists the
@@ -160,7 +160,7 @@ reformatting commits (`git config blame.ignoreRevsFile .git-blame-ignore-revs` o
 **The fast tier before each push, the full tier on CI.** Several agent sessions share one machine, and running every
 smoke on every push loaded it until fixed timeouts failed; CI runs everything on each PR, each smoke on its own runner,
 and reports every failing one. Locally, run what your change can break, once:
-- **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.9.10 --check` on the changed `.js`/`.css`;
+- **Fast tier, before each push** (about 1-2 min): `npx --yes prettier@3.10.1 --check` on the changed `.js`/`.css`;
   `node --check` on the changed JS; `python3 tools/check_versions.py` (consistency, and the sheet's changes file: never
   bump a number, rules W15 and D3);
   `python3 tools/datajson.py --check`; `python3 tools/sync_core.py --check`; `node tests/run.js` (rule W24); then **the
@@ -241,7 +241,7 @@ Decisions, screenshots for UI). The integrator merges it under the merge contrac
 **squash merge** whose title ends with ` (#N)` (that is how `git log` reads).
 - Two kinds of commits land on `main` without a PR: Pierre's admin **Publish** ("Photo curation: …", writes
   `curation.json` only) and the GitHub Action that follows it ("Candidate photos: …", writes `data.json` and `img/`). So
-  rebase on `origin/main` right before merging, or merge through a green merge train (rule W26). With one coral genus per line in `data.json`, edits to different genera
+  a PR merges through a green merge train, which tests it on the current `main` (rule W26). With one coral genus per line in `data.json`, edits to different genera
   merge by themselves;
   on a real `data.json` conflict, take `main`'s copy and re-run your `tools/apply_*.py` script rather than hand-merging.
 - Never force-push `main` (GitHub blocks it too once Pierre's ruleset is on, HANDOVER.md "Protect main"); never rewrite history without
@@ -269,7 +269,7 @@ title ` (#N)` and the PR description are the record of what shipped, the docs sa
 that every PR appends to made every two open PRs conflict, so never start one again (ROADMAP's old list is frozen in
 `docs/archive/`). `tests/docs.test.js` holds the rest: AGENTS.md's size budget, every rule ID cited resolving to one
 rule, no reference to the retired rule numbers, the living docs' relative links and anchors resolving, every
-ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow.
+ARCHITECTURE section cited by its name existing, `docs/PAGES.md` naming every workflow, and the identifiers the governing docs (AGENTS.md, `docs/rules/`, ARCHITECTURE, HANDOVER, INTEGRATOR, LEARNING) cite in backticks still existing: a path, or a file followed by a name it holds (`core.js` `faOf`); the test's `ID_ALLOW` lists, with a reason each, the few a doc names on purpose though they are gone (a retired tool, a branch's note): fix the doc first.
 *Why:* another agent (Codex, a Claude Project, a new developer) must be able to take over from the repo alone, with no
 chat history or memory. *Source:* Pierre, 2026-11-01; no done list, 2026-11-04; docs tests, 2026-11-05.
 
@@ -363,9 +363,10 @@ mechanical work a test verifies; never for a judgment (photo judging included).
 
 ### W26
 
-**Several ready PRs merge through one green merge train.** When two or more PRs each meet the merge contract on their
-own head, the integrator runs `python3 tools/train.py N1 N2 …` (`--dry-run` first): a new branch `train/<time>` holds
-`main` plus their heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
+**Every PR merges through a green merge train, alone or with other ready PRs.** When a PR meets the merge contract on
+its own head, the integrator runs `python3 tools/train.py N` (`--dry-run` first; PRs ready at the same time ride one
+train: `N1 N2 …`, in merge order). A PR is never brought up to date with `main` just to merge: a new branch
+`train/<time>` holds `main` plus the heads, Checks and Smokes run once on it, and if it is green each PR is squash-merged through the API in
 order at the head the train tested, with no update-branch (no new head, so no new Codex wait); then `main`'s tree must
 equal the train's, and the train stops if a Publish, an Action or another merge lands in between. A red train merges
 nothing: leave out the PR the failing job points to and build a new train, never re-run it (rule W23). A PR that changes
@@ -374,8 +375,9 @@ conflict on the header line). Any other new head (a fix, a catch-up merge of `ma
 Codex as always. A train branch gets no PR (rule W6 skips it; the weekly "Clean branches and Actions" workflow deletes it after two
 days, docs/HANDOVER.md); `tools/train.py` sends only GET and PUT to GitHub and
 never force-pushes.
-*Why:* each merge left the other ready PRs behind, and each catch-up cost a CI run and a Codex wait, about 4 min per PR
-in a burst. *Source:* Pierre, 2026-11-08 (Q305).
+*Why:* each merge leaves the other PRs behind `main`, and a catch-up merge is a new head, so a CI run and a Codex wait;
+the train tests a PR on `main` without one (87 of the 98 trains of 2026-11-14 to 16 held a single PR). *Source:* Pierre,
+2026-11-08 (Q305); every PR, even alone, 2026-11-16.
 
 ### W27
 

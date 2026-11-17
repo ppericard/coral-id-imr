@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The device's side of the full replay (sync.js replayAdopt, signIn, sendAnon; docs/LEARNING.md "Full replay") and the
 // learned-based achievements taken back (progress.js achRecheck): the app's own code run in Node on stubs (localStorage,
 // the page), against the sync script on an in-memory sheet (tests/gas.js) where it talks to the sheet. Nothing leaves

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Typed answers (Pierre, 2026-11-08, Q237): every text the form refuses before the answer is logged with it ("c'est
 // essentiel. Et c'est vrai pour tout le jeu, partout": quiz.js typeBind rj, answer rj, Code.gs v100 Rejected tries), and
 // on a genus question a common name or a family name is told so, with a nudge that gives nothing away (core.js
@@ -96,6 +97,7 @@ function page(subj = 'fish', typeElse = C.typeElse) {
       coral: {names: () => [], norm: C.typeNorm}
     },
     rankOf,
+    unitRankOf: C.unitRankOf,
     GX: g => X.gen[g],
     typeMatchIn: C.typeMatchIn,
     typeElse,

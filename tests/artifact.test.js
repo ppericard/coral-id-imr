@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // The published site (repo hygiene audit, 2026-11-08): pages.yml stages it with git archive, which leaves out every path
 // .gitattributes marks export-ignore: the docs, tests, tools, the judging package and the repository's own config. Nothing
 // the site serves may need them (the sync script reads raw.githubusercontent.com, never the site).

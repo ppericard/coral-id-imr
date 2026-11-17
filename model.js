@@ -33,8 +33,9 @@ const RARE = {E: 4, FEW: 3, SHARE: 0.1}; // SHARE: Pierre, 2026-11-08 (Q252)
 // Only the units of the subject's own rank (Pierre, 2026-11-08, Q271: the fish families, "c'est là que le débutant a
 // besoin de photos faciles"): a unit of another rank (a fish genus: app.js rankOf) starts under Open Water too, but its
 // player already knows the family, and capping it held back the ratings of its hard photos (about 30% fewer answers
-// under ease 4 over 10,000 simulated answers). Those units are drawn as before.
-const rareOn = n => (rankOf(n) || SUBJ.rank) === SUBJ.rank;
+// under ease 4 over 10,000 simulated answers). Those units are drawn as before. The subject's own rank is the one its game
+// units are at (core.js unitRankOf: the sea slugs' genera).
+const rareOn = n => (rankOf(n) || unitRankOf(SUBJ)) === unitRankOf(SUBJ);
 // The factor the hard photos' weights take so they make at most `share` of the draw (1 when they already do, or when
 // nothing else can be drawn). sc: each observation's weight; hardOf(k): the share of observation k's photo weight that
 // is hard (0 to 1). Exact for a question showing one photo (the fish); for several views, the share of the photos drawn.
@@ -482,6 +483,86 @@ const openChance = list => {
     stuck = n => late && ((P[n] || {}).ok || 0) + ((P[n] || {}).ko || 0) >= OPEN.STUCK;
   return Math.max(0, 1 - list.filter(n => introduced(n) && shaky(n) && !stuck(n)).length / OPEN.K);
 };
+// The rank share (Pierre, 2026-11-16, Q382: "une stratégie qui règle la répartition des questions, soit au niveau de la
+// famille, du genre ou de l'espèce, en fonction de la maîtrise justement des niveaux précédents"; Q384, the same mechanism
+// for the juveniles and colour phases later; docs/LEARNING.md "The rank share"). One rule for every step of a path: a
+// unit that hangs from another (its record's parent: a fish scientific genus or species from its family) may open and be
+// asked, but the units hanging from one level together take a share of the questions set by how much of that level the
+// player masters, small while it is not mastered, growing as it is.
+// - Inputs: each unit's parent (GX(n).parent; none on the slate) and the parent's level (rankOf: '' for the slate);
+//   the parents' bars (genScore) against their threshold (GX(p).shareAt, a bar from 0 to 1, else LV_AT[SHARE.AT]:
+//   Advanced, Pierre's level for a family's species, 2026-11-03), so a later level (the phases, Q384) or one unit (a
+//   species whose juveniles come early) sets its own in its data.
+// - Output, per level L: m(L), the share of L's units in play (pool: met, or may open now) at their threshold, and
+//   cap(L) = m(L)^SHARE.POW: at most that share of the drawn questions goes to the units hanging from L (shareW, in
+//   weighted), and one more of them opens only while their share of the draw is under it (shareRoom, quiz.js planPhoto).
+// POW 2 (simulated against 1, linear, and 3: docs/LEARNING.md "The rank share"): a quarter of the questions once half the
+// families are at Advanced, all of them free once every one is. A unit with no parent is never capped (the slate, the
+// coral bonus genera); a list of one level only is drawn as before. Nor is a unit the subject frees (app.js shareFree:
+// the units Pierre's decisions put in the families' phase, an IMR player's IMR genera from their family's Open Water,
+// Q219, and the scientific names turned on by hand early, Q240). Nor is a unit whose parent is no unit of the game (the sea
+// slugs' genera, the units of their circles, name a family that is only their structure): it hangs from nothing.
+const SHARE = {AT: 1, POW: 2};
+// The level n hangs from (its parent's rank), null for none; inPool: the units of the game (a parent outside: none).
+const shareLv = (n, inPool) => {
+  const p = (GX(n) || {}).parent;
+  return p && (!inPool || inPool.has(p)) ? (typeof rankOf === 'function' ? rankOf(p) : '') : null;
+};
+let SHARES = null;
+const sharesNow = () => {
+  const tick = SUBJ.id + '|' + answersSoFar() + '|' + (typeof Q === 'object' ? JSON.stringify(Q) : '');
+  if (SHARES && SHARES.tick === tick) return SHARES;
+  const L = typeof pool === 'function' ? pool() : slateGenera(),
+    inPool = new Set(L),
+    free = new Set(typeof shareFree === 'function' ? shareFree() : []),
+    lv = new Map(L.map(n => [n, free.has(n) ? null : shareLv(n, inPool)])),
+    cap = {},
+    w = {};
+  new Set([...lv.values()].filter(x => x !== null)).forEach(k => {
+    const up = L.filter(u => (typeof rankOf === 'function' ? rankOf(u) : '') === k && (introduced(u) || mayOpen(u))),
+      at = u => (typeof (GX(u) || {}).shareAt === 'number' ? GX(u).shareAt : LV_AT[SHARE.AT]),
+      m = up.length ? up.filter(u => genScore(u) >= at(u)).length / up.length : 0;
+    cap[k] = Math.pow(m, SHARE.POW);
+  });
+  // The draw's weights of the units met (drawW), by level hung from ('' key for those hanging from none: '~').
+  L.filter(introReady).forEach(n => {
+    const k = lv.get(n) === null ? '~' : lv.get(n);
+    w[k] = (w[k] || 0) + drawW(n);
+  });
+  return (SHARES = {tick, inPool, free, lv, cap, w});
+};
+const shareLvNow = (S, n) => (S.lv.has(n) ? S.lv.get(n) : S.free.has(n) ? null : shareLv(n, S.inPool));
+// The weights ws of the units list (weighted), those hanging from a level scaled down so that together they take at most
+// its cap of the total (the others keep theirs). None scaled when the list holds only them.
+const shareW = (list, ws) => {
+  if (list.every(n => shareLv(n) === null)) return ws;
+  const S = sharesNow(),
+    k = list.map(n => shareLvNow(S, n)),
+    out = ws.slice();
+  Object.entries(S.cap).forEach(([lv, c]) => {
+    if (c >= 1) return;
+    let g = 0,
+      o = 0;
+    out.forEach((x, i) => (k[i] === lv ? (g += x) : (o += x)));
+    if (g > 0 && o > 0 && g / (g + o) > c) {
+      const f = (c * o) / ((1 - c) * g);
+      out.forEach((x, i) => k[i] === lv && (out[i] = x * f));
+    }
+  });
+  return out;
+};
+// Whether unit n may open now as far as the rank share goes: always for a unit hanging from none; else while the units met
+// that hang from its level take less of the draw (drawW) than its cap.
+const shareRoom = n => {
+  if (shareLv(n) === null) return true;
+  const S = sharesNow(),
+    lv = shareLvNow(S, n);
+  if (lv === null) return true;
+  const c = S.cap[lv] || 0,
+    g = S.w[lv] || 0,
+    t = Object.values(S.w).reduce((a, x) => a + x, 0);
+  return c >= 1 || (c > 0 && (t > 0 ? g / t : 0) < c);
+};
 // The opening's pace (2026-11-04, Pierre, after a strong player was opened 7 genera in 16 answers right after a comeback,
 // and fell from 83% to 50% right: docs/LEARNING.md "Opening pace"): the genera opened on a card (the first cards, or one
 // of their own) in the last OPEN.WIN answers, as at (the answers count at which the question will show).
@@ -884,8 +965,7 @@ const introReset = at => {
 // the choice, up to the last of CHOICE.AT, and the sum of their surprise, right - e), fb the fallback cards shown ({'<choice>-lo' / '-hi': [answers,
 // time]), h the choices made, [c, at, t, via], for the admin's player journey}. Its variables (startV) are read where
 // the model uses them: the level a genus never answered starts from (ability, core.js playerStart). Nothing else is coded
-// per choice: the variable at (core.js CHOICE), the answer from which the open-all offer could come, is no longer read
-// since that card went (Pierre, 2026-11-12, Q337).
+// per choice.
 const startS = () => SUBJ || SUBJECTS[0]; // the subject on screen
 const startK = () => startKey(startS().id); // its record (core.js startKey)
 const startOf = () => {
@@ -1228,7 +1308,7 @@ function answeredAt(s, good, now = Date.now()) {
   if (P[LEVEL]) P[LEVEL].at = now;
 }
 function weighted(list) {
-  const w = list.map(weight);
+  const w = shareW(list, list.map(weight)); // the rank share (SHARE)
   const t = w.reduce((a, x) => a + x, 0);
   let r = Math.random() * t;
   for (let i = 0; i < list.length; i++) {
@@ -1272,7 +1352,9 @@ const misses = h => [...h].filter(x => x === '0').length;
 // default player's, so an adopted replay never takes back what the game did live. A subject the sheet does not replay
 // (SUBJECTS replay: fish) has no replay to wait for: its prior applies at once.
 const startP = () => (!startS().replay || (typeof sheetV === 'function' && sheetV() >= START_SHEET) ? startV().p : 0);
-const ability = n => abilityOf(P, n, startP());
+// A unit whose record names the unit it starts from (from: a fish species, its family; core.js fishSpUnits) starts from
+// that unit's ability when never answered (core.js abilityOf).
+const ability = n => abilityOf(P, n, startP(), (GX(n) || {}).from);
 // The answer time in the ability (core.js RTIME, rtWeight; Pierre, 2026-11-04): on only once the sync script replays it
 // (its replies say v >= RT_SHEET, sync.js sheetV), so the sheet's replay never undoes it (rule D4); before, every
 // step has weight 1, as before. The times are recorded either way (rtAdd), as the replay records them from the log.
@@ -1522,9 +1604,11 @@ const examLooks = n => {
 const lookLeft = n => looksLeft(P, n, examLooks(n));
 // And its confusion group met (Pierre, 2026-11-14, Q350 d): the exam opens once the unit's group partners that can open
 // (matesLeft: in play, behind no gate) are met; an exam already under way (s.ex) goes on.
+// A unit whose record says noex has no mastery exam (a fish species, step 1: docs/reviews/2026-11-14-species-step1.md, "No
+// species exam yet"; its bar tops out at 95%).
 const examOn = n => {
   const s = P[n] || {};
-  return !s.mx && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
+  return !s.mx && !(GX(n) || {}).noex && examOpen(s, P, n) && !lookLeft(n).length && (!!s.ex || !matesLeft(n).length);
 };
 const examReady = n => examOn(n) && (!(P[n] || {}).ex || answersSoFar() - P[n].ex.at >= EXAM.gap);
 // A learned genus stays learned through one miss and is lost on a second one before right answers bring it back up
@@ -1685,11 +1769,20 @@ const dataLooks = (L = [...slateGenera(), ...bonusList()]) =>
 // A choice's label as its button shows it (app.js unameT: the unit's name), compared as typed (letters only, core.js
 // typeNormAll: Yellowtail / Yellow-tail wrasse read as one). Two units may carry the same name (Pierre, 2026-11-15, Q381:
 // two fish species may share a common name), but a question never shows two choices of one label (distractors).
-const choiceKey = n =>
-  String((GX(n) || {}).name || n)
+const labelKey = x =>
+  String(x)
     .toLowerCase()
     .normalize('NFD')
     .replace(/[^a-z]/g, '');
+const choiceKey = n => labelKey((GX(n) || {}).name || n);
+// The labels a choice must not carry on a question about unit t: its own, and every other name its record lists (also:
+// a fish species' listed common names with their spellings, app.js fishGenera), since each of them names t too
+// (typed, any of them is right: Q376 (b)). Outside IMR, "Longnose butterflyfish" is the main name of F. longirostris and
+// a listed name of F. flavissimus: never a wrong choice on a photo of F. flavissimus.
+const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map(labelKey)].filter(Boolean));
+// Whether the choice o names unit t (its label is one of t's: choiceKeys), so it is never a wrong choice on a question
+// about t, an "Again" included (quiz.js planPhoto; Codex review #975).
+const choiceNames = (o, t) => o !== t && choiceKeys(t).has(choiceKey(o));
 // The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
 const choiceApart = (L, taken = []) => {
   const seen = new Set(taken.map(choiceKey));
@@ -1699,13 +1792,13 @@ function distractors(t, list, traps = trapsFor(t), known = introduced) {
   // Choices of the target's rank only (app.js rankOf): a fish scientific genus among genera, an entry among entries.
   // A ranked unit (a fish genus) may name any unit of its rank (app.js rankUnits): the ones in play stay first among the
   // genera met, the others make up the three (Codex review #526: a family with one genus at Advanced had one choice).
-  // Never a choice of the target's label, nor two of one label (choiceApart, Q381): of two units of one label, the one
-  // the rules below rank first is kept and the next one takes the other's place.
+  // Never a choice of the target's label or of another name it lists (choiceKeys), nor two of one label (choiceApart,
+  // Q381): of two units of one label, the one the rules below rank first is kept and the next one takes the other's place.
   const rk = rankOf(t),
-    tk = choiceKey(t);
+    tk = choiceKeys(t);
   list = list.filter(n => rankOf(n) === rk);
   if (rk) list = [...new Set([...list, ...rankUnits(rk)])];
-  list = list.filter(n => n === t || choiceKey(n) !== tk);
+  list = list.filter(n => n === t || !tk.has(choiceKey(n)));
   const ranked = list
     .filter(n => n !== t)
     .map(n => [n, confOf(t, n) * (0.8 + 0.4 * Math.random())])

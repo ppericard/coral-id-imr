@@ -260,6 +260,20 @@ const darkCards = (p, sel) =>
     // A genus page: Photos › Genera › Live, the genus as the last segment.
     const goGenus = g => go('photos/genera/live/' + encodeURIComponent(g));
     const text = () => p.evaluate(() => document.getElementById('view').innerText);
+    // One player's heatmap for an id with no answers on the side on screen (a deleted, merged or archived account's: rule
+    // D7): no map, no number, the id never offered in the picker, one line. '' when so, else what showed.
+    const heatNobody = async id => {
+      await go('analyses/difficulty/heatmap?player=' + encodeURIComponent(id));
+      const g = await p.evaluate(id => {
+        const s = document.querySelector('#view [data-hmwho]');
+        return {
+          map: !!document.querySelector('#view .adm-hmt, #view .adm-kpis'),
+          note: (document.querySelector('#view p.note') || {}).textContent,
+          listed: !!s && [...s.options].some(o => o.value === id && !o.disabled)
+        };
+      }, id);
+      return g.map || g.listed || g.note !== 'No answers from this player here.' ? JSON.stringify(g) : '';
+    };
     await p.goto(base + 'admin.html?demo');
     await p.waitForFunction(() => typeof DRAFT !== 'undefined' && DRAFT && DRAFT.genera, null, {timeout: 30000});
     if (!(await p.$('.adm-demo'))) fails.push(`${w}px: no demo banner`);
@@ -458,7 +472,7 @@ const darkCards = (p, sel) =>
         !at.groups.includes('photos')
       )
         fails.push(`${w}px Subjects: ${other.id} Reports ${JSON.stringify(at)}`);
-      // Its To do (fish admin at parity): the views All, Reports, Errors, Health and Points; Reports and All never show the
+      // Its To do (fish admin at parity): the views All, Reports, Errors, Alerts (every subject's), Health and Points; Reports and All never show the
       // corals' photo sections (core.js SUBJECTS admin todo: they showed on the fish Reports before); All ends with its photo
       // work, counts that open its pages under its prefix, a Coverage count landing on Coverage › Games with that chip
       // pressed and the same count.
@@ -483,7 +497,7 @@ const darkCards = (p, sel) =>
           .catch(() => fails.push(`${w}px Subjects: ${other.id} To do › All, no photo work drawn`));
         const fa = await secs();
         if (
-          fa.views.join() !== ['all', 'reports', 'errors', 'health', 'points'].map(v => 'inbox/todo/' + v).join() ||
+          fa.views.join() !== ['all', 'reports', 'errors', 'alerts', 'health', 'points'].map(v => 'inbox/todo/' + v).join() ||
           fa.h2.some(coralSec) ||
           fa.coral ||
           !fa.h2.includes('Reports and feedback') ||
@@ -1248,6 +1262,38 @@ const darkCards = (p, sel) =>
         // Its views: Games and Rights (every subject's, admin.js EVERY).
         if (!c.tabs.includes('Coverage') || c.views !== 2 || c.head !== 'Family' || c.rows !== c.fams || c.coral || c.note || c.wide > 0)
           fails.push(`${w}px Fish Coverage: ${JSON.stringify(c)}`);
+        // Its "+" column (candidates waiting): a photo in play is never one, under any of its names (core.js fishPid), the
+        // game's sure candidates included (they counted as waiting before: 17,275 for 824 on the real files). The column's
+        // total against a count made here: the units' species' candidates nobody decided (autosort.js fishState, on window:
+        // admin.js has its own fishState, of a photo's words) and not in play.
+        const pw = await p.evaluate(() => {
+          const D = fuData(),
+            F = D.F,
+            inPlay = new Set(
+              Object.values(D.play)
+                .flat()
+                .map(x => fishPid(x.f))
+            ),
+            sp = new Set(FISHC.units.flatMap(u => u.species).filter(s => FISHC.species[s] && !FISHC.species[s].out));
+          let n = 0,
+            all = 0;
+          Object.entries(FISHC.cand).forEach(([orig, L]) =>
+            L.forEach(x => {
+              const s = window.fishState(F, x.f, orig);
+              if (s.st !== null || !sp.has(s.sid)) return;
+              all++;
+              if (!inPlay.has(fishPid(x.f))) n++;
+            })
+          );
+          const col = [...document.querySelectorAll('.adm-fishcovt thead th')].findIndex(t => t.textContent === '+'),
+            plus = [...document.querySelectorAll('.adm-fishcovt tbody tr')].reduce(
+              (a, tr) => a + (parseInt(tr.children[col].textContent, 10) || 0),
+              0
+            );
+          return {plus, n, all, col, rows: document.querySelectorAll('.adm-fishcovt tbody tr').length, plays: (FISHC.plays || []).length};
+        });
+        if (pw.col < 0 || pw.plus !== pw.n || !(pw.n < pw.all))
+          fails.push(`${w}px Fish Coverage, "+" (candidates waiting, none in play): ${JSON.stringify(pw)}`);
         if (once) {
           await p.click('[data-fishlv="sp"][aria-pressed]');
           c = await cv();
@@ -1468,7 +1514,8 @@ const darkCards = (p, sel) =>
           p.evaluate(() => ({
             rows: [...document.querySelectorAll('.adm-fishmont .adm-mrow')].map(r => r.querySelector('.adm-mhead b').textContent),
             prev: document.querySelectorAll('.adm-fishmont .adm-mprev img').length,
-            want: fishPairs(FISHC.units).length,
+            // the pairs in force (no structure edit here: the IMR course's)
+            want: montPairs(ASUBJ, FISHC.raw, contentOf(DRAFT, ASUBJ), FISHC.units).length,
             wide: document.documentElement.scrollWidth - innerWidth
           }));
         let l = await lk();
@@ -1852,6 +1899,65 @@ const darkCards = (p, sel) =>
           const jg = await p.evaluate(g => (DRAFT.fish.genera || {})[g], gc.gid);
           if (jq[0] !== 'This photo is a juvenile. Use it as the cover anyway?' || !jg || jg.cover !== jf || jg.coverJ !== jf)
             fails.push(`${w}px Families: ★ Cover on a juvenile asks, then holds ${JSON.stringify({jq, jg})}`);
+          await p.evaluate(() => undo());
+          await settle();
+          await go(famHash);
+          // A watermarked ★ cover (Pierre, 2026-11-15, Q379): the default never takes one, but his pick stays in force and
+          // the node's page asks "Watermark: keep as cover?": Keep records coverW beside the cover and answers the node's
+          // proposal (one Undo step); Choose another opens Cover proposals, where his cover's proposal shows the watermark.
+          const wf = gc.t[0];
+          await p.evaluate(
+            ([f, fam]) => {
+              const t = fuJt(DRAFT.fish, f) || 'p1g0sl1';
+              DRAFT.fish = fishSet(DRAFT.fish, f, 'tags', t.slice(7).includes('w') ? t : fishTag(t, 'w'));
+              DRAFT.fish = fishPick(DRAFT.fish, fam, k => {
+                k.cover = f;
+                delete k.coverJ;
+                delete k.coverW;
+              });
+              saveDraft();
+              render();
+            },
+            [wf, fam]
+          );
+          await settle();
+          const wq = () =>
+            p.evaluate(fam => {
+              const seg = document.querySelector('.adm-fwm');
+              return {
+                ask: ((document.querySelector('.adm-fwmq') || {}).textContent || '').trim(),
+                acts: seg ? [...seg.querySelectorAll('button')].map(b => b.textContent.trim()) : [],
+                bar: ((document.querySelector('.adm-filter > .adm-sthumb.mine') || {}).dataset || {}).f,
+                why: (document.querySelector('.adm-cvwhy') || {}).textContent || '',
+                k: (DRAFT.fish.genera || {})[fam] || {},
+                kept: (DRAFT.fish.kept || {})[fam] || ''
+              };
+            }, fam);
+          d = await wq();
+          if (d.ask !== 'Watermark: keep as cover?' || d.acts.join() !== 'Keep,Choose another' || d.bar !== wf || d.k.cover !== wf)
+            fails.push(`${w}px Families: a watermarked ★ cover in force, asked about ${JSON.stringify(d)}`);
+          await shot('watermark-ask-1280', '.adm-treep .adm-filter');
+          if (process.env.SHOTS) {
+            const was = await p.evaluate(() => document.documentElement.dataset.theme || '');
+            await p.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
+            await shot('watermark-ask-dark-1280', '.adm-treep .adm-filter');
+            await p.evaluate(t => (t ? (document.documentElement.dataset.theme = t) : delete document.documentElement.dataset.theme), was);
+          }
+          await p.click('[data-fwok]');
+          await settle();
+          d = await wq();
+          if (d.ask || d.acts.length || d.bar !== wf || d.k.coverW !== wf || !d.kept || !/a watermark you kept/.test(d.why))
+            fails.push(`${w}px Families: Keep on a watermarked ★ cover ${JSON.stringify(d)}`);
+          await p.evaluate(() => undo());
+          await settle();
+          d = await wq();
+          if (!d.ask || d.k.coverW || d.kept) fails.push(`${w}px Families: Undo of the Keep ${JSON.stringify(d)}`);
+          await p.click('[data-fwcp]');
+          await settle();
+          d = await p.evaluate(fam => ({h: location.hash, wm: !!document.querySelector(`.adm-cprop[data-n="${fam}"] .adm-cwm`)}), fam);
+          if (d.h !== '#' + other.hash + 'photos/review/cover-proposals' || !d.wm)
+            fails.push(`${w}px Families: Choose another opens its proposal ${JSON.stringify(d)}`);
+          await shot('watermark-proposal-1280', `.adm-cprop[data-n="${fam}"]`);
           await p.evaluate(() => undo());
           await settle();
           await go(famHash);
@@ -2555,17 +2661,69 @@ const darkCards = (p, sel) =>
         fails.push(`${w}px Analyses heatmap, Typed: ${JSON.stringify(h1)}`);
       await p.click('#view [data-sf="hm"][data-v="pick"]');
       await settle();
-      // not a fish page yet (core.js SUBJECTS admin pages): the corals first
-      if (
-        once &&
-        (await p.evaluate(() =>
-          hasPage(
-            SUBJECTS.find(S => S.admin.pages),
-            'analyses/difficulty/heatmap'
-          )
-        ))
-      )
-        fails.push(`${w}px Analyses heatmap: on the fish side already`);
+      // the corals at one rank: no rank switch
+      if (await p.$('#view [data-sf="hr"]')) fails.push(`${w}px Analyses heatmap: a rank switch on the corals' side`);
+      // One player's map (Q123 m per player): the picker lists Everyone, then the players with answers (the signed-in ones by
+      // name); a player's map counts their answers only (its KPI against a direct count of their rows), the same rows and
+      // columns, its cells adding up to its Mix-ups, the A5 line in their words; the subject switch keeps the player; Journey
+      // opens theirs, whose Mix-ups card's Heatmap › comes back; Everyone is the pooled map again; a deleted account's id
+      // lists nothing and shows nothing (rule D7).
+      const pl = await p.evaluate(() => {
+          const s = document.querySelector('#view [data-hmwho]');
+          return s ? [...s.options].map(o => [o.value, o.textContent]) : null;
+        }),
+        ana = pl && pl.find(o => o[1] === 'Ana Demo');
+      if (!pl || pl[0][0] !== '' || pl[0][1] !== 'Everyone' || !ana || pl.some(o => /^~/.test(o[1])))
+        fails.push(`${w}px Analyses heatmap, the player picker: ${JSON.stringify(pl && pl.slice(0, 6))}`);
+      if (ana) {
+        await p.selectOption('#view [data-hmwho]', ana[0]);
+        await settle();
+        const h2 = await hm(),
+          x = await p.evaluate(
+            id => ({
+              hash: location.hash,
+              n: rowsOf(ASUBJ).filter(r => r[0] === id).length,
+              ch: rowsOf(ASUBJ).filter(r => r[0] === id && r[10]).length,
+              note: [...document.querySelectorAll('#view p.note')].map(e => e.textContent).join(' | '),
+              sw: [...document.querySelectorAll('#subj a')].map(a => a.getAttribute('href')).filter(h => h.includes('heatmap')),
+              j: (e => e && e.getAttribute('href'))(document.querySelector('#view .adm-shead a[data-own]'))
+            }),
+            ana[0]
+          );
+        if (
+          !h2 ||
+          x.hash !== '#analyses/difficulty/heatmap?player=' + encodeURIComponent(ana[0]) ||
+          h2.kp['Answers with choices'] !== `${x.ch}/${x.n}` ||
+          !x.n ||
+          String(h2.sum) !== h2.kp['Mix-ups'] ||
+          !(h2.sum < h0.sum) ||
+          h2.rows !== h0.rows ||
+          !/^Not enough data yet: .* more of their answers with choices/.test(x.note) ||
+          x.sw.length < 2 ||
+          x.sw.some(h => !h.endsWith('?player=' + encodeURIComponent(ana[0]))) ||
+          x.j !== '#players/list/journey/Ana%20Demo' ||
+          h2.wide > 0
+        )
+          fails.push(`${w}px Analyses heatmap, one player: ${JSON.stringify({x, h2})}`);
+        await go(x.j.slice(1));
+        const back = await p.evaluate(() => (e => e && e.getAttribute('href'))(document.querySelector('#view a[href*="heatmap?player="]')));
+        if (back !== x.hash) fails.push(`${w}px Journey, Heatmap ›: ${back}`);
+        else {
+          await p.click('#view a[href*="heatmap?player="]');
+          await settle();
+          const v = await p.evaluate(() => (document.querySelector('#view [data-hmwho]') || {}).value);
+          if (v !== ana[0]) fails.push(`${w}px Journey, Heatmap › opened ${v}`);
+        }
+        await p.selectOption('#view [data-hmwho]', '');
+        await settle();
+        const h3 = await hm(),
+          h3s = await p.evaluate(() => location.hash);
+        if (!h3 || h3.sum !== h0.sum || h3s !== '#analyses/difficulty/heatmap')
+          fails.push(`${w}px Analyses heatmap, Everyone again: ${JSON.stringify({h3s, sum: h3 && h3.sum, was: h0.sum})}`);
+      }
+      // an id with no answers here (a removed account's: rule D7, the players part checks an archive's) shows nothing
+      const nobody = await heatNobody('dnobody0');
+      if (nobody) fails.push(`${w}px Analyses heatmap, an id with no answers: ${nobody}`);
     }
     // The actions part (once, at 1280; its own CI job since the CI speed work of 2026-11-15, a third of the main part's time):
     // run here in a whole run, first in a run without the main part.
@@ -2749,17 +2907,20 @@ const darkCards = (p, sel) =>
           } else {
             if (!/^Fish: fitted on 1,000 answers · [\d,]+ since · next at 2,000$/.test(at.badge) || !at.cards)
               fe.push(`Overview ${JSON.stringify(at)}`);
-            if (at.not !== 'Not for fish yet: Difficulty › Heatmap.') fe.push(`the line on what is not there: "${at.not}"`);
-            // every view the fish side has: the live ones (Stops, Pairs, Answer log) and the others, each drawn from the
-            // fish report
+            // every Analyses view on the fish side since the Heatmap (Q123 m, 2026-11-16): no line on what is not there
+            if (at.not) fe.push(`the line on what is not there: "${at.not}"`);
+            // every view the fish side has: the live ones (Stops, Pairs, Heatmap, Answer log) and the others, each drawn
+            // from the fish report
             const [H, LV] = await fq.evaluate(() => [
               TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
               LIVE_STATS
             ]);
             if (
-              H.length !== 14 ||
+              H.length !== 15 ||
               !H.includes('analyses/difficulty/photos') ||
-              ['analyses/learning/stops', 'analyses/difficulty/pairs', 'analyses/learning/answer-log'].some(h => !H.includes(h))
+              ['analyses/learning/stops', 'analyses/difficulty/pairs', 'analyses/difficulty/heatmap', 'analyses/learning/answer-log'].some(
+                h => !H.includes(h)
+              )
             )
               fe.push(`its views ${H.join(' ')}`);
             // the views drawn from the fish report (the live ones have no report to draw: their own block below)
@@ -3753,12 +3914,13 @@ const darkCards = (p, sel) =>
               row = n => [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === n);
             return {
               F: F.id,
+              n: SUBJECTS.length, // a group of columns per subject (the sea slugs' too, from 2026-11-15)
               groups: [...document.querySelectorAll('.adm-ugrp th.adm-ug0')].map(th => th.textContent),
               ben: col >= 0 && row('Ben Demo').querySelectorAll('td')[col].innerText.trim(),
               dio: col >= 0 && row('Dio Demo').querySelectorAll('td')[col].innerText.trim()
             };
           });
-          if (L.groups.length !== 2 || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
+          if (L.groups.length !== L.n || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
           await q.click('[data-uopen="Ben Demo"]');
           const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
           if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
@@ -3784,7 +3946,7 @@ const darkCards = (p, sel) =>
             !j.col ||
             !j.sess ||
             !/Families met/i.test(j.kpis) ||
-            j.seg.length !== 2 ||
+            j.seg.length !== L.n ||
             j.seg[1][0] !== 'true' ||
             !/ 48$/.test(j.seg[1][1])
           )
@@ -3999,6 +4161,11 @@ const darkCards = (p, sel) =>
         }));
         if (arc.rows.some(n => /^Ben Demo/.test(n)) || !/Archived \(1\)/.test(arc.fold) || !/Ben Demo-test/.test(arc.fold))
           fails.push(`${w}px Players: archive Ben Demo → Ben Demo-test not shown apart (${JSON.stringify(arc)})`);
+        // the archive's answers are out of every view (rule D7): its heatmap shows nothing (Q123 m per player)
+        const benId = await p.evaluate(() => ((USERS.archived || []).find(a => a.name === 'Ben Demo-test') || {}).id);
+        const benHeat = benId ? await heatNobody(benId) : 'no archived id';
+        if (benHeat) fails.push(`${w}px Analyses heatmap, an archive's id: ${benHeat}`);
+        await go('players/list');
         // Hidden from the leaderboard (Pierre, 2026-11-03): no "hidden" tag, the name greyed (muted, italic), the full name
         // and the meaning in its title; a name shown on the leaderboard keeps the ink colour.
         const nameOf = n =>
@@ -4211,6 +4378,52 @@ const darkCards = (p, sel) =>
         if (anonSheets.filter(n => n === 1).length !== 1 || anonSheets.some(n => n > 1))
           fails.push(`${w}px anonymous journeys' sheets: ${JSON.stringify(anonSheets)}`);
 
+        // To do › Alerts (the sheet's Alerts tab, Code.gs readAlerts_ from admin.js ALERTS_SHEET; ROADMAP "Security
+        // follow-ups"): on the demo's default script (older), the version it waits for and no line (rule D4); from
+        // ALERTS_SHEET, the demo's lines of the last 30 days, newest first, counted by kind, the older one left out; the same
+        // page on the fish side (every subject's).
+        {
+          const AV = await p.evaluate(() => ALERTS_SHEET);
+          await go('inbox/todo/alerts');
+          const a0 = await text();
+          if (!a0.includes(`v${AV} not running yet`) || /limit reached/.test(a0))
+            fails.push(`${w}px Alerts before v${AV}: ${JSON.stringify(a0.slice(0, 160))}`);
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px Alerts page error: ${e.message}`));
+          const seen = () =>
+            q
+              .waitForSelector('.adm-alerts tbody tr', {timeout: 20000})
+              .catch(() => {})
+              .then(() =>
+                q.evaluate(() => ({
+                  rows: [...document.querySelectorAll('.adm-alerts tbody tr')].map(tr => tr.cells[1].textContent),
+                  kpis: [...document.querySelectorAll('#view .adm-kpis > div')].map(
+                    d => d.firstChild.textContent + ' ' + d.lastChild.textContent
+                  ),
+                  wide: document.documentElement.scrollWidth > innerWidth + 1
+                }))
+              );
+          const want = [
+            'limit reached: a:demoanon07 (600 per 6 h)',
+            'limit reached: n:Dm0Ab3Xy (3000 per 6 h)',
+            'photos not of the unit shown: Dm9Zq2Lk (4 of 10 answers)',
+            'limit reached: newacct (40 per 6 h)',
+            'left out of the statistics: device Dm1Wc8Rt signed in as Dm0Ab3Xy, left out too'
+          ];
+          await q.goto(base + `admin.html?demo&v=${AV}#inbox/todo/alerts`);
+          let a1 = await seen();
+          if (
+            JSON.stringify(a1.rows) !== JSON.stringify(want) ||
+            JSON.stringify(a1.kpis) !== JSON.stringify(['3 Limits reached', '1 Photos of another unit', '1 Left out, signed in']) ||
+            a1.wide
+          )
+            fails.push(`${w}px Alerts from v${AV}: ${JSON.stringify(a1)}`);
+          await q.evaluate(() => (location.hash = '#fish/inbox/todo/alerts'));
+          await q.waitForFunction(() => location.hash === '#fish/inbox/todo/alerts', null, {timeout: 5000}).catch(() => {});
+          a1 = await seen();
+          if (JSON.stringify(a1.rows) !== JSON.stringify(want)) fails.push(`${w}px fish Alerts from v${AV}: ${JSON.stringify(a1)}`);
+          await q.close();
+        }
         // To do › Reports lists the demo reports; Activity shows the demo players' answers.
         // Errors & feedback (sheet v19 events): the one-tap answers, app errors, photos, saves, from the demo's made-up events.
         await go('inbox/todo/errors');
@@ -4334,6 +4547,87 @@ const darkCards = (p, sel) =>
           if (!fr || !/10243932/.test(fr)) fails.push(`${w}px To do › Reports: the fish report has no fish name or photo (${fr})`);
         }
         await reportsBar();
+      }
+      // Codex review #987: a reported photo of another subject with its own files (core.js SUBJECTS admin files; the sea
+      // slugs) showed as "missing". On its side, at every width: its tile with the photo from its game file's source (a remote
+      // original stays remote), its family, the species it is identified as and its credits, no tool (they act on the fish
+      // part of the curation), no link to family pages it does not have, its reporter's Journey under its prefix; Enlarge
+      // shows the identification and the credits; the report on no other side; no sideways scroll.
+      const MORE = await p.evaluate(() =>
+        SUBJECTS.filter(S => S.sheets && S.admin.files && S !== FISHS).map(S => ({id: S.id, hash: S.hash, one: S.one}))
+      );
+      if (!MORE.length) fails.push(`${w}px To do › Reports: no third subject with its files to check`);
+      for (const X of MORE) {
+        const note = `Demo report: not this ${X.one} (${X.id}).`;
+        await go(X.hash + 'inbox/todo/reports');
+        const r = await p
+          .waitForFunction(
+            note => {
+              const c = [...document.querySelectorAll('#view .adm-rep')].find(x => x.textContent.includes(note)),
+                t = c && c.querySelector('.adm-tile'),
+                im = t && t.querySelector('img');
+              if (!im) return false;
+              const S = SUBJECTS.find(s => UNITA[s.id] && UNITA[s.id].ph[t.dataset.f]),
+                ph = S && UNITA[S.id].ph[t.dataset.f];
+              return {
+                id: c.dataset.rep,
+                f: t.dataset.f,
+                src: im.getAttribute('src'),
+                // The admin's tile keeps the photo's online source, on R2 or not (#1006; the R2 step is on since Q387).
+                want: ph && ph.src ? ph.src.replace('/original.', '/medium.') : '',
+                fam: ph && UNITA[S.id].gen[ph.entry].name,
+                t: ph && ph.t,
+                a: ph && ph.a,
+                cap: t.querySelector('figcaption').textContent,
+                head: c.querySelector('.adm-rephead').textContent,
+                tools: t.querySelectorAll('[data-fu],[data-act]:not([data-act="zoomx"])').length,
+                missing: /missing/.test(c.textContent),
+                unit: !!c.querySelector('[data-ru]'),
+                links: [...c.querySelectorAll('a.adm-gen')].length,
+                journey: (c.querySelector('[data-rj]') || {}).getAttribute?.('href') || ''
+              };
+            },
+            note,
+            {timeout: 15000}
+          )
+          .then(h => h.jsonValue())
+          .catch(() => null);
+        if (
+          !r ||
+          !r.want ||
+          r.src !== r.want ||
+          !r.cap.includes(r.fam) ||
+          !r.cap.includes(r.t) ||
+          !r.cap.includes(r.a) ||
+          !r.head.includes(r.fam) ||
+          r.tools ||
+          r.missing ||
+          r.unit ||
+          r.links ||
+          r.journey !== '#' + X.hash + 'players/list/journey/Ana%20Demo'
+        )
+          fails.push(`${w}px To do › Reports, ${X.id}: its reported photo ${JSON.stringify(r)}`);
+        else {
+          await p.click(`#view .adm-rep[data-rep="${r.id}"] .adm-tile [data-act="zoomx"]`);
+          const lb = await p
+            .waitForFunction(() => {
+              const l = document.getElementById('lightbox');
+              return !!l && !l.hidden && (l.querySelector('.lb-cap') || {}).textContent;
+            })
+            .then(h => h.jsonValue())
+            .catch(() => '');
+          if (!lb.includes(r.fam) || !lb.includes(r.t) || !lb.includes(r.a) || !lb.includes(r.f))
+            fails.push(`${w}px To do › Reports, ${X.id}: its photo enlarged reads "${lb}"`);
+          if (w === 390) await shot(`report-${X.id}-zoom-390`, '#lightbox');
+          await p.click('#lightbox [data-x]').catch(() => {});
+          if (w === 390) await shot(`report-${X.id}-390`, `#view .adm-rep[data-rep="${r.id}"]`);
+        }
+        const sx = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+        if (sx > 1) fails.push(`${w}px To do › Reports (${X.id}): ${sx}px of horizontal scroll`);
+        for (const other of ['', 'fish/']) {
+          await go(other + 'inbox/todo/reports');
+          if ((await text()).includes(note)) fails.push(`${w}px To do › Reports (${other || 'corals'}): the ${X.id} report shown there`);
+        }
       }
       // One action bar on every report (Q309), at every width: its status (Done, Stand-by, Dismiss), on one card, never
       // wider than it, on both sides.
@@ -5304,6 +5598,77 @@ const darkCards = (p, sel) =>
       );
       if (ps !== '#photos/stats/overview') fails.push(`${w}px Photo stats: a remembered Photo list view opens ${ps}, not Overview`);
     }
+    // Photo stats › Overview on the fish side (fish admin at parity): the corals' cards in the fish words (families,
+    // observations, circles, the fish sources), every photo of the fish data in one row of All photos, the circles adding
+    // up to the photos in play and the families, the answers per photo from the answer log alone (the demo's script here
+    // logs no fish answer: every photo in play in None; with answers, the fresh fish session below), Fewest and most
+    // opening the families' Tree pages, no coral genus, no photo difficulty, no sideways scroll, dark in the dark theme;
+    // the corals' Difficulty is not a fish page. At 390 and 1280.
+    {
+      await go('fish/photos/stats/overview');
+      await p.waitForFunction(() => document.querySelector('#view .adm-pov [data-pov="rated"]'), null, {timeout: 90000}).catch(() => {});
+      const fo = await p.evaluate(() => {
+        const V = document.getElementById('view'),
+          cells = sel => [...V.querySelectorAll(sel)].map(r => [...r.children].map(c => c.innerText.trim())),
+          pool = Object.fromEntries(cells('[data-pov="pool"] tbody tr').map(r => [r[0], Number(r[1])])),
+          circ = cells('[data-pov="views"] tbody tr'),
+          ans = cells('[data-pov="answers"] tbody tr');
+        return {
+          heads: [...V.querySelectorAll('.adm-scard h3')].map(h => h.textContent.trim()),
+          kpi: [...V.querySelectorAll('.adm-pov .adm-kpis span')].map(b => b.textContent.trim()),
+          kv: [...V.querySelectorAll('.adm-pov .adm-kpis b')].map(b => b.innerText.trim()),
+          pool,
+          sum: Object.entries(pool).reduce((t, [k, n]) => t + (k === 'Total' ? 0 : n), 0),
+          circ: circ.map(r => r[0]),
+          circK: circ.reduce((t, r) => t + Number(r[1]), 0),
+          circOf: circ.reduce((t, r) => t + Number(r[4].split(' / ')[1]), 0),
+          want: {
+            fams: FISHC.units.length,
+            circles: ASUBJ.structure.circle.of.map(c => `Circle ${c}`),
+            src: ASUBJ.admin.origins.map(o => o[1])
+          },
+          src: cells('[data-pov="sources"] tbody tr').map(r => r[0]),
+          ans: ans.map(r => [r[0], Number(r[1])]),
+          fams: cells('[data-pov="rated"] tbody tr').length,
+          ends: [...V.querySelectorAll('[data-pov="ends"] a.adm-gen')].filter(a =>
+            a.getAttribute('href').startsWith('#fish/photos/tree/key/')
+          ).length,
+          coral: Object.keys(DATA.gen)
+            .filter(g => new RegExp(`\\b${g}\\b`).test(V.textContent))
+            .slice(0, 3),
+          words: /Colon|recognised by|Far harder/.test(V.textContent),
+          // Coverage › Games' "+" total (autosort.js fishWaiting through fishCov): the same candidates waiting
+          cov: fishCov(FISHC.units, fuData().play, FISHC.species, FISHC.cand, DRAFT.fish || {}, fuJ).fam.reduce((t, r) => t + r.wait, 0),
+          wide: document.documentElement.scrollWidth - innerWidth
+        };
+      });
+      if (
+        fo.heads.join() !== 'All photos,Per family,Fewest and most,Circles,Sources,Answers per photo,3+ answers per family' ||
+        fo.pool.Candidates !== fo.cov ||
+        fo.kpi.join() !== 'Photos in play,Observations in play,Families in play,Candidates' ||
+        Number(fo.kv[0]) !== fo.pool['In play'] ||
+        !fo.pool['In play'] ||
+        fo.pool.Total !== fo.sum ||
+        Number(fo.kv[3]) !== fo.pool.Candidates ||
+        fo.circ.join() !== fo.want.circles.join() ||
+        fo.circK !== fo.pool['In play'] ||
+        fo.circOf !== fo.want.fams ||
+        fo.fams !== fo.want.fams ||
+        fo.src.join() !== fo.want.src.join() ||
+        fo.ans.reduce((t, r) => t + r[1], 0) !== fo.pool['In play'] ||
+        fo.ans[0][1] !== fo.pool['In play'] ||
+        fo.ends !== 10 ||
+        fo.coral.length ||
+        fo.words ||
+        fo.wide > 0
+      )
+        fails.push(`${w}px Fish Photo stats › Overview: ${JSON.stringify(fo)}`);
+      const dkF = await darkCards(p, '#view .adm-kpis > div, #view .adm-scard');
+      if (dkF) fails.push(`${w}px Fish Photo stats › Overview, dark theme: still light ${dkF}`);
+      await go('fish/photos/stats/difficulty');
+      const nd = await p.evaluate(() => (document.querySelector('#view > .note') || {}).textContent || '');
+      if (!/Not for fish yet/.test(nd)) fails.push(`${w}px #fish/photos/stats/difficulty: "${nd}"`);
+    }
     // Health (To do: is something wrong?) keeps what needs action, photos everyone misses and genera that don't take off;
     // Analyses › Learning › Stops has where players stop and the genus sheets opened (Pierre, 2026-11-04, one role per
     // admin page): each from the demo answers, no sideways page scroll; a photo everyone misses opens in the lightbox.
@@ -5549,9 +5914,214 @@ const darkCards = (p, sel) =>
             cap: ($('lightbox').querySelector('.lb-cap') || {}).textContent || ''
           }));
           if (!lb.open || /\b[fgs]:[A-Z]/.test(lb.cap) || !lb.cap.trim()) fe.push(`a photo enlarged ${JSON.stringify(lb)}`);
+          await fq.keyboard.press('Escape');
         }
-        if (fe.length) fails.push(`${vw}px Fish Answer log and Pairs: ${fe.slice(0, 4).join(' | ')}`);
+        // Difficulty › Heatmap on the fish side (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): one map per rank asked
+        // (Families, Genera: the genus questions added above), every family of the game on the map in its identification
+        // key group's block, the genera in their family's block in italics; the cells add up to the Mix-ups count; named,
+        // never by id; no compare link (the fish have none); the A5 line while most cells are under CONF.N offers.
+        await fq.evaluate(() => (location.hash = '#fish/analyses/difficulty/heatmap'));
+        await fq
+          .waitForFunction(() => cur === 'analyses/difficulty/heatmap' && document.querySelector('#view .adm-hmt'), null, {timeout: 60000})
+          .catch(() => fe.push('Heatmap not drawn'));
+        const hmF = () =>
+          fq.evaluate(() => {
+            const V = document.getElementById('view'),
+              T = V.querySelector('.adm-hmt');
+            if (!T) return null;
+            const kp = Object.fromEntries(
+              [...V.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
+            );
+            return {
+              ranks: [...V.querySelectorAll('[data-sf="hr"]')].map(
+                b => b.textContent + (b.getAttribute('aria-pressed') === 'true' ? '*' : '')
+              ),
+              rows: T.querySelectorAll('tbody tr').length,
+              cols: T.querySelectorAll('thead .hm-col').length,
+              slate: FISHA.slate.length,
+              names: [...T.querySelectorAll('tbody .hm-row')].map(th => th.textContent),
+              it: T.querySelectorAll('tbody .hm-row.hm-it').length,
+              fams: [...T.querySelectorAll('.hm-fam')].map(th => th.title),
+              sum: [...T.querySelectorAll('td')].reduce((t, e) => t + (Number(e.textContent) || 0), 0),
+              mix: kp['Mix-ups'],
+              links: T.querySelectorAll('td a').length,
+              note: (V.querySelector('p.note') || {}).textContent || '',
+              ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+        const hf = await hmF();
+        if (
+          !hf ||
+          hf.ranks.join() !== 'Families*,Genera' ||
+          hf.rows < hf.slate ||
+          hf.cols !== hf.rows ||
+          hf.it ||
+          hf.fams.length < 3 ||
+          !hf.fams.every(t => /^\d+\. \S/.test(t)) ||
+          String(hf.sum) !== hf.mix ||
+          !hf.sum ||
+          hf.links ||
+          hf.ids.length ||
+          hf.wide > 0
+        )
+          fe.push(`Heatmap, families ${JSON.stringify({...hf, names: undefined})}`);
+        else {
+          await fq.click('#view [data-sf="hr"][data-v="genus"]');
+          await fq.waitForFunction(() => document.querySelector('#view [data-sf="hr"][data-v="genus"][aria-pressed="true"]'), null, {
+            timeout: 30000
+          });
+          const hg = await hmF();
+          if (
+            !hg ||
+            ['Amphiprion', 'Chromis', 'Dascyllus', 'Pomacentrus'].some(g => !hg.names.includes(g)) ||
+            hg.it !== hg.rows ||
+            !hg.fams.includes('Damselfishes') ||
+            String(hg.sum) !== hg.mix ||
+            !hg.sum ||
+            !/^Not enough data yet: \d+ of the \d+ cells offered are under \d+ offers; about \d+ more answers with choices at this rank/.test(
+              hg.note
+            ) ||
+            hg.ids.length ||
+            hg.wide > 0
+          )
+            fe.push(`Heatmap, genera ${JSON.stringify(hg)}`);
+          // a log with genus questions only: no switch, still the genera in their family's block (Codex review #1012)
+          const solo = await fq.evaluate(() => {
+            const keep = ANS;
+            ANS = {...ANS, all: (ANS.all || ANS.rows).filter(r => !(rowSubject(r) === ASUBJ.id && /^f:/.test(r[2])))};
+            render();
+            const T = document.querySelector('#view .adm-hmt'),
+              out = {
+                sw: !!document.querySelector('#view [data-sf="hr"]'),
+                rows: T ? T.querySelectorAll('tbody tr').length : 0,
+                it: T ? T.querySelectorAll('tbody .hm-row.hm-it').length : -1,
+                fams: T ? [...T.querySelectorAll('.hm-fam')].map(th => th.title) : []
+              };
+            ANS = keep;
+            render();
+            return out;
+          });
+          if (solo.sw || !solo.rows || solo.it !== solo.rows || !solo.fams.includes('Damselfishes'))
+            fe.push(`Heatmap, genus questions only ${JSON.stringify(solo)}`);
+          await fq.click('#view [data-sf="hr"][data-v="family"]');
+        }
+        if (fe.length) fails.push(`${vw}px Fish Answer log, Pairs and Heatmap: ${fe.slice(0, 4).join(' | ')}`);
         await fc.close();
+      }
+      // Difficulty › Heatmap of a subject with units at several ranks played at the genus (SUBJECTS sheets, core.js
+      // unitRankOf: the sea slugs; the corals' one rank is the genus too; Q123 m, after #1020):
+      // its one Analyses view; every genus of its game on the map in italics, by name, in its family's block, the families
+      // in their taxonomic group (a column of the groups, the tree's taxa); the cells add up to the Mix-ups count; the A5
+      // line over its few made-up answers (admin-demo.js: Ana's count, Mara's not yet: her map says why); with no answer
+      // at all, Not enough data yet. No raw unit id, no sideways scroll. Once, at 1280 and 390 px.
+      for (const vw of [1280, 390]) {
+        const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
+          gc = await b.newContext({viewport: {width: vw, height: 900}, serviceWorkers: 'block'});
+        await gc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const gq = await gc.newPage(),
+          ge = [];
+        gq.on('pageerror', e => ge.push(e.message));
+        await gq.goto(base + `admin.html?demo&v=${VER}`);
+        const at = await gq
+          .waitForFunction(
+            () => typeof SUBJECTS !== 'undefined' && (SUBJECTS.find(S => S.sheets && unitRankOf(S) === 'genus') || {}).hash,
+            null,
+            {
+              timeout: 60000
+            }
+          )
+          .then(h => h.jsonValue())
+          .catch(() => null);
+        if (!at) ge.push('no subject played at the genus');
+        else {
+          await gq.evaluate(h => (location.hash = '#' + h + 'analyses/difficulty/heatmap'), at);
+          await gq
+            // drawn once its tree is read (unitAdmin: the units' names, blocks and groups)
+            .waitForFunction(
+              () => cur === 'analyses/difficulty/heatmap' && unitRegOf(ASUBJ) && document.querySelector('#view .adm-hmt .hm-sup'),
+              null,
+              {timeout: 90000}
+            )
+            .catch(() => ge.push('Heatmap not drawn'));
+          const hs = await gq.evaluate(() => {
+            const V = document.getElementById('view'),
+              T = V.querySelector('.adm-hmt'),
+              FA = unitRegOf(ASUBJ);
+            if (!T || !FA) return null;
+            const kp = Object.fromEntries(
+              [...V.querySelectorAll('.adm-kpis > div')].map(d => [d.querySelector('span').textContent, d.querySelector('b').textContent])
+            );
+            return {
+              views: TABS.filter(t => t[3] === 'analyses').flatMap(t => t[2].map(([h]) => h).filter(h => hasPage(ASUBJ, h))),
+              sw: !!V.querySelector('[data-sf="hr"]'),
+              rows: T.querySelectorAll('tbody tr').length,
+              cols: T.querySelectorAll('thead .hm-col').length,
+              slate: FA.slate.length,
+              it: T.querySelectorAll('tbody .hm-row.hm-it').length,
+              fams: [...T.querySelectorAll('.hm-fam:not(.hm-sup)')].map(th => th.title),
+              famsWant: [...new Set(FA.slate.map(g => FA.gen[FA.fam[g]].name))].sort(),
+              sups: [...T.querySelectorAll('.hm-sup')].map(th => th.title),
+              supsWant: FA.taxa.groups.map(g => g.title).sort(),
+              sum: [...T.querySelectorAll('td')].reduce((t, e) => t + (Number(e.textContent) || 0), 0),
+              mix: kp['Mix-ups'],
+              note: (V.querySelector('p.note') || {}).textContent || '',
+              players: [...V.querySelectorAll('[data-hmwho] option')].filter(o => o.value).map(o => [o.value, o.textContent]),
+              ids: (V.textContent.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          });
+          if (
+            !hs ||
+            hs.views.join() !== 'analyses/difficulty/heatmap' ||
+            hs.sw ||
+            hs.rows !== hs.slate ||
+            hs.cols !== hs.rows ||
+            hs.it !== hs.rows ||
+            [...hs.fams].sort().join() !== hs.famsWant.join() ||
+            [...hs.sups].sort().join() !== hs.supsWant.join() ||
+            String(hs.sum) !== hs.mix ||
+            !hs.sum ||
+            !/^Not enough data yet: \d+ of the \d+ cells offered are under \d+ offers; about \d+ more answers with choices to bring them there\.$/.test(
+              hs.note
+            ) ||
+            hs.ids.length ||
+            hs.wide > 0
+          )
+            ge.push(`pooled ${JSON.stringify({...hs, famsWant: undefined})}`);
+          // Mara's few answers do not count yet: her map says so
+          const mara = hs && hs.players.find(p => p[1] === 'Mara Demo');
+          if (!mara) ge.push('Mara not in the picker');
+          else {
+            await gq.evaluate(h => (location.hash = h), `#${at}analyses/difficulty/heatmap?player=${encodeURIComponent(mara[0])}`);
+            await gq.waitForFunction(id => hashQuery().get('player') === id && document.querySelector('#view .adm-hmt'), mara[0], {
+              timeout: 30000
+            });
+            const mn = await gq.evaluate(() => (document.querySelector('#view p.note') || {}).textContent || '');
+            if (!/^Not enough data yet: their answers count in the mix-ups once they are \d+ or more/.test(mn)) ge.push(`Mara: ${mn}`);
+            await gq.evaluate(h => (location.hash = h), `#${at}analyses/difficulty/heatmap`);
+            await gq.waitForFunction(() => !hashQuery().get('player') && document.querySelector('#view .adm-hmt'), null, {timeout: 30000});
+          }
+          // no answer at all in this subject (one just opened to its group): one line, no map
+          const none = await gq.evaluate(() => {
+            const keep = ANS;
+            ANS = {...ANS, all: (ANS.all || ANS.rows).filter(r => rowSubject(r) !== ASUBJ.id)};
+            render();
+            const o = {
+              map: !!document.querySelector('#view .adm-hmt, #view .adm-kpis'),
+              note: [...document.querySelectorAll('#view p.note')].map(e => e.textContent)
+            };
+            ANS = keep;
+            render();
+            return o;
+          });
+          if (none.map || none.note.join() !== 'Not enough data yet: no answers yet.') ge.push(`no answers ${JSON.stringify(none)}`);
+        }
+        if (ge.length) fails.push(`${vw}px Heatmap of a subject played at the genus: ${ge.slice(0, 4).join(' | ')}`);
+        await gc.close();
       }
       // Fish admin at parity, Journey details: a fish Journey names its units as the Answer log does (a family by name, a
       // genus in italics, an IMR sub-entry with its IMR name), titles and the chart's tooltips included; its Cards and
@@ -5839,6 +6409,68 @@ const darkCards = (p, sel) =>
           if (await fq.$('#admhelp [data-ht="page"]')) await fq.click('#admhelp [data-ht="page"]');
           const ht = await fq.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
           if (!/from the answers alone/.test(ht) || /Elo/.test(ht)) fe.push(`By difficulty, help ${ht.slice(0, 80)}`);
+          await fq.click('#help');
+        }
+        // Photo stats › Overview on the fish side, on the same answers: the answers per photo in play counted here from the
+        // fish answer log (every answer that showed it, its candidate id and its game id one photo: fishPid), the bands
+        // and the 3+ count as counted here; the candidate photo missed 9 times by 3 players counted Missed on its family's
+        // row, opening Health; its own help (the answers alone, no Elo).
+        if (!fe.length && pre.f) {
+          await fq.evaluate(() => (location.hash = '#fish/photos/stats/overview'));
+          await fq
+            .waitForFunction(() => cur === 'photos/stats/overview' && document.querySelector('#view [data-pov="rated"]'), null, {
+              timeout: 60000
+            })
+            .catch(() => fe.push('Photo stats › Overview not drawn'));
+          const po = await fq.evaluate(f => {
+            const N = {};
+            rowsOf().forEach(r =>
+              new Set(
+                String(r[6] || '')
+                  .split(' ')
+                  .filter(Boolean)
+              ).forEach(x => (N[fishPid(x)] = (N[fishPid(x)] || 0) + 1))
+            );
+            const D = fuDataM().D,
+              sp = FISHC.species,
+              play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => D.play[s] || [])),
+              A = play.map(p => N[fishPid(p.f)] || 0),
+              fam = fishFamOf(FISHA.ph[f].sp),
+              name = (FISHC.units.find(u => u.id === fam) || {}).name,
+              row = [...document.querySelectorAll('[data-pov="rated"] tbody tr')].find(r => r.children[0].innerText.trim() === name),
+              a = row && row.children[5].querySelector('a');
+            return {
+              bands: [...document.querySelectorAll('[data-pov="answers"] tbody tr')].map(r => Number(r.children[1].innerText)),
+              want: [
+                [0, 0],
+                [1, 2],
+                [3, 9],
+                [10, 29],
+                [30, Infinity]
+              ].map(([lo, hi]) => A.filter(x => x >= lo && x <= hi).length),
+              three: Number((/(\d+) \(/.exec((document.querySelector('[data-pov="answers"] .note') || {}).textContent || '') || [])[1]),
+              wantThree: A.filter(x => x >= 3).length,
+              inPlay: play.some(p => fishPid(p.f) === fishPid(f)),
+              name,
+              missed: a ? Number(a.textContent) : 0,
+              href: a ? a.getAttribute('href') : '',
+              wide: document.documentElement.scrollWidth - innerWidth
+            };
+          }, pre.f);
+          if (
+            po.bands.join() !== po.want.join() ||
+            !po.want.slice(1).some(Boolean) ||
+            po.three !== po.wantThree ||
+            !po.inPlay ||
+            po.missed < 1 ||
+            po.href !== '#fish/inbox/todo/health' ||
+            po.wide > 0
+          )
+            fe.push(`Photo stats › Overview ${JSON.stringify(po)}`);
+          await fq.click('#help');
+          if (await fq.$('#admhelp [data-ht="page"]')) await fq.click('#admhelp [data-ht="page"]');
+          const ph = await fq.evaluate(() => (document.getElementById('admhelp') || {}).textContent || '');
+          if (!/the answers alone/.test(ph) || /Elo|Colon/.test(ph)) fe.push(`Photo stats › Overview, help ${ph.slice(0, 80)}`);
           await fq.click('#help');
         }
         if (fe.length) fails.push(`1280px Fish Health, fresh session: ${fe.slice(0, 4).join(' | ')}`);
@@ -6504,7 +7136,252 @@ const darkCards = (p, sel) =>
         )
           se.push(`published ${JSON.stringify(pub)}`);
         if (!dlg.some(d => /sheet edits/.test(d))) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (dlg.some(d => /every player's path and progress/.test(d))) se.push('a text Publish confirmed the structure');
         if (se.length) fails.push(`Sheet text: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
+      // Photos › Tree, a family's circle and look-alike pairs (admin-content.js structBox, structBar; the structure editor,
+      // step 4 of docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A, Q366): in a
+      // context of its own, on a family with a look-alike line. The circle segments set the circle slot (one draft step,
+      // Undo), ↺ Restore; Withdraw a pair (v null, was 1), ↺; Add a look-alike… asks for a source once, then saves with one
+      // (v 1, was null, src); its words' line shows at once in the Sheet box; the Look-alikes filter's + Pair adds one
+      // between two families chosen there, and its pair tag withdraws it again (his entry goes); the row and the Circle
+      // filter follow the circle in force; a stale circle shows its three values, Keep mine takes the base now; Publish
+      // confirms once, saying it changes every player's path and progress, counts circles and pairs, and publishes them;
+      // dark theme; no overflow at 1280 and 390 with each box open and with a pair's tools in the bar.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [],
+          dlg = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(() => typeof FISHC === 'object' && FISHC && FISHC.raw && document.querySelector('#view .adm-treep'));
+        const ids = await sq.evaluate(() => {
+          const F = FISHC.raw,
+            T = fishTree(F),
+            fam = F.families.find(f => !f.wink && f.circle === 1 && (f.look || []).some(x => T.fam[x[0]] && !T.fam[x[0]].wink)),
+            lk = fam.look.find(x => T.fam[x[0]] && !T.fam[x[0]].wink)[0],
+            near = new Set([
+              fam.id,
+              ...F.families.filter(f => (f.look || []).some(x => x[0] === fam.id)).map(f => f.id),
+              ...fam.look.map(x => x[0])
+            ]),
+            free = F.families.filter(f => !f.wink && !near.has(f.id)).map(f => f.id);
+          return {fam: fam.id, lk, add: free[0], x: free[1], y: free[2]};
+        });
+        const FAM = ids.fam,
+          key = (a, b) => (a < b ? a + '|' + b : b + '|' + a),
+          cont = () => sq.evaluate(() => (DRAFT.fish || {}).content || {}),
+          pair = async k => ((await cont()).pairs || {})[k] || null,
+          circ = async () => (((await cont()).nodes || {})[FAM] || {}).circle || null,
+          box = '#view .adm-cstruct[data-stid]';
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key/' + encodeURIComponent(FAM));
+        await swait(() => document.querySelector('#view .adm-cstruct [data-stc]'));
+        const segs = await sq.evaluate(
+          b => [...document.querySelectorAll(b + ' [data-stc]')].map(x => [x.textContent, x.getAttribute('aria-pressed')]),
+          box
+        );
+        if (JSON.stringify(segs) !== '[["1","true"],["2","false"],["3","false"],["None","false"]]')
+          se.push(`the circle segments ${JSON.stringify(segs)}`);
+        // Circle 2: one draft entry over the base, Undo and Redo, then ↺ Restore.
+        await sq.click(`${box} [data-stc="2"]`);
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        let c = await circ();
+        if (!c || c.v !== 2 || c.was !== 1 || !c.t) se.push(`circle ${JSON.stringify(c)}`);
+        const rowTxt = () =>
+          sq.evaluate(id => (document.querySelector(`#view .adm-tree [data-tt="${CSS.escape(id)}"]`) || {}).textContent || '', FAM);
+        if (!/circle 2/.test(await rowTxt())) se.push(`the tree row ${JSON.stringify(await rowTxt())}`);
+        await sq.evaluate(() => undo());
+        if (await circ()) se.push('Undo left the circle');
+        await sq.evaluate(() => redo());
+        if (!(await circ())) se.push('Redo lost the circle');
+        await swait(() => document.querySelector('#view [data-stcid] [data-sta="drop"]'));
+        await sq.click('#view [data-stcid] [data-sta="drop"]');
+        await swait(() => !document.querySelector('#view [data-stcid].is-fresh'));
+        if (await circ()) se.push('Restore left the circle');
+        // None: off the game; the Circle filter offers No circle.
+        await sq.click(`${box} [data-stc=""]`);
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        if ((await circ()).v !== null) se.push('None');
+        const tags = await sq.evaluate(() => [...document.querySelectorAll('#view [data-tttag] option')].map(o => o.value));
+        if (!tags.includes('cnone')) se.push(`no No circle tag ${JSON.stringify(tags)}`);
+        // Withdraw the pair: v null, was 1; the row says so; ↺ brings it back.
+        const K = key(FAM, ids.lk),
+          prow = k => `${box} [data-stp="${k}"]`;
+        await sq.click(`${prow(K)} [data-sta="withdraw"]`);
+        await swait(() => document.querySelector('#view .adm-cstruct .is-fresh.is-out'));
+        let x = await pair(K);
+        if (!x || x.v !== null || x.was !== 1) se.push(`withdraw ${JSON.stringify(x)}`);
+        // its words are no longer in force: the Sheet box lists them as never applied, kept
+        if (await sq.evaluate(s => !!document.querySelector(s), `#view .adm-csheet [data-cs="look/${ids.lk}"]:not(.is-orphan)`))
+          se.push('a withdrawn pair keeps its line');
+        await sq.click(`${prow(K)} [data-sta="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-cstruct .is-out'));
+        if (await pair(K)) se.push('↺ left the withdrawal');
+        // Add a look-alike: the source asked once, then saved with one; its line shows in the Sheet box at once.
+        await sq.selectOption(`${box} [data-stadd]`, ids.add);
+        await swait(() => document.querySelector('#view [data-stbox]'));
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
+        const ask = await sq.evaluate(() => document.querySelector('#view [data-stbox] [data-sta="save"]').textContent);
+        if (ask !== 'Save without source' || (await pair(key(FAM, ids.add)))) se.push(`source asked ${ask}`);
+        await sq.fill('#view [data-stbox] [data-sts]', 'A made-up guide');
+        await sq.fill('#view [data-stbox] [data-stu]', 'https://example.org/pairs');
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => !document.querySelector('#view [data-stbox]'));
+        x = await pair(key(FAM, ids.add));
+        if (!x || x.v !== 1 || x.was !== null || JSON.stringify(x.src) !== '{"t":"A made-up guide","u":"https://example.org/pairs"}')
+          se.push(`add ${JSON.stringify(x)}`);
+        if (!(await sq.evaluate(s => !!document.querySelector(s), `#view .adm-csheet [data-cs="look/${ids.add}"]`)))
+          se.push("the added pair's line in the Sheet box");
+        // The Look-alikes filter: Any look-alike, + Pair between two families chosen there, saved without a source.
+        await sq.selectOption('#view [data-tttag]', 'look');
+        await swait(() => document.querySelector('#view [data-stnew]'));
+        await sq.click('#view [data-stnew]');
+        await swait(() => document.querySelector('#view [data-stbox] [data-st-a]'));
+        await sq.selectOption('#view [data-stbox] [data-st-a]', ids.x);
+        await swait(() => document.querySelector('#view [data-stbox] [data-st-b]'));
+        await sq.selectOption('#view [data-stbox] [data-st-b]', ids.y);
+        // no overflow with the filter's box open, at 1280 and 390, nor with a pair's tools in the bar (below)
+        const wideAt = async what => {
+          for (const w of [1280, 390]) {
+            await sq.setViewportSize({width: w, height: 900});
+            const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+            if (wide > 0) se.push(`${w}px, ${what}: ${wide}px too wide`);
+          }
+          await sq.setViewportSize({width: 1280, height: 900});
+        };
+        await wideAt('the + Pair box');
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => !document.querySelector('#view [data-stbox]'));
+        const KXY = key(ids.x, ids.y);
+        x = await pair(KXY);
+        if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`+ Pair ${JSON.stringify(x)}`);
+        // Its own tag says it was added, and its tools there take it out again (his entry goes).
+        await sq.selectOption('#view [data-tttag]', 'look:' + KXY);
+        const bar = `#view .adm-stbar[data-stp="${KXY}"]`,
+          hasSel = (sel, want) =>
+            sq
+              .waitForFunction(([s, w]) => !!document.querySelector(s) === w, [sel, want], {timeout: 90000})
+              .catch(() => se.push(`timed out: ${sel}`));
+        await hasSel(`${bar} [data-sta="drop"]`, true);
+        const lab = await sq.evaluate(k => document.querySelector(`#view [data-tttag] option[value="look:${k}"]`).textContent, KXY);
+        if (!/\(added\)/.test(lab)) se.push(`the pair tag ${JSON.stringify(lab)}`);
+        await wideAt("a pair's tools in the bar");
+        await sq.click(`${bar} [data-sta="drop"]`);
+        await hasSel(bar, false);
+        if (await pair(KXY)) se.push('the filter left the pair');
+        await sq.evaluate(() => {
+          store.set(subjK('reefid-admin-tree-tag'), '');
+          render();
+        });
+        // Dark theme; no overflow with the page's add box open.
+        const dk = await darkCards(sq, '#view .adm-cstruct .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        await sq.selectOption(`${box} [data-stadd]`, ids.x);
+        await swait(() => document.querySelector('#view [data-stbox]'));
+        await wideAt("the page's add box");
+        await sq.click('#view [data-stbox] [data-sta="cancel"]');
+        // A stale circle (the base changed since his edit): its three values, Keep mine takes the base now; no overflow.
+        await sq.evaluate(id => {
+          DRAFT.fish = {...DRAFT.fish, content: contentSet(DRAFT.fish.content, id, 'circle', null, 3, null, 7)};
+          saveDraft();
+          render();
+        }, FAM);
+        await swait(() => document.querySelector('#view [data-stcid].is-stale .adm-cs3'));
+        await wideAt('a stale circle');
+        await sq.click('#view [data-stcid] [data-sta="keep"]');
+        await swait(() => document.querySelector('#view [data-stcid].is-fresh'));
+        c = await circ();
+        if (!c || c.v !== null || c.was !== 1 || c.t === 7) se.push(`Keep mine ${JSON.stringify(c)}`);
+        // Photos › Look-alikes lists the pairs in force (admin-content.js montPairs): the added pair has a row marked
+        // "(added)" (its family in no circle here: the circles take no pair out, as the Tree's filter), its photo pick
+        // stored under its pair key as a base pair's; a base pair withdrawn loses its row and keeps its pick in fish mont,
+        // back with the Undo, and withdrawn again its pick is published; dark theme; no overflow at 1280 and 390.
+        const KA = key(FAM, ids.add),
+          mrow = k => `#view .adm-fishmont .adm-mrow:has([data-k="${k}"])`,
+          mont = k => sq.evaluate(k => ((DRAFT.fish || {}).mont || {})[k] || null, k),
+          rowsOf = () =>
+            sq.evaluate(() =>
+              [...document.querySelectorAll('#view .adm-fishmont .adm-mrow')].map(r => r.querySelector('.adm-mhead b').textContent)
+            ),
+          pickIn = async (k, side) => {
+            const s = `${mrow(k)} .adm-mth[data-side="${side}"]:not(.on)`,
+              f = await sq.evaluate(s => (document.querySelector(s) || {dataset: {}}).dataset.f || null, s);
+            if (!f) {
+              se.push(`Look-alikes: no photo to pick in ${k}`);
+              return null;
+            }
+            await sq.click(`${mrow(k)} .adm-mth[data-side="${side}"][data-f="${f}"]`);
+            return f;
+          };
+        await sq.evaluate(() => (location.hash = '#fish/photos/look-alikes'));
+        await swait(() => document.querySelector('#view .adm-fishmont .adm-mrow'));
+        const n0 = await sq.evaluate(() => fishPairs(FISHC.units).length);
+        let mr = await rowsOf();
+        const head = await sq.evaluate(s => (document.querySelector(s + ' .adm-mhead b') || {}).textContent || '', mrow(KA));
+        if (mr.length !== n0 + 1 || !/ \(added\)$/.test(head) || mr.filter(t => /\(added\)/.test(t)).length !== 1)
+          se.push(`Look-alikes rows ${JSON.stringify({n0, n: mr.length, head})}`);
+        const fa = await pickIn(KA, 'a');
+        x = await mont(KA);
+        if (fa && (!x || x.a !== fa || KA !== (await sq.evaluate(([a, b]) => contentPairKey(b, a), [FAM, ids.add]))))
+          se.push(`Look-alikes: the added pair's pick ${JSON.stringify(x)}`);
+        // a base pair's pick, then the pair withdrawn (one draft step, as the Tree's Withdraw writes it)
+        const fb = await pickIn(K, 'b');
+        await sq.evaluate(k => {
+          DRAFT.fish = {...DRAFT.fish, content: contentPairSet(DRAFT.fish.content, k, null, 1, null, Date.now())};
+          saveDraft();
+          render();
+        }, K);
+        await hasSel(mrow(K), false);
+        mr = await rowsOf();
+        if (mr.length !== n0 || (await sq.$(mrow(K)))) se.push(`Look-alikes: the withdrawn pair's row ${mr.length}`);
+        if (fb && ((await mont(K)) || {}).b !== fb) se.push(`Look-alikes: the withdrawn pair's pick ${JSON.stringify(await mont(K))}`);
+        await sq.evaluate(() => undo());
+        await hasSel(mrow(K), true);
+        const back = await sq.evaluate(
+          s => (document.querySelector(s + ' .adm-mth[data-side="b"].on') || {dataset: {}}).dataset.f,
+          mrow(K)
+        );
+        if (fb && back !== fb) se.push(`Look-alikes: Undo brought back ${back}, not ${fb}`);
+        const mdk = await darkCards(sq, '#view .adm-fishmont .adm-mrow');
+        if (mdk) se.push(`Look-alikes, dark theme: still light ${mdk}`);
+        await wideAt('the Look-alikes page with an added pair');
+        await sq.evaluate(() => redo());
+        await hasSel(mrow(K), false);
+        // Publish: one confirmation saying it changes every player's path and progress; circles and pairs counted; published.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 fish circle edit$/m.test(sum) || !/^2 fish look-alike pair edits$/m.test(sum))
+          se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => (SAVED.fish || {}).content);
+        if (
+          !pub ||
+          JSON.stringify(Object.keys(pub)) !== '["nodes","pairs"]' ||
+          JSON.stringify(Object.keys(pub.nodes)) !== JSON.stringify([FAM]) ||
+          JSON.stringify(Object.keys(pub.nodes[FAM])) !== '["circle"]' ||
+          pub.nodes[FAM].circle.v !== null ||
+          pub.nodes[FAM].circle.was !== 1 ||
+          JSON.stringify(Object.keys(pub.pairs)) !== JSON.stringify([KA, K].sort())
+        )
+          se.push(`published ${JSON.stringify(pub)}`);
+        // the picks published, the withdrawn pair's kept
+        const pm = await sq.evaluate(() => (SAVED.fish || {}).mont || {});
+        if ((fa && (pm[KA] || {}).a !== fa) || (fb && (pm[K] || {}).b !== fb)) se.push(`published picks ${JSON.stringify(pm)}`);
+        if (dlg.length !== 1 || !/every player's path and progress/.test(dlg[0])) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (se.length) fails.push(`Structure: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is

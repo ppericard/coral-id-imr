@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // tools/fieldeval.js (docs/LEARNING.md "Field learner and the Custom-8 scenario"): the logistic fit with an offset behind
 // the real-log set-size check, and Holm's adjustment.
 const test = require('node:test'),

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // rule D4: the app never gets ahead of the sheet script. Every gate on the script's version (a constant named
 // *_SHEET in the app's own files) is listed here with the feature it turns on: off below its version N, on from N, off
 // when a reply carries no version. A new gate fails this test until it is added to the table (test-suite review,
@@ -73,9 +74,21 @@ const GATES = {
   // Code.gs boardTreePut_ keeps it in chunks, bt): from the version that keeps it so; before, with every save
   // (tests/boardtree.test.js runs both). The species units open only from here too (their app PR, rule D4).
   TREE_SHEET: (v, N) => fn('sync.js', 'const treeOn = ', '\n', 'treeOn', {sheetV: () => v, TREE_SHEET: N})(),
+  // The fish species level (sync.js speciesOn: its units open and count in the score's tree once the sheet replays them,
+  // core.js fishReplayGen; app.js spOn reads it): from the version that lists them, the chunked tree's being lower.
+  SPECIES_SHEET: (v, N) =>
+    fn('sync.js', 'const speciesOn = ', '\n', 'speciesOn', {
+      treeOn: () => (v === undefined ? 0 : v) >= 143,
+      sheetV: () => v,
+      SPECIES_SHEET: N
+    })(),
   // Players' Photos and Spread columns, each player's photo exposure (admin.js expoOn, Code.gs exposure_ ex): from v81;
   // before, the columns stay away.
   EXPO_SHEET: (v, N) => fn('admin.js', 'const expoOn = ', '\n', 'expoOn', {USERS: v === undefined ? {} : {v}, EXPO_SHEET: N})(),
+  // To do › Alerts, the sheet's Alerts tab (admin.js alertsOn, loadAlerts; Code.gs readAlerts_): from the version that
+  // serves it; before, an older script answers 'input' and the page names the version it waits for.
+  ALERTS_SHEET: (v, N) =>
+    fn('admin.js', 'const alertsOn = ', '\n', 'alertsOn', {ALERTS_SHEET: N})({ok: true, rows: [], ...(v === undefined ? {} : {v})}),
   // Players › Archive… (admin.js archOn, Code.gs userArchive) and the Archived fold: from v58; before, the button is off.
   ARCH_SHEET: (v, N) => fn('admin.js', 'const archOn = ', '\n', 'archOn', {USERS: v === undefined ? {} : {v}, ARCH_SHEET: N})(),
   // Players' Leave out / Count again (sheet v115, statsExclude).
@@ -104,6 +117,27 @@ const GATES = {
   // The other subjects' replays, fish (sync.js rpOn, core.js REPLAYS_SHEET; Code.gs replays_): asked for and adopted
   // from the script that replays them under their own rules versions; before, fish merges as it did.
   REPLAYS_SHEET: (v, N) => fn('sync.js', 'const rpOn = ', '\n', 'rpOn', {REPLAYS_SHEET: N})({id: 'fish', replay: false, replayed: {}}, v),
+  // The content editor's structure (sync.js stOn, app.js structOn; core.js STRUCT_SHEET; Code.gs replays_ sts): the
+  // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
+  // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
+  STRUCT_SHEET: (v, N) => {
+    const on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {
+        STRUCT_SHEET: N,
+        rpOn: (S, x) => Number(x) >= 112
+      })({id: 'fish', structure: {}, replayed: {}}, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {STRUCT_SHEET: N, sheetV: () => (v === undefined ? 0 : v)})();
+    assert.strictEqual(on, app, 'the app and the sync agree');
+    return on;
+  },
+  // The sea slugs' beta group (core.js SUBJECTS seaslug sheet; Code.gs groupIds_): the admin's Players page offers it from
+  // the script that knows the subject; before, the line that says which version it needs.
+  SEASLUG_SHEET: (v, N) =>
+    fn('admin.js', 'const groupOn = ', '\n', 'groupOn', {
+      subjGroup: S => S.open === 'group',
+      USERS: v === undefined ? {} : {v},
+      GROUP_SHEET: 48,
+      ASUBJ: null
+    })({open: 'group', sheet: N}),
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.

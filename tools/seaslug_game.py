@@ -1,0 +1,501 @@
+#!/usr/bin/env python3
+"""The sea-slug subject's game data (study docs/reviews/2026-11-15-nudibranch-mode-study.md §9, steps 5 and 6): writes
+seaslug.json, the subject's tree, and seaslug-game.json, its photos in play, which the app reads (core.js SUBJECTS
+seaslug, app.js UNITS seaslug) as it reads fish.json and fish-game.json (core.js fishGen, app.js fishGenera).
+
+Inputs, all in the repository (no network but --r2's downloads):
+  - tools/seaslugs.json (tools/build_seaslugs.py): the species confirmed in the Philippines, their circles (Q377: circle
+    1, the 21 stars and the 24 most common other species; circles 2 and 3, the next 60 and 100 by commonness), their
+    WoRMS names, commonness, presence and the photo target (photoTarget: start 6, game cap 12, +5 for a documented
+    juvenile form; Pierre, 2026-11-15, Q377);
+  - seaslug-cand.json (tools/fetch_seaslugs.py): the candidate photos, one per observation, by iNaturalist taxon id;
+  - suggest.json "seaslug" (tools/judging_fish.py --subject seaslug, from judging/seaslug/*.json): the judgements on
+    judging/SEASLUG.md's rubric, the caps applied;
+  - seaslug-game.json as committed: which photos are already on R2 (their ar, cr, iv), kept as they are;
+  - tools/seaslug_groups.json (hand-kept from WoRMS's classification): the taxonomic groups the families sit in, in
+    order (Pierre, 2026-11-16: the true nudibranchs, Doridina then Cladobranchia, then the other sea slugs by order);
+  - tools/seaslug_names.json (tools/seaslug_names.py): the English common names and nicknames, each with its sources.
+
+seaslug.json, in fish.json's shape so the fish engine reads it unchanged (core.js fishGen, fishTree; app.js fishGenera):
+  - families {id f:<family>, name (the scientific name: Q369 (d), scientific names only), circle (its best species'
+    circle, as a fish family's), species, genera, look (none sourced yet: study §9 step 8), cues (none: no IMR content,
+    study §8), tgroup (its taxonomic group's number in taxa)}, in the order of their first species (by circle, then by
+    commonness rank);
+  - taxa {cite, short, groups [{n, title}]}: the taxonomic groups of tools/seaslug_groups.json, which the Learn page
+    shows the families under (learn.js viewFishList); a family in no group fails the build, naming it;
+  - genera {id g:<genus>, name, family, circle (its best species'), species};
+  - species {id s<iNaturalist taxon id>, name (iNaturalist's, which WoRMS accepts), now (the WoRMS accepted name when it
+    differs), ref (the WoRMS AphiaID), inat, circle, family, genus, r (the commonness rank over every group,
+    tools/seaslugs.json rank), group (the iNaturalist order: Nudibranchia, Sacoglossa...), star (the stars set, Q369 (c),
+    Q377: never the opening order), present {area: distinct Research Grade observers in the subject's area, the
+    Philippines (Q369 (b)), what the game's commonness reads (core.js fishGen cm); near, nearU, nearN: rule C8's near
+    test and the observers and observations within the instance's radius of Dauin, what the default covers read (app.js
+    nearSeen)}, look (the decided look-alike pairs, tools/seaslugs.json lookalikes: the two Spanish dancers, for step
+    8)};
+  - on a family, genus or species some source names in English: en [{n, src, nick, web}], its English common names and
+    nicknames, and ensrc {inat, worms, wiki}, where its sources hold it (tools/seaslug_names.json, names_of); the tree's
+    own ensrc says when each source was read. Information only (Pierre, 2026-11-17: shown wherever names are shown;
+    Q369 (d) stands: never a choice, no common-name branch).
+  - the species of CIRCLES (1, 2 and 3: the circles whose candidates were fetched and judged; a species not judged yet
+    is in the tree with no photo, and its photos come in at the next build once its judgements are in suggest.json);
+  - key null (rule S3: a region with no key has no such rule; no sea-slug key is read yet), no teaching entries, no IMR
+    tag.
+
+seaslug-game.json, in fish-game.json's record shape (core.js fishPhotos, fishGameRead) under each family id, one photo a
+line:
+  - the photos in play: a candidate judged sure (fish_game.py cand_sure's rule on the sea slugs' rubric: no unsure
+    field, keep best or alt, never dup, never an egg mass, valid tags and ease, a count an automatic route may put in
+    play, never out of the water), at most photoTarget.gameCap a species, the easiest first, plus up to
+    photoTarget.perJuvenileForm juvenile photos for a species with a documented juvenile form (photoTarget.juvenile);
+    a species with fewer than photoTarget.start such photos has none in play (it cannot be played yet). The same rule
+    for every circle;
+  - each record {f, o, src, a, lic, t, sp, loc, own, e, jt, ph, auto: "cand"}, ph "juvenile" for a photo judged a
+    juvenile (as a fish record's phase: tools/fish_game.py phase), and then either
+      r: 1, the photo read from iNaturalist (app.js img), until a run with --r2 has put it on R2; or
+      ar, cr, iv and no r: its four files on R2, as a fish game photo (study §9 step 6; tools/fish_game.py download:
+      the judge's proposed crop applied, tools/photos.py's four sizes), read from R2 by the app (app.js img) with the
+      online original (src) as its fallback (core.js photoAway).
+    A photo already on R2 (the committed file) keeps its files; one whose crop changed is listed with its old files
+    until a run with --r2 makes them again (its rewrite count iv bumped). A photo that fails to download stays remote.
+
+The R2 step is off in the Candidate photos workflow until Pierre's go (.github/workflows/approved-photos.yml
+SEASLUG_R2): the workflow builds offline (every new photo remote, r: 1) while it is off.
+
+  python3 tools/seaslug_game.py                  build offline (no download) and write both files
+  python3 tools/seaslug_game.py --check          build offline and exit 1 when a committed file differs (CI: the judged
+                                                 files and the list move, the game data must follow;
+                                                 tests/seaslug-game.test.js), but for the species not in
+                                                 seaslug-game.json yet whose judgements came since: the workflow builds
+                                                 them in after the merge (check)
+  python3 tools/seaslug_game.py --plan           print what --r2 would download and the expected R2 volume, by circle;
+                                                 writes nothing, downloads nothing
+  python3 tools/seaslug_game.py --r2 [--out DIR] [--max N]
+                                                 download the photos in play not on R2 yet into DIR (default r2-upload/,
+                                                 gitignored; the workflow uploads it with tools/r2_sync.sh DIR before it
+                                                 commits) and write both files
+"""
+import argparse
+import concurrent.futures as cf
+import json
+import os
+import re
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+from presence import label_confirmed  # noqa: E402  the label rule beside C8 (Q389 (2))
+LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
+GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
+CAND = os.path.join(ROOT, 'seaslug-cand.json')
+SUGGEST = os.path.join(ROOT, 'suggest.json')
+TREE_OUT = os.path.join(ROOT, 'seaslug.json')
+GAME_OUT = os.path.join(ROOT, 'seaslug-game.json')
+V = 1
+# The circles in the game: those whose candidates were fetched and judged (circle 1, Q377; circles 2 and 3, #985, #989,
+# #991, #997, #999 and circle 3's last part). Circle 4, the rest, has no candidates.
+CIRCLES = (1, 2, 3)
+# The sea slugs' rubric code without its ease digit, as suggest.json keeps it (tools/fish_judge.py RUBRICS "seaslug").
+TAGS = re.compile(r'^[pohtdv][01][gd][0-3][smb][lms][1sokx][jcawf]*$')
+# The counts an automatic route may put in play (core.js FISH_COUNT.play): one sea slug, several of its kind, another
+# species that cannot be taken for it (rule P3).
+PLAY_COUNT = '1so'
+# At most this many downloads a run (--max; the fish's FISH_MAX), circle 1 first.
+MAX = int(os.environ.get('SEASLUG_MAX', '5000'))
+
+
+def load(p, default=None):
+    if default is not None and not os.path.exists(p):
+        return default
+    with open(p, encoding='utf-8') as fh:
+        return json.load(fh)
+
+
+def sure(j):
+    """A judgement that puts its candidate in play by itself (tools/fish_game.py cand_sure, on the sea slugs' rubric)."""
+    if not j or j.get('egg') or j.get('u') or j.get('k', 'best') not in ('best', 'alt'):
+        return False
+    jt, e = j.get('jt') or '', j.get('e')
+    return bool(TAGS.match(jt)) and isinstance(e, int) and 1 <= e <= 5 and jt[6] in PLAY_COUNT and 'a' not in jt[7:]
+
+
+def juv(jt):
+    return 'j' in (jt or '')[7:]
+
+
+def crop(j):
+    """The judge's proposed crop of a sure judgement ([l, t, r, b] fractions of the original), None for the whole photo:
+    applied when the photo is downloaded for R2 (judging/SEASLUG.md "Candidates"), as a fish candidate's (tools/fish_game.py
+    plan)."""
+    c = (j or {}).get('c')
+    return list(c) if isinstance(c, list) and len(c) == 4 and list(c) != [0, 0, 1, 1] else None
+
+
+def phase(jt):
+    """The photo's phase as a fish record's (tools/fish_game.py phase: the juvenile flag, with no phase of Pierre's nor
+    of the pass, which the sea slugs' rubric never names, and no source stage on a sea-slug candidate)."""
+    return 'juvenile' if juv(jt) else ''
+
+
+def on_r2(o):
+    """A committed record whose four files are on R2: downloaded (no r) and measured (ar)."""
+    return bool(o) and not o.get('r') and bool(o.get('ar'))
+
+
+def stale(o, c):
+    """Whether a photo's files on R2 lack its crop c (tools/photos.py stale; the sea slugs have no rotation)."""
+    return o.get('cr') != c or bool(o.get('ro'))
+
+
+def taxa(groups, fams):
+    """The tree's taxonomic groups (tools/seaslug_groups.json; Pierre, 2026-11-16: the families in logical taxonomic
+    groups, the true nudibranchs apart from the other sea slugs): {cite, short, groups [{n, title}]} and each family's
+    group number {family name: n}, in the file's order, for the families of the tree fams. A family of the tree in no
+    group, or in two, fails the build, naming it (as the fish's key, rule S3: a published classification, never ours)."""
+    if not groups:
+        return None, {}
+    of, out = {}, []
+    for i, g in enumerate(groups['groups'], 1):
+        out.append({'n': i, 'title': g['title']})
+        for f in g['families']:
+            if f in of:
+                raise SystemExit(f'seaslug_game: family {f} in two groups of tools/seaslug_groups.json')
+            of[f] = i
+    miss = [f for f in fams if f not in of]
+    if miss:
+        raise SystemExit('seaslug_game: no group in tools/seaslug_groups.json for ' + ', '.join(miss))
+    return {'cite': groups['cite'], 'short': groups['short'], 'groups': out}, of
+
+
+def names_of(N):
+    """{(rank, name): {en, ensrc}} from tools/seaslug_names.json N (tools/seaslug_names.py): each taxon's English common
+    names and nicknames, [{n, src, nick, web}] (Pierre, 2026-11-17: information wherever names are shown, never a choice:
+    Q369 (d) stands), and where its sources hold it, ensrc {inat: taxon id, worms: AphiaID, wiki: article title}; none
+    for a taxon no source names."""
+    out = {}
+    for t in (N or {}).get('taxa') or []:
+        if not t.get('names'):
+            continue
+        W = (t.get('raw') or {}).get('wiki') or {}
+        src = {k: v for k, v in (('inat', t.get('inat')), ('worms', t.get('worms')),
+                                 ('wiki', W.get('title') if W.get('kind') in ('own', 'named') else None)) if v}
+        out[(t['rank'], t['name'])] = {'en': t['names'], 'ensrc': src}
+    return out
+
+
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
+    """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
+    seaslug-game.json prev: todo [(record, crop, iv)], the photos in play whose files R2 lacks or holds with another crop,
+    circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
+    tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it. inf: tools/seaslug_informal.json,
+    the species with no name yet. names: tools/seaslug_names.json, the English names each family, genus and species
+    carries (en, ensrc: names_of), none without it (a species with no name yet has none)."""
+    V_ = names_of(names)
+    vn = lambda rank, name: V_.get((rank, name)) or {}
+    T = L.get('photoTarget') or {}
+    start, cap, plus = T['start'], T['gameCap'], T.get('perJuvenileForm', 0)
+    documented = set(T.get('juvenile') or {})
+    sp = sorted((s for s in L['species'] if s.get('circle') in CIRCLES), key=lambda s: (s['circle'], s['rank']))
+    sid = {s['name']: 's%d' % s['inat'] for s in sp}
+    pairs = [p['pair'] for p in L.get('lookalikes') or [] if all(n in sid for n in p['pair'])]
+    fams, gens, species = {}, {}, []
+    for s in sp:
+        fid, gid, i, c = 'f:' + s['family'], 'g:' + s['genus'], sid[s['name']], s['circle']
+        f = fams.setdefault(fid, {'id': fid, 'name': s['family'], 'circle': c, 'species': [], 'genera': [], 'look': [],
+                                  **vn('family', s['family'])})
+        f['species'].append(i)
+        if gid not in f['genera']:
+            f['genera'].append(gid)
+        gens.setdefault(gid, {'id': gid, 'name': s['genus'], 'family': fid, 'circle': c, 'species': [],
+                              **vn('genus', s['genus'])})['species'].append(i)
+        w = s.get('worms') or {}
+        look = [sid[o] for p in pairs if s['name'] in p for o in p if o != s['name']]
+        species.append({
+            'id': i,
+            'name': s['name'],
+            **({'now': w['accepted']} if w.get('accepted') and w['accepted'] != s['name'] else {}),
+            **({'ref': w.get('aphiaAcc') or w['aphia']} if w.get('aphiaAcc') or w.get('aphia') else {}),
+            'inat': s['inat'],
+            'circle': c,
+            'family': fid,
+            'genus': gid,
+            'r': s['rank'],
+            'group': s['group'],
+            **({'star': True} if s.get('star') else {}),
+            'present': {'area': s['observers'], 'near': bool(s.get('near')), 'nearU': s.get('nearObservers', 0),
+                        'nearN': s.get('nearObs', 0)},
+            **({'look': look} if look else {}),
+            **vn('species', s['name']),
+        })
+    # The species with no name yet (tools/seaslug_informal.json; Pierre, 2026-11-17, Q389 (2)): a species of its genus,
+    # present by its label (tools/presence.py label_confirmed), only when its genus is in the tree; while the species are
+    # not units (#975) a sheet, whose photos play for its genus. Its record: id x:<key>, no inat nor WoRMS ref, src (its
+    # source, shown in small type beside its name: never a guide's number), cite and doi (the paper), field (the
+    # iNaturalist observation field that marks it), inf 1; circle its genus's (it never moves a genus), r the rank its
+    # label's observers would give it among the listed species (between two of them), present from the label's counts.
+    extra = []
+    for s in (inf or {}).get('species') or []:
+        P, gid = s.get('presence') or {}, 'g:' + s['genus']
+        if gid not in gens or not label_confirmed(P.get('observers')):
+            continue
+        G, i = gens[gid], 'x:' + s['key']
+        G['species'].append(i)
+        fams[G['family']]['species'].append(i)
+        kin = next(x for x in sp if x['genus'] == s['genus'])
+        species.append({
+            'id': i,
+            'name': s['name'],
+            'inf': 1,
+            'src': s['src'],
+            'cite': s['cite'],
+            **({'doi': s['doi']} if s.get('doi') else {}),
+            'field': s['field']['id'],
+            'circle': G['circle'],
+            'family': G['family'],
+            'genus': gid,
+            'r': sum(1 for x in L['species'] if x.get('observers', 0) > P['observers']) + 0.5,
+            'group': kin['group'],
+            'present': {'area': P['observers'], 'near': bool(P.get('near')), 'nearU': P.get('nearObservers', 0),
+                        'nearN': P.get('nearObs', 0)},
+        })
+        extra.append((s['key'], s['name']))
+    tx, tof = taxa(groups, [f['name'] for f in fams.values()])
+    for f in fams.values():
+        if f['name'] in tof:
+            f['tgroup'] = tof[f['name']]
+    tree = {
+        'v': V,
+        'about': 'the sea-slug subject\'s tree (tools/seaslug_game.py from tools/seaslugs.json; core.js fishGen reads it)',
+        'area': L.get('area'),
+        'centre': L.get('centre'),
+        'start': [],
+        'key': None,
+        **({'taxa': tx} if tx else {}),
+        # the English names' sources and when each was read (tools/seaslug_names.json pulled, guides)
+        **({'ensrc': {**{k: v for k, v in (names.get('pulled') or {}).items() if v},
+                      **({'guide': [{'t': g['t'], 'read': g.get('read')} for g in names.get('guides') or []]}
+                         if names.get('guides') else {})}} if V_ else {}),
+        'teach': [],
+        'families': list(fams.values()),
+        'genera': list(gens.values()),
+        'species': species,
+        'vn': [],
+        'ref': {},
+    }
+    old = {p['f']: p for P in ((prev or {}).get('photos') or {}).values() for p in P if isinstance(p, dict) and p.get('f')}
+    byname = {s['name']: s for s in species}
+    photos, todo = {}, []
+    C = cand.get('cand') or {}
+
+    def judged(key, unit, gl=False):
+        """The sure photos of the candidate list key, as records in play for unit (a species id, or a genus id for its
+        genus-level photos, marked gl)."""
+        out = []
+        for p in C.get(key) or []:
+            j = sug.get(p.get('f'))
+            if sure(j):
+                ph = phase(j['jt'])
+                out.append({'f': p['f'], 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': p['t'],
+                            'sp': unit, **({'gl': 1} if gl else {}), 'loc': p.get('loc'),
+                            **({'own': True} if p.get('own') else {}), 'e': j['e'], 'jt': j['jt'],
+                            **({'ph': ph} if ph else {}), 'auto': 'cand', 'r': 1})
+        return out
+
+    def kept(L1, documented_juvenile):
+        """The photos in play of one list: at most cap adults, the easiest first, then the juveniles (perJuvenileForm
+        for a documented juvenile form, else what the cap leaves)."""
+        order = lambda p: (-p['e'], p['f'])  # noqa: E731
+        adults = sorted((p for p in L1 if not juv(p['jt'])), key=order)[:cap]
+        young = sorted((p for p in L1 if juv(p['jt'])), key=order)
+        return adults + (young[:plus] if documented_juvenile else young[:max(0, cap - len(adults))])
+
+    def place(keep, fid):
+        for r in keep:
+            c, o = crop(sug.get(r['f'])), old.get(r['f'])
+            if on_r2(o) and o.get('src') == r['src']:
+                # on R2: its files as they are (its crop, shape and rewrite count); made again when its crop changed
+                del r['r']
+                r.update({k: o[k] for k in ('ar', 'cr', 'iv') if k in o})
+                if stale(o, c):
+                    todo.append((r, c, o.get('iv', 0) + 1))
+            else:
+                todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0))
+        photos.setdefault(fid, []).extend(keep)
+
+    for key, name in [(str(s['inat']), s['name']) for s in sp] + extra:
+        me = byname[name]
+        keep = kept(judged(key, me['id']), name in documented)
+        if len(keep) >= start:
+            place(keep, me['family'])
+    # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level; Pierre, 2026-11-17, Q389 (1)): the sure
+    # ones of each genus, sp its genus id and gl 1 (core.js fishGenUnits plays them for the genus, never for a species),
+    # at most cap, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
+    for gid, G in gens.items():
+        keep = kept(judged(G['name'], gid, gl=True), False)
+        mine = sum(1 for p in photos.get(G['family']) or [] if p['sp'] in G['species'])
+        if keep and len(keep) + mine >= start:
+            place(keep, G['family'])
+    game = {
+        'v': V,
+        'about': 'the sea-slug photos in play, on R2 once downloaded, else read from iNaturalist (r: 1) '
+                 '(tools/seaslug_game.py; core.js fishPhotos)',
+        'photos': photos,
+    }
+    return tree, game, todo
+
+
+def dump(o):
+    return json.dumps(o, ensure_ascii=False, indent=1) + '\n'
+
+
+def dump_game(g):
+    """seaslug-game.json one photo per line, as fish-game.json (a re-judge shows as the lines it changes)."""
+    j = lambda x: json.dumps(x, ensure_ascii=False, separators=(',', ':'))
+    units = ',\n'.join(j(k) + ':[\n' + ',\n'.join(j(p) for p in L) + ']' for k, L in g['photos'].items())
+    return '{' + ',\n'.join(j(k) + ':' + j(v) for k, v in g.items() if k != 'photos') + ',\n"photos":{\n' + units + '}}\n'
+
+
+def check(tree, game, tree_text, game_text):
+    """(the files out of date, the species waiting) for --check, from the build and the committed texts (None: missing).
+    seaslug.json must be the build; seaslug-game.json too, but for the species with no photo in it yet whose judgements
+    have come since (circle 3's last part, a species judged later): the Candidate photos workflow, which a change of
+    suggest.json starts, builds them in at its run after the merge, so a judging PR needs no rebuild of its own. A species
+    already in play must match the build (a re-judge of it rebuilds the file in its PR)."""
+    bad = [] if tree_text == dump(tree) else ['seaslug.json']
+    try:
+        have = {p.get('sp') for L in json.loads(game_text)['photos'].values() for p in L}
+    except (TypeError, ValueError, KeyError, AttributeError):
+        have = set()
+    wait = sorted({p['sp'] for L in game['photos'].values() for p in L} - have)
+    G = {**game, 'photos': {}}
+    for k, L in game['photos'].items():
+        L = [p for p in L if p['sp'] not in wait]
+        if L:
+            G['photos'][k] = L
+    if dump_game(G) != game_text:
+        bad.append('seaslug-game.json')
+    return bad, wait
+
+
+def download_all(todo, out, get=None, pause=None, workers=6):
+    """Downloads each (record, crop, iv) of todo into out with the fish's pipeline (tools/fish_game.py download: an
+    iNaturalist photo host only, the crop applied, tools/photos.py's four sizes, the shape ar), the record then marked on
+    R2 (no r; cr, iv). A photo that fails keeps its record as it was (remote, or its older files on R2), for the next
+    run. Returns (downloaded, failed)."""
+    import fish_game as FG
+    get = get or FG.opener
+    pause = FG.FB_PAUSE if pause is None else pause
+    os.makedirs(out, exist_ok=True)
+
+    def one(x):
+        r, c, iv = x
+        q = {k: v for k, v in r.items() if k not in ('r', 'ar', 'cr', 'iv')}
+        FG.download(q, c, out, get, pause)
+        q.pop('xc', None)
+        q.pop('xn', None)
+        return q, c, iv
+    done, failed = 0, []
+    with cf.ThreadPoolExecutor(workers) as ex:
+        futs = {ex.submit(one, x): x for x in todo}
+        for fut in cf.as_completed(futs):
+            r = futs[fut][0]
+            try:
+                q, c, iv = fut.result()
+            except Exception as e:
+                failed.append(r['f'])
+                print('failed:', r['f'], e)
+                continue
+            for k in ('r', 'cr', 'iv'):
+                r.pop(k, None)
+            r['ar'] = q['ar']
+            if c:
+                r['cr'] = c
+            if iv:
+                r['iv'] = iv
+            done += 1
+    return done, failed
+
+
+def inputs(root=ROOT):
+    j = lambda n, d=None: load(os.path.join(root, n), d)
+    return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
+            j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_names.json'), {}) or None)
+
+
+def write(root, tree, game):
+    for n, s in (('seaslug.json', dump(tree)), ('seaslug-game.json', dump_game(game))):
+        p = os.path.join(root, n)
+        if not os.path.exists(p) or open(p, encoding='utf-8').read() != s:
+            with open(p, 'w', encoding='utf-8') as fh:
+                fh.write(s)
+
+
+def run(out='r2-upload', root=ROOT, get=None, pause=None, workers=6, limit=None):
+    """The R2 step: builds, downloads what R2 lacks (at most limit, MAX by default; circle 1 first) and writes both files.
+    Returns (downloaded, failed, listed, waiting)."""
+    tree, game, todo = build(*inputs(root))
+    n = MAX if limit is None else limit
+    done, failed = download_all(todo[:n], out, get, pause, workers)
+    write(root, tree, game)
+    return done, failed, sum(len(L) for L in game['photos'].values()), max(0, len(todo) - n)
+
+
+def plan_text(tree, game, todo, n=MAX):
+    """What --r2 would do, by circle (the circle of the species each photo is in play for)."""
+    import fish_game as FG
+    circle = {s['id']: s['circle'] for s in tree['species']}
+    allr = [p for L in game['photos'].values() for p in L]
+    lines = []
+    for c in CIRCLES + (None,):
+        on = [p for p in allr if c is None or circle.get(p['sp']) == c]
+        td = [r for r, _, _ in todo if c is None or circle.get(r['sp']) == c]
+        sp = {p['sp'] for p in on}
+        tot = len([s for s in tree['species'] if c is None or s['circle'] == c])
+        name = f'circle {c}' if c else 'all'
+        lines.append(f'{name}: {len(on)} photos in play over {len(sp)} of {tot} species, {len(on) - len([p for p in on if p.get("r")])} '
+                     f'on R2; to download: {len(td)} ({len(td) * 4} files, about {len(td) * FG.KB_PER_PHOTO / 1024:.0f} MB)')
+    lines.append(f'R2 after the run: about {len(allr) * FG.KB_PER_PHOTO / 1024:.0f} MB for the sea slugs '
+                 f'({FG.KB_PER_PHOTO} KB a photo, the fish\'s mean over four sizes); at most {n} a run: '
+                 f'{-(-len(todo) // n) if todo else 0} run(s), circle 1 first')
+    return '\n'.join(lines)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    ap.add_argument('--check', action='store_true', help='exit 1 when a committed file differs from a fresh build')
+    ap.add_argument('--plan', action='store_true', help='print what --r2 would download; writes nothing')
+    ap.add_argument('--r2', action='store_true', help='download the photos in play R2 lacks into --out')
+    ap.add_argument('--out', default='r2-upload')
+    ap.add_argument('--max', type=int, default=MAX, help='at most this many downloads in this run (SEASLUG_MAX)')
+    a = ap.parse_args()
+    tree, game, todo = build(*inputs())
+    if a.check:
+        text = lambda p: open(p, encoding='utf-8').read() if os.path.exists(p) else None
+        bad, wait = check(tree, game, text(TREE_OUT), text(GAME_OUT))
+        if bad:
+            print('seaslug_game: out of date, run python3 tools/seaslug_game.py: ' + ', '.join(bad), file=sys.stderr)
+            sys.exit(1)
+        if wait:
+            print(f'seaslug_game: {len(wait)} species judged since, not in seaslug-game.json yet (the Candidate photos '
+                  'workflow builds them in after the merge): ' + ', '.join(wait))
+        return
+    if a.plan:
+        print(plan_text(tree, game, todo, a.max))
+        return
+    if a.r2:
+        import slot
+        slot.guard('tools/seaslug_game.py')  # one heavy run at a time on the machine (rule W24)
+        done, failed, n, wait = run(a.out, limit=a.max)
+        print(f'sea slugs: downloaded {done} into {a.out}/ (upload: tools/r2_sync.sh {a.out}), {len(failed)} failed; '
+              f'{n} photos in seaslug-game.json' + (f'; {wait} more wait for the next run' if wait else ''))
+        return
+    write(ROOT, tree, game)
+    n = sum(len(x) for x in game['photos'].values())
+    sp = len({p['sp'] for x in game['photos'].values() for p in x})
+    print(f'seaslug.json: {len(tree["families"])} families, {len(tree["genera"])} genera, {len(tree["species"])} species; '
+          f'seaslug-game.json: {n} photos in play, {sp} species playable, {len(todo)} not on R2 yet')
+
+
+if __name__ == '__main__':
+    main()

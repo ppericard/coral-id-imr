@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // analysis.js tdFeat keeps each player's log seconds in order as they come (a sorted insert) instead of sorting the whole
 // history at every answer (performance pass, 2026-11-09): each answer's z, log seconds minus the player's median over
 // their earlier timed answers, is the same as from a sort, here on a made-up log with ties, typed and untimed answers,

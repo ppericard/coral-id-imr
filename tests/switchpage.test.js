@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The admin's subject switch stays on the page on screen (Pierre, 2026-11-09): the same view on the other side, or the
 // view that side opens for the same tab or group; never the side's page used last.
 const test = require('node:test');

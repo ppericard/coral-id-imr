@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The leaderboard recalculated with today's rules (sheet v118; Pierre, 2026-11-09, rule D8: "whenever progress is
 // recalculated, the leaderboard must be recalculated automatically, even if people do not reconnect"): a player whose
 // saved copy applied an older rules version of a subject is ranked on that subject's board by the progress their app
@@ -15,6 +16,7 @@ const ROOT = path.join(__dirname, '..'),
   CODE = fs.readFileSync(path.join(ROOT, 'tools', 'sync', 'Code.gs'), 'utf8'),
   DJSON = fs.readFileSync(path.join(ROOT, 'data.json'), 'utf8'),
   FJSON = fs.readFileSync(path.join(ROOT, 'fish.json'), 'utf8'),
+  CJSON = fs.readFileSync(path.join(ROOT, 'curation.json'), 'utf8'),
   TOK = 'ghp_write000000000000000000';
 const resp = (code, body) => ({
   getResponseCode: () => code,
@@ -30,11 +32,13 @@ const withAll = (n = {data: 0, fish: 0}, hook = {}) => ({
       ? (n.data++ || !hook.data || hook.data(), resp(200, DJSON))
       : /\/main\/fish\.json$/.test(url)
         ? (n.fish++, resp(200, FJSON))
-        : /\/main\/tools\/sync\/Code\.gs/.test(url)
-          ? resp(200, CODE)
-          : /\/main\/tools\/sync\/appsscript\.json/.test(url)
-            ? resp(200, '{}')
-            : null
+        : /\/main\/curation\.json$/.test(url) // the content editor's structure the fish replay applies (Code.gs subjCur_)
+          ? resp(200, CJSON)
+          : /\/main\/tools\/sync\/Code\.gs/.test(url)
+            ? resp(200, CODE)
+            : /\/main\/tools\/sync\/appsscript\.json/.test(url)
+              ? resp(200, '{}')
+              : null
 });
 const ans = (id, x) => ({id, t: '2026-11-01T00:00:00Z', g: 'Acropora', a: 'Acropora', ok: 1, m: 'quiz', ph: 'acropora-1', ...x});
 // Coral answers, 1 in 4 a mix-up with Montipora.

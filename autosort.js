@@ -21,6 +21,8 @@
 // polyps out, cropped; "r" rejected; "?aw3T" a Check of a sure add; "-r" a rejection Pierre undid; "?aw3T@t5a1kq" a
 // Check he answered at that time.
 (function (root) {
+  // core.js (a global in admin.html, loaded before this file): the look-alike pair key (contentPairKey).
+  const C = typeof module !== 'undefined' && module.exports ? require('./core.js') : root;
   const AUTO = {
     // One sure candidate in `every` is a Check (deterministic per photo, autoCheck): about 1 in 20 (Pierre).
     every: 20,
@@ -91,7 +93,10 @@
   // tools/fetch_fish.py sure_out mirrors the rejects (they free room for the next fetch).
   // The flags after the seven tags: j c a w typed by the judge (w: a visible watermark or text, which only Home skips;
   // Pierre, 2026-11-15, Q373), p (phase) and r (a reference photo, its `rep`) added by the tool.
-  const FISH_TAGS = /^[pohtd][01][gdn][0-3][smb][lms][1smxok][jcawpr]*$/;
+  // The sea slugs' rubric (judging/SEASLUG.md, the fish's code shape; tools/fish_judge.py RUBRICS) adds the view v
+  // (ventral) and the flag f (rhinophores or gills hidden): accepted too, so a sure sea-slug judgement is never set aside
+  // for its code (#987). The fish's rubric never writes either, so the fish are read as before (tests/autosort.test.js).
+  const FISH_TAGS = /^[pohtdv][01][gdn][0-3][smb][lms][1smxok][jcawprf]*$/;
   // The doubts that weigh on the photo itself: every unsure field but the fish's box (bb), whose doubt only withholds the
   // photo's tile (tools/fish_game.py unsure, box_of; Codex review #826).
   const fishUnsure = j => ((j && j.u) || []).filter(x => x !== 'bb');
@@ -652,10 +657,12 @@
   // finds his picks (app.js fishCurate); null when it is not there.
   const fishAt = (L, f) => (f && ((L || []).find(p => p.f === f) || (L || []).find(p => fishPid(p.f) === fishPid(f)))) || null;
   // The family's cover: this photo, or none again (his pick taken off, under either of its names). Either way a
-  // confirmation of a juvenile cover (coverJ, below) goes with the old pick: a new pick on a juvenile asks again.
+  // confirmation of a juvenile cover (coverJ, below) or of a watermarked one (coverW) goes with the old pick: a new pick on
+  // a juvenile asks again.
   const fishCover = (F, tid, f) =>
     fishPick(F, tid, k => {
       delete k.coverJ;
+      delete k.coverW;
       if (k.cover && fishPid(k.cover) === fishPid(f)) delete k.cover;
       else k.cover = f;
     });
@@ -681,6 +688,23 @@
     fishPick(F, tid, k => {
       if (k.cover) k.coverJ = k.cover;
     });
+  // A watermarked photo (fishWm) is never a default cover (Pierre, 2026-11-15, Q379: "Perhaps we should also avoid them
+  // for covers"), but his ★ cover on one stays his choice (rule A1): in force as he picked it, while the Tree page asks
+  // "Watermark: keep as cover?" (admin-covers.js WM_ASK) and Cover proposals propose a photo without one. His Keep records
+  // the answer as coverJ does, next to the cover: curation.json fish genera {node id: {cover: f, coverW: f}}, through the
+  // draft and Publish (rule A1); it holds while it names the cover's photo (fishPid: either of its names), and a new pick
+  // drops it (fishCover). It changes no photo: Home still skips the photo (home.js homeOk), and a node's default never
+  // takes his kept ★ cover of a leaf under it. fishCoverW: node tid's ★ cover is this photo and he kept it; fishCoverWOk:
+  // the Keep, on the cover already there (the Tree page's one click).
+  const fishCoverW = (F, tid, p) => {
+    const k = ((F || {}).genera || {})[tid] || {},
+      f = p && (p.f || p);
+    return !!(f && k.cover && k.coverW && fishPid(k.coverW) === fishPid(k.cover) && fishPid(f) === fishPid(k.cover));
+  };
+  const fishCoverWOk = (F, tid) =>
+    fishPick(F, tid, k => {
+      if (k.cover) k.coverW = k.cover;
+    });
   // Validated, or not.
   const fishOk = (F, tid) =>
     fishPick(F, tid, k => {
@@ -694,6 +718,7 @@
     const out = k => {
       if (k.cover === f) delete k.cover;
       if (k.coverJ === f) delete k.coverJ;
+      if (k.coverW === f) delete k.coverW;
       Object.keys(k.feat || {}).forEach(s => (k.feat[s] = k.feat[s].filter(x => x !== f)));
     };
     let N = fishPick(F, tid, out);
@@ -748,6 +773,16 @@
     const mine = p.f in ((F || {}).phase || {}) || p.f in ((F || {}).tags || {});
     return fishPhase(p, j, F) === FJUV || (!mine && p.ph === FJUV);
   }
+  // A photo with a visible watermark or text (its flag w; Pierre, 2026-11-15, Q373), its tags as the game reads them: his,
+  // with the pass's w where they are the auto-sort's copy (fishTagsMine), else the pass's (j: its judgment). The app's
+  // copy: app.js wmP on the game record's jt.
+  function fishWm(p, j, F) {
+    if (!p) return false;
+    const pass = (j || {}).jt || '';
+    return String(fishTagsMine(F, p.f, pass) || pass)
+      .slice(7)
+      .includes('w');
+  }
   // Without his pick, the default cover of a node with leaves (Pierre, 2026-11-13, Q339 (b); 2026-11-14 on #864): among its
   // leaves (species) with a reference-level photo that is not a juvenile (core.js refLevel), the one most seen around the
   // instance's centre by distinct observers (ties: observations, then the game's order), then his ★ cover of that leaf
@@ -768,21 +803,33 @@
   // A leaf's (a species') cover, as the app's sheets show it (learn.js fishSpPhotos, spPhoto): his ★ pick while in play
   // and not a juvenile, else its first photo that is not a juvenile in the page's order (L: featured first, then the game's
   // order: fishOrder), else its first; null for no photo. A leaf has no default rule of its own (Q339 (b) picks among a
-  // node's leaves). His pick on a juvenile holds once he confirmed it (fishCoverJ).
+  // node's leaves). His pick on a juvenile holds once he confirmed it (fishCoverJ). The default takes a watermarked photo
+  // only when the leaf has no adult photo without one (fishWm, Q379: app.js coverFirst); his pick on one holds.
   function fishLeafCover(L, F, tid, j = () => null) {
     const k = (((F || {}).genera || {})[tid] || {}).cover,
       adult = p => !fishJuv(p, j(p.f), F),
       c = fishAt(L, k);
     L = L || [];
-    return (c && (adult(c) || fishCoverJ(F, tid, c)) ? c : null) || L.find(adult) || L[0] || null;
+    return (
+      (c && (adult(c) || fishCoverJ(F, tid, c)) ? c : null) ||
+      L.find(p => adult(p) && !fishWm(p, j(p.f), F)) ||
+      L.find(adult) ||
+      L[0] ||
+      null
+    );
   }
   // The default alone, whatever his pick on the node (fishCoverOf without it; the admin's Cover proposals, admin-covers.js,
   // set it beside his): {p: the photo, leaf: the leaf it was chosen for, seen: that leaf's [observers, observations], ref:
   // whether the leaves competed on a reference photo, mine: p is his ★ cover of that leaf}; null for no photo.
+  // Never a watermarked photo while the node has an adult photo without one (fishWm; Pierre, 2026-11-15, Q379): the leaves
+  // then compete on those, and his ★ cover of the leaf chosen is taken only without one (kept with coverW or not).
   function fishCoverRule(L, F, tid, j = () => null, seen = sid => fishNear(fishSeenOf(sid))) {
     const juv = p => fishJuv(p, j(p.f), F),
+      wm = p => fishWm(p, j(p.f), F),
       R = fishOrder(L, F, tid, '', j).rest,
-      A = R.filter(p => !juv(p)),
+      A0 = R.filter(p => !juv(p)),
+      A1 = A0.filter(p => !wm(p)),
+      A = A1.length ? A1 : A0,
       Ref = A.filter(p => refLevel(fishRec(p, F, j))),
       leaf = p => ((F || {}).add || {})[p.f] || p.sp || p.sid;
     let best = null;
@@ -790,11 +837,16 @@
       const s = seen(leaf(p)) || [0, 0];
       if (!best || s[0] > best.s[0] || (s[0] === best.s[0] && s[1] > best.s[1])) best = {p, s};
     });
-    if (!best) return R[0] ? {p: R[0], leaf: leaf(R[0]), seen: [0, 0], ref: false, mine: false} : null;
-    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (fishCoverJ); the leaves still compete on adults
+    if (!best) {
+      const q = R.find(p => !wm(p)) || R[0];
+      return q ? {p: q, leaf: leaf(q), seen: [0, 0], ref: false, mine: false} : null;
+    }
+    // his ★ cover of that leaf: an adult one, or a juvenile he confirmed (fishCoverJ); the leaves still compete on adults;
+    // without a watermark while the node has an adult photo without one (A)
     const lf = leaf(best.p),
       sk = (((F || {}).genera || {})[lf] || {}).cover,
-      m = fishAt(A, sk) || (fishCoverJ(F, lf, fishAt(R, sk)) ? fishAt(R, sk) : null);
+      sj = fishAt(R, sk),
+      m = fishAt(A, sk) || (fishCoverJ(F, lf, sj) && !(A1.length && wm(sj)) ? sj : null);
     return {p: m || best.p, leaf: lf, seen: best.s, ref: Ref.length > 0, mine: !!m};
   }
   // A leaf's presence around the instance's centre (Q339: "Il faudra rendre générique la localisation centrale de
@@ -919,20 +971,29 @@
   // words), imr}.
   // The candidates waiting (cand: fish-cand.json's, by their first species), by the species they wait in now: one Pierre
   // sent elsewhere with Not this waits there (fishState; Codex review #659); one in play, rejected or gone does not wait.
-  // {species id: [photo]}. Read by Coverage and the Tree's node pages.
-  function fishWaiting(cand, F) {
-    const waiting = {};
+  // play: the photos in play ({species id: [photo]}, admin.js fuData: his adds and the photos the game plays by
+  // themselves, the sure candidates and the reference photos, fishGameIn): a candidate among them, by its photo id (core.js
+  // fishPid, in any species), is in play, not waiting, whether or not he added it (a blind Check of the auto-sort on it
+  // included: the Candidates swiper shows it, fishQueue). {species id: [photo]}. Read by Coverage and the Tree's node
+  // pages.
+  function fishWaiting(cand, F, play) {
+    const waiting = {},
+      inPlay = new Set(
+        Object.values(play || {})
+          .flat()
+          .map(p => p && p.f && fishPid(p.f))
+      );
     Object.entries(cand || {}).forEach(([orig, L]) =>
       (L || []).forEach(p => {
         const x = fishState(F || {}, p.f, orig);
-        if (x.st === null) (waiting[x.sid] = waiting[x.sid] || []).push(p);
+        if (x.st === null && !inPlay.has(fishPid(p.f))) (waiting[x.sid] = waiting[x.sid] || []).push(p);
       })
     );
     return waiting;
   }
   function fishCov(U, play, species, cand, F, j = () => null) {
     F = F || {};
-    const waiting = fishWaiting(cand, F);
+    const waiting = fishWaiting(cand, F, play);
     const ease = p => (F.ease || {})[p.f] || (j(p.f) || {}).e || 0,
       isRef = p => !!(p.rep || ((F.tags || {})[p.f] || (j(p.f) || {}).jt || '').slice(7).includes('r')),
       spRow = (sid, fam) => {
@@ -1056,15 +1117,17 @@
   // ---- Fish Look-alikes (admin plan PR 10; docs/ROADMAP.md "Admin for every subject" row 10) ----
   // The pairs: two families the IMR course compares (fish.json families look: [other family id, IMR's words]), once each,
   // in the book's order, with every IMR line about them, each with its own source (fish.json families lsrc: the slide,
-  // and Pierre's additions; "IMR course" when none is recorded; rule C2, Codex review #667). [{k: 'f:A|f:B' (sorted), A,
-  // B (ids, in the book's order), cues: [[family id the line is on, words, source]]}].
+  // and Pierre's additions; "IMR course" when none is recorded; rule C2, Codex review #667). [{k: 'f:A|f:B' (core.js
+  // contentPairKey: the content editor's pair key too, so fish mont holds a pair he added as any), A, B (ids, in the
+  // book's order), cues: [[family id the line is on, words, source]]}]. The pairs in force (his withdrawn and added ones):
+  // admin-content.js montPairs, over the units of fish.json with them laid over it.
   function fishPairs(U) {
     const at = Object.fromEntries((U || []).map((u, i) => [u.id, i])),
       P = {};
     (U || []).forEach(u =>
       (u.look || []).forEach(([b, w]) => {
         if (!(b in at) || b === u.id) return;
-        const k = [u.id, b].sort().join('|');
+        const k = C.contentPairKey(u.id, b);
         P[k] = P[k] || {k, A: at[u.id] <= at[b] ? u.id : b, B: at[u.id] <= at[b] ? b : u.id, cues: []};
         if (w && !P[k].cues.some(c => c[1] === w)) P[k].cues.push([u.id, w, (u.lsrc || {})[b] || 'IMR course']);
       })
@@ -1384,6 +1447,8 @@
     fishCoverJ,
     fishCoverYes,
     fishCoverJOk,
+    fishCoverW,
+    fishCoverWOk,
     fishOk,
     fishDrop,
     fishOrder,
@@ -1394,6 +1459,7 @@
     fishRec,
     fishSeenFrom,
     fishJuv,
+    fishWm,
     fishUnitPhases,
     FISHEASY,
     fishNeeds,
