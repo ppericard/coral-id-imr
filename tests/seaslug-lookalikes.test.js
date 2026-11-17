@@ -137,6 +137,17 @@ test('build: partners kept in the subject or confirmed (rules C6, C8), the other
   assert.deepStrictEqual(o.order.slice(0, 3), ['Aa one|Aa two', 'Aa|Ee', 'Aa one|Cc four'], 'the strongest first');
 });
 
+// A species of the tree with no name yet (seaslug.json inf, x: ids; Pierre, 2026-11-17, Q389 (2)) has no iNaturalist
+// taxon: the build leaves it out of the iNaturalist parts and gives the same candidates.
+test('build: a tree species with no iNaturalist taxon (a species with no name yet) changes nothing', () => {
+  const o = py(
+    WORLD +
+      `tree2 = {**tree, 'species': tree['species'] + [{'id': 'x:aa-sp1', 'name': 'Aa sp. 1', 'inf': 1}]}
+print(json.dumps(m.build(L, tree2, source, P) == C))`
+  );
+  assert.strictEqual(o, true);
+});
+
 test('build: genus pairs, asked directly and summed from their species pairs', () => {
   const o = py(WORLD + 'print(json.dumps(pairs))');
   const g = o['genus:Aa|Bb'];
@@ -194,5 +205,6 @@ test('candidates only: neither the app nor the game tools read them; the decided
   for (const f of ['app.js', 'core.js', 'learn.js', 'quiz.js', 'admin.js', 'tools/seaslug_game.py', 'tools/build_seaslugs.py'])
     assert.ok(!read(f).includes('seaslug_lookalikes'), f);
   const C = JSON.parse(read('tools/seaslug_lookalikes_cand.json'));
-  assert.ok(C.pairs.length > 0 && C.counts.asked.species === JSON.parse(read('seaslug.json')).species.length);
+  // every species of the tree with an iNaturalist taxon (a species with no name yet has none: Q389 (2))
+  assert.ok(C.pairs.length > 0 && C.counts.asked.species === JSON.parse(read('seaslug.json')).species.filter(s => s.inat).length);
 });

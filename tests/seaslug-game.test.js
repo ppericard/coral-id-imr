@@ -154,6 +154,122 @@ test('the tree: circles 1 to 3, fish.json shape, scientific names, the area comm
   );
 });
 
+// The sea slugs without a species name (Pierre, 2026-11-17, Q389): (2) a species defined by a paper, present by its
+// label's observers (tools/presence.py label_confirmed: 3), a sheet of its genus whose photos play for the genus; (1) the
+// genus-level photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
+test('Q389: a species with no name yet in the tree by its label rule; genus-level photos in play for their genus only', () => {
+  const INF = {
+    species: [
+      {
+        key: 'aa-sp1',
+        name: 'Aa sp. 1',
+        genus: 'Aa',
+        src: 'Someone 2020',
+        cite: 'Someone (2020). A paper.',
+        doi: '10/x',
+        field: {id: 7, name: 'Aa sp. 1?', value: 'Yes'},
+        presence: {observers: 3, near: true, nearObservers: 2, nearObs: 4}
+      },
+      {
+        key: 'aa-sp2',
+        name: 'Aa sp. 2',
+        genus: 'Aa',
+        src: 'S',
+        cite: 'S',
+        field: {id: 8, name: 'x', value: 'Yes'},
+        presence: {observers: 2}
+      },
+      {
+        key: 'zz-sp1',
+        name: 'Zz sp. 1',
+        genus: 'Zz',
+        src: 'S',
+        cite: 'S',
+        field: {id: 9, name: 'y', value: 'Yes'},
+        presence: {observers: 50}
+      }
+    ]
+  };
+  const C2 = {
+      cand: {
+        ...CAND.cand,
+        'aa-sp1': [30, 31].map(n => cand('aa-sp1', n)),
+        Aa: [40, 41, 42].map(n => ({...cand('Aa', n), gl: 1})),
+        Bb: [50, 51, 52, 53, 54].map(n => ({...cand('Bb', n), gl: 1}))
+      }
+    },
+    S2 = {
+      ...SUG,
+      'seaslug-aa-sp1-cand-30': {jt: 'd1g0sl1', e: 5, k: 'best'},
+      'seaslug-aa-sp1-cand-31': {jt: 'd1g0sm1', e: 3},
+      'seaslug-Aa-cand-40': {jt: 'd1g0sl1', e: 5},
+      'seaslug-Aa-cand-41': {jt: 'p1g0sl1', e: 4},
+      'seaslug-Aa-cand-42': {jt: 'p1g0sl1', e: 2, u: ['code'], n: 'unsure'},
+      ...Object.fromEntries([50, 51, 52, 53, 54].map(n => [`seaslug-Bb-cand-${n}`, {jt: 'd1g0sl1', e: 55 - n}]))
+    };
+  const [T, G] = py(`print(json.dumps(g.build(${arg(LIST)}, ${arg(C2)}, ${arg(S2)}, None, None, ${arg(INF)})))`);
+  const x = T.species.find(s => s.id === 'x:aa-sp1');
+  assert.deepStrictEqual(
+    [x.name, x.inf, x.src, x.doi, x.field, x.circle, x.family, x.genus, x.group, x.present, 'inat' in x, 'ref' in x],
+    ['Aa sp. 1', 1, 'Someone 2020', '10/x', 7, 1, 'f:Afam', 'g:Aa', 'Nudibranchia', {area: 3, near: true, nearU: 2, nearN: 4}, false, false]
+  );
+  assert.strictEqual(x.r, 5.5, 'the rank its 3 label observers give it: after the 5 listed species with more');
+  assert.ok(!T.species.some(s => s.id === 'x:aa-sp2'), '2 observers with the label: under the rule, out');
+  assert.ok(!T.species.some(s => s.id === 'x:zz-sp1'), 'its genus is not in the tree: out');
+  assert.ok(T.genera.find(g => g.id === 'g:Aa').species.includes('x:aa-sp1'));
+  assert.ok(T.families.find(f => f.id === 'f:Afam').species.includes('x:aa-sp1'));
+  const A = G.photos['f:Afam'];
+  assert.deepStrictEqual(
+    A.filter(p => p.sp === 'x:aa-sp1').map(p => p.f.split('-').pop()),
+    ['30', '31'],
+    'its photos, by the species rule (start 2)'
+  );
+  assert.deepStrictEqual(
+    A.filter(p => p.gl).map(p => [p.f.split('-').pop(), p.sp, p.gl]),
+    [
+      ['40', 'g:Aa', 1],
+      ['41', 'g:Aa', 1]
+    ],
+    'the sure genus-level photos of Aa, for the genus (never an unsure one)'
+  );
+  assert.deepStrictEqual(
+    (G.photos['f:Bfam'] || []).map(p => [p.f.split('-').pop(), p.sp]),
+    [
+      ['50', 'g:Bb'],
+      ['51', 'g:Bb']
+    ],
+    'Bb: its species under the start, its genus-level photos reach it (cap 2, the easiest first)'
+  );
+  // core.js: a gl photo goes to its genus unit, never to a species' photos, never to another genus of the family
+  const X = C.fishGen(T, G.photos, undefined, 'genus');
+  assert.deepStrictEqual(
+    X.gen['g:Aa'].views.wide
+      .filter(p => p.gl)
+      .map(p => p.f.split('-').pop())
+      .sort(),
+    ['40', '41']
+  );
+  assert.ok(!X.gen['g:Ab'].views.wide.some(p => p.gl), 'not for the sibling genus');
+  assert.deepStrictEqual(
+    X.gen['g:Bb'].views.wide.map(p => p.sp),
+    ['g:Bb', 'g:Bb']
+  );
+  assert.strictEqual(C.fishGlOf(A.find(p => p.gl)), 'g:Aa');
+  assert.strictEqual(C.fishGlOf(A.find(p => !p.gl)), '');
+  // the label rule (tools/presence.py): 3 observers with the label in the Philippines
+  const pr = spawnSync(
+    'python3',
+    [
+      '-c',
+      `import sys; sys.path.insert(0, ${JSON.stringify(TOOLS)})\nimport presence as P\nprint([P.label_confirmed(n) for n in (None, 2, 3, 180)])`
+    ],
+    {
+      encoding: 'utf8'
+    }
+  );
+  assert.strictEqual(pr.stdout.trim(), '[False, False, True, True]', pr.stderr);
+});
+
 // Circle 3's last part (#1002) enters by itself: its judgements in suggest.json "seaslug" are all the build needs.
 test('a species judged later enters at the next build, by the same rule as circle 1', () => {
   const C3 = {...CAND, cand: {...CAND.cand, 5: [20, 21, 22].map(n => cand(5, n))}},
@@ -290,7 +406,8 @@ test('the R2 step takes at most --max a run, the rest remote until the next', {s
 test('--plan prints what the R2 step would download, by circle, and writes nothing', () => {
   const r = spawnSync('python3', [path.join(TOOLS, 'seaslug_game.py'), '--plan'], {encoding: 'utf8'});
   assert.strictEqual(r.status, 0, r.stderr);
-  assert.match(r.stdout, /^circle 1: \d+ photos in play over 45 of 45 species/m);
+  // circle 1: its 45 species, and Goniobranchus sp. 5 (tools/seaslug_informal.json, Q389 (2)) until its photos are judged
+  assert.match(r.stdout, /^circle 1: \d+ photos in play over (45|46) of 46 species/m);
   assert.match(r.stdout, /^circle 2: /m);
   assert.match(r.stdout, /^circle 3: /m);
   assert.match(r.stdout, /^all: \d+ photos in play .* to download: \d+ \(\d+ files, about \d+ MB\)/m);
@@ -306,9 +423,14 @@ test('the committed files read through the fish engine: three circles, scientifi
   // The circles of tools/seaslugs.json 1 to 3 (Q377: 45, then 60 and 100 by commonness), circle 4 left out.
   const L = json('tools/seaslugs.json').species,
     n = c => L.filter(s => s.circle === c).length;
+  // (the species with no name yet, tools/seaslug_informal.json, Q389 (2), apart: Goniobranchus sp. 5 in its genus's circle 1)
   assert.deepStrictEqual(
-    [1, 2, 3, 4].map(c => F.species.filter(s => s.circle === c).length),
+    [1, 2, 3, 4].map(c => F.species.filter(s => s.circle === c && !s.inf).length),
     [n(1), n(2), n(3), 0]
+  );
+  assert.deepStrictEqual(
+    F.species.filter(s => s.inf).map(s => [s.id, s.name, s.circle, s.genus]),
+    [['x:goniobranchus-sp5', 'Goniobranchus sp. 5', 1, 'g:Goniobranchus']]
   );
   assert.deepStrictEqual([n(1), n(2), n(3)], [45, 60, 100]);
   assert.strictEqual(X.c1.length + X.c2.length + X.c3.length, F.genera.length);

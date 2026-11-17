@@ -12,6 +12,23 @@ iNaturalist taxon id); `python3 tools/judging_fish.py --subject seaslug` draws t
 them into `suggest.json` `"seaslug"`; the code and its caps are `tools/fish_judge.py` `RUBRICS` `"seaslug"` (one tool for
 both subjects, `--subject` choosing). Tests: `tests/seaslugjudge.test.js`.
 
+## Genus-level candidates and the species with no name yet
+
+Two more kinds of list in `seaslug-cand.json` (Pierre, 2026-11-17, Q389; `tools/fetch_seaslugs.py` `--genus-level`,
+`--informal`), judged **on this same rubric, the same way**, each list its own judging file:
+
+- **Genus-level candidates** (Q389 (1)): observations identified at the genus only, agreed there by 2 current
+  identifications (or Research Grade at the genus). Keyed by the **genus's name** (`judging/seaslug/Goniobranchus.json`;
+  `... sheets Goniobranchus`), each record `gl: 1`. Once judged sure they play for the genus unit, never for a species.
+  Many show a species with no name yet (the *Goniobranchus* ones mostly the red-reticulate *Goniobranchus* sp. 5): as for
+  any candidate, judge how the animal is shown, never which species it is.
+- **A species with no name yet** (Q389 (2), `tools/seaslug_informal.json`: *Goniobranchus* sp. 5 of Soong et al. 2020):
+  observations carrying its label (the iNaturalist observation field its identifiers keep), at its genus and agreed
+  there. Keyed by its **key** (`judging/seaslug/goniobranchus-sp5.json`; `... sheets "Goniobranchus sp. 5"`). The label
+  is taken as given, as a Research Grade identification is (rule C5: a doubt goes to `points.json`).
+
+`todo` lists them with the species (a genus-level list as "<genus> (genus level)").
+
 ## How to look
 
 1. `python3 tools/judging_fish.py --subject seaslug sheets <id or name> ...` downloads the candidates still waiting at

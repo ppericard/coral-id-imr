@@ -138,7 +138,8 @@
     "s1115871",
     "s505174",
     "s878721",
-    "s781482"
+    "s781482",
+    "x:goniobranchus-sp5"
    ],
    "genera": [
     "g:Chromodoris",
@@ -935,7 +936,8 @@
     "s469420",
     "s349044",
     "s1354147",
-    "s505174"
+    "s505174",
+    "x:goniobranchus-sp5"
    ]
   },
   {
@@ -9611,6 +9613,26 @@
     "inat": 891014,
     "worms": 568191,
     "wiki": "Aplysia reticulata"
+   }
+  },
+  {
+   "id": "x:goniobranchus-sp5",
+   "name": "Goniobranchus sp. 5",
+   "inf": 1,
+   "src": "Soong et al. 2020",
+   "cite": "Soong, G.Y., Wilson, N.G. & Reimer, J.D. (2020). A species complex within the red-reticulate Goniobranchus Pease, 1866 (Nudibranchia: Doridina: Chromodorididae). Marine Biodiversity 50: 25.",
+   "doi": "10.1007/s12526-020-01048-w",
+   "field": 18499,
+   "circle": 1,
+   "family": "f:Chromodorididae",
+   "genus": "g:Goniobranchus",
+   "r": 3.5,
+   "group": "Nudibranchia",
+   "present": {
+    "area": 183,
+    "near": true,
+    "nearU": 23,
+    "nearN": 40
    }
   }
  ],

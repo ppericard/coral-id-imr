@@ -83,6 +83,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
+from presence import label_confirmed  # noqa: E402  the label rule beside C8 (Q389 (2))
 LIST = os.path.join(ROOT, 'tools', 'seaslugs.json')
 GROUPS = os.path.join(ROOT, 'tools', 'seaslug_groups.json')
 CAND = os.path.join(ROOT, 'seaslug-cand.json')
@@ -181,12 +182,13 @@ def names_of(N):
     return out
 
 
-def build(L, cand, sug, prev=None, groups=None, names=None):
+def build(L, cand, sug, prev=None, groups=None, inf=None, names=None):
     """(seaslug.json, seaslug-game.json, todo) from the list L, the candidates, the judgements and the committed
     seaslug-game.json prev: todo [(record, crop, iv)], the photos in play whose files R2 lacks or holds with another crop,
     circle 1 first (the records are in the game file: a run with --r2 completes them as it downloads). groups:
-    tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it. names: tools/seaslug_names.json,
-    the English names each family, genus and species carries (en, ensrc: names_of), none without it."""
+    tools/seaslug_groups.json, each family's taxonomic group (taxa), none without it. inf: tools/seaslug_informal.json,
+    the species with no name yet. names: tools/seaslug_names.json, the English names each family, genus and species
+    carries (en, ensrc: names_of), none without it (a species with no name yet has none)."""
     V_ = names_of(names)
     vn = lambda rank, name: V_.get((rank, name)) or {}
     T = L.get('photoTarget') or {}
@@ -224,6 +226,38 @@ def build(L, cand, sug, prev=None, groups=None, names=None):
             **({'look': look} if look else {}),
             **vn('species', s['name']),
         })
+    # The species with no name yet (tools/seaslug_informal.json; Pierre, 2026-11-17, Q389 (2)): a species of its genus,
+    # present by its label (tools/presence.py label_confirmed), only when its genus is in the tree; while the species are
+    # not units (#975) a sheet, whose photos play for its genus. Its record: id x:<key>, no inat nor WoRMS ref, src (its
+    # source, shown in small type beside its name: never a guide's number), cite and doi (the paper), field (the
+    # iNaturalist observation field that marks it), inf 1; circle its genus's (it never moves a genus), r the rank its
+    # label's observers would give it among the listed species (between two of them), present from the label's counts.
+    extra = []
+    for s in (inf or {}).get('species') or []:
+        P, gid = s.get('presence') or {}, 'g:' + s['genus']
+        if gid not in gens or not label_confirmed(P.get('observers')):
+            continue
+        G, i = gens[gid], 'x:' + s['key']
+        G['species'].append(i)
+        fams[G['family']]['species'].append(i)
+        kin = next(x for x in sp if x['genus'] == s['genus'])
+        species.append({
+            'id': i,
+            'name': s['name'],
+            'inf': 1,
+            'src': s['src'],
+            'cite': s['cite'],
+            **({'doi': s['doi']} if s.get('doi') else {}),
+            'field': s['field']['id'],
+            'circle': G['circle'],
+            'family': G['family'],
+            'genus': gid,
+            'r': sum(1 for x in L['species'] if x.get('observers', 0) > P['observers']) + 0.5,
+            'group': kin['group'],
+            'present': {'area': P['observers'], 'near': bool(P.get('near')), 'nearU': P.get('nearObservers', 0),
+                        'nearN': P.get('nearObs', 0)},
+        })
+        extra.append((s['key'], s['name']))
     tx, tof = taxa(groups, [f['name'] for f in fams.values()])
     for f in fams.values():
         if f['name'] in tof:
@@ -250,23 +284,31 @@ def build(L, cand, sug, prev=None, groups=None, names=None):
     old = {p['f']: p for P in ((prev or {}).get('photos') or {}).values() for p in P if isinstance(p, dict) and p.get('f')}
     byname = {s['name']: s for s in species}
     photos, todo = {}, []
-    for s in sp:
-        me = byname[s['name']]
-        L1 = []
-        for p in (cand.get('cand') or {}).get(str(s['inat'])) or []:
+    C = cand.get('cand') or {}
+
+    def judged(key, unit, gl=False):
+        """The sure photos of the candidate list key, as records in play for unit (a species id, or a genus id for its
+        genus-level photos, marked gl)."""
+        out = []
+        for p in C.get(key) or []:
             j = sug.get(p.get('f'))
             if sure(j):
                 ph = phase(j['jt'])
-                L1.append({'f': p['f'], 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': p['t'],
-                           'sp': me['id'], 'loc': p.get('loc'), **({'own': True} if p.get('own') else {}),
-                           'e': j['e'], 'jt': j['jt'], **({'ph': ph} if ph else {}), 'auto': 'cand', 'r': 1})
-        order = lambda p: (-p['e'], p['f'])
+                out.append({'f': p['f'], 'o': p['o'], 'src': p['src'], 'a': p['a'], 'lic': p['lic'], 't': p['t'],
+                            'sp': unit, **({'gl': 1} if gl else {}), 'loc': p.get('loc'),
+                            **({'own': True} if p.get('own') else {}), 'e': j['e'], 'jt': j['jt'],
+                            **({'ph': ph} if ph else {}), 'auto': 'cand', 'r': 1})
+        return out
+
+    def kept(L1, documented_juvenile):
+        """The photos in play of one list: at most cap adults, the easiest first, then the juveniles (perJuvenileForm
+        for a documented juvenile form, else what the cap leaves)."""
+        order = lambda p: (-p['e'], p['f'])  # noqa: E731
         adults = sorted((p for p in L1 if not juv(p['jt'])), key=order)[:cap]
         young = sorted((p for p in L1 if juv(p['jt'])), key=order)
-        young = young[:plus] if s['name'] in documented else young[:max(0, cap - len(adults))]
-        keep = adults + young
-        if len(keep) < start:
-            continue
+        return adults + (young[:plus] if documented_juvenile else young[:max(0, cap - len(adults))])
+
+    def place(keep, fid):
         for r in keep:
             c, o = crop(sug.get(r['f'])), old.get(r['f'])
             if on_r2(o) and o.get('src') == r['src']:
@@ -277,7 +319,21 @@ def build(L, cand, sug, prev=None, groups=None, names=None):
                     todo.append((r, c, o.get('iv', 0) + 1))
             else:
                 todo.append((r, c, o.get('iv', 0) + 1 if on_r2(o) else 0))
-        photos.setdefault(me['family'], []).extend(keep)
+        photos.setdefault(fid, []).extend(keep)
+
+    for key, name in [(str(s['inat']), s['name']) for s in sp] + extra:
+        me = byname[name]
+        keep = kept(judged(key, me['id']), name in documented)
+        if len(keep) >= start:
+            place(keep, me['family'])
+    # The genus units' genus-level photos (tools/fetch_seaslugs.py --genus-level; Pierre, 2026-11-17, Q389 (1)): the sure
+    # ones of each genus, sp its genus id and gl 1 (core.js fishGenUnits plays them for the genus, never for a species),
+    # at most cap, the easiest first; in play once the genus's photos in play, its species' and these, reach start.
+    for gid, G in gens.items():
+        keep = kept(judged(G['name'], gid, gl=True), False)
+        mine = sum(1 for p in photos.get(G['family']) or [] if p['sp'] in G['species'])
+        if keep and len(keep) + mine >= start:
+            place(keep, G['family'])
     game = {
         'v': V,
         'about': 'the sea-slug photos in play, on R2 once downloaded, else read from iNaturalist (r: 1) '
@@ -363,6 +419,7 @@ def inputs(root=ROOT):
     j = lambda n, d=None: load(os.path.join(root, n), d)
     return (j(os.path.join('tools', 'seaslugs.json')), j('seaslug-cand.json'), (j('suggest.json') or {}).get('seaslug') or {},
             j('seaslug-game.json', {'photos': {}}), j(os.path.join('tools', 'seaslug_groups.json'), {}) or None,
+            j(os.path.join('tools', 'seaslug_informal.json'), {}) or None,
             j(os.path.join('tools', 'seaslug_names.json'), {}) or None)
 
 
