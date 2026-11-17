@@ -451,6 +451,8 @@ egg = {'seaslug-601-cand-10', 'seaslug-601-cand-20', 'seaslug-601-cand-30', 'sea
        'seaslug-602-cand-80'}
 used = {p['f'].rsplit('-', 1)[-1] for L in (L601, LG, L602) for p in L}
 taken = {p['o'] for L in (L601, LG, L602) for p in L}
+# never captive, as every search (Codex review #1046)
+assert 'captive=false' in egg_query([1])
 # asked once, every observation with an egg-mass candidate in these lists (5 and 8 included: the same set on a rerun)
 c = {egg_query([1, 2, 3, 5, 7, 8]): {'results': [sp(1), sp(2, lic=['cc-by', 'cc-by-sa', 'cc-by-nc-sa']), sp(3, tid=699), sp(5),
                                               gen(7), sp(8, tid=602)]}}

@@ -400,8 +400,9 @@ def trim_id(o):
 
 
 def egg_query(ids):
-    """The request that asks the observations ids again, by id."""
-    return API + f"id={','.join(map(str, ids))}&per_page={EGG_BATCH}&order_by=id&fields={GL_FIELDS}"
+    """The request that asks the observations ids again, by id. Never captive (captive=false), as every search: an
+    observation marked captive since is not returned (Codex review #1046; fetch_fish.py's by-id refill does the same)."""
+    return API + f"id={','.join(map(str, ids))}&captive=false&per_page={EGG_BATCH}&order_by=id&fields={GL_FIELDS}"
 
 
 def eggs_back(net, jobs, egg, pairs, used, taken):
