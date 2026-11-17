@@ -57,8 +57,9 @@ time, U7, U12, "no daily-habit app"): none is proposed again here.
 | 6 | Find the X on the species units | `quiz.js` `planFind` asks only units with no rank (`!rankOf(t)`): the families. The species are units since 2026-11-15 [read] | FISH_PATH "Formats and their order", 5: "the species once they are units" [read] | S (code) + tiles per species | 1 |
 | 7 | Sea slug genus ID marks for circles 2-3 | `seaslug.json` genera `marks`: 18 of 24 in circle 1 (6 more in `none` with a reason), 1 of 22 in circle 2, 0 of 32 in circle 3; family `marks` 3 of 33 [measured]. `tools/seaslug_cues.py` stops only on "a circle-1 genus with neither" [read] | Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?"; study §9 step 7 ("family and genus sheets with sourced cues"); circles 2-3 in the game since 2026-11-16 [read] | L | 0 |
 | 8 | Sea slug stars achievement | 21 species carry `star` in `seaslug.json` [measured]; only `tools/seaslug_game.py:318` writes it, nothing in the app reads it; `SEASLUG_ACH` (`core.js:3971`) has no stars achievement [read] | Q369 (c): "A 'stars' set … with an achievement" (2026-11-15-seaslug-list.md) [read]. Its test (the units are genera, the stars species) is the integrator's call: e.g. the genera holding a star at Advanced | S (`core.js`: a changes file, rule D3) | 0 |
-| 9 | Fish species achievements that wait for nothing | fpct70 "Twilight zone" and fdauin20 "Local legend" are documented, not built (LEARNING "Fish achievements, around the global score": "Waiting, 6"); 70% is reachable since the species level's step 1 (families, genera and common names top out at 95%) [read] | Q259-Q264, Q261 (fdauin20 = circle-1 species for now) [read]; fdauin20's "named" read as by common name at Advanced is my reading [guess] | S | 0 (timing by `learnsim --ach`, as the others) |
+| 9 | Fish species achievements that wait for nothing | fpct70 "Twilight zone" and fdauin20 "Local legend" are documented, not built (LEARNING "Fish achievements, around the global score": "Waiting, 6"); 70% is reachable since the species level's step 1 (families, genera and common names top out at 95%), whose gate is met (`sync.js` `speciesOn`: `SPECIES_SHEET` 161, the sheet script at v167) [read] | Q259-Q264, Q261 (fdauin20 = circle-1 species for now) [read]; fdauin20's "named" read as by common name at Advanced is my reading [guess] | S | 0 (timing by `learnsim --ach`, as the others) |
 | 10 | Fish read their own pooled statistics in the app | the sea slugs have `SUBJECTS` `stats` (`core.js` `SEASLUGST_SHEET`, #1060); the fish entry has none [read] | STATUS "Next after the queue"; ROADMAP "Admin for every subject", PR 11 [read] | M | 2, and L12 |
+| 11 | Sea slug replay without the variant table | `SUBJECTS` fish `replayed.vars` (`core.js:570`); the sea slugs' `replayed` has none (`core.js:771-777`). The app's exam asks each variant group for every subject (`model.js` `varLeft`), so for *Hexabranchus* (the only genus with juvenile photos: 7 [measured]) the sheet's replay may keep a learned mark the app would not give | Q391 b ("Learned asks each variant group"; Q391 a: one rule for every level), rules D8, D9: "the app and the sheet decide alike" (`model.js:390`) [read] | S (`core.js`, `Code.gs` through `sync_core.py`, rules D3-D5) | 1 |
 
 Notes on row 1:
 
@@ -78,8 +79,7 @@ Notes on row 1:
 
 | # | Gap | Evidence | Size | L11 |
 | --- | --- | --- | --- | --- |
-| 11 | Sea slug files unversioned and out of the offline shell | `app.js` `UNITS.seaslug` `get`: `seaslug.json`, `seaslug-game.json` with no `?v=`; not in `sw.js` `SHELL` (`sw.js:26-57`). The reason given, "since only its group may open it" (ARCHITECTURE "Subjects", sea slugs), is stale since `open: 'all'` (2026-11-17). They fall in the revalidate branch: cached once fetched, but fetched again at every launch (198 KB + 1,060 KB) [measured, read] | S (a `?v=` reference; precaching them for everyone costs every install about 1.3 MB: a choice to make in that PR) | 0 |
-| 12 | Sea slug replay without the variant table | `SUBJECTS` fish `replayed.vars` (`core.js:570`); the sea slugs' `replayed` has none (`core.js:771-777`). The app's exam asks each variant group for every subject (`model.js` `varLeft`), so for *Hexabranchus* (the only genus with juvenile photos: 7 [measured]) the sheet's replay may keep a learned mark the app would not give (rules D8, D9) | S (`core.js`, `Code.gs` through `sync_core.py`, rules D3-D5) | 1 |
+| 12 | Sea slug files unversioned and out of the offline shell | `app.js` `UNITS.seaslug` `get`: `seaslug.json`, `seaslug-game.json` with no `?v=`; not in `sw.js` `SHELL` (`sw.js:26-57`). The reason given, "since only its group may open it" (ARCHITECTURE "Subjects", sea slugs), is stale since `open: 'all'` (2026-11-17). They fall in the revalidate branch: cached once fetched, but fetched again at every launch (198 KB + 1,060 KB) [measured, read] | S (a `?v=` reference; precaching them for everyone costs every install about 1.3 MB: a choice to make in that PR) | 0 |
 | 13 | Sea slug circle achievements beyond circle 1 | the fish have fc2 and fc3adv; the sea slugs only ssc1adv (`core.js:3971`) [read] | S | 0 |
 | 14 | Fish family-sheet genus content as an editor slot | `SUBJECTS` fish `content` genus slots: `cues`, `note` only; the genus `plain` and `marks` are not editable in the admin (ROADMAP row of row 2: "Not built: … the genus marks as a content-editor slot"); #1061 adds them for the sea slugs [read] | S | 0 |
 | 15 | Stale words | `learn.js:939` comment ("circle 1, and the opt-in circles once on": the code reads the whole path); ARCHITECTURE "Fish scientific genera" and FISH_PATH "Levels" ("98 genera in circle 1": 130 today) [read] | S | 0 |
@@ -95,9 +95,10 @@ The admin demo plays circle-1 families only (`admin-demo.js:841`, `:961`): made-
 - **#1057** (Q385): the fish held-out set. Corals: Parked (ROADMAP "A held-out photo set": "corals later").
 - **#1053**: the log keeps "*Goniobranchus* sp. 5".
 
-Left after #1061 and #1062, by #1061's own list (decided by Pierre, 2026-11-17: "Et pour les limaces de mer, toute la
-partie admin, c'est prévu aussi ?"): their auto-sort, Photo review (Ease, Phase & framing, By difficulty), Photos ›
-Look-alikes, To do's photo counts, Coverage › Games, cover proposals. **Decided, not built; M; L11 0.**
+Left after #1061 and #1062 (decided by Pierre, 2026-11-17: "Et pour les limaces de mer, toute la partie admin, c'est
+prévu aussi ?"): their auto-sort, Photo review (Ease, Phase & framing, By difficulty) and To do's photo counts, which
+#1061 lists as not built; and Photos › Look-alikes, Coverage › Games and the cover proposals, which I found by comparing
+the fish's and the sea slugs' `SUBJECTS` `admin` `pages` [read]. **Decided, not built; M; L11 0.**
 
 ### 1.4 Needs Pierre
 
@@ -171,7 +172,7 @@ One line each; evidence is a file, a ROADMAP row or a count.
 
 | Gap | Evidence | Status | Size |
 | --- | --- | --- | --- |
-| Sea slug files out of the shell | row 11 | integrator's call | S |
+| Sea slug files out of the shell | row 12 | integrator's call | S |
 | No way to take a subject's photos offline before a dive or a boat day: photos are cached only as viewed, at most 2,500 (`sw.js` `PH_MAX`), against 24,386 fish game photos [measured] | `sw.js` | not planned | M |
 | The domain and repository rename: a new origin loses the local progress of players not signed in unless handed over | ROADMAP "Domain and repository rename": "Next, before December 2026" | planned, **time-critical** | M |
 
