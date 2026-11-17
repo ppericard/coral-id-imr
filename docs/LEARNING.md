@@ -4043,7 +4043,7 @@ time). Level 1 now (the practice pools about 14% smaller with the same draw rule
   the direction looked for; a clear result is reported as the honest exam's cost, not as a breach.
 - **App world**: the same three profiles × seeds 1-3 × 600 questions, through `node tests/slot.js`. Guardrails only,
   with the units learned at 600 beside them.
-- Both against `origin/main` (b6acd40e's parent from main, v165) run with this branch's measuring tools
+- Both against `main` (cbbe5724, v165) run with this branch's measuring tools
   (`tools/ratedworld.js`, `tools/learnsim.js`: the `learned` row field, the judge's population over each unit's whole
   set; no change to the draw), the same seeds. One look each, `tools/learncmp.js`. Every guardrail of the table as before;
   the families at Advanced breach of the first run should be gone, as the bar is no longer touched in practice.
