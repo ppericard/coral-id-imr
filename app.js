@@ -798,7 +798,8 @@ function fishGenera(X, F) {
         // look-alikes the players' answers can drop (model.js dataSeed).
         ...(G.dlook ? {dl: G.dlook.filter(o => X.gen[o])} : {}),
         qt: cues || marks,
-        ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : {}), // an edit's source (core.js contentApply esrc)
+        // an edit's source (core.js contentApply esrc): of its cues, else of the marks shown in their place (the sea slugs')
+        ...(cues && G.esrc && G.esrc.cues ? {qsrc: G.esrc.cues} : marks && G.esrc && G.esrc.marks ? {qsrc: G.esrc.marks} : {}),
         tl: cues
           ? 'ID tips (IMR, ' + (G.imr || g) + sl + ')'
           : marks
