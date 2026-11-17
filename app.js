@@ -2202,7 +2202,8 @@ function treePhoto(f) {
   const id = fishPid(f),
     G = Object.values(FISH ? FISH.gen : {}).sort((a, b) => !!a.rank - !!b.rank);
   for (const g of G)
-    for (const [v, L] of Object.entries(g.views || {})) {
+    // its held-out photos too (model.js HELD: shown as a probe or an exam question, flagged like any other)
+    for (const [v, L] of [...Object.entries(g.views || {}), ['wide', g.held]]) {
       const p = (L || []).find(x => x && fishPid(x.f) === id);
       if (p) return {id, file: p.f, unit: g.id, ...(p.sp ? {sp: p.sp} : {}), view: v};
     }
