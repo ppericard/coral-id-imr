@@ -445,10 +445,15 @@ in the #953 rebuild, not in #975:
   Advanced) and the sexes and colour phases from `ph`; the defaults in one table, the per-taxon overrides in
   `tools/fish_source.json` next to `juv`, carried to the records by `fishGen` (one line, as the prototype does). The
   card then comes with the first held-back photo, as it does now.
-- **Its own check** (rule L11, level 2): this study's C0 runs are its first look; the real-log measure #953 left to the
-  integrator (each player's answers on a variant photo in a unit's first answers) still applies.
+- **Its own check** (rule L11, level 2): this study's runs are **exploratory** (5 seeds per profile, C0 chosen among
+  four candidates on those same seeds), not the rebuild's validation. The rebuilt #953 declares its own confirmation
+  check as rule L11 asks (the rated world at 10 seeds per profile at 3,000 answers, then the app world, every guardrail
+  against `main` and against #975; the 10,000-answer run stays dropped, section 8). The real-log measure #953 left to
+  the integrator (each player's answers on a variant photo in a unit's first answers) still applies.
 
 ## 10. Question for Pierre
+
+**Answered** (Pierre, 2026-11-17 10:52 Manila): "Q391 a oui, b oui": one rule for every level (C0), and "Learned" needs a right answer on each variant group.
 
 **Context.** Q388 asked about the families and Advanced only. This study puts every level under one rule: whatever
 depends on something comes as **that** thing is mastered. A family's genera and species come as the family is
