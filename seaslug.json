@@ -827,7 +827,23 @@
     "s199473",
     "s504373",
     "s1115871"
-   ]
+   ],
+   "dlook": [
+    "g:Nembrotha",
+    "g:Phyllidiopsis"
+   ],
+   "lsrc": {
+    "g:Nembrotha": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllidiopsis": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Nembrotha",
@@ -842,7 +858,23 @@
     "s142953",
     "s468034",
     "s418431"
-   ]
+   ],
+   "dlook": [
+    "g:Chromodoris",
+    "g:Hypselodoris"
+   ],
+   "lsrc": {
+    "g:Chromodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Hypselodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Hypselodoris",
@@ -869,6 +901,47 @@
     "s469461",
     "s878721",
     "s781482"
+   ],
+   "look": [
+    "g:Goniobranchus",
+    "g:Hexabranchus",
+    "g:Thorunna"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Rudman W.B. 1999 (January 22), Sea Slug Forum fact sheet Chromodoris kuniei: Goniobranchus kuniei, Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     },
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Hypselodoris maculosa",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Thorunna": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hypselodoris maculosa, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     },
+     {
+      "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
+      "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ],
+    "g:Nembrotha": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 9 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Nembrotha"
    ]
   },
   {
@@ -884,7 +957,17 @@
     "s207581",
     "s467978",
     "s120983"
-   ]
+   ],
+   "dlook": [
+    "g:Goniobranchus"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Halgerda",
@@ -917,6 +1000,16 @@
     "inat": 48754,
     "worms": 206296,
     "wiki": "Pteraeolidia"
+   },
+   "dlook": [
+    "g:Phyllodesmium"
+   ],
+   "lsrc": {
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
+     }
+    ]
    }
   },
   {
@@ -938,6 +1031,54 @@
     "s1354147",
     "s505174",
     "x:goniobranchus-sp5"
+   ],
+   "look": [
+    "g:Hypselodoris",
+    "g:Phyllidiella"
+   ],
+   "lsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (January 22), Sea Slug Forum fact sheet Chromodoris kuniei: Goniobranchus kuniei, Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://www.seaslugforum.net/find/chrokuni"
+     },
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus leopardus, Hypselodoris tryoni",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Phyllidiella": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus geometricus, Phyllidiella pustulosa",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Dermatobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 5 in the Philippines, 15 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllidia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 6 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Dendrodoris",
+    "g:Dermatobranchus",
+    "g:Hexabranchus",
+    "g:Phyllidia"
    ]
   },
   {
@@ -957,7 +1098,29 @@
     "s346900",
     "s496578",
     "s548307"
-   ]
+   ],
+   "dlook": [
+    "g:Favorinus",
+    "g:Marioniopsis",
+    "g:Pteraeolidia"
+   ],
+   "lsrc": {
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Marioniopsis": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Pteraeolidia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 5 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Jorunna",
@@ -968,7 +1131,17 @@
     "s50300",
     "s548348",
     "s467976"
-   ]
+   ],
+   "dlook": [
+    "g:Hexabranchus"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Ardeadoris",
@@ -990,6 +1163,25 @@
     "s199475",
     "s56646",
     "s63087"
+   ],
+   "look": [
+    "g:Tubulophilinopsis"
+   ],
+   "lsrc": {
+    "g:Tubulophilinopsis": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Tambja": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Tambja"
    ]
   },
   {
@@ -1000,7 +1192,17 @@
    "species": [
     "s546397",
     "s50550"
-   ]
+   ],
+   "dlook": [
+    "g:Aplysia"
+   ],
+   "lsrc": {
+    "g:Aplysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Doriprismatica",
@@ -1018,7 +1220,17 @@
    "circle": 1,
    "species": [
     "s119425"
-   ]
+   ],
+   "dlook": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Thecacera",
@@ -1039,6 +1251,25 @@
    "species": [
     "s120948",
     "s504449"
+   ],
+   "look": [
+    "g:Tyrannodoris"
+   ],
+   "lsrc": {
+    "g:Tyrannodoris": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Chelidonura": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 4 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Chelidonura"
    ]
   },
   {
@@ -1051,7 +1282,23 @@
     "s123404",
     "s548297",
     "s418506"
-   ]
+   ],
+   "dlook": [
+    "g:Asteronotus",
+    "g:Dendrodoris"
+   ],
+   "lsrc": {
+    "g:Asteronotus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Coryphellina",
@@ -1062,6 +1309,31 @@
     "s871903",
     "s1375852",
     "s873747"
+   ],
+   "look": [
+    "g:Samla"
+   ],
+   "lsrc": {
+    "g:Samla": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Coryphellina delicata, Coryphellina exoptata, Samla macassarana",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Caloria": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phestilla": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Caloria",
+    "g:Phestilla"
    ]
   },
   {
@@ -1114,7 +1386,45 @@
     "inat": 49745,
     "worms": 206859,
     "wiki": "Hexabranchus"
-   }
+   },
+   "look": [
+    "g:Hypselodoris",
+    "g:Thorunna"
+   ],
+   "lsrc": {
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Hypselodoris maculosa",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Thorunna": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 5 in the Philippines, 15 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Jorunna": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Platydoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Goniobranchus",
+    "g:Jorunna",
+    "g:Platydoris"
+   ]
   },
   {
    "id": "g:Costasiella",
@@ -1134,7 +1444,17 @@
    "species": [
     "s50528",
     "s50534"
-   ]
+   ],
+   "dlook": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 49 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Melibe",
@@ -1146,7 +1466,17 @@
     "s50551",
     "s779446",
     "s467983"
-   ]
+   ],
+   "dlook": [
+    "g:Cyerce"
+   ],
+   "lsrc": {
+    "g:Cyerce": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Favorinus",
@@ -1157,7 +1487,29 @@
     "s389587",
     "s147944",
     "s120967"
-   ]
+   ],
+   "dlook": [
+    "g:Aegires",
+    "g:Phyllodesmium",
+    "g:Samla"
+   ],
+   "lsrc": {
+    "g:Aegires": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Samla": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Dolabella",
@@ -1201,7 +1553,26 @@
     "inat": 49734,
     "worms": 138348,
     "wiki": "Phyllidiopsis"
-   }
+   },
+   "look": [
+    "g:Phyllidiella"
+   ],
+   "lsrc": {
+    "g:Phyllidiella": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Chromodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Chromodoris"
+   ]
   },
   {
    "id": "g:Aegires",
@@ -1210,7 +1581,17 @@
    "circle": 2,
    "species": [
     "s467975"
-   ]
+   ],
+   "dlook": [
+    "g:Favorinus"
+   ],
+   "lsrc": {
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Ceratosoma",
@@ -1232,7 +1613,25 @@
     "s49728",
     "s50552",
     "s319334"
-   ]
+   ],
+   "look": [
+    "g:Goniobranchus",
+    "g:Phyllidiopsis"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Goniobranchus geometricus, Phyllidiella pustulosa",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Phyllidiopsis": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Phyllidiella pustulosa, Phyllidiopsis burni, Phyllidiopsis krempfi",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Glossodoris",
@@ -1278,7 +1677,29 @@
     "s349039",
     "s355499",
     "s121317"
-   ]
+   ],
+   "look": [
+    "g:Hexabranchus",
+    "g:Hypselodoris"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hexabranchus lacer, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     }
+    ],
+    "g:Hypselodoris": [
+     {
+      "t": "Rudman W.B. 1999 (July 6), Sea Slug Forum message 'Juvenile Hexabranchus from Philippines': Hypselodoris maculosa, Thorunna australis",
+      "u": "http://www.seaslugforum.net/find/1013"
+     },
+     {
+      "t": "Rudman W.B. 2000 (February 10), Sea Slug Forum 'Chromodoris decora Colour Group: How to differentiate the species': Hypselodoris maculosa, Thorunna australis",
+      "u": "https://seaslugforum.net/find/chrodeco1"
+     }
+    ]
+   }
   },
   {
    "id": "g:Discodoris",
@@ -1317,7 +1738,18 @@
    "species": [
     "s823909",
     "s823908"
-   ]
+   ],
+   "look": [
+    "g:Chelidonura"
+   ],
+   "lsrc": {
+    "g:Chelidonura": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Chelidonura varians, Tubulophilinopsis gardineri",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Samla",
@@ -1328,6 +1760,25 @@
     "s696622",
     "s778294",
     "s778296"
+   ],
+   "look": [
+    "g:Coryphellina"
+   ],
+   "lsrc": {
+    "g:Coryphellina": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Coryphellina delicata, Coryphellina exoptata, Samla macassarana",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ],
+    "g:Favorinus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   },
+   "dlook": [
+    "g:Favorinus"
    ]
   },
   {
@@ -1410,6 +1861,22 @@
     "inat": 48657,
     "worms": 137654,
     "wiki": "Aplysia"
+   },
+   "dlook": [
+    "g:Dendrodoris",
+    "g:Elysia"
+   ],
+   "lsrc": {
+    "g:Dendrodoris": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 14 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Elysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 4 in the Philippines, 28 worldwide (2026-11-17)"
+     }
+    ]
    }
   },
   {
@@ -1440,7 +1907,17 @@
     "s1623585",
     "s1623583",
     "s549234"
-   ]
+   ],
+   "dlook": [
+    "g:Melibe"
+   ],
+   "lsrc": {
+    "g:Melibe": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Taringa",
@@ -1505,7 +1982,17 @@
    "circle": 3,
    "species": [
     "s52961"
-   ]
+   ],
+   "dlook": [
+    "g:Pleurobranchus"
+   ],
+   "lsrc": {
+    "g:Pleurobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Trapania",
@@ -1619,7 +2106,29 @@
    "circle": 3,
    "species": [
     "s50430"
-   ]
+   ],
+   "dlook": [
+    "g:Aplysia",
+    "g:Goniobranchus",
+    "g:Pleurobranchus"
+   ],
+   "lsrc": {
+    "g:Aplysia": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 14 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ],
+    "g:Pleurobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 3 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Dermatobranchus",
@@ -1629,7 +2138,17 @@
    "species": [
     "s495412",
     "s626349"
-   ]
+   ],
+   "dlook": [
+    "g:Goniobranchus"
+   ],
+   "lsrc": {
+    "g:Goniobranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 0 in the Philippines, 7 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Mariaglaja",
@@ -1647,7 +2166,17 @@
    "circle": 3,
    "species": [
     "s1491723"
-   ]
+   ],
+   "dlook": [
+    "g:Phyllodesmium"
+   ],
+   "lsrc": {
+    "g:Phyllodesmium": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 2 in the Philippines, 2 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Tyrannodoris",
@@ -1656,7 +2185,18 @@
    "circle": 3,
    "species": [
     "s699008"
-   ]
+   ],
+   "look": [
+    "g:Tambja"
+   ],
+   "lsrc": {
+    "g:Tambja": [
+     {
+      "t": "Nudi Pixel, 'Nudibranch Look-Alikes': Tambja gabrielae, Tambja olivaria, Tyrannodoris luteolineata",
+      "u": "https://nudipixel.net/similarities"
+     }
+    ]
+   }
   },
   {
    "id": "g:Odontoglaja",
@@ -1701,7 +2241,17 @@
    "circle": 3,
    "species": [
     "s559946"
-   ]
+   ],
+   "dlook": [
+    "g:Hexabranchus"
+   ],
+   "lsrc": {
+    "g:Hexabranchus": [
+     {
+      "t": "iNaturalist identifications, one genus taken for the other: 1 in the Philippines, 8 worldwide (2026-11-17)"
+     }
+    ]
+   }
   },
   {
    "id": "g:Pelagella",
