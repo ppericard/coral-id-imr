@@ -19,6 +19,11 @@ const ROOT = path.join(__dirname, '..'),
   F = JSON.parse(FJSON),
   CUR = JSON.parse(src('curation.json')),
   S = C.subjectOf('fish');
+// The variant table the sheet's fish replay reads (Code.gs subjRpl_, core.js fishVarTable; Q391 b) under curation c and
+// structure-applied fish.json A, from the photo files tests/gas.js serves.
+const PHJ = JSON.parse(src('fish-photos.json')),
+  GMJ = JSON.parse(src('fish-game.json')),
+  varsOf = (c, A) => S.replayed.vars(A, [F, PHJ, GMJ, c], S);
 const fam = (R, id) => R.families.find(f => f.id === id);
 const ids = L => L.map(x => x.id);
 // A curation holding fish content map c.
@@ -404,11 +409,11 @@ test('the sheet: a structure Publish replays a player whose rules are applied, i
     L = fishLog('a'),
     want0 = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(F)}
+      {gen: C.fishReplayGen(F), vars: varsOf(CUR, F)}
     ).ana.P,
     want1 = C.replayProgress(
       L.map(a => C.logRow(a, 'ana')),
-      {gen: C.fishReplayGen(C.contentApply(S, F, PAIRS))}
+      {gen: C.fishReplayGen(C.contentApply(S, F, PAIRS)), vars: varsOf(PAIRS, C.contentApply(S, F, PAIRS))}
     ).ana.P,
     st1 = C.structStamp(S, F, PAIRS),
     save = x => s.post({name: 'Ana', pin: '1234', data: savedUpToDate, summary: {}, answers: [], rv: C.RV, rvs: {fish: FRV}, ...x});
@@ -496,7 +501,7 @@ test('rule D8: the trigger replays under the new structure a player who never re
     JSON.parse(row.slice(5).join('')),
     C.replayProgress(
       L.map(a => C.logRow(a, 'ben')),
-      {gen: C.fishReplayGen(C.contentApply(S, F, PAIRS))}
+      {gen: C.fishReplayGen(C.contentApply(S, F, PAIRS)), vars: varsOf(PAIRS, C.contentApply(S, F, PAIRS))}
     ).ben.P
   );
   assert.strictEqual(s.ctx.boardWarm_(), 0, 'made once');

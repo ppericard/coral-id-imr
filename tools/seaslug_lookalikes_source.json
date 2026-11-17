@@ -1,5 +1,5 @@
 {
- "_doc": "Hand-kept input of tools/seaslug_lookalikes.py (its doc says how each field is used): the subject's root groups and area (as tools/seaslug_source.json), the floors that list a pair and that join species into an iNaturalist group, and the literature sets, each with its source, a quote and what was read (rule C2). Survey: docs/reviews/2026-11-17-seaslug-lookalikes-survey.md. Candidates only: not read by the game.",
+ "_doc": "Hand-kept input of tools/seaslug_lookalikes.py (its doc says how each field is used): the subject's root groups and area (as tools/seaslug_source.json), the floors that list a pair and that join species into an iNaturalist group, and the literature sets, each with its source, a quote and what was read (rule C2). Survey: docs/reviews/2026-11-17-seaslug-lookalikes-survey.md. Its sets' genus pairs enter the game as declared look-alikes (tools/seaslug_game.py genus_looks; Q390 D).",
  "roots": {"Nudibranchia": 47113, "Sacoglossa": 47801, "Cephalaspidea": 49784, "Pleurobranchida": 775833, "Aplysiida": 775804},
  "place": 6873,
  "floor": {"ph": 2, "world": 3},

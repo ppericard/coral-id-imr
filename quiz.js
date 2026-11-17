@@ -773,12 +773,15 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
+  // A right answer clears its photos' variant groups from those the answer log left (model.js varRight, varLeft).
+  if (good) varRight(target, seenPh);
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
   // genus as the answer for another one.
   // (exq, above: never from the custom quiz.)
   EXAMQ = null;
   // It needs TYPED.exam typed right answers among its EXAM.n (model.js examTyped asks them; an exam begun before the
-  // typed questions may take one more, its count held at EXAM.n so its % never passes 100).
+  // typed questions may take one more, its count held at EXAM.n so its % never passes 100), and a right answer on each
+  // variant group the unit has (model.js varLeft, examPassed; Q391 b: the exam asks them, its count held the same way).
   if (!good) delete s.ex;
   else if (exq) {
     const ex = s.ex || {k: 0, v: [], ts: Date.now()}; // ts: its start, which places it among the logged answers (core.js replayedOf)
@@ -786,7 +789,7 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     ex.t = (ex.t || 0) + (tq ? 1 : 0);
     ex.v = [...new Set([...ex.v, ph[0].view])];
     ex.at = answersSoFar();
-    if (ex.k >= EXAM.n && ex.t >= TYPED.exam) {
+    if (examPassed(target, ex)) {
       s.mx = Date.now(); // learned, and when (the admin's player journey; was 1 before 2026-11-02, still truthy)
       delete s.ex;
       setTimeout(
@@ -978,7 +981,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   // In the Duel tab, the relief card after the hold has just set in comes first (reliefArm); the others wait. In the
   // custom quiz, its once-ever reminder of the units waiting in the Quiz likewise (leftNote counts, leftArm).
   leftNote(cur);
-  if (!reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
+  // The first juvenile, or sex or colour phase, a question showed: its card takes the break at Next first (phaseArm).
+  // A Find the X showed four tiles, each of its own unit (Codex review #953).
+  const fxs = photoQuiz(cur) && FINDX && SHOWNQ && (SHOWNQ[4] || {}).find,
+    phx = phaseArm(nb, cur, fxs || seenPh.map(p => ({n: target, p})), exq && s.mx);
+  if (!phx && !reliefArm(nb, cur, chs) && !leftArm(nb, cur) && !(exq && s.mx) && promptOk()) {
     if (nudgeDue()) (promptMark(), signinNudge());
     else if (pulseDue()) pulseArm(nb);
   }
@@ -1313,6 +1320,78 @@ function allMetShow(r, brk) {
       if (how === 'route') return; // left unseen: it comes back
       store.set(subjDev(SUBJ.id, ALLMET.KEY + r.k), Date.now());
       toldAdd(allMetTok(r.k));
+      if (brk) route();
+    }
+  });
+  setTimeout(() => d.querySelectorAll('[data-b]').forEach(b => (b.disabled = false)), TIP.WAIT);
+  return d;
+}
+// Juveniles and colour phases (Pierre, 2026-11-04: "when a juvenile, a colour phase or a strongly dimorphic species first
+// comes in, a card explains it, with photos side by side"; 2026-11-07: they come in stages, with the card, at the right
+// moment; docs/LEARNING.md "Juveniles and colour phases on their unit's mastery"). The draw brings them in with each
+// unit's own mastery (model.js photoSet, varOf; Q391 a); the first question that shows one (core.js phaseKind: a juvenile, or a sex or
+// colour phase) brings its card at the break at Next: the photo beside one of the same species in another phase (core.js
+// phasePair: a juvenile beside an adult, a male beside a female), the photo's taxon, and the unit's own phase lines (the
+// IMR presentation's, fishGen phase). Once per kind and subject: on this device (PHASEC.KEY) and, signed in, on the
+// account's other devices (core.js TOLD 'phase:<subject>-<kind>'), marked only when shown. It takes the break before the
+// prompts and the tips (it says what the photo just answered was), never with a card, the tour or a toast up, over a
+// mastery toast due, or when the next question brings a card: it then waits for the next such photo. Its button takes no
+// tap for its first moments, as a tip's. The photo quiz and the custom quiz (photoQuiz); a subject with no phase judged
+// (the corals) never shows it.
+const PHASEC = {KEY: 'phase-', WORD: {juvenile: 'Juvenile', male: 'Male', female: 'Female', intermediate: 'Intermediate'}};
+const phaseTok = k => `phase:${SUBJ.id}-${k}`;
+const phaseSeen = k => !!store.get(subjDev(SUBJ.id, PHASEC.KEY + k), null) || toldHas(phaseTok(k));
+// L: the photos shown, each with its unit ({n, p}).
+function phaseArm(nb, cur, L, hold) {
+  const ph = L.map(x => x.p).filter(Boolean);
+  if (!photoQuiz(cur) || hold || !phaseCardOf(ph, phaseSeen)) return false;
+  return breakArm(nb, () => {
+    if (!(NEXTQ && NEXTQ.k === planKey(cur)) && hashNow() === cur) planNext(cur);
+    const c = phaseCardOf(ph, phaseSeen),
+      nx = NEXTQ && NEXTQ.k === planKey(cur) && NEXTQ.args;
+    if (!c || overlayBusy() || !lb.hidden || (nx && nextCards(cur, nx))) return false;
+    promptMark();
+    phaseShow(c, L.find(x => x.p === c.p).n, true);
+    return true;
+  });
+}
+// c: {p, k} (core.js phaseCardOf); n: the unit asked; brk: shown at the break, so its close goes on to the next question.
+function phaseShow({p, k}, n, brk) {
+  const g = GX(n),
+    q = phasePair(
+      p,
+      ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
+    ),
+    tx = photoTaxon([p], n),
+    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js fishGenera psrc,
+    // core.js contentApply esrc; rule C2, Codex review #953), else IMR's, the presentation's own words.
+    lines = g.phase || [],
+    w = phaseOf(p),
+    word = x => PHASEC.WORD[phaseOf(x)] || 'Adult',
+    fig = x => `<figure><img src="${img(x, 's')}" alt="${esc(word(x))}"><figcaption>${esc(word(x))}</figcaption></figure>`,
+    // Each photo's credit under them, its author and its observation (rule P5; Codex review #953): the answer is out.
+    credits = [p, q].filter(Boolean).map(credit).join('<br>'),
+    title =
+      k === 'juvenile'
+        ? 'Careful: this was a juvenile, it can look very different from the adult'
+        : w === 'intermediate'
+          ? 'Careful: this species’ colour phases can look very different'
+          : 'Careful: this species’ males and females can look very different';
+  const d = cardShow({
+    kind: 'tip',
+    cls: 'tipcard phasecard',
+    kick: 'Juveniles and phases',
+    title: esc(title),
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    primary: {text: 'Got it', attr: 'disabled'},
+    esc: 1,
+    focus: 'h3',
+    enter: () => {},
+    bind: d => (d.querySelector('h3').tabIndex = -1),
+    onClose: how => {
+      if (how === 'route') return; // left unseen: it comes back with the next such photo
+      store.set(subjDev(SUBJ.id, PHASEC.KEY + k), Date.now());
+      toldAdd(phaseTok(k));
       if (brk) route();
     }
   });
