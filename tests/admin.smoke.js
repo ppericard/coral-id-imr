@@ -2885,7 +2885,9 @@ const darkCards = (p, sel) =>
                   .split(W.one ? W.one[0].toUpperCase() + W.one.slice(1) : '\u0000')
                   .join(' ')
                   .split(W.many ? W.many[0].toUpperCase() + W.many.slice(1) : '\u0000')
-                  .join(' ');
+                  .join(' ')
+                  // the rank asked (analysis.js rkName, admin-analyses.js anRkWord: "a genus question", "Genus questions")
+                  .replace(/\b(?:family|genus|species) questions?/gi, ' '); // no \b after: textContent runs cells together
               return {
                 badge: (document.querySelector('.adm-an-badge') || {}).textContent || '',
                 none: /No report yet/.test(V.textContent),
@@ -2893,6 +2895,7 @@ const darkCards = (p, sel) =>
                 note: (document.querySelector('#view > .note') || {}).textContent || '',
                 views: [...document.querySelectorAll('#subnav .adm-views a, #subnav .adm-subtabs a')].map(a => a.textContent),
                 words: (t.match(/\b(genus|genera|Genus|Genera)\b/g) || []).length,
+                wctx: (t.match(/.{0,60}\b(?:genus|genera|Genus|Genera)\b.{0,30}/) || [''])[0],
                 ids: (t.match(/\b[fgs]:[A-Z]\w*/g) || []).slice(0, 3),
                 coral: Object.keys(DATA.gen).some(g => new RegExp(`\\b${g}\\b`).test(V.textContent)),
                 cards: V.querySelectorAll('.adm-an-card').length,
@@ -2947,6 +2950,38 @@ const darkCards = (p, sel) =>
                 !/\bEase\b/.test(ph.h)
               )
                 fe.push(`#fish/analyses/difficulty/photos ${JSON.stringify({...at, views: undefined, h: ph.h.slice(0, 300)})}`);
+              // the rank asked (the fish parity review, #1056: a rank effect in the models): its effect in the results, its
+              // own table on Formats and on What makes a photo hard, and the views that list units drawn one rank at a time
+              const rk = {};
+              for (const [h, k] of [
+                ['photos', 'ph'],
+                ['formats', 'fmt']
+              ]) {
+                await look('fish/analyses/difficulty/' + h);
+                rk[k] = await fq.evaluate(() => document.getElementById('view').textContent);
+              }
+              await look('fish/analyses/speed/answer-time');
+              // the units by rank (the rank effects themselves may read "not enough data" there, folded away)
+              rk.rt = await fq.evaluate(() =>
+                [...document.querySelectorAll('#view .adm-an-rk')].map(e => e.textContent.replace(/ · .*/, '')).join()
+              );
+              const ok = {
+                tab: /Rank asked/.test(rk.ph),
+                eff: /A (genus|species) question instead of a family question/.test(rk.ph),
+                fmt: /By the rank asked/.test(rk.fmt),
+                rt: rk.rt === 'Family questions,Genus questions,Species questions'
+              };
+              if (Object.values(ok).some(v => !v)) fe.push(`the rank asked: ${JSON.stringify({...ok, sub: rk.rt})}`);
+              // the corals' views: no rank
+              await look('analyses/speed/answer-time');
+              if (
+                await fq.evaluate(
+                  () =>
+                    !!document.querySelector('#view .adm-an-rk') ||
+                    /instead of a family question/.test(document.getElementById('view').textContent)
+                )
+              )
+                fe.push("the corals' Speed tells ranks apart");
             }
           }
           // the corals' report on the corals' side, as before
@@ -3922,6 +3957,21 @@ const darkCards = (p, sel) =>
           });
           if (L.groups.length !== L.n || L.ben !== '48' || L.dio !== '–') fails.push(`${w}px two subjects: the list ${JSON.stringify(L)}`);
           await q.click('[data-uopen="Ben Demo"]');
+          // His bar gives his fish Progress and Learned too, as his Journey does (admin.js uprogHtml: his saved copy read
+          // when the row opens).
+          const fb = await q
+            .waitForFunction(
+              () => {
+                const S = SUBJECTS.find(x => !x.replay),
+                  t = (document.querySelector('.adm-ubar') || {}).innerText || '';
+                return new RegExp(S.name + ': Progress \\d+%').test(t) && t;
+              },
+              null,
+              {timeout: 15000}
+            )
+            .then(h => h.jsonValue())
+            .catch(() => '');
+          if (!fb) fails.push(`${w}px two subjects: Ben's bar without his ${L.F} Progress`);
           const jh = await q.$eval('.adm-ubar a.next', a => a.getAttribute('href'));
           if (jh !== `#${L.F}/players/list/journey/Ben%20Demo`) fails.push(`${w}px two subjects: Ben's Journey link ${jh}`);
           await q.click('.adm-ubar a.next');
@@ -3951,6 +4001,34 @@ const darkCards = (p, sel) =>
             !/ 48$/.test(j.seg[1][1])
           )
             fails.push(`${w}px two subjects: Ben's ${L.F} Journey ${JSON.stringify(j)}`);
+          // His Progress is the % his app shows and his leaderboard ranks by: the subject's global score over the tree the
+          // sheet makes under the published curation (core.js treeScore, SUBJECTS replayed tree), not the families' mean;
+          // his bar on Players says the same.
+          const fx = await q.evaluate(() => {
+            const S = SUBJECTS.find(x => !x.replay && x.score),
+              PG = progOf(
+                USERS.users.find(u => u.name === 'Ben Demo'),
+                true,
+                S
+              ),
+              T = S.replayed.tree(contentApply(S, unitRegOf(S).raw.f, SAVED));
+            return {
+              kpi: (/(\d+)%(?: ↻ saved \d+%)? Progress/i.exec(document.querySelector('.adm-kpis').innerText.replace(/\s+/g, ' ')) || [])[1],
+              pct: PG && PG.pct,
+              board: PG && treeScore(PG.G, T, S.score).pct,
+              mean: PG && pctOf(PG.G, unitsOf(S).slate),
+              learned: PG && PG.learned,
+              name: S.name
+            };
+          });
+          if (
+            !fx.pct ||
+            String(fx.pct) !== fx.kpi ||
+            fx.board !== fx.pct ||
+            fx.mean === fx.pct ||
+            !new RegExp(`${fx.name}: Progress ${fx.pct}%[^·]*· Learned ${fx.learned}`).test(fb)
+          )
+            fails.push(`${w}px two subjects: Ben's ${L.F} Progress is not the % his app shows ${JSON.stringify({...fx, fb})}`);
           // A session of the Journey unfolds, with the progress it brought.
           await q.click('.adm-journey [data-recent] [data-sopen]');
           await calm();
