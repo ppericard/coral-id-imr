@@ -293,7 +293,7 @@ def refined(mine, passed):
 
 # autosort.js fishParse: a fish log code; its fields (t tags, e ease, p phase, c crop) are the ones the auto-sort wrote.
 LOG = re.compile(r'^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$')
-FLAGORD = 'jcawpr'  # autosort.js FFLAGORD: the flags in the rubric's order
+FLAGORD = 'jcawfpr'  # autosort.js FFLAGORD: the flags in the rubrics' order (the sea slugs' f too)
 
 
 def tags_auto(F):
