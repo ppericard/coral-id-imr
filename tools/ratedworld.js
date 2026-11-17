@@ -83,10 +83,14 @@ function fishUnits() {
     ph = J('fish-photos.json'),
     gm = C.fishGameRead(J('fish-game.json')),
     CUR = J('curation.json'),
+    // the held-out set, out of the views (core.js fishHeld; model.js HELD), when the file exists (a version before it: none)
+    HO = fs.existsSync(path.join(ROOT, 'fish-holdout.json')) ? J('fish-holdout.json') : {},
     src = fs.readFileSync(path.join(ROOT, 'app.js'), 'utf8'),
     ctx = vm.createContext({...C, Math, Map, Set, Object, Array, JSON, String, Number}),
     fishGenera = vm.runInContext('(' + cut(src, 'function fishGenera(', '\n}\n', {through: 1, file: 'app.js'}) + ')', ctx);
-  return (XCACHE = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR), ph.sheet), F));
+  const held = C.fishHeld ? C.fishHeld(HO, gm.photos, CUR) : undefined,
+    X = fishGenera(C.fishGen(F, C.fishPhotos(ph.photos, gm.photos, CUR, held), ph.sheet), F);
+  return (XCACHE = C.fishHeldUnits ? C.fishHeldUnits(X) : X);
 }
 
 // The coral units as the app builds them (app.js build: core.js applyCuration and applySlots, app.js applyForms; the
@@ -142,6 +146,9 @@ function unitsOf(subject) {
       sp: X.spl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
+      // its held-out photos (model.js HELD), drawn into the world with the others so a world is the same with or without
+      // the set withheld
+      held: n => X.gen[n].held || [],
       core: X.c1,
       c3: X.c3,
       tree: X.treeSp || X.tree,
@@ -180,7 +187,9 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     U.slate.forEach(n => (mu[n] = RATED.FAM * normal(r) + ((U.rec(n).look || []).length ? RATED.LOOK : 0)));
     U.extra.forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
   } else [...U.slate, ...U.extra].forEach(n => (mu[n] = coralSd * normal(r)));
-  const files = [...new Set([...U.slate, ...U.extra].flatMap(n => Object.values(U.views(n)).flatMap(L => L.map(p => p.f))))].sort();
+  const files = [
+    ...new Set([...U.slate, ...U.extra].flatMap(n => [...Object.values(U.views(n)).flat(), ...(U.held ? U.held(n) : [])].map(p => p.f)))
+  ].sort();
   files.forEach(f => {
     let e = RATED.EPS * normal(r);
     if (photos === 'tail' && r() < RATED.TAIL.SHARE) e += RATED.TAIL.ADD;
@@ -202,7 +211,7 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap', 'varKind', 'examPassed', 'heldSet', 'HELD'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {}) {
   if (!U.slate) U = unitsOfX(U);
@@ -214,6 +223,7 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = '', calib = null} = {})
   all.forEach(n => {
     const v = U.views(n);
     G[n] = {...U.rec(n), views: Object.fromEntries(Object.entries(v).map(([k, L]) => [k, subject === 'fish' ? L.map(p => ({...p, e: W.ease[p.f]})) : L]))};
+    if (G[n].held) G[n].held = G[n].held.map(p => ({...p, e: W.ease[p.f]}));
   });
   const mem = new Map(),
     store = {get: (k, d) => (mem.has(k) ? JSON.parse(mem.get(k)) : d), set: (k, v) => mem.set(k, JSON.stringify(v))},
@@ -325,8 +335,10 @@ function question(M, ctx, G, t, {list, cards = [], start = false}) {
     cf = typed ? 0 : M.confTerm(t, ch, k),
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : k < 4 ? (k >= 3 ? 'k3' : 'k2') : 'k4',
     cov = cards.includes(t) ? G[t].cover : null,
-    set = ex || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
-  return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set};
+    // a silent probe (quiz.js planPhoto: HELD.p, never with a card or an exam question; model.js heldSet)
+    probe = !ex && !cards.length && M.HELD && ctx.Math.random() < M.HELD.p && M.heldSet(t, ease - cf, k, fq),
+    set = ex || probe || M.photoSet(t, typeof cov === 'string' ? cov : (cov || {}).f || null, ease - cf, k, fq);
+  return {exam: !!ex, typed, chs: typed ? [] : ch, k, fq, traps, ease, cf, set, probe: !!probe};
 }
 // quiz.js answer: the unit's last two observations shown (s.ro), which photoSet holds back (Codex review #787).
 const noteRecent = (s, ph) => {
@@ -335,7 +347,8 @@ const noteRecent = (s, ph) => {
 
 // The judge's photo population of unit n: every game photo the game may ask (app.js gamePhotoOk, as photoSet reads it:
 // an extra genus's only Pierre's own or Research Grade; Codex review #789).
-const judgePhotos = (ctx, G, n) => [...new Set(VIEWN.flatMap(v => G[n].views[v] || []))].filter(p => ctx.gamePhotoOk(n, p));
+// Its held-out photos too (model.js HELD): the population is the unit's whole set, withheld or not.
+const judgePhotos = (ctx, G, n) => [...new Set([...VIEWN.flatMap(v => G[n].views[v] || []), ...(G[n].held || [])])].filter(p => ctx.gamePhotoOk(n, p));
 // The units a typed answer on t may name instead: the others met, of t's rank (quiz.js typeMatch: a coral bonus genus and
 // a slate genus alike; Codex review #789), not of its reporting kind.
 const typedOthers = (G, list, t, met) => list.filter(n => n !== t && met(n) && (G[n].rank || '') === (G[t].rank || ''));
@@ -396,6 +409,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     lv = [];
   let rights = 0,
     blk = {n: 0, ok: 0};
+  // the questions of the exam, and those that showed a held-out photo (model.js HELD: a probe, or an exam question on one)
+  const qs = {exam: 0, held: 0, heldOk: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
     const sl = list.filter(n => !U.extra.includes(n) && !(U.sp || []).includes(n)),
@@ -444,6 +459,9 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       same = typedOthers(G, list, t, M.introduced),
       ph = set.shown || [];
     if (!ph.length) throw new Error(`no photo for ${t} at answer ${i + 1} (exam ${exam}, typed ${typed}, k ${k}): ${JSON.stringify(set).slice(0, 200)}`);
+    const ho = ph.some(p => p && p.ho);
+    if (exam) qs.exam++;
+    if (ho) qs.held++;
     const d = mean(ph.map(p => trueD(t, p))),
       rec = r() < pRec(t, d, ph.length === 1),
       // The learner's true logit on this question (ability - difficulty, recognition), before it learns from it: the
@@ -455,6 +473,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       else c = chs[Math.floor(r() * chs.length)];
     }
     const ok = c === t;
+    if (ho && ok) qs.heldOk++;
     expo.push([t, ph[0].o || ph[0].f, ...ph.map(p => p.f)]);
     preOW.push([
       M.genScore(t) + 1e-9 < M.LV_AT[0] ? 1 : 0,
@@ -581,6 +600,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     knows: [...knows],
     right: rights / Math.max(1, N),
     lv,
+    qs,
     ...(keep ? {P: ctx.P} : {}) // the app's records, for the tests
   });
   return {step, result, ctx, M, G, trueD};

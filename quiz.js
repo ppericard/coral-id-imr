@@ -727,6 +727,9 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // |f: a Find the X (FIND), its four photos the choices; 4 of them, so never |kN.
     (photoQuiz(cur) && FINDX ? '|f' : '') +
     (warm ? '|c' : '') +
+    // |h: a held-out photo shown (model.js HELD: a silent probe, or an exam question on one, …|h|x; Q385), so the transfer
+    // can be measured from the log; before |kN, which the sheet reads at the end. Counted like any answer.
+    (ph.some(p => p && p.ho) ? '|h' : '') +
     (k < (photoQuiz(cur) ? 4 : nc) ? '|k' + k : '') +
     // |t: a typed question (TYPED), never with |kN; the sheet rates it with no guess rate (Code.gs guess_ v27). Its
     // answer a is the genus read ('' for "I don't know"), the raw text goes in ty; it offered no choices (ch empty).
@@ -2356,7 +2359,11 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     cf = typed ? 0 : confTerm(t, ch, kq),
     // Its format (core.js fmtOf, as answer logs it): the aim takes the format's offset (model.js aimOff, pfmt).
     fq = typed ? 'typed' : ch.length === 2 ? 'again' : kq < 4 ? (kq >= 3 ? 'k3' : 'k2') : 'k4',
-    set = ex || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
+    // A silent probe (model.js HELD, heldSet; the transfer check, Q385 (d) A): with HELD.p, a held-out photo of the unit
+    // never shown to this player, drawn by the same rule; never in the custom quiz, a comeback, with a card or an exam
+    // question (the duels, Again and Find the X are planned above, on their own photos).
+    probe = !ex && !sel && !warm && !cards.length && Math.random() < HELD.p && heldSet(t, Math.log(R) + ease - cf, kq, fq),
+    set = ex || probe || photoSet(t, cards.includes(t) ? (cover(GX(t)) || {}).f : null, Math.log(R) + ease - cf, kq, fq),
     // The question asked with its genus's card never shows the card's own photo again (new-player walkthrough 2026-11-02).
     q = [
       cur,

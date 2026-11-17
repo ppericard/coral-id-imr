@@ -153,7 +153,8 @@ const colonyMem = (obs, ps) =>
 // k: the question's plausible choices (plausibleK; 2 for an Again or a duel, Infinity typed), so the photo is aimed for
 // PICKD.P in that format (aimOff); f: its format (core.js fmtOf: 'k4', 'again', 'duel', 'typed'…), whose offset the aim
 // takes (fmtOff, the subject's pfmt). keep: the photos it may show, when not all of them (Find the X: the tiles).
-function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
+// alt: the photos to draw from instead of the unit's views (heldSet: its held-out photos, in the colony slot).
+function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null, alt = null) {
   const g = GX(n),
     two = g.levels === 2,
     need = two ? ['wide', 'macro'] : ['wide', 'medium', 'macro'];
@@ -167,7 +168,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
   const gameOk = p => gamePhotoOk(n, p);
   // all: every photo the unit may show, before keep (the variants' count of observations at full weight, below).
   const pics = (v, all = false) =>
-    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
+    (alt ? (v === 'wide' ? alt : []) : [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])])
       .filter(ok(v))
       .filter(gameOk)
       .filter(p => p.f !== skip && (all || !keep || keep(p)));
@@ -228,7 +229,7 @@ function photoSet(n, skip, shift = 0, k = 4, f = '', keep = null) {
     })
   );
   const keys = Object.keys(obs);
-  if (!keys.length && skip) return photoSet(n); // the card's photo was its only one
+  if (!keys.length && skip) return photoSet(n, null, 0, 4, '', null, alt); // the card's photo was its only one
   // The variety and the floor below lift an observation only by its best photo's variant factor (V above), so neither
   // brings a held-back photo back.
   const vObs = V.on ? Object.fromEntries(keys.map(k => [k, Math.min(1, Math.max(...Object.values(obs[k]).flat().map(V.f)))])) : null;
@@ -369,7 +370,9 @@ function varOf(n, L) {
   const on = L.some(p => f0(p) < 1) && new Set(L.filter(p => f0(p) >= 1).map(p => p.o || p.f)).size >= PICKD.VARIETY;
   return {on, kind, f: on ? f0 : () => 1};
 }
-// The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several.
+// The mastery exam's photos of unit n by view (examSet): its game photos alone, never a photo of several, its held-out
+// photos (heldPics) among them: the exam draws from those first, and the variant groups (varUnitOf) read the unit's
+// photos whole, as the sheet's replay does (core.js fishVarTable, made without the set).
 function examPics(n) {
   const g = GX(n),
     two = g.levels === 2,
@@ -377,7 +380,7 @@ function examPics(n) {
     oneForm = imrFormsOf(n).length === 1,
     gameOk = p => gamePhotoOk(n, p) && !p.multi;
   const pics = v =>
-    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : [])]
+    [...gamePics(n, v), ...(two && v === 'macro' ? gamePics(n, 'medium') : []), ...(v === 'wide' ? g.held || [] : [])]
       .filter(p => v !== 'wide' || p.form !== 'x' || oneForm)
       .filter(gameOk);
   return {two, need, pics};
@@ -415,8 +418,42 @@ function varRight(n, L) {
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
+// The held-out photos (the fish: fish-holdout.json, core.js fishHeld; ROADMAP "A held-out photo set", Pierre,
+// 2026-11-04 and 2026-11-16, Q385): a unit's held list (g.held, core.js fishGen), never in its views, so no game, card,
+// sheet or list shows them. They come only as unannounced questions counted like any other: the exam's (examSet) and the
+// silent probes (heldSet), logged |h (quiz.js answer). HELD.p: the chance a photo-quiz question becomes a probe (the
+// design note's starting point, docs/reviews/2026-11-15-held-out-photo-set-design.md §2).
+const HELD = {p: 0.1};
+// Unit n's held-out photos the games may show (gamePhotoOk, never a photo of several).
+const heldPics = n => ((GX(n) || {}).held || []).filter(p => gamePhotoOk(n, p) && !p.multi);
+// The photos this player was ever shown, on any unit of the subject (each unit's s.ps: {file: [shown, right]}).
+const shownAll = () =>
+  new Set(
+    Object.values(P).flatMap(s => (s && s.ps && typeof s.ps === 'object' ? Object.keys(s.ps).filter(f => (s.ps[f] || [0])[0] > 0) : []))
+  );
+// A silent probe on unit n (the transfer check, design note §2; Q385 (d) A: unannounced, in the photo quiz): photoSet on
+// its held-out photos never shown to this player, so drawn by the same rule as the question it replaces (target, format,
+// variants); never one that would leave a unit holding it (p.hu: core.js fishHeldUnits; a unit with an exam) with
+// EXAM.n or fewer held-out observations never shown (its exam's reserve). Null when there is none.
+function heldSet(n, shift = 0, k = 4, f = '') {
+  const L = heldPics(n);
+  if (!L.length) return null;
+  const seen = shownAll(),
+    left = {},
+    room = u => {
+      if (!(u in left)) {
+        const g = GX(u);
+        left[u] = !g || g.noex ? Infinity : new Set((g.held || []).filter(p => !seen.has(p.f)).map(p => p.o || p.f)).size;
+      }
+      return left[u] > EXAM.n;
+    },
+    ok = new Set(L.filter(p => !seen.has(p.f) && [n, ...(p.hu || [])].every(room)).map(p => p.f));
+  if (!ok.size) return null;
+  const set = photoSet(n, null, shift, k, f, p => ok.has(p.f), L);
+  return set && set.shown && set.shown.length ? {...set, held: 1} : null;
+}
 // The next exam question of genus n: one photo alone, in a view the exam has not shown yet when it can, never answered
-// right before (else the least seen), the hardest of them; while a variant group of the unit is left (varLeft, Q391 b),
+// right before (else the least seen), the hardest of them, a held-out photo never shown to this player first; while a variant group of the unit is left (varLeft, Q391 b),
 // among that group's released photos (the first group left). Null when the genus has no game photo.
 function examSet(n) {
   const s = P[n] || {},
@@ -435,13 +472,17 @@ function examSet(n) {
     L = pics(v),
     // Never shown at all first (a photo answered wrong has been seen, and its answer shown); else the least seen of those
     // never answered right; else the least seen.
+    // The held-out photos never shown to this player on any unit first (the honest exam, ROADMAP "A held-out photo
+    // set"; Q385): the hardest of them, as below.
+    seen = (g => g.held && g.held.length && shownAll())(GX(n)),
+    held = seen ? L.filter(p => p.ho && !seen.has(p.f)) : [],
     fresh = L.filter(p => !(ps[p.f] || [0])[0]),
     unright = L.filter(p => !(ps[p.f] || [0, 0])[1]),
     least = M =>
       M.slice()
         .sort((a, b) => (ps[a.f] || [0])[0] - (ps[b.f] || [0])[0])
         .slice(0, 3),
-    pool = fresh.length ? fresh : least(unright.length ? unright : L);
+    pool = held.length ? held : fresh.length ? fresh : least(unright.length ? unright : L);
   const p = pool.reduce((a, b) => (photoDiff(n, b) > photoDiff(n, a) ? b : a));
   return {shown: [{...p, view: lab(v)}], hint: null, reveal: [], exam: true};
 }
@@ -523,7 +564,8 @@ const easyTrust = () =>
 let GDIFF = {};
 const genusDiff = n => {
   if (n in GDIFF) return GDIFF[n];
-  const je = [...new Set(VIEWS.flatMap(([v]) => gamePics(n, v)))].filter(p => p.e),
+  // its held-out photos too (g.held), so withholding them does not move it
+  const je = [...new Set([...VIEWS.flatMap(([v]) => gamePics(n, v)), ...((GX(n) || {}).held || [])])].filter(p => p.e),
     ease = je.length ? je.reduce((t, p) => t + (PDIFF.MID - p.e) * calibOf(SUBJ).ease, 0) / je.length : 0;
   return (GDIFF[n] = Math.round((((PGD[n] || [0])[0] || 0) + ease) * 100) / 100);
 };
