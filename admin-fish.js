@@ -45,8 +45,8 @@ const FTAGS = [
   }
 ];
 const FFLAGS = {j: 'juvenile', c: 'camouflage', a: 'out of water', w: 'watermark', p: 'phase entry', r: 'reference photo'};
-const fishTagText = jt =>
-  !jt ? '' : [...FTAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FFLAGS[c])].filter(Boolean).map(esc).join(' · ');
+// Every value said, in the words of the tree subject in force (admin.js tagWords: the sea slugs' views and flags).
+const fishTagText = (jt, S = FISHS) => tagText(jt, tagWords(S, FTAGS, FFLAGS, true));
 // The rows Pierre sets (judging/FISH.md "Tags"): [position in the code, name, [[value, label]...]]; the flags he may
 // type (the tool adds p and r itself); the IMR phase words (judging/FISH.md "phase"), '' = none (an adult, or a
 // juvenile, which is the j flag).
@@ -141,6 +141,16 @@ const FPHASE_ROW = [
   ['female', 'Female'],
   ['male', 'Male']
 ];
+// The rows and flags of subject S's rubric (the tree subject in force, FISHS, by default): the fish's (FROWS, FFLAGS_MINE)
+// with those its SUBJECTS admin tags replace (the sea slugs': their six views, no night livery, the f flag; Pierre,
+// 2026-11-17: the sea slugs' admin at parity); the count row in its words ("One sea slug").
+const tagRows = (S = FISHS) => {
+  const T = (S && S.admin && S.admin.tags) || {},
+    w = x => (S ? x.replace(/\bSeveral fish\b/g, 'Several ' + S.name.toLowerCase()).replace(/\bfish\b/g, S.what.toLowerCase()) : x);
+  return FROWS.map(([i, n, o]) => [i, n, T[i] ? T[i].map(([v, l]) => [v, l]) : o.map(([v, l, t]) => [v, w(l), ...(t ? [w(t)] : [])])]);
+};
+const tagFlags = (S = FISHS) =>
+  S && S.admin && S.admin.tags && S.admin.tags.flags ? S.admin.tags.flags.map(([k, l]) => [k, l]) : FFLAGS_MINE;
 // One segmented row: the value in force pressed; dashed (auto) while it is the pass's, not Pierre's. An option may carry
 // its tooltip ([value, label, title]).
 const fRow = (name, at, opts, v, auto) =>
@@ -179,10 +189,12 @@ function fishRows(F, p, j, blind, entry, open = FTAGS_OPEN) {
   if (open)
     h +=
       `<div class="adm-ftags">` +
-      FROWS.map(([i, name, opts]) => fRow(name, `data-ft="${i}" data-fv`, opts, code ? code[i] : null, tAuto)).join('') +
-      `<span class="adm-qseg adm-ftag adm-fflags${tAuto ? ' auto' : ''}" role="group" aria-label="Flags">${FFLAGS_MINE.map(
-        ([k, t]) => `<button type="button" data-ff2="${k}" aria-pressed="${code.slice(7).includes(k)}">${t}</button>`
-      ).join('')}</span></div>`;
+      tagRows()
+        .map(([i, name, opts]) => fRow(name, `data-ft="${i}" data-fv`, opts, code ? code[i] : null, tAuto))
+        .join('') +
+      `<span class="adm-qseg adm-ftag adm-fflags${tAuto ? ' auto' : ''}" role="group" aria-label="Flags">${tagFlags()
+        .map(([k, t]) => `<button type="button" data-ff2="${k}" aria-pressed="${code.slice(7).includes(k)}">${t}</button>`)
+        .join('')}</span></div>`;
   return h;
 }
 // Not this (5b; Pierre's only): the photo goes to another species of its entry first, then any game species, or none.
@@ -239,11 +251,20 @@ const fishSrcTag = p => {
   const o = origin(p);
   return `<span class="adm-src o-${o}">${p.via === 'fishbase' && !p.own ? 'FishBase' : ORIGINS.find(x => x[0] === o)[1]}</span>${rightsTag(p)}${nameTag(p, FISHS)}`;
 };
+// A genus-level candidate's unit is its genus (gl: the sea slugs' genus-level lists, by the genus's id): "Genus sp.",
+// genus level (admin.js fuName).
 const fishName = sid => {
   const s = FISHC.species[sid] || {},
-    t = FISHC.entry[sid];
-  return {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
+    t = FISHC.entry[sid],
+    g = !FISHC.species[sid] && (FISHC.genera || {})[sid];
+  return g ? {sci: g.name + ' sp.', sub: 'genus level'} : {sci: s.name || sid, sub: [s.common, t && t.name].filter(Boolean).join(' · ')};
 };
+// The records the queue reads its targets from (autosort.js fishQueue, fishTarget): the species', and for a subject with
+// a target of its own (core.js SUBJECTS admin target) its genera's too, a genus-level list filling up to the same target.
+const candSpecies = () =>
+  FISHS && FISHS.admin.target > 0
+    ? {...Object.fromEntries(Object.keys(FISHC.genera || {}).map(g => [g, {tgt: FISHS.admin.target}])), ...FISHC.species}
+    : FISHC.species;
 // The photos of a species in play (Pierre's keep holds the add, never other species one could take for the subject: core.js
 // fishOther, Q323), its own candidates first, then any other photo added to it.
 const fishInPlay = (F, sid) => {
@@ -372,9 +393,12 @@ function renderFishCand() {
   }
   const F = DRAFT[TK] || {},
     SF = (SUG && SUG[TK]) || {},
-    Q0 = fishQueue(FISHC.cand, SF, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+    Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
-    Q1 = FQ === 'chk' ? chks : Q0,
+    // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
+    // (Codex review #1061: Checks chosen on the fish showed the sea slugs an empty queue with no switch)
+    aqOn = !!FISHS.admin.autosort || chks.length > 0,
+    Q1 = aqOn && FQ === 'chk' ? chks : Q0,
     shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),
     nFull = Q1.filter(x => x.full).length,
     nAside = Q1.filter(x => x.aside).length,
@@ -384,17 +408,21 @@ function renderFishCand() {
     nx = live.find(x => x !== c);
   const cnt = L => L.filter(shown).length;
   const seg =
-    `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The fish auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>` +
+    // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count, a
+    // chip beside the others
+    (aqOn
+      ? `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>`
+      : '') +
     candFlags(
-      `${
+      `${aqOn ? '' : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} to sort</span>`}${
         nFull
-          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
+          ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHS.admin.target > 0 ? `${FISHS.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`}): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
           : ''
       }${
         nAside
-          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
+          ? `<button type="button" class="adm-chip adm-caside" data-faside aria-pressed="${FASIDE}" title="${nAside} the pass is sure go (near-duplicate, subject not obvious, out of the water, an egg mass), not applied: ${FASIDE ? 'tap to hide them' : 'tap to show them'}">${nAside} set aside</button>`
           : ''
-      }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the fish candidate pass (judging/FISH.md)">${nJ} not judged yet</span>` : ''}`,
+      }${nJ ? `<span class="adm-chip adm-cjudge" title="Ask your agent for the ${esc(FISHS.what.toLowerCase())} candidate pass (judging/)">${nJ} not judged yet</span>` : ''}`,
       fishAutoBlock(false, true)
     ) +
     fishAutoBlock();

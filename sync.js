@@ -138,7 +138,7 @@ const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
 // the genera a question offers, only once the sheet replays them as the game scores them and its board tree holds them
 // (GENERA_SHEET: core.js fishReplayGen, fishBoardTree, fishVarTable with every circle's genera); before, circle 1's alone,
 // as before (rule D4). The one predicate (app.js sciNow).
-const GENERA_SHEET = 168;
+const GENERA_SHEET = 169;
 const generaOn = () => sheetV() >= GENERA_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();

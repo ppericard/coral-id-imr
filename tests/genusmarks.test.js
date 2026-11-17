@@ -156,7 +156,9 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
           id
         )
       ),
-    repBtn: () => '<button>report</button>'
+    repBtn: () => '<button>report</button>',
+    // learn.js esrcP: the content editor's source of an edited slot (core.js contentApply esrc)
+    esrcP: (r, k) => (r.esrc && r.esrc[k] ? `<p class="note esrc">Source: ${r.esrc[k].t}</p>` : '')
   };
   vm.createContext(c2);
   vm.runInContext(
@@ -178,6 +180,13 @@ test('the sheet: genMarks on the one sheet the genus opens, each line with its s
   );
   assert.ok(h.includes('https://www.fao.org/4/y0870e/y0870e02.pdf'));
   assert.strictEqual(c2.genMarks(g, 'f:Wrasses'), '', 'never on a sheet the genus does not open');
+  // Marks the content editor gave (the sea slugs' content marks) on a genus with no source of its own: his source, no empty
+  // Sources line.
+  const e = c2.genMarks(
+    {...g, plain: '', marks: ['A made-up mark'], msrc: [], mby: {}, esrc: {marks: {t: 'Made-up source'}}},
+    'g:Cheilinus'
+  );
+  assert.ok(e.includes('Source: Made-up source') && !e.includes('Sources:'));
   // A one-species genus: on its species' sheet (Gomphosus varius).
   assert.ok(c2.genMarks(FG.Gomphosus, 's:Gomphosus varius').includes(FG.Gomphosus.marks[0]));
   assert.strictEqual(c2.genMarks(FG.Chromis, 'g:Chromis'), '', 'an IMR genus: its IMR cues only');
