@@ -2642,6 +2642,22 @@ const UNITS = {
     winks: () => [],
     tiles: () => [],
     list: () => viewFishList(),
+    // Its sheets in its own words (learn.js sheetWord; study §9 step 7: no fish word on a sea-slug sheet): each sheet's ?
+    // text, a species' rank in its family by its observers in the Philippines (seaslug.json present.area, the subject's
+    // area), no species link but iNaturalist and WoRMS (FishBase is the fish's), and a sea slug as the "No photo yet"
+    // drawing. Its ID marks are its own, sourced (tools/seaslug_cues.json): shown on the sheets and in the quiz feedback.
+    words: {
+      famLede: () =>
+        'One family on one page, under its scientific name and its English names where a source gives one. <b>ID marks</b> are what to look at, in our words from the sources numbered after each line: the rhinophores, the gills or the cerata, the mantle and its edge, the body shape. <b>Genera</b> lists its genera, each with a few of its species. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. Tap a photo to enlarge it.',
+      genLede: f =>
+        `One genus of the ${esc(f.name)} on one page: its <b>ID marks</b>, in our words from the sources numbered after each line, then its species, one photo each, the most recorded in the Philippines first. <b>Opened for me</b> shows the species of the genera you have met in the quiz; <b>All</b> shows every species. <b>Don't confuse with</b> shows the look-alikes a source names or players mix up, each with its source. Tap a photo to enlarge it.`,
+      spLede:
+        'One species on one page: its scientific name, its English names where a source gives one, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.',
+      met: {v: s => (s.present || {}).area || 0, where: 'in the Philippines, by how many observers recorded it'},
+      links: () => [],
+      nophoto:
+        '<svg viewBox="0 0 64 40" aria-hidden="true"><path class="np-t" d="M5 31c4-8 14-12 27-12s22 4 27 12c-7 3-16 4-27 4S12 34 5 31z"/><path d="M15 21l-3-9M20 20l1-9M45 20c0-4 2-7 6-8M45 20c3-3 6-4 9-3"/><circle class="eye" cx="13" cy="11" r="1.5"/><circle class="eye" cx="21" cy="10" r="1.5"/></svg>'
+    },
     sheet: id => viewFishSheet(id),
     bar: id => fishBar(id),
     // The Genera page's line, and its genera grouped by family (learn.js viewFishList listBy; Pierre, 2026-11-16 ~15:42:
