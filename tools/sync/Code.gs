@@ -3878,7 +3878,7 @@ const CORE_ = (function () { const module = {exports: {}};
   // D4; SUBJECTS seaslug replayed sheet, boardSheet): the app asks for and adopts their replay (sync.js rpOn) and shows
   // their board (progress.js boardLive) only from it; before, the subject does exactly what it did (the plain merge, no
   // board: an older script answers &s=seaslug with the corals' board, never shown as the sea slugs').
-  const SEASLUGRP_SHEET = 162;
+  const SEASLUGRP_SHEET = 163;
   const SUBJECTS = [
     {
       id: 'coral',
