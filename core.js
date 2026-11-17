@@ -509,7 +509,14 @@
       // change to its replay never replays the corals again (the integrator, 2026-11-08: no card to a coral player for it).
       // No floor: the log is the only reference, a fish bar may go down (Pierre, 2026-11-09, Q330).
       // tree: its leaderboard's tree as the sheet makes it with the replay's units (fishBoardTree; Code.gs subjRpl_, board_).
-      replayed: {gen: F => fishReplayGen(F), rvs: () => FISH_RVS, tree: F => fishBoardTree(F)},
+      // vars: the variant table its replay reads (fishVarTable; Code.gs subjVar_), from its pool files with the structure in
+      // force, so the sheet takes a learned mark away from the log when a variant group has no right answer (Q391 b, D8).
+      replayed: {
+        gen: F => fishReplayGen(F),
+        rvs: () => FISH_RVS,
+        tree: F => fishBoardTree(F),
+        vars: (F, Fs, S) => fishVarTable(F, Fs, S)
+      },
       pool: {files: ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'], of: 'entries'},
       // Its own achievements (Pierre, 2026-11-04: about 14 general fish achievements; core.js FISH_ACH), in the shared
       // record under ids of their own, never counted in the corals'.
@@ -936,6 +943,106 @@
   // ('juv', every class), its sexes and colour phases ('ph'); '' none.
   const VAR_GROUPS = ['juv', 'ph'];
   const varGroup = v => (!v ? '' : v === 'ph' ? 'ph' : 'juv');
+  // The groups left, in one place for the app and the sync sheet (Q391 b; rules D8, D9: the sheet's replay takes a learned
+  // mark away from the answer log for every player at once, the app's exam asks the same groups: model.js varLeft).
+  // VAR_FULL: the observations at full weight under which nothing is held back (model.js PICKD.VARIETY; tests check they
+  // agree). varUnit(L, juv, at): what the rule reads of a unit's exam photos L (model.js examPics), null when none is a
+  // variant: n, the distinct observations of its photos with no variant; v, one [photo file, kind, observation] per
+  // variant photo, its observation a small index, -1 when a photo with no variant shares it (counted in n already); at,
+  // each kind's thresholds (at(kind): model.js varAtOf). The sheet keeps one per unit (fishVarTable), so its size stays
+  // small: no address, no record.
+  const VAR_FULL = 3;
+  function varUnit(L, juv, at) {
+    const plain = new Set(),
+      vs = [];
+    (L || []).forEach(p => {
+      const k = varKindOf(p, juv),
+        o = String(p.o || p.f);
+      if (k) vs.push([p.f, k, o]);
+      else plain.add(o);
+    });
+    if (!vs.length) return null;
+    const ids = [...new Set(vs.filter(x => !plain.has(x[2])).map(x => x[2]))],
+      A = {};
+    vs.forEach(([, k]) => (A[k] = A[k] || (typeof at === 'function' ? at(k) : (at || {})[k]) || VAR_AT[k] || [0, 0]));
+    return {n: plain.size, v: vs.map(([f, k, o]) => [f, k, plain.has(o) ? -1 : ids.indexOf(o)]), at: A};
+  }
+  // The variant groups of unit U (varUnit) released at bar x (each kind's ramp above 0; every one under the fallback:
+  // fewer than VAR_FULL observations at full weight, as model.js varOf) with no photo answered right in ps (the unit's
+  // photos {file: [shown, right]}); [] for none. A learned unit's bar is full (scoreOf: s.mx), so every group it has.
+  function varLeftOf(U, x, ps) {
+    if (!U || !Array.isArray(U.v) || !U.v.length) return [];
+    const R = {},
+      ramp = k => (k in R ? R[k] : (R[k] = varRamp(x, (U.at || {})[k] || VAR_AT[k]))),
+      full = new Set(),
+      rel = {},
+      ok = {};
+    let some = false;
+    U.v.forEach(([, k, i]) => (ramp(k) < 1 ? (some = true) : i >= 0 && full.add(i)));
+    const on = some && (Number(U.n) || 0) + full.size >= VAR_FULL;
+    U.v.forEach(([f, k]) => {
+      const g = varGroup(k),
+        h = (ps || {})[f];
+      if (!on || ramp(k) > 0) rel[g] = 1;
+      if (Array.isArray(h) && Number(h[1]) > 0) ok[g] = 1;
+    });
+    return VAR_GROUPS.filter(g => rel[g] && !ok[g]);
+  }
+  // The mastery exam passed (model.js EXAM.n right answers, TYPED.exam of them typed; tests check they agree): what the
+  // replay keeps of a learned mark it takes away for a variant group (replayedOf), as the app's exam leaves it.
+  const MX_EXAM = {n: 5, typed: 2};
+  // The variant table the sync sheet's replay reads (SUBJECTS replayed vars; Code.gs subjVar_): {unit id: varUnit} for
+  // every unit that can be learned and has a variant photo, made from the subject's pool files as the app makes its units:
+  // F, its first file with the structure in force laid over it (core.js contentApply, as Code.gs subjRpl_); Fs, the pool
+  // files [fish.json, fish-photos.json, fish-game.json, curation.json]; S, the subject. The families (fishGen over
+  // fishPhotos, as app.js fishBuild) and the scientific genera, each with its family's photos of its species (app.js
+  // fishGenera's filter: in circle 1 its species of circle 1; played at the genus, the species of its unit); a species unit
+  // has no exam (app.js noex). Each unit's juvenile classes and thresholds are its family's (model.js varHome, varAtOf).
+  // tests/phasepath.test.js checks it is the app's (model.js varLeft over app.js units).
+  function fishVarTable(F, Fs, S) {
+    const [, ph, gm, cur] = Fs || [],
+      X = fishGen(
+        F || {},
+        fishPhotos((ph || {}).photos, (fishGameRead(gm) || {}).photos, treeCur(S, cur)),
+        (ph || {}).sheet,
+        unitRankOf(S)
+      ),
+      sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
+      gens = new Map(((F && F.genera) || []).map(g => [g.id, g])),
+      atGenus = X.unit === 'genus',
+      out = {},
+      ok = p => p && p.f && !p.multi,
+      put = (id, L, home, own) => {
+        const U = varUnit(L.filter(ok), home.juv, k => ((own || {}).varAt || {})[k] || (home.varAt || {})[k] || VAR_AT[k]);
+        if (U) out[id] = U;
+      };
+    Object.values(X.gen).forEach(g => {
+      if (!g.wink && !g.rank && !g.parent) put(g.id, (g.views || {}).wide || [], g, g);
+    });
+    ((F && F.families) || [])
+      .filter(f => (atGenus || f.circle === 1) && X.gen[f.id])
+      .forEach(f => {
+        const E = X.gen[f.id];
+        (f.genera || [])
+          .map(id => gens.get(id))
+          .filter(Boolean)
+          .forEach(G => {
+            const L = atGenus
+              ? X.gen[G.id] && X.gen[G.id].parent === f.id
+                ? X.gen[G.id].species.map(id => sp.get(id)).filter(Boolean)
+                : []
+              : (G.species || []).map(id => sp.get(id)).filter(s => s && s.circle === 1);
+            if (!L.length) return;
+            const set = new Set(L.map(s => s.id));
+            put(
+              G.id,
+              ((E.views || {}).wide || []).filter(p => set.has(p.sp) || (!!p.gl && p.sp === G.id)),
+              E
+            );
+          });
+      });
+    return out;
+  }
   // The explanation card a phase photo brings (quiz.js phaseArm): 'juvenile', 'phase' for a sex or colour phase, '' none.
   // A sex or colour phase only on a photo whose tags carry the phase flag p: its entry is marked dimorph, the IMR
   // presentation saying its sexes or colour phases look different (judging/FISH.md "Tags"; the Parrotfishes, the Anthias),
@@ -5174,7 +5281,7 @@
     {
       v: 3,
       at: '2026-11-17',
-      why: "Learned asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): a unit's mastery exam is passed only once each variant group it has (its juveniles; its sexes and colour phases), released by its own mastery, has a right answer, its exam drawing that group's photo while one is left (model.js varLeft, examPassed); a learned mark whose unit lacks one is taken away silently on the device that holds the photos (model.js varRecalcAll, rule D6), its exam kept as passed but for that group",
+      why: "Learned asks each variant group (Pierre, 2026-11-17 10:52 Manila, Q391 b): a unit's mastery exam is passed only once each variant group it has (its juveniles; its sexes and colour phases), released by its own mastery, has a right answer, its exam drawing that group's photo while one is left (model.js varLeft, examPassed); a learned mark whose unit has a variant group with no right answer in the answer log is taken away by the sheet's replay for every player at once, the leaderboards included (rules D8, D9: replayProgress vars, fishVarTable, replayedOf; Code.gs subjVar_), silently (rule D6), its exam kept as passed but for that group",
       // No card (Pierre, 2026-11-09 ~14:45 Manila, Q330; a learned mark taken away silent too, Q332).
       msg: null
     }
@@ -5606,6 +5713,19 @@
           if (!keepsMark(x, pl.P, c)) x.lm = r[1];
         }
       });
+    // vars (a subject's variant table, fishVarTable; Code.gs rplMake_): each unit's variant groups with no photo answered
+    // right in the log (vl: varLeftOf at a full bar, a learned unit's), which take a learned mark away (replayedOf; Q391 b,
+    // rules D8, D9). Without vars (the corals; this device's answers replayed on top of the sheet's), vl stays as it came.
+    if (o.vars)
+      Object.values(out).forEach(pl =>
+        Object.keys(pl.P).forEach(g => {
+          const x = pl.P[g];
+          if (g === LEVEL || !isObj(x) || !own(o.vars, g)) return;
+          const vl = varLeftOf(own(o.vars, g), 1, x.ps);
+          if (vl.length) x.vl = vl;
+          else delete x.vl;
+        })
+      );
     return out;
   }
   // An answer of the app's own log (quiz.js answer: {id, t, g, a, ok, m, ph, e, th, nw, ch, rt}) as a replay row for
@@ -5724,7 +5844,14 @@
       if (s) {
         ['dd', 'dl', 'ro', 'cor'].forEach(f => s[f] !== undefined && (o[f] = dup(s[f])));
         if (afterBkt(s) && s.mx) {
-          if (!(r.lm > s.mx)) o.mx = s.mx;
+          // A variant group with no right answer in the log (r.vl, replayProgress vars; Q391 b): the mark goes, silently
+          // (rule D6), its exam kept as passed but for that group, started at the later of the mark and the last miss so
+          // a miss after it ends it (lx), ready at once (at 0: the app's EXAM.gap long past); the next exam question asks
+          // the group (model.js examSet), a right answer makes it learned again.
+          if (!(r.lm > s.mx))
+            if (Array.isArray(r.vl) && r.vl.length)
+              o.ex = {k: MX_EXAM.n, t: MX_EXAM.typed, v: [], ts: Math.max(Number(s.mx) || 0, Number(r.lx) || 0), at: 0};
+            else o.mx = s.mx;
         } else if (afterBkt(s) && s.ex && !(r.lx > (s.ex.ts || s.at || 0))) o.ex = dup(s.ex);
       }
       out[g] = o;
@@ -6582,6 +6709,11 @@
     varRamp,
     VAR_GROUPS,
     varGroup,
+    VAR_FULL,
+    varUnit,
+    varLeftOf,
+    MX_EXAM,
+    fishVarTable,
     phaseKind,
     phaseCardOf,
     phasePair,

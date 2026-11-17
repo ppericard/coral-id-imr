@@ -386,22 +386,15 @@ function examPics(n) {
 // VAR_GROUPS: its juveniles, its sexes and colour phases) that have a photo released by its mastery (varOf: weight above
 // 0, or every photo under the fallback) and no photo of the group answered right yet (s.ps). While one is left, the
 // exam's next question draws its photo (examSet) and the exam is not passed (examPassed). [] for a unit with no variant
-// (the corals).
+// (the corals). Through core.js varUnit and varLeftOf, the functions the sheet's replay takes a learned mark away with
+// (rules D8, D9: core.js fishVarTable, replayProgress vars, replayedOf), so the app and the sheet decide alike.
+function varUnitOf(n) {
+  if (!GX(n)) return null;
+  const {need, pics} = examPics(n);
+  return varUnit(need.flatMap(pics), (GX(varHome(n)) || {}).juv, v => varAtOf(n, v));
+}
 function varLeft(n) {
-  if (!GX(n)) return [];
-  const {need, pics} = examPics(n),
-    L = need.flatMap(pics),
-    V = varOf(n, L),
-    ps = (P[n] || {}).ps || {},
-    rel = {},
-    ok = {};
-  L.forEach(p => {
-    const g = varGroup(V.kind(p));
-    if (!g) return;
-    if (V.f(p) > 0) rel[g] = 1;
-    if ((ps[p.f] || [0, 0])[1] > 0) ok[g] = 1;
-  });
-  return VAR_GROUPS.filter(g => rel[g] && !ok[g]);
+  return GX(n) ? varLeftOf(varUnitOf(n), genScore(n), (P[n] || {}).ps) : [];
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;
@@ -1498,31 +1491,13 @@ function memRecalcAll() {
 // (app.js need at start-up), so the call at the end of this file and fishLoad's find no data, and app.js start-up runs
 // it once the data is built (2026-11-08: "reading 'gen'", and fishLoad failing brought the corals back).
 // "Learned" asks each variant group (Q391 b; fish rules version 3, core.js FISH_RVS): a learned mark whose unit has a
-// variant group left (varLeft: released by its mastery, never answered right) is taken away, silently (mxRecalc, rule
-// D6), at load and after each pull once the subject's whole data is in (domRecalcAll calls it: the sheet's replay keeps
-// the device's marks and has no photo phases). Its exam stays passed but for that group (s.ex at EXAM.n right, TYPED.exam
-// typed, started now so a later miss ends it as any miss does, core.js replayedOf): its next exam question asks the group
-// (examSet), and a right answer there makes it learned again. Saved and synced when it took one.
-function varRecalcAll() {
-  const L = Object.keys(P).filter(n => n !== LEVEL && P[n] && P[n].mx && !!GX(n) && varLeft(n).length);
-  if (!L.length) return false;
-  mxRecalc(
-    () =>
-      L.forEach(n => {
-        P[n].ex = {k: EXAM.n, t: TYPED.exam, v: [], ts: Date.now(), at: answersSoFar() - EXAM.gap};
-        delete P[n].mx;
-      }),
-    'rules'
-  );
-  save();
-  if (typeof ev === 'function') ev('recalc', {msg: `${SUBJ.id}: ${L.length} learned units wait for a variant group`});
-  return true;
-}
+// variant group with no right answer in the answer log is taken away by the sheet's replay (core.js replayProgress vars,
+// replayedOf; rules D8, D9), which every device adopts once (sync.js replayAdoptS, silently through mxRecalc: rule D6) and
+// the leaderboard ranks a player by until then; never by a device on its own.
 function domRecalcAll() {
   // Nor while the subject's data is still partial (app.js dataPartial: the fish units on their first photos only, before
   // fish-game.json): the rebuild reads the units' photo difficulties, and runs once the whole data is in (fishLoad).
   if (SUBJ.replay || !domRules() || !DATA || (typeof dataPartial === 'function' && dataPartial())) return false;
-  const vr = typeof varRecalcAll === 'function' && varRecalcAll();
   const L = Object.keys(P).filter(
     n => n !== LEVEL && P[n] && typeof P[n].pg === 'number' && !domOn(P[n]) && (P[n].ok || 0) + (P[n].ko || 0) > 0 && !!GX(n)
   );
@@ -1534,7 +1509,7 @@ function domRecalcAll() {
     s.ds = r.ds;
     delete s.pg;
   });
-  if (!L.length) return vr;
+  if (!L.length) return false;
   save();
   if (typeof ev === 'function') ev('recalc', {msg: `${SUBJ.id}: ${L.length} units rebuilt under the domain-score bar from their counts`});
   return true;

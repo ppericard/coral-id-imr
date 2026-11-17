@@ -315,3 +315,122 @@ test('the exam is passed only with each variant group right; a miss restarts it'
   assert.ok(s.mx, 'learned: five right, two typed, each group right');
   assert.strictEqual(s.ex, undefined);
 });
+
+// The sheet's replay decides from the answer log (rules D8, D9; fish rules version 3): core.js varUnit and varLeftOf are
+// what model.js varLeft runs, and what the replay reads through the variant table (fishVarTable, replayProgress vars,
+// replayedOf). App and sheet agree.
+test('varUnit and varLeftOf: model.js varLeft runs them, its constants are the app’s', () => {
+  const L = examPool(),
+    E = engine('fish', L, {score: 0.86, juv: {cls: 'C'}});
+  assert.strictEqual(C.VAR_FULL, E.PICKD.VARIETY);
+  assert.deepStrictEqual(C.MX_EXAM, {n: E.EXAM.n, typed: E.TYPED.exam});
+  const U = E.varUnitOf('u');
+  assert.deepStrictEqual(U, C.varUnit(L, {cls: 'C'}));
+  assert.strictEqual(U.n, 12);
+  assert.deepStrictEqual(U.at, {j: C.VAR_AT.j, ph: C.VAR_AT.ph});
+  [{}, {j2: [1, 0]}, {j2: [2, 1]}, {j2: [2, 1], m0: [1, 1]}].forEach(ps => {
+    E.P.u.ps = ps;
+    assert.deepStrictEqual(E.varLeft('u'), C.varLeftOf(U, 0.86, ps), JSON.stringify(ps));
+  });
+  // A mixed observation counts once; fewer than VAR_FULL at full weight: every group released (the fallback).
+  const M = [
+      {f: 'a', o: 'x'},
+      {f: 'j', o: 'x', ph: 'juvenile'},
+      {f: 'b', o: 'y'},
+      {f: 'm', o: 'z', ph: 'male'}
+    ],
+    V = C.varUnit(M, null);
+  assert.deepStrictEqual(V.v, [
+    ['j', 'j', -1],
+    ['m', 'ph', 0]
+  ]);
+  assert.deepStrictEqual(C.varLeftOf(V, 0.1, {}), ['juv', 'ph'], 'the fallback: nothing held back');
+  assert.deepStrictEqual(engine('fish', M, {score: 0.1}).varLeft('u'), ['juv', 'ph']);
+  assert.strictEqual(C.varUnit(L.slice(0, 12), null), null, 'no variant: nothing kept');
+  assert.deepStrictEqual(C.varLeftOf(null, 1, {}), []);
+});
+
+test("the sheet's variant table is the app's: every unit's, and the groups left, from the same files", () => {
+  const fs = require('fs'),
+    path = require('path'),
+    vm = require('vm'),
+    json = f => JSON.parse(fs.readFileSync(path.join(__dirname, '..', f), 'utf8')),
+    Fs = ['fish.json', 'fish-photos.json', 'fish-game.json', 'curation.json'].map(json),
+    S = C.subjectOf('fish'),
+    ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, fishSpUnits: C.fishSpUnits, rankWeights: C.rankWeights};
+  vm.createContext(ctx);
+  const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  vm.runInContext(
+    require('./block.js')(app, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
+    ctx
+  );
+  // The app's units (app.js fishBuild: fishGen over fishPhotos, then fishGenera), and the sheet's table from the same files.
+  const X = ctx.fishGenera(
+      C.fishGen(Fs[0], C.fishPhotos(Fs[1].photos, C.fishGameRead(Fs[2]).photos, C.treeCur(S, Fs[3])), Fs[1].sheet, C.unitRankOf(S)),
+      Fs[0]
+    ),
+    T = S.replayed.vars(Fs[0], Fs, S);
+  let n = 0;
+  Object.values(X.gen).forEach(g => {
+    if (g.wink || g.noex) return; // a wink family is never asked; a species unit has no exam
+    const home = g.rank ? X.gen[g.parent] : g,
+      E = engine('fish', g.views.wide, {juv: home.juv || null, varAt: home.varAt || null, score: 1}),
+      U = E.varUnitOf('u');
+    assert.deepStrictEqual(T[g.id] || null, U, g.id);
+    if (!U) return;
+    n++;
+    // The groups left at a learned unit's full bar, with no right answer, then one right per group: the same both ways.
+    const one = G => U.v.find(x => C.varGroup(x[1]) === G);
+    [{}, ...C.VAR_GROUPS.map(G => (one(G) ? {[one(G)[0]]: [1, 1]} : {}))].forEach(ps => {
+      E.P.u.ps = ps;
+      assert.deepStrictEqual(C.varLeftOf(T[g.id], 1, ps), E.varLeft('u'), g.id + ' ' + JSON.stringify(ps));
+    });
+  });
+  assert.ok(n >= 50 && Object.keys(T).some(k => k.startsWith('g:')), 'families and genera with variants: ' + n);
+  assert.ok(JSON.stringify(T).length < 600000, 'kept in the script cache in parts (Code.gs cacheBigPut_)');
+});
+
+test('the replay takes a learned mark away when a variant group has no right answer in the log; the corals as before', () => {
+  const L = examPool(),
+    vars = {'f:X': C.varUnit(L, {cls: 'C'})},
+    gen = {'f:X': {look: [], fam: 'X'}, 'f:Y': {look: [], fam: 'Y'}},
+    t0 = Date.UTC(2026, 10, 10),
+    row = (i, f, ok = 1) =>
+      C.logRow(
+        {
+          id: 'a' + i,
+          t: new Date(t0 + i * 1000).toISOString(),
+          g: 'f:X',
+          a: ok ? 'f:X' : 'f:Y',
+          ok,
+          m: 'quiz|c',
+          ph: f,
+          ch: 'f:X f:Y',
+          e: 0.8,
+          th: 1,
+          sc: {d: 0, r: 1}
+        },
+        'p'
+      ),
+    mx = t0 + 60000,
+    saved = {'f:X': {ok: 5, ko: 0, h: '11111', ds: 1, dp: [1, 1], mx}},
+    adopt = (rows, o) => C.replayAdopted(C.replayProgress(rows, {gen, ...o}).p.P, saved, 3)['f:X'];
+  const adults = [0, 1, 2, 3].map(i => row(i, `a${i}`));
+  // Only adults right in the log: both groups left, the mark goes, its exam kept as passed but for them.
+  const A = adopt(adults, {vars});
+  assert.ok(!A.mx);
+  assert.deepStrictEqual(A.ex, {k: C.MX_EXAM.n, t: C.MX_EXAM.typed, v: [], ts: mx, at: 0});
+  // A juvenile right, a male answered wrong: the sexes still left.
+  assert.ok(!adopt([...adults, row(4, 'j1'), row(5, 'm2', 0)], {vars}).mx);
+  // Each group right in the log: the mark stays.
+  assert.strictEqual(adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars}).mx, mx);
+  // No table (the corals; this device's answers on top of the sheet's replay): the mark as before.
+  assert.strictEqual(adopt(adults, {}).mx, mx);
+  // The sheet's replay carried on this device: its vl kept from the record it starts from.
+  const rec = C.replayProgress(adults, {gen, vars}).p.P;
+  assert.deepStrictEqual(rec['f:X'].vl, ['juv', 'ph']);
+  const on = C.replayProgress([row(9, 'a5')], {gen, start: {p: {P: rec, n: 0, used: 0, rep: 0}}}).p.P;
+  assert.deepStrictEqual(on['f:X'].vl, ['juv', 'ph']);
+  // The record a device holds never carries vl: the replay's own mark, read by replayedOf only.
+  assert.ok(!('vl' in A) && !('vl' in adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars})));
+});

@@ -97,8 +97,9 @@ Leaderboard On/Off (`reefid-sync-board`, synced with the progress, default On: n
   the bar of the unit asked (`VAR_AT`, `varRamp`; a family's `varAt` overrides; `model.js` `varOf`, `photoSet`: weights
   only, the variety and the floor lifting such an observation by its best photo's factor); nothing held back on a unit
   with fewer than `PICKD.VARIETY` observations at full weight. "Learned" asks a right answer on each variant group a unit
-  has (`model.js` `varLeft`, `examSet`, `examPassed`; existing marks taken away silently by `varRecalcAll`, fish rules
-  version 3). The first juvenile and the first sex or colour phase a player meets bring a card at Next (`quiz.js`
+  has (`model.js` `varLeft`, `examSet`, `examPassed`; existing marks taken away silently by the sheet's replay from the
+  answer log for every player at once, the leaderboards included: `core.js` `fishVarTable`, `replayProgress` `vars`,
+  `replayedOf`, `Code.gs` `subjVar_`; fish rules version 3). The first juvenile and the first sex or colour phase a player meets bring a card at Next (`quiz.js`
   `phaseArm`, `phaseShow`: the photo beside one of its species in another phase, `core.js` `phasePair`; once per kind and
   subject, `TOLD` `phase:<subject>-<kind>`). docs/LEARNING.md "Juveniles and colour phases on their unit's mastery".
 - **One colony per question** (PR #207, rule P4): photos are grouped by observation (`p.o`); a question shows the views of one colony only, never topped up from another. Beginners favour colonies shot at several zooms; `singleP()` raises the share of single-view questions (up to 85%) as ability rises (`FORMAT`, one schedule with the traps, 2026-11-03); a single view counts as +0.5 harder (`SINGLE`). Other views show after the answer.

@@ -3745,12 +3745,20 @@ is (`SHARE`, `sharesNow`, `shareW`).
   exam's next question draws among that group's released photos (the hardest never seen, as `examSet` always chose),
   and the exam is not passed: its count held at `EXAM.n` until the group is right. A miss restarts it as any miss does.
   No new threshold.
-- **Existing learned marks** (fish rules version 3, `core.js` `FISH_RVS`; rules D5, D6): the sheet's replay keeps the
-  device's learned marks (`replayedOf`) and has no photo phases, so the device takes them away: at load and after each
-  pull, once the subject's whole data is in (`model.js` `varRecalcAll`, from `domRecalcAll`), a learned unit with a
-  variant group left loses its mark silently (`mxRecalc`, the achievements kept, Q332), its exam kept as passed but for
-  that group (`s.ex` at `EXAM.n` right and `TYPED.exam` typed, started then): its next exam question asks the group, and
-  a right answer there makes it learned again. The leaderboards follow when that player's device next saves.
+- **Existing learned marks** (fish rules version 3, `core.js` `FISH_RVS`; rules D5, D6, D8, D9): the sheet's replay
+  decides from the answer log, for every player at once. It reads a variant table of the units that can be learned
+  (`core.js` `fishVarTable`, made from the pool files the app makes its units from: the families and the scientific
+  genera, each photo's kind by `varKindOf`; `Code.gs` `subjVar_`, kept with the replay's units by `subjRpl_`, 6 hours in
+  parts, `cacheBigPut_`), and marks each unit of the replayed record with its variant groups that have no photo answered
+  right in the log (`replayProgress` `vars`: `vl`, `varLeftOf` at a full bar, a learned unit's). `replayedOf` then takes
+  a learned mark away when its unit has a `vl` group, silently (rule D6), its exam kept as passed but for that group
+  (`s.ex` at `EXAM.n` right and `TYPED.exam` typed, `core.js` `MX_EXAM`, ready at once): its next exam question asks
+  the group, and a right answer there makes it learned again. The leaderboards follow at once (`board_` ranks a player
+  behind the rules by `replayAdopted` of their replay; `boardWarm_` makes the replays), each device when it adopts the
+  replay (`sync.js` `replayAdoptS`). The app's exam uses the same functions (`model.js` `varLeft`: `varUnit`,
+  `varLeftOf`), so app and sheet agree (`tests/phasepath.test.js`); no device takes a mark away on its own. A replay is
+  made only with the table (`Code.gs` `rplMake_`: none without it; the app keeps its own and asks again). This device's
+  answers replayed on top of the sheet's keep the sheet's `vl` until the next replay.
 - **The card** stays as built (`phaseArm`, `phaseShow`, `phasePair`, its two kinds, the `dimorph` condition, `TOLD`,
   the sign-out clear): it comes with the first variant photo a player meets.
 

@@ -63,6 +63,8 @@ function engine(
     varRamp: C.varRamp,
     VAR_GROUPS: C.VAR_GROUPS,
     varGroup: C.varGroup,
+    varUnit: C.varUnit,
+    varLeftOf: C.varLeftOf,
     memBucket: C.memBucket,
     aimOf: C.aimOf,
     DOM: C.DOM,
@@ -93,7 +95,7 @@ function engine(
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, varLeft, examSet, examPassed, EXAM, TYPED, P};\n})`,
+      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, varLeft, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P};\n})`,
       ctx
     );
   return make(...names.map(k => stubs[k]));
