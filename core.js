@@ -782,6 +782,28 @@
       calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
       pages: ['genera', 'sheet', 'quiz'],
       sheets: {family: 'f:', genus: 'g:', species: 's:'},
+      // The text slots its content editor may edit on each rank's sheets (the fish's SUBJECTS content above; Pierre,
+      // 2026-11-17: the sea slugs' admin at parity), laid over seaslug.json by core.js contentApply (app.js fishBuild, the
+      // sheet's replay alike): a family's and a genus's ID marks (tools/seaslug_cues.json, each line with its sources'
+      // numbers: contentPut keeps them on a line kept word for word) and the free note on every rank. No IMR slot (study §8).
+      // No structure: its genus look-alikes (look, lsrc: sources, not words) stay the build's (tools/seaslug_game.py).
+      content: {
+        family: {
+          at: 'families',
+          slots: [
+            {k: 'marks', n: 'ID marks', t: 'list'},
+            {k: 'note', n: 'Note', t: 'text', f: 'enote'}
+          ]
+        },
+        genus: {
+          at: 'genera',
+          slots: [
+            {k: 'marks', n: 'ID marks', t: 'list'},
+            {k: 'note', n: 'Note', t: 'text', f: 'enote'}
+          ]
+        },
+        species: {at: 'species', slots: [{k: 'note', n: 'Note', t: 'text', f: 'enote'}]}
+      },
       progress: ['photos'],
       // No IMR content (study §8): no "I'm at IMR" answer.
       start: {
@@ -799,6 +821,33 @@
         // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports), and
         // for Photos › Tree (its candidates: Not this, the candidates waiting).
         files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'seaslug-cand.json'},
+        // target: a species' photos in play its Candidates fill up to (autosort.js fishTarget; the fish's FISHT by
+        // default): the game's cap, tools/seaslugs.json photoTarget gameCap (tools/seaslug_game.py puts the sure ones in
+        // play up to it; tests/seaslugadmin.test.js keeps the two equal).
+        target: 12,
+        // tags: its rubric's rows where they differ from the fish's (judging/SEASLUG.md "Tags"; admin-fish.js FROWS), by
+        // the code's position: [value, name, words], words how a photo's tags say it ('' for a value that makes no photo
+        // harder: its good views); flags, the ones Pierre may set (the fish's j c w, and f, features hidden).
+        tags: {
+          0: [
+            ['d', 'Dorsal', ''],
+            ['p', 'Lateral', ''],
+            ['o', 'Oblique', ''],
+            ['h', 'Head-on', 'head-on'],
+            ['t', 'Rear', 'from behind'],
+            ['v', 'Ventral', 'ventral']
+          ],
+          2: [
+            ['g', 'Good light', ''],
+            ['d', 'Dim', 'dim light']
+          ],
+          flags: [
+            ['j', 'Juvenile', 'juvenile'],
+            ['c', 'Camouflage', 'camouflage'],
+            ['w', 'Watermark', 'watermark'],
+            ['f', 'Features hidden', 'features hidden']
+          ]
+        },
         todo: [],
         // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus, live from its answers,
@@ -808,11 +857,17 @@
           'inbox/todo/reports',
           'inbox/todo/errors',
           'inbox/todo/points',
+          // Health (the sea slugs' admin at parity, 2026-11-17): the photos everyone misses with their tools, the genera
+          // players are stuck on, from its answers (admin.js statsHealth, healthBad, healthGenera)
+          'inbox/todo/health',
           'players/list',
           // Photos › Tree › Key (the sea slugs' admin photo pages, 2026-11-17): the fish's node pages and photo tools on
-          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus. No WoRMS view:
-          // its tree carries no reference taxonomy (seaslug.json ref).
+          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus, its sheets'
+          // text slots (content above). No WoRMS view: its tree carries no reference taxonomy (seaslug.json ref).
           'photos/tree/key',
+          // Candidates (the sea slugs' admin at parity): seaslug-cand.json one at a time, as the fish's (admin-fish.js
+          // renderFishCand), a photo moved with Not this waiting as its new species' candidate; no auto-sort (autosort)
+          'photos/candidates',
           // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
           // at their genus, never as a species (autosort.js fishCov)
           'photos/stats/overview',
@@ -2076,6 +2131,14 @@
   function contentPut(sp, r, key, v) {
     const f = sp.f || sp.k,
       val = Array.isArray(v) ? v.slice() : v;
+    // A list whose lines carry their sources' numbers (mby[f][i], the record's msrc indexes of line i: the fish's and the
+    // sea slugs' ID marks): a line kept word for word keeps its numbers, a new or reworded one gets none (its source is the
+    // edit's own, esrc), so no line shows a source it was not read from (rule C2).
+    if (sp.t === 'list' && !sp.rows && !sp.map && isObj(r.mby) && Array.isArray(r.mby[f])) {
+      const was = Array.isArray(r[f]) ? r[f] : [],
+        by = r.mby[f];
+      r.mby = {...r.mby, [f]: (Array.isArray(val) ? val : []).map(x => (was.indexOf(x) >= 0 ? by[was.indexOf(x)] || [] : []))};
+    }
     if (sp.rows) r[f] = r[f].map(y => (Array.isArray(y) && y[0] === key ? [y[0], val == null ? '' : val, ...y.slice(2)] : y));
     else if (sp.map) r[f] = {...r[f], [key]: val == null ? '' : val};
     else {

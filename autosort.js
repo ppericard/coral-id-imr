@@ -129,7 +129,9 @@
   // not a whole stock (Pierre, 2026-11-08, docs/ROADMAP.md "Surprise-only species"): its target is FISHT.wink, and the
   // admin's Tree shows that many of its photos in play, the rest on demand (fishWinkFold).
   const FISHT = {obs: 8, top: 12, cap: 20, wink: 5};
-  const fishTarget = sp => (sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
+  // A subject with a target of its own (core.js SUBJECTS admin target: the sea slugs' game cap) has it on every species
+  // record the admin reads (fishSpecies tgt).
+  const fishTarget = sp => (sp && sp.tgt > 0 ? sp.tgt : sp && sp.wink ? FISHT.wink : sp && sp.cs ? FISHT.top : FISHT.obs);
   function fishParse(code) {
     const m = /^([?-]?)([ar])([tepc]*)(?:@([0-9a-z]+))?$/.exec(code || '');
     if (!m || (m[3] && (m[2] !== 'a' || m[1] === '?'))) return null;
@@ -450,9 +452,10 @@
     return {...F, [field]: M};
   }
   // One tag of a rubric code changed (pos 0-6: view, whole, light, colour loss, clarity, size, count), or a flag toggled
-  // (pos 'j' juvenile, 'c' camouflage, 'w' watermark), on Pierre's code, else the pass's, else a plain profile one; the
-  // tool-made flags (p phase entry, r reference photo) kept as they were, in the rubric's order.
-  const FFLAGORD = 'jcawpr';
+  // (pos 'j' juvenile, 'c' camouflage, 'w' watermark; the sea slugs' 'f' features hidden, judging/SEASLUG.md), on Pierre's
+  // code, else the pass's, else a plain profile one; the tool-made flags (p phase entry, r reference photo) kept as they
+  // were, in the rubrics' order (the fish's j c a w p r, the sea slugs' j c a w f: one order holds both).
+  const FFLAGORD = 'jcawfpr';
   function fishTag(code, pos, v) {
     const c = FISH_TAGS.test(code || '') ? code : 'p1g0sm1';
     if (typeof pos === 'number') return c.slice(0, pos) + v + c.slice(pos + 1);
@@ -939,11 +942,17 @@
     return F.sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group) || a.i - b.i).map(({i, ...f}) => f);
   }
   // The species records the admin reads ({id: fish.json species}), each species of a wink family (fish.json families
-  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink. Read only, never stored.
-  function fishSpecies(J) {
+  // wink: met only on the surprise cards) marked wink: true, so fishTarget gives it FISHT.wink; with tgt (its subject's
+  // own target, core.js SUBJECTS admin target), every record marked tgt. Read only, never stored.
+  function fishSpecies(J, tgt) {
     J = J || {};
     const wk = new Set((J.families || []).filter(f => f && f.wink).flatMap(f => f.species || []));
-    return Object.fromEntries((J.species || []).map(x => [x.id, wk.has(x.id) ? {...x, wink: true} : x]));
+    return Object.fromEntries(
+      (J.species || []).map(x => [
+        x.id,
+        wk.has(x.id) || tgt > 0 ? {...x, ...(wk.has(x.id) ? {wink: true} : {}), ...(tgt > 0 ? {tgt} : {})} : x
+      ])
+    );
   }
   // A wink species' photos in play on the admin's Tree (docs/ROADMAP.md "Surprise-only species"): only n (FISHT.wink) shown,
   // the rest folded. Its featured photos (Pierre's Feature) always shown, then the surprise card's own photos (fish.json
