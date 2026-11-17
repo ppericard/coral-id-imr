@@ -450,8 +450,9 @@ test('the committed files read through the fish engine: three circles, scientifi
   played.forEach(n =>
     X.gen[n].views.wide.forEach(p => assert.ok((p.r === 1 || (!p.r && p.ar > 0)) && /^https:\/\/inaturalist-open-data\./.test(p.src), p.f))
   );
-  // Every circle plays: circle 1 every species (Q377), circles 2 and 3 their species with enough sure photos.
-  const circ = new Map(F.species.map(s => [s.id, s.circle])),
+  // Every circle plays: circle 1 every species (Q377), circles 2 and 3 their species with enough sure photos. The species
+  // with no name yet (Goniobranchus sp. 5, Q389 (2)) counts apart: circle 1's 45 named species, plus it once judged.
+  const circ = new Map(F.species.filter(s => !s.inf).map(s => [s.id, s.circle])),
     sp = c =>
       new Set(
         Object.values(GM.photos)
