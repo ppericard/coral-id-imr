@@ -153,6 +153,28 @@ const GATES = {
       GROUP_SHEET: 48,
       ASUBJ: null
     })({open: 'group', sheet: N}),
+  // The sea slugs' replay and leaderboard (core.js SUBJECTS seaslug replayed sheet, boardSheet; Code.gs replays_, board_
+  // &s=seaslug): the app asks for and adopts their replay (sync.js rpOn) and shows their board (progress.js boardOk,
+  // boardLive) from the script that has them; before, the plain merge and no board (an older script answers &s=seaslug
+  // with the corals' board). The fish's replay and board keep their own versions.
+  SEASLUGRP_SHEET: (v, N) => {
+    const C = require('../core.js'),
+      SS = C.subjectOf('seaslug'),
+      FI = C.subjectOf('fish');
+    assert.strictEqual(SS.replayed.sheet, N);
+    assert.strictEqual(SS.boardSheet, N);
+    const rpOn = fn('sync.js', 'const rpOn = ', '\n', 'rpOn', {REPLAYS_SHEET: C.REPLAYS_SHEET}),
+      boardV = fn('progress.js', 'const boardV = ', '\n', 'boardV', {BOARD_SHEET: 95}),
+      ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {boardV}),
+      live = fn('progress.js', 'const boardLive = ', '\n', 'boardLive', {boardV, board0: () => C.SUBJECTS[0], sheetV: () => v}),
+      j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
+    if (v !== undefined && v >= C.REPLAYS_SHEET) assert.strictEqual(rpOn(FI, v), true, "the fish's replay from its own version");
+    if (v !== undefined && v >= 95) assert.strictEqual(ok(j, false, FI), true, "the fish's board from its own version");
+    const on = rpOn(SS, v);
+    assert.strictEqual(ok(j, false, SS), on, 'the board with the replay');
+    assert.strictEqual(live(SS), on, 'the board live with the replay');
+    return on;
+  },
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.
@@ -213,7 +235,10 @@ const GATES = {
   // Another subject's leaderboard (progress.js boardOk, Code.gs board_ &s=<id>): from v95; an older script answers with
   // the first subject's board, never shown as another's. The first subject's board is shown from any script.
   BOARD_SHEET: (v, N) => {
-    const ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {BOARD_SHEET: N}),
+    const ok = fn('progress.js', 'const boardOk = ', '\n', 'boardOk', {
+        BOARD_SHEET: N,
+        boardV: fn('progress.js', 'const boardV = ', '\n', 'boardV', {BOARD_SHEET: N})
+      }),
       j = {ok: true, rows: [], ...(v === undefined ? {} : {v})};
     assert.strictEqual(ok(j, true), true, "the first subject's board from any script");
     return ok(j, false);

@@ -5803,10 +5803,11 @@ const darkCards = (p, sel) =>
       }
       // Fish admin at parity, the next step: Analyses › Learning › Answer log and Analyses › Difficulty › Pairs follow the
       // Corals | Fish switch (rule A4). The demo's fish answers are family questions picked from choices; a few genus
-      // questions, typed answers and a mix-up of two genera of one family are added to its log (as the fresh Health block
-      // below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
+      // questions, typed answers, a mix-up of two genera of one family and one of two families of one key group are added
+      // to its log (as the fresh Health block below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
       // with its IMR name), the questions on each rank and typed against picked, no Elo column (the sheet sends the corals'
-      // levels), no compare page; Pairs: the two genera start as look-alikes, the fish photos and observations, the typed
+      // levels), no compare page; Pairs: the two genera start as look-alikes, the two families as Key group (the game's
+      // start, model.js confPrior), the fish photos and observations, the typed
       // mix-ups apart; no raw unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px.
       for (const vw of [1280, 390]) {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
@@ -5850,6 +5851,18 @@ const darkCards = (p, sel) =>
                 )
               );
             for (let i = 0; i < 4; i++) add.push(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+            // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
+            for (let i = 0; i < 3; i++)
+              add.push(
+                mk(
+                  id,
+                  'f:Surgeonfishes',
+                  i ? 'f:Surgeonfishes' : 'f:Rabbitfishes',
+                  i ? 1 : 0,
+                  'quiz',
+                  'f:Surgeonfishes f:Rabbitfishes f:Wrasses f:Gobies'
+                )
+              );
           });
           ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
           render();
@@ -5879,6 +5892,9 @@ const darkCards = (p, sel) =>
               pair: [...V.querySelectorAll('tr')]
                 .filter(tr => /Amphiprion · Chromis/.test(tr.textContent))
                 .map(tr => tr.cells[1].textContent),
+              key: [...V.querySelectorAll('tr')]
+                .filter(tr => /Rabbitfishes · Surgeonfishes|Surgeonfishes · Rabbitfishes/.test(tr.textContent))
+                .map(tr => tr.cells[1].textContent),
               zo: V.querySelectorAll('[data-zo]').length,
               wide: document.documentElement.scrollWidth - innerWidth
             };
@@ -5906,6 +5922,7 @@ const darkCards = (p, sel) =>
         if (
           pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
           pr.pair.join() !== 'Look-alike' ||
+          pr.key.join() !== 'Key group' ||
           !pr.zo ||
           pr.cmp ||
           pr.ids.length ||
