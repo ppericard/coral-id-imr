@@ -157,6 +157,63 @@ test('the tree: circles 1 to 3, fish.json shape, scientific names, the area comm
 // The sea slugs without a species name (Pierre, 2026-11-17, Q389): (2) a species defined by a paper, present by its
 // label's observers (tools/presence.py label_confirmed: 3), a sheet of its genus whose photos play for the genus; (1) the
 // genus-level photos (gl), in play for their genus unit only, never for a species, once the genus reaches the start.
+// Pierre's curation reaches the sea slugs' game (curation.json seaslug, core.js SUBJECTS seaslug admin.cur: the admin's
+// Photos › Tree and a report's photo tools write it), as the fish part reaches fish-game.json (tools/fish_game.py
+// in_play, record): what he removed, excluded or moved leaves and the next sure photo takes its place; his adds enter,
+// named after the species he moved them to; his ease, tags, crop and rotation are the record's and the download's.
+test("Pierre's curation of the sea slugs reaches the game file: removed, excluded, moved, added, ease, tags, crop, rotation", () => {
+  const cur = {
+      exclude: {'seaslug-1-cand-4': 1}, // the juvenile excluded for good: the next one (5) takes the documented +1
+      seaslug: {
+        seen: {'seaslug-1-cand-1': 1}, // removed: cand 3 fills the cap
+        out: {'seaslug-3-cand-11': 's1'}, // Not this, from Bb dd to Aa bb, then his add there
+        add: {'seaslug-3-cand-11': 's1', 'seaslug-2-cand-7': 's2', 'seaslug-2-cand-9': 's2'},
+        ease: {'seaslug-1-cand-2': 2},
+        tags: {'seaslug-2-cand-9': 'd1g0sl1'},
+        crop: {'seaslug-1-cand-3': [0.1, 0.2, 0.9, 0.8]},
+        rot: {'seaslug-1-cand-3': 90}
+      }
+    },
+    prev = {photos: {'f:Afam': [{f: 'seaslug-1-cand-3', src: 'https://x/3.jpg', ar: 1.5, sp: 's1'}]}};
+  const [, G, todo] = py(`t, gm, todo = g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, ${arg(prev)}, None, None, None, ${arg(cur)})
+print(json.dumps([t, gm, todo]))`);
+  assert.deepStrictEqual(
+    G.photos['f:Afam'].map(p => [p.f.split('-').pop(), p.sp, p.t, p.e, p.jt, p.auto || '']),
+    [
+      ['11', 's1', 'Aa bb', 3, 'd1g0sl1a', ''], // his add: in whatever its judgement, named after its new species
+      ['3', 's1', 'T', 3, 'p1g0sl1', 'cand'], // the cap's one place left: 3 (ease 3) before 2 (his ease 2)
+      ['5', 's1', 'T', 1, 'd1g0sl1j', 'cand'],
+      ['7', 's2', 'T', 5, 'd1g0sl1', ''], // his adds: an unsure and a dup judgement, his tags over the pass's
+      ['9', 's2', 'T', 3, 'd1g0sl1', '']
+    ]
+  );
+  assert.deepStrictEqual(
+    todo.map(([r, c, iv, ro]) => [r.f.split('-').pop(), c, iv, ro]),
+    [
+      ['11', null, 0, 0],
+      ['3', [0.1, 0.2, 0.9, 0.8], 1, 90], // on R2 without his crop and rotation: made again, its rewrite count bumped
+      ['5', null, 0, 0],
+      ['7', null, 0, 0],
+      ['9', null, 0, 0]
+    ]
+  );
+  // A count he set to another species one could take for it takes a photo out, his add or not (rule P3).
+  const k = {seaslug: {tags: {'seaslug-1-cand-1': 'd1g0slk'}}},
+    [, G2] = py(`print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, ${arg(k)})))`);
+  assert.deepStrictEqual(
+    G2.photos['f:Afam'].map(p => p.f.split('-').pop()),
+    ['2', '3', '4']
+  );
+  // No sea-slug part: the build as before (the fish part never read).
+  const [, G3] = py(
+    `print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, ${arg({fish: cur.seaslug})})))`
+  );
+  assert.deepStrictEqual(
+    G3.photos['f:Afam'].map(p => p.f.split('-').pop()),
+    ['1', '2', '4']
+  );
+});
+
 test('Q389: a species with no name yet in the tree by its label rule; genus-level photos in play for their genus only', () => {
   const INF = {
     species: [
