@@ -105,7 +105,7 @@ const treeOn = () => sheetV() >= TREE_SHEET;
 // chunks (treeOn) and replays the species units as the game scores them (SPECIES_SHEET: core.js fishReplayGen lists them,
 // with the family they start from); before, the species are not opened and the tree is the one of before (rule D4).
 // The one predicate every species rule reads.
-const SPECIES_SHEET = 158;
+const SPECIES_SHEET = 161;
 const speciesOn = () => treeOn() && sheetV() >= SPECIES_SHEET;
 const TREES = 'reefid-board-trees';
 const treeSums = new WeakMap();
