@@ -76,10 +76,13 @@ asks:
 Why a variant is not a unit (against #975's sketch of "each phase unit's record names its parent"): the same answer
 would fill two bars, a wrong answer would count twice (rule L2), the log, the replay and the score tree would gain records
 that are not a name to learn, and a change of that format is costly to undo (AGENTS.md "costly to undo"). Its mastery is
-the unit's: **a unit is mastered with its variants**, because its exam draws the unit's hardest photos never seen
-(`examSet`: `photoDiff` highest, every photo, no variant held back) and the bar is the share of all its photos
-(`D*`), variants included. So a unit is never learned on its adult photos alone, whatever the share rule holds back
-before its exam.
+the unit's: **the intended outcome is that a unit is mastered with its variants**. Today nothing guarantees it. The
+exam (`model.js` `examSet`, `quiz.js`) draws the unit's hardest photos never seen, from every photo with no variant
+held back, so variant photos, often judged hard, tend to come up in it; but it does not check that each juvenile, sex
+or phase the unit has was shown or answered right. The bar estimates the share of all the unit's photos the player
+would name (variants included in its target), from the answers given; it does not require any of them to have been on
+a variant. A unit can therefore be learned on its adult photos alone. Whether "Learned" should require each variant is
+a sub-question for Pierre (section 10), with its cost measured in section 8.
 
 Every level of every subject (rule S1: each one a record field or a data file, never a subject in the code):
 
