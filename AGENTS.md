@@ -119,10 +119,10 @@ words it uses (*unit*: what a question asks, a coral genus or a fish family, gen
 - **C5** Discrepancies between sources go to `points.json` (admin Points); never settle them.
 - **C6** ID cues cite only species present at Dauin or in the Philippines.
 - **C7** iNaturalist API: about one request a second, batched, a User-Agent, paced retries.
-- **C8** Presence: one rule for every species (`tools/presence.py`).
+- **C8** Presence: one rule for every species, a species with no name yet by its label (`tools/presence.py`).
 
 **Photos** ([docs/rules/photos.md](docs/rules/photos.md))
-- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish: reference-quality photos first, then easiest, never by source.
+- **P1** Coral photo priority: IMR lecture, Pierre's own, then others; fish and sea slugs: reference-quality photos first, then easiest, never by source.
 - **P2** Corals: three views per genus (colony, close-up, corallites); never duplicate a photo to fill one.
 - **P3** No photo of several corals or fish species in games; no Coral Finder book photo anywhere.
 - **P4** All photos of one question come from one observation.
