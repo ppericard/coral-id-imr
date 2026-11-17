@@ -474,7 +474,9 @@ function logAnswers_(name, answers, seen0, dev){
   // v60: a unit may be a fish entry (t01) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a duel's
   // mode; still a letter first, so nothing can start a formula.
   const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z0-9: ]*$/;
-  const W = /^[a-z]{1,20}$/, TX = /^[A-Za-z][A-Za-z0-9 .&'()-]*$/, SP = /^[A-Za-z][A-Za-z .,()-]*$/;
+  // vNEXT: SP takes digits after the first letter, for an informal species' number (the sea slugs' Goniobranchus sp. 5);
+  // still a letter first, so nothing can start a formula.
+  const W = /^[a-z]{1,20}$/, TX = /^[A-Za-z][A-Za-z0-9 .&'()-]*$/, SP = /^[A-Za-z][A-Za-z0-9 .,()-]*$/;
   const subj = a => word_(a.s, W, 20) || CORE_.SUBJECTS[0].id;  // an app from before v60 sends none: its answers are coral
   const rank = (a, sj) => word_(a.rk, W, 20) || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '';
   // v69: a fish answer from an app before the switch to the book's families names an old entry (t01): renamed here to
