@@ -57,6 +57,7 @@ const ENDPOINTS = [
   ['userData', () => ({userData: 'Ana'})],
   ['userBoard', () => ({userBoard: 'Ana', hide: true})],
   ['userGroup', () => ({userGroup: 'Ana', group: 'fish', on: true})],
+  ['userGroup', () => ({userGroup: 'Ana', cohort: 'RA Test', on: true})], // vNEXT: a cohort (tests/scopes.test.js)
   ['userStart', () => ({userStart: 'Ana', s: 'coral', c: 'imr'})],
   ['statsExclude', () => ({statsExclude: 'AbCd1234', on: true})],
   ['anonDelete', () => ({anonDelete: ['AbCd1234']})],

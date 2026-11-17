@@ -268,9 +268,11 @@ function quizBoard() {
   bindSync();
   // The player's place on the leaderboard (Pierre, 2026-11-01: rank and Elo here, the full board on its own page). The
   // board brings the rank only: the Elo stays the device's own (Q134), so nothing jumps when the reply comes.
+  // vNEXT: the first board of the Leaderboard page that lists the player (their cohort's, the staff's, the general one).
   const rank = B => {
     const a = document.getElementById('pbrank'),
-      i = B && B.rows ? boardMe(B.rows) : -1;
+      L = B && B.rows ? boardScopes(B).top.find(x => boardMe(x.rows) >= 0) : null,
+      i = L ? boardMe(L.rows) : -1;
     if (!a || i < 0) return;
     const elo = eloLine(P[LEVEL]);
     a.innerHTML = `🏆 <b>#${i + 1}</b>${elo ? ' · ' + elo : ''}`;
@@ -489,7 +491,7 @@ const loadBoard = (S = boardSubj()) => {
       .then(j => (boardOk(j, first) ? j : {err: j && (j.v < 14 || !first) ? 'old' : 'na'}))
       .catch(() => ({err: 'offline'}))
       .then(j => {
-        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, t: Date.now(), v: j.v});
+        if (!j.err) store.set(subjDev(S.id, BOARD_C), {rows: j.rows, staff: j.staff, cohorts: j.cohorts, t: Date.now(), v: j.v});
         else boardAt[k] = 0; // a failure is not kept for a minute: the next visit tries again
         return j;
       });
@@ -497,9 +499,37 @@ const loadBoard = (S = boardSubj()) => {
   return boardP[k];
 };
 const boardMe = rows => (SYNC && SYNC.name ? rows.findIndex(r => String(r[0]).toLowerCase() === SYNC.name.trim().toLowerCase()) : -1);
+// Staff and cohort boards (sheet vNEXT; Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle
+// cohorte aurait un leaderboard indépendant"; "ça serait rigolo que les étudiants voient le leaderboard du staff et
+// inversement"): a reply from SCOPES_SHEET splits the one ranking (Code.gs board_): rows, the general board without the
+// staff; staff, the trainers'; cohorts, [{n, rows}] each cohort's, its members but the staff. The page shows the
+// player's own cohort's first, then the staff's, then the general one; the other cohorts behind a discreet "Other
+// cohorts" (Pierre: "éventuellement mais pas forcément en priorité ou mis en avant"). An older reply: one board, as before.
+const SCOPES_SHEET = 162;
+// The player's cohort: its display name, '' for none, null when this account was never told (sync.js groupsSeen).
+const myCohort = () => {
+  const o = store.get(COHORT_KEY, null);
+  return SYNC && o && typeof o.c === 'string' && String(o.n).toLowerCase() === SYNC.name.trim().toLowerCase() ? o.c : null;
+};
+// The boards of a reply, in the page's order: {top: [{k, t, rows}], others: [{k, t, rows}]}; one untitled board before
+// SCOPES_SHEET, or when there is neither a staff nor a cohort board to show.
+function boardScopes(B) {
+  const one = {top: [{k: 'all', t: '', rows: B.rows}], others: []};
+  if (!(Number(B.v) >= SCOPES_SHEET) || !Array.isArray(B.staff)) return one;
+  const C = (Array.isArray(B.cohorts) ? B.cohorts : []).filter(c => c && typeof c.n === 'string' && Array.isArray(c.rows)),
+    m = myCohort(),
+    // Never told (a reply before the account's first load): the cohort whose board lists the player.
+    own = m ? C.find(c => c.n === m) : m === null ? C.find(c => boardMe(c.rows) >= 0) : null,
+    top = [
+      ...(own ? [{k: 'cohort', t: own.n, rows: own.rows}] : []),
+      ...(B.staff.length ? [{k: 'staff', t: 'Staff', rows: B.staff}] : []),
+      {k: 'all', t: 'All players', rows: B.rows}
+    ];
+  return top.length < 2 && !C.length ? one : {top, others: C.filter(c => c !== own).map(c => ({k: 'other', t: c.n, rows: c.rows}))};
+}
 function viewBoard() {
   // The title sits inside .board: pageHelp drops top-level titles where the header names the page, and here it doesn't.
-  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. To leave the leaderboard, ⚙ Settings, Leaderboard: Off.</p>
+  $v.innerHTML = `<p class="lede">Everyone who signed in, ranked by progress, then by Elo: your level from all your answers, which keeps rising as you name harder photos right, so it still counts at 100%. The Elo shows from ${ELO_MIN} answers: before that it moves too much to mean anything. Your cohort has its own leaderboard, shown first, and the staff theirs; the staff are not on the others. To leave the leaderboards, ⚙ Settings, Leaderboard: Off.</p>
   <div class="board">${boardTabs('board')}<div id="board"><p class="note">Loading…</p></div></div>`;
   const S = boardSubj(),
     C = boardCached(S);
@@ -519,12 +549,27 @@ function viewBoard() {
 function paintBoard(B, S = boardSubj()) {
   const box = document.getElementById('board');
   if (!box || hashNow() !== 'board') return;
-  const me = boardMe(B.rows),
+  const sc = boardScopes(B),
+    me = [...sc.top, ...sc.others].some(x => boardMe(x.rows) >= 0) ? 0 : -1,
     // The player's own row: this device's level (eloLine), as My progress shows it; the sheet's copy only when this
     // device has none to show (Q134), or when the subject on screen is not the board's (P is another subject's
     // progress). Other rows: the level the sheet read from their saved progress.
-    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '',
-    eloOf = (r, i) => (i === me && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
+    mine = me >= 0 && S === SUBJ ? eloLine(P[LEVEL]) : '';
+  // One board's list, the player's row marked; a titled board (staff and cohorts) under its heading.
+  const list = rows => {
+    const at = boardMe(rows),
+      eloOf = (r, i) => (i === at && mine ? mine : r[2] == null ? '' : `Elo ${eloScore(r[2])}`);
+    return rows.length
+      ? `<ol class="blist">${rows
+          .map(
+            (r, i) =>
+              `<li${i === at ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${markRow(r, B.v) ? markHtml() : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
+          )
+          .join('')}</ol>`
+      : '<p class="note">Nobody yet: be the first.</p>';
+  };
+  const part = x =>
+    x.t ? `<section class="bscope" data-scope="${x.k}"><h3 class="bhead">${esc(x.t)}</h3>${list(x.rows)}</section>` : list(x.rows);
   // Signed out: "Sign in" opens the sign-in card, as the header's button does (rule U9: sign-in is no longer in ⚙).
   const note = !SYNC
     ? '<p class="note"><button class="linkish" type="button" id="bsign">Sign in</button> to appear on the leaderboard.</p>'
@@ -537,14 +582,8 @@ function paintBoard(B, S = boardSubj()) {
   box.innerHTML =
     when +
     note +
-    (B.rows.length
-      ? `<ol class="blist">${B.rows
-          .map(
-            (r, i) =>
-              `<li${i === me ? ' class="me" aria-current="true"' : ''}><span class="brank">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="bwho"><b class="bname">${esc(r[0])}</b>${markRow(r, B.v) ? markHtml() : ''}</span><span class="belo" title="${eloOf(r, i) ? 'Elo: level from all answers' : `Elo shows from ${ELO_MIN} answers`}">${eloOf(r, i)}</span><span class="bpct">${r[1] == null ? '–' : r[1] + '%'}</span></li>`
-          )
-          .join('')}</ol>`
-      : '<p class="note">Nobody yet: be the first.</p>');
+    sc.top.map(part).join('') +
+    (sc.others.length ? `<details class="bmore"><summary>Other cohorts</summary>${sc.others.map(part).join('')}</details>` : '');
   const bs = box.querySelector('#bsign');
   if (bs) bs.onclick = e => document.getElementById('signb').onclick(e);
   const m = box.querySelector('.me');

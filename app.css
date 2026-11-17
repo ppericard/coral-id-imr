@@ -6629,6 +6629,30 @@ html.touring .unlock {
 .board {
   max-width: 640px;
 }
+/* Staff and cohort boards (progress.js boardScopes): each under a small heading; the other cohorts in a quiet fold. */
+.bscope + .bscope,
+.bmore {
+  margin-top: 20px;
+}
+.bhead {
+  margin: 0 0 8px;
+  font-size: var(--fs-s);
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bmore > summary {
+  cursor: pointer;
+  width: max-content;
+  font-size: var(--fs-s);
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bmore > .bscope {
+  margin-top: 16px;
+}
 .blist {
   list-style: none;
   margin: 0;

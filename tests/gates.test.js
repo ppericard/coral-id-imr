@@ -138,6 +138,17 @@ const GATES = {
       GROUP_SHEET: 48,
       ASUBJ: null
     })({open: 'group', sheet: N}),
+  // The staff and cohort boards (progress.js boardScopes; Code.gs board_ staff, cohorts): from vNEXT; before, the one
+  // general board as before, whatever the reply carries.
+  SCOPES_SHEET: (v, N) =>
+    fn('progress.js', 'function boardScopes(', '\nfunction viewBoard', 'boardScopes', {
+      SCOPES_SHEET: N,
+      myCohort: () => '',
+      boardMe: () => -1
+    })({ok: true, rows: [['A', 1, null]], staff: [['B', 2, null]], cohorts: [], ...(v === undefined ? {} : {v})}).top.length > 1,
+  // The admin's Cohort select and Staff toggle on a player's bar (admin.js cohortOn; Code.gs userGroup cohort, roles_):
+  // from vNEXT.
+  COHORT_SHEET: (v, N) => fn('admin.js', 'const cohortOn = ', '\n', 'cohortOn', {USERS: v === undefined ? {} : {v}, COHORT_SHEET: N})(),
   SCORE_SHEET: (v, N) => fn('model.js', 'const scoreOn = ', '\n', 'scoreOn', {SUBJ: {score: {}}, sheetV: () => v, SCORE_SHEET: N})(),
   // The ids of the player's own reports in a load reply (sync.js repsSeen, Code.gs repsOf_ reps), for "Your feedback
   // helped" (Q66): from v57; before, only the ids the device kept itself.

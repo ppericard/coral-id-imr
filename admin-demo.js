@@ -1216,7 +1216,9 @@
         mix: [],
         reports: 0,
         size: JSON.stringify(u.data).length,
-        ...(V >= 48 ? {groups: (u.groups || []).slice()} : {})
+        ...(V >= 48 ? {groups: (u.groups || []).slice()} : {}),
+        // sheet vNEXT (Code.gs users_): the player's cohort and the staff mark (the trainer role)
+        ...(V >= COHORT_SHEET ? {cohort: u.cohort || '', ...(u.staff ? {staff: 1} : {})} : {})
       };
     });
     const days = {},
@@ -1295,6 +1297,31 @@
     };
   }
   function users(p) {
+    // Sheet vNEXT: a cohort (Code.gs userGroup with cohort, cohortId_): one cohort per player, a new name makes it.
+    if (p.userGroup && p.cohort != null && V >= COHORT_SHEET) {
+      const c = String(p.cohort).replace(/\s+/g, ' ').trim(),
+        L = Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup];
+      if (!c || c.length > 40) return {ok: false, error: 'group'};
+      if (!Array.isArray(p.userGroup) && !S.users[lc(L[0])]) return {ok: false, error: 'user'};
+      let n = 0;
+      L.forEach(x => {
+        const u = S.users[lc(x)];
+        if (!u || (u.cohort === c) === !!p.on) return;
+        u.cohort = p.on ? c : '';
+        n++;
+      });
+      return {ok: true, cohort: c, n, members: Object.values(S.users).filter(u => u.cohort === c).length};
+    }
+    // Sheet vNEXT: the staff, the trainer role (Code.gs roles_ roleGrant, roleRevoke).
+    if (p.roleGrant || p.roleRevoke) {
+      const g = p.roleGrant || p.roleRevoke,
+        u = S.users[lc(g.account || '')];
+      if (g.role !== 'trainer' || g.scope !== 'instance:imr') return {ok: false, error: 'input'};
+      if (!u) return {ok: false, error: 'user'};
+      const was = !!u.staff;
+      u.staff = !!p.roleGrant;
+      return {ok: true, result: p.roleGrant ? (was ? 'held' : 'ok') : was ? 'ok' : 'none'};
+    }
     // Sheet v48: a beta subject's group (Code.gs groupSet_): players in or out, existing players only, each once.
     if (p.userGroup && V >= 48) {
       const g = String(p.group || ''),
@@ -1501,7 +1528,8 @@
         (p.userArchive && V >= 58) ||
         (p.userStart && V >= 99) ||
         (p.statsExclude && V >= EXCL_SHEET) ||
-        (p.userGroup && V >= 48)
+        (p.userGroup && V >= 48) ||
+        ((p.roleGrant || p.roleRevoke) && V >= COHORT_SHEET)
       )
         return ok(users(p));
       return ok({ok: false, error: 'demo'});

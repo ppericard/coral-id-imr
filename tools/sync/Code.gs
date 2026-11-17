@@ -253,6 +253,7 @@ function load_(name, row, q){
   if (data && typeof data._acct === 'string') { out.acct = data._acct; delete data._acct; }
   // v48: the beta groups the player is in (groupsOf_), [] for none. A failure leaves it out (the app keeps what it had).
   try { out.groups = groupsOf_(name); } catch (err) {}
+  try { out.cohort = cohortOf_(name); } catch (err) {}  // vNEXT: the player's cohort ('' for none), its board shown first
   try { out.notes = notes_(); } catch (err) {}  // v87: the Notes tab's card lines (notes_)
   if (row[6] && row[6] === adminAcct_()) out.admin = 1;  // v125: this is the admin's account (the app shows its 🌱)
   // v57: the ids of the player's own verified reports (repsOf_), for "Your feedback helped" (Q66). A failure leaves it out.
@@ -422,6 +423,7 @@ function doPost_(e){
   // The hold over every answer now logged, in time order (Codex review #370: a device that sent answers older than
   // another device's must not keep the order it replayed them in): the app takes it after a send.
   try { out.groups = groupsOf_(name); } catch (err) {}  // v48, as the load reply
+  try { out.cohort = cohortOf_(name); } catch (err) {}  // vNEXT, as the load reply
   try { out.notes = notes_(); } catch (err) {}  // v87, as the load reply
   try { const o = hold_(name, resetOf_(p.data), p.pt, !!p.light); out.hold = o.h; out.holdIds = o.ids; } catch (err) {}
   // v28: the full replay, over every answer now logged (replay_), under the script lock of its own as a load's (doGet_):
@@ -1710,12 +1712,14 @@ function roles_(p){
     const fail = e => (audit_(who.id, act + ' ' + role + (self ? ' (self)' : ''), scope, e, aid_(name)), {ok: false, error: e});
     if (!row) return fail('user');
     if (archived_(row)) return fail('archived');
-    if (p.roleGrant) return {ok: true, result: grantPut_(String(row[0]), row[6], role, scope, who.id, self)};
+    // vNEXT: the trainer role makes the staff, who have a board of their own: every board's cache is dropped.
+    if (p.roleGrant) { const res = grantPut_(String(row[0]), row[6], role, scope, who.id, self); if (role === 'trainer') boardsDrop_(); return {ok: true, result: res}; }
     const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROLES.TAB), k = lc_(row[0]);
     const v = sh && sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 3).getValues() : [];
     let n = 0;
     for (let i = v.length - 1; i >= 0; i--) if (lc_(v[i][0]) === k && String(v[i][1]) === role && String(v[i][2]) === scope) { sh.deleteRow(i + 2); n++; }
     audit_(who.id, 'revoke ' + role + (self ? ' (self)' : ''), scope, n ? 'ok' : 'none', aid_(row[0]));
+    if (n && role === 'trainer') boardsDrop_();
     return {ok: true, result: n ? 'ok' : 'none'};
   } finally { lock.releaseLock(); }
 }
@@ -2244,18 +2248,32 @@ function board_(sid){
     const levelOf = P => { const L = P && P['~level']; return L && typeof L.th === 'number' && isFinite(L.th) && n_(L) >= ELO_MIN ? L.th : null; };
     // A player with answers is listed before the level shows, at 0% too (Codex review #639): any record of the saved
     // progress with answers.
-    const answered = P => !!P && Object.keys(P).some(k => n_(P[k]) > 0), adm = adminAcct_();
-    out.rows = boardRows_(ra)
+    const answered = P => !!P && Object.keys(P).some(k => n_(P[k]) > 0), adm = adminAcct_(), listed = boardRows_(ra);
+    const all = listed
       // Progress saved before v14 (blank): learned / total until the player's next sync writes it.
       // Level only from ELO_MIN answers (v15, Pierre: "even 50 is not enough to settle the score"): null before.
       .map(r => { const P = nowOf(r), lv = levelOf(P), own = !P ? null : !Array.isArray(list) ? (S.score ? CORE_.treeScore(P, list, S.score).pct : null) : list.length ? pctOf_(P, list) : null,
           pct = own != null || !first ? own : r[8] === '' ? (Number(r[4]) ? Math.round(100 * Number(r[2]) / Number(r[4])) : null) : Number(r[8]);
         return lv != null || pct || answered(P) ? [String(r[0]), pct, lv].concat(adm && r[6] === adm ? [1] : []) : null; })
       .filter(Boolean)
-      .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]))
-      .slice(0, 200);
+      .sort((a, b) => (b[1] || 0) - (a[1] || 0) || (b[2] == null ? -99 : b[2]) - (a[2] == null ? -99 : a[2]));
+    // vNEXT (Pierre, 2026-11-17: "le staff aurait un leaderboard permanent, et chaque nouvelle cohorte aurait un
+    // leaderboard indépendant ... sans polluer le top du leaderboard des étudiants"): the one ranking above, split by who
+    // is where, each scope keeping its order and its first 200: rows, the general board, without the staff; staff, the
+    // trainers (staffSet_); cohorts, [{n: display name, rows}] for every cohort, the newest first, its members but the
+    // staff (cohortMap_). An app from before reads rows as before. The roles or groups unreadable: rows unsplit, as before.
+    const top = L => L.slice(0, 200);
+    out.rows = top(all);
+    try {
+      const st = staffSet_(), gr = groupRows_(), cm = cohortMap_(gr), staff = Object.create(null);
+      listed.forEach(r => { if (st.has(lc_(r[0]) + '|' + String(r[6]))) staff[lc_(r[0])] = 1; });
+      const rest = all.filter(x => !staff[lc_(x[0])]);
+      out.staff = top(all.filter(x => staff[lc_(x[0])]));
+      out.cohorts = cohortNames_(gr).map(n => ({n: n, rows: top(rest.filter(x => cm[lc_(x[0])] === n))}));
+      out.rows = top(rest);
+    } catch (e) { delete out.staff; delete out.cohorts; }
   }
-  cache.put(key, JSON.stringify(out), 300);
+  try { cache.put(key, JSON.stringify(out), 300); } catch (e) {}  // vNEXT: a reply over the cache's 100 KB is served uncached
   return out;
 }
 // The RAs rows a leaderboard lists: with a name, not opted out (Board 0), hidden by an admin (-1, v20) or archived (-2).
@@ -2485,10 +2503,48 @@ function groupMap_(){
   return m;
 }
 const groupsOf_ = name => groupMap_()[lc_(name)] || [];
-// Adds (on) or removes players of a group: existing players only (RAs tab), each once. Returns how many changed.
+// vNEXT: cohorts, for now (Pierre, 2026-11-17: "chaque nouvelle cohorte aurait un leaderboard indépendant"; ROADMAP
+// "Roles, instances and cohorts"): a named group of players the admin makes and fills on Players, kept in the same
+// Groups tab, its Group cell COHORT_ + the display name chosen at creation ("cohort:RA November 2026"), so a subject's
+// beta group (its bare id) is untouched: groupMap_ reads subject ids only. A player is in one cohort at most (groupSet_
+// moves them). A cohort exists while it has a member. The boards only ask who is a member (cohortMap_), so roles step
+// 2's real cohorts (a trainer makes one, students join with a code, Q345) can replace this behind the same map.
+const COHORT_ = 'cohort:', COHORT_MAX = 40;
+// The Group cell of a cohort named n ('' for a name that cannot be one: empty, too long, a control character).
+const cohortId_ = n => { const s = String(n == null ? '' : n).replace(/\s+/g, ' ').trim(); return s && s.length <= COHORT_MAX && !/[\u0000-\u001f\u007f]/.test(s) ? COHORT_ + s : ''; };
+const isCohort_ = g => String(g).indexOf(COHORT_) === 0 && String(g).length > COHORT_.length;
+// name (lower case) -> the display name of the cohort it is in; the newest row wins should two ever be there. No prototype.
+function cohortMap_(rows){
+  const m = Object.create(null);
+  (rows || groupRows_()).forEach(r => { const g = String(r[0]), k = lc_(r[1]); if (k && isCohort_(g)) m[k] = g.slice(COHORT_.length); });
+  return m;
+}
+// Every cohort's display name, the newest first (by its first row in the Groups tab).
+function cohortNames_(rows){
+  const seen = [];
+  (rows || groupRows_()).forEach(r => { const g = String(r[0]); if (isCohort_(g) && seen.indexOf(g) < 0) seen.push(g); });
+  return seen.reverse().map(g => g.slice(COHORT_.length));
+}
+const cohortOf_ = name => cohortMap_()[lc_(name)] || '';
+// vNEXT: the staff (Pierre, 2026-11-17: "techniquement le staff aurait les droits de 'trainer' dans l'app"): the accounts
+// holding the trainer role in the instance (roles step 1, the Roles tab), each by its lower-case name and the code hash
+// the grant was given to (as can_ reads a grant), so a name taken again after a delete is not staff.
+function staffSet_(){
+  const s = new Set();
+  grants_().forEach(g => { if (g.role === 'trainer' && g.scope === INST_SCOPE_) s.add(g.name + '|' + g.h); });
+  return s;
+}
+// Every subject's board cache dropped (a membership or a role changed who is on which board).
+const boardsDrop_ = () => CORE_.SUBJECTS.filter(S => S.board).forEach(S => { try { CacheService.getScriptCache().remove(boardCache_(S)); } catch (e) {} });
+// Adds (on) or removes players of a group: existing players only (RAs tab), each once. Returns how many changed. vNEXT:
+// added to a cohort, a player leaves the cohort they were in (one cohort each).
 function groupSet_(ra, names, g, on){
   const sh = sheet_(GROUPS.TAB, GROUPS.HEAD), rows = groupRows_(), has = k => rows.some(r => String(r[0]) === g && lc_(r[1]) === k);
   let n = 0;
+  if (on && isCohort_(g)) {
+    const out = Object.create(null); names.forEach(x => (out[lc_(x)] = 1));
+    for (let i = rows.length - 1; i >= 0; i--) if (isCohort_(rows[i][0]) && String(rows[i][0]) !== g && out[lc_(rows[i][1])] && find_(ra, String(rows[i][1]))) { sh.deleteRow(i + 2); rows.splice(i, 1); }
+  }
   if (on) {
     const add = [], seen = Object.create(null);  // v58: live players only, never an archive
     names.forEach(x => { const r = find_(ra, x), k = lc_(x); if (!r || seen[k] || has(k) || archived_(ra.getRange(r, 1, 1, HEAD.length).getValues()[0])) return;  seen[k] = 1; add.push([g, safe_(String(ra.getRange(r, 1).getValue())), new Date()]); });
@@ -2646,13 +2702,17 @@ function usersDo_(p, who){
   // v48: {userGroup: name | [names], group, on: true|false, token} adds players to the group of a subject in beta, or
   // removes them (groupSet_); answers how many changed and the group's members. Under the script lock, as a rename or a
   // merge could otherwise move a name between the read and the write.
+  // vNEXT: {userGroup, cohort: display name, on, token} does the same for a cohort (cohortId_; on: the player leaves the
+  // cohort they were in; a new name makes the cohort), and every board's cache is dropped (the cohorts' boards follow).
   if (p.userGroup) {
-    const g = String(p.group || ''), names = (Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
-    if (groupIds_().indexOf(g) < 0) return {ok: false, error: 'group'};
+    const coh = p.cohort != null, g = coh ? cohortId_(p.cohort) : String(p.group || ''), names = (Array.isArray(p.userGroup) ? p.userGroup : [p.userGroup]).map(String).slice(0, 2000);
+    if (coh ? !g : groupIds_().indexOf(g) < 0) return {ok: false, error: 'group'};
     const lock = lock_();
     try {
       if (!Array.isArray(p.userGroup) && !row_(names[0])) return {ok: false, error: 'user'};
-      const n = groupSet_(ra, names, g, !!p.on), m = groupMap_();
+      const n = groupSet_(ra, names, g, !!p.on);
+      if (coh) { boardsDrop_(); const cm = cohortMap_(), c = g.slice(COHORT_.length); return {ok: true, cohort: c, n: n, members: Object.keys(cm).filter(k => cm[k] === c).length}; }
+      const m = groupMap_();
       return {ok: true, group: g, n: n, members: Object.keys(m).filter(k => m[k].indexOf(g) >= 0).length};
     } finally { lock.releaseLock(); }
   }
@@ -2784,7 +2844,8 @@ function usersDo_(p, who){
       const answers = relabel_('Answers', 1, from, into), reports = relabel_('Reports', 2, from, into);
       pagesMove_(from, into);
       // v48: the merged name's beta groups join the kept name's (each once).
-      groupRows_().filter(r => lc_(r[1]) === lc_(from)).forEach(r => groupSet_(ra, [into], String(r[0]), true));
+      // vNEXT: a cohort only when the kept name is in none (it keeps its own).
+      groupRows_().filter(r => lc_(r[1]) === lc_(from) && !(isCohort_(r[0]) && cohortOf_(into))).forEach(r => groupSet_(ra, [into], String(r[0]), true));
       dropRows_(GROUPS.TAB, from, 2);
       rolesDrop_(from, who.id);  // v156: the merged-away account's roles go, never to into (rule D7; a grant is given, not merged)
       sxMove_(from, '');  // v115: the kept name's choice holds for the answers it takes
@@ -2800,12 +2861,13 @@ function usersDo_(p, who){
   // id (v13): the player's anonymous id, the one ?answers=1 and ?stats=1 use, so the admin's player list can join the two.
   // v58: archives apart, archived: [{name, id, time (the record's last save), answers, reports}], read-only in the admin.
   // v119: every map by player has no prototype (a player named constructor or __proto__ is a player like any other).
-  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null);
+  const out = {ok: true, users: [], removed: [], archived: []}, by = Object.create(null), dcol = Object.create(null), salt = anonSalt_(), arch = Object.create(null), hs = Object.create(null);
   liveRows_(false).forEach(r => { const a = {name: String(r[0]), id: aid_(String(r[0]), salt), time: new Date(r[1]).getTime() || 0, answers: 0, reports: 0}; out.archived.push(a); arch[lc_(a.name)] = a; });
   liveRows_().forEach(r => {
     const u = {name: String(r[0]), id: aid_(String(r[0]), salt), updated: new Date(r[1]).getTime() || 0, learned: Number(r[2]) || 0, seen: Number(r[3]) || 0, total: Number(r[4]) || 0,
       review: String(r[5] || ''), board: r[9] === '' ? 1 : Number(r[9]), answers: 0, right: 0, first: 0, last: 0, days: 0, modes: {}, recent: [0, 0], mix: [], reports: 0, size: String(r[7] || '').length};
     out.users.push(u); by[lc_(u.name)] = u; dcol[lc_(u.name)] = String(r[7] || '');
+    hs[lc_(u.name)] = String(r[6] || '');
   });
   // v60: the replayed subject's answers (the corals'), as before fish answers were logged: its mix-ups name its genera.
   const an = ss.getSheetByName('Answers'), days = Object.create(null), mixes = Object.create(null), last50 = Object.create(null), all = an && an.getLastRow() > 1 ? logRows_(an, SUBJ_COL + 1) : [];
@@ -2831,6 +2893,8 @@ function usersDo_(p, who){
   // v48: the beta groups each player is in.
   const gm = groupMap_();
   out.users.forEach(u => (u.groups = gm[lc_(u.name)] || []));
+  // vNEXT: each player's cohort ('' for none) and staff 1 for a trainer (staffSet_), for the admin's Cohort and Staff.
+  try { const cm = cohortMap_(), st = staffSet_(); out.users.forEach(u => { u.cohort = cm[lc_(u.name)] || ''; if (st.has(lc_(u.name) + '|' + hs[lc_(u.name)])) u.staff = 1; }); } catch (e) {}
   replayedAll_(out.users, dcol);
   out.excluded = [...sxSet_()];  // v115: the ids left out of the statistics
   return out;

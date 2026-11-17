@@ -3832,6 +3832,71 @@ const darkCards = (p, sel) =>
             .catch(() => fails.push(`${w}px Journey before v30: no version line for the genus sheets`));
           await q.close();
         }
+        // Cohorts and staff (sheet COHORT_SHEET; Pierre, 2026-11-17): a player's bar has a Cohort select (None, the cohorts,
+        // New cohort… asking its name) and Staff Add / Remove; the Groups column and the line above the table follow. Before
+        // the version, neither shows.
+        {
+          const q = await p.context().newPage();
+          q.on('pageerror', e => fails.push(`${w}px cohorts page error: ${e.message}`));
+          q.on('dialog', d =>
+            d.type() === 'prompt' ? d.accept('RA Test 2026') : (fails.push(`${w}px cohorts: a ${d.type()} dialog`), d.dismiss())
+          );
+          const calm = () =>
+            q
+              .waitForFunction(() => window.DEMO_PENDING === 0 && !/^\s*Loading/.test(document.getElementById('view').innerText), null, {
+                timeout: 20000
+              })
+              .then(() => q.waitForTimeout(300))
+              .catch(() => fails.push(`${w}px cohorts: never settled`));
+          const bar = async () => {
+            if (!(await q.$('.adm-ubar'))) await q.click('[data-uopen="Carla Demo"]');
+            return q.evaluate(() => {
+              const sel = document.querySelector('.adm-ubar [data-ucohort]'),
+                st = document.querySelector('.adm-ubar [data-ustaff]'),
+                row = [...document.querySelectorAll('.adm-urow')].find(r => r.dataset.uopen === 'Carla Demo');
+              return {
+                sel: sel ? [sel.value, [...sel.options].map(o => o.textContent)] : null,
+                staff: st ? st.parentNode.textContent.replace(/\s+/g, ' ').trim() : null,
+                line: (document.querySelector('.adm-ucoh') || {}).textContent || '',
+                cell: row ? row.textContent : '',
+                wide: document.documentElement.scrollWidth > document.documentElement.clientWidth
+              };
+            });
+          };
+          try {
+            const X = await p.evaluate(() => COHORT_SHEET);
+            await q.goto(base + `admin.html?demo&v=${X - 1}#players/list`);
+            await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+            await calm();
+            let b = await bar();
+            if (b.sel || b.staff) fails.push(`${w}px cohorts before v${X}: ${JSON.stringify(b)}`);
+            await q.goto(base + `admin.html?demo&v=${X}#players/list`);
+            await q.waitForSelector('.adm-urow', {timeout: 20000}).catch(() => {});
+            await calm();
+            b = await bar();
+            if (!b.sel || b.sel[0] !== '' || b.sel[1].join('|') !== 'None|New cohort…' || b.staff !== 'Not staff Add' || b.wide)
+              fails.push(`${w}px cohorts: before ${JSON.stringify(b)}`);
+            await q.selectOption('.adm-ubar [data-ucohort]', '+');
+            await calm();
+            b = await bar();
+            if (!b.sel || b.sel[0] !== 'RA Test 2026' || !/RA Test 2026: 1 · Staff: 0/.test(b.line) || !/RA Test 2026/.test(b.cell))
+              fails.push(`${w}px cohorts: New cohort… ${JSON.stringify(b)}`);
+            await q.click('.adm-ubar [data-ustaff]');
+            await calm();
+            b = await bar();
+            if (b.staff !== 'Staff Remove' || !/Staff: 1/.test(b.line) || !/Staff/.test(b.cell))
+              fails.push(`${w}px cohorts: Staff Add ${JSON.stringify(b)}`);
+            await q.click('.adm-ubar [data-ustaff]');
+            await calm();
+            await q.selectOption('.adm-ubar [data-ucohort]', '');
+            await calm();
+            b = await bar();
+            if (b.sel[0] !== '' || b.staff !== 'Not staff Add' || b.line) fails.push(`${w}px cohorts: back to none ${JSON.stringify(b)}`);
+          } catch (e) {
+            fails.push(`${w}px cohorts: ${String(e.message).split('\n')[0]}`);
+          }
+          await q.close();
+        }
         // Out of the statistics (sheet EXCL_SHEET, ROADMAP "Security follow-ups"): a player's bar and every device not signed in
         // carry Leave out / Count again, one click each way; a player left out is marked "out" in the list. Before it the
         // buttons are there, disabled, with the version they wait for.
