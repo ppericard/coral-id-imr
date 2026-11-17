@@ -11,7 +11,8 @@
 //    doors and the key page in the sea slugs' words; the switch to the fish and back swaps the tree in force (app.js
 //    treeAt), each subject's progress kept apart; their English names (seaslug.json en; Pierre, 2026-11-17) never in a
 //    question before its answer, after it in the verdict and the species line, on the Learn page's headings and tiles
-//    and on the sheets with their sources;
+//    and on the sheets with their sources; a genus sheet's sourced ID marks (tools/seaslug_cues.json), and no fish word on a
+//    genus or a species sheet, their ? text included (app.js UNITS words);
 // 3. a player in the sea-slug group (the sheet's groups, stubbed through the account's GROUPS_KEY record) sees it too.
 // Locally: node tests/seaslug.smoke.js (in the machine slot, tests/slot.js).
 const http = require('http'),
@@ -257,6 +258,19 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     const gs = await p.evaluate(g => hr('g-' + g), F.genera[0].id);
     await p.goto(base + gs);
     await p.waitForFunction(n => (document.querySelector('#view') || {}).innerText.includes(n), F.genera[0].name, {timeout: 15000});
+    // Its sourced ID marks (tools/seaslug_cues.json; study §9 step 7), each line with its source's number, and the sheet in
+    // the sea slugs' words, its ? text included (app.js UNITS words): no fish word.
+    const gm = await p.evaluate(() => ({
+      marks: [...document.querySelectorAll('#view .gmarks li')].map(li => [li.textContent, li.querySelectorAll('.srcn').length]),
+      srcs: (document.querySelector('#view .gmarks .msrc') || {}).textContent || '',
+      words: [...document.querySelectorAll('.lede, #view')].map(x => x.textContent).join(' ')
+    }));
+    check(
+      (F.genera[0].marks || []).length && gm.marks.length === F.genera[0].marks.length && gm.marks.every(([, n]) => n > 0),
+      `2: ${F.genera[0].name}'s ID marks, each with its source: ${JSON.stringify(gm.marks)}`
+    );
+    check(/^Sources: \[1\]/.test(gm.srcs), `2: ${F.genera[0].name}'s mark sources: "${gm.srcs}"`);
+    check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(gm.words), `2: a fish word on a sea-slug genus sheet`);
     // The genus look-alikes (seaslug.json genus look, dlook, lsrc; Pierre, 2026-11-17, Q390 D): a declared pair across two
     // families is a duel pair, a pair only iNaturalist shows a data look-alike from the start (no answer pooled here), both
     // traps on the pooled score; the sheets say each with its source: a genus's own page, a one-genus family's sheet for
@@ -302,10 +316,13 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       await p.waitForFunction(n => (document.querySelector('#view .fn-t') || {}).textContent === n, spn.name, {timeout: 15000});
       const sv = await p.evaluate(() => ({
         v: (document.querySelector('#view .fn-v') || {}).textContent || '',
-        more: [...document.querySelectorAll('#view .sheetmore .refs')].map(x => x.textContent).join(' ')
+        more: [...document.querySelectorAll('#view .sheetmore .refs')].map(x => x.textContent).join(' '),
+        words: [...document.querySelectorAll('.lede, #view')].map(x => x.textContent).join(' ')
       }));
       check(sv.v.startsWith(enFirst(spn)), `2: ${spn.name}'s sheet: "${sv.v}"`);
       check(/English names:/.test(sv.more), `2: ${spn.name}'s sheet: no English names with their sources`);
+      // in the sea slugs' words: its rank by its observers in the Philippines, no FishBase link, no IMR reference list
+      check(!/\bfish|FishBase|IMR\b|around Dauin/i.test(sv.words), `2: a fish word on ${spn.name}'s sheet`);
     }
     // A species with no name yet (seaslug.json inf; Pierre, 2026-11-17, Q389 (2)): its sheet names it with its source in
     // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase);
