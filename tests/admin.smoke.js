@@ -4132,7 +4132,11 @@ const darkCards = (p, sel) =>
             await go('players/list');
             await go(beta + '/players/list');
             const ga = await grp(),
-              gb = await p.evaluate(() => ({btn: !!document.querySelector('[data-ugall], [data-ugroup]'), label: !!ASUBJ.beta}));
+              // its beta label as core.js gives it (fish out of beta since 2026-11-17): opening to all never changes it
+              gb = await p.evaluate(() => ({
+                btn: !!document.querySelector('[data-ugall], [data-ugroup]'),
+                label: !!ASUBJ.beta === !!SUBJECTS.find(S => S.id === ASUBJ.id).beta
+              }));
             if (ga.line || ga.col || ga.all || gb.btn || !gb.label)
               fails.push(`${w}px Players (${beta}) open to all: ${JSON.stringify({...ga, ...gb})}`);
             await p.evaluate(b => (SUBJECTS.find(S => S.id === b).open = 'group'), beta);
