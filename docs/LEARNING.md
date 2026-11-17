@@ -4052,6 +4052,26 @@ time). Level 2 (probes draw a share of every fish question from another pool), c
   show the change costs no learning; the transfer itself waits for the real log (the design note's stop rule: 20
   players × 20 clean probes).
 
+**Results** (2026-11-17, `main` 4e5cc216 against 3eda653f; both worlds draw each photo's truth over the units' whole
+sets, held-out photos included, so the two arms play the same worlds; about 32 minutes of machine time in all):
+- **Rated world, primary `score@3000:up`: no difference** (T −0.71, p 0.85; beginner 43.8 → 44.6, strongRA 51.6 →
+  51.0, expert 54.0 → 54.0), as expected. Held-out questions: 318-402 of 3,000 answers per run (probes and exam
+  questions on held-out photos), 84-90% right.
+- **Guardrails, rated world**: true knowledge, E, the plateau, the share under ease 4 and the units met held at every
+  checkpoint; the score at 1,000, units at Open Water and families at Advanced unclear in places (the seeds' spread).
+  **One breach: families at Advanced at 1,000 answers, beginner, 5.8 → 3.6 (−2.2, bound −5.0; margin 2)**, per seed
+  0, 13, 6, 0, 10 → 0, 5, 1, 1, 11; at 3,000 30.6 → 30.6. Its right % at 1,000 −0.7 [−1.1, −0.3]: the probes are
+  harder photos (the set has none of the reference-level, ease-5 photos), and a miss on one sets the unit back like
+  any miss (Q385 (c) A). *Exploratory, after the look* (beginner, 5 fresh seeds 6-10, not part of the declared test):
+  9.8 → 8.0 (−1.8, bound −5.0, unclear), 31.2 → 30.6 at 3,000. Read together: a beginner reaches Advanced on about
+  two families fewer around 1,000 answers, caught up by 3,000. A cost at the margin that was not declared: it goes
+  to Pierre (rule L11), with the choices it leaves (keep it; probes from a unit's Open Water only; a lower `HELD.p`).
+- **App world**: no guardrail breached; true knowledge held at 300 and 600 for every profile, the share under ease 4
+  before Open Water held under its declared cost (−0.011 to +0.012, bounds ≤ +0.026), units met held; E at 600
+  (beginner), the first unit at Open Water (beginner, 120 → 79, i.e. sooner), units at Open Water at 300 and
+  families at Advanced (strongRA) unclear with 3 seeds. Held-out questions: 34-58 of 600 per run; exams started
+  by 600 in the strong profiles only (as on `main`).
+
 ### Fish: scientific genera, the first step of branch B (2026-11-04 night; merged #526, back at Advanced on 2026-11-08)
 
 Pierre, 2026-11-04 (docs/FISH_PATH.md "Levels"): the path is a tree, and branch B starts with the scientific genus names, "a
