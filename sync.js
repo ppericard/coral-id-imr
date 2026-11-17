@@ -237,11 +237,12 @@ const RVK = 'reefid-sync-coral-rv';
 // progress replayed from the answer log"): each with its own rules version applied (rvKey: reefid-sync-<subject>-rv,
 // travelling with the progress data as RVK does), asked for with the requests (rvs, the load's rv_<subject>) and adopted
 // as the corals' replay is (replayAdoptS), under its own rules versions (core.js rvsOf: fish FISH_RVS), but only from the
-// script that replays it under this app's rules (core.js REPLAYS_SHEET; rule D4): before, that subject does exactly what it
-// did (no rules version, the plain merge).
+// script that replays it under this app's rules (core.js REPLAYS_SHEET, or the subject's own version when later: SUBJECTS
+// replayed sheet, the sea slugs' SEASLUGRP_SHEET; rule D4): before, that subject does exactly what it did (no rules
+// version, the plain merge).
 const rpSubjects = () => SUBJECTS.filter(S => !S.replay && S.replayed);
 const rvKey = S => (!S || S.replay ? RVK : subjKey(S.id, 'rv'));
-const rpOn = (S, v) => !!S && (!!S.replay || (!!S.replayed && Number(v) >= REPLAYS_SHEET));
+const rpOn = (S, v) => !!S && (!!S.replay || (!!S.replayed && Number(v) >= Math.max(REPLAYS_SHEET, Number(S.replayed.sheet) || 0)));
 const rvApplied = S => Number(store.get(rvKey(S), 0)) || 0;
 // The rules version a request says: the one applied here, or 0 while this device holds answers the sheet logged from a
 // refused save (SYNC.lg, syncOnce): its merge baseline lacks them, so a saved copy another device built from the log
@@ -268,12 +269,22 @@ function fateUnknown(me) {
 }
 const rvAsk = S => (lgFor(S) ? 0 : rvApplied(S));
 // Another subject's units for its replay (core.js replayProgress gen; app.js UNITS gen: fish.json's, loaded with the
-// subject), null before they are in.
-const rpUnits = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].gen ? UNITS[S.id].gen() : null);
+// subject), null before they are in: read with its own tree in force (app.js treeWith), whichever tree subject is on
+// screen, so one subject's units never stand for another's (the fish and the sea slugs share the tree engine).
+const rpUnits = S => {
+  const U = typeof UNITS === 'object' ? UNITS[S.id] : null;
+  if (!U || !U.gen) return null;
+  return typeof treeWith === 'function' ? treeWith(S.id, () => U.gen()) : U.gen();
+};
 // Its variant table (core.js fishVarTable, as the sheet's replay reads it: SUBJECTS replayed vars; app.js UNITS vars), for
 // this device's answers replayed on top of the sheet's under a rules version that reads it (core.js rvVars): a queued
-// right answer on a unit's last variant group then keeps its learned mark (Codex review #953). Null before it is in.
-const rpVars = S => (typeof UNITS === 'object' && UNITS[S.id] && UNITS[S.id].vars ? UNITS[S.id].vars(S) : null);
+// right answer on a unit's last variant group then keeps its learned mark (Codex review #953). Null before it is in;
+// read with its own tree in force, as rpUnits.
+const rpVars = S => {
+  const U = typeof UNITS === 'object' ? UNITS[S.id] : null;
+  if (!U || !U.vars) return null;
+  return typeof treeWith === 'function' ? treeWith(S.id, () => U.vars(S)) : U.vars(S);
+};
 // The other subjects' versions a request says, each only once a reply said the script replays it (sheetV), so an older
 // script is never asked for a replay the app would not adopt, and once its units are in (the replay waits for them).
 const rvsAsk = () =>
