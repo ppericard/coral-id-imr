@@ -2364,12 +2364,13 @@ async function noticesAfterSync(base) {
 // links to its step; done = every step seen, with its achievement. Returns the failures.
 // Fish opens to all since 2026-11-06 (Q158): a check about the corals-only onboarding (one subject: the start question
 // first, no subject pick) serves core.js with fish back to open: 'group' (the two-subject tour: subjTour).
+// The corals alone: every other subject back to a group (fish and, since 2026-11-17, the sea slugs open to all).
 const oneSubject = c =>
   c.route(
     u => new URL(u).pathname === '/core.js',
     async r => {
       const res = await r.fetch();
-      await r.fulfill({response: res, body: (await res.text()).replace("open: 'all'", "open: 'group'")});
+      await r.fulfill({response: res, body: (await res.text()).replaceAll("open: 'all'", "open: 'group'")});
     }
   );
 async function startSmoke(b, base) {
@@ -4558,7 +4559,8 @@ async function subjTour(b, base) {
         const res = await r.fetch(),
           t = await res.text();
         if (!t.includes("open: 'all'")) fails.push('subject tour: fish does not open to all in core.js');
-        await r.fulfill({response: res, body: mode === 'all' ? t : t.replace("open: 'all'", "open: 'group'")});
+        // every subject but the corals back to a group (fish and, since 2026-11-17, the sea slugs open to all)
+        await r.fulfill({response: res, body: mode === 'all' ? t : t.replaceAll("open: 'all'", "open: 'group'")});
       }
     );
     await c.addInitScript(mode => {
@@ -4654,12 +4656,12 @@ async function subjTour(b, base) {
       fails.push(`subject tour, no group: ${JSON.stringify(all.map(s => [s.n, s.h, s.subj]))}`);
     await c.close();
   }
-  // 2. In the fish group: the choice first, forced, both subjects (fish with its beta tag); Fish picked: saved, the fish
+  // 2. In the fish group: the choice first, forced, both subjects (fish out of beta since 2026-11-17); Fish picked: saved, the fish
   // question, then where to switch (the Home row spotlit), the rest in fish words; Back shows the pick kept.
   {
     const [c, p] = await open('group');
     const s0 = await bub(p);
-    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish+beta' || s0.next || s0.skip || !/two subjects/.test(s0.text))
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish' || s0.next || s0.skip || !/two subjects/.test(s0.text))
       fails.push(`subject tour, group: the choice ${JSON.stringify(s0)}`);
     await p.keyboard.press('ArrowRight');
     await p.waitForTimeout(300);
@@ -4744,7 +4746,9 @@ async function subjTour(b, base) {
   {
     const [c, p] = await open('all');
     const s0 = await bub(p);
-    if (!s0 || s0.n !== '1 / 8' || s0.pick.length !== 2) fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
+    // the three subjects, the sea slugs with their beta tag, fish out of beta (Pierre, 2026-11-17)
+    if (!s0 || s0.n !== '1 / 8' || s0.pick.join() !== 'coral,fish,seaslug+beta')
+      fails.push(`subject tour, open to all: first step ${JSON.stringify(s0)}`);
     await tap(p, '#tour [data-pick="coral"]', 'step');
     await p.waitForSelector('#tour [data-start]', {timeout: 10000}).catch(() => {});
     const s1 = await bub(p),
