@@ -35,7 +35,8 @@ const LABELS = {ok: 'Learned', mid: 'Learning', weak: 'Review', new: ''};
 // Genus shown, Answered and Choices hold the units the app asks (a coral genus; a fish entry t01, a scientific genus
 // g:Chromis), the machine's ids; Taxon shown and Taxon answered their names at that rank when an id is not its name
 // (Damselfish, Chromis; blank for a coral genus, which is its own name, and for "I don't know"); Species shown the
-// species of the photos shown (a fish photo's PDF species name; blank for the corals' genus photos). Only the subject
+// species of the photos shown (a fish photo's PDF species name; a species with no name yet by its label, Goniobranchus
+// sp. 5, from vNEXT; blank for the corals' genus photos). Only the subject
 // the sheet replays (core.js SUBJECTS replay: the corals) feeds what the script computes (answerRows_: the photo
 // ratings, confusions, opening hold, full replay; users_): the other subjects' rows are logged and served (readAnswers),
 // nothing more.
@@ -474,7 +475,10 @@ function logAnswers_(name, answers, seen0, dev){
   // v60: a unit may be a fish entry (t01) or scientific genus (g:Chromis), in Genus shown, Answered, Choices and a duel's
   // mode; still a letter first, so nothing can start a formula.
   const G = /^[A-Za-z][A-Za-z0-9: -]*$/, M = /^[A-Za-z0-9:|-]*$/, PH = /^[A-Za-z0-9_. -]*$/, ID = /^[a-z0-9]+$/, CH = /^[A-Za-z0-9: ]*$/;
-  const W = /^[a-z]{1,20}$/, TX = /^[A-Za-z][A-Za-z0-9 .&'()-]*$/, SP = /^[A-Za-z][A-Za-z .,()-]*$/;
+  // vNEXT: Species shown also takes a species with no name yet by its label, a number after "sp. " (Goniobranchus sp. 5,
+  // tools/seaslug_informal.json; Pierre, 2026-11-17, Q389 (2)), where any digit blanked the whole cell: a digit only in
+  // that number (1 to 3 digits, ending its name), nowhere else; still a letter first, so nothing can start a formula.
+  const W = /^[a-z]{1,20}$/, TX = /^[A-Za-z][A-Za-z0-9 .&'()-]*$/, SP = /^[A-Za-z](?:[A-Za-z .,()-]| sp\. [0-9]{1,3}(?=,|$))*$/;
   const subj = a => word_(a.s, W, 20) || CORE_.SUBJECTS[0].id;  // an app from before v60 sends none: its answers are coral
   const rank = (a, sj) => word_(a.rk, W, 20) || (CORE_.SUBJECTS.find(S => S.id === sj) || {}).rank || '';
   // v69: a fish answer from an app before the switch to the book's families names an old entry (t01): renamed here to
