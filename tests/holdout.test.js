@@ -1,8 +1,10 @@
 require('./slot.js').testGuard();
-// The fish held-out photo set (tools/holdout.py; ROADMAP "A held-out photo set"; Pierre, 2026-11-16, Q385): per species,
-// 10% of its eligible observations, at least 5, never fewer than 8 left in practice; never Pierre's own, a reference
-// source's or a reference-level photo, nor a surprise-only species; a whole observation in or out (rule P4); a fixed
-// hash order; sticky when photos are added. Made-up fixtures, then the committed fish-holdout.json against the real files.
+// The fish held-out photo set (tools/holdout.py; ROADMAP "A held-out photo set"; Pierre, 2026-11-16, Q385; 2026-11-18:
+// "Il en faut suffisament pour refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs"):
+// 15 per exam unit (a family, a scientific genus), across its species in turn, never fewer than 8 left in practice per
+// species; never Pierre's own, a reference source's or a reference-level photo, nor a surprise-only species; a whole
+// observation in or out (rule P4); a fixed hash order; sticky when photos are added. Made-up fixtures, then the committed
+// fish-holdout.json against the real files.
 const test = require('node:test'),
   assert = require('node:assert'),
   crypto = require('crypto'),
@@ -37,33 +39,51 @@ const byRank = L => [...L].sort((a, b) => (rank(a) < rank(b) ? -1 : 1));
 const rec = (sp, o, k = {}) => ({f: `fish-${sp}-cand-${o}`, o: String(o), sp, e: 3, jt: 'p1g0sl1', ...k});
 const game = (...L) => ({photos: {t01: L.flat()}});
 const many = (sp, n, from = 1000) => Array.from({length: n}, (_, i) => rec(sp, from + i));
+// f:A a family of circle 2 (no genus unit), f:B one of circle 1 with two scientific genera, f:W a surprise-only one.
 const FISH = {
   families: [
-    {id: 'f:A', species: ['s1', 's2']},
+    {id: 'f:A', circle: 2, species: ['s1', 's2']},
+    {id: 'f:B', circle: 1, species: ['s3', 's4', 's5'], genera: ['g:X', 'g:Y']},
     {id: 'f:W', species: ['s9'], wink: {photos: []}}
-  ]
+  ],
+  genera: [
+    {id: 'g:X', family: 'f:B', species: ['s3', 's4']},
+    {id: 'g:Y', family: 'f:B', species: ['s5']}
+  ],
+  species: ['s1', 's2', 's3', 's4', 's5'].map(id => ({id, circle: id < 's3' ? 2 : 1}))
 };
-const quota = (sp, n) => (py('build', game(many(sp, n)), FISH, null)[sp] || []).length;
+const held = (G, prev = null) => py('build', G, FISH, prev);
+const first = (L, n) =>
+  byRank(L.map(p => p.o))
+    .slice(0, n)
+    .sort();
 
-test('a species holds out 10% of its eligible observations, at least 5, and keeps 8 in practice', () => {
-  assert.deepStrictEqual(RULE, {unit: 'species', rate: 0.1, floor: 5, keep: 8, salt: 'fish-holdout'});
-  assert.deepStrictEqual(
-    [100, 60, 51, 20, 13, 12, 10, 8, 3].map(n => [n, quota('s1', n)]),
-    [
-      [100, 10],
-      [60, 6],
-      [51, 6],
-      [20, 5],
-      [13, 5],
-      [12, 4],
-      [10, 2],
-      [8, 0],
-      [3, 0]
-    ]
-  );
+test('15 per exam unit, across its species in turn, 8 always left in practice per species', () => {
+  assert.deepStrictEqual(RULE, {unit: 'exam', target: 15, keep: 8, salt: 'fish-holdout'});
+  assert.deepStrictEqual(py('exam_units', FISH), [
+    ['f:A', ['s1', 's2']],
+    ['f:B', ['s3', 's4', 's5']],
+    ['g:X', ['s3', 's4']],
+    ['g:Y', ['s5']]
+  ]);
+  // s1 100 observations, s2 10 (2 to spare): in turn, s2 runs out after 2, s1 gives the rest
+  const H = held(game(many('s1', 100), many('s2', 10, 5000)));
+  assert.strictEqual(H.s1.length, 13);
+  assert.strictEqual(H.s2.length, 2);
+  // a unit that cannot reach 15 holds what it can: 12 observations, 4 held out; 8 or fewer, none
+  assert.strictEqual(held(game(many('s1', 12))).s1.length, 4);
+  assert.deepStrictEqual(held(game(many('s1', 8))), {});
   // 30 observations, 27 of them Pierre's own: the 3 eligible ones only
   const own = many('s1', 27).map(p => ({...p, own: true}));
-  assert.strictEqual(py('build', game(own, many('s1', 3, 5000)), FISH, null).s1.length, 3);
+  assert.strictEqual(held(game(own, many('s1', 3, 5000))).s1.length, 3);
+});
+
+test('the families first, then each scientific genus topped up to 15', () => {
+  // f:B: 5 from each species; g:X (s3, s4) has 10, takes 5 more in turn; g:Y (s5) has 5, takes 10 more
+  const G = game(many('s3', 40, 1000), many('s4', 40, 2000), many('s5', 40, 3000)),
+    H = held(G);
+  assert.deepStrictEqual([H.s3.length, H.s4.length, H.s5.length], [8, 7, 15]);
+  assert.deepStrictEqual(H.s3, first(many('s3', 40, 1000), 8));
 });
 
 test("never Pierre's own, a reference source's or a reference-level photo, nor a surprise-only species", () => {
@@ -78,10 +98,10 @@ test("never Pierre's own, a reference source's or a reference-level photo, nor a
     many('s9', 40, 3000)
   );
   for (let i = 0; i < 5; i++) {
-    const H = py('build', G, FISH, null);
+    const H = held(G);
     assert.ok(!('s9' in H), 'a surprise-only species holds nothing out');
     for (const o of ['1', '2', '3', '4']) assert.ok(!H.s1.includes(o), o);
-    G.photos.t01.push(...many('s1', 10, 10000 + 10 * i)); // more photos, so more held out: still none of them
+    G.photos.t01.push(...many('s1', 10, 10000 + 10 * i));
   }
   // a reference-level photo of ease 5 without the reference look is an ordinary one
   assert.deepStrictEqual(py('pool', game(rec('s2', 7, {e: 5, jt: 'p2g0sl1'})), FISH), {s2: {7: true}});
@@ -89,51 +109,35 @@ test("never Pierre's own, a reference source's or a reference-level photo, nor a
 
 test('the first eligible observations in the hash order, the same at every run', () => {
   const G = game(many('s1', 70), many('s2', 25, 4000)),
-    H = py('build', G, FISH, null);
-  assert.deepStrictEqual(H, py('build', G, FISH, null));
-  assert.deepStrictEqual(
-    H.s1,
-    byRank(many('s1', 70).map(p => p.o))
-      .slice(0, 7)
-      .sort()
-  );
-  assert.deepStrictEqual(
-    H.s2,
-    byRank(many('s2', 25, 4000).map(p => p.o))
-      .slice(0, 5)
-      .sort()
-  );
+    H = held(G);
+  assert.deepStrictEqual(H, held(G));
+  assert.deepStrictEqual(H.s1, first(many('s1', 70), 8));
+  assert.deepStrictEqual(H.s2, first(many('s2', 25, 4000), 7));
   // an observation keyed by its short id whatever the record's form (fish_short: the full address reads as the id)
   const full = many('s2', 25, 4000).map(p => ({...p, o: 'https://www.inaturalist.org/observations/' + p.o}));
-  assert.deepStrictEqual(py('build', game(full), FISH, null).s2, H.s2);
+  assert.deepStrictEqual(held(game(many('s1', 70), full)).s2, H.s2);
 });
 
 test('sticky: added photos never move a held-out observation; gone ones leave; 8 always stay in practice', () => {
   const old = many('s1', 60),
-    H = py('build', game(old), FISH, null);
-  // 60 more observations: the 6 held out stay, the species tops up to 12 from the rest by the same hash order
-  const more = [...old, ...many('s1', 60, 2000)],
-    H2 = py('build', game(more), FISH, H);
-  assert.ok(
-    H.s1.every(o => H2.s1.includes(o)),
-    'every observation held out stays held out'
-  );
-  const next = byRank(more.map(p => p.o).filter(o => !H.s1.includes(o))).slice(0, 6);
-  assert.deepStrictEqual(H2.s1, [...H.s1, ...next].sort());
-  // a fresh draw on the larger pool may differ: stickiness comes from the file only
-  assert.strictEqual(py('build', game(more), FISH, null).s1.length, 12);
-  // a held-out observation gone from play leaves the set; the species tops up again
-  const gone = H2.s1[0],
-    H3 = py('build', game(more.filter(p => p.o !== gone)), FISH, H2);
+    H = held(game(old));
+  assert.strictEqual(H.s1.length, 15);
+  // 60 more observations: the same 15 (the unit is at its target)
+  const more = [...old, ...many('s1', 60, 2000)];
+  assert.deepStrictEqual(held(game(more), H), H);
+  // a held-out observation gone from play leaves the set; the unit tops up by the same hash order
+  const gone = H.s1[0],
+    H3 = held(game(more.filter(p => p.o !== gone)), H);
   assert.ok(!H3.s1.includes(gone));
-  assert.strictEqual(H3.s1.length, 12);
+  assert.strictEqual(H3.s1.length, 15);
+  assert.ok(H.s1.filter(o => o !== gone).every(o => H3.s1.includes(o)));
   // a held-out observation that became Pierre's own leaves the set too
-  const mine = H2.s1[1],
-    H4 = py('build', game(more.map(p => (p.o === mine ? {...p, own: true} : p))), FISH, H2);
+  const mine = H.s1[1],
+    H4 = held(game(more.map(p => (p.o === mine ? {...p, own: true} : p))), H);
   assert.ok(!H4.s1.includes(mine));
-  // down to 11 observations in play, 6 of them held out: 3 go back to practice, the last in the hash order first
+  // down to 20 observations in play, 15 of them held out: 3 go back to practice, the last in the hash order first
   const kept = [...old.filter(p => H.s1.includes(p.o)), ...old.filter(p => !H.s1.includes(p.o)).slice(0, 5)],
-    H5 = py('build', game(kept), FISH, H);
+    H5 = held(game(kept), H);
   assert.deepStrictEqual(
     H5.s1,
     byRank(H.s1)
@@ -145,7 +149,7 @@ test('sticky: added photos never move a held-out observation; gone ones leave; 8
 test('stale(): the file is out of date when its rule or its set differs', () => {
   const doc = read('fish-holdout.json');
   assert.strictEqual(py('stale', doc, doc.held), false);
-  assert.strictEqual(py('stale', {...doc, rule: {...doc.rule, rate: 0.2}}, doc.held), true);
+  assert.strictEqual(py('stale', {...doc, rule: {...doc.rule, target: 10}}, doc.held), true);
   assert.strictEqual(py('stale', doc, {...doc.held, s0: ['1']}), true);
   assert.strictEqual(py('stale', null, {}), true);
 });
@@ -165,4 +169,9 @@ test('fish-holdout.json is what the rule gives on fish-game.json and fish.json (
     );
     assert.ok(Object.keys(P[sp]).length - L.length >= RULE.keep, sp);
   }
+  // every family reaches its 15; nearly every scientific genus too (those short have too few photos to spare)
+  const S = py('stats', G, F, doc.held);
+  assert.strictEqual(S.units.families.target, S.units.families.units);
+  assert.ok(S.units.genera.target >= 0.9 * S.units.genera.units, JSON.stringify(S.units));
+  assert.strictEqual(S.under, S.already, 'no species pushed under 8 in practice');
 });

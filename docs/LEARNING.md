@@ -4019,6 +4019,13 @@ qu'on faisait ça. Je pensais qu'on gardait des photos pour la fin." The start i
 ce qui doit se passer au début c'est ce qu'on a déjà implémenté c'est d'introduire des photos pas ou peu notées" (the
 exploration share of photos with few answers, `model.js` `CAL`). So the held-out photos measure transfer at the exam only.
 
+**Its size, per exam unit** (Pierre, 2026-11-18 ~06:11 Manila, asked whether exam only needs fewer: "Il en faut
+suffisament pour refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs"): 15 held-out
+observations per unit with a mastery exam (three exams of `EXAM.n` = 5: every family, each scientific genus), across
+its species in turn, never leaving a species with fewer than 8 in practice (`tools/holdout.py`); a unit short of that
+holds what it can, and its exam then falls back on today's rule. 2,476 observations of 23,383 in play (the first rule,
+per species, held 3,232): every family reaches 15, 125 of the 130 scientific genera, 4 hold fewer, 1 none.
+
 **What the game does with it** (the fish only; the sea slugs and the corals have no set):
 - **Withheld from practice.** `core.js` `fishPhotos` takes the set (`fishHeld`: its observations, less those of a photo
   Pierre picked as a ★ cover or featured photo, which stay practice) and marks those photos `ho`; `fishGen` and the

@@ -56,6 +56,14 @@ reason: practice photos of the eligible kind only, matched on each judged ease v
 
 ### How many
 
+**As built** (updated 2026-11-18, after Q385 and the wiring #1057): the set is sized per exam unit, not per species.
+Pierre, 2026-11-18 ~06:11 Manila, asked whether an exam-only set needs fewer photos: "Il en faut suffisament pour
+refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs". So: 15 per unit with a mastery
+exam (three exams of 5; every family, each scientific genus), across its species in turn, never leaving a species with
+fewer than 8 observations in practice; a unit short of that holds what it can (`tools/holdout.py`). The silent probes
+of §2 were removed the same morning (exam only: "Je pensais qu'on gardait des photos pour la fin"). The proposal below
+is kept as it was asked.
+
 **Per unit, at every rank that is a unit: 10% of its eligible observations, at least 5** (the exam's `EXAM.n`), but
 never more than a quarter of them. A genus's set is drawn first. A family's set is its genera's, topped up to its own
 floor when needed. The species inherit theirs from the genus draw. **Question (a)** asks about this size.
