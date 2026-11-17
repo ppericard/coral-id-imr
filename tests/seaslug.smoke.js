@@ -282,7 +282,7 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
           .waitForFunction(
             ([o, s]) =>
               [...document.querySelectorAll('#view .hubsec .lt')].some(a => {
-                // the player's own mix-up count may come first (learn.js lookCard: "you mixed them up ×N")
+                // the mix-up count of this player may come first (learn.js lookCard: "you mixed them up ×N")
                 const t = a.innerText.replace(/\s+/g, ' ').replace(/^you mixed them up ×\d+ /, '');
                 return t.startsWith(o) && new RegExp(s).test(t);
               }),
