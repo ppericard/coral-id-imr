@@ -201,7 +201,8 @@ among the questions on units that have such photos, **early** (in the unit's fir
 are Q388's); (2) jE early at least 90% of main's; (3) j, jL, ph early at most 0.02; (4) no wall: each kind's late share
 within ±0.03 of main's; (5) families at Advanced and the fish % within their margins of 975's; a tie goes to the
 simplest. Then the chosen rule against 975 and main: the app world (5 profiles × 5 seeds × 600 questions, two looks:
-95% bounds), the rated world at 10,000 answers (5 seeds), heavy-tailed photos at 3,000. The corals: a run under the
+95% bounds), the rated world at 10,000 answers (5 seeds; declared, then dropped by decision: section 8), heavy-tailed
+photos at 3,000. The corals: a run under the
 rule must be identical to one without it.
 
 **Added after reading the screen of main, 975, 975+953, A and B, before running it** (2026-11-17): the answers to the
@@ -359,6 +360,35 @@ rank and every variant, with #975's cap where the child units take questions fro
 plus about 30 lines for the variants, the easy juveniles from the first questions (Pierre's classes of 2026-11-04),
 the others with the unit's own mastery.
 
+**"Learned" and the variants** (Codex review of this PR: section 3's intended outcome is not guaranteed today). Units
+whose photos include variants: 57 families, 165 genera (scientific) and 404 species; 580 of them have juveniles, 222
+sexes or colour phases, 176 both. Whether each variant group a unit has (its juveniles; its sexes and colour phases)
+had been **shown** at least once by the time the unit reached Advanced, the earliest a measure can read (the exam opens
+at 0.85; the runs log which photos were shown, not whether each answer on them was right, so this is a lower bound on
+the delay a "right once" condition would add):
+
+| Units at Advanced that have variants | every group shown by then | shown later (more answers on the unit, median) | not shown by the run's end |
+| --- | --- | --- | --- |
+| main, 3,000 answers (861 units over the 25 runs) | 71% | 9% (7) | 20% |
+| 975, 3,000 answers (930) | 72% | 9% (8) | 19% |
+| C0, 3,000 answers (953) | 43% | 26% (5) | 31% |
+| C0, 10,000 answers (1,675) | 51% | 27% (6) | 22% |
+
+So today, with nothing held back, a fifth of the units reach Advanced and stay there without one of their variant
+groups ever shown; C0, which releases the variants with the unit's own mastery, makes that more frequent at the moment
+of Advanced. A condition on "Learned" would close it, at the cost of a few more answers on the unit (median 5-8 where
+the group then came) or, where the group never came by itself, of the exam itself asking it.
+
+**The 10,000-answer check** (C0 against main and against 975, rated world): **not run, by decision** (Pierre,
+2026-11-17 10:40 Manila, after asking what long simulations add while the subjects have little or no real data). The
+simulated players and photo difficulties are models: the comparisons at 3,000 answers (sections 6-7) are what tells the
+variants apart, and a 10,000-answer run would mostly read the model itself. Codex's point stands: C0's long-run effect
+is **not verified** here and is not inherited from #975 (variants follow the unit asked, the late-juvenile ramp ends at
+0.9, draw histories differ). It is checked instead on the players' real answers once C0 is live: the answer log, the
+admin's Analyses (Learning curves, Difficulty › Heatmap) and the families at Advanced, with the thresholds adjusted
+then. The row "C0, 10,000 answers" in the table above comes from the runs finished before the decision; it is shown
+as read, not as the check.
+
 **The app world** (the real app on the real data, the real judged eases and the juvenile ease cap; 5 profiles × 5 seeds
 × 600 questions, `--choice auto`, two looks: 95% bounds). There main already keeps most other juveniles out of a
 unit's first questions (1-5%, through the ease cap and `RARE`), but not the sexes and phases (13-17%):
@@ -384,11 +414,6 @@ point of 975's for every profile, the variants as above (easy juveniles early 0.
 held are harder on average, which may slow a slow player's first Open Water; it is the largest cost this study found,
 and the first thing the #953 rebuild must look at (more seeds, and the variant thresholds a = Open Water read on
 answers too, e.g. "Open Water or 30 answers on the unit", if it holds).
-
-**10,000 answers**: not rerun. C0's rank part is #975's cap, whose 10,000-answer check against main is in #975 (the
-families all at Advanced in both arms; the fish % −1.8 to +9.8 points by profile; species at Advanced 5-51). Its variant
-part has nothing left to hold by then: every family is at Advanced in both arms, and at Advanced C0 shows the juveniles,
-sexes and phases as often as 975 does (section 7, "at Advanced"). So the long check would read #975's numbers again.
 
 ## 9. What #975 keeps or changes, and how #953 is rebuilt
 
@@ -452,3 +477,15 @@ one new cost: for a slower player the first family at Open Water comes later, 12
 | **C0 (recommended)** | 22% | 19 / 38 | 30-31 | 43-53 | **70** |
 
 (Families and % as ranges over the five profiles; the last column on 20 seeds where a number is given.)
+
+**Sub-question: "Learned" and the variants.** Today the silent mastery exam (rule L9) can be passed on a unit's adult
+photos alone: nothing checks that its juveniles, or its sexes and colour phases, were ever answered. Should "Learned"
+require at least one right answer on each variant group a unit has (its juveniles; its sexes and colour phases), once
+they are released?
+- **Cost**: 626 units have such photos (57 families, 165 genera, 404 species). When a unit reaches Advanced, about a
+  fifth have never been shown one of their groups today, and about half under C0 (section 8); for those, "Learned" would
+  wait for the group, a median 5-8 more answers on the unit where it then came by itself, or the exam asking it.
+- **Recommendation: yes**, done by the exam rather than a new gate: while a group the unit has is not yet answered
+  right, one of the exam's questions draws its photo (still the hardest never seen, within that group). A miss restarts
+  the exam as any miss does. No new threshold; the late-class juveniles' full weight then set by Advanced (a = b = 0.8),
+  so every group is released before the exam opens at 0.85.
