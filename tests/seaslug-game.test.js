@@ -175,7 +175,7 @@ test("Pierre's curation of the sea slugs reaches the game file: removed, exclude
       }
     },
     prev = {photos: {'f:Afam': [{f: 'seaslug-1-cand-3', src: 'https://x/3.jpg', ar: 1.5, sp: 's1'}]}};
-  const [, G, todo] = py(`t, gm, todo = g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, ${arg(prev)}, None, None, None, ${arg(cur)})
+  const [, G, todo] = py(`t, gm, todo = g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, ${arg(prev)}, None, None, None, cur=${arg(cur)})
 print(json.dumps([t, gm, todo]))`);
   assert.deepStrictEqual(
     G.photos['f:Afam'].map(p => [p.f.split('-').pop(), p.sp, p.t, p.e, p.jt, p.auto || '']),
@@ -199,14 +199,14 @@ print(json.dumps([t, gm, todo]))`);
   );
   // A count he set to another species one could take for it takes a photo out, his add or not (rule P3).
   const k = {seaslug: {tags: {'seaslug-1-cand-1': 'd1g0slk'}}},
-    [, G2] = py(`print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, ${arg(k)})))`);
+    [, G2] = py(`print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, cur=${arg(k)})))`);
   assert.deepStrictEqual(
     G2.photos['f:Afam'].map(p => p.f.split('-').pop()),
     ['2', '3', '4']
   );
   // No sea-slug part: the build as before (the fish part never read).
   const [, G3] = py(
-    `print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, ${arg({fish: cur.seaslug})})))`
+    `print(json.dumps(g.build(${arg(LIST)}, ${arg(CAND)}, ${arg(SUG)}, None, None, None, None, cur=${arg({fish: cur.seaslug})})))`
   );
   assert.deepStrictEqual(
     G3.photos['f:Afam'].map(p => p.f.split('-').pop()),
