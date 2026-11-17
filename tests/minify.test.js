@@ -84,7 +84,7 @@ test('build_site: another minifier output changes the ?v= and sw.js V (a terser 
   assert.notStrictEqual(V(a), V(b));
   assert.notStrictEqual(sha(a, 'core.js'), sha(b, 'core.js'));
   // The JSON files did not move: their ?v= stays (no new download of the data for a new minifier).
-  const v = (d, f) => new RegExp(`${f.replace('.', '\\.')}\\?v=([0-9a-f]{10})`).exec(read(d, 'sw.js'))[1];
+  const v = (d, f) => read(d, 'sw.js').split(`'${f}?v=`)[1].slice(0, 10);
   assert.strictEqual(v(a, 'data.json'), v(b, 'data.json'));
 });
 
@@ -94,7 +94,7 @@ test('build_site fails, and nothing is half-built silently: no terser, another v
   assert.match(r.stderr, /terser not found/);
   r = build(copy(), fakeTerser('5.0.0'));
   assert.notStrictEqual(r.status, 0);
-  assert.match(r.stderr, new RegExp(`terser 5\\.0\\.0 found, ${M.TERSER.replace(/\./g, '\\.')} pinned`));
+  assert.ok(r.stderr.includes(`terser 5.0.0 found, ${M.TERSER} pinned`), r.stderr);
   r = build(copy(), fakeTerser(M.TERSER, "code = code.replace(/data\\.json\\?v=/g, 'data.json?w=')"));
   assert.notStrictEqual(r.status, 0);
   assert.match(r.stderr, /app\.js: its \?v= references changed when minified/);
