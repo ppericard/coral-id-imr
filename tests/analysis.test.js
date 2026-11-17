@@ -483,6 +483,7 @@ test('tools/analyses.js: one report per subject, each from its own answers (the 
     Object.keys(sm.fph).every(f => f.startsWith('seaslug-')),
     'from seaslug-game.json alone'
   );
+  assert.strictEqual(sm.rk, 'genus', 'their reference rank: the genus, their units (analysis.js rankRef)');
   // the fish: no coral photo features (ph), their own judged ones apart (fph: SUBJECTS analyses photos 'judged')
   const fm = metaOf('fish');
   assert.ok(Object.keys(fm.ph).length === 0, 'no coral photo features for the fish');

@@ -840,7 +840,7 @@
         FG = fishGen(fj, fp.photos).gen,
         E = Object.keys(FG).filter(id => FG[id].circle === 1 && !FG[id].wink && FG[id].views.wide.length),
         fpick = a => a[Math.floor(frnd() * a.length)];
-      FANA_META[FS.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fp)};
+      FANA_META[FS.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fp), rk: ANALYSIS.rankRef(FS)};
       [
         ['Ben Demo', 0.55, 48, 1.2, NOW - 40 * 60e3],
         ['Ana Demo', 0.8, 30, 4, NOW - 3 * DAY],
@@ -904,14 +904,28 @@
       // (analysis.js DEMO_PLAYERS) on the fish units with the most photos, about 1,200 answers (a first milestone, as
       // the Action stores one from 1000 fish answers), from analysis.js synth with its known effects. Only the report is
       // made from them (anaReport): the answer log keeps the few fish answers above, so the fish pages stay as they were.
+      // A few genus and species units too (one of fish.json's scientific genera or core.js fishSpUnits for each of 12 of
+      // those families, in turn), on their family's photos (as the game shows a species' photo at every rank), so the
+      // report tells the ranks asked apart as the real one does (analysis.js rankOfUnit): its rank effects, and the views
+      // that list units drawn one rank at a time.
       const FU = Object.keys(FG)
           .filter(id => FG[id].views.wide.length >= 3)
           .slice(0, 24),
+        SPU = fishSpUnits(fj),
+        FR = FU.slice(0, 12)
+          .map((f, i) => (i % 2 ? SPU.find(u => u.family === f) : (fj.genera || []).find(g => g.family === f)))
+          .map((x, i) => x && [x.id, FU[i]])
+          .filter(Boolean),
+        // the units in the order they open in the made-up answers (synth): a genus or species unit after every second family
+        famOf = Object.fromEntries(FU.flatMap((id, i) => [[id, id], ...(i % 2 && FR[i >> 1] ? [FR[i >> 1]] : [])])),
         k = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, x) => t + x[2], 0);
       fana[FS.id] = ANALYSIS.synth({
         players: ANALYSIS.DEMO_PLAYERS.map(x => [x[0], x[1], Math.ceil(x[2] * k), x[3]]),
-        photos: Object.fromEntries(FU.map(id => [id, FG[id].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])),
+        photos: Object.fromEntries(
+          Object.keys(famOf).map(id => [id, FG[famOf[id]].views.wide.slice(0, 8).map(x => ({f: x.f, v: 'wide'}))])
+        ),
         look: Object.fromEntries(FU.map(id => [id, FG[id].look || []])),
+        rk: {genus: [0.6, 0.15], species: [1, 0.3]},
         start: NOW - 30 * DAY,
         end: NOW - 3 * DAY,
         seed: 5,
@@ -955,7 +969,7 @@
               .filter(id => id.startsWith(x.sheets[unitRankOf(x)] || '') && !XG[id].wink && XG[id].views.wide.length >= 3)
               .slice(0, 24),
             xk = 1200 / ANALYSIS.DEMO_PLAYERS.reduce((t, y) => t + y[2], 0);
-          FANA_META[x.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fishGameRead(gm))};
+          FANA_META[x.id] = {ph: {}, fph: ANALYSIS.photoMetaFish(fishGameRead(gm)), rk: ANALYSIS.rankRef(x)};
           fana[x.id] = ANALYSIS.synth({
             players: ANALYSIS.DEMO_PLAYERS.map(y => [y[0], y[1], Math.ceil(y[2] * xk), y[3]]),
             photos: Object.fromEntries(XU.map(id => [id, XG[id].views.wide.slice(0, 8).map(y => ({f: y.f, v: 'wide'}))])),
