@@ -162,7 +162,8 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       shown = GP.find(r => new RegExp(`/${r.f}[-.]`).test(q.photo) || (r.src && q.photo.includes(r.src))),
       spRec = shown && shown.sp ? F.species.find(s => s.id === shown.sp) : null;
     check(!!shown, `2: the photo shown is not in seaslug-game.json: ${q.photo}`);
-    if (shown && !shown.sp) check(v.sp === '', `2: a species line on a photo identified to the genus only: "${v.sp}"`);
+    // A genus-level photo carries its genus as its sp ("g:Chromodoris", with gl): no species, so no line.
+    if (shown && (shown.gl || !spRec)) check(v.sp === '', `2: a species line on a photo identified to the genus only: "${v.sp}"`);
     else
       check(
         !!spRec && v.sp.startsWith(`This photo: ${enFirst(spRec) ? enFirst(spRec) + ' · ' : ''}${spRec.name}`),
