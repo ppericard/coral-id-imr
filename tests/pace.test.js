@@ -229,6 +229,7 @@ test('the Duel tab: its photo eased by the opening hold, as every question of th
       GX: n => ({n}),
       photoSet: (...a) => (calls.push(a), {shown: [{f: 'x'}]}),
       duelPick: () => ['A', 'B'],
+      choiceNames: () => false, // model.js: whether one unit's label names the other (never here)
       pick: L => L[0],
       introduced: () => true,
       cover: () => null,
