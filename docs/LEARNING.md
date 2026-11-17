@@ -4020,11 +4020,13 @@ ce qui doit se passer au début c'est ce qu'on a déjà implémenté c'est d'int
 exploration share of photos with few answers, `model.js` `CAL`). So the held-out photos measure transfer at the exam only.
 
 **Its size, per exam unit** (Pierre, 2026-11-18 ~06:11 Manila, asked whether exam only needs fewer: "Il en faut
-suffisament pour refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs"): 15 held-out
-observations per unit with a mastery exam (three exams of `EXAM.n` = 5: every family, each scientific genus), across
-its species in turn, never leaving a species with fewer than 8 in practice (`tools/holdout.py`); a unit short of that
-holds what it can, and its exam then falls back on today's rule. 2,476 observations of 23,383 in play (the first rule,
-per species, held 3,232): every family reaches 15, 125 of the 130 scientific genera, 4 hold fewer, 1 none.
+suffisament pour refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs"; and 06:48:
+"Si on n'a pas assez de photos, ben on privilégie l'apprentissage"): up to 15 held-out observations per unit with a
+mastery exam (three exams of `EXAM.n` = 5: every family, each scientific genus), across its species in turn, never
+leaving a species with fewer than 8 in practice, and only from a real surplus: a unit keeps at least 30 observations in
+practice, a genus's floor bounding its family's take too (`tools/holdout.py` `FLOOR`). A thinner unit holds back
+little or nothing, and its exam falls back on today's rule. 1,946 observations of 23,383 in play (the first rule, per
+species, held 3,232): 52 of the 65 families reach 15, 11 hold fewer, 2 none; of the 130 scientific genera, 82, 33, 15.
 
 **What the game does with it** (the fish only; the sea slugs and the corals have no set):
 - **Withheld from practice.** `core.js` `fishPhotos` takes the set (`fishHeld`: its observations, less those of a photo
@@ -4094,6 +4096,30 @@ with a first try stopped when the set's rule changed):
   122 of 130 genera at 15, each genus with 12 or more in practice; a keep of 16, 2,407 held, 114 genera at 15; a unit's
   practice at least twice its held-out ones, 2,267 held, 52 of 65 families and 82 genera at 15. Any genus-only change can
   reach the strongRA loss (genera); the beginner delay and the app world's drop at 300 are family-level and would remain.
+- **Learning first** (Pierre, 2026-11-18 06:48, on the thin units: "ça c'est le problème que je veux éviter. Si on n'a
+  pas assez de photos, ben on privilégie l'apprentissage"): a unit holds back only from a real surplus; how many are
+  held back is no longer something to maximise. Built as `tools/holdout.py` `FLOOR` 30: a unit holds back only what
+  leaves it at least 30 observations in practice, and a genus's floor also bounds what its family takes from its
+  species (`take` guard). `RATIO` (practice at least twice the held-out ones) and `GENUS_KEEP` stay as parameters, off.
+  Variants against the same before arm (cbbe5724), rated world, beginner and strongRA × 10 seeds, two looks (95%
+  bounds); r, the before/after correlation over the seeds:
+
+  | Set | Held | First unit at Open Water, beginner (margin +37) | Units at Open Water at 1,000, strongRA (margin 2) |
+  | --- | --- | --- | --- |
+  | 15 per unit (as built before) | 2,476 | 184 → 238, +54 [+106] breached, r 0.80 | 40.4 → 37.3, −3.1 [−5.2] breached, r 0.79 |
+  | practice ≥ 2× held (`RATIO` 2) | 2,267 | 184 → 222, +38 [+91] breached, r 0.80 | 40.4 → 39.6, −0.8 [−3.4] unclear, r 0.60 |
+  | floor 30, no guard | 1,963 | 184 → 217, +33 [+78] unclear, r 0.76 | 40.4 → 40.2, −0.2 [−2.5] unclear, r 0.71 |
+  | **floor 30 with the guard (kept)** | **1,946** | 184 → 241, +57 [+114] breached, r 0.85 | 40.4 → 38.1, −2.3 [−4.4] breached, r 0.75 |
+  | A/A: floor 30 no guard → with guard | 23 observations apart | 217 → 241, +25 [+64] unclear | 40.2 → 38.1, −2.1 [−3.2] breached |
+
+  The last two sets differ by 23 observations (20 out, 3 in) yet read opposite verdicts, and the A/A row moves units at
+  Open Water by a breach-sized −2.1: at 10 seeds these two measures cannot tell the variants apart (any change to a
+  practice pool sends each run down another path), and the delay does not grow with how much is held back (1,946 to
+  2,476). So the variant was not picked on these verdicts: the guarded floor is kept as the faithful reading of Pierre's
+  principle (the guard is what keeps 11 thin genera from giving 22 observations through their family), and it holds
+  back the fewest. True knowledge held in every arm. Whether withholding moves these two measures at all needs more
+  seeds or a measure less sensitive to the run's path; it goes to Pierre with the PR. About 30 minutes of machine time
+  for the three variant arms.
   The app world's breach (units at Open Water at 300, strongRA) is all families there (23, 24, 22 → 18, 21, 17), while
   the rated world reads that measure unclear at 10 seeds (16.6 → 16.5); not re-run at the higher level. Rule L11: a
   confirmed breach goes to Pierre, with the choices it leaves: keep it; top a genus up only where practice stays well

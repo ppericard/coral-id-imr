@@ -22,6 +22,18 @@ const py = (fn, ...args) =>
       {cwd: ROOT, encoding: 'utf8', input: JSON.stringify(args), maxBuffer: 64 << 20}
     )
   );
+// The same with module constants set first (the variants' parameters: GENUS_KEEP, RATIO, FLOOR).
+const pyWith = (set, fn, ...args) =>
+  JSON.parse(
+    execFileSync(
+      'python3',
+      [
+        '-c',
+        `import sys, json; sys.path.insert(0, 'tools'); import holdout as h\nfor k, v in ${JSON.stringify(set)}.items(): setattr(h, k, v)\nprint(json.dumps(h.${fn}(*json.load(sys.stdin))))`
+      ],
+      {cwd: ROOT, encoding: 'utf8', input: JSON.stringify(args), maxBuffer: 64 << 20}
+    )
+  );
 const RULE = JSON.parse(
   execFileSync('python3', ['-c', "import sys, json; sys.path.insert(0, 'tools'); import holdout as h; print(json.dumps(h.RULE))"], {
     cwd: ROOT,
@@ -52,14 +64,15 @@ const FISH = {
   ],
   species: ['s1', 's2', 's3', 's4', 's5'].map(id => ({id, circle: id < 's3' ? 2 : 1}))
 };
-const held = (G, prev = null) => py('build', G, FISH, prev);
+// The take mechanics on small fixtures, the unit floor off (FLOOR 0: below, its own test).
+const held = (G, prev = null, set = {FLOOR: 0}) => pyWith(set, 'build', G, FISH, prev);
 const first = (L, n) =>
   byRank(L.map(p => p.o))
     .slice(0, n)
     .sort();
 
 test('15 per exam unit, across its species in turn, 8 always left in practice per species', () => {
-  assert.deepStrictEqual(RULE, {unit: 'exam', target: 15, keep: 8, salt: 'fish-holdout'});
+  assert.deepStrictEqual(RULE, {unit: 'exam', target: 15, keep: 8, genusKeep: 8, ratio: 0, floor: 30, salt: 'fish-holdout'});
   assert.deepStrictEqual(py('exam_units', FISH), [
     ['f:A', ['s1', 's2']],
     ['f:B', ['s3', 's4', 's5']],
@@ -115,6 +128,22 @@ test('take(): a thin genus holds what it can, a rich genus reaches 15, a family 
   const E = {a: ['1', '2', '3'], b: ['4', '5', '6', '7']},
     h = {a: [], b: []};
   assert.strictEqual(py('take', h, E, {a: 1, b: 4}, ['a', 'b']), 5);
+});
+
+// Learning first (Pierre, 2026-11-18 06:48: "Si on n'a pas assez de photos, ben on privilégie l'apprentissage"): a
+// unit holds back only from a real surplus, what leaves it FLOOR (30) observations in practice; RATIO, the variant the
+// learning check did not keep, as a parameter.
+test('learning first: a unit holds back only above 30 observations in practice', () => {
+  const on = G => held(G, null, {});
+  assert.deepStrictEqual(on(game(many('s1', 30))), {}, 'a thin unit holds back nothing');
+  assert.strictEqual(on(game(many('s1', 40))).s1.length, 10, '40 in play: 10 held, 30 left');
+  assert.strictEqual(on(game(many('s1', 100))).s1.length, 15, 'a rich unit reaches 15');
+  // a thin genus in a rich family: the family takes its 15, the genus g:Y (s5, 32 observations) only 2 in all
+  const G = game(many('s3', 60, 1000), many('s4', 60, 2000), many('s5', 32, 3000)),
+    H = on(G);
+  assert.strictEqual(H.s5.length, 2);
+  // RATIO 2 (off): practice at least twice the held-out ones, 30 in play: 10 held
+  assert.strictEqual(held(game(many('s1', 30)), null, {FLOOR: 0, RATIO: 2}).s1.length, 10);
 });
 
 test("never Pierre's own, a reference source's or a reference-level photo, nor a surprise-only species", () => {
@@ -202,7 +231,14 @@ test('fish-holdout.json is what the rule gives on fish-game.json and fish.json (
   }
   // every family reaches its 15; nearly every scientific genus too (those short have too few photos to spare)
   const S = py('stats', G, F, doc.held);
-  assert.strictEqual(S.units.families.target, S.units.families.units);
-  assert.ok(S.units.genera.target >= 0.9 * S.units.genera.units, JSON.stringify(S.units));
+  // every exam unit holds nothing or keeps 30 or more in practice (learning first); most families still reach 15
+  const sp = Object.fromEntries(Object.entries(P).map(([s, O]) => [s, Object.keys(O).length]));
+  for (const [u, L] of py('exam_units', F)) {
+    const S2 = [...new Set(L)].filter(s => s in sp),
+      n = S2.reduce((t, s) => t + sp[s], 0),
+      h = S2.reduce((t, s) => t + (doc.held[s] || []).length, 0);
+    assert.ok(h === 0 || n - h >= 30, u + ': ' + h + ' held of ' + n);
+  }
+  assert.ok(S.units.families.target >= 0.75 * S.units.families.units, JSON.stringify(S.units));
   assert.strictEqual(S.under, S.already, 'no species pushed under 8 in practice');
 });

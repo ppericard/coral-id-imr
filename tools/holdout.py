@@ -13,6 +13,10 @@ si et seulement si on a assez de photos par ailleurs"):
     out", and he has seen them all), a reference source's photo (rep) or of reference level (fish_game.ref_level, core.js
     refLevel: the cards', covers' and first photos' kind, rule P1). The surprise-only species (fish.json wink) are left
     out (no game unit). A whole observation is in or out (rule P4: one question, one observation).
+  - Learning first (Pierre, 2026-11-18 06:48: "Si on n'a pas assez de photos, ben on privilégie l'apprentissage"): a
+    unit holds back only from a real surplus, what leaves it at least FLOOR (30) observations in practice; a thinner
+    unit holds back nothing, and its exam asks the photos seen least. A genus's floor also bounds what its family takes
+    from its species (take guard), so a thin genus inside a rich family keeps its photos too.
   - How many: TARGET (15: three exams of model.js EXAM.n = 5) per exam unit, taken across its species in turn (its
     species order in fish.json: the commonness order, the most met first), never leaving a species with fewer than KEEP
     (8, the admin's per-species photo target, autosort.js FISHT.obs) of its observations in practice. A unit that cannot
@@ -48,8 +52,15 @@ import fish_short  # noqa: E402  (an observation's short id)
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = 'fish-holdout.json'
 TARGET, KEEP, SALT = 15, 8, 'fish-holdout'
+# GENUS_KEEP: the per-species keep of a scientific genus's top-up (KEEP for the families); RATIO: a unit holds at most
+# its observations in play / (1 + RATIO), so its practice stays at least RATIO times its held-out ones (0: off). The
+# integrator's variants of option B on #1057 (2026-11-18), set by the check in docs/LEARNING.md.
+# FLOOR: a unit holds back only what leaves it at least FLOOR observations in practice (0: off). Set to 30 (Pierre,
+# 2026-11-18 06:48: "Si on n'a pas assez de photos, ben on privilégie l'apprentissage": a unit holds back only from a
+# real surplus); the learning check of #1057 (docs/LEARNING.md) cleared both Open Water breaches with it, not with RATIO 2.
+GENUS_KEEP, RATIO, FLOOR = 8, 0, 30
 EXAM_N = 5  # model.js EXAM.n: an exam's questions (TARGET is three exams' worth)
-RULE = {'unit': 'exam', 'target': TARGET, 'keep': KEEP, 'salt': SALT}
+RULE = {'unit': 'exam', 'target': TARGET, 'keep': KEEP, 'genusKeep': GENUS_KEEP, 'ratio': RATIO, 'floor': FLOOR, 'salt': SALT}
 ABOUT = ('the fish observations held out of practice, by species, sized per exam unit (tools/holdout.py; ROADMAP '
          '"A held-out photo set"): never shown in practice, the mastery exam asks them first')
 
@@ -109,27 +120,45 @@ def build(game, fish, prev=None):
     E = {s: sorted((o for o, ok in O.items() if ok), key=rank) for s, O in P.items()}
     cap = {s: max(0, min(len(E[s]), len(P[s]) - KEEP)) for s in P}  # never fewer than KEEP in practice
     held = {s: [o for o in E[s] if o in had][:cap[s]] for s in P}
-    for _, S in exam_units(fish):
-        take(held, E, cap, [s for s in dict.fromkeys(S) if s in P])
+    units = [(u, [s for s in dict.fromkeys(S) if s in P]) for u, S in exam_units(fish)]
+    # Learning first for every unit at once: a genus's own floor also bounds what its family takes from its species
+    # (guard: each species' genus units, [their species, the most they may hold]).
+    guard = {}
+    for u, S in units:
+        if FLOOR and not u.startswith('f:'):
+            g = (S, max(0, sum(len(P[s]) for s in S) - FLOOR))
+            for s in S:
+                guard.setdefault(s, []).append(g)
+    for uid, S in units:
+        c = cap
+        if not uid.startswith('f:'):  # a genus: its species keep GENUS_KEEP (never less than what they hold already)
+            c = {s: min(cap[s], max(len(held[s]), len(P[s]) - GENUS_KEEP)) for s in S}
+        take(held, E, c, S, sum(len(P[s]) for s in S), guard)
     return dict(sorted((s, sorted(L)) for s, L in held.items() if L))
 
 
-def take(held, E, cap, S):
+def take(held, E, cap, S, n=None, guard=None):
     """Tops exam unit S (its species in order, a family's or a genus's: one rule for both) up to TARGET held-out
     observations, one species at a time in turn, each its next eligible observation in hash order, only while that
     species keeps at least KEEP in practice after the take (cap: Pierre, 2026-11-18, "si et seulement si on a assez de
     photos par ailleurs"); a unit that cannot reach TARGET so holds what it can. held: {species: [observation]}, changed
-    in place; E: each species' eligible observations in hash order. Returns how many the unit holds."""
-    need = TARGET - sum(len(held[s]) for s in S)
+    in place; E: each species' eligible observations in hash order; n: the unit's observations in play, for RATIO.
+    guard: {species: [(a unit's species, the most that unit may hold)]}, the floors of the other units it belongs to.
+    Returns how many the unit holds."""
+    room = lambda s: all(sum(len(held[x]) for x in L) < m for L, m in (guard or {}).get(s, ()))
+    target = min(TARGET, n // (1 + RATIO)) if RATIO and n is not None else TARGET
+    if FLOOR and n is not None:
+        target = min(target, max(0, n - FLOOR))
+    need = target - sum(len(held[s]) for s in S)
     while need > 0:
         took = False
         for s in S:
-            if need > 0 and len(held[s]) < cap[s]:
+            if need > 0 and len(held[s]) < cap[s] and room(s):
                 held[s].append(next(o for o in E[s] if o not in held[s]))
                 need, took = need - 1, True
         if not took:
             break
-    return TARGET - max(0, need)
+    return target - max(0, need)
 
 
 def stale(old, held):

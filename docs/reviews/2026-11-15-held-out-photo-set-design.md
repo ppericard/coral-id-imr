@@ -60,7 +60,8 @@ reason: practice photos of the eligible kind only, matched on each judged ease v
 Pierre, 2026-11-18 ~06:11 Manila, asked whether an exam-only set needs fewer photos: "Il en faut suffisament pour
 refaire l'examen plusieurs fois, si et seulement si on a assez de photos par ailleurs". So: 15 per unit with a mastery
 exam (three exams of 5; every family, each scientific genus), across its species in turn, never leaving a species with
-fewer than 8 observations in practice; a unit short of that holds what it can (`tools/holdout.py`). The silent probes
+fewer than 8 observations in practice. Then, the same morning (06:48), learning first: "Si on n'a pas assez de photos, ben on privilégie l'apprentissage": a unit holds back only
+what leaves it at least 30 observations in practice, so a thin unit holds back nothing (`tools/holdout.py` `FLOOR`). The silent probes
 of §2 were removed the same morning (exam only: "Je pensais qu'on gardait des photos pour la fin"). The proposal below
 is kept as it was asked.
 
