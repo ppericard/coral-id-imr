@@ -145,7 +145,8 @@
   // imr: each genus the IMR course names otherwise to that name (Analyses › Learning › Answer log), groups: the groups of
   // its identification key in force, {n, title} (core.js fishGen; Analyses › Difficulty › Heatmap's family blocks), taxa:
   // where its tree has them, the taxonomic groups its families sit in (core.js fishGen taxa, each family's tg; the
-  // Heatmap's column of the families' groups)}; null
+  // Heatmap's column of the families' groups), spu: each species unit the game asks (core.js fishSpUnits, s:s091) to
+  // {family, look: the other species units of its family}, as the game starts its pairs (admin.js fishUnitRec)}; null
   // without a tree. unit: the rank of its game units (core.js unitRankOf): 'genus' makes its genera the slate (the sea
   // slugs), each photo then shown by its genus.
   function repReg(f, first, gm, unit) {
@@ -182,6 +183,7 @@
       spg,
       imr,
       groups: F.groups || [],
+      spu: Object.fromEntries(C.fishSpUnits(f, F).map(u => [u.id, {family: u.family, look: u.look}])),
       ...(F.taxa ? {taxa: F.taxa} : {})
     };
   }

@@ -92,17 +92,32 @@
   // show the same genera. Offered: ★ (the slate's starred genera, rule L5); the look-alikes, the pairs Photos ›
   // Look-alikes shows (the IMR lecture's and the Coral Finder text's: admin.js classicPairs), any or one; Needs work (a
   // genus whose ✓ Validated waits: admin.js needs), Candidates waiting (admin.js pending), Draft (a genus whose choices
-  // changed since the published file: admin.js changed). No growth form, ever (rule C4). c: {pairs: [{k, A, B}], needs(n)
-  // → [what], waiting(n) → count, draft: [genera]}. [{k, grp, t, on(node)}].
+  // changed since the published file: admin.js changed). No growth form, ever (rule C4). c: {pairs: [{k, A, B}], rows:
+  // the content editor's pairs (admin-content.js pairRows), needs(n) → [what], waiting(n) → count, draft: [genera]}.
+  // [{k, grp, t, on(node)}]. The look-alikes, as the fish's (admin.js fuFilters): the base's, then each pair the draft
+  // holds an entry for (one he added with + Pair, a withdrawal), so its tools in the bar (structBar) can be reached; each
+  // says when he added or withdrew it; Any look-alike, the pairs in force (Codex review #988).
   function ctFilters(d, c) {
-    const P = (c && c.pairs) || [],
-      inP = new Set(P.flatMap(p => [p.A, p.B])),
+    const P0 = (c && c.pairs) || [],
+      PR = (c && c.rows) || [],
+      byK = new Map(PR.map(r => [r.key, r])),
+      ids = new Set(ctLeaves(d).map(l => l.id)),
+      P = [
+        ...P0,
+        ...PR.filter(r => r.e && !P0.some(p => p.k === r.key) && ids.has(r.a) && ids.has(r.b)).map(r => ({k: r.key, A: r.a, B: r.b}))
+      ],
+      live = p => !byK.has(p.k) || byK.get(p.k).v === 1,
+      word = p => {
+        const r = byK.get(p.k);
+        return r && r.e && (r.state === 'fresh' || r.state === 'stale') ? (r.v === 1 ? ' (added)' : ' (withdrawn)') : '';
+      },
+      inP = new Set(P.filter(live).flatMap(p => [p.A, p.B])),
       dr = new Set((c && c.draft) || []),
       g = n => !!n.genus,
       out = [];
     if (ctLeaves(d).some(l => l.star)) out.push({k: 'star', grp: 'Slate', t: '★ Starred', on: n => g(n) && !!n.star});
     if (P.length) out.push({k: 'look', grp: 'Look-alikes', t: 'Any look-alike', on: n => g(n) && inP.has(n.id)});
-    P.forEach(p => out.push({k: 'look:' + p.k, grp: 'Look-alikes', t: `${p.A} · ${p.B}`, on: n => n.id === p.A || n.id === p.B}));
+    P.forEach(p => out.push({k: 'look:' + p.k, grp: 'Look-alikes', t: `${p.A} · ${p.B}${word(p)}`, on: n => n.id === p.A || n.id === p.B}));
     out.push(
       {k: 'work', grp: 'To do', t: 'Needs work', on: n => g(n) && !!(c && c.needs && c.needs(n.id).length)},
       {k: 'cand', grp: 'To do', t: 'Candidates waiting', on: n => g(n) && !!(c && c.waiting && c.waiting(n.id))},
@@ -179,7 +194,14 @@ function renderCoralTree(id, view = TREE) {
     hadF = !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.adm-tree')),
     top = (o => (o ? o.scrollTop : null))($v.querySelector('.adm-tree') && $v.querySelector('.adm-list'));
   const imrOn = FU_IMR === 'imr',
-    FL = ctFilters(DATA, {pairs: classicPairs(), needs, waiting: m => pending(m).length, draft: changed()}),
+    // the base's classic pairs and the draft's pair entries (ctFilters rows)
+    FL = ctFilters(DATA, {
+      pairs: classicPairs(),
+      rows: typeof pairRows === 'function' ? pairRows(ASUBJ, DATA, contentOf(DRAFT, ASUBJ)) : [],
+      needs,
+      waiting: m => pending(m).length,
+      draft: changed()
+    }),
     tag = FL.find(x => x.k === store.get(ctTagK(), '')),
     imrF = x => !!x.slate,
     // the filters read in the Key through its leaves, shown in the view on screen with what leads to them (as the fish's)
@@ -200,7 +222,12 @@ function renderCoralTree(id, view = TREE) {
         ([k, t]) =>
           `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}" title="${k === 'imr' ? 'The IMR slate' : 'Every genus'}">${t}</button>`
       )
-      .join('')}</span>${tagSel}`,
+      .join('')}</span>${tagSel}${typeof structBar === 'function' ? structBar(ASUBJ, DATA, tag && tag.k) : ''}`,
+    // The content editor's tools, as on the fish's Tree (admin-content.js; design note v2, step 8): the Look-alikes
+    // filter's + Pair box under the bar, the edits to check in the bar (sheetWarn), a genus page's Structure (its
+    // look-alike pairs: no circle, the slate is not the editor's) and Sheet boxes, over data.json as the admin holds it.
+    stAdd = typeof structAdd === 'function' ? structAdd(ASUBJ, DATA, x => x) : '',
+    cw = typeof sheetWarn === 'function' ? sheetWarn(ASUBJ, DATA, tvHref) : '',
     kr = kids.length ? cap1(TV.node.get(kids[0]).rank || '') || 'Open' : '',
     kidSel = kids.length
       ? `<select class="adm-fgsel" data-ttkid aria-label="${esc(kr)}"><option value="">${esc(kr)} · ${kids.length}</option>${kids
@@ -213,8 +240,8 @@ function renderCoralTree(id, view = TREE) {
     side = `<nav class="adm-side" aria-label="Genera"><select id="gsel" aria-label="Genus">${opts}</select><div class="adm-list"><div class="adm-tree" role="tree" aria-label="${view === TREE_W ? 'WoRMS' : 'Key'}"></div></div></nav>`;
   let bar, body;
   if (!n.genus) {
-    bar = `${crumbs}<b class="adm-sname">${ttName(n)}<small>${ttRank(n)}${R.gn(sel)} · ${R.ph(sel)}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}${kidSel}${probs}`;
-    body = `<div class="adm-tcards">${kids.map(x => `<a class="adm-tcard" href="${esc(tvHref(x))}" data-ttc="${esc(x)}">${R.row(TV.node.get(x))}</a>`).join('')}</div>`;
+    bar = `${crumbs}<b class="adm-sname">${ttName(n)}<small>${ttRank(n)}${R.gn(sel)} · ${R.ph(sel)}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}${kidSel}${cw}${probs}`;
+    body = `${stAdd}<div class="adm-tcards">${kids.map(x => `<a class="adm-tcard" href="${esc(tvHref(x))}" data-ttc="${esc(x)}">${R.row(TV.node.get(x))}</a>`).join('')}</div>`;
   } else {
     const m = sel,
       g = DATA.gen[m],
@@ -223,16 +250,23 @@ function renderCoralTree(id, view = TREE) {
       nd = needs(m),
       nc = pending(m).length,
       why = c ? (c.picked ? 'Your ★ cover' : 'Default: no ★ cover picked (the genus page’s automatic one)') : 'No photo on the site';
-    bar = `${crumbs}${c ? `<a class="adm-sthumb${c.picked ? ' mine' : ''}" href="${esc(genusHref(m))}" title="Cover"><img src="${img(c, 1)}" alt="${esc(m)} cover"></a>` : ''}<b class="adm-sname"><i>${esc(m)}</i><small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${R.ph(m)}${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}<a class="chip adm-ctopen" href="${esc(genusHref(m))}">Genus page</a>${e.ok ? `<b class="adm-ctok${nd.length ? ' warnc' : ''}">${nd.length ? '! Validated, incomplete' : '✓ Validated'}</b>` : ''}${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${probs}<small class="adm-cvwhy">${esc(why)}</small>`;
-    body = rows(m)
-      .map(([v]) => {
-        const r = rowOf(m, v),
-          all = r.feat.length + r.rest.length;
-        return `<section class="adm-row adm-ctview" data-ctv="${esc(v)}"><h3>${label(m, v)} <small>${all} photo${all === 1 ? '' : 's'} · ${r.feat.length}/${FEAT} featured</small></h3><div class="adm-ctfeat">${r.feat
-          .map(p => `<a href="${esc(genusHref(m))}" title="${esc(label(m, v))}"><img src="${img(p, 1)}" alt="" loading="lazy"></a>`)
-          .join('')}</div>${r.feat.length ? '' : '<p class="note">No featured photo.</p>'}</section>`;
-      })
-      .join('');
+    bar = `${crumbs}${c ? `<a class="adm-sthumb${c.picked ? ' mine' : ''}" href="${esc(genusHref(m))}" title="Cover"><img src="${img(c, 1)}" alt="${esc(m)} cover"></a>` : ''}<b class="adm-sname"><i>${esc(m)}</i><small>${ttRank(n)}${g.n ? 'No. ' + g.n : g.x ? 'not IMR' : '★'} · ${R.ph(m)}${nc ? ` · ${nc} candidate${nc === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="Genus">${opts}</select>${imrSeg}<a class="chip adm-ctopen" href="${esc(genusHref(m))}">Genus page</a>${e.ok ? `<b class="adm-ctok${nd.length ? ' warnc' : ''}">${nd.length ? '! Validated, incomplete' : '✓ Validated'}</b>` : ''}${nd.length ? `<b class="warnc adm-needs">${nd.map(esc).join(' · ')}</b>` : ''}${cw}${probs}<small class="adm-cvwhy">${esc(why)}</small>`;
+    // Its look-alike pairs and its sheet's text, above its photos (admin-content.js structBox, sheetBox).
+    const stbox = typeof structBox === 'function' ? structBox(ASUBJ, DATA, m, x => x, tvHref) : '',
+      sbox = typeof sheetBox === 'function' ? sheetBox(ASUBJ, DATA, m, x => x) : '';
+    body =
+      stAdd +
+      stbox +
+      sbox +
+      rows(m)
+        .map(([v]) => {
+          const r = rowOf(m, v),
+            all = r.feat.length + r.rest.length;
+          return `<section class="adm-row adm-ctview" data-ctv="${esc(v)}"><h3>${label(m, v)} <small>${all} photo${all === 1 ? '' : 's'} · ${r.feat.length}/${FEAT} featured</small></h3><div class="adm-ctfeat">${r.feat
+            .map(p => `<a href="${esc(genusHref(m))}" title="${esc(label(m, v))}"><img src="${img(p, 1)}" alt="" loading="lazy"></a>`)
+            .join('')}</div>${r.feat.length ? '' : '<p class="note">No featured photo.</p>'}</section>`;
+        })
+        .join('');
   }
   $v.innerHTML = `<div class="adm adm-treep">${side}<section class="adm-main"><div class="adm-filter adm-sticky">${bar}</div>${body}</section></div>`;
   [$('gsel'), $v.querySelector('.adm-gsel2')].forEach(
@@ -254,5 +288,8 @@ function renderCoralTree(id, view = TREE) {
         render();
       })
   );
+  // The content editor's tools (the bar's, the + Pair box, a genus page's Structure and Sheet).
+  if (typeof structBind === 'function') structBind($v, ASUBJ, DATA);
+  if (n.genus && typeof sheetBind === 'function') sheetBind($v, ASUBJ, DATA, sel);
   fuTreeMount(TV, sel, R.row, vis, hadF, top);
 }

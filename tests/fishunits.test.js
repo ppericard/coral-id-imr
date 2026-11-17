@@ -428,6 +428,43 @@ test('fishCov and fishWaiting: a candidate in play by itself, under any of its n
   assert.strictEqual(Object.values(A.fishWaiting(cand, {})).flat().length, 5);
 });
 
+// Genus-level photos (gl, sp the genus's id: the sea slugs' observations agreed at the genus only; Pierre, 2026-11-17, Q389
+// (1)): counted in their genus's and family's photos, observations and candidates waiting, never as a species.
+test('fishCov: a genus-level photo counts for its genus and family, never as a species (gl)', () => {
+  const U = [
+      {
+        id: 'f:A',
+        name: 'As',
+        species: ['s1'],
+        phase: [],
+        genera: [
+          {id: 'g:X', name: 'X', species: ['s1']},
+          {id: 'g:Y', name: 'Y', species: []}
+        ]
+      }
+    ],
+    species = {s1: {name: 'X one'}},
+    cand = {'g:X': [{f: 'seaslug-X-cand-9', o: 'o9'}], 'g:Y': [{f: 'seaslug-Y-cand-8', o: 'o8'}]},
+    play = {
+      s1: [{f: 'a', o: 'oa', auto: 'cand'}],
+      'g:X': [
+        {f: 'b', o: 'ob', sp: 'g:X', gl: 1, auto: 'cand'},
+        {f: 'c', o: 'oc', sp: 'g:X', gl: 1, auto: 'cand'}
+      ]
+    },
+    C = A.fishCov(U, play, species, cand, {}),
+    gx = C.gen.find(r => r.id === 'g:X'),
+    gy = C.gen.find(r => r.id === 'g:Y');
+  assert.deepStrictEqual(
+    C.sp.map(r => [r.id, r.n]),
+    [['s1', 1]],
+    'no species row for a genus'
+  );
+  assert.deepStrictEqual([gx.n, gx.obs, gx.gl, gx.of, gx.ok, gx.wait], [3, 3, 2, 1, 0, 1]);
+  assert.deepStrictEqual([gy.n, gy.gl, gy.of, gy.wait], [0, 0, 0, 1], 'a genus with genus-level candidates only: its row, waiting');
+  assert.deepStrictEqual([C.fam[0].n, C.fam[0].gl, C.fam[0].of, C.fam[0].wait], [3, 2, 1, 2]);
+});
+
 // The real files (read-only; curation.json is never written, rule A1): the photos in play as the admin builds them
 // (admin.js fuData: his adds in play, then the game's records in play, fishGameIn, a photo once by fishPid), and no
 // candidate counted as waiting is among them. Invariants only: Publish changes curation.json on main without a PR.

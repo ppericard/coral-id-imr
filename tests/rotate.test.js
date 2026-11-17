@@ -225,7 +225,7 @@ const adminVm = (extra = '') => {
     H = {},
     ctx = vm.createContext({...CORE, rotNorm, document: {addEventListener: (t, fn) => (H[t] = fn)}, navigator: {}});
   vm.runInContext(
-    'let R2 = true, AWAY = false, DRAFT = {fish: {}}, SAVED = {}, IDX = photoIndex();\n' +
+    'let R2 = true, AWAY = false, DRAFT = {fish: {}}, SAVED = {}, TK = "fish", IDX = photoIndex();\n' +
       'const photoIdx = () => IDX, photoLook = f => IDX.f.get(f), photoRetry = () => false;\n' +
       'class HTMLImageElement {}\n' +
       block(A, 'const same = (a, b) => ', '\n', {file: 'admin.js', through: true}) +

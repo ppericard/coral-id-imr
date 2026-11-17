@@ -70,30 +70,63 @@ test('logConds: fish answers by rank and, once one is typed, typed against picke
   assert.ok(!('Typed' in conds(R.slice(0, 2), FISH)), 'nothing typed: no typed rows');
 });
 
-// The fish data as fishAdmin reads them: gen holds the families (core.js fishGen records), fam maps every family, genus
-// and species sheet id to its family.
+// The fish data as fishAdmin reads them: gen holds the families (core.js fishGen records: look, fam their line, forms their
+// group of the identification key), fam maps every family, genus and species sheet id to its family, spu each species
+// unit to its family and the other species units of it (core.js fishSpUnits).
 const FA = {
-  gen: {'f:Damselfishes': {look: ['f:Cardinalfishes']}, 'f:Cardinalfishes': {look: ['f:Damselfishes']}, 'f:Wrasses': {look: []}},
+  gen: {
+    'f:Damselfishes': {look: ['f:Cardinalfishes'], fam: 'Pomacentridae', forms: ['g17']},
+    'f:Cardinalfishes': {look: ['f:Damselfishes'], fam: 'Apogonidae', forms: ['g16']},
+    'f:Wrasses': {look: [], fam: 'Labridae', forms: ['g17']},
+    'f:Gobies': {look: [], fam: 'Gobiidae', forms: ['g20']}
+  },
   fam: {
     'f:Damselfishes': 'f:Damselfishes',
     'f:Cardinalfishes': 'f:Cardinalfishes',
     'f:Wrasses': 'f:Wrasses',
+    'f:Gobies': 'f:Gobies',
     'g:Chromis': 'f:Damselfishes',
     'g:Amphiprion': 'f:Damselfishes',
     'g:Thalassoma': 'f:Wrasses',
+    'g:Valenciennea': 'f:Gobies',
     's:Chromis viridis': 'f:Damselfishes'
+  },
+  spu: {
+    's:s091': {family: 'f:Damselfishes', look: ['s:s084']},
+    's:s084': {family: 'f:Damselfishes', look: ['s:s091']},
+    's:s201': {family: 'f:Wrasses', look: []},
+    's:s301': {family: 'f:Gobies', look: []}
   }
 };
 const prior = (a, b) => pairPrior(a, b, fishUnitRec(FA, a, 'g:'), fishUnitRec(FA, b, 'g:'))[0];
 
 test('pairPrior with fishUnitRec: declared families, two genera of one family, else Other', () => {
   assert.strictEqual(prior('f:Damselfishes', 'f:Cardinalfishes'), 'Look-alike', 'declared both ways');
-  assert.strictEqual(prior('f:Damselfishes', 'f:Wrasses'), 'Other');
+  assert.strictEqual(prior('f:Damselfishes', 'f:Gobies'), 'Other');
   assert.strictEqual(prior('g:Chromis', 'g:Amphiprion'), 'Look-alike', 'two genera of one family, as the game declares them');
-  assert.strictEqual(prior('g:Chromis', 'g:Thalassoma'), 'Other', 'genera of two families');
+  assert.strictEqual(prior('g:Chromis', 'g:Valenciennea'), 'Other', 'genera of two families in two key groups');
   assert.deepStrictEqual(fishUnitRec(FA, 'g:Chromis', 'g:').look, ['g:Amphiprion'], 'its siblings only, never a species sheet id');
-  assert.deepStrictEqual(fishUnitRec(FA, 'g:Unknown', 'g:'), {look: [], fam: ''}, 'a unit the data do not know');
-  assert.deepStrictEqual(fishUnitRec(null, 'f:Damselfishes', 'g:'), {look: [], fam: ''}, 'before the fish data are read');
+  assert.deepStrictEqual(fishUnitRec(FA, 'g:Unknown', 'g:'), {look: [], fam: '', forms: []}, 'a unit the data do not know');
+  assert.deepStrictEqual(fishUnitRec(null, 'f:Damselfishes', 'g:'), {look: [], fam: '', forms: []}, 'before the fish data are read');
+});
+
+test('pairPrior with fishUnitRec: two families of one key group start as the game starts them (model.js confPrior FORM)', () => {
+  // the game: a shared "growth form" (app.js imrFormsOf: a fish unit's forms, its family's key group) above Other
+  assert.deepStrictEqual(
+    pairPrior('f:Damselfishes', 'f:Wrasses', fishUnitRec(FA, 'f:Damselfishes', 'g:'), fishUnitRec(FA, 'f:Wrasses', 'g:')),
+    ['Key group', C.CONF.FORM]
+  );
+  assert.strictEqual(prior('g:Chromis', 'g:Thalassoma'), 'Key group', "their genera take their families' group");
+  assert.strictEqual(prior('s:s091', 's:s201'), 'Key group', 'so do their species');
+  // a declared look-alike stays one whatever the groups (Cardinalfishes in another group)
+  assert.strictEqual(prior('f:Cardinalfishes', 'f:Damselfishes'), 'Look-alike');
+});
+
+test('fishUnitRec: a species unit, the other species units of its family as the game declares them (core.js fishSpUnits)', () => {
+  assert.strictEqual(prior('s:s091', 's:s084'), 'Look-alike', 'two species of one family');
+  assert.strictEqual(prior('s:s084', 's:s301'), 'Other', 'species of two families in two key groups');
+  assert.deepStrictEqual(fishUnitRec(FA, 's:s091', 'g:'), {look: ['s:s084'], fam: 'Pomacentridae', forms: ['g17']});
+  assert.deepStrictEqual(fishUnitRec(FA, 's:s999', 'g:'), {look: [], fam: '', forms: []}, 'a species unit the data do not know');
 });
 
 test('pairPrior: the coral records as before (look-alike, family, other) with their rates', () => {

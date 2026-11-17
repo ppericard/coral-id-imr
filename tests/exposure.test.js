@@ -130,13 +130,15 @@ test("v81 users: each player's exposure per subject, from the Answers tab and th
   assert.deepStrictEqual(ana.ex[fish.id], want(L.slice(4), FP));
   assert.deepStrictEqual(ana.ex[fish.id].slice(2), [1, 2, 1]);
   assert.ok(!('ex' in r.users.find(u => u.name === 'Ben')), 'no answer, no exposure');
-  // Cached: a second list reads no file again; each file was read once (curation.json once for both subjects).
+  // Cached: a second list reads no file again; each file was read once (curation.json once for both subjects' pools, and
+  // once for the corals' look-alike pairs the players' replayed progress is made under: Code.gs subjCur_, design note v2
+  // step 8).
   s.post({users: 1, token: TOK});
   assert.ok(
     [...coral.pool.files, ...fish.pool.files].every(x => f.n[x] >= 1),
     JSON.stringify(f.n)
   );
-  assert.strictEqual(f.n['curation.json'], 1);
+  assert.strictEqual(f.n['curation.json'], 2);
   assert.strictEqual(f.n['fish-photos.json'], 1);
   // Files out of reach: no exposure, the list as before.
   const s2 = loadCodeGs();

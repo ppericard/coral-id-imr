@@ -24,6 +24,11 @@
   "seaslug-119429-cand-518685467": {"code": "p1g0sl15"},
   "seaslug-119429-cand-532225122": {"code": "d1g0sm14"},
   "seaslug-119429-cand-528503908": {"code": "d0g0sl13", "note": "the body twisted, its rear turned over: the shape is not read whole"},
-  "seaslug-119429-cand-552030071": {"code": "o1g0sl15"}
+  "seaslug-119429-cand-552030071": {"code": "o1g0sl15"},
+  "seaslug-119429-cand-680291800": {"code": "o1g0sl14", "note": "the mantle folded, the body rearing"},
+  "seaslug-119429-cand-711509920": {"code": "o1g0sl14", "note": "the head toward the camera, the body foreshortened"},
+  "seaslug-119429-cand-570357846": {"code": "p1g0sl15"},
+  "seaslug-119429-cand-607133717": {"code": "h1g0sl13", "note": "the body twisted, the head toward the camera"},
+  "seaslug-119429-cand-604391070": {"code": "d1g0sl15"}
  }
 }

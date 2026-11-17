@@ -172,15 +172,20 @@ function lightLoad() {
   return LIGHT_P;
 }
 // The view's `live` option (admin.js TABS): in the switch while a proposal is open; false until the file is read.
-const lightLive = () => (lightLoad(), !!LIGHT && lightOpen(LIGHT, DRAFT.fish).length > 0);
+const lightLive = () => (lightLoad(), !!LIGHT && lightOpen(LIGHT, DRAFT[TK]).length > 0);
 // Publish's summary lines (admin.js pubSummary).
 const lightSummary = () => {
   if (!LIGHT || !LIGHT.length) return [];
-  const c = lightCounts(LIGHT, DRAFT.fish, SAVED.fish);
-  return [
-    [c.accepted, 'fish light proposal accepted', 'fish light proposals accepted'],
-    [c.kept, 'fish light proposal kept as it was', 'fish light proposals kept as they were']
-  ];
+  // every tree subject's part (admin.js TREES: a proposal names its photo, so only its own subject's part counts it),
+  // whatever the subject on screen
+  return TREES.flatMap(S => {
+    const c = lightCounts(LIGHT, DRAFT[S.admin.cur], SAVED[S.admin.cur]),
+      w = S.card;
+    return [
+      [c.accepted, `${w} light proposal accepted`, `${w} light proposals accepted`],
+      [c.kept, `${w} light proposal kept as it was`, `${w} light proposals kept as they were`]
+    ];
+  });
 };
 function renderLight() {
   if (!TOKEN) {
@@ -195,9 +200,9 @@ function renderLight() {
     return;
   }
   status();
-  const O = lightOpen(LIGHT, DRAFT.fish),
+  const O = lightOpen(LIGHT, DRAFT[TK]),
     sp = FISHC.species,
-    rec = x => ({...(FISHC.byF[x.photo] || {f: x.photo}), sid: (DRAFT.fish.add || {})[x.photo]});
+    rec = x => ({...(FISHC.byF[x.photo] || {f: x.photo}), sid: (DRAFT[TK].add || {})[x.photo]});
   if (!O.length) {
     $v.innerHTML = '<p class="note">No light proposal left.</p>';
     return;
@@ -229,7 +234,7 @@ function renderLight() {
     .join('')}`;
   const fx = fn => {
     const y = window.scrollY;
-    DRAFT.fish = fn(DRAFT.fish || {});
+    DRAFT[TK] = fn(DRAFT[TK] || {});
     saveDraft();
     render();
     window.scrollTo(0, y);
@@ -252,14 +257,14 @@ function renderLight() {
   };
   $v.querySelector('[data-lpall]').onclick = () => {
     if (!confirm(`Accept all ${O.length} light proposals into your draft? Undo steps back.`)) return;
-    const D = DRAFT.fish || {},
+    const D = DRAFT[TK] || {},
       K = new Map(O.map(x => [x, keepOf(D, x)]));
     fx(F => O.reduce((N, x) => lightAccept(N, x, K.get(x)), F));
   };
   $v.querySelectorAll('.adm-lprop[data-f]').forEach(tl => {
     const x = O.find(y => y.photo === tl.dataset.f);
     tl.querySelector('[data-lpa]').onclick = () => {
-      const keep = keepOf(DRAFT.fish || {}, x);
+      const keep = keepOf(DRAFT[TK] || {}, x);
       fx(F => lightAccept(F, x, keep));
     };
     tl.querySelector('[data-lpk]').onclick = () => fx(F => lightKeep(F, x));

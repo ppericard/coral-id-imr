@@ -4550,11 +4550,17 @@ const darkCards = (p, sel) =>
       }
       // Codex review #987: a reported photo of another subject with its own files (core.js SUBJECTS admin files; the sea
       // slugs) showed as "missing". On its side, at every width: its tile with the photo from its game file's source (a remote
-      // original stays remote), its family, the species it is identified as and its credits, no tool (they act on the fish
-      // part of the curation), no link to family pages it does not have, its reporter's Journey under its prefix; Enlarge
+      // original stays remote), its family, the species it is identified as and its credits; with its Photos › Tree (the sea
+      // slugs' since 2026-11-17) every photo tool of its Tree (they act on its own part of the curation) and its unit's link
+      // and Open, else no tool and no link to pages it does not have; its reporter's Journey under its prefix; Enlarge
       // shows the identification and the credits; the report on no other side; no sideways scroll.
       const MORE = await p.evaluate(() =>
-        SUBJECTS.filter(S => S.sheets && S.admin.files && S !== FISHS).map(S => ({id: S.id, hash: S.hash, one: S.one}))
+        SUBJECTS.filter(S => S.sheets && S.admin.files && S !== FISHS).map(S => ({
+          id: S.id,
+          hash: S.hash,
+          one: S.one,
+          tree: hasPage(S, TREE)
+        }))
       );
       if (!MORE.length) fails.push(`${w}px To do › Reports: no third subject with its files to check`);
       for (const X of MORE) {
@@ -4595,20 +4601,21 @@ const darkCards = (p, sel) =>
         if (
           !r ||
           !r.want ||
-          r.src !== r.want ||
+          // with its Tree, the tile of its Tree (its file on R2, else its original; its credits on Enlarge, below)
+          (X.tree ? !r.src : r.src !== r.want) ||
           !r.cap.includes(r.fam) ||
           !r.cap.includes(r.t) ||
-          !r.cap.includes(r.a) ||
+          (!X.tree && !r.cap.includes(r.a)) ||
           !r.head.includes(r.fam) ||
-          r.tools ||
+          !r.tools !== !X.tree ||
           r.missing ||
-          r.unit ||
-          r.links ||
+          r.unit !== X.tree ||
+          !r.links !== !X.tree ||
           r.journey !== '#' + X.hash + 'players/list/journey/Ana%20Demo'
         )
           fails.push(`${w}px To do › Reports, ${X.id}: its reported photo ${JSON.stringify(r)}`);
         else {
-          await p.click(`#view .adm-rep[data-rep="${r.id}"] .adm-tile [data-act="zoomx"]`);
+          await p.click(`#view .adm-rep[data-rep="${r.id}"] .adm-tile :is([data-act="zoomx"], [data-fu="zoom"])`);
           const lb = await p
             .waitForFunction(() => {
               const l = document.getElementById('lightbox');
@@ -5796,10 +5803,11 @@ const darkCards = (p, sel) =>
       }
       // Fish admin at parity, the next step: Analyses › Learning › Answer log and Analyses › Difficulty › Pairs follow the
       // Corals | Fish switch (rule A4). The demo's fish answers are family questions picked from choices; a few genus
-      // questions, typed answers and a mix-up of two genera of one family are added to its log (as the fresh Health block
-      // below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
+      // questions, typed answers, a mix-up of two genera of one family and one of two families of one key group are added
+      // to its log (as the fresh Health block below does). The Answer log: the fish players and answers only, the families and genera by name (an IMR sub-entry
       // with its IMR name), the questions on each rank and typed against picked, no Elo column (the sheet sends the corals'
-      // levels), no compare page; Pairs: the two genera start as look-alikes, the fish photos and observations, the typed
+      // levels), no compare page; Pairs: the two genera start as look-alikes, the two families as Key group (the game's
+      // start, model.js confPrior), the fish photos and observations, the typed
       // mix-ups apart; no raw unit id, no coral genus, no sideways scroll. Once, at 1280 and 390 px.
       for (const vw of [1280, 390]) {
         const VER = Number(/const VERSION = (\d+);/.exec(fs.readFileSync(path.join(ROOT, 'tools/sync/Code.gs'), 'utf8'))[1]),
@@ -5843,6 +5851,18 @@ const darkCards = (p, sel) =>
                 )
               );
             for (let i = 0; i < 4; i++) add.push(mk(id, 'g:Chromis', i % 3 ? 'g:Chromis' : 'g:Pomacentrus', i % 3 ? 1 : 0, 'quiz|t', ''));
+            // two families of one key group no source declares look-alikes: Pairs starts them as the game does (Key group)
+            for (let i = 0; i < 3; i++)
+              add.push(
+                mk(
+                  id,
+                  'f:Surgeonfishes',
+                  i ? 'f:Surgeonfishes' : 'f:Rabbitfishes',
+                  i ? 1 : 0,
+                  'quiz',
+                  'f:Surgeonfishes f:Rabbitfishes f:Wrasses f:Gobies'
+                )
+              );
           });
           ANS = {...ANS, all: [...(ANS.all || ANS.rows || []), ...add]};
           render();
@@ -5872,6 +5892,9 @@ const darkCards = (p, sel) =>
               pair: [...V.querySelectorAll('tr')]
                 .filter(tr => /Amphiprion · Chromis/.test(tr.textContent))
                 .map(tr => tr.cells[1].textContent),
+              key: [...V.querySelectorAll('tr')]
+                .filter(tr => /Rabbitfishes · Surgeonfishes|Surgeonfishes · Rabbitfishes/.test(tr.textContent))
+                .map(tr => tr.cells[1].textContent),
               zo: V.querySelectorAll('[data-zo]').length,
               wide: document.documentElement.scrollWidth - innerWidth
             };
@@ -5899,6 +5922,7 @@ const darkCards = (p, sel) =>
         if (
           pr.h3.join(' | ') !== 'Pairs | Photos | Observations | Species | Typed' ||
           pr.pair.join() !== 'Look-alike' ||
+          pr.key.join() !== 'Key group' ||
           !pr.zo ||
           pr.cmp ||
           pr.ids.length ||
@@ -6842,6 +6866,76 @@ const darkCards = (p, sel) =>
         if (le.length) fails.push(`Light proposals: ${le.slice(0, 4).join(' | ')}`);
         await lc.close();
       }
+      // The sea slugs' admin photo pages (2026-11-17; Pierre: "Tu peux compléter tout ce qui manque pour les
+      // nudibranches?"): Photos › Tree on their tree, the fish's photo tools on their own part of the curation (admin.js
+      // TK, treeIn), their genus-level photos a leaf of their genus (gl), Publish sending their part beside the fish's, a
+      // reported sea-slug photo with its tools and its genus's page, Photo stats by genus. In a context of its own.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [];
+        sq.on('pageerror', e => se.push(e.message));
+        const swait = (fn, what) => sq.waitForFunction(fn, null, {timeout: 60000}).catch(() => se.push(`timed out: ${what}`));
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/g%3AChromodoris');
+        await swait(() => document.querySelectorAll('#view .adm-ftile [data-fu="remove"]').length > 4, 'the genus page');
+        const s0 = await sq.evaluate(() => ({
+          gl: !!document.querySelector('#view section.adm-row[data-sid="g:Chromodoris"] .adm-ftile'),
+          leaf: !!tvTree(TREE).node.get('gl:g:Chromodoris'),
+          imr: !!document.querySelector('[data-fuimr]')
+        }));
+        if (!s0.gl || !s0.leaf) se.push(`no genus-level section or leaf ${JSON.stringify(s0)}`);
+        if (s0.imr) se.push('All | IMR shown on a tree the IMR course does not name');
+        const [f0, f1] = await sq.$$eval('#view section.adm-row:not([data-sid^="g:"]) .adm-ftile', L =>
+          L.slice(0, 2).map(t => t.dataset.f)
+        );
+        await sq.click(`.adm-ftile[data-f="${f0}"] [data-fu="remove"]`);
+        await sq.click(`.adm-ftile[data-f="${f1}"] [data-fu="feat"]`);
+        const fg = await sq.$eval('#view section.adm-row[data-sid="g:Chromodoris"] .adm-ftile', t => t.dataset.f).catch(() => '');
+        if (fg) await sq.click(`.adm-ftile[data-f="${fg}"] [data-fu="cover"]`);
+        const s1 = await sq.evaluate(
+          ([f0, f1, fg]) => ({
+            seen: ((DRAFT.seaslug || {}).seen || {})[f0],
+            feat: JSON.stringify(((DRAFT.seaslug || {}).genera || {})['f:Chromodorididae']),
+            cover: (((DRAFT.seaslug || {}).genera || {})['g:Chromodoris'] || {}).cover === fg,
+            fish: JSON.stringify(DRAFT.fish) === JSON.stringify(SAVED.fish),
+            out: Object.keys(output()).includes('seaslug'),
+            sum: String(pubSummary())
+          }),
+          [f0, f1, fg]
+        );
+        if (!s1.seen || !s1.feat.includes(f1) || !s1.cover || !s1.fish || !s1.out || !/sea slug photos? set aside/.test(s1.sum))
+          se.push(`the tools ${JSON.stringify(s1)}`);
+        // the genus-level leaf's page reads that cover under its genus's id, as ★ Cover writes it (Codex review #1047)
+        if (fg) {
+          await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/gl%3Ag%3AChromodoris');
+          await swait(() => !!document.querySelector('#view .adm-sthumb'), 'the genus-level page');
+          const hc = await sq.$eval('#view .adm-sthumb', t => [t.dataset.f, t.classList.contains('mine')]).catch(() => []);
+          if (hc[0] !== fg || !hc[1]) se.push(`the genus-level page's cover ${JSON.stringify(hc)} (chosen ${fg})`);
+        }
+        // The fish's Tree after the switch: its own part, its own data; back on the sea slugs, the draft as it was.
+        await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
+        await swait(
+          () =>
+            document.querySelectorAll('#view .adm-ftile').length > 4 &&
+            /^fish-|^f[ib]/.test(document.querySelector('#view .adm-ftile').dataset.f),
+          'the fish Tree'
+        );
+        await sq.goto(base + 'admin.html?demo#seaslug/inbox/todo/reports');
+        await swait(() => !!document.querySelector('.adm-rep .adm-ftile [data-fu="remove"]'), 'a sea-slug report with its tools');
+        const s2 = await sq.evaluate(() => ({
+          seen: Object.keys((DRAFT.seaslug || {}).seen || {}).length,
+          open: [...document.querySelectorAll('.adm-rep a[data-ru]')].map(a => a.getAttribute('href'))
+        }));
+        if (s2.seen !== 1 || !s2.open.some(h => /^#seaslug\/photos\/tree\/key\/g%3A/.test(h))) se.push(`the report ${JSON.stringify(s2)}`);
+        await sq.goto(base + 'admin.html?demo#seaslug/photos/stats/overview');
+        await swait(() => /genera in play/i.test(document.querySelector('#view').textContent), 'Photo stats by genus');
+        if (se.length) fails.push(`Sea slugs' photo pages: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
       // Photo review › Cover proposals (admin-covers.js; Pierre, 2026-11-14 after Q339 (b), #864): in a context of its own.
       // Pierre's published fish part first with no node cover: no proposal, the view not in the switch. Then three family
       // covers of his, each an adult photo in play the rule does not pick (found in the page, so the check follows the data):
@@ -7382,6 +7476,135 @@ const darkCards = (p, sel) =>
         if ((fa && (pm[KA] || {}).a !== fa) || (fb && (pm[K] || {}).b !== fb)) se.push(`published picks ${JSON.stringify(pm)}`);
         if (dlg.length !== 1 || !/every player's path and progress/.test(dlg[0])) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
         if (se.length) fails.push(`Structure: ${se.slice(0, 4).join(' | ')}`);
+        await sc.close();
+      }
+      // Photos › Tree on the corals' side (design note v2, step 8; admin-coraltree.js, the same admin-content.js editors): a
+      // genus page has a Structure box with its look-alikes and no circle, and a Sheet box with the corals' slots. A starred
+      // genus's only surveyed look-alike cannot be withdrawn (the ★ rule, L5: Withdraw off, titled "★ rule"); a held
+      // withdrawal reaching the draft (a merge) is counted to check in the bar. On Acropora: Withdraw a pair (its line
+      // leaves the Sheet), ↺; add a look-alike (the source asked once); ✎ its plain words; Publish confirms once and counts
+      // the coral sheet and pair edits, published at the curation's top; dark theme; no overflow at 1280 and 390.
+      {
+        const sc = await b.newContext({viewport: {width: 1280, height: 900}, serviceWorkers: 'block'});
+        await sc.route(
+          u => !u.href.startsWith(base),
+          r => r.abort()
+        );
+        const sq = await sc.newPage(),
+          se = [],
+          dlg = [];
+        sq.on('pageerror', e => se.push(e.message));
+        sq.on('dialog', d => (dlg.push(d.message()), d.accept()));
+        const swait = fn => sq.waitForFunction(fn, null, {timeout: 90000}).catch(() => se.push(`timed out: ${fn}`));
+        const cont = () => sq.evaluate(() => DRAFT.content || {}),
+          pair = async k => ((await cont()).pairs || {})[k] || null,
+          box = '#view .adm-cstruct[data-stid]',
+          prow = k => `${box} [data-stp="${k}"]`,
+          has = s => sq.evaluate(s => !!document.querySelector(s), s),
+          wideAt = async what => {
+            for (const w of [1280, 390]) {
+              await sq.setViewportSize({width: w, height: 900});
+              const wide = await sq.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+              if (wide > 0) se.push(`${w}px, ${what}: ${wide}px too wide`);
+            }
+            await sq.setViewportSize({width: 1280, height: 900});
+          };
+        await sq.goto(base + 'admin.html?demo#photos/tree/key/Halomitra');
+        await swait(() => document.querySelector('#view .adm-cstruct[data-stid="Halomitra"] [data-stp]'));
+        if (await has('#view .adm-cstruct [data-stc]')) se.push('a circle on a coral genus');
+        const held = await sq.evaluate(
+          s => (b => (b ? [b.disabled, b.title] : null))(document.querySelector(s + ' [data-sta="withdraw"]')),
+          prow('Halomitra|Herpolitha')
+        );
+        if (!held || !held[0] || held[1] !== '★ rule') se.push(`Halomitra's Withdraw ${JSON.stringify(held)}`);
+        // a held withdrawal from a merge: listed with its why, counted to check, then removed (his entry goes)
+        await sq.evaluate(() => {
+          DRAFT.content = contentPairSet(DRAFT.content || {}, 'Halomitra|Herpolitha', null, 1, null, 3);
+          saveDraft();
+          render();
+        });
+        await swait(() => document.querySelector('#view .adm-csw'));
+        const hw = await sq.evaluate(
+          s =>
+            ((document.querySelector(s) || {}).textContent || '') +
+            ' / ' +
+            ((document.querySelector('#view .adm-csw') || {}).textContent || ''),
+          prow('Halomitra|Herpolitha')
+        );
+        if (!/★ rule/.test(hw) || !/1 sheet edit to check/.test(hw)) se.push(`held ${JSON.stringify(hw)}`);
+        await sq.click(`${prow('Halomitra|Herpolitha')} [data-sta="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-csw'));
+        if (await pair('Halomitra|Herpolitha')) se.push('Remove left the held entry');
+        // Acropora: Withdraw Montipora, its line leaves the Sheet; ↺ brings it back.
+        await sq.goto(base + 'admin.html?demo#photos/tree/key/Acropora');
+        await swait(
+          () => document.querySelector('#view .adm-cstruct[data-stid="Acropora"]') && document.querySelector('#view .adm-csheet')
+        );
+        const K = 'Acropora|Montipora';
+        await sq.click(`${prow(K)} [data-sta="withdraw"]`);
+        await swait(() => document.querySelector('#view .adm-cstruct .is-fresh.is-out'));
+        let x = await pair(K);
+        if (!x || x.v !== null || x.was !== 1) se.push(`withdraw ${JSON.stringify(x)}`);
+        if (await has('#view .adm-csheet [data-cs="lsrc/Montipora"]:not(.is-orphan)')) se.push('a withdrawn pair keeps its line');
+        await sq.click(`${prow(K)} [data-sta="drop"]`);
+        await swait(() => !document.querySelector('#view .adm-cstruct .is-out'));
+        if (await pair(K)) se.push('↺ left the withdrawal');
+        // Add a look-alike: the box names the genus; the source asked once, then saved without one; its line in the Sheet.
+        await sq.selectOption(`${box} [data-stadd]`, 'Porites');
+        await swait(() => document.querySelector('#view [data-stbox]'));
+        await wideAt("the page's add box");
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => document.querySelector('#view [data-stbox] .adm-cssrcs.need'));
+        await sq.click('#view [data-stbox] [data-sta="save"]');
+        await swait(() => !document.querySelector('#view [data-stbox]'));
+        x = await pair('Acropora|Porites');
+        if (!x || x.v !== 1 || x.was !== null || x.src) se.push(`add ${JSON.stringify(x)}`);
+        if (!(await has('#view .adm-csheet [data-cs="lsrc/Porites"]'))) se.push("the added pair's line in the Sheet box");
+        // The Look-alikes filter offers the pair he added (admin-coraltree.js ctFilters rows; Codex review #988): chosen,
+        // its tools are in the bar (structBar), then the tag is put back.
+        const opt = await sq.evaluate(
+          () => (document.querySelector('#view [data-tttag] option[value="look:Acropora|Porites"]') || {}).textContent || ''
+        );
+        if (!/^Acropora · Porites \(added\) · 2 genera$/.test(opt)) se.push(`the Tree filter's added pair ${JSON.stringify(opt)}`);
+        else {
+          await sq.selectOption('#view [data-tttag]', 'look:Acropora|Porites');
+          await swait(() => document.querySelector('#view .adm-filter [data-stp="Acropora|Porites"]'));
+          await sq.selectOption('#view [data-tttag]', '');
+          await swait(() => !document.querySelector('#view .adm-filter [data-stp]'));
+        }
+        // The Sheet: the corals' slots; ✎ the plain words, Save: one entry, the original in was.
+        if (!(await sq.evaluate(() => document.querySelector('#view .adm-csheet').open))) await sq.click('#view .adm-csheet > summary');
+        const slots = await sq.evaluate(() => [...document.querySelectorAll('#view .adm-csheet [data-cs]')].map(x => x.dataset.cs));
+        ['plain', 'qt', 'mn', 'imr', 'sum', 'crit', 'lsrc/Montipora'].forEach(k => slots.includes(k) || se.push('no slot ' + k));
+        await sq.click('#view .adm-csheet [data-cs="plain"] [data-csa="edit"]');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="plain"] textarea'));
+        await sq.fill('#view .adm-csheet [data-cs="plain"] textarea', 'Made-up plain words.');
+        await sq.click('#view .adm-csheet [data-cs="plain"] [data-csa="save"]');
+        await swait(() => document.querySelector('#view .adm-csheet [data-cs="plain"].is-fresh'));
+        const pe = await sq.evaluate(() => [((DRAFT.content || {}).nodes || {}).Acropora, DATA.gen.Acropora.plain]);
+        if (!pe[0] || !pe[0].plain || pe[0].plain.v !== 'Made-up plain words.' || pe[0].plain.was !== pe[1])
+          se.push(`plain ${JSON.stringify(pe[0])}`);
+        await wideAt('the coral Sheet and Structure');
+        const dk = await darkCards(sq, '#view .adm-cstruct .adm-cslot, #view .adm-csheet .adm-cslot');
+        if (dk) se.push(`dark theme: still light ${dk}`);
+        // Publish: one confirmation; the coral sheet and pair edits counted; published at the curation's top.
+        const sum = await sq.evaluate(() => pubSummary());
+        if (!/^1 coral genus sheet edit$/m.test(sum) || !/^1 coral look-alike pair edit$/m.test(sum))
+          se.push(`Publish summary ${JSON.stringify(sum)}`);
+        await sq.click('#save');
+        await sq
+          .waitForFunction(() => /Published/.test((document.querySelector('.adm-toast') || {}).textContent || ''), null, {timeout: 15000})
+          .catch(() => se.push('Publish: no "Published" toast'));
+        const pub = await sq.evaluate(() => SAVED.content);
+        if (
+          !pub ||
+          JSON.stringify(Object.keys(pub)) !== '["nodes","pairs"]' ||
+          JSON.stringify(Object.keys(pub.nodes)) !== '["Acropora"]' ||
+          JSON.stringify(Object.keys(pub.pairs)) !== '["Acropora|Porites"]'
+        )
+          se.push(`published ${JSON.stringify(pub)}`);
+        if (dlg.length !== 1 || !/every player's path and progress/.test(dlg[0])) se.push(`Publish's confirm ${JSON.stringify(dlg)}`);
+        if (se.length) fails.push(`Coral Tree editors: ${se.slice(0, 4).join(' | ')}`);
         await sc.close();
       }
       // Photo review › Growth form (Pierre, 2026-11-03: he checks forms by hand to see whether the automatic detection is
