@@ -657,8 +657,12 @@
       admin: {
         cur: 'fish',
         // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
-        // its tree; ph, its first photos (none for a subject without); gm, its game photos.
-        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json'},
+        // its tree; ph, its first photos (none for a subject without); gm, its game photos; cand, its candidate photos
+        // (admin.js fishLoad: Photos › Tree's tools, Candidates).
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json', cand: 'fish-cand.json'},
+        // autosort: the fish auto-sort writes its part at each admin load (admin.js fishAutoRun, autosort.js fishRun),
+        // the candidates judged sure that the game does not take in by itself.
+        autosort: true,
         // To do › All and Points (fish admin at parity, Pierre 2026-11-08): All lists the reports, flags and errors with
         // its photo work (todo), never the corals' photo sections; Points, the fish points of points.json.
         todo: ['photos'],
@@ -787,12 +791,14 @@
           know: ['I know sea slugs well', 'A diver or a photographer: you can already name many genera.']
         }
       },
-      // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
-      // not about one subject's photos, its Players page holding its beta group.
+      // Its admin part: its own key in curation.json (Pierre's choices on its photos, applied by the app through treeCur
+      // and by tools/seaslug_game.py), the pages not about one subject's photos, its Players page holding its beta
+      // group, and its Photos › Tree with the fish's photo tools.
       admin: {
         cur: 'seaslug',
-        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports).
-        files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
+        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports), and
+        // for Photos › Tree (its candidates: Not this, the candidates waiting).
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json', cand: 'seaslug-cand.json'},
         todo: [],
         // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
         // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus, live from its answers,
@@ -803,10 +809,18 @@
           'inbox/todo/errors',
           'inbox/todo/points',
           'players/list',
+          // Photos › Tree › Key (the sea slugs' admin photo pages, 2026-11-17): the fish's node pages and photo tools on
+          // its tree (admin.js renderFishUnits, fishTile), its genus-level photos (gl) a leaf of their genus. No WoRMS view:
+          // its tree carries no reference taxonomy (seaslug.json ref).
+          'photos/tree/key',
+          // Photo stats › Overview: its photos in play in its words (admin.js pstatsFish), its genus-level photos counted
+          // at their genus, never as a species (autosort.js fishCov)
+          'photos/stats/overview',
           'analyses/difficulty/heatmap'
         ],
         obs: 'Observations',
         origins: [
+          ['own', 'Pierre', 'Pierre'],
           ['dauin', 'iNat Dauin', 'Dauin'],
           ['ph', 'iNat Philippines', 'PH'],
           ['world', 'iNat elsewhere', 'World']
