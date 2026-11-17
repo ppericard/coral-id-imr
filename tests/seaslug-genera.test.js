@@ -60,10 +60,10 @@ test('core.js fishGen unit genus: every genus of the circles a unit, in its best
     const g = X.gen[G.id],
       sp = new Set(G.species);
     assert.deepStrictEqual([g.rank, g.name, g.parent, g.circle, g.species], ['genus', G.name, G.family, G.circle, G.species], G.id);
-    // its family's photos of its species, every one of them
+    // its family's photos of its species, every one of them, and its own genus-level photos (gl, Q389 (1))
     assert.deepStrictEqual(
       g.views.wide.map(p => p.f),
-      X.gen[G.family].views.wide.filter(p => sp.has(p.sp)).map(p => p.f),
+      X.gen[G.family].views.wide.filter(p => sp.has(p.sp) || (p.gl && p.sp === G.id)).map(p => p.f),
       G.id
     );
     // its look-alikes: its sibling genera

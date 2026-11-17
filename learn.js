@@ -1121,8 +1121,29 @@ const spAlso = s => {
     .map(([n, L]) => `<p class="fn-g">${n === first ? 'Also used for' : `“${esc(n)}” is also used for`} ${L.map(sp).join(', ')}</p>`)
     .join('');
 };
+// A species' name as HTML: in italics; a species with no name yet (seaslug.json inf: Goniobranchus sp. 5; Pierre,
+// 2026-11-17, Q389 (2)) its genus in italics, the rest upright, and the source that defines it in small type (its src:
+// the paper, never a guide's number; rule C2).
+const spNameH = s => {
+  if (!s.inf) return `<i>${esc(s.name)}</i>`;
+  const [g, ...rest] = s.name.split(' ');
+  return `<i>${esc(g)}</i> ${esc(rest.join(' '))}${s.src ? ` <small class="spsrc">(${esc(s.src)})</small>` : ''}`;
+};
+// Its links on the species sheet: iNaturalist, WoRMS and FishBase; a species with no name yet has no taxon there, so its
+// source (the paper's DOI) and the iNaturalist observation field that marks its observations.
+const spLinks = s => {
+  const a = (u, t) => `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`;
+  if (s.inf)
+    return [
+      s.doi ? a('https://doi.org/' + s.doi, esc(s.src || 'Source')) : '',
+      s.field ? a('https://www.inaturalist.org/observation_fields/' + encodeURIComponent(s.field), 'iNaturalist') : ''
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  return `${a('https://www.inaturalist.org/taxa/' + encodeURIComponent(s.inat), 'iNaturalist')} · ${a('https://www.marinespecies.org/aphia.php?p=taxdetails&id=' + encodeURIComponent(s.ref), 'WoRMS')} · ${a('https://www.fishbase.se/summary/' + encodeURIComponent(s.name.replace(/\s+/g, '-')) + '.html', 'FishBase')}`;
+};
 const fishTile = s =>
-  `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap"><i>${esc(s.name)}</i>${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
+  `<a class="ftile" href="${esc(hr('g-s:' + s.name))}">${spPic(s)}<span class="fcap">${spNameH(s)}${spCommon(s) ? `<span>${esc(spCommon(s))}</span>` : ''}${
     s.now && s.now !== s.name ? `<small>now <i>${esc(s.now)}</i> in WoRMS</small>` : ''
   }${s.cs ? `<small><b class="star">★</b> IMR most sighted #${s.cs}</small>` : ''}</span></a>`;
 // Every species of a list, the "Opened for me" filter first (on by default; Pierre, Q5).
@@ -1379,14 +1400,13 @@ function fishSpecies(s) {
     F = famSpecies(f),
     rank = [...F].sort((a, b) => (b.cmi || 0) - (a.cmi || 0)).indexOf(s) + 1,
     sib = g ? genSpecies(g).filter(x => x !== s) : [],
-    gto = g ? fishGo(g.id) : '',
-    fbName = s.name.replace(/\s+/g, '-');
+    gto = g ? fishGo(g.id) : '';
   const fig = (p, i, big) =>
     `<figure><button type="button" class="zoom${big ? ' fbig' : ''}" data-z="${i}" aria-label="Enlarge photo: ${esc(s.name)}"><img src="${img(p, 's')}" srcset="${srcset(p)}" sizes="${big ? '(max-width: 599.98px) 100vw, 45vw' : '(max-width: 599.98px) 50vw, 300px'}" alt="${esc(s.name)}" loading="${big ? 'eager' : 'lazy'}">${ZOOMI}</button><figcaption>${isJ(p) ? '<b>Juvenile</b> · ' : ''}${credit(p)}</figcaption></figure>`;
-  const links = `<a href="https://www.inaturalist.org/taxa/${encodeURIComponent(s.inat)}" target="_blank" rel="noopener">iNaturalist</a> · <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&amp;id=${encodeURIComponent(s.ref)}" target="_blank" rel="noopener">WoRMS</a> · <a href="https://www.fishbase.se/summary/${encodeURIComponent(fbName)}.html" target="_blank" rel="noopener">FishBase</a>`;
+  const links = spLinks(s);
   $v.innerHTML = `<p class="lede">One species on one page: its scientific name as on the IMR reference list, its common name, its family and genus, its photos (the easiest first; tap one to enlarge it) and the other species of its genus.${isPhone() ? '' : ' ← / → go to the previous / next species.'}</p>
   <article class="sheet fsheet">
-    <div class="fnames"><p class="fn-t"><i>${esc(s.name)}</i></p>${vernOf(s.id).length ? vernHead(s.id) : spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
+    <div class="fnames"><p class="fn-t">${spNameH(s)}</p>${vernOf(s.id).length ? vernHead(s.id) : spCommon(s) ? `<p class="fn-s">${esc(spCommon(s))}</p>` : ''}${spAlso(s)}${s.now && s.now !== s.name ? `<p class="fn-g">now <i>${esc(s.now)}</i> in WoRMS</p>` : ''}</div>
     <p class="fbadges"><a class="chip" href="${esc(hr('g-' + f.id))}">${esc(f.name)}</a>${g ? `<a class="chip" href="${esc(hr('g-' + gto))}"><i>${esc(g.name)}</i>${g.common ? ' · ' + esc(g.common) : ''}</a>` : ''}${s.cs ? `<span class="chip"><b class="star">★</b> IMR most sighted #${s.cs}</span>` : ''}${s.pdf ? '<span class="chip">On the IMR reference list</span>' : ''}<span class="chip">${(s.present || {}).near ? 'Confirmed near Dauin' : 'Not confirmed near Dauin'}</span></p>
     ${spFacts(s)}
     ${fishNote(s)}
@@ -1410,7 +1430,7 @@ function fishSpecies(s) {
         : `<div class="fphotos"><span class="fbig">${noFish()}</span><p class="note">No photo of it here yet: see it on ${links}.</p></div>`
     }
     ${sib.length ? `<h3>Other species of <i>${esc(g.name)}</i> <small>${sib.length}</small></h3><div class="ftiles">${sib.map(fishTile).join('')}</div>` : ''}
-    <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${links}</p></details>
+    <details class="more sheetmore"><summary>More details</summary>${spNamesLine(s)}${vernMore(s.id)}<p class="note refs"><b>References:</b> ${s.pdf ? 'IMR / EventMeasure reference list · ' : ''}${s.inf && s.cite ? esc(s.cite) + ' · ' : ''}${links}</p></details>
     <p class="repline">${repBtn({k: 'sheet', g: s.id, m: 'sheet'}, '⚑ Report a problem with this sheet')}</p>
   </article>`;
   fishBind(flat, () => fishSpecies(s));

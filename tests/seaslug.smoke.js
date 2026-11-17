@@ -261,6 +261,33 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       check(sv.v.startsWith(enFirst(spn)), `2: ${spn.name}'s sheet: "${sv.v}"`);
       check(/English names:/.test(sv.more), `2: ${spn.name}'s sheet: no English names with their sources`);
     }
+    // A species with no name yet (seaslug.json inf; Pierre, 2026-11-17, Q389 (2)): its sheet names it with its source in
+    // small type, its genus in italics only, and links its paper and its iNaturalist field (no taxon, WoRMS or FishBase);
+    // it has no English name.
+    const inf = F.species.find(s => s.inf);
+    if (inf) {
+      await p.goto(base + (await p.evaluate(n => hr('g-s:' + n), inf.name)));
+      await p.waitForFunction(n => (document.querySelector('#view .fn-t') || {}).innerText === n, `${inf.name} (${inf.src})`, {
+        timeout: 15000
+      });
+      const sh = await p.evaluate(() => ({
+        it: [...document.querySelectorAll('#view .fn-t i')].map(x => x.textContent),
+        small: (document.querySelector('#view .fn-t small') || {}).textContent,
+        v: !!document.querySelector('#view .fn-v'),
+        links: [...document.querySelectorAll('#view .sheetmore a')].map(a => a.href)
+      }));
+      check(sh.it.join() === inf.name.split(' ')[0], '2: the species with no name: its genus alone in italics');
+      check(sh.small === `(${inf.src})`, '2: its source in small type');
+      check(!sh.v, '2: the species with no name: no English name');
+      check(
+        sh.links.some(h => new URL(h).host === 'doi.org') &&
+          sh.links.some(h => new URL(h).host === 'www.inaturalist.org' && new URL(h).pathname.startsWith('/observation_fields/')) &&
+          !sh.links.some(
+            h => ['www.fishbase.se', 'www.marinespecies.org'].includes(new URL(h).host) || new URL(h).pathname.startsWith('/taxa/')
+          ),
+        '2: its links: the paper and the field, no taxon page'
+      );
+    }
     await p.goto(base + '#seaslug');
     await p.waitForFunction(() => /Identify a sea slug/.test(document.querySelector('#view').innerText), null, {timeout: 15000});
     const home = await p.evaluate(() => document.querySelector('#view').innerText);
