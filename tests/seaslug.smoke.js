@@ -154,13 +154,20 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
       verdict: (document.querySelector('#view .fb h3') || {}).textContent || ''
     }));
     check(v.right, '2: the right answer did not close the question');
-    // After the answer: the photo's species, its first English name before it when a source gives one (Pierre, 2026-11-17)
-    const spName = (v.sp.match(/([A-Z][a-z]+ [a-z-]+)\s*$/) || [])[1],
-      spRec = F.species.find(s => s.name === spName);
-    check(
-      !!spRec && v.sp === `This photo: ${enFirst(spRec) ? enFirst(spRec) + ' · ' : ''}${spName}`,
-      `2: the species line is not its English name and its scientific name: "${v.sp}"`
-    );
+    // After the answer: the photo's species, its first English name before it when a source gives one (Pierre, 2026-11-17).
+    // The photo shown is found in the game file by its file name (R2: img/<f>-<size>.webp) or its iNaturalist address; a photo identified to
+    // the genus only (gl, Q389 (1): about 1 in 6 of the game's photos) has no species, so no line. A species with no name
+    // yet (Q389 (2), "Goniobranchus sp. 5") has its source after the name: the line starts with the name.
+    const GP = Object.values(JSON.parse(fs.readFileSync(path.join(ROOT, 'seaslug-game.json'), 'utf8')).photos).flat(),
+      shown = GP.find(r => new RegExp(`/${r.f}[-.]`).test(q.photo) || (r.src && q.photo.includes(r.src))),
+      spRec = shown && shown.sp ? F.species.find(s => s.id === shown.sp) : null;
+    check(!!shown, `2: the photo shown is not in seaslug-game.json: ${q.photo}`);
+    if (shown && !shown.sp) check(v.sp === '', `2: a species line on a photo identified to the genus only: "${v.sp}"`);
+    else
+      check(
+        !!spRec && v.sp.startsWith(`This photo: ${enFirst(spRec) ? enFirst(spRec) + ' · ' : ''}${spRec.name}`),
+        `2: the species line is not its English name and its scientific name (${spRec && spRec.name}): "${v.sp}"`
+      );
     check(
       !enFirst(G(q.a.t)) || v.verdict.includes(enFirst(G(q.a.t))),
       `2: the verdict does not give the genus's English name: "${v.verdict}"`
