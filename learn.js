@@ -1048,7 +1048,8 @@ const fishRoot = (g, at) =>
 // A genus's own presentation and ID marks (fish.json plain, marks, msrc, mby: tools/fish_genus_marks.json; Pierre,
 // 2026-11-08), on the sheet the genus opens, as its name roots (fishRoot): its page, the species sheet of a one-species
 // genus, the family sheet of a family's only genus. Each line with its sources' numbers, the sources listed below, never
-// as IMR's (rule C1: the IMR cues show in their own box).
+// as IMR's (rule C1: the IMR cues show in their own box); the content editor's edit of them with its own source (SUBJECTS
+// content marks, the sea slugs'; core.js contentApply esrc, contentPut keeping the numbers of a line kept).
 const genMarks = (g, at) => {
   if (!g || !(g.plain || (g.marks || []).length) || fishGo(g.id) !== at) return '';
   const S = g.msrc || [],
@@ -1061,9 +1062,9 @@ const genMarks = (g, at) => {
         .join('');
   return `<div class="fmarks gmarks">${g.plain ? `<p class="plainw">${esc(g.plain)}${n(by.plain)}</p>` : ''}${
     (g.marks || []).length
-      ? `<h3>ID marks of <i>${esc(g.name)}</i></h3><ul class="crit">${g.marks.map((x, i) => `<li>${esc(x)}${n((by.marks || [])[i])}</li>`).join('')}</ul>`
+      ? `<h3>ID marks of <i>${esc(g.name)}</i></h3><ul class="crit">${g.marks.map((x, i) => `<li>${esc(x)}${n((by.marks || [])[i])}</li>`).join('')}</ul>${esrcP(g, 'marks')}`
       : ''
-  }<p class="note msrc">Sources: ${S.map((x, i) => `[${i + 1}] <a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join('; ')} · ${repBtn({k: 'sheet', g: g.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`;
+  }<p class="note msrc">${S.length ? `Sources: ${S.map((x, i) => `[${i + 1}] <a href="${esc(safeUrl(x.u))}" target="_blank" rel="noopener">${esc(x.t)}</a>`).join('; ')} · ` : ''}${repBtn({k: 'sheet', g: g.id, m: 'marks'}, '⚑ Report or correct a line')}</p></div>`;
 };
 // The photos enlarge, the species filter redraws the page where it was.
 const fishBind = (flat, redraw) => {

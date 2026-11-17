@@ -5739,6 +5739,36 @@ What it says, on this learner:
   34.7 → 35.3, lecture RA progress at 300 27.8 → 25.5%. The CI seed's beginner went from 16 genera at question 100 (the
   limit) to 17, so the limit is 17 (one draw, not a faster opening: 30 learnsim seeds give 16.5 → 15.7).
 
+### The sea slugs' own pooled statistics (2026-11-17, sheet v167)
+
+Pierre, 2026-11-17: "Tu peux compléter tout ce qui manque pour les nudibranches?". Until then the sea slugs had no game
+photo pool on the sheet (`core.js` `SUBJECTS` `pool`), so the sheet pooled nothing of their answers and the app read the
+corals' statistics for them, which hold no sea slug photo or genus: every sea slug photo drew on its judged-ease prior,
+every genus offset was 0 and every pair kept its prior, so a **data look-alike** seeded from iNaturalist's
+identifications (`model.js` `dataSeed`, Q390 D: a genus pair across families no specialist source names) could never be
+dropped by the players' answers.
+
+- **Built**: the sea slugs get a pool (`seaslug.json`, `seaslug-game.json`, their part of `curation.json`; their genera the
+  units) and so their own fold on the sheet, by the same rules as the corals' and the fish's (`Code.gs` `stats_`,
+  `statsFold_`: trusted players only, the hierarchical photo Elo with a genus offset per genus, the pair counts `conf`,
+  photos checked against their pool); `?stats=1&s=seaslug` serves them, the reply naming its subject. The app reads them
+  (`SUBJECTS` `stats`, `sync.js` `loadOwnStats`, `model.js` `statsJoin`): `photoDiff` takes their photo ratings and genus
+  offsets, `pooledConf` (the traps, the progress's look-alike weight, `confTerm`) and `isDataLook` their pair counts, so a
+  seeded pair offered together often and seldom mixed up falls under `CONF.TRAP` and stops being a look-alike, as any
+  data look-alike (`CONF`, `confScore`). The photo memory and the format offsets stay the prior and none for them (`pmem`,
+  `pfmt`), as the sheet's replay of a subject other than the corals reads no pooled statistics: no change to how a sea
+  slug answer is replayed.
+- **Checks (rule L11, level 1: one subject, one input; the sea slugs have almost no answers yet)**: unit tests on the
+  in-memory sheet and the app's code (`tests/seaslugstats.test.js`: the pool is the game's genera; `?stats=1&s=seaslug`
+  rates their photos and counts their pairs, the corals' and the fish's replies the same with or without sea slug answers;
+  the app keeps a reply naming the sea slugs only, from the script that serves them; a seeded pair offered together 30
+  times and never mixed up is no longer a look-alike, the corals' numbers untouched), the sea slug smoke and the admin
+  smoke's Analyses part. No learning simulation: with no sea slug answers the pooled numbers are their priors, so the draw
+  is the one of before until answers come (Pierre, 2026-11-17, against a simulation of a subject with no data). To watch
+  once they come: the seeded pairs that drop (`dataLooks`), the genus offsets against the judged ease.
+- **The fish** keep their statistics on the sheet only (no `SUBJECTS` `stats`): reading them in the app is the admin
+  plan's PR 11 (ROADMAP), a change of their draw to check on their log (rule L12).
+
 ### Photo exposure (2026-11-06, Q187-Q190; fish too)
 
 Pierre's answers to the photo exposure study (docs/reviews/2026-11-06-photo-exposure-study.md, PR #670: 19% of the coral

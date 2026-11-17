@@ -132,12 +132,17 @@ test('a judgment changed refits the fish milestones (the report fingerprint read
   assert.notStrictEqual(moved.R[1000], r0.R[1000]);
 });
 
-test('the fish read their judged features: core.js SUBJECTS, tools/analyses.js and the admin page', () => {
-  const fish = C.subjectOf('fish');
-  assert.strictEqual(fish.analyses.photos, 'judged');
-  assert.ok(fish.admin.pages.includes('analyses/difficulty/photos'));
+test('the fish and the sea slugs read their judged features: core.js SUBJECTS, tools/analyses.js and the admin page', () => {
+  ['fish', 'seaslug'].forEach(id => {
+    const S = C.subjectOf(id);
+    assert.strictEqual(S.analyses.photos, 'judged', id);
+    assert.ok(S.admin.pages.includes('analyses/difficulty/photos'), id);
+  });
   const tool = fs.readFileSync(path.join(ROOT, 'tools/analyses.js'), 'utf8');
-  assert.match(tool, /k === 'judged'\s*\? \{ph: \{\}, fph: A\.photoMetaFish\(rd\('fish-game\.json'\)\)\}/);
+  // each from its own game file (SUBJECTS admin files gm), the tool and the admin's Recompute here alike
+  assert.match(tool, /k === 'judged'\s*\? \{ph: \{\}, fph: A\.photoMetaFish\(C\.fishGameRead\(rd\(S\.admin\.files\.gm\)\)\)\}/);
+  assert.match(fs.readFileSync(path.join(ROOT, 'admin-analyses.js'), 'utf8'), /fetch\(S\.admin\.files\.gm, /);
+  assert.strictEqual(C.subjectOf('fish').admin.files.gm, 'fish-game.json');
   // 15: the rank asked told apart (tests/analysis-ranks.test.js)
   assert.ok(A.AV >= 14);
 });
