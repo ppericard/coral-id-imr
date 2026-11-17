@@ -395,7 +395,10 @@ function renderFishCand() {
     SF = (SUG && SUG[TK]) || {},
     Q0 = fishQueue(FISHC.cand, SF, candSpecies(), F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
     chks = Q0.filter(x => x.chk),
-    Q1 = FQ === 'chk' ? chks : Q0,
+    // the queue switch (below) only where Checks can exist: elsewhere every candidate, whatever FQ another subject left
+    // (Codex review #1061: Checks chosen on the fish showed the sea slugs an empty queue with no switch)
+    aqOn = !!FISHS.admin.autosort || chks.length > 0,
+    Q1 = aqOn && FQ === 'chk' ? chks : Q0,
     shown = x => !FSKIP.has(x.p.f) && (FFULL || !x.full) && (FASIDE || !x.aside),
     nFull = Q1.filter(x => x.full).length,
     nAside = Q1.filter(x => x.aside).length,
@@ -403,16 +406,15 @@ function renderFishCand() {
     live = Q1.filter(shown),
     c = live.find(x => x.p.f === FPIN) || live[0],
     nx = live.find(x => x !== c);
-  const cnt = L => L.filter(shown).length,
-    aq = !!FISHS.admin.autosort || chks.length > 0;
+  const cnt = L => L.filter(shown).length;
   const seg =
     // the queue switch for a subject with an auto-sort (core.js SUBJECTS admin autosort: its Checks); else its count, a
     // chip beside the others
-    (aq
+    (aqOn
       ? `<span class="adm-qseg adm-csrc" role="group" aria-label="Queue"><button type="button" data-fq="all" aria-pressed="${FQ === 'all'}" title="Every candidate, the thinnest species first">All <b>${cnt(Q0)}</b></button><button type="button" data-fq="chk" aria-pressed="${FQ === 'chk'}" title="The auto-sort's Checks, blind">Checks <b>${cnt(chks)}</b></button></span>`
       : '') +
     candFlags(
-      `${aq ? '' : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} to sort</span>`}${
+      `${aqOn ? '' : `<span class="adm-chip" title="Every candidate, the thinnest species first">${cnt(Q0)} to sort</span>`}${
         nFull
           ? `<button type="button" class="adm-chip adm-cfull" data-ffull aria-pressed="${FFULL}" title="${nFull} candidate${nFull === 1 ? '' : 's'} of species at their target (${FISHS.admin.target > 0 ? `${FISHS.admin.target} observations` : `${FISHT.obs} observations, ${FISHT.top} for the cheatsheet's, ${FISHT.wink} for the surprise cards'`}): ${FFULL ? 'tap to hide them' : 'tap to show them'}">${nFull} at target</button>`
           : ''
