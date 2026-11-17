@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The plain sentence (Pierre, 2026-11-03: genus sheets clear for complete beginners): one everyday-words line per genus,
 // data.json `plain` (tools/apply_plain_sheets.py), shown by app.js plainLine on the genus sheet and the first card.
 const block = require('./block.js'); // the block of a browser file a test runs, its markers checked

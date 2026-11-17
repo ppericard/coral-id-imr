@@ -34,9 +34,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.15'
-      - name: Formatting (Prettier 3.9.10; .prettierrc.json, .prettierignore)
+      - name: Formatting (Prettier 3.10.1; .prettierrc.json, .prettierignore)
         run: |
-          npx --yes prettier@3.9.10 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
+          npx --yes prettier@3.10.1 --check "*.js" "*.css" "proto/*.js" "proto/*.css" "tests/*.js"
       - name: JS syntax
         run: |
           for f in *.js proto/*.js tests/*.js tools/*.js tools/og/*.js; do node --check "$f" || exit 1; done
@@ -56,6 +56,11 @@ jobs:
       - name: Python tools compile
         run: |
           python3 -m py_compile tools/*.py
+      # The fish held-out set is what tools/holdout.py writes from fish-game.json and fish.json (the photo workflow
+      # rewrites it with fish-game.json; a PR that changes either runs the tool).
+      - name: Fish held-out set up to date (tools/holdout.py --check)
+        run: |
+          python3 tools/holdout.py --check
       - name: Photo sizes (every photo in 1600, 960, 480 and 240 px, tools/photos.py)
         run: |
           python3 tools/photos.py --check

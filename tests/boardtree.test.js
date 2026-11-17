@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The leaderboard tree kept in chunks, sent only when it changed (Pierre, 2026-11-15, Q375: "ok";
 // docs/reviews/2026-11-14-species-step1.md (c) A): Code.gs boardTreePut_, boardTreeGet_, boardUnitsSave_'s bt, boardLog_;
 // sync.js TREE_SHEET, boardUnits, treesSeen. The sync script runs on an in-memory sheet (tests/gas.js, whose script
@@ -70,6 +71,27 @@ test('the sheet: a 30,000-character tree is kept in chunks under the 9 kB limit,
   same(save(s, {fish: ['f:Family0', 'f:Family1']}).bt, {fish: sumOf(small)});
   same(s.ctx.boardUnits_({id: 'fish'}), small);
   assert.deepStrictEqual(logRows(s), [], 'nothing logged');
+});
+
+// The species level's own tree (core.js fishScoreTree with the species on, one unit per species: s:s091): the sheet keeps
+// it, reads it back whole and ranks the board by treeScore over it, the species' common names counted.
+test('the sheet: the species level’s tree, on the real fish.json, is kept, read back and ranks the board', () => {
+  const s = loadCodeGs(),
+    F = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'fish.json'), 'utf8')),
+    T = C.fishScoreTree(C.fishGen(F, {}), F, true),
+    units = T.s.flatMap(e => e[3] || []);
+  assert.ok(units.length > 600 && units.every(u => /^s:s\d+$/.test(u)), units.length + ' species units');
+  const r = save(s, {fish: T});
+  assert.strictEqual(r.ok, true);
+  same(r.bt, {fish: sumOf(T)});
+  same(s.ctx.boardUnits_({id: 'fish'}), T, 'read back whole');
+  assert.deepStrictEqual(logRows(s), [], 'nothing refused');
+  // a player with a family learned and a species at Advanced: the board's % is My progress's, the species counted
+  const Q = {[T.f[0][0]]: {ok: 9, ko: 0, mx: 1}, [units[0]]: {ok: 9, ko: 0, mx: 1}, '~level': {ok: 220, ko: 30, th: 1}},
+    want = C.treeScore(Q, T, K).pct;
+  assert.ok(want > C.treeScore({[T.f[0][0]]: Q[T.f[0][0]]}, T, K).pct);
+  s.post({name: 'Bea', pin: '1234', data: fish(Q), summary: {board: 1, boards: {fish: T}}, answers: []});
+  assert.ok(s.get({board: '1', s: 'fish'}).rows.some(x => x[0] === 'Bea' && x[1] === want));
 });
 
 test('the sheet: a tree an older script kept as one JSON text is read as before, and a new tree replaces it', () => {

@@ -598,6 +598,10 @@ GitHub token allows today. It matters from roles step 1 on (step 6 of the plan).
 *Recommendation: B.* Each organisation then sees exactly who may change its content, and who did. For IMR it costs one
 grant. Until roles step 1 exists, the token stays the only gate (phase 0).
 
+*Decided (Pierre, 2026-11-15, Q364): B.* Rights are separate in theory; the platform admin may grant himself a role, and
+the grant is logged. Built in roles step 1: Pierre's account holds the platform admin, owner and content editor roles of
+the IMR instance, each given as a self-grant with its Audit row (docs/SECURITY.md "Roles and the Audit tab").
+
 **(k) Is the pilot's sign-in (a name and a 4-digit code, Q349) enough for an editor to publish through the relay?**
 *Access.* It gates only step 7 of the plan (the editors' relay). A content edit reaches every player of the instance.
 Today, five wrong codes lock a name for 10 minutes (docs/SECURITY.md), so trying every code takes days, not minutes.
@@ -608,6 +612,8 @@ Today, five wrong codes lock a name for 10 minutes (docs/SECURITY.md), so trying
 
 *Recommendation: A for the pilot, B before a second organisation.* The pilot's editors are a few people Pierre knows.
 Every edit can be undone and is traced, and B would hold the relay until step 5.
+
+*Decided (Pierre, 2026-11-15, Q365): A.* The pilot sign-in (a name and a 4-digit code) is enough for now.
 
 **Rule wordings to confirm** (no number: a rule's wording, its substance already decided):
 - **C2**, one line added: "An instance's content editor's own words, pairs and circles carry a source when they give

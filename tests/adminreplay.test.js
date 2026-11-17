@@ -1,4 +1,5 @@
 'use strict';
+require('./slot.js').testGuard();
 // admin.js statsFor (PR #808's salvage, Q335): the admin's full replay of a player (progOf) takes what the sheet's replay
 // takes (Code.gs replay_: mem, conf, fmt and the genus offsets gd), so the admin's replayed progress is the sheet's for
 // rows logged without a scoring record (the domain-score bar reads gd for them, core.js replayProgress).

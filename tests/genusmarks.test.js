@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish genera's own presentation and ID marks (Pierre, 2026-11-08: each genus needs a short presentation and its ID
 // cues, sourced, rules C2, C3, C6, before the genera open to more players): tools/fish_genus_marks.json, built into
 // fish.json genera plain, marks, msrc, mby by tools/build_fish.py add_families (genus_marks), shown on the genus card
@@ -106,7 +107,13 @@ test('a tip is short and seen on a photo; a species named is one of its own game
 });
 
 // fishGenera as app.js has it, on the real fish.json (as tests/scigenera.test.js loads it).
-const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+const ctx = {
+  DOM: {EX: 0.9},
+  easyCover: C.easyCover,
+  fishScoreTree: C.fishScoreTree,
+  fishSpUnits: C.fishSpUnits,
+  rankWeights: C.rankWeights
+};
 vm.createContext(ctx);
 vm.runInContext(
   [block(APP, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}), 'this.fishGenera = fishGenera;'].join('\n'),

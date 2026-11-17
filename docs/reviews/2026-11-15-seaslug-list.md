@@ -43,7 +43,8 @@ checked photo by photo (all 97 of circle 1 show the animal, none an egg mass, so
 ribbons are under the "Egg" annotations and in *H. sanguineus*'s photo supply (§5.1); egg ribbons and egg masses are
 excluded from the candidates (`photos.exclude`, Pierre, 2026-11-15); and the reference sources for facts and photos.
 
-**Circle 2's candidate photos**, fetched later the same day with circle 1's tool and rules: §7.
+**Circle 2's candidate photos**, fetched later the same day with circle 1's tool and rules: §7. **Circle 3's**, the
+same way, that evening: §8.
 
 ## 1. Method
 
@@ -588,6 +589,177 @@ nigrocincta*). 43 of the 60 are seen near Dauin.
 | 60 | *Samla riwo* | Nudibranchia | 102 | 20 | 0 | 1 | 19 | 0 |
 
 "Near Dauin" here is the candidate's own place (`loc: dauin`, within 40 km), not the species' "seen near Dauin" (§1.2).
+
+## 8. Circle 3: the candidate photos fetched (2026-11-15)
+
+Circle 3 is the 100 species after circle 2 by commonness (Q377; `circle: 3` in `tools/seaslugs.json`, common ranks 103
+to 203; rank 176, *Hexabranchus sanguineus*, is a circle-1 star). It was already marked: `tools/build_seaslugs.py`,
+`tools/seaslugs.json` and `tools/seaslug_source.json` are unchanged, so circles 1 and 2 and the 21 stars are too (their
+name lists compared with `origin/main`: deep-equal). *Janolus savinkini*, one of the 3 stars Pierre removed, is in it
+by its commonness (§4.1). Its candidate photos were fetched into `seaslug-cand.json` with
+`python3 tools/fetch_seaslugs.py --circle 3`, the tool and the rules of circles 1 and 2, unchanged (§7's list: 20
+candidates per species, one photo per observation, Research Grade at species level, never captive, CC0 / CC BY /
+CC BY-NC, the egg annotations dropped, the Philippines first, then the Indo-West Pacific box for a species still short).
+
+Nothing was judged, downloaded or uploaded. The 105 lists of circles 1 and 2 (2,105 candidates) are unchanged (compared
+with `origin/main`: deep-equal).
+
+**Result [measured]** (pulled 2026-11-15, 21:44-21:45 Manila; 40 requests through `tools/inat.py`, rule C7: the 100
+species asked together in 15 pages of 200 (3 batches), one `species_counts`, and 24 searches abroad, one per species
+still short; a rerun with `--offline` writes the same bytes):
+- **2,000 candidates, 20 for each of the 100 species.** **No species is short of the 20**, so none is below the start of
+  6. 1,873 are from the Philippines (180 of them within 40 km of Dauin) and 127 from abroad.
+- **The first circle to need photos from abroad**: 24 species have fewer than 20 usable observations in the Philippines,
+  and were filled from the Indo-West Pacific box. The fewest from the Philippines: *Trapania scurra* 7 (13 abroad),
+  *Hypselodoris katherinae* 9 (11), *Notodoris serenae* 12 (8). Every one has 6 or more from the Philippines alone.
+- Licences: 1,870 CC BY-NC, 92 CC BY, 38 CC0. 11 are Pierre's own, taken like anyone's (no priority, Research Grade only),
+  in 9 species.
+- Egg filter 1: 18 egg-annotated observations came back in the replies, in 9 species (*Thorunna halourga* 6, *Doto ussi*
+  and *Bulbaeolidia alba* 3 each, 1 each for 6 others); none was taken.
+- Life stage: 21 candidates are annotated Adult and 4 Juvenile (*Miamira miamirana* 2, *Cyerce nigra* 1, *Trapania
+  scurra* 1), taken in the normal places.
+- **No +5 juvenile places in circle 3.** `photoTarget.juvenile` still names only *Hexabranchus lacer*: no source has been
+  read for a different-looking juvenile of a circle-3 species. Leads for a later look, by their Juvenile annotations
+  (Research Grade, world / Philippines; `juv` in `tools/seaslugs.json`): *Ceratosoma trilobatum* 8 / 0, *Hypselodoris
+  zephyra* 7 / 0, *Pleurobranchus peronii* 7 / 0, *Aplysia argus* 6 / 0, *Stylocheilus striatus* 5 / 0, *Miamira
+  miamirana* 4 / 3, *Pleurobranchus grandis* 3 / 1, *Melibe viridis* 2 / 0, and 9 species with 1 each.
+- **The thinnest, on open licences only**: 36 species have no CC0 or CC BY candidate, and 71 of the 100 have fewer than
+  12 Research Grade observations with an open photo worldwide (`photos.worldOpen`); 7 have none (*Cyerce elegans*,
+  *Hypselodoris bollandi*, *Melibe digitata*, *Odontoglaja guamensis*, *Phyllidiopsis fissurata*, *Phyllodesmium
+  tuberculatum*, *Sclerodoris tuberculata*). This matters only for an open-licence product (§5.1).
+- The ceiling of 30 for very variable genera is not applied, as in circles 1 and 2 (2 *Chromodoris* and 2 *Phyllidia*
+  here).
+- **The weekly licence refresh** (`tools/licences.py`) asks every candidate's observation, 200 a request, pooled over all
+  its files: these 2,000 observations add about 10 requests a week.
+
+Groups: 78 nudibranchs, 8 sacoglossans, 6 headshield slugs, 5 sidegill slugs and 3 sea hares. 42 of the 100 are seen
+near Dauin.
+
+| # | Species | Group | Common rank | Candidates | Philippines / abroad | Near Dauin | CC0 / CC BY | CC BY-NC | Juvenile-annotated |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | *Melibe viridis* | Nudibranchia | 103 | 20 | 20 / 0 | 3 | 0 | 20 | 0 |
+| 2 | *Bornella anguilla* | Nudibranchia | 104 | 20 | 20 / 0 | 2 | 1 | 19 | 0 |
+| 3 | *Gymnodoris crocea* | Nudibranchia | 105 | 20 | 20 / 0 | 19 | 2 | 18 | 0 |
+| 4 | *Tubulophilinopsis gardineri* | Cephalaspidea | 106 | 20 | 20 / 0 | 6 | 0 | 20 | 0 |
+| 5 | *Cyerce nigra* | Sacoglossa | 107 | 20 | 20 / 0 | 0 | 1 | 19 | 1 |
+| 6 | *Phyllidiopsis fissurata* | Nudibranchia | 108 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 7 | *Hypselodoris reidi* | Nudibranchia | 109 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 8 | *Taringa halgerda* | Nudibranchia | 110 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 9 | *Thuridilla gracilis* | Sacoglossa | 111 | 20 | 20 / 0 | 3 | 1 | 19 | 0 |
+| 10 | *Ceratosoma trilobatum* | Nudibranchia | 112 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 11 | *Phyllodesmium colemani* | Nudibranchia | 113 | 20 | 20 / 0 | 3 | 1 | 19 | 0 |
+| 12 | *Thecacera pikachu* | Nudibranchia | 114 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 13 | *Plakobranchus ocellatus* | Sacoglossa | 115 | 20 | 20 / 0 | 2 | 1 | 19 | 0 |
+| 14 | *Doto ussi* | Nudibranchia | 116 | 20 | 20 / 0 | 0 | 2 | 18 | 0 |
+| 15 | *Tenellia bughaw* | Nudibranchia | 117 | 20 | 20 / 0 | 6 | 5 | 15 | 0 |
+| 16 | *Phyllodesmium tuberculatum* | Nudibranchia | 118 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 17 | *Tomoberthella martensi* | Pleurobranchida | 119 | 20 | 20 / 0 | 1 | 2 | 18 | 0 |
+| 18 | *Phyllodesmium poindimiei* | Nudibranchia | 120 | 20 | 20 / 0 | 3 | 2 | 18 | 0 |
+| 19 | *Hypselodoris infucata* | Nudibranchia | 121 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 20 | *Colpodaspis thompsoni* | Cephalaspidea | 122 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 21 | *Cabangus regius* | Nudibranchia | 123 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 22 | *Halgerda tessellata* | Nudibranchia | 124 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 23 | *Miamira miamirana* | Nudibranchia | 125 | 20 | 20 / 0 | 0 | 1 | 19 | 2 |
+| 24 | *Phyllodesmium opalescens* | Nudibranchia | 126 | 20 | 20 / 0 | 0 | 2 | 18 | 0 |
+| 25 | *Miamira sinuata* | Nudibranchia | 127 | 20 | 20 / 0 | 3 | 1 | 19 | 0 |
+| 26 | *Hypselodoris paradisa* | Nudibranchia | 128 | 20 | 20 / 0 | 0 | 2 | 18 | 0 |
+| 27 | *Halgerda willeyi* | Nudibranchia | 129 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 28 | *Aplysia argus* | Aplysiida | 130 | 20 | 20 / 0 | 5 | 0 | 20 | 0 |
+| 29 | *Tenellia nakapila* | Nudibranchia | 131 | 20 | 20 / 0 | 13 | 4 | 16 | 0 |
+| 30 | *Asteronotus cespitosus* | Nudibranchia | 132 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 31 | *Trapania vitta* | Nudibranchia | 133 | 20 | 20 / 0 | 2 | 2 | 18 | 0 |
+| 32 | *Cyerce blackburnae* | Sacoglossa | 134 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 33 | *Phyllidia exquisita* | Nudibranchia | 135 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 34 | *Elysia pusilla* | Sacoglossa | 136 | 20 | 20 / 0 | 4 | 2 | 18 | 0 |
+| 35 | *Tambja olivaria* | Nudibranchia | 137 | 20 | 20 / 0 | 1 | 2 | 18 | 0 |
+| 36 | *Hypselodoris maculosa* | Nudibranchia | 138 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 37 | *Mexichromis pusilla* | Nudibranchia | 139 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 38 | *Janolus savinkini* | Nudibranchia | 140 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 39 | *Janolus flavoanulatus* | Nudibranchia | 141 | 20 | 20 / 0 | 2 | 0 | 20 | 0 |
+| 40 | *Phyllidiella rudmani* | Nudibranchia | 142 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 41 | *Favorinus mirabilis* | Nudibranchia | 143 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 42 | *Cyerce katiae* | Sacoglossa | 144 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 43 | *Notodoris minor* | Nudibranchia | 145 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 44 | *Pleurobranchus grandis* | Pleurobranchida | 146 | 20 | 20 / 0 | 3 | 0 | 20 | 0 |
+| 45 | *Ardeadoris angustolutea* | Nudibranchia | 147 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 46 | *Ardeadoris averni* | Nudibranchia | 148 | 20 | 13 / 7 | 0 | 2 | 18 | 0 |
+| 47 | *Nembrotha livingstonei* | Nudibranchia | 149 | 20 | 20 / 0 | 3 | 2 | 18 | 0 |
+| 48 | *Goniobranchus albopunctatus* | Nudibranchia | 150 | 20 | 16 / 4 | 1 | 3 | 17 | 0 |
+| 49 | *Hypselodoris zephyra* | Nudibranchia | 151 | 20 | 20 / 0 | 6 | 2 | 18 | 0 |
+| 50 | *Melibe digitata* | Nudibranchia | 152 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 51 | *Verconia alboannulata* | Nudibranchia | 153 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 52 | *Baeolidia moebii* | Nudibranchia | 154 | 20 | 20 / 0 | 4 | 1 | 19 | 0 |
+| 53 | *Philinopsis speciosa* | Cephalaspidea | 155 | 20 | 20 / 0 | 1 | 2 | 18 | 0 |
+| 54 | *Sagaminopteron nigropunctatum* | Cephalaspidea | 156 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 55 | *Sclerodoris tuberculata* | Nudibranchia | 157 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 56 | *Coryphellina lotos* | Nudibranchia | 158 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 57 | *Murphydoris adusta* | Nudibranchia | 159 | 20 | 20 / 0 | 2 | 1 | 19 | 0 |
+| 58 | *Pleurobranchus weberi* | Pleurobranchida | 160 | 20 | 20 / 0 | 5 | 2 | 18 | 0 |
+| 59 | *Stylocheilus striatus* | Aplysiida | 161 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 60 | *Pleurobranchus peronii* | Pleurobranchida | 162 | 20 | 20 / 0 | 2 | 0 | 20 | 0 |
+| 61 | *Cratena simba* | Nudibranchia | 163 | 20 | 20 / 0 | 5 | 1 | 19 | 0 |
+| 62 | *Phyllodesmium pinnatum* | Nudibranchia | 164 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 63 | *Trapania palmula* | Nudibranchia | 165 | 20 | 20 / 0 | 5 | 0 | 20 | 0 |
+| 64 | *Euselenops luniceps* | Pleurobranchida | 166 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 65 | *Tenellia puti* | Nudibranchia | 167 | 20 | 17 / 3 | 2 | 2 | 18 | 0 |
+| 66 | *Hypselodoris skyleri* | Nudibranchia | 168 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 67 | *Dendrodoris tuberculosa* | Nudibranchia | 169 | 20 | 19 / 1 | 4 | 1 | 19 | 0 |
+| 68 | *Thorunna daniellae* | Nudibranchia | 170 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 69 | *Hypselodoris bollandi* | Nudibranchia | 171 | 20 | 16 / 4 | 0 | 0 | 20 | 0 |
+| 70 | *Phyllodesmium kabiranum* | Nudibranchia | 172 | 20 | 15 / 5 | 1 | 3 | 17 | 0 |
+| 71 | *Dermatobranchus funiculus* | Nudibranchia | 173 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 72 | *Mariaglaja tsurugensis* | Cephalaspidea | 174 | 20 | 13 / 7 | 3 | 2 | 18 | 0 |
+| 73 | *Dermatobranchus caeruleomaculatus* | Nudibranchia | 175 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 74 | *Marioniopsis arborescens* | Nudibranchia | 177 | 20 | 20 / 0 | 3 | 0 | 20 | 0 |
+| 75 | *Goniobranchus setoensis* | Nudibranchia | 178 | 20 | 20 / 0 | 1 | 1 | 19 | 0 |
+| 76 | *Trapania miltabrancha* | Nudibranchia | 179 | 20 | 19 / 1 | 9 | 4 | 16 | 0 |
+| 77 | *Goniobranchus fabulus* | Nudibranchia | 180 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 78 | *Tyrannodoris luteolineata* | Nudibranchia | 181 | 20 | 13 / 7 | 0 | 4 | 16 | 0 |
+| 79 | *Odontoglaja guamensis* | Cephalaspidea | 182 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 80 | *Favorinus japonicus* | Nudibranchia | 183 | 20 | 20 / 0 | 1 | 0 | 20 | 0 |
+| 81 | *Chromodoris michaeli* | Nudibranchia | 184 | 20 | 13 / 7 | 1 | 1 | 19 | 0 |
+| 82 | *Glossodoris hikuerensis* | Nudibranchia | 185 | 20 | 14 / 6 | 2 | 5 | 15 | 0 |
+| 83 | *Cyerce elegans* | Sacoglossa | 186 | 20 | 16 / 4 | 4 | 0 | 20 | 0 |
+| 84 | *Thorunna halourga* | Nudibranchia | 187 | 20 | 19 / 1 | 0 | 0 | 20 | 0 |
+| 85 | *Phyllidia polkadotsa* | Nudibranchia | 188 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 86 | *Notobryon wardi* | Nudibranchia | 189 | 20 | 13 / 7 | 8 | 4 | 16 | 0 |
+| 87 | *Notodoris serenae* | Nudibranchia | 190 | 20 | 12 / 8 | 2 | 6 | 14 | 0 |
+| 88 | *Thuridilla carlsoni* | Sacoglossa | 191 | 20 | 14 / 6 | 1 | 2 | 18 | 0 |
+| 89 | *Trapania scurra* | Nudibranchia | 192 | 20 | 7 / 13 | 1 | 5 | 15 | 1 |
+| 90 | *Verconia norba* | Nudibranchia | 193 | 20 | 17 / 3 | 2 | 1 | 19 | 0 |
+| 91 | *Chromodoris kalawakan* | Nudibranchia | 194 | 20 | 20 / 0 | 0 | 1 | 19 | 0 |
+| 92 | *Goniobranchus albonares* | Nudibranchia | 195 | 20 | 13 / 7 | 0 | 2 | 18 | 0 |
+| 93 | *Melibe engeli* | Nudibranchia | 196 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 94 | *Atagema intecta* | Nudibranchia | 197 | 20 | 15 / 5 | 1 | 4 | 16 | 0 |
+| 95 | *Hypselodoris violacea* | Nudibranchia | 198 | 20 | 16 / 4 | 0 | 2 | 18 | 0 |
+| 96 | *Bulbaeolidia alba* | Nudibranchia | 199 | 20 | 17 / 3 | 0 | 4 | 16 | 0 |
+| 97 | *Platydoris sanguinea* | Nudibranchia | 200 | 20 | 17 / 3 | 1 | 3 | 17 | 0 |
+| 98 | *Hypselodoris katherinae* | Nudibranchia | 201 | 20 | 9 / 11 | 0 | 7 | 13 | 0 |
+| 99 | *Pelagella longicornis* | Nudibranchia | 202 | 20 | 20 / 0 | 0 | 0 | 20 | 0 |
+| 100 | *Aplysia reticulata* | Aplysiida | 203 | 20 | 20 / 0 | 6 | 0 | 20 | 0 |
+
+"Near Dauin" here is the candidate's own place (`loc: dauin`, within 40 km), as in §7.
+
+## 9. Pierre's own photos: the fish's rule (2026-11-16)
+
+Pierre, 2026-11-16 (Q386): his own sea slug photos follow the fish's rule (rule P1's fish exception, rule S2). §7 and §8
+took his like anyone's, Research Grade only and with no priority; since then `tools/fetch_seaslugs.py` reads his
+observations with the fish's own function (`fetch_fish.usable_obs`): identified to the species they are usable even when
+Needs ID (`ni`), and they are taken first, so none is left out: on top of a list already full, up to the ceiling of 30.
+Never boosted: they wait for the judging pass on the rubric like any candidate.
+
+**Result [measured]** (pulled 2026-11-16, about 15:20 Manila; `python3 tools/fetch_seaslugs.py --own --circle 1 --circle 2
+--circle 3`, his search only: 8 requests through `tools/inat.py`, rule C7, 3 `species_counts` and 5 searches of up to 50
+species together; nothing else asked):
+- His search returned 174 observations of the 205 species with candidates, all identified at species level; 57 were
+  already candidates (Research Grade, taken like anyone's).
+- **116 added, 5 of them Needs ID** (one each: *Goniobranchus geometricus*, *Phyllidia elegans*, *Chromodoris strigata*,
+  *Phyllidiella pustulosa*, *Phyllidiopsis fissurata*). The other 111 are his Research Grade observations that the
+  variety order (the least represented observer first) had left out of full lists. 39 species gain at least one; the
+  most: *Nembrotha chamberlaini* and *Phyllidia coelestis* +10 each (both at the ceiling of 30; one usable observation of
+  his of *N. chamberlaini* stays out for want of room), *Chromodoris annae* and *Goniobranchus geometricus* +9,
+  *Phyllidia elegans* +7. 8 are from abroad inside the Indo-West Pacific; every one carries a licence.
+- None is judged yet: `python3 tools/judging_fish.py --subject seaslug todo` lists them for the next judging pass.
 
 ## Appendix A. The pages read (pulled 2026-11-15)
 

@@ -16,7 +16,8 @@
 //
 // The world of a seed (the same seed, the same world, so two versions of the app compare on it):
 // - each family's difficulty mu ~ N(0, FAM^2), + LOOK when it has declared look-alikes; each scientific genus's mu ~ its
-//   family's + N(0, SUB^2), + SIB when it has sibling genera;
+//   family's + N(0, SUB^2), + SIB when it has sibling genera; each species unit's (the species level, app.js fishGenera
+//   X.spl, by common name) the same way from its family, drawn after the photos so the worlds of before stay the same;
 // - each photo's own part eps (one per photo file): normal N(0, EPS^2); tail, the same with TAIL.SHARE of the photos
 //   TAIL.ADD harder; t3, a t with 3 degrees of freedom scaled to the same sd. A question on unit n with photo f has the
 //   true difficulty mu(n) + eps(f). Its judged ease (what the app reads as p.e) e = round(EASE.MID - (eps + N(0,
@@ -136,12 +137,15 @@ function unitsOf(subject) {
       slate: [...X.c1, ...X.c2, ...X.c3],
       extra: X.sci,
       setK: 'sci',
+      // the species units (app.js fishGenera X.spl), in play as the app has them with the species level on (sheetV 1000):
+      // a family's from its Advanced, one at a time in its order (app.js spPlay); the score's tree with them
+      sp: X.spl || [],
       rec: n => X.gen[n],
       views: n => ({wide: X.gen[n].views.wide || []}),
       core: X.c1,
       c3: X.c3,
-      tree: X.tree,
-      kind: n => (X.gen[n].rank === 'genus' ? 'genus' : 'family'),
+      tree: X.treeSp || X.tree,
+      kind: n => X.gen[n].rank || 'family',
       imrFormsOf: n => X.gen[n].forms || ['a']
     };
   }
@@ -153,6 +157,7 @@ function unitsOf(subject) {
     DATA: d,
     slate,
     extra,
+    sp: [],
     setK: 'bon',
     rec: GX,
     views: n => Object.fromEntries(VIEWN.map(v => [v, ((GX(n).sl || {})[v] ? GX(n).sl[v].game : GX(n).views[v]) || []])),
@@ -187,6 +192,8 @@ function world(U, seed, photos = 'normal', {coralSd = RATED.CORAL_GD} = {}) {
     eps[f] = e;
     ease[f] = Math.max(1, Math.min(5, Math.round(RATED.EASE.MID - (e + RATED.EASE.NOISE * normal(r)) / RATED.EASE.STEP)));
   });
+  // The species units after everything else (their photos are their family's), so a world without them is drawn as before.
+  (U.sp || []).forEach(n => (mu[n] = (mu[U.rec(n).parent] || 0) + RATED.SUB * normal(r) + ((U.rec(n).look || []).length ? RATED.SIB : 0)));
   return {mu, eps, ease, pi: piOf(seed)};
 }
 // The player's offset of a seed's world, on a stream of its own (so a test reads it for many seeds without their worlds).
@@ -195,12 +202,12 @@ const piOf = seed => RATED.PI * normal(gen((seed * 2246822519) ^ 0x3c6ef372));
 const unitsOfX = X => (X === fishUnits() ? unitsOf('fish') : X);
 
 // The model.js bindings the planner reads.
-const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
+const MODEL = ['PDIFF', 'holdEase', 'answersSoFar', 'introReady', 'INTRO', 'introHold', 'holdStep', 'openPace', 'openRight', 'introduced', 'mayOpen', 'openChance', 'shareRoom', 'openPick', 'introAdd', 'openRecent', 'asked', 'nextTarget', 'examReady', 'examTyped', 'typedP', 'distractors', 'trapsFor', 'plausibleK', 'examSet', 'photoSet', 'PICKD', 'famOf', 'confTerm', 'pgLook', 'startP', 'genusDiff', 'EXAM', 'TYPED', 'mxKept', 'genScore', 'LV_AT', 'progPct', 'startSet', 'imrSaid', 'introMap'];
 // model.js in a vm on the world's units, with the app's globals it reads (app.js) written here.
 function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
   if (!U.slate) U = unitsOfX(U);
   const subject = U.subject,
-    all = [...U.slate, ...U.extra],
+    all = [...U.slate, ...U.extra, ...(U.sp || [])],
     // Every unit's record with its game photos per view, each with the world's judged ease (p.e) where the subject has
     // one (the fish; no coral photo is judged).
     G = {};
@@ -227,6 +234,16 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
         units = U.extra.filter(n => !(imr() && G[n].imrg) && at(n, ctx.LV_AT[1]));
       return {auto, units};
     },
+    // The species units in play (app.js spPlay, the species level on): each family at Advanced brings its species met and
+    // the next one not met in its order (one with a photo).
+    spUnits = () => {
+      const by = new Map();
+      (U.sp || []).forEach(n => by.set(G[n].parent, [...(by.get(G[n].parent) || []), n]));
+      return [...by].flatMap(([p, L]) => {
+        const next = ctx.genScore(p) >= ctx.LV_AT[1] && L.find(n => !ctx.introduced(n) && has(n));
+        return [...L.filter(ctx.introduced), ...(next ? [next] : [])];
+      });
+    },
     gate = n => {
       const c = (G[n] || {}).circle || 1;
       if (c < 2) return true;
@@ -244,13 +261,16 @@ function engine(U, W, {app = 'truth', seed = 1, beyond = ''} = {}) {
     imrFormsOf: n => U.imrFormsOf(n),
     isCore: p => !!(SUBJ.tiers && (p.imr || p.own)),
     rankOf: n => (G[n] || {}).rank || '',
-    rankUnits: rk => U.extra.filter(n => (G[n].rank || '') === rk),
+    rankUnits: rk => [...U.extra, ...(U.sp || [])].filter(n => (G[n].rank || '') === rk),
     slateGenera: () => slate,
     UNITS: {[subject]: tree ? {core: () => U.core, slate: () => slate, tree: () => tree, gate, opens: []} : {slate: () => slate, opens: []}},
-    bonusList: () => [...new Set([...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto])],
+    bonusList: () => [...new Set([...(ctx.Q[U.setK] ? setUnits().units : []), ...setUnits().auto, ...spUnits()])],
     // app.js setLater (Q208 A): a fish scientific genus waits while a family in play is still to open (model.js openPick),
     // unless it is an auto unit (an IMR player's IMR genus) or the set was turned on by hand early (Q.sciH, Q240).
     setLater: n => subject === 'fish' && U.extra.includes(n) && !ctx.Q[U.setK + 'H'] && !setUnits().auto.includes(n),
+    // app.js shareFree (the rank share, Q382): the fish scientific genera an IMR player gets by themselves (Q219), every one
+    // once the set was turned on by hand early (Q240).
+    shareFree: () => (subject === 'fish' ? [...(ctx.Q[U.setK + 'H'] ? setUnits().units : []), ...setUnits().auto] : []),
     pool: () => [...slate, ...ctx.bonusList()].filter(has), // app.js pool: units with a photo to show
     openShut: n => U.c3.includes(n) && beyond !== 'yes' && !U.c3.some(u => u in ctx.introMap()),
     headScore,
@@ -348,6 +368,8 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     know = {};
   slate.forEach(n => (know[n] = knows.has(n) ? prof.hi : prof.lo));
   U.extra.forEach(n => (know[n] = LP.genKnown(prof, knows, G[n].parent, G[n].imrg) ? prof.hi : prof.lo));
+  // the species by common name: no profile knows them beyond its low start (the expert's is 0.93)
+  (U.sp || []).forEach(n => (know[n] = prof.lo));
   const teach = (n, x = 1) => n in know && (know[n] += Math.min(1, prof.rate * x) * (1 - know[n])),
     trueD = (n, p) => (W.mu[n] || 0) + (W.eps[p.f] || 0),
     pRec = (n, d, single = true) => sig(logit(know[n]) + pi - d - (single ? RATED.SINGLE : 0)),
@@ -355,7 +377,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       const L = judgePhotos(ctx, G, n);
       return L.length ? L.reduce((t, p) => t + pRec(n, trueD(n, p)), 0) / L.length : null;
     },
-    UA = [...slate, ...U.extra],
+    UA = [...slate, ...U.extra, ...(U.sp || [])],
     kindOf = U.kind,
     KINDS = [...new Set(UA.map(kindOf))],
     mean = A => (A.length ? A.reduce((a, x) => a + x, 0) / A.length : null);
@@ -374,7 +396,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     blk = {n: 0, ok: 0};
   // quiz.js introStart: the first cards, INTRO.START units of the slate (not a set's), easiest and most common first.
   const introStart = list => {
-    const sl = list.filter(n => !U.extra.includes(n)),
+    const sl = list.filter(n => !U.extra.includes(n) && !(U.sp || []).includes(n)),
       want = M.INTRO.START - sl.filter(M.introduced).length,
       L = [],
       met = n => M.introduced(n) || L.includes(n);
@@ -384,7 +406,18 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
   };
   const P = () => ctx.P,
     shown = () => (U.tree ? C.treeScore(ctx.P, U.tree, ctx.SUBJ.score).pct : M.progPct(slate));
+  // One answer with the false-alarm table armed (core.js faArm: the same values, read from one pass over the records
+  // instead of a scan per unit): within it only scoreAnswer writes the records' offers, mix-ups and typed counts.
   const step = i => {
+    const P0 = ctx.P;
+    C.faArm(P0);
+    try {
+      return play(i);
+    } finally {
+      C.faDisarm(P0);
+    }
+  };
+  const play = i => {
     const at = M.answersSoFar(),
       list = ctx.pool();
     // The opt-in set's offer (app.js UNITS sets): the fish scientific names once a family is at Advanced, accepted or
@@ -396,7 +429,7 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
     const start = cards.length > 0,
       met = list.filter(M.introReady);
     if (!start && met.length && !M.introHold() && M.openPace(at, []) && M.openRight(at)) {
-      const fresh = list.filter(n => !M.introduced(n) && M.mayOpen(n));
+      const fresh = list.filter(n => !M.introduced(n) && M.mayOpen(n) && M.shareRoom(n)); // the rank share (model.js SHARE)
       if (fresh.length && ctx.Math.random() < M.openChance(list)) cards = [M.openPick(fresh, list)];
     }
     if (cards.length) M.introAdd(cards, start);
@@ -442,7 +475,10 @@ function playerOf(U, W, {profile, seed, N, cps, app = 'truth', beyond = '', lear
       dt: 0,
       dom: true,
       mu: M.genusDiff(t),
-      ...(!ok && G[c] ? {muc: M.genusDiff(c)} : {})
+      ...(!ok && G[c] ? {muc: M.genusDiff(c)} : {}),
+      // a unit never answered starts from the unit its record names (a species: its family), as quiz.js answer passes it
+      ...(G[t].from ? {from: G[t].from} : {}),
+      ...(!ok && G[c] && G[c].from ? {cfrom: G[c].from} : {})
     });
     const res = C.scoreAnswer(P(), q);
     if (typeof res.e === 'number') M.holdStep(res.e, ok); // the opening hold (quiz.js answer)

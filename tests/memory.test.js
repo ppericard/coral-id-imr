@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo memory in the app (core.js pgMemW, pgMissW, MEM; docs/LEARNING.md "Photo memory"): the weights model.js and quiz.js
 // use, in core.js since 2026-11-03 so the full replay (core.js replayProgress) runs the same rules.
 const test = require('node:test');

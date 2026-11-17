@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish scientific genera (app.js fishGenera, sciOpen, UNITS fish sets sci; docs/FISH_PATH.md "Levels"): offered to
 // everyone once a family is at Advanced, a family's genera from its Advanced (Pierre, 2026-11-08, back from Q205's Open
 // Water); for a player at IMR, the genera the IMR course names alone come without the offer from their family's Open
@@ -17,7 +18,14 @@ const F = json('fish.json'),
   APP = src('app.js');
 
 // fishGenera and sciOpen as app.js has them, on the real fish.json; LV_AT as model.js has it.
-const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights}; // core.js, as the app has it (the card photo, Q270; the fish score's tree, #730)
+// core.js, as the app has it (the card photo, Q270; the fish score's tree, #730; the species units)
+const ctx = {
+  DOM: {EX: 0.9},
+  easyCover: C.easyCover,
+  fishScoreTree: C.fishScoreTree,
+  fishSpUnits: C.fishSpUnits,
+  rankWeights: C.rankWeights
+};
 vm.createContext(ctx);
 vm.runInContext(
   [
@@ -150,9 +158,11 @@ test('imrSaid: anyone who ever answered "I\u2019m at IMR" (Pierre, 2026-11-08, Q
 });
 
 test('the fish make no level-change proposal (Pierre, 2026-11-08); the corals keep theirs', () => {
-  const units = block(APP, 'const UNITS = {', '\n};\n', {file: 'app.js'});
-  assert.strictEqual((units.match(/startFb: false/g) || []).length, 1);
-  assert.ok(units.indexOf('startFb: false') > units.indexOf('  fish: {'), 'on the fish');
+  const units = block(APP, 'const UNITS = {', '\n};\n', {file: 'app.js'}),
+    fish = block(units, '\n  fish: {', '\n  },\n'),
+    coral = block(units, '\n  coral: {', '\n  },\n');
+  assert.ok(/startFb: false/.test(fish), 'on the fish');
+  assert.ok(!/startFb/.test(coral), 'never on the corals');
 });
 
 test('Q240: turned on by hand before Advanced, a family’s genera from its Open Water (Pierre, 2026-11-08)', () => {

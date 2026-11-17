@@ -392,6 +392,40 @@
         {3: 0}
       )
     ];
+    // A game report from every other subject with sheets at several ranks and files of its own (core.js SUBJECTS admin
+    // files; Codex review #987): its first game photo as its game file has it (a remote original stays remote), reported as
+    // a wrong answer on the unit showing it, from its quiz: its family, or its species' genus for a subject played at the
+    // genus (core.js unitRankOf: the sea slugs), read from its tree.
+    {
+      const FX = SUBJECTS.find(x => x.admin.cur && x.sheets),
+        more = SUBJECTS.filter(x => x !== FX && x.sheets && x.admin.files && x.admin.files.gm),
+        get = u =>
+          real(u, {cache: 'no-cache'})
+            .then(r => (r.ok ? r.json() : null))
+            .catch(() => null);
+      const got = await Promise.all(more.map(x => get(x.admin.files.gm))),
+        trees = await Promise.all(more.map(x => (unitRankOf(x) === 'genus' ? get(x.admin.files.f) : null)));
+      more.forEach((x, i) => {
+        const [t, L] = Object.entries((got[i] && got[i].photos) || {}).find(([, L]) => L && L.length && L[0].f) || [],
+          s = t && trees[i] && (trees[i].species || []).find(y => y.id === L[0].sp),
+          u = s && s.genus ? s.genus : t;
+        if (t)
+          reports.push(
+            rp(
+              12 + i,
+              'Ana Demo',
+              'wrong',
+              u,
+              '',
+              '',
+              `Demo report: not this ${x.one} (${x.id}).`,
+              'quiz',
+              L[0].f,
+              x.hash + 'practice/quiz'
+            )
+          );
+      });
+    }
     // Events (sheet v19): [id, time, device, kind, message, where, page, detail, app, browser], newest first.
     // One-tap prompts (core.js PULSEQ): the item in Where, the code in Message; Detail keeps r only for easy / ok / hard,
     // as the sheet does. Each prompt logs its showing, then an answer, "Not now" (skip), moving on (none) or nothing (the
@@ -883,7 +917,86 @@
         subject: FS.id
       });
     }
+    // Every other subject with sheets at several ranks and files of its own (core.js SUBJECTS admin files; its Analyses ›
+    // Difficulty › Heatmap) gets a few answers too, four choices on its first circle's units, half the time with one of
+    // the unit's look-alikes: Ana enough for her answers to count (core.js trustOf), Mara a few, not yet. Older than their
+    // other answers (a Journey opens on the subject they played last), with their own random numbers so the rest of the
+    // demo stays the same.
+    if (V >= 60 && FS) {
+      const more = SUBJECTS.filter(x => x !== FS && !x.replay && x.sheets && x.admin.files && x.admin.files.gm),
+        got = await Promise.all(
+          more.map(x =>
+            Promise.all(
+              [x.admin.files.f, x.admin.files.gm].map(u =>
+                real(u, {cache: 'no-cache'})
+                  .then(r => (r.ok ? r.json() : null))
+                  .catch(() => null)
+              )
+            )
+          )
+        );
+      more.forEach((x, i) => {
+        const [tree, gm] = got[i];
+        if (!tree || !gm) return;
+        let s = 23 + i;
+        const xr = () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648,
+          xp = a => a[Math.floor(xr() * a.length)],
+          XG = fishGen(tree, (fishGameRead(gm) || {}).photos, undefined, unitRankOf(x)).gen,
+          E = Object.keys(XG).filter(
+            id => XG[id].circle === 1 && !XG[id].wink && XG[id].views.wide.length && id.startsWith(x.sheets[unitRankOf(x)] || '')
+          );
+        if (E.length < 4) return;
+        [
+          ['Ana Demo', 0.8, 30, NOW - 10 * DAY],
+          ['Mara Demo', 0.45, 8, NOW - 9 * DAY]
+        ].forEach(([name, skill, n, t0]) => {
+          for (let j = 0; j < n; j++) {
+            const g = xp(E.slice(0, Math.min(E.length, 4 + Math.floor(j / 5)))),
+              L = (XG[g].look || []).filter(y => E.includes(y)),
+              ch = [g];
+            while (ch.length < 4) {
+              const y = L.length && xr() < 0.5 ? xp(L) : xp(E);
+              if (!ch.includes(y)) ch.push(y);
+            }
+            const right = xr() < skill,
+              ans = right ? g : xp(ch.slice(1));
+            frows.push([
+              name,
+              t0 + j * 30e3,
+              g,
+              ans,
+              right ? 1 : 0,
+              'quiz',
+              xp(XG[g].views.wide).f,
+              'demos' + frows.length,
+              0.6,
+              0,
+              0,
+              ch.join(' '),
+              4 + Math.round(xr() * 80) / 10,
+              0,
+              null,
+              null,
+              null,
+              null,
+              x.id
+            ]);
+          }
+        });
+      });
+    }
+    // The Alerts tab (Code.gs readAlerts_, admin.js ALERTS_SHEET): [time ms, text], newest first, made-up ids only; the
+    // last line is older than the page's 30 days, so it is left out.
+    const alerts = [
+      [NOW - 2 * 3600e3, 'limit reached: a:demoanon07 (600 per 6 h)'],
+      [NOW - 26 * 3600e3, 'limit reached: n:Dm0Ab3Xy (3000 per 6 h)'],
+      [NOW - 3 * DAY, 'photos not of the unit shown: Dm9Zq2Lk (4 of 10 answers)'],
+      [NOW - 5 * DAY, 'limit reached: newacct (40 per 6 h)'],
+      [NOW - 9 * DAY, 'left out of the statistics: device Dm1Wc8Rt signed in as Dm0Ab3Xy, left out too'],
+      [NOW - 40 * DAY, 'limit reached: anon (6000 per 6 h)']
+    ];
     S = {rows, frows, fana, after: [], users, reports, events, pages, removed: [], list, gen, slate: slateOf(D), pools: {}, excluded: []};
+    S.alerts = alerts;
     // v81 (Code.gs pools_): each subject's game photos per unit, from the real public files its SUBJECTS pool names.
     if (V >= 81)
       await Promise.all(
@@ -1370,6 +1483,8 @@
       if (p.readReports) return ok({ok: true, rows: S.reports.map(r => r.slice())});
       // pages: 1 (v30) reads the Pages tab; an older script ignores it and sends the other events.
       if (p.readEvents) return ok({ok: true, rows: (p.pages && V >= 30 ? S.pages : S.events).map(r => r.slice())});
+      // The Alerts tab (admin.js ALERTS_SHEET): an older script takes it for a progress write without a name ('input').
+      if (p.readAlerts) return ok(V >= ALERTS_SHEET ? {ok: true, rows: S.alerts.map(r => r.slice())} : {ok: false, error: 'input'});
       if (p.readAnswers) return ok(answers());
       if (p.readStats) return ok(stats());
       // The light read (admin.js LIVE_SHEET): an older script takes it for a progress write without a name ('input').
@@ -1411,11 +1526,13 @@
           ? p.pages
             ? 'pages'
             : 'events'
-          : p.readReports
-            ? 'reports'
-            : Object.keys(p)
-                .filter(k => k !== 'token')
-                .join(',');
+          : p.readAlerts
+            ? 'alerts'
+            : p.readReports
+              ? 'reports'
+              : Object.keys(p)
+                  .filter(k => k !== 'token')
+                  .join(',');
   };
   window.fetch = async (u, opts = {}) => {
     window.DEMO_PENDING++;

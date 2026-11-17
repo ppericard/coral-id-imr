@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // A Find the X's photo tapped in the log (Pierre, 2026-11-15, Q371: "ok pour A"): the Answers tab's last column, Photo
 // answered, holds the file stem of the photo the player tapped (quiz.js answer pa), so the species taken for another
 // family can be read from it (fish-game.json); checked as Photos; blank for any other answer and the rows logged

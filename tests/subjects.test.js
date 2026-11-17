@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The subject registry (core.js SUBJECTS, the taxon model: corals and fish on one engine) and the fish adapter
 // (fishGen, fishTypeNames) on the real fish.json and fish-photos.json; each subject's progress kept apart when two
 // accounts merge (mergeUsers).
@@ -12,7 +13,12 @@ const F = read('fish.json'),
 
 test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys unchanged for the corals', () => {
   const ids = C.SUBJECTS.map(s => s.id);
-  assert.deepStrictEqual(ids, ['coral', 'fish']);
+  assert.deepStrictEqual(ids, ['coral', 'fish', 'seaslug']);
+  // the sea slugs (study §9 step 5): a beta subject that opens to its group, on the sheet version that knows it (rule D4)
+  assert.ok(C.subjGroup(C.subjectOf('seaslug')) && C.subjectOf('seaslug').beta);
+  assert.ok(C.subjectOf('seaslug').sheet > C.STRUCT_SHEET);
+  assert.strictEqual(C.subjKey('seaslug', 'progress'), 'reefid-sync-seaslug-progress');
+  assert.strictEqual(C.subjDev('seaslug', 'comeback'), 'reefid-seaslug-comeback');
   assert.strictEqual(C.subjectOf('fish').id, 'fish');
   assert.strictEqual(C.subjectOf('nope'), C.SUBJECTS[0]); // an unknown choice falls back on the first subject
   // the report dialog's "Several …" reason in each subject's words (sync.js REP_WHY)
@@ -40,14 +46,20 @@ test('registry: one id per subject, keys reefid-sync-<id>-<name>, device keys un
   assert.strictEqual(new Set(C.SUBJECTS.flatMap(s => s.base)).size, 2 * C.SUBJECTS.length);
   assert.strictEqual(new Set(C.SUBJECTS.map(s => s.dev)).size, C.SUBJECTS.length);
   // A leaderboard per subject (Pierre, 2026-11-04: separate per subject, no merged ranking; sheet v95); achievements
-  // per subject too (Pierre, 2026-11-04), each its own list in the one record.
+  // per subject too (Pierre, 2026-11-04), each its own list in the one record. A subject still in its beta group may come
+  // without them, as the fish did before sheet v95 (the sea slugs, study §9 step 5); never one open to every player.
+  const all = C.SUBJECTS.filter(s => !C.subjGroup(s));
   assert.ok(
-    C.SUBJECTS.every(s => s.board === true),
-    'every subject has its leaderboard'
+    all.every(s => s.board === true),
+    'every subject open to all has its leaderboard'
   );
   assert.ok(
-    C.SUBJECTS.every(s => s.ach === true && typeof s.achs === 'function'),
-    'every subject has its achievements'
+    all.every(s => s.ach === true && typeof s.achs === 'function'),
+    'every subject open to all has its achievements'
+  );
+  assert.ok(
+    C.SUBJECTS.every(s => !s.ach || typeof s.achs === 'function'),
+    'achievements come with their list'
   );
   assert.strictEqual(C.SUBJECTS.filter(s => s.achFeats).length, 1, "one subject's answers keep the record's feats");
 });
@@ -602,7 +614,8 @@ test('answer log by subject: replay, rank, ansSubject, subjRows, subjEntries, lo
     C.SUBJECTS.map(S => [S.id, S.rank, S.replay]),
     [
       ['coral', 'genus', true],
-      ['fish', 'family', false]
+      ['fish', 'family', false],
+      ['seaslug', 'family', false]
     ]
   );
   assert.ok(

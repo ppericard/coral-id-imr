@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The app's addresses (URL refonte, Pierre 2026-11-05, Q53-Q56; docs/reviews/2026-11-05-url-scheme-study.md 3.2): every
 // page key and its address, both ways; the subject prefix; split before decoding; old and unknown addresses.
 // node --test tests/

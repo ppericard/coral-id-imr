@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The custom quiz's draw (model.js CUSTOM, customOf, customDraw, customChoices; docs/LEARNING.md "Custom quiz"):
 // model.js's own code (the wrong choices, distractors, and the custom quiz block) run in Node on a made-up slate of 12
 // genera, with core.js's confusion scores. Only selected genera are asked; the choices come from the selection first,

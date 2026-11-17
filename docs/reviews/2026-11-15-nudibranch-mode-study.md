@@ -570,10 +570,37 @@ Sizes are rough, for one agent **[guess]**.
    - A `SUBJECTS` entry (`open: 'group'`, beta), `UNITS` for family, genus and species, scientific names only.
    - A `core.js` change, so a `tools/sync/changes/` file (rule D3), and the sheet's replay where needed.
    - Smoke tests in the slot.
+   - **Built** (2026-11-15, PR "Sea slugs in the app"): `core.js` `SUBJECTS` `seaslug` ("Sea slugs", `open: 'group'`,
+     beta; its group managed on its admin Players page once the sheet script knows it, `SEASLUG_SHEET`), and `app.js`
+     `UNITS.seaslug`, read through the fish engine: `tools/seaslug_game.py` writes `seaslug.json` (circle 1 in
+     `fish.json`'s shape: 14 families, 24 genera, 45 species, scientific names only, no key, commonness over the
+     Philippines) and `seaslug-game.json` (the judged candidates that are sure, start 6, cap 12, +5 for *H. lacer*'s
+     juvenile form). Families are the game's units, genera the opt-in set as the fish's branch B; species have their
+     sheets but no game unit yet (the fish species level, #975, comes first). Not replayed by the sheet, no leaderboard,
+     no achievements. The photos are still read from iNaturalist (`r: 1`) until step 6. ARCHITECTURE.md "Subjects".
+   - **Changed** (2026-11-16, Pierre: the ID books and the experts work at the genus, "c'est au niveau des genres"): the
+     genera are the game's units from the start (`SUBJECTS` `unitRank: 'genus'`; 78 genera over circles 1 to 3), the
+     families structure only (the tree, the sheets), and the opt-in genus set is gone. §6.2's "family → genus → species"
+     mapping now starts at the genus. The Learn page shows the genus tiles directly, grouped by family, the families
+     under WoRMS's taxonomic groups (Nudibranchia · Doridina, Nudibranchia · Cladobranchia, then the other sea slugs by
+     order; Pierre, 2026-11-16, `tools/seaslug_groups.json`).
 6. **The R2 game photos**: about 1 day. `tools/fish_game.py` generalised (paths, prefixes) for a second photo subject.
+   - **Built, off until Pierre's go** (2026-11-16, PR "Sea slugs: R2 game photos (off), circles 2 and 3 in the game"):
+     `tools/seaslug_game.py --r2` downloads the sea-slug photos in play with the fish's pipeline (`tools/fish_game.py`
+     `download`: the four sizes, the judge's crop) into `r2-upload/` and lists them without `r`, the original kept as the
+     fallback; `--plan` says what a run would upload. The Candidate photos workflow runs it once its `SEASLUG_R2` is
+     `on`; until then the photos stay read from iNaturalist (`r: 1`). Circles 2 and 3 joined circle 1 in the game data in
+     the same PR (33 families, 205 species), opening at the fish's thresholds. ARCHITECTURE.md "Tools".
 7. **Tree and sheets**: about 1 day, then content as it comes.
    - The build writes the generic tree section; the admin's Tree shows the subject.
    - Family and genus sheets with sourced cues.
+   - **Built, partly** (2026-11-17, Pierre: "apporter cette information de nom commun quand elle existe", at the family,
+     genus and species level, nicknames too; still no common-name branch, (d)): the English common names and nicknames as
+     information, each with its sources (`tools/seaslug_names.py` → `tools/seaslug_names.json`, copied into
+     `seaslug.json` `en`): iNaturalist, WoRMS, English Wikipedia, Florent's Guide and SEASLUG.WORLD, and pages read by hand.
+     Shown under the scientific name on the sheets, on the Learn tiles, and in the quiz after the answer only; the choices
+     stay scientific names, and a typed English name is not a right answer (as a fish genus's common name). A name the
+     sources give two taxa is a point (`points.json`, rule C5). ARCHITECTURE.md "Subjects".
 8. **Look-alikes**: half a day, then as data comes.
    - The sourced sets of §6.3 as declared pairs.
    - Then the players' confusions once answers exist.

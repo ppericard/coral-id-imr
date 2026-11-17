@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The learning fixes of 2026-11-04 (docs/LEARNING.md "Opening pace", "Easier questions when a run goes wrong", "Known
 // mix-ups", "Look-alikes from the data", "The apology card"): model.js's and quiz.js's own code run in Node on stubs (the
 // player's record P, the cards, the store), core.js's pure rules directly.
@@ -228,6 +229,7 @@ test('the Duel tab: its photo eased by the opening hold, as every question of th
       GX: n => ({n}),
       photoSet: (...a) => (calls.push(a), {shown: [{f: 'x'}]}),
       duelPick: () => ['A', 'B'],
+      choiceNames: () => false, // model.js: whether one unit's label names the other (never here)
       pick: L => L[0],
       introduced: () => true,
       cover: () => null,

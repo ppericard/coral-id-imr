@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The curated common names of the fish species (Pierre, 2026-11-04: 1 to 3 per species, never more; published as
 // selected, Pierre, 2026-11-08, Q313; which name comes first, Pierre, 2026-11-15, Q376; docs/FISH_PATH.md "Common names"):
 // tools/fish_common.py selects them into tools/fish_common.json (every name with its sources), tools/build_fish.py writes

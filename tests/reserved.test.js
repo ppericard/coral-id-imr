@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Reserved account names (Pierre, 2026-11-09): a name holding a member name of Object.prototype (constructor, __proto__,
 // toString…) or prototype as one of its words is refused for a new account and an archive name, in the app's sign-in form
 // (sync.js, core.js reservedName) and by the sync script (Code.gs doPost_, users_ userArchive: error 'reserved'). An

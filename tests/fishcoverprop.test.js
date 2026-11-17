@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photo review › Cover proposals (admin-covers.js; Pierre, 2026-11-14 after Q339 (b), #864: "Si tu as mieux fait moi des
 // propositions"): where his ★ Cover of a family or a genus differs from the default cover rule's pick, the rule's photo is
 // proposed beside his; Accept sets it as his cover in the draft (one Undo step), Keep mine records the pair in fish.kept;

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Coral candidates (Pierre, 2026-11-05): no share-alike licences any more (aligned with the fish rules), the share-alike
 // photos already on the site left to him (admin To do › Share-alike, presence.js shareAlike / saQueue), and an observation
 // whose identification by the trusted expert `thamnasteroid` no other identification disagrees with, accepted in the Philippines tiers
@@ -204,7 +205,7 @@ test('the Candidate photos workflow starts from the latest main and tidies the l
   assert.match(job, /fetch-depth: 0\n\s+filter: blob:none/, 'the history, for --files');
   assert.match(
     job,
-    /git add data\.json cand\.json excluded\.json fish-game\.json fish-photos\.json fish-cand\.json tools\/fish_refs\.json seaslug-cand\.json img/
+    /git add data\.json cand\.json excluded\.json fish-game\.json fish-holdout\.json fish-photos\.json fish-cand\.json tools\/fish_refs\.json seaslug-cand\.json seaslug\.json seaslug-game\.json img/
   );
   // The licence refresh (tools/licences.py): weekly and by hand, never at a Publish; before tools/fish_game.py builds
   // fish-game.json from the sources it refreshed.

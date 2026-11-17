@@ -1,7 +1,8 @@
 # Fish naming path: design spec
 
-Status: design agreed with Pierre on 2026-11-03; the species level not built (its step 1, common names, waits on four
-questions: [docs/reviews/2026-11-14-species-step1.md](reviews/2026-11-14-species-step1.md)). Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
+Status: design agreed with Pierre on 2026-11-03; the species level's step 1, common names, built on 2026-11-15 (Q362,
+Q375, Q376, Q381; [docs/reviews/2026-11-14-species-step1.md](reviews/2026-11-14-species-step1.md); "Unlock rules" below),
+behind the sheet script that replays its units; scientific species names not built. Level 1 is built and open to every player (Q158, #650; since #656 the book's families, the IMR entries a tag), with the scientific genus step (#526, #702), the fish sheets (#675, #677, #684), the leaderboard and achievements (#693, #694) (docs/ARCHITECTURE.md
 "Subjects", docs/LEARNING.md "Fish on the same model"). This file says what comes next: species names, common then Latin, and the IMR
 shortcut (since 2026-11-04 the fish welcome question and the open-all card). It reuses the engine as it is (Elo per unit, progress, mastery levels and exam, opening, typed share); nothing here is a coded
 track: every unlock is a performance threshold or a share that rises with progress (docs/LEARNING.md "Considered and not adopted").
@@ -133,8 +134,8 @@ is the design's shorthand, and internal identifiers may keep it.
   with no name (Q247), 381 with 1, 252 with 2, 28 with 3; the IMR name is not the main name for 107 of the 367 IMR-named
   species (the study's count), 118 species with a regional name. `tools/fish_common.py`'s summary lists every main name that
   changed and every name newly listed, so a refetch that moves one is looked at before it ships.
-- **Where the player's first name shows** (`app.js` `cnFirst`, `imrNow`; the species level, which will ask them, is not built
-  yet): the species tiles and the one-species genus rows of the family and genus sheets, the species sheet's title (its
+- **Where the player's first name shows** (`app.js` `cnFirst`, `imrNow`): the species level's questions, their choices
+  and its cards (the species unit's label), the species tiles and the one-species genus rows of the family and genus sheets, the species sheet's title (its
   other listed names under More details, the IMR one marked), the "This photo: …" line under every fish verdict
   (`fishTaxon`), and a scientific genus's species line ("Most met here: …", read when shown). The admin keeps the IMR
   name (`common`).
@@ -143,14 +144,21 @@ is the design's shorthand, and internal identifiers may keep it.
   `typeMatchIn`), no other name the references give, no short form; a name two species list is right for the species
   asked, either of them (Q319, kept by Q381); the choices of a multiple-choice question never carry one label twice, nor
   the target's (`model.js` `choiceKey`, `choiceApart`, in `distractors` and `customChoices`: letters only, so Yellowtail and
-  Yellow-tail wrasse are one label; no unit of one rank shares a label in today's game, `tests/choicelabels.test.js`); the
+  Yellow-tail wrasse are one label; among the species units only the shared names do, `tests/choicelabels.test.js`), nor
+  any other listed name of the target (`model.js` `choiceKeys`, the species' `also`: outside IMR "Longnose
+  butterflyfish", *F. longirostris*'s main name, is never a wrong choice on a photo of *F. flavissimus*, which lists it; 5
+  such pairs outside IMR, 9 at IMR on 2026-11-15), an "Again" after a mix-up included: it asks only a unit the other
+  choice does not name, none when each names the other (`quiz.js` `planPhoto`, `model.js` `choiceNames`), and a duel
+  never pairs two units one label names (`quiz.js` `duelPick`, `planDuel`, 2026-11-17); the
   species sheet names the other species of a shared name under the name shown ("Also used for *Oxycheilinus
   bimaculatus*", linked to its sheet; "“Clown anemonefish” is also used for …" for another listed name: `app.js` `cnAlso`,
   `learn.js` `spAlso`); a kind word of the name index (razorfish) is known, the nudge. A family question reads them too (`core.js`
   `fishNameIndex`, role `sp`: "“Swallowtail puller” is one of the Damselfishes."). On a genus question, a listed or
-  regional name typed gets the "common name" nudge (Q237, `typeOther`). Still to build with the species level: the species'
-  one common-name unit in the score tree (`core.js` `fishScoreTree`, today `[]` for a species with a PDF name, `null`
-  without one, so the two `single` species read as nameless until then).
+  regional name typed gets the "common name" nudge (Q237, `typeOther`). On a species question (the species level, step 1)
+  every listed and regional name, with its spellings, is the species unit's (`UNITS` fish `names`, from `cnTypeNames`),
+  so any of them typed credits the one unit (Q376 (b)). The species' one common-name unit is in the score tree once the
+  species level is on (`core.js` `fishScoreTree` on: `['s:s091']`, `null` for a species with no listed name; off, as before:
+  `[]` for a species with a PDF name, `null` without one).
 - **Correcting a list**: no admin page or `curation.json` key for it yet (ROADMAP row "Fish common names").
 - **Later languages**: names as a per-language layer over the taxon-keyed progress (Q362; the study §7.2); not built.
 - **Genus common names** (`tools/fish_genus_names.json`, `fish.json` genera `common`, `csrc`): the IMR sub-entry's name,
@@ -240,13 +248,34 @@ The first fish questions must be easy and readable. Two decisions, each built in
   player already knows very well, exactly as scientific names come in species by species; there is no switch from families to species.
   When species questions, and then scientific-name questions, start being asked is the difficulty algorithm's job, following the player's
   progress.
-- They open **one at a time**, with the existing machinery: the `OPEN` share (new units only while few are shaky), a first-meeting card
-  (`INTRO`), the opening hold (`introHold`), never the answer of the question right after its card.
+- They open with the existing machinery: the `OPEN` share (new units only while few are shaky), a first-meeting card
+  (`INTRO`), the opening hold (`introHold`), never the answer of the question right after its card. **Not one at a time
+  but at the rank share** (Pierre, 2026-11-16, Q382: "je ne suis pas forcément d'accord pour qu'il y en ait une à la
+  fois ... une stratégie qui règle finalement la répartition des questions ... en fonction de la maîtrise justement des
+  niveaux précédents"): the units below the families (their species, and their scientific genera) take together a share
+  of the questions set by how many families are at Advanced, small at first, every question free once all are
+  (`model.js` `SHARE`; docs/LEARNING.md "The rank share"). The same mechanism is meant for the juveniles and colour phases
+  (Q384, #953): one more level, its own thresholds in the data.
 - Order inside an entry: **the most commonly met around Dauin first**, by the commonness index (`fish.json` species `cmi`; the entry's
   `species` list is in that order; "Species order: the commonness index" below). Until 2026-11-04 it was the PDF rank (`r`).
 - A species starts from its entry's ability (as `playerStart` starts a genus from the global level), so a strong player on Wrasse gets harder
   Wrasse species questions sooner.
 - Species of circles 2 and 3 follow the same rule once their family is open (every circle is on the path since Pierre, 2026-11-06, Q175).
+- **Built, step 1 by common name** (2026-11-15; docs/LEARNING.md "Fish: the species level, step 1"):
+  - **Units**: one per species with a listed name (`core.js` `fishSpUnits`, `s:s091`; `app.js` `fishGenera` builds the
+    records, rank `species`). The label is the player's first name (`cnFirst`), with the scientific name in small type
+    under each choice (schedule step 1).
+  - **Opening**: the set `sp` (`UNITS` fish `sets`, no offer, no switch). `app.js` `spPlay` gives a family at Advanced its
+    species met and the next one not met, in its order; how often one opens and is asked is the rank share's (2026-11-16,
+    Q382: `model.js` `SHARE`, `shareW`, `shareRoom`).
+  - **Start**: a species never answered starts from its family's ability (`core.js` `abilityOf` from, the replay too).
+  - **No exam yet** (`noex`): the bar tops out at 95%.
+  - **The milestone**: a line on the first species card ("Your first species name").
+  - **Achievements**: fsp1, fsp10, fsp50.
+  - **The gate**: on only once the sheet keeps the tree in chunks and replays the species units (`sync.js` `speciesOn`:
+    `TREE_SHEET` and `SPECIES_SHEET`; rule D4). Until then the species are not opened and the score's tree is the one of before.
+  - **Not built**: a wrong pick of another family's species counting against both families ("Questions and choices at
+    the species level"). Added later, it needs a fish rules version (`FISH_RVS`).
 
 ## Species order: the commonness index (Pierre, 2026-11-04)
 
@@ -411,7 +440,7 @@ Gaps before species questions ship:
 - **Duplicate common names**: "Twospot wrasse" is both *Halichoeres biocellatus* and *Oxycheilinus bimaculatus* (open question); also "Seagrass wrasse" (*Halichoeres papilionaceus*, *Novaculoides macrolepidotus*), Twotone / Two-tone wrasse (*H. prosopeion*, *Thalassoma amblycephalum*) and Blackstripe / Blackstriped cardinalfish (*Ostorhinchus nigrofasciatus*, *Cheilodipterus nigrotaeniatus*), each the PDF's or the Dauin source's name of both: settled, right for both species (Pierre, 2026-11-09, Q319); since Q381 (2026-11-15) any name two species carry stays on both, 11 in all ("Common names").
 - The three `check` names (likely PDF slips) to settle.
 - The curated common names per species (1 to 3, or none for a species no reference names: "Common names"): published in `fish.json` `cn` (Q313); the species questions use them through `app.js` `cnShow` and `cnTypeNames`; a shared name right for the species asked, never two choices of one label (Q381).
-- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design.
+- Fish answers are logged to the sheet from the first answer (Pierre, 2026-11-06; sheet v60 Subject, Rank, Taxon shown, Taxon answered, Species shown: ARCHITECTURE.md "Every subject's answers, at any rank"), but the app uses nothing computed from them yet: no pooled photo difficulty, memory offsets or confusion scores for fish in play (`SUBJECTS` `replay: false`). Since sheet v137 (Q123 j for the fish) the sheet folds them as the corals' (`?stats=1&s=fish`, ARCHITECTURE.md "Progress sync": the corals' rules at the rank each question asked); the app reading them, and the confusion views below, wait for their own design. The admin reads them already (Q123 m, 2026-11-16): Analyses › Difficulty › Heatmap on the Fish side is view 1 below (family to family, every family of the game in its key group's block) and the genus questions' matrix (genera in their family's block), live from the log (ARCHITECTURE.md "Heatmap").
 
 ## Fish photos and the admin (Pierre, 2026-11-04)
 
@@ -633,9 +662,10 @@ on families only to an IMR RA with every species open:
     scientific genera), their timing simulated (docs/LEARNING.md "Fish achievements, simulated"); species named and Fish basics
     come with those features;
   - **redesigned around the global score** (2026-11-08, Pierre's Q259-Q264; the full list, its names and timings in docs/LEARNING.md
-    "Fish achievements, around the global score"): 33, of which 24 are built (the score every 10 points to 60%, fpct25
-    retired; families; scientific genera at Open Water and at Advanced; the circles at Advanced) and 9 wait for the species
-    level or Fish basics. **At the species level**: fsp1, fsp10, fsp50 (species named by a common name, at Advanced),
+    "Fish achievements, around the global score"): 33, of which 27 are built (the score every 10 points to 60%, fpct25
+    retired; families; scientific genera at Open Water and at Advanced; the circles at Advanced; since the species level's
+    step 1, fsp1, fsp10 and fsp50) and 6 wait for the scientific species names or Fish basics. **At the species level**:
+    fsp1, fsp10, fsp50 (species named by a common name, at Advanced; built),
     fspsci1 (a first species named in Latin: its scientific name's bar at Advanced, Q262), fboth25 (25 species with both
     names at Advanced), fdauin20 ("Dauin's top 20": the 20 circle-1 species most seen near Dauin, Q261: circle 1 only for
     now, another top with circle 3 later), fpct70 and fpct100 ("Fish god": every name of every species), and Pierre's

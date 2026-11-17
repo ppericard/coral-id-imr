@@ -1,0 +1,58 @@
+{
+ "_doc": "The inputs of tools/seaslug_lit.py (the sea-slug literature watch; docs/reviews/2026-11-17-seaslug-literature-scan.md). Hand-kept: the tool reads this file and never writes it. since: the first year of the authorities counted as new (the 2nd edition of the regional guide, Gosliner, Valdes & Behrens, is 2018; Pierre, 2026-11-17: the guide is dated and not used). ignoreSources: WoRMS sources left out of the 'revised' list (the start of the reference, and why). extraGenera: genera outside tools/seaslugs.json that are watched too, each with why. labels: the informal 'sp. N' labels with 4 or more unhedged observers in the Philippines (docs/reviews/2026-11-17-seaslug-undescribed-species-study.md, Appendix A), as observers write them, with those observers; a label with no `named` entry stays in the tool's 'unnamed' list. named: an informal label (NSSI2 = Gosliner, Valdes & Behrens 2018) or an old broad name that a paper now names: the name, the paper (rule C2) and how the link is known (the note's labels: [read] a page, [measured] counted on iNaturalist); the tool checks the name in WoRMS and its presence (rule C8).",
+ "since": 2018,
+ "ignoreSources": [
+  {"ref": "Gosliner, T. et al. (2023). Southern African Sea Slugs.", "why": "A regional field guide (South Africa) that WoRMS lists as an additional source on most of our species: not a revision."}
+ ],
+ "extraGenera": {
+  "Eubranchus": "Three informal labels with 4 or more observers (sp. 10, 23, 28); no species confirmed in the Philippines yet (undescribed study, Appendix A).",
+  "Aldisa": "Aldisa sp. 9, 4 observers (undescribed study, Appendix A).",
+  "Facelina": "Facelina sp. 9, 4 observers (undescribed study, Appendix A)."
+ },
+ "labels": [
+  {"label": "Goniobranchus sp. 5", "observers": 180},
+  {"label": "Stiliger sp. 1", "observers": 9},
+  {"label": "Goniobranchus sp. 42", "observers": 8},
+  {"label": "Thordisa sp. 11", "observers": 7},
+  {"label": "Aegires sp. 6", "observers": 7},
+  {"label": "Eubranchus sp. 23", "observers": 7},
+  {"label": "Cratena sp. 2", "observers": 7},
+  {"label": "Aegires sp. 7", "observers": 6},
+  {"label": "Verconia sp. 5", "observers": 5},
+  {"label": "Stiliger sp. 5", "observers": 5},
+  {"label": "Aegires sp. 8", "observers": 5},
+  {"label": "Eubranchus sp. 28", "observers": 5},
+  {"label": "Tenellia sp. 6", "observers": 4},
+  {"label": "Marionia sp. 6", "observers": 4},
+  {"label": "Ceratosoma sp. 1", "observers": 4},
+  {"label": "Polycera sp. 3", "observers": 4},
+  {"label": "Caloria sp. 4", "observers": 4},
+  {"label": "Paradoris sp. 10", "observers": 4},
+  {"label": "Marionia sp. 13", "observers": 4},
+  {"label": "Stiliger sp. 9", "observers": 4},
+  {"label": "Doto sp. 6", "observers": 4},
+  {"label": "Favorinus sp. 2", "observers": 4},
+  {"label": "Goniobranchus sp. 32", "observers": 4},
+  {"label": "Elysia sp. 37", "observers": 4},
+  {"label": "Aldisa sp. 9", "observers": 4},
+  {"label": "Tenellia sp. 18", "observers": 4},
+  {"label": "Facelina sp. 9", "observers": 4},
+  {"label": "Stiliger sp. 6", "observers": 4},
+  {"label": "Thuridilla sp. 6", "observers": 4},
+  {"label": "Doto sp. 1", "observers": 4},
+  {"label": "Eubranchus sp. 10", "observers": 4}
+ ],
+ "named": [
+  {"label": "Thecacera sp. 8 (NSSI2)", "name": "Thecacera pikachu", "paper": "Pola M., Paz-Sedano S., Martin P.G., Warren L., Noble K. & Martin-Hervas M.D.R. (2026). Zootaxa 5793(1): 193-217. doi:10.11646/zootaxa.5793.1.9", "how": "[read] seaslug.world's species page cites 'Thecacera sp.8' (NSSI2) in its references; [measured] the 8 iNaturalist observations whose description says 'Thecacera sp. 8' are all identified T. pikachu now"},
+  {"label": "Thecacera pacifica ('Pikachu nudibranch')", "name": "Thecacera pikachu", "paper": "Pola et al. (2026), as above", "how": "[read] the 2026 name; seaslug.world: 'internationally this species was the one known by the Pikachu nickname'; English Wikipedia's 'Pikachu nudibranch' still redirects to Thecacera pacifica (2026-11-17): a discrepancy (rule C5)"},
+  {"label": "Tenellia sp. 20 (NSSI2)", "name": "Tenellia nakapila", "paper": "Kim A.Y., Donohoo S.A. & Gosliner T.M. (2024). PeerJ 12: e18517. doi:10.7717/peerj.18517", "how": "[measured] 8 of the 9 iNaturalist observations whose description says 'Tenellia sp. 20' are identified T. nakapila; an identifier's remark (undescribed study, 3.3)"},
+  {"label": "Phyllidia sp. 10 (NSSI2; sp. 9 in the 2015 guide)", "name": "Phyllidia ovata", "paper": "Wagele H., Raubold L.M., Papu A., Undap N. & Yonow N. (2025). ZooKeys 1245: 1-18. doi:10.3897/zookeys.1245.153046", "how": "[read] the paper's synonymy: 'sp. 10: Gosliner et al. 2018: 217'; its distribution cites a Dauin photo"},
+  {"label": "Phyllidia picta / P. coelestis (some photos)", "name": "Phyllidia ovata", "paper": "Wagele et al. (2025), as above", "how": "[read] the paper: 'several images were located in files of P. picta ... and P. coelestis in both iNaturalist and NudiPixel'"},
+  {"label": "Goniobranchus sp. 43 (NSSI2)", "name": "Chromodoris kalawakan", "paper": "Bonomo L.J. & Gosliner T.M. (2020). Zootaxa 4819(3): 401-435. doi:10.11646/zootaxa.4819.3.1", "how": "[read] Plazi treatment: 'Goniobranchus sp. 43 - Gosliner et al 2018: 160'"},
+  {"label": "Chromodoris sp. 11 (NSSI2)", "name": "Chromodoris quagga", "paper": "Bonomo & Gosliner (2020), as above", "how": "[read] Plazi treatment: 'sp. 11 - Gosliner et al. 2018: 139'; type locality Tingloy, Batangas"},
+  {"label": "Chromodoris sp. 12 (NSSI2)", "name": "Chromodoris balat", "paper": "Bonomo & Gosliner (2020), as above", "how": "[read] Plazi treatment: 'sp. 12 - Gosliner et al. 2018: 140'; misidentified as C. striatella in the 2008 and 2015 guides"},
+  {"label": "Glossodoris sp. 1 (2008 guide) / Doriprismatica sp. 1 (2015)", "name": "Doriprismatica balut", "paper": "Matsuda S.B. & Gosliner T.M. (2018). Zootaxa 4444(5): 501-529. doi:10.11646/zootaxa.4444.5.1", "how": "[read] Plazi treatment (undescribed study, 3.2)"},
+  {"label": "Nembrotha sp. 5 (NSSI2)", "name": "Nembrotha lorosae", "paper": "Pola et al. (2026), as above", "how": "[read] seaslug.world's species page cites 'Nembrotha sp.5' (Gosliner et al., 2018) in its references (the paper's full text not read)"},
+  {"label": "Nembrotha aurea / N. purpureolineata (some photos)", "name": "Nembrotha lorosae", "paper": "Pola et al. (2026), as above", "how": "[read] seaslug.world: 'Many records previously attributed to Nembrotha purpureolineata or N. aurea are referable to this species' (the paper's full text not read)"}
+ ]
+}

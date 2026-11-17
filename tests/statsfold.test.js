@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The pooled stats built incrementally (sheet v134; Q123 j, Pierre 2026-11-14): the trigger's fold (Code.gs statsFold_)
 // serves exactly what the whole log gives (stats_), run after run, at any number of rows a run, through every rebuild.
 // Against the in-memory sheet of tests/gas.js only: nothing leaves this process (rule D1).
@@ -32,7 +33,7 @@ const POOL = {
 };
 const UP = {s091: 'f:Damselfishes', s088: 'f:Damselfishes', s244: 'f:Wrasses'};
 const pools = (s, P = POOL) =>
-  Object.entries(P).forEach(([k, v]) => (s.cache['pool2' + k] = JSON.stringify({p: v, u: k === 'fish' ? UP : {}})));
+  Object.entries(P).forEach(([k, v]) => (s.cache['pool3' + k] = JSON.stringify({p: v, u: k === 'fish' ? UP : {}})));
 const G = ['Acropora', 'Porites', 'Favia'];
 // The fish: questions at the family rank, and some at the species rank; each unit's photos.
 const FAM = ['f:Damselfishes', 'f:Butterflyfishes', 'f:Wrasses'],

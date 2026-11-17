@@ -17,7 +17,7 @@
    "keep": "dup"
   },
   "fish-s370-cand-367189847": {
-   "code": "p1g1sl1c2",
+   "code": "p1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-367191288": {
@@ -69,7 +69,7 @@
    "keep": "alt"
   },
   "fish-s370-cand-313814487": {
-   "code": "o1g1sl1c2",
+   "code": "o1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-313815438": {
@@ -77,7 +77,7 @@
    "keep": "dup"
   },
   "fish-s370-cand-54427457": {
-   "code": "o1g1sl1c2",
+   "code": "o1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-751842045": {
@@ -89,7 +89,7 @@
    "keep": "best"
   },
   "fish-s370-cand-310978054": {
-   "code": "h1g1sl1c2",
+   "code": "h1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-52063979": {
@@ -97,7 +97,7 @@
    "keep": "best"
   },
   "fish-s370-cand-311310745": {
-   "code": "o1g1sl1c2",
+   "code": "o1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-311309428": {
@@ -105,7 +105,7 @@
    "keep": "dup"
   },
   "fish-s370-cand-56379011": {
-   "code": "h1g1sl1c2",
+   "code": "h1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-56379017": {
@@ -113,7 +113,7 @@
    "keep": "dup"
   },
   "fish-s370-cand-280059317": {
-   "code": "o1g1sl1c2",
+   "code": "o1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-52076068": {
@@ -121,15 +121,15 @@
    "keep": "best"
   },
   "fish-s370-cand-90547802": {
-   "code": "o1g1sl1c2",
+   "code": "o1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-92536857": {
-   "code": "h1g1sl1c2",
+   "code": "h1g1sl1cw2",
    "keep": "best"
   },
   "fish-s370-cand-92536371": {
-   "code": "h1g0sl13",
+   "code": "h1g0sl1w3",
    "keep": "alt"
   },
   "fish-s370-cand-92536515": {
@@ -141,11 +141,11 @@
    "keep": "best"
   },
   "fish-s370-cand-54427407": {
-   "code": "h1g0sl13",
+   "code": "h1g0sl1w3",
    "keep": "alt"
   },
   "fish-s370-cand-54427414": {
-   "code": "o1g0sl13",
+   "code": "o1g0sl1w3",
    "keep": "best"
   },
   "fish-s370-cand-115721921": {
@@ -173,7 +173,7 @@
    "keep": "alt"
   },
   "fish-s370-cand-686401385": {
-   "code": "o1g0sl13",
+   "code": "o1g0sl1w3",
    "keep": "alt"
   },
   "fish-s370-cand-686401388": {

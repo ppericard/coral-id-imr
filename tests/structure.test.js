@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The sheet overlay's step 3 (docs/reviews/2026-11-14-sheet-overlay-design.md v2; Pierre, 2026-11-15, Q359, Q363 h A,
 // Q366): the content editor's circles and look-alike pairs in the apply (core.js structApply, fishStructure), the
 // structure stamp (structStamp), the sheet's replay under the structure in force (Code.gs subjRpl_, replay_, replays_,
@@ -104,7 +105,13 @@ test('in no circle: the family and its genera left out, its species out, look-al
   const G = C.fishReplayGen(A);
   assert.ok(!G['f:Angelfishes'] && !G['f:Butterflyfishes'].look.includes('f:Angelfishes'));
   assert.ok(!C.fishNameIndex(A, {}).some(e => e.g === 'f:Angelfishes'));
-  const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+  const ctx = {
+    DOM: {EX: 0.9},
+    easyCover: C.easyCover,
+    fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
+    rankWeights: C.rankWeights
+  };
   vm.createContext(ctx);
   vm.runInContext(
     block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
@@ -508,7 +515,13 @@ test('rule D8: the trigger replays under the new structure a player who never re
 // ---- The leaderboard's score tree under the structure (design note v2, step 4; Codex review #977) ----
 
 test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and without a structure edit", () => {
-  const ctx = {DOM: {EX: 0.9}, easyCover: C.easyCover, fishScoreTree: C.fishScoreTree, rankWeights: C.rankWeights};
+  const ctx = {
+    DOM: {EX: 0.9},
+    easyCover: C.easyCover,
+    fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
+    rankWeights: C.rankWeights
+  };
   vm.createContext(ctx);
   vm.runInContext(
     block(src('app.js'), 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) + '\nthis.fishGenera = fishGenera;',
@@ -516,7 +529,8 @@ test("fishBoardTree is the app's own score tree (app.js UNITS tree), with and wi
   );
   [CUR, cur(MOVES), PAIRS].forEach(c => {
     const A = C.contentApply(S, F, c);
-    assert.deepStrictEqual(C.fishBoardTree(A), ctx.fishGenera(C.fishGen(A, {}), A).tree);
+    // the species level's tree (app.js treeSp): the sheet that holds this code replays the species units
+    assert.deepStrictEqual(C.fishBoardTree(A), ctx.fishGenera(C.fishGen(A, {}), A).treeSp);
   });
   // the subject's own declaration, which the sheet reads (no subject named there: rule S1)
   assert.deepStrictEqual(S.replayed.tree(F), C.fishBoardTree(F));
@@ -564,7 +578,7 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   assert.strictEqual(board(), p0);
   // The sheet's tree not cached (evicted): the apps' tree, as before; made again at the next read.
   Object.keys(s.cache)
-    .filter(k => k.startsWith('stree1:'))
+    .filter(k => k.startsWith('stree2:'))
     .forEach(k => delete s.cache[k]);
   save(T1);
   assert.strictEqual(board(), p1, 'the tree the app sent last');
@@ -575,10 +589,44 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   // A tree the sheet could not make or refused is kept as 0: no tree of its own (the apps'), and fish.json is not read
   // again at every call for it.
   Object.keys(s.cache)
-    .filter(k => k.startsWith('stree1:'))
+    .filter(k => k.startsWith('stree2:'))
     .forEach(k => (s.cache[k] = '0'));
   s.ctx.subjStRefresh_();
   s.ctx.subjStRefresh_();
   assert.strictEqual(m.n.fish, n1 + 1);
   assert.strictEqual(board(), p1, 'the tree the app sent last');
+});
+
+// Codex review #975 (P1): with the species units the replay's units are over the script cache's 100 KB a value, so they
+// are kept in parts (Code.gs cacheBigPut_), read back whole, and the public board reads the stamp from them (subjStKept_,
+// never a fetch): before, the put threw unseen, every call made them again and the board never saw a Publish's stamp.
+test('the sheet: the replay units over one cache value are kept in parts; the stamp is read from the cache alone', () => {
+  const m = mainFiles(),
+    s = loadCodeGs({fetch: m.fetch, cacheMax: 100 * 1024}),
+    st1 = C.structStamp(S, F, PAIRS),
+    gen1 = C.fishReplayGen(C.contentApply(S, F, PAIRS)),
+    key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen3:fish:') && !k.includes('#'));
+  assert.ok(JSON.stringify({gen: gen1, st: st1}).length > 100 * 1024, 'over one cache value');
+  assert.strictEqual(s.ctx.subjStKept_('fish'), null, 'nothing cached yet: no stamp, nothing fetched');
+  assert.strictEqual(m.n.fish, 0);
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(key().length, 1);
+  assert.match(String(s.cache[key()[0]]), /^#\d+$/, 'kept in parts');
+  assert.strictEqual(s.ctx.subjStKept_('fish'), '', "the base's structure: the empty stamp, read");
+  // A structure Publish, read by the 15-minute trigger: the board reads its stamp.
+  m.cur = PAIRS;
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(s.ctx.subjStKept_('fish'), st1);
+  // Read back whole from the cache: fish.json not read again.
+  const n1 = m.n.fish,
+    x = s.ctx.subjRpl_('fish');
+  assert.strictEqual(m.n.fish, n1, 'from the cache');
+  assert.strictEqual(JSON.stringify(x), JSON.stringify({gen: gen1, st: st1}));
+  // A part gone: read as missing (never a part for the whole), made again at the next call.
+  const k = key().find(k => k.endsWith(':' + C.structFp(S, PAIRS)));
+  delete s.cache[k + '#1'];
+  assert.strictEqual(s.ctx.subjStKept_('fish'), null);
+  assert.strictEqual(s.ctx.subjRpl_('fish').st, st1);
+  assert.strictEqual(m.n.fish, n1 + 1);
+  assert.strictEqual(s.ctx.subjStKept_('fish'), st1);
 });

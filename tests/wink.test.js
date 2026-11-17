@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish surprise cards (quiz.js WINK, winkDue, winkMerge; Pierre, 2026-11-06: his second fish question was the whale
 // shark; the first only after at least 300 fish answers, the next after about 600-700 — 200 and 400 since 2026-11-08; 13:31: each surprise once per
 // player, and that's all, across devices): quiz.js's own code runs in Node on stubs (the player's answer count, the

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // The fish curation (curation.json "fish", admin plan PR 4; autosort.js "Fish curation", admin.js fishAutoRun,
 // fishOut): the fish auto-sort proposes the pass's sure judgments up to each species' target, never touches what Pierre
 // decided (his "Not this" above all: only his click writes it, and a photo he marked so is never proposed again), and

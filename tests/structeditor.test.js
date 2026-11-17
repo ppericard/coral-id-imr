@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Photos › Tree, the structure editor (admin-content.js; docs/reviews/2026-11-14-sheet-overlay-design.md v2, step 4;
 // Pierre, 2026-11-15, Q359, Q363 h A, Q366): the pure part. A family's circle in force and its state, its look-alike
 // pairs (the base's and his), the pair entries the draft writes (core.js contentPairKey, contentPairSet,

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Players › Visits (Pierre, 2026-11-08, Q301-Q304; one page for every subject, 2026-11-09): admin-visits.js visitsOf (the
 // visits from the Pages rows, each marked with its subjects, joined to their load row, who answered and who signed in),
 // devClass (phone, tablet, computer), visitsPick (the filters, Subject among them), visitPeriods (per day or week) and

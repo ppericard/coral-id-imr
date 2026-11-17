@@ -2589,6 +2589,16 @@ td.cov-c .cov-off {
     --cut: 36em;
   }
 }
+/* To do › Alerts: each line is the whole alert, so it wraps in its cell instead of ending in "…" on phones. */
+.adm-alerts td:last-child {
+  max-width: none;
+  white-space: normal;
+}
+.adm-alerts code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
 .adm-tscroll.tall {
   max-height: 420px;
   overflow-y: auto;
@@ -5887,6 +5897,16 @@ a.adm-fchip {
 }
 .adm-hmt.nofam .hm-corner {
   width: var(--hm-lw);
+}
+/* The families' groups (a subject whose families sit in taxonomic groups): a column of their own, left of the families'. */
+.adm-hmt.sup .hm-fam:not(.hm-sup) {
+  left: var(--hm-fw);
+}
+.adm-hmt.sup .hm-row {
+  left: calc(2 * var(--hm-fw));
+}
+.adm-hmt.sup .hm-corner {
+  width: calc(2 * var(--hm-fw) + var(--hm-lw));
 }
 .adm-hmt .hm-it {
   font-style: italic;

@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Pierre's choices per fish unit on the admin's fish pages (curation.json fish genera {unit id: {cover, feat, ok}},
 // autosort.js fishPick) reach the app (2026-11-08: his ★ Cover choices, published several times, never showed: the
 // app's fish build set every card's photo to the first of the game's order). app.js fishBuild → fishCurate gives the
@@ -30,18 +31,21 @@ function app(photoDiff) {
     easyCover: C.easyCover,
     fishPid: C.fishPid,
     fishScoreTree: C.fishScoreTree,
+    fishSpUnits: C.fishSpUnits,
     refLevel: C.refLevel,
     contentApply: C.contentApply,
+    treeCur: C.treeCur,
+    unitRankOf: C.unitRankOf,
     SUBJECTS: C.SUBJECTS,
     ...(photoDiff ? {photoDiff} : {})
   };
   vm.createContext(ctx);
   vm.runInContext(
-    'let FISH = null, FISHRAW = null, CUR = null, FISHF = null;\n' +
+    "let FISH = null, FISHRAW = null, CUR = null, FISHF = null, TREE_AT = 'fish';\n" +
       block(src, 'const VIEWS = [', '];\n', {through: 1, file: 'app.js'}) +
       block(src, 'const allPhotos = g =>', '// applyCuration(d, c) and applySlots', {file: 'app.js'}) +
       block(src, 'function fishGenera(X, F) {', '\n}\n', {through: 1, file: 'app.js'}) +
-      block(src, 'const fishBuild = () => {', 'const fishLoad = () =>', {file: 'app.js'}) +
+      block(src, 'const fishBuild = () => {', 'const treeLoad = id =>', {file: 'app.js'}) +
       block(src, 'function rankPhotos() {', '\n}\n', {through: 1, file: 'app.js'}) +
       '\nthis.run = (raw, cur) => { FISHRAW = raw; CUR = cur; return fishBuild(); }; this.cover = cover;' +
       '\nthis.juvP = juvP; this.adultFirst = adultFirst; this.seenCover = seenCover; this.nearSeen = nearSeen;' +
@@ -533,7 +537,10 @@ function sheets(B) {
       genSpecies: g => g.species.map(id => F2.species.find(s => s.id === id)),
       seenCover: X.seenCover,
       fishSeen: sid => X.nearSeen((B.sps || {})[sid]),
-      fishSpPick: sid => (B.covers || {})[sid] || null
+      fishSpPick: sid => (B.covers || {})[sid] || null,
+      // a tree's English names given as information (app.js vernFirst, learn.js capFirst): none for the fish
+      vernFirst: () => '',
+      capFirst: s => s
     };
   vm.createContext(ctx);
   vm.runInContext(

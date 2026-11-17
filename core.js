@@ -103,69 +103,6 @@
       return [];
     }
   }
-  // idkey-migration: begin
-  // One-shot move of this device's data to the names of 2026-11-04 (Pierre: the Coral Finder tool became the Coral ID
-  // Key; the book keeps its name). Alpha (rule W3): no old name is read anywhere else; this moves the data
-  // once and the code forgets them. The tool's keys reefid-finder-* become reefid-idkey-*, the admin's Sheets & ID Key
-  // table reefid-admin-fcov reefid-admin-kcov, and page names stored inside values: the photo size per page
-  // (reefid-sync-size), the Lab votes per tool (reefid-lab-votes), the admin's remembered views (reefid-admin-view,
-  // -sub). Idempotent: once nothing is left under an old name it changes nothing (a value the sheet sends back from
-  // before is moved at the next start). app.js and admin.js run it at start-up, after migrateStorage. Delete it (and
-  // its test, tests/idkey.test.js) once every device has started the renamed app. Returns the keys it wrote.
-  const IDKEY_OLD = {finder: 'idkey', 'lab-finder': 'lab-idkey', '~fcov': '~kcov'};
-  function migrateIdKey(s) {
-    try {
-      s = s || localStorage; // storage blocked: nothing to move
-    } catch (e) {
-      return [];
-    }
-    const done = [],
-      move = (o, n) => {
-        const v = s.getItem(o);
-        if (v === null) return;
-        if (s.getItem(n) === null) s.setItem(n, v);
-        s.removeItem(o);
-        done.push(n);
-      },
-      edit = (k, f) => {
-        const v = s.getItem(k);
-        let o;
-        try {
-          o = JSON.parse(v);
-        } catch (e) {}
-        if (!isObj(o)) return;
-        const w = JSON.stringify(f(o));
-        if (w !== v) (s.setItem(k, w), done.push(k));
-      },
-      // An object keyed by page or tool name: the old name's entry under the new one, unless the new one is set.
-      names = o => {
-        Object.keys(IDKEY_OLD).forEach(a => {
-          if (!Object.prototype.hasOwnProperty.call(o, a)) return;
-          if (!Object.prototype.hasOwnProperty.call(o, IDKEY_OLD[a])) o[IDKEY_OLD[a]] = o[a];
-          delete o[a];
-        });
-        return o;
-      },
-      // An object whose values are page names.
-      values = o => {
-        Object.keys(o).forEach(
-          k => typeof o[k] === 'string' && Object.prototype.hasOwnProperty.call(IDKEY_OLD, o[k]) && (o[k] = IDKEY_OLD[o[k]])
-        );
-        return o;
-      };
-    try {
-      const keys = [];
-      for (let i = 0; i < s.length; i++) keys.push(s.key(i));
-      keys.filter(k => k.startsWith('reefid-finder-')).forEach(k => move(k, 'reefid-idkey-' + k.slice(14)));
-      move('reefid-admin-fcov', 'reefid-admin-kcov');
-      edit('reefid-sync-size', names);
-      edit('reefid-lab-votes', names);
-      edit('reefid-admin-view', values);
-      edit('reefid-admin-sub', values);
-    } catch (e) {}
-    return done;
-  }
-  // idkey-migration: end
   // A player's data from the sheet or a progress file, which may hold the old names (an app from before the rename
   // saved it), the new ones, or both (withLegacy): with the new names only, the new one winning.
   function keysIn(d) {
@@ -300,7 +237,11 @@
   //           off the slate, card, ⚙ row; UNITS[id].opens: slate units that open once on, card, My progress button)
   //   rank    the rank its units are asked at (a unit's own rank, app.js rankOf, wins: a fish scientific genus): logged
   //           with every answer (sheet v60 Answers Rank). Every subject's answers go to the sheet's Answers tab under its
-  //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked)
+  //           id (Pierre, 2026-11-06: fish answers logged from the first second, at whatever rank was asked). A tree
+  //           subject's top rank (the family: the fish, the sea slugs), which the admin reads as its tree's
+  //   unitRank  the rank of a tree subject's game units from the start (level 1), when not its rank (unitRankOf): the
+  //           sea slugs' 'genus' (Pierre, 2026-11-16: "c'est au niveau des genres"), its genera the units of its circles
+  //           and its families structure only (core.js fishGen unit). Unset: rank (the fish: families, then genera opt-in)
   //   replay  the sheet computes from its logged answers: photo ratings, confusions, the opening hold, the full replay
   //           of its progress (Code.gs answerRows_ keeps only its rows); the others are logged only, for later
   //   ach     it has achievements: achs() its list (core.js ACH, FISH_ACH), all in the one synced record (progress.js
@@ -445,6 +386,9 @@
       'f:RequiemSharks': 'Requiem Sharks'
     }
   };
+  // The sync script version that knows the sea-slug subject (rule D4): its group (Code.gs groupIds_) can be set from the
+  // admin's Players page from it (admin.js groupOn, SUBJECTS sheet).
+  const SEASLUG_SHEET = 151;
   const SUBJECTS = [
     {
       id: 'coral',
@@ -696,6 +640,9 @@
       // origins: no IMR photos for fish (Pierre, 2026-11-04), iNaturalist only: Pierre's own, then by place.
       admin: {
         cur: 'fish',
+        // files: the public files the admin reads its units and photos from (admin.js unitReg; the app's UNITS get): f,
+        // its tree; ph, its first photos (none for a subject without); gm, its game photos.
+        files: {f: 'fish.json', ph: 'fish-photos.json', gm: 'fish-game.json'},
         // To do › All and Points (fish admin at parity, Pierre 2026-11-08): All lists the reports, flags and errors with
         // its photo work (todo), never the corals' photo sections; Points, the fish points of points.json.
         todo: ['photos'],
@@ -717,6 +664,9 @@
           // sheet rates the corals' photos only)
           'photos/review/by-difficulty',
           'photos/look-alikes',
+          // Photo stats › Overview (fish admin at parity): its photos in play in its words, the answers per photo from the
+          // answers alone (admin.js pstatsFish). No Difficulty: its numbers are the sheet's photo ratings, the corals' only.
+          'photos/stats/overview',
           // Its Analyses report's views (admin-analyses.js; one report per subject): every view of the stored report, and
           // the views drawn from the live answer log (admin.js
           // LIVE_STATS), from the fish answers (fish admin at parity, 2026-11-08): Stops (admin.js statsHealth,
@@ -729,6 +679,9 @@
           'analyses/difficulty/mix-ups',
           'analyses/difficulty/time',
           'analyses/difficulty/pairs',
+          // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every unit against every unit at each rank asked, live
+          // from its answers, families in their identification key group, genera in their family
+          'analyses/difficulty/heatmap',
           'analyses/learning/practice',
           'analyses/learning/after-a-break',
           'analyses/learning/sessions',
@@ -746,6 +699,83 @@
           ['world', 'iNat elsewhere', 'World']
         ]
       }
+    },
+    {
+      // The sea slugs (Pierre, 2026-11-15, Q369: one "sea slugs" subject, its circles by popularity, the Philippines as its
+      // area, a stars set, scientific names only; Q377: circle 1 of 45 species; study docs/reviews/2026-11-15-nudibranch-
+      // mode-study.md §9, step 5). Read through the fish engine (app.js UNITS seaslug get: seaslug.json and
+      // seaslug-game.json, built by tools/seaslug_game.py): its genera from the start (unitRank; Pierre, 2026-11-16: the
+      // experts and the ID books work at the genus), its families structure only; the species have their sheets. In
+      // beta, opened to a group (rule S1): the admin and the players Pierre adds on its Players page.
+      id: 'seaslug',
+      dev: 'seaslug-',
+      base: ['sbase', 'spending'],
+      name: 'Sea slugs',
+      icon: '<path d="M3 16.5c2.2-3 5.4-4.3 9.3-4.3 3.6 0 6.5 1.3 8.7 3.9-2.8 1.3-5.8 1.9-9 1.9-3.3 0-6.3-.5-9-1.5z"/><path d="M6.5 13.4 5.2 9.6M9 12.6l.2-3.8M17.6 13.4c0-1.6.8-2.8 2.2-3.5M17.6 13.4c.9-1.2 2-1.7 3.4-1.6"/>',
+      one: 'genus',
+      many: 'genera',
+      what: 'Sea slug',
+      several: 'sea slug species',
+      card: 'sea slug',
+      lecture: 'a sea slug ID course',
+      pv: 'seaslug.',
+      hash: 'seaslug/',
+      zoom: 'the rhinophores, the gills and the pattern of the mantle',
+      beta: {
+        kick: 'Sea slugs…',
+        line: '<b>Sea slugs are in beta</b>: nudibranchs and other sea slugs of the Philippines, by their scientific names, iNaturalist photos for now. Feedback welcome.'
+      },
+      // The admin and its group only (rule S1; the group managed on its admin Players page). sheet: the sync script
+      // version that knows this subject (Code.gs groupIds_: its group can be set and is reported from it; rule D4).
+      open: 'group',
+      sheet: SEASLUG_SHEET,
+      views: [['wide', 'Photo']],
+      // No opt-in set: its genera are its units from the start.
+      optin: [],
+      rank: 'family',
+      unitRank: 'genus',
+      // Not replayed by the sheet (no replayed): its progress merges against its own base, as the fish's did before the
+      // replay. No leaderboard, no achievements, no Analyses report and no photo pool yet.
+      replay: false,
+      // The fish's draw calibration (every photo carries a judged ease, judging/SEASLUG.md), the floor shared over 20
+      // observations, the sea slugs' candidate count (Q377).
+      calib: {ref: 3, early: 1.5, u: 0.25, pool: 20},
+      pages: ['genera', 'sheet', 'quiz'],
+      sheets: {family: 'f:', genus: 'g:', species: 's:'},
+      progress: ['photos'],
+      // No IMR content (study §8): no "I'm at IMR" answer.
+      start: {
+        q: 'How well do you know sea slugs?',
+        opts: {
+          new: ['I’m new to sea slugs', 'Start from scratch: a few easy genera first.'],
+          know: ['I know sea slugs well', 'A diver or a photographer: you can already name many genera.']
+        }
+      },
+      // Its admin part: its own key in curation.json (none yet: its photos in play are its judged ones), and the pages
+      // not about one subject's photos, its Players page holding its beta group.
+      admin: {
+        cur: 'seaslug',
+        // Its files, read by the admin for a reported photo's tile, credits and identification (To do › Reports).
+        files: {f: 'seaslug.json', gm: 'seaslug-game.json'},
+        todo: [],
+        // Points: its own (points.json subj seaslug: the taxonomic groups' WoRMS / iNaturalist difference, rule C5).
+        // Heatmap (admin-heatmap.js; Pierre, 2026-11-14, Q123 m): every genus against every genus, live from its answers,
+        // the genera in their family's block, the families in their taxonomic group (seaslug.json taxa).
+        pages: [
+          'inbox/todo/all',
+          'inbox/todo/reports',
+          'inbox/todo/errors',
+          'inbox/todo/points',
+          'players/list',
+          'analyses/difficulty/heatmap'
+        ],
+        obs: 'Observations',
+        origins: [
+          ['dauin', 'iNat Dauin', 'Dauin'],
+          ['ph', 'iNat Philippines', 'PH'],
+          ['world', 'iNat elsewhere', 'World']
+        ]
+      }
     }
   ];
   // The subject chosen on this device (Home or the header), synced with the player's settings.
@@ -757,6 +787,9 @@
   // every observation keeps the whole floor (model.js PICKD.FLOOR).
   const CALIB = {ease: 0.5, ref: 1, early: 0, pool: Infinity};
   const calibOf = s => ({...CALIB, ...((s && s.calib) || {})});
+  // The rank subject s's game units are at (SUBJECTS unitRank, else its rank): what an answer on one of them logs, and the
+  // rank app.js rankOf reads as the subject's own.
+  const unitRankOf = s => (s && (s.unitRank || s.rank)) || '';
   const subjKey = (s, name) => KEYS.SYNC + subjectOf(s).id + '-' + name;
   const subjDev = (s, name) => KEYS.APP + subjectOf(s).dev + name;
   // A subject that opens to a group of players (SUBJECTS open: 'group'), not to everyone: the app, the admin and the sheet
@@ -920,7 +953,41 @@
       ? Object.fromEntries(Object.entries(L).map(([id, s]) => [id, E['look/' + id] ? `${s}; ${E['look/' + id].t}` : s]))
       : L;
   };
-  function fishGen(F, photos, sheet) {
+  // The genus a genus-level photo belongs to (gl: its observation agreed at the genus only, sp its genus id; the sea
+  // slugs, Pierre, 2026-11-17, Q389 (1)), '' for any other photo: a photo of the genus, never counted for a species.
+  const fishGlOf = p => (p && p.gl && p.sp) || '';
+  // The genera of a subject played at the genus from the start (fishGen unit 'genus'): [record] in F.genera's order, each
+  // {id, name, rank 'genus', one, parent (its family), fam (its family's line), circle (its best species' in a circle),
+  // species (those in a circle), look (its sibling genera of the list), views {wide: its family's photos of its species
+  // and its own genus-level photos (gl, sp its id: fishGlOf)}, cover}. gen: fishGen's families by id; sp: F's species by
+  // id. A genus whose family is not in gen, or a surprise card's, or with no species in a circle, is none.
+  function fishGenUnits(F, gen, sp) {
+    const inC = id => [1, 2, 3].includes((sp.get(id) || {}).circle),
+      L = (F.genera || [])
+        .map(G => [G, G && gen[G.family], ((G && G.species) || []).filter(inC)])
+        .filter(([G, E, S]) => G && G.id && E && !E.wink && S.length);
+    return L.map(([G, E, S]) => {
+      const set = new Set(S),
+        wide = E.views.wide.filter(p => set.has(p.sp) || fishGlOf(p) === G.id),
+        g = {
+          id: G.id,
+          name: G.name,
+          rank: 'genus',
+          one: 'genus',
+          parent: E.id,
+          fam: E.name + (E.fam ? ' · ' + E.fam : ''),
+          circle: Math.min(...S.map(id => sp.get(id).circle)),
+          species: S,
+          look: L.filter(([o, X]) => X === E && o !== G).map(([o]) => o.id),
+          views: {wide}
+        };
+      if (wide.length) g.cover = easyCover(wide).f;
+      return g;
+    });
+  }
+  // unit: the rank of the game's units (SUBJECTS unitRank, unitRankOf): 'genus' plays the genera from the start
+  // (fishGenUnits); anything else, the families (the fish).
+  function fishGen(F, photos, sheet, unit) {
     const gen = {},
       sp = new Map((F.species || []).map(s => [s.id, s])),
       start = new Set((F.start || []).map(id => FISH_RENAMED.ids[id] || id)),
@@ -943,13 +1010,21 @@
     Object.entries(photos || {}).forEach(([tid, L]) =>
       (L || []).forEach(p => {
         // its entry's family only for a species fish.json does not know: a species out of the game (its family in no
-        // circle by the content editor: core.js fishStructure) never lends its photos to the other family of its entry
-        const fid = famOf.get(p && p.sp) || (sp.has(p && p.sp) ? null : FISH_RENAMED.ids[tid]);
+        // circle by the content editor: core.js fishStructure) never lends its photos to the other family of its entry.
+        // A genus-level photo (gl, sp its genus id: the sea slugs' observations agreed at the genus, Pierre, 2026-11-17,
+        // Q389 (1)) goes to its genus's family, and plays for its genus unit only (fishGenUnits), never for a species.
+        const gl = p && p.gl && gens.get(p.sp),
+          fid = gl ? gl.family : famOf.get(p && p.sp) || (sp.has(p && p.sp) ? null : FISH_RENAMED.ids[tid]);
         if (fid) (byFam[fid] = byFam[fid] || []).push(p);
       })
     );
     (F.families || []).forEach(t => {
-      const dauin = (t.species || []).reduce((a, id) => a + (((sp.get(id) || {}).present || {}).dauin || 0), 0),
+      // how common its species are: near Dauin for the fish, over the subject's own area where its tree gives one
+      // (present.area: the sea slugs' distinct observers in the Philippines; Pierre, 2026-11-15, Q369 (b))
+      const dauin = (t.species || []).reduce((a, id) => {
+          const p = (sp.get(id) || {}).present || {};
+          return a + ((F.area ? p.area : p.dauin) || 0);
+        }, 0),
         imrGen = (t.genera || []).map(id => gens.get(id)).filter(g => g && g.imr);
       gen[t.id] = {
         id: t.id,
@@ -995,6 +1070,9 @@
           )
         },
         ...(start.has(t.id) ? {first: 1} : {}),
+        // its taxonomic group's number in the tree's taxa (the sea slugs': tools/seaslug_groups.json), the Learn page's
+        // heading above its block (learn.js viewFishList); display only
+        ...(t.tgroup ? {tg: t.tgroup} : {}),
         ...(t.wink ? {wink: t.wink, note: t.note || ''} : {}),
         names: fishNames(t, imrGen, [...(teachOf.get(t.id) || [])]),
         // Its scientific names among them (its own, its IMR genera's, its IMR entries' families): never read in an English
@@ -1011,7 +1089,13 @@
     Object.values(gen).forEach(g => {
       if (g.views.wide.length) g.cover = easyCover(g.views.wide).f;
     });
-    const ids = Object.keys(gen),
+    // A subject whose game units are its genera from the start (unit 'genus', SUBJECTS unitRank: the sea slugs; Pierre,
+    // 2026-11-16): its families stay in gen as structure (the sheets, the blocks, a genus's parent) and its genera are the
+    // units of its circles (fishGenUnits); app.js fishGenera completes their records as it does the fish's scientific
+    // genera. Otherwise (the fish) the families are the units, as before.
+    const byGen = unit === 'genus' ? fishGenUnits(F, gen, sp) : null;
+    if (byGen) byGen.forEach(g => (gen[g.id] = g));
+    const ids = byGen ? byGen.map(g => g.id) : Object.keys(gen),
       play = n => !gen[n].wink,
       sh = {},
       shAdd = (id, p) => p && p.f && p.src && id && !(sh[id] = sh[id] || []).some(x => x.f === p.f) && sh[id].push({...p, use: 'ref'});
@@ -1023,9 +1107,12 @@
       c1: ids.filter(n => play(n) && gen[n].circle === 1),
       c2: ids.filter(n => play(n) && gen[n].circle === 2),
       c3: ids.filter(n => play(n) && gen[n].circle === 3),
-      winks: ids.filter(n => !play(n)),
+      winks: Object.keys(gen).filter(n => !play(n)),
       key: F.key ? {id: F.key.id, region: F.key.region, cite: F.key.cite, short: F.key.short} : null,
-      groups: (F.key && F.key.groups) || []
+      groups: (F.key && F.key.groups) || [],
+      // the taxonomic groups its families sit in (the tree's taxa: {cite, short, groups [{n, title}]}), when it has them
+      ...(F.taxa ? {taxa: F.taxa} : {}),
+      ...(byGen ? {unit: 'genus'} : {})
     };
   }
   // The fish units as the full replay reads them (core.js replayProgress gen: each unit's look-alikes and family line, for
@@ -1049,6 +1136,35 @@
             .map(G => G.id);
         ids.forEach(id => (out[id] = {look: ids.filter(o => o !== id), fam: E.name + (E.fam ? ' · ' + E.fam : '')}));
       });
+    // The species units (fishSpUnits, below), each with its look-alikes, its family line and the unit it starts from
+    // (from: abilityOf), so the replay counts a species picked wrongly as the game does (rule L2) and starts a species
+    // from its family's ability as the game does.
+    fishSpUnits(F || {}, X).forEach(u => (out[u.id] = {look: u.look.slice(), fam: u.fam, from: u.from}));
+    return out;
+  }
+  // The fish species units (Pierre, 2026-11-15, Q362: one progress unit per species; docs/reviews/
+  // 2026-11-14-species-step1.md, step 1: photo questions answered by common name): 's:' + the species id (s:s091), one
+  // for each species with a listed common name (fish.json cn; a species with none has no common-name unit, Q247) in a
+  // family in play (a wink family's species are never asked), in each family's species order (fish.json families
+  // species: the commonness order, cmi), the order they open in. Each with: s, its fish.json record; family, its family
+  // unit; look, the other species units of its family (its look-alikes: the traps of its choices once the player gets it
+  // right, rule L7, as a scientific genus's are its sibling genera); fam, its family's line (the card's and the
+  // feedback's, the replay's family prior); from, the unit a species never answered starts from: its family (Pierre,
+  // 2026-11-03, docs/FISH_PATH.md "Unlock rules": "a species starts from its entry's ability"; abilityOf). The app's
+  // units (app.js fishSpUnitsUnits) and the sheet's replay (fishReplayGen) read this one list. X: fishGen's units, when
+  // built already.
+  function fishSpUnits(F, X) {
+    const G = (X || fishGen(F || {}, {})).gen,
+      sp = new Map(((F && F.species) || []).map(s => [s.id, s])),
+      out = [];
+    ((F && F.families) || []).forEach(f => {
+      const E = G[f.id];
+      if (!E || E.wink) return;
+      const L = (f.species || []).map(id => sp.get(id)).filter(s => s && (s.cn || []).length),
+        ids = L.map(s => 's:' + s.id),
+        fam = E.name + (E.fam ? ' · ' + E.fam : '');
+      L.forEach((s, i) => out.push({id: ids[i], s, family: f.id, look: ids.filter(o => o !== ids[i]), fam, from: f.id}));
+    });
     return out;
   }
   // The tree of the fish global score as the app makes it (app.js UNITS tree: fishScoreTree over fishGen's families and
@@ -1056,10 +1172,13 @@
   // which exist). The sync sheet ranks the fish leaderboard by it, made with its replay's units under the structure in
   // force (SUBJECTS replayed tree; Code.gs subjRpl_, board_), so a circle Publish moves the board's weights with the
   // replays, whether a device saves or not (Codex review #977; design note v2, step 4). tests/structure.test.js checks it
-  // is the app's tree, with and without a structure edit.
+  // is the app's tree, with and without a structure edit. The species level on (fishScoreTree on): a sheet script that holds
+  // this code replays the species units (SPECIES_SHEET), so its tree is the app's with species (app.js treeSp); a player
+  // with no species unit gets the same % on either tree (a named species' common names, [] or its unit never answered,
+  // count 0 both ways; the few species whose common and cn fields disagree move the raw score by about 1e-6).
   function fishBoardTree(F) {
     const X = fishGen(F || {}, {});
-    return fishScoreTree({...X, gen: {...fishReplayGen(F), ...X.gen}}, F || {});
+    return fishScoreTree({...X, gen: {...fishReplayGen(F), ...X.gen}}, F || {}, true);
   }
   // The fish structure in force (SUBJECTS fish structure apply; design note v2 sections 1 and 2, step 3): fish.json F with
   // the content editor's circles and pairs X ({circle: Map family id → 1, 2, 3 or null, pairs: [{a, b, v: 1 or null,
@@ -1327,6 +1446,14 @@
   // that entered by itself he did not reject, exclude or move) and not excluded for good (curation exclude, by name or
   // photo id). With no curation (not loaded), the lists as they are. Every photo is on R2 (2026-11-15: the stopgap of
   // remote iNaturalist photos, which joined an entry short of 5 very easy curated photos, is retired).
+  // treeCur(S, cur): the curation as the fish engine reads it for tree subject S (fishPhotos, fishGone, app.js fishCurate:
+  // its fish part): S's own part (SUBJECTS admin.cur) under the fish's key, the rest as it is; the same content for the
+  // fish, whose part it is. A subject with no part yet (the sea slugs: Pierre has curated none) gets none: its photos in
+  // play are its judged ones, as fish photos are before he decides. null stays null (not loaded).
+  const treeCur = (S, cur) => {
+    const k = S && S.admin && S.admin.cur;
+    return cur && k ? {...cur, fish: cur[k]} : cur;
+  };
   function fishPhotos(first, game, cur) {
     const F = cur && cur.fish,
       X = (cur && cur.exclude) || {},
@@ -2047,7 +2174,8 @@
       .map((f, i) => [f, i])
       .sort((a, b) => (a[0].group || 99) - (b[0].group || 99) || a[1] - b[1])
       .map(x => x[0].id);
-    const spOf = id => sp[id] || (String(id).startsWith('s:') ? byName[String(id).slice(2)] || null : null);
+    // a species by its id (s091), its sheet id (s:<name>) or its unit (s:s091, fishSpUnits)
+    const spOf = id => sp[id] || (String(id).startsWith('s:') ? sp[String(id).slice(2)] || byName[String(id).slice(2)] || null : null);
     const go = id => {
       if (fam[id]) return id;
       const s = spOf(id);
@@ -3247,8 +3375,7 @@
   // player with fewer than ASK answers; from ASK answers on the choice is inferred silently: startInfer). It initialises
   // a few variables of the existing model, never a coded path: v.p, the level the answers are shrunk towards (playerStart:
   // the starting ability of a genus never answered, hence the photos, traps and single views of its first questions, and
-  // the shaky signal that paces the opening of genera); v.at, the answer from which the offer to open all genera can come
-  // (model.js introOffer, INTRO.OFFER.AT for everyone before); v.basics, Coral basics offered first. "new" is the
+  // the shaky signal that paces the opening of genera); v.basics, Coral basics offered first. "new" is the
   // default player of before (a new player is a beginner). Values and their simulation: docs/LEARNING.md "The first-
   // launch question". Each subject asks its own (SUBJECTS start: its words; the fish welcome question, Pierre 2026-11-04),
   // with these answers and variables, stored per subject in reefid-sync-<subject>-start (startKey, synced with the
@@ -3277,9 +3404,9 @@
     MET: 10, // the slate genera met before a 'hi' verdict: the same as the open-all offer's (model.js INTRO.OFFER.MET)
     // [id, variables], in order from the lowest level to the highest (startBand); their words per subject: SUBJECTS start.
     opts: [
-      ['new', {p: 0, at: 50, basics: 1}],
-      ['imr', {p: 0.5, at: 30, basics: 0}],
-      ['know', {p: 1.25, at: 20, basics: 0}]
+      ['new', {p: 0, basics: 1}],
+      ['imr', {p: 0.5, basics: 0}],
+      ['know', {p: 1.25, basics: 0}]
     ]
   };
   const startOpt = c => CHOICE.opts.find(o => o[0] === c) || null;
@@ -3532,7 +3659,19 @@
       s => (s.sets.sci || 0) >= 5
     ],
     ['fgen20', 'Name dropper', '20 scientific genera at Advanced level or above (80%+)', 2, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 20],
-    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60]
+    ['fgen60', 'Walking field guide', '60 scientific genera at Advanced level or above', 3, '🏷️', s => ((s.setsAdv || {}).sci || 0) >= 60],
+    // The species named by a common name (the species level, step 1; Pierre, 2026-11-08, Q259-Q264: a species named at
+    // Advanced, its common-name unit's bar at 80%; docs/LEARNING.md "Fish achievements, around the global score").
+    ['fsp1', 'First name terms', 'A species at Advanced level (80%+) by its common name', 1, '🐟', s => ((s.setsAdv || {}).sp || 0) >= 1],
+    ['fsp10', 'Name tags', '10 species at Advanced level or above by their common names', 2, '🐟', s => ((s.setsAdv || {}).sp || 0) >= 10],
+    [
+      'fsp50',
+      'Fish ID nerd',
+      '50 species at Advanced level or above by their common names',
+      3,
+      '🐟',
+      s => ((s.setsAdv || {}).sp || 0) >= 50
+    ]
   ].map(([id, title, desc, tier, icon, test, kind = 'learn']) => ({id, title, desc, tier, icon, test, kind}));
   // The Contributions (kind 'contrib') are one family for every subject, listed with the corals' (ACH) and shown on every
   // subject's page; achFind: an achievement of any list by its id.
@@ -3752,7 +3891,11 @@
   // genera of circle 1, app.js fishGenera), its scientific and common names none until the species level exists. The species with
   // no unit of their own are packed by genus and circle (their weights summed: the same score, a tree the sheet can keep).
   // The circle is the family's (treeScore by: the components per circle).
-  function fishScoreTree(X, F) {
+  // on: the species level on (sync.js speciesOn: the sheet keeps the tree in chunks and replays the species units; rule
+  // D4): each species with a common-name unit (fishSpUnits, Q362: one unit per species, filled by its names, Q376 (b))
+  // then has an entry of its own, [weight, genus, '', [its unit], circle], its unit in the common-name place (C, Q242);
+  // its scientific name has no unit yet (''). Off, the tree is the one of before, whatever the data.
+  function fishScoreTree(X, F, on) {
     const sp = new Map((F.species || []).map(s => [s.id, s])),
       fam = new Map((F.families || []).map(f => [f.id, f])),
       fams = [...X.c1, ...X.c2, ...X.c3].filter(id => fam.has(id)),
@@ -3764,8 +3907,11 @@
       circ = id => X.gen[id].circle || 1;
     L.forEach(([s, id], i) => {
       fw[id] = (fw[id] || 0) + w[i];
-      const g = s.genus && X.gen[s.genus] ? s.genus : '',
-        named = !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
+      const g = s.genus && X.gen[s.genus] ? s.genus : '';
+      // The species level on: a species with a listed name has its own entry, its unit as its common names; one with none
+      // (Q247) has none, null, packed as before.
+      if (on && (s.cn || []).length) return pack.set('s:' + s.id, [w[i], g, '', ['s:' + s.id], circ(id)]);
+      const named = on ? false : !!s.common, // no common name at all: null (treeScore, Q247), never packed with the others
         key = g + '|' + circ(id) + '|' + named,
         e = pack.get(key) || [0, g, '', named ? [] : null, circ(id)];
       e[0] += w[i];
@@ -3998,16 +4144,68 @@
   // the ability are untouched.
   // A unit's rank as its id says it (a fish family f:, a scientific genus g:; a coral genus, or an id without a prefix: '').
   const rankKey = n => (/^([a-z]+):/.exec(String(n || '')) || [])[1] || '';
-  function faOf(P, n) {
-    if (!P || !n) return 0;
+  // The typed questions on other units of n's rank, where the chances to give n start (above).
+  const faTyped = (P, n) => Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+  // The scan: every other record of P read for n.
+  function faScan(P, n) {
     let fa = 0,
-      op = Math.max(0, (((P[LEVEL] || {}).tyk || {})[rankKey(n)] || 0) - ((P[n] || {}).ty || 0));
+      op = faTyped(P, n);
     for (const t in P) {
       if (t === n || t === LEVEL || !P[t]) continue;
       fa += (P[t].conf || {})[n] || 0;
       op += (P[t].off || {})[n] || 0;
     }
     return op > 0 ? Math.min(1, fa / op) : 0;
+  }
+  // The false-alarm table (2026-11-15; speed only, every value the same to the last bit). The scan reads every record of
+  // P for one unit, and a caller that reads every unit's bar after each answer pays it once per unit: the rated world
+  // (tools/ratedworld.js) spent most of a 10,000-answer fish run there. faArm(P) lets the next faOf build one table of
+  // every unit's false alarms and chances in a single pass over P, in the scan's own order (the records in P's order, the
+  // typed questions first: each unit's sums take the same numbers in the same order, so the same floats), and answer the
+  // later calls from it until scoreAnswer writes P (it disarms the table while it runs and arms it again, empty, after) or
+  // faDisarm(P). Opt-in: the caller arms P only while nothing but scoreAnswer writes the records' conf, off, ty or the
+  // level's tyk (the rated world, one answer at a time); the app and the sheet never arm, so they scan as before. A P
+  // whose conf or off is not a plain object of numbers, or a unit id that is not a string or that Object.prototype holds,
+  // is scanned. FA_CHECK.on (the tests): every answer from the table is checked against the scan, and a difference throws.
+  const FA_CHECK = {on: false},
+    FAT = new WeakMap(),
+    faArm = P => void (P && typeof P === 'object' && FAT.set(P, null)),
+    faDisarm = P => void (P && typeof P === 'object' && FAT.delete(P)),
+    faPlain = c => {
+      if (typeof c !== 'object' || Array.isArray(c)) return false;
+      const p = Object.getPrototypeOf(c);
+      return p === null || Object.getPrototypeOf(p) === null; // a plain object, of this realm or of a vm's
+    };
+  function faTable(P) {
+    const u = new Map(),
+      // Record t's conf or off (c) added to every other unit's false alarms or chances (key); false when c is not a plain
+      // object of numbers. A unit's chances start at its typed questions, as the scan's do.
+      add = (c, t, key) => {
+        if (!c) return true;
+        if (!faPlain(c)) return false;
+        for (const k of Object.keys(c)) {
+          const v = c[k];
+          if (v && typeof v !== 'number') return false;
+          if (k === t) continue;
+          if (!u.has(k)) u.set(k, {fa: 0, op: faTyped(P, k)});
+          u.get(k)[key] += v || 0;
+        }
+        return true;
+      };
+    for (const t in P) if (t !== LEVEL && P[t] && !(add(P[t].conf, t, 'fa') && add(P[t].off, t, 'op'))) return {ok: false};
+    return {ok: true, u};
+  }
+  function faOf(P, n) {
+    if (!P || !n) return 0;
+    if (!FAT.has(P) || typeof n !== 'string' || n in Object.prototype) return faScan(P, n);
+    let T = FAT.get(P);
+    if (!T) FAT.set(P, (T = faTable(P)));
+    if (!T.ok) return faScan(P, n);
+    // A unit no other record names nor offers: no false alarm, 0 as the scan gives it.
+    const x = T.u.get(n),
+      v = x ? (x.op > 0 ? Math.min(1, x.fa / x.op) : 0) : 0;
+    if (FA_CHECK.on && !Object.is(v, faScan(P, n))) throw new Error(`faOf: the table gives ${v} for ${n}, the scan ${faScan(P, n)}`);
+    return v;
   }
   // The domain score as the bar uses it: s.ds less the genus's false-alarm rate (faOf), at least 0.
   const domVal = (s, P, n) => Math.max(0, s.ds - faOf(P, n));
@@ -4621,8 +4819,12 @@
   const ELO = {th0: 0, kmax: 0.8, kmin: 0.25, n: 15, lo: -1.5, hi: 3, vr: 0.1, vg: 2};
   // p: the level the player's first-launch answer says (CHOICE, startVars(c).p), which a genus never answered starts
   // from (playerStart); 0, the default player's, when they have not answered.
-  const abilityOf = (P, n, p = 0) => {
+  // from: the unit a unit never answered starts from instead (a fish species: its family, Pierre, 2026-11-03,
+  // docs/FISH_PATH.md "Unlock rules"; core.js fishSpUnits from), once that unit has an ability of its own; none, or one
+  // never answered: the global level, as any unit.
+  const abilityOf = (P, n, p = 0, from) => {
     const s = (P || {})[n] || {};
+    if (typeof s.th !== 'number' && from && from !== n && typeof ((P || {})[from] || {}).th === 'number') return abilityOf(P, from, p);
     if (typeof s.th !== 'number') return s.lv ? ELO.th0 + Math.min(2, s.lv) : playerStart(P, n, p);
     return Math.min(ELO.hi, Math.max(ELO.lo, s.th + levelMove(P, n, s)));
   };
@@ -4640,8 +4842,8 @@
   // surprise either way.
   // p: the first-launch answer's prior (abilityOf, playerStart), for a genus never answered. S: the shared slope of the
   // answer model (scoreAnswer slopeOf, Q147: 1 until the sheet estimates it).
-  function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1) {
-    const th = abilityOf(P, n, p),
+  function eloStep(P, n, s, good, d, k, w = 1, p = 0, S = 1, from) {
+    const th = abilityOf(P, n, p, from),
       g = 1 / k,
       e = g + (1 - g) * sigm(S * (th - d)),
       m = (s.ok || 0) + (s.ko || 0);
@@ -4754,7 +4956,19 @@
   // the question counts as that much easier: a 2-choice right answer, more often right than a 1 in 2 guess explains,
   // proves less, and a 2-choice miss weighs less; 0 until the game passes the sheet's offsets).
   const domF = (q, mu) => ({mu: Number(mu) || 0, o: -(Number(q.df) || 0), t: -(Number(q.dt) || 0), S: slopeOf(q)});
+  // An answer scored on P (scoreStep, below). It writes the records' conf, off and ty and the level's tyk at different
+  // points, so an armed false-alarm table (faArm) is off while it runs, every read of it a scan, and armed again empty
+  // after it.
   function scoreAnswer(P, q) {
+    if (!FAT.has(P)) return scoreStep(P, q);
+    FAT.delete(P);
+    try {
+      return scoreStep(P, q);
+    } finally {
+      FAT.set(P, null);
+    }
+  }
+  function scoreStep(P, q) {
     const t = q.t,
       ok = !!q.ok,
       k = q.k,
@@ -4782,7 +4996,8 @@
       dm = d0 + fam + cf,
       out = {dm, rw: 1, look: false, th0: null, e: null, w: null};
     if (scored) {
-      const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p),
+      // q.from, q.cfrom: the units the unit shown and the unit given start from when never answered (abilityOf from)
+      const th0 = typeof q.th === 'number' ? q.th : abilityOf(P, t, p, q.from),
         look = typeof q.look === 'function' ? !!q.look() : !!q.look;
       let w = null;
       // The bar (Q135): the domain score from the player's own answers on the genus, the question's difficulty as the game
@@ -4799,7 +5014,7 @@
       // The ability: the genus shown against the question's difficulty with the memory and the mix-ups, a right answer's
       // step weighed by its time against the player's earlier ones.
       const rw = q.timed === false ? 1 : rtWeight(P[LEVEL], q.sec, k, ok);
-      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q));
+      eloStep(P, t, s, ok, dm - df, k, rw, p, slopeOf(q), q.from);
       Object.assign(out, {th0, look, w, rw, e: 1 / k + (1 - 1 / k) * R * sigm(slopeOf(q) * (th0 - dm))});
     }
     // The global level: made at the first answer from the player's history (its counts hold this answer), then one step
@@ -4847,7 +5062,7 @@
         const Rc = typeof q.Rc === 'number' ? q.Rc : 1;
         // The bar: no miss in its posterior (a false alarm, counted by its record's offers and mix-ups and taken off its
         // bar by faOf, Q174); a record of the former rules (s.pg): a miss on the photo shown, as before.
-        if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p), d0, k, Rc, aimOf(P[LEVEL].th)));
+        if (!domIn(q, x)) x.pg = pgStep(pgOf(x), false, pgMissW(abilityOf(P, q.c, p, q.cfrom), d0, k, Rc, aimOf(P[LEVEL].th)));
         delete x.L;
         x.u = (x.u || 0) + 1;
       }
@@ -5449,6 +5664,9 @@
         const pr = startPriorAt(own(starts, id), r[1]), // the first-launch answer's prior at this answer (abilityOf)
           replayable = fs.length && k > 1 && (sc || (typeof e === 'number' && typeof th === 'number'));
         const q = {t, c, ok, k, chs, ph: fs, cv: !!wrong, p: pr, sec, timed: time, rt: time && !!replayable, d0: null, dom};
+        // the units a species shown or given starts from (fishReplayGen from: its family), as the game does (abilityOf)
+        if ((gen[t] || {}).from) q.from = gen[t].from;
+        if (wrong && gen[c].from) q.cfrom = gen[c].from;
         // The domain-score bar's genus offsets: as the game logged them (sc m, n), else the replay's gd (o.gd).
         q.mu = sc && typeof sc.m === 'number' ? sc.m : gdv(t);
         q.muc = sc && typeof sc.n === 'number' ? sc.n : gdv(c);
@@ -5870,7 +6088,7 @@
       m = pageName(k, pre);
     return m === pre + 'other' ? s : m;
   }
-  // This device's data under the old names (app.js and admin.js at start-up, after migrateIdKey): the photo size per page
+  // This device's data under the old names (app.js and admin.js at start-up, after migrateStorage): the photo size per page
   // (reefid-sync-size, keyed by page name: genera, genus, pair, idkey, lab-gallery, lab-elim; tips dropped), the events
   // still queued (reefid-evq: each one's address, a visit summary's page names), the photos flagged (reefid-photo-flags:
   // where they were seen). Idempotent (a value the sheet sends back from an older device is moved at the next start).
@@ -6239,6 +6457,9 @@
     keepsMark,
     domFromCounts,
     faOf,
+    FA_CHECK,
+    faArm,
+    faDisarm,
     looksLeft,
     afterBkt,
     TARGET_P,
@@ -6429,6 +6650,7 @@
     subjectOf,
     CALIB,
     calibOf,
+    unitRankOf,
     subjGroup,
     replaySubject,
     replayedSubjects,
@@ -6448,7 +6670,9 @@
     subjKey,
     subjDev,
     fishGen,
+    fishGlOf,
     fishReplayGen,
+    fishSpUnits,
     fishBoardTree,
     easyRank,
     easyCover,
@@ -6466,6 +6690,7 @@
     fishGone,
     fishPid,
     fishPhotos,
+    treeCur,
     unitPool,
     exposureOf,
     keepSubjectKeys,
@@ -6520,7 +6745,6 @@
     withOldNames,
     migrateKeys,
     migrateStorage,
-    migrateIdKey,
     keysIn,
     LEGACY_SEND,
     withLegacy,

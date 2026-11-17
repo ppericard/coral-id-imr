@@ -70,15 +70,17 @@ const typeMatch = (text, rk = '') =>
   );
 // What a typed text that is no unit of rank rk names instead (core.js typeElse): the rank word of another unit it names
 // ('family'), 'common' for a common name, '' for nothing. Only on a question below the subject's rank (a fish scientific
-// genus), from the subject's own lists (UNITS typeOther); none for a subject without them.
+// genus, a sea slugs' genus: its tree's top rank is the family), from the subject's own lists (UNITS typeOther); none for
+// a subject without them.
 const typeKind = (text, rk) => {
   const U = UNITS[SUBJ.id],
-    x = rk && U.typeOther ? U.typeOther(rk) : null;
+    at = rk || unitRankOf(SUBJ),
+    x = at !== SUBJ.rank && U.typeOther ? U.typeOther(at) : null;
   if (!x) return '';
   return typeElse(
     text,
     typeNames().filter(o => rankOf(o.g) !== rk),
-    {...x, rank: g => rankOf(g) || SUBJ.rank, own: g => (GX(g) || {}).imrName},
+    {...x, rank: g => rankOf(g) || unitRankOf(SUBJ), own: g => (GX(g) || {}).imrName},
     U.norm
   );
 };
@@ -292,8 +294,7 @@ const typeStep = (m, text, sp, t) => {
   // A name several units share (razorfish, Holocentridae): the name as it is spelled, nothing more: it is no old name
   // nor another name of the unit (Codex review #834).
   if (m.shared) return {spelled: s, plain: true, old: false, alt: false};
-  const u = GX(m.g || t);
-  return {spelled: !m.old && u && u.name && !u.rank ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
+  return {spelled: !m.old && uplain(m.g || t) ? s : `<i>${s}</i>`, old: !!m.old, alt: !!m.alt};
 };
 // Time to answer and photo enlarged (Pierre, 2026-11-02: a right answer that needed a long look or an enlarged photo says
 // the photo was harder; sheet v23 Seconds and Enlarged; since 2026-11-04 the seconds weigh a right answer's ability
@@ -344,7 +345,7 @@ function question(cur, target, choices, prompt, set, kq) {
     <div class="qstage${fx ? ' qfx' : ''}">${fx ? fx.map(tile).join('') : ph.map((p, k) => fig(p, k)).join('')}</div>
     <aside class="qside">
       <div class="qtop"><p class="prompt">${prompt}</p>${trail()}${quizNav(cur)}</div>
-      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${GX(c) && GX(c).name && !GX(c).rank ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${esc(unameT(c))}</button>`).join('')}</div>`}
+      ${set.typed ? `<div class="tyq">${typeForm(GX(target).one ? {...SUBJ, one: GX(target).one} : SUBJ)}</div>` : fx ? '' : `<div class="ans"${kq ? ` data-k="${kq}"` : ''}>${choices.map((c, i) => `<button type="button" data-c="${esc(c)}"${uplain(c) ? ' class="plain"' : ''}><kbd>${i + 1}</kbd>${GX(c) && GX(c).sci ? `<span class="csn">${esc(unameT(c))}<small>${esc(GX(c).sci)}</small></span>` : esc(unameT(c))}</button>`).join('')}</div>`}
       ${set.hint ? '<button type="button" class="linkish" id="hintb">Show the corallites (hint)</button>' : ''}
       <div id="after"></div>
     </aside></div>`;
@@ -760,7 +761,11 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // logged with the answer so the replay meets the same ones.
     dom: domRules(),
     mu: genusDiff(target),
-    ...(!good && GX(c) ? {muc: genusDiff(c)} : {})
+    ...(!good && GX(c) ? {muc: genusDiff(c)} : {}),
+    // A unit never answered starts from the unit its record names (a fish species: its family; core.js abilityOf), as the
+    // sheet's replay does (fishReplayGen from).
+    ...(GX(target).from ? {from: GX(target).from} : {}),
+    ...(!good && GX(c) && GX(c).from ? {cfrom: GX(c).from} : {})
   });
   const res = scoreAnswer(P, q),
     {th0, dm} = res,
@@ -847,11 +852,12 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
     // logAnswers_ keeps only the fields it knows), so no gate (rule D4). Grading never reads them.
     ...(tq && tq.rj && tq.rj.length ? {rj: tq.rj.slice(0, TYPEDQ_RJ)} : {}),
     // The subject and the rank asked (Pierre, 2026-11-06: the sheet records an answer at any taxonomic level; sheet v60
-    // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's (SUBJECTS
-    // rank). An older script ignores these fields and would file the answer as a coral one: the answers of a subject the
-    // sheet does not replay are sent only from LOG_SHEET (core.js logOk, sync.js), queued until then (rule D4).
+    // columns Subject, Rank): the unit's own rank (app.js rankOf: a fish scientific genus), else its subject's units'
+    // (core.js unitRankOf: SUBJECTS unitRank, else rank). An older script ignores these fields and would file the answer as
+    // a coral one: the answers of a subject the sheet does not replay are sent only from LOG_SHEET (core.js logOk,
+    // sync.js), queued until then (rule D4).
     s: SUBJ.id,
-    rk: rankOf(target) || SUBJ.rank,
+    rk: rankOf(target) || unitRankOf(SUBJ),
     // The names at that rank, shown and answered, when a unit's id is not its name (a fish entry t01 is Damselfish, a
     // scientific genus g:Chromis is Chromis; a coral genus is its own name: nothing more), and the species of the photos
     // shown (UNITS species: a fish photo's species; none for the corals' genus photos), for the sheet's readers.
@@ -1004,10 +1010,13 @@ function fbBody(target, c, good, idk, again, ph, read, step, tx) {
     ? // The answer's own tips, said as such (an RA tester, 2026-11-02: "Why not X:" read as the reasons the photo is not X).
       `${namesLine(target, c)}<p class="vs">Your answer, ${uname(c)}, would show: ${gloss(tipsText(C))}${C.qt && C.qsrc && C.qsrc.t ? ` <small class="esrc">(${esc(C.qsrc.t)})</small>` : ''}${fish ? '' : ` <a class="linkish" href="${esc(hr('cmp-' + target + '|' + c))}">Compare them</a>`}</p>${apart ? `<p class="vs"><b>Tell them apart</b> (IMR${asrc && asrc.t ? '; ' + esc(asrc.t) : ''}): ${esc(apart)}</p>` : ''}${again && againTold() ? '<p class="vs again">This pair comes back as a duel in a moment.</p>' : ''}`
     : '';
-  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling.
-  const named = inner =>
+  // The unit's name as the verdict shows it (its link to the genus sheet, its notes), with inner as its spelling. A unit's
+  // English name given as information (app.js vernFirst, UNITS vern: the sea slugs'; Pierre, 2026-11-17) follows its
+  // scientific name once the answer is out, never in the choices; none for a subject without them.
+  const ven = vernFirst(target),
+    named = inner =>
       fish
-        ? `<b>${inner}</b> <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
+        ? `<b>${inner}</b>${ven ? ` <span class="ven">${esc(ven)}</span>` : ''} <small>${esc(altName(g.fam))}</small>${isBonus(target) ? ` <small>· ${esc(setOf(target).tag)}</small>` : ''}`
         : `<a href="${esc(hr('g-' + target))}"${sheetTab()}>${inner}</a>${isBenthic(target) ? ' (fire coral, IMR benthic slate)' : g.x ? ' (bonus, not on the IMR list)' : g.n ? '' : ' (★ not surveyed)'}`,
     name = named(fish ? uname(target) : `<i>${esc(target)}</i>`),
     // The verdict, one line. A retype still wrong: "✓ Yes, but not quite: it's spelled X", the same link, its wrong
@@ -1121,7 +1130,7 @@ function winkAnswer(n, id, ids, p, tm) {
     zm: tm.zm ? 1 : 0,
     tz: -new Date().getTimezoneOffset(),
     s: SUBJ.id,
-    rk: rankOf(n) || SUBJ.rank,
+    rk: rankOf(n) || unitRankOf(SUBJ),
     ...(unitName(n) ? {tn: unitName(n)} : {}),
     ...(unitName(a) ? {ta: unitName(a)} : {}),
     ...(sp ? {sp} : {})
@@ -2059,6 +2068,9 @@ function introShow(L, start, kind = start ? 's' : 'c', offerAll = start) {
 function introCard(n, o = {}) {
   const g = GX(n),
     p = cover(g),
+    // a set's line on its units' cards: a text, or a function of the unit (app.js UNITS fish sets sp: the milestone)
+    sc = isBonus(n) ? setOf(n).card : '',
+    scard = typeof sc === 'function' ? sc(n) : sc,
     star = typeof starNote === 'function' && DATA.gen[n] ? starNote(n) : '',
     tips = tipsList(g),
     hinted = !!o.hint && tips.includes('data-gt');
@@ -2070,7 +2082,7 @@ function introCard(n, o = {}) {
     title: uname(n),
     body: `${g.name ? `<p class="ulfam">${esc(altName(g.fam))}</p>` : ''}${plainLine(g)}
       ${star ? `<p class="ulnote">${star}: on the slate so you learn to tell them apart.</p>` : ''}
-      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : isBonus(n) && setOf(n).card ? `<p class="ulnote">${setOf(n).card}</p>` : ''}
+      ${isBenthic(n) ? `<p class="warn">${BENTHIC_NOTE}</p>` : scard ? `<p class="ulnote">${scard}</p>` : ''}
       <div class="ultips"><p class="label">${tipsLabel(g)}</p>${tips}${hinted ? '<p class="gthint">Tap an underlined word to see what it means.</p>' : ''}</div>
       ${o.note ? `<p class="ulnote">${o.note}</p>` : ''}`,
     primary: {text: o.btn || 'Got it'},
@@ -2137,8 +2149,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   if (rematch.length && gap && at - rematch[0].at >= CONTRAST.GAP) {
     const pair = rematch[0].pair,
       // The custom quiz asks only its own genera; and never a genus not met yet (2026-11-04: a genus never met, offered
-      // to make up the choices and picked, was asked by its Again with no card, a genus opened by the side door).
-      ask = (sel ? pair.filter(n => sel.includes(n)) : pair).filter(n => introReady(n) || (sel && sel.includes(n)));
+      // to make up the choices and picked, was asked by its Again with no card, a genus opened by the side door). Nor a
+      // unit the other choice names (model.js choiceNames: outside IMR, "Longnose butterflyfish" is a listed name of
+      // F. flavissimus, so its Again asks F. longirostris only; Codex review #975): with neither, no Again.
+      ask = (sel ? pair.filter(n => sel.includes(n)) : pair).filter(
+        n => (introReady(n) || (sel && sel.includes(n))) && !pair.some(o => choiceNames(o, n))
+      );
     rematch = rematch.slice(1);
     // Never on a genus closed again by "One at a time" (model.js introBack): it waits for its card.
     if (ask.length && pair.every(n => play.includes(n) && !closed(n))) {
@@ -2190,7 +2206,7 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
     // chance of the free places for shaky genera, the genus drawn easiest and most common first (openPick).
     fresh =
       !sel && !start && !warm && met.length && !noOpen() && !introHold() && openPace(at, soon) && openRight(at)
-        ? list.filter(n => !introduced(n) && mayOpen(n))
+        ? list.filter(n => !introduced(n) && mayOpen(n) && shareRoom(n)) // the rank share (model.js SHARE)
         : [];
   if (fresh.length && Math.random() < openChance(list)) cards = [openPick(fresh, list)];
   // With the first cards, the question is about one of them (never a bonus genus unlocked earlier, say); with a card of
@@ -2300,7 +2316,11 @@ function quizDuel(a, b, fresh = true, from = '') {
 function duelPick(list, keep = () => true) {
   // The subject's look-alike pairs (app.js UNITS pairs: for corals, Millepora and the bonus genera duel with the slate
   // look-alike the Coral Finder names) and the look-alikes from the data (model.js dataLooks), when both are in the list.
-  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list)].filter(([x, y]) => list.includes(x) && list.includes(y) && keep([x, y]));
+  // Never two units one label names (model.js choiceNames: two fish species may share a common name, Q381): such a duel
+  // would read "Brown damsel or Brown damsel?", and either answer is right (Q319).
+  const ps = [...UNITS[SUBJ.id].pairs(), ...dataLooks(list)].filter(
+    ([x, y]) => list.includes(x) && list.includes(y) && !choiceNames(x, y) && !choiceNames(y, x) && keep([x, y])
+  );
   if (!ps.length) return null;
   // Your mix-ups you still make come up most (personal confusion score, confOf), then pairs players often confuse and
   // the classic look-alikes (compared in the IMR lecture or the Coral Finder text).
@@ -2318,9 +2338,22 @@ function duelPick(list, keep = () => true) {
 function planDuel(a, b) {
   // Only the genera the player has unlocked (model.js unlocked: one progression path for every game, Pierre 2026-11-04):
   // the Duel tab opens none. A pair from a link (#practice/duels/A/B, "Drill this pair") must name two unlocked genera with game
-  // photos; anything else gets a normal duel (code re-review L2). Null when no look-alike pair is unlocked yet.
+  // photos, and not two of one label (choiceNames, as duelPick); anything else gets a normal duel (code re-review L2).
+  // Null when no look-alike pair is unlocked yet.
   const list = unlocked();
-  if (a && b && !(a !== b && list.includes(a) && list.includes(b) && photoSet(a).shown.length && photoSet(b).shown.length))
+  if (
+    a &&
+    b &&
+    !(
+      a !== b &&
+      list.includes(a) &&
+      list.includes(b) &&
+      !choiceNames(a, b) &&
+      !choiceNames(b, a) &&
+      photoSet(a).shown.length &&
+      photoSet(b).shown.length
+    )
+  )
     a = b = undefined;
   let pair = a && b ? [a, b] : null;
   if (!pair) pair = duelPick(list);

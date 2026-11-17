@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Pierre's photo rules, checked on the real data.json + curation.json (core.js applyCuration / applySlots, the same
 // code the app runs). These are Pierre's standing rules (docs/rules/photos.md): if one fails, a data or code change broke a rule.
 const test = require('node:test'),

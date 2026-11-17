@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // Other species in view, split in two (Pierre, 2026-11-09, Q323; judging/FISH.md "Tags", count): o (no risk of taking
 // another fish for the subject at the game's rank: in play) and k (confusion possible: never in play, rule P3); m, the
 // code before the split, reads as not sorted yet, so as k until sorted. Both automatic routes (autosort.js fishSure,

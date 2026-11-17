@@ -1,3 +1,4 @@
+require('./slot.js').testGuard();
 // What makes a photo hard on the fish side (fish admin at parity; ROADMAP "Analyses for the fish": "the fish photos' own
 // features (judged ease, phase, framing)"): analysis.js photoMetaFish reads the judged features of the photos the game
 // plays (fish-game.json), and Photo factors fits them with the corals' model (LLTM: player, unit and photo random

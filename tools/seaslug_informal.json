@@ -1,0 +1,29 @@
+{
+  "_doc": "The sea slugs' species with no name yet (Pierre, 2026-11-17, Q389 (2); study docs/reviews/2026-11-17-seaslug-undescribed-species-study.md): each defined by a published source (rule C2) and found on iNaturalist through the observation field its identifiers keep, since iNaturalist holds no taxon for it. Hand-kept but for `presence`, which tools/fetch_seaslugs.py --informal measures. Read by tools/fetch_seaslugs.py (its candidates, key = the seaslug-cand.json key), tools/judging_fish.py --subject seaslug and tools/seaslug_game.py (a species sheet of its genus while the species are not units, #975). Never a guide's number (the 2018 guide is not a source here: Pierre, 2026-11-17).",
+  "rule": "Present when the observations carrying the label in the Philippines (Research Grade or Needs ID) have at least 3 distinct observers (tools/presence.py label_confirmed; Pierre, 2026-11-17, Q389 (2)); near Dauin: 2 within the centre's radius (near_dauin). Its candidates: observations with the label, at the genus, the genus agreed by 2 current identifications (tools/fetch_seaslugs.py agreed).",
+  "species": [
+    {
+      "key": "goniobranchus-sp5",
+      "name": "Goniobranchus sp. 5",
+      "genus": "Goniobranchus",
+      "src": "Soong et al. 2020",
+      "cite": "Soong, G.Y., Wilson, N.G. & Reimer, J.D. (2020). A species complex within the red-reticulate Goniobranchus Pease, 1866 (Nudibranchia: Doridina: Chromodorididae). Marine Biodiversity 50: 25.",
+      "doi": "10.1007/s12526-020-01048-w",
+      "defined": "One of the five species-level clades of the red-reticulate Goniobranchus that Soong et al. (2020) delimit with COI and 16S rDNA (ABGD; maximum likelihood and Bayesian trees); none of the clades' morphotypes matches the original descriptions of G. reticulatus or G. tinctorius (the abstract). Its live animals are in the paper's supplementary Fig. S3 (not read: subscription). Mehrotra et al. 2021 (ZooKeys 1042: 73-188) cite it from the Philippines, Indonesia, Japan and Australia.",
+      "field": {
+        "id": 18499,
+        "name": "Goniobranchus sp. 5 in Soong et al., 2020?",
+        "value": "Yes"
+      },
+      "decided": "Pierre, 2026-11-17, Q389 (2): \"au niveau espèce, Goniobranchus sp. 5 d'abord\"",
+      "presence": {
+        "obs": 456,
+        "observers": 183,
+        "nearObs": 40,
+        "nearObservers": 23,
+        "near": true,
+        "confirmed": true
+      }
+    }
+  ]
+}

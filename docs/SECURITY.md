@@ -12,7 +12,7 @@ or a protection changes.
 | Admin (`admin.html`) | Anyone can open the page, only a GitHub token with write access to the repo can change anything | Someone with Pierre's token rewrites `curation.json`. | Fine-grained token, this repo only, 90-day expiry, stored encrypted in Pierre's browser (password). Every Publish is a commit: reversible. |
 | Sync script (Google Apps Script web app, `SYNC_URL`) | Anyone (it must accept RAs without Google accounts) | Fake answers skew the photo ratings and confusion scores; fake accounts and reports clutter admin Players and To do; the Sheet grows until Google limits bite (20 million cells per spreadsheet, script run quotas) and sync slows or stops for real players. | See below. |
 | Leaderboard (`GET ?board=1`, v14) | Anyone | Shows each signed-in player's chosen name, progress % and Elo unless they opted out (⚙ Leaderboard: Off, a `reefid-sync` setting so it holds on every device; privacy.html says so). The progress % is computed by the script from the saved progress (v16), like the Elo from the answers; a tampered app could still save inflated progress, as it could fake answers. | Cached 5 minutes; nothing else about a player is returned. Per-player numbers (the anonymous answer log, each id's ability) are admin-only from v14 (POST with the token), so a public leaderboard row can't be matched to an anonymous id and its answer history. |
-| Names, reports, user management | Only with the admin GitHub token (checked by the script with GitHub) | — | `isAdmin_`. |
+| Names, reports, user management, roles | Only with the admin GitHub token (checked by the script with GitHub) | — | `gate_` → `can_()` (roles step 1, below); the token reached through `caller_` → `isAdmin_` only. |
 | Self-update of the script | Whoever can push to `main` | Arbitrary script code. | Same trust as the site itself: only Pierre, his agents and the Candidate photos workflow's bot push to `main` (its credentials: below). |
 | The weekly backup to pCloud (sheet v139, [BACKUP.md](BACKUP.md)) | The script only; the credential is the Script Property `PCLOUD_UPLOAD_CODE` (the code of a pCloud upload link, v144, the one Pierre uses) or `PCLOUD_TOKEN` (a pCloud OAuth token; used when both are set) | Code pushed to `main` runs as the script, so it can read that credential (as it can `ANON_SALT`). The upload link's code only adds files to the link's folder: it cannot read, list or delete anything, so a leaked code lets someone fill that folder (up to the link's limits, or Pierre's pCloud space), not read the backups. The token reaches everything the pCloud app was allowed to reach. A backup file leaked from pCloud exposes the sheet: names, code hashes, answers. | Either is sent only to `api.pcloud.com` or `eapi.pcloud.com` (any other `PCLOUD_HOST` is refused before any request) and never logged or returned (`backup_` scrubs both, as typed and URL-encoded, from any error text; only pCloud's numeric result is logged; `tests/backup.test.js`). The token goes only in the `Authorization` header (never a URL, which fetch errors can echo); the code goes in the `uploadtolink` URL, the only form pCloud documents, with no `Authorization` header. Revoke: delete the upload link in pCloud (code), or the app (token). |
 
@@ -63,7 +63,7 @@ of that key yet); those runs hold read-only tokens too.
   players (counted by answer, not by request: since 2026-11-08 a device not signed in sends each answer about 3 s after
   it, `sync.js` `anonSoon`, instead of 10 at a time); 3000 answers per name; 40 new accounts; 300 report requests; 200 events per device and 3000 in all (v19 error reports and one-tap answers, `events_`, 50 per request). Over a cap the script writes nothing and
   answers `busy` (the app keeps its answers and sends them later). The first refusal of each window is written to the
-  Sheet's **Alerts** tab.
+  Sheet's **Alerts** tab, which the admin shows in To do › Alerts (below).
 - **Duplicates**: an answer id already in the Answers tab is never logged twice; the same for an event id in the Events tab (v19), and in the Pages tab (v30).
 - **Pages opened** (v30, `pages` events, Pierre 2026-11-03): the summary of the pages a player opened is kept only in
   the shapes `core.js` `pagesClean` allows (page names by pattern, genus names, counts and seconds clamped, an origin
@@ -149,10 +149,78 @@ as before. The reply it serves holds what `?stats=1` always sent (photo ratings,
 Its row 4 (sheet v145) holds what the admin's `readStats` adds, each player's ability by admin id, never a name, and
 is read only with the admin token; the same deletes blank it with the fold, and the archived players are left out
 when it is read.
+The Roles tab (sheet v156, below): a delete, a self-delete, a merge (its from) and an archive drop the account's
+grants (`rolesDrop_`), never move them to Into or to the archive name, so whoever takes the name later holds nothing (a
+grant also holds only for the code hash it was made for). Each dropped grant writes an Audit row, by anonymous id. The
+Audit tab keeps its rows: they hold anonymous ids only, never a name, and nothing reads them in normal operation.
+
+## Roles and the Audit tab (sheet v156, roles step 1)
+
+Pierre, 2026-11-13 (Q342-Q349, ROADMAP "Roles, instances and cohorts"): scoped roles, enforced by the sync script, never
+by the page; 2026-11-15 (Q364): rights are separate, the platform admin may grant himself a role, and the grant is
+logged; (Q365) the pilot's name and 4-digit code are enough for now.
+- **Grants**: the Roles tab, one row a grant (Account, Role, Scope, Since, Code hash). Roles and what they give:
+  `admin` at `platform` (the code, the base database, creating instances; it may grant any role at any scope), `owner`
+  at an instance (its players, its settings, granting its roles), `editor` at an instance (its content), `trainer` at
+  an instance (its cohorts, from roles step 2). The player role is every account's and is not stored. This sheet serves
+  one instance, `instance:imr` (`Code.gs` `INSTANCE_`; Q343, one shared sheet for now).
+- **One check**: every privileged endpoint calls `gate_(token, right, action)`, which asks `can_(caller, right,
+  scope)`. Today's endpoints need the `players` right on `instance:imr`; the roles list and `roleGrant` / `roleRevoke`
+  need `grant` at the grant's scope.
+- **The admin token is the platform admin, with every right.** A token that can push to the repository can change this
+  script, so no right is withheld from it. Q364's separation holds for the grants an account holds: an account holding
+  only `admin` is refused an instance's players and content until it holds that instance's role.
+- **Callers today: the token only** (`caller_`). `can_` already answers for an account (its name and its code hash), but
+  no endpoint takes an account's name and code as its caller yet, so who may do what is unchanged. Letting a granted
+  account act with its name and code is a later step (the editors' relay, the trainer view).
+- **Pierre's grants**: platform admin, and owner and content editor of `instance:imr`. Given once, as self-grants by
+  the token, to the admin's account (`ADMIN_ACCT`) the first time the admin page reads the answer log signed in to it
+  (`rolesSeed_`). A property marks it done, so a revoke or a delete is never silently granted again. It is marked done
+  only once every grant has its Audit row (v159): a try that fails part way (a Sheets error) writes a Deploy log line,
+  and the admin page's next read finishes it.
+- **The Audit tab**: Time, Admin id, Action, Scope, Result, Target id. One row per change (the players' management, the
+  Analyses report's put, each grant and revoke, a self-grant marked `(self)`), and per refusal at most 20 every 6 hours
+  (`over_`: anyone can send one; refusals take no script lock). Reads are not written: the admin page reads every
+  minute. Every id is an anonymous id: `aid_` for an account, `gh:` and 8 characters for a token (a salted hash, never
+  the token; blank for a refusal, whose caller is nobody known), never a name; the target of a request is written as
+  its id, never the name it carries.
+  A grant is never without its row (v159, `grantPut_`): a row that cannot be written fails the grant (the request
+  answers an error), and the next try of a grant held with no `ok` row since its last revoke (`grantAudited_`) writes
+  that `ok` row instead of `held`. A row that cannot be written is a line in the Deploy log (`roleLog_`, the same line
+  at most once an hour), never silent.
+- **No editor or trainer ever gets a GitHub token that can push** (Q342): their later steps go through this script.
+
+## The Alerts tab in the admin (v152)
+
+Pierre, 2026-11-01 (ROADMAP "Security follow-ups"): admin **To do › Alerts** (`#inbox/todo/alerts`, the same page on
+every subject's side) shows the tab's lines of the last 30 days, newest first, counted by kind, read-only. The script
+serves them with `readAlerts` (the `players` right through `gate_` since roles step 1, so the admin token only today,
+as `readEvents`; its last 3000 lines). The tab holds only what the
+script writes there itself, never what a player sends:
+- `limit reached: <key> (<limit> per 6 h)` (`over_`), the key being `a:<id>` (a device not signed in: its random
+  anonymous id, no name), `anon`, `n:<name>` (a signed-in player's answers), `newacct`, `reports`,
+  `ev:<device id>`, `events`, `old`, `selfdel`, `sd:<admin id>` or `auditdeny` (the Audit tab's refusals, roles step 1);
+- `photos not of the unit shown: <admin id> (n of m answers)` (`photoCheck_`);
+- `left out of the statistics: device <admin id> signed in as <admin id>, left out too`.
+
+The one name is the per-name cap's `n:<name>` (lowercased). `readAlerts` serves it as the name's admin id (`aid_`, the
+id admin Players shows beside the name), so the page shows no name, fewer than the Events tab, whose old-app notes name
+the player in brackets; the tab itself keeps the name, as before. A delete or a merge rewrites that mention in the tab
+(`redact_`: `~deleted <id>`, or the name it joined); an archive moves it to the archive's name.
+
+**Rule D7** (the integrator, 2026-11-16): a line that names an account or a device (`n:<name>`, `sd:<admin id>`, the
+photos line, the left-out line by the account the device signed in as) is served only while its admin id is a current
+writer's: a live account (an RAs row, not archived) or a device not signed in that still has answers (`~anon <id>` in
+the Answers tab). So the page shows and counts nothing of a deleted (`~deleted <id>`), merged-away or archived account,
+nor of a device once it signed in (its answers are the account's) or was deleted; the tab keeps every line. The lines
+that name nobody stay (`a:` and `ev:` device ids, the global caps). **Not covered** (ROADMAP "Alerts lines of a name
+taken again"): an admin id is the name's, so a new account under a deleted or archived account's name shows that old
+account's id lines again; closing it means rewriting those ids in the tab, a write-path change for its own PR.
 
 ## If it happens
 
-1. Look at the **Alerts** tab and admin **Players** (Activity, Users): a burst of `~anon` ids or new names.
+1. Look at admin **To do › Alerts** (the sheet's **Alerts** tab) and admin **Players** (Activity, Users): a burst of
+   `a:` or `newacct` lines, of `~anon` ids or new names.
 2. A player or device that is not junk enough to delete but should not rate the photos: Players, **Leave out**
    (above). Answers with photos of another unit are already kept out of the photo ratings; the Alerts tab names their
    sender's admin id.
@@ -167,4 +235,5 @@ when it is read.
 ## Not done yet (ROADMAP)
 
 - Archive old answers to a second tab or Sheet before the 10-million-cell limit.
-- Show the Alerts tab in the admin (To do).
+
+(Showing the Alerts tab in the admin is done: To do › Alerts, above.)
