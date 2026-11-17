@@ -595,3 +595,37 @@ test('rule D8: the board ranks by the tree the sheet makes under the structure i
   assert.strictEqual(m.n.fish, n1 + 1);
   assert.strictEqual(board(), p1, 'the tree the app sent last');
 });
+
+// Codex review #975 (P1): with the species units the replay's units are over the script cache's 100 KB a value, so they
+// are kept in parts (Code.gs cacheBigPut_), read back whole, and the public board reads the stamp from them (subjStKept_,
+// never a fetch): before, the put threw unseen, every call made them again and the board never saw a Publish's stamp.
+test('the sheet: the replay units over one cache value are kept in parts; the stamp is read from the cache alone', () => {
+  const m = mainFiles(),
+    s = loadCodeGs({fetch: m.fetch, cacheMax: 100 * 1024}),
+    st1 = C.structStamp(S, F, PAIRS),
+    gen1 = C.fishReplayGen(C.contentApply(S, F, PAIRS)),
+    key = () => Object.keys(s.cache).filter(k => k.startsWith('sgen3:fish:') && !k.includes('#'));
+  assert.ok(JSON.stringify({gen: gen1, st: st1}).length > 100 * 1024, 'over one cache value');
+  assert.strictEqual(s.ctx.subjStKept_('fish'), null, 'nothing cached yet: no stamp, nothing fetched');
+  assert.strictEqual(m.n.fish, 0);
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(key().length, 1);
+  assert.match(String(s.cache[key()[0]]), /^#\d+$/, 'kept in parts');
+  assert.strictEqual(s.ctx.subjStKept_('fish'), '', "the base's structure: the empty stamp, read");
+  // A structure Publish, read by the 15-minute trigger: the board reads its stamp.
+  m.cur = PAIRS;
+  s.ctx.subjStRefresh_();
+  assert.strictEqual(s.ctx.subjStKept_('fish'), st1);
+  // Read back whole from the cache: fish.json not read again.
+  const n1 = m.n.fish,
+    x = s.ctx.subjRpl_('fish');
+  assert.strictEqual(m.n.fish, n1, 'from the cache');
+  assert.strictEqual(JSON.stringify(x), JSON.stringify({gen: gen1, st: st1}));
+  // A part gone: read as missing (never a part for the whole), made again at the next call.
+  const k = key().find(k => k.endsWith(':' + C.structFp(S, PAIRS)));
+  delete s.cache[k + '#1'];
+  assert.strictEqual(s.ctx.subjStKept_('fish'), null);
+  assert.strictEqual(s.ctx.subjRpl_('fish').st, st1);
+  assert.strictEqual(m.n.fish, n1 + 1);
+  assert.strictEqual(s.ctx.subjStKept_('fish'), st1);
+});

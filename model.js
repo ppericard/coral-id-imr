@@ -1765,6 +1765,9 @@ const choiceKey = n => labelKey((GX(n) || {}).name || n);
 // (typed, any of them is right: Q376 (b)). Outside IMR, "Longnose butterflyfish" is the main name of F. longirostris and
 // a listed name of F. flavissimus: never a wrong choice on a photo of F. flavissimus.
 const choiceKeys = t => new Set([choiceKey(t), ...((GX(t) || {}).also || []).map(labelKey)].filter(Boolean));
+// Whether the choice o names unit t (its label is one of t's: choiceKeys), so it is never a wrong choice on a question
+// about t, an "Again" included (quiz.js planPhoto; Codex review #975).
+const choiceNames = (o, t) => o !== t && choiceKeys(t).has(choiceKey(o));
 // The units of L whose label no unit before them in L, nor any of taken, carries: the first of each label kept.
 const choiceApart = (L, taken = []) => {
   const seen = new Set(taken.map(choiceKey));

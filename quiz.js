@@ -2149,8 +2149,12 @@ function planPhoto(cur = 'quiz', at = answersSoFar()) {
   if (rematch.length && gap && at - rematch[0].at >= CONTRAST.GAP) {
     const pair = rematch[0].pair,
       // The custom quiz asks only its own genera; and never a genus not met yet (2026-11-04: a genus never met, offered
-      // to make up the choices and picked, was asked by its Again with no card, a genus opened by the side door).
-      ask = (sel ? pair.filter(n => sel.includes(n)) : pair).filter(n => introReady(n) || (sel && sel.includes(n)));
+      // to make up the choices and picked, was asked by its Again with no card, a genus opened by the side door). Nor a
+      // unit the other choice names (model.js choiceNames: outside IMR, "Longnose butterflyfish" is a listed name of
+      // F. flavissimus, so its Again asks F. longirostris only; Codex review #975): with neither, no Again.
+      ask = (sel ? pair.filter(n => sel.includes(n)) : pair).filter(
+        n => (introReady(n) || (sel && sel.includes(n))) && !pair.some(o => choiceNames(o, n))
+      );
     rematch = rematch.slice(1);
     // Never on a genus closed again by "One at a time" (model.js introBack): it waits for its card.
     if (ask.length && pair.every(n => play.includes(n) && !closed(n))) {

@@ -214,3 +214,86 @@ test('no two units of one rank in today’s game share a label: the draw is unch
   assert.ok(coral.length >= 30, String(coral.length));
   assert.strictEqual(new Set(coral).size, coral.length, 'two coral genera of one label');
 });
+
+// Codex review #975 (P2): an "Again" after a mix-up (quiz.js planPhoto) shows the two units of the mix-up, so it never asks
+// a unit the other one names (model.js choiceNames). Outside IMR a photo of F. longirostris ("Longnose butterflyfish")
+// answered "Forceps butterflyfish" queues the pair: its Again asks F. longirostris only, never F. flavissimus between
+// "Longnose butterflyfish" (one of its listed names, typed right) and "Forceps butterflyfish". At IMR the labels turn
+// round (F. flavissimus shows "Longnose butterflyfish", a listed name of F. longirostris): the Again asks F. flavissimus
+// only. Each of the two named by the other: no Again. quiz.js planPhoto's own code runs in Node, the game around it stubbed.
+function againOf(GEN) {
+  const src = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
+  let picked = false;
+  const ctx = {
+    GX: n => GEN[n],
+    pool: () => Object.keys(GEN),
+    CUSTOM_H: 'practice/custom/play',
+    customSel: () => null,
+    holdEase: () => 0,
+    CONTRAST: {GAP: 2},
+    introReady: () => true,
+    closed: () => false,
+    pick: L => ((picked = true), L[Math.floor(Math.random() * L.length)]),
+    // Past the Again's branch (no unit picked for it): the rest of the planner is not loaded.
+    rustNow: () => {
+      if (!picked) throw new Error('past the Again');
+    },
+    cbIn: () => false,
+    recallAt: () => 1,
+    uname: n => GEN[n].name,
+    shuffle: L => L,
+    photoSet: () => ({shown: []})
+  };
+  vm.createContext(ctx);
+  vm.runInContext(
+    block(src('model.js'), "// A choice's label as its button shows it", '// The units of L whose label') +
+      'let rematch = [], twoAt = -Infinity, twoPair = "";\n' +
+      block(src('quiz.js'), "function planPhoto(cur = 'quiz', at = answersSoFar()) {", '\n}\n', {through: 1, file: 'quiz.js'}) +
+      '\nthis.M = {choiceNames, planPhoto, queue: p => (rematch = [{pair: p, at: 5}], twoAt = -Infinity), left: () => [rematch.length, twoAt]};',
+    ctx
+  );
+  // The question planned 5 answers after the mix-up queued pair (target first): its unit, or null with no Again.
+  return pair => {
+    ctx.M.queue(pair);
+    picked = false;
+    let q = null;
+    try {
+      q = ctx.M.planPhoto('quiz', 10);
+    } catch (e) {
+      assert.strictEqual(e.message, 'past the Again');
+    }
+    assert.strictEqual(ctx.M.left()[0], 0, 'the pair leaves the queue either way');
+    if (!q) {
+      assert.strictEqual(ctx.M.left()[1], -Infinity, 'no Again: the contrast spacing untouched');
+      return null;
+    }
+    assert.ok(q.again && q[2].length === 2 && pair.every(n => q[2].includes(n)));
+    return q[1];
+  };
+}
+test('an Again never asks a unit the other choice names: the Forcipiger pair, outside IMR and at IMR', () => {
+  const fl = id('Forcipiger flavissimus'),
+    lo = id('Forcipiger longirostris'),
+    unit = (n, imr) => {
+      const s = F.species.find(x => x.id === n);
+      return {name: cnShow(s, imr), also: (s.cn || []).flat()};
+    },
+    asked = (imr, pair) => {
+      const run = againOf(Object.fromEntries([fl, lo, ...pair].map(n => [n, unit(n, imr)])));
+      return new Set(Array.from({length: 40}, () => run(pair)));
+    };
+  [
+    [false, lo],
+    [true, fl]
+  ].forEach(([imr, only]) => {
+    // either order of the mix-up (which was the target), the same unit asked
+    assert.deepStrictEqual([...asked(imr, [lo, fl])], [only], imr ? 'IMR' : 'other');
+    assert.deepStrictEqual([...asked(imr, [fl, lo])], [only], imr ? 'IMR' : 'other');
+  });
+  // A pair whose names are apart: either unit, as before.
+  const [a, b] = ['Pomacentrus moluccensis', 'Pomacentrus pavo'].map(id);
+  assert.deepStrictEqual([...asked(false, [a, b])].sort(), [a, b].sort());
+  // Each named by the other: no Again.
+  const run = againOf({A: {name: 'Alpha', also: ['Alpha', 'Beta']}, B: {name: 'Beta', also: ['Beta', 'Alpha']}});
+  assert.strictEqual(run(['A', 'B']), null);
+});

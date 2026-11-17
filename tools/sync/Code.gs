@@ -845,13 +845,15 @@ function subjCur_(sid, force){
 // the same file and structure, kept beside the units under the same fingerprint (STREE_, its own key: the tree grows with
 // the species level), so the board's weights per family and circle follow a circle Publish with the replays, whether a
 // device saves or not (subjTreeKept_, board_).
+// v161 (Codex review #975): with the species units the replay's units are about 270 KB, over the script cache's 100 KB a
+// value, so both are put and read in parts (cacheBigPut_, cacheBigGet_), the stamp's reader too (subjStKept_).
 const SGEN_ = 'sgen3:', STREE_ = 'stree2:';
 const subjTreeOn_ = S => !!(S.score && S.replayed && typeof S.replayed.tree === 'function');
 function subjRpl_(sid, force){
   const S = CORE_.subjectOf(sid), X = subjCur_(sid, force);
   if (!X || !(S.replayed && typeof S.replayed.gen === 'function')) return null;
-  const c = CacheService.getScriptCache(), k = SGEN_ + S.id + ':' + X.fp, tk = STREE_ + S.id + ':' + X.fp, hit = c.get(k);
-  if (hit && (!subjTreeOn_(S) || c.get(tk))) return JSON.parse(hit);
+  const c = CacheService.getScriptCache(), k = SGEN_ + S.id + ':' + X.fp, tk = STREE_ + S.id + ':' + X.fp, hit = cacheBigGet_(c, k);
+  if (hit && (!subjTreeOn_(S) || cacheBigGet_(c, tk))) return JSON.parse(hit);
   const d = mainJson_(((S.pool || {}).files || [])[0]);
   if (!d) return null;
   const cur = S.admin && S.admin.cur ? {[S.admin.cur]: {content: X.c}} : {content: X.c},
@@ -859,13 +861,13 @@ function subjRpl_(sid, force){
     gen = S.replayed.gen(A);
   if (!gen || !Object.keys(gen).length) return null;
   const out = {gen: gen, st: CORE_.structStamp(S, d, cur)};
-  try { c.put(k, JSON.stringify(out), 21600); } catch (e) {}
+  try { cacheBigPut_(c, k, JSON.stringify(out), 21600); } catch (e) {}
   // A tree that cannot be made or is refused is kept as 0 (subjTreeKept_ reads no tree: the apps' then), so fish.json is not
   // fetched again at every call for it.
   if (subjTreeOn_(S)) {
     let json = null;
     try { const T = S.replayed.tree(A); json = T ? boardTreeOk_(T) : null; } catch (e) {}
-    try { c.put(tk, json || '0', 21600); } catch (e) {}
+    try { cacheBigPut_(c, tk, json || '0', 21600); } catch (e) {}
   }
   return out;
 }
@@ -877,7 +879,7 @@ function subjTreeKept_(S){
   if (!S.structure || !subjTreeOn_(S)) return null;
   const c = CacheService.getScriptCache();
   try {
-    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), T = X ? JSON.parse(c.get(STREE_ + S.id + ':' + X.fp) || 'null') : null;
+    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), T = X ? JSON.parse(cacheBigGet_(c, STREE_ + S.id + ':' + X.fp) || 'null') : null;
     return T && boardTreeOk_(T) ? {f: T.f, s: T.s} : null;
   } catch (e) { return null; }
 }
@@ -888,7 +890,7 @@ function subjStKept_(sid){
   const S = CORE_.subjectOf(sid), c = CacheService.getScriptCache();
   if (!S.structure) return '';
   try {
-    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), Y = X ? JSON.parse(c.get(SGEN_ + S.id + ':' + X.fp) || 'null') : null;
+    const X = JSON.parse(c.get('scur1:' + S.id) || 'null'), Y = X ? JSON.parse(cacheBigGet_(c, SGEN_ + S.id + ':' + X.fp) || 'null') : null;
     return Y && typeof Y.st === 'string' ? Y.st : null;
   } catch (e) { return null; }
 }
@@ -2852,7 +2854,7 @@ function exposure_(rows, by){
   });
 }
 // Each subject's game photos per unit, grouped by colony (core.js unitPool over the site's files its SUBJECTS pool names,
-// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool2<id>, cut in
+// read from GitHub main, each file once per request): {subject id: pool}, cached 6 hours per subject (pool3<id>, cut in
 // parts by cacheBigPut_: the corals' about 43 KB, the fish's about 390 KB, over the script cache's 100 KB a value). A
 // subject whose files cannot be read is left out, and not asked again for 10 minutes.
 // only (v115): true, the cached pools alone, nothing fetched (an answer's write: photoAlert_); a subject id, that
@@ -2870,7 +2872,7 @@ function pools_(only, ups){
     return files[name] = v;
   };
   CORE_.SUBJECTS.filter(S => S.pool).forEach(S => {
-    const k = 'pool2' + S.id, hit = cacheBigGet_(c, k);
+    const k = 'pool3' + S.id, hit = cacheBigGet_(c, k);  // v161: pool3, the species units' parents (unitUp_)
     if (hit) { try { const v = JSON.parse(hit); if (v && v.p) { out[S.id] = v.p; if (ups) ups[S.id] = v.u || {}; } return; } catch (e) {} }
     if (only === true || (only && only !== S.id)) return;
     let P = null, U = {};
@@ -2907,6 +2909,9 @@ function cacheBigGet_(c, k){
 // v115 (review of #801): a subject's units above the ones its pool holds, from its first pool file: fish.json's genera
 // (g:Chromis) and species (by sheet id, s:Chromis ternatensis, and by id) to their family (f:Damselfishes), the unit
 // the fish pool groups its photos under (core.js unitPool); {} for a file without them (the corals' data.json).
+// v161 (Codex review #975): and the species units of the species level by their unit id, s: and the species id (s:s084,
+// core.js fishSpUnits), so a species question's photos are its family's; cached under a new key (pool3), so the parent
+// units a script before them cached are never read.
 function unitUp_(F){
   const up = Object.create(null);
   if (!F || !Array.isArray(F.genera)) return up;
@@ -2914,7 +2919,7 @@ function unitUp_(F){
   (F.species || []).forEach(x => {
     const fam = x && (x.family || up['g:' + String(x.name || '').split(' ')[0]]);
     if (!fam) return;
-    if (x.id) up[x.id] = fam;
+    if (x.id) up[x.id] = up['s:' + x.id] = fam;
     if (x.name) up['s:' + x.name] = fam;
   });
   return up;
