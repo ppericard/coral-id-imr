@@ -973,9 +973,11 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
     // Levels (lvStep): corals 12 genera met, 6 at Open Water; fish 30 families met, 8 at Advanced, 2 learned.
     lv = {
       coral: Object.fromEntries(Array.from({length: 40}, (_, i) => ['G' + i, i < 6 ? 2 : i < 12 ? 1 : 0])),
-      fish: Object.fromEntries(Array.from({length: 67}, (_, i) => ['f' + i, i < 2 ? 5 : i < 8 ? 3 : i < 30 ? 1 : 0]))
+      fish: Object.fromEntries(Array.from({length: 67}, (_, i) => ['f' + i, i < 2 ? 5 : i < 8 ? 3 : i < 30 ? 1 : 0])),
+      // the sea slugs (their own achievements, core.js SEASLUG_ACH): in, nothing played
+      seaslug: Object.fromEntries(Array.from({length: 78}, (_, i) => ['g' + i, 0]))
     },
-    S = {coral: C.SUBJECTS[0], fish: C.SUBJECTS[1]},
+    S = {coral: C.SUBJECTS[0], fish: C.SUBJECTS[1], seaslug: C.subjectOf('seaslug')},
     ctx = {
       ...C,
       SYNC: {name: 'Ana'},
@@ -1000,7 +1002,7 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
     bonusList: () => [],
     introduced: () => false,
     eloScore: () => 0,
-    headPct: () => coralPct,
+    headPct: () => (ctx.cur === 'seaslug' ? 0 : coralPct),
     treeScore: () => ({pct: fishPct}),
     UNITS: {
       coral: {},
@@ -1009,7 +1011,8 @@ function migr(A, {fish = true, coralPct = 30, fishPct = 45} = {}) {
         circles: () => (ctx.fishIn ? [ids('fish').slice(0, 28), ids('fish').slice(28, 32), ids('fish').slice(32)] : []),
         tree: () => (ctx.fishIn ? {f: [], s: []} : null),
         sets: [{k: 'sci', all: () => []}]
-      }
+      },
+      seaslug: {circles: () => [ids('seaslug').slice(0, 24), ids('seaslug').slice(24, 46), ids('seaslug').slice(46)]}
     },
     inSubject: (id, fn) => {
       const was = ctx.cur;

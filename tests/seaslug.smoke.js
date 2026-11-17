@@ -308,6 +308,62 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     await p.waitForFunction(() => TREE_AT === SUBJ.id && FISH && FISH.gen['f:Chromodorididae'] && !FISH.gen['f:Damselfishes'], null, {
       timeout: 30000
     });
+    // Its leaderboard (Pierre, 2026-11-17; core.js SUBJECTS seaslug board, boardSheet): asked as &s=seaslug and shown only
+    // from the script that serves it (SEASLUGRP_SHEET, rule D4), the corals' board before; its replay's units, the app's
+    // (UNITS gen, read with its own tree in force: sync.js rpUnits). The sheet's replies are fixtures inside the page's
+    // fetch (rule D1).
+    const sb = await p.evaluate(async () => {
+      const f0 = window.fetch,
+        asked = [],
+        sv0 = store.get(SHEETV, 0);
+      window.fetch = u => {
+        asked.push(String(u).replace(/^.*\?/, ''));
+        const rows = /s=seaslug/.test(u) ? [['Slug P', 41, 0.7]] : [['Coral P', 90, 1.1]];
+        return Promise.resolve(new Response(JSON.stringify({ok: true, rows, v: store.get(SHEETV, 0)})));
+      };
+      const shown = () => new Promise(ok => setTimeout(() => ok((document.getElementById('board') || {}).textContent || ''), 200));
+      try {
+        store.set(SHEETV, SEASLUGRP_SHEET - 1);
+        go('board');
+        const before = await shown(),
+          live0 = boardLive(SUBJ),
+          rp0 = rpOn(SUBJ, sheetV()),
+          asked0 = asked.splice(0);
+        store.set(SHEETV, SEASLUGRP_SHEET);
+        Object.keys(boardP).forEach(k => delete boardP[k]);
+        viewBoard();
+        const after = await shown();
+        // its replay's units from its own tree, whichever subject is on screen
+        const units = inSubject('coral', () => rpUnits(subjectOf('seaslug')));
+        return {before, live0, rp0, asked0, after, asked, live1: boardLive(SUBJ), units: !!units && !!units['g:Chromodoris']};
+      } finally {
+        window.fetch = f0;
+        store.set(SHEETV, sv0);
+      }
+    });
+    check(
+      !sb.live0 && !sb.rp0 && /Coral P/.test(sb.before) && sb.asked0.every(a => a === 'board=1'),
+      `2: before its script, no sea slug board: ${JSON.stringify(sb)}`
+    );
+    check(
+      sb.live1 && /Slug P/.test(sb.after) && /41%/.test(sb.after) && sb.asked.every(a => a === 'board=1&s=seaslug'),
+      `2: the sea slug board: ${JSON.stringify(sb)}`
+    );
+    check(sb.units, '2: its replay units read with its own tree in force');
+    // Its achievements page: its own list (core.js SEASLUG_ACH) and ? text, the Contributions apart.
+    await p.goto(base + '#seaslug/leaderboard/achievements');
+    await p.waitForFunction(() => document.querySelectorAll('#view .achl li').length > 0, null, {timeout: 15000});
+    const ach = await p.evaluate(() => ({
+      n: document.querySelectorAll('#view .achl')[0].querySelectorAll('li').length,
+      want: SEASLUG_ACH.length,
+      head: (document.querySelector('#view .btitle') || {}).textContent,
+      text: document.querySelector('#view').innerText
+    }));
+    check(
+      ach.n === ach.want && new RegExp(`^\\d+/${ach.want} earned$`).test(ach.head) && /Naked gills/.test(ach.text),
+      `2: the achievements page: ${ach.n} ${ach.head}`
+    );
+    check(/sea slug learning/.test(ach.text) && !/Fish whisperer|Coral master/.test(ach.text), '2: its own ? text and list');
     check(!errs.length, '2: page errors: ' + errs.join('; '));
     await ctx.close();
   }
