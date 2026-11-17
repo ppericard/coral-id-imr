@@ -3753,7 +3753,10 @@ is (`SHARE`, `sharesNow`, `shareW`).
   right in the log (`replayProgress` `vars`: `vl`, `varLeftOf` at a full bar, a learned unit's). `replayedOf` then takes
   a learned mark away when its unit has a `vl` group, silently (rule D6), its exam kept as passed but for that group
   (`s.ex` at `EXAM.n` right and `TYPED.exam` typed, `core.js` `MX_EXAM`, ready at once): its next exam question asks
-  the group, and a right answer there makes it learned again. The leaderboards follow at once (`board_` ranks a player
+  the group, and a right answer there makes it learned again. The record adopted keeps the log's groups (`vl`), which
+  the exam reads over the photos seen (`model.js` `varLeft`) until a right answer on the device clears each
+  (`varRight`): a right answer the saved copy holds but the log lacks (one played before the fish answers were logged)
+  never brings the mark back (rule D9; Codex review #953). The leaderboards follow at once (`board_` ranks a player
   behind the rules by `replayAdopted` of their replay; `boardWarm_` makes the replays), each device when it adopts the
   replay (`sync.js` `replayAdoptS`). The app's exam uses the same functions (`model.js` `varLeft`: `varUnit`,
   `varLeftOf`), so app and sheet agree (`tests/phasepath.test.js`); no device takes a mark away on its own. A replay is

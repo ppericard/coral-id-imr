@@ -393,8 +393,25 @@ function varUnitOf(n) {
   const {need, pics} = examPics(n);
   return varUnit(need.flatMap(pics), (GX(varHome(n)) || {}).juv, v => varAtOf(n, v));
 }
+// A group the answer log left (s.vl: core.js replayProgress vars, kept by replayedOf) stays left, though s.ps, merged
+// with this device's saved copy, holds a right answer the log lacks (rule D9; Codex review #953), until a right answer
+// on it here (varRight): the same groups as the sheet's replay.
 function varLeft(n) {
-  return GX(n) ? varLeftOf(varUnitOf(n), genScore(n), (P[n] || {}).ps) : [];
+  if (!GX(n)) return [];
+  const U = varUnitOf(n),
+    x = genScore(n),
+    s = P[n] || {},
+    left = varLeftOf(U, x, s.ps),
+    log = Array.isArray(s.vl) ? s.vl : [];
+  return log.length ? varLeftOf(U, x, {}).filter(g => left.includes(g) || log.includes(g)) : left;
+}
+// A right answer on unit n's photos L (quiz.js answer) clears their variant groups from those the log left (s.vl).
+function varRight(n, L) {
+  const s = P[n];
+  if (!s || !Array.isArray(s.vl)) return;
+  const got = new Set((L || []).map(p => varGroup(varKind(n, p))));
+  s.vl = s.vl.filter(g => !got.has(g));
+  if (!s.vl.length) delete s.vl;
 }
 // The exam passed (quiz.js answer, the rated world): EXAM.n right, TYPED.exam of them typed, and no variant group left.
 const examPassed = (n, ex) => ex.k >= EXAM.n && (ex.t || 0) >= TYPED.exam && !varLeft(n).length;

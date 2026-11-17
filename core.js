@@ -2356,7 +2356,8 @@
         // vr: the Elo step's volatility (app.js abilityStep), part of the model the device that played updated; lt: the
         // global level at the genus's last own step (core.js levelMove), which goes with its th.
         // dp, ds: the domain-score bar's posterior and bar (domStep), the model of that device's answers like pg.
-        ['lv', 'run', 'L', 'pg', 'dp', 'ds', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx'].forEach(k => {
+        // vl: the variant groups the log left (core.js replayedOf), cleared by that device's right answers (model.js varRight).
+        ['lv', 'run', 'L', 'pg', 'dp', 'ds', 'pm', 'rv', 'th', 'lt', 'vr', 'ro', 'ex', 'mx', 'vl'].forEach(k => {
           if (l[k] !== undefined) out[k] = l[k];
           else delete out[k];
         });
@@ -5761,8 +5762,9 @@
   //   at (the later of the two), du (either), the photos seen ps per photo the larger [shown, right] of the two (the
   //   device also counts as shown a corallites hint revealed after the answer, which the log leaves out: a replay must
   //   not make it new again for the exam, model.js examSet), pm 1 (the record is under the photo memory rule: memRecalc must never
-  //   correct it again), and rv when given (the rules version it was replayed with: mergeProgress then keeps it over
-  //   an older copy of the same answers);
+  //   correct it again), rv when given (the rules version it was replayed with: mergeProgress then keeps it over
+  //   an older copy of the same answers), and the variant groups with no right answer in the log (vl, which the exam
+  //   reads over ps: model.js varLeft);
   // - from the saved copy, what the log cannot give: the mastery exam passed (mx) or in course (ex), dropped when passed
   //   under the former model (a record without s.pg, before 2026-11-02: that genus takes the exam again; memRecalc, commit
   //   of 2026-11-03), and the mark dropped too when the log has a miss after the exam that the game takes it away at
@@ -5787,7 +5789,11 @@
   // The replay does not decide the exam: a genus learned keeps it here even if its replayed bar is lower, unless a miss
   // after the exam takes it away, as the game does (mxKeeps, lm).
   const LEVEL_LOG = ['th', 'vr', 'lt', 'tyk', 'rt'];
-  const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak'];
+  // vl (replayProgress vars): the unit's variant groups with no right answer in the log, kept on the record so the app's
+  // exam asks them (model.js varLeft) even where the photos seen ps, merged with the saved copy below, hold a right answer
+  // the log lacks (one played before the fish answers were logged): the log is the only reference (rule D9; Codex review
+  // #953); quiz.js answer clears a group at a right answer on it (model.js varRight).
+  const REPLAYED = ['pg', 'dp', 'ds', 'ok', 'ko', 'ty', 'h', 'ps', 'off', 'conf', 'th', 'lt', 'vr', 'streak', 'vl'];
   function replayedOf(rep, saved, rv) {
     const S = isObj(saved) ? saved : {},
       R = (rep && rep.P) || {},

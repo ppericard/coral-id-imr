@@ -95,7 +95,7 @@ function engine(
   const ctx = vm.createContext({...stubs}),
     names = Object.keys(stubs),
     make = vm.runInContext(
-      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, varLeft, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P};\n})`,
+      `(function (${names.join(', ')}) {\n${code}\nreturn {photoSet, RARE, rareCap, varOf, varLeft, varRight, varUnitOf, examSet, examPassed, EXAM, TYPED, PICKD, P};\n})`,
       ctx
     );
   return make(...names.map(k => stubs[k]));

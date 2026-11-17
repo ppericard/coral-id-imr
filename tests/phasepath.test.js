@@ -431,8 +431,120 @@ test('the replay takes a learned mark away when a variant group has no right ans
   assert.deepStrictEqual(rec['f:X'].vl, ['juv', 'ph']);
   const on = C.replayProgress([row(9, 'a5')], {gen, start: {p: {P: rec, n: 0, used: 0, rep: 0}}}).p.P;
   assert.deepStrictEqual(on['f:X'].vl, ['juv', 'ph']);
-  // The record a device holds never carries vl: the replay's own mark, read by replayedOf only.
-  assert.ok(!('vl' in A) && !('vl' in adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars})));
+  // The record adopted keeps the log's groups left (vl), which the exam reads; none once each group is right in the log.
+  assert.deepStrictEqual(A.vl, ['juv', 'ph']);
+  assert.ok(!('vl' in adopt([...adults, row(4, 'j1'), row(5, 'm2')], {vars})));
+});
+
+// Codex review #953: a right answer on a variant photo in the saved copy but not in the log (played before the fish
+// answers were logged) comes back into the adopted record's photos seen (replayedOf merges ps); the exam reads the log's
+// groups (vl) over it, so the mark comes back only once that group is answered right here, as the sheet decides.
+test('a right variant answer the log lacks does not bring the mark back: the exam asks the group the log left', () => {
+  const L = examPool(),
+    vars = {'f:X': C.varUnit(L, {cls: 'C'})},
+    gen = {'f:X': {look: [], fam: 'X'}, 'f:Y': {look: [], fam: 'Y'}},
+    t0 = Date.UTC(2026, 10, 10),
+    row = (i, f) =>
+      C.logRow(
+        {
+          id: 'a' + i,
+          t: new Date(t0 + i * 1000).toISOString(),
+          g: 'f:X',
+          a: 'f:X',
+          ok: 1,
+          m: 'quiz|c',
+          ph: f,
+          ch: 'f:X f:Y',
+          e: 0.8,
+          th: 1,
+          sc: {d: 0, r: 1}
+        },
+        'p'
+      ),
+    mx = t0 + 60000,
+    // The saved copy: learned, with a juvenile and a male answered right that the log does not hold.
+    saved = {'f:X': {ok: 5, ko: 0, h: '11111', ds: 1, dp: [1, 1], mx, ps: {j1: [1, 1], m2: [1, 1]}}},
+    rec = C.replayProgress(
+      [0, 1, 2, 3].map(i => row(i, `a${i}`)),
+      {gen, vars}
+    ).p.P,
+    A = C.replayAdopted(rec, saved, 3)['f:X'];
+  assert.ok(!A.mx, 'the mark goes');
+  assert.deepStrictEqual(
+    [A.ps.j1, A.ps.m2],
+    [
+      [1, 1],
+      [1, 1]
+    ],
+    'the saved exposure kept'
+  );
+  assert.deepStrictEqual(A.vl, ['juv', 'ph']);
+  // The app's exam on that record: both groups left, a juvenile asked first, not passed.
+  const E = engine('fish', L, {score: 1, juv: {cls: 'C'}}),
+    one = f => L.find(p => p.f === f);
+  E.P.u = JSON.parse(JSON.stringify(A));
+  assert.deepStrictEqual(E.varLeft('u'), ['juv', 'ph']);
+  assert.ok(!E.examPassed('u', E.P.u.ex));
+  for (let i = 0; i < 20; i++) assert.ok(E.examSet('u').shown[0].f.startsWith('j'), 'the juveniles asked');
+  // A right answer on an adult clears nothing; on a juvenile, its group; on a male, the last: passed.
+  E.varRight('u', [one('a0')]);
+  assert.deepStrictEqual(E.P.u.vl, ['juv', 'ph']);
+  E.varRight('u', [one('j0')]);
+  assert.deepStrictEqual(E.varLeft('u'), ['ph']);
+  assert.ok(!E.examPassed('u', E.P.u.ex));
+  for (let i = 0; i < 20; i++) assert.ok(E.examSet('u').shown[0].f.startsWith('m'), 'then the sexes');
+  E.varRight('u', [one('m0')]);
+  assert.ok(!('vl' in E.P.u));
+  assert.deepStrictEqual(E.varLeft('u'), []);
+  assert.ok(E.examPassed('u', E.P.u.ex), 'learned again');
+  // The sheet decides alike once those answers reach the log: no group left, the mark kept.
+  const rec2 = C.replayProgress([0, 1, 2, 3].map(i => row(i, `a${i}`)).concat([row(4, 'j0'), row(5, 'm0')]), {gen, vars}).p.P;
+  assert.ok(!('vl' in rec2['f:X']));
+  assert.strictEqual(C.replayAdopted(rec2, saved, 3)['f:X'].mx, mx);
+  // Between devices (core.js mergeProgress): this device's cleared groups win when it answered since the baseline.
+  const B = {'f:X': {...A}},
+    mine = {'f:X': {...E.P.u, ok: A.ok + 2, h: A.h + '11'}},
+    M = C.mergeProgress(B, mine, B)['f:X'];
+  assert.ok(!('vl' in M));
+  assert.deepStrictEqual(C.mergeProgress(B, B, {'f:X': {...A, ok: A.ok + 1, h: A.h + '1'}})['f:X'].vl, ['juv', 'ph']);
+  // quiz.js answer clears them at a right answer, before the exam step reads them.
+  const quizSrc = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8');
+  assert.ok(quizSrc.indexOf('if (good) varRight(target, seenPh);') < quizSrc.indexOf('if (examPassed(target, ex))'));
+  assert.ok(quizSrc.indexOf('if (good) varRight(target, seenPh);') > quizSrc.indexOf('const res = scoreAnswer(P, q)'));
+});
+
+// The phase card (quiz.js phaseShow) names the source of its lines: the one the content editor gave with an edit of
+// them (app.js fishGenera psrc), else IMR's (Codex review #953).
+test('the phase card shows its lines under their recorded source, else IMR', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'quiz.js'), 'utf8'),
+    fn = require('./block.js')(src, 'function phaseShow(', '\n}\n', {through: 1, file: 'quiz.js'}),
+    p = {f: 'j', ph: 'juvenile'},
+    show = g => {
+      let body = '';
+      const stubs = {
+        GX: () => g,
+        phasePair: () => null,
+        gamePhotoOk: () => true,
+        photoTaxon: () => null,
+        taxonLine: () => '',
+        phaseOf: x => x.ph || '',
+        PHASEC: {WORD: {juvenile: 'Juvenile'}},
+        img: x => x.f,
+        esc: x => String(x).replace(/</g, '&lt;'),
+        credit: () => 'c',
+        cardShow: o => ((body = o.body), {querySelectorAll: () => []}),
+        setTimeout: () => {},
+        TIP: {WAIT: 0}
+      };
+      new Function(...Object.keys(stubs), fn + '\nreturn phaseShow;')(...Object.values(stubs))({p, k: 'juvenile'}, 'u');
+      return body;
+    };
+  assert.match(show({phase: ['Juveniles yellow']}), /<p class="phlines"><b>IMR<\/b>: Juveniles yellow<\/p>/);
+  assert.match(
+    show({phase: ['An edited line'], psrc: {t: 'Randall 2005 <p. 3>'}}),
+    /<p class="phlines"><b>Randall 2005 &lt;p. 3><\/b>: An edited line<\/p>/
+  );
+  assert.ok(!/phlines/.test(show({phase: []})), 'no line: no source');
 });
 
 // This device's answers replayed on top of the sheet's (sync.js replayAdoptS) recompute the variant groups left with the

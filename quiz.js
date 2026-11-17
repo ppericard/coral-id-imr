@@ -773,6 +773,8 @@ function answer(cur, c, target, ph, cor, unseen, tm = {}, tap = null) {
   if (ph[0]) s.ro = [...(s.ro || []).filter(o => o !== (ph[0].o || ph[0].f)), ph[0].o || ph[0].f].slice(-2);
   if (good && cor) s.cor = 1; // milestone: right with the corallites photo in view
   if (good && (cur.startsWith('quiz-duel') || (photoQuiz(cur) && AUTOD))) s.du = 1; // won a look-alike duel, in the Duel tab or slipped into the quiz (the duel achievement)
+  // A right answer clears its photos' variant groups from those the answer log left (model.js varRight, varLeft).
+  if (good) varRight(target, seenPh);
   // Mastery exam (EXAM): count an exam question passed; any miss on the genus ends its exam, and so does giving the
   // genus as the answer for another one.
   // (exq, above: never from the custom quiz.)
@@ -1361,6 +1363,8 @@ function phaseShow({p, k}, n, brk) {
       ((g.views || {}).wide || []).filter(x => gamePhotoOk(n, x))
     ),
     tx = photoTaxon([p], n),
+    // Its phase lines, under their source: the one the content editor gave with an edit of them (app.js fishGenera psrc,
+    // core.js contentApply esrc; rule C2, Codex review #953), else IMR's, the presentation's own words.
     lines = g.phase || [],
     w = phaseOf(p),
     word = x => PHASEC.WORD[phaseOf(x)] || 'Adult',
@@ -1378,7 +1382,7 @@ function phaseShow({p, k}, n, brk) {
     cls: 'tipcard phasecard',
     kick: 'Juveniles and phases',
     title: esc(title),
-    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>IMR</b>: ${lines.map(esc).join('; ')}</p>` : ''}<p class="credit">${credits}</p>`,
+    body: `<div class="phvis">${fig(p)}${q ? fig(q) : ''}</div>${tx ? taxonLine(tx) : ''}${lines.length ? `<p class="phlines"><b>${esc((g.psrc && g.psrc.t) || 'IMR')}</b>: ${lines.map(esc).join('; ')}</p>` : ''}<p class="credit">${credits}</p>`,
     primary: {text: 'Got it', attr: 'disabled'},
     esc: 1,
     focus: 'h3',
