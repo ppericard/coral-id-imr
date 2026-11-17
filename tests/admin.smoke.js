@@ -6909,6 +6909,13 @@ const darkCards = (p, sel) =>
         );
         if (!s1.seen || !s1.feat.includes(f1) || !s1.cover || !s1.fish || !s1.out || !/sea slug photos? set aside/.test(s1.sum))
           se.push(`the tools ${JSON.stringify(s1)}`);
+        // the genus-level leaf's page reads that cover under its genus's id, as ★ Cover writes it (Codex review #1047)
+        if (fg) {
+          await sq.goto(base + 'admin.html?demo#seaslug/photos/tree/key/gl%3Ag%3AChromodoris');
+          await swait(() => !!document.querySelector('#view .adm-sthumb'), 'the genus-level page');
+          const hc = await sq.$eval('#view .adm-sthumb', t => [t.dataset.f, t.classList.contains('mine')]).catch(() => []);
+          if (hc[0] !== fg || !hc[1]) se.push(`the genus-level page's cover ${JSON.stringify(hc)} (chosen ${fg})`);
+        }
         // The fish's Tree after the switch: its own part, its own data; back on the sea slugs, the draft as it was.
         await sq.goto(base + 'admin.html?demo#fish/photos/tree/key');
         await swait(

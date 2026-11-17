@@ -2884,7 +2884,8 @@ function renderFishUnits(id, view = TREE) {
     lv = ttPath(T, sel).length - 1 - base,
     pathOf = x => ttPath(T, x).slice(base),
     photosOf = x => fuNodePhotos(T, u, e, x),
-    cvOf = x => nodeCover(x, photosOf(x), F, fuJ, leafOf(x)),
+    // a genus-level leaf's cover is kept under its genus's id, as its ★ Cover writes it (Codex review #1047)
+    cvOf = x => nodeCover((T.node.get(x) || {}).gl ? leafSid(T, x) : x, photosOf(x), F, fuJ, leafOf(x)),
     C = cvOf(sel),
     cv = C.p,
     P = photosOf(sel),
