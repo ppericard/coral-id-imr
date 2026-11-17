@@ -351,19 +351,21 @@ const ready = p => p.waitForFunction(() => window.APP_READY, null, {timeout: 300
     );
     check(sb.units, '2: its replay units read with its own tree in force');
     // Its achievements page: its own list (core.js SEASLUG_ACH) and ? text, the Contributions apart.
-    await p.goto(base + '#seaslug/leaderboard/achievements');
+    await p.evaluate(() => go('ach'));
     await p.waitForFunction(() => document.querySelectorAll('#view .achl li').length > 0, null, {timeout: 15000});
     const ach = await p.evaluate(() => ({
       n: document.querySelectorAll('#view .achl')[0].querySelectorAll('li').length,
       want: SEASLUG_ACH.length,
       head: (document.querySelector('#view .btitle') || {}).textContent,
-      text: document.querySelector('#view').innerText
+      text: document.querySelector('#view').innerText,
+      // its ? text (behind the shared ?, rule U1): the subject's own
+      help: achSubj().id === 'seaslug' && UNITS[achSubj().id].achHelp()
     }));
     check(
       ach.n === ach.want && new RegExp(`^\\d+/${ach.want} earned$`).test(ach.head) && /Naked gills/.test(ach.text),
       `2: the achievements page: ${ach.n} ${ach.head}`
     );
-    check(/sea slug learning/.test(ach.text) && !/Fish whisperer|Coral master/.test(ach.text), '2: its own ? text and list');
+    check(/sea slug learning/.test(ach.help || '') && !/Fish whisperer|Course director/.test(ach.text), '2: its own ? text and list');
     check(!errs.length, '2: page errors: ' + errs.join('; '));
     await ctx.close();
   }
