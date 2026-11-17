@@ -268,7 +268,7 @@ let SHOWN_COVER = null,
   PRES = {}, // presence.json sp: each photo species confirmed in the Philippines or not (tools/coral_presence.py)
   NAMES = {}, // names.json, the first subject's section: former names and iNaturalist spellings (tools/taxonomy.py; presence.js nameFlag)
   NAMEJ = {}, // names.json by subject id: every subject's section (nameTag)
-  FISHA = null, // the fish entries and their photos, for the fish beta's reports (fishAdmin)
+  FISHA = null, // the tree subject in force's entries and photos, for its reports (fishAdmin; UNITA's, by subject)
   KNOWN = new Set(),
   DATA,
   SAVED = {v: 1, genera: {}},
@@ -279,6 +279,18 @@ let SHOWN_COVER = null,
   AUTOQ = {},
   AUTOF = {},
   lastGenus = null;
+// The tree subjects (core.js SUBJECTS with their own part of curation.json and sheets at several ranks, never named: rule
+// S1), and the one in force (FISHS, TK its part's key: SUBJECTS admin.cur): the one on screen when it is one, else the last
+// one on screen, as the app's tree in force (app.js treeAt; treeIn below). Photos › Tree, the photo tools (fishTile,
+// bindFishTiles), the family pages' data (FISHC, fishLoad) and the registry of its reports (FISHA, fishAdmin) are the one
+// in force's, and every read or write of "its part" is DRAFT[TK] (the sea slugs' admin photo pages, 2026-11-17).
+// The auto-sort's subject (SUBJECTS admin autosort; AK its part's key): its part is stamped and sorted at each load,
+// whatever the subject on screen (autoWhen, fishAutoRun).
+const TREES = SUBJECTS.filter(S => S.admin.cur && S.sheets),
+  ASORT = TREES.find(S => S.admin.autosort) || null,
+  AK = ASORT ? ASORT.admin.cur : '';
+let FISHS = TREES[0] || null,
+  TK = FISHS ? FISHS.admin.cur : '';
 // Photo quality: 3 good, 2 fair, 1 poor (material for a realistic mode). First ratings come from quality.json
 // (tools/photo_quality.py, rough on purpose); Pierre's corrections live in curation.json "quality" {f: level}.
 const QUAL = [
@@ -449,20 +461,20 @@ function autoWhen() {
   if (ASIG_OF !== snap) {
     const S = JSON.parse(snap);
     ASIG = autoSigs(S);
-    FSIG = fishSigs((S || {}).fish);
+    FSIG = fishSigs((S || {})[AK]);
     FSIG_F = null;
     ASIG_OF = snap;
   }
   const t = Date.now() / 1000,
-    same = !!DRAFT.fish && DRAFT.fish === FSIG_F,
+    same = !!DRAFT[AK] && DRAFT[AK] === FSIG_F,
     A = autoStamp(DRAFT, ASIG, t),
-    FA = DRAFT.fish && !same && fishStamp(DRAFT.fish, FSIG, t);
+    FA = DRAFT[AK] && !same && fishStamp(DRAFT[AK], FSIG, t);
   if (A) DRAFT.auto = A;
-  if (FA) DRAFT.fish = {...DRAFT.fish, auto: FA};
+  if (FA) DRAFT[AK] = {...DRAFT[AK], auto: FA};
   ASIG = autoSigs(DRAFT); // of the draft saveDraft is about to keep as snap
   if (!same) {
-    FSIG = fishSigs(DRAFT.fish);
-    FSIG_F = DRAFT.fish;
+    FSIG = fishSigs(DRAFT[AK]);
+    FSIG_F = DRAFT[AK];
   }
 }
 const untimed = L => Object.fromEntries(Object.entries(L).map(([f, c]) => [f, String(c).replace(/@[0-9a-z]+$/, '')]));
@@ -1418,7 +1430,7 @@ function status0() {
       snChanged() ? 'several corals' : '',
       tlChanged() ? 'tile photos' : '',
       auChanged() ? 'auto-sort' : '',
-      fiChanged() ? 'fish curation' : '',
+      ...fiChanged(),
       coChanged() ? 'sheet edits' : '',
       ptChanged() ? 'points to handle' : '',
       rpChanged() ? 'report statuses' : ''
@@ -1765,6 +1777,7 @@ function readHash() {
   if (shared(q) && !pre) S = subjRead ? ASUBJ : SUBJECTS.find(x => x.id === store.get('reefid-admin-nav-subj', '')) || ADM0;
   subjRead = true;
   ASUBJ = S;
+  treeIn(S);
   cur = q;
   if (cur !== p || (shared(cur) && pre)) history.replaceState(null, '', '#' + (shared(cur) ? '' : ASUBJ.hash) + admAddr(cur));
   store.set('reefid-admin-nav-subj', ASUBJ.id);
@@ -1938,7 +1951,7 @@ const modeKey = () =>
 // outside suggest.json; fish-game.json keeps its e and jt).
 const fuJ = f => {
   const g = ((FISHC && FISHC.gj) || {})[f],
-    j = ((SUG && SUG.fish) || {})[f];
+    j = ((SUG && SUG[TK]) || {})[f];
   return g && j ? {...g, ...j} : j || g || null;
 };
 let FU_IMR = store.get('reefid-admin-fu-imr', 'all'); // the family list: 'all' or 'imr' (the IMR course's only)
@@ -1952,8 +1965,9 @@ const fuRankOf = (S, id) => {
   return R.find(r => (S.sheets || {})[r] && String(id).startsWith(S.sheets[r])) || R[R.length - 1];
 };
 // The rubric's tags in words (judging/FISH.md "Tags"): only what makes a photo harder, as the fish Candidates say it.
+// The sea slugs' own letters (judging/SEASLUG.md: v ventral, f features hidden; never in a fish code) read the same way.
 const FU_TAGS = [
-  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above'},
+  {o: 'oblique', h: 'head-on', t: 'tail view', d: 'from above', v: 'ventral'},
   {0: 'partial'},
   {d: 'dim light', n: 'night livery'},
   {1: 'slight colour loss', 2: 'strong colour loss', 3: 'monochrome'},
@@ -1967,7 +1981,7 @@ const FU_TAGS = [
     x: 'subject not obvious'
   }
 ];
-const FU_FLAGS = {c: 'camouflage', a: 'out of water', w: 'watermark'};
+const FU_FLAGS = {c: 'camouflage', a: 'out of water', w: 'watermark', f: 'features hidden'};
 const fuTags = jt =>
   !jt ? '' : [...FU_TAGS.map((m, i) => m[jt[i]]), ...[...jt.slice(7)].map(c => FU_FLAGS[c])].filter(Boolean).map(esc).join(' · ');
 // A unit's IMR tag: "IMR", its IMR name in the tooltip; a family IMR teaches with another (the Soapfishes) says so.
@@ -1981,7 +1995,7 @@ const fuImr = u =>
 // [0, 0, 1, 1] = uncropped on purpose), else the judging pass's (Codex review #655); and his rotation (fish rot).
 const fuP = p =>
   p
-    ? {...p, j: {c: ((DRAFT.fish || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT.fish || {}).rot || {})[p.f])}}
+    ? {...p, j: {c: ((DRAFT[TK] || {}).crop || {})[p.f] || (fuJ(p.f) || {}).c || null, ro: rotNorm(((DRAFT[TK] || {}).rot || {})[p.f])}}
     : p;
 // A node's page in the Key view (where the other pages send a family: Coverage, reports, Pairs), and in the Tree view on
 // screen (TT_VIEW: its tree, its crumbs, its cards and selects).
@@ -1993,8 +2007,8 @@ const tvHref = id => '#' + ASUBJ.hash + TT_VIEW + '/' + encodeURIComponent(id);
 // An add with other species one could take for its subject, or not sorted yet (core.js fishOther: his tag, his legacy m
 // refined by the pass's o or k; Pierre, 2026-11-09, Q323) is out of play: listed apart (other), never counted in play.
 function fuData() {
-  const F = DRAFT.fish || {},
-    S0 = SAVED.fish || {},
+  const F = DRAFT[TK] || {},
+    S0 = SAVED[TK] || {},
     play = {},
     other = [],
     gone = [];
@@ -2010,7 +2024,7 @@ function fuData() {
       .flat()
       .map(p => fishPid(p.f))
   );
-  fishGameIn(FISHC.plays, DRAFT).forEach(p => {
+  fishGameIn(FISHC.plays, treeCur(FISHS, DRAFT)).forEach(p => {
     if (seen.has(fishPid(p.f))) return;
     seen.add(fishPid(p.f));
     (play[p.sp] = play[p.sp] || []).push(p);
@@ -2039,15 +2053,17 @@ function fuData() {
 function fuFam(u, D) {
   const sp = FISHC.species,
     ok = s => sp[s] && !sp[s].out,
-    rows = Object.fromEntries(u.species.filter(ok).map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
+    // its species', then its genera's genus-level photos (gl: the genus's own row, under its id)
+    ids = [...u.species.filter(ok), ...u.genera.map(g => g.id).filter(g => (D.play[g] || []).length)],
+    rows = Object.fromEntries(ids.map(sid => [sid, fishOrder(D.play[sid] || [], D.F, u.id, sid, fuJ)])),
     k = (D.F.genera || {})[u.id] || {},
-    all = u.species.filter(ok).flatMap(s => [...rows[s].feat, ...rows[s].rest]),
+    all = ids.flatMap(s => [...rows[s].feat, ...rows[s].rest]),
     // his pick while in play, else the family's first photo in the game's order across all its species (core.js easyRank
     // as the game's card cover: reference-level first; Codex review #655)
     cover = fishCoverOf(all, D.F, u.id, fuJ);
   return {rows, k, all, cover, needs: fishNeeds(u, D.play, sp, D.F, fuJ), n: u.species.filter(ok).length};
 }
-const fuName = sid => (FISHC.species[sid] || {}).name || sid;
+const fuName = sid => (FISHC.species[sid] || {}).name || (FISHC.genera[sid] ? FISHC.genera[sid].name + ' sp.' : sid);
 // A species whose candidate photos come from another iNaturalist taxon (fish.json photoTaxon; Pierre, 2026-11-14, Q354 b:
 // the Pacific form iNaturalist splits off): one short line where the admin shows its photos (its section on the family's
 // page, its Candidates card); the IMR name stays the species' own. '' for every other species.
@@ -2075,20 +2091,24 @@ let FT_REC = {}, // the records of the fish tiles drawn, by photo (for Enlarge a
 // for a few photos of many families.
 let FUD = null;
 const fuDataM = () =>
-  FUD && FUD.fish === DRAFT.fish && FUD.saved === SAVED && FUD.plays === FISHC.plays
+  FUD && FUD.k === TK && FUD.fish === DRAFT[TK] && FUD.saved === SAVED && FUD.plays === FISHC.plays
     ? FUD
-    : (FUD = {fish: DRAFT.fish, saved: SAVED, plays: FISHC.plays, D: fuData(), E: {}});
+    : (FUD = {k: TK, fish: DRAFT[TK], saved: SAVED, plays: FISHC.plays, D: fuData(), E: {}});
 const fuFamM = u => {
   const M = fuDataM();
   return (M.E[u.id] = M.E[u.id] || fuFam(u, M.D));
 };
 // The family (Photos › Tree page) of species sid: fish.json's, else the unit that lists it.
 const fishFamOf = sid =>
-  !sid || !FISHC ? '' : (FISHC.species[sid] || {}).family || ((FISHC.units || []).find(u => u.species.includes(sid)) || {}).id || '';
+  !sid || !FISHC
+    ? ''
+    : (FISHC.species[sid] || FISHC.genera[sid] || {}).family ||
+      ((FISHC.units || []).find(u => u.species.includes(sid) || u.genera.some(g => g.id === sid)) || {}).id ||
+      '';
 // The state of photo f in the draft: 'excluded', 'not this', 'removed', or '' (in play or undecided). A photo moved with
 // Not this and then added under its corrected species is in play there (core.js fishOn), not "not this" (Codex review #823).
 const fishState = f => {
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     o = (F.out || {})[f];
   return (F.exclude || {})[f]
     ? 'excluded'
@@ -2114,7 +2134,7 @@ const fuJt = (F, f) => {
 // last), open (an Open in Tree link), extra (more actions), flag (a flag's key: the tools that take the photo out
 // also clear it)}.
 function fishTile(p, o) {
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     f = p.f,
     sid = o.sid,
     out = o.play ? '' : fishState(f),
@@ -2194,7 +2214,7 @@ function bindFishTiles(scope, o = {}) {
     if (!f) return;
     // One change to the fish part; one that takes the photo out of play also clears its flag (To do's flags).
     const fx = (fn, msg, gone) => {
-      DRAFT.fish = fn(DRAFT.fish || {});
+      DRAFT[TK] = fn(DRAFT[TK] || {});
       if (gone && tl.dataset.fflag) {
         const L = {...flagsOf(DRAFT)};
         delete L[tl.dataset.fflag];
@@ -2213,7 +2233,7 @@ function bindFishTiles(scope, o = {}) {
       }
       if (!FISHC) return;
       if (a === 'feat') {
-        const r = fishFeat(DRAFT.fish, fam, sid, f);
+        const r = fishFeat(DRAFT[TK], fam, sid, f);
         if (r.full) return toast(`Already ${FISHFEAT} featured: remove one first.`);
         return fx(() => r.F);
       }
@@ -2276,10 +2296,10 @@ function bindFishTiles(scope, o = {}) {
     bindFishRows(
       R,
       f,
-      () => fishTagsMine(DRAFT.fish || {}, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '',
+      () => fishTagsMine(DRAFT[TK] || {}, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '',
       (fn, w) => {
         const off = play && w && w.pos === 6 && (w.v === 'k' || w.v === 'x');
-        DRAFT.fish = off ? fishReject(fishDrop(fn(DRAFT.fish || {}), fam, f), f) : fn(DRAFT.fish || {});
+        DRAFT[TK] = off ? fishReject(fishDrop(fn(DRAFT[TK] || {}), fam, f), f) : fn(DRAFT[TK] || {});
         if (off && tl.dataset.fflag) {
           const L = {...flagsOf(DRAFT)};
           delete L[tl.dataset.fflag];
@@ -2309,6 +2329,10 @@ const fuWink = (u, cover) =>
 // family: its page holds the choices of everything under it, featured photos and ✓ Validated, curation.json fish genera
 // under its id); sci, its scientific name or names; it, a name set in italics (a genus); tag, its IMR tag.
 let TT = null; // {units, T}
+// The leaf of a genus's genus-level photos (fuTreeOf), and the unit a leaf's photos are in play for (its sid: a species,
+// or the genus of a genus-level leaf; the node's own id for any other).
+const glId = g => 'gl:' + g,
+  leafSid = (T, x) => (T.node.get(x) || {}).sid || x;
 function fuTreeOf(U) {
   if (TT && TT.units === U) return TT.T;
   const sp = FISHC.species,
@@ -2317,7 +2341,10 @@ function fuTreeOf(U) {
     // another subject's page may build it first: Covers, a third subject)
     R = Object.keys((FISHS || ASUBJ).sheets || {}),
     N = [],
-    K = new Set();
+    K = new Set(),
+    // the genera with genus-level photos (gl: sp the genus's id; the sea slugs' observations agreed at the genus only,
+    // Pierre, 2026-11-17, Q389 (1)), in play or candidates
+    GL = new Set([...(FISHC.plays || []).filter(p => p && p.gl).map(p => p.sp), ...Object.keys(FISHC.cand).filter(k => FISHC.genera[k])]);
   U.forEach(u => {
     const k = u.group == null ? 'k:none' : 'k:' + u.group;
     if (!K.has(k)) {
@@ -2329,7 +2356,22 @@ function fuTreeOf(U) {
       const S = g.species.filter(ok);
       if (!S.length) return;
       N.push({id: g.id, name: g.name, it: true, rank: R[1], up: u.id, tag: fuImr(g), g});
-      S.forEach(s => N.push({id: s, name: sp[s].common || sp[s].name, sci: sp[s].name, rank: R[2], up: g.id, sid: s}));
+      // a species with no common name (the sea slugs: Q369 d) by its scientific name alone, in italics
+      S.forEach(s =>
+        N.push({
+          id: s,
+          name: sp[s].common || sp[s].name,
+          sci: sp[s].common ? sp[s].name : '',
+          it: !sp[s].common,
+          rank: R[2],
+          up: g.id,
+          sid: s
+        })
+      );
+      // its genus-level photos: a leaf of their own after its species (glId), its photos the genus's (sid its id), never
+      // a species (core.js fishGlOf)
+      if (GL.has(g.id))
+        N.push({id: glId(g.id), name: `${g.name} sp.`, sci: '', it: true, rank: 'genus level', up: g.id, sid: g.id, gl: true});
     });
   });
   TT = {units: U, T: ttBuild(N)};
@@ -2351,7 +2393,7 @@ function fuWormsOf(U) {
   if (TW && TW.units === U) return TW.T;
   const K = fuTreeOf(U),
     L = [...K.node.values()]
-      .filter(n => n.sid)
+      .filter(n => n.sid && !n.gl)
       .map(n => ({
         id: n.id,
         name: n.name,
@@ -2417,7 +2459,11 @@ const ttName = n => (n.it ? `<i>${esc(n.name)}</i>` : esc(n.name));
 // in fish.json's order), else its leaves' in the tree's order, each featured first, then the game's order. The node
 // pages, their headings and Cover proposals (admin-covers.js coverList) read the same list, so they agree on a cover.
 const fuNodePhotos = (T, u, e, id) =>
-  id === u.id ? e.all : ttLeaves(T, id).flatMap(s => (e.rows[s] ? [...e.rows[s].feat, ...e.rows[s].rest] : []));
+  id === u.id
+    ? e.all
+    : ttLeaves(T, id)
+        .map(x => leafSid(T, x))
+        .flatMap(s => (e.rows[s] ? [...e.rows[s].feat, ...e.rows[s].rest] : []));
 // What is unfolded, per subject and view (a convenience of this browser): the ids of the open nodes; none saved yet = the
 // roots open (the Key's groups with their families, as the list was; WoRMS's classes with their orders).
 let TT_OPEN = null,
@@ -2513,8 +2559,8 @@ const fuCircle = x => {
 };
 function fuRow(T, E, D) {
   const F = D.F,
-    S0 = SAVED.fish || {},
-    nSp = ttRoll(T, n => (n.sid ? 1 : 0)),
+    S0 = SAVED[TK] || {},
+    nSp = ttRoll(T, n => (n.sid && !n.gl ? 1 : 0)),
     nPh = ttRoll(T, n => (n.sid ? (D.play[n.sid] || []).length : 0)),
     ph = id => `${nPh[id]} photo${nPh[id] === 1 ? '' : 's'}`,
     // a node's own choices changed since the published file (its cover at any rank: curation.json fish genera by node id)
@@ -2527,12 +2573,12 @@ function fuRow(T, E, D) {
         dirty = [x.id, ...x.genera.map(g => g.id), ...x.species].some(mine) || x.species.some(s => D.dirty.has(s)),
         nd = E[x.id].needs;
       return `<span class="adm-g">${c && c.src ? `<img ${crSrc(fuP(c), 1)} alt="" loading="lazy">` : '<span class="none"></span>'}<span>${esc(x.name)} ${fuImr(x)}
-      <small>${ttRank(n)}<i>${esc(x.sci.join(', '))}</i> · ${x.wink ? 'wink' : fuCircle(x) == null ? 'no circle' : `circle ${fuCircle(x)}`} ·${E[x.id].n} sp. · ${ph(x.id)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
+      <small>${ttRank(n)}${x.sci.length ? `<i>${esc(x.sci.join(', '))}</i> · ` : ''}${x.wink ? 'wink' : fuCircle(x) == null ? 'no circle' : `circle ${fuCircle(x)}`} · ${E[x.id].n} sp. · ${ph(x.id)}${nd.length ? ` · <b class="warnc" title="${esc(nd.join(' · '))}">${esc(nd[0])}</b>` : ''}</small></span><span class="dots">${E[x.id].k.ok ? (nd.length ? '<b class="dot warn" title="Validated, incomplete">!</b>' : '<b class="dot done" title="Validated">✓</b>') : ''}${dirty ? '<b class="dot" title="Draft not published yet">●</b>' : ''}</span></span>`;
     }
     if (n.sid)
-      return `<span class="adm-ttn">${esc(n.name)}<small>${ttRank(n)}<i>${esc(n.sci)}</i> · ${ph(n.id)}</small></span>${D.dirty.has(n.sid) || mine(n.sid) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
+      return `<span class="adm-ttn">${n.gl ? ttName(n) : esc(n.name)}<small>${ttRank(n)}${n.sci ? `<i>${esc(n.sci)}</i> · ` : ''}${ph(n.id)}</small></span>${D.dirty.has(n.sid) || mine(n.sid) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
     // a key genus, a key group, or a WoRMS taxon (n.ref: its draft's dot from its species, as a genus's)
-    return `<span class="adm-ttn${n.g || n.ref ? '' : ' adm-ttk'}">${n.g ? `<i>${esc(n.name)}</i> ${fuImr(n.g)}` : ttName(n)}<small>${ttRank(n)}${nSp[n.id]} sp. · ${ph(n.id)}</small></span>${(n.g && mine(n.id)) || ((n.g || n.ref) && ttLeaves(T, n.id).some(s => D.dirty.has(s) || mine(s))) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
+    return `<span class="adm-ttn${n.g || n.ref ? '' : ' adm-ttk'}">${n.g ? `<i>${esc(n.name)}</i> ${fuImr(n.g)}` : ttName(n)}<small>${ttRank(n)}${nSp[n.id]} sp. · ${ph(n.id)}</small></span>${(n.g && mine(n.id)) || ((n.g || n.ref) && ttLeaves(T, n.id).some(s => D.dirty.has(leafSid(T, s)) || mine(s))) ? '<span class="dots"><b class="dot" title="Draft not published yet">●</b></span>' : ''}`;
   };
   return {row, nSp, ph};
 }
@@ -2547,7 +2593,7 @@ function fuRow(T, E, D) {
 // photos featured for it). [{k, grp, t, on(node)}]; T the Key's tree, E each unit's fuFam, D fuData.
 function fuFilters(T, U, E, D) {
   const F = D.F,
-    S0 = SAVED.fish || {},
+    S0 = SAVED[TK] || {},
     ent = (X, k) => (X.genera || {})[k],
     mine = k => !same(ent(F, k), ent(S0, k)),
     // a unit's own choices but the photos it features for its species (each counted on its species)
@@ -2694,7 +2740,9 @@ function renderFishUnits(id, view = TREE) {
     E = Object.fromEntries(U.map(x => [x.id, fuFam(x, D)])),
     F = D.F,
     XI = fishIdx(F),
-    imrOn = FU_IMR === 'imr',
+    // All | IMR only for a tree some of whose families or genera the IMR course names (none for the sea slugs)
+    imrAny = U.some(x => x.imr || x.imrWith || x.genera.some(g => g.imr)),
+    imrOn = imrAny && FU_IMR === 'imr',
     // The filters: All | IMR (the IMR course's tag) and the tag chosen (fuFilters; one no longer offered reads as none),
     // read in the Key (T) through its leaves; shown, the leaves that pass both and what leads to them in the view on
     // screen (taxtree.js ttPass, ttReach), the node on screen always.
@@ -2728,12 +2776,16 @@ function renderFishUnits(id, view = TREE) {
   // on while a tag is chosen.
   const tagSel = ttTagSel(FL, tag, f => ttPass(T, [imrOn && imrF, f.on].filter(Boolean)).size, 'sp.');
   // All | IMR in the sticky bar, at every width (the side list is hidden on phones).
-  const imrSeg = `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
-    ['all', 'All'],
-    ['imr', 'IMR']
-  ]
-    .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
-    .join('')}</span>${tagSel}${typeof structBar === 'function' ? structBar(ASUBJ, FISHC.raw, tag && tag.k) : ''}`;
+  const imrSeg = `${
+    imrAny
+      ? `<span class="adm-qseg adm-lvseg adm-fimr" role="group" aria-label="Families shown">${[
+          ['all', 'All'],
+          ['imr', 'IMR']
+        ]
+          .map(([k, t]) => `<button type="button" data-fuimr="${k}" aria-pressed="${FU_IMR === k}">${t}</button>`)
+          .join('')}</span>`
+      : ''
+  }${tagSel}${typeof structBar === 'function' ? structBar(ASUBJ, FISHC.raw, tag && tag.k) : ''}`;
   // The Look-alikes filter's + Pair box (admin-content.js structAdd), under the bar of every Tree page.
   const nameOf = x => (T.node.get(x) || {}).name || x,
     stAdd = typeof structAdd === 'function' ? structAdd(ASUBJ, FISHC.raw, nameOf) : '';
@@ -2836,7 +2888,8 @@ function renderFishUnits(id, view = TREE) {
     C = cvOf(sel),
     cv = C.p,
     P = photosOf(sel),
-    LV = new Set(ttLeaves(T, sel)),
+    // the units its leaves' photos are in play for (a genus-level leaf's: its genus, leafSid)
+    LV = new Set(ttLeaves(T, sel).map(x => leafSid(T, x))),
     // the candidates still waiting in each of its leaves (autosort.js fishWaiting: not in play, by photo id, rejected nor
     // gone), as Coverage counts them
     W = fishWaiting(FISHC.cand, F, D.play),
@@ -2851,22 +2904,28 @@ function renderFishUnits(id, view = TREE) {
   // photos, candidates waiting) and its photos in play, featured first, then the game's order. A wink family's species
   // (met only on the surprise cards: docs/ROADMAP.md "Surprise-only species") shows FISHT.wink of them, the surprise card's
   // own first (autosort.js fishWinkFold), the rest behind its "N more" chip (FU_WALL); every photo still counts.
-  const sect = sid => {
-    const {feat} = e.rows[sid],
+  // x: the leaf's node id; its photos' unit, sid (leafSid: a genus-level leaf's photos are its genus's, its ★ Cover the
+  // genus's: its path stops at the genus).
+  const sect = x => {
+    const sid = leafSid(T, x),
+      gl = !!T.node.get(x).gl,
+      {feat} = e.rows[sid],
       all = [...feat, ...e.rows[sid].rest],
       wf = u.wink ? fishWinkFold(e.rows[sid], u.wink.photos) : null,
       rest = wf ? (FU_WALL ? [...wf.show, ...wf.fold] : wf.show) : e.rows[sid].rest,
       more = wf ? wf.fold.length : 0,
-      s = sp[sid],
+      s = sp[sid] || {name: T.node.get(x).name},
       nPh = all.length,
       obs = new Set(all.map(p => p.o || p.f)).size,
       tg = fishTarget(s),
       out = all.filter(p => !shown(p)).length,
       nc = (W[sid] || []).length,
-      c = cvOf(sid),
-      path = pathOf(sid),
-      nm = esc(s.common || s.name);
-    return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(c.p && {...c.p, sid}, c.by === 'mine', `${cap1(RK[path.length - 1] || '')} cover`)}${sid === sel ? nm : `<a class="adm-nlink" href="${esc(tvHref(sid))}">${nm}</a>`} <small><i>${esc(s.name)}</i> · <b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${nPh} photo${nPh === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}${nc ? ` · <span title="Candidates waiting (Photos › Candidates)">${nc} candidate${nc === 1 ? '' : 's'}</span>` : ''}</small>${more ? ` <button type="button" class="adm-chip adm-fwall" data-fuwall aria-pressed="${FU_WALL}" title="Photos in play beyond the ${FISHT.wink} shown: ${FU_WALL ? 'tap to hide them' : 'tap to show them'}">${more} more</button>` : ''}${fishPtx(s)}</h3>
+      c = cvOf(x),
+      path = gl ? pathOf(x).slice(0, -1) : pathOf(x),
+      // its common name, its scientific name below; a species with none (the sea slugs: scientific names only, Q369 d)
+      // its scientific name once
+      nm = gl || !s.common ? `<i>${esc(s.name)}</i>` : esc(s.common);
+    return `<section class="adm-row" data-sid="${esc(sid)}"><h3>${hThumb(c.p && {...c.p, sid}, c.by === 'mine', `${cap1(RK[path.length - 1] || '')} cover`)}${x === sel ? nm : `<a class="adm-nlink" href="${esc(tvHref(x))}">${nm}</a>`} <small>${gl ? 'genus level · ' : s.common ? `<i>${esc(s.name)}</i> · ` : ''}<b class="${obs < tg ? 'warnc' : ''}" title="Observations in play / target">${obs}/${tg}</b> · ${nPh} photo${nPh === 1 ? '' : 's'}${out ? ` · <b>${out} filtered out</b>` : ''}${nc ? ` · <span title="Candidates waiting (Photos › Candidates)">${nc} candidate${nc === 1 ? '' : 's'}</span>` : ''}</small>${more ? ` <button type="button" class="adm-chip adm-fwall" data-fuwall aria-pressed="${FU_WALL}" title="Photos in play beyond the ${FISHT.wink} shown: ${FU_WALL ? 'tap to hide them' : 'tap to show them'}">${more} more</button>` : ''}${fishPtx(s)}</h3>
       <div class="adm-grid">${feat.map((p, i) => (shown(p) ? fuTile(sid, p, {num: i + 1}, cv, XI, path, lv) : '')).join('')}${rest
         .filter(shown)
         .map(p => fuTile(sid, p, {}, cv, XI, path, lv))
@@ -2875,12 +2934,12 @@ function renderFishUnits(id, view = TREE) {
   // The subtree under the page's node, any depth: a leaf its section; a node between, a block with its heading (its cover,
   // its name opening its page, its leaves' count) around its children's; the page's node itself, its children's alone.
   const block = x => {
-    if (leafOf(x)) return e.rows[x] ? sect(x) : '';
+    if (leafOf(x)) return e.rows[leafSid(T, x)] ? sect(x) : '';
     const inner = T.kids.get(x).map(block).join('');
     if (x === sel || !inner) return inner;
     const m = T.node.get(x),
       c = cvOf(x),
-      nS = ttLeaves(T, x).filter(s => e.rows[s]).length;
+      nS = ttLeaves(T, x).filter(s => e.rows[s] && !T.node.get(s).gl).length;
     return `<section class="adm-fgen" data-gen="${esc(x)}"><h3 class="adm-fgenh">${hThumb(c.p, c.by === 'mine', `${cap1(m.rank || '')} cover`)}<a class="adm-nlink" href="${esc(tvHref(x))}">${ttName(m)}</a> ${m.tag || ''} <small>${nS} species</small></h3>${inner}</section>`;
   };
   const body = block(sel);
@@ -2925,7 +2984,7 @@ function renderFishUnits(id, view = TREE) {
     askW = C.wm && !askJ,
     why = `<small class="adm-cvwhy">${esc(nodeCoverWhy(C, (FISHC.centre || {}).name))}${pr && !askW ? ` · <a href="#${esc(ASUBJ.hash + COVER_PAGE)}">the rule proposes another</a>` : ''}</small>${askJ ? `<button type="button" class="chip warnc adm-fjok" data-fjok>${esc(JUV_ASK)}</button>` : ''}${askW ? `<b class="warnc adm-fwmq">${esc(WM_ASK)}</b><span class="adm-qseg adm-lvseg adm-fwm" role="group" aria-label="${esc(WM_ASK)}"><button type="button" data-fwok>${esc(WM_KEEP)}</button>${pr ? `<button type="button" data-fwcp>${esc(WM_OTHER)}</button>` : ''}</span>` : ''}`,
     cnt = o => P.filter(p => origin(p) === o).length;
-  const filter = `<div class="adm-filter adm-sticky">${crumbs}${cv && cv.src ? `<button type="button" class="adm-sthumb${C.by === 'mine' ? ' mine' : ''}" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid || cv.sp || '')}" data-fu="zoom" title="${esc(cap1(n.rank || ''))} cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(n.name)} cover"></button>` : ''}<b class="adm-sname">${ttName(n)} ${n.tag || ''}<small>${n.sci && !n.it ? `<i>${esc(n.sci)}</i> · ` : ''}${LV.size} sp. · ${P.length} photo${P.length === 1 ? '' : 's'}${nC ? ` · ${nC} candidate${nC === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}${kidSel}${unitPage ? `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}` : ''}${jw}${cw}${probs}${why}${FB.origins({cnt})}</div>`;
+  const filter = `<div class="adm-filter adm-sticky">${crumbs}${cv && cv.src ? `<button type="button" class="adm-sthumb${C.by === 'mine' ? ' mine' : ''}" data-f="${esc(cv.f)}" data-sid="${esc(cv.sid || cv.sp || '')}" data-fu="zoom" title="${esc(cap1(n.rank || ''))} cover"><img ${crSrc(fuP(cv), 1)} alt="${esc(n.name)} cover"></button>` : ''}<b class="adm-sname">${ttName(n)} ${n.tag || ''}<small>${n.sci && !n.it ? `<i>${esc(n.sci)}</i> · ` : ''}${n.gl ? 'genus level' : `${[...LV].filter(x => sp[x]).length} sp.`} · ${P.length} photo${P.length === 1 ? '' : 's'}${nC ? ` · ${nC} candidate${nC === 1 ? '' : 's'}` : ''}</small></b><select class="adm-gsel2" aria-label="${cap1(ASUBJ.one)}">${opts}</select>${imrSeg}${kidSel}${unitPage ? `<button type="button" class="adm-okbtn" data-ok aria-pressed="${!!e.k.ok}" title="Validated">✓ Validated</button>${e.needs.length ? `<b class="warnc adm-needs">${e.needs.map(esc).join(' · ')}</b>` : ''}` : ''}${jw}${cw}${probs}${why}${FB.origins({cnt})}</div>`;
   // Its sheet's text and the content editor's edits (admin-content.js sheetBox: a node the app gives a sheet), above its
   // photos.
   const sbox = typeof sheetBox === 'function' ? sheetBox(ASUBJ, FISHC.raw, sel, nameOf) : '';
@@ -2947,14 +3006,14 @@ function renderFishUnits(id, view = TREE) {
   const jok = $v.querySelector('[data-fjok]');
   if (jok)
     jok.onclick = () => {
-      DRAFT.fish = fishCoverJOk(DRAFT.fish || {}, sel);
+      DRAFT[TK] = fishCoverJOk(DRAFT[TK] || {}, sel);
       saveDraft();
       render();
     };
   const wok = $v.querySelector('[data-fwok]');
   if (wok)
     wok.onclick = () => {
-      DRAFT.fish = coverWKeep(DRAFT.fish || {}, sel, pr ? prX : null);
+      DRAFT[TK] = coverWKeep(DRAFT[TK] || {}, sel, pr ? prX : null);
       saveDraft();
       render();
     };
@@ -2964,7 +3023,7 @@ function renderFishUnits(id, view = TREE) {
   if (okb)
     okb.onclick = () => {
       if (!e.k.ok && e.needs.length) return toast('Not ready: ' + e.needs.join(' · '));
-      DRAFT.fish = fishOk(DRAFT.fish || {}, u.id);
+      DRAFT[TK] = fishOk(DRAFT[TK] || {}, u.id);
       saveDraft();
       render();
     };
@@ -3108,15 +3167,15 @@ function fishTodoLines() {
   const M = fuDataM(),
     k = [FU_IMR, SUG, LIGHT];
   if (!(M.todo && M.todo.k.every((x, i) => x === k[i]))) {
-    const F = DRAFT.fish || {},
+    const F = DRAFT[TK] || {},
       UB = Object.fromEntries(FISHC.units.map(u => [u.id, u])),
       C = fishCov(FISHC.units, M.D.play, FISHC.species, FISHC.cand, M.D.F, fuJ),
-      Q = fishQueue(FISHC.cand, (SUG && SUG.fish) || {}, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
+      Q = fishQueue(FISHC.cand, (SUG && SUG[TK]) || {}, FISHC.species, F, fishGameIn(FISHC.plays, {...DRAFT, fish: F})),
       pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`,
       L = [
         ['photos/candidates', fishCandTodo(Q), n => pl(n, 'candidate')],
-        [COVER_PAGE, coverOpen(coverList(), DRAFT.fish).length, n => pl(n, 'cover proposal')],
-        [LIGHT_PAGE, LIGHT ? lightOpen(LIGHT, DRAFT.fish).length : 0, n => pl(n, 'light proposal')]
+        [COVER_PAGE, coverOpen(coverList(), DRAFT[TK]).length, n => pl(n, 'cover proposal')],
+        [LIGHT_PAGE, LIGHT ? lightOpen(LIGHT, DRAFT[TK]).length : 0, n => pl(n, 'light proposal')]
       ]
         .filter(x => x[1])
         .map(([h, n, w]) => ({h, n, t: w(n)})),
@@ -3424,14 +3483,14 @@ function renderFishReview(kind) {
   $('frevfam').onchange = e => ((FREV.fam = e.target.value), keep());
   $('frevguess').onchange = e => ((FREV.guess = e.target.checked), keep());
   const fx = fn => {
-    DRAFT.fish = fn(DRAFT.fish || {});
+    DRAFT[TK] = fn(DRAFT[TK] || {});
     saveDraft();
     render();
   };
   $v.querySelectorAll('.adm-tile[data-f]').forEach(tl => {
     const f = tl.dataset.f,
       p = L.find(x => x.f === f),
-      base = () => fishTagsMine(DRAFT.fish, f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '';
+      base = () => fishTagsMine(DRAFT[TK], f, (fuJ(f) || {}).jt) || (fuJ(f) || {}).jt || '';
     tl.querySelector('[data-frz]').onclick = () =>
       zoomSet(
         L.map(fuP),
@@ -3539,10 +3598,10 @@ function renderFishMont() {
         }).join('')
       : '<p class="note">No look-alike pairs.</p>'
   }</section>`;
-  const curE = k => ({...((DRAFT.fish || {}).mont || {})[k]});
+  const curE = k => ({...((DRAFT[TK] || {}).mont || {})[k]});
   const keep = e2 => {
     const y = window.scrollY;
-    DRAFT.fish = fishMontSet(DRAFT.fish, e2[0], e2[1]);
+    DRAFT[TK] = fishMontSet(DRAFT[TK], e2[0], e2[1]);
     saveDraft();
     renderFishMont();
     window.scrollTo(0, y);
@@ -5331,7 +5390,6 @@ function bindAlerts() {
 // fish-photos.json and fish-game.json: the curated photos on R2, admin plan PR 7) are read once, when To do first shows,
 // into FISHA (reports.js repReg: its units, its photos each with the unit showing it, its slate as the app's UNITS slate,
 // a report's unit to its family's page and its photos for Attach, its IMR sub-entries' names).
-let FISHP_ADM = null;
 // Subject S's files (SUBJECTS admin files) read into its registry (reports.js repReg); null when a file it names is missing.
 const unitRead = S => {
   const W = (S && S.admin.files) || {},
@@ -5341,41 +5399,32 @@ const unitRead = S => {
     return !W.f || k.some(x => !J[x]) || (W.ph && !J.ph.photos) ? null : repReg(J.f, J.ph, J.gm, unitRankOf(S));
   });
 };
-function fishAdmin() {
-  return (FISHP_ADM =
-    FISHP_ADM ||
-    unitRead(FISHS)
-      .then(R => {
-        if (!R) return;
-        FISHA = R;
-        if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
-      })
-      .catch(() => {}));
-}
-// The subject whose photos and units fishAdmin reads (its own part of curation.json, sheets at several ranks), and a
-// family's page (Photos › Tree) under its prefix (or under another subject S's).
-const FISHS = SUBJECTS.find(S => S.admin.cur && S.sheets) || null;
+// The tree subject in force's (FISHS: FISHA is its registry in UNITA).
+const fishAdmin = () => unitAdmin(FISHS);
+// A family's page (Photos › Tree) under the prefix of the tree subject in force (FISHS, above), or of another subject S.
 const famHref = (id, S = FISHS || ASUBJ) => '#' + S.hash + TREE + '/' + encodeURIComponent(id);
-// Every other subject with sheets at several ranks (Codex review #987: the reports of a third subject), read the same way
-// once one of its reports or flags shows (unitAdmin), its registry by subject id (UNITA): its reports' photos, with their
-// credits and the identification they carry, keep their source (a remote original stays remote); its units' names; Attach.
-// Its tiles carry no tool: fishTile's act on FISHS's part of curation.json.
+// Every subject with sheets at several ranks (Codex review #987: the reports of a third subject), read once one of its
+// reports or flags shows (unitAdmin), its registry by subject id (UNITA): its reports' photos, with their credits and the
+// identification they carry, keep their source (a remote original stays remote); its units' names; Attach. The tree
+// subject in force's is FISHA too; its tiles carry the photo tools (fishRepTile), another's none (unitTile): fishTile's
+// act on the part of the subject in force.
 const UNITA = {},
   UNITP = {};
 function unitAdmin(S) {
-  if (!S || S === FISHS) return fishAdmin();
+  if (!S) return Promise.resolve();
   return (UNITP[S.id] =
     UNITP[S.id] ||
     unitRead(S)
       .then(R => {
         if (!R) return;
         UNITA[S.id] = R;
+        if (S === FISHS) FISHA = R;
         if (cur === 'inbox/todo/reports' || cur === 'inbox/todo/all') render();
       })
       .catch(() => {}));
 }
-// Subject S's registry once read (FISHA for FISHS), else null.
-const unitRegOf = S => (!S ? null : S === FISHS ? FISHA : UNITA[S.id] || null);
+// Subject S's registry once read, else null.
+const unitRegOf = S => (S && UNITA[S.id]) || null;
 // A photo of another subject unitAdmin read (not FISHS's: fishRepTile): {S, p}, else null.
 const unitPhOf = f => {
   const S = SUBJECTS.find(x => x !== FISHS && UNITA[x.id] && UNITA[x.id].ph[f]);
@@ -5392,7 +5441,8 @@ const repUnit = (x, bare, S0) => {
   const R = unitRegOf(S),
     fam = R && hasPage(S, TREE) && R.fam[x],
     nm = R && R.gen[x] ? esc(R.gen[x].name) : `<i>${esc(String(x).replace(/^[a-z]:/, ''))}</i>`;
-  return `${fam ? `<a class="adm-gen" href="${esc(famHref(fam, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
+  // its family's page, or its own node when the subject's units are narrower than the tree's families (a sea-slug genus)
+  return `${fam ? `<a class="adm-gen" href="${esc(famHref(unitRankOf(S) === S.rank ? fam : x, S))}">${nm}</a>` : nm}${bare ? '' : ` <small>(${esc(S.name.toLowerCase())})</small>`}`;
 };
 // A coral photo's tile outside its genus page (To do's reports and flags, Health's photos everyone misses): its genus
 // page's tile (tile0) with every tool it has there (Q309), without the drag handle, its genus first; bound by bindTiles,
@@ -5423,7 +5473,7 @@ function fishRepTile(fp, o = {}) {
   }
   // Its species: the one it is in play for (a photo moved with Not this and added under its corrected species, maybe in
   // another family), else its record's; its family: that species' (Codex review #823), else the record's.
-  const F = DRAFT.fish || {},
+  const F = DRAFT[TK] || {},
     sid = F.add && F.add[f] && fishOn(F, f, F.add[f]) ? F.add[f] : fp.sp,
     fam = fishFamOf(sid) || fp.entry,
     lead = lead0(fam),
@@ -5457,7 +5507,8 @@ function repUnitPhotos(u, R) {
   const fam = R.fam[u],
     L = (fam && R.gen[fam] && R.gen[fam].views.wide) || [],
     sid = R.spid[u],
-    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => R.spg[p.sp] === u) : L;
+    // a genus: its species' photos and its own genus-level ones (gl, sp its id: core.js fishGlOf)
+    M = sid ? L.filter(p => p.sp === sid) : /^g:/.test(u) ? L.filter(p => R.spg[p.sp] === u || fishGlOf(p) === u) : L;
   return M.length ? M : L;
 }
 function repPicker(c, S) {
@@ -5679,8 +5730,13 @@ function renderTriage() {
       // the page it was sent from, a photo to attach when it has none.
       u = !gone && !arch && c.who && USERS && (USERS.users || []).find(x => x.name.toLowerCase() === c.who.toLowerCase()),
       // its family's page when its subject has the family pages (Photos › Tree), its genus page for a coral
+      // (its family's page; the unit's own node when its units are narrower than the tree's families: a sea-slug genus)
       fam = S.sheets && hasPage(S, TREE) && (unitRegOf(S) || {fam: {}}).fam[c.unit],
-      unitHref = fam ? famHref(fam, S) : !S.sheets && c.unit && DATA.gen[c.unit] ? genusHref(c.unit) : '',
+      unitHref = fam
+        ? famHref(unitRankOf(S) === S.rank ? fam : c.unit, S)
+        : !S.sheets && c.unit && DATA.gen[c.unit]
+          ? genusHref(c.unit)
+          : '',
       att = !c.photos.length && REP_ATT[c.id],
       shown = c.photos.length ? c.photos : att ? [att] : [],
       acts = ['done', 'wait', 'drop', ...(st === 'open' ? [] : ['open'])].map(k => REP_STATUS.find(x => x[0] === k)),
@@ -6401,7 +6457,8 @@ const aIdx = () => MEMO.aidx || (MEMO.aidx = autoIdx(DRAFT)),
     return x && !x.d.check && !x.d.undone ? x.d : null;
   },
   auChanged = () => !same(DRAFT.auto || {}, SAVED.auto || {}) || !same(DRAFT.retest || {}, SAVED.retest || {}),
-  fiChanged = () => !same(fishOut(DRAFT.fish), fishOut(SAVED.fish));
+  // the tree subjects whose part changed, in their words ("fish curation", "sea slug curation")
+  fiChanged = () => TREES.filter(S => !same(fishOut(DRAFT[S.admin.cur]), fishOut(SAVED[S.admin.cur]))).map(S => `${S.card} curation`);
 const localDay = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -6489,76 +6546,112 @@ function autoRun() {
   return R;
 }
 // The fish auto-sort (admin plan PR 4; autosort.js fishRun): the same path for the fish candidates (fish-cand.json,
-// judged in suggest.json "fish" on the judging/FISH.md rubric), into DRAFT.fish, one Undo step, sent by Publish. Runs
+// judged in suggest.json "fish" on the judging/FISH.md rubric), into DRAFT[TK], one Undo step, sent by Publish. Runs
 // only when the pass has judged fish candidates, so the 2.6 MB candidate list is fetched only then. Never writes "out"
 // (Pierre's Not this) and never touches a photo he decided. Its keep agreement (fishCompare, autoState) turns it off.
-let FISHC = null; // {cand, species} once loaded
-// The fish candidates and species, fetched once (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, or an
-// Undo needs a candidate's species).
-// withGame (the fish pages): also the photos the game plays (fish-game.json, 3 MB), so that counts and lists show every photo
-// in play whatever its route (Pierre's adds, the sure candidates and the reference photos that enter by themselves),
-// not curation.json's adds alone. Not fetched for the auto-sort's own use of FISHC.
-let FISHL = null, // the one initial load, shared by every caller (the auto-sort's and a page's)
-  FISHG = null;
-async function fishLoad(withGame) {
-  const get = u =>
-    fetch(u, {cache: 'no-cache'})
-      .then(r => (r.ok ? r.json() : {}))
-      .catch(() => ({}));
-  if (!FISHC)
-    await (FISHL =
-      FISHL ||
-      Promise.all([get('fish-cand.json'), get('fish.json')]).then(([C, F]) => {
-        FISHC = {
-          units: fishUnits(F),
-          // fish.json as built: the base of the content editor's edits (admin-content.js, the node pages' Sheet box).
+let FISHC = null; // the tree subject in force's family pages' data, once loaded (TLOAD's, by subject)
+// The candidates and units of tree subject S (SUBJECTS admin files: its tree f and its candidates cand), fetched once
+// (fish-cand.json is 2.6 MB: only when the fish auto-sort has work, an Undo needs a candidate's species, or a page shows
+// them). withGame (the family pages): also the photos the game plays (its files gm: fish-game.json, 3 MB), so that counts
+// and lists show every photo in play whatever its route (Pierre's adds, the sure candidates and the reference photos that
+// enter by themselves), not curation.json's adds alone. Not fetched for the auto-sort's own use. Each subject's loads and
+// data are its own (TLOAD: {C its data, L its first load, G its game load}), so a load still on its way when the subject
+// on screen changes lands in its own subject; FISHC is the one in force's (treeIn).
+const TLOAD = {};
+async function fishLoad(withGame, S = FISHS) {
+  if (!S) return null;
+  const T = (TLOAD[S.id] = TLOAD[S.id] || {}),
+    W = S.admin.files || {},
+    get = u =>
+      fetch(u, {cache: 'no-cache'})
+        .then(r => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+  if (!T.C)
+    await (T.L =
+      T.L ||
+      Promise.all([get(W.cand), get(W.f)]).then(([C, F]) => {
+        // Its candidate lists by the unit they are candidates of (tools/fetch_fish.py keys them by species id;
+        // tools/fetch_seaslugs.py by iNaturalist taxon id, genus name for a genus-level list, an informal species' key):
+        // each key read through the tree's own ids (a species' inat, a genus's name, an id's part after its prefix).
+        const unit = {};
+        (F.species || []).forEach(x => {
+          unit[x.id] = x.id;
+          if (x.inat != null) unit[String(x.inat)] = x.id;
+          const m = /^[a-z]+:(.+)$/.exec(x.id);
+          if (m) unit[m[1]] = unit[m[1]] || x.id;
+        });
+        (F.genera || []).forEach(g => (unit[g.name] = unit[g.name] || g.id));
+        const cand = Object.fromEntries(Object.entries(C.cand || {}).map(([k, L]) => [unit[k] || k, L])),
+          // its families' groups: the identification key's (fish.json key), else the taxonomic groups its tree sits in
+          // (seaslug.json taxa, each family's tgroup), in their order
+          G = (F.key || F.taxa || {}).groups || [],
+          tg = Object.fromEntries((F.families || []).filter(f => f.tgroup != null).map(f => [f.id, f.tgroup]));
+        T.C = {
+          units: fishUnits(F)
+            .map(u => (u.group == null && u.id in tg ? {...u, group: tg[u.id]} : u))
+            .sort((a, b) => (a.group == null ? 99 : a.group) - (b.group == null ? 99 : b.group)),
+          // the tree file as built: the base of the content editor's edits (admin-content.js, the node pages' Sheet box).
           raw: F,
           // The instance's centre (fish.json centre: tools/instance.json), named in Cover proposals' why line (admin-covers.js).
           centre: F.centre || null,
-          groups: Object.fromEntries(((F.key || {}).groups || []).map(g => [g.n, g.title])),
-          cand: C.cand || {},
+          groups: Object.fromEntries(G.map(g => [g.n, g.title])),
+          cand,
           // {id: species record}, a wink family's species marked wink (autosort.js fishSpecies: its own target, FISHT.wink).
           species: fishSpecies(F),
+          // {id: genus record}: a genus-level photo's unit (gl, sp its genus id), named by its genus (fuName).
+          genera: Object.fromEntries((F.genera || []).map(g => [g.id, g])),
           // The reference taxonomy (WoRMS: {AphiaID: {name, rank, parent}}), the Tree's WoRMS view (fuWormsOf).
           ref: F.ref || {},
           // Each species' teaching entry (its IMR entry for circle 1), for the fish Candidates card (admin-fish.js).
           entry: Object.fromEntries((F.teach || []).flatMap(t => (t.species || []).map(sid => [sid, t]))),
           // The species in the game (a circle, not out): where Not this may send a photo (admin-fish.js fishNotThisSel).
           game: new Set((F.species || []).filter(x => x.circle && !x.out).map(x => x.id)),
-          byF: Object.fromEntries(Object.entries(C.cand || {}).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
+          byF: Object.fromEntries(Object.entries(cand).flatMap(([sid, L]) => L.map(p => [p.f, {...p, sid}])))
         };
+        if (S === FISHS) FISHC = T.C;
       }));
-  if (withGame && !FISHC.plays)
-    await (FISHG =
-      FISHG ||
-      get('fish-game.json').then(G0 => {
+  if (withGame && !T.C.plays)
+    await (T.G =
+      T.G ||
+      get(W.gm).then(G0 => {
         const G = fishGameRead(G0), // its records whole (core.js: the file's short form)
           L = Object.values((G && G.photos) || {}).flat();
         // The judgment a game record carries (a reference photo is judged outside suggest.json), with its resolved phase.
-        FISHC.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
-        FISHC.plays = L;
+        T.C.gj = Object.fromEntries(L.filter(p => p && p.f && p.e).map(p => [p.f, {e: p.e, jt: p.jt, ...(p.ph ? {ph: p.ph} : {})}]));
+        T.C.plays = L;
       }));
-  return FISHC;
+  return T.C;
+}
+// Tree subject S in force (readHash: the subject on screen, when it is one; rule S1, never named): its family pages' data
+// (FISHC), its registry (FISHA), its part's key (TK); the memos of the page drawn from the other's are dropped.
+function treeIn(S) {
+  if (!S || S === FISHS || !TREES.includes(S)) return;
+  FISHS = S;
+  TK = S.admin.cur;
+  FISHC = (TLOAD[S.id] || {}).C || null;
+  FISHA = UNITA[S.id] || null;
+  FUD = null;
+  FT_LOAD = null;
 }
 async function fishAutoRun() {
-  if (!TOKEN || !DRAFT || !Object.keys((SUG && SUG.fish) || {}).length) return null;
-  await fishLoad();
-  const keepOn = autoState(fishCompare(DRAFT.fish)).keep.on,
-    {F, R} = fishRun(FISHC.cand, SUG.fish, FISHC.species, DRAFT.fish, localDay(), keepOn);
-  if (F === DRAFT.fish) return R;
-  DRAFT.fish = F;
+  if (!TOKEN || !DRAFT || !ASORT || !Object.keys((SUG && SUG[AK]) || {}).length) return null;
+  const C = await fishLoad(false, ASORT);
+  const keepOn = autoState(fishCompare(DRAFT[AK])).keep.on,
+    {F, R} = fishRun(C.cand, SUG[AK], C.species, DRAFT[AK], localDay(), keepOn);
+  if (F === DRAFT[AK]) return R;
+  DRAFT[AK] = F;
   saveDraft();
   render();
   return R;
 }
 // One fish auto decision taken back (autosort.js fishUndo): never applied again, the photo is a candidate again. One Undo step.
 async function fishAutoUndo(f) {
-  const p = (await fishLoad()).byF[f];
+  const p = ASORT && (await fishLoad(false, ASORT)).byF[f];
   // A candidate no longer in fish-cand.json: its species is unknown, so the add cannot be checked; left to Pierre.
   if (!p) return toast('This photo is no longer a fish candidate: its auto decision cannot be undone here.');
-  const F = fishUndo(DRAFT.fish, f, p.sid);
-  if (F === DRAFT.fish) return;
-  DRAFT.fish = F;
+  const F = fishUndo(DRAFT[AK], f, p.sid);
+  if (F === DRAFT[AK]) return;
+  DRAFT[AK] = F;
   saveDraft();
   render();
   toast('Fish auto decision undone: the photo waits for you as a candidate.');
@@ -7429,7 +7522,8 @@ const output = () => {
       if (Object.keys(DRAFT.auto[d] || {}).length) auto[d] = sorted(DRAFT.auto[d]);
     });
   const retest = sorted(DRAFT.retest);
-  const fish = fishOut(DRAFT.fish);
+  // each tree subject's part (SUBJECTS admin.cur: "fish", "seaslug"), as published (fishOut)
+  const trees = TREES.map(S => [S.admin.cur, fishOut(DRAFT[S.admin.cur])]).filter(([, v]) => Object.keys(v).length);
   // The content editor's edits of the subject whose part is the top level (core.js contentOut: sorted, no empty map).
   const content = contentOut(DRAFT.content);
   // Pierre's state of the points to handle (To do › Points): by point id, each point's fields sorted.
@@ -7459,7 +7553,7 @@ const output = () => {
     ...(Object.keys(tile).length ? {tile} : {}),
     ...(Object.keys(auto).length ? {auto} : {}),
     ...(Object.keys(retest).length ? {retest} : {}),
-    ...(Object.keys(fish).length ? {fish} : {}),
+    ...Object.fromEntries(trees),
     ...(Object.keys(content).length ? {content} : {}),
     ...(Object.keys(points).length ? {points} : {}),
     ...(Object.keys(reps).length ? {reps} : {})
@@ -7512,6 +7606,30 @@ const author = async () =>
 // touched with what changed in each.
 const nDiff = (a, b) =>
   [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])].filter(k => !same((a || {})[k], (b || {})[k])).length;
+// Tree subject S's part in the publish summary (pubSummary), in its words (SUBJECTS card: "fish", "sea slug"): the photos
+// in play, set aside or marked Not this; each rank of its tree apart (fuRanks, fuRankOf: from SUBJECTS sheets), its unit's
+// own choices (Photos › Tree: cover, featured, Validated; its part's genera), then the covers of the narrower ranks ("fish
+// family", "fish genus cover", "fish species cover"), picked on the same page (the same map, under the genus's 'g:' id or
+// the species' id); its flags, rotations, look-alike pairs (Photos › Look-alikes: its part's mont) and auto-sort decisions.
+const treeSummary = S => {
+  const k = S.admin.cur,
+    D = DRAFT[k] || {},
+    V = SAVED[k] || {},
+    w = S.card;
+  return [
+    [nDiff(D.add, V.add), `${w} photo in play`, `${w} photos in play`],
+    [nDiff(D.seen, V.seen) + nDiff(D.exclude, V.exclude), `${w} photo set aside`, `${w} photos set aside`],
+    [nDiff(D.out, V.out), `${w} photo not this species`, `${w} photos not this species`],
+    ...fuRanks(S).map((r, i) => {
+      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([x]) => fuRankOf(S, x) === r));
+      return [nDiff(pick(D.genera), pick(V.genera)), i ? `${w} ${r} cover` : `${w} ${r}`, i ? '' : `${w} ${r.replace(/y$/, 'ie')}s`];
+    }),
+    [nDiff(D.flag, V.flag), `${w} triage flag`],
+    [nDiff(D.rot, V.rot), `${w} photo rotation`],
+    [nDiff(D.mont, V.mont), `${w} look-alike pair`],
+    [nDiff(...[D, V].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), `${w} auto-sort decision`]
+  ];
+};
 function pubSummary() {
   const W = {
     feat: 'featured',
@@ -7540,30 +7658,10 @@ function pubSummary() {
     // Decisions, not the times of Pierre's answers (@t, autoWhen): his answer is counted under its own kind above.
     [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values(c.auto || {}))))), 'auto-sort decision'],
     [nDiff(DRAFT.retest, SAVED.retest), 'retest'],
-    // Fish (curation.json "fish"): the photos in play, set aside or marked Not this, and the fish auto-sort's decisions.
-    [nDiff((DRAFT.fish || {}).add, (SAVED.fish || {}).add), 'fish photo in play'],
-    [
-      nDiff((DRAFT.fish || {}).seen, (SAVED.fish || {}).seen) + nDiff((DRAFT.fish || {}).exclude, (SAVED.fish || {}).exclude),
-      'fish photo set aside'
-    ],
-    [nDiff((DRAFT.fish || {}).out, (SAVED.fish || {}).out), 'fish photo not this species'],
-    // A fish family's own choices (Photos › Tree: cover, featured, Validated; curation.json fish genera), and the
-    // genus and species covers picked on the same page (the same map, under the genus's 'g:' id or the species' id).
-    // Each rank of the subject's tree apart (fuRanks, fuRankOf: from SUBJECTS sheets): its unit's own choices, then the
-    // covers of the narrower ranks ("fish family", "fish genus cover", "fish species cover").
-    ...(FISHS ? fuRanks(FISHS) : []).map((r, i) => {
-      const pick = m => Object.fromEntries(Object.entries(m || {}).filter(([k]) => fuRankOf(FISHS, k) === r));
-      return [
-        nDiff(pick((DRAFT.fish || {}).genera), pick((SAVED.fish || {}).genera)),
-        i ? `fish ${r} cover` : `fish ${r}`,
-        i ? '' : `fish ${r.replace(/y$/, 'ie')}s`
-      ];
-    }),
-    [nDiff((DRAFT.fish || {}).flag, (SAVED.fish || {}).flag), 'fish triage flag'],
-    [nDiff((DRAFT.fish || {}).rot, (SAVED.fish || {}).rot), 'fish photo rotation'],
-    // A fish look-alike pair's picks (Photos › Look-alikes: phase, photos, hidden; curation.json fish mont).
-    [nDiff((DRAFT.fish || {}).mont, (SAVED.fish || {}).mont), 'fish look-alike pair'],
-    [nDiff(...[DRAFT, SAVED].map(c => untimed(Object.assign({}, ...Object.values((c.fish || {}).auto || {}))))), 'fish auto-sort decision'],
+    // Each tree subject's part (curation.json "fish", "seaslug": SUBJECTS admin.cur), in its words (SUBJECTS card): the
+    // photos in play, set aside or marked Not this, its choices per rank, its flags, rotations, look-alike pairs, and the
+    // auto-sort's decisions.
+    ...TREES.flatMap(treeSummary),
     // The light re-judge's proposals answered (Photo review › Light proposals, admin-light.js): accepted, kept.
     ...(typeof lightSummary === 'function' ? lightSummary() : []),
     // The cover proposals answered Keep mine (Photo review › Cover proposals, admin-covers.js); an Accept is a cover above.
@@ -7611,7 +7709,7 @@ async function save() {
     pt = ptChanged(),
     rp = rpChanged(),
     co = coChanged();
-  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi || pt || rp || co) || !TOKEN) return;
+  if (!(ch.length || q || x || fm || fl || sg || cd || mt || cr || ro || sn || tl || au || fi.length || pt || rp || co) || !TOKEN) return;
   // One confirmation, saying so when the structure changes (stChanged): never a second dialog.
   if (!confirm(`Publish to the public site?\n\n${stChanged() ? ST_PUBLISH + '\n\n' : ''}${pubSummary()}`)) return;
   const b = $('save');
@@ -7628,7 +7726,7 @@ async function save() {
   };
   try {
     await fresh();
-    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...(fi ? ['fish curation'] : []), ...(co ? ['sheet edits'] : []), ...(stChanged() ? ['circles and look-alike pairs'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
+    const msg = `Photo curation: ${[...ch.slice(0, 6), ...(q ? ['quality ratings'] : []), ...(fm ? ['growth forms'] : []), ...(x ? ['exclusions'] : []), ...(fl ? ['triage flags'] : []), ...(sg ? ['triage suggestions'] : []), ...(cd ? ['candidate reviews'] : []), ...(mt ? ['look-alike montages'] : []), ...(cr ? ['crops'] : []), ...(ro ? ['rotations'] : []), ...(sn ? ['several corals'] : []), ...(tl ? ['growth-form tile photos'] : []), ...(au ? ['auto-sort'] : []), ...fi, ...(co ? ['sheet edits'] : []), ...(stChanged() ? ['circles and look-alike pairs'] : []), ...(pt ? ['points to handle'] : []), ...(rp ? ['report statuses'] : [])].join(', ')}${ch.length > 6 ? ` and ${ch.length - 6} more genera` : ''}`;
     const who = await author(),
       stale = x => /does not match|sha|409/i.test(x.message);
     // A publish from elsewhere between the read and the write: read again, merge, and try once more on our own.
@@ -8174,7 +8272,7 @@ function renderFishDiff() {
     fishAdmin().then(() => here() && FISHA && render());
     return;
   }
-  const FD = DRAFT.fish || {},
+  const FD = DRAFT[TK] || {},
     done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f],
     PH = photoAnswers(rowsOf(S), f => !!FISHA.ph[f] && !done(f)),
     L = diffByAnswers(PH, SF.min, DIFF_ORDER);
@@ -8424,8 +8522,11 @@ function pstatsFish(S, here) {
     F = D.F,
     sp = FISHC.species,
     C = fishCov(FISHC.units, D.play, sp, FISHC.cand, F, fuJ),
-    // its photos in play, each with its family (as fishCov's rows count them: the species of the family not out)
-    play = FISHC.units.flatMap(u => u.species.filter(s => sp[s] && !sp[s].out).flatMap(s => (D.play[s] || []).map(p => ({p, u})))),
+    // its photos in play, each with its family (as fishCov's rows count them: the species of the family not out, and its
+    // genera's genus-level photos, gl)
+    play = FISHC.units.flatMap(u =>
+      [...u.species.filter(s => sp[s] && !sp[s].out), ...u.genera.map(g => g.id)].flatMap(s => (D.play[s] || []).map(p => ({p, u})))
+    ),
     PA = answersBy(photoAnswers(rowsOf(S)), fishPid),
     ans = x => PA[fishPid(x.p.f)];
   // Every photo the fish data hold, by state, each counted once (by fishPid), in play first; then, the first that applies:
@@ -8450,15 +8551,22 @@ function pstatsFish(S, here) {
   ['exclude', 'out', 'seen', 'add'].forEach(k => Object.keys(F[k] || {}).forEach(f => one(f, !!FISHC.byF[f])));
   Object.values(FISHC.cand).forEach(L => (L || []).forEach(p => one(p.f, true)));
   (FISHC.plays || []).forEach(p => p && p.f && one(p.f, false));
-  const famRows = C.fam,
+  // Its units' rows: the families (fishCov's), or its genera when its game units are its genera (SUBJECTS unitRank: the
+  // sea slugs), each photo then counted at its genus (its species', or its own for a genus-level photo, gl: fishGlOf),
+  // its circle its genus's.
+  const byGen = unitRankOf(S) === 'genus' && S.rank !== 'genus',
+    famRows = byGen ? C.gen.map(r => ({...r, circle: (FISHC.genera[r.id] || {}).circle})) : C.fam,
+    unitOfX = x => (byGen ? fishGlOf(x.p) || (sp[x.p.sp] || {}).genus : x.u.id),
     by = Object.fromEntries(famRows.map(r => [r.id, {r, s: {}}])),
     far = Object.fromEntries(famRows.map(r => [r.id, {k: 0, a: 0, f: 0}])),
     fam = r => `<a class="adm-gen" href="${esc(fuHref(r.id))}">${esc(r.name)}</a>`,
-    circles = (S.structure && S.structure.circle && S.structure.circle.of) || [];
+    // the circles of its structure, else those its units carry
+    circles =
+      (S.structure && S.structure.circle && S.structure.circle.of) || [...new Set(famRows.map(r => r.circle).filter(Boolean))].sort();
   play.forEach(x => {
     const o = origin(x.p),
-      b = by[x.u.id],
-      c = far[x.u.id],
+      b = by[unitOfX(x)],
+      c = far[unitOfX(x)],
       a = ans(x);
     if (b) b.s[o] = (b.s[o] || 0) + 1;
     if (!c) return;
@@ -8471,9 +8579,9 @@ function pstatsFish(S, here) {
     many: S.many,
     obs: S.admin.obs || 'Observations',
     units: famRows.map(r => ({n: r.name, k: r.n, obs: r.obs, html: fam(r)})),
-    // the ranks under the family, each one's photos in play (fishCov's genus and species rows)
+    // the other ranks, each one's photos in play (fishCov's family, genus and species rows)
     spread: [
-      ['Photos per genus', distOf(C.gen.map(r => r.n))],
+      byGen ? ['Photos per family', distOf(C.fam.map(r => r.n))] : ['Photos per genus', distOf(C.gen.map(r => r.n))],
       ['Photos per species', distOf(C.sp.map(r => r.n))]
     ],
     kpis: [['Candidates', st.wait]],
@@ -10875,7 +10983,7 @@ function healthBad(R, S = ASUBJ) {
   // from the photo Elo against the median of the genus's rated photos.
   const PS = S.sheets ? {} : photoStats(),
     META = Object.create(null);
-  const FD = (DRAFT && DRAFT.fish) || {},
+  const FD = (DRAFT && DRAFT[TK]) || {},
     done = f => (FD.exclude || {})[f] || (FD.out || {})[f] || (FD.seen || {})[f];
   if (S.sheets) Object.values((FISHA && FISHA.ph) || {}).forEach(p => done(p.f) || (META[p.f] = META[p.f] || {...p, genus: p.entry}));
   else

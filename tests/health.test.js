@@ -158,7 +158,8 @@ test('Health per subject: the fish photos and units, the corals untouched', () =
     photoStats: () => ({}),
     nAns: s => (s ? (s[3] ?? s[1]) : 0),
     GAME: new Set(['Favia', 'Favites']),
-    DRAFT: {fish: {}}
+    DRAFT: {fish: {}},
+    TK: 'fish' // the tree subject in force's part (admin.js TK)
   };
   let t = 0;
   const miss = (id, g, ph) => [id, t++, g, 'x', 0, 'quiz', ph];

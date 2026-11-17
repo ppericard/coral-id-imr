@@ -197,9 +197,9 @@ function coverLoad() {
 // per draft (COVER_N): on another page it is worked out once the click is drawn (some 100 ms on the real data), then the
 // switch drawn again if it changed; on the view itself, at once (renderCovers).
 let COVER_N = {key: null, on: false, t: 0};
-const coverKeyNow = () => [DRAFT.fish, SAVED, FISHC.plays];
+const coverKeyNow = () => [DRAFT[TK], SAVED, FISHC.plays];
 function coverNow() {
-  const O = coverOpen(coverList(), DRAFT.fish);
+  const O = coverOpen(coverList(), DRAFT[TK]);
   COVER_N = {key: coverKeyNow(), on: O.length > 0, t: 0};
   return O;
 }
@@ -217,9 +217,13 @@ const coverLive = () => {
   return COVER_N.on;
 };
 // Publish's summary line (admin.js pubSummary): the covers accepted are counted with the covers, rank by rank.
-const coverSummary = () => [
-  [coverKeptN(DRAFT.fish, SAVED.fish), 'fish cover proposal kept as it was', 'fish cover proposals kept as they were']
-];
+// Every tree subject's part (admin.js TREES), in its words (SUBJECTS card), whatever the subject on screen.
+const coverSummary = () =>
+  TREES.map(S => [
+    coverKeptN(DRAFT[S.admin.cur], SAVED[S.admin.cur]),
+    `${S.card} cover proposal kept as it was`,
+    `${S.card} cover proposals kept as they were`
+  ]);
 function renderCovers() {
   if (!FISHC || !FISHC.plays) {
     status();
@@ -259,7 +263,7 @@ function renderCovers() {
     .join('')}`;
   const fx = fn => {
     const y = window.scrollY;
-    DRAFT.fish = fn(DRAFT.fish || {});
+    DRAFT[TK] = fn(DRAFT[TK] || {});
     saveDraft();
     render();
     window.scrollTo(0, y);
