@@ -86,6 +86,37 @@ test('the families first, then each scientific genus topped up to 15', () => {
   assert.deepStrictEqual(H.s3, first(many('s3', 40, 1000), 8));
 });
 
+// One helper for every exam unit (holdout.py take; the integrator's option B on #1057, Pierre, 2026-11-18: "si et
+// seulement si on a assez de photos par ailleurs"): a unit takes only from species that keep 8 in practice after it.
+test('take(): a thin genus holds what it can, a rich genus reaches 15, a family across its species; never a species under 8', () => {
+  const left = (G, H) =>
+    Object.fromEntries(Object.entries(py('pool', G, FISH)).map(([sp, O]) => [sp, Object.keys(O).length - (H[sp] || []).length]));
+  // a thin genus: g:Y (s5) has 12 observations, so 4 to spare; f:B took its share first, g:Y tops up to what s5 can give
+  const thin = game(many('s3', 40, 1000), many('s4', 40, 2000), many('s5', 12, 3000)),
+    T = held(thin);
+  assert.strictEqual(T.s5.length, 4);
+  assert.strictEqual(left(thin, T).s5, 8);
+  // a rich genus: s5 with 40 observations reaches its 15
+  const rich = game(many('s3', 40, 1000), many('s4', 40, 2000), many('s5', 40, 3000));
+  assert.strictEqual(held(rich).s5.length, 15);
+  // a family: f:A across s1 (9 observations, 1 to spare) and s2 (60): 1 from s1, the rest from s2
+  const fam = game(many('s1', 9), many('s2', 60, 5000)),
+    F = held(fam);
+  assert.deepStrictEqual([F.s1.length, F.s2.length], [1, 14]);
+  for (const [G, H] of [
+    [thin, T],
+    [fam, F]
+  ])
+    assert.ok(
+      Object.values(left(G, H)).every(n => n >= 8),
+      JSON.stringify(left(G, H))
+    );
+  // the helper itself: the same rule called directly on a unit
+  const E = {a: ['1', '2', '3'], b: ['4', '5', '6', '7']},
+    h = {a: [], b: []};
+  assert.strictEqual(py('take', h, E, {a: 1, b: 4}, ['a', 'b']), 5);
+});
+
 test("never Pierre's own, a reference source's or a reference-level photo, nor a surprise-only species", () => {
   const G = game(
     many('s1', 40),

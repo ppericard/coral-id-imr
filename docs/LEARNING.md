@@ -4086,6 +4086,14 @@ with a first try stopped when the set's rule changed):
   - units at Open Water at 1,000, strongRA: 40.4 → 37.3 (−3.1, bound −5.2; margin 2), down in 8 of 10 seeds; by kind,
     mostly the scientific genera (8.4 → 6.2), families 31.2 → 30.7, species 0.8 → 0.4: the genera lose practice photos
     to the 15 each is topped up to, where they do not have "assez de photos par ailleurs".
+  The integrator's option B (2026-11-18: a unit takes only from species that keep 8 in practice after the take, one
+  helper for families and genera, `tools/holdout.py` `take`) is the rule already built: rebuilt with it, the file is the
+  same byte for byte, so these results stand for it and no new run was made. The pressure is per genus, not per species:
+  a genus topped up to 15 can keep as few as 8 practice observations (*Chaetodontoplus* 15 held, 9 left). Sizes of
+  variants that would change it (computed, not simulated): a per-species keep of 12 for the genus top-up, 2,448 held,
+  122 of 130 genera at 15, each genus with 12 or more in practice; a keep of 16, 2,407 held, 114 genera at 15; a unit's
+  practice at least twice its held-out ones, 2,267 held, 52 of 65 families and 82 genera at 15. Any genus-only change can
+  reach the strongRA loss (genera); the beginner delay and the app world's drop at 300 are family-level and would remain.
   The app world's breach (units at Open Water at 300, strongRA) is all families there (23, 24, 22 → 18, 21, 17), while
   the rated world reads that measure unclear at 10 seeds (16.6 → 16.5); not re-run at the higher level. Rule L11: a
   confirmed breach goes to Pierre, with the choices it leaves: keep it; top a genus up only where practice stays well

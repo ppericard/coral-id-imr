@@ -110,17 +110,26 @@ def build(game, fish, prev=None):
     cap = {s: max(0, min(len(E[s]), len(P[s]) - KEEP)) for s in P}  # never fewer than KEEP in practice
     held = {s: [o for o in E[s] if o in had][:cap[s]] for s in P}
     for _, S in exam_units(fish):
-        S = [s for s in dict.fromkeys(S) if s in P]
-        need = TARGET - sum(len(held[s]) for s in S)
-        while need > 0:
-            took = False
-            for s in S:
-                if need > 0 and len(held[s]) < cap[s]:
-                    held[s].append(next(o for o in E[s] if o not in held[s]))
-                    need, took = need - 1, True
-            if not took:
-                break
+        take(held, E, cap, [s for s in dict.fromkeys(S) if s in P])
     return dict(sorted((s, sorted(L)) for s, L in held.items() if L))
+
+
+def take(held, E, cap, S):
+    """Tops exam unit S (its species in order, a family's or a genus's: one rule for both) up to TARGET held-out
+    observations, one species at a time in turn, each its next eligible observation in hash order, only while that
+    species keeps at least KEEP in practice after the take (cap: Pierre, 2026-11-18, "si et seulement si on a assez de
+    photos par ailleurs"); a unit that cannot reach TARGET so holds what it can. held: {species: [observation]}, changed
+    in place; E: each species' eligible observations in hash order. Returns how many the unit holds."""
+    need = TARGET - sum(len(held[s]) for s in S)
+    while need > 0:
+        took = False
+        for s in S:
+            if need > 0 and len(held[s]) < cap[s]:
+                held[s].append(next(o for o in E[s] if o not in held[s]))
+                need, took = need - 1, True
+        if not took:
+            break
+    return TARGET - max(0, need)
 
 
 def stale(old, held):
