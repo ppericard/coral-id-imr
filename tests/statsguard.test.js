@@ -385,16 +385,19 @@ test('a refused sign-in moves no exclusion; the saved retry does', () => {
 });
 
 // Review 2 of #801 (P3-2): nothing is fetched under the script lock: a replay (doGet rv, a save's, an anonymous send's)
-// computes stats_ against the cached pools only; the public stats, which hold no lock, read and cache them.
+// computes stats_ against the cached pools only; the public stats, which hold no lock, read and cache them. The replay's
+// units are read there, data.json and, from step 8 of the sheet overlay's design note, the look-alike pairs of
+// curation.json laid over it (Code.gs gen_, subjCur_: once, then cached), never a photo pool.
 test('a replay under the script lock fetches no photo pool when cold; the public stats warm it', () => {
   const n = {},
     s = loadCodeGs({fetch: site(n), cacheMax: 100 * 1024}),
-    pool = () => Object.keys(n).filter(f => /^fish|curation/.test(f));
+    pool = () => Object.keys(n).filter(f => /^fish/.test(f));
   s.post({name: 'Ana', pin: '1234', data: {}, summary: {}, answers: run('a', {ph: 'imrl-p8_g36'}), rv: 0});
   s.get({name: 'Ana', pin: '1234', rv: '0'});
   s.post({anon: 'device0003', anonAnswers: run('d'), rv: 0});
   assert.ok(n['data.json'] >= 1, 'the replays ran (their genera read): ' + JSON.stringify(n));
   assert.deepStrictEqual(pool(), [], 'no pool file read under the lock: ' + JSON.stringify(n));
+  assert.strictEqual(n['curation.json'], 1, 'the units’ pairs read once: ' + JSON.stringify(n));
   assert.ok(!s.cache.pool3fish && !s.cache.pool3coral);
   for (const k of Object.keys(s.cache)) if (k.startsWith('stats')) delete s.cache[k];
   assert.strictEqual(s.get({stats: '1'}).ok, true);

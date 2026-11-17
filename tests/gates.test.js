@@ -121,11 +121,26 @@ const GATES = {
   // stamps said and a replay under a new one adopted, the circles and pairs laid over the units, from the script that
   // replays under them (tests/fishadopt.test.js, tests/structure.test.js); before, the text slots alone, nothing sent.
   STRUCT_SHEET: (v, N) => {
-    const on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {
-        STRUCT_SHEET: N,
+    // core.js structSheet: a subject's own version (SUBJECTS structure sheet), else STRUCT_SHEET
+    const structSheet = S => (S && S.structure && S.structure.sheet ? S.structure.sheet() : N),
+      S = {id: 'fish', structure: {}, replayed: {}},
+      on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {
+        structSheet,
         rpOn: (S, x) => Number(x) >= 112
-      })({id: 'fish', structure: {}, replayed: {}}, v),
-      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {STRUCT_SHEET: N, sheetV: () => (v === undefined ? 0 : v)})();
+      })(S, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {structSheet, sheetV: () => (v === undefined ? 0 : v)})(S);
+    assert.strictEqual(on, app, 'the app and the sync agree');
+    return on;
+  },
+  // The corals' look-alike pairs (design note v2, step 8; sync.js stOn, app.js structOn through core.js structSheet, the
+  // corals' SUBJECTS structure sheet; Code.gs stMain_, gen_ under the pairs): their stamp said and a replay under a new one
+  // adopted, the pairs laid over data.json, from the script that replays the corals under them (tests/coralcontent.test.js);
+  // before, the text slots alone, nothing sent.
+  PAIRS_SHEET: (v, N) => {
+    const structSheet = S => (S && S.structure && S.structure.sheet ? S.structure.sheet() : 146),
+      S = {id: 'coral', replay: true, structure: {sheet: () => N}},
+      on = fn('sync.js', 'const stOn = ', '\n', 'stOn', {structSheet, rpOn: S => !!S.replay})(S, v),
+      app = fn('app.js', 'const structOn = ', '\n', 'structOn', {structSheet, sheetV: () => (v === undefined ? 0 : v)})(S);
     assert.strictEqual(on, app, 'the app and the sync agree');
     return on;
   },

@@ -417,9 +417,20 @@ test('answers logged while the trigger replays: that replay dropped, made again 
     s = loadCodeGs({fetch: f.fetch}),
     S = C.subjectOf(C.replaySubject());
   play(s, 'Ana', '1234', {});
-  hook.data = () =>
-    assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+  // The answer comes in while the trigger makes the first coral replay, outside the lock: from step 8 of the design note
+  // the coral units are made before the replays (subjStRefresh_ reads data.json under the content editor's pairs), so the
+  // replay itself is where it comes, not data.json's fetch.
+  const mk = s.ctx.rplMake_;
+  let late = false;
+  s.ctx.rplMake_ = (...a) => {
+    if (!late && !a[4]) {
+      late = true;
+      assert.ok(s.post({name: 'Ana', pin: '1234', data: dataOf(allSaved()), summary: {}, at: 1, answers: [qa('late', 40)]}).log);
+    }
+    return mk(...a);
+  };
   s.ctx.autoUpdate();
+  assert.ok(late, 'the answer came in during the replay');
   assert.ok(!s.sheets.Replayed || !s.sheets.Replayed.rows.slice(1).some(r => r[0] === 'Ana'), 'made over 12 rows, 13 now: not written');
   s.ctx.autoUpdate();
   assert.deepStrictEqual(
